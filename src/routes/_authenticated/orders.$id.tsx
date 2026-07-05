@@ -436,7 +436,11 @@ function OrderDetail() {
           <SendInvoiceDialog order={order} totals={totals} settings={settingsQ.data} currency={currency} />
           <Button variant="outline" onClick={copyLink}><LinkIcon className="h-4 w-4 mr-2" /> {t("orders.copyLink")}</Button>
           <Button variant="outline" onClick={printReceipt}><Receipt className="h-4 w-4 mr-2" /> {t("orders.printReceipt")}</Button>
-          <Button variant="outline" onClick={() => window.print()}><Printer className="h-4 w-4 mr-2" /> {t("orders.printA4")}</Button>
+          <Button variant="outline" onClick={async () => {
+            const el = document.querySelector<HTMLElement>(".printable-invoice");
+            const { downloadInvoicePdf } = await import("@/lib/download-invoice-pdf");
+            await downloadInvoicePdf(el, `invoice-${order.invoice_number ?? order.id}`);
+          }}><Printer className="h-4 w-4 mr-2" /> {t("orders.printA4")}</Button>
           <Button onClick={save}><Save className="h-4 w-4 mr-2" /> {t("common.save")}</Button>
         </div>
       </div>
