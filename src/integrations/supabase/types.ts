@@ -440,6 +440,7 @@ export type Database = {
           shipping_address_id: string | null
           status: string
           stock_deducted: boolean
+          stock_snapshot: Json | null
           subtotal: number
           tax_amount: number
           tax_rate: number
@@ -463,6 +464,7 @@ export type Database = {
           shipping_address_id?: string | null
           status?: string
           stock_deducted?: boolean
+          stock_snapshot?: Json | null
           subtotal?: number
           tax_amount?: number
           tax_rate?: number
@@ -486,6 +488,7 @@ export type Database = {
           shipping_address_id?: string | null
           status?: string
           stock_deducted?: boolean
+          stock_snapshot?: Json | null
           subtotal?: number
           tax_amount?: number
           tax_rate?: number
