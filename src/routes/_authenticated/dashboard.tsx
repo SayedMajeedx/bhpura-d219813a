@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
-import { Package, Users, ReceiptText, TrendingUp, CalendarDays, Trophy } from "lucide-react";
+import { Package, Users, ReceiptText, TrendingUp, CalendarDays, Trophy, Wallet, PiggyBank } from "lucide-react";
 import { formatMoney } from "@/lib/format";
 import { useI18n, useT } from "@/lib/i18n";
 
@@ -27,7 +27,7 @@ function Dashboard() {
   const { data } = useQuery({
     queryKey: ["dashboard-stats"],
     queryFn: async () => {
-      const [products, customers, orders, variants, items] = await Promise.all([
+      const [products, customers, orders, variants, items, expenses] = await Promise.all([
         supabase.from("products").select("id", { count: "exact", head: true }),
         supabase.from("customers").select("id", { count: "exact", head: true }),
         supabase
@@ -36,6 +36,7 @@ function Dashboard() {
           .order("created_at", { ascending: false }),
         supabase.from("product_variants").select("stock"),
         supabase.from("order_items").select("description, quantity"),
+        (supabase.from("expenses") as any).select("amount, expense_date"),
       ]);
 
       const monthStart = startOfMonthISO();
@@ -53,6 +54,13 @@ function Dashboard() {
       ).length;
 
       const totalRevenue = allOrders.reduce((s, o) => s + Number(o.total || 0), 0);
+
+      const allExpenses = ((expenses as any).data ?? []) as { amount: number; expense_date: string }[];
+      const totalExpenses = allExpenses.reduce((s, e) => s + Number(e.amount || 0), 0);
+      const expensesMonth = allExpenses
+        .filter((e) => new Date(e.expense_date).toISOString() >= monthStart)
+        .reduce((s, e) => s + Number(e.amount || 0), 0);
+      const netProfit = totalRevenue - totalExpenses;
 
       const stock = (variants.data ?? []).reduce((s: number, v: any) => s + (v.stock ?? 0), 0);
 
@@ -78,6 +86,9 @@ function Dashboard() {
         stock,
         recent: allOrders.slice(0, 5),
         topSelling,
+        totalExpenses,
+        expensesMonth,
+        netProfit,
       };
     },
   });
@@ -87,6 +98,17 @@ function Dashboard() {
       label: t("dashboard.revenueMonth"),
       value: data ? formatMoney(data.revenueMonth, data.currency, locale) : "—",
       icon: TrendingUp,
+    },
+    {
+      label: t("dashboard.totalExpenses"),
+      value: data ? formatMoney(data.totalExpenses, data.currency, locale) : "—",
+      icon: Wallet,
+    },
+    {
+      label: t("dashboard.netProfit"),
+      value: data ? formatMoney(data.netProfit, data.currency, locale) : "—",
+      icon: PiggyBank,
+      hint: t("dashboard.netProfitFormula"),
     },
     {
       label: t("dashboard.ordersToday"),
@@ -111,7 +133,7 @@ function Dashboard() {
         <h1 className="text-3xl sm:text-4xl font-display">{t("dashboard.title")}</h1>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6 sm:mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 mb-6 sm:mb-8">
         {primary.map((s) => {
           const Icon = s.icon;
           return (
@@ -120,6 +142,7 @@ function Dashboard() {
                 <div className="min-w-0">
                   <p className="text-xs uppercase tracking-wider text-muted-foreground">{s.label}</p>
                   <p className="text-2xl sm:text-3xl font-display mt-2 truncate">{s.value}</p>
+                  {(s as any).hint && <p className="text-[10px] text-muted-foreground mt-1">{(s as any).hint}</p>}
                 </div>
                 <div className="h-10 w-10 shrink-0 rounded-full bg-secondary flex items-center justify-center">
                   <Icon className="h-5 w-5 text-primary" />
