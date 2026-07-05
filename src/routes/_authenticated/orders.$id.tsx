@@ -13,8 +13,26 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogT
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { formatMoney } from "@/lib/format";
-import { useT } from "@/lib/i18n";
+import { useT, useI18n } from "@/lib/i18n";
 import { regionLabel } from "@/lib/bahrain-regions";
+
+function formatDeliveryAddress(
+  c: { region?: string | null; road?: string | null; house?: string | null; flat?: string | null; address?: string | null; city?: string | null } | null | undefined,
+  lang: "en" | "ar",
+): string[] {
+  if (!c) return [];
+  const region = regionLabel(c.region, lang) || c.city || "";
+  const road = c.road?.trim() || "";
+  const house = c.house?.trim() || "";
+  const flat = c.flat?.trim() || "";
+  const parts = lang === "ar"
+    ? [region, road, house, flat] // المنطقة، طريق، منزل، شقة
+    : [flat, house, road, region]; // Flat, House, Road, Region
+  const filtered = parts.filter((p) => p && p.length > 0);
+  if (filtered.length === 0 && c.address) return c.address.split(/\r?\n/).filter(Boolean);
+  const sep = lang === "ar" ? "، " : ", ";
+  return filtered.length ? [filtered.join(sep)] : [];
+}
 
 
 export const Route = createFileRoute("/_authenticated/orders/$id")({
@@ -31,6 +49,7 @@ type Item = {
 
 function OrderDetail() {
   const t = useT();
+  const { lang } = useI18n();
   const { id } = Route.useParams();
   const qc = useQueryClient();
 
@@ -211,6 +230,21 @@ function OrderDetail() {
               </Select>
             </div>
           </div>
+          {order.customer_id && (() => {
+            const selected = (customersQ.data ?? []).find((c: any) => c.id === order.customer_id);
+            if (!selected) return null;
+            const lines = formatDeliveryAddress(selected, lang);
+            return (
+              <div className="mt-4 pt-4 border-t border-border text-start">
+                <p className="text-xs uppercase tracking-wider text-muted-foreground mb-1">{t("orderDetail.deliveryAddress")}</p>
+                <p className="font-medium">{selected.name}</p>
+                {lines.length > 0
+                  ? lines.map((l, i) => <p key={i} className="text-sm text-muted-foreground">{l}</p>)
+                  : <p className="text-sm text-muted-foreground italic">{t("orderDetail.noDeliveryAddress")}</p>}
+                {selected.phone && <p className="text-sm text-muted-foreground">{selected.phone}</p>}
+              </div>
+            );
+          })()}
         </Card>
 
         <Card className="p-6">
@@ -506,19 +540,11 @@ function InvoicePreview({ order, items, settings }: { order: any; items: Item[];
             <div className="mb-8 text-start">
               <p className="text-xs uppercase tracking-wider text-neutral-500 mb-1">{L.billTo}</p>
               <p className="font-medium">{order.customers.name}</p>
-              {(() => {
-                const c = order.customers;
-                const parts = [c.road, c.house, c.flat].filter((v: string | null) => v && String(v).trim());
-                const line1 = parts.join(" · ");
-                const region = regionLabel(c.region, invoiceLang) || c.city || "";
-                return (
-                  <>
-                    {line1 && <p className="text-sm text-neutral-600">{isRTL ? toArabicDigits(line1) : line1}</p>}
-                    {!line1 && c.address && <p className="text-sm text-neutral-600 whitespace-pre-line">{c.address}</p>}
-                    {region && <p className="text-sm text-neutral-600">{region}</p>}
-                  </>
-                );
-              })()}
+              {formatDeliveryAddress(order.customers, invoiceLang).map((line, i) => (
+                <p key={i} className="text-sm text-neutral-600 whitespace-pre-line">
+                  {isRTL ? toArabicDigits(line) : line}
+                </p>
+              ))}
               {order.customers.phone && <p className="text-sm text-neutral-600">{num(order.customers.phone)}</p>}
               {order.customers.email && <p className="text-sm text-neutral-600">{order.customers.email}</p>}
             </div>
