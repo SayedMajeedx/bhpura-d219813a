@@ -180,7 +180,7 @@ const en: Dict = {
   "orders.linkCopied": "Link copied to clipboard!",
   "orders.linkFailed": "Could not copy link — try again.",
   "orders.printReceipt": "Print receipt",
-  "orders.printA4": "Print invoice (A4)",
+  "orders.printA4": "Download PDF",
   "orders.actions": "Actions",
   "orders.popupBlocked": "Popup blocked — allow popups to print the receipt.",
 
