@@ -588,8 +588,8 @@ function InvoicePreview({ order, items, settings, shippingAddress }: { order: an
             .printable-invoice * { print-color-adjust: exact !important; -webkit-print-color-adjust: exact !important; }
           }
         `}</style>
-        <div className="p-10" style={{ borderTop: `6px solid ${color}` }}>
-          <div className="flex justify-between items-start mb-10 gap-6">
+        <div className="p-4 sm:p-8 md:p-10 print:p-10" style={{ borderTop: `6px solid ${color}` }}>
+          <div className="flex flex-col md:flex-row justify-between items-start mb-8 md:mb-10 gap-4 md:gap-6 print:flex-row">
             <div className="flex-1 min-w-0">
               {settings.logo_url && (
                 <div
