@@ -14,7 +14,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { formatMoney } from "@/lib/format";
 import { useT, useI18n } from "@/lib/i18n";
-import { regionLabel, formatAddressLine, type StructuredAddress } from "@/lib/bahrain-regions";
+import { regionLabel, formatAddressLine, formatAddressDetailed, type StructuredAddress } from "@/lib/bahrain-regions";
 
 function formatDeliveryAddress(
   c: { region?: string | null; road?: string | null; house?: string | null; flat?: string | null; address?: string | null; city?: string | null } | null | undefined,
