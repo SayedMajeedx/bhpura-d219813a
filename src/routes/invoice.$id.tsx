@@ -150,13 +150,13 @@ function PublicInvoice() {
           <div className="p-5 sm:p-10">
             {/* EN: brand right + details left; AR: brand left + details right (flex-row-reverse in both) */}
             <div className="flex flex-col sm:flex-row-reverse justify-between items-start gap-4 mb-8">
-              <div className="min-w-0" style={{ textAlign: isRTL ? "start" : "end" }}>
+              <div className="min-w-0" style={{ textAlign: "end" }}>
                 {settings?.logo_url && (
                   <img
                     src={settings.logo_url}
                     alt="logo"
                     className="h-14 object-contain mb-2"
-                    style={{ marginInlineStart: isRTL ? 0 : "auto" }}
+                    style={{ marginInlineStart: "auto" }}
                   />
                 )}
                 <h2 style={{ color }} className="text-2xl font-semibold">{brand}</h2>
@@ -166,7 +166,7 @@ function PublicInvoice() {
                   {settings?.vat_number && ` · ${L.vatId} ${settings.vat_number}`}
                 </p>
               </div>
-              <div style={{ textAlign: isRTL ? "end" : "start" }}>
+              <div style={{ textAlign: "start" }}>
                 <h1 style={{ color }} className="text-3xl sm:text-4xl font-semibold tracking-tight">{L.invoice}</h1>
                 <p className="text-base mt-1">{L.number}: {order.invoice_number}</p>
                 <p className="text-xs mt-2" style={{ opacity: 0.7 }}>{L.date}: {new Date(order.order_date).toLocaleDateString(locale)}</p>
@@ -178,7 +178,7 @@ function PublicInvoice() {
             </div>
 
             {order.customers && (
-              <div className="mb-8" style={{ textAlign: isRTL ? "end" : "start" }}>
+              <div className="mb-8" style={{ textAlign: "start" }}>
                 <p className="text-xs uppercase tracking-wider mb-1" style={{ opacity: 0.6 }}>{L.billTo}</p>
                 <p className="font-medium">{order.customers.name}</p>
                 {order.customers.phone && <p className="text-sm" style={{ opacity: 0.75 }}>{order.customers.phone}</p>}
@@ -236,8 +236,8 @@ function PublicInvoice() {
               </table>
             </div>
 
-            {/* Totals block: EN → right, AR → left */}
-            <div className="flex" style={{ justifyContent: isRTL ? "flex-start" : "flex-end" }}>
+            {/* Totals block: EN → left side, AR → right side (both anchor to doc start). */}
+            <div className="flex" style={{ justifyContent: "flex-start" }}>
               <div className="w-full sm:w-72 text-sm space-y-1">
                 <div className="flex justify-between"><span style={{ opacity: 0.75 }}>{L.subtotal}</span><span>{money(order.subtotal)}</span></div>
                 {Number(order.discount) > 0 && <div className="flex justify-between"><span style={{ opacity: 0.75 }}>{L.discount}</span><span>− {money(order.discount)}</span></div>}
