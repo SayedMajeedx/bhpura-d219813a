@@ -95,6 +95,56 @@ export type Database = {
         }
         Relationships: []
       }
+      customer_addresses: {
+        Row: {
+          created_at: string
+          customer_id: string
+          flat: string | null
+          house: string | null
+          id: string
+          is_default: boolean
+          label: string | null
+          region: string | null
+          road: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          customer_id: string
+          flat?: string | null
+          house?: string | null
+          id?: string
+          is_default?: boolean
+          label?: string | null
+          region?: string | null
+          road?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          customer_id?: string
+          flat?: string | null
+          house?: string | null
+          id?: string
+          is_default?: boolean
+          label?: string | null
+          region?: string | null
+          road?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customer_addresses_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       customers: {
         Row: {
           address: string | null
@@ -284,6 +334,7 @@ export type Database = {
           notes: string | null
           order_date: string
           shipping: number
+          shipping_address_id: string | null
           status: string
           subtotal: number
           tax_amount: number
@@ -302,6 +353,7 @@ export type Database = {
           notes?: string | null
           order_date?: string
           shipping?: number
+          shipping_address_id?: string | null
           status?: string
           subtotal?: number
           tax_amount?: number
@@ -320,6 +372,7 @@ export type Database = {
           notes?: string | null
           order_date?: string
           shipping?: number
+          shipping_address_id?: string | null
           status?: string
           subtotal?: number
           tax_amount?: number
@@ -334,6 +387,13 @@ export type Database = {
             columns: ["customer_id"]
             isOneToOne: false
             referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_shipping_address_id_fkey"
+            columns: ["shipping_address_id"]
+            isOneToOne: false
+            referencedRelation: "customer_addresses"
             referencedColumns: ["id"]
           },
         ]
