@@ -270,7 +270,7 @@ function OrderDetail() {
   };
 
   const printReceipt = () => {
-    const settings = settingsQ.data ?? {};
+    const settings: any = settingsQ.data ?? {};
     const LEGACY = new Set(["Abaya Atelier", "أباية أتيليه"]);
     const rawBrand = (settings.business_name ?? "").trim();
     const brand = !rawBrand || LEGACY.has(rawBrand)
