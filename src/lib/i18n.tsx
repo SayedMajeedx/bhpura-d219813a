@@ -215,6 +215,17 @@ const en: Dict = {
   "orderDetail.addonsHint": "Add options in Inventory → Customization add-ons.",
   "orderDetail.insufficientStock": "Insufficient stock for one or more items. Adjust quantities or restock before confirming.",
   "orderDetail.stockUpdated": "Inventory updated",
+  "orderDetail.advancePaid": "Advance Payment",
+  "orderDetail.remaining": "Remaining Balance",
+  "orderDetail.paymentSummary": "Payment",
+
+  "payStatus.paid": "Paid",
+  "payStatus.partial": "Partially Paid",
+  "payStatus.unpaid": "Unpaid",
+
+  "invoice.total": "Total Amount",
+  "invoice.advancePaid": "Advance Paid",
+  "invoice.remainingDue": "Remaining Due",
 
   "payment.cash": "Cash",
   "payment.card": "Card",
@@ -436,6 +447,17 @@ const ar: Dict = {
   "orderDetail.addonsHint": "أضيفي الخيارات من المخزون ← إضافات التخصيص.",
   "orderDetail.insufficientStock": "المخزون غير كافٍ لأحد البنود. عدّلي الكميات أو أعيدي التخزين قبل التأكيد.",
   "orderDetail.stockUpdated": "تم تحديث المخزون",
+  "orderDetail.advancePaid": "المبلغ المقدم",
+  "orderDetail.remaining": "المبلغ المتبقي",
+  "orderDetail.paymentSummary": "الدفع",
+
+  "payStatus.paid": "مدفوع",
+  "payStatus.partial": "مدفوع جزئياً",
+  "payStatus.unpaid": "غير مدفوع",
+
+  "invoice.total": "المبلغ الإجمالي",
+  "invoice.advancePaid": "المبلغ المقدم المدفوع",
+  "invoice.remainingDue": "المتبقي للاستحقاق",
 
   "payment.cash": "نقدًا",
   "payment.card": "بطاقة",
