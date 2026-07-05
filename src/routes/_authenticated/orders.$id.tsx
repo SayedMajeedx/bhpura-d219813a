@@ -361,11 +361,11 @@ function OrderDetail() {
               <div key={idx} className="border border-border rounded-lg p-4 space-y-3">
                 <div className="grid grid-cols-1 sm:grid-cols-12 gap-3">
                   <div className="sm:col-span-5">
-                    <Label>From inventory</Label>
+                    <Label>{t("orderDetail.fromInventory")}</Label>
                     <Select value={it.variant_id ?? "custom"} onValueChange={(v) => v !== "custom" && pickVariant(idx, v)}>
-                      <SelectTrigger><SelectValue placeholder="Pick a variant..." /></SelectTrigger>
+                      <SelectTrigger><SelectValue placeholder={t("orderDetail.pickVariant")} /></SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="custom">— Custom line —</SelectItem>
+                        <SelectItem value="custom">{t("orderDetail.customLine")}</SelectItem>
                         {(variantsQ.data ?? []).map((v: any) => {
                           const p = productsQ.data?.find((x: any) => x.id === v.product_id);
                           if (!p) return null;
@@ -379,16 +379,16 @@ function OrderDetail() {
                     </Select>
                   </div>
                   <div className="sm:col-span-4">
-                    <Label>Description</Label>
+                    <Label>{t("orderDetail.description")}</Label>
                     <Input value={it.description} onChange={(e) => updateItem(idx, { description: e.target.value })} />
                   </div>
-                  <div className="sm:col-span-1"><Label>Qty</Label>
+                  <div className="sm:col-span-1"><Label>{t("orderDetail.qty")}</Label>
                     <Input type="number" min={1} value={it.quantity} onChange={(e) => updateItem(idx, { quantity: Number(e.target.value) })} /></div>
-                  <div className="sm:col-span-2"><Label>Unit price</Label>
+                  <div className="sm:col-span-2"><Label>{t("orderDetail.unitPrice")}</Label>
                     <Input type="number" step="0.01" value={it.unit_price} onChange={(e) => updateItem(idx, { unit_price: Number(e.target.value) })} /></div>
                 </div>
                 <div>
-                  <Label className="text-xs">Customizations</Label>
+                  <Label className="text-xs">{t("orderDetail.customizations")}</Label>
                   <div className="flex flex-wrap gap-2 mt-1">
                     {(customQ.data ?? []).map((c: any) => {
                       const active = it.customizations.some((x) => x.name === c.name);
@@ -400,11 +400,11 @@ function OrderDetail() {
                         </button>
                       );
                     })}
-                    {(customQ.data ?? []).length === 0 && <span className="text-xs text-muted-foreground">Add options in Inventory → Customization add-ons.</span>}
+                    {(customQ.data ?? []).length === 0 && <span className="text-xs text-muted-foreground">{t("orderDetail.addonsHint")}</span>}
                   </div>
                 </div>
                 <div className="flex items-center justify-between pt-2 border-t border-border">
-                  <span className="text-sm text-muted-foreground">Line total</span>
+                  <span className="text-sm text-muted-foreground">{t("orderDetail.lineTotal")}</span>
                   <div className="flex items-center gap-3">
                     <span className="font-medium">{formatMoney(it.line_total, currency)}</span>
                     <Button variant="ghost" size="icon" onClick={() => setItems(items.filter((_, i) => i !== idx))}>
