@@ -3,6 +3,7 @@ import { getPublicInvoice } from "@/lib/public-invoice.functions";
 import { useState } from "react";
 import { formatMoney } from "@/lib/format";
 import { formatAddressDetailed, regionLabel, type StructuredAddress } from "@/lib/bahrain-regions";
+import { derivePaymentStatus, PAYMENT_BADGE_CLASSES, PAYMENT_BADGE_LABEL } from "@/lib/payment-status";
 
 export const Route = createFileRoute("/invoice/$id")({
   ssr: false,
@@ -197,10 +198,43 @@ function PublicInvoice() {
                 {Number(order.discount) > 0 && <div className="flex justify-between"><span className="text-neutral-600">{L.discount}</span><span>− {money(order.discount)}</span></div>}
                 {Number(order.tax_rate) > 0 && <div className="flex justify-between"><span className="text-neutral-600">{L.vat} ({order.tax_rate}%)</span><span>{money(order.tax_amount)}</span></div>}
                 {Number(order.shipping) > 0 && <div className="flex justify-between"><span className="text-neutral-600">{L.shipping}</span><span>{money(order.shipping)}</span></div>}
-                <div className="flex justify-between pt-2 border-t-2" style={{ borderColor: color }}>
-                  <span className="text-lg" style={{ color }}>{L.grandTotal}</span>
-                  <span className="text-lg" style={{ color }}>{money(order.total)}</span>
-                </div>
+                {(() => {
+                  const badge = derivePaymentStatus(order.status, Number(order.total), Number(order.advance_paid ?? 0));
+                  const advance = Number(order.advance_paid ?? 0);
+                  const remaining = Math.max(0, Number(order.total) - advance);
+                  return (
+                    <>
+                      <div className="flex justify-between items-center pt-2 border-t-2" style={{ borderColor: color }}>
+                        <span className="text-lg" style={{ color }}>
+                          {lang === "ar" ? "المبلغ الإجمالي" : "Total Amount"}
+                        </span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-lg" style={{ color }}>{money(order.total)}</span>
+                          <span className={`text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full border ${PAYMENT_BADGE_CLASSES[badge]}`}>
+                            {PAYMENT_BADGE_LABEL[badge][lang]}
+                          </span>
+                        </div>
+                      </div>
+                      {advance > 0 && (
+                        <>
+                          <div className="flex justify-between pt-1">
+                            <span className="text-neutral-600">
+                              {lang === "ar" ? "المبلغ المقدم المدفوع" : "Advance Paid"}
+                            </span>
+                            <span>− {money(advance)}</span>
+                          </div>
+                          <div
+                            className="flex justify-between items-center rounded-md px-2 py-1 mt-1 font-semibold"
+                            style={{ backgroundColor: `${color}1a`, color }}
+                          >
+                            <span>{lang === "ar" ? "المتبقي للاستحقاق" : "Remaining Due"}</span>
+                            <span>{money(remaining)}</span>
+                          </div>
+                        </>
+                      )}
+                    </>
+                  );
+                })()}
               </div>
             </div>
 
