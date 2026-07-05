@@ -2,7 +2,7 @@
 // PDF that mirrors the live preview exactly (colors, fonts, RTL layout).
 //
 // Uses html2canvas-pro (supports modern CSS color functions like oklch()
-// emitted by Tailwind v4) + jsPDF to paginate onto A4.
+// emitted by Tailwind v4) + jsPDF to fit the invoice onto one A4 page.
 //
 // Mobile fix: on phones the source element renders at the phone's viewport
 // width (often ~360px), which makes html2canvas capture a compressed / broken
@@ -163,38 +163,16 @@ export async function downloadInvoicePdf(
     const contentW = pageW - margin * 2;
     const contentH = pageH - margin * 2;
 
-    const pxPerMm = canvas.width / contentW;
-    const pageHeightPx = Math.floor(contentH * pxPerMm);
+    const imgData = canvas.toDataURL("image/jpeg", 0.95);
+    const widthScale = contentW / canvas.width;
+    const heightScale = contentH / canvas.height;
+    const scale = Math.min(widthScale, heightScale);
+    const imgW = canvas.width * scale;
+    const imgH = canvas.height * scale;
+    const x = margin + (contentW - imgW) / 2;
+    const y = margin + (contentH - imgH) / 2;
 
-    let renderedPx = 0;
-    let pageIndex = 0;
-    while (renderedPx < canvas.height) {
-      const sliceHeightPx = Math.min(pageHeightPx, canvas.height - renderedPx);
-      const pageCanvas = document.createElement("canvas");
-      pageCanvas.width = canvas.width;
-      pageCanvas.height = sliceHeightPx;
-      const ctx = pageCanvas.getContext("2d");
-      if (!ctx) break;
-      ctx.fillStyle = "#ffffff";
-      ctx.fillRect(0, 0, pageCanvas.width, pageCanvas.height);
-      ctx.drawImage(
-        canvas,
-        0,
-        renderedPx,
-        canvas.width,
-        sliceHeightPx,
-        0,
-        0,
-        canvas.width,
-        sliceHeightPx,
-      );
-      const imgData = pageCanvas.toDataURL("image/jpeg", 0.95);
-      const imgHeightMm = sliceHeightPx / pxPerMm;
-      if (pageIndex > 0) pdf.addPage();
-      pdf.addImage(imgData, "JPEG", margin, margin, contentW, imgHeightMm);
-      renderedPx += sliceHeightPx;
-      pageIndex += 1;
-    }
+    pdf.addImage(imgData, "JPEG", x, y, imgW, imgH);
 
     pdf.save(finalName);
   } finally {
