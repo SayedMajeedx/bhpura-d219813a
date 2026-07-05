@@ -329,20 +329,61 @@ function Row({ label, value }: { label: string; value: string }) {
 
 const INVOICE_LABELS = {
   en: {
-    invoice: "INVOICE", date: "Date", status: "Status", billTo: "Bill to",
+    invoice: "INVOICE", invoiceNumber: "Invoice #",
+    date: "Date", status: "Status", billTo: "Bill to",
+    paymentMethod: "Payment method", vatLabel: "VAT",
     item: "Item", description: "Description", qty: "Qty", unit: "Unit Price", price: "Price", total: "Total",
-    subtotal: "Subtotal", discount: "Discount", vat: "VAT", shipping: "Shipping",
+    subtotal: "Subtotal", discount: "Discount", vat: "VAT", shipping: "Shipping", grandTotal: "Grand Total",
     notes: "Notes", warmRegards: "Warm regards",
     language: "Language", english: "English", arabic: "العربية",
   },
   ar: {
-    invoice: "فاتورة", date: "التاريخ", status: "الحالة", billTo: "فاتورة إلى",
+    invoice: "فاتورة", invoiceNumber: "رقم الفاتورة",
+    date: "التاريخ", status: "الحالة", billTo: "فاتورة إلى",
+    paymentMethod: "طريقة الدفع", vatLabel: "الرقم الضريبي",
     item: "الصنف", description: "الوصف", qty: "الكمية", unit: "سعر الوحدة", price: "السعر", total: "الإجمالي",
-    subtotal: "المجموع الفرعي", discount: "الخصم", vat: "ضريبة القيمة المضافة", shipping: "الشحن",
+    subtotal: "المجموع الفرعي", discount: "الخصم", vat: "ضريبة القيمة المضافة", shipping: "الشحن", grandTotal: "الإجمالي الكلي",
     notes: "ملاحظات", warmRegards: "مع أطيب التحيات",
     language: "اللغة", english: "English", arabic: "العربية",
   },
 } as const;
+
+const STATUS_LABELS: Record<string, { en: string; ar: string }> = {
+  draft: { en: "Draft", ar: "مسودة" },
+  confirmed: { en: "Confirmed", ar: "مؤكدة" },
+  paid: { en: "Paid", ar: "مدفوعة" },
+  pending: { en: "Pending", ar: "قيد الانتظار" },
+  shipped: { en: "Shipped", ar: "تم الشحن" },
+  completed: { en: "Completed", ar: "مكتملة" },
+  cancelled: { en: "Cancelled", ar: "ملغاة" },
+  refunded: { en: "Refunded", ar: "مستردة" },
+};
+
+const PAYMENT_LABELS: Record<string, { en: string; ar: string }> = {
+  cash: { en: "Cash", ar: "نقدًا" },
+  card: { en: "Card", ar: "بطاقة" },
+  bank_transfer: { en: "Bank transfer", ar: "تحويل بنكي" },
+  transfer: { en: "Bank transfer", ar: "تحويل بنكي" },
+  benefit: { en: "Benefit", ar: "بنفت" },
+  apple_pay: { en: "Apple Pay", ar: "أبل باي" },
+  google_pay: { en: "Google Pay", ar: "جوجل باي" },
+  cod: { en: "Cash on delivery", ar: "الدفع عند الاستلام" },
+};
+
+function tStatus(s: string | null | undefined, lang: "en" | "ar") {
+  if (!s) return "";
+  return STATUS_LABELS[s]?.[lang] ?? s;
+}
+function tPayment(s: string | null | undefined, lang: "en" | "ar") {
+  if (!s) return "";
+  return PAYMENT_LABELS[s]?.[lang] ?? s;
+}
+
+// Localize numerals (Arabic-Indic) inside a rendered money/number string
+function toArabicDigits(str: string) {
+  const map = ["٠","١","٢","٣","٤","٥","٦","٧","٨","٩"];
+  return str.replace(/[0-9]/g, (d) => map[+d]);
+}
 
 function InvoicePreview({ order, items, settings }: { order: any; items: Item[]; settings: any }) {
   const currency = order.currency;
@@ -358,12 +399,19 @@ function InvoicePreview({ order, items, settings }: { order: any; items: Item[];
   const [invoiceLang, setInvoiceLang] = useState<"en" | "ar">("en");
   const L = INVOICE_LABELS[invoiceLang];
   const isRTL = invoiceLang === "ar";
+  const locale = isRTL ? "ar-BH" : "en-US";
+  const money = (n: number) => {
+    const s = formatMoney(n, currency, locale);
+    return isRTL ? toArabicDigits(s) : s;
+  };
+  const num = (n: number | string) => (isRTL ? toArabicDigits(String(n)) : String(n));
 
   const family = isRTL
     ? `"Tajawal", "Cairo", sans-serif`
     : settings.font_family === "Custom (uploaded)"
       ? "'InvoiceCustomFont', sans-serif"
       : `"${settings.font_family || "Cormorant Garamond"}", serif`;
+
 
   return (
     <div className="space-y-2">
@@ -424,14 +472,17 @@ function InvoicePreview({ order, items, settings }: { order: any; items: Item[];
               {settings.address && <p className="text-sm text-neutral-600 whitespace-pre-line mt-1">{settings.address}</p>}
               <p className="text-xs text-neutral-500 mt-1">
                 {[settings.phone, settings.email].filter(Boolean).join(" · ")}
-                {settings.vat_number && ` · VAT ${settings.vat_number}`}
+                {settings.vat_number && ` · ${L.vatLabel} ${num(settings.vat_number)}`}
               </p>
             </div>
             <div className={isRTL ? "text-left" : "text-right"}>
               <h1 className="text-4xl font-display tracking-tight" style={{ color }}>{L.invoice}</h1>
-              <p className="text-lg mt-1">#{order.invoice_number}</p>
-              <p className="text-xs text-neutral-500 mt-2">{L.date}: {new Date(order.order_date).toLocaleDateString(isRTL ? "ar-EG" : undefined)}</p>
-              <p className="text-xs text-neutral-500">{L.status}: {order.status}</p>
+              <p className="text-lg mt-1">{L.invoiceNumber}: {num(order.invoice_number)}</p>
+              <p className="text-xs text-neutral-500 mt-2">{L.date}: {new Date(order.order_date).toLocaleDateString(isRTL ? "ar-BH" : undefined)}</p>
+              <p className="text-xs text-neutral-500">{L.status}: {tStatus(order.status, invoiceLang)}</p>
+              {order.payment_method && (
+                <p className="text-xs text-neutral-500">{L.paymentMethod}: {tPayment(order.payment_method, invoiceLang)}</p>
+              )}
             </div>
           </div>
 
@@ -441,7 +492,7 @@ function InvoicePreview({ order, items, settings }: { order: any; items: Item[];
               <p className="font-medium">{order.customers.name}</p>
               {order.customers.address && <p className="text-sm text-neutral-600 whitespace-pre-line">{order.customers.address}</p>}
               {order.customers.city && <p className="text-sm text-neutral-600">{order.customers.city}</p>}
-              {order.customers.phone && <p className="text-sm text-neutral-600">{order.customers.phone}</p>}
+              {order.customers.phone && <p className="text-sm text-neutral-600">{num(order.customers.phone)}</p>}
               {order.customers.email && <p className="text-sm text-neutral-600">{order.customers.email}</p>}
             </div>
           )}
@@ -451,7 +502,7 @@ function InvoicePreview({ order, items, settings }: { order: any; items: Item[];
               <tr style={{ backgroundColor: color, color: "white" }}>
                 <th className={`${isRTL ? "text-right" : "text-left"} p-3`}>{L.description}</th>
                 <th className={`${isRTL ? "text-left" : "text-right"} p-3 w-16`}>{L.qty}</th>
-                <th className={`${isRTL ? "text-left" : "text-right"} p-3 w-28`}>{L.price}</th>
+                <th className={`${isRTL ? "text-left" : "text-right"} p-3 w-28`}>{L.unit}</th>
                 <th className={`${isRTL ? "text-left" : "text-right"} p-3 w-28`}>{L.total}</th>
               </tr>
             </thead>
@@ -463,14 +514,14 @@ function InvoicePreview({ order, items, settings }: { order: any; items: Item[];
                     {it.customizations.length > 0 && (
                       <ul className="mt-1 text-xs text-neutral-600 space-y-0.5">
                         {it.customizations.map((c, ci) => (
-                          <li key={ci}>+ {c.name} ({formatMoney(c.price_delta, currency)})</li>
+                          <li key={ci}>+ {c.name} ({money(c.price_delta)})</li>
                         ))}
                       </ul>
                     )}
                   </td>
-                  <td className={`p-3 ${isRTL ? "text-left" : "text-right"}`}>{it.quantity}</td>
-                  <td className={`p-3 ${isRTL ? "text-left" : "text-right"}`}>{formatMoney(it.unit_price + it.customization_total, currency)}</td>
-                  <td className={`p-3 font-medium ${isRTL ? "text-left" : "text-right"}`}>{formatMoney(it.line_total, currency)}</td>
+                  <td className={`p-3 ${isRTL ? "text-left" : "text-right"}`}>{num(it.quantity)}</td>
+                  <td className={`p-3 ${isRTL ? "text-left" : "text-right"}`}>{money(it.unit_price + it.customization_total)}</td>
+                  <td className={`p-3 font-medium ${isRTL ? "text-left" : "text-right"}`}>{money(it.line_total)}</td>
                 </tr>
               ))}
             </tbody>
@@ -478,13 +529,13 @@ function InvoicePreview({ order, items, settings }: { order: any; items: Item[];
 
           <div className={`flex ${isRTL ? "justify-start" : "justify-end"}`}>
             <div className="w-72 text-sm space-y-1">
-              <div className="flex justify-between"><span className="text-neutral-600">{L.subtotal}</span><span>{formatMoney(order.subtotal, currency)}</span></div>
-              {Number(order.discount) > 0 && <div className="flex justify-between"><span className="text-neutral-600">{L.discount}</span><span>− {formatMoney(order.discount, currency)}</span></div>}
-              {Number(order.tax_rate) > 0 && <div className="flex justify-between"><span className="text-neutral-600">{L.vat} ({order.tax_rate}%)</span><span>{formatMoney(order.tax_amount, currency)}</span></div>}
-              {Number(order.shipping) > 0 && <div className="flex justify-between"><span className="text-neutral-600">{L.shipping}</span><span>{formatMoney(order.shipping, currency)}</span></div>}
+              <div className="flex justify-between"><span className="text-neutral-600">{L.subtotal}</span><span>{money(order.subtotal)}</span></div>
+              {Number(order.discount) > 0 && <div className="flex justify-between"><span className="text-neutral-600">{L.discount}</span><span>− {money(order.discount)}</span></div>}
+              {Number(order.tax_rate) > 0 && <div className="flex justify-between"><span className="text-neutral-600">{L.vat} ({num(order.tax_rate)}%)</span><span>{money(order.tax_amount)}</span></div>}
+              {Number(order.shipping) > 0 && <div className="flex justify-between"><span className="text-neutral-600">{L.shipping}</span><span>{money(order.shipping)}</span></div>}
               <div className="flex justify-between pt-2 border-t-2" style={{ borderColor: color }}>
-                <span className="font-display text-lg" style={{ color }}>{L.total}</span>
-                <span className="font-display text-lg" style={{ color }}>{formatMoney(order.total, currency)}</span>
+                <span className="font-display text-lg" style={{ color }}>{L.grandTotal}</span>
+                <span className="font-display text-lg" style={{ color }}>{money(order.total)}</span>
               </div>
             </div>
           </div>
