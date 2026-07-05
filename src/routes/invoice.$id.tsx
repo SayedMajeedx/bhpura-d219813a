@@ -52,7 +52,7 @@ const LABELS = {
     billTo: "Bill to", delivery: "Delivery address", payment: "Payment method", vatId: "VAT",
     desc: "Description", qty: "Qty", unit: "Unit", total: "Total", size: "Size", color: "Color",
     subtotal: "Subtotal", discount: "Discount", vat: "VAT", shipping: "Shipping", grandTotal: "Grand Total",
-    notes: "Notes", print: "Print", switchAr: "العربية", switchEn: "English",
+    notes: "Notes", print: "Download PDF", switchAr: "العربية", switchEn: "English",
   },
   ar: {
     invoice: "فاتورة", number: "رقم الفاتورة", date: "التاريخ", status: "الحالة",
