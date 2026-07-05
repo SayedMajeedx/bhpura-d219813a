@@ -99,8 +99,8 @@ export async function downloadInvoicePdf(
   const wrapper = document.createElement("div");
   wrapper.style.position = "fixed";
   wrapper.style.top = "0";
-  wrapper.style.left = "-10000px";
-  wrapper.style.zIndex = "0";
+  wrapper.style.left = "0";
+  wrapper.style.zIndex = "-1";
   wrapper.style.pointerEvents = "none";
   wrapper.style.opacity = "1";
   wrapper.style.width = `${PDF_RENDER_WIDTH_PX}px`;
