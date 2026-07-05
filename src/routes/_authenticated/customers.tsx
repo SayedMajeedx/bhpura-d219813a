@@ -115,6 +115,7 @@ function CustomersPage() {
 function CustomerDialog({ customer, onSaved }: { customer: Customer | null; onSaved: () => void }) {
   const t = useT();
   const { lang } = useI18n();
+  const qc = useQueryClient();
   const [f, setF] = useState({
     name: customer?.name ?? "",
     phone: customer?.phone ?? "",
@@ -151,7 +152,12 @@ function CustomerDialog({ customer, onSaved }: { customer: Customer | null; onSa
       ? await supabase.from("customers").update(payload).eq("id", customer.id)
       : await supabase.from("customers").insert(payload);
     if (error) toast.error(error.message);
-    else { toast.success(t("common.save")); onSaved(); }
+    else {
+      toast.success(t("common.save"));
+      qc.invalidateQueries({ queryKey: ["order"] });
+      qc.invalidateQueries({ queryKey: ["orders"] });
+      onSaved();
+    }
   };
 
   return (
