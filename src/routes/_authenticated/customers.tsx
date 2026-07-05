@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,10 +9,10 @@ import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Pencil, Trash2, Users } from "lucide-react";
+import { Plus, Pencil, Trash2, Users, Star, Check } from "lucide-react";
 import { toast } from "sonner";
 import { useT, useI18n } from "@/lib/i18n";
-import { BAHRAIN_REGIONS, regionLabel } from "@/lib/bahrain-regions";
+import { BAHRAIN_REGIONS, regionLabel, formatAddressLine, type StructuredAddress } from "@/lib/bahrain-regions";
 
 export const Route = createFileRoute("/_authenticated/customers")({
   component: CustomersPage,
@@ -32,6 +32,17 @@ type Customer = {
   flat: string | null;
 };
 
+type Address = {
+  id: string;
+  customer_id: string;
+  label: string | null;
+  region: string | null;
+  road: string | null;
+  house: string | null;
+  flat: string | null;
+  is_default: boolean;
+};
+
 function CustomersPage() {
   const t = useT();
   const { lang } = useI18n();
@@ -46,6 +57,19 @@ function CustomersPage() {
       if (error) throw error;
       return data as Customer[];
     },
+  });
+
+  const addressesQ = useQuery({
+    queryKey: ["customer_addresses"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("customer_addresses").select("*");
+      if (error) throw error;
+      return data as Address[];
+    },
+  });
+  const defaultByCustomer = new Map<string, Address>();
+  (addressesQ.data ?? []).forEach((a) => {
+    if (a.is_default) defaultByCustomer.set(a.customer_id, a);
   });
 
   const del = async (id: string) => {
@@ -97,7 +121,13 @@ function CustomersPage() {
                     {c.phone && <div>{c.phone}</div>}
                     {c.email && <div>{c.email}</div>}
                   </td>
-                  <td className="p-4 text-muted-foreground">{regionLabel(c.region, lang) || c.city || "—"}</td>
+                  <td className="p-4 text-muted-foreground">
+                    {(() => {
+                      const def = defaultByCustomer.get(c.id);
+                      if (def) return formatAddressLine(def, lang) || regionLabel(def.region, lang) || "—";
+                      return regionLabel(c.region, lang) || c.city || "—";
+                    })()}
+                  </td>
                   <td className="p-4 text-right">
                     <Button variant="ghost" size="icon" onClick={() => { setEditing(c); setOpen(true); }}><Pencil className="h-4 w-4" /></Button>
                     <Button variant="ghost" size="icon" onClick={() => del(c.id)}><Trash2 className="h-4 w-4" /></Button>
@@ -120,48 +150,62 @@ function CustomerDialog({ customer, onSaved }: { customer: Customer | null; onSa
     name: customer?.name ?? "",
     phone: customer?.phone ?? "",
     email: customer?.email ?? "",
-    region: customer?.region ?? "",
-    road: customer?.road ?? "",
-    house: customer?.house ?? "",
-    flat: customer?.flat ?? "",
     notes: customer?.notes ?? "",
+  });
+
+  // For NEW customers we require one initial address inside the dialog.
+  const [initialAddr, setInitialAddr] = useState({ label: "", region: "", road: "", house: "", flat: "" });
+
+  const addressesQ = useQuery({
+    queryKey: ["customer_addresses", customer?.id ?? "new"],
+    queryFn: async () => {
+      if (!customer) return [] as Address[];
+      const { data, error } = await supabase.from("customer_addresses").select("*").eq("customer_id", customer.id).order("created_at");
+      if (error) throw error;
+      return data as Address[];
+    },
+    enabled: !!customer,
   });
 
   const save = async () => {
     if (!f.name.trim()) return toast.error(t("customers.name"));
-    if (!f.region.trim() || !f.road.trim() || !f.house.trim()) {
-      return toast.error(t("customers.requiredError"));
-    }
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
-    const composedAddress = [f.road, f.house, f.flat].filter((v) => v && v.trim()).join(" · ");
-    const payload = {
-      name: f.name,
-      phone: f.phone,
-      email: f.email,
-      notes: f.notes,
-      region: f.region,
-      road: f.road,
-      house: f.house,
-      flat: f.flat || null,
-      city: f.region, // keep legacy column in sync
-      address: composedAddress,
-      user_id: user.id,
-    };
-    const { error } = customer
-      ? await supabase.from("customers").update(payload).eq("id", customer.id)
-      : await supabase.from("customers").insert(payload);
-    if (error) toast.error(error.message);
-    else {
-      toast.success(t("common.save"));
-      qc.invalidateQueries({ queryKey: ["order"] });
-      qc.invalidateQueries({ queryKey: ["orders"] });
-      onSaved();
+
+    if (!customer) {
+      if (!initialAddr.region.trim() || !initialAddr.road.trim() || !initialAddr.house.trim()) {
+        return toast.error(t("customers.requiredError"));
+      }
+      const composedAddress = [initialAddr.road, initialAddr.house, initialAddr.flat].filter((v) => v.trim()).join(" · ");
+      const { data: created, error } = await supabase.from("customers").insert({
+        name: f.name, phone: f.phone, email: f.email, notes: f.notes,
+        region: initialAddr.region, road: initialAddr.road, house: initialAddr.house, flat: initialAddr.flat || null,
+        city: initialAddr.region, address: composedAddress,
+        user_id: user.id,
+      }).select("id").single();
+      if (error || !created) return toast.error(error?.message ?? "Failed");
+      const { error: aerr } = await supabase.from("customer_addresses").insert({
+        user_id: user.id, customer_id: created.id, label: initialAddr.label || "Primary",
+        region: initialAddr.region, road: initialAddr.road, house: initialAddr.house, flat: initialAddr.flat || null,
+        is_default: true,
+      });
+      if (aerr) return toast.error(aerr.message);
+    } else {
+      const { error } = await supabase.from("customers").update({
+        name: f.name, phone: f.phone, email: f.email, notes: f.notes,
+      }).eq("id", customer.id);
+      if (error) return toast.error(error.message);
     }
+    toast.success(t("common.save"));
+    qc.invalidateQueries({ queryKey: ["customers"] });
+    qc.invalidateQueries({ queryKey: ["customer_addresses"] });
+    qc.invalidateQueries({ queryKey: ["order"] });
+    qc.invalidateQueries({ queryKey: ["orders"] });
+    onSaved();
   };
 
   return (
-    <DialogContent>
+    <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
       <DialogHeader><DialogTitle>{customer ? t("customers.editTitle") : t("customers.newTitle")}</DialogTitle></DialogHeader>
       <div className="space-y-3">
         <div>
@@ -172,34 +216,171 @@ function CustomerDialog({ customer, onSaved }: { customer: Customer | null; onSa
           <div><Label>{t("customers.phone")}</Label><Input className="text-start" value={f.phone} onChange={(e) => setF({ ...f, phone: e.target.value })} /></div>
           <div><Label>{t("customers.email")}</Label><Input className="text-start" value={f.email} onChange={(e) => setF({ ...f, email: e.target.value })} /></div>
         </div>
-        <div>
-          <Label>{t("customers.region")} <span className="text-destructive">*</span></Label>
-          <Select value={f.region} onValueChange={(v) => setF({ ...f, region: v })}>
-            <SelectTrigger className="text-start"><SelectValue placeholder={t("customers.regionPlaceholder")} /></SelectTrigger>
-            <SelectContent>
-              {BAHRAIN_REGIONS.map((r) => (
-                <SelectItem key={r.value} value={r.value}>{lang === "ar" ? r.ar : r.en}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <Label>{t("customers.road")} <span className="text-destructive">*</span></Label>
-            <Input className="text-start" placeholder={t("customers.roadPlaceholder")} value={f.road} onChange={(e) => setF({ ...f, road: e.target.value })} />
-          </div>
-          <div>
-            <Label>{t("customers.house")} <span className="text-destructive">*</span></Label>
-            <Input className="text-start" placeholder={t("customers.housePlaceholder")} value={f.house} onChange={(e) => setF({ ...f, house: e.target.value })} />
-          </div>
-        </div>
-        <div>
-          <Label>{t("customers.flat")}</Label>
-          <Input className="text-start" placeholder={t("customers.flatPlaceholder")} value={f.flat} onChange={(e) => setF({ ...f, flat: e.target.value })} />
-        </div>
         <div><Label>{t("customers.notes")}</Label><Textarea className="text-start" value={f.notes} onChange={(e) => setF({ ...f, notes: e.target.value })} /></div>
+
+        <div className="pt-3 border-t border-border">
+          <h3 className="font-medium mb-2">{t("customers.addresses")}</h3>
+          {!customer ? (
+            <AddressFields value={initialAddr} onChange={setInitialAddr} lang={lang} />
+          ) : (
+            <AddressManager customerId={customer.id} addresses={addressesQ.data ?? []} lang={lang} />
+          )}
+        </div>
       </div>
       <DialogFooter><Button onClick={save}>{t("common.save")}</Button></DialogFooter>
     </DialogContent>
+  );
+}
+
+function AddressFields({
+  value, onChange, lang, showLabel = true,
+}: {
+  value: { label: string; region: string; road: string; house: string; flat: string };
+  onChange: (v: { label: string; region: string; road: string; house: string; flat: string }) => void;
+  lang: "en" | "ar";
+  showLabel?: boolean;
+}) {
+  const t = useT();
+  return (
+    <div className="space-y-3">
+      {showLabel && (
+        <div>
+          <Label>{t("customers.addressLabel")}</Label>
+          <Input className="text-start" value={value.label} onChange={(e) => onChange({ ...value, label: e.target.value })} />
+        </div>
+      )}
+      <div>
+        <Label>{t("customers.region")} <span className="text-destructive">*</span></Label>
+        <Select value={value.region} onValueChange={(v) => onChange({ ...value, region: v })}>
+          <SelectTrigger className="text-start"><SelectValue placeholder={t("customers.regionPlaceholder")} /></SelectTrigger>
+          <SelectContent>
+            {BAHRAIN_REGIONS.map((r) => (
+              <SelectItem key={r.value} value={r.value}>{lang === "ar" ? r.ar : r.en}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <Label>{t("customers.road")} <span className="text-destructive">*</span></Label>
+          <Input className="text-start" placeholder={t("customers.roadPlaceholder")} value={value.road} onChange={(e) => onChange({ ...value, road: e.target.value })} />
+        </div>
+        <div>
+          <Label>{t("customers.house")} <span className="text-destructive">*</span></Label>
+          <Input className="text-start" placeholder={t("customers.housePlaceholder")} value={value.house} onChange={(e) => onChange({ ...value, house: e.target.value })} />
+        </div>
+      </div>
+      <div>
+        <Label>{t("customers.flat")}</Label>
+        <Input className="text-start" placeholder={t("customers.flatPlaceholder")} value={value.flat} onChange={(e) => onChange({ ...value, flat: e.target.value })} />
+      </div>
+    </div>
+  );
+}
+
+function AddressManager({ customerId, addresses, lang }: { customerId: string; addresses: Address[]; lang: "en" | "ar" }) {
+  const t = useT();
+  const qc = useQueryClient();
+  const [adding, setAdding] = useState(false);
+  const [draft, setDraft] = useState({ label: "", region: "", road: "", house: "", flat: "" });
+  const [editingId, setEditingId] = useState<string | null>(null);
+
+  const invalidate = () => {
+    qc.invalidateQueries({ queryKey: ["customer_addresses"] });
+    qc.invalidateQueries({ queryKey: ["customer_addresses", customerId] });
+    qc.invalidateQueries({ queryKey: ["order"] });
+  };
+
+  const setDefault = async (id: string) => {
+    await supabase.from("customer_addresses").update({ is_default: false }).eq("customer_id", customerId);
+    const { error } = await supabase.from("customer_addresses").update({ is_default: true }).eq("id", id);
+    if (error) return toast.error(error.message);
+    toast.success(t("customers.setDefault"));
+    invalidate();
+  };
+
+  const remove = async (id: string) => {
+    if (!confirm(t("customers.deleteAddressConfirm"))) return;
+    const { error } = await supabase.from("customer_addresses").delete().eq("id", id);
+    if (error) return toast.error(error.message);
+    invalidate();
+  };
+
+  const saveDraft = async () => {
+    if (!draft.region.trim() || !draft.road.trim() || !draft.house.trim()) {
+      return toast.error(t("customers.requiredError"));
+    }
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    const payload = {
+      user_id: user.id, customer_id: customerId,
+      label: draft.label || null,
+      region: draft.region, road: draft.road, house: draft.house, flat: draft.flat || null,
+    };
+    let error;
+    if (editingId) {
+      ({ error } = await supabase.from("customer_addresses").update(payload).eq("id", editingId));
+    } else {
+      const shouldBeDefault = addresses.length === 0;
+      ({ error } = await supabase.from("customer_addresses").insert({ ...payload, is_default: shouldBeDefault }));
+    }
+    if (error) return toast.error(error.message);
+    setAdding(false); setEditingId(null);
+    setDraft({ label: "", region: "", road: "", house: "", flat: "" });
+    invalidate();
+  };
+
+  const startEdit = (a: Address) => {
+    setEditingId(a.id); setAdding(true);
+    setDraft({ label: a.label ?? "", region: a.region ?? "", road: a.road ?? "", house: a.house ?? "", flat: a.flat ?? "" });
+  };
+
+  return (
+    <div className="space-y-3">
+      {addresses.length === 0 && !adding && (
+        <p className="text-sm text-muted-foreground italic">{t("customers.noAddresses")}</p>
+      )}
+      <ul className="space-y-2">
+        {addresses.map((a) => (
+          <li key={a.id} className="flex items-start gap-2 border border-border rounded-md p-3">
+            <div className="flex-1 min-w-0 text-start">
+              <div className="flex items-center gap-2">
+                <p className="font-medium truncate">{a.label || t("customers.address")}</p>
+                {a.is_default && (
+                  <span className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary flex items-center gap-1">
+                    <Star className="h-3 w-3" /> {t("customers.default")}
+                  </span>
+                )}
+              </div>
+              <p className="text-sm text-muted-foreground">{formatAddressLine(a as StructuredAddress, lang) || "—"}</p>
+            </div>
+            <div className="flex items-center gap-1">
+              {!a.is_default && (
+                <Button variant="ghost" size="sm" onClick={() => setDefault(a.id)} title={t("customers.setDefault")}>
+                  <Check className="h-4 w-4" />
+                </Button>
+              )}
+              <Button variant="ghost" size="icon" onClick={() => startEdit(a)}><Pencil className="h-4 w-4" /></Button>
+              <Button variant="ghost" size="icon" onClick={() => remove(a.id)}><Trash2 className="h-4 w-4" /></Button>
+            </div>
+          </li>
+        ))}
+      </ul>
+      {adding ? (
+        <div className="border border-border rounded-md p-3 space-y-3">
+          <AddressFields value={draft} onChange={setDraft} lang={lang} />
+          <div className="flex gap-2 justify-end">
+            <Button variant="outline" size="sm" onClick={() => { setAdding(false); setEditingId(null); setDraft({ label: "", region: "", road: "", house: "", flat: "" }); }}>
+              {t("common.cancel")}
+            </Button>
+            <Button size="sm" onClick={saveDraft}>{t("common.save")}</Button>
+          </div>
+        </div>
+      ) : (
+        <Button variant="outline" size="sm" onClick={() => setAdding(true)}>
+          <Plus className="h-4 w-4 me-1" /> {t("customers.addAddress")}
+        </Button>
+      )}
+    </div>
   );
 }

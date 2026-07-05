@@ -8,13 +8,13 @@ import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Plus, Trash2, Printer, Save, Send } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, Printer, Save, Send, Search, Star } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { formatMoney } from "@/lib/format";
 import { useT, useI18n } from "@/lib/i18n";
-import { regionLabel } from "@/lib/bahrain-regions";
+import { regionLabel, formatAddressLine, type StructuredAddress } from "@/lib/bahrain-regions";
 
 function formatDeliveryAddress(
   c: { region?: string | null; road?: string | null; house?: string | null; flat?: string | null; address?: string | null; city?: string | null } | null | undefined,
@@ -33,6 +33,17 @@ function formatDeliveryAddress(
   const sep = lang === "ar" ? "، " : ", ";
   return filtered.length ? [filtered.join(sep)] : [];
 }
+
+type SavedAddress = {
+  id: string;
+  customer_id: string;
+  label: string | null;
+  region: string | null;
+  road: string | null;
+  house: string | null;
+  flat: string | null;
+  is_default: boolean;
+};
 
 
 export const Route = createFileRoute("/_authenticated/orders/$id")({
@@ -77,6 +88,14 @@ function OrderDetail() {
     queryKey: ["customers"],
     queryFn: async () => (await supabase.from("customers").select("*").order("name")).data ?? [],
   });
+  const addressesQ = useQuery({
+    queryKey: ["customer_addresses"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("customer_addresses").select("*");
+      if (error) throw error;
+      return (data ?? []) as SavedAddress[];
+    },
+  });
   const customQ = useQuery({
     queryKey: ["customizations"],
     queryFn: async () => (await supabase.from("customization_options").select("*").order("name")).data ?? [],
@@ -93,6 +112,7 @@ function OrderDetail() {
 
   const [order, setOrder] = useState<Order | null>(null);
   const [items, setItems] = useState<Item[]>([]);
+  const [phoneSearch, setPhoneSearch] = useState("");
 
   useEffect(() => {
     if (orderQ.data) {
@@ -159,6 +179,7 @@ function OrderDetail() {
 
     const { error: oe } = await supabase.from("orders").update({
       customer_id: order.customer_id, status: order.status, notes: order.notes,
+      shipping_address_id: order.shipping_address_id ?? null,
       discount: totals.discount, tax_rate: order.tax_rate, tax_amount: totals.taxAmount,
       shipping: totals.shipping, subtotal: totals.subtotal, total: totals.total,
       currency, order_date: order.order_date,
@@ -198,15 +219,45 @@ function OrderDetail() {
       {/* Editor - hidden on print */}
       <div className="no-print space-y-4 mb-8">
         <Card className="p-6">
+          <div className="mb-4">
+            <Label className="flex items-center gap-2"><Search className="h-3 w-3" /> {t("customers.searchByPhone")}</Label>
+            <Input
+              className="text-start"
+              placeholder={t("customers.searchByPhonePh")}
+              value={phoneSearch}
+              onChange={(e) => {
+                const q = e.target.value;
+                setPhoneSearch(q);
+                const digits = q.replace(/\D/g, "");
+                if (digits.length < 3) return;
+                const match = (customersQ.data ?? []).find((c: any) =>
+                  (c.phone ?? "").replace(/\D/g, "").includes(digits),
+                );
+                if (match) {
+                  const def = (addressesQ.data ?? []).find((a) => a.customer_id === match.id && a.is_default)
+                    ?? (addressesQ.data ?? []).find((a) => a.customer_id === match.id);
+                  setOrder({ ...order, customer_id: match.id, shipping_address_id: def?.id ?? null });
+                }
+              }}
+            />
+            {phoneSearch.replace(/\D/g, "").length >= 3 && !(customersQ.data ?? []).some((c: any) => (c.phone ?? "").replace(/\D/g, "").includes(phoneSearch.replace(/\D/g, ""))) && (
+              <p className="text-xs text-muted-foreground mt-1 italic">{t("customers.noMatch")}</p>
+            )}
+          </div>
           <div className="grid grid-cols-3 gap-4">
             <div>
               <Label>Customer</Label>
-              <Select value={order.customer_id ?? "none"} onValueChange={(v) => setOrder({ ...order, customer_id: v === "none" ? null : v })}>
+              <Select value={order.customer_id ?? "none"} onValueChange={(v) => {
+                const cid = v === "none" ? null : v;
+                const def = cid ? (addressesQ.data ?? []).find((a) => a.customer_id === cid && a.is_default)
+                  ?? (addressesQ.data ?? []).find((a) => a.customer_id === cid) : null;
+                setOrder({ ...order, customer_id: cid, shipping_address_id: def?.id ?? null });
+              }}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="none">— No customer —</SelectItem>
                   {(customersQ.data ?? []).map((c: any) => (
-                    <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                    <SelectItem key={c.id} value={c.id}>{c.name}{c.phone ? ` — ${c.phone}` : ""}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -233,15 +284,48 @@ function OrderDetail() {
           {order.customer_id && (() => {
             const selected = (customersQ.data ?? []).find((c: any) => c.id === order.customer_id);
             if (!selected) return null;
-            const lines = formatDeliveryAddress(selected, lang);
+            const customerAddrs = (addressesQ.data ?? []).filter((a) => a.customer_id === order.customer_id);
+            const defaultAddr = customerAddrs.find((a) => a.is_default);
+            const activeId = order.shipping_address_id ?? defaultAddr?.id ?? null;
+            const active = customerAddrs.find((a) => a.id === activeId) ?? null;
+            const legacyLines = formatDeliveryAddress(selected, lang);
             return (
               <div className="mt-4 pt-4 border-t border-border text-start">
                 <p className="text-xs uppercase tracking-wider text-muted-foreground mb-1">{t("orderDetail.deliveryAddress")}</p>
                 <p className="font-medium">{selected.name}</p>
-                {lines.length > 0
-                  ? lines.map((l, i) => <p key={i} className="text-sm text-muted-foreground">{l}</p>)
-                  : <p className="text-sm text-muted-foreground italic">{t("orderDetail.noDeliveryAddress")}</p>}
                 {selected.phone && <p className="text-sm text-muted-foreground">{selected.phone}</p>}
+                {customerAddrs.length > 0 ? (
+                  <div className="mt-3 space-y-2">
+                    <Label className="text-xs">{t("orderDetail.chooseAddress")}</Label>
+                    <Select
+                      value={activeId ?? ""}
+                      onValueChange={(v) => setOrder({ ...order, shipping_address_id: v })}
+                    >
+                      <SelectTrigger className="text-start"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {customerAddrs.map((a) => (
+                          <SelectItem key={a.id} value={a.id}>
+                            {(a.label || t("customers.address"))}{a.is_default ? ` ★` : ""} — {formatAddressLine(a as StructuredAddress, lang) || "—"}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {active && (
+                      <p className="text-sm text-muted-foreground">
+                        {formatAddressLine(active as StructuredAddress, lang) || "—"}
+                        {active.is_default && (
+                          <span className="ms-2 inline-flex items-center gap-1 text-xs text-primary">
+                            <Star className="h-3 w-3" /> {t("customers.default")}
+                          </span>
+                        )}
+                      </p>
+                    )}
+                  </div>
+                ) : legacyLines.length > 0 ? (
+                  legacyLines.map((l, i) => <p key={i} className="text-sm text-muted-foreground">{l}</p>)
+                ) : (
+                  <p className="text-sm text-muted-foreground italic">{t("orderDetail.noDeliveryAddress")}</p>
+                )}
               </div>
             );
           })()}
@@ -345,11 +429,20 @@ function OrderDetail() {
       </div>
 
       {/* Printable invoice */}
+      {(() => {
+        const addrs = (addressesQ.data ?? []).filter((a) => a.customer_id === order.customer_id);
+        const chosen = addrs.find((a) => a.id === order.shipping_address_id)
+          ?? addrs.find((a) => a.is_default)
+          ?? null;
+        return (
       <InvoicePreview
         order={{ ...order, subtotal: totals.subtotal, tax_amount: totals.taxAmount, total: totals.total }}
         items={items}
         settings={settingsQ.data}
+        shippingAddress={chosen}
       />
+        );
+      })()}
     </div>
   );
 }
@@ -427,7 +520,7 @@ function toArabicDigits(str: string) {
   return str.replace(/[0-9]/g, (d) => map[+d]);
 }
 
-function InvoicePreview({ order, items, settings }: { order: any; items: Item[]; settings: any }) {
+function InvoicePreview({ order, items, settings, shippingAddress }: { order: any; items: Item[]; settings: any; shippingAddress?: SavedAddress | null }) {
   const currency = order.currency;
   const color = settings.primary_color || "#8b6f47";
   const bg = settings.background_color || "#ffffff";
@@ -540,11 +633,17 @@ function InvoicePreview({ order, items, settings }: { order: any; items: Item[];
             <div className="mb-8 text-start">
               <p className="text-xs uppercase tracking-wider text-neutral-500 mb-1">{L.billTo}</p>
               <p className="font-medium">{order.customers.name}</p>
-              {formatDeliveryAddress(order.customers, invoiceLang).map((line, i) => (
-                <p key={i} className="text-sm text-neutral-600 whitespace-pre-line">
-                  {isRTL ? toArabicDigits(line) : line}
-                </p>
-              ))}
+              {(() => {
+                const line = shippingAddress ? formatAddressLine(shippingAddress as StructuredAddress, invoiceLang) : "";
+                if (line) {
+                  return <p className="text-sm text-neutral-600">{isRTL ? toArabicDigits(line) : line}</p>;
+                }
+                return formatDeliveryAddress(order.customers, invoiceLang).map((l, i) => (
+                  <p key={i} className="text-sm text-neutral-600 whitespace-pre-line">
+                    {isRTL ? toArabicDigits(l) : l}
+                  </p>
+                ));
+              })()}
               {order.customers.phone && <p className="text-sm text-neutral-600">{num(order.customers.phone)}</p>}
               {order.customers.email && <p className="text-sm text-neutral-600">{order.customers.email}</p>}
             </div>
