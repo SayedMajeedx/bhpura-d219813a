@@ -13,7 +13,10 @@ export const getPublicInvoice = createServerFn({ method: "GET" })
       .select("*, customers(name, phone, email), order_items(*, products(name), product_variants(size, color, fabric))")
       .eq("id", data.id)
       .maybeSingle();
-    if (error) throw new Error(error.message);
+    if (error) {
+      console.error("[getPublicInvoice] order query failed", error);
+      throw new Error("Unable to load invoice");
+    }
     if (!order) return null;
 
     const { data: settings } = await supabaseAdmin
