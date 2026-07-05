@@ -213,7 +213,19 @@ function PublicInvoice() {
                   {items.map((it: any, i: number) => (
                     <tr key={i} className="border-b border-neutral-200 align-top">
                       <td className="p-3">
-                        <p className="font-medium">{it.description || "—"}</p>
+                        {it.products?.name || it.product_variants ? (
+                          <div className="space-y-0.5">
+                            <p className="font-medium">{it.products?.name || it.description || "—"}</p>
+                            {it.product_variants?.size && (
+                              <p className="text-xs" style={{ opacity: 0.75 }}>{L.size}: {it.product_variants.size}</p>
+                            )}
+                            {it.product_variants?.color && (
+                              <p className="text-xs" style={{ opacity: 0.75 }}>{L.color}: {it.product_variants.color}</p>
+                            )}
+                          </div>
+                        ) : (
+                          <p className="font-medium">{it.description || "—"}</p>
+                        )}
                         {(it.customizations ?? []).length > 0 && (
                           <ul className="mt-1 text-xs space-y-0.5" style={{ opacity: 0.75 }}>
                             {it.customizations.map((c: any, ci: number) => (
