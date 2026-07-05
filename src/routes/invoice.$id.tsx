@@ -59,7 +59,7 @@ const LABELS = {
     billTo: "فاتورة إلى", delivery: "عنوان التوصيل", payment: "طريقة الدفع", vatId: "الرقم الضريبي",
     desc: "الوصف", qty: "الكمية", unit: "سعر الوحدة", total: "الإجمالي", size: "المقاس", color: "اللون",
     subtotal: "المجموع الفرعي", discount: "الخصم", vat: "ضريبة القيمة المضافة", shipping: "الشحن", grandTotal: "الإجمالي الكلي",
-    notes: "ملاحظات", print: "طباعة", switchAr: "العربية", switchEn: "English",
+    notes: "ملاحظات", print: "تحميل الفاتورة PDF", switchAr: "العربية", switchEn: "English",
   },
 } as const;
 
