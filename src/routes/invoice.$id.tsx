@@ -166,7 +166,7 @@ function PublicInvoice() {
                   {settings?.vat_number && ` · ${L.vatId} ${settings.vat_number}`}
                 </p>
               </div>
-              <div style={{ textAlign: isRTL ? "end" : "start" }}>
+              <div style={{ textAlign: "start" }}>
                 <h1 style={{ color }} className="text-3xl sm:text-4xl font-semibold tracking-tight">{L.invoice}</h1>
                 <p className="text-base mt-1">{L.number}: {order.invoice_number}</p>
                 <p className="text-xs mt-2" style={{ opacity: 0.7 }}>{L.date}: {new Date(order.order_date).toLocaleDateString(locale)}</p>
