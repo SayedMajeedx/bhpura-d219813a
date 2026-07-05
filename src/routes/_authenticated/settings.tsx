@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "sonner";
 import { Upload } from "lucide-react";
 import { useT } from "@/lib/i18n";
+import { Rnd } from "react-rnd";
 
 export const Route = createFileRoute("/_authenticated/settings")({
   component: Settings,
@@ -24,7 +25,11 @@ type Settings = {
   footer_note: string | null; next_invoice_number: number;
   font_family: string; font_url: string | null; font_size: number;
   text_color: string; background_color: string; logo_size: number;
+  logo_x: number; logo_y: number; logo_width: number; logo_height: number;
 };
+
+const LOGO_CANVAS_W = 600;
+const LOGO_CANVAS_H = 220;
 
 const FONT_PRESETS = [
   "Cormorant Garamond", "Playfair Display", "Inter", "Roboto",
@@ -79,6 +84,7 @@ function Settings() {
       default_tax_rate: f.default_tax_rate, primary_color: f.primary_color, footer_note: f.footer_note,
       font_family: f.font_family, font_url: f.font_url, font_size: f.font_size,
       text_color: f.text_color, background_color: f.background_color, logo_size: f.logo_size,
+      logo_x: f.logo_x, logo_y: f.logo_y, logo_width: f.logo_width, logo_height: f.logo_height,
     }).eq("user_id", f.user_id);
     if (error) toast.error(error.message);
     else { toast.success("Saved"); qc.invalidateQueries({ queryKey: ["business-settings"] }); }
@@ -213,6 +219,67 @@ function Settings() {
             <p style={{ marginTop: 6 }}>{t("settings.previewText")}</p>
           </div>
         </Card>
+
+        {f.logo_url && (
+          <Card className="p-6 space-y-4">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h2 className="font-display text-xl">Invoice logo position &amp; size</h2>
+                <p className="text-sm text-muted-foreground">
+                  Drag the logo to reposition it and drag any corner to resize. This will be applied to every invoice.
+                </p>
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() =>
+                  setF({ ...f, logo_x: 0, logo_y: 0, logo_width: 160, logo_height: 64 })
+                }
+              >
+                Reset
+              </Button>
+            </div>
+
+            <div
+              className="relative mx-auto border border-dashed border-border rounded-md bg-white overflow-hidden"
+              style={{ width: LOGO_CANVAS_W, height: LOGO_CANVAS_H }}
+            >
+              <Rnd
+                size={{ width: f.logo_width, height: f.logo_height }}
+                position={{ x: f.logo_x, y: f.logo_y }}
+                onDragStop={(_e, d) => setF({ ...f, logo_x: d.x, logo_y: d.y })}
+                onResizeStop={(_e, _dir, ref, _delta, pos) =>
+                  setF({
+                    ...f,
+                    logo_width: parseInt(ref.style.width, 10),
+                    logo_height: parseInt(ref.style.height, 10),
+                    logo_x: pos.x,
+                    logo_y: pos.y,
+                  })
+                }
+                bounds="parent"
+                lockAspectRatio
+                className="border border-dashed border-neutral-300 hover:border-neutral-500"
+              >
+                <img
+                  src={f.logo_url}
+                  alt="logo"
+                  draggable={false}
+                  style={{ width: "100%", height: "100%", objectFit: "contain", pointerEvents: "none" }}
+                />
+              </Rnd>
+            </div>
+
+            <div className="grid grid-cols-4 gap-3 text-sm">
+              <div><Label>X</Label><Input type="number" value={f.logo_x} onChange={(e) => setF({ ...f, logo_x: Number(e.target.value) })} /></div>
+              <div><Label>Y</Label><Input type="number" value={f.logo_y} onChange={(e) => setF({ ...f, logo_y: Number(e.target.value) })} /></div>
+              <div><Label>Width</Label><Input type="number" value={f.logo_width} onChange={(e) => setF({ ...f, logo_width: Number(e.target.value) })} /></div>
+              <div><Label>Height</Label><Input type="number" value={f.logo_height} onChange={(e) => setF({ ...f, logo_height: Number(e.target.value) })} /></div>
+            </div>
+            <p className="text-xs text-muted-foreground">Remember to click Save below to persist changes.</p>
+          </Card>
+        )}
 
         <div className="flex justify-end"><Button onClick={save}>{t("settings.save")}</Button></div>
       </div>

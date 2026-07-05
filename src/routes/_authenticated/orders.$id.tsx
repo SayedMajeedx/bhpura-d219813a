@@ -14,7 +14,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { formatMoney } from "@/lib/format";
 import { useT } from "@/lib/i18n";
-import { Rnd } from "react-rnd";
+
 
 export const Route = createFileRoute("/_authenticated/orders/$id")({
   component: OrderDetail,
@@ -334,7 +334,6 @@ const INVOICE_LABELS = {
     subtotal: "Subtotal", discount: "Discount", vat: "VAT", shipping: "Shipping",
     notes: "Notes", warmRegards: "Warm regards",
     language: "Language", english: "English", arabic: "العربية",
-    resetLogo: "Reset logo",
   },
   ar: {
     invoice: "فاتورة", date: "التاريخ", status: "الحالة", billTo: "فاتورة إلى",
@@ -342,7 +341,6 @@ const INVOICE_LABELS = {
     subtotal: "المجموع الفرعي", discount: "الخصم", vat: "ضريبة القيمة المضافة", shipping: "الشحن",
     notes: "ملاحظات", warmRegards: "مع أطيب التحيات",
     language: "اللغة", english: "English", arabic: "العربية",
-    resetLogo: "إعادة ضبط الشعار",
   },
 } as const;
 
@@ -352,7 +350,10 @@ function InvoicePreview({ order, items, settings }: { order: any; items: Item[];
   const bg = settings.background_color || "#ffffff";
   const text = settings.text_color || "#1a1a1a";
   const fontSize = Number(settings.font_size) || 14;
-  const defaultLogoSize = Number(settings.logo_size) || 64;
+  const logoX = Number(settings.logo_x) || 0;
+  const logoY = Number(settings.logo_y) || 0;
+  const logoW = Number(settings.logo_width) || 160;
+  const logoH = Number(settings.logo_height) || 64;
 
   const [invoiceLang, setInvoiceLang] = useState<"en" | "ar">("en");
   const L = INVOICE_LABELS[invoiceLang];
@@ -364,28 +365,10 @@ function InvoicePreview({ order, items, settings }: { order: any; items: Item[];
       ? "'InvoiceCustomFont', sans-serif"
       : `"${settings.font_family || "Cormorant Garamond"}", serif`;
 
-  // Draggable / resizable logo state
-  const [logoBox, setLogoBox] = useState({
-    x: 0,
-    y: 0,
-    width: Math.max(defaultLogoSize * 2, 120),
-    height: defaultLogoSize,
-  });
-  useEffect(() => {
-    setLogoBox((b) => ({ ...b, height: defaultLogoSize, width: Math.max(defaultLogoSize * 2, 120) }));
-  }, [defaultLogoSize]);
-  const resetLogo = () =>
-    setLogoBox({ x: 0, y: 0, width: Math.max(defaultLogoSize * 2, 120), height: defaultLogoSize });
-
   return (
     <div className="space-y-2">
       {/* Invoice controls (not printed) */}
       <div className="print:hidden flex flex-wrap items-center justify-end gap-2">
-        {settings.logo_url && (
-          <Button type="button" variant="ghost" size="sm" onClick={resetLogo}>
-            {L.resetLogo}
-          </Button>
-        )}
         <Label className="text-xs text-muted-foreground">{L.language}:</Label>
         <div className="inline-flex rounded-md border border-input overflow-hidden">
           <button
@@ -420,31 +403,21 @@ function InvoicePreview({ order, items, settings }: { order: any; items: Item[];
               {settings.logo_url && (
                 <div
                   className="relative mb-3"
-                  style={{ height: Math.max(logoBox.height + logoBox.y, defaultLogoSize) + 20 }}
+                  style={{ height: logoH + logoY + 8 }}
                 >
-                  <Rnd
-                    size={{ width: logoBox.width, height: logoBox.height }}
-                    position={{ x: logoBox.x, y: logoBox.y }}
-                    onDragStop={(_e: any, d: any) => setLogoBox((b) => ({ ...b, x: d.x, y: d.y }))}
-                    onResizeStop={(_e: any, _dir: any, ref: any, _delta: any, pos: any) =>
-                      setLogoBox({
-                        width: parseInt(ref.style.width, 10),
-                        height: parseInt(ref.style.height, 10),
-                        x: pos.x,
-                        y: pos.y,
-                      })
-                    }
-                    bounds="parent"
-                    lockAspectRatio
-                    className="border border-dashed border-transparent hover:border-neutral-300 print:!border-transparent"
-                  >
-                    <img
-                      src={settings.logo_url}
-                      alt="logo"
-                      draggable={false}
-                      style={{ width: "100%", height: "100%", objectFit: "contain", pointerEvents: "none" }}
-                    />
-                  </Rnd>
+                  <img
+                    src={settings.logo_url}
+                    alt="logo"
+                    draggable={false}
+                    style={{
+                      position: "absolute",
+                      left: logoX,
+                      top: logoY,
+                      width: logoW,
+                      height: logoH,
+                      objectFit: "contain",
+                    }}
+                  />
                 </div>
               )}
               <h2 style={{ color, fontSize: `${fontSize * 1.75}px`, fontWeight: 600 }}>{settings.business_name}</h2>
