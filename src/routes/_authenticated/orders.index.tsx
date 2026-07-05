@@ -57,7 +57,7 @@ function OrdersList() {
     if (!user) return;
     const { data: settings } = await supabase.from("business_settings").select("*").eq("user_id", user.id).maybeSingle();
     const nextNum = settings?.next_invoice_number ?? 1001;
-    const currency = settings?.currency ?? "SAR";
+    const currency = settings?.currency ?? "BHD";
     const taxRate = settings?.default_tax_rate ?? 15;
     const { data: order, error } = await supabase.from("orders").insert({
       user_id: user.id, invoice_number: nextNum, currency, tax_rate: taxRate,

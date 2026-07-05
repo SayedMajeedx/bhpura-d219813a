@@ -50,12 +50,38 @@ export type StructuredAddress = {
   is_default?: boolean;
 };
 
+/**
+ * Translate common Arabic address terms into English equivalents so that
+ * free-text address fields (Block/Road/House/Flat) render correctly on
+ * the English invoice even when the user typed them in Arabic.
+ */
+const AR_ADDRESS_TERMS: Array<[RegExp, string]> = [
+  [/مجمع/g, "Block"],
+  [/مجمّع/g, "Block"],
+  [/مجموعة/g, "Block"],
+  [/طريق/g, "Road"],
+  [/شارع/g, "Street"],
+  [/منزل/g, "House"],
+  [/بيت/g, "House"],
+  [/شقة/g, "Flat"],
+  [/مبنى/g, "Building"],
+  [/مبني/g, "Building"],
+];
+
+export function translateArabicAddressTerms(s: string | null | undefined, lang: "en" | "ar"): string {
+  if (!s) return "";
+  if (lang !== "en") return s;
+  let out = s;
+  for (const [re, en] of AR_ADDRESS_TERMS) out = out.replace(re, en);
+  return out;
+}
+
 export function formatAddressLine(a: StructuredAddress | null | undefined, lang: "en" | "ar"): string {
   if (!a) return "";
   const region = regionLabel(a.region, lang);
-  const road = a.road?.trim() || "";
-  const house = a.house?.trim() || "";
-  const flat = a.flat?.trim() || "";
+  const road = translateArabicAddressTerms(a.road?.trim() || "", lang);
+  const house = translateArabicAddressTerms(a.house?.trim() || "", lang);
+  const flat = translateArabicAddressTerms(a.flat?.trim() || "", lang);
   const parts = lang === "ar" ? [region, road, house, flat] : [flat, house, road, region];
   const sep = lang === "ar" ? "، " : ", ";
   return parts.filter((p) => p && p.length > 0).join(sep);
@@ -70,9 +96,9 @@ export function formatAddressLine(a: StructuredAddress | null | undefined, lang:
 export function formatAddressDetailed(a: StructuredAddress | null | undefined, lang: "en" | "ar"): string {
   if (!a) return "";
   const region = regionLabel(a.region, lang);
-  const road = a.road?.trim() || "";
-  const house = a.house?.trim() || "";
-  const flat = a.flat?.trim() || "";
+  const road = translateArabicAddressTerms(a.road?.trim() || "", lang);
+  const house = translateArabicAddressTerms(a.house?.trim() || "", lang);
+  const flat = translateArabicAddressTerms(a.flat?.trim() || "", lang);
   const parts: string[] = [];
   if (lang === "ar") {
     if (region) parts.push(`المنطقة: ${region}`);

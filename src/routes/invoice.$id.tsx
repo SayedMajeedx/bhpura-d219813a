@@ -87,9 +87,11 @@ function PublicInvoice() {
   const [lang, setLang] = useState<"en" | "ar">("en");
   const L = LABELS[lang];
   const isRTL = lang === "ar";
-  const locale = isRTL ? "ar-BH" : "en-US";
-  const currency = order.currency ?? "SAR";
+  const locale = isRTL ? "ar-BH" : "en-BH";
+  const currency = order.currency ?? "BHD";
   const color = settings?.primary_color || "#8b6f47";
+  const textColor = settings?.text_color || "#1a1a1a";
+  const bgColor = settings?.background_color || "#ffffff";
   const brand = settings?.business_name || (lang === "ar" ? "بيورا" : "Pura");
   const items = order.order_items ?? [];
 
@@ -101,8 +103,34 @@ function PublicInvoice() {
   const legacyRegion = order.customers && (order.customers as any).region
     ? regionLabel((order.customers as any).region, lang) : "";
 
+  // Translate free-text business address terms when showing the English invoice.
+  const displayBusinessAddress = (() => {
+    const raw: string | null | undefined = settings?.address;
+    if (!raw) return "";
+    if (isRTL) return raw;
+    return raw
+      .replace(/مجمع/g, "Block")
+      .replace(/طريق/g, "Road")
+      .replace(/شارع/g, "Street")
+      .replace(/منزل/g, "House")
+      .replace(/شقة/g, "Flat")
+      .replace(/مبنى/g, "Building");
+  })();
+
   return (
     <div dir={isRTL ? "rtl" : "ltr"} lang={lang} className="min-h-screen bg-neutral-100 py-6 px-3 sm:py-10 sm:px-6">
+      <style>{`
+        @media print {
+          @page { margin: 12mm; }
+          html, body { background: #fff !important; }
+          .invoice-card { box-shadow: none !important; border: 0 !important; background: #fff !important; }
+          .invoice-card, .invoice-card p, .invoice-card span, .invoice-card td,
+          .invoice-card th, .invoice-card li, .invoice-card h1, .invoice-card h2,
+          .invoice-card h3, .invoice-card strong, .invoice-card em { color: #000 !important; }
+          .invoice-card thead th { color: #ffffff !important; }
+          .invoice-card * { print-color-adjust: exact !important; -webkit-print-color-adjust: exact !important; }
+        }
+      `}</style>
       <div className="mx-auto max-w-3xl">
         <div className="print:hidden mb-4 flex flex-wrap items-center justify-end gap-2">
           <div className="inline-flex rounded-md border border-neutral-300 bg-white overflow-hidden text-xs">
@@ -118,43 +146,54 @@ function PublicInvoice() {
         </div>
 
         <div
-          className="rounded-lg shadow-lg bg-white overflow-hidden"
-          style={{ borderTop: `6px solid ${color}`, fontFamily: isRTL ? `'Tajawal','Cairo',sans-serif` : `'Cormorant Garamond', serif` }}
+          className="invoice-card rounded-lg shadow-lg overflow-hidden"
+          style={{
+            borderTop: `6px solid ${color}`,
+            backgroundColor: bgColor,
+            color: textColor,
+            fontFamily: isRTL ? `'Tajawal','Cairo',sans-serif` : `'Cormorant Garamond', serif`,
+          }}
         >
           <div className="p-5 sm:p-10">
-            <div className="flex flex-col sm:flex-row justify-between items-start gap-4 mb-8">
-              <div className="min-w-0">
+            {/* EN: brand right + details left; AR: brand left + details right (flex-row-reverse in both) */}
+            <div className="flex flex-col sm:flex-row-reverse justify-between items-start gap-4 mb-8">
+              <div className="min-w-0" style={{ textAlign: isRTL ? "start" : "end" }}>
                 {settings?.logo_url && (
-                  <img src={settings.logo_url} alt="logo" className="h-14 object-contain mb-2" />
+                  <img
+                    src={settings.logo_url}
+                    alt="logo"
+                    className="h-14 object-contain mb-2"
+                    style={{ marginInlineStart: isRTL ? 0 : "auto" }}
+                  />
                 )}
                 <h2 style={{ color }} className="text-2xl font-semibold">{brand}</h2>
-                {settings?.address && <p className="text-sm text-neutral-600 whitespace-pre-line mt-1">{settings.address}</p>}
-                <p className="text-xs text-neutral-500 mt-1">
+                {displayBusinessAddress && <p className="text-sm whitespace-pre-line mt-1" style={{ opacity: 0.75 }}>{displayBusinessAddress}</p>}
+                <p className="text-xs mt-1" style={{ opacity: 0.65 }}>
                   {[settings?.phone, settings?.email].filter(Boolean).join(" · ")}
                   {settings?.vat_number && ` · ${L.vatId} ${settings.vat_number}`}
                 </p>
               </div>
-              <div className={isRTL ? "text-start sm:text-start" : "text-start sm:text-end"}>
+              <div style={{ textAlign: isRTL ? "end" : "start" }}>
                 <h1 style={{ color }} className="text-3xl sm:text-4xl font-semibold tracking-tight">{L.invoice}</h1>
                 <p className="text-base mt-1">{L.number}: {order.invoice_number}</p>
-                <p className="text-xs text-neutral-500 mt-2">{L.date}: {new Date(order.order_date).toLocaleDateString(locale)}</p>
-                <p className="text-xs text-neutral-500">{L.status}: {PAYMENT_BADGE_LABEL[resolvePaymentStatus(order.payment_status, order.status, Number(order.total_amount || order.total || 0), Number(order.advance_paid || 0))][lang]}</p>
+                <p className="text-xs mt-2" style={{ opacity: 0.7 }}>{L.date}: {new Date(order.order_date).toLocaleDateString(locale)}</p>
+                <p className="text-xs" style={{ opacity: 0.7 }}>{L.status}: {PAYMENT_BADGE_LABEL[resolvePaymentStatus(order.payment_status, order.status, Number(order.total_amount || order.total || 0), Number(order.advance_paid || 0))][lang]}</p>
                 {order.payment_method && (
-                  <p className="text-xs text-neutral-500">{L.payment}: {PAY[order.payment_method]?.[lang] ?? order.payment_method}</p>
+                  <p className="text-xs" style={{ opacity: 0.7 }}>{L.payment}: {PAY[order.payment_method]?.[lang] ?? order.payment_method}</p>
                 )}
               </div>
             </div>
 
             {order.customers && (
-              <div className="mb-8">
-                <p className="text-xs uppercase tracking-wider text-neutral-500 mb-1">{L.billTo}</p>
+              <div className="mb-8" style={{ textAlign: isRTL ? "end" : "start" }}>
+                <p className="text-xs uppercase tracking-wider mb-1" style={{ opacity: 0.6 }}>{L.billTo}</p>
                 <p className="font-medium">{order.customers.name}</p>
-                {order.customers.phone && <p className="text-sm text-neutral-600">{order.customers.phone}</p>}
-                {order.customers.email && <p className="text-sm text-neutral-600">{order.customers.email}</p>}
+                {order.customers.phone && <p className="text-sm" style={{ opacity: 0.75 }}>{order.customers.phone}</p>}
+                {order.customers.email && <p className="text-sm" style={{ opacity: 0.75 }}>{order.customers.email}</p>}
                 {(addrLine || legacyRegion) && (
                   <div className="mt-3 pt-3 border-t border-neutral-200">
-                    <p className="text-xs uppercase tracking-wider text-neutral-500 mb-1">{L.delivery}</p>
-                    <p className="text-sm text-neutral-700">{addrLine || legacyRegion}</p>
+                    <p className="text-xs uppercase tracking-wider mb-1" style={{ opacity: 0.6 }}>{L.delivery}</p>
+                    <p className="text-sm" style={{ opacity: 0.85 }}>{addrLine || legacyRegion}</p>
                   </div>
                 )}
               </div>
@@ -163,7 +202,7 @@ function PublicInvoice() {
             <div className="-mx-2 sm:mx-0 overflow-x-auto">
               <table className="w-full min-w-[440px] text-sm mb-6">
                 <thead>
-                  <tr style={{ backgroundColor: color, color: "white" }}>
+                  <tr style={{ backgroundColor: color, color: "#ffffff" }}>
                     <th className="text-start p-3">{L.desc}</th>
                     <th className="text-end p-3 w-16">{L.qty}</th>
                     <th className="text-end p-3 w-24">{L.unit}</th>
@@ -176,7 +215,7 @@ function PublicInvoice() {
                       <td className="p-3">
                         <p className="font-medium">{it.description || "—"}</p>
                         {(it.customizations ?? []).length > 0 && (
-                          <ul className="mt-1 text-xs text-neutral-600 space-y-0.5">
+                          <ul className="mt-1 text-xs space-y-0.5" style={{ opacity: 0.75 }}>
                             {it.customizations.map((c: any, ci: number) => (
                               <li key={ci}>+ {c.name} ({money(c.price_delta)})</li>
                             ))}
@@ -192,12 +231,13 @@ function PublicInvoice() {
               </table>
             </div>
 
-            <div className="flex justify-end">
+            {/* Totals block: EN → right, AR → left */}
+            <div className="flex" style={{ justifyContent: isRTL ? "flex-start" : "flex-end" }}>
               <div className="w-full sm:w-72 text-sm space-y-1">
-                <div className="flex justify-between"><span className="text-neutral-600">{L.subtotal}</span><span>{money(order.subtotal)}</span></div>
-                {Number(order.discount) > 0 && <div className="flex justify-between"><span className="text-neutral-600">{L.discount}</span><span>− {money(order.discount)}</span></div>}
-                {Number(order.tax_rate) > 0 && <div className="flex justify-between"><span className="text-neutral-600">{L.vat} ({order.tax_rate}%)</span><span>{money(order.tax_amount)}</span></div>}
-                {Number(order.shipping) > 0 && <div className="flex justify-between"><span className="text-neutral-600">{L.shipping}</span><span>{money(order.shipping)}</span></div>}
+                <div className="flex justify-between"><span style={{ opacity: 0.75 }}>{L.subtotal}</span><span>{money(order.subtotal)}</span></div>
+                {Number(order.discount) > 0 && <div className="flex justify-between"><span style={{ opacity: 0.75 }}>{L.discount}</span><span>− {money(order.discount)}</span></div>}
+                {Number(order.tax_rate) > 0 && <div className="flex justify-between"><span style={{ opacity: 0.75 }}>{L.vat} ({order.tax_rate}%)</span><span>{money(order.tax_amount)}</span></div>}
+                {Number(order.shipping) > 0 && <div className="flex justify-between"><span style={{ opacity: 0.75 }}>{L.shipping}</span><span>{money(order.shipping)}</span></div>}
                 {(() => {
                   const badge = resolvePaymentStatus(order.payment_status, order.status, Number(order.total), Number(order.advance_paid ?? 0));
                   const advance = Number(order.advance_paid ?? 0);
@@ -218,7 +258,7 @@ function PublicInvoice() {
                       {advance > 0 && (
                         <>
                           <div className="flex justify-between pt-1">
-                            <span className="text-neutral-600">
+                            <span style={{ opacity: 0.75 }}>
                               {lang === "ar" ? "المبلغ المقدم المدفوع" : "Advance Paid"}
                             </span>
                             <span>− {money(advance)}</span>
@@ -239,8 +279,8 @@ function PublicInvoice() {
             </div>
 
             {(order.notes || settings?.footer_note) && (
-              <div className="mt-8 pt-6 border-t border-neutral-200 text-sm text-neutral-600 space-y-2">
-                {order.notes && <p><strong className="text-neutral-800">{L.notes}: </strong>{order.notes}</p>}
+              <div className="mt-8 pt-6 border-t border-neutral-200 text-sm space-y-2" style={{ opacity: 0.85 }}>
+                {order.notes && <p><strong>{L.notes}: </strong>{order.notes}</p>}
                 {settings?.footer_note && <p className="italic">{settings.footer_note}</p>}
               </div>
             )}

@@ -150,7 +150,7 @@ function OrderDetail() {
 
   if (!order || !settingsQ.data) return <div className="p-8">Loading…</div>;
 
-  const currency = order.currency ?? "SAR";
+  const currency = order.currency ?? "BHD";
 
   const addItem = () => {
     setItems([...items, {
@@ -867,17 +867,30 @@ function InvoicePreview({ order, items, settings, shippingAddress, paymentBadge 
           @media print {
             @page { margin: 12mm; }
             body { background: #fff !important; }
-            .printable-invoice { direction: ${isRTL ? "rtl" : "ltr"} !important; unicode-bidi: isolate; box-shadow: none !important; border: 0 !important; }
+            .printable-invoice { direction: ${isRTL ? "rtl" : "ltr"} !important; unicode-bidi: isolate; box-shadow: none !important; border: 0 !important; background: #fff !important; }
             .printable-invoice * { print-color-adjust: exact !important; -webkit-print-color-adjust: exact !important; }
+            /* Force legible black text for all invoice content on paper */
+            .printable-invoice, .printable-invoice p, .printable-invoice span,
+            .printable-invoice td, .printable-invoice th, .printable-invoice li,
+            .printable-invoice h1, .printable-invoice h2, .printable-invoice h3,
+            .printable-invoice strong, .printable-invoice em { color: #000 !important; }
+            /* Table header keeps its accent background but text stays white */
+            .printable-invoice thead th { color: #ffffff !important; }
           }
         `}</style>
         <div className="p-4 sm:p-8 md:p-10 print:p-10" style={{ borderTop: `6px solid ${color}` }}>
-          <div className="flex flex-col md:flex-row justify-between items-start mb-8 md:mb-10 gap-4 md:gap-6 print:flex-row">
-            <div className="flex-1 min-w-0">
+          {/*
+            Layout rule:
+            - EN (LTR): brand block on the RIGHT, invoice meta on the LEFT
+            - AR (RTL): brand block on the LEFT, invoice meta on the RIGHT
+            Achieved with flex-row-reverse in both modes (LTR flex-row-reverse puts first child right; RTL flex-row-reverse puts first child left).
+          */}
+          <div className="flex flex-col md:flex-row-reverse justify-between items-start mb-8 md:mb-10 gap-4 md:gap-6 print:flex-row-reverse">
+            <div className="flex-1 min-w-0" style={{ textAlign: isRTL ? "start" : "end" }}>
               {settings.logo_url && (
                 <div
-                  className="relative mb-3"
-                  style={{ height: logoH + logoY + 8 }}
+                  className="relative mb-3 flex"
+                  style={{ height: logoH + logoY + 8, justifyContent: isRTL ? "flex-start" : "flex-end" }}
                 >
                   <img
                     src={settings.logo_url}
@@ -885,7 +898,7 @@ function InvoicePreview({ order, items, settings, shippingAddress, paymentBadge 
                     draggable={false}
                     style={{
                       position: "absolute",
-                      insetInlineStart: logoX,
+                      insetInlineEnd: logoX,
                       top: logoY,
                       width: logoW,
                       height: logoH,
@@ -895,29 +908,29 @@ function InvoicePreview({ order, items, settings, shippingAddress, paymentBadge 
                 </div>
               )}
               <h2 style={{ color, fontSize: `${fontSize * 1.75}px`, fontWeight: 600 }}>{brandFor(invoiceLang, settings.business_name)}</h2>
-              {settings.address && <p className="text-sm text-neutral-600 whitespace-pre-line mt-1">{settings.address}</p>}
-              <p className="text-xs text-neutral-500 mt-1">
+              {settings.address && <p className="text-sm whitespace-pre-line mt-1" style={{ opacity: 0.75 }}>{isRTL ? settings.address : (settings.address as string).replace(/مجمع/g, "Block").replace(/طريق/g, "Road").replace(/منزل/g, "House").replace(/شقة/g, "Flat").replace(/شارع/g, "Street")}</p>}
+              <p className="text-xs mt-1" style={{ opacity: 0.65 }}>
                 {[settings.phone, settings.email].filter(Boolean).join(" · ")}
                 {settings.vat_number && ` · ${L.vatLabel} ${num(settings.vat_number)}`}
               </p>
             </div>
-            <div className="text-start md:text-end print:text-end w-full md:w-auto">
+            <div className="w-full md:w-auto" style={{ textAlign: isRTL ? "end" : "start" }}>
               <h1 className="text-3xl sm:text-4xl font-display tracking-tight" style={{ color }}>{L.invoice}</h1>
               <p className="text-lg mt-1">{L.invoiceNumber}: {num(order.invoice_number)}</p>
-              <p className="text-xs text-neutral-500 mt-2">{L.date}: {new Date(order.order_date).toLocaleDateString(isRTL ? "ar-BH" : undefined)}</p>
-              <p className="text-xs text-neutral-500">{L.status}: {PAYMENT_BADGE_LABEL[paymentBadge ?? "unpaid"][invoiceLang]}</p>
+              <p className="text-xs mt-2" style={{ opacity: 0.7 }}>{L.date}: {new Date(order.order_date).toLocaleDateString(isRTL ? "ar-BH" : undefined)}</p>
+              <p className="text-xs" style={{ opacity: 0.7 }}>{L.status}: {PAYMENT_BADGE_LABEL[paymentBadge ?? "unpaid"][invoiceLang]}</p>
               {order.payment_method && (
-                <p className="text-xs text-neutral-500">{L.paymentMethod}: {tPayment(order.payment_method, invoiceLang)}</p>
+                <p className="text-xs" style={{ opacity: 0.7 }}>{L.paymentMethod}: {tPayment(order.payment_method, invoiceLang)}</p>
               )}
             </div>
           </div>
 
           {order.customers && (
-            <div className="mb-8 text-start">
-              <p className="text-xs uppercase tracking-wider text-neutral-500 mb-1">{L.billTo}</p>
+            <div className="mb-8" style={{ textAlign: isRTL ? "end" : "start" }}>
+              <p className="text-xs uppercase tracking-wider mb-1" style={{ opacity: 0.6 }}>{L.billTo}</p>
               <p className="font-medium">{order.customers.name}</p>
-              {order.customers.phone && <p className="text-sm text-neutral-600">{num(order.customers.phone)}</p>}
-              {order.customers.email && <p className="text-sm text-neutral-600">{order.customers.email}</p>}
+              {order.customers.phone && <p className="text-sm" style={{ opacity: 0.75 }}>{num(order.customers.phone)}</p>}
+              {order.customers.email && <p className="text-sm" style={{ opacity: 0.75 }}>{order.customers.email}</p>}
               {(() => {
                 const detailed = shippingAddress
                   ? formatAddressDetailed(shippingAddress as StructuredAddress, invoiceLang)
@@ -926,16 +939,16 @@ function InvoicePreview({ order, items, settings, shippingAddress, paymentBadge 
                 if (!detailed && legacy.length === 0) return null;
                 return (
                   <div className="mt-3 pt-3 border-t border-neutral-200">
-                    <p className="text-xs uppercase tracking-wider text-neutral-500 mb-1">
+                    <p className="text-xs uppercase tracking-wider mb-1" style={{ opacity: 0.6 }}>
                       {isRTL ? "عنوان التوصيل" : "Delivery address"}
                     </p>
                     {detailed ? (
-                      <p className="text-sm text-neutral-700 leading-relaxed">
+                      <p className="text-sm leading-relaxed" style={{ opacity: 0.85 }}>
                         {isRTL ? toArabicDigits(detailed) : detailed}
                       </p>
                     ) : (
                       legacy.map((l, i) => (
-                        <p key={i} className="text-sm text-neutral-700 whitespace-pre-line">
+                        <p key={i} className="text-sm whitespace-pre-line" style={{ opacity: 0.85 }}>
                           {isRTL ? toArabicDigits(l) : l}
                         </p>
                       ))
@@ -949,7 +962,7 @@ function InvoicePreview({ order, items, settings, shippingAddress, paymentBadge 
           <div className="-mx-4 sm:mx-0 overflow-x-auto print:overflow-visible print:mx-0">
             <table className="w-full min-w-[520px] text-sm mb-6">
               <thead>
-                <tr style={{ backgroundColor: color, color: "white" }}>
+                <tr style={{ backgroundColor: color, color: "#ffffff" }}>
                   <th className="text-start p-3">{L.description}</th>
                   <th className="text-end p-3 w-16">{L.qty}</th>
                   <th className="text-end p-3 w-28">{L.unit}</th>
@@ -962,7 +975,7 @@ function InvoicePreview({ order, items, settings, shippingAddress, paymentBadge 
                     <td className="p-3 text-start">
                       <p className="font-medium">{it.description || "—"}</p>
                       {it.customizations.length > 0 && (
-                        <ul className="mt-1 text-xs text-neutral-600 space-y-0.5">
+                        <ul className="mt-1 text-xs space-y-0.5" style={{ opacity: 0.75 }}>
                           {it.customizations.map((c, ci) => (
                             <li key={ci}>+ {c.name} ({money(c.price_delta)})</li>
                           ))}
@@ -978,12 +991,13 @@ function InvoicePreview({ order, items, settings, shippingAddress, paymentBadge 
             </table>
           </div>
 
-          <div className="flex justify-end">
+          {/* Totals: align to the language's END side (right in LTR, left in RTL) */}
+          <div className="flex" style={{ justifyContent: isRTL ? "flex-start" : "flex-end" }}>
             <div className="w-72 text-sm space-y-1">
-              <div className="flex justify-between"><span className="text-neutral-600">{L.subtotal}</span><span>{money(order.subtotal)}</span></div>
-              {Number(order.discount) > 0 && <div className="flex justify-between"><span className="text-neutral-600">{L.discount}</span><span>− {money(order.discount)}</span></div>}
-              {Number(order.tax_rate) > 0 && <div className="flex justify-between"><span className="text-neutral-600">{L.vat} ({num(order.tax_rate)}%)</span><span>{money(order.tax_amount)}</span></div>}
-              {Number(order.shipping) > 0 && <div className="flex justify-between"><span className="text-neutral-600">{L.shipping}</span><span>{money(order.shipping)}</span></div>}
+              <div className="flex justify-between"><span style={{ opacity: 0.75 }}>{L.subtotal}</span><span>{money(order.subtotal)}</span></div>
+              {Number(order.discount) > 0 && <div className="flex justify-between"><span style={{ opacity: 0.75 }}>{L.discount}</span><span>− {money(order.discount)}</span></div>}
+              {Number(order.tax_rate) > 0 && <div className="flex justify-between"><span style={{ opacity: 0.75 }}>{L.vat} ({num(order.tax_rate)}%)</span><span>{money(order.tax_amount)}</span></div>}
+              {Number(order.shipping) > 0 && <div className="flex justify-between"><span style={{ opacity: 0.75 }}>{L.shipping}</span><span>{money(order.shipping)}</span></div>}
               <div className="flex justify-between items-center pt-2 border-t-2" style={{ borderColor: color }}>
                 <span className="font-display text-lg" style={{ color }}>
                   {invoiceLang === "ar" ? "المبلغ الإجمالي" : "Total Amount"}
@@ -1000,7 +1014,7 @@ function InvoicePreview({ order, items, settings, shippingAddress, paymentBadge 
               {Number(order.advance_paid) > 0 && (
                 <>
                   <div className="flex justify-between pt-1">
-                    <span className="text-neutral-600">
+                    <span style={{ opacity: 0.75 }}>
                       {invoiceLang === "ar" ? "المبلغ المقدم المدفوع" : "Advance Paid"}
                     </span>
                     <span>− {money(order.advance_paid)}</span>
@@ -1019,8 +1033,8 @@ function InvoicePreview({ order, items, settings, shippingAddress, paymentBadge 
 
 
           {(order.notes || settings.footer_note) && (
-            <div className="mt-10 pt-6 border-t border-neutral-200 text-sm text-neutral-600 space-y-2">
-              {order.notes && <p><strong className="text-neutral-800">{L.notes}: </strong>{order.notes}</p>}
+            <div className="mt-10 pt-6 border-t border-neutral-200 text-sm space-y-2" style={{ opacity: 0.85 }}>
+              {order.notes && <p><strong>{L.notes}: </strong>{order.notes}</p>}
               {settings.footer_note && <p className="italic">{settings.footer_note}</p>}
               <p className="italic">{L.warmRegards},<br/>{brandFor(invoiceLang, settings.business_name)}</p>
             </div>

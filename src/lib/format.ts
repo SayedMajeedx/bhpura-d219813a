@@ -1,4 +1,4 @@
-export function formatMoney(amount: number, currency = "SAR", locale = "en-US") {
+export function formatMoney(amount: number, currency = "BHD", locale = "en-BH") {
   const n = Number(amount || 0);
   try {
     return new Intl.NumberFormat(locale, {

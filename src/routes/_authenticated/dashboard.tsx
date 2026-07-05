@@ -43,7 +43,7 @@ function Dashboard() {
       const todayStart = startOfTodayISO();
 
       const allOrders = (orders.data ?? []) as any[];
-      const currency = allOrders[0]?.currency ?? "SAR";
+      const currency = allOrders[0]?.currency ?? "BHD";
 
       const revenueMonth = allOrders
         .filter((o) => new Date(o.created_at).toISOString() >= monthStart)
