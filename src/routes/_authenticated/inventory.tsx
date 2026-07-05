@@ -57,7 +57,7 @@ function Inventory() {
   });
 
   return (
-    <div className="p-8 max-w-7xl">
+    <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto">
       <div className="mb-6 flex items-center justify-between">
         <div>
           <h1 className="text-4xl font-display">{t("inventory.title")}</h1>

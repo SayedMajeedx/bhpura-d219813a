@@ -109,7 +109,7 @@ function Settings() {
   const previewFont = f.font_family === "Custom (uploaded)" ? "'CustomFont', sans-serif" : `"${f.font_family}", sans-serif`;
 
   return (
-    <div className="p-8 max-w-4xl">
+    <div className="p-4 sm:p-6 lg:p-8 max-w-4xl mx-auto">
       {f.font_url && (
         <style>{`@font-face { font-family: 'CustomFont'; src: url('${f.font_url}'); font-display: swap; }`}</style>
       )}
@@ -119,7 +119,7 @@ function Settings() {
       <div className="space-y-6">
         <Card className="p-6 space-y-4">
           <h2 className="font-display text-xl">{t("settings.business")}</h2>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div><Label>{t("settings.businessName")}</Label><Input value={f.business_name} onChange={(e) => setF({ ...f, business_name: e.target.value })} /></div>
             <div>
               <Label>{t("settings.logo")}</Label>
@@ -134,11 +134,11 @@ function Settings() {
             </div>
           </div>
           <div><Label>{t("settings.address")}</Label><Textarea value={f.address ?? ""} onChange={(e) => setF({ ...f, address: e.target.value })} /></div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div><Label>{t("settings.phone")}</Label><Input value={f.phone ?? ""} onChange={(e) => setF({ ...f, phone: e.target.value })} /></div>
             <div><Label>{t("settings.email")}</Label><Input value={f.email ?? ""} onChange={(e) => setF({ ...f, email: e.target.value })} /></div>
           </div>
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
             <div><Label>{t("settings.vat")}</Label><Input value={f.vat_number ?? ""} onChange={(e) => setF({ ...f, vat_number: e.target.value })} /></div>
             <div><Label>{t("settings.currency")}</Label><Input value={f.currency} onChange={(e) => setF({ ...f, currency: e.target.value.toUpperCase() })} /></div>
             <div><Label>{t("settings.defaultVat")}</Label><Input type="number" step="0.01" value={f.default_tax_rate} onChange={(e) => setF({ ...f, default_tax_rate: Number(e.target.value) })} /></div>
@@ -149,7 +149,7 @@ function Settings() {
         <Card className="p-6 space-y-4">
           <h2 className="font-display text-xl">{t("settings.appearance")}</h2>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <Label>{t("settings.fontFamily")}</Label>
               <Select value={f.font_family} onValueChange={(v) => setF({ ...f, font_family: v })}>
@@ -172,7 +172,7 @@ function Settings() {
             </div>
           </div>
 
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
             <div>
               <Label>{t("settings.fontSize")}</Label>
               <Input type="number" min={10} max={24} value={f.font_size} onChange={(e) => setF({ ...f, font_size: Number(e.target.value) })} />
@@ -190,7 +190,7 @@ function Settings() {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <Label>{t("settings.textColor")}</Label>
               <div className="flex items-center gap-2">
@@ -271,7 +271,7 @@ function Settings() {
               </Rnd>
             </div>
 
-            <div className="grid grid-cols-4 gap-3 text-sm">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
               <div><Label>X</Label><Input type="number" value={f.logo_x} onChange={(e) => setF({ ...f, logo_x: Number(e.target.value) })} /></div>
               <div><Label>Y</Label><Input type="number" value={f.logo_y} onChange={(e) => setF({ ...f, logo_y: Number(e.target.value) })} /></div>
               <div><Label>Width</Label><Input type="number" value={f.logo_width} onChange={(e) => setF({ ...f, logo_width: Number(e.target.value) })} /></div>

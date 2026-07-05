@@ -80,7 +80,7 @@ function CustomersPage() {
   };
 
   return (
-    <div className="p-8 max-w-6xl">
+    <div className="p-4 sm:p-6 lg:p-8 max-w-6xl mx-auto">
       <div className="mb-6 flex items-center justify-between">
         <div>
           <h1 className="text-4xl font-display">{t("customers.title")}</h1>
@@ -212,7 +212,7 @@ function CustomerDialog({ customer, onSaved }: { customer: Customer | null; onSa
           <Label>{t("customers.name")} <span className="text-destructive">*</span></Label>
           <Input className="text-start" value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} />
         </div>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div><Label>{t("customers.phone")}</Label><Input className="text-start" value={f.phone} onChange={(e) => setF({ ...f, phone: e.target.value })} /></div>
           <div><Label>{t("customers.email")}</Label><Input className="text-start" value={f.email} onChange={(e) => setF({ ...f, email: e.target.value })} /></div>
         </div>
@@ -260,7 +260,7 @@ function AddressFields({
           </SelectContent>
         </Select>
       </div>
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div>
           <Label>{t("customers.road")} <span className="text-destructive">*</span></Label>
           <Input className="text-start" placeholder={t("customers.roadPlaceholder")} value={value.road} onChange={(e) => onChange({ ...value, road: e.target.value })} />
