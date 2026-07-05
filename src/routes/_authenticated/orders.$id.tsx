@@ -663,35 +663,37 @@ function InvoicePreview({ order, items, settings, shippingAddress }: { order: an
             </div>
           )}
 
-          <table className="w-full text-sm mb-6">
-            <thead>
-              <tr style={{ backgroundColor: color, color: "white" }}>
-                <th className="text-start p-3">{L.description}</th>
-                <th className="text-end p-3 w-16">{L.qty}</th>
-                <th className="text-end p-3 w-28">{L.unit}</th>
-                <th className="text-end p-3 w-28">{L.total}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {items.map((it, i) => (
-                <tr key={i} className="border-b border-neutral-200 align-top">
-                  <td className="p-3 text-start">
-                    <p className="font-medium">{it.description || "—"}</p>
-                    {it.customizations.length > 0 && (
-                      <ul className="mt-1 text-xs text-neutral-600 space-y-0.5">
-                        {it.customizations.map((c, ci) => (
-                          <li key={ci}>+ {c.name} ({money(c.price_delta)})</li>
-                        ))}
-                      </ul>
-                    )}
-                  </td>
-                  <td className="p-3 text-end">{num(it.quantity)}</td>
-                  <td className="p-3 text-end">{money(it.unit_price + it.customization_total)}</td>
-                  <td className="p-3 font-medium text-end">{money(it.line_total)}</td>
+          <div className="-mx-4 sm:mx-0 overflow-x-auto print:overflow-visible print:mx-0">
+            <table className="w-full min-w-[520px] text-sm mb-6">
+              <thead>
+                <tr style={{ backgroundColor: color, color: "white" }}>
+                  <th className="text-start p-3">{L.description}</th>
+                  <th className="text-end p-3 w-16">{L.qty}</th>
+                  <th className="text-end p-3 w-28">{L.unit}</th>
+                  <th className="text-end p-3 w-28">{L.total}</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {items.map((it, i) => (
+                  <tr key={i} className="border-b border-neutral-200 align-top">
+                    <td className="p-3 text-start">
+                      <p className="font-medium">{it.description || "—"}</p>
+                      {it.customizations.length > 0 && (
+                        <ul className="mt-1 text-xs text-neutral-600 space-y-0.5">
+                          {it.customizations.map((c, ci) => (
+                            <li key={ci}>+ {c.name} ({money(c.price_delta)})</li>
+                          ))}
+                        </ul>
+                      )}
+                    </td>
+                    <td className="p-3 text-end">{num(it.quantity)}</td>
+                    <td className="p-3 text-end whitespace-nowrap">{money(it.unit_price + it.customization_total)}</td>
+                    <td className="p-3 font-medium text-end whitespace-nowrap">{money(it.line_total)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
 
           <div className="flex justify-end">
             <div className="w-72 text-sm space-y-1">
