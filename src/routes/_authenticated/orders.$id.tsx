@@ -399,12 +399,19 @@ function InvoicePreview({ order, items, settings }: { order: any; items: Item[];
   const [invoiceLang, setInvoiceLang] = useState<"en" | "ar">("en");
   const L = INVOICE_LABELS[invoiceLang];
   const isRTL = invoiceLang === "ar";
+  const locale = isRTL ? "ar-BH" : "en-US";
+  const money = (n: number) => {
+    const s = formatMoney(n, currency, locale);
+    return isRTL ? toArabicDigits(s) : s;
+  };
+  const num = (n: number | string) => (isRTL ? toArabicDigits(String(n)) : String(n));
 
   const family = isRTL
     ? `"Tajawal", "Cairo", sans-serif`
     : settings.font_family === "Custom (uploaded)"
       ? "'InvoiceCustomFont', sans-serif"
       : `"${settings.font_family || "Cormorant Garamond"}", serif`;
+
 
   return (
     <div className="space-y-2">
