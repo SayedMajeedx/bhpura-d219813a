@@ -48,7 +48,7 @@ function ExpensesPage() {
   const [open, setOpen] = useState(false);
 
   const list = q.data ?? [];
-  const currency = list[0]?.currency ?? "SAR";
+  const currency = list[0]?.currency ?? "BHD";
   const total = useMemo(() => list.reduce((s, e) => s + Number(e.amount || 0), 0), [list]);
 
   const del = async (id: string) => {
@@ -141,7 +141,7 @@ function ExpenseDialog({ expense, onSaved }: { expense: Expense | null; onSaved:
     category: expense?.category ?? "",
     description: expense?.description ?? "",
     amount: expense ? String(expense.amount) : "0",
-    currency: expense?.currency ?? "SAR",
+    currency: expense?.currency ?? "BHD",
     expense_date: expense?.expense_date ?? new Date().toISOString().slice(0, 10),
     notes: expense?.notes ?? "",
   });
