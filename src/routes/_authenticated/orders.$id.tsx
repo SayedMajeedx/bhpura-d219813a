@@ -334,7 +334,6 @@ const INVOICE_LABELS = {
     subtotal: "Subtotal", discount: "Discount", vat: "VAT", shipping: "Shipping",
     notes: "Notes", warmRegards: "Warm regards",
     language: "Language", english: "English", arabic: "العربية",
-    resetLogo: "Reset logo",
   },
   ar: {
     invoice: "فاتورة", date: "التاريخ", status: "الحالة", billTo: "فاتورة إلى",
@@ -342,7 +341,6 @@ const INVOICE_LABELS = {
     subtotal: "المجموع الفرعي", discount: "الخصم", vat: "ضريبة القيمة المضافة", shipping: "الشحن",
     notes: "ملاحظات", warmRegards: "مع أطيب التحيات",
     language: "اللغة", english: "English", arabic: "العربية",
-    resetLogo: "إعادة ضبط الشعار",
   },
 } as const;
 
