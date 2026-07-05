@@ -50,7 +50,7 @@ const LABELS = {
   en: {
     invoice: "INVOICE", number: "Invoice #", date: "Date", status: "Status",
     billTo: "Bill to", delivery: "Delivery address", payment: "Payment method", vatId: "VAT",
-    desc: "Description", qty: "Qty", unit: "Unit", total: "Total",
+    desc: "Description", qty: "Qty", unit: "Unit", total: "Total", size: "Size", color: "Color",
     subtotal: "Subtotal", discount: "Discount", vat: "VAT", shipping: "Shipping", grandTotal: "Grand Total",
     notes: "Notes", print: "Print", switchAr: "العربية", switchEn: "English",
   },
