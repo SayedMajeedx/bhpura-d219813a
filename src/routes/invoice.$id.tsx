@@ -138,7 +138,7 @@ function PublicInvoice() {
                 <h1 style={{ color }} className="text-3xl sm:text-4xl font-semibold tracking-tight">{L.invoice}</h1>
                 <p className="text-base mt-1">{L.number}: {order.invoice_number}</p>
                 <p className="text-xs text-neutral-500 mt-2">{L.date}: {new Date(order.order_date).toLocaleDateString(locale)}</p>
-                <p className="text-xs text-neutral-500">{L.status}: {STATUS[order.status]?.[lang] ?? order.status}</p>
+                <p className="text-xs text-neutral-500">{L.status}: {PAYMENT_BADGE_LABEL[derivePaymentStatus(order.status, Number(order.total_amount || 0), Number(order.advance_paid || 0))][lang]}</p>
                 {order.payment_method && (
                   <p className="text-xs text-neutral-500">{L.payment}: {PAY[order.payment_method]?.[lang] ?? order.payment_method}</p>
                 )}
