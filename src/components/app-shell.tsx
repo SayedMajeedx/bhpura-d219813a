@@ -1,0 +1,76 @@
+import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
+import { LayoutDashboard, Package, Users, ReceiptText, Settings, LogOut, Languages } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { useI18n } from "@/lib/i18n";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+
+export function AppShell({ children }: { children: React.ReactNode }) {
+  const pathname = useRouterState({ select: (r) => r.location.pathname });
+  const navigate = useNavigate();
+  const { t, lang, setLang } = useI18n();
+
+  const nav = [
+    { to: "/dashboard", label: t("nav.dashboard"), icon: LayoutDashboard },
+    { to: "/inventory", label: t("nav.inventory"), icon: Package },
+    { to: "/customers", label: t("nav.customers"), icon: Users },
+    { to: "/orders", label: t("nav.orders"), icon: ReceiptText },
+    { to: "/settings", label: t("nav.settings"), icon: Settings },
+  ] as const;
+
+  const signOut = async () => {
+    await supabase.auth.signOut();
+    navigate({ to: "/auth" });
+  };
+
+  return (
+    <div className="min-h-screen flex bg-background">
+      <aside className="no-print w-64 border-r border-sidebar-border bg-sidebar text-sidebar-foreground flex flex-col">
+        <div className="p-6 border-b border-sidebar-border">
+          <h1 className="text-2xl font-display text-primary leading-tight">{t("app.title")}</h1>
+          <p className="text-xs text-muted-foreground mt-1">{t("app.subtitle")}</p>
+        </div>
+        <nav className="flex-1 p-3 space-y-1">
+          {nav.map((item) => {
+            const active = pathname === item.to || (item.to !== "/dashboard" && pathname.startsWith(item.to));
+            const Icon = item.icon;
+            return (
+              <Link
+                key={item.to}
+                to={item.to}
+                className={cn(
+                  "flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors",
+                  active
+                    ? "bg-sidebar-primary text-sidebar-primary-foreground"
+                    : "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                )}
+              >
+                <Icon className="h-4 w-4" />
+                {item.label}
+              </Link>
+            );
+          })}
+        </nav>
+        <div className="p-3 border-t border-sidebar-border space-y-2">
+          <div className="flex items-center gap-2 px-2">
+            <Languages className="h-4 w-4 text-muted-foreground" />
+            <Select value={lang} onValueChange={(v) => setLang(v as "en" | "ar")}>
+              <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="en">English</SelectItem>
+                <SelectItem value="ar">العربية</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <Button variant="ghost" className="w-full justify-start" onClick={signOut}>
+            <LogOut className="h-4 w-4 mr-2" /> {t("nav.signOut")}
+          </Button>
+        </div>
+      </aside>
+      <main className="flex-1 overflow-auto print-area">
+        {children}
+      </main>
+    </div>
+  );
+}
