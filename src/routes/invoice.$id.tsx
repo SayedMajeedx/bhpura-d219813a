@@ -57,7 +57,7 @@ const LABELS = {
   ar: {
     invoice: "فاتورة", number: "رقم الفاتورة", date: "التاريخ", status: "الحالة",
     billTo: "فاتورة إلى", delivery: "عنوان التوصيل", payment: "طريقة الدفع", vatId: "الرقم الضريبي",
-    desc: "الوصف", qty: "الكمية", unit: "سعر الوحدة", total: "الإجمالي",
+    desc: "الوصف", qty: "الكمية", unit: "سعر الوحدة", total: "الإجمالي", size: "المقاس", color: "اللون",
     subtotal: "المجموع الفرعي", discount: "الخصم", vat: "ضريبة القيمة المضافة", shipping: "الشحن", grandTotal: "الإجمالي الكلي",
     notes: "ملاحظات", print: "طباعة", switchAr: "العربية", switchEn: "English",
   },
