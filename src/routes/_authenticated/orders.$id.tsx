@@ -633,11 +633,17 @@ function InvoicePreview({ order, items, settings, shippingAddress }: { order: an
             <div className="mb-8 text-start">
               <p className="text-xs uppercase tracking-wider text-neutral-500 mb-1">{L.billTo}</p>
               <p className="font-medium">{order.customers.name}</p>
-              {formatDeliveryAddress(order.customers, invoiceLang).map((line, i) => (
-                <p key={i} className="text-sm text-neutral-600 whitespace-pre-line">
-                  {isRTL ? toArabicDigits(line) : line}
-                </p>
-              ))}
+              {(() => {
+                const line = shippingAddress ? formatAddressLine(shippingAddress as StructuredAddress, invoiceLang) : "";
+                if (line) {
+                  return <p className="text-sm text-neutral-600">{isRTL ? toArabicDigits(line) : line}</p>;
+                }
+                return formatDeliveryAddress(order.customers, invoiceLang).map((l, i) => (
+                  <p key={i} className="text-sm text-neutral-600 whitespace-pre-line">
+                    {isRTL ? toArabicDigits(l) : l}
+                  </p>
+                ));
+              })()}
               {order.customers.phone && <p className="text-sm text-neutral-600">{num(order.customers.phone)}</p>}
               {order.customers.email && <p className="text-sm text-neutral-600">{order.customers.email}</p>}
             </div>
