@@ -439,12 +439,20 @@ function InvoicePreview({ order, items, settings }: { order: any; items: Item[];
       <div
         dir={isRTL ? "rtl" : "ltr"}
         lang={invoiceLang}
-        className="rounded-lg shadow-lg border border-border overflow-hidden"
-        style={{ backgroundColor: bg, color: text, fontFamily: family, fontSize: `${fontSize}px` }}
+        className="printable-invoice rounded-lg shadow-lg border border-border overflow-hidden"
+        style={{ backgroundColor: bg, color: text, fontFamily: family, fontSize: `${fontSize}px`, printColorAdjust: "exact", WebkitPrintColorAdjust: "exact" } as any}
       >
         {settings.font_url && !isRTL && (
           <style>{`@font-face { font-family: 'InvoiceCustomFont'; src: url('${settings.font_url}'); font-display: swap; }`}</style>
         )}
+        <style>{`
+          @media print {
+            @page { margin: 12mm; }
+            body { background: #fff !important; }
+            .printable-invoice { direction: ${isRTL ? "rtl" : "ltr"} !important; unicode-bidi: isolate; box-shadow: none !important; border: 0 !important; }
+            .printable-invoice * { print-color-adjust: exact !important; -webkit-print-color-adjust: exact !important; }
+          }
+        `}</style>
         <div className="p-10" style={{ borderTop: `6px solid ${color}` }}>
           <div className="flex justify-between items-start mb-10 gap-6">
             <div className="flex-1 min-w-0">
