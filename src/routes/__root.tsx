@@ -12,6 +12,7 @@ import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { Toaster } from "@/components/ui/sonner";
 import { I18nProvider } from "@/lib/i18n";
+import { installNumericInputBehavior } from "@/lib/numeric-input-behavior";
 
 function NotFoundComponent() {
   return (
@@ -106,6 +107,9 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  useEffect(() => {
+    installNumericInputBehavior();
+  }, []);
   return (
     <QueryClientProvider client={queryClient}>
       <I18nProvider>
