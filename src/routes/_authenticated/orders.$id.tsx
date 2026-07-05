@@ -326,99 +326,203 @@ function Row({ label, value }: { label: string; value: string }) {
   );
 }
 
+const INVOICE_LABELS = {
+  en: {
+    invoice: "INVOICE", date: "Date", status: "Status", billTo: "Bill to",
+    item: "Item", description: "Description", qty: "Qty", unit: "Unit Price", price: "Price", total: "Total",
+    subtotal: "Subtotal", discount: "Discount", vat: "VAT", shipping: "Shipping",
+    notes: "Notes", warmRegards: "Warm regards",
+    language: "Language", english: "English", arabic: "العربية",
+    resetLogo: "Reset logo",
+  },
+  ar: {
+    invoice: "فاتورة", date: "التاريخ", status: "الحالة", billTo: "فاتورة إلى",
+    item: "الصنف", description: "الوصف", qty: "الكمية", unit: "سعر الوحدة", price: "السعر", total: "الإجمالي",
+    subtotal: "المجموع الفرعي", discount: "الخصم", vat: "ضريبة القيمة المضافة", shipping: "الشحن",
+    notes: "ملاحظات", warmRegards: "مع أطيب التحيات",
+    language: "اللغة", english: "English", arabic: "العربية",
+    resetLogo: "إعادة ضبط الشعار",
+  },
+} as const;
+
 function InvoicePreview({ order, items, settings }: { order: any; items: Item[]; settings: any }) {
   const currency = order.currency;
   const color = settings.primary_color || "#8b6f47";
   const bg = settings.background_color || "#ffffff";
   const text = settings.text_color || "#1a1a1a";
   const fontSize = Number(settings.font_size) || 14;
-  const logoSize = Number(settings.logo_size) || 64;
-  const family = settings.font_family === "Custom (uploaded)" ? "'InvoiceCustomFont', sans-serif" : `"${settings.font_family || "Cormorant Garamond"}", serif`;
+  const defaultLogoSize = Number(settings.logo_size) || 64;
+
+  const [invoiceLang, setInvoiceLang] = useState<"en" | "ar">("en");
+  const L = INVOICE_LABELS[invoiceLang];
+  const isRTL = invoiceLang === "ar";
+
+  const family = isRTL
+    ? `"Tajawal", "Cairo", sans-serif`
+    : settings.font_family === "Custom (uploaded)"
+      ? "'InvoiceCustomFont', sans-serif"
+      : `"${settings.font_family || "Cormorant Garamond"}", serif`;
+
+  // Draggable / resizable logo state
+  const [logoBox, setLogoBox] = useState({
+    x: 0,
+    y: 0,
+    width: Math.max(defaultLogoSize * 2, 120),
+    height: defaultLogoSize,
+  });
+  useEffect(() => {
+    setLogoBox((b) => ({ ...b, height: defaultLogoSize, width: Math.max(defaultLogoSize * 2, 120) }));
+  }, [defaultLogoSize]);
+  const resetLogo = () =>
+    setLogoBox({ x: 0, y: 0, width: Math.max(defaultLogoSize * 2, 120), height: defaultLogoSize });
 
   return (
-    <div className="rounded-lg shadow-lg border border-border overflow-hidden" style={{ backgroundColor: bg, color: text, fontFamily: family, fontSize: `${fontSize}px` }}>
-      {settings.font_url && (
-        <style>{`@font-face { font-family: 'InvoiceCustomFont'; src: url('${settings.font_url}'); font-display: swap; }`}</style>
-      )}
-      <div className="p-10" style={{ borderTop: `6px solid ${color}` }}>
-        <div className="flex justify-between items-start mb-10">
-          <div>
-            {settings.logo_url && <img src={settings.logo_url} alt="logo" style={{ height: logoSize, marginBottom: 12, objectFit: "contain" }} />}
-            <h2 style={{ color, fontSize: `${fontSize * 1.75}px`, fontWeight: 600 }}>{settings.business_name}</h2>
-            {settings.address && <p className="text-sm text-neutral-600 whitespace-pre-line mt-1">{settings.address}</p>}
-            <p className="text-xs text-neutral-500 mt-1">
-              {[settings.phone, settings.email].filter(Boolean).join(" · ")}
-              {settings.vat_number && ` · VAT ${settings.vat_number}`}
-            </p>
-          </div>
-          <div className="text-right">
-            <h1 className="text-4xl font-display tracking-tight" style={{ color }}>INVOICE</h1>
-            <p className="text-lg mt-1">#{order.invoice_number}</p>
-            <p className="text-xs text-neutral-500 mt-2">Date: {new Date(order.order_date).toLocaleDateString()}</p>
-            <p className="text-xs text-neutral-500">Status: {order.status}</p>
-          </div>
-        </div>
-
-        {order.customers && (
-          <div className="mb-8">
-            <p className="text-xs uppercase tracking-wider text-neutral-500 mb-1">Bill to</p>
-            <p className="font-medium">{order.customers.name}</p>
-            {order.customers.address && <p className="text-sm text-neutral-600 whitespace-pre-line">{order.customers.address}</p>}
-            {order.customers.city && <p className="text-sm text-neutral-600">{order.customers.city}</p>}
-            {order.customers.phone && <p className="text-sm text-neutral-600">{order.customers.phone}</p>}
-            {order.customers.email && <p className="text-sm text-neutral-600">{order.customers.email}</p>}
-          </div>
+    <div className="space-y-2">
+      {/* Invoice controls (not printed) */}
+      <div className="print:hidden flex flex-wrap items-center justify-end gap-2">
+        {settings.logo_url && (
+          <Button type="button" variant="ghost" size="sm" onClick={resetLogo}>
+            {L.resetLogo}
+          </Button>
         )}
+        <Label className="text-xs text-muted-foreground">{L.language}:</Label>
+        <div className="inline-flex rounded-md border border-input overflow-hidden">
+          <button
+            type="button"
+            onClick={() => setInvoiceLang("en")}
+            className={`px-3 py-1 text-xs ${invoiceLang === "en" ? "bg-primary text-primary-foreground" : "bg-background"}`}
+          >
+            {L.english}
+          </button>
+          <button
+            type="button"
+            onClick={() => setInvoiceLang("ar")}
+            className={`px-3 py-1 text-xs ${invoiceLang === "ar" ? "bg-primary text-primary-foreground" : "bg-background"}`}
+          >
+            {L.arabic}
+          </button>
+        </div>
+      </div>
 
-        <table className="w-full text-sm mb-6">
-          <thead>
-            <tr style={{ backgroundColor: color, color: "white" }}>
-              <th className="text-left p-3">Item</th>
-              <th className="text-right p-3 w-16">Qty</th>
-              <th className="text-right p-3 w-28">Unit</th>
-              <th className="text-right p-3 w-28">Total</th>
-            </tr>
-          </thead>
-          <tbody>
-            {items.map((it, i) => (
-              <tr key={i} className="border-b border-neutral-200 align-top">
-                <td className="p-3">
-                  <p className="font-medium">{it.description || "—"}</p>
-                  {it.customizations.length > 0 && (
-                    <ul className="mt-1 text-xs text-neutral-600 space-y-0.5">
-                      {it.customizations.map((c, ci) => (
-                        <li key={ci}>+ {c.name} ({formatMoney(c.price_delta, currency)})</li>
-                      ))}
-                    </ul>
-                  )}
-                </td>
-                <td className="p-3 text-right">{it.quantity}</td>
-                <td className="p-3 text-right">{formatMoney(it.unit_price + it.customization_total, currency)}</td>
-                <td className="p-3 text-right font-medium">{formatMoney(it.line_total, currency)}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-
-        <div className="flex justify-end">
-          <div className="w-72 text-sm space-y-1">
-            <div className="flex justify-between"><span className="text-neutral-600">Subtotal</span><span>{formatMoney(order.subtotal, currency)}</span></div>
-            {Number(order.discount) > 0 && <div className="flex justify-between"><span className="text-neutral-600">Discount</span><span>− {formatMoney(order.discount, currency)}</span></div>}
-            {Number(order.tax_rate) > 0 && <div className="flex justify-between"><span className="text-neutral-600">VAT ({order.tax_rate}%)</span><span>{formatMoney(order.tax_amount, currency)}</span></div>}
-            {Number(order.shipping) > 0 && <div className="flex justify-between"><span className="text-neutral-600">Shipping</span><span>{formatMoney(order.shipping, currency)}</span></div>}
-            <div className="flex justify-between pt-2 border-t-2" style={{ borderColor: color }}>
-              <span className="font-display text-lg" style={{ color }}>Total</span>
-              <span className="font-display text-lg" style={{ color }}>{formatMoney(order.total, currency)}</span>
+      <div
+        dir={isRTL ? "rtl" : "ltr"}
+        lang={invoiceLang}
+        className="rounded-lg shadow-lg border border-border overflow-hidden"
+        style={{ backgroundColor: bg, color: text, fontFamily: family, fontSize: `${fontSize}px` }}
+      >
+        {settings.font_url && !isRTL && (
+          <style>{`@font-face { font-family: 'InvoiceCustomFont'; src: url('${settings.font_url}'); font-display: swap; }`}</style>
+        )}
+        <div className="p-10" style={{ borderTop: `6px solid ${color}` }}>
+          <div className="flex justify-between items-start mb-10 gap-6">
+            <div className="flex-1 min-w-0">
+              {settings.logo_url && (
+                <div
+                  className="relative mb-3"
+                  style={{ height: Math.max(logoBox.height + logoBox.y, defaultLogoSize) + 20 }}
+                >
+                  <Rnd
+                    size={{ width: logoBox.width, height: logoBox.height }}
+                    position={{ x: logoBox.x, y: logoBox.y }}
+                    onDragStop={(_e, d) => setLogoBox((b) => ({ ...b, x: d.x, y: d.y }))}
+                    onResizeStop={(_e, _dir, ref, _delta, pos) =>
+                      setLogoBox({
+                        width: parseInt(ref.style.width, 10),
+                        height: parseInt(ref.style.height, 10),
+                        x: pos.x,
+                        y: pos.y,
+                      })
+                    }
+                    bounds="parent"
+                    lockAspectRatio
+                    className="border border-dashed border-transparent hover:border-neutral-300 print:!border-transparent"
+                  >
+                    <img
+                      src={settings.logo_url}
+                      alt="logo"
+                      draggable={false}
+                      style={{ width: "100%", height: "100%", objectFit: "contain", pointerEvents: "none" }}
+                    />
+                  </Rnd>
+                </div>
+              )}
+              <h2 style={{ color, fontSize: `${fontSize * 1.75}px`, fontWeight: 600 }}>{settings.business_name}</h2>
+              {settings.address && <p className="text-sm text-neutral-600 whitespace-pre-line mt-1">{settings.address}</p>}
+              <p className="text-xs text-neutral-500 mt-1">
+                {[settings.phone, settings.email].filter(Boolean).join(" · ")}
+                {settings.vat_number && ` · VAT ${settings.vat_number}`}
+              </p>
+            </div>
+            <div className={isRTL ? "text-left" : "text-right"}>
+              <h1 className="text-4xl font-display tracking-tight" style={{ color }}>{L.invoice}</h1>
+              <p className="text-lg mt-1">#{order.invoice_number}</p>
+              <p className="text-xs text-neutral-500 mt-2">{L.date}: {new Date(order.order_date).toLocaleDateString(isRTL ? "ar-EG" : undefined)}</p>
+              <p className="text-xs text-neutral-500">{L.status}: {order.status}</p>
             </div>
           </div>
-        </div>
 
-        {(order.notes || settings.footer_note) && (
-          <div className="mt-10 pt-6 border-t border-neutral-200 text-sm text-neutral-600 space-y-2">
-            {order.notes && <p><strong className="text-neutral-800">Notes: </strong>{order.notes}</p>}
-            {settings.footer_note && <p className="italic">{settings.footer_note}</p>}
+          {order.customers && (
+            <div className="mb-8">
+              <p className="text-xs uppercase tracking-wider text-neutral-500 mb-1">{L.billTo}</p>
+              <p className="font-medium">{order.customers.name}</p>
+              {order.customers.address && <p className="text-sm text-neutral-600 whitespace-pre-line">{order.customers.address}</p>}
+              {order.customers.city && <p className="text-sm text-neutral-600">{order.customers.city}</p>}
+              {order.customers.phone && <p className="text-sm text-neutral-600">{order.customers.phone}</p>}
+              {order.customers.email && <p className="text-sm text-neutral-600">{order.customers.email}</p>}
+            </div>
+          )}
+
+          <table className="w-full text-sm mb-6">
+            <thead>
+              <tr style={{ backgroundColor: color, color: "white" }}>
+                <th className={`${isRTL ? "text-right" : "text-left"} p-3`}>{L.description}</th>
+                <th className={`${isRTL ? "text-left" : "text-right"} p-3 w-16`}>{L.qty}</th>
+                <th className={`${isRTL ? "text-left" : "text-right"} p-3 w-28`}>{L.price}</th>
+                <th className={`${isRTL ? "text-left" : "text-right"} p-3 w-28`}>{L.total}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {items.map((it, i) => (
+                <tr key={i} className="border-b border-neutral-200 align-top">
+                  <td className="p-3">
+                    <p className="font-medium">{it.description || "—"}</p>
+                    {it.customizations.length > 0 && (
+                      <ul className="mt-1 text-xs text-neutral-600 space-y-0.5">
+                        {it.customizations.map((c, ci) => (
+                          <li key={ci}>+ {c.name} ({formatMoney(c.price_delta, currency)})</li>
+                        ))}
+                      </ul>
+                    )}
+                  </td>
+                  <td className={`p-3 ${isRTL ? "text-left" : "text-right"}`}>{it.quantity}</td>
+                  <td className={`p-3 ${isRTL ? "text-left" : "text-right"}`}>{formatMoney(it.unit_price + it.customization_total, currency)}</td>
+                  <td className={`p-3 font-medium ${isRTL ? "text-left" : "text-right"}`}>{formatMoney(it.line_total, currency)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+
+          <div className={`flex ${isRTL ? "justify-start" : "justify-end"}`}>
+            <div className="w-72 text-sm space-y-1">
+              <div className="flex justify-between"><span className="text-neutral-600">{L.subtotal}</span><span>{formatMoney(order.subtotal, currency)}</span></div>
+              {Number(order.discount) > 0 && <div className="flex justify-between"><span className="text-neutral-600">{L.discount}</span><span>− {formatMoney(order.discount, currency)}</span></div>}
+              {Number(order.tax_rate) > 0 && <div className="flex justify-between"><span className="text-neutral-600">{L.vat} ({order.tax_rate}%)</span><span>{formatMoney(order.tax_amount, currency)}</span></div>}
+              {Number(order.shipping) > 0 && <div className="flex justify-between"><span className="text-neutral-600">{L.shipping}</span><span>{formatMoney(order.shipping, currency)}</span></div>}
+              <div className="flex justify-between pt-2 border-t-2" style={{ borderColor: color }}>
+                <span className="font-display text-lg" style={{ color }}>{L.total}</span>
+                <span className="font-display text-lg" style={{ color }}>{formatMoney(order.total, currency)}</span>
+              </div>
+            </div>
           </div>
-        )}
+
+          {(order.notes || settings.footer_note) && (
+            <div className="mt-10 pt-6 border-t border-neutral-200 text-sm text-neutral-600 space-y-2">
+              {order.notes && <p><strong className="text-neutral-800">{L.notes}: </strong>{order.notes}</p>}
+              {settings.footer_note && <p className="italic">{settings.footer_note}</p>}
+              <p className="italic">{L.warmRegards},<br/>{settings.business_name}</p>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
