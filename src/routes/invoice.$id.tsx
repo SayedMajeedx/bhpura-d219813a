@@ -157,7 +157,6 @@ function PublicInvoice() {
                 )}
                 <p className="text-xs mt-1" style={{ opacity: 0.65 }}>
                   {[settings?.phone, settings?.email].filter(Boolean).join(" · ")}
-                  {settings?.vat_number && ` · ${L.vatId} ${settings.vat_number}`}
                 </p>
               </div>
               <div className="pdf-meta-block w-[48%] min-w-0" style={{ textAlign: "end" }}>
