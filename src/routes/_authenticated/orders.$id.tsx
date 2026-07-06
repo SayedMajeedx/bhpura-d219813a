@@ -316,6 +316,7 @@ function OrderDetail() {
           product_id: i.product_id ?? null, variant_id: i.variant_id ?? null,
           description: i.description, quantity: i.quantity, unit_price: i.unit_price,
           customizations: i.customizations, customization_total: i.customization_total, line_total: i.line_total,
+          location: i.location ?? "main",
         })),
       );
       if (ie) return toast.error(ie.message);
