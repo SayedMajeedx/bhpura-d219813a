@@ -108,7 +108,7 @@ function Inventory() {
   );
 }
 
-function ProductsSection({ products, variants, onChanged }: { products: Product[]; variants: Variant[]; onChanged: () => void }) {
+function ProductsSection({ products, variants, businessName, onChanged }: { products: Product[]; variants: Variant[]; businessName: string | null; onChanged: () => void }) {
   const t = useT();
   const [editing, setEditing] = useState<Product | null>(null);
   const [open, setOpen] = useState(false);
