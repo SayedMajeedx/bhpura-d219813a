@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Plus, Pencil, Trash2, Package, TrendingUp, Wand2 } from "lucide-react";
 import { toast } from "sonner";
 import { formatMoney } from "@/lib/format";
-import { useT } from "@/lib/i18n";
+import { useT, useI18n } from "@/lib/i18n";
 import { ActivityLogList } from "@/components/activity-log-list";
 
 export const Route = createFileRoute("/_authenticated/inventory")({
