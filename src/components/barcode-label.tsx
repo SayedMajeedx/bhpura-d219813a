@@ -80,11 +80,11 @@ export function printLabels(labels: LabelData[]) {
     try {
       JsBarcode(tmp, l.code, {
         format: "CODE128",
-        height: 60,
-        width: 1.8,
+        height: 70,
+        width: 2.2,
         fontSize: 14,
         displayValue: true,
-        margin: 4,
+        margin: 8,
         background: "#ffffff",
         lineColor: "#000000",
       });
