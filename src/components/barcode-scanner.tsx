@@ -28,8 +28,13 @@ const requestEnvironmentCamera = () => {
     throw new Error("Camera access is not supported by this browser.");
   }
   return navigator.mediaDevices.getUserMedia({
-    video: { facingMode: { ideal: "environment" } },
+    video: { facingMode: "environment" },
     audio: false,
+  }).catch((error) => {
+    if (error?.name === "OverconstrainedError" || error?.name === "NotFoundError") {
+      return navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+    }
+    throw error;
   });
 };
 
@@ -152,7 +157,10 @@ export function BarcodeScanner({ open, onOpenChange, onDetected, cameraStreamPro
       try {
         // Prefer the stream requested directly by the Scan Barcode click handler.
         const stream = cameraStreamPromise ? await cameraStreamPromise : await requestEnvironmentCamera();
-        if (cancelled) return;
+        if (cancelled) {
+          stream.getTracks().forEach((track) => track.stop());
+          return;
+        }
         streamRef.current = stream;
 
         await new Promise((r) => requestAnimationFrame(() => r(null)));
