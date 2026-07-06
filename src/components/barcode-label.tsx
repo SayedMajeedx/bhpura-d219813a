@@ -168,13 +168,25 @@ export function printLabels(labels: LabelData[]) {
       overflow: hidden !important;
     }
     @media print {
-      body * { visibility: hidden !important; }
-      #print-section, #print-section * { visibility: visible !important; }
       html, body {
         margin: 0 !important;
         padding: 0 !important;
         background: #fff !important;
+        overflow: visible !important;
+        position: static !important;
+        height: auto !important;
+        width: auto !important;
+        min-height: 0 !important;
       }
+      body { padding-right: 0 !important; }
+      body * { visibility: hidden !important; }
+      [data-radix-portal], [data-radix-popper-content-wrapper],
+      [role="dialog"], [data-radix-dialog-overlay], [data-radix-dialog-content],
+      [data-sonner-toaster], [data-radix-toast-viewport] {
+        display: none !important;
+        visibility: hidden !important;
+      }
+      #print-section, #print-section * { visibility: visible !important; }
       #print-section {
         position: absolute !important;
         left: 0 !important;
@@ -184,6 +196,7 @@ export function printLabels(labels: LabelData[]) {
         opacity: 1 !important;
         pointer-events: auto !important;
         z-index: 2147483647 !important;
+        display: block !important;
       }
       #print-section .barcode-card {
         width: 50mm !important;
@@ -197,9 +210,9 @@ export function printLabels(labels: LabelData[]) {
         box-sizing: border-box !important;
         padding: 5px !important;
       }
-      #print-section .barcode-image { width: 40mm !important; height: auto !important; }
-      #print-section .barcode-image svg { width: 40mm !important; height: auto !important; }
-      #print-section .barcode-text { font-size: 10px !important; font-weight: bold !important; margin-top: 2px !important; }
+      #print-section .barcode-image { width: 40mm !important; height: auto !important; display: block !important; }
+      #print-section .barcode-image svg { width: 40mm !important; height: auto !important; display: block !important; }
+      #print-section .barcode-text { font-size: 10px !important; font-weight: bold !important; margin-top: 2px !important; display: block !important; }
     }
   `;
 
