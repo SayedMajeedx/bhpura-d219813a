@@ -71,9 +71,6 @@ export function PrintableLabel({ data }: { data: LabelData }) {
  * Using a separate window avoids fighting the app's print styles.
  */
 export function printLabels(labels: LabelData[]) {
-  const w = window.open("", "_blank", "width=900,height=700");
-  if (!w) return;
-
   // Render barcodes off-DOM as SVG strings using a temp svg element in the current doc.
   const svgs = labels.map((l) => {
     const tmp = document.createElementNS("http://www.w3.org/2000/svg", "svg");
@@ -94,39 +91,7 @@ export function printLabels(labels: LabelData[]) {
     return tmp.outerHTML;
   });
 
-  const html = `<!doctype html>
-<html>
-<head>
-<meta charset="utf-8" />
-<title>Barcode labels</title>
-<style>
-  * { box-sizing: border-box; }
-  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; margin: 0; padding: 12mm; background: #fff; color: #000; }
-  .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6mm; }
-  .label {
-    border: 1px dashed #ccc;
-    padding: 4mm;
-    page-break-inside: avoid;
-    break-inside: avoid;
-    text-align: center;
-    background: #fff;
-  }
-  .biz { font-size: 9px; text-transform: uppercase; letter-spacing: 1px; color: #666; margin-bottom: 2mm; }
-  .name { font-size: 12px; font-weight: 600; margin-bottom: 1mm; }
-  .meta { font-size: 10px; color: #444; margin-bottom: 2mm; }
-  .price { font-size: 12px; font-weight: 700; margin-top: 2mm; }
-  svg { max-width: 100%; height: auto; }
-  @media print {
-    body { padding: 8mm; }
-    .no-print { display: none; }
-    @page { margin: 8mm; }
-  }
-</style>
-</head>
-<body>
-  <div class="no-print" style="text-align:right; margin-bottom:8px;">
-    <button onclick="window.print()" style="padding:8px 16px; font-size:14px; cursor:pointer;">Print</button>
-  </div>
+  const bodyHtml = `
   <div class="grid">
     ${labels
       .map(
@@ -144,17 +109,103 @@ export function printLabels(labels: LabelData[]) {
       </div>`
       )
       .join("")}
-  </div>
-  <script>
-    window.addEventListener('load', function(){ setTimeout(function(){ window.print(); }, 300); });
-  </script>
-</body>
-</html>`;
+  </div>`;
 
-  w.document.open();
-  w.document.write(html);
-  w.document.close();
+  const styles = `
+  * { box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; margin: 0; padding: 12mm; background: #fff; color: #000; }
+  .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6mm; }
+  .label { border: 1px dashed #ccc; padding: 4mm; page-break-inside: avoid; break-inside: avoid; text-align: center; background: #fff; }
+  .biz { font-size: 9px; text-transform: uppercase; letter-spacing: 1px; color: #666; margin-bottom: 2mm; }
+  .name { font-size: 12px; font-weight: 600; margin-bottom: 1mm; }
+  .meta { font-size: 10px; color: #444; margin-bottom: 2mm; }
+  .price { font-size: 12px; font-weight: 700; margin-top: 2mm; }
+  svg { max-width: 100%; height: auto; }
+  .toolbar { position: fixed; top: 0; left: 0; right: 0; padding: 10px 12px; background: #fff; border-bottom: 1px solid #eee; display: flex; gap: 8px; justify-content: flex-end; z-index: 10; }
+  .toolbar button { padding: 10px 16px; font-size: 14px; cursor: pointer; border-radius: 6px; border: 1px solid #ddd; background: #f8f8f8; }
+  .toolbar button.primary { background: #111; color: #fff; border-color: #111; }
+  .content { padding-top: 56px; }
+  @media print {
+    body { padding: 8mm; }
+    .toolbar { display: none; }
+    .content { padding-top: 0; }
+    @page { margin: 8mm; }
+  }`;
+
+  const html = `<!doctype html><html><head><meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" /><title>Barcode labels</title><style>${styles}</style></head><body><div class="toolbar"><button onclick="window.close && window.close()">Close</button><button class="primary" onclick="window.focus();window.print()">Print</button></div><div class="content">${bodyHtml}</div><script>window.addEventListener('load',function(){setTimeout(function(){try{window.focus();window.print();}catch(e){}} ,400);});</script></body></html>`;
+
+  // Mobile browsers (iOS Safari, Android Chrome) frequently block window.open
+  // outside a strict user gesture, and even when a popup opens, window.print()
+  // inside it is unreliable. Use a hidden iframe as the primary strategy — it
+  // works in-page without popup permission, and prints the current tab.
+  const isMobile = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+
+  const printViaIframe = () => {
+    // Clean up any previous print iframe.
+    document.querySelectorAll("iframe[data-print-labels]").forEach((n) => n.remove());
+    const iframe = document.createElement("iframe");
+    iframe.setAttribute("data-print-labels", "1");
+    iframe.style.position = "fixed";
+    iframe.style.right = "0";
+    iframe.style.bottom = "0";
+    iframe.style.width = "0";
+    iframe.style.height = "0";
+    iframe.style.border = "0";
+    iframe.setAttribute("aria-hidden", "true");
+    document.body.appendChild(iframe);
+
+    const triggerPrint = () => {
+      try {
+        const win = iframe.contentWindow;
+        if (!win) return;
+        win.focus();
+        win.print();
+      } catch {
+        /* noop */
+      }
+    };
+
+    iframe.onload = () => {
+      // Give the browser a tick to layout SVG barcodes before printing.
+      setTimeout(triggerPrint, 350);
+    };
+
+    const doc = iframe.contentDocument;
+    if (!doc) return;
+    doc.open();
+    doc.write(html);
+    doc.close();
+
+    // Remove iframe after print dialog interaction on desktop.
+    setTimeout(() => {
+      try {
+        iframe.remove();
+      } catch {
+        /* noop */
+      }
+    }, 60_000);
+  };
+
+  if (isMobile) {
+    printViaIframe();
+    return;
+  }
+
+  // Desktop: try popup first for a nicer preview; fall back to iframe if blocked.
+  try {
+    const w = window.open("", "_blank", "width=900,height=700");
+    if (!w) {
+      printViaIframe();
+      return;
+    }
+    w.document.open();
+    w.document.write(html);
+    w.document.close();
+  } catch {
+    printViaIframe();
+  }
 }
+
 
 function escapeHtml(s: string) {
   return s
