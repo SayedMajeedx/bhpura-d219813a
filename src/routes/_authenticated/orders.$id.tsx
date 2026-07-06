@@ -184,6 +184,9 @@ function OrderDetail() {
         return stream;
       })
       : Promise.reject(new Error("Camera access is not supported by this browser."));
+    void promise.catch(() => {
+      /* handled inside the scanner modal */
+    });
     setCameraStreamPromise(promise);
     setScannerOpen(true);
   };
