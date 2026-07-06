@@ -18,36 +18,19 @@ const SUPPORTED_FORMATS = [
   Html5QrcodeSupportedFormats.EAN_8,
   Html5QrcodeSupportedFormats.CODE_128,
   Html5QrcodeSupportedFormats.CODE_39,
+  Html5QrcodeSupportedFormats.CODE_93,
   Html5QrcodeSupportedFormats.UPC_A,
   Html5QrcodeSupportedFormats.UPC_E,
   Html5QrcodeSupportedFormats.ITF,
+  Html5QrcodeSupportedFormats.CODABAR,
 ];
 
-const requestEnvironmentCamera = () => {
-  if (!navigator.mediaDevices?.getUserMedia) {
-    throw new Error("Camera access is not supported by this browser.");
-  }
-  return navigator.mediaDevices.getUserMedia({
-    video: { facingMode: "environment" },
-    audio: false,
-  }).catch((error) => {
-    if (error?.name === "OverconstrainedError" || error?.name === "NotFoundError") {
-      return navigator.mediaDevices.getUserMedia({ video: true, audio: false });
-    }
-    throw error;
-  });
-};
-
-const delay = (ms: number) => new Promise((resolve) => window.setTimeout(resolve, ms));
+const DECODE_REGION_ID = "barcode-scanner-decode-region";
 
 export function BarcodeScanner({ open, onOpenChange, onDetected, cameraStreamPromise }: Props) {
   const { lang } = useI18n();
   const isAr = lang === "ar";
-  const decodeContainerId = "barcode-scanner-decode-region";
   const decoderRef = useRef<Html5Qrcode | null>(null);
-  const streamRef = useRef<MediaStream | null>(null);
-  const videoRef = useRef<HTMLVideoElement | null>(null);
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [starting, setStarting] = useState(false);
@@ -55,7 +38,7 @@ export function BarcodeScanner({ open, onOpenChange, onDetected, cameraStreamPro
 
   const getDecoder = useCallback(() => {
     if (!decoderRef.current) {
-      decoderRef.current = new Html5Qrcode(decodeContainerId, {
+      decoderRef.current = new Html5Qrcode(DECODE_REGION_ID, {
         verbose: false,
         formatsToSupport: SUPPORTED_FORMATS,
       });
@@ -65,19 +48,15 @@ export function BarcodeScanner({ open, onOpenChange, onDetected, cameraStreamPro
 
   const stopCamera = useCallback(async () => {
     stoppedRef.current = true;
-    const video = videoRef.current;
-    if (video) {
-      video.pause();
-      video.srcObject = null;
-    }
-    const stream = streamRef.current;
-    streamRef.current = null;
-    stream?.getTracks().forEach((track) => track.stop());
     const decoder = decoderRef.current;
     decoderRef.current = null;
     if (decoder) {
       try {
         if (decoder.isScanning) await decoder.stop();
+      } catch {
+        /* noop */
+      }
+      try {
         await decoder.clear();
       } catch {
         /* noop */
@@ -97,7 +76,7 @@ export function BarcodeScanner({ open, onOpenChange, onDetected, cameraStreamPro
     } else if (name === "NotFoundError" || name === "DevicesNotFoundError" || name === "OverconstrainedError") {
       setError(
         isAr
-          ? "لم يتم العثور على كاميرا خلفية. استخدم زر التقاط صورة الكود."
+          ? "لم يتم العثور على كاميرا مناسبة. استخدم زر التقاط صورة الكود."
           : "No suitable camera found. Use the Upload/Take Photo option.",
       );
     } else if (name === "NotReadableError" || name === "TrackStartError") {
@@ -115,36 +94,6 @@ export function BarcodeScanner({ open, onOpenChange, onDetected, cameraStreamPro
     }
   }, [isAr]);
 
-  const decodeCanvas = useCallback(async (canvas: HTMLCanvasElement) => {
-    const NativeBarcodeDetector = (window as any).BarcodeDetector;
-    if (NativeBarcodeDetector) {
-      try {
-        const formats = await NativeBarcodeDetector.getSupportedFormats?.();
-        const wantedFormats = ["code_128", "code_39", "ean_13", "ean_8", "upc_a", "upc_e", "itf", "qr_code"];
-        const supported = Array.isArray(formats)
-          ? wantedFormats.filter((format) => formats.includes(format))
-          : wantedFormats;
-        if (supported.length > 0) {
-          const detector = new NativeBarcodeDetector({ formats: supported });
-          const results = await detector.detect(canvas);
-          const rawValue = results?.[0]?.rawValue;
-          if (rawValue) return String(rawValue);
-        }
-      } catch {
-        /* Fall through to html5-qrcode image decoding. */
-      }
-    }
-
-    const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/jpeg", 0.92));
-    if (!blob) return null;
-    const file = new File([blob], "barcode-frame.jpg", { type: "image/jpeg" });
-    try {
-      return await getDecoder().scanFile(file, false);
-    } catch {
-      return null;
-    }
-  }, [getDecoder]);
-
   useEffect(() => {
     if (!open) return;
     stoppedRef.current = false;
@@ -155,47 +104,75 @@ export function BarcodeScanner({ open, onOpenChange, onDetected, cameraStreamPro
 
     const start = async () => {
       try {
-        // Prefer the stream requested directly by the Scan Barcode click handler.
-        const stream = cameraStreamPromise ? await cameraStreamPromise : await requestEnvironmentCamera();
+        // Release the pre-warmed probe stream from the click handler; html5-qrcode
+        // will open its own stream and would otherwise hit NotReadableError.
+        let deviceId: string | undefined;
+        if (cameraStreamPromise) {
+          try {
+            const probe = await cameraStreamPromise;
+            const track = probe.getVideoTracks()[0];
+            deviceId = track?.getSettings?.().deviceId;
+            probe.getTracks().forEach((t) => t.stop());
+          } catch {
+            /* fall through — html5-qrcode will request its own */
+          }
+        }
+
+        // Ensure the decode region div is mounted.
+        await new Promise((r) => requestAnimationFrame(() => r(null)));
+        if (cancelled) return;
+
+        const decoder = getDecoder();
+
+        const cameraConfig: MediaTrackConstraints = deviceId
+          ? { deviceId: { exact: deviceId } }
+          : { facingMode: { ideal: "environment" } };
+
+        const config = {
+          fps: 12,
+          qrbox: (viewfinderWidth: number, viewfinderHeight: number) => ({
+            width: Math.floor(viewfinderWidth * 0.88),
+            height: Math.floor(viewfinderHeight * 0.4),
+          }),
+          aspectRatio: 1,
+          disableFlip: false,
+          formatsToSupport: SUPPORTED_FORMATS,
+          experimentalFeatures: { useBarCodeDetectorIfSupported: true },
+        };
+
+        const onSuccess = (decodedText: string) => {
+          if (stoppedRef.current) return;
+          stoppedRef.current = true;
+          onDetected(decodedText.trim());
+          void stopCamera();
+          onOpenChange(false);
+        };
+
+        const onFrameFail = () => {
+          /* per-frame no-match — ignore */
+        };
+
+        try {
+          await decoder.start(cameraConfig as any, config, onSuccess, onFrameFail);
+        } catch (err) {
+          // Retry with a looser facingMode fallback if exact deviceId failed.
+          if (deviceId) {
+            await decoder.start(
+              { facingMode: { ideal: "environment" } } as any,
+              config,
+              onSuccess,
+              onFrameFail,
+            );
+          } else {
+            throw err;
+          }
+        }
+
         if (cancelled) {
-          stream.getTracks().forEach((track) => track.stop());
+          await stopCamera();
           return;
         }
-        streamRef.current = stream;
-
-        await new Promise((r) => requestAnimationFrame(() => r(null)));
-        const video = videoRef.current;
-        if (!video || cancelled) return;
-
-        video.setAttribute("playsinline", "true");
-        video.setAttribute("webkit-playsinline", "true");
-        video.muted = true;
-        video.srcObject = stream;
-        await video.play();
-
         setStarting(false);
-
-        const canvas = canvasRef.current ?? document.createElement("canvas");
-        canvasRef.current = canvas;
-        const context = canvas.getContext("2d", { willReadFrequently: true });
-        if (!context) throw new Error("Unable to prepare barcode scanner.");
-
-        while (!cancelled && !stoppedRef.current) {
-          if (video.readyState >= 2 && video.videoWidth > 0 && video.videoHeight > 0) {
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
-            context.drawImage(video, 0, 0, canvas.width, canvas.height);
-            const decodedText = await decodeCanvas(canvas);
-            if (decodedText?.trim() && !cancelled && !stoppedRef.current) {
-              stoppedRef.current = true;
-              onDetected(decodedText.trim());
-              await stopCamera();
-              onOpenChange(false);
-              return;
-            }
-          }
-          await delay(450);
-        }
       } catch (e: any) {
         setStarting(false);
         handleCameraError(e);
@@ -208,33 +185,66 @@ export function BarcodeScanner({ open, onOpenChange, onDetected, cameraStreamPro
       cancelled = true;
       void stopCamera();
     };
-  }, [cameraStreamPromise, decodeCanvas, handleCameraError, onDetected, onOpenChange, open, stopCamera]);
+  }, [cameraStreamPromise, getDecoder, handleCameraError, onDetected, onOpenChange, open, stopCamera]);
+
+  const downscaleImage = async (file: File, maxEdge = 1600): Promise<File> => {
+    try {
+      const bitmap = await createImageBitmap(file);
+      const scale = Math.min(1, maxEdge / Math.max(bitmap.width, bitmap.height));
+      if (scale >= 1) return file;
+      const w = Math.round(bitmap.width * scale);
+      const h = Math.round(bitmap.height * scale);
+      const canvas = document.createElement("canvas");
+      canvas.width = w;
+      canvas.height = h;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return file;
+      ctx.drawImage(bitmap, 0, 0, w, h);
+      const blob: Blob | null = await new Promise((r) => canvas.toBlob(r, "image/jpeg", 0.92));
+      if (!blob) return file;
+      return new File([blob], file.name.replace(/\.[^.]+$/, "") + ".jpg", { type: "image/jpeg" });
+    } catch {
+      return file;
+    }
+  };
 
   const handleFile = async (file: File) => {
     setError(null);
-    stoppedRef.current = true;
-    const stream = streamRef.current;
-    streamRef.current = null;
-    stream?.getTracks().forEach((track) => track.stop());
-    const video = videoRef.current;
-    if (video) {
-      video.pause();
-      video.srcObject = null;
-    }
+    await stopCamera();
+    const prepared = await downscaleImage(file);
+    // Use a fresh decoder instance for scanFile so it doesn't conflict with live scanning.
+    const scanDecoder = new Html5Qrcode(DECODE_REGION_ID, {
+      verbose: false,
+      formatsToSupport: SUPPORTED_FORMATS,
+    });
     try {
-      const text = await getDecoder().scanFile(file, true);
+      let text: string | null = null;
+      try {
+        text = await scanDecoder.scanFile(prepared, true);
+      } catch {
+        try {
+          text = await scanDecoder.scanFile(prepared, false);
+        } catch {
+          text = null;
+        }
+      }
       if (text) {
         stoppedRef.current = true;
         onDetected(text.trim());
-        await stopCamera();
         onOpenChange(false);
+        return;
       }
-    } catch (e: any) {
       setError(
         isAr
           ? "تعذر قراءة الباركود من الصورة. حاول التقاط صورة أوضح وأقرب."
           : "Could not read the barcode from that image. Try a clearer, closer photo.",
       );
+    } finally {
+      try {
+        await scanDecoder.clear();
+      } catch {
+        /* noop */
+      }
     }
   };
 
@@ -248,23 +258,10 @@ export function BarcodeScanner({ open, onOpenChange, onDetected, cameraStreamPro
           </Button>
         </DialogHeader>
         <div className="p-4 pt-0 space-y-3">
-          <div
-            className="relative w-full aspect-square bg-muted rounded-md overflow-hidden"
-          >
-            <video
-              ref={videoRef}
-              className="h-full w-full object-cover"
-              muted
-              playsInline
-              autoPlay
-            />
-            <div className="pointer-events-none absolute inset-x-0 top-0 h-[33%] bg-background/40" />
-            <div className="pointer-events-none absolute inset-x-0 bottom-0 h-[33%] bg-background/40" />
-            <div className="pointer-events-none absolute left-0 top-[33%] h-[34%] w-[12%] bg-background/40" />
-            <div className="pointer-events-none absolute right-0 top-[33%] h-[34%] w-[12%] bg-background/40" />
-            <div className="pointer-events-none absolute inset-x-[12%] top-1/2 h-[34%] -translate-y-1/2 rounded-md border-2 border-primary/80" />
+          <div className="relative w-full aspect-square bg-black rounded-md overflow-hidden">
+            <div id={DECODE_REGION_ID} className="absolute inset-0 [&_video]:h-full [&_video]:w-full [&_video]:object-cover" />
+            <div className="pointer-events-none absolute inset-x-[6%] top-1/2 h-[40%] -translate-y-1/2 rounded-md border-2 border-primary/80" />
           </div>
-          <div id={decodeContainerId} className="hidden" />
           {starting && !error && (
             <p className="text-xs text-muted-foreground text-center">
               {isAr ? "جارٍ تشغيل الكاميرا..." : "Starting camera..."}
@@ -275,8 +272,8 @@ export function BarcodeScanner({ open, onOpenChange, onDetected, cameraStreamPro
           )}
           <p className="text-xs text-muted-foreground text-center">
             {isAr
-              ? "وجّه الكاميرا نحو الباركود الموجود على القطعة."
-              : "Point the camera at the item's barcode."}
+              ? "وجّه الكاميرا نحو الباركود بحيث يملأ الإطار."
+              : "Point the camera so the barcode fills the framed area."}
           </p>
 
           <div className="flex items-center gap-2 pt-1">
