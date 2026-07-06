@@ -13,6 +13,7 @@ import { Plus, Pencil, Trash2, Users, Star, Check } from "lucide-react";
 import { toast } from "sonner";
 import { useT, useI18n } from "@/lib/i18n";
 import { BAHRAIN_REGIONS, regionLabel, formatAddressLine, type StructuredAddress } from "@/lib/bahrain-regions";
+import { PhoneInput } from "@/components/phone-input";
 
 export const Route = createFileRoute("/_authenticated/customers")({
   component: CustomersPage,
@@ -215,7 +216,7 @@ function CustomerDialog({ customer, onSaved }: { customer: Customer | null; onSa
           <Input className="text-start" value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} />
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <div><Label>{t("customers.phone")}</Label><Input className="text-start" value={f.phone} onChange={(e) => setF({ ...f, phone: e.target.value })} /></div>
+          <div><Label>{t("customers.phone")}</Label><PhoneInput value={f.phone} onChange={(v) => setF({ ...f, phone: v })} /></div>
           <div><Label>{t("customers.email")}</Label><Input className="text-start" value={f.email} onChange={(e) => setF({ ...f, email: e.target.value })} /></div>
         </div>
         <div><Label>{t("customers.notes")}</Label><Textarea className="text-start" value={f.notes} onChange={(e) => setF({ ...f, notes: e.target.value })} /></div>

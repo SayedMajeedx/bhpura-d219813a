@@ -20,6 +20,7 @@ import { resolvePaymentStatus, PAYMENT_BADGE_CLASSES, PAYMENT_BADGE_LABEL, PAYME
 import { logActivityBatch } from "@/lib/activity-log";
 import { ActivityLogList } from "@/components/activity-log-list";
 import { BarcodeScanner } from "@/components/barcode-scanner";
+import { PhoneInput } from "@/components/phone-input";
 
 function formatDeliveryAddress(
   c: { region?: string | null; road?: string | null; house?: string | null; flat?: string | null; address?: string | null; city?: string | null } | null | undefined,
@@ -1288,8 +1289,8 @@ function SendInvoiceDialog({ order, totals, settings, currency }: { order: any; 
             </TabsContent>
             <TabsContent value="whatsapp" className="space-y-3 mt-4">
               <div>
-                <Label>Phone (from customer — include country code)</Label>
-                <Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+966501234567" />
+                <Label>Phone (country code + number)</Label>
+                <PhoneInput value={phone} onChange={setPhone} />
               </div>
               <div>
                 <Label>Message</Label>

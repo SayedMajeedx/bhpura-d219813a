@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "sonner";
 import { Upload } from "lucide-react";
 import { useT } from "@/lib/i18n";
+import { PhoneInput } from "@/components/phone-input";
 import { Rnd } from "react-rnd";
 
 export const Route = createFileRoute("/_authenticated/settings")({
@@ -135,7 +136,7 @@ function Settings() {
           </div>
           <div><Label>{t("settings.address")}</Label><Textarea value={f.address ?? ""} onChange={(e) => setF({ ...f, address: e.target.value })} /></div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div><Label>{t("settings.phone")}</Label><Input value={f.phone ?? ""} onChange={(e) => setF({ ...f, phone: e.target.value })} /></div>
+            <div><Label>{t("settings.phone")}</Label><PhoneInput value={f.phone} onChange={(v) => setF({ ...f, phone: v })} /></div>
             <div><Label>{t("settings.email")}</Label><Input value={f.email ?? ""} onChange={(e) => setF({ ...f, email: e.target.value })} /></div>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
