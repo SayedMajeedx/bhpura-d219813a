@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Html5Qrcode, Html5QrcodeSupportedFormats } from "html5-qrcode";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -9,6 +9,7 @@ type Props = {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   onDetected: (code: string) => void;
+  cameraStreamPromise?: Promise<MediaStream> | null;
 };
 
 const SUPPORTED_FORMATS = [
@@ -22,15 +23,122 @@ const SUPPORTED_FORMATS = [
   Html5QrcodeSupportedFormats.ITF,
 ];
 
-export function BarcodeScanner({ open, onOpenChange, onDetected }: Props) {
+const requestEnvironmentCamera = () => {
+  if (!navigator.mediaDevices?.getUserMedia) {
+    throw new Error("Camera access is not supported by this browser.");
+  }
+  return navigator.mediaDevices.getUserMedia({
+    video: { facingMode: { ideal: "environment" } },
+    audio: false,
+  });
+};
+
+const delay = (ms: number) => new Promise((resolve) => window.setTimeout(resolve, ms));
+
+export function BarcodeScanner({ open, onOpenChange, onDetected, cameraStreamPromise }: Props) {
   const { lang } = useI18n();
   const isAr = lang === "ar";
-  const containerId = "barcode-scanner-region";
-  const scannerRef = useRef<Html5Qrcode | null>(null);
+  const decodeContainerId = "barcode-scanner-decode-region";
+  const decoderRef = useRef<Html5Qrcode | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [starting, setStarting] = useState(false);
   const stoppedRef = useRef(false);
+
+  const getDecoder = useCallback(() => {
+    if (!decoderRef.current) {
+      decoderRef.current = new Html5Qrcode(decodeContainerId, {
+        verbose: false,
+        formatsToSupport: SUPPORTED_FORMATS,
+      });
+    }
+    return decoderRef.current;
+  }, []);
+
+  const stopCamera = useCallback(async () => {
+    stoppedRef.current = true;
+    const video = videoRef.current;
+    if (video) {
+      video.pause();
+      video.srcObject = null;
+    }
+    const stream = streamRef.current;
+    streamRef.current = null;
+    stream?.getTracks().forEach((track) => track.stop());
+    const decoder = decoderRef.current;
+    decoderRef.current = null;
+    if (decoder) {
+      try {
+        if (decoder.isScanning) await decoder.stop();
+        await decoder.clear();
+      } catch {
+        /* noop */
+      }
+    }
+  }, []);
+
+  const handleCameraError = useCallback((e: any) => {
+    const raw = String(e?.message || e || "");
+    const name = e?.name;
+    if (name === "NotAllowedError" || name === "PermissionDeniedError" || raw.includes("Permission denied")) {
+      setError(
+        isAr
+          ? "تم رفض إذن الكاميرا. فعّل الإذن من إعدادات المتصفح، أو استخدم زر التقاط صورة الكود."
+          : "Camera permission denied. Enable it in your browser settings, or use the Upload/Take Photo option.",
+      );
+    } else if (name === "NotFoundError" || name === "DevicesNotFoundError" || name === "OverconstrainedError") {
+      setError(
+        isAr
+          ? "لم يتم العثور على كاميرا خلفية. استخدم زر التقاط صورة الكود."
+          : "No suitable camera found. Use the Upload/Take Photo option.",
+      );
+    } else if (name === "NotReadableError" || name === "TrackStartError") {
+      setError(
+        isAr
+          ? "الكاميرا مستخدمة من تطبيق آخر. أغلق التطبيقات الأخرى أو استخدم زر التقاط صورة الكود."
+          : "The camera is already in use. Close other camera apps or use the Upload/Take Photo option.",
+      );
+    } else {
+      setError(
+        isAr
+          ? "تعذر تشغيل الكاميرا. جرّب التقاط صورة الكود."
+          : "Unable to start the camera. Try the Upload/Take Photo option.",
+      );
+    }
+  }, [isAr]);
+
+  const decodeCanvas = useCallback(async (canvas: HTMLCanvasElement) => {
+    const NativeBarcodeDetector = (window as any).BarcodeDetector;
+    if (NativeBarcodeDetector) {
+      try {
+        const formats = await NativeBarcodeDetector.getSupportedFormats?.();
+        const wantedFormats = ["code_128", "code_39", "ean_13", "ean_8", "upc_a", "upc_e", "itf", "qr_code"];
+        const supported = Array.isArray(formats)
+          ? wantedFormats.filter((format) => formats.includes(format))
+          : wantedFormats;
+        if (supported.length > 0) {
+          const detector = new NativeBarcodeDetector({ formats: supported });
+          const results = await detector.detect(canvas);
+          const rawValue = results?.[0]?.rawValue;
+          if (rawValue) return String(rawValue);
+        }
+      } catch {
+        /* Fall through to html5-qrcode image decoding. */
+      }
+    }
+
+    const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/jpeg", 0.92));
+    if (!blob) return null;
+    const file = new File([blob], "barcode-frame.jpg", { type: "image/jpeg" });
+    try {
+      return await getDecoder().scanFile(file, false);
+    } catch {
+      return null;
+    }
+  }, [getDecoder]);
 
   useEffect(() => {
     if (!open) return;
@@ -40,100 +148,49 @@ export function BarcodeScanner({ open, onOpenChange, onDetected }: Props) {
 
     let cancelled = false;
 
-    const stop = async () => {
-      const s = scannerRef.current;
-      scannerRef.current = null;
-      if (!s) return;
-      try {
-        if (s.isScanning) await s.stop();
-        await s.clear();
-      } catch {
-        /* noop */
-      }
-    };
-
     const start = async () => {
       try {
-        // 1) Explicitly trigger the browser's native camera permission prompt.
-        if (!navigator.mediaDevices?.getUserMedia) {
-          throw new Error(
-            isAr
-              ? "المتصفح لا يدعم الوصول إلى الكاميرا."
-              : "This browser does not support camera access.",
-          );
-        }
-        const probeStream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: { ideal: "environment" } },
-          audio: false,
-        });
-        // Release the probe stream — html5-qrcode will open its own.
-        probeStream.getTracks().forEach((t) => t.stop());
-
+        // Prefer the stream requested directly by the Scan Barcode click handler.
+        const stream = cameraStreamPromise ? await cameraStreamPromise : await requestEnvironmentCamera();
         if (cancelled) return;
+        streamRef.current = stream;
 
-        // Wait a tick to ensure the container div is mounted.
         await new Promise((r) => requestAnimationFrame(() => r(null)));
-        const el = document.getElementById(containerId);
-        if (!el || cancelled) return;
+        const video = videoRef.current;
+        if (!video || cancelled) return;
 
-        const scanner = new Html5Qrcode(containerId, {
-          verbose: false,
-          formatsToSupport: SUPPORTED_FORMATS,
-        });
-        scannerRef.current = scanner;
-
-        await scanner.start(
-          { facingMode: { ideal: "environment" } },
-          {
-            fps: 10,
-            qrbox: (w, h) => {
-              const min = Math.min(w, h);
-              const size = Math.floor(min * 0.75);
-              return { width: size, height: Math.floor(size * 0.6) };
-            },
-            aspectRatio: 1.0,
-          },
-          (decodedText) => {
-            if (stoppedRef.current) return;
-            stoppedRef.current = true;
-            onDetected(decodedText.trim());
-            stop().finally(() => onOpenChange(false));
-          },
-          () => { /* ignore per-frame decode errors */ },
-        );
-
-        // Ensure the injected <video> plays inline on iOS Safari.
-        const video = el.querySelector("video");
-        if (video) {
-          video.setAttribute("playsinline", "true");
-          video.setAttribute("webkit-playsinline", "true");
-          video.muted = true;
-        }
+        video.setAttribute("playsinline", "true");
+        video.setAttribute("webkit-playsinline", "true");
+        video.muted = true;
+        video.srcObject = stream;
+        await video.play();
 
         setStarting(false);
+
+        const canvas = canvasRef.current ?? document.createElement("canvas");
+        canvasRef.current = canvas;
+        const context = canvas.getContext("2d", { willReadFrequently: true });
+        if (!context) throw new Error("Unable to prepare barcode scanner.");
+
+        while (!cancelled && !stoppedRef.current) {
+          if (video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA && video.videoWidth > 0 && video.videoHeight > 0) {
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+            const decodedText = await decodeCanvas(canvas);
+            if (decodedText?.trim() && !cancelled && !stoppedRef.current) {
+              stoppedRef.current = true;
+              onDetected(decodedText.trim());
+              await stopCamera();
+              onOpenChange(false);
+              return;
+            }
+          }
+          await delay(450);
+        }
       } catch (e: any) {
         setStarting(false);
-        const name = e?.name;
-        if (name === "NotAllowedError" || name === "PermissionDeniedError") {
-          setError(
-            isAr
-              ? "تم رفض إذن الكاميرا. فعّل الإذن من إعدادات المتصفح، أو استخدم زر التقاط صورة الكود."
-              : "Camera permission denied. Enable it in your browser settings, or use the Upload/Take Photo option.",
-          );
-        } else if (name === "NotFoundError" || name === "OverconstrainedError") {
-          setError(
-            isAr
-              ? "لم يتم العثور على كاميرا خلفية. استخدم زر التقاط صورة الكود."
-              : "No suitable camera found. Use the Upload/Take Photo option.",
-          );
-        } else {
-          setError(
-            e?.message ||
-              (isAr
-                ? "تعذر تشغيل الكاميرا. جرّب التقاط صورة الكود."
-                : "Unable to start the camera. Try the Upload/Take Photo option."),
-          );
-        }
+        handleCameraError(e);
       }
     };
 
@@ -141,30 +198,26 @@ export function BarcodeScanner({ open, onOpenChange, onDetected }: Props) {
 
     return () => {
       cancelled = true;
-      stoppedRef.current = true;
-      void stop();
+      void stopCamera();
     };
-  }, [open, isAr, onDetected, onOpenChange]);
+  }, [cameraStreamPromise, decodeCanvas, handleCameraError, onDetected, onOpenChange, open, stopCamera]);
 
   const handleFile = async (file: File) => {
     setError(null);
-    // Stop the live scanner if it's running so scanFile can operate.
-    const s = scannerRef.current;
-    if (s?.isScanning) {
-      try { await s.stop(); } catch { /* noop */ }
+    const stream = streamRef.current;
+    streamRef.current = null;
+    stream?.getTracks().forEach((track) => track.stop());
+    const video = videoRef.current;
+    if (video) {
+      video.pause();
+      video.srcObject = null;
     }
-    const decoder = scannerRef.current ?? new Html5Qrcode(containerId, {
-      verbose: false,
-      formatsToSupport: SUPPORTED_FORMATS,
-    });
-    scannerRef.current = decoder;
     try {
-      const text = await decoder.scanFile(file, true);
+      const text = await getDecoder().scanFile(file, true);
       if (text) {
         stoppedRef.current = true;
         onDetected(text.trim());
-        try { await decoder.clear(); } catch { /* noop */ }
-        scannerRef.current = null;
+        await stopCamera();
         onOpenChange(false);
       }
     } catch (e: any) {
@@ -187,9 +240,18 @@ export function BarcodeScanner({ open, onOpenChange, onDetected }: Props) {
         </DialogHeader>
         <div className="p-4 pt-0 space-y-3">
           <div
-            id={containerId}
-            className="w-full aspect-square bg-black rounded-md overflow-hidden [&_video]:w-full [&_video]:h-full [&_video]:object-cover"
-          />
+            className="relative w-full aspect-square bg-muted rounded-md overflow-hidden"
+          >
+            <video
+              ref={videoRef}
+              className="h-full w-full object-cover"
+              muted
+              playsInline
+              autoPlay
+            />
+            <div className="pointer-events-none absolute inset-x-[12%] top-1/2 h-[34%] -translate-y-1/2 rounded-md border-2 border-primary/80 shadow-[0_0_0_999px_hsl(var(--background)/0.45)]" />
+          </div>
+          <div id={decodeContainerId} className="hidden" />
           {starting && !error && (
             <p className="text-xs text-muted-foreground text-center">
               {isAr ? "جارٍ تشغيل الكاميرا..." : "Starting camera..."}
