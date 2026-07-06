@@ -1,31 +1,59 @@
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
-import { LayoutDashboard, Package, Users, ReceiptText, Settings, LogOut, Languages, Menu, Wallet, Megaphone } from "lucide-react";
-import { useState, useEffect } from "react";
+import { LayoutDashboard, Package, Users, ReceiptText, Settings, LogOut, Languages, Menu, Wallet, Megaphone, Shield } from "lucide-react";
+import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { useI18n } from "@/lib/i18n";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
+import { useProfile } from "@/lib/profile-context";
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = useRouterState({ select: (r) => r.location.pathname });
   const navigate = useNavigate();
   const { t, lang, setLang } = useI18n();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const { isAdmin, isActive, isLoading, signOutAndRedirect } = useProfile();
 
   // close drawer when route changes
   useEffect(() => { setMobileOpen(false); }, [pathname]);
 
-  const nav = [
-    { to: "/dashboard", label: t("nav.dashboard"), icon: LayoutDashboard },
-    { to: "/inventory", label: t("nav.inventory"), icon: Package },
-    { to: "/customers", label: t("nav.customers"), icon: Users },
-    { to: "/campaigns", label: lang === "ar" ? "حملات الواتساب" : "WhatsApp Campaigns", icon: Megaphone },
-    { to: "/orders", label: t("nav.orders"), icon: ReceiptText },
-    { to: "/expenses", label: t("nav.expenses"), icon: Wallet },
-    { to: "/settings", label: t("nav.settings"), icon: Settings },
-  ] as const;
+  // Force-logout inactive users
+  useEffect(() => {
+    if (isLoading) return;
+    if (!isActive) {
+      (async () => {
+        await signOutAndRedirect();
+      })();
+    }
+  }, [isLoading, isActive, signOutAndRedirect]);
+
+  // Build nav items based on role
+  const nav = useMemo(() => {
+    const items: { to: string; label: string; icon: typeof LayoutDashboard; adminOnly?: boolean }[] = [
+      { to: "/dashboard", label: t("nav.dashboard"), icon: LayoutDashboard },
+      { to: "/inventory", label: t("nav.inventory"), icon: Package },
+      { to: "/customers", label: t("nav.customers"), icon: Users },
+      { to: "/campaigns", label: lang === "ar" ? "حملات الواتساب" : "WhatsApp Campaigns", icon: Megaphone },
+      { to: "/orders", label: t("nav.orders"), icon: ReceiptText },
+      { to: "/expenses", label: t("nav.expenses"), icon: Wallet, adminOnly: true },
+      { to: "/settings", label: t("nav.settings"), icon: Settings },
+    ];
+    // Team Management only for admins
+    if (isAdmin) {
+      const teamNav = { to: "/team", label: lang === "ar" ? "إدارة الموظفين" : "Team Management", icon: Shield };
+      // Insert before settings
+      const settingsIdx = items.findIndex((i) => i.to === "/settings");
+      if (settingsIdx >= 0) {
+        items.splice(settingsIdx, 0, teamNav);
+      } else {
+        items.push(teamNav);
+      }
+    }
+    // Filter out admin-only items if not admin
+    return items.filter((item) => !item.adminOnly || isAdmin);
+  }, [t, lang, isAdmin]);
 
   const signOut = async () => {
     await supabase.auth.signOut();

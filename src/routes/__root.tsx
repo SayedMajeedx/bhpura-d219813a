@@ -13,6 +13,7 @@ import { reportLovableError } from "../lib/lovable-error-reporting";
 import { Toaster } from "@/components/ui/sonner";
 import { I18nProvider } from "@/lib/i18n";
 import { installNumericInputBehavior } from "@/lib/numeric-input-behavior";
+import { ProfileProvider } from "@/lib/profile-context";
 
 function NotFoundComponent() {
   return (
@@ -126,8 +127,10 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <I18nProvider>
-        <Outlet />
-        <Toaster />
+        <ProfileProvider>
+          <Outlet />
+          <Toaster />
+        </ProfileProvider>
       </I18nProvider>
     </QueryClientProvider>
   );

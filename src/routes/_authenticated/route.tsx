@@ -7,6 +7,20 @@ export const Route = createFileRoute("/_authenticated")({
   beforeLoad: async () => {
     const { data, error } = await supabase.auth.getUser();
     if (error || !data.user) throw redirect({ to: "/auth" });
+
+    // Check if user profile is active
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("status")
+      .eq("id", data.user.id)
+      .maybeSingle();
+
+    // If inactive, force logout
+    if (profile && profile.status !== "active") {
+      await supabase.auth.signOut();
+      throw redirect({ to: "/auth" });
+    }
+
     return { user: data.user };
   },
   component: () => (

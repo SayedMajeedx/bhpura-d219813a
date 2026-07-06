@@ -292,6 +292,25 @@ const en: Dict = {
   "payment.apple_pay": "Apple Pay",
   "payment.google_pay": "Google Pay",
   "payment.cod": "Cash on delivery",
+
+  "team.title": "Team Management",
+  "team.subtitle": "Add and manage staff accounts. Only admins can view this page.",
+  "team.addStaff": "Add Staff",
+  "team.addTitle": "Add New Staff Member",
+  "team.name": "Name",
+  "team.email": "Email",
+  "team.password": "Password",
+  "team.role": "Role",
+  "team.status": "Status",
+  "team.admin": "Admin",
+  "team.staff": "Staff",
+  "team.active": "Active",
+  "team.inactive": "Inactive",
+  "team.deactivate": "Deactivate Account",
+  "team.reactivate": "Reactivate Account",
+  "team.editUser": "Edit User",
+  "team.deleteUser": "Delete User",
+  "team.deleteConfirm": "Are you sure you want to delete this user? All user data will be permanently deleted. This action cannot be undone.",
 };
 
 const ar: Dict = {
@@ -582,6 +601,25 @@ const ar: Dict = {
   "payment.apple_pay": "أبل باي",
   "payment.google_pay": "جوجل باي",
   "payment.cod": "الدفع عند الاستلام",
+
+  "team.title": "إدارة الموظفين",
+  "team.subtitle": "إضافة وإدارة حسابات الموظفين. هذه الصفحة للمديرين فقط.",
+  "team.addStaff": "إضافة موظف",
+  "team.addTitle": "إضافة موظف جديد",
+  "team.name": "الاسم",
+  "team.email": "البريد الإلكتروني",
+  "team.password": "كلمة المرور",
+  "team.role": "الدور",
+  "team.status": "الحالة",
+  "team.admin": "مدير",
+  "team.staff": "موظف",
+  "team.active": "نشط",
+  "team.inactive": "غير نشط",
+  "team.deactivate": "إلغاء تنشيط الحساب",
+  "team.reactivate": "إعادة تنشيط الحساب",
+  "team.editUser": "تعديل المستخدم",
+  "team.deleteUser": "حذف المستخدم",
+  "team.deleteConfirm": "هل أنت متأكد من حذف هذا المستخدم؟ سيتم حذف جميع بيانات المستخدم نهائياً. لا يمكن التراجع عن هذا الإجراء.",
 };
 
 const dicts: Record<Lang, Dict> = { en, ar };

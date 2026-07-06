@@ -8,12 +8,13 @@ import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
-import { Plus, Pencil, Trash2, Package, TrendingUp, Wand2, Printer } from "lucide-react";
+import { Plus, Pencil, Trash2, Package, TrendingUp, Wand as Wand2, Printer } from "lucide-react";
 import { toast } from "sonner";
 import { formatMoney } from "@/lib/format";
 import { useT, useI18n } from "@/lib/i18n";
 import { ActivityLogList } from "@/components/activity-log-list";
 import { BarcodeSvg, PrintLabelButton, printLabels, type LabelData } from "@/components/barcode-label";
+import { useProfile } from "@/lib/profile-context";
 
 export const Route = createFileRoute("/_authenticated/inventory")({
   component: Inventory,
@@ -259,6 +260,7 @@ function VariantList({ productId, productName, businessName, variants, onChanged
   const t = useT();
   const { lang } = useI18n();
   const isAr = lang === "ar";
+  const { canViewFinancials } = useProfile();
   const [adding, setAdding] = useState(false);
   const empty = {
     size: "", color: "", fabric: "", sku: "", barcode: "",
@@ -311,9 +313,9 @@ function VariantList({ productId, productName, businessName, variants, onChanged
               <th className="py-2 pe-3 text-start">{t("inventory.fabric")}</th>
               <th className="py-2 pe-3 text-start">{t("inventory.sku")}</th>
               <th className="py-2 pe-3 text-start">{barcodeLabel}</th>
-              <th className="py-2 pe-3 text-start">{t("inventory.cost")}</th>
+              {canViewFinancials && <th className="py-2 pe-3 text-start">{t("inventory.cost")}</th>}
               <th className="py-2 pe-3 text-start">{t("inventory.price")}</th>
-              <th className="py-2 pe-3 text-start">{t("inventory.margin")}</th>
+              {canViewFinancials && <th className="py-2 pe-3 text-start">{t("inventory.margin")}</th>}
               <th className="py-2 pe-3 text-start">{mainLabel}</th>
               <th className="py-2 pe-3 text-start">{incLabel}</th>
               <th className="py-2 pe-3 text-start">{t("inventory.stock")}</th>
@@ -367,9 +369,9 @@ function VariantList({ productId, productName, businessName, variants, onChanged
                       )}
                     </div>
                   </td>
-                  <td className="py-2 pe-3 text-start"><input type="number" step="0.01" className="bg-transparent w-20 outline-none text-start" defaultValue={v.cost_price} onBlur={(e) => update(v, { cost_price: Number(e.target.value) })} /></td>
+                  {canViewFinancials && <td className="py-2 pe-3 text-start"><input type="number" step="0.01" className="bg-transparent w-20 outline-none text-start" defaultValue={v.cost_price} onBlur={(e) => update(v, { cost_price: Number(e.target.value) })} /></td>}
                   <td className="py-2 pe-3 text-start"><input type="number" step="0.01" className="bg-transparent w-24 outline-none text-start" defaultValue={v.selling_price} onBlur={(e) => update(v, { selling_price: Number(e.target.value) })} /></td>
-                  <td className="py-2 pe-3 text-primary"><span className="inline-flex items-center gap-1"><TrendingUp className="h-3 w-3" />{margin.toFixed(0)}%</span></td>
+                  {canViewFinancials && <td className="py-2 pe-3 text-primary"><span className="inline-flex items-center gap-1"><TrendingUp className="h-3 w-3" />{margin.toFixed(0)}%</span></td>}
                   <td className="py-2 pe-3 text-start"><input type="number" className="bg-transparent w-16 outline-none text-start" defaultValue={v.stock_main ?? 0} onBlur={(e) => update(v, { stock_main: Number(e.target.value) })} /></td>
                   <td className="py-2 pe-3 text-start"><input type="number" className="bg-transparent w-16 outline-none text-start" defaultValue={v.stock_incubator ?? 0} onBlur={(e) => update(v, { stock_incubator: Number(e.target.value) })} /></td>
                   <td className="py-2 pe-3 text-start font-medium">{(v.stock_main ?? 0) + (v.stock_incubator ?? 0)}</td>
@@ -391,9 +393,9 @@ function VariantList({ productId, productName, businessName, variants, onChanged
                     </button>
                   </div>
                 </td>
-                <td className="py-2 pe-3"><Input className="h-8 w-20 text-start" type="number" step="0.01" value={row.cost_price} onChange={(e) => setRow({ ...row, cost_price: e.target.value })} /></td>
+                {canViewFinancials && <td className="py-2 pe-3"><Input className="h-8 w-20 text-start" type="number" step="0.01" value={row.cost_price} onChange={(e) => setRow({ ...row, cost_price: e.target.value })} /></td>}
                 <td className="py-2 pe-3"><Input className="h-8 w-24 text-start" type="number" step="0.01" value={row.selling_price} onChange={(e) => setRow({ ...row, selling_price: e.target.value })} /></td>
-                <td></td>
+                {canViewFinancials && <td></td>}
                 <td className="py-2 pe-3"><Input className="h-8 w-16 text-start" type="number" value={row.stock_main} onChange={(e) => setRow({ ...row, stock_main: e.target.value })} /></td>
                 <td className="py-2 pe-3"><Input className="h-8 w-16 text-start" type="number" value={row.stock_incubator} onChange={(e) => setRow({ ...row, stock_incubator: e.target.value })} /></td>
                 <td></td>

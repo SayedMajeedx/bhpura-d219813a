@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -14,6 +14,21 @@ import { formatMoney } from "@/lib/format";
 import { useI18n, useT } from "@/lib/i18n";
 
 export const Route = createFileRoute("/_authenticated/expenses")({
+  beforeLoad: async () => {
+    // Only admins can access expenses
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw redirect({ to: "/auth" });
+
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", user.id)
+      .maybeSingle();
+
+    if (!profile || profile.role !== "admin") {
+      throw redirect({ to: "/dashboard" });
+    }
+  },
   component: ExpensesPage,
 });
 

@@ -5,6 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Package, Users, ReceiptText, TrendingUp, CalendarDays, Trophy, Wallet, PiggyBank } from "lucide-react";
 import { formatMoney } from "@/lib/format";
 import { useI18n, useT } from "@/lib/i18n";
+import { useProfile } from "@/lib/profile-context";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   component: Dashboard,
@@ -22,6 +23,7 @@ function startOfTodayISO() {
 function Dashboard() {
   const t = useT();
   const { lang } = useI18n();
+  const { canViewFinancials } = useProfile();
   const locale = lang === "ar" ? "ar-BH" : "en-US";
 
   const { data } = useQuery({
@@ -93,23 +95,31 @@ function Dashboard() {
     },
   });
 
+  // Build stats array based on user role - financials only for admins
   const primary = [
-    {
-      label: t("dashboard.revenueMonth"),
-      value: data ? formatMoney(data.revenueMonth, data.currency, locale) : "—",
-      icon: TrendingUp,
-    },
-    {
-      label: t("dashboard.totalExpenses"),
-      value: data ? formatMoney(data.totalExpenses, data.currency, locale) : "—",
-      icon: Wallet,
-    },
-    {
-      label: t("dashboard.netProfit"),
-      value: data ? formatMoney(data.netProfit, data.currency, locale) : "—",
-      icon: PiggyBank,
-      hint: t("dashboard.netProfitFormula"),
-    },
+    ...(canViewFinancials
+      ? [
+          {
+            label: t("dashboard.revenueMonth"),
+            value: data ? formatMoney(data.revenueMonth, data.currency, locale) : "—",
+            icon: TrendingUp,
+            financial: true,
+          },
+          {
+            label: t("dashboard.totalExpenses"),
+            value: data ? formatMoney(data.totalExpenses, data.currency, locale) : "—",
+            icon: Wallet,
+            financial: true,
+          },
+          {
+            label: t("dashboard.netProfit"),
+            value: data ? formatMoney(data.netProfit, data.currency, locale) : "—",
+            icon: PiggyBank,
+            hint: t("dashboard.netProfitFormula"),
+            financial: true,
+          },
+        ]
+      : []),
     {
       label: t("dashboard.ordersToday"),
       value: data ? String(data.ordersToday) : "—",
