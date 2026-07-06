@@ -1,32 +1,19 @@
 ## Goal
-Make the barcodes actually scannable by rendering them as CODE128 images (not just digits) with print options.
+Split every phone input into two fields — country code + local number — with Bahrain (+973) prefilled. Save concatenated E.164 (e.g. `+97312345678`) into the existing single `phone` column, so no DB changes are needed.
 
-## Changes
+## New component: `src/components/phone-input.tsx`
+- Props: `value: string | null`, `onChange: (fullE164: string) => void`, `placeholder?`, `className?`.
+- Renders a small shadcn `Select` for country code + an `Input` for the local number, side by side, RTL-aware.
+- Country codes (default +973 first): 🇧🇭 +973 Bahrain, 🇸🇦 +966 Saudi, 🇦🇪 +971 UAE, 🇰🇼 +965 Kuwait, 🇶🇦 +974 Qatar, 🇴🇲 +968 Oman.
+- Parses incoming `value`: matches longest known code prefix → sets code + local; falls back to `+973` when empty/unrecognized.
+- Emits `code + localDigits` (digits-only local part) on change, empty string when local is empty.
 
-**1. Install `jsbarcode`** for client-side CODE128 SVG rendering (works offline, no external calls).
-
-**2. New component `src/components/barcode-label.tsx`**
-- Renders a CODE128 barcode SVG from a code string using JsBarcode.
-- Props: `code`, plus optional `productName`, `size`, `color`, `price`, `businessName` for the label layout.
-- Two modes: `compact` (inline preview in tables) and `label` (full printable sticker with business name at top, product name + size/color, barcode, price at bottom).
-
-**3. Inventory UI (`src/routes/_authenticated/inventory.tsx`)**
-- Next to each variant's barcode digits, show the small CODE128 preview + a "Print" button that opens a print dialog for that single label.
-- Add a "Print all barcodes" button at the top of the inventory page that opens a bulk print sheet: a grid of labels (all variants that have a barcode), sized for standard sticker sheets, page-breaks handled via CSS `@media print`.
-- Business name pulled from existing `business_settings` query already used on the page.
-
-**4. Product detail modal**
-- The inventory page uses an edit dialog per product; inside that dialog, for each variant row, show a larger barcode rendering so it can be scanned directly from the screen during quick tests.
-
-**5. Print styling**
-- A dedicated `PrintableLabelsSheet` component rendered into a hidden container; on print click, use `window.print()` scoped via a body class + `@media print` rules to hide app chrome and show only the labels grid.
-- Each label: business name (small, top), product name (bold), size · color, CODE128 barcode (with human-readable digits below, built into JsBarcode), price (bottom right).
+## Files to edit
+1. `src/routes/_authenticated/customers.tsx` — replace the plain `<Input>` phone field in the customer dialog (line 218) with `<PhoneInput>`.
+2. `src/routes/_authenticated/settings.tsx` — replace business phone `<Input>` (line 138) with `<PhoneInput>`.
+3. `src/routes/_authenticated/orders.$id.tsx` — replace the manual-entry phone `<Input>` in the WhatsApp send dialog (line 1292) with `<PhoneInput>` (already used with country code, this just formalizes it). Leave the phone-search box alone — it's a filter, not a phone entry.
 
 ## Out of scope
-- No DB changes (barcode column already exists).
-- No changes to scanner logic on the order page.
-- No QR codes (CODE128 only, per your choice).
-
-## Technical notes
-- JsBarcode renders into an SVG ref via `useEffect`; safe for SSR because the component is only used inside authenticated client routes.
-- Bulk print uses CSS grid with `page-break-inside: avoid` on each label.
+- No DB migration (single `phone` column keeps working).
+- Existing saved numbers are shown as-is (component parses known Gulf prefixes; unknown ones default to +973 with the raw digits preserved as the local part).
+- No changes to the WhatsApp-link builders — they already accept the full number.
