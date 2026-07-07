@@ -64,7 +64,7 @@ function OrdersList() {
     }).select().single();
     if (error) return toast.error(error.message);
     await supabase.from("business_settings").update({ next_invoice_number: nextNum + 1 }).eq("user_id", user.id);
-    navigate({ to: "/orders/$id", params: { id: order.id } });
+    navigate({ to: "/b/$slug/orders/$id", params: { slug, id: order.id } });
   };
 
   const del = async (id: string) => {
@@ -107,7 +107,7 @@ function OrdersList() {
               {data!.map((o) => (
                 <tr key={o.id} className="border-t border-border hover:bg-secondary/30">
                   <td className="p-4">
-                    <Link to="/orders/$id" params={{ id: o.id }} className="text-primary font-medium">
+                    <Link to="/b/$slug/orders/$id" params={{ slug, id: o.id }} className="text-primary font-medium">
                       #{o.invoice_number}
                     </Link>
                   </td>
