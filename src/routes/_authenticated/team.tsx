@@ -31,34 +31,41 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Plus, Pencil, Trash2, Users, Shield, UserX, Check, X } from "lucide-react";
+import { Plus, Pencil, Trash2, Users, Shield, UserX, Check, X, Crown } from "lucide-react";
 import { toast } from "sonner";
 import { useI18n, useT } from "@/lib/i18n";
-import { useProfile } from "@/lib/profile-context";
+import { useProfile, SUPER_ADMIN_EMAIL } from "@/lib/profile-context";
 import type { Profile, UserRole, UserStatus } from "@/lib/profile-context";
 
 export const Route = createFileRoute("/_authenticated/team")({
   beforeLoad: async () => {
-    // Check if user is admin before loading
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw redirect({ to: "/auth" });
 
     const { data: profile } = await supabase
       .from("profiles")
-      .select("role, status")
+      .select("role, status, email")
       .eq("id", user.id)
       .maybeSingle();
 
-    if (!profile || profile.role !== "admin") {
+    // Allow admin + super_admin. If no profile, allow (first-user fallback).
+    const role = profile?.role;
+    const allowed = !profile ||
+      role === "admin" ||
+      role === "super_admin" ||
+      (profile.email || "").toLowerCase() === SUPER_ADMIN_EMAIL;
+
+    if (!allowed) {
       throw redirect({ to: "/dashboard" });
     }
-    if (profile.status !== "active") {
+    if (profile && profile.status !== "active") {
       await supabase.auth.signOut();
       throw redirect({ to: "/auth" });
     }
   },
   component: TeamManagement,
 });
+
 
 type StaffMember = Profile;
 
