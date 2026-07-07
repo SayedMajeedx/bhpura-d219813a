@@ -81,11 +81,12 @@ function OrderDetail() {
         .from("orders")
         .select("*, customers(*), order_items(*)")
         .eq("id", id)
-        .single();
+        .maybeSingle();
       if (error) throw error;
-      return data as Order;
+      return data as Order | null;
     },
   });
+
   const productsQ = useQuery({
     queryKey: ["products", brandId],
     queryFn: async () => (await supabase.from("products").select("*").eq("brand_id", brandId)).data ?? [],
