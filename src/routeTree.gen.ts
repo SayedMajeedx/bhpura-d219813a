@@ -28,6 +28,7 @@ import { Route as StoreSlugRouteRouteImport } from './routes/store.$slug.route'
 import { Route as StoreSlugIndexRouteImport } from './routes/store.$slug.index'
 import { Route as StoreSlugCheckoutRouteImport } from './routes/store.$slug.checkout'
 import { Route as AuthenticatedBSlugRouteRouteImport } from './routes/_authenticated/b.$slug.route'
+import { Route as StoreSlugThankYouOrderIdRouteImport } from './routes/store.$slug.thank-you.$orderId'
 import { Route as StoreSlugProductIdRouteImport } from './routes/store.$slug.product.$id'
 import { Route as AuthenticatedBSlugTeamRouteImport } from './routes/_authenticated/b.$slug.team'
 import { Route as AuthenticatedBSlugSettingsRouteImport } from './routes/_authenticated/b.$slug.settings'
@@ -133,6 +134,12 @@ const AuthenticatedBSlugRouteRoute = AuthenticatedBSlugRouteRouteImport.update({
   path: '/b/$slug',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const StoreSlugThankYouOrderIdRoute =
+  StoreSlugThankYouOrderIdRouteImport.update({
+    id: '/thank-you/$orderId',
+    path: '/thank-you/$orderId',
+    getParentRoute: () => StoreSlugRouteRoute,
+  } as any)
 const StoreSlugProductIdRoute = StoreSlugProductIdRouteImport.update({
   id: '/product/$id',
   path: '/product/$id',
@@ -219,6 +226,7 @@ export interface FileRoutesByFullPath {
   '/b/$slug/settings': typeof AuthenticatedBSlugSettingsRoute
   '/b/$slug/team': typeof AuthenticatedBSlugTeamRoute
   '/store/$slug/product/$id': typeof StoreSlugProductIdRoute
+  '/store/$slug/thank-you/$orderId': typeof StoreSlugThankYouOrderIdRoute
   '/b/$slug/orders/$id': typeof AuthenticatedBSlugOrdersIdRoute
   '/b/$slug/orders/': typeof AuthenticatedBSlugOrdersIndexRoute
 }
@@ -248,6 +256,7 @@ export interface FileRoutesByTo {
   '/b/$slug/settings': typeof AuthenticatedBSlugSettingsRoute
   '/b/$slug/team': typeof AuthenticatedBSlugTeamRoute
   '/store/$slug/product/$id': typeof StoreSlugProductIdRoute
+  '/store/$slug/thank-you/$orderId': typeof StoreSlugThankYouOrderIdRoute
   '/b/$slug/orders/$id': typeof AuthenticatedBSlugOrdersIdRoute
   '/b/$slug/orders': typeof AuthenticatedBSlugOrdersIndexRoute
 }
@@ -280,6 +289,7 @@ export interface FileRoutesById {
   '/_authenticated/b/$slug/settings': typeof AuthenticatedBSlugSettingsRoute
   '/_authenticated/b/$slug/team': typeof AuthenticatedBSlugTeamRoute
   '/store/$slug/product/$id': typeof StoreSlugProductIdRoute
+  '/store/$slug/thank-you/$orderId': typeof StoreSlugThankYouOrderIdRoute
   '/_authenticated/b/$slug/orders/$id': typeof AuthenticatedBSlugOrdersIdRoute
   '/_authenticated/b/$slug/orders/': typeof AuthenticatedBSlugOrdersIndexRoute
 }
@@ -312,6 +322,7 @@ export interface FileRouteTypes {
     | '/b/$slug/settings'
     | '/b/$slug/team'
     | '/store/$slug/product/$id'
+    | '/store/$slug/thank-you/$orderId'
     | '/b/$slug/orders/$id'
     | '/b/$slug/orders/'
   fileRoutesByTo: FileRoutesByTo
@@ -341,6 +352,7 @@ export interface FileRouteTypes {
     | '/b/$slug/settings'
     | '/b/$slug/team'
     | '/store/$slug/product/$id'
+    | '/store/$slug/thank-you/$orderId'
     | '/b/$slug/orders/$id'
     | '/b/$slug/orders'
   id:
@@ -372,6 +384,7 @@ export interface FileRouteTypes {
     | '/_authenticated/b/$slug/settings'
     | '/_authenticated/b/$slug/team'
     | '/store/$slug/product/$id'
+    | '/store/$slug/thank-you/$orderId'
     | '/_authenticated/b/$slug/orders/$id'
     | '/_authenticated/b/$slug/orders/'
   fileRoutesById: FileRoutesById
@@ -521,6 +534,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedBSlugRouteRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/store/$slug/thank-you/$orderId': {
+      id: '/store/$slug/thank-you/$orderId'
+      path: '/thank-you/$orderId'
+      fullPath: '/store/$slug/thank-you/$orderId'
+      preLoaderRoute: typeof StoreSlugThankYouOrderIdRouteImport
+      parentRoute: typeof StoreSlugRouteRoute
+    }
     '/store/$slug/product/$id': {
       id: '/store/$slug/product/$id'
       path: '/product/$id'
@@ -657,12 +677,14 @@ interface StoreSlugRouteRouteChildren {
   StoreSlugCheckoutRoute: typeof StoreSlugCheckoutRoute
   StoreSlugIndexRoute: typeof StoreSlugIndexRoute
   StoreSlugProductIdRoute: typeof StoreSlugProductIdRoute
+  StoreSlugThankYouOrderIdRoute: typeof StoreSlugThankYouOrderIdRoute
 }
 
 const StoreSlugRouteRouteChildren: StoreSlugRouteRouteChildren = {
   StoreSlugCheckoutRoute: StoreSlugCheckoutRoute,
   StoreSlugIndexRoute: StoreSlugIndexRoute,
   StoreSlugProductIdRoute: StoreSlugProductIdRoute,
+  StoreSlugThankYouOrderIdRoute: StoreSlugThankYouOrderIdRoute,
 }
 
 const StoreSlugRouteRouteWithChildren = StoreSlugRouteRoute._addFileChildren(
