@@ -308,12 +308,19 @@ function TeamManagement() {
                     <td className="p-4">
                       <span
                         className={`inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full ${
-                          member.role === "admin"
+                          member.role === "super_admin"
+                            ? "bg-amber-500/15 text-amber-700 dark:text-amber-400"
+                            : member.role === "admin"
                             ? "bg-primary/10 text-primary"
                             : "bg-secondary text-secondary-foreground"
                         }`}
                       >
-                        {member.role === "admin" ? (
+                        {member.role === "super_admin" ? (
+                          <>
+                            <Crown className="h-3 w-3" />
+                            {isAr ? "مدير عام" : "Super Admin"}
+                          </>
+                        ) : member.role === "admin" ? (
                           <>
                             <Shield className="h-3 w-3" />
                             {isAr ? "مدير" : "Admin"}
@@ -326,6 +333,7 @@ function TeamManagement() {
                         )}
                       </span>
                     </td>
+
                     <td className="p-4">
                       <span
                         className={`inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full ${
