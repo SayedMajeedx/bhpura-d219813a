@@ -66,12 +66,21 @@ function ExpensesPage() {
   const q = useQuery({
     queryKey: ["expenses"],
     queryFn: async () => {
-      const { data, error } = await (supabase.from("expenses") as any)
-        .select("*")
-        .order("expense_date", { ascending: false });
-      if (error) throw error;
-      return (data ?? []) as Expense[];
+      try {
+        const { data, error } = await (supabase.from("expenses") as any)
+          .select("*")
+          .order("expense_date", { ascending: false });
+        if (error) {
+          console.error("[expenses] fetch error:", error);
+          return [] as Expense[];
+        }
+        return (data ?? []) as Expense[];
+      } catch (err) {
+        console.error("[expenses] unexpected fetch error:", err);
+        return [] as Expense[];
+      }
     },
+    retry: false,
   });
 
   const [editing, setEditing] = useState<Expense | null>(null);
