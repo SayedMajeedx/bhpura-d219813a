@@ -8,6 +8,7 @@ import { formatMoney } from "@/lib/format";
 import { toast } from "sonner";
 import { useT } from "@/lib/i18n";
 import { resolvePaymentStatus, PAYMENT_BADGE_CLASSES } from "@/lib/payment-status";
+import { useBrand } from "@/lib/brand-context";
 
 export const Route = createFileRoute("/_authenticated/b/$slug/orders/")({
   component: OrdersList,
@@ -40,14 +41,17 @@ function OrdersList() {
   const qc = useQueryClient();
   const navigate = useNavigate();
   const { slug } = Route.useParams();
+  const brand = useBrand();
+  const brandId = brand.id;
 
 
   const { data } = useQuery({
-    queryKey: ["orders"],
+    queryKey: ["orders", brandId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("orders")
         .select("*, customers(name)")
+        .eq("brand_id", brandId)
         .order("created_at", { ascending: false });
       if (error) throw error;
       return data as any[];
