@@ -25,6 +25,7 @@ import { Route as AuthenticatedCustomersRouteImport } from './routes/_authentica
 import { Route as AuthenticatedCampaignsRouteImport } from './routes/_authenticated/campaigns'
 import { Route as AuthenticatedBrandsRouteImport } from './routes/_authenticated/brands'
 import { Route as StoreSlugRouteRouteImport } from './routes/store.$slug.route'
+import { Route as StoreSlugIndexRouteImport } from './routes/store.$slug.index'
 import { Route as AuthenticatedBSlugRouteRouteImport } from './routes/_authenticated/b.$slug.route'
 import { Route as AuthenticatedBSlugTeamRouteImport } from './routes/_authenticated/b.$slug.team'
 import { Route as AuthenticatedBSlugSettingsRouteImport } from './routes/_authenticated/b.$slug.settings'
@@ -115,6 +116,11 @@ const StoreSlugRouteRoute = StoreSlugRouteRouteImport.update({
   path: '/store/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
+const StoreSlugIndexRoute = StoreSlugIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => StoreSlugRouteRoute,
+} as any)
 const AuthenticatedBSlugRouteRoute = AuthenticatedBSlugRouteRouteImport.update({
   id: '/b/$slug',
   path: '/b/$slug',
@@ -179,7 +185,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/reset-password': typeof ResetPasswordRoute
-  '/store/$slug': typeof StoreSlugRouteRoute
+  '/store/$slug': typeof StoreSlugRouteRouteWithChildren
   '/brands': typeof AuthenticatedBrandsRoute
   '/campaigns': typeof AuthenticatedCampaignsRoute
   '/customers': typeof AuthenticatedCustomersRoute
@@ -191,6 +197,7 @@ export interface FileRoutesByFullPath {
   '/team': typeof AuthenticatedTeamRoute
   '/invoice/$id': typeof InvoiceIdRoute
   '/b/$slug': typeof AuthenticatedBSlugRouteRouteWithChildren
+  '/store/$slug/': typeof StoreSlugIndexRoute
   '/b/$slug/campaigns': typeof AuthenticatedBSlugCampaignsRoute
   '/b/$slug/customers': typeof AuthenticatedBSlugCustomersRoute
   '/b/$slug/dashboard': typeof AuthenticatedBSlugDashboardRoute
@@ -206,7 +213,6 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/reset-password': typeof ResetPasswordRoute
-  '/store/$slug': typeof StoreSlugRouteRoute
   '/brands': typeof AuthenticatedBrandsRoute
   '/campaigns': typeof AuthenticatedCampaignsRoute
   '/customers': typeof AuthenticatedCustomersRoute
@@ -218,6 +224,7 @@ export interface FileRoutesByTo {
   '/team': typeof AuthenticatedTeamRoute
   '/invoice/$id': typeof InvoiceIdRoute
   '/b/$slug': typeof AuthenticatedBSlugRouteRouteWithChildren
+  '/store/$slug': typeof StoreSlugIndexRoute
   '/b/$slug/campaigns': typeof AuthenticatedBSlugCampaignsRoute
   '/b/$slug/customers': typeof AuthenticatedBSlugCustomersRoute
   '/b/$slug/dashboard': typeof AuthenticatedBSlugDashboardRoute
@@ -235,7 +242,7 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/reset-password': typeof ResetPasswordRoute
-  '/store/$slug': typeof StoreSlugRouteRoute
+  '/store/$slug': typeof StoreSlugRouteRouteWithChildren
   '/_authenticated/brands': typeof AuthenticatedBrandsRoute
   '/_authenticated/campaigns': typeof AuthenticatedCampaignsRoute
   '/_authenticated/customers': typeof AuthenticatedCustomersRoute
@@ -247,6 +254,7 @@ export interface FileRoutesById {
   '/_authenticated/team': typeof AuthenticatedTeamRoute
   '/invoice/$id': typeof InvoiceIdRoute
   '/_authenticated/b/$slug': typeof AuthenticatedBSlugRouteRouteWithChildren
+  '/store/$slug/': typeof StoreSlugIndexRoute
   '/_authenticated/b/$slug/campaigns': typeof AuthenticatedBSlugCampaignsRoute
   '/_authenticated/b/$slug/customers': typeof AuthenticatedBSlugCustomersRoute
   '/_authenticated/b/$slug/dashboard': typeof AuthenticatedBSlugDashboardRoute
@@ -276,6 +284,7 @@ export interface FileRouteTypes {
     | '/team'
     | '/invoice/$id'
     | '/b/$slug'
+    | '/store/$slug/'
     | '/b/$slug/campaigns'
     | '/b/$slug/customers'
     | '/b/$slug/dashboard'
@@ -291,7 +300,6 @@ export interface FileRouteTypes {
     | '/auth'
     | '/forgot-password'
     | '/reset-password'
-    | '/store/$slug'
     | '/brands'
     | '/campaigns'
     | '/customers'
@@ -303,6 +311,7 @@ export interface FileRouteTypes {
     | '/team'
     | '/invoice/$id'
     | '/b/$slug'
+    | '/store/$slug'
     | '/b/$slug/campaigns'
     | '/b/$slug/customers'
     | '/b/$slug/dashboard'
@@ -331,6 +340,7 @@ export interface FileRouteTypes {
     | '/_authenticated/team'
     | '/invoice/$id'
     | '/_authenticated/b/$slug'
+    | '/store/$slug/'
     | '/_authenticated/b/$slug/campaigns'
     | '/_authenticated/b/$slug/customers'
     | '/_authenticated/b/$slug/dashboard'
@@ -348,7 +358,7 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   ForgotPasswordRoute: typeof ForgotPasswordRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
-  StoreSlugRouteRoute: typeof StoreSlugRouteRoute
+  StoreSlugRouteRoute: typeof StoreSlugRouteRouteWithChildren
   InvoiceIdRoute: typeof InvoiceIdRoute
 }
 
@@ -465,6 +475,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/store/$slug'
       preLoaderRoute: typeof StoreSlugRouteRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/store/$slug/': {
+      id: '/store/$slug/'
+      path: '/'
+      fullPath: '/store/$slug/'
+      preLoaderRoute: typeof StoreSlugIndexRouteImport
+      parentRoute: typeof StoreSlugRouteRoute
     }
     '/_authenticated/b/$slug': {
       id: '/_authenticated/b/$slug'
@@ -598,13 +615,25 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
 const AuthenticatedRouteRouteWithChildren =
   AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
 
+interface StoreSlugRouteRouteChildren {
+  StoreSlugIndexRoute: typeof StoreSlugIndexRoute
+}
+
+const StoreSlugRouteRouteChildren: StoreSlugRouteRouteChildren = {
+  StoreSlugIndexRoute: StoreSlugIndexRoute,
+}
+
+const StoreSlugRouteRouteWithChildren = StoreSlugRouteRoute._addFileChildren(
+  StoreSlugRouteRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
   ForgotPasswordRoute: ForgotPasswordRoute,
   ResetPasswordRoute: ResetPasswordRoute,
-  StoreSlugRouteRoute: StoreSlugRouteRoute,
+  StoreSlugRouteRoute: StoreSlugRouteRouteWithChildren,
   InvoiceIdRoute: InvoiceIdRoute,
 }
 export const routeTree = rootRouteImport

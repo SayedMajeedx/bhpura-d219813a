@@ -5,7 +5,7 @@ import { useStorefront, formatPrice } from "@/lib/storefront-context";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useMemo, useState, useEffect, useRef } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+
 
 export const Route = createFileRoute("/store/$slug/")({
   component: StoreHome,
