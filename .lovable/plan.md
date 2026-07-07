@@ -1,92 +1,101 @@
-# Multi-Brand (Multi-Tenant) Infrastructure
+# Public Storefront + Payments + Realtime + Localization
 
-## 1. Database migration
+## 1. Database migration (schema + policies)
 
-**New table `public.brands`**
-- `id uuid pk`, `slug text unique not null` (lowercase, url-safe, validated),
-  `name_en text not null`, `name_ar text`, `logo_url text`,
-  `is_active boolean default true`, `created_by uuid` (super admin),
-  timestamps.
-- GRANTs: `authenticated` SELECT (RLS narrows), `service_role` ALL.
-- RLS: super admin full CRUD; everyone else SELECT rows they belong to
-  (`brand_id = current_brand_id()` or `super_admin`).
+**New columns**
+- `products`: `is_active bool default true`, `media jsonb default '[]'` (array of `{type:'image'|'video', url}`)
+- `product_variants`: no schema change (stock already there)
+- `brands`: hero media (`hero_media jsonb default '[]'`, `hero_video_url text`, `primary_color text`, `about_ar text`, `about_en text`)
+- `business_settings`: `cod_enabled bool default true`, `card_enabled bool default false`, `benefit_enabled bool default false`, `benefit_qr_url text`
+- `orders`: `channel text default 'admin'` (values: `admin`, `storefront`), allow `user_id` nullable OR set to brand owner for storefront orders — simpler: keep `user_id NOT NULL` and set it to the brand's `created_by` on storefront insert
+- `customers`: same — set `user_id` = brand owner for guest customers created via storefront
 
-**Role enum + role change**
-- Extend `role` check constraint on `profiles` to include `brand_admin`.
-- Update `is_admin()` to include `brand_admin` (per-brand admin still is an
-  "admin" inside their brand).
-- Add `is_brand_admin()` and `current_brand_id()` security-definer helpers.
-- Add `can_access_brand(bid uuid)` = `is_super_admin() OR bid = current_brand_id()`.
+**Public read policies (anon)**
+- `brands`: add `SELECT TO anon USING (is_active)` — safe public columns already
+- `products`: `SELECT TO anon USING (is_active AND EXISTS(brand active))`
+- `product_variants`: `SELECT TO anon USING (EXISTS(product active))`
+- `business_settings`: create a public view `public.brand_public_settings` (security_invoker) exposing only logo, colors, currency, name, benefit_qr_url, payment toggles; grant SELECT to anon
+- `customers`, `orders`, `order_items`: no anon SELECT. Instead expose a SECURITY DEFINER RPC `place_storefront_order(p_brand_id, p_customer jsonb, p_items jsonb, p_payment_method text, p_notes text)` that:
+  1. Validates brand active + payment method enabled
+  2. Inserts/updates customer (dedupe by phone within brand)
+  3. Inserts order with `channel='storefront'`, `status='pending'`, `user_id = brand owner`
+  4. Inserts order_items
+  5. Calls stock deduction inline (bypass existing `sync_order_stock` which checks `auth.uid()`) — write a new helper `deduct_storefront_stock(p_order_id)` that runs as definer
+  6. Returns `{order_id, invoice_number}`
+- Grant EXECUTE on RPC to anon
 
-**Default brand + backfill**
-- Insert `('pura', 'Pura', 'بورا')`.
-- Backfill `brand_id = <pura.id>` on every existing row in:
-  `profiles, products, product_variants, orders, order_items, customers,
-   customer_addresses, expenses, activity_logs, message_templates,
-   business_settings, customization_options`.
-- After backfill, set `brand_id NOT NULL` on those tables (kept nullable on
-  `profiles` because super admin has no brand).
+**Realtime**
+- `ALTER PUBLICATION supabase_realtime ADD TABLE products, product_variants, orders, customers;`
 
-**Brand-scoped RLS**
-- Rewrite existing policies on the 10 tenant tables to require
-  `can_access_brand(brand_id)`.
-- Writes: default `brand_id = current_brand_id()` via triggers so callers
-  don't have to remember to set it.
-- Super admin sees/edits everything.
+**Storage**
+- Reuse `invoice-assets` bucket; add public read policy for `brand-media/*` prefix, or create new public bucket `brand-media` for hero videos/product videos/benefit QR
 
-## 2. Server side
+## 2. Storefront routes (`/store/$slug/*`)
 
-**Edge fn `user-management`**
-- Accept optional `brand_id` on create/update.
-- Accept `brand_admin` role only when caller is super admin (brand admins
-  can only create `staff` inside their own brand).
-- Force `brand_id` to equal caller's brand for non-super-admin callers.
+Files created:
+- `src/routes/store.$slug.route.tsx` — layout: loads brand + public settings, provides context (brand, settings, cart, lang), renders header/footer + `<Outlet />`
+- `src/routes/store.$slug.index.tsx` — hero banner (image or autoplay muted looping video), featured products grid, categories
+- `src/routes/store.$slug.products.tsx` — full catalog with filters (category, price, in-stock)
+- `src/routes/store.$slug.product.$id.tsx` — product detail: media carousel (images + `<video controls>` clips), variant selector, add-to-cart
+- `src/routes/store.$slug.checkout.tsx` — cart review, customer info form, address, payment method radio (only enabled shown), benefit QR panel when selected, place order → calls RPC
+- `src/routes/store.$slug.thank-you.$orderId.tsx` — order confirmation
 
-**New edge fn `brand-management`** (super-admin only)
-- `create` (name_en, name_ar, slug, logo_url) + assign initial brand admin.
-- `list`, `update`, `deactivate`.
+Existing `src/routes/store.$slug.tsx` becomes the route layout (renamed to `.route.tsx`).
 
-## 3. Client
+**Client features**
+- `useStorefront()` context: brand, settings, cart (localStorage-persisted per brand slug), lang (ar/en with localStorage), currency
+- Header: brand logo + name (lang-based), language toggle (العربية/English) that sets `document.documentElement.dir` and `lang`, cart icon with count
+- All copy via inline `t()` helper in a small `src/lib/storefront-i18n.ts` (masculine Arabic)
+- Brand primary color applied via CSS variable at layout root
+- Framer-motion smooth transitions; skeleton loading states
+- Mobile-first: sticky bottom "Add to cart" on product page, drawer cart
 
-**`profile-context`**
-- Add `brand` (joined row) and `isBrandAdmin` derived flag.
+**Realtime**
+- In the layout, subscribe to `products`, `product_variants` for this `brand_id` → `queryClient.invalidateQueries(['storefront', slug, ...])`
+- Clean teardown in `useEffect`
 
-**Routing (TanStack file routes)**
-Move every workspace page under a new brand layout:
-- New: `_authenticated.b.$slug.route.tsx` — layout that loads the brand by
-  slug, checks the caller can access it (super admin OR brand matches),
-  provides a `BrandContext`, renders `<Outlet />`.
-- Move: `dashboard`, `inventory`, `customers`, `campaigns`, `orders.index`,
-  `orders.$id`, `expenses`, `settings`, `team` files into
-  `_authenticated/b/$slug/…`.
-- Keep bare `/dashboard` as a smart redirector: super admin → `/brands`,
-  brand admin/staff → `/b/{their-slug}/dashboard`.
-- New: `_authenticated.brands.tsx` — super-admin-only brand list/create UI.
-- Reserve: `store.$slug.tsx` — public placeholder route that fetches the
-  brand by slug and renders a "coming soon" shell (RLS allows anon SELECT
-  on the specific brand row via a narrow policy).
+## 3. Brand Admin: Payment Settings
 
-**AppShell**
-- Nav links now use `to="/b/$slug/dashboard"` etc., built from current
-  brand context.
-- Add brand switcher (super admin only) at top of sidebar.
-- Language switcher, i18n, and existing behaviour untouched.
+Add a new "إعدادات الدفع / Payment Settings" card in `src/routes/_authenticated/b.$slug.settings.tsx`:
+- Three switches: COD, Card, Benefit Pay
+- Benefit QR image upload (uses existing `uploadToBucket` helper, public URL)
+- Preview of QR
 
-**User-management page (team)**
-- When super admin: brand column + brand assignment dropdown; `brand_admin`
-  role option.
-- When brand admin: staff-only role selector, brand implicit.
+Add hero media & product media upload UI:
+- Brand settings: hero image/video upload → `brands.hero_media`
+- Inventory product form (`b.$slug.inventory.tsx`): add multi-media uploader writing to `products.media` (images + optional short mp4 clips). Toggle `is_active`.
 
-## 4. Storefront readiness (no UI yet)
-- `store.$slug.tsx` renders a minimal "Storefront coming soon" so the
-  slug-based public URL is reserved and the brand lookup path is exercised.
-- All product/variant/settings tables now carry `brand_id NOT NULL`, ready
-  for a future public read via a narrow `TO anon` policy on
-  `products/product_variants` filtered by `brand_id + is_active`.
+## 4. Real-time in admin dashboards
 
-## 5. Risk / rollout
-- Migration is destructive of current policies — I'll drop/recreate in one
-  transaction with backfill first, then set NOT NULL last.
-- Type regeneration happens after the migration; client edits follow.
-- Every existing feature stays functional because super admin sees all
-  brands and existing data belongs to `pura`.
+Add realtime subscriptions in:
+- `b.$slug.orders.index.tsx` → invalidate on new orders (already listing brand orders)
+- `b.$slug.customers.tsx` → invalidate on new customers
+- `b.$slug.inventory.tsx` → invalidate on variant stock changes
+
+## 5. Global Arabic copy pass — feminine → masculine/neutral
+
+Sweep `src/lib/i18n.tsx` and any inline `ar:` strings across the app. Examples:
+- "أضيفي" → "أضف"
+- "سجّلي" → "سجّل"
+- "مشترياتكِ" → "مشترياتك"
+- "أهلاً بكِ" → "أهلاً بك"
+- "قومي بـ" → "قم بـ"
+- All verb endings, pronoun suffixes normalized.
+
+Do this in a single file diff on `src/lib/i18n.tsx` and grep the routes for remaining feminine forms.
+
+## 6. Technical notes
+
+- Storefront queries use browser `supabase` client (anon key) — RLS + anon policies enforce safety
+- Order placement uses `supabase.rpc('place_storefront_order', {...})` (no auth required)
+- Videos: `<video autoPlay muted loop playsInline>` for hero; `<video controls playsInline>` in product gallery
+- Media gallery component: shared between hero and product page, keyboard/swipe navigation
+- Cart persists in `localStorage` keyed by `cart:${brandSlug}`
+- Empty/loading/error states everywhere; toast on order success then redirect
+
+## Out of scope (confirm if needed)
+- Real card payment processor integration (Stripe/Tap/etc.) — "Card Payment" will collect intent and mark order pending manual processing unless you want a specific gateway
+- Customer login/accounts on storefront (guest checkout only)
+- Search / discount codes
+
+Approve to build.

@@ -87,35 +87,47 @@ export type Database = {
       }
       brands: {
         Row: {
+          about_ar: string | null
+          about_en: string | null
           created_at: string
           created_by: string | null
+          hero_media: Json
           id: string
           is_active: boolean
           logo_url: string | null
           name_ar: string | null
           name_en: string
+          primary_color: string | null
           slug: string
           updated_at: string
         }
         Insert: {
+          about_ar?: string | null
+          about_en?: string | null
           created_at?: string
           created_by?: string | null
+          hero_media?: Json
           id?: string
           is_active?: boolean
           logo_url?: string | null
           name_ar?: string | null
           name_en: string
+          primary_color?: string | null
           slug: string
           updated_at?: string
         }
         Update: {
+          about_ar?: string | null
+          about_en?: string | null
           created_at?: string
           created_by?: string | null
+          hero_media?: Json
           id?: string
           is_active?: boolean
           logo_url?: string | null
           name_ar?: string | null
           name_en?: string
+          primary_color?: string | null
           slug?: string
           updated_at?: string
         }
@@ -125,8 +137,12 @@ export type Database = {
         Row: {
           address: string | null
           background_color: string
+          benefit_enabled: boolean
+          benefit_qr_url: string | null
           brand_id: string
           business_name: string
+          card_enabled: boolean
+          cod_enabled: boolean
           created_at: string
           currency: string
           default_tax_rate: number
@@ -152,8 +168,12 @@ export type Database = {
         Insert: {
           address?: string | null
           background_color?: string
+          benefit_enabled?: boolean
+          benefit_qr_url?: string | null
           brand_id: string
           business_name?: string
+          card_enabled?: boolean
+          cod_enabled?: boolean
           created_at?: string
           currency?: string
           default_tax_rate?: number
@@ -179,8 +199,12 @@ export type Database = {
         Update: {
           address?: string | null
           background_color?: string
+          benefit_enabled?: boolean
+          benefit_qr_url?: string | null
           brand_id?: string
           business_name?: string
+          card_enabled?: boolean
+          cod_enabled?: boolean
           created_at?: string
           currency?: string
           default_tax_rate?: number
@@ -551,6 +575,7 @@ export type Database = {
         Row: {
           advance_paid: number
           brand_id: string
+          channel: string
           created_at: string
           currency: string
           customer_id: string | null
@@ -576,6 +601,7 @@ export type Database = {
         Insert: {
           advance_paid?: number
           brand_id: string
+          channel?: string
           created_at?: string
           currency?: string
           customer_id?: string | null
@@ -601,6 +627,7 @@ export type Database = {
         Update: {
           advance_paid?: number
           brand_id?: string
+          channel?: string
           created_at?: string
           currency?: string
           customer_id?: string | null
@@ -721,34 +748,43 @@ export type Database = {
       }
       products: {
         Row: {
+          base_price: number | null
           brand_id: string
           category: string | null
           created_at: string
           description: string | null
           id: string
           image_url: string | null
+          is_active: boolean
+          media: Json
           name: string
           updated_at: string
           user_id: string
         }
         Insert: {
+          base_price?: number | null
           brand_id: string
           category?: string | null
           created_at?: string
           description?: string | null
           id?: string
           image_url?: string | null
+          is_active?: boolean
+          media?: Json
           name: string
           updated_at?: string
           user_id: string
         }
         Update: {
+          base_price?: number | null
           brand_id?: string
           category?: string | null
           created_at?: string
           description?: string | null
           id?: string
           image_url?: string | null
+          is_active?: boolean
+          media?: Json
           name?: string
           updated_at?: string
           user_id?: string
@@ -806,7 +842,33 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      brand_public_settings: {
+        Row: {
+          background_color: string | null
+          benefit_enabled: boolean | null
+          benefit_qr_url: string | null
+          brand_id: string | null
+          business_name: string | null
+          card_enabled: boolean | null
+          cod_enabled: boolean | null
+          currency: string | null
+          font_family: string | null
+          font_url: string | null
+          footer_note: string | null
+          logo_url: string | null
+          primary_color: string | null
+          text_color: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "business_settings_brand_id_fkey"
+            columns: ["brand_id"]
+            isOneToOne: false
+            referencedRelation: "brands"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       can_access_brand: { Args: { _brand_id: string }; Returns: boolean }
@@ -815,6 +877,16 @@ export type Database = {
       is_admin: { Args: never; Returns: boolean }
       is_brand_admin: { Args: never; Returns: boolean }
       is_super_admin: { Args: never; Returns: boolean }
+      place_storefront_order: {
+        Args: {
+          p_brand_slug: string
+          p_customer: Json
+          p_items: Json
+          p_notes?: string
+          p_payment_method: string
+        }
+        Returns: Json
+      }
       sync_order_stock: { Args: { p_order_id: string }; Returns: undefined }
     }
     Enums: {
