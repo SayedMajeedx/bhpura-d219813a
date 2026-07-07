@@ -27,6 +27,7 @@ import { Route as AuthenticatedBrandsRouteImport } from './routes/_authenticated
 import { Route as StoreSlugRouteRouteImport } from './routes/store.$slug.route'
 import { Route as StoreSlugIndexRouteImport } from './routes/store.$slug.index'
 import { Route as AuthenticatedBSlugRouteRouteImport } from './routes/_authenticated/b.$slug.route'
+import { Route as StoreSlugProductIdRouteImport } from './routes/store.$slug.product.$id'
 import { Route as AuthenticatedBSlugTeamRouteImport } from './routes/_authenticated/b.$slug.team'
 import { Route as AuthenticatedBSlugSettingsRouteImport } from './routes/_authenticated/b.$slug.settings'
 import { Route as AuthenticatedBSlugInventoryRouteImport } from './routes/_authenticated/b.$slug.inventory'
@@ -126,6 +127,11 @@ const AuthenticatedBSlugRouteRoute = AuthenticatedBSlugRouteRouteImport.update({
   path: '/b/$slug',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const StoreSlugProductIdRoute = StoreSlugProductIdRouteImport.update({
+  id: '/product/$id',
+  path: '/product/$id',
+  getParentRoute: () => StoreSlugRouteRoute,
+} as any)
 const AuthenticatedBSlugTeamRoute = AuthenticatedBSlugTeamRouteImport.update({
   id: '/team',
   path: '/team',
@@ -205,6 +211,7 @@ export interface FileRoutesByFullPath {
   '/b/$slug/inventory': typeof AuthenticatedBSlugInventoryRoute
   '/b/$slug/settings': typeof AuthenticatedBSlugSettingsRoute
   '/b/$slug/team': typeof AuthenticatedBSlugTeamRoute
+  '/store/$slug/product/$id': typeof StoreSlugProductIdRoute
   '/b/$slug/orders/$id': typeof AuthenticatedBSlugOrdersIdRoute
   '/b/$slug/orders/': typeof AuthenticatedBSlugOrdersIndexRoute
 }
@@ -232,6 +239,7 @@ export interface FileRoutesByTo {
   '/b/$slug/inventory': typeof AuthenticatedBSlugInventoryRoute
   '/b/$slug/settings': typeof AuthenticatedBSlugSettingsRoute
   '/b/$slug/team': typeof AuthenticatedBSlugTeamRoute
+  '/store/$slug/product/$id': typeof StoreSlugProductIdRoute
   '/b/$slug/orders/$id': typeof AuthenticatedBSlugOrdersIdRoute
   '/b/$slug/orders': typeof AuthenticatedBSlugOrdersIndexRoute
 }
@@ -262,6 +270,7 @@ export interface FileRoutesById {
   '/_authenticated/b/$slug/inventory': typeof AuthenticatedBSlugInventoryRoute
   '/_authenticated/b/$slug/settings': typeof AuthenticatedBSlugSettingsRoute
   '/_authenticated/b/$slug/team': typeof AuthenticatedBSlugTeamRoute
+  '/store/$slug/product/$id': typeof StoreSlugProductIdRoute
   '/_authenticated/b/$slug/orders/$id': typeof AuthenticatedBSlugOrdersIdRoute
   '/_authenticated/b/$slug/orders/': typeof AuthenticatedBSlugOrdersIndexRoute
 }
@@ -292,6 +301,7 @@ export interface FileRouteTypes {
     | '/b/$slug/inventory'
     | '/b/$slug/settings'
     | '/b/$slug/team'
+    | '/store/$slug/product/$id'
     | '/b/$slug/orders/$id'
     | '/b/$slug/orders/'
   fileRoutesByTo: FileRoutesByTo
@@ -319,6 +329,7 @@ export interface FileRouteTypes {
     | '/b/$slug/inventory'
     | '/b/$slug/settings'
     | '/b/$slug/team'
+    | '/store/$slug/product/$id'
     | '/b/$slug/orders/$id'
     | '/b/$slug/orders'
   id:
@@ -348,6 +359,7 @@ export interface FileRouteTypes {
     | '/_authenticated/b/$slug/inventory'
     | '/_authenticated/b/$slug/settings'
     | '/_authenticated/b/$slug/team'
+    | '/store/$slug/product/$id'
     | '/_authenticated/b/$slug/orders/$id'
     | '/_authenticated/b/$slug/orders/'
   fileRoutesById: FileRoutesById
@@ -490,6 +502,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedBSlugRouteRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/store/$slug/product/$id': {
+      id: '/store/$slug/product/$id'
+      path: '/product/$id'
+      fullPath: '/store/$slug/product/$id'
+      preLoaderRoute: typeof StoreSlugProductIdRouteImport
+      parentRoute: typeof StoreSlugRouteRoute
+    }
     '/_authenticated/b/$slug/team': {
       id: '/_authenticated/b/$slug/team'
       path: '/team'
@@ -617,10 +636,12 @@ const AuthenticatedRouteRouteWithChildren =
 
 interface StoreSlugRouteRouteChildren {
   StoreSlugIndexRoute: typeof StoreSlugIndexRoute
+  StoreSlugProductIdRoute: typeof StoreSlugProductIdRoute
 }
 
 const StoreSlugRouteRouteChildren: StoreSlugRouteRouteChildren = {
   StoreSlugIndexRoute: StoreSlugIndexRoute,
+  StoreSlugProductIdRoute: StoreSlugProductIdRoute,
 }
 
 const StoreSlugRouteRouteWithChildren = StoreSlugRouteRoute._addFileChildren(
