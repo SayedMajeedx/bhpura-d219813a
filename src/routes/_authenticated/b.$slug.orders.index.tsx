@@ -39,6 +39,8 @@ function OrdersList() {
   const t = useT();
   const qc = useQueryClient();
   const navigate = useNavigate();
+  const { slug } = Route.useParams();
+
 
   const { data } = useQuery({
     queryKey: ["orders"],
