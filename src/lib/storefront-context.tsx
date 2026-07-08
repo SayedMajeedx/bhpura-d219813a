@@ -45,6 +45,8 @@ export type PublicSettings = {
   btn_primary_fg: string | null;
   btn_secondary_bg: string | null;
   btn_secondary_fg: string | null;
+  btn_checkout_bg: string | null;
+  btn_checkout_fg: string | null;
 };
 
 export type CartItem = {
