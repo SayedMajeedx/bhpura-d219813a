@@ -140,6 +140,10 @@ export type Database = {
           benefit_enabled: boolean
           benefit_qr_url: string | null
           brand_id: string
+          btn_primary_bg: string | null
+          btn_primary_fg: string | null
+          btn_secondary_bg: string | null
+          btn_secondary_fg: string | null
           business_name: string
           card_enabled: boolean
           cod_enabled: boolean
@@ -152,7 +156,14 @@ export type Database = {
           font_family: string
           font_size: number
           font_url: string | null
+          footer_bg: string | null
+          footer_fg: string | null
           footer_note: string | null
+          header_bg: string | null
+          header_fg: string | null
+          heading_color: string | null
+          link_color: string | null
+          logo_align: string
           logo_height: number
           logo_size: number
           logo_url: string | null
@@ -174,6 +185,10 @@ export type Database = {
           benefit_enabled?: boolean
           benefit_qr_url?: string | null
           brand_id: string
+          btn_primary_bg?: string | null
+          btn_primary_fg?: string | null
+          btn_secondary_bg?: string | null
+          btn_secondary_fg?: string | null
           business_name?: string
           card_enabled?: boolean
           cod_enabled?: boolean
@@ -186,7 +201,14 @@ export type Database = {
           font_family?: string
           font_size?: number
           font_url?: string | null
+          footer_bg?: string | null
+          footer_fg?: string | null
           footer_note?: string | null
+          header_bg?: string | null
+          header_fg?: string | null
+          heading_color?: string | null
+          link_color?: string | null
+          logo_align?: string
           logo_height?: number
           logo_size?: number
           logo_url?: string | null
@@ -208,6 +230,10 @@ export type Database = {
           benefit_enabled?: boolean
           benefit_qr_url?: string | null
           brand_id?: string
+          btn_primary_bg?: string | null
+          btn_primary_fg?: string | null
+          btn_secondary_bg?: string | null
+          btn_secondary_fg?: string | null
           business_name?: string
           card_enabled?: boolean
           cod_enabled?: boolean
@@ -220,7 +246,14 @@ export type Database = {
           font_family?: string
           font_size?: number
           font_url?: string | null
+          footer_bg?: string | null
+          footer_fg?: string | null
           footer_note?: string | null
+          header_bg?: string | null
+          header_fg?: string | null
+          heading_color?: string | null
+          link_color?: string | null
+          logo_align?: string
           logo_height?: number
           logo_size?: number
           logo_url?: string | null
@@ -239,6 +272,53 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "business_settings_brand_id_fkey"
+            columns: ["brand_id"]
+            isOneToOne: false
+            referencedRelation: "brands"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      categories: {
+        Row: {
+          brand_id: string
+          created_at: string
+          id: string
+          image_url: string | null
+          is_active: boolean
+          name_ar: string | null
+          name_en: string
+          slug: string | null
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          brand_id: string
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          name_ar?: string | null
+          name_en: string
+          slug?: string | null
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          brand_id?: string
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          name_ar?: string | null
+          name_en?: string
+          slug?: string | null
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "categories_brand_id_fkey"
             columns: ["brand_id"]
             isOneToOne: false
             referencedRelation: "brands"
@@ -919,6 +999,10 @@ export type Database = {
           benefit_enabled: boolean | null
           benefit_qr_url: string | null
           brand_id: string | null
+          btn_primary_bg: string | null
+          btn_primary_fg: string | null
+          btn_secondary_bg: string | null
+          btn_secondary_fg: string | null
           business_name: string | null
           card_enabled: boolean | null
           cod_enabled: boolean | null
@@ -927,7 +1011,15 @@ export type Database = {
           delivery_fee: number | null
           font_family: string | null
           font_url: string | null
+          footer_bg: string | null
+          footer_fg: string | null
           footer_note: string | null
+          header_bg: string | null
+          header_fg: string | null
+          heading_color: string | null
+          link_color: string | null
+          logo_align: string | null
+          logo_size: number | null
           logo_url: string | null
           pickup_enabled: boolean | null
           primary_color: string | null
@@ -951,6 +1043,7 @@ export type Database = {
         Args: { p_brand_id: string; p_hard?: boolean }
         Returns: Json
       }
+      delete_category: { Args: { p_id: string }; Returns: Json }
       is_active: { Args: never; Returns: boolean }
       is_admin: { Args: never; Returns: boolean }
       is_brand_admin: { Args: never; Returns: boolean }
