@@ -38,6 +38,17 @@ export const Route = createFileRoute("/store/$slug")({
       .maybeSingle();
 
     const s = settings as any;
+    const rawPages = Array.isArray(s?.pages) ? s.pages : [];
+    const normalizedPages = Array.from({ length: 5 }, (_, i) => {
+      const p = rawPages[i] ?? {};
+      return {
+        title_ar: p.title_ar ?? null,
+        title_en: p.title_en ?? null,
+        content_ar: p.content_ar ?? null,
+        content_en: p.content_en ?? null,
+        image_url: p.image_url ?? null,
+      };
+    });
     const safeSettings: PublicSettings = {
       brand_id: brand.id,
       business_name: s?.business_name ?? brand.name_en,
@@ -68,6 +79,9 @@ export const Route = createFileRoute("/store/$slug")({
       btn_secondary_fg: s?.btn_secondary_fg ?? null,
       btn_checkout_bg: s?.btn_checkout_bg ?? null,
       btn_checkout_fg: s?.btn_checkout_fg ?? null,
+      pages: normalizedPages,
+      whatsapp_enabled: Boolean(s?.whatsapp_enabled),
+      whatsapp_number: s?.whatsapp_number ?? null,
     };
 
 
