@@ -223,9 +223,13 @@ function ProductsSection({ products, variants, businessName, onChanged }: { prod
                       <img src={p.image_url} alt={p.name} className="w-20 h-24 object-cover rounded-md border border-border" />
                     )}
                     <div className="flex-1">
-                      <h3 className="text-lg font-display">{p.name}</h3>
+                      <h3 className="text-lg font-display">{(isAr ? (p.name_ar || p.name_en) : (p.name_en || p.name_ar)) || p.name}</h3>
                       {p.category && <p className="text-xs text-muted-foreground">{p.category}</p>}
-                      {p.description && <p className="text-sm text-muted-foreground mt-1">{p.description}</p>}
+                      {(() => {
+                        const desc = isAr ? (p.description_ar || p.description_en) : (p.description_en || p.description_ar);
+                        const fallback = desc || p.description;
+                        return fallback ? <p className="text-sm text-muted-foreground mt-1">{fallback}</p> : null;
+                      })()}
                       <p className="text-xs text-muted-foreground mt-2">
                         {pVariants.length} {t("inventory.variantsCount")} · {stockTotal} {t("inventory.inStock")}
                       </p>
