@@ -32,12 +32,24 @@ function AuthPage() {
     setLoading(true);
     try {
       if (mode === "signup") {
-        const { error } = await supabase.auth.signUp({
+        const { data, error } = await supabase.auth.signUp({
           email, password,
           options: { emailRedirectTo: window.location.origin },
         });
         if (error) throw error;
         applyRememberMe(remember);
+        if (!data.session) {
+          // Email confirmation required — inform the user immediately.
+          toast.success(
+            lang === "ar"
+              ? "تحقّق من بريدك الإلكتروني وافتح رابط التفعيل لتأكيد حسابك قبل تسجيل الدخول."
+              : "Check your email and click the verification link to activate your account before signing in.",
+            { duration: 9000 },
+          );
+          setMode("signin");
+          setPassword("");
+          return;
+        }
         toast.success(t("auth.accountCreated"));
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
