@@ -204,23 +204,42 @@ function NewBrandDialog({ onSaved }: { onSaved: () => void }) {
       </DialogHeader>
       <div className="space-y-3">
         <div>
-          <Label>{lang === "ar" ? "المعرّف (الرابط)" : "Slug (URL)"}</Label>
+          <Label>{lang === "ar" ? "الاسم بالإنجليزية (يدوي)" : "Brand Name — English (manual)"}</Label>
           <Input
+            autoComplete="off"
+            autoCorrect="off"
+            spellCheck={false}
+            value={form.name_en}
+            onChange={(e) => setForm({ ...form, name_en: e.target.value })}
+            placeholder={lang === "ar" ? "اكتب الاسم يدويًا" : "Type the brand name manually"}
+          />
+        </div>
+        <div>
+          <Label>{lang === "ar" ? "الاسم بالعربية (يدوي)" : "Brand Name — Arabic (manual)"}</Label>
+          <Input
+            autoComplete="off"
+            autoCorrect="off"
+            spellCheck={false}
+            value={form.name_ar}
+            onChange={(e) => setForm({ ...form, name_ar: e.target.value })}
+            placeholder={lang === "ar" ? "اكتب الاسم يدويًا" : "Type the brand name manually"}
+          />
+        </div>
+        <div>
+          <Label>{lang === "ar" ? "المعرّف (الرابط) — يدوي" : "URL slug (manual)"}</Label>
+          <Input
+            autoComplete="off"
+            autoCorrect="off"
+            spellCheck={false}
             placeholder="pura"
             value={form.slug}
             onChange={(e) => setForm({ ...form, slug: e.target.value })}
           />
           <p className="text-xs text-muted-foreground mt-1">
-            {lang === "ar" ? "سيظهر في: /b/{المعرّف} و /store/{المعرّف}" : "Used in /b/{slug} and /store/{slug}"}
+            {lang === "ar"
+              ? "يُكتب يدويًا ولا يُشتق من الاسم. سيظهر في /b/{المعرّف} و /store/{المعرّف}."
+              : "Typed manually — never auto-generated from the name. Used in /b/{slug} and /store/{slug}."}
           </p>
-        </div>
-        <div>
-          <Label>{lang === "ar" ? "الاسم (إنجليزي)" : "Name (English)"}</Label>
-          <Input value={form.name_en} onChange={(e) => setForm({ ...form, name_en: e.target.value })} />
-        </div>
-        <div>
-          <Label>{lang === "ar" ? "الاسم (عربي)" : "Name (Arabic)"}</Label>
-          <Input value={form.name_ar} onChange={(e) => setForm({ ...form, name_ar: e.target.value })} />
         </div>
         <div>
           <Label>{lang === "ar" ? "رابط الشعار" : "Logo URL"}</Label>
