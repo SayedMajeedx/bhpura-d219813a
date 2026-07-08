@@ -457,14 +457,14 @@ function SearchBar() {
       const pattern = `%${debounced.replace(/[%_]/g, (m: string) => `\\${m}`)}%`;
       const { data, error } = await supabase
         .from("products")
-        .select("id, name, image_url, product_variants(selling_price)")
+        .select("id, name, name_ar, name_en, image_url, product_variants(selling_price)")
         .eq("brand_id", brand.id)
         .eq("is_active", true)
-        .or(`name.ilike.${pattern},description.ilike.${pattern}`)
+        .or(`name.ilike.${pattern},name_ar.ilike.${pattern},name_en.ilike.${pattern},description.ilike.${pattern},description_ar.ilike.${pattern},description_en.ilike.${pattern}`)
         .limit(8);
       if (error) throw error;
       return (data ?? []) as unknown as Array<{
-        id: string; name: string; image_url: string | null;
+        id: string; name: string; name_ar: string | null; name_en: string | null; image_url: string | null;
         product_variants: Array<{ selling_price: number }>;
       }>;
     },
