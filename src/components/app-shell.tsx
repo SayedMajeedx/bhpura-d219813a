@@ -1,5 +1,5 @@
 import { Link, useRouterState, useNavigate, useParams } from "@tanstack/react-router";
-import { LayoutDashboard, Package, Users, ReceiptText, Settings, LogOut, Languages, Menu, Wallet, Megaphone, Shield, Store, Crown, Plug } from "lucide-react";
+import { LayoutDashboard, Package, Users, ReceiptText, Settings, LogOut, Languages, Menu, Wallet, Megaphone, Shield, Store, Crown, Plug, Tags } from "lucide-react";
 import { useState, useEffect, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -58,6 +58,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       items.push(
         { to: "/b/$slug/dashboard", params: { slug: activeSlug }, label: t("nav.dashboard"), icon: LayoutDashboard },
         { to: "/b/$slug/inventory", params: { slug: activeSlug }, label: t("nav.inventory"), icon: Package },
+        { to: "/b/$slug/categories", params: { slug: activeSlug }, label: lang === "ar" ? "الأقسام" : "Categories", icon: Tags },
         { to: "/b/$slug/customers", params: { slug: activeSlug }, label: t("nav.customers"), icon: Users },
         { to: "/b/$slug/campaigns", params: { slug: activeSlug }, label: lang === "ar" ? "حملات الواتساب" : "WhatsApp Campaigns", icon: Megaphone },
         { to: "/b/$slug/orders", params: { slug: activeSlug }, label: t("nav.orders"), icon: ReceiptText },

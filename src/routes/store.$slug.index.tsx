@@ -6,7 +6,6 @@ import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useMemo, useState, useEffect, useRef } from "react";
 
-
 export const Route = createFileRoute("/store/$slug/")({
   component: StoreHome,
 });
@@ -28,8 +27,18 @@ type ProductRow = {
   }>;
 };
 
+type CategoryRow = {
+  id: string;
+  name_en: string;
+  name_ar: string | null;
+  slug: string | null;
+  image_url: string | null;
+  sort_order: number;
+};
+
 function StoreHome() {
   const { brand } = useStorefront();
+  const [activeCat, setActiveCat] = useState<string | null>(null);
 
   const { data: products, isLoading } = useQuery({
     queryKey: ["storefront", brand.slug, "products"],
@@ -47,12 +56,36 @@ function StoreHome() {
     },
   });
 
+  const { data: categories } = useQuery({
+    queryKey: ["storefront", brand.slug, "categories"],
+    queryFn: async () => {
+      const { data, error } = await (supabase.from("categories") as any)
+        .select("id, name_en, name_ar, slug, image_url, sort_order")
+        .eq("brand_id", brand.id)
+        .eq("is_active", true)
+        .order("sort_order", { ascending: true });
+      if (error) throw error;
+      return (data ?? []) as CategoryRow[];
+    },
+  });
+
+  const filtered = useMemo(() => {
+    const list = products ?? [];
+    if (!activeCat) return list;
+    return list.filter((p) => p.category === activeCat);
+  }, [products, activeCat]);
+
   return (
     <div>
       <HeroBanner />
       <section className="mx-auto max-w-7xl px-4 sm:px-6 py-10 sm:py-14">
-        <Categories products={products ?? []} />
-        <ProductGrid products={products ?? []} loading={isLoading} />
+        <Categories
+          products={products ?? []}
+          categories={categories ?? []}
+          activeCat={activeCat}
+          onSelect={setActiveCat}
+        />
+        <ProductGrid products={filtered} loading={isLoading} />
       </section>
     </div>
   );
@@ -79,21 +112,21 @@ function HeroBanner() {
       )}
 
       <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 h-full flex items-center min-h-[320px] sm:min-h-[55vh]">
-        <div className="max-w-xl bg-white/80 backdrop-blur rounded-2xl p-6 sm:p-8 shadow-lg">
+        <div className="max-w-xl bg-white/85 backdrop-blur rounded-2xl p-6 sm:p-8 shadow-lg">
           <h1
             className="font-display text-3xl sm:text-5xl mb-3"
-            style={{ color: settings.primary_color }}
+            style={{ color: "var(--sf-heading)" }}
           >
             {lang === "ar" ? brand.name_ar || brand.name_en : brand.name_en}
           </h1>
-          <p className="text-sm sm:text-base text-muted-foreground mb-4">
+          <p className="text-sm sm:text-base text-neutral-700 mb-4">
             {(lang === "ar" ? brand.about_ar : brand.about_en) ||
               t("مجموعة مختارة بعناية لك.", "A curated collection made for you.")}
           </p>
           <a
             href="#products"
-            className="inline-flex items-center px-6 py-3 rounded-full text-white font-semibold"
-            style={{ backgroundColor: settings.primary_color }}
+            className="inline-flex items-center px-6 py-3 rounded-full font-semibold"
+            style={{ backgroundColor: "var(--sf-btn-primary-bg)", color: "var(--sf-btn-primary-fg)" }}
           >
             {t("تسوّق الآن", "Shop now")}
           </a>
@@ -142,26 +175,66 @@ function HeroCarousel({ items }: { items: Array<{ type: "image" | "video"; url: 
   );
 }
 
-function Categories({ products }: { products: ProductRow[] }) {
-  const { t } = useStorefront();
-  const cats = useMemo(() => {
-    const set = new Set<string>();
-    products.forEach((p) => p.category && set.add(p.category));
-    return Array.from(set);
-  }, [products]);
+function Categories({
+  products,
+  categories,
+  activeCat,
+  onSelect,
+}: {
+  products: ProductRow[];
+  categories: CategoryRow[];
+  activeCat: string | null;
+  onSelect: (c: string | null) => void;
+}) {
+  const { t, lang } = useStorefront();
 
-  if (cats.length === 0) return null;
+  // Merge admin-defined categories with any legacy categories referenced by products
+  const merged = useMemo(() => {
+    const known = new Map<string, { key: string; label: string; image: string | null }>();
+    for (const c of categories) {
+      const key = c.slug || c.name_en;
+      const label = (lang === "ar" ? c.name_ar : c.name_en) || c.name_en;
+      known.set(key, { key, label, image: c.image_url });
+    }
+    for (const p of products) {
+      if (p.category && !known.has(p.category)) {
+        known.set(p.category, { key: p.category, label: p.category, image: null });
+      }
+    }
+    return Array.from(known.values());
+  }, [categories, products, lang]);
+
+  if (merged.length === 0) return null;
 
   return (
     <div className="mb-8 flex flex-wrap gap-2 justify-center">
-      <a href="#products" className="px-4 py-2 rounded-full bg-muted text-sm">
+      <button
+        type="button"
+        onClick={() => onSelect(null)}
+        className={`px-4 py-2 rounded-full text-sm border transition-colors ${
+          activeCat === null ? "bg-neutral-900 text-white border-neutral-900" : "bg-white/80 text-neutral-800 border-neutral-200 hover:bg-neutral-100"
+        }`}
+      >
         {t("الكل", "All")}
-      </a>
-      {cats.map((c) => (
-        <a key={c} href={`#cat-${c}`} className="px-4 py-2 rounded-full bg-muted text-sm">
-          {c}
-        </a>
-      ))}
+      </button>
+      {merged.map((c) => {
+        const active = activeCat === c.key;
+        return (
+          <button
+            key={c.key}
+            type="button"
+            onClick={() => onSelect(c.key)}
+            className={`px-3 py-1.5 rounded-full text-sm border inline-flex items-center gap-2 transition-colors ${
+              active ? "bg-neutral-900 text-white border-neutral-900" : "bg-white/80 text-neutral-800 border-neutral-200 hover:bg-neutral-100"
+            }`}
+          >
+            {c.image && (
+              <img src={c.image} alt="" className="h-5 w-5 rounded-full object-cover" />
+            )}
+            {c.label}
+          </button>
+        );
+      })}
     </div>
   );
 }
@@ -195,7 +268,7 @@ function ProductGrid({ products, loading }: { products: ProductRow[]; loading: b
 }
 
 function ProductCard({ product }: { product: ProductRow }) {
-  const { brand, currency, lang, t, settings } = useStorefront();
+  const { brand, currency, lang, t } = useStorefront();
   const prices = product.product_variants.map((v) => v.selling_price).filter((p) => p > 0);
   const minPrice = prices.length ? Math.min(...prices) : 0;
   const totalStock = product.product_variants.reduce((s, v) => s + (v.stock_main || 0), 0);
@@ -227,7 +300,7 @@ function ProductCard({ product }: { product: ProductRow }) {
         )}
         {oos && (
           <div className="absolute inset-0 bg-black/40 grid place-items-center">
-            <span className="bg-white/95 px-3 py-1 rounded-full text-xs font-semibold">
+            <span className="bg-white/95 px-3 py-1 rounded-full text-xs font-semibold text-neutral-900">
               {t("نفد المخزون", "Sold out")}
             </span>
           </div>
@@ -235,7 +308,7 @@ function ProductCard({ product }: { product: ProductRow }) {
       </div>
       <div className="mt-2">
         <div className="text-sm font-medium truncate">{product.name}</div>
-        <div className="text-sm font-semibold" style={{ color: settings.primary_color }}>
+        <div className="text-sm font-semibold" style={{ color: "var(--sf-heading)" }}>
           {minPrice > 0 ? formatPrice(minPrice, currency, lang) : t("السعر عند الطلب", "Price on request")}
         </div>
       </div>
