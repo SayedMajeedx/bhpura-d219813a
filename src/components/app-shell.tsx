@@ -114,7 +114,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             to="/admin/brands"
             className={cn(
               "flex items-center gap-2 px-2 py-1.5 rounded-md text-xs transition-colors",
-              pathname === "/brands"
+              pathname === "/admin/brands"
                 ? "bg-sidebar-primary text-sidebar-primary-foreground"
                 : "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
             )}

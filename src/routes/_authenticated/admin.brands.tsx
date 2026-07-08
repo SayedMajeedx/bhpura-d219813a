@@ -237,8 +237,8 @@ function NewBrandDialog({ onSaved }: { onSaved: () => void }) {
           />
           <p className="text-xs text-muted-foreground mt-1">
             {lang === "ar"
-              ? "يُكتب يدويًا ولا يُشتق من الاسم. سيظهر في /b/{المعرّف} و /store/{المعرّف}."
-              : "Typed manually — never auto-generated from the name. Used in /b/{slug} and /store/{slug}."}
+              ? "يُكتب يدويًا ولا يُشتق من الاسم. سيظهر في /admin/b/{المعرّف} و /{المعرّف}."
+              : "Typed manually — never auto-generated from the name. Used in /admin/b/{slug} and /{slug}."}
           </p>
         </div>
         <div>
