@@ -252,6 +252,8 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
   };
   const [form, setForm] = useState(initialForm);
   const [uploading, setUploading] = useState(false);
+  const [cropSrc, setCropSrc] = useState<string | null>(null);
+  const [pendingVideo, setPendingVideo] = useState<File | null>(null);
   const mediaInput = useState<HTMLInputElement | null>(null);
 
   // Re-sync form whenever the edited product changes (or the dialog is reopened
