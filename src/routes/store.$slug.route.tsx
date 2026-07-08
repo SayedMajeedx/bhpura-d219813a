@@ -82,6 +82,7 @@ export const Route = createFileRoute("/store/$slug")({
       btn_checkout_bg: s?.btn_checkout_bg ?? null,
       btn_checkout_fg: s?.btn_checkout_fg ?? null,
       pages: normalizedPages,
+      socials: normalizedSocials,
       whatsapp_enabled: Boolean(s?.whatsapp_enabled),
       whatsapp_number: s?.whatsapp_number ?? null,
     };
