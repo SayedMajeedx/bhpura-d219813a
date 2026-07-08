@@ -257,8 +257,10 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
   const isAr = lang === "ar";
   const brand = useBrand();
   const initialForm = {
-    name: product?.name ?? "",
-    description: product?.description ?? "",
+    name_ar: product?.name_ar ?? "",
+    name_en: product?.name_en ?? product?.name ?? "",
+    description_ar: product?.description_ar ?? "",
+    description_en: product?.description_en ?? product?.description ?? "",
     category: product?.category ?? "",
     image_url: product?.image_url ?? "",
     is_active: product?.is_active ?? true,
@@ -268,6 +270,9 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
   const [uploading, setUploading] = useState(false);
   const [cropSrc, setCropSrc] = useState<string | null>(null);
   const [pendingVideo, setPendingVideo] = useState<File | null>(null);
+  const [translatingName, setTranslatingName] = useState<"ar->en" | "en->ar" | null>(null);
+  const [translatingDesc, setTranslatingDesc] = useState<"ar->en" | "en->ar" | null>(null);
+  const translate = useServerFn(translateProductText);
   const mediaInput = useState<HTMLInputElement | null>(null);
 
   // Re-sync form whenever the edited product changes (or the dialog is reopened
@@ -275,8 +280,10 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
   // and unmodified fields are never overwritten with blanks.
   useEffect(() => {
     setForm({
-      name: product?.name ?? "",
-      description: product?.description ?? "",
+      name_ar: product?.name_ar ?? "",
+      name_en: product?.name_en ?? product?.name ?? "",
+      description_ar: product?.description_ar ?? "",
+      description_en: product?.description_en ?? product?.description ?? "",
       category: product?.category ?? "",
       image_url: product?.image_url ?? "",
       is_active: product?.is_active ?? true,
@@ -334,18 +341,64 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
     setCropSrc(null);
   };
 
+  const runTranslate = async (
+    field: "name" | "description",
+    direction: "ar->en" | "en->ar",
+  ) => {
+    const from = direction === "ar->en" ? "ar" : "en";
+    const to = direction === "ar->en" ? "en" : "ar";
+    const source = field === "name"
+      ? (from === "ar" ? form.name_ar : form.name_en)
+      : (from === "ar" ? form.description_ar : form.description_en);
+    if (!source.trim()) {
+      toast.error(isAr ? "اكتب النص أولاً" : "Type the text first");
+      return;
+    }
+    const setBusy = field === "name" ? setTranslatingName : setTranslatingDesc;
+    setBusy(direction);
+    try {
+      const { text } = await translate({ data: { text: source, from, to } });
+      const cleaned = text.trim();
+      if (!cleaned) throw new Error(isAr ? "لم يتم استلام ترجمة" : "No translation returned");
+      setForm((f) => {
+        if (field === "name") {
+          return to === "en" ? { ...f, name_en: cleaned } : { ...f, name_ar: cleaned };
+        }
+        return to === "en" ? { ...f, description_en: cleaned } : { ...f, description_ar: cleaned };
+      });
+      toast.success(isAr ? "تمت الترجمة" : "Translated");
+    } catch (e: any) {
+      const msg = String(e?.message ?? e);
+      if (msg.includes("CREDITS_EXHAUSTED")) toast.error(isAr ? "نفدت الأرصدة، يرجى إضافة رصيد" : "AI credits exhausted");
+      else if (msg.includes("RATE_LIMITED")) toast.error(isAr ? "الكثير من الطلبات، حاول بعد قليل" : "Rate limited — try again shortly");
+      else toast.error(isAr ? "تعذر الترجمة" : "Translation failed");
+    } finally {
+      setBusy(null);
+    }
+  };
+
 
   const save = async () => {
-    if (!form.name.trim()) return toast.error(t("inventory.name"));
+    const nameAr = form.name_ar.trim();
+    const nameEn = form.name_en.trim();
+    if (!nameAr && !nameEn) return toast.error(isAr ? "أدخل اسم المنتج بأي لغة" : "Enter a product name in any language");
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
+
+    // Keep legacy 'name' / 'description' populated (fallback + order_items)
+    const legacyName = nameEn || nameAr;
+    const legacyDesc = form.description_en.trim() || form.description_ar.trim() || null;
 
     if (product) {
       // Partial update: only send the fields owned by this form. Do NOT include
       // user_id (would clobber original owner) or brand_id (would break tenancy).
       const patch = {
-        name: form.name,
-        description: form.description,
+        name: legacyName,
+        name_ar: nameAr || null,
+        name_en: nameEn || null,
+        description: legacyDesc,
+        description_ar: form.description_ar.trim() || null,
+        description_en: form.description_en.trim() || null,
         category: form.category,
         image_url: form.image_url,
         is_active: form.is_active,
@@ -354,7 +407,19 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
       const { error } = await supabase.from("products").update(patch).eq("id", product.id);
       if (error) return toast.error(error.message);
     } else {
-      const payload = { ...form, user_id: user.id, media: form.media as any };
+      const payload = {
+        user_id: user.id,
+        name: legacyName,
+        name_ar: nameAr || null,
+        name_en: nameEn || null,
+        description: legacyDesc,
+        description_ar: form.description_ar.trim() || null,
+        description_en: form.description_en.trim() || null,
+        category: form.category,
+        image_url: form.image_url,
+        is_active: form.is_active,
+        media: form.media as any,
+      };
       const { error } = await (supabase.from("products") as any).insert(payload);
       if (error) return toast.error(error.message);
     }
