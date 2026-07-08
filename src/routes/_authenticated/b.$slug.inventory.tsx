@@ -23,7 +23,8 @@ export const Route = createFileRoute("/_authenticated/b/$slug/inventory")({
   component: Inventory,
 });
 
-type Product = { id: string; name: string; description: string | null; category: string | null; image_url: string | null };
+type MediaItem = { type: "image" | "video"; url: string };
+type Product = { id: string; name: string; description: string | null; category: string | null; image_url: string | null; is_active: boolean; media: MediaItem[] };
 type Variant = {
   id: string; product_id: string; sku: string | null; size: string | null; color: string | null; fabric: string | null;
   cost_price: number; selling_price: number; stock: number;
