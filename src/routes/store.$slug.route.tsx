@@ -209,19 +209,27 @@ function StoreHeader() {
             <img
               src={settings.logo_url}
               alt={displayName}
-              className="h-10 w-10 rounded-full object-cover shrink-0"
+              className="rounded-full object-cover shrink-0"
+              style={{ height: logoSize, width: logoSize }}
             />
           )}
-          <span className="font-display text-lg sm:text-xl truncate" style={{ color: settings.primary_color }}>
+          <span
+            className="font-display text-lg sm:text-xl truncate"
+            style={{ color: "var(--sf-heading)" }}
+          >
             {displayName}
           </span>
         </Link>
 
-        <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+        <div
+          className="flex items-center gap-1 sm:gap-2 shrink-0"
+          style={{ color: "var(--sf-header-fg)" }}
+        >
           <Button
             variant="ghost"
             size="sm"
-            className="gap-1"
+            className="gap-1 hover:bg-black/5"
+            style={{ color: "var(--sf-header-fg)" }}
             onClick={() => setLang(lang === "ar" ? "en" : "ar")}
             aria-label="Language switch"
           >
@@ -230,12 +238,12 @@ function StoreHeader() {
           </Button>
 
           {session ? (
-            <Button variant="ghost" size="sm" className="gap-1" onClick={() => signOut()} title={session.user?.email ?? ""}>
+            <Button variant="ghost" size="sm" className="gap-1 hover:bg-black/5" style={{ color: "var(--sf-header-fg)" }} onClick={() => signOut()} title={session.user?.email ?? ""}>
               <LogOut className="h-4 w-4" />
               <span className="hidden sm:inline max-w-[120px] truncate">{session.user?.email ?? t("خروج", "Sign out")}</span>
             </Button>
           ) : (
-            <Button asChild variant="ghost" size="sm" className="gap-1">
+            <Button asChild variant="ghost" size="sm" className="gap-1 hover:bg-black/5" style={{ color: "var(--sf-header-fg)" }}>
               <Link to="/store/$slug/auth" params={{ slug: brand.slug }}>
                 <User className="h-4 w-4" />
                 <span className="hidden sm:inline">{t("دخول", "Sign in")}</span>
@@ -244,13 +252,13 @@ function StoreHeader() {
           )}
 
           <CartDrawer>
-            <Button variant="ghost" size="sm" className="relative gap-1">
+            <Button variant="ghost" size="sm" className="relative gap-1 hover:bg-black/5" style={{ color: "var(--sf-header-fg)" }}>
               <ShoppingBag className="h-5 w-5" />
               <span className="hidden sm:inline">{t("السلة", "Cart")}</span>
               {cartCount > 0 && (
                 <span
-                  className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-semibold grid place-items-center text-white"
-                  style={{ backgroundColor: settings.primary_color }}
+                  className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-semibold grid place-items-center"
+                  style={{ backgroundColor: "var(--sf-btn-primary-bg)", color: "var(--sf-btn-primary-fg)" }}
                 >
                   {cartCount}
                 </span>
