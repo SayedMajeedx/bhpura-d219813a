@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useStorefront, formatPrice, type CartItem } from "@/lib/storefront-context";
+import { useStorefront, formatPrice, pickName, pickDescription } from "@/lib/storefront-context";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -25,7 +25,11 @@ type Variant = {
 type Product = {
   id: string;
   name: string;
+  name_ar: string | null;
+  name_en: string | null;
   description: string | null;
+  description_ar: string | null;
+  description_en: string | null;
   image_url: string | null;
   media: unknown;
   product_variants: Variant[];
@@ -44,7 +48,7 @@ function ProductDetail() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("products")
-        .select("id, name, description, image_url, media, product_variants(id, size, color, fabric, selling_price, stock_main)")
+        .select("id, name, name_ar, name_en, description, description_ar, description_en, image_url, media, product_variants(id, size, color, fabric, selling_price, stock_main)")
         .eq("id", id)
         .eq("brand_id", brand.id)
         .eq("is_active", true)
@@ -99,6 +103,9 @@ function ProductDetail() {
   const maxStock = variant?.stock_main ?? 0;
   const canAdd = !!variant && variant.stock_main > 0;
 
+  const displayName = pickName(lang, product);
+  const displayDescription = pickDescription(lang, product);
+
   const doAdd = () => {
     if (!variant) {
       toast.error(t("اختر خياراً أولاً", "Please select an option"));
@@ -107,7 +114,9 @@ function ProductDetail() {
     addToCart({
       variant_id: variant.id,
       product_id: product.id,
-      name: product.name,
+      name: displayName,
+      name_ar: product.name_ar,
+      name_en: product.name_en,
       image: media.find((m) => m.type === "image")?.url ?? product.image_url ?? null,
       price: variant.selling_price,
       size: variant.size,
@@ -132,7 +141,7 @@ function ProductDetail() {
                   className="w-full h-full object-contain bg-black"
                 />
               ) : (
-                <img src={media[mediaIdx].url} alt={product.name} className="w-full h-full object-cover" />
+                <img src={media[mediaIdx].url} alt={displayName} className="w-full h-full object-cover" />
               )}
               {media.length > 1 && (
                 <>
@@ -182,12 +191,12 @@ function ProductDetail() {
       </div>
 
       <div>
-        <h1 className="font-display text-3xl mb-2">{product.name}</h1>
+        <h1 className="font-display text-3xl mb-2">{displayName}</h1>
         <div className="text-2xl font-semibold mb-4" style={{ color: settings.primary_color }}>
           {displayPrice > 0 ? formatPrice(displayPrice, currency, lang) : t("السعر عند الطلب", "Price on request")}
         </div>
-        {product.description && (
-          <p className="text-muted-foreground mb-6 whitespace-pre-line">{product.description}</p>
+        {displayDescription && (
+          <p className="text-muted-foreground mb-6 whitespace-pre-line">{displayDescription}</p>
         )}
 
         {variants.length > 0 && (

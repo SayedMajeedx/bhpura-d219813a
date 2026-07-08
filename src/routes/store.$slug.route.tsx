@@ -6,6 +6,7 @@ import {
   StorefrontProvider,
   useStorefront,
   formatPrice,
+  pickName,
   type Brand,
   type PublicSettings,
   readableOn,
@@ -353,15 +354,17 @@ function CartDrawer({ children }: { children: React.ReactNode }) {
               {t("السلة فارغة", "Your cart is empty")}
             </div>
           ) : (
-            cart.map((item) => (
+            cart.map((item) => {
+              const displayName = pickName(lang, { name: item.name, name_ar: item.name_ar, name_en: item.name_en });
+              return (
               <div key={item.variant_id} className="flex gap-3 border rounded-lg p-2 items-center">
                 {item.image ? (
-                  <img src={item.image} alt={item.name} className="h-16 w-16 rounded object-cover shrink-0" />
+                  <img src={item.image} alt={displayName} className="h-16 w-16 rounded object-cover shrink-0" />
                 ) : (
                   <div className="h-16 w-16 rounded bg-muted shrink-0" />
                 )}
                 <div className="flex-1 min-w-0">
-                  <div className="font-medium truncate">{item.name}</div>
+                  <div className="font-medium truncate">{displayName}</div>
                   <div className="text-xs text-muted-foreground">
                     {[item.size, item.color].filter(Boolean).join(" · ")}
                   </div>
@@ -397,7 +400,8 @@ function CartDrawer({ children }: { children: React.ReactNode }) {
                   </button>
                 </div>
               </div>
-            ))
+              );
+            })
           )}
         </div>
 
@@ -453,14 +457,14 @@ function SearchBar() {
       const pattern = `%${debounced.replace(/[%_]/g, (m: string) => `\\${m}`)}%`;
       const { data, error } = await supabase
         .from("products")
-        .select("id, name, image_url, product_variants(selling_price)")
+        .select("id, name, name_ar, name_en, image_url, product_variants(selling_price)")
         .eq("brand_id", brand.id)
         .eq("is_active", true)
-        .or(`name.ilike.${pattern},description.ilike.${pattern}`)
+        .or(`name.ilike.${pattern},name_ar.ilike.${pattern},name_en.ilike.${pattern},description.ilike.${pattern},description_ar.ilike.${pattern},description_en.ilike.${pattern}`)
         .limit(8);
       if (error) throw error;
       return (data ?? []) as unknown as Array<{
-        id: string; name: string; image_url: string | null;
+        id: string; name: string; name_ar: string | null; name_en: string | null; image_url: string | null;
         product_variants: Array<{ selling_price: number }>;
       }>;
     },
@@ -516,6 +520,7 @@ function SearchBar() {
           {!isFetching && results.length > 0 && (
             <ul className="divide-y" style={{ borderColor: "rgba(0,0,0,0.06)" }}>
               {results.map((p) => {
+                const displayName = pickName(lang, p);
                 const price = p.product_variants?.[0]?.selling_price ?? 0;
                 return (
                   <li key={p.id}>
@@ -527,11 +532,11 @@ function SearchBar() {
                     >
                       <div className="h-12 w-12 shrink-0 rounded bg-muted overflow-hidden">
                         {p.image_url && (
-                          <img src={p.image_url} alt={p.name} className="h-full w-full object-cover" />
+                          <img src={p.image_url} alt={displayName} className="h-full w-full object-cover" />
                         )}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <div className="text-sm font-medium truncate">{p.name}</div>
+                        <div className="text-sm font-medium truncate">{displayName}</div>
                         <div className="text-xs" style={{ color: "var(--sf-heading)" }}>
                           {formatPrice(Number(price), currency, lang)}
                         </div>

@@ -273,20 +273,43 @@ function ProfileSection({ isAr }: { isAr: boolean }) {
   };
 
   return (
-    <Card className="p-5 sm:p-6 space-y-4 max-w-xl">
-      <div>
-        <Label>{t("الاسم الكامل", "Full name")}</Label>
-        <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} dir={isAr ? "rtl" : "ltr"} />
+    <Card
+      dir={isAr ? "rtl" : "ltr"}
+      className={`p-5 sm:p-6 space-y-4 max-w-xl ${isAr ? "text-right ms-auto" : "text-left me-auto"}`}
+    >
+      <div className="space-y-1.5">
+        <Label className={isAr ? "block text-right" : "block text-left"}>{t("الاسم الكامل", "Full name")}</Label>
+        <Input
+          value={form.name}
+          onChange={(e) => setForm({ ...form, name: e.target.value })}
+          dir={isAr ? "rtl" : "ltr"}
+          className={isAr ? "text-right" : "text-left"}
+          placeholder={t("اكتب اسمك الكامل", "Your full name")}
+        />
       </div>
-      <div>
-        <Label>{t("رقم الهاتف", "Phone number")}</Label>
-        <Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} inputMode="tel" dir="ltr" placeholder="+97312345678" />
+      <div className="space-y-1.5">
+        <Label className={isAr ? "block text-right" : "block text-left"}>{t("رقم الهاتف", "Phone number")}</Label>
+        <Input
+          value={form.phone}
+          onChange={(e) => setForm({ ...form, phone: e.target.value })}
+          inputMode="tel"
+          dir="ltr"
+          className="text-left"
+          placeholder="+97312345678"
+        />
       </div>
-      <div>
-        <Label>{t("البريد الإلكتروني", "Email")}</Label>
-        <Input value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} type="email" dir="ltr" />
+      <div className="space-y-1.5">
+        <Label className={isAr ? "block text-right" : "block text-left"}>{t("البريد الإلكتروني", "Email")}</Label>
+        <Input
+          value={form.email}
+          onChange={(e) => setForm({ ...form, email: e.target.value })}
+          type="email"
+          dir="ltr"
+          className="text-left"
+          placeholder="you@example.com"
+        />
       </div>
-      <div className="pt-2">
+      <div className={`pt-2 flex ${isAr ? "justify-start" : "justify-start"}`}>
         <Button onClick={save} disabled={saving}>
           {saving && <Loader2 className="h-4 w-4 mr-1 animate-spin" />}
           {t("حفظ التغييرات", "Save changes")}

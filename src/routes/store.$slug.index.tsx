@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useStorefront, formatPrice } from "@/lib/storefront-context";
+import { useStorefront, formatPrice, pickName } from "@/lib/storefront-context";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useMemo, useState, useEffect, useRef } from "react";
@@ -13,7 +13,11 @@ export const Route = createFileRoute("/store/$slug/")({
 type ProductRow = {
   id: string;
   name: string;
+  name_ar: string | null;
+  name_en: string | null;
   description: string | null;
+  description_ar: string | null;
+  description_en: string | null;
   category: string | null;
   image_url: string | null;
   media: unknown;
@@ -46,7 +50,7 @@ function StoreHome() {
       const { data, error } = await supabase
         .from("products")
         .select(
-          "id, name, description, category, image_url, media, brand_id, product_variants(id, selling_price, stock_main, size, color)",
+          "id, name, name_ar, name_en, description, description_ar, description_en, category, image_url, media, brand_id, product_variants(id, selling_price, stock_main, size, color)",
         )
         .eq("brand_id", brand.id)
         .eq("is_active", true)
@@ -280,6 +284,7 @@ function ProductGrid({ products, loading }: { products: ProductRow[]; loading: b
 
 function ProductCard({ product }: { product: ProductRow }) {
   const { brand, currency, lang, t } = useStorefront();
+  const displayName = pickName(lang, product);
   const prices = product.product_variants.map((v) => v.selling_price).filter((p) => p > 0);
   const minPrice = prices.length ? Math.min(...prices) : 0;
   const totalStock = product.product_variants.reduce((s, v) => s + (v.stock_main || 0), 0);
@@ -300,7 +305,7 @@ function ProductCard({ product }: { product: ProductRow }) {
         {cover ? (
           <img
             src={cover}
-            alt={product.name}
+            alt={displayName}
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
             loading="lazy"
           />
@@ -318,7 +323,7 @@ function ProductCard({ product }: { product: ProductRow }) {
         )}
       </div>
       <div className="mt-2">
-        <div className="text-sm font-medium truncate">{product.name}</div>
+        <div className="text-sm font-medium truncate">{displayName}</div>
         <div className="text-sm font-semibold" style={{ color: "var(--sf-heading)" }}>
           {minPrice > 0 ? formatPrice(minPrice, currency, lang) : t("السعر عند الطلب", "Price on request")}
         </div>

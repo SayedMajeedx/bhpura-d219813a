@@ -63,6 +63,8 @@ export type CartItem = {
   variant_id: string;
   product_id: string;
   name: string;
+  name_ar?: string | null;
+  name_en?: string | null;
   image: string | null;
   price: number;
   size: string | null;
@@ -70,6 +72,24 @@ export type CartItem = {
   qty: number;
   max_stock: number;
 };
+
+/** Pick the localized product name, falling back through en → ar → base name. */
+export function pickName(
+  lang: StoreLang,
+  p: { name?: string | null; name_ar?: string | null; name_en?: string | null },
+): string {
+  if (lang === "ar") return p.name_ar || p.name_en || p.name || "";
+  return p.name_en || p.name_ar || p.name || "";
+}
+
+/** Pick the localized product description with the same fallback chain. */
+export function pickDescription(
+  lang: StoreLang,
+  p: { description?: string | null; description_ar?: string | null; description_en?: string | null },
+): string {
+  if (lang === "ar") return p.description_ar || p.description_en || p.description || "";
+  return p.description_en || p.description_ar || p.description || "";
+}
 
 type StoreCtx = {
   brand: Brand;

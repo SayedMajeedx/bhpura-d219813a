@@ -8,7 +8,9 @@ import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
-import { Plus, Pencil, Trash2, Package, TrendingUp, Wand as Wand2, Printer } from "lucide-react";
+import { Plus, Pencil, Trash2, Package, TrendingUp, Wand as Wand2, Printer, Sparkles, Loader2 } from "lucide-react";
+import { useServerFn } from "@tanstack/react-start";
+import { translateProductText } from "@/lib/translate.functions";
 import { toast } from "sonner";
 import { formatMoney } from "@/lib/format";
 import { useT, useI18n } from "@/lib/i18n";
@@ -25,7 +27,19 @@ export const Route = createFileRoute("/_authenticated/b/$slug/inventory")({
 });
 
 type MediaItem = { type: "image" | "video"; url: string };
-type Product = { id: string; name: string; description: string | null; category: string | null; image_url: string | null; is_active: boolean; media: MediaItem[] };
+type Product = {
+  id: string;
+  name: string;
+  name_ar: string | null;
+  name_en: string | null;
+  description: string | null;
+  description_ar: string | null;
+  description_en: string | null;
+  category: string | null;
+  image_url: string | null;
+  is_active: boolean;
+  media: MediaItem[];
+};
 type Variant = {
   id: string; product_id: string; sku: string | null; size: string | null; color: string | null; fabric: string | null;
   cost_price: number; selling_price: number; stock: number;
@@ -209,9 +223,13 @@ function ProductsSection({ products, variants, businessName, onChanged }: { prod
                       <img src={p.image_url} alt={p.name} className="w-20 h-24 object-cover rounded-md border border-border" />
                     )}
                     <div className="flex-1">
-                      <h3 className="text-lg font-display">{p.name}</h3>
+                      <h3 className="text-lg font-display">{(isAr ? (p.name_ar || p.name_en) : (p.name_en || p.name_ar)) || p.name}</h3>
                       {p.category && <p className="text-xs text-muted-foreground">{p.category}</p>}
-                      {p.description && <p className="text-sm text-muted-foreground mt-1">{p.description}</p>}
+                      {(() => {
+                        const desc = isAr ? (p.description_ar || p.description_en) : (p.description_en || p.description_ar);
+                        const fallback = desc || p.description;
+                        return fallback ? <p className="text-sm text-muted-foreground mt-1">{fallback}</p> : null;
+                      })()}
                       <p className="text-xs text-muted-foreground mt-2">
                         {pVariants.length} {t("inventory.variantsCount")} · {stockTotal} {t("inventory.inStock")}
                       </p>
@@ -243,8 +261,10 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
   const isAr = lang === "ar";
   const brand = useBrand();
   const initialForm = {
-    name: product?.name ?? "",
-    description: product?.description ?? "",
+    name_ar: product?.name_ar ?? "",
+    name_en: product?.name_en ?? product?.name ?? "",
+    description_ar: product?.description_ar ?? "",
+    description_en: product?.description_en ?? product?.description ?? "",
     category: product?.category ?? "",
     image_url: product?.image_url ?? "",
     is_active: product?.is_active ?? true,
@@ -254,6 +274,9 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
   const [uploading, setUploading] = useState(false);
   const [cropSrc, setCropSrc] = useState<string | null>(null);
   const [pendingVideo, setPendingVideo] = useState<File | null>(null);
+  const [translatingName, setTranslatingName] = useState<"ar->en" | "en->ar" | null>(null);
+  const [translatingDesc, setTranslatingDesc] = useState<"ar->en" | "en->ar" | null>(null);
+  const translate = useServerFn(translateProductText);
   const mediaInput = useState<HTMLInputElement | null>(null);
 
   // Re-sync form whenever the edited product changes (or the dialog is reopened
@@ -261,8 +284,10 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
   // and unmodified fields are never overwritten with blanks.
   useEffect(() => {
     setForm({
-      name: product?.name ?? "",
-      description: product?.description ?? "",
+      name_ar: product?.name_ar ?? "",
+      name_en: product?.name_en ?? product?.name ?? "",
+      description_ar: product?.description_ar ?? "",
+      description_en: product?.description_en ?? product?.description ?? "",
       category: product?.category ?? "",
       image_url: product?.image_url ?? "",
       is_active: product?.is_active ?? true,
@@ -320,18 +345,64 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
     setCropSrc(null);
   };
 
+  const runTranslate = async (
+    field: "name" | "description",
+    direction: "ar->en" | "en->ar",
+  ) => {
+    const from = direction === "ar->en" ? "ar" : "en";
+    const to = direction === "ar->en" ? "en" : "ar";
+    const source = field === "name"
+      ? (from === "ar" ? form.name_ar : form.name_en)
+      : (from === "ar" ? form.description_ar : form.description_en);
+    if (!source.trim()) {
+      toast.error(isAr ? "اكتب النص أولاً" : "Type the text first");
+      return;
+    }
+    const setBusy = field === "name" ? setTranslatingName : setTranslatingDesc;
+    setBusy(direction);
+    try {
+      const { text } = await translate({ data: { text: source, from, to } });
+      const cleaned = text.trim();
+      if (!cleaned) throw new Error(isAr ? "لم يتم استلام ترجمة" : "No translation returned");
+      setForm((f) => {
+        if (field === "name") {
+          return to === "en" ? { ...f, name_en: cleaned } : { ...f, name_ar: cleaned };
+        }
+        return to === "en" ? { ...f, description_en: cleaned } : { ...f, description_ar: cleaned };
+      });
+      toast.success(isAr ? "تمت الترجمة" : "Translated");
+    } catch (e: any) {
+      const msg = String(e?.message ?? e);
+      if (msg.includes("CREDITS_EXHAUSTED")) toast.error(isAr ? "نفدت الأرصدة، يرجى إضافة رصيد" : "AI credits exhausted");
+      else if (msg.includes("RATE_LIMITED")) toast.error(isAr ? "الكثير من الطلبات، حاول بعد قليل" : "Rate limited — try again shortly");
+      else toast.error(isAr ? "تعذر الترجمة" : "Translation failed");
+    } finally {
+      setBusy(null);
+    }
+  };
+
 
   const save = async () => {
-    if (!form.name.trim()) return toast.error(t("inventory.name"));
+    const nameAr = form.name_ar.trim();
+    const nameEn = form.name_en.trim();
+    if (!nameAr && !nameEn) return toast.error(isAr ? "أدخل اسم المنتج بأي لغة" : "Enter a product name in any language");
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
+
+    // Keep legacy 'name' / 'description' populated (fallback + order_items)
+    const legacyName = nameEn || nameAr;
+    const legacyDesc = form.description_en.trim() || form.description_ar.trim() || null;
 
     if (product) {
       // Partial update: only send the fields owned by this form. Do NOT include
       // user_id (would clobber original owner) or brand_id (would break tenancy).
       const patch = {
-        name: form.name,
-        description: form.description,
+        name: legacyName,
+        name_ar: nameAr || null,
+        name_en: nameEn || null,
+        description: legacyDesc,
+        description_ar: form.description_ar.trim() || null,
+        description_en: form.description_en.trim() || null,
         category: form.category,
         image_url: form.image_url,
         is_active: form.is_active,
@@ -340,7 +411,19 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
       const { error } = await supabase.from("products").update(patch).eq("id", product.id);
       if (error) return toast.error(error.message);
     } else {
-      const payload = { ...form, user_id: user.id, media: form.media as any };
+      const payload = {
+        user_id: user.id,
+        name: legacyName,
+        name_ar: nameAr || null,
+        name_en: nameEn || null,
+        description: legacyDesc,
+        description_ar: form.description_ar.trim() || null,
+        description_en: form.description_en.trim() || null,
+        category: form.category,
+        image_url: form.image_url,
+        is_active: form.is_active,
+        media: form.media as any,
+      };
       const { error } = await (supabase.from("products") as any).insert(payload);
       if (error) return toast.error(error.message);
     }
@@ -352,7 +435,19 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
     <DialogContent className="max-h-[90vh] overflow-y-auto">
       <DialogHeader><DialogTitle>{product ? t("inventory.editProduct") : t("inventory.newProduct")}</DialogTitle></DialogHeader>
       <div className="space-y-3">
-        <div><Label>{t("inventory.name")}</Label><Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></div>
+        <BilingualField
+          labelAr="اسم المنتج — عربي"
+          labelEn="Product name — English"
+          valueAr={form.name_ar}
+          valueEn={form.name_en}
+          onChangeAr={(v) => setForm({ ...form, name_ar: v })}
+          onChangeEn={(v) => setForm({ ...form, name_en: v })}
+          isAr={isAr}
+          translatingArToEn={translatingName === "ar->en"}
+          translatingEnToAr={translatingName === "en->ar"}
+          onTranslateArToEn={() => runTranslate("name", "ar->en")}
+          onTranslateEnToAr={() => runTranslate("name", "en->ar")}
+        />
         <div>
           <Label>{t("inventory.category")}</Label>
           {(categoriesQ.data ?? []).length > 0 ? (
@@ -378,7 +473,20 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
           )}
         </div>
         <div><Label>{t("inventory.imageUrl")}</Label><Input value={form.image_url} onChange={(e) => setForm({ ...form, image_url: e.target.value })} /></div>
-        <div><Label>{t("inventory.description")}</Label><Textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} /></div>
+        <BilingualField
+          multiline
+          labelAr="الوصف — عربي"
+          labelEn="Description — English"
+          valueAr={form.description_ar}
+          valueEn={form.description_en}
+          onChangeAr={(v) => setForm({ ...form, description_ar: v })}
+          onChangeEn={(v) => setForm({ ...form, description_en: v })}
+          isAr={isAr}
+          translatingArToEn={translatingDesc === "ar->en"}
+          translatingEnToAr={translatingDesc === "en->ar"}
+          onTranslateArToEn={() => runTranslate("description", "ar->en")}
+          onTranslateEnToAr={() => runTranslate("description", "en->ar")}
+        />
 
         <div className="flex items-center justify-between rounded-md border border-border p-3">
           <div>
@@ -640,5 +748,70 @@ function CustomizationsSection({ items, onChanged }: { items: Customization[]; o
         </ul>
       )}
     </Card>
+  );
+}
+
+function BilingualField({
+  labelAr, labelEn, valueAr, valueEn, onChangeAr, onChangeEn, isAr,
+  multiline = false,
+  translatingArToEn, translatingEnToAr,
+  onTranslateArToEn, onTranslateEnToAr,
+}: {
+  labelAr: string;
+  labelEn: string;
+  valueAr: string;
+  valueEn: string;
+  onChangeAr: (v: string) => void;
+  onChangeEn: (v: string) => void;
+  isAr: boolean;
+  multiline?: boolean;
+  translatingArToEn: boolean;
+  translatingEnToAr: boolean;
+  onTranslateArToEn: () => void;
+  onTranslateEnToAr: () => void;
+}) {
+  return (
+    <div className="grid gap-3 sm:grid-cols-2">
+      <div className="space-y-1">
+        <div className="flex items-center justify-between gap-2">
+          <Label className="text-xs">{labelAr}</Label>
+          <button
+            type="button"
+            onClick={onTranslateArToEn}
+            disabled={translatingArToEn || !valueAr.trim()}
+            className="inline-flex items-center gap-1 text-[11px] text-primary hover:underline disabled:opacity-40 disabled:no-underline"
+            title={isAr ? "ترجمة تلقائية إلى الإنجليزية" : "Auto-translate to English"}
+          >
+            {translatingArToEn ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
+            <span>✨ {isAr ? "ترجم → EN" : "Translate → EN"}</span>
+          </button>
+        </div>
+        {multiline ? (
+          <Textarea dir="rtl" value={valueAr} onChange={(e) => onChangeAr(e.target.value)} className="text-right" rows={3} />
+        ) : (
+          <Input dir="rtl" value={valueAr} onChange={(e) => onChangeAr(e.target.value)} className="text-right" />
+        )}
+      </div>
+      <div className="space-y-1">
+        <div className="flex items-center justify-between gap-2">
+          <Label className="text-xs">{labelEn}</Label>
+          <button
+            type="button"
+            onClick={onTranslateEnToAr}
+            disabled={translatingEnToAr || !valueEn.trim()}
+            className="inline-flex items-center gap-1 text-[11px] text-primary hover:underline disabled:opacity-40 disabled:no-underline"
+            title={isAr ? "ترجمة تلقائية إلى العربية" : "Auto-translate to Arabic"}
+          >
+            {translatingEnToAr ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
+            <span>✨ {isAr ? "ترجم → AR" : "Translate → AR"}</span>
+          </button>
+        </div>
+        {multiline ? (
+          <Textarea dir="ltr" value={valueEn} onChange={(e) => onChangeEn(e.target.value)} rows={3} />
+        ) : (
+          <Input dir="ltr" value={valueEn} onChange={(e) => onChangeEn(e.target.value)} />
+        )}
+      </div>
+    </div>
   );
 }
