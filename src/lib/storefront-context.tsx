@@ -54,6 +54,7 @@ export type PublicSettings = {
     content_en: string | null;
     image_url: string | null;
   }>;
+  socials: Array<{ name: string; url: string }>;
   whatsapp_enabled: boolean;
   whatsapp_number: string | null;
 };

@@ -1,5 +1,6 @@
 import { createFileRoute, Outlet, Link, notFound, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import {
   StorefrontProvider,
@@ -40,16 +41,17 @@ export const Route = createFileRoute("/store/$slug")({
 
     const s = settings as any;
     const rawPages = Array.isArray(s?.pages) ? s.pages : [];
-    const normalizedPages = Array.from({ length: 5 }, (_, i) => {
-      const p = rawPages[i] ?? {};
-      return {
-        title_ar: p.title_ar ?? null,
-        title_en: p.title_en ?? null,
-        content_ar: p.content_ar ?? null,
-        content_en: p.content_en ?? null,
-        image_url: p.image_url ?? null,
-      };
-    });
+    const normalizedPages = rawPages.map((p: any) => ({
+      title_ar: p?.title_ar ?? null,
+      title_en: p?.title_en ?? null,
+      content_ar: p?.content_ar ?? null,
+      content_en: p?.content_en ?? null,
+      image_url: p?.image_url ?? null,
+    }));
+    const rawSocials = Array.isArray(s?.socials) ? s.socials : [];
+    const normalizedSocials = rawSocials
+      .map((x: any) => ({ name: String(x?.name ?? "").trim(), url: String(x?.url ?? "").trim() }))
+      .filter((x: { name: string; url: string }) => x.name && x.url);
     const safeSettings: PublicSettings = {
       brand_id: brand.id,
       business_name: s?.business_name ?? brand.name_en,
@@ -81,6 +83,7 @@ export const Route = createFileRoute("/store/$slug")({
       btn_checkout_bg: s?.btn_checkout_bg ?? null,
       btn_checkout_fg: s?.btn_checkout_fg ?? null,
       pages: normalizedPages,
+      socials: normalizedSocials,
       whatsapp_enabled: Boolean(s?.whatsapp_enabled),
       whatsapp_number: s?.whatsapp_number ?? null,
     };
@@ -420,31 +423,126 @@ function CartDrawer({ children }: { children: React.ReactNode }) {
 }
 
 function SearchBar() {
-  const { brand, lang, t } = useStorefront();
+  const { brand, lang, t, currency } = useStorefront();
   const navigate = useNavigate();
   const [q, setQ] = useState("");
+  const [debounced, setDebounced] = useState("");
+  const [open, setOpen] = useState(false);
+  const [focused, setFocused] = useState(false);
+  const containerRef = React.useRef<HTMLDivElement>(null);
+
+  React.useEffect(() => {
+    const id = setTimeout(() => setDebounced(q.trim()), 200);
+    return () => clearTimeout(id);
+  }, [q]);
+
+  React.useEffect(() => {
+    const onDoc = (e: MouseEvent) => {
+      if (!containerRef.current?.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", onDoc);
+    return () => document.removeEventListener("mousedown", onDoc);
+  }, []);
+
+  const { data, isFetching } = useQuery({
+    queryKey: ["storefront", brand.slug, "live-search", debounced],
+    enabled: debounced.length >= 2,
+    queryFn: async () => {
+      const pattern = `%${debounced.replace(/[%_]/g, (m: string) => `\\${m}`)}%`;
+      const { data, error } = await supabase
+        .from("products")
+        .select("id, name, image_url, product_variants(selling_price)")
+        .eq("brand_id", brand.id)
+        .eq("is_active", true)
+        .or(`name.ilike.${pattern},description.ilike.${pattern}`)
+        .limit(8);
+      if (error) throw error;
+      return (data ?? []) as unknown as Array<{
+        id: string; name: string; image_url: string | null;
+        product_variants: Array<{ selling_price: number }>;
+      }>;
+    },
+    staleTime: 15_000,
+  });
+
+  const results = data ?? [];
+  const showDropdown = focused && open && debounced.length >= 2;
+
   return (
-    <form
-      role="search"
-      onSubmit={(e) => {
-        e.preventDefault();
-        const query = q.trim();
-        if (!query) return;
-        navigate({ to: "/store/$slug/search", params: { slug: brand.slug }, search: { q: query } });
-      }}
-      className="relative w-full"
-    >
-      <Search className={`absolute top-1/2 -translate-y-1/2 h-4 w-4 opacity-60 ${lang === "ar" ? "right-3" : "left-3"}`} />
-      <Input
-        value={q}
-        onChange={(e) => setQ(e.target.value)}
-        placeholder={t("ابحث عن منتج...", "Search for products...")}
-        className={`h-10 bg-white/70 dark:bg-black/20 border-black/10 ${lang === "ar" ? "pr-9" : "pl-9"}`}
-        inputMode="search"
-        enterKeyHint="search"
-        aria-label={t("ابحث عن منتج", "Search products")}
-      />
-    </form>
+    <div ref={containerRef} className="relative w-full">
+      <form
+        role="search"
+        onSubmit={(e) => {
+          e.preventDefault();
+          const query = q.trim();
+          if (!query) return;
+          setOpen(false);
+          navigate({ to: "/store/$slug/search", params: { slug: brand.slug }, search: { q: query } });
+        }}
+        className="relative w-full"
+      >
+        <Search className={`absolute top-1/2 -translate-y-1/2 h-4 w-4 opacity-60 ${lang === "ar" ? "right-3" : "left-3"}`} />
+        <Input
+          value={q}
+          onChange={(e) => { setQ(e.target.value); setOpen(true); }}
+          onFocus={() => { setFocused(true); setOpen(true); }}
+          onBlur={() => setFocused(false)}
+          placeholder={t("ابحث عن منتج...", "Search for products...")}
+          className={`h-10 bg-white/70 dark:bg-black/20 border-black/10 ${lang === "ar" ? "pr-9" : "pl-9"}`}
+          inputMode="search"
+          enterKeyHint="search"
+          aria-label={t("ابحث عن منتج", "Search products")}
+        />
+      </form>
+
+      {showDropdown && (
+        <div
+          className="absolute left-0 right-0 top-full mt-2 z-50 rounded-lg border shadow-xl bg-white dark:bg-neutral-900 max-h-[70vh] overflow-auto"
+          style={{ borderColor: "rgba(0,0,0,0.08)" }}
+          onMouseDown={(e) => e.preventDefault()}
+        >
+          {isFetching && (
+            <div className="p-4 text-center text-sm text-muted-foreground">
+              {t("جارٍ البحث...", "Searching...")}
+            </div>
+          )}
+          {!isFetching && results.length === 0 && (
+            <div className="p-4 text-center text-sm text-muted-foreground">
+              {t("لا توجد نتائج مطابقة", "No products found")}
+            </div>
+          )}
+          {!isFetching && results.length > 0 && (
+            <ul className="divide-y" style={{ borderColor: "rgba(0,0,0,0.06)" }}>
+              {results.map((p) => {
+                const price = p.product_variants?.[0]?.selling_price ?? 0;
+                return (
+                  <li key={p.id}>
+                    <Link
+                      to="/store/$slug/product/$id"
+                      params={{ slug: brand.slug, id: p.id }}
+                      onClick={() => { setOpen(false); setQ(""); }}
+                      className="flex items-center gap-3 px-3 py-2 hover:bg-black/5 dark:hover:bg-white/5"
+                    >
+                      <div className="h-12 w-12 shrink-0 rounded bg-muted overflow-hidden">
+                        {p.image_url && (
+                          <img src={p.image_url} alt={p.name} className="h-full w-full object-cover" />
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm font-medium truncate">{p.name}</div>
+                        <div className="text-xs" style={{ color: "var(--sf-heading)" }}>
+                          {formatPrice(Number(price), currency, lang)}
+                        </div>
+                      </div>
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -457,6 +555,7 @@ function StoreFooter() {
       hasContent: Boolean(p.title_ar || p.title_en),
     }))
     .filter((p) => p.hasContent && p.title);
+  const socials = settings.socials ?? [];
   return (
     <footer
       className="border-t mt-16 py-8"
@@ -466,18 +565,34 @@ function StoreFooter() {
         color: "var(--sf-footer-fg)",
       }}
     >
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 text-center text-sm space-y-3" style={{ color: "var(--sf-footer-fg)" }}>
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 text-center text-sm space-y-4" style={{ color: "var(--sf-footer-fg)" }}>
         <div className="font-medium" style={{ color: "var(--sf-heading)" }}>
           {lang === "ar" ? brand.name_ar || brand.name_en : brand.name_en}
         </div>
+        {socials.length > 0 && (
+          <nav className="flex flex-wrap justify-center gap-x-5 gap-y-2 text-xs tracking-[0.2em] uppercase">
+            {socials.map((s, i) => (
+              <a
+                key={`${s.name}-${i}`}
+                href={s.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:underline underline-offset-4"
+                style={{ color: "var(--sf-footer-fg)" }}
+              >
+                {s.name}
+              </a>
+            ))}
+          </nav>
+        )}
         {pageLinks.length > 0 && (
-          <nav className="flex flex-wrap justify-center gap-x-4 gap-y-2">
+          <nav className="flex flex-wrap justify-center gap-x-5 gap-y-2 text-xs tracking-[0.2em] uppercase">
             {pageLinks.map((p) => (
               <Link
                 key={p.idx}
                 to="/store/$slug/page/$idx"
                 params={{ slug: brand.slug, idx: String(p.idx) }}
-                className="underline-offset-2 hover:underline"
+                className="hover:underline underline-offset-4"
                 style={{ color: "var(--sf-link)" }}
               >
                 {p.title}

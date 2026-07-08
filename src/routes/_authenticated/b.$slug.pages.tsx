@@ -9,7 +9,7 @@ import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
-import { Upload, Trash2, MessageCircle } from "lucide-react";
+import { Upload, Trash2, MessageCircle, Plus, GripVertical } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
 import { useBrand } from "@/lib/brand-context";
 
@@ -25,7 +25,9 @@ type PageSlot = {
   image_url: string | null;
 };
 
-const emptySlot = (): PageSlot => ({
+type Social = { name: string; url: string };
+
+const emptyPage = (): PageSlot => ({
   title_ar: "",
   title_en: "",
   content_ar: "",
@@ -57,7 +59,7 @@ function PagesAndPolicies() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("business_settings")
-        .select("pages, whatsapp_enabled, whatsapp_number")
+        .select("pages, whatsapp_enabled, whatsapp_number, socials")
         .eq("brand_id", brandId)
         .maybeSingle();
       if (error) throw error;
@@ -65,7 +67,8 @@ function PagesAndPolicies() {
     },
   });
 
-  const [pages, setPages] = useState<PageSlot[]>(() => Array.from({ length: 5 }, emptySlot));
+  const [pages, setPages] = useState<PageSlot[]>([]);
+  const [socials, setSocials] = useState<Social[]>([]);
   const [waEnabled, setWaEnabled] = useState(false);
   const [waNumber, setWaNumber] = useState("");
   const [saving, setSaving] = useState(false);
@@ -74,14 +77,21 @@ function PagesAndPolicies() {
 
   useEffect(() => {
     if (!data) return;
-    const raw = Array.isArray(data.pages) ? data.pages : [];
+    const rawPages = Array.isArray(data.pages) ? data.pages : [];
     setPages(
-      Array.from({ length: 5 }, (_, i) => ({
-        title_ar: raw[i]?.title_ar ?? "",
-        title_en: raw[i]?.title_en ?? "",
-        content_ar: raw[i]?.content_ar ?? "",
-        content_en: raw[i]?.content_en ?? "",
-        image_url: raw[i]?.image_url ?? null,
+      rawPages.map((p: any) => ({
+        title_ar: p?.title_ar ?? "",
+        title_en: p?.title_en ?? "",
+        content_ar: p?.content_ar ?? "",
+        content_en: p?.content_en ?? "",
+        image_url: p?.image_url ?? null,
+      })),
+    );
+    const rawSocials = Array.isArray(data.socials) ? data.socials : [];
+    setSocials(
+      rawSocials.map((x: any) => ({
+        name: String(x?.name ?? ""),
+        url: String(x?.url ?? ""),
       })),
     );
     setWaEnabled(Boolean(data.whatsapp_enabled));
@@ -91,6 +101,16 @@ function PagesAndPolicies() {
   const updatePage = (idx: number, patch: Partial<PageSlot>) => {
     setPages((prev) => prev.map((p, i) => (i === idx ? { ...p, ...patch } : p)));
   };
+  const removePage = (idx: number) => {
+    setPages((prev) => prev.filter((_, i) => i !== idx));
+  };
+  const addPage = () => setPages((prev) => [...prev, emptyPage()]);
+
+  const updateSocial = (idx: number, patch: Partial<Social>) => {
+    setSocials((prev) => prev.map((s, i) => (i === idx ? { ...s, ...patch } : s)));
+  };
+  const removeSocial = (idx: number) => setSocials((prev) => prev.filter((_, i) => i !== idx));
+  const addSocial = () => setSocials((prev) => [...prev, { name: "", url: "" }]);
 
   const onPickImage = async (idx: number, file: File) => {
     try {
@@ -109,17 +129,21 @@ function PagesAndPolicies() {
 
   const save = async () => {
     setSaving(true);
-    const cleaned = pages.map((p) => ({
+    const cleanedPages = pages.map((p) => ({
       title_ar: p.title_ar.trim() || null,
       title_en: p.title_en.trim() || null,
       content_ar: p.content_ar.trim() || null,
       content_en: p.content_en.trim() || null,
       image_url: p.image_url || null,
     }));
+    const cleanedSocials = socials
+      .map((s) => ({ name: s.name.trim(), url: s.url.trim() }))
+      .filter((s) => s.name && s.url);
     const number = waNumber.replace(/\s+/g, "").replace(/^00/, "+");
     const { error } = await (supabase.from("business_settings") as any)
       .update({
-        pages: cleaned,
+        pages: cleanedPages,
+        socials: cleanedSocials,
         whatsapp_enabled: waEnabled,
         whatsapp_number: number || null,
       })
@@ -142,11 +166,51 @@ function PagesAndPolicies() {
         </h1>
         <p className="text-sm text-muted-foreground mt-1">
           {isAr
-            ? "خصّص حتى 5 صفحات (دليل مقاسات، سياسة التوصيل، من نحن ...) — ستظهر الروابط الممتلئة تلقائياً في تذييل المتجر."
-            : "Customize up to 5 pages (size guide, delivery policy, about us…). Filled slots appear automatically in your storefront footer."}
+            ? "أضف عدداً غير محدود من الصفحات (من نحن، سياسة التوصيل، دليل المقاسات …) — ستظهر روابطها تلقائياً في تذييل المتجر."
+            : "Add unlimited pages (about us, delivery policy, size guide…). Links appear automatically in your storefront footer."}
         </p>
       </div>
 
+      {/* Social links */}
+      <Card className="p-5 space-y-4">
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="font-display text-lg">
+            {isAr ? "روابط التواصل الاجتماعي" : "Social media links"}
+          </h2>
+          <Button type="button" size="sm" variant="outline" onClick={addSocial}>
+            <Plus className="h-4 w-4 mr-1" />
+            {isAr ? "إضافة رابط منصة" : "Add social link"}
+          </Button>
+        </div>
+        {socials.length === 0 && (
+          <p className="text-sm text-muted-foreground">
+            {isAr ? "لم تُضف أي روابط بعد." : "No links yet."}
+          </p>
+        )}
+        <div className="space-y-3">
+          {socials.map((s, i) => (
+            <div key={i} className="grid grid-cols-1 sm:grid-cols-[1fr_2fr_auto] gap-2 items-center">
+              <Input
+                value={s.name}
+                onChange={(e) => updateSocial(i, { name: e.target.value })}
+                placeholder={isAr ? "اسم المنصة (INSTAGRAM)" : "Platform (INSTAGRAM)"}
+              />
+              <Input
+                value={s.url}
+                onChange={(e) => updateSocial(i, { url: e.target.value })}
+                placeholder="https://instagram.com/yourbrand"
+                dir="ltr"
+                inputMode="url"
+              />
+              <Button type="button" variant="ghost" size="icon" onClick={() => removeSocial(i)} aria-label="Remove">
+                <Trash2 className="h-4 w-4 text-red-600" />
+              </Button>
+            </div>
+          ))}
+        </div>
+      </Card>
+
+      {/* WhatsApp */}
       <Card className="p-5 space-y-4">
         <div className="flex items-center gap-2">
           <MessageCircle className="h-5 w-5" style={{ color: "#25D366" }} />
@@ -180,23 +244,36 @@ function PagesAndPolicies() {
         </div>
       </Card>
 
+      {/* Pages */}
+      <div className="flex items-center justify-between">
+        <h2 className="font-display text-xl">
+          {isAr ? "الصفحات" : "Pages"}
+        </h2>
+        <Button type="button" onClick={addPage} size="sm">
+          <Plus className="h-4 w-4 mr-1" />
+          {isAr ? "إضافة صفحة جديدة" : "Add new page"}
+        </Button>
+      </div>
+
+      {pages.length === 0 && (
+        <Card className="p-6 text-center text-sm text-muted-foreground">
+          {isAr ? "لا توجد صفحات بعد. اضغط \"إضافة صفحة جديدة\" للبدء." : 'No pages yet. Click "Add new page" to begin.'}
+        </Card>
+      )}
+
       {pages.map((p, i) => (
         <Card key={i} className="p-5 space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="font-display text-lg">
-              {isAr ? `الصفحة ${i + 1}` : `Page ${i + 1}`}
-            </h2>
-            {(p.title_ar || p.title_en || p.content_ar || p.content_en || p.image_url) && (
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={() => setPages((prev) => prev.map((x, j) => (j === i ? emptySlot() : x)))}
-              >
-                <Trash2 className="h-4 w-4 mr-1" />
-                {isAr ? "مسح" : "Clear"}
-              </Button>
-            )}
+            <div className="flex items-center gap-2">
+              <GripVertical className="h-4 w-4 text-muted-foreground" />
+              <h2 className="font-display text-lg">
+                {isAr ? `الصفحة ${i + 1}` : `Page ${i + 1}`}
+              </h2>
+            </div>
+            <Button type="button" variant="ghost" size="sm" onClick={() => removePage(i)}>
+              <Trash2 className="h-4 w-4 mr-1 text-red-600" />
+              {isAr ? "حذف" : "Delete"}
+            </Button>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

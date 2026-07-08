@@ -177,6 +177,7 @@ export type Database = {
           phone: string | null
           pickup_enabled: boolean
           primary_color: string
+          socials: Json
           text_color: string
           updated_at: string
           user_id: string
@@ -227,6 +228,7 @@ export type Database = {
           phone?: string | null
           pickup_enabled?: boolean
           primary_color?: string
+          socials?: Json
           text_color?: string
           updated_at?: string
           user_id: string
@@ -277,6 +279,7 @@ export type Database = {
           phone?: string | null
           pickup_enabled?: boolean
           primary_color?: string
+          socials?: Json
           text_color?: string
           updated_at?: string
           user_id?: string
@@ -1041,6 +1044,7 @@ export type Database = {
           pages: Json | null
           pickup_enabled: boolean | null
           primary_color: string | null
+          socials: Json | null
           text_color: string | null
           whatsapp_enabled: boolean | null
           whatsapp_number: string | null
