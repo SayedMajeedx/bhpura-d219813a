@@ -22,6 +22,7 @@ import { Route as SlugSearchRouteImport } from './routes/$slug.search'
 import { Route as SlugCheckoutRouteImport } from './routes/$slug.checkout'
 import { Route as SlugAuthRouteImport } from './routes/$slug.auth'
 import { Route as SlugAccountRouteImport } from './routes/$slug.account'
+import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin.index'
 import { Route as AuthenticatedAdminTeamRouteImport } from './routes/_authenticated/admin.team'
 import { Route as AuthenticatedAdminSettingsRouteImport } from './routes/_authenticated/admin.settings'
 import { Route as AuthenticatedAdminOrdersRouteImport } from './routes/_authenticated/admin.orders'
@@ -110,6 +111,11 @@ const SlugAccountRoute = SlugAccountRouteImport.update({
   id: '/account',
   path: '/account',
   getParentRoute: () => SlugRouteRoute,
+} as any)
+const AuthenticatedAdminIndexRoute = AuthenticatedAdminIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AuthenticatedAdminRoute,
 } as any)
 const AuthenticatedAdminTeamRoute = AuthenticatedAdminTeamRouteImport.update({
   id: '/team',
@@ -276,6 +282,7 @@ export interface FileRoutesByFullPath {
   '/admin/orders': typeof AuthenticatedAdminOrdersRoute
   '/admin/settings': typeof AuthenticatedAdminSettingsRoute
   '/admin/team': typeof AuthenticatedAdminTeamRoute
+  '/admin/': typeof AuthenticatedAdminIndexRoute
   '/admin/b/$slug': typeof AuthenticatedAdminBSlugRouteRouteWithChildren
   '/admin/b/$slug/campaigns': typeof AuthenticatedAdminBSlugCampaignsRoute
   '/admin/b/$slug/categories': typeof AuthenticatedAdminBSlugCategoriesRoute
@@ -299,7 +306,6 @@ export interface FileRoutesByTo {
   '/$slug/auth': typeof SlugAuthRoute
   '/$slug/checkout': typeof SlugCheckoutRoute
   '/$slug/search': typeof SlugSearchRoute
-  '/admin': typeof AuthenticatedAdminRouteWithChildren
   '/invoice/$id': typeof InvoiceIdRoute
   '/$slug': typeof SlugIndexRoute
   '/$slug/page/$idx': typeof SlugPageIdxRoute
@@ -313,6 +319,7 @@ export interface FileRoutesByTo {
   '/admin/orders': typeof AuthenticatedAdminOrdersRoute
   '/admin/settings': typeof AuthenticatedAdminSettingsRoute
   '/admin/team': typeof AuthenticatedAdminTeamRoute
+  '/admin': typeof AuthenticatedAdminIndexRoute
   '/admin/b/$slug': typeof AuthenticatedAdminBSlugRouteRouteWithChildren
   '/admin/b/$slug/campaigns': typeof AuthenticatedAdminBSlugCampaignsRoute
   '/admin/b/$slug/categories': typeof AuthenticatedAdminBSlugCategoriesRoute
@@ -353,6 +360,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/orders': typeof AuthenticatedAdminOrdersRoute
   '/_authenticated/admin/settings': typeof AuthenticatedAdminSettingsRoute
   '/_authenticated/admin/team': typeof AuthenticatedAdminTeamRoute
+  '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
   '/_authenticated/admin/b/$slug': typeof AuthenticatedAdminBSlugRouteRouteWithChildren
   '/_authenticated/admin/b/$slug/campaigns': typeof AuthenticatedAdminBSlugCampaignsRoute
   '/_authenticated/admin/b/$slug/categories': typeof AuthenticatedAdminBSlugCategoriesRoute
@@ -393,6 +401,7 @@ export interface FileRouteTypes {
     | '/admin/orders'
     | '/admin/settings'
     | '/admin/team'
+    | '/admin/'
     | '/admin/b/$slug'
     | '/admin/b/$slug/campaigns'
     | '/admin/b/$slug/categories'
@@ -416,7 +425,6 @@ export interface FileRouteTypes {
     | '/$slug/auth'
     | '/$slug/checkout'
     | '/$slug/search'
-    | '/admin'
     | '/invoice/$id'
     | '/$slug'
     | '/$slug/page/$idx'
@@ -430,6 +438,7 @@ export interface FileRouteTypes {
     | '/admin/orders'
     | '/admin/settings'
     | '/admin/team'
+    | '/admin'
     | '/admin/b/$slug'
     | '/admin/b/$slug/campaigns'
     | '/admin/b/$slug/categories'
@@ -469,6 +478,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/orders'
     | '/_authenticated/admin/settings'
     | '/_authenticated/admin/team'
+    | '/_authenticated/admin/'
     | '/_authenticated/admin/b/$slug'
     | '/_authenticated/admin/b/$slug/campaigns'
     | '/_authenticated/admin/b/$slug/categories'
@@ -586,6 +596,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/$slug/account'
       preLoaderRoute: typeof SlugAccountRouteImport
       parentRoute: typeof SlugRouteRoute
+    }
+    '/_authenticated/admin/': {
+      id: '/_authenticated/admin/'
+      path: '/'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AuthenticatedAdminIndexRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
     }
     '/_authenticated/admin/team': {
       id: '/_authenticated/admin/team'
@@ -836,6 +853,7 @@ interface AuthenticatedAdminRouteChildren {
   AuthenticatedAdminOrdersRoute: typeof AuthenticatedAdminOrdersRoute
   AuthenticatedAdminSettingsRoute: typeof AuthenticatedAdminSettingsRoute
   AuthenticatedAdminTeamRoute: typeof AuthenticatedAdminTeamRoute
+  AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
   AuthenticatedAdminBSlugRouteRoute: typeof AuthenticatedAdminBSlugRouteRouteWithChildren
 }
 
@@ -848,6 +866,7 @@ const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
   AuthenticatedAdminOrdersRoute: AuthenticatedAdminOrdersRoute,
   AuthenticatedAdminSettingsRoute: AuthenticatedAdminSettingsRoute,
   AuthenticatedAdminTeamRoute: AuthenticatedAdminTeamRoute,
+  AuthenticatedAdminIndexRoute: AuthenticatedAdminIndexRoute,
   AuthenticatedAdminBSlugRouteRoute:
     AuthenticatedAdminBSlugRouteRouteWithChildren,
 }
