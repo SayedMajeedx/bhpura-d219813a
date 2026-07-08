@@ -138,6 +138,16 @@ function StoreShell() {
   }, [brand.id, brand.slug, qc]);
 
   const primary = settings.primary_color;
+  const headerBg = settings.header_bg ?? settings.background_color ?? "#ffffff";
+  const headerFg = settings.header_fg ?? readableOn(headerBg, settings.text_color);
+  const footerBg = settings.footer_bg ?? settings.background_color ?? "#ffffff";
+  const footerFg = settings.footer_fg ?? readableOn(footerBg, settings.text_color);
+  const btnPrimaryBg = settings.btn_primary_bg ?? primary;
+  const btnPrimaryFg = settings.btn_primary_fg ?? readableOn(btnPrimaryBg, "#ffffff");
+  const btnSecondaryBg = settings.btn_secondary_bg ?? "#111111";
+  const btnSecondaryFg = settings.btn_secondary_fg ?? readableOn(btnSecondaryBg, "#ffffff");
+  const headingColor = settings.heading_color ?? primary;
+  const linkColor = settings.link_color ?? primary;
 
   return (
     <div
@@ -147,6 +157,16 @@ function StoreShell() {
           backgroundColor: settings.background_color,
           color: settings.text_color,
           ["--brand" as any]: primary,
+          ["--sf-header-bg" as any]: headerBg,
+          ["--sf-header-fg" as any]: headerFg,
+          ["--sf-footer-bg" as any]: footerBg,
+          ["--sf-footer-fg" as any]: footerFg,
+          ["--sf-btn-primary-bg" as any]: btnPrimaryBg,
+          ["--sf-btn-primary-fg" as any]: btnPrimaryFg,
+          ["--sf-btn-secondary-bg" as any]: btnSecondaryBg,
+          ["--sf-btn-secondary-fg" as any]: btnSecondaryFg,
+          ["--sf-heading" as any]: headingColor,
+          ["--sf-link" as any]: linkColor,
         } as React.CSSProperties
       }
     >
@@ -162,17 +182,28 @@ function StoreShell() {
 function StoreHeader() {
   const { brand, settings, lang, setLang, t, cartCount, session, signOut } = useStorefront();
   const displayName = lang === "ar" ? brand.name_ar || brand.name_en : brand.name_en;
+  const align = settings.logo_align ?? "left";
+  const logoSize = settings.logo_size || 40;
 
   return (
     <header
-      className="sticky top-0 z-40 w-full border-b backdrop-blur bg-white/80"
-      style={{ borderColor: "rgba(0,0,0,0.06)" }}
+      className="sticky top-0 z-40 w-full border-b backdrop-blur"
+      style={{
+        backgroundColor: "var(--sf-header-bg)",
+        color: "var(--sf-header-fg)",
+        borderColor: "rgba(0,0,0,0.08)",
+      }}
     >
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 h-16 flex items-center justify-between gap-3">
+      <div
+        className={`mx-auto max-w-7xl px-4 sm:px-6 h-16 flex items-center gap-3 ${
+          align === "center" ? "justify-between" : "justify-between"
+        }`}
+      >
         <Link
           to="/store/$slug"
           params={{ slug: brand.slug }}
-          className="flex items-center gap-3 min-w-0"
+          className={`flex items-center gap-3 min-w-0 ${align === "center" ? "mx-auto" : ""}`}
+          style={{ color: "var(--sf-header-fg)" }}
         >
           {settings.logo_url && (
             <img
