@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -241,16 +241,31 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
   const { lang } = useI18n();
   const isAr = lang === "ar";
   const brand = useBrand();
-  const [form, setForm] = useState({
+  const initialForm = {
     name: product?.name ?? "",
     description: product?.description ?? "",
     category: product?.category ?? "",
     image_url: product?.image_url ?? "",
     is_active: product?.is_active ?? true,
     media: (product?.media ?? []) as MediaItem[],
-  });
+  };
+  const [form, setForm] = useState(initialForm);
   const [uploading, setUploading] = useState(false);
   const mediaInput = useState<HTMLInputElement | null>(null);
+
+  // Re-sync form whenever the edited product changes (or the dialog is reopened
+  // with a different product) so previously-saved values are preserved as defaults
+  // and unmodified fields are never overwritten with blanks.
+  useEffect(() => {
+    setForm({
+      name: product?.name ?? "",
+      description: product?.description ?? "",
+      category: product?.category ?? "",
+      image_url: product?.image_url ?? "",
+      is_active: product?.is_active ?? true,
+      media: (product?.media ?? []) as MediaItem[],
+    });
+  }, [product?.id]);
 
   const categoriesQ = useQuery({
     queryKey: ["categories", brand.id],
@@ -290,12 +305,27 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
     if (!form.name.trim()) return toast.error(t("inventory.name"));
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
-    const payload = { ...form, user_id: user.id, media: form.media as any };
-    const { error } = product
-      ? await supabase.from("products").update(payload).eq("id", product.id)
-      : await (supabase.from("products") as any).insert(payload);
-    if (error) toast.error(error.message);
-    else { toast.success(t("common.save")); onSaved(); }
+
+    if (product) {
+      // Partial update: only send the fields owned by this form. Do NOT include
+      // user_id (would clobber original owner) or brand_id (would break tenancy).
+      const patch = {
+        name: form.name,
+        description: form.description,
+        category: form.category,
+        image_url: form.image_url,
+        is_active: form.is_active,
+        media: form.media as any,
+      };
+      const { error } = await supabase.from("products").update(patch).eq("id", product.id);
+      if (error) return toast.error(error.message);
+    } else {
+      const payload = { ...form, user_id: user.id, media: form.media as any };
+      const { error } = await (supabase.from("products") as any).insert(payload);
+      if (error) return toast.error(error.message);
+    }
+    toast.success(t("common.save"));
+    onSaved();
   };
 
   return (
