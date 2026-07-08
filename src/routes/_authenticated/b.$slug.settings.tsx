@@ -645,7 +645,7 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
     queryKey: ["business-settings-theme", brandId],
     queryFn: async () => {
       const { data, error } = await supabase.from("business_settings")
-        .select("logo_size, logo_align, header_bg, header_fg, footer_bg, footer_fg, heading_color, link_color, btn_primary_bg, btn_primary_fg, btn_secondary_bg, btn_secondary_fg")
+        .select("logo_size, logo_align, header_bg, header_fg, footer_bg, footer_fg, heading_color, link_color, btn_primary_bg, btn_primary_fg, btn_secondary_bg, btn_secondary_fg, btn_checkout_bg, btn_checkout_fg")
         .eq("brand_id", brandId).maybeSingle();
       if (error) throw error;
       return data as any;
