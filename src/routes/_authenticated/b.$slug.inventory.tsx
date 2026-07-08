@@ -750,3 +750,68 @@ function CustomizationsSection({ items, onChanged }: { items: Customization[]; o
     </Card>
   );
 }
+
+function BilingualField({
+  labelAr, labelEn, valueAr, valueEn, onChangeAr, onChangeEn, isAr,
+  multiline = false,
+  translatingArToEn, translatingEnToAr,
+  onTranslateArToEn, onTranslateEnToAr,
+}: {
+  labelAr: string;
+  labelEn: string;
+  valueAr: string;
+  valueEn: string;
+  onChangeAr: (v: string) => void;
+  onChangeEn: (v: string) => void;
+  isAr: boolean;
+  multiline?: boolean;
+  translatingArToEn: boolean;
+  translatingEnToAr: boolean;
+  onTranslateArToEn: () => void;
+  onTranslateEnToAr: () => void;
+}) {
+  return (
+    <div className="grid gap-3 sm:grid-cols-2">
+      <div className="space-y-1">
+        <div className="flex items-center justify-between gap-2">
+          <Label className="text-xs">{labelAr}</Label>
+          <button
+            type="button"
+            onClick={onTranslateArToEn}
+            disabled={translatingArToEn || !valueAr.trim()}
+            className="inline-flex items-center gap-1 text-[11px] text-primary hover:underline disabled:opacity-40 disabled:no-underline"
+            title={isAr ? "ترجمة تلقائية إلى الإنجليزية" : "Auto-translate to English"}
+          >
+            {translatingArToEn ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
+            <span>✨ {isAr ? "ترجم → EN" : "Translate → EN"}</span>
+          </button>
+        </div>
+        {multiline ? (
+          <Textarea dir="rtl" value={valueAr} onChange={(e) => onChangeAr(e.target.value)} className="text-right" rows={3} />
+        ) : (
+          <Input dir="rtl" value={valueAr} onChange={(e) => onChangeAr(e.target.value)} className="text-right" />
+        )}
+      </div>
+      <div className="space-y-1">
+        <div className="flex items-center justify-between gap-2">
+          <Label className="text-xs">{labelEn}</Label>
+          <button
+            type="button"
+            onClick={onTranslateEnToAr}
+            disabled={translatingEnToAr || !valueEn.trim()}
+            className="inline-flex items-center gap-1 text-[11px] text-primary hover:underline disabled:opacity-40 disabled:no-underline"
+            title={isAr ? "ترجمة تلقائية إلى العربية" : "Auto-translate to Arabic"}
+          >
+            {translatingEnToAr ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
+            <span>✨ {isAr ? "ترجم → AR" : "Translate → AR"}</span>
+          </button>
+        </div>
+        {multiline ? (
+          <Textarea dir="ltr" value={valueEn} onChange={(e) => onChangeEn(e.target.value)} rows={3} />
+        ) : (
+          <Input dir="ltr" value={valueEn} onChange={(e) => onChangeEn(e.target.value)} />
+        )}
+      </div>
+    </div>
+  );
+}
