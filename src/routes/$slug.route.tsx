@@ -24,7 +24,7 @@ import {
 import { ShoppingBag, Languages, Minus, Plus, Trash2, X, User, Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 
-export const Route = createFileRoute("/store/$slug")({
+export const Route = createFileRoute("/$slug")({
   loader: async ({ params }) => {
     const { data: brand, error: brandErr } = await supabase
       .from("brands")
@@ -244,7 +244,7 @@ function StoreHeader() {
       <div className="mx-auto max-w-7xl px-4 sm:px-6 py-2 flex flex-col gap-2">
         <div className="h-14 flex items-center gap-3 justify-between">
           <Link
-            to="/store/$slug"
+            to="/$slug"
             params={{ slug: brand.slug }}
             className={`flex items-center gap-3 min-w-0 ${align === "center" ? "sm:mx-auto" : ""}`}
             style={{ color: "var(--sf-header-fg)" }}
@@ -293,14 +293,14 @@ function StoreHeader() {
 
             {session ? (
               <Button asChild variant="ghost" size="sm" className="gap-1 hover:bg-black/5" style={{ color: "var(--sf-header-fg)" }}>
-                <Link to="/store/$slug/account" params={{ slug: brand.slug }} title={session.user?.email ?? ""}>
+                <Link to="/$slug/account" params={{ slug: brand.slug }} title={session.user?.email ?? ""}>
                   <User className="h-4 w-4" />
                   <span className="hidden sm:inline max-w-[120px] truncate">{t("حسابي", "My account")}</span>
                 </Link>
               </Button>
             ) : (
               <Button asChild variant="ghost" size="sm" className="gap-1 hover:bg-black/5" style={{ color: "var(--sf-header-fg)" }}>
-                <Link to="/store/$slug/auth" params={{ slug: brand.slug }}>
+                <Link to="/$slug/auth" params={{ slug: brand.slug }}>
                   <User className="h-4 w-4" />
                   <span className="hidden sm:inline">{t("دخول", "Sign in")}</span>
                 </Link>
@@ -416,7 +416,7 @@ function CartDrawer({ children }: { children: React.ReactNode }) {
               style={{ backgroundColor: "var(--sf-btn-primary-bg)", color: "var(--sf-btn-primary-fg)" }}
               onClick={() => {
                 setOpen(false);
-                navigate({ to: "/store/$slug/checkout", params: { slug: brand.slug } });
+                navigate({ to: "/$slug/checkout", params: { slug: brand.slug } });
               }}
             >
               {t("إتمام الشراء", "Checkout")}
@@ -483,7 +483,7 @@ function SearchBar() {
           const query = q.trim();
           if (!query) return;
           setOpen(false);
-          navigate({ to: "/store/$slug/search", params: { slug: brand.slug }, search: { q: query } });
+          navigate({ to: "/$slug/search", params: { slug: brand.slug }, search: { q: query } });
         }}
         className="relative w-full"
       >
@@ -525,7 +525,7 @@ function SearchBar() {
                 return (
                   <li key={p.id}>
                     <Link
-                      to="/store/$slug/product/$id"
+                      to="/$slug/product/$id"
                       params={{ slug: brand.slug, id: p.id }}
                       onClick={() => { setOpen(false); setQ(""); }}
                       className="flex items-center gap-3 px-3 py-2 hover:bg-black/5 dark:hover:bg-white/5"
@@ -597,7 +597,7 @@ function StoreFooter() {
             {pageLinks.map((p) => (
               <Link
                 key={p.idx}
-                to="/store/$slug/page/$idx"
+                to="/$slug/page/$idx"
                 params={{ slug: brand.slug, idx: String(p.idx) }}
                 className="hover:underline underline-offset-4"
                 style={{ color: "var(--sf-link)" }}

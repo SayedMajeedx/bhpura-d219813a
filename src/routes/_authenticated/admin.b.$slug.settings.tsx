@@ -17,7 +17,7 @@ import { useBrand } from "@/lib/brand-context";
 import { Switch } from "@/components/ui/switch";
 import { Trash2 } from "lucide-react";
 
-export const Route = createFileRoute("/_authenticated/b/$slug/settings")({
+export const Route = createFileRoute("/_authenticated/admin/b/$slug/settings")({
   component: Settings,
 });
 

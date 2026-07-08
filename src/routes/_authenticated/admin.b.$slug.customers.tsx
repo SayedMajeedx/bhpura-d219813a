@@ -17,7 +17,7 @@ import { PhoneInput } from "@/components/phone-input";
 import { useBrand } from "@/lib/brand-context";
 import { useRealtimeInvalidate } from "@/hooks/use-realtime-invalidate";
 
-export const Route = createFileRoute("/_authenticated/b/$slug/customers")({
+export const Route = createFileRoute("/_authenticated/admin/b/$slug/customers")({
   component: CustomersPage,
 });
 

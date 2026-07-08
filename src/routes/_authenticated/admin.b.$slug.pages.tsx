@@ -13,7 +13,7 @@ import { Upload, Trash2, MessageCircle, Plus, GripVertical } from "lucide-react"
 import { useI18n } from "@/lib/i18n";
 import { useBrand } from "@/lib/brand-context";
 
-export const Route = createFileRoute("/_authenticated/b/$slug/pages")({
+export const Route = createFileRoute("/_authenticated/admin/b/$slug/pages")({
   component: PagesAndPolicies,
 });
 

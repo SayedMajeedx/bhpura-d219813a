@@ -11,7 +11,7 @@ import { toast } from "sonner";
 import { Loader2, User, LogIn, MailCheck } from "lucide-react";
 import { translateAuthError } from "@/lib/auth-errors";
 
-export const Route = createFileRoute("/store/$slug/auth")({
+export const Route = createFileRoute("/$slug/auth")({
   component: StorefrontAuth,
 });
 
@@ -25,7 +25,7 @@ function StorefrontAuth() {
 
   if (session) {
     // Already signed in — bounce back to checkout / home
-    navigate({ to: "/store/$slug", params: { slug: brand.slug } });
+    navigate({ to: "/$slug", params: { slug: brand.slug } });
     return null;
   }
 
@@ -53,7 +53,7 @@ function StorefrontAuth() {
     await link(form.name, form.phone);
     setWorking(false);
     toast.success(t("مرحبًا بعودتك!", "Welcome back!"));
-    navigate({ to: "/store/$slug/checkout", params: { slug: brand.slug } });
+    navigate({ to: "/$slug/checkout", params: { slug: brand.slug } });
   };
 
   const signUp = async () => {
@@ -90,7 +90,7 @@ function StorefrontAuth() {
     // Already signed in (email confirmation disabled) — link + go to checkout.
     await link(form.name, form.phone);
     toast.success(t("تم إنشاء الحساب!", "Account created!"));
-    navigate({ to: "/store/$slug/checkout", params: { slug: brand.slug } });
+    navigate({ to: "/$slug/checkout", params: { slug: brand.slug } });
   };
 
   return (
@@ -187,7 +187,7 @@ function StorefrontAuth() {
         </Tabs>
 
         <div className="text-center text-sm">
-          <Link to="/store/$slug/checkout" params={{ slug: brand.slug }} className="underline text-muted-foreground">
+          <Link to="/$slug/checkout" params={{ slug: brand.slug }} className="underline text-muted-foreground">
             {t("متابعة كضيف", "Continue as guest")}
           </Link>
         </div>

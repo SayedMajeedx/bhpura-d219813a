@@ -3,7 +3,7 @@ import { useStorefront } from "@/lib/storefront-context";
 import { Card } from "@/components/ui/card";
 import { CheckCircle2 } from "lucide-react";
 
-export const Route = createFileRoute("/store/$slug/thank-you/$orderId")({
+export const Route = createFileRoute("/$slug/thank-you/$orderId")({
   component: ThankYou,
 });
 
@@ -21,7 +21,7 @@ function ThankYou() {
           )}
         </p>
         <Link
-          to="/store/$slug"
+          to="/$slug"
           params={{ slug: brand.slug }}
           className="inline-flex px-6 py-3 rounded-full text-white"
           style={{ backgroundColor: settings.primary_color }}

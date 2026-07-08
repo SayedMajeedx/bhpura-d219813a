@@ -9,7 +9,7 @@ import { useState, useMemo } from "react";
 import { ChevronLeft, ChevronRight, ShoppingBag } from "lucide-react";
 import { toast } from "sonner";
 
-export const Route = createFileRoute("/store/$slug/product/$id")({
+export const Route = createFileRoute("/$slug/product/$id")({
   component: ProductDetail,
 });
 
@@ -90,7 +90,7 @@ function ProductDetail() {
       <div className="mx-auto max-w-lg p-8 text-center">
         <Card className="p-8">
           <p className="mb-4">{t("لم يتم العثور على المنتج.", "Product not found.")}</p>
-          <Link to="/store/$slug" params={{ slug: brand.slug }} className="underline">
+          <Link to="/$slug" params={{ slug: brand.slug }} className="underline">
             {t("العودة للمتجر", "Back to store")}
           </Link>
         </Card>
@@ -263,7 +263,7 @@ function ProductDetail() {
             disabled={!canAdd}
             onClick={() => {
               doAdd();
-              navigate({ to: "/store/$slug/checkout", params: { slug: brand.slug } });
+              navigate({ to: "/$slug/checkout", params: { slug: brand.slug } });
             }}
           >
             {t("اشتر الآن", "Buy now")}

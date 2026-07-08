@@ -19,7 +19,7 @@ type ProductRow = {
   product_variants: Array<{ id: string; selling_price: number; stock_main: number }>;
 };
 
-export const Route = createFileRoute("/store/$slug/search")({
+export const Route = createFileRoute("/$slug/search")({
   validateSearch: (s): SearchParams => ({ q: typeof s.q === "string" ? s.q : "" }),
   component: SearchPage,
 });
@@ -80,7 +80,7 @@ function SearchPage() {
             return (
               <Link
                 key={p.id}
-                to="/store/$slug/product/$id"
+                to="/$slug/product/$id"
                 params={{ slug: brand.slug, id: p.id }}
                 className="group block"
               >

@@ -4,7 +4,7 @@ import { BrandProvider, type Brand } from "@/lib/brand-context";
 import { useT } from "@/lib/i18n";
 import { Card } from "@/components/ui/card";
 
-export const Route = createFileRoute("/_authenticated/b/$slug")({
+export const Route = createFileRoute("/_authenticated/admin/b/$slug")({
   beforeLoad: async ({ params }) => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw redirect({ to: "/auth" });

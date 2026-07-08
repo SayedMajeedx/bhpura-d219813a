@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "sonner";
 import { Loader2, CreditCard, Banknote, QrCode, Truck, Store, User } from "lucide-react";
 
-export const Route = createFileRoute("/store/$slug/checkout")({
+export const Route = createFileRoute("/$slug/checkout")({
   component: Checkout,
 });
 
@@ -99,7 +99,7 @@ function Checkout() {
       <div className="mx-auto max-w-lg p-8 text-center">
         <Card className="p-8">
           <p className="mb-4">{t("السلة فارغة", "Your cart is empty")}</p>
-          <Link to="/store/$slug" params={{ slug: brand.slug }} className="underline">
+          <Link to="/$slug" params={{ slug: brand.slug }} className="underline">
             {t("العودة للمتجر", "Back to store")}
           </Link>
         </Card>
@@ -147,7 +147,7 @@ function Checkout() {
       clearCart();
       toast.success(t("تم استلام طلبك!", "Order placed!"));
       navigate({
-        to: "/store/$slug/thank-you/$orderId",
+        to: "/$slug/thank-you/$orderId",
         params: { slug: brand.slug, orderId: String(orderId ?? "") },
       });
     } catch (e: any) {
@@ -176,7 +176,7 @@ function Checkout() {
               <p className="text-sm min-w-0 break-words">{t("لديك حساب؟ سجّل الدخول لملء البيانات تلقائيًا.", "Have an account? Sign in to prefill your details.")}</p>
             </div>
             <Button asChild size="sm" variant="outline" className="shrink-0">
-              <Link to="/store/$slug/auth" params={{ slug: brand.slug }}>{t("سجّل الدخول", "Sign in")}</Link>
+              <Link to="/$slug/auth" params={{ slug: brand.slug }}>{t("سجّل الدخول", "Sign in")}</Link>
             </Button>
           </Card>
         )}

@@ -14,7 +14,7 @@ import { toast } from "sonner";
 import { Loader2, LogOut, Plus, Trash2, PackageSearch, MapPin, User as UserIcon } from "lucide-react";
 import { BAHRAIN_REGIONS, regionLabel } from "@/lib/bahrain-regions";
 
-export const Route = createFileRoute("/store/$slug/account")({
+export const Route = createFileRoute("/$slug/account")({
   component: AccountPage,
 });
 
@@ -70,7 +70,7 @@ function AccountPage() {
   const isAr = lang === "ar";
 
   if (!session) {
-    return <Navigate to="/store/$slug/auth" params={{ slug: brand.slug }} />;
+    return <Navigate to="/$slug/auth" params={{ slug: brand.slug }} />;
   }
 
   return (
@@ -124,7 +124,7 @@ function SignOutButton() {
       onClick={async () => {
         setBusy(true);
         await signOut();
-        navigate({ to: "/store/$slug", params: { slug: brand.slug }, replace: true });
+        navigate({ to: "/$slug", params: { slug: brand.slug }, replace: true });
       }}
     >
       <LogOut className="h-4 w-4 mr-1" />
@@ -513,7 +513,7 @@ function AddressesSection({ isAr, lang }: { isAr: boolean; lang: "ar" | "en" }) 
       )}
 
       <div className="text-xs text-muted-foreground pt-2">
-        <Link to="/store/$slug" params={{ slug: (useStorefront().brand.slug) }} className="hover:underline" style={{ color: "var(--sf-link)" }}>
+        <Link to="/$slug" params={{ slug: (useStorefront().brand.slug) }} className="hover:underline" style={{ color: "var(--sf-link)" }}>
           {t("العودة إلى المتجر", "Back to store")}
         </Link>
       </div>

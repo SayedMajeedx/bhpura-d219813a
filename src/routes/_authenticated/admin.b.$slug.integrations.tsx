@@ -15,7 +15,7 @@ import { toast } from "sonner";
 import { useT, useI18n } from "@/lib/i18n";
 import { useBrand } from "@/lib/brand-context";
 
-export const Route = createFileRoute("/_authenticated/b/$slug/integrations")({
+export const Route = createFileRoute("/_authenticated/admin/b/$slug/integrations")({
   component: IntegrationsPage,
 });
 

@@ -11,7 +11,7 @@ import { resolvePaymentStatus, PAYMENT_BADGE_CLASSES } from "@/lib/payment-statu
 import { useBrand } from "@/lib/brand-context";
 import { useRealtimeInvalidate } from "@/hooks/use-realtime-invalidate";
 
-export const Route = createFileRoute("/_authenticated/b/$slug/orders/")({
+export const Route = createFileRoute("/_authenticated/admin/b/$slug/orders/")({
   component: OrdersList,
 });
 

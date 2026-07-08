@@ -3,7 +3,7 @@ import { useStorefront } from "@/lib/storefront-context";
 import { Card } from "@/components/ui/card";
 import { ChevronLeft } from "lucide-react";
 
-export const Route = createFileRoute("/store/$slug/page/$idx")({
+export const Route = createFileRoute("/$slug/page/$idx")({
   component: PageView,
   notFoundComponent: PageMissing,
 });
@@ -23,7 +23,7 @@ function PageView() {
   return (
     <article className="mx-auto max-w-3xl px-4 sm:px-6 py-8 sm:py-14">
       <Link
-        to="/store/$slug"
+        to="/$slug"
         params={{ slug: brand.slug }}
         className="inline-flex items-center gap-1 text-sm mb-4 hover:underline"
         style={{ color: "var(--sf-link)" }}

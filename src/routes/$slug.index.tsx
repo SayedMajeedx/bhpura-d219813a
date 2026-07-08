@@ -6,7 +6,7 @@ import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useMemo, useState, useEffect, useRef } from "react";
 
-export const Route = createFileRoute("/store/$slug/")({
+export const Route = createFileRoute("/$slug/")({
   component: StoreHome,
 });
 
@@ -297,7 +297,7 @@ function ProductCard({ product }: { product: ProductRow }) {
 
   return (
     <Link
-      to="/store/$slug/product/$id"
+      to="/$slug/product/$id"
       params={{ slug: brand.slug, id: product.id }}
       className="group block"
     >

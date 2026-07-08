@@ -22,7 +22,7 @@ import { useRealtimeInvalidate } from "@/hooks/use-realtime-invalidate";
 import { Switch } from "@/components/ui/switch";
 import { ImageCropperDialog } from "@/components/image-cropper-dialog";
 
-export const Route = createFileRoute("/_authenticated/b/$slug/inventory")({
+export const Route = createFileRoute("/_authenticated/admin/b/$slug/inventory")({
   component: Inventory,
 });
 

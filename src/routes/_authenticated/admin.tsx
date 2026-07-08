@@ -9,7 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
  * - brand admin / staff → /b/{their-slug}/dashboard
  * - anyone without a brand assignment → /brands (super admin) or /auth (with a message)
  */
-export const Route = createFileRoute("/_authenticated/dashboard")({
+export const Route = createFileRoute("/_authenticated/admin")({
   beforeLoad: async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw redirect({ to: "/auth" });

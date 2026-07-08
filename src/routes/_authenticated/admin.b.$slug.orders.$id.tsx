@@ -53,7 +53,7 @@ type SavedAddress = {
 };
 
 
-export const Route = createFileRoute("/_authenticated/b/$slug/orders/$id")({
+export const Route = createFileRoute("/_authenticated/admin/b/$slug/orders/$id")({
   component: OrderDetail,
   errorComponent: OrderErrorBoundary,
   notFoundComponent: () => <OrderErrorBoundary />,

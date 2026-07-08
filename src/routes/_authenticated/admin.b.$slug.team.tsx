@@ -38,7 +38,7 @@ import { useProfile, SUPER_ADMIN_EMAIL } from "@/lib/profile-context";
 import { useBrand } from "@/lib/brand-context";
 import type { Profile, UserRole, UserStatus } from "@/lib/profile-context";
 
-export const Route = createFileRoute("/_authenticated/b/$slug/team")({
+export const Route = createFileRoute("/_authenticated/admin/b/$slug/team")({
   beforeLoad: async ({ params }) => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw redirect({ to: "/auth" });

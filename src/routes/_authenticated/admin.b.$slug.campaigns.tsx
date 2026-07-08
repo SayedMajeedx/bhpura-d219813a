@@ -26,7 +26,7 @@ import { useI18n } from "@/lib/i18n";
 import { toast } from "sonner";
 import { useBrand } from "@/lib/brand-context";
 
-export const Route = createFileRoute("/_authenticated/b/$slug/campaigns")({
+export const Route = createFileRoute("/_authenticated/admin/b/$slug/campaigns")({
   component: CampaignsPage,
 });
 

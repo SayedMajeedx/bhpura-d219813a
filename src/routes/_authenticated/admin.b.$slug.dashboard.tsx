@@ -8,7 +8,7 @@ import { useI18n, useT } from "@/lib/i18n";
 import { useProfile } from "@/lib/profile-context";
 import { useBrand } from "@/lib/brand-context";
 
-export const Route = createFileRoute("/_authenticated/b/$slug/dashboard")({
+export const Route = createFileRoute("/_authenticated/admin/b/$slug/dashboard")({
   component: Dashboard,
 });
 
