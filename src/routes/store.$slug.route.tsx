@@ -66,6 +66,8 @@ export const Route = createFileRoute("/store/$slug")({
       btn_primary_fg: s?.btn_primary_fg ?? null,
       btn_secondary_bg: s?.btn_secondary_bg ?? null,
       btn_secondary_fg: s?.btn_secondary_fg ?? null,
+      btn_checkout_bg: s?.btn_checkout_bg ?? null,
+      btn_checkout_fg: s?.btn_checkout_fg ?? null,
     };
 
 
