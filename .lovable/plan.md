@@ -1,68 +1,106 @@
-## 1. Manage Brands — Edit & Delete
+# Storefront Theme Customizer, Categories, and Contrast Fixes
 
-`/brands` (Super Admin) will get per-card **Edit** and **Delete** actions.
+## 1. Auto-provision storefronts on brand creation
 
-- **Edit dialog** (reuses `NewBrandDialog` shape): name_en, name_ar, logo URL + upload button, primary color picker, about_en/about_ar textareas, is_active toggle. Slug is shown read-only (changing a slug would break URLs, invoices, storefront links).
-- **Delete dialog** with a red confirmation warning listing what will be affected (products, orders, customers, storefront). To keep data safe by default we use a **soft-delete**: sets `is_active = false` and appends a `-deleted-<timestamp>` suffix to the slug so the name can be reused. A checkbox "Permanently delete (destructive)" is only offered when the brand has zero orders/products; the backend enforces this via a new `delete_brand(brand_id, hard)` SECURITY DEFINER RPC restricted to super admin.
+- Add a Postgres trigger `AFTER INSERT ON public.brands` that inserts a `business_settings` row for the new brand with sensible defaults (currency `BHD`, `cod_enabled = true`, `delivery_enabled = true`, `pickup_enabled = true`, `primary_color`, `text_color`, `background_color`, `font_family`, business_name defaulted to `name_en`, `user_id = created_by`).
+- Because the route `/store/:slug` reads `brands` + `business_settings`, this makes the storefront live the instant a brand is created — no manual init.
+- Backfill: run one-time UPSERT to ensure every existing active brand has a `business_settings` row.
 
-## 2. Bahraini Shipping Address Structure
+## 2. Storefront Appearance Customizer
 
-Add a **Block** field everywhere and standardise the six fields:
-Label / Region / Block / Road / House / Flat.
+Extend `business_settings` with theme columns (all nullable, safe defaults):
 
-**Schema (migration):**
-- `ALTER TABLE customers ADD COLUMN block text;`
-- `ALTER TABLE customer_addresses ADD COLUMN block text;`
-- Update `place_storefront_order` RPC to accept and persist `block` on the customer row *and* to insert a matching `customer_addresses` row (label defaults to "Home") linked to the new order via `orders.shipping_address_id`.
+```
+logo_size int default 48
+logo_align text default 'left'   -- left|center|right
+header_bg text                    -- hex/oklch
+header_fg text
+footer_bg text
+footer_fg text
+heading_color text
+link_color text
+btn_primary_bg text
+btn_primary_fg text
+btn_secondary_bg text
+btn_secondary_fg text
+```
 
-**Admin portal (orders detail):** the customer form and saved-address picker gain a Block field; `formatDeliveryAddress` in `bahrain-regions.ts` is extended to include it and to render each part with a labelled prefix (`Block: 123, Road: 456, House: 12, Flat: 4`) — both Arabic and English.
+Update `brand_public_settings` view to expose these columns to anon.
 
-**Storefront checkout:** replace the current flat "Address / City" fields with the six-field group (Label, Region dropdown from `bahrain-regions`, Block, Road, House, Flat-optional). Region uses the existing dropdown from `src/lib/bahrain-regions.ts`.
+New UI: **"مظهر المتجر / Storefront Customizer"** card in `b.$slug.settings.tsx` (or new tab). Sections:
+- Logo (existing uploader + size slider + alignment radio)
+- Header colors (bg + fg color pickers)
+- Footer colors (bg + fg)
+- Typography (text color = existing, heading color, link color)
+- Buttons (primary bg/fg, secondary bg/fg)
 
-**Invoice / order voucher:** `download-invoice-pdf.ts`, `thermal-print.ts`, order detail print view, and the public `/invoice/:id` route all render the address via a single helper that outputs the labelled string ("Block: X, Road: Y, House: Z, Flat: W, Region: …"), so admin, thermal receipt, PDF, and shopper's thank-you page all match.
+Uses existing color-input pattern + saves via existing settings mutation. Real-time via existing settings realtime hook.
 
-## 3. Storefront Customer Auth + Fulfillment Method + Delivery Fee
+## 3. Dynamic Categories (full CRUD)
 
-**Storefront auth (`/store/$slug/auth`):**
-- Email + password sign-up / sign-in using the standard Supabase client — same table the admin portal uses, so accounts unify.
-- On successful sign-up a client-side call to a new `link_storefront_customer` RPC creates (or links) a `customers` row for that `brand_id` where `email` matches and stores the new `auth_user_id` column on that row.
-- Checkout header shows "Sign in / Sign up" when logged out and the customer's name when logged in. Guest checkout stays supported; if a logged-in user checks out we skip the name/phone/email fields and pull them from the profile.
-- New column `customers.auth_user_id uuid` (nullable, indexed). RLS: keep existing "brand access" for staff; add a policy `TO authenticated USING (auth_user_id = auth.uid())` so shoppers can read their own record across brands.
+New table `public.categories`:
+```
+id uuid pk, brand_id uuid not null, name_ar text, name_en text not null,
+slug text, image_url text, sort_order int default 0,
+is_active boolean default true, created_at, updated_at
+```
+With brand-scoped RLS (admins manage, anon SELECT active rows), GRANTs, and unique(brand_id, slug).
 
-**Fulfillment method:**
-- Add `orders.fulfillment_method text NOT NULL DEFAULT 'delivery'` (check `'delivery' | 'pickup'`).
-- Storefront checkout: prominent two-tile selector (توصيل / استلام من الفرع) above the payment method.
-- Order summary: adds a "Delivery fee" line when `delivery`; hides it (or shows "Pickup — free") when `pickup`.
+New route `src/routes/_authenticated/b.$slug.categories.tsx`:
+- Table/grid of categories with drag-free sort (up/down or number input).
+- Create/Edit dialog: name_ar, name_en, image upload (invoice-assets bucket + public URL), sort_order.
+- Delete: RPC `delete_category(p_id)` that counts linked products (via `products.category` matching name_en or slug) and returns count for confirmation; performs soft delete (`is_active=false`) if any linked, hard delete otherwise.
 
-**Delivery fee (per brand):**
-- `business_settings.delivery_fee numeric(10,2) NOT NULL DEFAULT 0`.
-- Brand admin `/b/$slug/settings` gets a new card **Shipping** with a delivery-fee numeric input, saved through the existing settings save action.
-- `place_storefront_order` RPC now reads `delivery_fee` from `business_settings` and writes `shipping = delivery_fee` on the order when method = delivery, `shipping = 0` when pickup; totals are recomputed accordingly.
-- Column-level anon `GRANT SELECT (delivery_fee, fulfillment_pickup_enabled)` and `brand_public_settings` view is updated so the storefront can display the fee before checkout.
+Product form: `products.category` remains a text column. Replace hardcoded `<Input>`/select with a `<Select>` fetching `categories` for the current brand, storing the category slug in `products.category`.
 
-## 4. Global UI Contrast Audit
+Sidebar nav: add "الأقسام / Categories" link in `app-shell.tsx` under brand routes.
 
-Fix in `src/styles.css`:
-- Bump `--muted-foreground` in light mode from `oklch(0.5 0.02 25)` → `oklch(0.42 0.02 25)` (AA on white).
-- Bump `--muted-foreground` in dark mode from `oklch(0.72 0.02 70)` → `oklch(0.82 0.02 70)`.
-- Force `input, textarea, select { color: var(--color-foreground); background-color: var(--color-background); }` and `::placeholder { color: var(--color-muted-foreground); opacity: 1; }` in `@layer base` so shadcn inputs never render foreground=background in any theme.
-- Add `[data-slot="select-value"], [data-radix-select-value] { color: inherit; }` fallback to fix invisible dropdown text on the Radix Select trigger.
-- Table cells: ensure `<th>`/`<td>` inherit `--color-foreground` (the shadcn `<table>` primitive is fine; the storefront's ad-hoc tables get a `text-foreground` utility on their `<tbody>`).
-- Storefront: the `text_color` / `background_color` inline styles on the store shell will only apply to the shell wrapper; inputs and cards inside `<main>` will use design tokens (not the raw brand colors) so shopper input text stays readable regardless of the brand palette.
+## 4. Storefront: dynamic categories on `/store/:slug`
 
-## 5. Developer Integrations Tab (placeholder)
+- Add a horizontal category strip (chips with image thumbnail) under the hero on `store.$slug.index.tsx`.
+- Client-side filter: clicking a chip sets a category filter state and the product grid filters by `products.category`.
+- Query categories via anon SELECT (RLS + GRANT).
 
-- New route `src/routes/_authenticated/b.$slug.integrations.tsx` linked from the brand sidebar (label: "ربط المطورين / Developer integrations").
-- New table `integration_credentials` (`id, brand_id, provider text, base_url text, api_key text, webhook_secret text, is_active bool, notes text`) — RLS gated to `is_admin() AND can_access_brand(brand_id)`; keys are stored as text for now with a UI warning that production wiring is pending. Values are masked in the list (`sk_live_••••1234`) and revealed with a "Show" toggle.
-- UI: header + short explainer, a "New integration" dialog (provider dropdown seeded with Aramex, Posta Plus, Stripe, Tap, Custom, plus free-text), list of saved credentials with edit/delete, and a copy-to-clipboard for the brand's webhook target URL (`https://…/api/public/webhooks/<provider>/<brand_id>`). No actual outbound calls yet — this ships the schema + UI plumbing only.
+## 5. PC contrast & visibility fixes
 
-## Technical notes
+In `store.$slug.route.tsx` header + `store.$slug.index.tsx` + `store.$slug.product.$id.tsx`:
+- Header: replace `text-white` on the outer bar with `text-[var(--sf-header-fg)]` with fallback to `--sf-fg` (dark). Same for cart/language/email links.
+- Buy Now button: force a dark contrasting background (`--sf-btn-secondary-bg` fallback to `#111`) with light foreground; add border for safety.
+- Stock availability chip: use `bg-secondary text-secondary-foreground` (semantic) with border, so it contrasts on any brand palette.
 
-- Migration in a single file: adds `block` to customers + customer_addresses, `delivery_fee` to business_settings, `fulfillment_method` to orders, `auth_user_id` to customers, creates `integration_credentials`, updates `place_storefront_order` + `brand_public_settings` view, adds `delete_brand` and `link_storefront_customer` RPCs. Every new/altered public table gets the required GRANT block before RLS/policies.
-- Files touched: `src/routes/_authenticated/brands.tsx` (edit/delete), `src/routes/_authenticated/b.$slug.settings.tsx` (shipping + delivery fee card), `src/routes/_authenticated/b.$slug.route.tsx` (sidebar link), new `b.$slug.integrations.tsx`, `src/routes/_authenticated/b.$slug.orders.$id.tsx` (Block field in address form, fulfillment method badge), `src/routes/store.$slug.checkout.tsx` (auth handoff, six-field address, fulfillment selector, delivery fee), new `src/routes/store.$slug.auth.tsx`, `src/lib/storefront-context.tsx` (session + delivery_fee in settings), `src/lib/bahrain-regions.ts` (labelled formatter with Block), `src/lib/download-invoice-pdf.ts` + `src/lib/thermal-print.ts` + `src/routes/invoice.$id.tsx` (labelled address rendering), `src/styles.css` (contrast fixes).
+Inject brand theme as CSS variables on the storefront root (in `store.$slug.route.tsx`):
+```
+:root of storefront -->
+  --sf-header-bg, --sf-header-fg,
+  --sf-footer-bg, --sf-footer-fg,
+  --sf-heading, --sf-link,
+  --sf-btn-primary-bg, --sf-btn-primary-fg,
+  --sf-btn-secondary-bg, --sf-btn-secondary-fg
+```
+All storefront components consume these with hard-coded fallbacks; nothing else in the admin app is affected.
 
-## Out of scope for this pass
+## Migration summary
 
-- Real shipping-carrier API calls (Aramex/Posta Plus wiring beyond storing credentials).
-- Real card processing (Stripe/Tap) — the UI stays as-is; only credential storage is added.
-- Encryption-at-rest for API keys (would need Vault / server-side crypto; flagged in the Integrations UI).
+1. `ALTER TABLE business_settings ADD COLUMN ...` (theme cols).
+2. `CREATE TRIGGER brands_after_insert_default_settings ...` + backfill.
+3. `CREATE TABLE public.categories` + GRANTs + RLS + policies + trigger for updated_at.
+4. `CREATE FUNCTION delete_category(...)`.
+5. Recreate `brand_public_settings` view to include new theme cols.
+
+## Files to add/edit
+
+- Migration file (new).
+- `src/routes/_authenticated/b.$slug.categories.tsx` (new).
+- `src/routes/_authenticated/b.$slug.settings.tsx` — add Customizer card.
+- `src/routes/_authenticated/b.$slug.inventory.tsx` (product form) — swap category input for dynamic Select.
+- `src/components/app-shell.tsx` — nav link.
+- `src/lib/storefront-context.tsx` — extend PublicSettings + expose theme vars.
+- `src/routes/store.$slug.route.tsx` — inject CSS vars, fix header contrast.
+- `src/routes/store.$slug.index.tsx` — category strip + filter.
+- `src/routes/store.$slug.product.$id.tsx` — fix Buy Now + stock chip.
+
+## Out of scope
+
+- Full drag-and-drop reorder (using sort_order number input instead).
+- Live preview split-pane (values apply after save, storefront realtime picks up).
+- Public storage bucket creation (reusing existing `invoice-assets` + signed/public URLs already used by media uploads).
