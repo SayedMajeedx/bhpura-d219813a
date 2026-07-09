@@ -230,15 +230,16 @@ function ExpensesPage() {
   );
 }
 
-function ExpenseDialog({ expense, onSaved }: { expense: Expense | null; onSaved: () => void }) {
+function ExpenseDialog({ expense, initial, onSaved }: { expense: Expense | null; initial?: ScannedExpense | null; onSaved: () => void }) {
   const t = useT();
+  const { lang } = useI18n();
   const [form, setForm] = useState({
-    category: expense?.category ?? "",
-    description: expense?.description ?? "",
-    amount: expense ? String(expense.amount) : "0",
-    currency: expense?.currency ?? "BHD",
-    expense_date: expense?.expense_date ?? new Date().toISOString().slice(0, 10),
-    notes: expense?.notes ?? "",
+    category: expense?.category ?? initial?.category ?? "",
+    description: expense?.description ?? (initial ? [initial.supplier, initial.description].filter(Boolean).join(" — ") : ""),
+    amount: expense ? String(expense.amount) : initial ? String(initial.amount ?? 0) : "0",
+    currency: expense?.currency ?? initial?.currency ?? "BHD",
+    expense_date: expense?.expense_date ?? initial?.expense_date ?? new Date().toISOString().slice(0, 10),
+    notes: expense?.notes ?? initial?.notes ?? "",
   });
 
   const save = async () => {
