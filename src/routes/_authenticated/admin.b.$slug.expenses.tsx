@@ -84,6 +84,10 @@ function ExpensesPage() {
 
   const [editing, setEditing] = useState<Expense | null>(null);
   const [open, setOpen] = useState(false);
+  const [scanned, setScanned] = useState<ScannedExpense | null>(null);
+  const [scanning, setScanning] = useState(false);
+  const fileRef = useRef<HTMLInputElement | null>(null);
+  const scanFn = useServerFn(scanReceipt);
 
   const list = q.data ?? [];
   const currency = list[0]?.currency ?? "BHD";
@@ -99,6 +103,38 @@ function ExpensesPage() {
     }
   };
 
+  const onFilePicked = async (file: File | null) => {
+    if (!file) return;
+    if (file.size > 12 * 1024 * 1024) {
+      toast.error(lang === "ar" ? "الملف كبير جداً (الحد 12 ميغابايت)" : "File too large (max 12MB)");
+      return;
+    }
+    setScanning(true);
+    try {
+      const dataUrl = await new Promise<string>((resolve, reject) => {
+        const r = new FileReader();
+        r.onload = () => resolve(String(r.result));
+        r.onerror = () => reject(new Error("read failed"));
+        r.readAsDataURL(file);
+      });
+      const result = await scanFn({ data: { dataUrl, mimeType: file.type || "image/jpeg", targetLang: lang === "ar" ? "ar" : "en" } });
+      setScanned(result);
+      setEditing(null);
+      setOpen(true);
+      toast.success(lang === "ar" ? "تم استخراج بيانات الفاتورة" : "Receipt data extracted");
+    } catch (e: any) {
+      const msg = e?.message === "RATE_LIMITED"
+        ? (lang === "ar" ? "تجاوزت الحد. حاول لاحقاً" : "Rate limited, try again")
+        : e?.message === "CREDITS_EXHAUSTED"
+          ? (lang === "ar" ? "نفدت رصيد الذكاء الاصطناعي" : "AI credits exhausted")
+          : (e?.message ?? (lang === "ar" ? "فشل مسح الفاتورة" : "Failed to scan receipt"));
+      toast.error(msg);
+    } finally {
+      setScanning(false);
+      if (fileRef.current) fileRef.current.value = "";
+    }
+  };
+
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-5xl mx-auto">
       <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
@@ -106,18 +142,39 @@ function ExpensesPage() {
           <h1 className="text-3xl sm:text-4xl font-display">{t("expenses.title")}</h1>
           <p className="text-muted-foreground mt-1">{t("expenses.subtitle")}</p>
         </div>
-        <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) setEditing(null); }}>
-          <DialogTrigger asChild>
-            <Button onClick={() => setEditing(null)}>
-              <Plus className="h-4 w-4 me-2" /> {t("expenses.add")}
-            </Button>
-          </DialogTrigger>
-          <ExpenseDialog
-            expense={editing}
-            onSaved={() => { setOpen(false); setEditing(null); qc.invalidateQueries({ queryKey: ["expenses"] }); }}
+        <div className="flex flex-wrap items-center gap-2">
+          <input
+            ref={fileRef}
+            type="file"
+            accept="image/*,application/pdf"
+            capture="environment"
+            className="hidden"
+            onChange={(e) => onFilePicked(e.target.files?.[0] ?? null)}
           />
-        </Dialog>
+          <Button
+            variant="outline"
+            onClick={() => fileRef.current?.click()}
+            disabled={scanning}
+            className="border-primary/40 text-primary hover:bg-primary/5"
+          >
+            {scanning ? <Loader2 className="h-4 w-4 me-2 animate-spin" /> : <Sparkles className="h-4 w-4 me-2" />}
+            {lang === "ar" ? "مسح فاتورة بالذكاء الاصطناعي" : "Scan receipt with AI"}
+          </Button>
+          <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) { setEditing(null); setScanned(null); } }}>
+            <DialogTrigger asChild>
+              <Button onClick={() => { setEditing(null); setScanned(null); }}>
+                <Plus className="h-4 w-4 me-2" /> {t("expenses.add")}
+              </Button>
+            </DialogTrigger>
+            <ExpenseDialog
+              expense={editing}
+              initial={scanned}
+              onSaved={() => { setOpen(false); setEditing(null); setScanned(null); qc.invalidateQueries({ queryKey: ["expenses"] }); }}
+            />
+          </Dialog>
+        </div>
       </div>
+
 
       <Card className="p-5 sm:p-6 mb-6">
         <div className="flex items-center justify-between">
