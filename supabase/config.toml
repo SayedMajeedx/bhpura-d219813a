@@ -1,1 +1,6 @@
 project_id = "uoxgrghdjrmgociwzwnx"
+
+[functions.send-order-email]
+# Caller is Postgres (pg_net), not a logged-in user. Auth is done inside the
+# function via the x-webhook-secret header instead of a Supabase JWT.
+verify_jwt = false

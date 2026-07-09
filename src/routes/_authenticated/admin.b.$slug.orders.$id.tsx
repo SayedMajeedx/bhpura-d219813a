@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Plus, Trash2, Printer, Save, Send, Search, Star, Receipt, Link as LinkIcon, ScanLine } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, Printer, Save, Send, Search, Star, Receipt, Link as LinkIcon, ScanLine, Mail, MailCheck, MailWarning } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { toast } from "sonner";
@@ -540,6 +540,23 @@ function OrderDetail() {
     if (!ok) toast.error(t("orders.popupBlocked"));
   };
 
+  const [resendingEmail, setResendingEmail] = useState(false);
+  const resendConfirmationEmail = async () => {
+    if (!order?.id) return;
+    setResendingEmail(true);
+    try {
+      const { error } = await supabase.rpc("resend_order_confirmation_email", { p_order_id: order.id });
+      if (error) throw error;
+      toast.success(lang === "ar" ? "تم إرسال البريد الإلكتروني" : "Confirmation email queued for sending");
+      qc.invalidateQueries({ queryKey: ["order", id] });
+    } catch (err) {
+      console.error("resend confirmation email failed", err);
+      toast.error((err as Error)?.message ?? (lang === "ar" ? "تعذر إرسال البريد" : "Could not send email"));
+    } finally {
+      setResendingEmail(false);
+    }
+  };
+
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-6xl mx-auto">
       <div className="no-print mb-6 flex flex-wrap items-center justify-between gap-3">
@@ -560,6 +577,29 @@ function OrderDetail() {
               toast.error((err as Error)?.message ?? "PDF download failed");
             }
           }}><Printer className="h-4 w-4 mr-2" /> {t("orders.printA4")}</Button>
+          <Button
+            variant="outline"
+            onClick={resendConfirmationEmail}
+            disabled={resendingEmail}
+            title={
+              order?.confirmation_email_status === "sent"
+                ? (lang === "ar" ? "تم الإرسال" : "Sent")
+                : order?.confirmation_email_status === "failed"
+                ? (order?.confirmation_email_error || (lang === "ar" ? "فشل الإرسال" : "Send failed"))
+                : undefined
+            }
+          >
+            {order?.confirmation_email_status === "sent" ? (
+              <MailCheck className="h-4 w-4 mr-2 text-green-600" />
+            ) : order?.confirmation_email_status === "failed" ? (
+              <MailWarning className="h-4 w-4 mr-2 text-destructive" />
+            ) : (
+              <Mail className="h-4 w-4 mr-2" />
+            )}
+            {order?.confirmation_email_status === "sent"
+              ? (lang === "ar" ? "إعادة إرسال التأكيد" : "Resend confirmation")
+              : (lang === "ar" ? "إرسال بريد التأكيد" : "Send confirmation email")}
+          </Button>
           <Button onClick={save}><Save className="h-4 w-4 mr-2" /> {t("common.save")}</Button>
         </div>
       </div>

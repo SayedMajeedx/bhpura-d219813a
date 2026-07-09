@@ -17,6 +17,21 @@ const SMTP_USER = Deno.env.get("ZOHO_SMTP_USER") || FROM_ADDRESS;
 const SMTP_PASS = Deno.env.get("ZOHO_SMTP_PASS") || "";
 const WEBHOOK_SECRET = Deno.env.get("ORDER_EMAIL_WEBHOOK_SECRET") || "";
 
+function timingSafeEqual(a: string, b: string): boolean {
+  const enc = new TextEncoder();
+  const bufA = enc.encode(a);
+  const bufB = enc.encode(b);
+  if (bufA.length !== bufB.length) {
+    // Still walk `a`'s length so short-secret guesses don't return faster.
+    let dummy = 0;
+    for (let i = 0; i < bufA.length; i++) dummy |= bufA[i];
+    return false;
+  }
+  let diff = 0;
+  for (let i = 0; i < bufA.length; i++) diff |= bufA[i] ^ bufB[i];
+  return diff === 0;
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { status: 200, headers: corsHeaders });
@@ -32,7 +47,7 @@ Deno.serve(async (req: Request) => {
 
   try {
     const providedSecret = req.headers.get("x-webhook-secret") || "";
-    if (!WEBHOOK_SECRET || providedSecret !== WEBHOOK_SECRET) {
+    if (!WEBHOOK_SECRET || !timingSafeEqual(providedSecret, WEBHOOK_SECRET)) {
       return json({ error: "Unauthorized" }, 401);
     }
 
