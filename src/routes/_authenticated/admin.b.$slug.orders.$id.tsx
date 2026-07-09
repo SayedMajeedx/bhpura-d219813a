@@ -8,7 +8,8 @@ import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Plus, Trash2, Printer, Save, Send, Search, Star, Receipt, Link as LinkIcon, ScanLine, Mail } from "lucide-react";import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
+import { ArrowLeft, Plus, Trash2, Printer, Save, Send, Search, Star, Receipt, Link as LinkIcon, ScanLine } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { formatMoney } from "@/lib/format";
@@ -32,8 +33,8 @@ function formatDeliveryAddress(
   const house = c.house?.trim() || "";
   const flat = c.flat?.trim() || "";
   const parts = lang === "ar"
-    ? [region, road, house, flat]
-    : [flat, house, road, region];
+    ? [region, road, house, flat] // المنطقة، طريق، منزل، شقة
+    : [flat, house, road, region]; // Flat, House, Road, Region
   const filtered = parts.filter((p) => p && p.length > 0);
   if (filtered.length === 0 && c.address) return c.address.split(/\r?\n/).filter(Boolean);
   const sep = lang === "ar" ? "، " : ", ";
@@ -50,6 +51,7 @@ type SavedAddress = {
   flat: string | null;
   is_default: boolean;
 };
+
 
 export const Route = createFileRoute("/_authenticated/admin/b/$slug/orders/$id")({
   component: OrderDetail,
@@ -74,11 +76,11 @@ function OrderErrorBoundary({ error }: { error?: Error }) {
   );
 }
 
+
 type Order = any;
 type Item = {
   id?: string; product_id?: string | null; variant_id?: string | null;
-  description: string; quantity: number;
-  unit_price: number;
+  description: string; quantity: number; unit_price: number;
   customizations: { name: string; price_delta: number }[];
   customization_total: number; line_total: number;
   location: "main" | "incubator";
@@ -92,15 +94,6 @@ function OrderDetail() {
   const brand = useBrand();
   const brandId = brand.id;
 
-  // 💡 الحفاظ على الـ States الأصلية مع الحفاظ على الترتيب لعدم كسر الـ Hooks
-  const [order, setOrder] = useState<Order | null>(null);
-  const [items, setItems] = useState<Item[]>([]);
-  const [phoneSearch, setPhoneSearch] = useState("");
-  const [scannerOpen, setScannerOpen] = useState(false);
-  const [cameraStreamPromise, setCameraStreamPromise] = useState<Promise<MediaStream> | null>(null);
-  const cameraStreamRef = useRef<MediaStream | null>(null);
-  const [resendingEmail, setResendingEmail] = useState(false);
-
   const orderQ = useQuery({
     queryKey: ["order", id],
     queryFn: async () => {
@@ -112,6 +105,7 @@ function OrderDetail() {
       if (error) throw error;
       if (!data) throw new Error("Order not found. It may have been deleted.");
       return data as Order;
+
     },
   });
 
@@ -119,17 +113,14 @@ function OrderDetail() {
     queryKey: ["products", brandId],
     queryFn: async () => (await supabase.from("products").select("*").eq("brand_id", brandId)).data ?? [],
   });
-
   const variantsQ = useQuery({
     queryKey: ["variants", brandId],
     queryFn: async () => (await supabase.from("product_variants").select("*").eq("brand_id", brandId)).data ?? [],
   });
-
   const customersQ = useQuery({
     queryKey: ["customers", brandId],
     queryFn: async () => (await supabase.from("customers").select("*").eq("brand_id", brandId).order("name")).data ?? [],
   });
-
   const addressesQ = useQuery({
     queryKey: ["customer_addresses", brandId],
     queryFn: async () => {
@@ -138,12 +129,10 @@ function OrderDetail() {
       return (data ?? []) as SavedAddress[];
     },
   });
-
   const customQ = useQuery({
     queryKey: ["customizations", brandId],
     queryFn: async () => (await supabase.from("customization_options").select("*").eq("brand_id", brandId).order("name")).data ?? [],
   });
-
   const settingsQ = useQuery({
     queryKey: ["business-settings", brandId],
     queryFn: async () => {
@@ -151,6 +140,10 @@ function OrderDetail() {
       return data;
     },
   });
+
+  const [order, setOrder] = useState<Order | null>(null);
+  const [items, setItems] = useState<Item[]>([]);
+  const [phoneSearch, setPhoneSearch] = useState("");
 
   useEffect(() => {
     if (orderQ.data) {
@@ -183,7 +176,14 @@ function OrderDetail() {
     [order?.payment_status, order?.status, totals.total, totals.advancePaid],
   );
 
+  const [scannerOpen, setScannerOpen] = useState(false);
+  const [cameraStreamPromise, setCameraStreamPromise] = useState<Promise<MediaStream> | null>(null);
+  const cameraStreamRef = useRef<MediaStream | null>(null);
+
+
+
   if (!order || !settingsQ.data) return <div className="p-8">Loading…</div>;
+
 
   const currency = order.currency ?? "BHD";
 
@@ -213,6 +213,7 @@ function OrderDetail() {
         }
         throw error;
       }).then(async (stream) => {
+        // Try to enable continuous autofocus (supported on most modern mobile browsers).
         try {
           const track = stream.getVideoTracks()[0];
           const caps: any = track.getCapabilities?.() ?? {};
@@ -226,10 +227,13 @@ function OrderDetail() {
         return stream;
       })
       : Promise.reject(new Error("Camera access is not supported by this browser."));
-    void promise.catch(() => {});
+    void promise.catch(() => {
+      /* handled inside the scanner modal */
+    });
     setCameraStreamPromise(promise);
     setScannerOpen(true);
   };
+
 
   const handleScanned = (code: string) => {
     const trimmed = code.trim();
@@ -250,7 +254,9 @@ function OrderDetail() {
     if (v.size) lines.push(`${sizeLabel}: ${v.size}`);
     if (v.color) lines.push(`${colorLabel}: ${v.color}`);
     if (v.fabric) lines.push(`${fabricLabel}: ${v.fabric}`);
-    const preferred: "main" | "incubator" = (v.stock_main ?? 0) > 0 ? "main" : (v.stock_incubator ?? 0) > 0 ? "incubator" : "main";
+    // Default to whichever location has stock; prefer main.
+    const preferred: "main" | "incubator" =
+      (v.stock_main ?? 0) > 0 ? "main" : (v.stock_incubator ?? 0) > 0 ? "incubator" : "main";
     const newItem: Item = {
       product_id: v.product_id,
       variant_id: v.id,
@@ -304,6 +310,7 @@ function OrderDetail() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
+    // Stock precheck when order will be in a deducting state.
     if (DEDUCTING.has(order.status)) {
       const variants = variantsQ.data ?? [];
       const wasDeducted = !!(orderQ.data as any)?.stock_deducted;
@@ -340,6 +347,7 @@ function OrderDetail() {
     } as any).eq("id", order.id);
     if (oe) return toast.error(oe.message);
 
+    // ── Activity log: detect changes vs saved state
     const prev = (orderQ.data ?? {}) as any;
     const logs: Array<{ action: string; en: string; ar: string; order_id: string }> = [];
     if (prev.status !== order.status) {
@@ -385,6 +393,7 @@ function OrderDetail() {
       if (ie) return toast.error(ie.message);
     }
 
+    // Sync inventory (deduct or restore based on status).
     const { error: se } = await supabase.rpc("sync_order_stock", { p_order_id: order.id });
     if (se) {
       if (se.message?.includes("INSUFFICIENT_STOCK")) {
@@ -392,10 +401,12 @@ function OrderDetail() {
       } else {
         toast.error(se.message);
       }
+      // Continue to invalidate — items may already be saved. User can adjust.
     } else if (DEDUCTING.has(order.status) || (orderQ.data as any)?.stock_deducted) {
       toast.success(t("orderDetail.stockUpdated"));
     }
 
+    // Stock deltas: compare prior deducted items vs current, log per-variant changes
     if (!se) {
       const variants = variantsQ.data ?? [];
       const wasDeducted = !!(orderQ.data as any)?.stock_deducted;
@@ -440,12 +451,14 @@ function OrderDetail() {
     }
 
     if (logs.length > 0) await logActivityBatch(logs);
+
     toast.success("Saved");
     qc.invalidateQueries({ queryKey: ["order", id] });
     qc.invalidateQueries({ queryKey: ["orders"] });
     qc.invalidateQueries({ queryKey: ["variants"] });
     qc.invalidateQueries({ queryKey: ["activity_logs"] });
   };
+
 
   const copyLink = async () => {
     const url = `${window.location.origin}/invoice/${order.id}`;
@@ -472,9 +485,13 @@ function OrderDetail() {
     const settings: any = settingsQ.data ?? {};
     const LEGACY = new Set(["Abaya Atelier", "أباية أتيليه"]);
     const rawBrand = (settings.business_name ?? "").trim();
-    const brand = !rawBrand || LEGACY.has(rawBrand) ? (lang === "ar" ? "بيورا" : "Pura") : rawBrand;
+    const brand = !rawBrand || LEGACY.has(rawBrand)
+      ? (lang === "ar" ? "بيورا" : "Pura")
+      : rawBrand;
+
     const paymentLabel = order.payment_method ? t(`payment.${order.payment_method}`) : "";
     const statusLabel = t(`status.${order.status}`);
+
     const ok = printThermalReceipt({
       brand,
       invoiceNumber: order.invoice_number,
@@ -515,30 +532,12 @@ function OrderDetail() {
         vat: t("orderDetail.vat"),
         shipping: t("orderDetail.shipping"),
         grandTotal: t("orderDetail.grandTotal"),
-        thankYou: settings.footer_note?.trim() || (lang === "ar" ? "شكراً لتسوّقكم معنا" : "Thank you for your order"),
+        thankYou: settings.footer_note?.trim()
+          || (lang === "ar" ? "شكراً لتسوّقكم معنا" : "Thank you for your order"),
       },
       footerNote: null,
     });
     if (!ok) toast.error(t("orders.popupBlocked"));
-  };
-
-  // 🚀 تحويل دالة الإرسال القديمة لتتصل بالسيرفر والـ Edge Function بشكل متوافق تماماً
-  const resendConfirmationEmail = async () => {
-    if (!order?.id) return;
-    setResendingEmail(true);
-    try {
-      const { data, error } = await supabase.functions.invoke("send-order-email", {
-        body: { order_id: order.id },
-      });
-      if (error) throw error;
-      toast.success(lang === "ar" ? "تم إرسال بريد التأكيد الفاخر بنجاح عبر زوهو!" : "Confirmation email sent via Zoho!");
-      qc.invalidateQueries({ queryKey: ["order", id] });
-    } catch (err) {
-      console.error("resend confirmation email failed", err);
-      toast.error((err as Error)?.message ?? (lang === "ar" ? "تعذر إرسال البريد" : "Could not send email"));
-    } finally {
-      setResendingEmail(false);
-    }
   };
 
   return (
@@ -561,30 +560,11 @@ function OrderDetail() {
               toast.error((err as Error)?.message ?? "PDF download failed");
             }
           }}><Printer className="h-4 w-4 mr-2" /> {t("orders.printA4")}</Button>
-          
-          {/* الـ Button المتناسق والذكي لبريد التأكيد */}
-          <Button
-            variant="outline"
-            onClick={resendConfirmationEmail}
-            disabled={resendingEmail}
-            title={
-              order?.confirmation_email_status === "sent"
-                ? (lang === "ar" ? "تم الإرسال" : "Sent")
-                : order?.confirmation_email_status === "failed"
-                ? (order?.confirmation_email_error || (lang === "ar" ? "فشل الإرسال" : "Send failed"))
-                : undefined
-            }
-          >
-            <Mail className={`h-4 w-4 mr-2 ${order?.confirmation_email_status === "sent" ? "text-green-600" : order?.confirmation_email_status === "failed" ? "text-destructive" : ""}`} />
-            {order?.confirmation_email_status === "sent"
-              ? (lang === "ar" ? "إعادة إرسال التأكيد" : "Resend confirmation")
-              : (lang === "ar" ? "إرسال بريد التأكيد" : "Send confirmation email")}
-          </Button>
-          
           <Button onClick={save}><Save className="h-4 w-4 mr-2" /> {t("common.save")}</Button>
         </div>
       </div>
 
+      {/* Editor - hidden on print */}
       <div className="no-print space-y-4 mb-8">
         <Card className="p-6">
           <div className="mb-4">
@@ -598,9 +578,12 @@ function OrderDetail() {
                 setPhoneSearch(q);
                 const digits = q.replace(/\D/g, "");
                 if (digits.length < 3) return;
-                const match = (customersQ.data ?? []).find((c: any) => (c.phone ?? "").replace(/\D/g, "").includes(digits));
+                const match = (customersQ.data ?? []).find((c: any) =>
+                  (c.phone ?? "").replace(/\D/g, "").includes(digits),
+                );
                 if (match) {
-                  const def = (addressesQ.data ?? []).find((a) => a.customer_id === match.id && a.is_default) ?? (addressesQ.data ?? []).find((a) => a.customer_id === match.id);
+                  const def = (addressesQ.data ?? []).find((a) => a.customer_id === match.id && a.is_default)
+                    ?? (addressesQ.data ?? []).find((a) => a.customer_id === match.id);
                   setOrder({ ...order, customer_id: match.id, shipping_address_id: def?.id ?? null });
                 }
               }}
@@ -614,7 +597,8 @@ function OrderDetail() {
               <Label>{t("orderDetail.customer")}</Label>
               <Select value={order.customer_id ?? "none"} onValueChange={(v) => {
                 const cid = v === "none" ? null : v;
-                const def = cid ? (addressesQ.data ?? []).find((a) => a.customer_id === cid && a.is_default) ?? (addressesQ.data ?? []).find((a) => a.customer_id === cid) : null;
+                const def = cid ? (addressesQ.data ?? []).find((a) => a.customer_id === cid && a.is_default)
+                  ?? (addressesQ.data ?? []).find((a) => a.customer_id === cid) : null;
                 setOrder({ ...order, customer_id: cid, shipping_address_id: def?.id ?? null });
               }}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
@@ -646,7 +630,10 @@ function OrderDetail() {
             </div>
             <div>
               <Label>{t("orderDetail.paymentMethod")}</Label>
-              <Select value={order.payment_method ?? "none"} onValueChange={(v) => setOrder({ ...order, payment_method: v === "none" ? null : v })}>
+              <Select
+                value={order.payment_method ?? "none"}
+                onValueChange={(v) => setOrder({ ...order, payment_method: v === "none" ? null : v })}
+              >
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="none">{t("orderDetail.selectPayment")}</SelectItem>
@@ -677,7 +664,10 @@ function OrderDetail() {
                 {customerAddrs.length > 0 ? (
                   <div className="mt-3 space-y-2">
                     <Label className="text-xs">{t("orderDetail.chooseAddress")}</Label>
-                    <Select value={activeId ?? ""} onValueChange={(v) => setOrder({ ...order, shipping_address_id: v })}>
+                    <Select
+                      value={activeId ?? ""}
+                      onValueChange={(v) => setOrder({ ...order, shipping_address_id: v })}
+                    >
                       <SelectTrigger className="text-start"><SelectValue /></SelectTrigger>
                       <SelectContent>
                         {customerAddrs.map((a) => (
@@ -728,88 +718,90 @@ function OrderDetail() {
               const incStock = Number((variant as any)?.stock_incubator ?? 0);
               const isAr = lang === "ar";
               return (
-                <div key={idx} className="border border-border rounded-lg p-4 space-y-3">
-                  <div className="grid grid-cols-1 sm:grid-cols-12 gap-3">
-                    <div className="sm:col-span-4">
-                      <Label>{t("orderDetail.fromInventory")}</Label>
-                      <Select value={it.variant_id ?? "custom"} onValueChange={(v) => v !== "custom" && pickVariant(idx, v)}>
-                        <SelectTrigger><SelectValue placeholder={t("orderDetail.pickVariant")} /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="custom">{t("orderDetail.customLine")}</SelectItem>
-                          {(variantsQ.data ?? []).map((v: any) => {
-                            const p = productsQ.data?.find((x: any) => x.id === v.product_id);
-                            if (!p) return null;
-                            return (
-                              <SelectItem key={v.id} value={v.id}>
-                                {p.name} {v.size ? `· ${v.size}` : ""} {v.color ? `· ${v.color}` : ""} — {formatMoney(v.selling_price, currency)}
-                              </SelectItem>
-                            );
-                          })}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="sm:col-span-3">
-                      <Label>{t("orderDetail.description")}</Label>
-                      <Textarea rows={3} value={it.description} onChange={(e) => updateItem(idx, { description: e.target.value })} className="text-sm leading-snug" />
-                    </div>
-                    <div className="sm:col-span-2">
-                      <Label>{t("orderDetail.qty")}</Label>
-                      <Input type="number" min={1} className="min-w-[70px] text-center" value={it.quantity} onChange={(e) => updateItem(idx, { quantity: Number(e.target.value) })} />
-                    </div>
-                    <div className="sm:col-span-3">
-                      <Label>{t("orderDetail.unitPrice")}</Label>
-                      <Input type="number" step="0.01" value={it.unit_price} onChange={(e) => updateItem(idx, { unit_price: Number(e.target.value) })} />
-                    </div>
-                  </div>
-
-                  {it.variant_id && (
-                    <div>
-                      <Label className="text-xs">{isAr ? "الموقع (خصم من)" : "Location (deduct from)"}</Label>
-                      <div className="flex flex-wrap gap-2 mt-1">
-                        {([
-                          { key: "main", en: `Direct Sales · Main (${mainStock})`, ar: `الرئيسي (${mainStock})` },
-                          { key: "incubator", en: `Incubator (${incStock})`, ar: `الحاضنة (${incStock})` },
-                        ] as const).map((opt) => {
-                          const active = it.location === opt.key;
+              <div key={idx} className="border border-border rounded-lg p-4 space-y-3">
+                <div className="grid grid-cols-1 sm:grid-cols-12 gap-3">
+                  <div className="sm:col-span-4">
+                    <Label>{t("orderDetail.fromInventory")}</Label>
+                    <Select value={it.variant_id ?? "custom"} onValueChange={(v) => v !== "custom" && pickVariant(idx, v)}>
+                      <SelectTrigger><SelectValue placeholder={t("orderDetail.pickVariant")} /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="custom">{t("orderDetail.customLine")}</SelectItem>
+                        {(variantsQ.data ?? []).map((v: any) => {
+                          const p = productsQ.data?.find((x: any) => x.id === v.product_id);
+                          if (!p) return null;
                           return (
-                            <button
-                              key={opt.key}
-                              type="button"
-                              onClick={() => updateItem(idx, { location: opt.key })}
-                              className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${active ? "bg-primary text-primary-foreground border-primary" : "border-border hover:bg-secondary"}`}
-                            >
-                              {isAr ? opt.ar : opt.en}
-                            </button>
+                            <SelectItem key={v.id} value={v.id}>
+                              {p.name} {v.size ? `· ${v.size}` : ""} {v.color ? `· ${v.color}` : ""} — {formatMoney(v.selling_price, currency)}
+                            </SelectItem>
                           );
                         })}
-                      </div>
-                    </div>
-                  )}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="sm:col-span-3">
+                    <Label>{t("orderDetail.description")}</Label>
+                    <Textarea rows={3} value={it.description} onChange={(e) => updateItem(idx, { description: e.target.value })} className="text-sm leading-snug" />
+                  </div>
+                  <div className="sm:col-span-2"><Label>{t("orderDetail.qty")}</Label>
+                    <Input type="number" min={1} className="min-w-[70px] text-center" value={it.quantity} onChange={(e) => updateItem(idx, { quantity: Number(e.target.value) })} /></div>
+                  <div className="sm:col-span-3"><Label>{t("orderDetail.unitPrice")}</Label>
+                    <Input type="number" step="0.01" value={it.unit_price} onChange={(e) => updateItem(idx, { unit_price: Number(e.target.value) })} /></div>
+                </div>
 
+                {it.variant_id && (
                   <div>
-                    <Label className="text-xs">{t("orderDetail.customizations")}</Label>
+                    <Label className="text-xs">{isAr ? "الموقع (خصم من)" : "Location (deduct from)"}</Label>
                     <div className="flex flex-wrap gap-2 mt-1">
-                      {(customQ.data ?? []).map((c: any) => {
-                        const active = it.customizations.some((x) => x.name === c.name);
+                      {([
+                        { key: "main", en: `Direct Sales · Main (${mainStock})`, ar: `الرئيسي (${mainStock})` },
+                        { key: "incubator", en: `Incubator (${incStock})`, ar: `الحاضنة (${incStock})` },
+                      ] as const).map((opt) => {
+                        const active = it.location === opt.key;
                         return (
-                          <button key={c.id} type="button" onClick={() => toggleCustom(idx, { name: c.name, price_delta: Number(c.price_delta) })} className={`text-xs px-2 py-1 rounded-full border ${active ? "bg-primary text-primary-foreground border-primary" : "border-border hover:bg-secondary"}`}>
-                            {c.name} +{formatMoney(c.price_delta, currency)}
+                          <button
+                            key={opt.key}
+                            type="button"
+                            onClick={() => updateItem(idx, { location: opt.key })}
+                            className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${
+                              active
+                                ? "bg-primary text-primary-foreground border-primary"
+                                : "border-border hover:bg-secondary"
+                            }`}
+                          >
+                            {isAr ? opt.ar : opt.en}
                           </button>
                         );
                       })}
-                      {(customQ.data ?? []).length === 0 && <span className="text-xs text-muted-foreground">{t("orderDetail.addonsHint")}</span>}
                     </div>
                   </div>
-                  <div className="flex items-center justify-between pt-2 border-t border-border">
-                    <span className="text-sm text-muted-foreground">{t("orderDetail.lineTotal")}</span>
-                    <div className="flex items-center gap-3">
-                      <span className="font-medium">{formatMoney(it.line_total, currency)}</span>
-                      <Button variant="ghost" size="icon" onClick={() => setItems(items.filter((_, i) => i !== idx))}>
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
+                )}
+
+                <div>
+                  <Label className="text-xs">{t("orderDetail.customizations")}</Label>
+                  <div className="flex flex-wrap gap-2 mt-1">
+                    {(customQ.data ?? []).map((c: any) => {
+                      const active = it.customizations.some((x) => x.name === c.name);
+                      return (
+                        <button key={c.id} type="button"
+                          onClick={() => toggleCustom(idx, { name: c.name, price_delta: Number(c.price_delta) })}
+                          className={`text-xs px-2 py-1 rounded-full border ${active ? "bg-primary text-primary-foreground border-primary" : "border-border hover:bg-secondary"}`}>
+                          {c.name} +{formatMoney(c.price_delta, currency)}
+                        </button>
+                      );
+                    })}
+                    {(customQ.data ?? []).length === 0 && <span className="text-xs text-muted-foreground">{t("orderDetail.addonsHint")}</span>}
                   </div>
                 </div>
+                <div className="flex items-center justify-between pt-2 border-t border-border">
+                  <span className="text-sm text-muted-foreground">{t("orderDetail.lineTotal")}</span>
+                  <div className="flex items-center gap-3">
+                    <span className="font-medium">{formatMoney(it.line_total, currency)}</span>
+                    <Button variant="ghost" size="icon" onClick={() => setItems(items.filter((_, i) => i !== idx))}>
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              </div>
               );
             })}
           </div>
@@ -824,27 +816,32 @@ function OrderDetail() {
             </div>
             <div className="space-y-3">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <Label>{t("orderDetail.discount")}</Label>
-                  <Input type="number" step="0.01" value={order.discount} onChange={(e) => setOrder({ ...order, discount: Number(e.target.value) })} />
-                </div>
-                <div>
-                  <Label>{t("orderDetail.shipping")}</Label>
-                  <Input type="number" step="0.01" value={order.shipping} onChange={(e) => setOrder({ ...order, shipping: Number(e.target.value) })} />
-                </div>
+                <div><Label>{t("orderDetail.discount")}</Label>
+                  <Input type="number" step="0.01" value={order.discount} onChange={(e) => setOrder({ ...order, discount: Number(e.target.value) })} /></div>
+                <div><Label>{t("orderDetail.shipping")}</Label>
+                  <Input type="number" step="0.01" value={order.shipping} onChange={(e) => setOrder({ ...order, shipping: Number(e.target.value) })} /></div>
               </div>
-              <div>
-                <Label>{t("orderDetail.taxRate")}</Label>
-                <Input type="number" step="0.01" value={order.tax_rate} onChange={(e) => setOrder({ ...order, tax_rate: Number(e.target.value) })} />
-              </div>
+              <div><Label>{t("orderDetail.taxRate")}</Label>
+                <Input type="number" step="0.01" value={order.tax_rate} onChange={(e) => setOrder({ ...order, tax_rate: Number(e.target.value) })} /></div>
               <div>
                 <Label>{t("orderDetail.advancePaid")}</Label>
-                <Input type="number" step="0.01" min={0} value={order.advance_paid ?? 0} onChange={(e) => setOrder({ ...order, advance_paid: Number(e.target.value) })} />
+                <Input
+                  type="number"
+                  step="0.01"
+                  min={0}
+                  value={order.advance_paid ?? 0}
+                  onChange={(e) => setOrder({ ...order, advance_paid: Number(e.target.value) })}
+                />
               </div>
               <div>
                 <Label>{t("orderDetail.paymentStatus")}</Label>
-                <Select value={order.payment_status ?? "unpaid"} onValueChange={(v) => setOrder({ ...order, payment_status: v })}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                <Select
+                  value={order.payment_status ?? "unpaid"}
+                  onValueChange={(v) => setOrder({ ...order, payment_status: v })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
                     {PAYMENT_BADGE_VALUES.map((v) => (
                       <SelectItem key={v} value={v}>{t(`payStatus.${v}`)}</SelectItem>
@@ -861,7 +858,9 @@ function OrderDetail() {
                   <span className="font-display text-lg">{t("orderDetail.total")}</span>
                   <div className="flex items-center gap-2">
                     <span className="font-display text-lg">{formatMoney(totals.total, currency)}</span>
-                    <span className={`text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full border ${PAYMENT_BADGE_CLASSES[paymentBadge]}`}>
+                    <span
+                      className={`text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full border ${PAYMENT_BADGE_CLASSES[paymentBadge]}`}
+                    >
                       {t(`payStatus.${paymentBadge}`)}
                     </span>
                   </div>
@@ -881,17 +880,20 @@ function OrderDetail() {
         </Card>
       </div>
 
+      {/* Printable invoice */}
       {(() => {
         const addrs = (addressesQ.data ?? []).filter((a) => a.customer_id === order.customer_id);
-        const chosen = addrs.find((a) => a.id === order.shipping_address_id) ?? addrs.find((a) => a.is_default) ?? null;
+        const chosen = addrs.find((a) => a.id === order.shipping_address_id)
+          ?? addrs.find((a) => a.is_default)
+          ?? null;
         return (
-          <InvoicePreview
-            order={{ ...order, subtotal: totals.subtotal, tax_amount: totals.taxAmount, total: totals.total, advance_paid: totals.advancePaid }}
-            items={items}
-            settings={settingsQ.data}
-            shippingAddress={chosen}
-            paymentBadge={paymentBadge}
-          />
+      <InvoicePreview
+        order={{ ...order, subtotal: totals.subtotal, tax_amount: totals.taxAmount, total: totals.total, advance_paid: totals.advancePaid }}
+        items={items}
+        settings={settingsQ.data}
+        shippingAddress={chosen}
+        paymentBadge={paymentBadge}
+      />
         );
       })()}
       <div className="max-w-6xl mx-auto p-4 sm:p-6 lg:p-8 no-print">
@@ -929,7 +931,6 @@ const INVOICE_LABELS = {
     language: "اللغة", english: "English", arabic: "العربية",
   },
 } as const;
-
 const BRAND: Record<"en" | "ar", string> = { en: "Pura", ar: "بيورا" };
 const LEGACY_BRAND_NAMES = new Set(["Abaya Atelier", "أباية أتيليه"]);
 function brandFor(lang: "en" | "ar", stored?: string | null) {
@@ -964,12 +965,12 @@ function tStatus(s: string | null | undefined, lang: "en" | "ar") {
   if (!s) return "";
   return STATUS_LABELS[s]?.[lang] ?? s;
 }
-
 function tPayment(s: string | null | undefined, lang: "en" | "ar") {
   if (!s) return "";
   return PAYMENT_LABELS[s]?.[lang] ?? s;
 }
 
+// Localize numerals (Arabic-Indic) inside a rendered money/number string
 function toArabicDigits(str: string) {
   const map = ["٠","١","٢","٣","٤","٥","٦","٧","٨","٩"];
   return str.replace(/[0-9]/g, (d) => map[+d]);
@@ -995,21 +996,32 @@ function InvoicePreview({ order, items, settings, shippingAddress, paymentBadge 
     return isRTL ? toArabicDigits(s) : s;
   };
   const num = (n: number | string) => (isRTL ? toArabicDigits(String(n)) : String(n));
+
   const family = isRTL
     ? `"Tajawal", "Cairo", sans-serif`
     : settings.font_family === "Custom (uploaded)"
       ? "'InvoiceCustomFont', sans-serif"
       : `"${settings.font_family || "Cormorant Garamond"}", serif`;
 
+
   return (
     <div className="space-y-2">
+      {/* Invoice controls (not printed) */}
       <div className="print:hidden flex flex-wrap items-center justify-end gap-2">
         <Label className="text-xs text-muted-foreground">{L.language}:</Label>
         <div className="inline-flex rounded-md border border-input overflow-hidden">
-          <button type="button" onClick={() => setInvoiceLang("en")} className={`px-3 py-1 text-xs ${invoiceLang === "en" ? "bg-primary text-primary-foreground" : "bg-background"}`}>
+          <button
+            type="button"
+            onClick={() => setInvoiceLang("en")}
+            className={`px-3 py-1 text-xs ${invoiceLang === "en" ? "bg-primary text-primary-foreground" : "bg-background"}`}
+          >
             {L.english}
           </button>
-          <button type="button" onClick={() => setInvoiceLang("ar")} className={`px-3 py-1 text-xs ${invoiceLang === "ar" ? "bg-primary text-primary-foreground" : "bg-background"}`}>
+          <button
+            type="button"
+            onClick={() => setInvoiceLang("ar")}
+            className={`px-3 py-1 text-xs ${invoiceLang === "ar" ? "bg-primary text-primary-foreground" : "bg-background"}`}
+          >
             {L.arabic}
           </button>
         </div>
@@ -1024,12 +1036,36 @@ function InvoicePreview({ order, items, settings, shippingAddress, paymentBadge 
         {settings.font_url && !isRTL && (
           <style>{`@font-face { font-family: 'InvoiceCustomFont'; src: url('${settings.font_url}'); font-display: swap; }`}</style>
         )}
+        {/* Browser print overrides removed — PDF is generated via html2pdf directly from the live DOM,
+            preserving the exact colors and typography configured by the user. */}
         <div className="pdf-invoice-body p-4 sm:p-8 md:p-10 print:p-10" style={{ borderTop: `6px solid ${color}` }}>
+          {/*
+            Layout rule:
+            - EN (LTR): brand block on the LEFT, invoice meta on the RIGHT
+            - AR (RTL): brand block on the RIGHT, invoice meta on the LEFT
+            Natural flex-row mirrors correctly from the document direction.
+          */}
           <div className="pdf-invoice-header flex flex-row justify-between items-start mb-8 md:mb-10 gap-4 md:gap-6 print:flex-row">
             <div className="pdf-brand-block w-[48%] min-w-0" style={{ textAlign: "start" }}>
               {settings.logo_url && (
-                <div className="pdf-brand-logo-wrap relative mb-3 flex" style={{ height: logoH + logoY + 8, justifyContent: "flex-start" }}>
-                  <img src={settings.logo_url} alt="logo" className="pdf-brand-logo" draggable={false} style={{ position: "absolute", insetInlineStart: logoX, top: logoY, width: logoW, height: logoH, objectFit: "contain" }} />
+                <div
+                  className="pdf-brand-logo-wrap relative mb-3 flex"
+                  style={{ height: logoH + logoY + 8, justifyContent: "flex-start" }}
+                >
+                  <img
+                    src={settings.logo_url}
+                    alt="logo"
+                    className="pdf-brand-logo"
+                    draggable={false}
+                    style={{
+                      position: "absolute",
+                      insetInlineStart: logoX,
+                      top: logoY,
+                      width: logoW,
+                      height: logoH,
+                      objectFit: "contain",
+                    }}
+                  />
                 </div>
               )}
               <p className="text-xs mt-1" style={{ opacity: 0.65 }}>
@@ -1054,7 +1090,9 @@ function InvoicePreview({ order, items, settings, shippingAddress, paymentBadge 
               {order.customers.phone && <p className="text-sm" style={{ opacity: 0.75 }}>{num(order.customers.phone)}</p>}
               {order.customers.email && <p className="text-sm" style={{ opacity: 0.75 }}>{order.customers.email}</p>}
               {(() => {
-                const detailed = shippingAddress ? formatAddressDetailed(shippingAddress as StructuredAddress, invoiceLang) : "";
+                const detailed = shippingAddress
+                  ? formatAddressDetailed(shippingAddress as StructuredAddress, invoiceLang)
+                  : "";
                 const legacy = !detailed ? formatDeliveryAddress(order.customers, invoiceLang) : [];
                 if (!detailed && legacy.length === 0) return null;
                 return (
@@ -1124,6 +1162,7 @@ function InvoicePreview({ order, items, settings, shippingAddress, paymentBadge 
             </table>
           </div>
 
+          {/* Totals stay on the physical left side in both languages. */}
           <div className="pdf-totals-row flex" style={{ justifyContent: "flex-start", direction: "ltr" }}>
             <div className="pdf-totals-block w-72 text-sm space-y-1" style={{ direction: isRTL ? "rtl" : "ltr" }}>
               <div className="flex justify-between"><span style={{ opacity: 0.75 }}>{L.subtotal}</span><span>{money(order.subtotal)}</span></div>
@@ -1151,7 +1190,10 @@ function InvoicePreview({ order, items, settings, shippingAddress, paymentBadge 
                     </span>
                     <span>− {money(order.advance_paid)}</span>
                   </div>
-                  <div className="flex justify-between items-center rounded-md px-2 py-1 mt-1 font-semibold" style={{ backgroundColor: `${color}1a`, color }}>
+                  <div
+                    className="flex justify-between items-center rounded-md px-2 py-1 mt-1 font-semibold"
+                    style={{ backgroundColor: `${color}1a`, color }}
+                  >
                     <span>{invoiceLang === "ar" ? "المتبقي للاستحقاق" : "Remaining Due"}</span>
                     <span>{money(Math.max(0, Number(order.total) - Number(order.advance_paid)))}</span>
                   </div>
@@ -1159,6 +1201,7 @@ function InvoicePreview({ order, items, settings, shippingAddress, paymentBadge 
               )}
             </div>
           </div>
+
 
           {(order.notes || settings.footer_note) && (
             <div className="mt-10 pt-6 border-t border-neutral-200 text-sm space-y-2" style={{ opacity: 0.85 }}>
@@ -1182,8 +1225,7 @@ function renderTemplate(str: string, vars: Record<string, string>) {
 function defaultBody() {
   return `Hi {{customer_name}},
 
-Thank you for your order with {{business_name}}.
-Please find your invoice details below:
+Thank you for your order with {{business_name}}. Please find your invoice details below:
 
 Invoice #: {{invoice_number}}
 Date: {{date}}
@@ -1200,6 +1242,7 @@ function SendInvoiceDialog({ order, totals, settings, currency }: { order: any; 
   const [open, setOpen] = useState(false);
   const [manageOpen, setManageOpen] = useState(false);
   const qc = useQueryClient();
+
   const vars = useMemo(() => ({
     customer_name: order?.customers?.name ?? "there",
     customer_email: order?.customers?.email ?? "",
@@ -1210,6 +1253,7 @@ function SendInvoiceDialog({ order, totals, settings, currency }: { order: any; 
     total: formatMoney(totals.total, currency),
     notes: order?.notes ?? "",
   }), [order, totals, settings, currency]);
+
   const brand = useBrand();
   const brandId = brand.id;
   const templatesQ = useQuery({
@@ -1220,12 +1264,14 @@ function SendInvoiceDialog({ order, totals, settings, currency }: { order: any; 
       return (data ?? []) as Tpl[];
     },
   });
+
   const [selectedId, setSelectedId] = useState<string>("__default");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [subject, setSubject] = useState("");
   const [message, setMessage] = useState("");
 
+  // Refresh fields from customer + selected template whenever dialog opens or selection/order changes
   useEffect(() => {
     if (!open) return;
     setEmail(order?.customers?.email ?? "");
@@ -1237,6 +1283,7 @@ function SendInvoiceDialog({ order, totals, settings, currency }: { order: any; 
     setMessage(renderTemplate(rawBody, vars));
   }, [open, selectedId, templatesQ.data, vars]);
 
+  // Auto-pick default template once loaded
   useEffect(() => {
     if (selectedId !== "__default") return;
     const def = templatesQ.data?.find((t) => t.is_default);
@@ -1252,6 +1299,8 @@ function SendInvoiceDialog({ order, totals, settings, currency }: { order: any; 
   const openWhatsApp = () => {
     const digits = (phone || "").replace(/[^\d]/g, "");
     if (!digits) return toast.error("This customer has no phone on file — add it in Customers or type one here (with country code)");
+    // Explicitly inject the live invoice link (same URL as the "Copy invoice link" button)
+    // into the {{Dynamic Invoice Link}} placeholder before encoding for WhatsApp.
     const origin = typeof window !== "undefined" ? window.location.origin : "";
     const invoiceLink = `${origin}/invoice/${order.id}`;
     const finalMessage = message.replace(/\{\{\s*Dynamic Invoice Link\s*\}\}/g, invoiceLink);
@@ -1274,3 +1323,181 @@ function SendInvoiceDialog({ order, totals, settings, currency }: { order: any; 
           <div className="flex gap-2 items-end">
             <div className="flex-1">
               <Label>Template</Label>
+              <Select value={selectedId} onValueChange={setSelectedId}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__default">— Built-in default —</SelectItem>
+                  {(templatesQ.data ?? []).map((t) => (
+                    <SelectItem key={t.id} value={t.id}>{t.name}{t.is_default ? " ★" : ""}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <Button variant="outline" size="sm" onClick={() => setManageOpen(true)}>Manage</Button>
+          </div>
+
+          <Tabs defaultValue="email" className="mt-2">
+            <TabsList className="grid grid-cols-2 w-full">
+              <TabsTrigger value="email">Email</TabsTrigger>
+              <TabsTrigger value="whatsapp">WhatsApp</TabsTrigger>
+            </TabsList>
+            <TabsContent value="email" className="space-y-3 mt-4">
+              <div>
+                <Label>To (from customer)</Label>
+                <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="customer@example.com" />
+              </div>
+              <div>
+                <Label>Subject</Label>
+                <Input value={subject} onChange={(e) => setSubject(e.target.value)} />
+              </div>
+              <div>
+                <Label>Message</Label>
+                <Textarea rows={10} value={message} onChange={(e) => setMessage(e.target.value)} />
+              </div>
+              <DialogFooter>
+                <Button onClick={openEmail}><Send className="h-4 w-4 mr-2" /> Open email app</Button>
+              </DialogFooter>
+            </TabsContent>
+            <TabsContent value="whatsapp" className="space-y-3 mt-4">
+              <div>
+                <Label>Phone (country code + number)</Label>
+                <PhoneInput value={phone} onChange={setPhone} />
+              </div>
+              <div>
+                <Label>Message</Label>
+                <Textarea rows={10} value={message} onChange={(e) => setMessage(e.target.value)} />
+              </div>
+              <p className="text-xs text-muted-foreground">Opens WhatsApp Web or the WhatsApp app with the message pre-filled — you send it manually. Attach the printed PDF there if needed.</p>
+              <DialogFooter>
+                <Button onClick={openWhatsApp}><Send className="h-4 w-4 mr-2" /> Open WhatsApp</Button>
+              </DialogFooter>
+            </TabsContent>
+          </Tabs>
+        </DialogContent>
+      </Dialog>
+
+      <ManageTemplatesDialog
+        open={manageOpen}
+        onOpenChange={setManageOpen}
+        templates={templatesQ.data ?? []}
+        onChanged={() => qc.invalidateQueries({ queryKey: ["message-templates"] })}
+      />
+    </>
+  );
+}
+
+function ManageTemplatesDialog({ open, onOpenChange, templates, onChanged }: {
+  open: boolean; onOpenChange: (o: boolean) => void; templates: Tpl[]; onChanged: () => void;
+}) {
+  const [editing, setEditing] = useState<Partial<Tpl> | null>(null);
+
+  const startNew = () => setEditing({ name: "", channel: "both", subject: "", body: defaultBody(), is_default: false });
+
+  const save = async () => {
+    if (!editing?.name || !editing?.body) return toast.error("Name and body are required");
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    const payload = {
+      user_id: user.id,
+      name: editing.name!,
+      channel: editing.channel ?? "both",
+      subject: editing.subject ?? null,
+      body: editing.body!,
+      is_default: !!editing.is_default,
+    };
+    // If setting as default, unset others first
+    if (payload.is_default) {
+      await supabase.from("message_templates").update({ is_default: false }).eq("user_id", user.id);
+    }
+    let error;
+    if (editing.id) {
+      ({ error } = await supabase.from("message_templates").update(payload).eq("id", editing.id));
+    } else {
+      ({ error } = await (supabase.from("message_templates") as any).insert(payload));
+    }
+    if (error) return toast.error(error.message);
+    toast.success("Saved");
+    setEditing(null);
+    onChanged();
+  };
+
+  const remove = async (id: string) => {
+    const { error } = await supabase.from("message_templates").delete().eq("id", id);
+    if (error) return toast.error(error.message);
+    toast.success("Deleted");
+    onChanged();
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Message templates</DialogTitle>
+          <DialogDescription>
+            Use placeholders like <code>{"{{customer_name}}"}</code>, <code>{"{{business_name}}"}</code>, <code>{"{{invoice_number}}"}</code>, <code>{"{{date}}"}</code>, <code>{"{{total}}"}</code>, <code>{"{{notes}}"}</code>.
+          </DialogDescription>
+        </DialogHeader>
+
+        {!editing && (
+          <div className="space-y-2">
+            <div className="flex justify-end">
+              <Button size="sm" onClick={startNew}><Plus className="h-3 w-3 mr-1" /> New template</Button>
+            </div>
+            {templates.length === 0 && <p className="text-sm text-muted-foreground">No templates yet.</p>}
+            {templates.map((t) => (
+              <div key={t.id} className="flex items-center justify-between border border-border rounded-md p-3">
+                <div>
+                  <p className="font-medium text-sm">{t.name} {t.is_default && <span className="text-xs text-primary">★ default</span>}</p>
+                  <p className="text-xs text-muted-foreground">{t.channel}</p>
+                </div>
+                <div className="flex gap-2">
+                  <Button size="sm" variant="outline" onClick={() => setEditing(t)}>Edit</Button>
+                  <Button size="sm" variant="ghost" onClick={() => remove(t.id)}><Trash2 className="h-4 w-4" /></Button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {editing && (
+          <div className="space-y-3">
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label>Name</Label>
+                <Input value={editing.name ?? ""} onChange={(e) => setEditing({ ...editing, name: e.target.value })} />
+              </div>
+              <div>
+                <Label>Channel</Label>
+                <Select value={editing.channel ?? "both"} onValueChange={(v) => setEditing({ ...editing, channel: v as Tpl["channel"] })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="both">Both</SelectItem>
+                    <SelectItem value="email">Email only</SelectItem>
+                    <SelectItem value="whatsapp">WhatsApp only</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div>
+              <Label>Email subject (optional)</Label>
+              <Input value={editing.subject ?? ""} onChange={(e) => setEditing({ ...editing, subject: e.target.value })} />
+            </div>
+            <div>
+              <Label>Body</Label>
+              <Textarea rows={12} value={editing.body ?? ""} onChange={(e) => setEditing({ ...editing, body: e.target.value })} />
+            </div>
+            <label className="flex items-center gap-2 text-sm">
+              <input type="checkbox" checked={!!editing.is_default} onChange={(e) => setEditing({ ...editing, is_default: e.target.checked })} />
+              Use as default template
+            </label>
+            <DialogFooter>
+              <Button variant="ghost" onClick={() => setEditing(null)}>Cancel</Button>
+              <Button onClick={save}>Save template</Button>
+            </DialogFooter>
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+}
+
