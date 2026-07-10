@@ -9,8 +9,8 @@ const Input = z.object({
 });
 
 /**
- * One-shot merchant text translation via Lovable AI Gateway.
- * Auth-gated so anonymous visitors can't burn credits.
+ * One-shot merchant text translation via Azure AI Translator.
+ * Auth-gated so anonymous visitors can't burn translation quota.
  */
 export const translateProductText = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -18,45 +18,43 @@ export const translateProductText = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     if (data.from === data.to) return { text: data.text };
 
-    const key = process.env.LOVABLE_API_KEY;
-    if (!key) throw new Error("Missing LOVABLE_API_KEY");
+    const key = process.env.AZURE_TRANSLATOR_KEY;
+    const region = process.env.AZURE_TRANSLATOR_REGION;
 
-    const target = data.to === "ar" ? "Arabic" : "English";
-    const source = data.from === "ar" ? "Arabic" : "English";
+    if (!key) throw new Error("Missing AZURE_TRANSLATOR_KEY");
+    if (!region) throw new Error("Missing AZURE_TRANSLATOR_REGION");
 
-    const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    const endpoint =
+      process.env.AZURE_TRANSLATOR_ENDPOINT ||
+      "https://api.cognitive.microsofttranslator.com";
+
+    const url = new URL("/translate", endpoint);
+    url.searchParams.set("api-version", "3.0");
+    url.searchParams.set("from", data.from);
+    url.searchParams.set("to", data.to);
+
+    const res = await fetch(url.toString(), {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Lovable-API-Key": key,
+        "Ocp-Apim-Subscription-Key": key,
+        "Ocp-Apim-Subscription-Region": region,
       },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
-        messages: [
-          {
-            role: "system",
-            content:
-              `You are a professional bilingual e-commerce copywriter. Translate the user's product text from ${source} to ${target}. ` +
-              `Keep the tone natural, concise, and marketing-friendly. Preserve line breaks. ` +
-              `Do NOT add quotes, prefixes like "Translation:", explanations, or emojis unless present in the source. ` +
-              `Return ONLY the translated text.`,
-          },
-          { role: "user", content: data.text },
-        ],
-        temperature: 0.2,
-      }),
+      body: JSON.stringify([{ text: data.text }]),
     });
 
-    if (res.status === 429) throw new Error("RATE_LIMITED");
-    if (res.status === 402) throw new Error("CREDITS_EXHAUSTED");
+    if (res.status === 401) throw new Error("AZURE_TRANSLATOR_AUTH_FAILED");
+    if (res.status === 403) throw new Error("AZURE_TRANSLATOR_FORBIDDEN_OR_REGION_MISMATCH");
+    if (res.status === 429) throw new Error("AZURE_TRANSLATOR_RATE_LIMITED");
     if (!res.ok) {
       const t = await res.text().catch(() => "");
-      throw new Error(`AI gateway error ${res.status}: ${t.slice(0, 200)}`);
+      throw new Error(`Azure translation error ${res.status}: ${t.slice(0, 200)}`);
     }
 
-    const json = (await res.json()) as {
-      choices?: Array<{ message?: { content?: string } }>;
-    };
-    const out = json.choices?.[0]?.message?.content?.trim() ?? "";
+    const json = (await res.json()) as Array<{
+      translations?: Array<{ text?: string }>;
+    }>;
+
+    const out = json[0]?.translations?.[0]?.text?.trim() ?? "";
     return { text: out };
   });
