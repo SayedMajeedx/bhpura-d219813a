@@ -16,6 +16,61 @@ import { toast } from "sonner";
 import { formatMoney } from "@/lib/format";
 import { useI18n, useT } from "@/lib/i18n";
 import { useBrand } from "@/lib/brand-context";
+
+const MAX_SCANNER_REQUEST_BYTES = 2_500_000;
+
+function fileToDataUrl(file: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result));
+    reader.onerror = () => reject(new Error("READ_FAILED"));
+    reader.readAsDataURL(file);
+  });
+}
+
+async function prepareReceiptForScanning(file: File): Promise<{ dataUrl: string; mimeType: string }> {
+  if (file.type === "application/pdf") {
+    if (file.size > MAX_SCANNER_REQUEST_BYTES) throw new Error("PDF_TOO_LARGE");
+    return { dataUrl: await fileToDataUrl(file), mimeType: file.type };
+  }
+
+  if (!file.type.startsWith("image/")) throw new Error("UNSUPPORTED_FILE");
+
+  const bitmap = await createImageBitmap(file, { imageOrientation: "from-image" });
+  try {
+    let maxDimension = 1800;
+    let quality = 0.82;
+    let output: Blob | null = null;
+
+    // Camera photos can be 10–30 MB. Resize and progressively compress until
+    // the base64 request remains safely below Vercel's function body limit.
+    for (let attempt = 0; attempt < 5; attempt += 1) {
+      const scale = Math.min(1, maxDimension / Math.max(bitmap.width, bitmap.height));
+      const width = Math.max(1, Math.round(bitmap.width * scale));
+      const height = Math.max(1, Math.round(bitmap.height * scale));
+      const canvas = document.createElement("canvas");
+      canvas.width = width;
+      canvas.height = height;
+      const context = canvas.getContext("2d");
+      if (!context) throw new Error("IMAGE_PROCESSING_FAILED");
+      context.fillStyle = "#ffffff";
+      context.fillRect(0, 0, width, height);
+      context.drawImage(bitmap, 0, 0, width, height);
+      output = await new Promise<Blob | null>((resolve) =>
+        canvas.toBlob(resolve, "image/jpeg", quality),
+      );
+      if (!output) throw new Error("IMAGE_PROCESSING_FAILED");
+      if (output.size <= MAX_SCANNER_REQUEST_BYTES) break;
+      maxDimension = Math.round(maxDimension * 0.8);
+      quality = Math.max(0.55, quality - 0.08);
+    }
+
+    if (!output || output.size > MAX_SCANNER_REQUEST_BYTES) throw new Error("IMAGE_TOO_LARGE");
+    return { dataUrl: await fileToDataUrl(output), mimeType: "image/jpeg" };
+  } finally {
+    bitmap.close();
+  }
+}
 import { scanReceipt, type ScannedExpense, type ScannedLineItem } from "@/lib/scan-receipt.functions";
 
 export const Route = createFileRoute("/_authenticated/admin/b/$slug/expenses")({
@@ -109,19 +164,20 @@ function ExpensesPage() {
 
   const onFilePicked = async (file: File | null) => {
     if (!file) return;
-    if (file.size > 12 * 1024 * 1024) {
-      toast.error(lang === "ar" ? "الملف كبير جداً (الحد 12 ميغابايت)" : "File too large (max 12MB)");
+    if (file.size > 40 * 1024 * 1024) {
+      toast.error(lang === "ar" ? "الملف كبير جداً (الحد 40 ميغابايت)" : "File too large (max 40MB)");
       return;
     }
     setScanning(true);
     try {
-      const dataUrl = await new Promise<string>((resolve, reject) => {
-        const r = new FileReader();
-        r.onload = () => resolve(String(r.result));
-        r.onerror = () => reject(new Error("read failed"));
-        r.readAsDataURL(file);
+      const prepared = await prepareReceiptForScanning(file);
+      const result = await scanFn({
+        data: {
+          dataUrl: prepared.dataUrl,
+          mimeType: prepared.mimeType,
+          targetLang: lang === "ar" ? "ar" : "en",
+        },
       });
-      const result = await scanFn({ data: { dataUrl, mimeType: file.type || "image/jpeg", targetLang: lang === "ar" ? "ar" : "en" } });
       setScanned(result);
       setEditing(null);
       setReviewOpen(true);
@@ -129,8 +185,10 @@ function ExpensesPage() {
     } catch (e: any) {
       const msg = e?.message === "RATE_LIMITED"
         ? (lang === "ar" ? "تجاوزت الحد. حاول لاحقاً" : "Rate limited, try again")
-        : e?.message === "CREDITS_EXHAUSTED"
-          ? (lang === "ar" ? "نفدت رصيد الذكاء الاصطناعي" : "AI credits exhausted")
+        : e?.message === "PDF_TOO_LARGE"
+          ? (lang === "ar" ? "ملف PDF كبير جداً. الحد 2.5 ميغابايت" : "PDF is too large (max 2.5MB)")
+        : e?.message === "IMAGE_TOO_LARGE" || e?.message === "IMAGE_PROCESSING_FAILED"
+          ? (lang === "ar" ? "تعذر ضغط الصورة. يرجى التقاط صورة أوضح وأقرب" : "Could not prepare the image. Try a closer, clearer photo")
           : (e?.message ?? (lang === "ar" ? "فشل مسح الفاتورة" : "Failed to scan receipt"));
       toast.error(msg);
     } finally {
