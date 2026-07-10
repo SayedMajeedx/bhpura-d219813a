@@ -15,7 +15,7 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
-type Body = { order_id?: string; lang?: "ar" | "en" };
+type Body = { order_id?: string; email_token?: string; lang?: "ar" | "en" };
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -213,18 +213,51 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
   if (req.method !== "POST") return json({ error: "Method not allowed" }, 405);
 
-  // Auth: webhook secret OR Supabase JWT bearer (admin resend)
+  // Auth is verified below. Merely looking like a Bearer token is not proof of
+  // authentication (the public anon key is also normally sent as Bearer).
   const providedSecret = req.headers.get("x-webhook-secret") ?? "";
   const authz = req.headers.get("authorization") ?? "";
-  const hasJwt = authz.toLowerCase().startsWith("bearer ") && authz.length > 20;
   const secretOk = !!WEBHOOK_SECRET && providedSecret === WEBHOOK_SECRET;
-  if (!hasJwt && !secretOk) return json({ error: "Unauthorized" }, 401);
 
   let body: Body = {};
   try { body = await req.json(); } catch { /* noop */ }
   const orderId = body.order_id;
   if (!orderId) return json({ error: "order_id required" }, 400);
   const lang: "ar" | "en" = body.lang === "ar" ? "ar" : "en";
+
+  let authorized = secretOk;
+  const token = authz.toLowerCase().startsWith("bearer ") ? authz.slice(7).trim() : "";
+  if (!authorized && token) {
+    const { data: userData } = await admin.auth.getUser(token);
+    const user = userData?.user;
+    if (user) {
+      const { data: order } = await admin.from("orders")
+        .select("brand_id, customer:customers(auth_user_id)")
+        .eq("id", orderId).maybeSingle();
+      const customerOwnsOrder = order?.customer?.auth_user_id === user.id;
+      const { data: profile } = await admin.from("profiles")
+        .select("role, status, brand_id").eq("id", user.id).maybeSingle();
+      const isActiveAdmin = profile?.status === "active" &&
+        ["admin", "brand_admin", "super_admin"].includes(profile.role) &&
+        (profile.role === "super_admin" || profile.brand_id === order?.brand_id);
+      authorized = customerOwnsOrder || isActiveAdmin;
+    }
+  }
+
+  // Guest checkout gets a random, order-scoped capability from the checkout
+  // RPC. It authorizes sending only this order's confirmation email.
+  if (!authorized && body.email_token) {
+    // Consume the guest capability atomically so a copied token cannot be
+    // replayed to send repeated messages.
+    const { data: tokenMatch } = await admin.from("orders")
+      .update({ confirmation_email_token: crypto.randomUUID() })
+      .eq("id", orderId)
+      .eq("confirmation_email_token", body.email_token)
+      .select("id")
+      .maybeSingle();
+    authorized = !!tokenMatch;
+  }
+  if (!authorized) return json({ error: "Forbidden" }, 403);
 
   if (!SMTP_USER || !SMTP_PASS) return json({ error: "SMTP credentials not configured" }, 500);
 

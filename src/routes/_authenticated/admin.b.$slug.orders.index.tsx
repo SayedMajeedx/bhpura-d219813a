@@ -150,7 +150,7 @@ function OrdersList() {
                       size="icon"
                       title={t("orders.copyLink")}
                       aria-label={t("orders.copyLink")}
-                      onClick={() => copyInvoiceLink(o.id, t)}
+                      onClick={() => copyInvoiceLink(o.public_invoice_token, t)}
                     >
                       <LinkIcon className="h-4 w-4" />
                     </Button>

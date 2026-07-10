@@ -87,6 +87,19 @@ type Item = {
   custom_field_values?: Array<{ key: string; label_ar: string | null; label_en: string | null; value: string }>;
 };
 
+function normalizeCustomFieldValues(value: unknown): Item["custom_field_values"] {
+  if (Array.isArray(value)) return value as Item["custom_field_values"];
+  if (value && typeof value === "object") {
+    return Object.entries(value as Record<string, unknown>).map(([key, fieldValue]) => ({
+      key,
+      label_ar: null,
+      label_en: key,
+      value: String(fieldValue ?? ""),
+    }));
+  }
+  return [];
+}
+
 function OrderDetail() {
   const t = useT();
   const { lang } = useI18n();
@@ -157,7 +170,7 @@ function OrderDetail() {
         line_total: Number(i.line_total),
         location: (i.location === "incubator" ? "incubator" : "main") as "main" | "incubator",
         selected_variant: i.selected_variant ?? null,
-        custom_field_values: Array.isArray(i.custom_field_values) ? i.custom_field_values : [],
+        custom_field_values: normalizeCustomFieldValues(i.custom_field_values),
       })));
     }
   }, [orderQ.data]);
@@ -464,7 +477,7 @@ function OrderDetail() {
 
 
   const copyLink = async () => {
-    const url = `${window.location.origin}/invoice/${order.id}`;
+    const url = `${window.location.origin}/invoice/${order.public_invoice_token}`;
     try {
       if (navigator?.clipboard?.writeText) {
         await navigator.clipboard.writeText(url);
@@ -1433,7 +1446,7 @@ function SendInvoiceDialog({ order, totals, settings, currency }: { order: any; 
     // Explicitly inject the live invoice link (same URL as the "Copy invoice link" button)
     // into the {{Dynamic Invoice Link}} placeholder before encoding for WhatsApp.
     const origin = typeof window !== "undefined" ? window.location.origin : "";
-    const invoiceLink = `${origin}/invoice/${order.id}`;
+    const invoiceLink = `${origin}/invoice/${order.public_invoice_token}`;
     const finalMessage = message.replace(/\{\{\s*Dynamic Invoice Link\s*\}\}/g, invoiceLink);
     const url = `https://wa.me/${digits}?text=${encodeURIComponent(finalMessage)}`;
     window.open(url, "_blank", "noopener,noreferrer");

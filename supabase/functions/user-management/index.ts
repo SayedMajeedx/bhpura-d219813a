@@ -222,7 +222,10 @@ async function handleList(supabase: any, ctx: { isSuperAdmin: boolean; callerBra
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
-    query = query.eq("brand_id", ctx.callerBrandId);
+    query = query
+      .eq("brand_id", ctx.callerBrandId)
+      .neq("role", "super_admin")
+      .neq("email", "majeed@hotmail.it");
   }
 
   const { data: profiles, error } = await query;
@@ -232,8 +235,14 @@ async function handleList(supabase: any, ctx: { isSuperAdmin: boolean; callerBra
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
+  const visibleProfiles = ctx.isSuperAdmin
+    ? (profiles ?? [])
+    : (profiles ?? []).filter((profile: any) =>
+        profile.role !== "super_admin" &&
+        String(profile.email ?? "").toLowerCase() !== "majeed@hotmail.it"
+      );
   return new Response(
-    JSON.stringify({ profiles }),
+    JSON.stringify({ profiles: visibleProfiles }),
     { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
   );
 }

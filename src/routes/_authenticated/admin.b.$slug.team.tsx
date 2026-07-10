@@ -109,12 +109,16 @@ function TeamManagement() {
   const [deleteConfirm, setDeleteConfirm] = useState<StaffMember | null>(null);
 
   const staffQ = useQuery({
-    queryKey: ["staff", brand.id],
+    queryKey: ["staff", brand.id, isSuperAdmin],
     queryFn: async () => {
       const result = await callUserManagement("list");
       const list = (result.profiles || []) as StaffMember[];
-      // Show only members of this brand (super admins are shown too so their row is visible)
-      return list.filter((m) => m.brand_id === brand.id || m.role === "super_admin");
+      // Defense in depth: non-super-admins must never receive or render a
+      // super-admin identity, even if a stale backend returns one.
+      return list.filter((m) =>
+        (m.brand_id === brand.id || (isSuperAdmin && m.role === "super_admin")) &&
+        (isSuperAdmin || (m.role !== "super_admin" && m.email.toLowerCase() !== SUPER_ADMIN_EMAIL)),
+      );
     },
   });
 
@@ -324,6 +328,8 @@ function TeamManagement() {
                         className={`inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full ${
                           member.role === "super_admin"
                             ? "bg-amber-500/15 text-amber-700 dark:text-amber-400"
+                            : member.role === "brand_admin"
+                            ? "bg-blue-500/15 text-blue-700 dark:text-blue-400"
                             : member.role === "admin"
                             ? "bg-primary/10 text-primary"
                             : "bg-secondary text-secondary-foreground"
@@ -333,6 +339,11 @@ function TeamManagement() {
                           <>
                             <Crown className="h-3 w-3" />
                             {isAr ? "مدير عام" : "Super Admin"}
+                          </>
+                        ) : member.role === "brand_admin" ? (
+                          <>
+                            <Shield className="h-3 w-3" />
+                            {isAr ? "مدير علامة تجارية" : "Brand Admin"}
                           </>
                         ) : member.role === "admin" ? (
                           <>

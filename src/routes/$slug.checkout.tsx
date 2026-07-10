@@ -96,12 +96,9 @@ function Checkout() {
   useEffect(() => {
     if (!settings.pickup_enabled) return;
     (async () => {
-      const { data } = await supabase
-        .from("branches" as any)
-        .select("id, name_ar, name_en, location_ar, location_en, notes_ar, notes_en")
-        .eq("brand_id", brand.id)
-        .eq("is_active", true)
-        .order("created_at", { ascending: true });
+      const { data } = await supabase.rpc("get_public_branches" as any, {
+        p_brand_id: brand.id,
+      });
       const list = ((data ?? []) as any[]);
       setBranches(list);
       setBranchId((cur) => cur || (list[0]?.id ?? ""));
@@ -168,6 +165,9 @@ function Checkout() {
             color: c.color,
             fabric: c.fabric ?? null,
           },
+          // Send both names during rollout. The database normalizes these to
+          // order_items.custom_field_values.
+          custom_fields: c.custom_fields ?? [],
           custom_field_values: c.custom_fields ?? [],
         })),
         p_payment_method: method,
@@ -177,6 +177,7 @@ function Checkout() {
       } as any);
       if (error) throw error;
       const orderId = (data as any)?.order_id;
+      const confirmationEmailToken = (data as any)?.confirmation_email_token;
       clearCart();
       toast.success(t("تم استلام طلبك!", "Order placed!"));
       // Fire-and-forget confirmation email (respects storefront language).
@@ -184,12 +185,13 @@ function Checkout() {
         const emailLang = (typeof document !== "undefined" && document.documentElement.dir === "rtl") ? "ar" : "en";
         // Fire-and-forget; server returns 202 immediately and sends in background.
         supabase.functions.invoke("send-order-email", {
-          body: { order_id: orderId, lang: emailLang },
+          body: { order_id: orderId, email_token: confirmationEmailToken, lang: emailLang },
         }).catch((err) => console.warn("[send-order-email]", err));
       }
       navigate({
         to: "/$slug/thank-you/$orderId",
         params: { slug: brand.slug, orderId: String(orderId ?? "") },
+        search: { fulfillment },
       });
     } catch (e: any) {
       const msg = String(e?.message ?? e);

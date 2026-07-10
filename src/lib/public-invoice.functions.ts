@@ -11,13 +11,16 @@ export const getPublicInvoice = createServerFn({ method: "GET" })
     const { data: order, error } = await supabaseAdmin
       .from("orders")
       .select("*, customers(name, phone, email), order_items(*, products(name), product_variants(size, color, fabric))")
-      .eq("id", data.id)
+      .eq("public_invoice_token", data.id)
       .maybeSingle();
     if (error) {
       console.error("[getPublicInvoice] order query failed", error);
       throw new Error("Unable to load invoice");
     }
     if (!order) return null;
+
+    // Never serialize the one-purpose email capability to an invoice viewer.
+    const { confirmation_email_token: _emailToken, ...publicOrder } = order as any;
 
     const { data: settings } = await supabaseAdmin
       .from("business_settings")
@@ -35,5 +38,5 @@ export const getPublicInvoice = createServerFn({ method: "GET" })
       shippingAddress = addr ?? null;
     }
 
-    return { order, settings, shippingAddress };
+    return { order: publicOrder, settings, shippingAddress };
   });
