@@ -48,7 +48,7 @@ const RESPONSE_JSON_SCHEMA = {
   required: ["store_name", "date", "line_items", "subtotal", "tax_amount", "grand_total"],
 } as const;
 
-const GEMINI_MODEL = "gemini-2.5-flash";
+const GEMINI_MODEL = "gemini-3.5-flash";
 const GEMINI_ENDPOINT =
   `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
 
@@ -137,7 +137,15 @@ export const scanReceipt = createServerFn({ method: "POST" })
     if (response.status === 401 || response.status === 403) throw new Error("GEMINI_AUTH_FAILED");
     if (!response.ok) {
       const details = await response.text().catch(() => "");
-      throw new Error(`Gemini API error ${response.status}: ${details.slice(0, 300)}`);
+      let providerMessage = details;
+      try {
+        const providerError = JSON.parse(details) as { error?: { message?: string; status?: string } };
+        providerMessage = providerError.error?.message || providerError.error?.status || details;
+      } catch { /* keep the plain response body */ }
+      if (response.status === 404 || /model.*(?:not found|no longer available)/i.test(providerMessage)) {
+        throw new Error("GEMINI_MODEL_UNAVAILABLE");
+      }
+      throw new Error(`Gemini API error ${response.status}: ${providerMessage.slice(0, 300)}`);
     }
 
     const payload = (await response.json()) as {

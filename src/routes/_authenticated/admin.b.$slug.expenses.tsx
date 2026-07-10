@@ -185,6 +185,8 @@ function ExpensesPage() {
     } catch (e: any) {
       const msg = e?.message === "RATE_LIMITED"
         ? (lang === "ar" ? "تجاوزت الحد. حاول لاحقاً" : "Rate limited, try again")
+        : e?.message === "GEMINI_MODEL_UNAVAILABLE"
+          ? (lang === "ar" ? "نموذج الذكاء الاصطناعي غير متاح حالياً" : "The AI scanner model is currently unavailable")
         : e?.message === "PDF_TOO_LARGE"
           ? (lang === "ar" ? "ملف PDF كبير جداً. الحد 2.5 ميغابايت" : "PDF is too large (max 2.5MB)")
         : e?.message === "IMAGE_TOO_LARGE" || e?.message === "IMAGE_PROCESSING_FAILED"
