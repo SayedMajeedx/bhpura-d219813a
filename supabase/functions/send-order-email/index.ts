@@ -1,3 +1,103 @@
+// Send order confirmation email via Zoho SMTP.
+// Optimized for Supabase Edge Runtime CPU limits:
+//   - Fast auth check (webhook secret OR Supabase JWT)
+//   - Order query joins only real order relationships; settings are fetched by brand_id
+//   - SMTP work executed inside EdgeRuntime.waitUntil() so the HTTP response
+//     returns immediately (202 Accepted) — the client no longer waits on the
+//     ~1-3s Zoho SMTPS handshake, avoiding "CPU Time exceeded".
+
+import { SMTPClient } from "https://deno.land/x/denomailer@1.6.0/mod.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-webhook-secret",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+};
+
+type Body = { order_id?: string; lang?: "ar" | "en" };
+
+const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
+const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+const SMTP_HOST = Deno.env.get("ZOHO_SMTP_HOST") ?? "smtp.zoho.com";
+const SMTP_PORT = Number(Deno.env.get("ZOHO_SMTP_PORT") ?? "465");
+const SMTP_USER = Deno.env.get("ZOHO_SMTP_USER") ?? "";
+const SMTP_PASS = Deno.env.get("ZOHO_SMTP_PASS") ?? "";
+const FROM_ADDRESS = Deno.env.get("ORDER_EMAIL_FROM_ADDRESS") ?? "no-reply@boutq.store";
+const WEBHOOK_SECRET = Deno.env.get("ORDER_EMAIL_WEBHOOK_SECRET") ?? "";
+
+// deno-lint-ignore no-explicit-any
+const admin: any = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+  auth: { persistSession: false, autoRefreshToken: false },
+});
+
+function escapeHtml(s: unknown) {
+  return String(s ?? "").replace(/[&<>"']/g, (c) =>
+    ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]!),
+  );
+}
+
+function fmt(n: number, currency: string, isAr: boolean) {
+  try {
+    return new Intl.NumberFormat(isAr ? "ar-BH" : "en-US", {
+      style: "currency", currency, maximumFractionDigits: 3,
+    }).format(Number(n || 0));
+  } catch {
+    return `${Number(n || 0).toFixed(3)} ${currency}`;
+  }
+}
+
+function paymentStatusLabel(status: string | null | undefined, isAr: boolean) {
+  const normalized = String(status ?? "").toLowerCase().replace(/[_-]/g, " ");
+  if (isAr) {
+    if (normalized.includes("partial")) return "مدفوع جزئياً";
+    if (normalized.includes("unpaid") || normalized.includes("pending")) return "غير مدفوع";
+    if (normalized.includes("paid")) return "مدفوع";
+    return status || "غير محدد";
+  }
+  if (normalized.includes("partial")) return "Partially paid";
+  if (normalized.includes("unpaid") || normalized.includes("pending")) return "Unpaid";
+  if (normalized.includes("paid")) return "Paid";
+  return status || "Not specified";
+}
+
+function renderHtml(o: any, items: any[], brandName: string, primary: string, isAr: boolean) {
+  const dir = isAr ? "rtl" : "ltr";
+  const L = isAr
+    ? { greet: "شكراً لطلبك", intro: "تم استلام طلبك بنجاح. تفاصيله أدناه:", inv: "رقم الفاتورة", date: "التاريخ",
+        item: "الصنف", qty: "الكمية", price: "السعر", total: "الإجمالي", subtotal: "المجموع الفرعي",
+        discount: "الخصم", vat: "ضريبة القيمة المضافة", shipping: "الشحن", grand: "الإجمالي النهائي",
+        paymentStatus: "حالة الدفع", advance: "الدفعة المقدمة", remaining: "المبلغ المتبقي",
+        regards: "مع أطيب التحيات", footer: "هذه رسالة تلقائية، الرجاء عدم الرد." }
+    : { greet: "Thanks for your order", intro: "We received your order. Details below:", inv: "Invoice #", date: "Date",
+        item: "Item", qty: "Qty", price: "Price", total: "Total", subtotal: "Subtotal",
+        discount: "Discount", vat: "VAT", shipping: "Shipping", grand: "Grand total",
+        paymentStatus: "Payment status", advance: "Advance payment", remaining: "Remaining balance",
+        regards: "Warm regards", footer: "This is an automated message, please do not reply." };
+  const cur = o.currency ?? "BHD";
+  const align = isAr ? "left" : "right";
+  const discount = Number(o.discount || 0);
+  const shipping = Number(o.shipping || 0);
+  const taxAmount = Number(o.tax_amount || 0);
+  const taxRate = Number(o.tax_rate || 0);
+  const advancePaid = Number(o.advance_paid || 0);
+  const total = Number(o.total || 0);
+  const remaining = Math.max(total - advancePaid, 0);
+  const paymentStatus = paymentStatusLabel(o.payment_status, isAr);
+  const showVat = o.tax_rate !== null && o.tax_rate !== undefined || taxAmount > 0;
+  const showPaymentSummary = !!o.payment_status || advancePaid > 0;
+  const rows = items.map((i: any) =>
+    `<tr><td style="padding:10px 8px;border-bottom:1px solid #eee">${escapeHtml(i.description)}</td>` +
+    `<td style="padding:10px 8px;border-bottom:1px solid #eee;text-align:center">${i.quantity}</td>` +
+    `<td style="padding:10px 8px;border-bottom:1px solid #eee;text-align:${align}">${fmt(Number(i.unit_price), cur, isAr)}</td>` +
+    `<td style="padding:10px 8px;border-bottom:1px solid #eee;text-align:${align}">${fmt(Number(i.line_total), cur, isAr)}</td></tr>`
+  ).join("");
+  return `<!doctype html><html lang="${isAr ? "ar" : "en"}" dir="${dir}"><head><meta charset="utf-8"><title>${escapeHtml(brandName)} — ${L.inv} ${escapeHtml(o.invoice_number)}</title></head>
+<body style="margin:0;background:#f7f7f8;font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;color:#111">
+<div style="max-width:640px;margin:0 auto;background:#fff">
+<div style="padding:24px 28px;background:${primary};color:#fff"><h1 style="margin:0;font-size:22px">${escapeHtml(brandName)}</h1><p style="margin:6px 0 0;opacity:.9">${L.greet}</p></div>
+<div style="padding:24px 28px">
+<p style="margin:0 0 16px">${L.intro}</p>
 <p style="margin:0 0 4px"><strong>${L.inv}:</strong> ${escapeHtml(o.invoice_number)}</p>
 <p style="margin:0 0 16px"><strong>${L.date}:</strong> ${new Date(o.order_date).toLocaleDateString(isAr ? "ar-BH" : "en-US")}</p>
 <table style="width:100%;border-collapse:collapse;margin-top:8px;font-size:14px"><thead><tr>

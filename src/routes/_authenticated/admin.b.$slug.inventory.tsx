@@ -143,6 +143,7 @@ function Inventory() {
         />
       ) : (
         <CustomizationsSection
+          brandId={brandId}
           items={customizations.data ?? []}
           onChanged={() => qc.invalidateQueries({ queryKey: ["customizations"] })}
         />
@@ -168,13 +169,17 @@ function ProductsSection({ products, variants, businessName, onChanged }: { prod
 
   const isAr = useI18n().lang === "ar";
 
+  const brand = useBrand();
+  const brandId = brand.id;
+
   const printAll = async () => {
     const labels: LabelData[] = [];
     const [{ data: freshProducts, error: productsError }, { data: freshVariants, error: variantsError }] = await Promise.all([
-      supabase.from("products").select("id, name").order("created_at", { ascending: false }),
+      supabase.from("products").select("id, name").eq("brand_id", brandId).order("created_at", { ascending: false }),
       supabase
         .from("product_variants")
         .select("product_id, barcode, size, color, selling_price")
+        .eq("brand_id", brandId)
         .not("barcode", "is", null)
         .order("created_at"),
     ]);
@@ -393,6 +398,7 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
     } else {
       const payload = {
         user_id: user.id,
+        brand_id: brand.id,
         name: legacyName,
         name_ar: nameAr || null,
         name_en: nameEn || null,
@@ -586,6 +592,7 @@ function VariantList({ productId, productName, businessName, variants, onChanged
   const { lang } = useI18n();
   const isAr = lang === "ar";
   const { canViewFinancials } = useProfile();
+  const brand = useBrand();
   const [adding, setAdding] = useState(false);
   const empty = {
     size: "", size_unit: "", color: "", fabric: "", sku: "", barcode: "",
@@ -603,7 +610,9 @@ function VariantList({ productId, productName, businessName, variants, onChanged
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
     const { error } = await (supabase.from("product_variants") as any).insert({
-      user_id: user.id, product_id: productId,
+      user_id: user.id,
+      brand_id: brand.id,
+      product_id: productId,
       size: row.size || null, size_unit: row.size_unit || null,
       color: row.color || null, fabric: row.fabric || null,
       sku: row.sku || null, barcode: row.barcode.trim() || null,
@@ -767,7 +776,7 @@ function VariantList({ productId, productName, businessName, variants, onChanged
   );
 }
 
-function CustomizationsSection({ items, onChanged }: { items: Customization[]; onChanged: () => void }) {
+function CustomizationsSection({ brandId, items, onChanged }: { brandId: string; items: Customization[]; onChanged: () => void }) {
   const t = useT();
   const [name, setName] = useState("");
   const [price, setPrice] = useState("0");
@@ -777,7 +786,10 @@ function CustomizationsSection({ items, onChanged }: { items: Customization[]; o
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
     const { error } = await (supabase.from("customization_options") as any).insert({
-      user_id: user.id, name, price_delta: Number(price),
+      user_id: user.id,
+      brand_id: brandId,
+      name,
+      price_delta: Number(price),
     });
     if (error) toast.error(error.message);
     else { setName(""); setPrice("0"); onChanged(); }
