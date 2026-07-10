@@ -25,7 +25,7 @@ const en: Dict = {
   "nav.inventory": "Inventory",
   "nav.customers": "Customers",
   "nav.orders": "Orders & Invoices",
-  "nav.settings": "Invoice Settings",
+  "nav.settings": "Settings",
   "nav.signOut": "Sign out",
 
   "auth.welcomeBack": "Welcome back",
@@ -375,7 +375,7 @@ const ar: Dict = {
   "nav.inventory": "المخزون",
   "nav.customers": "العملاء",
   "nav.orders": "الطلبات والفواتير",
-  "nav.settings": "إعدادات الفاتورة",
+  "nav.settings": "الإعدادات",
   "nav.signOut": "تسجيل الخروج",
 
   "auth.welcomeBack": "مرحباً بعودتك",
