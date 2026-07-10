@@ -85,6 +85,24 @@ export type Database = {
           },
         ]
       }
+      app_config: {
+        Row: {
+          key: string
+          updated_at: string
+          value: string
+        }
+        Insert: {
+          key: string
+          updated_at?: string
+          value: string
+        }
+        Update: {
+          key?: string
+          updated_at?: string
+          value?: string
+        }
+        Relationships: []
+      }
       brands: {
         Row: {
           about_ar: string | null
@@ -742,6 +760,9 @@ export type Database = {
           advance_paid: number
           brand_id: string
           channel: string
+          confirmation_email_error: string | null
+          confirmation_email_sent_at: string | null
+          confirmation_email_status: string
           created_at: string
           currency: string
           customer_id: string | null
@@ -769,6 +790,9 @@ export type Database = {
           advance_paid?: number
           brand_id: string
           channel?: string
+          confirmation_email_error?: string | null
+          confirmation_email_sent_at?: string | null
+          confirmation_email_status?: string
           created_at?: string
           currency?: string
           customer_id?: string | null
@@ -796,6 +820,9 @@ export type Database = {
           advance_paid?: number
           brand_id?: string
           channel?: string
+          confirmation_email_error?: string | null
+          confirmation_email_sent_at?: string | null
+          confirmation_email_status?: string
           created_at?: string
           currency?: string
           customer_id?: string | null
@@ -1110,6 +1137,10 @@ export type Database = {
             }
             Returns: Json
           }
+      resend_order_confirmation_email: {
+        Args: { p_order_id: string }
+        Returns: Json
+      }
       sync_order_stock: { Args: { p_order_id: string }; Returns: undefined }
     }
     Enums: {
