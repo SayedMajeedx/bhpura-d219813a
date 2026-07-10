@@ -216,7 +216,7 @@ function WhatsAppFab() {
       target="_blank"
       rel="noopener noreferrer"
       aria-label="WhatsApp"
-      className={`fixed z-50 bottom-5 ${lang === "ar" ? "left-5" : "right-5"} h-14 w-14 rounded-full grid place-items-center shadow-lg hover:scale-105 transition-transform`}
+      className={`fixed z-50 bottom-24 md:bottom-5 ${lang === "ar" ? "left-5" : "right-5"} h-14 w-14 rounded-full grid place-items-center shadow-lg hover:scale-105 transition-transform`}
       style={{ backgroundColor: "#25D366", color: "#fff" }}
     >
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-7 w-7" aria-hidden="true">
