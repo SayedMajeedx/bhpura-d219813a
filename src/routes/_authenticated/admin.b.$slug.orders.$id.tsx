@@ -664,6 +664,12 @@ function OrderDetail() {
               <div className="mt-4 pt-4 border-t border-border text-start">
                 <p className="text-xs uppercase tracking-wider text-muted-foreground mb-1">{t("orderDetail.deliveryAddress")}</p>
                 <p className="font-medium">{selected.name}</p>
+                {selected.email && (
+                  <p className="text-sm text-muted-foreground flex items-center gap-1.5 break-all">
+                    <Mail className="h-3.5 w-3.5 shrink-0" />
+                    <a href={`mailto:${selected.email}`} className="hover:underline">{selected.email}</a>
+                  </p>
+                )}
                 {selected.phone && <p className="text-sm text-muted-foreground">{selected.phone}</p>}
                 {customerAddrs.length > 0 ? (
                   <div className="mt-3 space-y-2">

@@ -1,12 +1,12 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useStorefront, formatPrice, pickName, pickDescription } from "@/lib/storefront-context";
+import { useStorefront, formatPrice, pickName, pickDescription, readableOn } from "@/lib/storefront-context";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useState, useMemo } from "react";
-import { ChevronLeft, ChevronRight, ShoppingBag } from "lucide-react";
+import { useState, useMemo, useRef } from "react";
+import { ChevronLeft, ChevronRight, ShoppingBag, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/$slug/product/$id")({
@@ -45,6 +45,14 @@ type Product = {
   product_variants: Variant[];
 };
 
+/** Natural sort key: extract leading number so "52" < "54" < "60". */
+function variantSortKey(v: Variant): [number, string] {
+  const label = [v.size, v.color, v.fabric].filter(Boolean).join(" · ");
+  const m = /-?\d+(?:\.\d+)?/.exec(label);
+  const num = m ? Number(m[0]) : Number.POSITIVE_INFINITY;
+  return [num, label.toLowerCase()];
+}
+
 function ProductDetail() {
   const { id } = Route.useParams();
   const { brand, settings, currency, lang, t, addToCart } = useStorefront();
@@ -53,6 +61,8 @@ function ProductDetail() {
   const [variantId, setVariantId] = useState<string | null>(null);
   const [qty, setQty] = useState(1);
   const [cfValues, setCfValues] = useState<Record<string, string>>({});
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const optionsRef = useRef<HTMLDivElement | null>(null);
 
   const { data: product, isLoading } = useQuery({
     queryKey: ["storefront", brand.slug, "product", id],
@@ -79,7 +89,15 @@ function ProductDetail() {
     return [];
   }, [product]);
 
-  const variants = product?.product_variants ?? [];
+  const variants = useMemo<Variant[]>(() => {
+    const list = product?.product_variants ?? [];
+    return [...list].sort((a, b) => {
+      const [an, al] = variantSortKey(a);
+      const [bn, bl] = variantSortKey(b);
+      if (an !== bn) return an - bn;
+      return al.localeCompare(bl, undefined, { numeric: true, sensitivity: "base" });
+    });
+  }, [product]);
   const variant = variantId ? variants.find((v) => v.id === variantId) : null;
   const customFields = useMemo<CustomField[]>(
     () => (Array.isArray(product?.custom_fields) ? (product!.custom_fields as CustomField[]) : []),
@@ -115,24 +133,44 @@ function ProductDetail() {
   const price = variant?.selling_price ?? Math.min(...variants.map((v) => v.selling_price).filter((p) => p > 0), Infinity);
   const displayPrice = isFinite(price) ? price : 0;
   const maxStock = variant?.stock_main ?? 0;
-  const canAdd = !!variant && variant.stock_main > 0;
+  const hasVariants = variants.length > 0;
 
   const displayName = pickName(lang, product);
   const displayDescription = pickDescription(lang, product);
 
   const cfLabel = (f: CustomField) => (lang === "ar" ? (f.label_ar || f.label_en || f.key) : (f.label_en || f.label_ar || f.key));
 
-  const doAdd = () => {
-    if (!variant) {
-      toast.error(t("اختر خياراً أولاً", "Please select an option"));
-      return;
+  const primary = settings.primary_color || "#111111";
+  const primaryFg = readableOn(primary);
+
+  const scrollToOptions = () => {
+    optionsRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+  };
+
+  const validate = (): string | null => {
+    if (hasVariants && !variant) {
+      return t("يرجى اختيار مقاس/خيار أولاً", "Please select a size or option first");
+    }
+    if (variant && variant.stock_main <= 0) {
+      return t("هذا الخيار غير متوفر حالياً", "This option is out of stock");
     }
     for (const f of customFields) {
       if (f.required && !(cfValues[f.key] ?? "").trim()) {
-        toast.error(t(`الحقل مطلوب: ${cfLabel(f)}`, `Required field: ${cfLabel(f)}`));
-        return;
+        return t(`الحقل مطلوب: ${cfLabel(f)}`, `Required field: ${cfLabel(f)}`);
       }
     }
+    return null;
+  };
+
+  const doAdd = (thenBuy = false) => {
+    const err = validate();
+    if (err) {
+      setErrorMsg(err);
+      toast.error(err);
+      scrollToOptions();
+      return;
+    }
+    setErrorMsg(null);
     const custom = customFields
       .map((f) => ({
         key: f.key,
@@ -142,26 +180,31 @@ function ProductDetail() {
       }))
       .filter((v) => v.value.length > 0);
     addToCart({
-      variant_id: variant.id,
+      variant_id: variant!.id,
       product_id: product.id,
       name: displayName,
       name_ar: product.name_ar,
       name_en: product.name_en,
       image: media.find((m) => m.type === "image")?.url ?? product.image_url ?? null,
-      price: variant.selling_price,
-      size: variant.size,
-      color: variant.color,
-      fabric: variant.fabric,
+      price: variant!.selling_price,
+      size: variant!.size,
+      color: variant!.color,
+      fabric: variant!.fabric,
       qty,
-      max_stock: variant.stock_main,
+      max_stock: variant!.stock_main,
       custom_fields: custom,
     });
-    toast.success(t("تمت الإضافة إلى السلة", "Added to cart"));
+    if (thenBuy) {
+      navigate({ to: "/$slug/checkout", params: { slug: brand.slug } });
+    } else {
+      toast.success(t("تمت الإضافة إلى السلة", "Added to cart"));
+    }
   };
 
+  const priceLabel = displayPrice > 0 ? formatPrice(displayPrice, currency, lang) : t("السعر عند الطلب", "Price on request");
 
   return (
-    <div className="mx-auto max-w-6xl px-4 sm:px-6 py-6 sm:py-10 grid md:grid-cols-2 gap-8">
+    <div className="mx-auto max-w-6xl px-4 sm:px-6 py-3 sm:py-10 grid md:grid-cols-2 gap-4 sm:gap-8 pb-28 md:pb-10">
       <div>
         <div className="relative aspect-square bg-muted rounded-2xl overflow-hidden">
           {media.length > 0 ? (
@@ -210,7 +253,7 @@ function ProductDetail() {
                 className={`h-16 w-16 rounded-lg overflow-hidden shrink-0 border-2 ${
                   i === mediaIdx ? "border-current" : "border-transparent"
                 }`}
-                style={i === mediaIdx ? { borderColor: settings.primary_color } : undefined}
+                style={i === mediaIdx ? { borderColor: primary } : undefined}
               >
                 {m.type === "video" ? (
                   <div className="w-full h-full bg-black grid place-items-center text-white text-[10px]">▶</div>
@@ -224,29 +267,35 @@ function ProductDetail() {
       </div>
 
       <div>
-        <h1 className="font-display text-3xl mb-2">{displayName}</h1>
-        <div className="text-2xl font-semibold mb-4" style={{ color: settings.primary_color }}>
-          {displayPrice > 0 ? formatPrice(displayPrice, currency, lang) : t("السعر عند الطلب", "Price on request")}
+        <h1 className="font-display text-2xl sm:text-3xl mb-1 sm:mb-2">{displayName}</h1>
+        <div className="text-xl sm:text-2xl font-semibold mb-3 sm:mb-4" style={{ color: primary }}>
+          {priceLabel}
         </div>
         {displayDescription && (
-          <p className="text-muted-foreground mb-6 whitespace-pre-line">{displayDescription}</p>
+          <p className="text-muted-foreground mb-4 sm:mb-6 whitespace-pre-line text-sm sm:text-base">{displayDescription}</p>
         )}
 
-        {variants.length > 0 && (
-          <div className="mb-4">
+        {hasVariants && (
+          <div ref={optionsRef} className="mb-4 scroll-mt-24">
             <div className="text-sm font-medium mb-2">{t("الخيارات", "Options")}</div>
             <div className="flex flex-wrap gap-2">
               {variants.map((v) => {
                 const oos = v.stock_main <= 0;
                 const active = v.id === variantId;
                 const label = [v.size, v.color, v.fabric].filter(Boolean).join(" · ") || t("متغيّر", "Variant");
+                const style: React.CSSProperties = active
+                  ? { backgroundColor: primary, color: primaryFg, borderColor: primary }
+                  : {};
                 return (
                   <button
                     key={v.id}
                     disabled={oos}
-                    onClick={() => { setVariantId(v.id); setQty(1); }}
-                    className={`px-3 py-2 rounded-lg border text-sm ${active ? "border-current" : "border-input"} ${oos ? "opacity-40 line-through" : ""}`}
-                    style={active ? { borderColor: settings.primary_color, backgroundColor: `${settings.primary_color}11` } : undefined}
+                    onClick={() => { setVariantId(v.id); setQty(1); setErrorMsg(null); }}
+                    className={`min-h-11 px-4 py-2 rounded-lg border-2 text-sm font-medium transition-all ${
+                      active ? "shadow-sm" : "border-input bg-background hover:border-foreground/40"
+                    } ${oos ? "opacity-40 line-through cursor-not-allowed" : ""}`}
+                    style={style}
+                    aria-pressed={active}
                   >
                     {label}
                   </button>
@@ -261,7 +310,7 @@ function ProductDetail() {
             {customFields.map((f) => {
               const label = cfLabel(f);
               const val = cfValues[f.key] ?? "";
-              const set = (v: string) => setCfValues((s) => ({ ...s, [f.key]: v }));
+              const set = (v: string) => { setCfValues((s) => ({ ...s, [f.key]: v })); setErrorMsg(null); };
               return (
                 <div key={f.key}>
                   <label className="block text-sm font-medium mb-1">
@@ -271,7 +320,7 @@ function ProductDetail() {
                     <select
                       value={val}
                       onChange={(e) => set(e.target.value)}
-                      className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm"
+                      className="w-full h-11 rounded-md border border-input bg-background px-3 text-sm"
                     >
                       <option value="">{t("اختر...", "Select...")}</option>
                       {(f.options ?? []).map((o) => (
@@ -283,7 +332,7 @@ function ProductDetail() {
                       type={f.type === "number" ? "number" : "text"}
                       value={val}
                       onChange={(e) => set(e.target.value)}
-                      className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm"
+                      className="w-full h-11 rounded-md border border-input bg-background px-3 text-sm"
                     />
                   )}
                 </div>
@@ -312,28 +361,71 @@ function ProductDetail() {
           </div>
         )}
 
-        <div className="flex gap-2">
+        {errorMsg && (
+          <div
+            role="alert"
+            className="mb-3 flex items-center gap-2 rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+          >
+            <AlertCircle className="h-4 w-4 shrink-0" />
+            <span>{errorMsg}</span>
+          </div>
+        )}
+
+        <div className="hidden md:flex gap-2">
           <Button
-            className="flex-1 h-12"
-            style={{ backgroundColor: "var(--sf-btn-primary-bg)", color: "var(--sf-btn-primary-fg)" }}
-            disabled={!canAdd}
-            onClick={doAdd}
+            className="flex-1 h-12 font-semibold shadow-sm hover:opacity-90"
+            style={{ backgroundColor: "var(--sf-btn-primary-bg)", color: "var(--sf-btn-primary-fg)", opacity: 1 }}
+            onClick={() => doAdd(false)}
           >
             <ShoppingBag className="h-4 w-4 me-2" />
             {t("أضف للسلة", "Add to cart")}
           </Button>
           <Button
-            className="h-12 border"
+            className="h-12 border-2 font-semibold hover:opacity-90"
             style={{
               backgroundColor: "var(--sf-btn-secondary-bg)",
               color: "var(--sf-btn-secondary-fg)",
               borderColor: "var(--sf-btn-secondary-bg)",
+              opacity: 1,
             }}
-            disabled={!canAdd}
-            onClick={() => {
-              doAdd();
-              navigate({ to: "/$slug/checkout", params: { slug: brand.slug } });
+            onClick={() => doAdd(true)}
+          >
+            {t("اشتر الآن", "Buy now")}
+          </Button>
+        </div>
+      </div>
+
+      {/* Mobile sticky purchase bar */}
+      <div
+        className="md:hidden fixed inset-x-0 bottom-0 z-40 border-t bg-background/95 backdrop-blur px-3 py-2 shadow-[0_-4px_16px_-8px_rgba(0,0,0,0.15)]"
+        style={{ paddingBottom: "calc(0.5rem + env(safe-area-inset-bottom, 0px))" }}
+      >
+        <div className="mx-auto max-w-6xl flex items-center gap-2">
+          <div className="min-w-0 flex-1">
+            <div className="text-[10px] uppercase tracking-wider text-muted-foreground truncate">
+              {variant ? [variant.size, variant.color, variant.fabric].filter(Boolean).join(" · ") || t("مختار", "Selected") : t("اختر الخيار", "Choose option")}
+            </div>
+            <div className="text-base font-semibold truncate" style={{ color: primary }}>
+              {priceLabel}
+            </div>
+          </div>
+          <Button
+            className="h-11 px-3 font-semibold"
+            style={{ backgroundColor: "var(--sf-btn-primary-bg)", color: "var(--sf-btn-primary-fg)", opacity: 1 }}
+            onClick={() => doAdd(false)}
+            aria-label={t("أضف للسلة", "Add to cart")}
+          >
+            <ShoppingBag className="h-4 w-4" />
+          </Button>
+          <Button
+            className="h-11 px-4 font-semibold border-2"
+            style={{
+              backgroundColor: "var(--sf-btn-checkout-bg, var(--sf-btn-secondary-bg))",
+              color: "var(--sf-btn-checkout-fg, var(--sf-btn-secondary-fg))",
+              borderColor: "var(--sf-btn-checkout-bg, var(--sf-btn-secondary-bg))",
+              opacity: 1,
             }}
+            onClick={() => doAdd(true)}
           >
             {t("اشتر الآن", "Buy now")}
           </Button>

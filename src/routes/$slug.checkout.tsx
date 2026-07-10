@@ -283,7 +283,7 @@ function Checkout() {
                 {t("لا توجد فروع متاحة حاليًا.", "No branches available right now.")}
               </p>
             ) : (
-              <div className="grid gap-2">
+              <div className="grid gap-3 sm:grid-cols-2">
                 {branches.map((b) => {
                   const active = branchId === b.id;
                   return (
@@ -291,16 +291,28 @@ function Checkout() {
                       key={b.id}
                       type="button"
                       onClick={() => setBranchId(b.id)}
-                      className={`text-start p-3 rounded-lg border ${active ? "border-current" : "border-input"}`}
-                      style={active ? { borderColor: settings.primary_color, backgroundColor: `${settings.primary_color}11` } : undefined}
+                      className={`relative text-start p-4 rounded-xl border-2 transition-all hover:shadow-sm ${active ? "shadow-sm" : "border-input bg-background hover:border-foreground/30"}`}
+                      style={active ? { borderColor: settings.primary_color, backgroundColor: `${settings.primary_color}14` } : undefined}
+                      aria-pressed={active}
                     >
-                      <div className="font-medium">{branchLabel(b)}</div>
-                      {branchLoc(b) && <div className="text-xs text-muted-foreground">{branchLoc(b)}</div>}
-                      {(lang === "ar" ? b.notes_ar : b.notes_en) && (
-                        <div className="text-xs text-muted-foreground mt-1">
-                          {lang === "ar" ? b.notes_ar : b.notes_en}
+                      <div className="flex items-start gap-3">
+                        <span
+                          className={`mt-0.5 h-5 w-5 shrink-0 rounded-full border-2 grid place-items-center transition-colors ${active ? "" : "border-muted-foreground/40"}`}
+                          style={active ? { borderColor: settings.primary_color, backgroundColor: settings.primary_color } : undefined}
+                          aria-hidden
+                        >
+                          {active && <span className="h-2 w-2 rounded-full bg-white" />}
+                        </span>
+                        <div className="min-w-0 flex-1">
+                          <div className="font-semibold truncate">{branchLabel(b)}</div>
+                          {branchLoc(b) && <div className="text-xs text-muted-foreground mt-0.5">{branchLoc(b)}</div>}
+                          {(lang === "ar" ? b.notes_ar : b.notes_en) && (
+                            <div className="text-xs text-muted-foreground mt-1">
+                              {lang === "ar" ? b.notes_ar : b.notes_en}
+                            </div>
+                          )}
                         </div>
-                      )}
+                      </div>
                     </button>
                   );
                 })}
