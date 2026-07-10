@@ -83,6 +83,8 @@ type Item = {
   customizations: { name: string; price_delta: number }[];
   customization_total: number; line_total: number;
   location: "main" | "incubator";
+  selected_variant?: { size?: string | null; color?: string | null; fabric?: string | null } | null;
+  custom_field_values?: Array<{ key: string; label_ar: string | null; label_en: string | null; value: string }>;
 };
 
 function OrderDetail() {
