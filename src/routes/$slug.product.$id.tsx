@@ -16,6 +16,7 @@ export const Route = createFileRoute("/$slug/product/$id")({
 type Variant = {
   id: string;
   size: string | null;
+  size_unit: string | null;
   color: string | null;
   fabric: string | null;
   selling_price: number;
