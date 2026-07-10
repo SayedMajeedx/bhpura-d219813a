@@ -8,6 +8,50 @@ const Input = z.object({
   targetLang: z.enum(["ar", "en"]).default("ar"),
 });
 
+const GeminiReceipt = z.object({
+  store_name: z.string(),
+  date: z.string(),
+  line_items: z.array(z.object({
+    product_name: z.string(),
+    quantity: z.number(),
+    unit_price: z.number(),
+  })),
+  subtotal: z.number(),
+  tax_amount: z.number(),
+  grand_total: z.number(),
+});
+
+const RESPONSE_JSON_SCHEMA = {
+  type: "object",
+  additionalProperties: false,
+  properties: {
+    store_name: { type: "string", description: "Merchant or store name exactly as shown." },
+    date: { type: "string", description: "Receipt date formatted as YYYY-MM-DD, or an empty string if unreadable." },
+    line_items: {
+      type: "array",
+      description: "Every readable purchased product or service line.",
+      items: {
+        type: "object",
+        additionalProperties: false,
+        properties: {
+          product_name: { type: "string" },
+          quantity: { type: "number", minimum: 0 },
+          unit_price: { type: "number", minimum: 0 },
+        },
+        required: ["product_name", "quantity", "unit_price"],
+      },
+    },
+    subtotal: { type: "number", minimum: 0 },
+    tax_amount: { type: "number", minimum: 0 },
+    grand_total: { type: "number", minimum: 0 },
+  },
+  required: ["store_name", "date", "line_items", "subtotal", "tax_amount", "grand_total"],
+} as const;
+
+const GEMINI_MODEL = "gemini-2.5-flash";
+const GEMINI_ENDPOINT =
+  `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
+
 export type ScannedLineItem = {
   name: string;
   quantity: number;
@@ -16,140 +60,140 @@ export type ScannedLineItem = {
 };
 
 export type ScannedExpense = {
-  // Header
   store_name: string;
   category: string;
-  supplier: string;   // same as store_name; retained for back-compat
+  supplier: string;
   description: string;
-  expense_date: string; // YYYY-MM-DD
-  receipt_time: string; // HH:mm (24h) or ""
+  expense_date: string;
+  receipt_time: string;
   currency: string;
-  // Money
   subtotal: number;
   tax_amount: number;
-  tax_rate: number;    // percent (e.g. 10 for 10%)
-  amount: number;      // grand total
-  // Details
+  tax_rate: number;
+  amount: number;
   items: ScannedLineItem[];
   notes: string;
 };
+
+function extractBase64(dataUrl: string): string {
+  const comma = dataUrl.indexOf(",");
+  if (comma < 0) throw new Error("INVALID_RECEIPT_DATA");
+  const metadata = dataUrl.slice(0, comma);
+  if (!metadata.includes(";base64")) throw new Error("INVALID_RECEIPT_DATA");
+  const base64 = dataUrl.slice(comma + 1).replace(/\s/g, "");
+  if (!base64) throw new Error("INVALID_RECEIPT_DATA");
+  return base64;
+}
 
 export const scanReceipt = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((raw: unknown) => Input.parse(raw))
   .handler(async ({ data }): Promise<ScannedExpense> => {
-    const key = process.env.LOVABLE_API_KEY;
-    if (!key) throw new Error("Missing LOVABLE_API_KEY");
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) throw new Error("Missing GEMINI_API_KEY");
 
-    const langName = data.targetLang === "ar" ? "Arabic" : "English";
+    const outputLanguage = data.targetLang === "ar" ? "Arabic" : "English";
     const today = new Date().toISOString().slice(0, 10);
-    const isPdf = data.mimeType === "application/pdf";
+    const systemPrompt = [
+      "You are a precise OCR engine for retail receipts and commercial invoices.",
+      "Read both Arabic and English text, including mixed-language documents.",
+      `Return product_name values in ${outputLanguage}, preserving brand names when translation would be misleading.`,
+      "Extract only information visible in the supplied document; never invent products or monetary values.",
+      "Use plain numeric values without currency symbols or thousands separators.",
+      "If quantity is omitted for a visible line item, use 1.",
+      "If the date is visible, normalize it to YYYY-MM-DD; otherwise return an empty string.",
+      "Return one minified JSON object matching the supplied schema and nothing else.",
+    ].join(" ");
 
-    const prompt =
-      `You are an expert bookkeeping OCR for retail/commercial receipts and invoices. ` +
-      `Extract EVERYTHING from the receipt/invoice image and return STRICT JSON ONLY matching:\n` +
-      `{\n` +
-      `  "store_name": string,           // vendor/store name at the top of the receipt\n` +
-      `  "category": string,             // one short ${langName} label (Shipping, Packaging, Marketing, Utilities, Software, Meals, Travel, Office, Inventory, Rent, Salaries, Fees, Other)\n` +
-      `  "description": string,          // ONE concise ${langName} summary of what was purchased\n` +
-      `  "expense_date": "YYYY-MM-DD",   // parse any format\n` +
-      `  "receipt_time": "HH:mm",        // 24h. empty string if not on receipt\n` +
-      `  "currency": "BHD"|"USD"|"SAR"|"AED"|"KWD"|"QAR"|"OMR",\n` +
-      `  "subtotal": number,             // sum before tax; 0 if not listed\n` +
-      `  "tax_amount": number,           // VAT/tax value; 0 if none\n` +
-      `  "tax_rate": number,             // percent, e.g. 10 for 10%; 0 if none\n` +
-      `  "amount": number,               // FINAL GRAND TOTAL PAID (after tax)\n` +
-      `  "items": [                      // every line item on the receipt\n` +
-      `    { "name": string, "quantity": number, "unit_price": number, "line_total": number }\n` +
-      `  ],\n` +
-      `  "notes": string                 // invoice # / VAT # / payment method in ${langName}; else ""\n` +
-      `}\n\n` +
-      `STRICT RULES:\n` +
-      `- Item "name" MUST be translated into ${langName}.\n` +
-      `- All numbers are plain numbers (no currency symbols, no thousands separators).\n` +
-      `- amount = FINAL total after tax. If unclear, pick the largest bottom-most monetary value.\n` +
-      `- If quantity is missing on a line, default to 1.\n` +
-      `- If unit_price is missing, compute line_total/quantity.\n` +
-      `- Never invent items. If no items are readable, return "items": [].\n` +
-      `- expense_date defaults to "${today}" if missing.\n` +
-      `- currency defaults to "BHD" if unclear.\n` +
-      `- Return ONLY the JSON object. No markdown fences, no commentary.`;
-
-    const userContent: unknown[] = [
-      { type: "text", text: prompt },
-      isPdf
-        ? { type: "file", file: { filename: "receipt.pdf", file_data: data.dataUrl } }
-        : { type: "image_url", image_url: { url: data.dataUrl } },
-    ];
-
-    const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    const response = await fetch(GEMINI_ENDPOINT, {
       method: "POST",
-      headers: { "Content-Type": "application/json", "Lovable-API-Key": key },
+      headers: {
+        "Content-Type": "application/json",
+        "x-goog-api-key": apiKey,
+      },
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
-        messages: [
-          { role: "system", content: "You extract structured expense data from receipts. Return strict JSON only." },
-          { role: "user", content: userContent },
-        ],
-        response_format: { type: "json_object" },
-        temperature: 0.1,
+        systemInstruction: { parts: [{ text: systemPrompt }] },
+        contents: [{
+          role: "user",
+          parts: [
+            { text: "Perform OCR on this receipt or invoice and extract its structured purchase data." },
+            {
+              inlineData: {
+                mimeType: data.mimeType,
+                data: extractBase64(data.dataUrl),
+              },
+            },
+          ],
+        }],
+        generationConfig: {
+          temperature: 0,
+          responseMimeType: "application/json",
+          responseJsonSchema: RESPONSE_JSON_SCHEMA,
+        },
       }),
     });
 
-    if (res.status === 429) throw new Error("RATE_LIMITED");
-    if (res.status === 402) throw new Error("CREDITS_EXHAUSTED");
-    if (!res.ok) {
-      const t = await res.text().catch(() => "");
-      throw new Error(`AI gateway error ${res.status}: ${t.slice(0, 200)}`);
+    if (response.status === 429) throw new Error("RATE_LIMITED");
+    if (response.status === 401 || response.status === 403) throw new Error("GEMINI_AUTH_FAILED");
+    if (!response.ok) {
+      const details = await response.text().catch(() => "");
+      throw new Error(`Gemini API error ${response.status}: ${details.slice(0, 300)}`);
     }
 
-    const json = (await res.json()) as { choices?: Array<{ message?: { content?: string } }> };
-    let raw = json.choices?.[0]?.message?.content?.trim() ?? "{}";
-    raw = raw.replace(/^```(?:json)?/i, "").replace(/```$/, "").trim();
-
-    let p: any = {};
-    try { p = JSON.parse(raw); }
-    catch {
-      const m = raw.match(/\{[\s\S]*\}/);
-      if (m) { try { p = JSON.parse(m[0]); } catch { /* noop */ } }
-    }
-
-    const num = (v: unknown) => {
-      const n = Number(v);
-      return Number.isFinite(n) ? n : 0;
+    const payload = (await response.json()) as {
+      candidates?: Array<{ content?: { parts?: Array<{ text?: string }> }; finishReason?: string }>;
+      promptFeedback?: { blockReason?: string };
     };
+    const raw = payload.candidates?.[0]?.content?.parts
+      ?.map((part) => part.text ?? "")
+      .join("")
+      .trim();
+    if (!raw) {
+      const reason = payload.promptFeedback?.blockReason || payload.candidates?.[0]?.finishReason || "EMPTY_RESPONSE";
+      throw new Error(`GEMINI_SCAN_FAILED: ${reason}`);
+    }
 
-    const items: ScannedLineItem[] = Array.isArray(p.items)
-      ? p.items.map((i: any) => {
-          const qty = Math.max(1, Math.round(num(i?.quantity) || 1));
-          const unit = num(i?.unit_price);
-          const lt = num(i?.line_total) || unit * qty;
-          return {
-            name: String(i?.name ?? "").trim(),
-            quantity: qty,
-            unit_price: unit,
-            line_total: lt,
-          };
-        }).filter((i: ScannedLineItem) => i.name)
-      : [];
+    let parsedJson: unknown;
+    try {
+      parsedJson = JSON.parse(raw);
+    } catch {
+      throw new Error("GEMINI_INVALID_JSON");
+    }
+    const receipt = GeminiReceipt.parse(parsedJson);
 
-    const store = String(p.store_name ?? p.supplier ?? "").trim();
-    const amount = num(p.amount);
-    const subtotal = num(p.subtotal) || (amount ? amount - num(p.tax_amount) : items.reduce((s, i) => s + i.line_total, 0));
+    const items: ScannedLineItem[] = receipt.line_items
+      .map((item) => {
+        const quantity = Math.max(1, item.quantity || 1);
+        const unitPrice = Math.max(0, item.unit_price);
+        return {
+          name: item.product_name.trim(),
+          quantity,
+          unit_price: unitPrice,
+          line_total: quantity * unitPrice,
+        };
+      })
+      .filter((item) => item.name.length > 0);
 
+    const subtotal = Math.max(0, receipt.subtotal);
+    const taxAmount = Math.max(0, receipt.tax_amount);
+    const grandTotal = Math.max(0, receipt.grand_total);
+    const taxRate = subtotal > 0 ? (taxAmount / subtotal) * 100 : 0;
+    const storeName = receipt.store_name.trim();
+
+    // Adapt Gemini's intentionally small schema to the existing expense editor.
     return {
-      store_name: store,
-      category: String(p.category ?? "").trim() || (data.targetLang === "ar" ? "أخرى" : "Other"),
-      supplier: store,
-      description: String(p.description ?? "").trim(),
-      expense_date: /^\d{4}-\d{2}-\d{2}$/.test(String(p.expense_date)) ? String(p.expense_date) : today,
-      receipt_time: /^\d{2}:\d{2}$/.test(String(p.receipt_time)) ? String(p.receipt_time) : "",
-      currency: String(p.currency ?? "BHD").trim().toUpperCase().slice(0, 3) || "BHD",
-      subtotal: Math.max(0, subtotal),
-      tax_amount: num(p.tax_amount),
-      tax_rate: num(p.tax_rate),
-      amount,
+      store_name: storeName,
+      category: data.targetLang === "ar" ? "أخرى" : "Other",
+      supplier: storeName,
+      description: items.map((item) => item.name).join(", "),
+      expense_date: /^\d{4}-\d{2}-\d{2}$/.test(receipt.date) ? receipt.date : today,
+      receipt_time: "",
+      currency: "BHD",
+      subtotal,
+      tax_amount: taxAmount,
+      tax_rate: Number(taxRate.toFixed(2)),
+      amount: grandTotal,
       items,
-      notes: String(p.notes ?? "").trim(),
+      notes: "",
     };
   });
