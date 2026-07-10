@@ -306,6 +306,7 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
       image_url: product?.image_url ?? "",
       is_active: product?.is_active ?? true,
       media: (product?.media ?? []) as MediaItem[],
+      custom_fields: (Array.isArray(product?.custom_fields) ? product!.custom_fields : []) as CustomField[],
     });
   }, [product?.id]);
 
