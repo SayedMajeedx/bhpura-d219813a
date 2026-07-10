@@ -993,6 +993,7 @@ export type Database = {
           product_id: string
           selling_price: number
           size: string | null
+          size_unit: string | null
           sku: string | null
           stock: number
           stock_incubator: number
@@ -1011,6 +1012,7 @@ export type Database = {
           product_id: string
           selling_price?: number
           size?: string | null
+          size_unit?: string | null
           sku?: string | null
           stock?: number
           stock_incubator?: number
@@ -1029,6 +1031,7 @@ export type Database = {
           product_id?: string
           selling_price?: number
           size?: string | null
+          size_unit?: string | null
           sku?: string | null
           stock?: number
           stock_incubator?: number
