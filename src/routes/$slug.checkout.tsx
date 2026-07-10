@@ -91,6 +91,25 @@ function Checkout() {
     }
   }, [fulfillmentOptions, fulfillment]);
 
+  const [branches, setBranches] = useState<Array<{ id: string; name_ar: string | null; name_en: string | null; location_ar: string | null; location_en: string | null; notes_ar: string | null; notes_en: string | null }>>([]);
+  const [branchId, setBranchId] = useState<string>("");
+  useEffect(() => {
+    if (!settings.pickup_enabled) return;
+    (async () => {
+      const { data } = await supabase
+        .from("branches" as any)
+        .select("id, name_ar, name_en, location_ar, location_en, notes_ar, notes_en")
+        .eq("brand_id", brand.id)
+        .eq("is_active", true)
+        .order("created_at", { ascending: true });
+      const list = ((data ?? []) as any[]);
+      setBranches(list);
+      setBranchId((cur) => cur || (list[0]?.id ?? ""));
+    })();
+  }, [brand.id, settings.pickup_enabled]);
+  const branchLabel = (b: typeof branches[number]) => (lang === "ar" ? (b.name_ar || b.name_en || "") : (b.name_en || b.name_ar || ""));
+  const branchLoc = (b: typeof branches[number]) => (lang === "ar" ? (b.location_ar || b.location_en || "") : (b.location_en || b.location_ar || ""));
+
   const shipping = fulfillment === "delivery" ? Number(settings.delivery_fee || 0) : 0;
   const grandTotal = cartTotal + shipping;
 
