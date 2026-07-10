@@ -11,6 +11,16 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Plus, Pencil, Trash2, Wallet, Sparkles, Loader2, Store as StoreIcon, Calendar, Clock, Receipt } from "lucide-react";
 import { toast } from "sonner";
 import { formatMoney } from "@/lib/format";
@@ -145,6 +155,8 @@ function ExpensesPage() {
   const [reviewOpen, setReviewOpen] = useState(false);
   const [scanned, setScanned] = useState<ScannedExpense | null>(null);
   const [scanning, setScanning] = useState(false);
+  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
   const fileRef = useRef<HTMLInputElement | null>(null);
   const scanFn = useServerFn(scanReceipt);
 
@@ -153,12 +165,17 @@ function ExpensesPage() {
   const total = useMemo(() => list.reduce((s, e) => s + Number(e.amount || 0), 0), [list]);
 
   const del = async (id: string) => {
-    if (!confirm(t("expenses.deleteConfirm"))) return;
-    const { error } = await (supabase.from("expenses") as any).delete().eq("id", id);
-    if (error) toast.error(error.message);
-    else {
-      toast.success(t("common.delete"));
-      qc.invalidateQueries({ queryKey: ["expenses"] });
+    setDeleting(true);
+    try {
+      const { error } = await (supabase.from("expenses") as any).delete().eq("id", id);
+      if (error) toast.error(error.message);
+      else {
+        toast.success(t("common.delete"));
+        setDeleteTargetId(null);
+        await qc.invalidateQueries({ queryKey: ["expenses"] });
+      }
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -245,6 +262,31 @@ function ExpensesPage() {
         onSaved={() => { setReviewOpen(false); setScanned(null); qc.invalidateQueries({ queryKey: ["expenses"] }); }}
       />
 
+      <AlertDialog open={deleteTargetId !== null} onOpenChange={(open) => {
+        if (!open && !deleting) setDeleteTargetId(null);
+      }}>
+        <AlertDialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-lg">
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("common.delete")}</AlertDialogTitle>
+            <AlertDialogDescription>{t("expenses.deleteConfirm")}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>{t("common.cancel")}</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={deleting || !deleteTargetId}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={(event) => {
+                event.preventDefault();
+                if (deleteTargetId) void del(deleteTargetId);
+              }}
+            >
+              {deleting ? <Loader2 className="h-4 w-4 me-2 animate-spin" /> : null}
+              {t("common.delete")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <Card className="p-5 sm:p-6 mb-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2 text-muted-foreground">
@@ -300,7 +342,7 @@ function ExpensesPage() {
                       size="icon"
                       className="h-11 w-11 touch-manipulation text-destructive hover:text-destructive"
                       aria-label={lang === "ar" ? "حذف المصروف" : "Delete expense"}
-                      onClick={() => void del(e.id)}
+                      onClick={() => setDeleteTargetId(e.id)}
                     >
                       <Trash2 className="h-5 w-5" />
                     </Button>
@@ -337,7 +379,7 @@ function ExpensesPage() {
                       <Button variant="ghost" size="icon" onClick={() => { setEditing(e); setOpen(true); }}>
                         <Pencil className="h-4 w-4" />
                       </Button>
-                      <Button variant="ghost" size="icon" onClick={() => del(e.id)}>
+                      <Button variant="ghost" size="icon" onClick={() => setDeleteTargetId(e.id)}>
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     </td>
