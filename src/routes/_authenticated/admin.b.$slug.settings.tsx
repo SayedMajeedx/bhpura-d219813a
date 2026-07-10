@@ -782,6 +782,7 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
 type BranchRow = {
   id: string;
   brand_id: string;
+  user_id: string;
   name_ar: string | null;
   name_en: string | null;
   location_ar: string | null;
@@ -809,8 +810,14 @@ function BranchesCard({ brandId }: { brandId: string }) {
   });
   const [draft, setDraft] = useState<Partial<BranchRow>>({});
   const addBranch = async () => {
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    if (userError || !user) {
+      toast.error(isAr ? "يرجى تسجيل الدخول مرة أخرى" : "Please sign in again");
+      return;
+    }
     const payload = {
       brand_id: brandId,
+      user_id: user.id,
       name_ar: draft.name_ar?.trim() || null,
       name_en: draft.name_en?.trim() || null,
       location_ar: draft.location_ar?.trim() || null,
