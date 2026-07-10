@@ -1,25 +1,3 @@
-  const dir = isAr ? "rtl" : "ltr";
-  const L = isAr
-    ? { greet: "شكراً لطلبك", intro: "تم استلام طلبك بنجاح. تفاصيله أدناه:", inv: "رقم الفاتورة", date: "التاريخ",
-        item: "الصنف", qty: "الكمية", price: "السعر", total: "الإجمالي", subtotal: "المجموع الفرعي",
-        shipping: "الشحن", grand: "الإجمالي النهائي", regards: "مع أطيب التحيات", footer: "هذه رسالة تلقائية، الرجاء عدم الرد." }
-    : { greet: "Thanks for your order", intro: "We received your order. Details below:", inv: "Invoice #", date: "Date",
-        item: "Item", qty: "Qty", price: "Price", total: "Total", subtotal: "Subtotal",
-        shipping: "Shipping", grand: "Grand total", regards: "Warm regards", footer: "This is an automated message, please do not reply." };
-  const cur = o.currency ?? "BHD";
-  const align = isAr ? "left" : "right";
-  const rows = items.map((i: any) =>
-    `<tr><td style="padding:10px 8px;border-bottom:1px solid #eee">${escapeHtml(i.description)}</td>` +
-    `<td style="padding:10px 8px;border-bottom:1px solid #eee;text-align:center">${i.quantity}</td>` +
-    `<td style="padding:10px 8px;border-bottom:1px solid #eee;text-align:${align}">${fmt(Number(i.unit_price), cur, isAr)}</td>` +
-    `<td style="padding:10px 8px;border-bottom:1px solid #eee;text-align:${align}">${fmt(Number(i.line_total), cur, isAr)}</td></tr>`
-  ).join("");
-  return `<!doctype html><html lang="${isAr ? "ar" : "en"}" dir="${dir}"><head><meta charset="utf-8"><title>${escapeHtml(brandName)} — ${L.inv} ${escapeHtml(o.invoice_number)}</title></head>
-<body style="margin:0;background:#f7f7f8;font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;color:#111">
-<div style="max-width:640px;margin:0 auto;background:#fff">
-<div style="padding:24px 28px;background:${primary};color:#fff"><h1 style="margin:0;font-size:22px">${escapeHtml(brandName)}</h1><p style="margin:6px 0 0;opacity:.9">${L.greet}</p></div>
-<div style="padding:24px 28px">
-<p style="margin:0 0 16px">${L.intro}</p>
 <p style="margin:0 0 4px"><strong>${L.inv}:</strong> ${escapeHtml(o.invoice_number)}</p>
 <p style="margin:0 0 16px"><strong>${L.date}:</strong> ${new Date(o.order_date).toLocaleDateString(isAr ? "ar-BH" : "en-US")}</p>
 <table style="width:100%;border-collapse:collapse;margin-top:8px;font-size:14px"><thead><tr>
@@ -30,8 +8,13 @@
 </tr></thead><tbody>${rows}</tbody></table>
 <table style="width:100%;margin-top:16px;font-size:14px">
 <tr><td style="padding:4px 8px">${L.subtotal}</td><td style="padding:4px 8px;text-align:${align}">${fmt(Number(o.subtotal), cur, isAr)}</td></tr>
-${Number(o.shipping) ? `<tr><td style="padding:4px 8px">${L.shipping}</td><td style="padding:4px 8px;text-align:${align}">${fmt(Number(o.shipping), cur, isAr)}</td></tr>` : ""}
-<tr><td style="padding:8px;font-weight:700;border-top:1px solid #ddd">${L.grand}</td><td style="padding:8px;font-weight:700;text-align:${align};border-top:1px solid #ddd">${fmt(Number(o.total), cur, isAr)}</td></tr>
+${discount > 0 ? `<tr><td style="padding:4px 8px">${L.discount}</td><td style="padding:4px 8px;text-align:${align}">- ${fmt(discount, cur, isAr)}</td></tr>` : ""}
+${showVat ? `<tr><td style="padding:4px 8px">${L.vat}${Number.isFinite(taxRate) ? ` (${taxRate}%)` : ""}</td><td style="padding:4px 8px;text-align:${align}">${fmt(taxAmount, cur, isAr)}</td></tr>` : ""}
+${shipping ? `<tr><td style="padding:4px 8px">${L.shipping}</td><td style="padding:4px 8px;text-align:${align}">${fmt(shipping, cur, isAr)}</td></tr>` : ""}
+<tr><td style="padding:8px;font-weight:700;border-top:1px solid #ddd">${L.grand}</td><td style="padding:8px;font-weight:700;text-align:${align};border-top:1px solid #ddd">${fmt(total, cur, isAr)}</td></tr>
+${showPaymentSummary ? `<tr><td style="padding:8px 8px 4px">${L.paymentStatus}</td><td style="padding:8px 8px 4px;text-align:${align}"><span style="display:inline-block;padding:3px 8px;border-radius:999px;background:#eaf2ff;color:#1558d6;border:1px solid #b8d2ff;font-size:12px">${escapeHtml(paymentStatus)}</span></td></tr>` : ""}
+${advancePaid > 0 ? `<tr><td style="padding:4px 8px">${L.advance}</td><td style="padding:4px 8px;text-align:${align}">- ${fmt(advancePaid, cur, isAr)}</td></tr>` : ""}
+${advancePaid > 0 ? `<tr><td style="padding:8px;font-weight:700">${L.remaining}</td><td style="padding:8px;font-weight:700;text-align:${align}">${fmt(remaining, cur, isAr)}</td></tr>` : ""}
 </table>
 <p style="margin:24px 0 0">${L.regards},<br/><strong>${escapeHtml(brandName)}</strong></p>
 </div>
@@ -46,7 +29,8 @@ async function sendAndLog(orderId: string, lang: "ar" | "en") {
     const { data: order, error: oe } = await admin
       .from("orders")
       .select(`
-        id, brand_id, invoice_number, order_date, subtotal, shipping, total, currency, customer_id,
+        id, brand_id, invoice_number, order_date, subtotal, discount, tax_amount, tax_rate,
+        shipping, total, currency, customer_id, advance_paid, payment_status,
         order_items ( description, quantity, unit_price, line_total ),
         customer:customers ( email, name )
       `)
