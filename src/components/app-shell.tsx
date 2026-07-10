@@ -125,6 +125,20 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </div>
       )}
 
+      {activeSlug && (
+        <div className="px-3 pt-3">
+          <a
+            href={`/${activeSlug}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center justify-center gap-2 rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground shadow-sm hover:opacity-90 transition-opacity"
+          >
+            <Store className="h-4 w-4" />
+            {lang === "ar" ? "عرض المتجر" : "View Storefront"}
+          </a>
+        </div>
+      )}
+
       <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
         {nav.map((item) => {
           const active = pathname.startsWith(item.to.replace("$slug", item.params?.slug ?? ""));
