@@ -261,9 +261,58 @@ function ExpensesPage() {
           <p className="text-muted-foreground">{t("expenses.none")}</p>
         </Card>
       ) : (
-        <Card className="overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[640px] text-sm">
+        <>
+          {/* Mobile cards keep actions visible and provide reliable 44px touch targets. */}
+          <div className="space-y-3 sm:hidden">
+            {list.map((e) => (
+              <Card key={e.id} className="p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                      <span className="font-medium">{e.category}</span>
+                      <span className="text-xs text-muted-foreground">
+                        {new Date(e.expense_date).toLocaleDateString(locale)}
+                      </span>
+                    </div>
+                    <p className="mt-1 break-words text-sm text-muted-foreground">
+                      {e.store_name ? <span className="font-medium text-foreground">{e.store_name}</span> : null}
+                      {e.store_name && e.description ? " — " : null}
+                      {e.description || (!e.store_name ? "—" : "")}
+                    </p>
+                    <p className="mt-2 font-semibold">
+                      {formatMoney(Number(e.amount), e.currency, locale)}
+                    </p>
+                  </div>
+                  <div className="flex shrink-0 items-center gap-1">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-11 w-11 touch-manipulation"
+                      aria-label={lang === "ar" ? "تعديل المصروف" : "Edit expense"}
+                      onClick={() => { setEditing(e); setOpen(true); }}
+                    >
+                      <Pencil className="h-5 w-5" />
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-11 w-11 touch-manipulation text-destructive hover:text-destructive"
+                      aria-label={lang === "ar" ? "حذف المصروف" : "Delete expense"}
+                      onClick={() => void del(e.id)}
+                    >
+                      <Trash2 className="h-5 w-5" />
+                    </Button>
+                  </div>
+                </div>
+              </Card>
+            ))}
+          </div>
+
+          <Card className="hidden overflow-hidden sm:block">
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[640px] text-sm">
               <thead className="bg-secondary/50 text-xs uppercase tracking-wider text-muted-foreground">
                 <tr>
                   <th className="p-3 text-start">{t("expenses.date")}</th>
@@ -295,9 +344,10 @@ function ExpensesPage() {
                   </tr>
                 ))}
               </tbody>
-            </table>
-          </div>
-        </Card>
+              </table>
+            </div>
+          </Card>
+        </>
       )}
     </div>
   );
