@@ -547,6 +547,7 @@ function OrderDetail() {
         </Link>
         <div className="flex flex-wrap gap-2">
           <SendInvoiceDialog order={order} totals={totals} settings={settingsQ.data} currency={currency} />
+          <ResendConfirmationEmailButton order={order} lang={lang} onDone={() => qc.invalidateQueries({ queryKey: ["order", id] })} />
           <Button variant="outline" onClick={copyLink}><LinkIcon className="h-4 w-4 mr-2" /> {t("orders.copyLink")}</Button>
           <Button variant="outline" onClick={printReceipt}><Receipt className="h-4 w-4 mr-2" /> {t("orders.printReceipt")}</Button>
           <Button variant="outline" onClick={async () => {
