@@ -148,8 +148,10 @@ function Checkout() {
       toast.success(t("تم استلام طلبك!", "Order placed!"));
       // Fire-and-forget confirmation email (respects storefront language).
       if (orderId && form.email) {
+        const emailLang = (typeof document !== "undefined" && document.documentElement.dir === "rtl") ? "ar" : "en";
+        // Fire-and-forget; server returns 202 immediately and sends in background.
         supabase.functions.invoke("send-order-email", {
-          body: { order_id: orderId, lang: (typeof document !== "undefined" && document.documentElement.dir === "rtl") ? "ar" : "en" },
+          body: { order_id: orderId, lang: emailLang },
         }).catch((err) => console.warn("[send-order-email]", err));
       }
       navigate({

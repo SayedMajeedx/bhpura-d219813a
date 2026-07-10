@@ -538,7 +538,12 @@ export type Database = {
           description: string | null
           expense_date: string
           id: string
+          line_items: Json | null
           notes: string | null
+          receipt_time: string | null
+          store_name: string | null
+          tax_amount: number | null
+          tax_rate: number | null
           updated_at: string
           user_id: string
         }
@@ -551,7 +556,12 @@ export type Database = {
           description?: string | null
           expense_date?: string
           id?: string
+          line_items?: Json | null
           notes?: string | null
+          receipt_time?: string | null
+          store_name?: string | null
+          tax_amount?: number | null
+          tax_rate?: number | null
           updated_at?: string
           user_id: string
         }
@@ -564,7 +574,12 @@ export type Database = {
           description?: string | null
           expense_date?: string
           id?: string
+          line_items?: Json | null
           notes?: string | null
+          receipt_time?: string | null
+          store_name?: string | null
+          tax_amount?: number | null
+          tax_rate?: number | null
           updated_at?: string
           user_id?: string
         }
