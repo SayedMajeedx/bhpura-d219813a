@@ -1155,10 +1155,13 @@ function InvoicePreview({ order, items, settings, shippingAddress, paymentBadge 
                 {order.fulfillment_method === "pickup"
                   ? (isRTL ? "استلام من الفرع" : "Pickup from branch")
                   : (isRTL ? "توصيل" : "Delivery")}
-                {order.branch_id && <BranchName brandId={brandId} branchId={order.branch_id} isRTL={isRTL} />}
               </p>
+              {order.branch_id && (
+                <InvoiceBranchName brandId={order.brand_id} branchId={order.branch_id} isRTL={isRTL} />
+              )}
             </div>
           )}
+
 
 
           <div className="pdf-table-wrap -mx-4 sm:mx-0 overflow-x-auto print:overflow-visible print:mx-0">
