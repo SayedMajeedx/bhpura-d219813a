@@ -1311,12 +1311,12 @@ function SendInvoiceDialog({ order, totals, settings, currency }: { order: any; 
     <>
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogTrigger asChild>
-          <Button variant="outline"><Send className="h-4 w-4 mr-2" /> {t("orderDetail.sendInvoice")}</Button>
+          <Button variant="outline"><Send className="h-4 w-4 mr-2" /> {t("orderDetail.sendInvoiceWa")}</Button>
         </DialogTrigger>
         <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>{t("orderDetail.sendInvoice")}</DialogTitle>
-            <DialogDescription>Pick a template, tweak the message, then send via email or WhatsApp.</DialogDescription>
+            <DialogTitle>{t("orderDetail.sendInvoiceWa")}</DialogTitle>
+            <DialogDescription>Pick a template, tweak the message, then open WhatsApp.</DialogDescription>
           </DialogHeader>
 
           <div className="flex gap-2 items-end">
@@ -1335,43 +1335,20 @@ function SendInvoiceDialog({ order, totals, settings, currency }: { order: any; 
             <Button variant="outline" size="sm" onClick={() => setManageOpen(true)}>Manage</Button>
           </div>
 
-          <Tabs defaultValue="email" className="mt-2">
-            <TabsList className="grid grid-cols-2 w-full">
-              <TabsTrigger value="email">Email</TabsTrigger>
-              <TabsTrigger value="whatsapp">WhatsApp</TabsTrigger>
-            </TabsList>
-            <TabsContent value="email" className="space-y-3 mt-4">
-              <div>
-                <Label>To (from customer)</Label>
-                <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="customer@example.com" />
-              </div>
-              <div>
-                <Label>Subject</Label>
-                <Input value={subject} onChange={(e) => setSubject(e.target.value)} />
-              </div>
-              <div>
-                <Label>Message</Label>
-                <Textarea rows={10} value={message} onChange={(e) => setMessage(e.target.value)} />
-              </div>
-              <DialogFooter>
-                <Button onClick={openEmail}><Send className="h-4 w-4 mr-2" /> Open email app</Button>
-              </DialogFooter>
-            </TabsContent>
-            <TabsContent value="whatsapp" className="space-y-3 mt-4">
-              <div>
-                <Label>Phone (country code + number)</Label>
-                <PhoneInput value={phone} onChange={setPhone} />
-              </div>
-              <div>
-                <Label>Message</Label>
-                <Textarea rows={10} value={message} onChange={(e) => setMessage(e.target.value)} />
-              </div>
-              <p className="text-xs text-muted-foreground">Opens WhatsApp Web or the WhatsApp app with the message pre-filled — you send it manually. Attach the printed PDF there if needed.</p>
-              <DialogFooter>
-                <Button onClick={openWhatsApp}><Send className="h-4 w-4 mr-2" /> Open WhatsApp</Button>
-              </DialogFooter>
-            </TabsContent>
-          </Tabs>
+          <div className="space-y-3 mt-4">
+            <div>
+              <Label>Phone (country code + number)</Label>
+              <PhoneInput value={phone} onChange={setPhone} />
+            </div>
+            <div>
+              <Label>Message</Label>
+              <Textarea rows={10} value={message} onChange={(e) => setMessage(e.target.value)} />
+            </div>
+            <p className="text-xs text-muted-foreground">Opens WhatsApp Web or the WhatsApp app with the message pre-filled — you send it manually. Attach the printed PDF there if needed.</p>
+            <DialogFooter>
+              <Button onClick={openWhatsApp}><Send className="h-4 w-4 mr-2" /> Open WhatsApp</Button>
+            </DialogFooter>
+          </div>
         </DialogContent>
       </Dialog>
 
@@ -1384,6 +1361,7 @@ function SendInvoiceDialog({ order, totals, settings, currency }: { order: any; 
     </>
   );
 }
+
 
 function ManageTemplatesDialog({ open, onOpenChange, templates, onChanged }: {
   open: boolean; onOpenChange: (o: boolean) => void; templates: Tpl[]; onChanged: () => void;
