@@ -22,6 +22,15 @@ type Variant = {
   stock_main: number;
 };
 
+type CustomField = {
+  key: string;
+  label_ar: string | null;
+  label_en: string | null;
+  type: "text" | "number" | "select";
+  options?: string[];
+  required?: boolean;
+};
+
 type Product = {
   id: string;
   name: string;
@@ -32,6 +41,7 @@ type Product = {
   description_en: string | null;
   image_url: string | null;
   media: unknown;
+  custom_fields: CustomField[] | null;
   product_variants: Variant[];
 };
 
