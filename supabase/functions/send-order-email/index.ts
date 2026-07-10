@@ -1,53 +1,3 @@
-// Send order confirmation email via Zoho SMTP.
-// Optimized for Supabase Edge Runtime CPU limits:
-//   - Fast auth check (webhook secret OR Supabase JWT)
-//   - ONE consolidated DB query (joins on order_items, customer, business_settings)
-//   - SMTP work executed inside EdgeRuntime.waitUntil() so the HTTP response
-//     returns immediately (202 Accepted) — the client no longer waits on the
-//     ~1-3s Zoho SMTPS handshake, avoiding "CPU Time exceeded".
-
-import { SMTPClient } from "https://deno.land/x/denomailer@1.6.0/mod.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-webhook-secret",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-};
-
-type Body = { order_id?: string; lang?: "ar" | "en" };
-
-const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
-const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const SMTP_HOST = Deno.env.get("ZOHO_SMTP_HOST") ?? "smtp.zoho.com";
-const SMTP_PORT = Number(Deno.env.get("ZOHO_SMTP_PORT") ?? "465");
-const SMTP_USER = Deno.env.get("ZOHO_SMTP_USER") ?? "";
-const SMTP_PASS = Deno.env.get("ZOHO_SMTP_PASS") ?? "";
-const FROM_ADDRESS = Deno.env.get("ORDER_EMAIL_FROM_ADDRESS") ?? "no-reply@boutq.store";
-const WEBHOOK_SECRET = Deno.env.get("ORDER_EMAIL_WEBHOOK_SECRET") ?? "";
-
-// deno-lint-ignore no-explicit-any
-const admin: any = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
-  auth: { persistSession: false, autoRefreshToken: false },
-});
-
-function escapeHtml(s: unknown) {
-  return String(s ?? "").replace(/[&<>"']/g, (c) =>
-    ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]!),
-  );
-}
-
-function fmt(n: number, currency: string, isAr: boolean) {
-  try {
-    return new Intl.NumberFormat(isAr ? "ar-BH" : "en-US", {
-      style: "currency", currency, maximumFractionDigits: 3,
-    }).format(Number(n || 0));
-  } catch {
-    return `${Number(n || 0).toFixed(3)} ${currency}`;
-  }
-}
-
-function renderHtml(o: any, items: any[], brandName: string, primary: string, isAr: boolean) {
   const dir = isAr ? "rtl" : "ltr";
   const L = isAr
     ? { greet: "شكراً لطلبك", intro: "تم استلام طلبك بنجاح. تفاصيله أدناه:", inv: "رقم الفاتورة", date: "التاريخ",
@@ -91,19 +41,27 @@ ${Number(o.shipping) ? `<tr><td style="padding:4px 8px">${L.shipping}</td><td st
 
 async function sendAndLog(orderId: string, lang: "ar" | "en") {
   try {
-    // ONE query — order + items + customer + settings
+    // Query the order and its direct relationships only. business_settings is
+    // linked to brands, not orders, so fetch it separately by order.brand_id.
     const { data: order, error: oe } = await admin
       .from("orders")
       .select(`
         id, brand_id, invoice_number, order_date, subtotal, shipping, total, currency, customer_id,
         order_items ( description, quantity, unit_price, line_total ),
-        customer:customers ( email, name ),
-        settings:business_settings!inner ( business_name, primary_color )
+        customer:customers ( email, name )
       `)
       .eq("id", orderId)
       .maybeSingle();
 
     if (oe || !order) throw new Error(oe?.message ?? "Order not found");
+
+    const { data: settings, error: se } = await admin
+      .from("business_settings")
+      .select("business_name, primary_color, email_sender_name")
+      .eq("brand_id", order.brand_id)
+      .maybeSingle();
+
+    if (se) console.warn("[send-order-email] settings lookup failed", se.message);
 
     const to = (order.customer?.email ?? "").trim();
     if (!to) {
@@ -115,8 +73,9 @@ async function sendAndLog(orderId: string, lang: "ar" | "en") {
     }
 
     const isAr = lang === "ar";
-    const brandName = order.settings?.business_name ?? "Boutq";
-    const primary = order.settings?.primary_color ?? "#111827";
+    const brandName = settings?.business_name ?? "Boutq";
+    const senderName = settings?.email_sender_name?.trim() || brandName;
+    const primary = settings?.primary_color ?? "#111827";
     const subject = isAr
       ? `${brandName} — تأكيد الطلب #${order.invoice_number}`
       : `${brandName} — Order confirmation #${order.invoice_number}`;
@@ -136,7 +95,7 @@ async function sendAndLog(orderId: string, lang: "ar" | "en") {
     try {
       // Hard 20s timeout to guarantee we never wedge the runtime
       await Promise.race([
-        client.send({ from: `${brandName} <${FROM_ADDRESS}>`, to, subject, html, content: "auto" }),
+        client.send({ from: `${senderName} <${FROM_ADDRESS}>`, to, subject, html, content: "auto" }),
         new Promise((_r, reject) => setTimeout(() => reject(new Error("SMTP timeout")), 20_000)),
       ]);
     } finally {
