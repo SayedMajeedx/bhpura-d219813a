@@ -59,6 +59,13 @@ export type PublicSettings = {
   whatsapp_number: string | null;
 };
 
+export type CustomFieldValue = {
+  key: string;
+  label_ar: string | null;
+  label_en: string | null;
+  value: string;
+};
+
 export type CartItem = {
   variant_id: string;
   product_id: string;
@@ -69,8 +76,10 @@ export type CartItem = {
   price: number;
   size: string | null;
   color: string | null;
+  fabric?: string | null;
   qty: number;
   max_stock: number;
+  custom_fields?: CustomFieldValue[];
 };
 
 /** Pick the localized product name, falling back through en → ar → base name. */
