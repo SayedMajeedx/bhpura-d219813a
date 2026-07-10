@@ -6,6 +6,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useState, useMemo, useRef } from "react";
+import { formatSizeWithUnit } from "@/components/bilingual-field";
 import { ChevronLeft, ChevronRight, ShoppingBag, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 
