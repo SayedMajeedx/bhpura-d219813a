@@ -4,7 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useI18n } from "@/lib/i18n";
-import { Camera, Keyboard, Upload, X } from "lucide-react";
+import { Camera, Keyboard, RefreshCw, Upload, X, ZoomIn } from "lucide-react";
 
 type Props = {
   open: boolean;
@@ -36,6 +36,11 @@ export function BarcodeScanner({ open, onOpenChange, onDetected, cameraStreamPro
   const [error, setError] = useState<string | null>(null);
   const [starting, setStarting] = useState(false);
   const [manualCode, setManualCode] = useState("");
+  const [cameras, setCameras] = useState<Array<{ id: string; label: string }>>([]);
+  const [activeCameraId, setActiveCameraId] = useState<string | null>(null);
+  const [restartKey, setRestartKey] = useState(0);
+  const [zoomRange, setZoomRange] = useState<{ min: number; max: number; step: number } | null>(null);
+  const [zoom, setZoom] = useState(1);
   const stoppedRef = useRef(false);
 
   const getDecoder = useCallback(() => {
@@ -126,7 +131,32 @@ export function BarcodeScanner({ open, onOpenChange, onDetected, cameraStreamPro
 
         const decoder = getDecoder();
 
-        const cameraConfig: MediaTrackConstraints = deviceId
+        const available = await Html5Qrcode.getCameras().catch(() => []);
+        const mapped = available.map((camera) => ({ id: camera.id, label: camera.label || `Camera ${camera.id.slice(0, 4)}` }));
+        setCameras(mapped);
+        const scoreCamera = (label: string) => {
+          const value = label.toLowerCase();
+          let score = 0;
+          if (/back|rear|environment/.test(value)) score += 20;
+          if (/wide/.test(value) && !/ultra/.test(value)) score += 8;
+          if (/main|camera 1/.test(value)) score += 4;
+          if (/front|user|facetime/.test(value)) score -= 30;
+          if (/ultra|telephoto/.test(value)) score -= 8;
+          return score;
+        };
+        const preferred = activeCameraId && mapped.some((camera) => camera.id === activeCameraId)
+          ? activeCameraId
+          : [...mapped].sort((a, b) => scoreCamera(b.label) - scoreCamera(a.label))[0]?.id;
+        if (preferred) setActiveCameraId(preferred);
+
+        const cameraConfig: MediaTrackConstraints = preferred
+          ? {
+              deviceId: { exact: preferred },
+              width: { ideal: 1920 },
+              height: { ideal: 1080 },
+              frameRate: { ideal: 30 },
+            }
+          : deviceId
           ? {
               deviceId: { exact: deviceId },
               width: { ideal: 1920 },
@@ -164,6 +194,14 @@ export function BarcodeScanner({ open, onOpenChange, onDetected, cameraStreamPro
             if (caps.focusMode?.includes?.("continuous")) advanced.push({ focusMode: "continuous" });
             if (caps.exposureMode?.includes?.("continuous")) advanced.push({ exposureMode: "continuous" });
             if (caps.whiteBalanceMode?.includes?.("continuous")) advanced.push({ whiteBalanceMode: "continuous" });
+            if (typeof caps.zoom?.min === "number" && typeof caps.zoom?.max === "number") {
+              const initialZoom = Math.min(caps.zoom.max, Math.max(caps.zoom.min, caps.zoom.min > 1 ? caps.zoom.min : 1));
+              setZoomRange({ min: caps.zoom.min, max: caps.zoom.max, step: caps.zoom.step || 0.1 });
+              setZoom(initialZoom);
+              advanced.push({ zoom: initialZoom });
+            } else {
+              setZoomRange(null);
+            }
             if (advanced.length) void track.applyConstraints({ advanced } as any).catch(() => {});
           } catch { /* noop */ }
         };
@@ -216,7 +254,25 @@ export function BarcodeScanner({ open, onOpenChange, onDetected, cameraStreamPro
       cancelled = true;
       void stopCamera();
     };
-  }, [cameraStreamPromise, getDecoder, handleCameraError, onDetected, onOpenChange, open, stopCamera]);
+  }, [cameraStreamPromise, getDecoder, handleCameraError, onDetected, onOpenChange, open, restartKey, stopCamera]);
+
+  const switchCamera = async () => {
+    if (cameras.length < 2) return;
+    const current = cameras.findIndex((camera) => camera.id === activeCameraId);
+    const next = cameras[(current + 1 + cameras.length) % cameras.length];
+    setActiveCameraId(next.id);
+    await stopCamera();
+    stoppedRef.current = false;
+    setRestartKey((value) => value + 1);
+  };
+
+  const applyZoom = (nextZoom: number) => {
+    setZoom(nextZoom);
+    const region = document.getElementById(DECODE_REGION_ID);
+    const video = region?.querySelector("video") as HTMLVideoElement | null;
+    const track = (video?.srcObject as MediaStream | null)?.getVideoTracks?.()[0];
+    if (track) void track.applyConstraints({ advanced: [{ zoom: nextZoom } as any] }).catch(() => undefined);
+  };
 
   const downscaleImage = async (file: File, maxEdge = 1600): Promise<File> => {
     try {
@@ -291,8 +347,24 @@ export function BarcodeScanner({ open, onOpenChange, onDetected, cameraStreamPro
         <div className="p-4 pt-0 space-y-3">
           <div className="relative w-full aspect-video bg-black rounded-md overflow-hidden">
             <div id={DECODE_REGION_ID} className="absolute inset-0 [&_video]:h-full [&_video]:w-full [&_video]:object-cover" />
-            <div className="pointer-events-none absolute inset-x-[6%] top-1/2 h-[40%] -translate-y-1/2 rounded-md border-2 border-primary/80" />
+            <div className="pointer-events-none absolute inset-x-[5%] top-1/2 h-[52%] -translate-y-1/2 rounded-lg border-[3px] border-white shadow-[0_0_0_999px_rgba(0,0,0,.28)]">
+              <span className="absolute -top-7 start-1/2 -translate-x-1/2 whitespace-nowrap rounded bg-black/70 px-2 py-1 text-[11px] font-medium text-white">
+                {isAr ? "باركود واحد داخل الإطار" : "One barcode inside the frame"}
+              </span>
+            </div>
+            {cameras.length > 1 && (
+              <Button type="button" size="icon" variant="secondary" className="absolute end-2 top-2 h-9 w-9 rounded-full" onClick={() => void switchCamera()} title={isAr ? "تبديل الكاميرا" : "Switch camera"}>
+                <RefreshCw className="h-4 w-4" />
+              </Button>
+            )}
           </div>
+          {zoomRange && zoomRange.max > zoomRange.min && (
+            <div className="flex items-center gap-3 rounded-md border px-3 py-2">
+              <ZoomIn className="h-4 w-4 text-muted-foreground" />
+              <input type="range" className="min-w-0 flex-1 accent-current" min={zoomRange.min} max={zoomRange.max} step={zoomRange.step} value={zoom} onChange={(event) => applyZoom(Number(event.target.value))} aria-label={isAr ? "تكبير الكاميرا" : "Camera zoom"} />
+              <span className="w-9 text-end text-xs tabular-nums">{zoom.toFixed(1)}×</span>
+            </div>
+          )}
           {starting && !error && (
             <p className="text-xs text-muted-foreground text-center">
               {isAr ? "جارٍ تشغيل الكاميرا..." : "Starting camera..."}
