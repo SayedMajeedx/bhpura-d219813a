@@ -1,9 +1,11 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.49.1";
 
-const allowedOrigin = Deno.env.get("ALLOWED_ORIGIN") ?? "https://bhpura.vercel.app";
+// This function is authenticated with a bearer token and never uses cookies.
+// Allow all browser origins so custom storefront/admin domains can call it;
+// authorization and role checks below remain the security boundary.
 const corsHeaders = {
-  "Access-Control-Allow-Origin": allowedOrigin,
+  "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
   "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Client-Info, Apikey",
 };
@@ -309,23 +311,33 @@ async function handleCreate(supabase: any, body: any, ctx: { userId: string; isS
     );
   }
 
-  // Wait for trigger to create profile, then set desired role/brand
-  await new Promise((r) => setTimeout(r, 400));
-
-  const updatePayload: Record<string, any> = { name: name || email.split("@")[0], role: userRole };
+  const updatePayload: Record<string, any> = {
+    id: userId,
+    email,
+    name: name || email.split("@")[0],
+    role: userRole,
+    status: "active",
+  };
   if (userRole !== "super_admin") {
     updatePayload.brand_id = brand_id ?? null;
   } else {
     updatePayload.brand_id = null;
   }
 
+  // Upsert removes the race with the auth-user trigger: whether the trigger has
+  // already inserted the profile or not, creation finishes in one deterministic state.
   const { error: profileUpdateError } = await supabase
     .from("profiles")
-    .update(updatePayload)
-    .eq("id", userId);
+    .upsert(updatePayload, { onConflict: "id" });
 
   if (profileUpdateError) {
     console.error("[user-management] Profile update error:", profileUpdateError);
+    // Do not leave an inaccessible orphaned auth account when profile creation fails.
+    await supabase.auth.admin.deleteUser(userId).catch(() => undefined);
+    return new Response(
+      JSON.stringify({ error: `Failed to create user profile: ${profileUpdateError.message}` }),
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
   }
 
   return new Response(

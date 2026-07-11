@@ -71,6 +71,7 @@ export const Route = createFileRoute("/_authenticated/admin/b/$slug/team")({
 type StaffMember = Profile;
 
 const USER_MANAGEMENT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/user-management`;
+const SUPABASE_PUBLIC_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 async function callUserManagement(action: string, body?: any) {
   const { data: { session } } = await supabase.auth.getSession();
@@ -84,11 +85,18 @@ async function callUserManagement(action: string, body?: any) {
     headers: {
       "Content-Type": "application/json",
       "Authorization": `Bearer ${session.access_token}`,
+      ...(SUPABASE_PUBLIC_KEY ? { apikey: SUPABASE_PUBLIC_KEY } : {}),
     },
     body: body ? JSON.stringify(body) : undefined,
   });
 
-  const result = await response.json();
+  const responseText = await response.text();
+  let result: any = {};
+  try {
+    result = responseText ? JSON.parse(responseText) : {};
+  } catch {
+    result = { error: responseText || `Request failed (${response.status})` };
+  }
   if (!response.ok) {
     throw new Error(result.error || `Request failed (${response.status})`);
   }
