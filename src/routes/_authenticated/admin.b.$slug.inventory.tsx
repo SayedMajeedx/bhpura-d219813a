@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
-import { Plus, Pencil, Trash2, Package, TrendingUp, Wand as Wand2, Printer } from "lucide-react";
+import { Plus, Pencil, Trash2, Package, TrendingUp, Wand as Wand2, Printer, Search, AlertTriangle, Boxes } from "lucide-react";
 import { toast } from "sonner";
 import { formatMoney } from "@/lib/format";
 import { useT, useI18n } from "@/lib/i18n";
@@ -122,8 +122,8 @@ function Inventory() {
   const businessName = useQuery({
     queryKey: ["business-name", brandId],
     queryFn: async () => {
-      const { data } = await supabase.from("business_settings").select("business_name").eq("brand_id", brandId).maybeSingle();
-      return data?.business_name ?? null;
+      const { data } = await supabase.from("business_settings").select("business_name, currency").eq("brand_id", brandId).maybeSingle();
+      return data ?? null;
     },
   });
 
@@ -151,7 +151,8 @@ function Inventory() {
         <ProductsSection
           products={products.data ?? []}
           variants={variants.data ?? []}
-          businessName={businessName.data ?? null}
+          businessName={businessName.data?.business_name ?? null}
+          currency={businessName.data?.currency ?? "BHD"}
           onChanged={() => { qc.invalidateQueries({ queryKey: ["products"] }); qc.invalidateQueries({ queryKey: ["variants"] }); }}
         />
       ) : (
@@ -169,12 +170,15 @@ function Inventory() {
   );
 }
 
-function ProductsSection({ products, variants, businessName, onChanged }: { products: Product[]; variants: Variant[]; businessName: string | null; onChanged: () => void }) {
+function ProductsSection({ products, variants, businessName, currency, onChanged }: { products: Product[]; variants: Variant[]; businessName: string | null; currency: string; onChanged: () => void }) {
   const t = useT();
   const brand = useBrand();
   const brandId = brand.id;
   const [editing, setEditing] = useState<Product | null>(null);
   const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState("");
+  const [stockFilter, setStockFilter] = useState<"all" | "low" | "out">("all");
+  const [visibilityFilter, setVisibilityFilter] = useState<"all" | "active" | "hidden">("all");
 
   const del = async (id: string) => {
     const product = products.find((item) => item.id === id);
@@ -191,6 +195,19 @@ function ProductsSection({ products, variants, businessName, onChanged }: { prod
   };
 
   const isAr = useI18n().lang === "ar";
+  const productStock = (productId: string) => variants.filter((variant) => variant.product_id === productId).reduce((sum, variant) => sum + Number(variant.stock_main || 0) + Number(variant.stock_incubator || 0), 0);
+  const normalizedSearch = search.trim().toLowerCase();
+  const filteredProducts = products.filter((product) => {
+    const productVariants = variants.filter((variant) => variant.product_id === product.id);
+    const searchable = [product.name, product.name_ar, product.name_en, product.category, ...productVariants.flatMap((variant) => [variant.sku, variant.barcode, variant.size, variant.color])].join(" ").toLowerCase();
+    const stock = productStock(product.id);
+    return (!normalizedSearch || searchable.includes(normalizedSearch))
+      && (stockFilter === "all" || (stockFilter === "out" ? stock <= 0 : stock > 0 && stock <= 5))
+      && (visibilityFilter === "all" || (visibilityFilter === "active" ? product.is_active : !product.is_active));
+  });
+  const totalUnits = products.reduce((sum, product) => sum + productStock(product.id), 0);
+  const lowStock = products.filter((product) => { const stock = productStock(product.id); return stock > 0 && stock <= 5; }).length;
+  const outOfStock = products.filter((product) => productStock(product.id) <= 0).length;
 
   const printAll = async () => {
     const labels: LabelData[] = [];
@@ -234,7 +251,25 @@ function ProductsSection({ products, variants, businessName, onChanged }: { prod
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-end gap-2">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        {[
+          [Package, isAr ? "المنتجات" : "Products", products.length],
+          [Boxes, isAr ? "إجمالي الوحدات" : "Total units", totalUnits],
+          [AlertTriangle, isAr ? "مخزون منخفض" : "Low stock", lowStock],
+          [TrendingUp, isAr ? "نفد المخزون" : "Out of stock", outOfStock],
+        ].map(([Icon, label, value], index) => { const StatIcon = Icon as typeof Package; return <Card key={index} className="p-3 sm:p-4"><div className="flex items-center gap-3"><div className={`rounded-lg p-2 ${index >= 2 && Number(value) > 0 ? "bg-amber-100 text-amber-700" : "bg-primary/10 text-primary"}`}><StatIcon className="h-4 w-4" /></div><div className="min-w-0"><p className="text-xs text-muted-foreground truncate">{String(label)}</p><p className="font-semibold">{String(value)}</p></div></div></Card>; })}
+      </div>
+
+      <Card className="p-3 sm:p-4">
+        <div className="grid grid-cols-1 sm:grid-cols-[minmax(220px,1fr)_160px_170px] gap-3">
+          <div className="relative"><Search className="absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" /><Input className="ps-9" value={search} onChange={(e) => setSearch(e.target.value)} placeholder={isAr ? "ابحث بالمنتج أو SKU أو الباركود" : "Search product, SKU, or barcode"} /></div>
+          <Select value={stockFilter} onValueChange={(value: "all" | "low" | "out") => setStockFilter(value)}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">{isAr ? "كل المخزون" : "All stock"}</SelectItem><SelectItem value="low">{isAr ? "مخزون منخفض" : "Low stock"}</SelectItem><SelectItem value="out">{isAr ? "نفد المخزون" : "Out of stock"}</SelectItem></SelectContent></Select>
+          <Select value={visibilityFilter} onValueChange={(value: "all" | "active" | "hidden") => setVisibilityFilter(value)}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">{isAr ? "كل المنتجات" : "All visibility"}</SelectItem><SelectItem value="active">{isAr ? "ظاهر في المتجر" : "Storefront active"}</SelectItem><SelectItem value="hidden">{isAr ? "مخفي" : "Hidden"}</SelectItem></SelectContent></Select>
+        </div>
+        <p className="mt-2 text-xs text-muted-foreground">{filteredProducts.length} / {products.length}</p>
+      </Card>
+
+      <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2">
         <Button variant="outline" onClick={printAll}>
           <Printer className="h-4 w-4 me-2" /> {isAr ? "طباعة كل الباركودات" : "Print all barcodes"}
         </Button>
@@ -251,11 +286,14 @@ function ProductsSection({ products, variants, businessName, onChanged }: { prod
           <Package className="h-10 w-10 mx-auto text-muted-foreground mb-3" />
           <p className="text-muted-foreground">{t("inventory.none")}</p>
         </Card>
+      ) : filteredProducts.length === 0 ? (
+        <Card className="p-10 text-center"><Search className="mx-auto mb-3 h-8 w-8 text-muted-foreground" /><p className="font-medium">{isAr ? "لا توجد منتجات مطابقة" : "No matching products"}</p><Button variant="ghost" className="mt-2" onClick={() => { setSearch(""); setStockFilter("all"); setVisibilityFilter("all"); }}>{isAr ? "مسح عوامل التصفية" : "Clear filters"}</Button></Card>
       ) : (
         <div className="space-y-4">
-          {products.map((p) => {
+          {filteredProducts.map((p) => {
             const pVariants = variants.filter((v) => v.product_id === p.id);
-            const stockTotal = pVariants.reduce((s, v) => s + (v.stock ?? 0), 0);
+            const stockTotal = pVariants.reduce((s, v) => s + Number(v.stock_main || 0) + Number(v.stock_incubator || 0), 0);
+            const prices = pVariants.map((v) => Number(v.selling_price || 0)).filter(Number.isFinite);
             return (
               <Card key={p.id} className="p-6">
                 <div className="flex items-start justify-between gap-4">
@@ -264,16 +302,14 @@ function ProductsSection({ products, variants, businessName, onChanged }: { prod
                       <img src={p.image_url} alt={p.name} className="w-20 h-24 object-cover rounded-md border border-border" />
                     )}
                     <div className="flex-1">
-                      <h3 className="text-lg font-display">{(isAr ? (p.name_ar || p.name_en) : (p.name_en || p.name_ar)) || p.name}</h3>
+                      <div className="flex flex-wrap items-center gap-2"><h3 className="text-lg font-display">{(isAr ? (p.name_ar || p.name_en) : (p.name_en || p.name_ar)) || p.name}</h3><span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${p.is_active ? "bg-emerald-100 text-emerald-700" : "bg-muted text-muted-foreground"}`}>{p.is_active ? (isAr ? "ظاهر" : "Active") : (isAr ? "مخفي" : "Hidden")}</span></div>
                       {p.category && <p className="text-xs text-muted-foreground">{p.category}</p>}
                       {(() => {
                         const desc = isAr ? (p.description_ar || p.description_en) : (p.description_en || p.description_ar);
                         const fallback = desc || p.description;
                         return fallback ? <p className="text-sm text-muted-foreground mt-1">{fallback}</p> : null;
                       })()}
-                      <p className="text-xs text-muted-foreground mt-2">
-                        {pVariants.length} {t("inventory.variantsCount")} · {stockTotal} {t("inventory.inStock")}
-                      </p>
+                      <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs"><span className={stockTotal <= 0 ? "font-semibold text-destructive" : stockTotal <= 5 ? "font-semibold text-amber-600" : "text-muted-foreground"}>{stockTotal <= 0 ? (isAr ? "نفد المخزون" : "Out of stock") : `${stockTotal} ${t("inventory.inStock")}`}</span><span className="text-muted-foreground">{pVariants.length} {t("inventory.variantsCount")}</span>{prices.length > 0 && <span className="font-medium">{formatMoney(Math.min(...prices), currency)}{Math.max(...prices) !== Math.min(...prices) ? ` – ${formatMoney(Math.max(...prices), currency)}` : ""}</span>}</div>
                     </div>
                   </div>
                   <div className="flex gap-1">
