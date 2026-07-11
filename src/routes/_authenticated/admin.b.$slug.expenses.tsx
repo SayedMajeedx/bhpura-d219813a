@@ -409,6 +409,17 @@ function ExpenseDialog({ expense, onSaved }: { expense: Expense | null; onSaved:
     notes: expense?.notes ?? "",
   });
 
+  useEffect(() => {
+    setForm({
+      category: expense?.category ?? "",
+      description: expense?.description ?? "",
+      amount: expense ? String(expense.amount) : "0",
+      currency: expense?.currency ?? "BHD",
+      expense_date: expense?.expense_date ?? new Date().toISOString().slice(0, 10),
+      notes: expense?.notes ?? "",
+    });
+  }, [expense]);
+
   const save = async () => {
     if (!form.category.trim()) return toast.error(t("expenses.category"));
     const { data: { user } } = await supabase.auth.getUser();

@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState, useRef } from "react";
+import { useEffect, useState, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -166,6 +166,17 @@ function CategoryDialog({ brandId, category, onSaved }: { brandId: string; categ
   });
   const [uploading, setUploading] = useState(false);
   const fileInput = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    setForm({
+      name_en: category?.name_en ?? "",
+      name_ar: category?.name_ar ?? "",
+      slug: category?.slug ?? "",
+      image_url: category?.image_url ?? "",
+      sort_order: category?.sort_order ?? 0,
+      is_active: category?.is_active ?? true,
+    });
+  }, [category]);
 
   const upload = async (file: File) => {
     try {

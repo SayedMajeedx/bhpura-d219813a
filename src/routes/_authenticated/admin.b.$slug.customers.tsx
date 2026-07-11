@@ -216,6 +216,16 @@ function CustomerDialog({ customer, onSaved }: { customer: Customer | null; onSa
   // For NEW customers we require one initial address inside the dialog.
   const [initialAddr, setInitialAddr] = useState({ label: "", region: "", block: "", road: "", house: "", flat: "" });
 
+  useEffect(() => {
+    setF({
+      name: customer?.name ?? "",
+      phone: customer?.phone ?? "",
+      email: customer?.email ?? "",
+      notes: customer?.notes ?? "",
+    });
+    setInitialAddr({ label: "", region: "", block: "", road: "", house: "", flat: "" });
+  }, [customer]);
+
   const addressesQ = useQuery({
     queryKey: ["customer_addresses", customer?.id ?? "new"],
     queryFn: async () => {

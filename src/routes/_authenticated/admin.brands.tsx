@@ -166,6 +166,18 @@ function NewBrandDialog({ onSaved }: { onSaved: () => void }) {
   const [form, setForm] = useState({ slug: "", name_en: "", name_ar: "", logo_url: "" });
   const [saving, setSaving] = useState(false);
 
+  useEffect(() => {
+    setForm({
+      name_en: brand.name_en,
+      name_ar: brand.name_ar ?? "",
+      logo_url: brand.logo_url ?? "",
+      primary_color: brand.primary_color ?? "#8b6f47",
+      about_ar: brand.about_ar ?? "",
+      about_en: brand.about_en ?? "",
+      is_active: brand.is_active,
+    });
+  }, [brand]);
+
   const submit = async () => {
     const slug = form.slug.trim().toLowerCase();
     if (!/^[a-z0-9](?:[a-z0-9-]{0,30}[a-z0-9])?$/.test(slug)) {

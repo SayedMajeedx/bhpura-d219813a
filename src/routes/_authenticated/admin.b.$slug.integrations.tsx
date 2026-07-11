@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -180,6 +180,17 @@ function IntegrationDialog({ brandId, row, onSaved }: { brandId: string; row: Ro
     is_active: row?.is_active ?? true,
     notes: row?.notes ?? "",
   });
+  useEffect(() => {
+    setForm({
+      provider: row?.provider ?? "aramex",
+      provider_custom: row && !PROVIDER_PRESETS.find((provider) => provider.value === row.provider) ? row.provider : "",
+      base_url: row?.base_url ?? "",
+      api_key: "",
+      webhook_secret: "",
+      is_active: row?.is_active ?? true,
+      notes: row?.notes ?? "",
+    });
+  }, [row]);
   const providerValue = useMemo(() => form.provider === "custom" ? form.provider_custom.trim() : form.provider, [form.provider, form.provider_custom]);
 
   const save = async () => {
