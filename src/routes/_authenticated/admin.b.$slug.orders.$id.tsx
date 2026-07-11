@@ -354,6 +354,8 @@ function OrderDetail() {
     const { error: oe } = await supabase.from("orders").update({
       customer_id: order.customer_id, status: order.status, notes: order.notes,
       shipping_address_id: order.shipping_address_id ?? null,
+      digital_delivery_channel: order.fulfillment_method === "digital" ? order.digital_delivery_channel : null,
+      digital_delivery_contact: order.fulfillment_method === "digital" ? order.digital_delivery_contact : null,
       payment_method: order.payment_method ?? null,
       payment_status: order.payment_status ?? "unpaid",
       discount: totals.discount, tax_rate: order.tax_rate, tax_amount: totals.taxAmount,
@@ -675,7 +677,9 @@ function OrderDetail() {
             const legacyLines = formatDeliveryAddress(selected, lang);
             return (
               <div className="mt-4 pt-4 border-t border-border text-start">
-                <p className="text-xs uppercase tracking-wider text-muted-foreground mb-1">{t("orderDetail.deliveryAddress")}</p>
+                <p className="text-xs uppercase tracking-wider text-muted-foreground mb-1">
+                  {order.fulfillment_method === "digital" ? (lang === "ar" ? "بيانات العميل" : "Customer details") : t("orderDetail.deliveryAddress")}
+                </p>
                 <p className="font-medium">{selected.name}</p>
                 {selected.email && (
                   <p className="text-sm text-muted-foreground flex items-center gap-1.5 break-all">
@@ -684,7 +688,7 @@ function OrderDetail() {
                   </p>
                 )}
                 {selected.phone && <p className="text-sm text-muted-foreground">{selected.phone}</p>}
-                {customerAddrs.length > 0 ? (
+                {order.fulfillment_method !== "digital" && (customerAddrs.length > 0 ? (
                   <div className="mt-3 space-y-2">
                     <Label className="text-xs">{t("orderDetail.chooseAddress")}</Label>
                     <Select
@@ -715,10 +719,34 @@ function OrderDetail() {
                   legacyLines.map((l, i) => <p key={i} className="text-sm text-muted-foreground">{l}</p>)
                 ) : (
                   <p className="text-sm text-muted-foreground italic">{t("orderDetail.noDeliveryAddress")}</p>
-                )}
+                ))}
               </div>
             );
           })()}
+          {order.fulfillment_method === "digital" && (
+            <div className="mt-4 rounded-lg border-2 p-4 text-start" style={{ borderColor: settingsQ.data.primary_color }}>
+              <div className="mb-3">
+                <p className="text-xs uppercase tracking-wider text-muted-foreground">{lang === "ar" ? "طريقة التسليم" : "Fulfillment method"}</p>
+                <p className="font-semibold text-lg">{lang === "ar" ? "تسليم رقمي" : "Digital delivery"}</p>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <Label>{lang === "ar" ? "قناة التسليم" : "Delivery channel"}</Label>
+                  <Select value={order.digital_delivery_channel ?? "email"} onValueChange={(value) => setOrder({ ...order, digital_delivery_channel: value })}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="email">{lang === "ar" ? "البريد الإلكتروني" : "Email"}</SelectItem>
+                      <SelectItem value="whatsapp">{lang === "ar" ? "واتساب" : "WhatsApp"}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>{order.digital_delivery_channel === "whatsapp" ? (lang === "ar" ? "رقم أو معرّف واتساب" : "WhatsApp number or user ID") : (lang === "ar" ? "البريد الإلكتروني" : "Email address")}</Label>
+                  <Input dir="ltr" value={order.digital_delivery_contact ?? ""} onChange={(e) => setOrder({ ...order, digital_delivery_contact: e.target.value })} />
+                </div>
+              </div>
+            </div>
+          )}
         </Card>
 
         <Card className="p-6">

@@ -9,8 +9,12 @@
 import { SMTPClient } from "https://deno.land/x/denomailer@1.6.0/mod.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-const allowedOrigins = (Deno.env.get("ALLOWED_ORIGINS") ?? "https://bhpura.vercel.app")
-  .split(",").map((origin) => origin.trim()).filter(Boolean);
+const allowedOrigins = Array.from(new Set([
+  ...(Deno.env.get("ALLOWED_ORIGINS") ?? "").split(","),
+  "https://boutq.store",
+  "https://www.boutq.store",
+  "https://bhpura.vercel.app",
+].map((origin) => origin.trim()).filter(Boolean)));
 function corsHeadersFor(req: Request) {
   const origin = req.headers.get("origin") ?? "";
   return {
