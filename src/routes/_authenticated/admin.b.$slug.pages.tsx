@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import { Upload, Trash2, MessageCircle, Plus, GripVertical } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
 import { useBrand } from "@/lib/brand-context";
+import { uploadPublicMedia } from "@/lib/r2-upload";
 
 export const Route = createFileRoute("/_authenticated/admin/b/$slug/pages")({
   component: PagesAndPolicies,
@@ -34,18 +35,6 @@ const emptyPage = (): PageSlot => ({
   content_en: "",
   image_url: null,
 });
-
-const LONG_TTL = 60 * 60 * 24 * 365 * 10;
-
-async function uploadPageImage(userId: string, file: File): Promise<string> {
-  const ext = file.name.split(".").pop() ?? "bin";
-  const path = `${userId}/page-${Date.now()}.${ext}`;
-  const { error } = await supabase.storage.from("invoice-assets").upload(path, file, { upsert: true });
-  if (error) throw error;
-  const { data, error: se } = await supabase.storage.from("invoice-assets").createSignedUrl(path, LONG_TTL);
-  if (se || !data) throw se ?? new Error("Failed to sign URL");
-  return data.signedUrl;
-}
 
 function PagesAndPolicies() {
   const { lang } = useI18n();
@@ -115,9 +104,7 @@ function PagesAndPolicies() {
   const onPickImage = async (idx: number, file: File) => {
     try {
       setUploadingIdx(idx);
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-      const url = await uploadPageImage(user.id, file);
+      const url = await uploadPublicMedia(brandId, file, "page");
       updatePage(idx, { image_url: url });
       toast.success(isAr ? "تم الرفع — لا تنس الحفظ" : "Uploaded — remember to save");
     } catch (e: any) {

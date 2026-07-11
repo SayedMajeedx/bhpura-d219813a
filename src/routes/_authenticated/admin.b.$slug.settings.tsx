@@ -17,6 +17,7 @@ import { useBrand } from "@/lib/brand-context";
 import { Switch } from "@/components/ui/switch";
 import { Trash2 } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { uploadPublicMedia } from "@/lib/r2-upload";
 
 export const Route = createFileRoute("/_authenticated/admin/b/$slug/settings")({
   component: Settings,
@@ -41,18 +42,6 @@ const FONT_PRESETS = [
   "Lato", "Montserrat", "Open Sans", "Poppins", "Georgia",
   "Times New Roman", "Arial", "Helvetica", "Custom (uploaded)",
 ];
-
-const LONG_TTL = 60 * 60 * 24 * 365 * 10; // 10 years
-
-async function uploadToBucket(userId: string, file: File, kind: "logo" | "favicon" | "font"): Promise<string> {
-  const ext = file.name.split(".").pop() ?? "bin";
-  const path = `${userId}/${kind}-${Date.now()}.${ext}`;
-  const { error } = await supabase.storage.from("invoice-assets").upload(path, file, { upsert: true });
-  if (error) throw error;
-  const { data, error: se } = await supabase.storage.from("invoice-assets").createSignedUrl(path, LONG_TTL);
-  if (se || !data) throw se ?? new Error("Failed to sign URL");
-  return data.signedUrl;
-}
 
 function Settings() {
   const t = useT();
@@ -110,9 +99,7 @@ function Settings() {
   const handleUpload = async (file: File, kind: "logo" | "favicon" | "font") => {
     try {
       setUploading(kind);
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-      const url = await uploadToBucket(user.id, file, kind);
+      const url = await uploadPublicMedia(brandId, file, kind);
       if (kind === "logo") setF({ ...f, logo_url: url });
       else if (kind === "favicon") setF({ ...f, favicon_url: url });
       else setF({ ...f, font_url: url, font_family: "Custom (uploaded)" });
@@ -409,15 +396,8 @@ function PaymentSettingsCard({ brandId }: { brandId: string }) {
   const uploadQr = async (file: File) => {
     try {
       setUploading(true);
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-      const ext = file.name.split(".").pop() ?? "png";
-      const path = `${user.id}/brand-media/benefit-qr-${Date.now()}.${ext}`;
-      const { error } = await supabase.storage.from("invoice-assets").upload(path, file, { upsert: true });
-      if (error) throw error;
-      const { data, error: se } = await supabase.storage.from("invoice-assets").createSignedUrl(path, 60 * 60 * 24 * 365 * 10);
-      if (se || !data) throw se ?? new Error("Failed to sign URL");
-      setState((s) => (s ? { ...s, benefit_qr_url: data.signedUrl } : s));
+      const url = await uploadPublicMedia(brandId, file, "payment-qr");
+      setState((s) => (s ? { ...s, benefit_qr_url: url } : s));
       toast.success(isAr ? "تم رفع الرمز — لا تنسَ الحفظ" : "QR uploaded — remember to save");
     } catch (e: any) {
       toast.error(e.message ?? "Upload failed");
@@ -504,16 +484,9 @@ function BrandHeroCard({ brandId }: { brandId: string }) {
   const uploadMedia = async (file: File) => {
     try {
       setUploading(true);
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-      const ext = file.name.split(".").pop() ?? "bin";
-      const path = `${user.id}/brand-media/hero-${Date.now()}.${ext}`;
-      const { error } = await supabase.storage.from("invoice-assets").upload(path, file, { upsert: true });
-      if (error) throw error;
-      const { data, error: se } = await supabase.storage.from("invoice-assets").createSignedUrl(path, 60 * 60 * 24 * 365 * 10);
-      if (se || !data) throw se ?? new Error("Failed to sign URL");
+      const url = await uploadPublicMedia(brandId, file, "hero");
       const type: "image" | "video" = file.type.startsWith("video") ? "video" : "image";
-      setState((s) => (s ? { ...s, hero_media: [...s.hero_media, { type, url: data.signedUrl }] } : s));
+      setState((s) => (s ? { ...s, hero_media: [...s.hero_media, { type, url }] } : s));
       toast.success(isAr ? "تم الرفع — لا تنسَ الحفظ" : "Uploaded — remember to save");
     } catch (e: any) {
       toast.error(e.message ?? "Upload failed");

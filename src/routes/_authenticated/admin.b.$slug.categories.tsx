@@ -11,6 +11,7 @@ import { Plus, Pencil, Trash2, Upload, Tags, ArrowUp, ArrowDown } from "lucide-r
 import { toast } from "sonner";
 import { useI18n } from "@/lib/i18n";
 import { useBrand } from "@/lib/brand-context";
+import { uploadPublicMedia } from "@/lib/r2-upload";
 import { useRealtimeInvalidate } from "@/hooks/use-realtime-invalidate";
 
 export const Route = createFileRoute("/_authenticated/admin/b/$slug/categories")({
@@ -169,15 +170,8 @@ function CategoryDialog({ brandId, category, onSaved }: { brandId: string; categ
   const upload = async (file: File) => {
     try {
       setUploading(true);
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-      const ext = file.name.split(".").pop() ?? "bin";
-      const path = `${user.id}/brand-media/category-${Date.now()}.${ext}`;
-      const { error } = await supabase.storage.from("invoice-assets").upload(path, file, { upsert: true });
-      if (error) throw error;
-      const { data, error: se } = await supabase.storage.from("invoice-assets").createSignedUrl(path, 60 * 60 * 24 * 365 * 10);
-      if (se || !data) throw se ?? new Error("Failed to sign URL");
-      setForm((f) => ({ ...f, image_url: data.signedUrl }));
+      const url = await uploadPublicMedia(brandId, file, "category");
+      setForm((f) => ({ ...f, image_url: url }));
     } catch (e: any) {
       toast.error(e.message ?? "Upload failed");
     } finally { setUploading(false); }

@@ -20,6 +20,7 @@ import { useRealtimeInvalidate } from "@/hooks/use-realtime-invalidate";
 import { Switch } from "@/components/ui/switch";
 import { ImageCropperDialog } from "@/components/image-cropper-dialog";
 import { BilingualField } from "@/components/bilingual-field";
+import { uploadPublicMedia } from "@/lib/r2-upload";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
 /** Common measurement units the admin can pick from for a "size" variant. */
@@ -336,17 +337,12 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
     },
   });
 
-  const uploadBlob = async (blob: Blob, ext: string, kind: "image" | "video") => {
+  const uploadBlob = async (blob: Blob, _ext: string, kind: "image" | "video") => {
     try {
       setUploading(true);
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-      const path = `${user.id}/brand-media/product-${Date.now()}.${ext}`;
-      const { error } = await supabase.storage.from("invoice-assets").upload(path, blob, { upsert: true, contentType: kind === "image" ? "image/jpeg" : blob.type });
-      if (error) throw error;
-      const { data, error: se } = await supabase.storage.from("invoice-assets").createSignedUrl(path, 60 * 60 * 24 * 365 * 10);
-      if (se || !data) throw se ?? new Error("Failed to sign URL");
-      setForm((f) => ({ ...f, media: [...f.media, { type: kind, url: data.signedUrl }] }));
+      const mediaBlob = blob.type ? blob : new Blob([blob], { type: kind === "image" ? "image/jpeg" : "video/mp4" });
+      const url = await uploadPublicMedia(brand.id, mediaBlob, "product");
+      setForm((f) => ({ ...f, media: [...f.media, { type: kind, url }] }));
       toast.success(isAr ? "تم الرفع" : "Uploaded");
     } catch (e: any) {
       toast.error(e.message ?? "Upload failed");
