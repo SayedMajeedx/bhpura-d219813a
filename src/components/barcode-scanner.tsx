@@ -135,6 +135,11 @@ export function BarcodeScanner({ open, onOpenChange, onDetected }: Props) {
           return;
         }
         controlsRef.current = controls;
+        // iOS WebKit can attach the MediaStream without beginning inline
+        // playback, leaving a black video element despite an active camera.
+        videoRef.current?.setAttribute("playsinline", "true");
+        videoRef.current?.setAttribute("webkit-playsinline", "true");
+        await videoRef.current?.play().catch(() => undefined);
         configureTrack();
         setStarting(false);
       } catch (caught: any) {
@@ -148,7 +153,10 @@ export function BarcodeScanner({ open, onOpenChange, onDetected }: Props) {
     };
     void start();
     return () => { cancelled = true; stop(); };
-  }, [activeCameraId, configureTrack, finish, hints, isAr, open, restartKey, stop]);
+  // activeCameraId is intentionally excluded: selecting the initial rear
+  // camera updates its label without tearing down the stream that just opened.
+  // Explicit lens switches increment restartKey and start a new stream safely.
+  }, [configureTrack, finish, hints, isAr, open, restartKey, stop]);
 
   const switchCamera = () => {
     if (cameras.length < 2) return;
@@ -190,7 +198,15 @@ export function BarcodeScanner({ open, onOpenChange, onDetected }: Props) {
         </DialogHeader>
         <div className="space-y-3 p-4 pt-0">
           <div className="relative aspect-video w-full overflow-hidden rounded-md bg-black">
-            <video ref={videoRef} muted playsInline autoPlay className="h-full w-full object-cover" />
+            <video
+              ref={videoRef}
+              muted
+              playsInline
+              autoPlay
+              controls={false}
+              disablePictureInPicture
+              className="h-full w-full object-cover"
+            />
             <div className="pointer-events-none absolute inset-x-[5%] top-1/2 h-[52%] -translate-y-1/2 rounded-lg border-[3px] border-white shadow-[0_0_0_999px_rgba(0,0,0,.28)]">
               <span className="absolute -top-7 start-1/2 -translate-x-1/2 whitespace-nowrap rounded bg-black/70 px-2 py-1 text-[11px] font-medium text-white">{isAr ? "باركود واحد داخل الإطار" : "One barcode inside the frame"}</span>
             </div>
