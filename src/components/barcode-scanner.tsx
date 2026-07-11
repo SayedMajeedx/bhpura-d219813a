@@ -44,6 +44,7 @@ export function BarcodeScanner({ open, onOpenChange, onDetected }: Props) {
   const [restartKey, setRestartKey] = useState(0);
   const [zoomRange, setZoomRange] = useState<{ min: number; max: number; step: number } | null>(null);
   const [zoom, setZoom] = useState(1);
+  const [cameraRequested, setCameraRequested] = useState(false);
 
   const hints = useMemo(() => {
     const map = new Map();
@@ -94,7 +95,7 @@ export function BarcodeScanner({ open, onOpenChange, onDetected }: Props) {
   }, []);
 
   useEffect(() => {
-    if (!open || !videoRef.current) return;
+    if (!open || !cameraRequested || !videoRef.current) return;
     handledRef.current = false;
     setError(null);
     setStarting(true);
@@ -159,7 +160,7 @@ export function BarcodeScanner({ open, onOpenChange, onDetected }: Props) {
   // activeCameraId is intentionally excluded: selecting the initial rear
   // camera updates its label without tearing down the stream that just opened.
   // Explicit lens switches increment restartKey and start a new stream safely.
-  }, [configureTrack, finish, hints, isAr, open, restartKey, stop]);
+  }, [cameraRequested, configureTrack, finish, hints, isAr, open, restartKey, stop]);
 
   const switchCamera = () => {
     if (cameras.length < 2) return;
@@ -193,7 +194,15 @@ export function BarcodeScanner({ open, onOpenChange, onDetected }: Props) {
   };
 
   return (
-    <Dialog open={open} onOpenChange={(value) => { if (!value) stop(); onOpenChange(value); }}>
+    <Dialog open={open} onOpenChange={(value) => {
+      if (!value) {
+        stop();
+        setCameraRequested(false);
+        setStarting(false);
+        setError(null);
+      }
+      onOpenChange(value);
+    }}>
       <DialogContent className="max-w-md overflow-hidden p-0">
         <DialogHeader className="flex-row items-center justify-between p-4 pb-2">
           <DialogTitle>{isAr ? "مسح الباركود" : "Scan barcode"}</DialogTitle>
@@ -214,10 +223,37 @@ export function BarcodeScanner({ open, onOpenChange, onDetected }: Props) {
               <span className="absolute -top-7 start-1/2 -translate-x-1/2 whitespace-nowrap rounded bg-black/70 px-2 py-1 text-[11px] font-medium text-white">{isAr ? "باركود واحد داخل الإطار" : "One barcode inside the frame"}</span>
             </div>
             {cameras.length > 1 && <Button type="button" size="icon" variant="secondary" className="absolute end-2 top-2 h-9 w-9 rounded-full" onClick={switchCamera}><RefreshCw className="h-4 w-4" /></Button>}
+            {!cameraRequested && (
+              <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-slate-950 text-white">
+                <Camera className="h-9 w-9" />
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={() => {
+                    handledRef.current = false;
+                    setError(null);
+                    setStarting(true);
+                    setCameraRequested(true);
+                  }}
+                >
+                  {isAr ? "تشغيل الكاميرا" : "Start camera"}
+                </Button>
+                <p className="max-w-[85%] text-center text-xs text-white/70">
+                  {isAr ? "اضغط للسماح بالوصول إلى الكاميرا" : "Tap to allow camera access"}
+                </p>
+              </div>
+            )}
           </div>
           {zoomRange && zoomRange.max > zoomRange.min && <div className="flex items-center gap-3 rounded-md border px-3 py-2"><ZoomIn className="h-4 w-4 text-muted-foreground" /><input type="range" className="min-w-0 flex-1" min={zoomRange.min} max={zoomRange.max} step={zoomRange.step} value={zoom} onChange={(event) => applyZoom(Number(event.target.value))} /><span className="w-9 text-end text-xs">{zoom.toFixed(1)}×</span></div>}
           {starting && !error && <p className="text-center text-xs text-muted-foreground">{isAr ? "جارٍ تشغيل الماسح..." : "Starting scanner…"}</p>}
-          {error && <p className="text-center text-xs text-destructive">{error}</p>}
+          {error && (
+            <div className="space-y-2 text-center">
+              <p className="text-xs text-destructive">{error}</p>
+              <Button type="button" size="sm" variant="outline" onClick={() => { stop(); setCameraRequested(false); setError(null); }}>
+                {isAr ? "إعادة المحاولة" : "Try camera again"}
+              </Button>
+            </div>
+          )}
           <p className="text-center text-xs text-muted-foreground">{isAr ? "قرّب باركوداً واحداً حتى تملأ الخطوط البيضاء الإطار." : "Move one barcode closer until its bars fill the frame."}</p>
           <Button type="button" variant="secondary" size="sm" className="w-full gap-2" onClick={() => fileInputRef.current?.click()}><Camera className="h-4 w-4" /><Upload className="h-4 w-4 -ms-1" />{isAr ? "رفع أو التقاط صورة" : "Upload or Take Photo"}</Button>
           <input ref={fileInputRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={(event) => { const file = event.target.files?.[0]; if (file) void scanFile(file); event.target.value = ""; }} />
