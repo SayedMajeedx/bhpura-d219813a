@@ -46,6 +46,12 @@ export async function downloadInvoicePdf(
       -webkit-print-color-adjust: exact !important;
       print-color-adjust: exact !important;
     }
+    .pdf-render-root[dir="rtl"],
+    .pdf-render-root[dir="rtl"] * {
+      letter-spacing: normal !important;
+      text-transform: none !important;
+      font-kerning: normal !important;
+    }
     .pdf-render-root .pdf-invoice-body {
       padding: 40px !important;
     }

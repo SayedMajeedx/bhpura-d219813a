@@ -1228,7 +1228,7 @@ function InvoicePreview({ order, items, settings, shippingAddress, paymentBadge 
               </div>}
             </div>
             <div className="pdf-meta-block w-[48%] min-w-0" style={{ textAlign: "end" }}>
-              <h1 className="text-3xl sm:text-4xl font-display tracking-tight" style={{ color }}>{(isRTL ? settings.invoice_title_ar : settings.invoice_title_en) || L.invoice}</h1>
+              <h1 className={`text-3xl sm:text-4xl font-display ${isRTL ? "" : "tracking-tight"}`} style={{ color, letterSpacing: isRTL ? "normal" : undefined, textTransform: "none" }}>{(isRTL ? settings.invoice_title_ar : settings.invoice_title_en) || L.invoice}</h1>
               <p className="text-lg mt-1">{L.invoiceNumber}: {num(order.invoice_number)}</p>
               <p className="text-xs mt-2" style={{ opacity: 0.7 }}>{L.date}: {new Date(order.order_date).toLocaleDateString(isRTL ? "ar-BH" : undefined)}</p>
               <p className="text-xs" style={{ opacity: 0.7 }}>{L.status}: {PAYMENT_BADGE_LABEL[paymentBadge ?? "unpaid"][invoiceLang]}</p>
@@ -1240,7 +1240,7 @@ function InvoicePreview({ order, items, settings, shippingAddress, paymentBadge 
 
           {order.customers && (
             <div className="mb-8" style={{ textAlign: "start" }}>
-              <p className="text-xs uppercase tracking-wider mb-1" style={{ opacity: 0.6 }}>{L.billTo}</p>
+              <p className={`text-xs mb-1 ${isRTL ? "" : "uppercase tracking-wider"}`} style={{ opacity: 0.6, letterSpacing: isRTL ? "normal" : undefined }}>{L.billTo}</p>
               <p className="font-medium">{order.customers.name}</p>
               {settings.invoice_show_customer_contact !== false && order.customers.phone && <p dir="ltr" className="text-sm" style={{ opacity: 0.75, unicodeBidi: "isolate", textAlign: isRTL ? "right" : "left" }}>{num(order.customers.phone)}</p>}
               {settings.invoice_show_customer_contact !== false && order.customers.email && <p dir="ltr" className="text-sm" style={{ opacity: 0.75, textAlign: isRTL ? "right" : "left" }}>{order.customers.email}</p>}
@@ -1252,7 +1252,7 @@ function InvoicePreview({ order, items, settings, shippingAddress, paymentBadge 
                 if (!detailed && legacy.length === 0) return null;
                 return (
                   <div className="mt-3 pt-3 border-t border-neutral-200">
-                    <p className="text-xs uppercase tracking-wider mb-1" style={{ opacity: 0.6 }}>
+                    <p className={`text-xs mb-1 ${isRTL ? "" : "uppercase tracking-wider"}`} style={{ opacity: 0.6, letterSpacing: isRTL ? "normal" : undefined }}>
                       {isRTL ? "عنوان التوصيل" : "Delivery address"}
                     </p>
                     {detailed ? (
@@ -1274,7 +1274,7 @@ function InvoicePreview({ order, items, settings, shippingAddress, paymentBadge 
 
           {settings.invoice_show_fulfillment !== false && (order.fulfillment_method || order.branch_id) && (
             <div className="mb-6 rounded-lg p-4 text-sm" style={{ textAlign: "start", backgroundColor: secondary }}>
-              <p className="text-xs uppercase tracking-wider mb-1" style={{ opacity: 0.6 }}>
+              <p className={`text-xs mb-1 ${isRTL ? "" : "uppercase tracking-wider"}`} style={{ opacity: 0.6, letterSpacing: isRTL ? "normal" : undefined }}>
                 {isRTL ? "طريقة التسليم" : "Fulfillment"}
               </p>
               <p>
@@ -1286,7 +1286,7 @@ function InvoicePreview({ order, items, settings, shippingAddress, paymentBadge 
               </p>
               {order.fulfillment_method === "digital" && (
                 <div className="mt-2 rounded-md border border-neutral-200 p-3">
-                  <p className="text-xs uppercase tracking-wider" style={{ opacity: 0.6 }}>
+                  <p className={`text-xs ${isRTL ? "" : "uppercase tracking-wider"}`} style={{ opacity: 0.6, letterSpacing: isRTL ? "normal" : undefined }}>
                     {isRTL ? "قناة التسليم الرقمي" : "Digital delivery channel"}
                   </p>
                   <p className="font-medium">
@@ -1382,7 +1382,7 @@ function InvoicePreview({ order, items, settings, shippingAddress, paymentBadge 
                 <div className="flex items-center gap-2">
                   <span className="font-display text-lg" style={{ color }}>{money(order.total)}</span>
                   {paymentBadge && (
-                    <span className={`text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full border ${PAYMENT_BADGE_CLASSES[paymentBadge]}`}>
+                    <span className={`text-[10px] px-2 py-0.5 rounded-full border ${isRTL ? "" : "uppercase tracking-wider"} ${PAYMENT_BADGE_CLASSES[paymentBadge]}`} style={{ letterSpacing: isRTL ? "normal" : undefined }}>
                       {PAYMENT_BADGE_LABEL[paymentBadge][invoiceLang]}
                     </span>
                   )}

@@ -194,7 +194,7 @@ function PublicInvoice() {
                 </div>}
               </div>
               <div className="pdf-meta-block w-[48%] min-w-0" style={{ textAlign: "end" }}>
-                <h1 style={{ color }} className="text-2xl sm:text-4xl font-semibold tracking-tight">{invoiceTitle}</h1>
+                <h1 style={{ color, letterSpacing: isRTL ? "normal" : undefined, textTransform: "none" }} className={`text-2xl sm:text-4xl font-semibold ${isRTL ? "" : "tracking-tight"}`}>{invoiceTitle}</h1>
                 <p className="text-sm sm:text-base mt-1">{L.number}: {order.invoice_number}</p>
                 <p className="text-xs mt-2" style={{ opacity: 0.7 }}>{L.date}: {new Date(order.order_date).toLocaleDateString(locale)}</p>
                 <p className="text-xs" style={{ opacity: 0.7 }}>{L.status}: {PAYMENT_BADGE_LABEL[resolvePaymentStatus(order.payment_status, order.status, Number(order.total_amount || order.total || 0), Number(order.advance_paid || 0))][lang]}</p>
@@ -206,13 +206,13 @@ function PublicInvoice() {
 
             {order.customers && (
               <div className="mb-8" style={{ textAlign: "start" }}>
-                <p className="text-xs uppercase tracking-wider mb-1" style={{ opacity: 0.6 }}>{L.billTo}</p>
+                <p className={`text-xs mb-1 ${isRTL ? "" : "uppercase tracking-wider"}`} style={{ opacity: 0.6, letterSpacing: isRTL ? "normal" : undefined }}>{L.billTo}</p>
                 <p className="font-medium">{order.customers.name}</p>
                 {showContact && order.customers.phone && <p dir="ltr" className="text-sm" style={{ opacity: 0.75, unicodeBidi: "isolate", textAlign: isRTL ? "right" : "left" }}>{order.customers.phone}</p>}
                 {showContact && order.customers.email && <p dir="ltr" className="text-sm" style={{ opacity: 0.75, textAlign: isRTL ? "right" : "left" }}>{order.customers.email}</p>}
                 {!showFulfillment && (addrLine || legacyRegion) && (
                   <div className="mt-3 pt-3 border-t border-neutral-200">
-                    <p className="text-xs uppercase tracking-wider mb-1" style={{ opacity: 0.6 }}>{L.delivery}</p>
+                    <p className={`text-xs mb-1 ${isRTL ? "" : "uppercase tracking-wider"}`} style={{ opacity: 0.6, letterSpacing: isRTL ? "normal" : undefined }}>{L.delivery}</p>
                     <p className="text-sm" style={{ opacity: 0.85 }}>{addrLine || legacyRegion}</p>
                   </div>
                 )}
@@ -221,7 +221,7 @@ function PublicInvoice() {
 
             {showFulfillment && (
               <div className="mb-8 rounded-lg p-4 text-sm" style={{ backgroundColor: secondaryColor, textAlign: "start" }}>
-                <p className="text-xs uppercase tracking-wider mb-1" style={{ opacity: 0.6 }}>{isRTL ? "طريقة التسليم" : "Fulfillment"}</p>
+                <p className={`text-xs mb-1 ${isRTL ? "" : "uppercase tracking-wider"}`} style={{ opacity: 0.6, letterSpacing: isRTL ? "normal" : undefined }}>{isRTL ? "طريقة التسليم" : "Fulfillment"}</p>
                 <p className="font-semibold">{order.fulfillment_method === "digital" ? (isRTL ? "تسليم رقمي" : "Digital delivery") : order.fulfillment_method === "pickup" ? (isRTL ? "استلام من الفرع" : "Pickup from branch") : (isRTL ? "توصيل" : "Delivery")}</p>
                 {order.fulfillment_method === "digital" && <p dir="ltr" className="mt-1 break-all">{order.digital_delivery_channel === "whatsapp" ? "WhatsApp" : "Email"}: {order.digital_delivery_contact}</p>}
                 {order.fulfillment_method === "pickup" && branch && <p className="mt-1" style={{ opacity: 0.8 }}>{isRTL ? branch.name_ar || branch.name_en : branch.name_en || branch.name_ar}{(isRTL ? branch.location_ar || branch.location_en : branch.location_en || branch.location_ar) ? ` — ${isRTL ? branch.location_ar || branch.location_en : branch.location_en || branch.location_ar}` : ""}</p>}
@@ -293,7 +293,7 @@ function PublicInvoice() {
                         </span>
                         <div className="flex items-center gap-2">
                           <span className="text-lg" style={{ color }}>{money(order.total)}</span>
-                          <span className={`text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full border ${PAYMENT_BADGE_CLASSES[badge]}`}>
+                          <span className={`text-[10px] px-2 py-0.5 rounded-full border ${isRTL ? "" : "uppercase tracking-wider"} ${PAYMENT_BADGE_CLASSES[badge]}`} style={{ letterSpacing: isRTL ? "normal" : undefined }}>
                             {PAYMENT_BADGE_LABEL[badge][lang]}
                           </span>
                         </div>
