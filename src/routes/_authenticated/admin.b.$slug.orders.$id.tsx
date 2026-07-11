@@ -143,6 +143,14 @@ function OrderDetail() {
       return (data ?? []) as SavedAddress[];
     },
   });
+  const branchesQ = useQuery({
+    queryKey: ["branches", brandId],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("branches").select("id, name_ar, name_en, location_ar, location_en").eq("brand_id", brandId);
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
   const customQ = useQuery({
     queryKey: ["customizations", brandId],
     queryFn: async () => (await supabase.from("customization_options").select("*").eq("brand_id", brandId).order("name")).data ?? [],
@@ -723,30 +731,71 @@ function OrderDetail() {
               </div>
             );
           })()}
-          {order.fulfillment_method === "digital" && (
-            <div className="mt-4 rounded-lg border-2 p-4 text-start" style={{ borderColor: settingsQ.data.primary_color }}>
-              <div className="mb-3">
-                <p className="text-xs uppercase tracking-wider text-muted-foreground">{lang === "ar" ? "طريقة التسليم" : "Fulfillment method"}</p>
-                <p className="font-semibold text-lg">{lang === "ar" ? "تسليم رقمي" : "Digital delivery"}</p>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <Label>{lang === "ar" ? "قناة التسليم" : "Delivery channel"}</Label>
-                  <Select value={order.digital_delivery_channel ?? "email"} onValueChange={(value) => setOrder({ ...order, digital_delivery_channel: value })}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="email">{lang === "ar" ? "البريد الإلكتروني" : "Email"}</SelectItem>
-                      <SelectItem value="whatsapp">{lang === "ar" ? "واتساب" : "WhatsApp"}</SelectItem>
-                    </SelectContent>
-                  </Select>
+          {(() => {
+            const method = order.fulfillment_method ?? "delivery";
+            const selectedCustomer = (customersQ.data ?? []).find((c: any) => c.id === order.customer_id);
+            const selectedAddress = (addressesQ.data ?? []).find((a) => a.id === order.shipping_address_id);
+            const selectedBranch = (branchesQ.data ?? []).find((b: any) => b.id === order.branch_id);
+            const address = selectedAddress
+              ? formatAddressLine(selectedAddress as StructuredAddress, lang)
+              : formatDeliveryAddress(selectedCustomer, lang).join("، ");
+            const branchName = selectedBranch
+              ? (lang === "ar" ? selectedBranch.name_ar || selectedBranch.name_en : selectedBranch.name_en || selectedBranch.name_ar)
+              : null;
+            const branchLocation = selectedBranch
+              ? (lang === "ar" ? selectedBranch.location_ar || selectedBranch.location_en : selectedBranch.location_en || selectedBranch.location_ar)
+              : null;
+            const title = method === "digital"
+              ? (lang === "ar" ? "تسليم رقمي" : "Digital delivery")
+              : method === "pickup"
+                ? (lang === "ar" ? "استلام من الفرع" : "Pickup from branch")
+                : (lang === "ar" ? "توصيل" : "Delivery");
+            return (
+              <div className="mt-5 overflow-hidden rounded-xl border bg-muted/20 text-start shadow-sm">
+                <div className="flex items-center justify-between gap-3 border-b bg-muted/50 px-4 py-3">
+                  <div>
+                    <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">{lang === "ar" ? "طريقة التسليم" : "Fulfillment"}</p>
+                    <p className="text-lg font-semibold">{title}</p>
+                  </div>
+                  <span className="rounded-full px-3 py-1 text-xs font-semibold" style={{ backgroundColor: `${settingsQ.data.primary_color}18`, color: settingsQ.data.primary_color }}>
+                    {method === "digital" ? (lang === "ar" ? "رقمي" : "Digital") : method === "pickup" ? (lang === "ar" ? "فرع" : "Branch") : (lang === "ar" ? "عنوان" : "Address")}
+                  </span>
                 </div>
-                <div>
-                  <Label>{order.digital_delivery_channel === "whatsapp" ? (lang === "ar" ? "رقم أو معرّف واتساب" : "WhatsApp number or user ID") : (lang === "ar" ? "البريد الإلكتروني" : "Email address")}</Label>
-                  <Input dir="ltr" value={order.digital_delivery_contact ?? ""} onChange={(e) => setOrder({ ...order, digital_delivery_contact: e.target.value })} />
+                <div className="p-4">
+                  {method === "digital" ? (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <Label>{lang === "ar" ? "قناة التسليم" : "Delivery channel"}</Label>
+                        <Select value={order.digital_delivery_channel ?? "email"} onValueChange={(value) => setOrder({ ...order, digital_delivery_channel: value })}>
+                          <SelectTrigger><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="email">{lang === "ar" ? "البريد الإلكتروني" : "Email"}</SelectItem>
+                            <SelectItem value="whatsapp">{lang === "ar" ? "واتساب" : "WhatsApp"}</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label>{order.digital_delivery_channel === "whatsapp" ? (lang === "ar" ? "رقم أو معرّف واتساب" : "WhatsApp number or user ID") : (lang === "ar" ? "البريد الإلكتروني" : "Email address")}</Label>
+                        <Input dir="ltr" value={order.digital_delivery_contact ?? ""} onChange={(e) => setOrder({ ...order, digital_delivery_contact: e.target.value })} />
+                      </div>
+                    </div>
+                  ) : method === "pickup" ? (
+                    <div className="space-y-1">
+                      <p className="text-xs uppercase tracking-wider text-muted-foreground">{lang === "ar" ? "الفرع المختار" : "Selected branch"}</p>
+                      <p className="font-semibold">{branchName || (lang === "ar" ? "لم يتم تحديد فرع" : "No branch selected")}</p>
+                      {branchLocation && <p className="text-sm text-muted-foreground">{branchLocation}</p>}
+                    </div>
+                  ) : (
+                    <div className="space-y-1">
+                      <p className="text-xs uppercase tracking-wider text-muted-foreground">{lang === "ar" ? "عنوان التوصيل المختار" : "Selected delivery address"}</p>
+                      <p className="font-medium">{address || (lang === "ar" ? "لا يوجد عنوان توصيل" : "No delivery address available")}</p>
+                      <p className="text-sm text-muted-foreground">{lang === "ar" ? "رسوم التوصيل" : "Delivery fee"}: {formatMoney(Number(order.shipping ?? 0), order.currency ?? "BHD")}</p>
+                    </div>
+                  )}
                 </div>
               </div>
-            </div>
-          )}
+            );
+          })()}
         </Card>
 
         <Card className="p-6">
