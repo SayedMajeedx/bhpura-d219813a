@@ -24,7 +24,7 @@ export const Route = createFileRoute("/_authenticated/admin/b/$slug/settings")({
 
 type Settings = {
   user_id: string;
-  business_name: string; logo_url: string | null; address: string | null;
+  business_name: string; logo_url: string | null; favicon_url: string | null; address: string | null;
   phone: string | null; email: string | null; vat_number: string | null;
   currency: string; default_tax_rate: number; primary_color: string;
   footer_note: string | null; next_invoice_number: number;
@@ -44,7 +44,7 @@ const FONT_PRESETS = [
 
 const LONG_TTL = 60 * 60 * 24 * 365 * 10; // 10 years
 
-async function uploadToBucket(userId: string, file: File, kind: "logo" | "font"): Promise<string> {
+async function uploadToBucket(userId: string, file: File, kind: "logo" | "favicon" | "font"): Promise<string> {
   const ext = file.name.split(".").pop() ?? "bin";
   const path = `${userId}/${kind}-${Date.now()}.${ext}`;
   const { error } = await supabase.storage.from("invoice-assets").upload(path, file, { upsert: true });
@@ -63,8 +63,9 @@ function Settings() {
   const brandDisplayName = (lang === "ar" ? brand.name_ar : brand.name_en) || brand.name_en || brand.slug;
   const LEGACY_NAMES = new Set(["My Abaya Boutique", "متجر عباياتي", ""]);
   const logoInput = useRef<HTMLInputElement>(null);
+  const faviconInput = useRef<HTMLInputElement>(null);
   const fontInput = useRef<HTMLInputElement>(null);
-  const [uploading, setUploading] = useState<null | "logo" | "font">(null);
+  const [uploading, setUploading] = useState<null | "logo" | "favicon" | "font">(null);
 
   const { data } = useQuery({
     queryKey: ["business-settings", brandId],
@@ -95,7 +96,7 @@ function Settings() {
 
   const save = async () => {
     const { error } = await supabase.from("business_settings").update({
-      business_name: f.business_name, logo_url: f.logo_url, address: f.address, phone: f.phone,
+      business_name: f.business_name, logo_url: f.logo_url, favicon_url: f.favicon_url, address: f.address, phone: f.phone,
       email: f.email, vat_number: f.vat_number, currency: f.currency,
       default_tax_rate: f.default_tax_rate, primary_color: f.primary_color, footer_note: f.footer_note,
       font_family: f.font_family, font_url: f.font_url, font_size: f.font_size,
@@ -106,15 +107,16 @@ function Settings() {
     else { toast.success("Saved"); qc.invalidateQueries({ queryKey: ["business-settings"] }); }
   };
 
-  const handleUpload = async (file: File, kind: "logo" | "font") => {
+  const handleUpload = async (file: File, kind: "logo" | "favicon" | "font") => {
     try {
       setUploading(kind);
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
       const url = await uploadToBucket(user.id, file, kind);
       if (kind === "logo") setF({ ...f, logo_url: url });
+      else if (kind === "favicon") setF({ ...f, favicon_url: url });
       else setF({ ...f, font_url: url, font_family: "Custom (uploaded)" });
-      toast.success(`${kind === "logo" ? "Logo" : "Font"} uploaded — remember to save`);
+      toast.success(`${kind === "logo" ? "Logo" : kind === "favicon" ? "Favicon" : "Font"} uploaded — remember to save`);
     } catch (e: any) {
       toast.error(e.message ?? "Upload failed");
     } finally {
@@ -170,6 +172,20 @@ function Settings() {
                     <Upload className="h-4 w-4" />
                   </Button>
                 </div>
+              </div>
+              <div>
+                <Label>{lang === "ar" ? "أيقونة المتجر" : "Store favicon"}</Label>
+                <div className="flex gap-2">
+                  <Input value={f.favicon_url ?? ""} placeholder="https://… (SVG, PNG, ICO)" onChange={(e) => setF({ ...f, favicon_url: e.target.value })} />
+                  <input ref={faviconInput} type="file" accept="image/svg+xml,image/png,image/x-icon,image/vnd.microsoft.icon,image/webp" className="hidden"
+                    onChange={(e) => e.target.files?.[0] && handleUpload(e.target.files[0], "favicon")} />
+                  <Button type="button" variant="outline" size="icon" onClick={() => faviconInput.current?.click()} disabled={uploading === "favicon"} aria-label={lang === "ar" ? "رفع أيقونة المتجر" : "Upload favicon"}>
+                    <Upload className="h-4 w-4" />
+                  </Button>
+                </div>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {lang === "ar" ? "يفضل ملف SVG أو PNG مربع. عند تركه فارغاً سيتم استخدام شعار المتجر." : "A square SVG or PNG works best. Leave blank to use the brand logo."}
+                </p>
               </div>
             </div>
             <div><Label>{t("settings.address")}</Label><Textarea value={f.address ?? ""} onChange={(e) => setF({ ...f, address: e.target.value })} /></div>

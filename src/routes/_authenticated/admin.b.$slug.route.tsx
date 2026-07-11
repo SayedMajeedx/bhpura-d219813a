@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { BrandProvider, type Brand } from "@/lib/brand-context";
 import { useT } from "@/lib/i18n";
 import { Card } from "@/components/ui/card";
+import { useDynamicFavicon } from "@/lib/favicon";
 
 export const Route = createFileRoute("/_authenticated/admin/b/$slug")({
   beforeLoad: async ({ params }) => {
@@ -49,7 +50,19 @@ export const Route = createFileRoute("/_authenticated/admin/b/$slug")({
       throw redirect({ to: "/admin" });
     }
 
-    return { brand: brand as Brand };
+    const { data: iconSettings } = await (supabase
+      .from("business_settings") as any)
+      .select("favicon_url, logo_url")
+      .eq("brand_id", brand.id)
+      .maybeSingle();
+
+    return {
+      brand: {
+        ...brand,
+        favicon_url: iconSettings?.favicon_url ?? null,
+        logo_url: iconSettings?.logo_url ?? brand.logo_url ?? null,
+      } as Brand,
+    };
   },
   component: BrandLayout,
   errorComponent: BrandError,
@@ -58,6 +71,7 @@ export const Route = createFileRoute("/_authenticated/admin/b/$slug")({
 
 function BrandLayout() {
   const { brand } = Route.useRouteContext();
+  useDynamicFavicon(brand.favicon_url, brand.logo_url);
   return (
     <BrandProvider brand={brand}>
       <Outlet />

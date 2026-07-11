@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/sheet";
 import { ShoppingBag, Languages, Minus, Plus, Trash2, X, User, Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { faviconType, resolveBrandFavicon, useDynamicFavicon } from "@/lib/favicon";
 
 export const Route = createFileRoute("/$slug")({
   loader: async ({ params }) => {
@@ -57,6 +58,7 @@ export const Route = createFileRoute("/$slug")({
       brand_id: brand.id,
       business_name: s?.business_name ?? brand.name_en,
       logo_url: s?.logo_url ?? brand.logo_url ?? null,
+      favicon_url: s?.favicon_url ?? null,
       currency: s?.currency ?? "BHD",
       primary_color: s?.primary_color ?? brand.primary_color ?? "#8b6f47",
       text_color: s?.text_color ?? "#111111",
@@ -104,6 +106,7 @@ export const Route = createFileRoute("/$slug")({
     const title = `${b.name_en} — Storefront`;
     const desc = `Shop ${b.name_en}${b.name_ar ? " / " + b.name_ar : ""} online.`;
     const img = b.logo_url ?? undefined;
+    const favicon = resolveBrandFavicon(loaderData?.settings?.favicon_url, loaderData?.settings?.logo_url ?? b.logo_url);
     return {
       meta: [
         { title },
@@ -114,6 +117,7 @@ export const Route = createFileRoute("/$slug")({
         ...(img ? [{ property: "og:image", content: img }] : []),
         { name: "twitter:card", content: img ? "summary_large_image" : "summary" },
       ],
+      links: [{ rel: "icon", href: favicon, ...(faviconType(favicon) ? { type: faviconType(favicon) } : {}) }],
     };
   },
   component: StorefrontLayout,
@@ -123,6 +127,7 @@ export const Route = createFileRoute("/$slug")({
 
 function StorefrontLayout() {
   const { brand, settings } = Route.useLoaderData();
+  useDynamicFavicon(settings.favicon_url, settings.logo_url ?? brand.logo_url);
   return (
     <StorefrontProvider brand={brand} settings={settings}>
       <StoreShell />

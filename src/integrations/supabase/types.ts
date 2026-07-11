@@ -243,6 +243,7 @@ export type Database = {
           email_intro_ar: string | null
           email_intro_en: string | null
           email_sender_name: string | null
+          favicon_url: string | null
           font_family: string
           font_size: number
           font_url: string | null
@@ -299,6 +300,7 @@ export type Database = {
           email_intro_ar?: string | null
           email_intro_en?: string | null
           email_sender_name?: string | null
+          favicon_url?: string | null
           font_family?: string
           font_size?: number
           font_url?: string | null
@@ -355,6 +357,7 @@ export type Database = {
           email_intro_ar?: string | null
           email_intro_en?: string | null
           email_sender_name?: string | null
+          favicon_url?: string | null
           font_family?: string
           font_size?: number
           font_url?: string | null
@@ -1185,6 +1188,7 @@ export type Database = {
           currency: string | null
           delivery_enabled: boolean | null
           delivery_fee: number | null
+          favicon_url: string | null
           font_family: string | null
           font_url: string | null
           footer_bg: string | null

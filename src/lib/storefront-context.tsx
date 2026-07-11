@@ -20,6 +20,7 @@ export type PublicSettings = {
   brand_id: string;
   business_name: string;
   logo_url: string | null;
+  favicon_url: string | null;
   currency: string;
   primary_color: string;
   text_color: string;
