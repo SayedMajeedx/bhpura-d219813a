@@ -1390,8 +1390,11 @@ function ResendConfirmationEmailButton({ order, lang, onDone }: { order: any; la
     if (!order?.id) return;
     setSending(true);
     try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData.session?.access_token;
       const { data, error } = await supabase.functions.invoke("send-order-email", {
         body: { order_id: order.id, lang },
+        headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : undefined,
       });
       if (error) throw error;
       if ((data as any)?.error) throw new Error(String((data as any).error));
