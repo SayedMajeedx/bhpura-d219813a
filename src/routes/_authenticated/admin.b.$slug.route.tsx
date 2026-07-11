@@ -3,7 +3,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { BrandProvider, type Brand } from "@/lib/brand-context";
 import { useT } from "@/lib/i18n";
 import { Card } from "@/components/ui/card";
-import { useDynamicFavicon } from "@/lib/favicon";
 
 export const Route = createFileRoute("/_authenticated/admin/b/$slug")({
   beforeLoad: async ({ params }) => {
@@ -71,7 +70,6 @@ export const Route = createFileRoute("/_authenticated/admin/b/$slug")({
 
 function BrandLayout() {
   const { brand } = Route.useRouteContext();
-  useDynamicFavicon(brand.favicon_url, brand.logo_url);
   return (
     <BrandProvider brand={brand}>
       <Outlet />

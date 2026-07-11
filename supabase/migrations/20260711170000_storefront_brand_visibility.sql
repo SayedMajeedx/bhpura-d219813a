@@ -4,6 +4,11 @@ ALTER TABLE public.business_settings
   ADD COLUMN IF NOT EXISTS show_hero_about boolean NOT NULL DEFAULT true,
   ADD COLUMN IF NOT EXISTS show_footer_name boolean NOT NULL DEFAULT true;
 
+-- The public view uses caller permissions, so these columns must be readable by
+-- anonymous storefront visitors just like the other public theme fields.
+GRANT SELECT (show_header_name, show_hero_title, show_hero_about, show_footer_name)
+  ON public.business_settings TO anon;
+
 CREATE OR REPLACE VIEW public.brand_public_settings
 WITH (security_invoker = true) AS
 SELECT bs.brand_id, bs.business_name, bs.logo_url, bs.currency,
