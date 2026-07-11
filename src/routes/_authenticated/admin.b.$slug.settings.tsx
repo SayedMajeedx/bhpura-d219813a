@@ -656,6 +656,10 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
   const [state, setState] = useState<{
     logo_size: number;
     logo_align: string;
+    show_header_name: boolean;
+    show_hero_title: boolean;
+    show_hero_about: boolean;
+    show_footer_name: boolean;
     header_bg: string | null;
     header_fg: string | null;
     footer_bg: string | null;
@@ -674,7 +678,7 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
     queryKey: ["business-settings-theme", brandId],
     queryFn: async () => {
       const { data, error } = await supabase.from("business_settings")
-        .select("logo_size, logo_align, header_bg, header_fg, footer_bg, footer_fg, heading_color, link_color, btn_primary_bg, btn_primary_fg, btn_secondary_bg, btn_secondary_fg, btn_checkout_bg, btn_checkout_fg")
+        .select("logo_size, logo_align, show_header_name, show_hero_title, show_hero_about, show_footer_name, header_bg, header_fg, footer_bg, footer_fg, heading_color, link_color, btn_primary_bg, btn_primary_fg, btn_secondary_bg, btn_secondary_fg, btn_checkout_bg, btn_checkout_fg")
         .eq("brand_id", brandId).maybeSingle();
       if (error) throw error;
       return data as any;
@@ -685,6 +689,10 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
     if (data) setState({
       logo_size: data.logo_size ?? 48,
       logo_align: data.logo_align ?? "left",
+      show_header_name: data.show_header_name ?? true,
+      show_hero_title: data.show_hero_title ?? true,
+      show_hero_about: data.show_hero_about ?? true,
+      show_footer_name: data.show_footer_name ?? true,
       header_bg: data.header_bg ?? null,
       header_fg: data.header_fg ?? null,
       footer_bg: data.footer_bg ?? null,
@@ -761,6 +769,27 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
                 >
                   {isAr ? (a === "left" ? "يسار" : a === "center" ? "وسط" : "يمين") : a}
                 </Button>
+              ))}
+            </div>
+          </div>
+          <div className="sm:col-span-2 space-y-3 border-t border-border pt-4">
+            <div>
+              <h3 className="font-medium text-sm">{isAr ? "ظهور هوية المتجر" : "Brand identity visibility"}</h3>
+              <p className="mt-1 text-xs text-muted-foreground">
+                {isAr ? "تبقى أسماء العلامة محفوظة للهوية والبحث، ويمكن إخفاؤها بشكل مستقل في كل قسم." : "Brand names remain saved for identity and SEO, but can be hidden independently in each storefront area."}
+              </p>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {([
+                ["show_header_name", isAr ? "إظهار الاسم بجانب الشعار" : "Show name beside header logo"],
+                ["show_hero_title", isAr ? "إظهار اسم العلامة في الواجهة" : "Show brand name in hero"],
+                ["show_hero_about", isAr ? "إظهار النبذة في الواجهة" : "Show About text in hero"],
+                ["show_footer_name", isAr ? "إظهار اسم العلامة في التذييل" : "Show brand name in footer"],
+              ] as const).map(([key, label]) => (
+                <div key={key} className="flex items-center justify-between gap-4 rounded-md border border-border p-3">
+                  <Label className="cursor-pointer">{label}</Label>
+                  <Switch checked={state[key]} onCheckedChange={(checked) => setState({ ...state, [key]: checked })} />
+                </div>
               ))}
             </div>
           </div>

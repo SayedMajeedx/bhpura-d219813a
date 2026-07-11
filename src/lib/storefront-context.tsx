@@ -36,6 +36,10 @@ export type PublicSettings = {
   // Theme customizer
   logo_size: number;
   logo_align: "left" | "center" | "right";
+  show_header_name: boolean;
+  show_hero_title: boolean;
+  show_hero_about: boolean;
+  show_footer_name: boolean;
   header_bg: string | null;
   header_fg: string | null;
   footer_bg: string | null;

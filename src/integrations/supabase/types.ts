@@ -261,6 +261,10 @@ export type Database = {
           logo_width: number
           logo_x: number
           logo_y: number
+          show_footer_name: boolean
+          show_header_name: boolean
+          show_hero_about: boolean
+          show_hero_title: boolean
           next_invoice_number: number
           pages: Json
           phone: string | null
@@ -318,6 +322,10 @@ export type Database = {
           logo_width?: number
           logo_x?: number
           logo_y?: number
+          show_footer_name?: boolean
+          show_header_name?: boolean
+          show_hero_about?: boolean
+          show_hero_title?: boolean
           next_invoice_number?: number
           pages?: Json
           phone?: string | null
@@ -375,6 +383,10 @@ export type Database = {
           logo_width?: number
           logo_x?: number
           logo_y?: number
+          show_footer_name?: boolean
+          show_header_name?: boolean
+          show_hero_about?: boolean
+          show_hero_title?: boolean
           next_invoice_number?: number
           pages?: Json
           phone?: string | null

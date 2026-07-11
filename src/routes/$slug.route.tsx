@@ -73,6 +73,10 @@ export const Route = createFileRoute("/$slug")({
       delivery_fee: Number(s?.delivery_fee ?? 0),
       logo_size: Number(s?.logo_size ?? 48),
       logo_align: (s?.logo_align ?? "left") as "left" | "center" | "right",
+      show_header_name: s?.show_header_name ?? true,
+      show_hero_title: s?.show_hero_title ?? true,
+      show_hero_about: s?.show_hero_about ?? true,
+      show_footer_name: s?.show_footer_name ?? true,
       header_bg: s?.header_bg ?? null,
       header_fg: s?.header_fg ?? null,
       footer_bg: s?.footer_bg ?? null,
@@ -267,12 +271,12 @@ function StoreHeader() {
                 }}
               />
             )}
-            <span
+            {settings.show_header_name && <span
               className="font-display text-lg sm:text-xl truncate"
               style={{ color: "var(--sf-heading)" }}
             >
               {displayName}
-            </span>
+            </span>}
           </Link>
 
           {/* Desktop search */}
@@ -589,9 +593,9 @@ function StoreFooter() {
       }}
     >
       <div className="mx-auto max-w-7xl px-4 sm:px-6 text-center text-sm space-y-4" style={{ color: "var(--sf-footer-fg)" }}>
-        <div className="font-medium" style={{ color: "var(--sf-heading)" }}>
+        {settings.show_footer_name && <div className="font-medium" style={{ color: "var(--sf-heading)" }}>
           {lang === "ar" ? brand.name_ar || brand.name_en : brand.name_en}
-        </div>
+        </div>}
         {socials.length > 0 && (
           <nav className="flex flex-wrap justify-center gap-x-5 gap-y-2 text-xs tracking-[0.2em] uppercase">
             {socials.map((s, i) => (

@@ -123,16 +123,16 @@ function HeroBanner() {
 
       <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 h-full flex items-center min-h-[300px] sm:min-h-[55vh]">
         <div className="max-w-xl bg-white/85 backdrop-blur rounded-2xl p-6 sm:p-8 shadow-lg">
-          <h1
+          {settings.show_hero_title && <h1
             className="font-display text-3xl sm:text-5xl mb-3"
             style={{ color: "var(--sf-heading)" }}
           >
             {lang === "ar" ? brand.name_ar || brand.name_en : brand.name_en}
-          </h1>
-          <p className="text-sm sm:text-base text-neutral-700 mb-4">
+          </h1>}
+          {settings.show_hero_about && <p className="text-sm sm:text-base text-neutral-700 mb-4">
             {(lang === "ar" ? brand.about_ar : brand.about_en) ||
               t("مجموعة مختارة بعناية لك.", "A curated collection made for you.")}
-          </p>
+          </p>}
           <a
             href="#products"
             className="inline-flex items-center px-6 py-3 rounded-full font-semibold"
