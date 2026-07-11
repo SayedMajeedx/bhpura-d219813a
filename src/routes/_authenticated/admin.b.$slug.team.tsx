@@ -307,14 +307,14 @@ function TeamManagement() {
       ) : (
         <Card className="overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[640px] text-sm">
+            <table className="w-full text-sm lg:min-w-[640px]">
               <thead className="bg-secondary/50 text-xs uppercase tracking-wider text-muted-foreground">
                 <tr>
                   <th className="p-4 text-start">{isAr ? "الاسم" : "Name"}</th>
-                  <th className="p-4 text-start">{isAr ? "البريد الإلكتروني" : "Email"}</th>
+                  <th className="hidden p-4 text-start md:table-cell">{isAr ? "البريد الإلكتروني" : "Email"}</th>
                   <th className="p-4 text-start">{isAr ? "الدور" : "Role"}</th>
-                  <th className="p-4 text-start">{isAr ? "الحالة" : "Status"}</th>
-                  <th className="p-4 text-start">{isAr ? "تاريخ الإنشاء" : "Created"}</th>
+                  <th className="hidden p-4 text-start sm:table-cell">{isAr ? "الحالة" : "Status"}</th>
+                  <th className="hidden p-4 text-start lg:table-cell">{isAr ? "تاريخ الإنشاء" : "Created"}</th>
                   <th className="p-4 text-end">{isAr ? "إجراءات" : "Actions"}</th>
                 </tr>
               </thead>
@@ -322,7 +322,7 @@ function TeamManagement() {
                 {staff.map((member) => (
                   <tr key={member.id} className="border-t border-border">
                     <td className="p-4 font-medium">{member.name || member.email.split("@")[0]}</td>
-                    <td className="p-4 text-muted-foreground" dir="ltr">{member.email}</td>
+                    <td className="hidden p-4 text-muted-foreground md:table-cell" dir="ltr">{member.email}</td>
                     <td className="p-4">
                       <span
                         className={`inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full ${
@@ -380,7 +380,7 @@ function TeamManagement() {
                         )}
                       </span>
                     </td>
-                    <td className="p-4 text-muted-foreground">
+                    <td className="hidden p-4 text-muted-foreground lg:table-cell">
                       {new Date(member.created_at).toLocaleDateString(locale)}
                     </td>
                     <td className="p-4 text-end">

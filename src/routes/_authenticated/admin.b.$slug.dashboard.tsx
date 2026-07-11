@@ -146,6 +146,22 @@ function Dashboard() {
     <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto">
       <div className="mb-6 sm:mb-8">
         <h1 className="text-3xl sm:text-4xl font-display">{t("dashboard.title")}</h1>
+        <div className="mt-4 flex gap-2 overflow-x-auto pb-1">
+          <Link to="/admin/b/$slug/orders" params={{ slug }} className="inline-flex h-10 shrink-0 items-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground">
+            <ReceiptText className="me-2 h-4 w-4" />{lang === "ar" ? "الطلبات" : "Orders"}
+          </Link>
+          <Link to="/admin/b/$slug/inventory" params={{ slug }} className="inline-flex h-10 shrink-0 items-center rounded-md border border-input bg-background px-4 text-sm font-medium">
+            <Package className="me-2 h-4 w-4" />{lang === "ar" ? "المنتجات" : "Products"}
+          </Link>
+          <Link to="/admin/b/$slug/customers" params={{ slug }} className="inline-flex h-10 shrink-0 items-center rounded-md border border-input bg-background px-4 text-sm font-medium">
+            <Users className="me-2 h-4 w-4" />{lang === "ar" ? "العملاء" : "Customers"}
+          </Link>
+          {canViewFinancials && (
+            <Link to="/admin/b/$slug/expenses" params={{ slug }} className="inline-flex h-10 shrink-0 items-center rounded-md border border-input bg-background px-4 text-sm font-medium">
+              <Wallet className="me-2 h-4 w-4" />{lang === "ar" ? "المصروفات" : "Expenses"}
+            </Link>
+          )}
+        </div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 mb-6 sm:mb-8">

@@ -53,23 +53,23 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   // Build brand-prefixed nav items. If no active slug, links go to /dashboard (redirector).
   const nav = useMemo(() => {
-    const items: { to: string; params?: any; label: string; icon: typeof LayoutDashboard; adminOnly?: boolean }[] = [];
+    const items: { to: string; params?: any; label: string; icon: typeof LayoutDashboard; adminOnly?: boolean; section: string }[] = [];
     if (activeSlug) {
       items.push(
-        { to: "/admin/b/$slug/dashboard", params: { slug: activeSlug }, label: t("nav.dashboard"), icon: LayoutDashboard },
-        { to: "/admin/b/$slug/inventory", params: { slug: activeSlug }, label: t("nav.inventory"), icon: Package },
-        { to: "/admin/b/$slug/categories", params: { slug: activeSlug }, label: lang === "ar" ? "الأقسام" : "Categories", icon: Tags },
-        { to: "/admin/b/$slug/customers", params: { slug: activeSlug }, label: t("nav.customers"), icon: Users },
-        { to: "/admin/b/$slug/campaigns", params: { slug: activeSlug }, label: lang === "ar" ? "حملات الواتساب" : "WhatsApp Campaigns", icon: Megaphone },
-        { to: "/admin/b/$slug/orders", params: { slug: activeSlug }, label: t("nav.orders"), icon: ReceiptText },
-        { to: "/admin/b/$slug/expenses", params: { slug: activeSlug }, label: t("nav.expenses"), icon: Wallet, adminOnly: true },
+        { to: "/admin/b/$slug/dashboard", params: { slug: activeSlug }, label: t("nav.dashboard"), icon: LayoutDashboard, section: lang === "ar" ? "نظرة عامة" : "Overview" },
+        { to: "/admin/b/$slug/orders", params: { slug: activeSlug }, label: t("nav.orders"), icon: ReceiptText, section: lang === "ar" ? "المبيعات" : "Sales" },
+        { to: "/admin/b/$slug/customers", params: { slug: activeSlug }, label: t("nav.customers"), icon: Users, section: lang === "ar" ? "المبيعات" : "Sales" },
+        { to: "/admin/b/$slug/campaigns", params: { slug: activeSlug }, label: lang === "ar" ? "حملات الواتساب" : "WhatsApp Campaigns", icon: Megaphone, section: lang === "ar" ? "المبيعات" : "Sales" },
+        { to: "/admin/b/$slug/inventory", params: { slug: activeSlug }, label: t("nav.inventory"), icon: Package, section: lang === "ar" ? "الكتالوج" : "Catalog" },
+        { to: "/admin/b/$slug/categories", params: { slug: activeSlug }, label: lang === "ar" ? "الأقسام" : "Categories", icon: Tags, section: lang === "ar" ? "الكتالوج" : "Catalog" },
+        { to: "/admin/b/$slug/expenses", params: { slug: activeSlug }, label: t("nav.expenses"), icon: Wallet, adminOnly: true, section: lang === "ar" ? "المالية" : "Finance" },
       );
       if (isAdmin) {
-        items.push({ to: "/admin/b/$slug/team", params: { slug: activeSlug }, label: lang === "ar" ? "إدارة الموظفين" : "Team Management", icon: Shield });
-        items.push({ to: "/admin/b/$slug/integrations", params: { slug: activeSlug }, label: t("nav.integrations"), icon: Plug });
+        items.push({ to: "/admin/b/$slug/team", params: { slug: activeSlug }, label: lang === "ar" ? "إدارة الموظفين" : "Team Management", icon: Shield, section: lang === "ar" ? "الوصول" : "Access" });
+        items.push({ to: "/admin/b/$slug/integrations", params: { slug: activeSlug }, label: t("nav.integrations"), icon: Plug, section: lang === "ar" ? "واجهة المتجر" : "Storefront" });
       }
-      items.push({ to: "/admin/b/$slug/pages", params: { slug: activeSlug }, label: lang === "ar" ? "الصفحات والسياسات" : "Pages & Policies", icon: FileText });
-      items.push({ to: "/admin/b/$slug/settings", params: { slug: activeSlug }, label: t("nav.settings"), icon: Settings });
+      items.push({ to: "/admin/b/$slug/pages", params: { slug: activeSlug }, label: lang === "ar" ? "الصفحات والسياسات" : "Pages & Policies", icon: FileText, section: lang === "ar" ? "واجهة المتجر" : "Storefront" });
+      items.push({ to: "/admin/b/$slug/settings", params: { slug: activeSlug }, label: t("nav.settings"), icon: Settings, section: lang === "ar" ? "واجهة المتجر" : "Storefront" });
 
     }
     return items.filter((item) => !item.adminOnly || isAdmin);
@@ -81,6 +81,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   };
 
   const brandLabel = profile?.brand?.[lang === "ar" ? "name_ar" : "name_en"] ?? profile?.brand?.name_en ?? t("app.title");
+  const currentPageLabel = nav.find((item) => pathname.startsWith(item.to.replace("$slug", item.params?.slug ?? "")))?.label;
 
   const SidebarContent = (
     <>
@@ -140,12 +141,18 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       )}
 
       <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
-        {nav.map((item) => {
+        {nav.map((item, index) => {
           const active = pathname.startsWith(item.to.replace("$slug", item.params?.slug ?? ""));
           const Icon = item.icon;
+          const showSection = index === 0 || nav[index - 1]?.section !== item.section;
           return (
-            <Link
-              key={item.to}
+            <div key={item.to}>
+              {showSection && (
+                <div className="px-3 pb-1 pt-3 text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                  {item.section}
+                </div>
+              )}
+              <Link
               to={item.to as any}
               params={item.params}
               className={cn(
@@ -154,10 +161,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   ? "bg-sidebar-primary text-sidebar-primary-foreground"
                   : "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
               )}
-            >
-              <Icon className="h-4 w-4" />
-              {item.label}
-            </Link>
+              >
+                <Icon className="h-4 w-4" />
+                {item.label}
+              </Link>
+            </div>
           );
         })}
       </nav>
@@ -225,7 +233,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             {SidebarContent}
           </SheetContent>
         </Sheet>
-        <h1 className="text-lg font-display text-primary">{brandLabel}</h1>
+        <div className="min-w-0 text-center leading-tight">
+          <h1 className="truncate text-base font-display text-primary">{brandLabel}</h1>
+          {currentPageLabel && <div className="truncate text-[10px] text-muted-foreground">{currentPageLabel}</div>}
+        </div>
         <div className="w-9" />
       </div>
 

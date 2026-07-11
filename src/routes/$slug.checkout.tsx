@@ -210,7 +210,7 @@ function Checkout() {
   };
 
   return (
-    <div className="mx-auto max-w-4xl px-4 sm:px-6 py-8 grid md:grid-cols-[1fr_360px] gap-6">
+    <div className="mx-auto max-w-4xl px-4 sm:px-6 pt-8 pb-28 md:py-8 grid md:grid-cols-[1fr_360px] gap-6">
       <div className="space-y-4">
         {!session && (
           <Card className="p-4 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 border-primary/30 bg-primary/5">
@@ -426,10 +426,18 @@ function Checkout() {
           <h2 className="font-display text-xl">{t("ملخّص الطلب", "Order summary")}</h2>
           <div className="space-y-2 max-h-72 overflow-auto">
             {cart.map((c) => (
-              <div key={c.variant_id} className="flex justify-between text-sm">
-                <span className="truncate me-2">
-                  {c.name} × {c.qty}
-                </span>
+              <div key={c.cart_line_id} className="flex justify-between gap-3 text-sm">
+                <div className="min-w-0 me-2">
+                  <div className="truncate">{c.name} × {c.qty}</div>
+                  {[c.size, c.color, c.fabric].filter(Boolean).length > 0 && (
+                    <div className="truncate text-xs text-muted-foreground">{[c.size, c.color, c.fabric].filter(Boolean).join(" · ")}</div>
+                  )}
+                  {(c.custom_fields ?? []).map((field) => (
+                    <div key={field.key} className="text-xs text-muted-foreground break-words">
+                      {lang === "ar" ? (field.label_ar || field.label_en || field.key) : (field.label_en || field.label_ar || field.key)}: {field.value}
+                    </div>
+                  ))}
+                </div>
                 <span>{formatPrice(c.price * c.qty, currency, lang)}</span>
               </div>
             ))}
@@ -461,6 +469,29 @@ function Checkout() {
             {t("تأكيد الطلب", "Place order")}
           </Button>
         </Card>
+      </div>
+
+      <div className="fixed inset-x-0 bottom-0 z-40 border-t bg-background/95 px-4 py-3 shadow-[0_-6px_20px_-12px_rgba(0,0,0,0.35)] backdrop-blur md:hidden">
+        <div className="mx-auto flex max-w-lg items-center gap-3">
+          <div className="min-w-0 flex-1">
+            <div className="text-xs text-muted-foreground">{t("الإجمالي", "Total")}</div>
+            <div className="truncate text-lg font-semibold" style={{ color: settings.primary_color }}>
+              {formatPrice(grandTotal, currency, lang)}
+            </div>
+          </div>
+          <Button
+            className="h-12 min-w-36 shrink-0"
+            style={{
+              backgroundColor: settings.btn_checkout_bg ?? settings.primary_color,
+              color: settings.btn_checkout_fg ?? "#fff",
+            }}
+            disabled={submitting || availableMethods.length === 0 || fulfillmentOptions.length === 0}
+            onClick={submit}
+          >
+            {submitting && <Loader2 className="h-4 w-4 me-2 animate-spin" />}
+            {t("تأكيد الطلب", "Place order")}
+          </Button>
+        </div>
       </div>
     </div>
   );

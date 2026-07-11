@@ -10,6 +10,8 @@ import { useT } from "@/lib/i18n";
 import { resolvePaymentStatus, PAYMENT_BADGE_CLASSES } from "@/lib/payment-status";
 import { useBrand } from "@/lib/brand-context";
 import { useRealtimeInvalidate } from "@/hooks/use-realtime-invalidate";
+import { useState } from "react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 
 export const Route = createFileRoute("/_authenticated/admin/b/$slug/orders/")({
   component: OrdersList,
@@ -44,6 +46,7 @@ function OrdersList() {
   const { slug } = Route.useParams();
   const brand = useBrand();
   const brandId = brand.id;
+  const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
 
   useRealtimeInvalidate(
     [
@@ -85,10 +88,9 @@ function OrdersList() {
   };
 
   const del = async (id: string) => {
-    if (!confirm(t("orders.deleteConfirm"))) return;
     const { error } = await supabase.from("orders").delete().eq("id", id);
     if (error) toast.error(error.message);
-    else { toast.success(t("common.delete")); qc.invalidateQueries({ queryKey: ["orders"] }); }
+    else { toast.success(t("common.delete")); setDeleteTarget(null); qc.invalidateQueries({ queryKey: ["orders"] }); }
   };
 
   return (
@@ -107,7 +109,32 @@ function OrdersList() {
           <p className="text-muted-foreground">{t("orders.none")}</p>
         </Card>
       ) : (
-        <Card className="overflow-hidden">
+        <>
+          <div className="space-y-3 sm:hidden">
+            {data!.map((o) => {
+              const badge = resolvePaymentStatus((o as any).payment_status, o.status, Number(o.total), Number((o as any).advance_paid ?? 0));
+              return (
+                <Card key={o.id} className="p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0 flex-1">
+                      <Link to="/admin/b/$slug/orders/$id" params={{ slug, id: o.id }} className="text-lg font-semibold text-primary">#{o.invoice_number}</Link>
+                      <div className="mt-1 text-xs text-muted-foreground">{new Date(o.order_date).toLocaleDateString()} · {o.customers?.name ?? t("orders.noCustomer")}</div>
+                      <div className="mt-3 flex flex-wrap items-center gap-2">
+                        <span className="rounded bg-secondary px-2 py-1 text-[10px] uppercase tracking-wider">{t(`status.${o.status}`)}</span>
+                        <span className={`rounded-full border px-2 py-0.5 text-[10px] uppercase tracking-wider ${PAYMENT_BADGE_CLASSES[badge]}`}>{t(`payStatus.${badge}`)}</span>
+                      </div>
+                      <div className="mt-3 font-semibold">{formatMoney(Number(o.total), o.currency)}</div>
+                    </div>
+                    <div className="flex shrink-0 flex-col gap-1">
+                      <Button className="h-11 w-11 touch-manipulation" variant="ghost" size="icon" aria-label={t("orders.copyLink")} onClick={() => copyInvoiceLink(o.public_invoice_token, t)}><LinkIcon className="h-5 w-5" /></Button>
+                      <Button className="h-11 w-11 touch-manipulation text-destructive" variant="ghost" size="icon" aria-label={t("common.delete")} onClick={() => setDeleteTarget(o.id)}><Trash2 className="h-5 w-5" /></Button>
+                    </div>
+                  </div>
+                </Card>
+              );
+            })}
+          </div>
+          <Card className="hidden overflow-hidden sm:block">
           <div className="overflow-x-auto">
           <table className="w-full min-w-[720px] text-sm">
             <thead className="bg-secondary/50">
@@ -154,15 +181,22 @@ function OrdersList() {
                     >
                       <LinkIcon className="h-4 w-4" />
                     </Button>
-                    <Button variant="ghost" size="icon" onClick={() => del(o.id)}><Trash2 className="h-4 w-4" /></Button>
+                    <Button variant="ghost" size="icon" onClick={() => setDeleteTarget(o.id)}><Trash2 className="h-4 w-4" /></Button>
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
           </div>
-        </Card>
+          </Card>
+        </>
       )}
+      <AlertDialog open={deleteTarget !== null} onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}>
+        <AlertDialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-lg">
+          <AlertDialogHeader><AlertDialogTitle>{t("common.delete")}</AlertDialogTitle><AlertDialogDescription>{t("orders.deleteConfirm")}</AlertDialogDescription></AlertDialogHeader>
+          <AlertDialogFooter><AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel><AlertDialogAction className="bg-destructive text-destructive-foreground hover:bg-destructive/90" onClick={() => { if (deleteTarget) void del(deleteTarget); }}>{t("common.delete")}</AlertDialogAction></AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

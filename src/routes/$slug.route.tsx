@@ -357,7 +357,7 @@ function CartDrawer({ children }: { children: React.ReactNode }) {
             cart.map((item) => {
               const displayName = pickName(lang, { name: item.name, name_ar: item.name_ar, name_en: item.name_en });
               return (
-              <div key={item.variant_id} className="flex gap-3 border rounded-lg p-2 items-center">
+              <div key={item.cart_line_id} className="flex gap-3 border rounded-lg p-2 items-center">
                 {item.image ? (
                   <img src={item.image} alt={displayName} className="h-16 w-16 rounded object-cover shrink-0" />
                 ) : (
@@ -366,8 +366,19 @@ function CartDrawer({ children }: { children: React.ReactNode }) {
                 <div className="flex-1 min-w-0">
                   <div className="font-medium truncate">{displayName}</div>
                   <div className="text-xs text-muted-foreground">
-                    {[item.size, item.color].filter(Boolean).join(" · ")}
+                    {[item.size, item.color, item.fabric].filter(Boolean).join(" · ")}
                   </div>
+                  {(item.custom_fields ?? []).length > 0 && (
+                    <div className="mt-1 space-y-0.5 text-xs text-muted-foreground">
+                      {item.custom_fields!.map((field) => (
+                        <div key={field.key} className="break-words">
+                          <span className="font-medium text-foreground/80">
+                            {lang === "ar" ? (field.label_ar || field.label_en || field.key) : (field.label_en || field.label_ar || field.key)}:
+                          </span>{" "}{field.value}
+                        </div>
+                      ))}
+                    </div>
+                  )}
                   <div className="text-sm font-semibold mt-1" style={{ color: settings.primary_color }}>
                     {formatPrice(item.price * item.qty, currency, lang)}
                   </div>
@@ -376,7 +387,7 @@ function CartDrawer({ children }: { children: React.ReactNode }) {
                   <div className="flex items-center border rounded">
                     <button
                       className="px-2 py-1"
-                      onClick={() => updateQty(item.variant_id, item.qty - 1)}
+                      onClick={() => updateQty(item.cart_line_id, item.qty - 1)}
                       aria-label="decrease"
                     >
                       <Minus className="h-3 w-3" />
@@ -385,7 +396,7 @@ function CartDrawer({ children }: { children: React.ReactNode }) {
                     <button
                       className="px-2 py-1 disabled:opacity-40"
                       disabled={item.qty >= item.max_stock}
-                      onClick={() => updateQty(item.variant_id, item.qty + 1)}
+                      onClick={() => updateQty(item.cart_line_id, item.qty + 1)}
                       aria-label="increase"
                     >
                       <Plus className="h-3 w-3" />
@@ -393,7 +404,7 @@ function CartDrawer({ children }: { children: React.ReactNode }) {
                   </div>
                   <button
                     className="text-xs text-red-600 flex items-center gap-1"
-                    onClick={() => removeFromCart(item.variant_id)}
+                    onClick={() => removeFromCart(item.cart_line_id)}
                   >
                     <Trash2 className="h-3 w-3" />
                     {t("حذف", "Remove")}

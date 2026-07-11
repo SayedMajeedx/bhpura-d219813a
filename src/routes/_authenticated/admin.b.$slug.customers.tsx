@@ -119,7 +119,31 @@ function CustomersPage() {
           <p className="text-muted-foreground">{t("customers.none")}</p>
         </Card>
       ) : (
-        <Card className="overflow-hidden">
+        <>
+          <div className="space-y-3 sm:hidden">
+            {data!.map((c) => {
+              const def = defaultByCustomer.get(c.id);
+              const address = def ? (formatAddressLine(def, lang) || regionLabel(def.region, lang)) : (regionLabel(c.region, lang) || c.city);
+              return (
+                <Card key={c.id} className="p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0 flex-1">
+                      <div className="font-semibold">{c.name}</div>
+                      {c.phone && <div className="mt-1 text-sm text-muted-foreground" dir="ltr">{c.phone}</div>}
+                      {c.email && <div className="break-all text-sm text-muted-foreground">{c.email}</div>}
+                      {address && <div className="mt-2 text-xs text-muted-foreground">{address}</div>}
+                      {c.notes && <div className="mt-2 text-xs text-muted-foreground">{c.notes}</div>}
+                    </div>
+                    <div className="flex shrink-0 flex-col gap-1">
+                      <Button className="h-11 w-11 touch-manipulation" variant="ghost" size="icon" onClick={() => { setEditing(c); setOpen(true); }}><Pencil className="h-5 w-5" /></Button>
+                      <Button className="h-11 w-11 touch-manipulation text-destructive" variant="ghost" size="icon" onClick={() => del(c.id)}><Trash2 className="h-5 w-5" /></Button>
+                    </div>
+                  </div>
+                </Card>
+              );
+            })}
+          </div>
+          <Card className="hidden overflow-hidden sm:block">
           <div className="overflow-x-auto">
           <table className="w-full min-w-[560px] text-sm">
             <thead className="bg-secondary/50">
@@ -154,7 +178,8 @@ function CustomersPage() {
             </tbody>
           </table>
           </div>
-        </Card>
+          </Card>
+        </>
       )}
     </div>
   );

@@ -189,6 +189,7 @@ function ProductDetail() {
       }))
       .filter((v) => v.value.length > 0);
     addToCart({
+      cart_line_id: "",
       variant_id: variant!.id,
       product_id: product.id,
       name: displayName,

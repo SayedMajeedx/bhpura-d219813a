@@ -639,7 +639,55 @@ function VariantList({ productId, productName, businessName, variants, onChanged
 
   return (
     <div className="mt-4 border-t border-border pt-4">
-      <div className="overflow-x-auto">
+      <div className="space-y-3 md:hidden">
+        {variants.map((v) => {
+          const margin = v.selling_price > 0 ? ((v.selling_price - v.cost_price) / v.selling_price) * 100 : 0;
+          return (
+            <div key={v.id} className="rounded-lg border border-border p-3 space-y-3">
+              <div className="flex items-center justify-between gap-2">
+                <div className="font-medium">{[v.size, v.color, v.fabric].filter(Boolean).join(" · ") || (isAr ? "خيار المنتج" : "Product variant")}</div>
+                <Button className="h-11 w-11 touch-manipulation text-destructive" variant="ghost" size="icon" onClick={() => del(v.id)}><Trash2 className="h-4 w-4" /></Button>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div><Label className="text-xs">{t("inventory.size")}</Label><Input defaultValue={v.size ?? ""} onBlur={(e) => update(v, { size: e.target.value || null })} /></div>
+                <div><Label className="text-xs">{isAr ? "الوحدة" : "Unit"}</Label><select className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm" defaultValue={v.size_unit ?? ""} onChange={(e) => update(v, { size_unit: e.target.value || null })}>{SIZE_UNITS.map((u) => <option key={u} value={u}>{u || "—"}</option>)}</select></div>
+                <div><Label className="text-xs">{t("inventory.color")}</Label><Input defaultValue={v.color ?? ""} onBlur={(e) => update(v, { color: e.target.value || null })} /></div>
+                <div><Label className="text-xs">{t("inventory.fabric")}</Label><Input defaultValue={v.fabric ?? ""} onBlur={(e) => update(v, { fabric: e.target.value || null })} /></div>
+                <div><Label className="text-xs">{t("inventory.sku")}</Label><Input defaultValue={v.sku ?? ""} onBlur={(e) => update(v, { sku: e.target.value || null })} /></div>
+                <div><Label className="text-xs">{barcodeLabel}</Label><Input defaultValue={v.barcode ?? ""} onBlur={(e) => update(v, { barcode: e.target.value.trim() || null })} /></div>
+                {canViewFinancials && <div><Label className="text-xs">{t("inventory.cost")}</Label><Input type="number" step="0.01" defaultValue={v.cost_price} onBlur={(e) => update(v, { cost_price: Number(e.target.value) })} /></div>}
+                <div><Label className="text-xs">{t("inventory.price")}</Label><Input type="number" step="0.01" defaultValue={v.selling_price} onBlur={(e) => update(v, { selling_price: Number(e.target.value) })} /></div>
+                <div><Label className="text-xs">{mainLabel}</Label><Input type="number" defaultValue={v.stock_main ?? 0} onBlur={(e) => update(v, { stock_main: Number(e.target.value) })} /></div>
+                <div><Label className="text-xs">{incLabel}</Label><Input type="number" defaultValue={v.stock_incubator ?? 0} onBlur={(e) => update(v, { stock_incubator: Number(e.target.value) })} /></div>
+              </div>
+              <div className="flex items-center justify-between rounded-md bg-secondary/50 px-3 py-2 text-sm">
+                <span>{t("inventory.stock")}: <b>{(v.stock_main ?? 0) + (v.stock_incubator ?? 0)}</b></span>
+                {canViewFinancials && <span className="text-primary">{t("inventory.margin")}: {margin.toFixed(0)}%</span>}
+              </div>
+            </div>
+          );
+        })}
+        {adding && (
+          <div className="rounded-lg border border-primary/30 bg-secondary/30 p-3 space-y-3">
+            <div className="font-medium">{t("inventory.addVariant")}</div>
+            <div className="grid grid-cols-2 gap-3">
+              <div><Label className="text-xs">{t("inventory.size")}</Label><Input value={row.size} onChange={(e) => setRow({ ...row, size: e.target.value })} /></div>
+              <div><Label className="text-xs">{isAr ? "الوحدة" : "Unit"}</Label><select className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm" value={row.size_unit} onChange={(e) => setRow({ ...row, size_unit: e.target.value })}>{SIZE_UNITS.map((u) => <option key={u} value={u}>{u || "—"}</option>)}</select></div>
+              <div><Label className="text-xs">{t("inventory.color")}</Label><Input value={row.color} onChange={(e) => setRow({ ...row, color: e.target.value })} /></div>
+              <div><Label className="text-xs">{t("inventory.fabric")}</Label><Input value={row.fabric} onChange={(e) => setRow({ ...row, fabric: e.target.value })} /></div>
+              <div><Label className="text-xs">{t("inventory.sku")}</Label><Input value={row.sku} onChange={(e) => setRow({ ...row, sku: e.target.value })} /></div>
+              <div><Label className="text-xs">{barcodeLabel}</Label><Input value={row.barcode} onChange={(e) => setRow({ ...row, barcode: e.target.value })} /></div>
+              {canViewFinancials && <div><Label className="text-xs">{t("inventory.cost")}</Label><Input type="number" step="0.01" value={row.cost_price} onChange={(e) => setRow({ ...row, cost_price: e.target.value })} /></div>}
+              <div><Label className="text-xs">{t("inventory.price")}</Label><Input type="number" step="0.01" value={row.selling_price} onChange={(e) => setRow({ ...row, selling_price: e.target.value })} /></div>
+              <div><Label className="text-xs">{mainLabel}</Label><Input type="number" value={row.stock_main} onChange={(e) => setRow({ ...row, stock_main: e.target.value })} /></div>
+              <div><Label className="text-xs">{incLabel}</Label><Input type="number" value={row.stock_incubator} onChange={(e) => setRow({ ...row, stock_incubator: e.target.value })} /></div>
+            </div>
+            <div className="flex justify-end gap-2"><Button variant="ghost" onClick={() => setAdding(false)}>{t("common.cancel")}</Button><Button onClick={add}>{t("common.save")}</Button></div>
+          </div>
+        )}
+      </div>
+
+      <div className="hidden overflow-x-auto md:block">
         <table className="w-full min-w-[900px] text-sm">
           <thead>
             <tr className="text-start text-xs uppercase tracking-wider text-muted-foreground">

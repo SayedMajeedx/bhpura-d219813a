@@ -67,6 +67,7 @@ export type CustomFieldValue = {
 };
 
 export type CartItem = {
+  cart_line_id: string;
   variant_id: string;
   product_id: string;
   name: string;
@@ -109,8 +110,8 @@ type StoreCtx = {
   t: (ar: string, en: string) => string;
   cart: CartItem[];
   addToCart: (item: CartItem) => void;
-  removeFromCart: (variant_id: string) => void;
-  updateQty: (variant_id: string, qty: number) => void;
+  removeFromCart: (cart_line_id: string) => void;
+  updateQty: (cart_line_id: string, qty: number) => void;
   clearCart: () => void;
   cartCount: number;
   cartTotal: number;
@@ -120,6 +121,19 @@ type StoreCtx = {
 };
 
 const Ctx = createContext<StoreCtx | null>(null);
+
+function cartLineId(item: Pick<CartItem, "variant_id" | "size" | "color" | "fabric" | "custom_fields">): string {
+  const fields = [...(item.custom_fields ?? [])]
+    .map((field) => ({ key: field.key, value: field.value }))
+    .sort((a, b) => a.key.localeCompare(b.key));
+  return JSON.stringify({
+    variant: item.variant_id,
+    size: item.size ?? "",
+    color: item.color ?? "",
+    fabric: item.fabric ?? "",
+    fields,
+  });
+}
 
 export function StorefrontProvider({
   brand,
@@ -142,7 +156,13 @@ export function StorefrontProvider({
       const l = localStorage.getItem(langKey);
       if (l === "en" || l === "ar") setLangState(l);
       const c = localStorage.getItem(cartKey);
-      if (c) setCart(JSON.parse(c));
+      if (c) {
+        const stored = JSON.parse(c) as Array<Partial<CartItem> & { variant_id: string }>;
+        setCart(stored.map((item) => ({
+          ...item,
+          cart_line_id: item.cart_line_id || cartLineId(item as CartItem),
+        })) as CartItem[]);
+      }
     } catch {}
   }, [cartKey, langKey]);
 
@@ -179,28 +199,42 @@ export function StorefrontProvider({
 
   const addToCart = useCallback((item: CartItem) => {
     setCart((prev) => {
-      const existing = prev.find((c) => c.variant_id === item.variant_id);
+      const lineId = cartLineId(item);
+      const existing = prev.find((c) => c.cart_line_id === lineId);
+      const usedByOtherConfigurations = prev
+        .filter((c) => c.variant_id === item.variant_id && c.cart_line_id !== lineId)
+        .reduce((sum, c) => sum + c.qty, 0);
+      const availableForLine = Math.max(0, item.max_stock - usedByOtherConfigurations);
       if (existing) {
         return prev.map((c) =>
-          c.variant_id === item.variant_id
-            ? { ...c, qty: Math.min(c.max_stock, c.qty + item.qty) }
+          c.cart_line_id === lineId
+            ? { ...c, qty: Math.min(availableForLine, c.qty + item.qty) }
             : c,
         );
       }
-      return [...prev, { ...item, qty: Math.min(item.qty, item.max_stock) }];
+      if (availableForLine <= 0) return prev;
+      return [...prev, { ...item, cart_line_id: lineId, qty: Math.min(item.qty, availableForLine) }];
     });
   }, []);
 
-  const removeFromCart = useCallback((variant_id: string) => {
-    setCart((prev) => prev.filter((c) => c.variant_id !== variant_id));
+  const removeFromCart = useCallback((cart_line_id: string) => {
+    setCart((prev) => prev.filter((c) => c.cart_line_id !== cart_line_id));
   }, []);
 
-  const updateQty = useCallback((variant_id: string, qty: number) => {
-    setCart((prev) =>
-      prev
-        .map((c) => (c.variant_id === variant_id ? { ...c, qty: Math.min(c.max_stock, Math.max(1, qty)) } : c))
-        .filter((c) => c.qty > 0),
-    );
+  const updateQty = useCallback((cart_line_id: string, qty: number) => {
+    setCart((prev) => {
+      const target = prev.find((c) => c.cart_line_id === cart_line_id);
+      if (!target) return prev;
+      const usedByOthers = prev
+        .filter((c) => c.variant_id === target.variant_id && c.cart_line_id !== cart_line_id)
+        .reduce((sum, c) => sum + c.qty, 0);
+      const availableForLine = Math.max(1, target.max_stock - usedByOthers);
+      return prev.map((c) =>
+        c.cart_line_id === cart_line_id
+          ? { ...c, qty: Math.min(availableForLine, Math.max(1, qty)) }
+          : c,
+      );
+    });
   }, []);
 
   const clearCart = useCallback(() => setCart([]), []);

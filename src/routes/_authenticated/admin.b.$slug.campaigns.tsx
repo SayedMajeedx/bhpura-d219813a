@@ -350,7 +350,28 @@ function CampaignsPage() {
             {isAr ? "لا يوجد عملاء." : "No customers found."}
           </div>
         ) : (
-          <div className="overflow-x-auto">
+          <>
+          <div className="space-y-3 p-3 sm:hidden">
+            {filtered.map((c) => {
+              const isSent = !!sent[c.id];
+              const orderCount = ordersQ.data?.[c.id] ?? 0;
+              return (
+                <div key={c.id} className={`rounded-lg border p-3 ${isSent ? "bg-emerald-500/10" : "bg-background"}`}>
+                  <div className="font-medium">{c.name}</div>
+                  <div className="mt-1 text-sm text-muted-foreground" dir="ltr">{c.phone || "—"}</div>
+                  <div className="mt-1 text-xs text-muted-foreground">{isAr ? "إجمالي الطلبات" : "Total orders"}: {orderCount}</div>
+                  <div className="mt-3">
+                    {isSent ? (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 px-2 py-1 text-xs font-medium text-emerald-700"><Check className="h-3 w-3" />{isAr ? "تم الإرسال" : "Sent"}</span>
+                    ) : (
+                      <Button className="w-full" size="sm" onClick={() => send(c)} disabled={!c.phone}><MessageCircle className="me-2 h-4 w-4" />{isAr ? "إرسال عبر الواتساب" : "Send via WhatsApp"}</Button>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          <div className="hidden overflow-x-auto sm:block">
             <table className="w-full min-w-[560px] text-sm">
               <thead className="bg-secondary/50">
                 <tr>
@@ -396,6 +417,7 @@ function CampaignsPage() {
               </tbody>
             </table>
           </div>
+          </>
         )}
       </Card>
 

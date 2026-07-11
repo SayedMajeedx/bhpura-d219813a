@@ -80,10 +80,7 @@ function StoreHome() {
   const filtered = useMemo(() => {
     const list = products ?? [];
     if (!activeCat) return list;
-    const match = list.filter((p) => p.category === activeCat);
-    // Fallback: if the selected category filters to zero (e.g. legacy category name mismatch),
-    // show the full list rather than a misleading "no products" screen.
-    return match.length > 0 ? match : list;
+    return list.filter((p) => p.category === activeCat);
   }, [products, activeCat]);
 
   return (
@@ -96,7 +93,12 @@ function StoreHome() {
           activeCat={activeCat}
           onSelect={setActiveCat}
         />
-        <ProductGrid products={filtered} loading={isLoading} />
+        <ProductGrid
+          products={filtered}
+          loading={isLoading}
+          categoryEmpty={activeCat !== null}
+          onViewAll={() => setActiveCat(null)}
+        />
       </section>
     </div>
   );
@@ -107,10 +109,7 @@ function HeroBanner() {
   const media = brand.hero_media && brand.hero_media.length > 0 ? brand.hero_media : null;
 
   return (
-    <section
-      className="relative w-full overflow-hidden"
-      style={{ minHeight: "clamp(320px, 55vh, 640px)" }}
-    >
+    <section className="relative w-full overflow-hidden min-h-[300px] sm:min-h-[55vh] sm:max-h-[640px]">
       {media ? (
         <HeroCarousel items={media} />
       ) : (
@@ -122,7 +121,7 @@ function HeroBanner() {
         />
       )}
 
-      <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 h-full flex items-center min-h-[320px] sm:min-h-[55vh]">
+      <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 h-full flex items-center min-h-[300px] sm:min-h-[55vh]">
         <div className="max-w-xl bg-white/85 backdrop-blur rounded-2xl p-6 sm:p-8 shadow-lg">
           <h1
             className="font-display text-3xl sm:text-5xl mb-3"
@@ -250,7 +249,7 @@ function Categories({
   );
 }
 
-function ProductGrid({ products, loading }: { products: ProductRow[]; loading: boolean }) {
+function ProductGrid({ products, loading, categoryEmpty, onViewAll }: { products: ProductRow[]; loading: boolean; categoryEmpty: boolean; onViewAll: () => void }) {
   const { t } = useStorefront();
   if (loading) {
     return (
@@ -268,7 +267,14 @@ function ProductGrid({ products, loading }: { products: ProductRow[]; loading: b
   if (products.length === 0) {
     return (
       <Card id="products" className="p-8 sm:p-12 text-center text-muted-foreground">
-        {t("لا توجد منتجات بعد.", "No products yet.")}
+        <p>{categoryEmpty
+          ? t("لا توجد منتجات متاحة في هذا القسم حالياً.", "No products are currently available in this category.")
+          : t("لا توجد منتجات بعد.", "No products yet.")}</p>
+        {categoryEmpty && (
+          <button type="button" onClick={onViewAll} className="mt-4 text-sm font-medium underline underline-offset-4" style={{ color: "var(--sf-link)" }}>
+            {t("عرض كل المنتجات", "View all products")}
+          </button>
+        )}
       </Card>
     );
   }
