@@ -269,6 +269,9 @@ export type Database = {
           storefront_font_en: string
           storefront_font_ar_url: string | null
           storefront_font_en_url: string | null
+          storefront_accent_color: string | null
+          storefront_background_color: string | null
+          storefront_text_color: string | null
           hero_title_ar: string | null
           hero_title_en: string | null
           hero_title_align: string
@@ -339,6 +342,9 @@ export type Database = {
           storefront_font_en?: string
           storefront_font_ar_url?: string | null
           storefront_font_en_url?: string | null
+          storefront_accent_color?: string | null
+          storefront_background_color?: string | null
+          storefront_text_color?: string | null
           hero_title_ar?: string | null
           hero_title_en?: string | null
           hero_title_align?: string
@@ -409,6 +415,9 @@ export type Database = {
           storefront_font_en?: string
           storefront_font_ar_url?: string | null
           storefront_font_en_url?: string | null
+          storefront_accent_color?: string | null
+          storefront_background_color?: string | null
+          storefront_text_color?: string | null
           hero_title_ar?: string | null
           hero_title_en?: string | null
           hero_title_align?: string

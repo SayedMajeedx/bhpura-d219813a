@@ -23,6 +23,7 @@ export type PublicSettings = {
   favicon_url: string | null;
   currency: string;
   primary_color: string;
+  storefront_accent_color: string;
   text_color: string;
   background_color: string;
   cod_enabled: boolean;

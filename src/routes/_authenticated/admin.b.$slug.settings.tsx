@@ -675,6 +675,9 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
     hero_title_size: number;
     hero_title_color: string | null;
     hero_title_align: "start" | "center" | "end";
+    storefront_accent_color: string | null;
+    storefront_background_color: string | null;
+    storefront_text_color: string | null;
     header_bg: string | null;
     header_fg: string | null;
     footer_bg: string | null;
@@ -693,7 +696,7 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
     queryKey: ["business-settings-theme", brandId],
     queryFn: async () => {
       const { data, error } = await supabase.from("business_settings")
-        .select("logo_size, logo_align, show_header_name, show_hero_title, show_hero_about, show_footer_name, storefront_font_en, storefront_font_ar, storefront_font_en_url, storefront_font_ar_url, hero_title_en, hero_title_ar, hero_title_size, hero_title_color, hero_title_align, header_bg, header_fg, footer_bg, footer_fg, heading_color, link_color, btn_primary_bg, btn_primary_fg, btn_secondary_bg, btn_secondary_fg, btn_checkout_bg, btn_checkout_fg")
+        .select("logo_size, logo_align, show_header_name, show_hero_title, show_hero_about, show_footer_name, storefront_font_en, storefront_font_ar, storefront_font_en_url, storefront_font_ar_url, hero_title_en, hero_title_ar, hero_title_size, hero_title_color, hero_title_align, storefront_accent_color, storefront_background_color, storefront_text_color, header_bg, header_fg, footer_bg, footer_fg, heading_color, link_color, btn_primary_bg, btn_primary_fg, btn_secondary_bg, btn_secondary_fg, btn_checkout_bg, btn_checkout_fg")
         .eq("brand_id", brandId).maybeSingle();
       if (error) throw error;
       return data as any;
@@ -717,6 +720,9 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
       hero_title_size: Number(data.hero_title_size ?? 48),
       hero_title_color: data.hero_title_color ?? null,
       hero_title_align: data.hero_title_align ?? "start",
+      storefront_accent_color: data.storefront_accent_color ?? null,
+      storefront_background_color: data.storefront_background_color ?? null,
+      storefront_text_color: data.storefront_text_color ?? null,
       header_bg: data.header_bg ?? null,
       header_fg: data.header_fg ?? null,
       footer_bg: data.footer_bg ?? null,
@@ -833,6 +839,18 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
               ))}
             </div>
           </div>
+        </div>
+      </div>
+
+      <div className="space-y-4 rounded-md border border-border p-4">
+        <div>
+          <h3 className="font-medium text-sm">{isAr ? "ألوان المتجر" : "Storefront colors"}</h3>
+          <p className="mt-1 text-xs text-muted-foreground">{isAr ? "هذه الألوان خاصة بالمتجر ولا تؤثر على الفواتير." : "These colors apply only to the storefront and never affect invoices."}</p>
+        </div>
+        <ColorField label={isAr ? "لون المتجر الأساسي" : "Storefront accent color"} value={state.storefront_accent_color} onChange={(value) => setState({ ...state, storefront_accent_color: value })} />
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <ColorField label={isAr ? "خلفية المتجر" : "Storefront background"} value={state.storefront_background_color} onChange={(value) => setState({ ...state, storefront_background_color: value })} />
+          <ColorField label={isAr ? "نص المتجر" : "Storefront text"} value={state.storefront_text_color} onChange={(value) => setState({ ...state, storefront_text_color: value })} />
         </div>
       </div>
 
