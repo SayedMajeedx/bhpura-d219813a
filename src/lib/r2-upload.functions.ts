@@ -31,10 +31,9 @@ export const createR2UploadUrl = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((raw: unknown) => Input.parse(raw))
   .handler(async ({ data, context }) => {
-    const rpc = context.supabase.rpc as any;
     const [{ data: canAccess }, { data: isAdmin }] = await Promise.all([
-      rpc("can_access_brand", { _brand_id: data.brandId }),
-      rpc("is_admin"),
+      context.supabase.rpc("can_access_brand", { _brand_id: data.brandId }),
+      context.supabase.rpc("is_admin"),
     ]);
     if (!canAccess || !isAdmin) throw new Error("FORBIDDEN");
 
