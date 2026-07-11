@@ -679,13 +679,26 @@ function VariantList({ productId, productName, businessName, variants, onChanged
   const [row, setRow] = useState(empty);
 
   const genBarcode = () => {
-    const rnd = Math.random().toString(36).slice(2, 8).toUpperCase();
-    return `PL-${Date.now().toString(36).toUpperCase().slice(-4)}${rnd}`;
+    const random = new Uint32Array(2);
+    crypto.getRandomValues(random);
+    const time = Date.now().toString().slice(-8);
+    const entropy = `${random[0] % 10000}`.padStart(4, "0");
+    return `BQ${time}${entropy}`;
+  };
+
+  const normalizeBarcode = (value: unknown) => String(value ?? "").replace(/[\u0000-\u001f\u007f]/g, "").trim().toUpperCase();
+  const barcodeInUse = (value: unknown, exceptId?: string) => {
+    const normalized = normalizeBarcode(value);
+    return !!normalized && variants.some((variant) => variant.id !== exceptId && normalizeBarcode(variant.barcode) === normalized);
   };
 
   const add = async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
+    if (barcodeInUse(row.barcode)) {
+      toast.error(isAr ? "هذا الباركود مستخدم بالفعل لمنتج آخر" : "This barcode is already assigned to another variant");
+      return;
+    }
     const { error } = await (supabase.from("product_variants") as any).insert({
       user_id: user.id,
       brand_id: brand.id,
@@ -701,6 +714,10 @@ function VariantList({ productId, productName, businessName, variants, onChanged
   };
 
   const update = async (v: Variant, patch: Partial<Variant>) => {
+    if (Object.prototype.hasOwnProperty.call(patch, "barcode") && barcodeInUse(patch.barcode, v.id)) {
+      toast.error(isAr ? "هذا الباركود مستخدم بالفعل لمنتج آخر" : "This barcode is already assigned to another variant");
+      return;
+    }
     const { error } = await supabase.from("product_variants").update(patch).eq("id", v.id);
     if (error) toast.error(error.message); else onChanged();
   };

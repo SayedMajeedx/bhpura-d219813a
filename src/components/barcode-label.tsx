@@ -79,9 +79,9 @@ export function printLabels(labels: LabelData[]) {
     try {
       JsBarcode(tmp, l.code, {
         format: "CODE128",
-        height: 60,
-        width: 2,
-        fontSize: 12,
+        height: 54,
+        width: 1.55,
+        fontSize: 11,
         displayValue: true,
         margin: 4,
         background: "#ffffff",
@@ -95,10 +95,14 @@ export function printLabels(labels: LabelData[]) {
 
   const labelHtml = labels
     .map((l, i) => {
-      const info = buildLabelInfo(l);
       return `<div class="barcode-card">
+        ${l.businessName ? `<div class="barcode-business">${escapeHtml(l.businessName)}</div>` : ""}
+        ${l.productName ? `<div class="barcode-product">${escapeHtml(l.productName)}</div>` : ""}
+        <div class="barcode-details">
+          <span>${escapeHtml([l.size, l.color].filter(Boolean).join(" · "))}</span>
+          ${l.price != null ? `<strong>${escapeHtml(formatMoney(Number(l.price)))}</strong>` : ""}
+        </div>
         <div class="barcode-image">${svgs[i] ?? ""}</div>
-        <div class="barcode-text">${escapeHtml(info)}</div>
       </div>`;
     })
     .join("");
@@ -135,26 +139,31 @@ export function printLabels(labels: LabelData[]) {
       min-height: 30mm !important;
       max-height: 30mm !important;
       margin: 0 !important;
-      padding: 5px !important;
+      padding: 2.2mm 2.5mm 1.5mm !important;
       display: flex !important;
       flex-direction: column !important;
       align-items: center !important;
-      justify-content: center !important;
+      justify-content: flex-start !important;
       text-align: center !important;
       overflow: hidden !important;
       page-break-after: always !important;
       break-after: page !important;
     }
+    #print-section .barcode-business { width: 100% !important; font-size: 7px !important; line-height: 1 !important; font-weight: 700 !important; letter-spacing: .08em !important; text-transform: uppercase !important; white-space: nowrap !important; overflow: hidden !important; text-overflow: ellipsis !important; }
+    #print-section .barcode-product { width: 100% !important; margin-top: 1px !important; font-size: 10px !important; line-height: 1.1 !important; font-weight: 700 !important; white-space: nowrap !important; overflow: hidden !important; text-overflow: ellipsis !important; }
+    #print-section .barcode-details { width: 100% !important; min-height: 11px !important; display: flex !important; justify-content: space-between !important; gap: 4px !important; font-size: 7px !important; line-height: 1.1 !important; white-space: nowrap !important; }
+    #print-section .barcode-details span { overflow: hidden !important; text-overflow: ellipsis !important; }
     #print-section .barcode-image {
-      width: 40mm !important;
+      width: 44mm !important;
       height: auto !important;
       line-height: 0 !important;
       flex: 0 0 auto !important;
+      margin-top: auto !important;
     }
     #print-section .barcode-image svg {
-      width: 40mm !important;
+      width: 44mm !important;
       height: auto !important;
-      max-width: 40mm !important;
+      max-width: 44mm !important;
       display: block !important;
     }
     #print-section .barcode-text {
@@ -205,13 +214,13 @@ export function printLabels(labels: LabelData[]) {
         display: flex !important;
         flex-direction: column !important;
         align-items: center !important;
-        justify-content: center !important;
+        justify-content: flex-start !important;
         text-align: center !important;
         box-sizing: border-box !important;
-        padding: 5px !important;
+        padding: 2.2mm 2.5mm 1.5mm !important;
       }
-      #print-section .barcode-image { width: 40mm !important; height: auto !important; display: block !important; }
-      #print-section .barcode-image svg { width: 40mm !important; height: auto !important; display: block !important; }
+      #print-section .barcode-image { width: 44mm !important; height: auto !important; display: block !important; }
+      #print-section .barcode-image svg { width: 44mm !important; height: auto !important; display: block !important; }
       #print-section .barcode-text { font-size: 10px !important; font-weight: bold !important; margin-top: 2px !important; display: block !important; }
     }
   `;
@@ -261,15 +270,6 @@ export function printLabels(labels: LabelData[]) {
       cleanup();
     }
   }, 150);
-}
-
-
-function buildLabelInfo(label: LabelData) {
-  const model = String(label.productName || "Product").trim();
-  const size = String(label.size || "-").trim();
-  const color = String(label.color || "-").trim();
-  const price = label.price != null ? formatMoney(Number(label.price)) : "BHD 0.00";
-  return `${model} - ${size} - ${color} - ${price}`;
 }
 
 

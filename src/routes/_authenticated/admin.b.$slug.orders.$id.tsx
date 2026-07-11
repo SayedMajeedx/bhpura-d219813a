@@ -260,11 +260,16 @@ function OrderDetail() {
 
 
   const handleScanned = (code: string) => {
-    const trimmed = code.trim();
+    const normalizeScan = (value: unknown) => String(value ?? "")
+      .replace(/[\u0000-\u001f\u007f]/g, "")
+      .trim()
+      .toUpperCase();
+    const trimmed = normalizeScan(code);
     if (!trimmed) return;
     const variants = variantsQ.data ?? [];
     const products = productsQ.data ?? [];
-    const v = variants.find((x: any) => (x.barcode ?? "").trim() === trimmed || (x.sku ?? "").trim() === trimmed);
+    const v = variants.find((x: any) => normalizeScan(x.barcode) === trimmed)
+      ?? variants.find((x: any) => normalizeScan(x.sku) === trimmed);
     if (!v) {
       toast.error(lang === "ar" ? `لم يتم العثور على الباركود: ${trimmed}` : `Barcode not found: ${trimmed}`);
       return;
@@ -292,7 +297,13 @@ function OrderDetail() {
       line_total: Number(v.selling_price ?? 0),
       location: preferred,
     };
-    setItems((prev) => [...prev, newItem]);
+    setItems((prev) => {
+      const existingIndex = prev.findIndex((item) => item.variant_id === v.id && item.location === preferred && !(item.customizations?.length));
+      if (existingIndex < 0) return [...prev, newItem];
+      return prev.map((item, index) => index === existingIndex
+        ? recalc({ ...item, quantity: Number(item.quantity) + 1 })
+        : item);
+    });
     toast.success(isAr ? "تمت إضافة القطعة" : "Item added");
   };
 

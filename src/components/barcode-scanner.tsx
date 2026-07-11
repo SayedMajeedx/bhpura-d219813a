@@ -2,8 +2,9 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Html5Qrcode, Html5QrcodeSupportedFormats } from "html5-qrcode";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { useI18n } from "@/lib/i18n";
-import { Camera, Upload, X } from "lucide-react";
+import { Camera, Keyboard, Upload, X } from "lucide-react";
 
 type Props = {
   open: boolean;
@@ -34,6 +35,7 @@ export function BarcodeScanner({ open, onOpenChange, onDetected, cameraStreamPro
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [starting, setStarting] = useState(false);
+  const [manualCode, setManualCode] = useState("");
   const stoppedRef = useRef(false);
 
   const getDecoder = useCallback(() => {
@@ -144,7 +146,7 @@ export function BarcodeScanner({ open, onOpenChange, onDetected, cameraStreamPro
             width: Math.floor(viewfinderWidth * 0.9),
             height: Math.floor(viewfinderHeight * 0.45),
           }),
-          aspectRatio: 1,
+          aspectRatio: 16 / 9,
           disableFlip: false,
           formatsToSupport: SUPPORTED_FORMATS,
           videoConstraints: cameraConfig,
@@ -287,7 +289,7 @@ export function BarcodeScanner({ open, onOpenChange, onDetected, cameraStreamPro
           </Button>
         </DialogHeader>
         <div className="p-4 pt-0 space-y-3">
-          <div className="relative w-full aspect-square bg-black rounded-md overflow-hidden">
+          <div className="relative w-full aspect-video bg-black rounded-md overflow-hidden">
             <div id={DECODE_REGION_ID} className="absolute inset-0 [&_video]:h-full [&_video]:w-full [&_video]:object-cover" />
             <div className="pointer-events-none absolute inset-x-[6%] top-1/2 h-[40%] -translate-y-1/2 rounded-md border-2 border-primary/80" />
           </div>
@@ -336,6 +338,29 @@ export function BarcodeScanner({ open, onOpenChange, onDetected, cameraStreamPro
               e.target.value = "";
             }}
           />
+          <form
+            className="flex gap-2"
+            onSubmit={(event) => {
+              event.preventDefault();
+              const code = manualCode.trim();
+              if (!code) return;
+              onDetected(code);
+              onOpenChange(false);
+            }}
+          >
+            <div className="relative flex-1">
+              <Keyboard className="absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                dir="ltr"
+                className="ps-9 font-mono"
+                value={manualCode}
+                onChange={(event) => setManualCode(event.target.value)}
+                placeholder={isAr ? "امسح بجهاز خارجي أو أدخل الرمز" : "Use scanner gun or enter code"}
+                autoComplete="off"
+              />
+            </div>
+            <Button type="submit" disabled={!manualCode.trim()}>{isAr ? "إضافة" : "Add"}</Button>
+          </form>
         </div>
       </DialogContent>
     </Dialog>
