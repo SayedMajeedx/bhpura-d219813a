@@ -183,15 +183,19 @@ function OrdersList() {
           </div>
           <Card className="hidden overflow-hidden sm:block">
           <div className="overflow-x-auto">
-          <table className="w-full min-w-[720px] text-sm">
+          <table className="w-full min-w-[720px] table-fixed text-sm">
+            <colgroup>
+              <col className="w-[13%]" /><col className="w-[16%]" /><col className="w-[23%]" />
+              <col className="w-[17%]" /><col className="w-[19%]" /><col className="w-[12%]" />
+            </colgroup>
             <thead className="bg-secondary/50">
-              <tr className="text-left">
-                <th className="p-4 font-medium">{t("orders.invoice")}</th>
-                <th className="p-4 font-medium">{t("orders.date")}</th>
-                <th className="p-4 font-medium">{t("orders.customer")}</th>
-                <th className="p-4 font-medium">{t("orders.status")}</th>
-                <th className="p-4 font-medium text-right">{t("orders.total")}</th>
-                <th className="p-4 text-right">{t("orders.actions")}</th>
+              <tr>
+                <th className="p-4 text-start font-medium">{t("orders.invoice")}</th>
+                <th className="p-4 text-start font-medium">{t("orders.date")}</th>
+                <th className="p-4 text-start font-medium">{t("orders.customer")}</th>
+                <th className="p-4 text-start font-medium">{t("orders.status")}</th>
+                <th className="p-4 text-end font-medium">{t("orders.total")}</th>
+                <th className="p-4 text-end">{t("orders.actions")}</th>
               </tr>
             </thead>
             <tbody>
@@ -205,7 +209,7 @@ function OrdersList() {
                   <td className="p-4 text-muted-foreground">{new Date(o.order_date).toLocaleDateString()}</td>
                   <td className="p-4">{o.customers?.name ?? <span className="text-muted-foreground italic">{t("orders.noCustomer")}</span>}</td>
                   <td className="p-4"><span className="text-xs uppercase tracking-wider px-2 py-1 rounded bg-secondary">{t(`status.${o.status}`)}</span></td>
-                  <td className="p-4 text-right font-medium whitespace-nowrap">
+                  <td className="p-4 text-end font-medium whitespace-nowrap">
                     <div className="inline-flex items-center gap-2">
                       <span>{formatMoney(Number(o.total), o.currency)}</span>
                       {(() => {
@@ -218,7 +222,7 @@ function OrdersList() {
                       })()}
                     </div>
                   </td>
-                  <td className="p-4 text-right whitespace-nowrap">
+                  <td className="p-4 text-end whitespace-nowrap">
                     <Button
                       variant="ghost"
                       size="icon"

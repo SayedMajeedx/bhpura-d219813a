@@ -162,31 +162,37 @@ function CustomersPage() {
           </div>
           <Card className="hidden overflow-hidden sm:block">
           <div className="overflow-x-auto">
-          <table className="w-full min-w-[560px] text-sm">
+          <table className="w-full min-w-[560px] table-fixed text-sm">
+            <colgroup>
+              <col className="w-[28%]" />
+              <col className="w-[32%]" />
+              <col className="w-[28%]" />
+              <col className="w-[12%]" />
+            </colgroup>
             <thead className="bg-secondary/50">
-              <tr className="text-left">
-                <th className="p-4 font-medium">{t("customers.name")}</th>
-                <th className="p-4 font-medium">{t("customers.contact")}</th>
-                <th className="p-4 font-medium">{t("customers.region")}</th>
-                <th className="p-4"></th>
+              <tr>
+                <th className="p-4 text-start font-medium">{t("customers.name")}</th>
+                <th className="p-4 text-start font-medium">{t("customers.contact")}</th>
+                <th className="p-4 text-start font-medium">{t("customers.region")}</th>
+                <th className="p-4 text-end"><span className="sr-only">{t("common.actions")}</span></th>
               </tr>
             </thead>
             <tbody>
               {data!.map((c) => (
                 <tr key={c.id} className="border-t border-border">
-                  <td className="p-4"><p className="font-medium">{c.name}</p>{c.notes && <p className="text-xs text-muted-foreground mt-1">{c.notes}</p>}</td>
-                  <td className="p-4 text-muted-foreground">
-                    {c.phone && <div>{c.phone}</div>}
+                  <td className="p-4 text-start"><p className="font-medium">{c.name}</p>{c.notes && <p className="text-xs text-muted-foreground mt-1">{c.notes}</p>}</td>
+                  <td className="p-4 text-start text-muted-foreground">
+                    {c.phone && <div className="text-start" dir="ltr">{c.phone}</div>}
                     {c.email && <div>{c.email}</div>}
                   </td>
-                  <td className="p-4 text-muted-foreground">
+                  <td className="p-4 text-start text-muted-foreground">
                     {(() => {
                       const def = defaultByCustomer.get(c.id);
                       if (def) return formatAddressLine(def, lang) || regionLabel(def.region, lang) || "—";
                       return regionLabel(c.region, lang) || c.city || "—";
                     })()}
                   </td>
-                  <td className="p-4 text-right">
+                  <td className="p-4 text-end whitespace-nowrap">
                     <Button variant="ghost" size="icon" onClick={() => { setEditing(c); setOpen(true); }}><Pencil className="h-4 w-4" /></Button>
                     <DeleteAction message={t("customers.deleteConfirm")} onConfirm={() => del(c.id)} />
                   </td>
