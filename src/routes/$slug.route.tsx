@@ -79,6 +79,10 @@ export const Route = createFileRoute("/$slug")({
       show_footer_name: s?.show_footer_name ?? true,
       storefront_font_en: s?.storefront_font_en ?? "Inter",
       storefront_font_ar: s?.storefront_font_ar ?? "Tajawal",
+      storefront_font_en_url: s?.storefront_font_en_url ?? null,
+      storefront_font_ar_url: s?.storefront_font_ar_url ?? null,
+      hero_title_en: s?.hero_title_en ?? null,
+      hero_title_ar: s?.hero_title_ar ?? null,
       hero_title_size: Number(s?.hero_title_size ?? 48),
       hero_title_color: s?.hero_title_color ?? null,
       hero_title_align: (s?.hero_title_align ?? "start") as "start" | "center" | "end",
@@ -184,6 +188,8 @@ function StoreShell() {
   const headingColor = settings.heading_color ?? primary;
   const linkColor = settings.link_color ?? primary;
   const storefrontFont = lang === "ar" ? settings.storefront_font_ar : settings.storefront_font_en;
+  const storefrontFontUrl = lang === "ar" ? settings.storefront_font_ar_url : settings.storefront_font_en_url;
+  const storefrontFontFamily = storefrontFontUrl ? "StorefrontCustomFont" : storefrontFont;
 
   return (
     <div
@@ -203,13 +209,14 @@ function StoreShell() {
           ["--sf-btn-secondary-fg" as any]: btnSecondaryFg,
           ["--sf-heading" as any]: headingColor,
           ["--sf-link" as any]: linkColor,
-          ["--sf-font" as any]: `"${storefrontFont}", sans-serif`,
-          ["--font-sans" as any]: `"${storefrontFont}", sans-serif`,
-          ["--font-display" as any]: `"${storefrontFont}", sans-serif`,
-          fontFamily: `"${storefrontFont}", sans-serif`,
+          ["--sf-font" as any]: `"${storefrontFontFamily}", sans-serif`,
+          ["--font-sans" as any]: `"${storefrontFontFamily}", sans-serif`,
+          ["--font-display" as any]: `"${storefrontFontFamily}", sans-serif`,
+          fontFamily: `"${storefrontFontFamily}", sans-serif`,
         } as React.CSSProperties
       }
     >
+      {storefrontFontUrl && <style>{`@font-face { font-family: 'StorefrontCustomFont'; src: url('${storefrontFontUrl}'); font-display: swap; }`}</style>}
       <StoreHeader />
       <main className="flex-1">
         <Outlet />

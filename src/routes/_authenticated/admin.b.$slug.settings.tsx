@@ -656,6 +656,9 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
   const isAr = lang === "ar";
   const qc = useQueryClient();
   const [saving, setSaving] = useState(false);
+  const [uploadingFont, setUploadingFont] = useState<null | "en" | "ar">(null);
+  const enFontInput = useRef<HTMLInputElement>(null);
+  const arFontInput = useRef<HTMLInputElement>(null);
   const [state, setState] = useState<{
     logo_size: number;
     logo_align: string;
@@ -665,6 +668,10 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
     show_footer_name: boolean;
     storefront_font_en: string;
     storefront_font_ar: string;
+    storefront_font_en_url: string | null;
+    storefront_font_ar_url: string | null;
+    hero_title_en: string | null;
+    hero_title_ar: string | null;
     hero_title_size: number;
     hero_title_color: string | null;
     hero_title_align: "start" | "center" | "end";
@@ -686,7 +693,7 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
     queryKey: ["business-settings-theme", brandId],
     queryFn: async () => {
       const { data, error } = await supabase.from("business_settings")
-        .select("logo_size, logo_align, show_header_name, show_hero_title, show_hero_about, show_footer_name, storefront_font_en, storefront_font_ar, hero_title_size, hero_title_color, hero_title_align, header_bg, header_fg, footer_bg, footer_fg, heading_color, link_color, btn_primary_bg, btn_primary_fg, btn_secondary_bg, btn_secondary_fg, btn_checkout_bg, btn_checkout_fg")
+        .select("logo_size, logo_align, show_header_name, show_hero_title, show_hero_about, show_footer_name, storefront_font_en, storefront_font_ar, storefront_font_en_url, storefront_font_ar_url, hero_title_en, hero_title_ar, hero_title_size, hero_title_color, hero_title_align, header_bg, header_fg, footer_bg, footer_fg, heading_color, link_color, btn_primary_bg, btn_primary_fg, btn_secondary_bg, btn_secondary_fg, btn_checkout_bg, btn_checkout_fg")
         .eq("brand_id", brandId).maybeSingle();
       if (error) throw error;
       return data as any;
@@ -703,6 +710,10 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
       show_footer_name: data.show_footer_name ?? true,
       storefront_font_en: data.storefront_font_en ?? "Inter",
       storefront_font_ar: data.storefront_font_ar ?? "Tajawal",
+      storefront_font_en_url: data.storefront_font_en_url ?? null,
+      storefront_font_ar_url: data.storefront_font_ar_url ?? null,
+      hero_title_en: data.hero_title_en ?? null,
+      hero_title_ar: data.hero_title_ar ?? null,
       hero_title_size: Number(data.hero_title_size ?? 48),
       hero_title_color: data.hero_title_color ?? null,
       hero_title_align: data.hero_title_align ?? "start",
@@ -728,6 +739,22 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
     setSaving(false);
     if (error) toast.error(error.message);
     else { toast.success(isAr ? "تم الحفظ" : "Saved"); qc.invalidateQueries({ queryKey: ["business-settings-theme", brandId] }); }
+  };
+
+  const uploadStorefrontFont = async (file: File, language: "en" | "ar") => {
+    try {
+      setUploadingFont(language);
+      const url = await uploadPublicMedia(brandId, file, "font");
+      setState((current) => current ? {
+        ...current,
+        [language === "en" ? "storefront_font_en_url" : "storefront_font_ar_url"]: url,
+      } : current);
+      toast.success(isAr ? "تم رفع الخط — لا تنسَ الحفظ" : "Font uploaded — remember to save");
+    } catch (error: any) {
+      toast.error(error.message ?? "Font upload failed");
+    } finally {
+      setUploadingFont(null);
+    }
   };
 
   if (!state) return null;
@@ -821,6 +848,12 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>{STOREFRONT_EN_FONTS.map((font) => <SelectItem key={font} value={font}><span style={{ fontFamily: font }}>{font}</span></SelectItem>)}</SelectContent>
             </Select>
+            <div className="mt-2 flex gap-2">
+              <Input readOnly value={state.storefront_font_en_url ? (isAr ? "خط مخصص مرفوع" : "Custom font uploaded") : ""} placeholder={isAr ? "أو ارفع خطاً مخصصاً" : "Or upload a custom font"} />
+              <input ref={enFontInput} type="file" accept=".woff,.woff2,.ttf,.otf" className="hidden" onChange={(e) => e.target.files?.[0] && uploadStorefrontFont(e.target.files[0], "en")} />
+              <Button type="button" variant="outline" size="icon" disabled={uploadingFont === "en"} onClick={() => enFontInput.current?.click()}><Upload className="h-4 w-4" /></Button>
+              {state.storefront_font_en_url && <Button type="button" variant="ghost" size="sm" onClick={() => setState({ ...state, storefront_font_en_url: null })}>{isAr ? "إزالة" : "Remove"}</Button>}
+            </div>
           </div>
           <div>
             <Label>{isAr ? "الخط العربي" : "Arabic font"}</Label>
@@ -828,6 +861,12 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>{STOREFRONT_AR_FONTS.map((font) => <SelectItem key={font} value={font}><span style={{ fontFamily: font }}>{font}</span></SelectItem>)}</SelectContent>
             </Select>
+            <div className="mt-2 flex gap-2">
+              <Input readOnly value={state.storefront_font_ar_url ? (isAr ? "خط مخصص مرفوع" : "Custom font uploaded") : ""} placeholder={isAr ? "أو ارفع خطاً مخصصاً" : "Or upload a custom font"} />
+              <input ref={arFontInput} type="file" accept=".woff,.woff2,.ttf,.otf" className="hidden" onChange={(e) => e.target.files?.[0] && uploadStorefrontFont(e.target.files[0], "ar")} />
+              <Button type="button" variant="outline" size="icon" disabled={uploadingFont === "ar"} onClick={() => arFontInput.current?.click()}><Upload className="h-4 w-4" /></Button>
+              {state.storefront_font_ar_url && <Button type="button" variant="ghost" size="sm" onClick={() => setState({ ...state, storefront_font_ar_url: null })}>{isAr ? "إزالة" : "Remove"}</Button>}
+            </div>
           </div>
         </div>
       </div>
@@ -838,6 +877,14 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
           <p className="mt-1 text-xs text-muted-foreground">{isAr ? "تحكم مستقل في اسم العلامة الظاهر فوق صورة الواجهة." : "Independent styling for the brand name displayed over the hero media."}</p>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <Label>{isAr ? "عنوان الواجهة بالإنجليزية" : "Hero title (English)"}</Label>
+            <Input value={state.hero_title_en ?? ""} placeholder={isAr ? "اتركه فارغاً لاستخدام اسم العلامة" : "Blank uses the English brand name"} onChange={(e) => setState({ ...state, hero_title_en: e.target.value || null })} />
+          </div>
+          <div>
+            <Label>{isAr ? "عنوان الواجهة بالعربية" : "Hero title (Arabic)"}</Label>
+            <Input dir="rtl" value={state.hero_title_ar ?? ""} placeholder={isAr ? "فارغ يستخدم اسم العلامة بالعربية" : "Blank uses the Arabic brand name"} onChange={(e) => setState({ ...state, hero_title_ar: e.target.value || null })} />
+          </div>
           <div>
             <Label>{isAr ? "حجم العنوان (بكسل)" : "Title size (px)"}</Label>
             <Input type="number" min={24} max={96} value={state.hero_title_size} onChange={(e) => setState({ ...state, hero_title_size: Math.max(24, Math.min(96, Number(e.target.value))) })} />

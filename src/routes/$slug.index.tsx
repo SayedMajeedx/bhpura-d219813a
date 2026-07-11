@@ -127,7 +127,9 @@ function HeroBanner() {
               className="mb-3 leading-tight"
               style={{ color: settings.hero_title_color ?? "var(--sf-heading)", fontSize: `clamp(1.875rem, 5vw, ${settings.hero_title_size}px)`, fontFamily: "var(--sf-font)" }}
           >
-            {lang === "ar" ? brand.name_ar || brand.name_en : brand.name_en}
+              {lang === "ar"
+                ? settings.hero_title_ar || brand.name_ar || brand.name_en
+                : settings.hero_title_en || brand.name_en}
           </h1>}
           {settings.show_hero_about && <p className="text-sm sm:text-base text-neutral-700 mb-4">
             {(lang === "ar" ? brand.about_ar : brand.about_en) ||

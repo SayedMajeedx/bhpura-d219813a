@@ -42,6 +42,10 @@ export type PublicSettings = {
   show_footer_name: boolean;
   storefront_font_en: string;
   storefront_font_ar: string;
+  storefront_font_en_url: string | null;
+  storefront_font_ar_url: string | null;
+  hero_title_en: string | null;
+  hero_title_ar: string | null;
   hero_title_size: number;
   hero_title_color: string | null;
   hero_title_align: "start" | "center" | "end";
