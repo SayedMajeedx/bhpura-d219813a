@@ -68,6 +68,15 @@ export function BarcodeScanner({ open, onOpenChange, onDetected }: Props) {
     if (!code) return;
     handledRef.current = true;
     stop();
+    // A successful scan closes the parent dialog directly, bypassing the
+    // Dialog onOpenChange cleanup. Reset all per-session camera state here so
+    // the next scan starts with a fresh stream instead of a stopped black one.
+    setCameraRequested(false);
+    setStarting(false);
+    setError(null);
+    setZoomRange(null);
+    setCameras([]);
+    setActiveCameraId(null);
     onDetected(code);
     onOpenChange(false);
   }, [onDetected, onOpenChange, stop]);
