@@ -43,6 +43,9 @@ const FONT_PRESETS = [
   "Times New Roman", "Arial", "Helvetica", "Custom (uploaded)",
 ];
 
+const STOREFRONT_EN_FONTS = ["Inter", "Poppins", "Montserrat", "Playfair Display", "Cormorant Garamond"];
+const STOREFRONT_AR_FONTS = ["Tajawal", "Cairo", "Noto Sans Arabic", "Noto Kufi Arabic"];
+
 function Settings() {
   const t = useT();
   const { lang } = useI18n();
@@ -660,6 +663,11 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
     show_hero_title: boolean;
     show_hero_about: boolean;
     show_footer_name: boolean;
+    storefront_font_en: string;
+    storefront_font_ar: string;
+    hero_title_size: number;
+    hero_title_color: string | null;
+    hero_title_align: "start" | "center" | "end";
     header_bg: string | null;
     header_fg: string | null;
     footer_bg: string | null;
@@ -678,7 +686,7 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
     queryKey: ["business-settings-theme", brandId],
     queryFn: async () => {
       const { data, error } = await supabase.from("business_settings")
-        .select("logo_size, logo_align, show_header_name, show_hero_title, show_hero_about, show_footer_name, header_bg, header_fg, footer_bg, footer_fg, heading_color, link_color, btn_primary_bg, btn_primary_fg, btn_secondary_bg, btn_secondary_fg, btn_checkout_bg, btn_checkout_fg")
+        .select("logo_size, logo_align, show_header_name, show_hero_title, show_hero_about, show_footer_name, storefront_font_en, storefront_font_ar, hero_title_size, hero_title_color, hero_title_align, header_bg, header_fg, footer_bg, footer_fg, heading_color, link_color, btn_primary_bg, btn_primary_fg, btn_secondary_bg, btn_secondary_fg, btn_checkout_bg, btn_checkout_fg")
         .eq("brand_id", brandId).maybeSingle();
       if (error) throw error;
       return data as any;
@@ -693,6 +701,11 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
       show_hero_title: data.show_hero_title ?? true,
       show_hero_about: data.show_hero_about ?? true,
       show_footer_name: data.show_footer_name ?? true,
+      storefront_font_en: data.storefront_font_en ?? "Inter",
+      storefront_font_ar: data.storefront_font_ar ?? "Tajawal",
+      hero_title_size: Number(data.hero_title_size ?? 48),
+      hero_title_color: data.hero_title_color ?? null,
+      hero_title_align: data.hero_title_align ?? "start",
       header_bg: data.header_bg ?? null,
       header_fg: data.header_fg ?? null,
       footer_bg: data.footer_bg ?? null,
@@ -790,6 +803,53 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
                   <Label className="cursor-pointer">{label}</Label>
                   <Switch checked={state[key]} onCheckedChange={(checked) => setState({ ...state, [key]: checked })} />
                 </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="space-y-4 rounded-md border border-border p-4">
+        <div>
+          <h3 className="font-medium text-sm">{isAr ? "خطوط المتجر" : "Storefront fonts"}</h3>
+          <p className="mt-1 text-xs text-muted-foreground">{isAr ? "اختر خطاً مستقلاً لكل لغة في واجهة المتجر." : "Choose an independent website font for each storefront language."}</p>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <Label>{isAr ? "الخط الإنجليزي" : "English font"}</Label>
+            <Select value={state.storefront_font_en} onValueChange={(value) => setState({ ...state, storefront_font_en: value })}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>{STOREFRONT_EN_FONTS.map((font) => <SelectItem key={font} value={font}><span style={{ fontFamily: font }}>{font}</span></SelectItem>)}</SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label>{isAr ? "الخط العربي" : "Arabic font"}</Label>
+            <Select value={state.storefront_font_ar} onValueChange={(value) => setState({ ...state, storefront_font_ar: value })}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>{STOREFRONT_AR_FONTS.map((font) => <SelectItem key={font} value={font}><span style={{ fontFamily: font }}>{font}</span></SelectItem>)}</SelectContent>
+            </Select>
+          </div>
+        </div>
+      </div>
+
+      <div className="space-y-4 rounded-md border border-border p-4">
+        <div>
+          <h3 className="font-medium text-sm">{isAr ? "عنوان الواجهة الرئيسي" : "Hero title"}</h3>
+          <p className="mt-1 text-xs text-muted-foreground">{isAr ? "تحكم مستقل في اسم العلامة الظاهر فوق صورة الواجهة." : "Independent styling for the brand name displayed over the hero media."}</p>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <Label>{isAr ? "حجم العنوان (بكسل)" : "Title size (px)"}</Label>
+            <Input type="number" min={24} max={96} value={state.hero_title_size} onChange={(e) => setState({ ...state, hero_title_size: Math.max(24, Math.min(96, Number(e.target.value))) })} />
+          </div>
+          <ColorField label={isAr ? "لون عنوان الواجهة" : "Hero title color"} value={state.hero_title_color} onChange={(value) => setState({ ...state, hero_title_color: value })} />
+          <div className="sm:col-span-2">
+            <Label>{isAr ? "محاذاة العنوان" : "Title alignment"}</Label>
+            <div className="mt-1 flex gap-2">
+              {(["start", "center", "end"] as const).map((alignment) => (
+                <Button key={alignment} type="button" size="sm" variant={state.hero_title_align === alignment ? "default" : "outline"} onClick={() => setState({ ...state, hero_title_align: alignment })}>
+                  {isAr ? (alignment === "start" ? "البداية" : alignment === "center" ? "الوسط" : "النهاية") : alignment}
+                </Button>
               ))}
             </div>
           </div>

@@ -40,6 +40,11 @@ export type PublicSettings = {
   show_hero_title: boolean;
   show_hero_about: boolean;
   show_footer_name: boolean;
+  storefront_font_en: string;
+  storefront_font_ar: string;
+  hero_title_size: number;
+  hero_title_color: string | null;
+  hero_title_align: "start" | "center" | "end";
   header_bg: string | null;
   header_fg: string | null;
   footer_bg: string | null;

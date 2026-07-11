@@ -77,6 +77,11 @@ export const Route = createFileRoute("/$slug")({
       show_hero_title: s?.show_hero_title ?? true,
       show_hero_about: s?.show_hero_about ?? true,
       show_footer_name: s?.show_footer_name ?? true,
+      storefront_font_en: s?.storefront_font_en ?? "Inter",
+      storefront_font_ar: s?.storefront_font_ar ?? "Tajawal",
+      hero_title_size: Number(s?.hero_title_size ?? 48),
+      hero_title_color: s?.hero_title_color ?? null,
+      hero_title_align: (s?.hero_title_align ?? "start") as "start" | "center" | "end",
       header_bg: s?.header_bg ?? null,
       header_fg: s?.header_fg ?? null,
       footer_bg: s?.footer_bg ?? null,
@@ -140,7 +145,7 @@ function StorefrontLayout() {
 }
 
 function StoreShell() {
-  const { brand, settings } = useStorefront();
+  const { brand, settings, lang } = useStorefront();
   const qc = useQueryClient();
 
   // Realtime: refresh product / variant queries when inventory changes for this brand
@@ -178,6 +183,7 @@ function StoreShell() {
   const btnSecondaryFg = settings.btn_secondary_fg ?? readableOn(btnSecondaryBg, "#ffffff");
   const headingColor = settings.heading_color ?? primary;
   const linkColor = settings.link_color ?? primary;
+  const storefrontFont = lang === "ar" ? settings.storefront_font_ar : settings.storefront_font_en;
 
   return (
     <div
@@ -197,6 +203,10 @@ function StoreShell() {
           ["--sf-btn-secondary-fg" as any]: btnSecondaryFg,
           ["--sf-heading" as any]: headingColor,
           ["--sf-link" as any]: linkColor,
+          ["--sf-font" as any]: `"${storefrontFont}", sans-serif`,
+          ["--font-sans" as any]: `"${storefrontFont}", sans-serif`,
+          ["--font-display" as any]: `"${storefrontFont}", sans-serif`,
+          fontFamily: `"${storefrontFont}", sans-serif`,
         } as React.CSSProperties
       }
     >

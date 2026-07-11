@@ -122,10 +122,10 @@ function HeroBanner() {
       )}
 
       <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 h-full flex items-center min-h-[300px] sm:min-h-[55vh]">
-        <div className="max-w-xl bg-white/85 backdrop-blur rounded-2xl p-6 sm:p-8 shadow-lg">
+        <div className="max-w-xl w-full bg-white/85 backdrop-blur rounded-2xl p-6 sm:p-8 shadow-lg" style={{ textAlign: settings.hero_title_align }}>
           {settings.show_hero_title && <h1
-            className="font-display text-3xl sm:text-5xl mb-3"
-            style={{ color: "var(--sf-heading)" }}
+              className="mb-3 leading-tight"
+              style={{ color: settings.hero_title_color ?? "var(--sf-heading)", fontSize: `clamp(1.875rem, 5vw, ${settings.hero_title_size}px)`, fontFamily: "var(--sf-font)" }}
           >
             {lang === "ar" ? brand.name_ar || brand.name_en : brand.name_en}
           </h1>}

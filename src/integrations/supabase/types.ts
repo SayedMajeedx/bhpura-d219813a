@@ -265,6 +265,11 @@ export type Database = {
           show_header_name: boolean
           show_hero_about: boolean
           show_hero_title: boolean
+          storefront_font_ar: string
+          storefront_font_en: string
+          hero_title_align: string
+          hero_title_color: string | null
+          hero_title_size: number
           next_invoice_number: number
           pages: Json
           phone: string | null
@@ -326,6 +331,11 @@ export type Database = {
           show_header_name?: boolean
           show_hero_about?: boolean
           show_hero_title?: boolean
+          storefront_font_ar?: string
+          storefront_font_en?: string
+          hero_title_align?: string
+          hero_title_color?: string | null
+          hero_title_size?: number
           next_invoice_number?: number
           pages?: Json
           phone?: string | null
@@ -387,6 +397,11 @@ export type Database = {
           show_header_name?: boolean
           show_hero_about?: boolean
           show_hero_title?: boolean
+          storefront_font_ar?: string
+          storefront_font_en?: string
+          hero_title_align?: string
+          hero_title_color?: string | null
+          hero_title_size?: number
           next_invoice_number?: number
           pages?: Json
           phone?: string | null
