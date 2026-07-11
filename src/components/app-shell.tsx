@@ -86,13 +86,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const SidebarContent = (
     <>
       <div className="p-6 border-b border-sidebar-border">
-        <h1 className="text-2xl font-display text-primary leading-tight">{brandLabel}</h1>
-        <p className="text-xs text-muted-foreground mt-1">{t("app.subtitle")}</p>
+        <h1 className="text-2xl font-display text-sidebar-foreground leading-tight">{brandLabel}</h1>
+        <p className="mt-1 text-xs text-sidebar-foreground/70">{t("app.subtitle")}</p>
       </div>
 
       {isSuperAdmin && (
         <div className="p-3 border-b border-sidebar-border space-y-2">
-          <div className="flex items-center gap-2 px-1 text-xs uppercase tracking-wider text-primary">
+          <div className="flex items-center gap-2 px-1 text-xs uppercase tracking-wider text-sidebar-foreground/80">
             <Crown className="h-3.5 w-3.5" />
             {lang === "ar" ? "المدير الأعلى" : "Super Admin"}
           </div>
@@ -132,7 +132,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             href={`/${activeSlug}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center justify-center gap-2 rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground shadow-sm hover:opacity-90 transition-opacity"
+            className="flex items-center justify-center gap-2 rounded-md bg-sidebar-primary px-3 py-2 text-sm font-medium text-sidebar-primary-foreground shadow-sm hover:opacity-90 transition-opacity"
           >
             <Store className="h-4 w-4" />
             {lang === "ar" ? "عرض المتجر" : "View Storefront"}
@@ -148,7 +148,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           return (
             <div key={item.to}>
               {showSection && (
-                <div className="px-3 pb-1 pt-3 text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                <div className="px-3 pb-1 pt-3 text-[10px] font-semibold uppercase tracking-[0.16em] text-sidebar-foreground/65">
                   {item.section}
                 </div>
               )}
@@ -171,7 +171,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       </nav>
       <div className="p-3 border-t border-sidebar-border space-y-2">
         <div className="flex items-center gap-2 px-2">
-          <Languages className="h-4 w-4 text-muted-foreground" />
+          <Languages className="h-4 w-4 text-sidebar-foreground/70" />
           <Select value={lang} onValueChange={(v) => setLang(v as "en" | "ar")}>
             <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
             <SelectContent>
@@ -234,8 +234,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </SheetContent>
         </Sheet>
         <div className="min-w-0 text-center leading-tight">
-          <h1 className="truncate text-base font-display text-primary">{brandLabel}</h1>
-          {currentPageLabel && <div className="truncate text-[10px] text-muted-foreground">{currentPageLabel}</div>}
+          <h1 className="truncate text-base font-display text-sidebar-foreground">{brandLabel}</h1>
+          {currentPageLabel && <div className="truncate text-[10px] text-sidebar-foreground/70">{currentPageLabel}</div>}
         </div>
         <div className="w-9" />
       </div>
