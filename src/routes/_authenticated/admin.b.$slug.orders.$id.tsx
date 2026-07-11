@@ -1205,7 +1205,6 @@ function InvoicePreview({ order, items, settings, shippingAddress, paymentBadge 
                 >
                   <img
                     src={settings.logo_url}
-                    crossOrigin="anonymous"
                     alt="logo"
                     className="pdf-brand-logo"
                     draggable={false}
@@ -1223,8 +1222,8 @@ function InvoicePreview({ order, items, settings, shippingAddress, paymentBadge 
               <p className="font-semibold">{settings.business_name}</p>
               {settings.invoice_show_business_details !== false && <div className="text-xs mt-1 space-y-0.5" style={{ opacity: 0.7 }}>
                 {settings.address && <p>{settings.address}</p>}
-                {settings.phone && <p dir="ltr" style={{ unicodeBidi: "isolate" }}>{settings.phone}</p>}
-                {settings.email && <p dir="ltr" style={{ unicodeBidi: "isolate" }}>{settings.email}</p>}
+                {settings.phone && <p dir="ltr" style={{ unicodeBidi: "isolate", textAlign: isRTL ? "right" : "left" }}>{settings.phone}</p>}
+                {settings.email && <p dir="ltr" style={{ unicodeBidi: "isolate", textAlign: isRTL ? "right" : "left" }}>{settings.email}</p>}
                 {settings.vat_number && <p>{isRTL ? "الرقم الضريبي" : "VAT"}: {settings.vat_number}</p>}
               </div>}
             </div>
@@ -1243,8 +1242,8 @@ function InvoicePreview({ order, items, settings, shippingAddress, paymentBadge 
             <div className="mb-8" style={{ textAlign: "start" }}>
               <p className="text-xs uppercase tracking-wider mb-1" style={{ opacity: 0.6 }}>{L.billTo}</p>
               <p className="font-medium">{order.customers.name}</p>
-              {settings.invoice_show_customer_contact !== false && order.customers.phone && <p dir="ltr" className="text-sm" style={{ opacity: 0.75, unicodeBidi: "isolate" }}>{num(order.customers.phone)}</p>}
-              {settings.invoice_show_customer_contact !== false && order.customers.email && <p className="text-sm" style={{ opacity: 0.75 }}>{order.customers.email}</p>}
+              {settings.invoice_show_customer_contact !== false && order.customers.phone && <p dir="ltr" className="text-sm" style={{ opacity: 0.75, unicodeBidi: "isolate", textAlign: isRTL ? "right" : "left" }}>{num(order.customers.phone)}</p>}
+              {settings.invoice_show_customer_contact !== false && order.customers.email && <p dir="ltr" className="text-sm" style={{ opacity: 0.75, textAlign: isRTL ? "right" : "left" }}>{order.customers.email}</p>}
               {(() => {
                 const detailed = shippingAddress
                   ? formatAddressDetailed(shippingAddress as StructuredAddress, invoiceLang)
