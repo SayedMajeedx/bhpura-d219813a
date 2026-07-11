@@ -228,7 +228,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               <Menu className="h-5 w-5" />
             </Button>
           </SheetTrigger>
-          <SheetContent side={lang === "ar" ? "right" : "left"} className="p-0 w-72 flex flex-col bg-sidebar text-sidebar-foreground">
+          <SheetContent
+            side={lang === "ar" ? "right" : "left"}
+            className="w-72 border-0 p-0 flex flex-col bg-sidebar text-sidebar-foreground shadow-2xl"
+          >
             <SheetTitle className="sr-only">{brandLabel}</SheetTitle>
             {SidebarContent}
           </SheetContent>
