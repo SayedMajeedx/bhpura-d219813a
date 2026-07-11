@@ -1135,6 +1135,8 @@ function InvoicePreview({ order, items, settings, shippingAddress, paymentBadge 
   const logoY = Number(settings.logo_y) || 0;
   const logoW = Number(settings.logo_width) || 160;
   const logoH = Number(settings.logo_height) || 64;
+  const template = settings.invoice_template || "modern";
+  const secondary = settings.invoice_secondary_color || `${color}10`;
 
   const [invoiceLang, setInvoiceLang] = useState<"en" | "ar">("en");
   const L = INVOICE_LABELS[invoiceLang];
@@ -1179,7 +1181,7 @@ function InvoicePreview({ order, items, settings, shippingAddress, paymentBadge 
       <div
         dir={isRTL ? "rtl" : "ltr"}
         lang={invoiceLang}
-        className="printable-invoice pdf-invoice-root rounded-lg shadow-lg border border-border overflow-hidden"
+        className={`printable-invoice pdf-invoice-root overflow-hidden ${template === "minimal" ? "" : "rounded-lg border border-border shadow-lg"}`}
         style={{ backgroundColor: bg, color: text, fontFamily: family, fontSize: `${fontSize}px`, printColorAdjust: "exact", WebkitPrintColorAdjust: "exact" } as any}
       >
         {settings.font_url && !isRTL && (
@@ -1187,7 +1189,7 @@ function InvoicePreview({ order, items, settings, shippingAddress, paymentBadge 
         )}
         {/* Browser print overrides removed — PDF is generated via html2pdf directly from the live DOM,
             preserving the exact colors and typography configured by the user. */}
-        <div className="pdf-invoice-body p-4 sm:p-8 md:p-10 print:p-10" style={{ borderTop: `6px solid ${color}` }}>
+        <div className="pdf-invoice-body p-4 sm:p-8 md:p-10 print:p-10" style={{ borderTop: template === "minimal" ? "0" : template === "classic" ? `2px solid ${color}` : `8px solid ${color}` }}>
           {/*
             Layout rule:
             - EN (LTR): brand block on the LEFT, invoice meta on the RIGHT
@@ -1217,12 +1219,15 @@ function InvoicePreview({ order, items, settings, shippingAddress, paymentBadge 
                   />
                 </div>
               )}
-              <p className="text-xs mt-1" style={{ opacity: 0.65 }}>
-                {[settings.phone, settings.email].filter(Boolean).join(" · ")}
-              </p>
+              <p className="font-semibold">{settings.business_name}</p>
+              {settings.invoice_show_business_details !== false && <div className="text-xs mt-1 space-y-0.5" style={{ opacity: 0.7 }}>
+                {settings.address && <p>{settings.address}</p>}
+                <p>{[settings.phone, settings.email].filter(Boolean).join(" · ")}</p>
+                {settings.vat_number && <p>{isRTL ? "الرقم الضريبي" : "VAT"}: {settings.vat_number}</p>}
+              </div>}
             </div>
             <div className="pdf-meta-block w-[48%] min-w-0" style={{ textAlign: "end" }}>
-              <h1 className="text-3xl sm:text-4xl font-display tracking-tight" style={{ color }}>{L.invoice}</h1>
+              <h1 className="text-3xl sm:text-4xl font-display tracking-tight" style={{ color }}>{(isRTL ? settings.invoice_title_ar : settings.invoice_title_en) || L.invoice}</h1>
               <p className="text-lg mt-1">{L.invoiceNumber}: {num(order.invoice_number)}</p>
               <p className="text-xs mt-2" style={{ opacity: 0.7 }}>{L.date}: {new Date(order.order_date).toLocaleDateString(isRTL ? "ar-BH" : undefined)}</p>
               <p className="text-xs" style={{ opacity: 0.7 }}>{L.status}: {PAYMENT_BADGE_LABEL[paymentBadge ?? "unpaid"][invoiceLang]}</p>
@@ -1236,8 +1241,8 @@ function InvoicePreview({ order, items, settings, shippingAddress, paymentBadge 
             <div className="mb-8" style={{ textAlign: "start" }}>
               <p className="text-xs uppercase tracking-wider mb-1" style={{ opacity: 0.6 }}>{L.billTo}</p>
               <p className="font-medium">{order.customers.name}</p>
-              {order.customers.phone && <p className="text-sm" style={{ opacity: 0.75 }}>{num(order.customers.phone)}</p>}
-              {order.customers.email && <p className="text-sm" style={{ opacity: 0.75 }}>{order.customers.email}</p>}
+              {settings.invoice_show_customer_contact !== false && order.customers.phone && <p className="text-sm" style={{ opacity: 0.75 }}>{num(order.customers.phone)}</p>}
+              {settings.invoice_show_customer_contact !== false && order.customers.email && <p className="text-sm" style={{ opacity: 0.75 }}>{order.customers.email}</p>}
               {(() => {
                 const detailed = shippingAddress
                   ? formatAddressDetailed(shippingAddress as StructuredAddress, invoiceLang)
@@ -1266,8 +1271,8 @@ function InvoicePreview({ order, items, settings, shippingAddress, paymentBadge 
             </div>
           )}
 
-          {(order.fulfillment_method || order.branch_id) && (
-            <div className="mb-6 text-sm" style={{ textAlign: "start" }}>
+          {settings.invoice_show_fulfillment !== false && (order.fulfillment_method || order.branch_id) && (
+            <div className="mb-6 rounded-lg p-4 text-sm" style={{ textAlign: "start", backgroundColor: secondary }}>
               <p className="text-xs uppercase tracking-wider mb-1" style={{ opacity: 0.6 }}>
                 {isRTL ? "طريقة التسليم" : "Fulfillment"}
               </p>
@@ -1403,7 +1408,7 @@ function InvoicePreview({ order, items, settings, shippingAddress, paymentBadge 
           </div>
 
 
-          {(order.notes || settings.footer_note) && (
+          {settings.invoice_show_notes !== false && (order.notes || settings.footer_note) && (
             <div className="mt-10 pt-6 border-t border-neutral-200 text-sm space-y-2" style={{ opacity: 0.85 }}>
               {order.notes && <p><strong>{L.notes}: </strong>{order.notes}</p>}
               {settings.footer_note && <p className="italic">{settings.footer_note}</p>}

@@ -13,7 +13,8 @@ export const getPublicInvoice = createServerFn({ method: "GET" })
       .select(`
         id, invoice_number, order_date, status, payment_method, payment_status,
         currency, notes, fulfillment_method, subtotal, discount, tax_amount,
-        tax_rate, shipping, total, advance_paid, shipping_address_id, user_id,
+        tax_rate, shipping, total, advance_paid, shipping_address_id, user_id, brand_id,
+        branch_id, digital_delivery_channel, digital_delivery_contact,
         customers(name, phone, email, region),
         order_items(description, quantity, unit_price, line_total, customization_total,
           customizations, custom_field_values, products(name), product_variants(size, color, fabric))
@@ -28,8 +29,8 @@ export const getPublicInvoice = createServerFn({ method: "GET" })
 
     const { data: settings } = await supabaseAdmin
       .from("business_settings")
-      .select("business_name, logo_url, address, phone, email, vat_number, currency, footer_note, primary_color, background_color, text_color")
-      .eq("user_id", order.user_id)
+      .select("business_name, logo_url, address, phone, email, vat_number, currency, footer_note, primary_color, background_color, text_color, font_family, font_url, invoice_template, invoice_secondary_color, invoice_show_business_details, invoice_show_customer_contact, invoice_show_fulfillment, invoice_show_notes, invoice_title_en, invoice_title_ar")
+      .eq("brand_id", order.brand_id)
       .maybeSingle();
 
     let shippingAddress: any = null;
@@ -42,7 +43,15 @@ export const getPublicInvoice = createServerFn({ method: "GET" })
       shippingAddress = addr ?? null;
     }
 
+    let branch: any = null;
+    if (order.branch_id) {
+      const { data: selectedBranch } = await supabaseAdmin.from("branches")
+        .select("name_ar, name_en, location_ar, location_en")
+        .eq("id", order.branch_id).eq("brand_id", order.brand_id).maybeSingle();
+      branch = selectedBranch ?? null;
+    }
+
     // The query above is intentionally allowlisted. Never replace it with `*`:
     // new internal order fields must not become public automatically.
-    return { order, settings, shippingAddress };
+    return { order, settings, shippingAddress, branch };
   });

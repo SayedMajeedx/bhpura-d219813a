@@ -163,16 +163,29 @@ export async function downloadInvoicePdf(
     const contentW = pageW - margin * 2;
     const contentH = pageH - margin * 2;
 
-    const imgData = canvas.toDataURL("image/jpeg", 0.95);
-    const widthScale = contentW / canvas.width;
-    const heightScale = contentH / canvas.height;
-    const scale = Math.min(widthScale, heightScale);
-    const imgW = canvas.width * scale;
-    const imgH = canvas.height * scale;
-    const x = margin + (contentW - imgW) / 2;
-    const y = margin + (contentH - imgH) / 2;
-
-    pdf.addImage(imgData, "JPEG", x, y, imgW, imgH);
+    // Preserve a readable A4 width and paginate vertically. The previous
+    // implementation shrank the entire invoice onto one page, making longer
+    // invoices unreadably small.
+    const pxPerMm = canvas.width / contentW;
+    const pageSliceHeightPx = Math.floor(contentH * pxPerMm);
+    let sourceY = 0;
+    let pageIndex = 0;
+    while (sourceY < canvas.height) {
+      const sliceHeight = Math.min(pageSliceHeightPx, canvas.height - sourceY);
+      const pageCanvas = document.createElement("canvas");
+      pageCanvas.width = canvas.width;
+      pageCanvas.height = sliceHeight;
+      const ctx = pageCanvas.getContext("2d");
+      if (!ctx) throw new Error("Unable to prepare invoice PDF page");
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, 0, pageCanvas.width, pageCanvas.height);
+      ctx.drawImage(canvas, 0, sourceY, canvas.width, sliceHeight, 0, 0, canvas.width, sliceHeight);
+      if (pageIndex > 0) pdf.addPage();
+      const sliceHeightMm = sliceHeight / pxPerMm;
+      pdf.addImage(pageCanvas.toDataURL("image/jpeg", 0.94), "JPEG", margin, margin, contentW, sliceHeightMm);
+      sourceY += sliceHeight;
+      pageIndex += 1;
+    }
 
     pdf.save(finalName);
   } finally {

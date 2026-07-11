@@ -32,6 +32,14 @@ type Settings = {
   font_family: string; font_url: string | null; font_size: number;
   text_color: string; background_color: string; logo_size: number;
   logo_x: number; logo_y: number; logo_width: number; logo_height: number;
+  invoice_template: "modern" | "classic" | "minimal";
+  invoice_secondary_color: string | null;
+  invoice_show_business_details: boolean;
+  invoice_show_customer_contact: boolean;
+  invoice_show_fulfillment: boolean;
+  invoice_show_notes: boolean;
+  invoice_title_en: string | null;
+  invoice_title_ar: string | null;
 };
 
 const LOGO_CANVAS_W = 600;
@@ -94,6 +102,12 @@ function Settings() {
       font_family: f.font_family, font_url: f.font_url, font_size: f.font_size,
       text_color: f.text_color, background_color: f.background_color, logo_size: f.logo_size,
       logo_x: f.logo_x, logo_y: f.logo_y, logo_width: f.logo_width, logo_height: f.logo_height,
+      invoice_template: f.invoice_template, invoice_secondary_color: f.invoice_secondary_color,
+      invoice_show_business_details: f.invoice_show_business_details,
+      invoice_show_customer_contact: f.invoice_show_customer_contact,
+      invoice_show_fulfillment: f.invoice_show_fulfillment,
+      invoice_show_notes: f.invoice_show_notes,
+      invoice_title_en: f.invoice_title_en, invoice_title_ar: f.invoice_title_ar,
     }).eq("brand_id", brandId);
     if (error) toast.error(error.message);
     else { toast.success("Saved"); qc.invalidateQueries({ queryKey: ["business-settings"] }); }
@@ -252,6 +266,31 @@ function Settings() {
                   <input type="color" value={f.background_color} onChange={(e) => setF({ ...f, background_color: e.target.value })} className="h-9 w-12 rounded border border-border cursor-pointer" />
                   <Input value={f.background_color} onChange={(e) => setF({ ...f, background_color: e.target.value })} />
                 </div>
+              </div>
+            </div>
+
+            <div className="rounded-lg border border-border p-4 space-y-4">
+              <div>
+                <h3 className="font-medium">{lang === "ar" ? "قالب الفاتورة" : "Invoice template"}</h3>
+                <p className="text-xs text-muted-foreground">{lang === "ar" ? "يطبق على المعاينة وملف PDF والرابط العام." : "Applies to the preview, PDF download, and public invoice link."}</p>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                {(["modern", "classic", "minimal"] as const).map((template) => (
+                  <Button key={template} type="button" variant={f.invoice_template === template ? "default" : "outline"} onClick={() => setF({ ...f, invoice_template: template })} className="capitalize">{template}</Button>
+                ))}
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div><Label>{lang === "ar" ? "عنوان الفاتورة بالإنجليزية" : "English invoice title"}</Label><Input value={f.invoice_title_en ?? ""} placeholder="INVOICE" onChange={(e) => setF({ ...f, invoice_title_en: e.target.value || null })} /></div>
+                <div><Label>{lang === "ar" ? "عنوان الفاتورة بالعربية" : "Arabic invoice title"}</Label><Input dir="rtl" value={f.invoice_title_ar ?? ""} placeholder="فاتورة" onChange={(e) => setF({ ...f, invoice_title_ar: e.target.value || null })} /></div>
+                <div><Label>{lang === "ar" ? "اللون الثانوي" : "Secondary color"}</Label><div className="flex gap-2"><input type="color" value={f.invoice_secondary_color ?? "#f5f5f5"} onChange={(e) => setF({ ...f, invoice_secondary_color: e.target.value })} className="h-9 w-12 rounded border" /><Input value={f.invoice_secondary_color ?? ""} placeholder="#f5f5f5" onChange={(e) => setF({ ...f, invoice_secondary_color: e.target.value || null })} /></div></div>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {([
+                  ["invoice_show_business_details", lang === "ar" ? "إظهار بيانات النشاط" : "Show business details"],
+                  ["invoice_show_customer_contact", lang === "ar" ? "إظهار بيانات العميل" : "Show customer contact"],
+                  ["invoice_show_fulfillment", lang === "ar" ? "إظهار بيانات التسليم" : "Show fulfillment details"],
+                  ["invoice_show_notes", lang === "ar" ? "إظهار الملاحظات" : "Show notes and footer"],
+                ] as const).map(([key, label]) => <div key={key} className="flex items-center justify-between rounded-md border p-3"><Label>{label}</Label><Switch checked={f[key]} onCheckedChange={(checked) => setF({ ...f, [key]: checked })} /></div>)}
               </div>
             </div>
 

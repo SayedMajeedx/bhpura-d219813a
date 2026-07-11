@@ -86,8 +86,9 @@ const PAY: Record<string, { en: string; ar: string }> = {
 };
 
 function PublicInvoice() {
-  const { order, settings, shippingAddress } = Route.useLoaderData() as any;
+  const { order, settings, shippingAddress, branch } = Route.useLoaderData() as any;
   const [lang, setLang] = useState<"en" | "ar">("en");
+  const [copied, setCopied] = useState(false);
   const L = LABELS[lang];
   const isRTL = lang === "ar";
   const locale = isRTL ? "ar-BH" : "en-BH";
@@ -95,6 +96,13 @@ function PublicInvoice() {
   const color = settings?.primary_color || "#8b6f47";
   const textColor = settings?.text_color || "#1a1a1a";
   const bgColor = settings?.background_color || "#ffffff";
+  const secondaryColor = settings?.invoice_secondary_color || `${color}10`;
+  const template = settings?.invoice_template || "modern";
+  const showBusiness = settings?.invoice_show_business_details !== false;
+  const showContact = settings?.invoice_show_customer_contact !== false;
+  const showFulfillment = settings?.invoice_show_fulfillment !== false;
+  const showNotes = settings?.invoice_show_notes !== false;
+  const invoiceTitle = (isRTL ? settings?.invoice_title_ar : settings?.invoice_title_en) || L.invoice;
   const items = order.order_items ?? [];
 
   const money = (n: number) => formatMoney(Number(n || 0), currency, locale);
@@ -109,11 +117,30 @@ function PublicInvoice() {
     <div dir={isRTL ? "rtl" : "ltr"} lang={lang} className="min-h-screen bg-neutral-100 py-6 px-3 sm:py-10 sm:px-6">
       {/* Browser print overrides removed — PDF is generated via html2pdf directly from the live DOM. */}
       <div className="mx-auto max-w-3xl">
-        <div className="print:hidden mb-4 flex flex-wrap items-center justify-end gap-2">
+        <div className="print:hidden mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-neutral-200 bg-white p-3 shadow-sm">
+          <div>
+            <p className="text-sm font-semibold">{settings?.business_name}</p>
+            <p className="text-xs text-neutral-500">#{order.invoice_number} · {new Date(order.order_date).toLocaleDateString(locale)}</p>
+          </div>
+          <div className="flex flex-wrap items-center justify-end gap-2">
           <div className="inline-flex rounded-md border border-neutral-300 bg-white overflow-hidden text-xs">
             <button onClick={() => setLang("en")} className={`px-3 py-1 ${lang === "en" ? "bg-neutral-900 text-white" : ""}`}>English</button>
             <button onClick={() => setLang("ar")} className={`px-3 py-1 ${lang === "ar" ? "bg-neutral-900 text-white" : ""}`}>العربية</button>
           </div>
+          <button
+            onClick={async () => {
+              const url = window.location.href;
+              if (navigator.share) {
+                try { await navigator.share({ title: `${invoiceTitle} #${order.invoice_number}`, url }); return; } catch { /* copy fallback */ }
+              }
+              await navigator.clipboard.writeText(url);
+              setCopied(true);
+              window.setTimeout(() => setCopied(false), 1800);
+            }}
+            className="px-3 py-2 text-xs rounded-md border border-neutral-300 bg-white hover:bg-neutral-50"
+          >
+            {copied ? (isRTL ? "تم النسخ" : "Copied") : (isRTL ? "مشاركة الرابط" : "Share link")}
+          </button>
           <button
             onClick={async () => {
               try {
@@ -125,21 +152,24 @@ function PublicInvoice() {
                 alert((err as Error)?.message ?? "PDF download failed");
               }
             }}
-            className="px-3 py-1 text-xs rounded-md border border-neutral-300 bg-white hover:bg-neutral-50"
+            className="px-3 py-2 text-xs rounded-md font-semibold text-white hover:opacity-90"
+            style={{ backgroundColor: color }}
           >
             {L.print}
           </button>
+          </div>
         </div>
 
         <div
           className="invoice-card pdf-invoice-root rounded-lg shadow-lg overflow-hidden"
           style={{
-            borderTop: `6px solid ${color}`,
+            borderTop: template === "minimal" ? "0" : template === "classic" ? `2px solid ${color}` : `8px solid ${color}`,
             backgroundColor: bgColor,
             color: textColor,
-            fontFamily: isRTL ? `'Tajawal','Cairo',sans-serif` : `'Cormorant Garamond', serif`,
+            fontFamily: settings?.font_url ? `'PublicInvoiceCustom', sans-serif` : isRTL ? `'Tajawal','Cairo',sans-serif` : `"${settings?.font_family || "Cormorant Garamond"}", serif`,
           }}
         >
+          {settings?.font_url && <style>{`@font-face{font-family:'PublicInvoiceCustom';src:url('${settings.font_url}');font-display:swap}`}</style>}
           <div className="pdf-invoice-body p-5 sm:p-10">
             {/* Brand block always on the doc-start side (LTR=left, RTL=right);
                 invoice metadata always on the doc-end side. Using natural
@@ -155,12 +185,15 @@ function PublicInvoice() {
                     style={{ marginInlineEnd: "auto" }}
                   />
                 )}
-                <p className="text-xs mt-1" style={{ opacity: 0.65 }}>
-                  {[settings?.phone, settings?.email].filter(Boolean).join(" · ")}
-                </p>
+                <p className="font-semibold">{settings?.business_name}</p>
+                {showBusiness && <div className="text-xs mt-1 space-y-0.5" style={{ opacity: 0.72 }}>
+                  {settings?.address && <p>{settings.address}</p>}
+                  <p>{[settings?.phone, settings?.email].filter(Boolean).join(" · ")}</p>
+                  {settings?.vat_number && <p>{L.vatId}: {settings.vat_number}</p>}
+                </div>}
               </div>
               <div className="pdf-meta-block w-[48%] min-w-0" style={{ textAlign: "end" }}>
-                <h1 style={{ color }} className="text-2xl sm:text-4xl font-semibold tracking-tight">{L.invoice}</h1>
+                <h1 style={{ color }} className="text-2xl sm:text-4xl font-semibold tracking-tight">{invoiceTitle}</h1>
                 <p className="text-sm sm:text-base mt-1">{L.number}: {order.invoice_number}</p>
                 <p className="text-xs mt-2" style={{ opacity: 0.7 }}>{L.date}: {new Date(order.order_date).toLocaleDateString(locale)}</p>
                 <p className="text-xs" style={{ opacity: 0.7 }}>{L.status}: {PAYMENT_BADGE_LABEL[resolvePaymentStatus(order.payment_status, order.status, Number(order.total_amount || order.total || 0), Number(order.advance_paid || 0))][lang]}</p>
@@ -174,14 +207,24 @@ function PublicInvoice() {
               <div className="mb-8" style={{ textAlign: "start" }}>
                 <p className="text-xs uppercase tracking-wider mb-1" style={{ opacity: 0.6 }}>{L.billTo}</p>
                 <p className="font-medium">{order.customers.name}</p>
-                {order.customers.phone && <p className="text-sm" style={{ opacity: 0.75 }}>{order.customers.phone}</p>}
-                {order.customers.email && <p className="text-sm" style={{ opacity: 0.75 }}>{order.customers.email}</p>}
-                {(addrLine || legacyRegion) && (
+                {showContact && order.customers.phone && <p className="text-sm" style={{ opacity: 0.75 }}>{order.customers.phone}</p>}
+                {showContact && order.customers.email && <p className="text-sm" style={{ opacity: 0.75 }}>{order.customers.email}</p>}
+                {!showFulfillment && (addrLine || legacyRegion) && (
                   <div className="mt-3 pt-3 border-t border-neutral-200">
                     <p className="text-xs uppercase tracking-wider mb-1" style={{ opacity: 0.6 }}>{L.delivery}</p>
                     <p className="text-sm" style={{ opacity: 0.85 }}>{addrLine || legacyRegion}</p>
                   </div>
                 )}
+              </div>
+            )}
+
+            {showFulfillment && (
+              <div className="mb-8 rounded-lg p-4 text-sm" style={{ backgroundColor: secondaryColor, textAlign: "start" }}>
+                <p className="text-xs uppercase tracking-wider mb-1" style={{ opacity: 0.6 }}>{isRTL ? "طريقة التسليم" : "Fulfillment"}</p>
+                <p className="font-semibold">{order.fulfillment_method === "digital" ? (isRTL ? "تسليم رقمي" : "Digital delivery") : order.fulfillment_method === "pickup" ? (isRTL ? "استلام من الفرع" : "Pickup from branch") : (isRTL ? "توصيل" : "Delivery")}</p>
+                {order.fulfillment_method === "digital" && <p dir="ltr" className="mt-1 break-all">{order.digital_delivery_channel === "whatsapp" ? "WhatsApp" : "Email"}: {order.digital_delivery_contact}</p>}
+                {order.fulfillment_method === "pickup" && branch && <p className="mt-1" style={{ opacity: 0.8 }}>{isRTL ? branch.name_ar || branch.name_en : branch.name_en || branch.name_ar}{(isRTL ? branch.location_ar || branch.location_en : branch.location_en || branch.location_ar) ? ` — ${isRTL ? branch.location_ar || branch.location_en : branch.location_en || branch.location_ar}` : ""}</p>}
+                {order.fulfillment_method === "delivery" && (addrLine || legacyRegion) && <p className="mt-1" style={{ opacity: 0.8 }}>{addrLine || legacyRegion}</p>}
               </div>
             )}
 
@@ -219,6 +262,7 @@ function PublicInvoice() {
                             ))}
                           </ul>
                         )}
+                        {(it.custom_field_values ?? []).length > 0 && <div className="mt-1 text-xs space-y-0.5" style={{ opacity: 0.75 }}>{it.custom_field_values.map((field: any, fi: number) => <p key={fi}>{(isRTL ? field.label_ar || field.label_en : field.label_en || field.label_ar) || field.key}: {field.value}</p>)}</div>}
                       </td>
                       <td className="p-3 text-end">{it.quantity}</td>
                       <td className="p-3 text-end whitespace-nowrap">{money(Number(it.unit_price) + Number(it.customization_total))}</td>
@@ -276,7 +320,7 @@ function PublicInvoice() {
               </div>
             </div>
 
-            {(order.notes || settings?.footer_note) && (
+            {showNotes && (order.notes || settings?.footer_note) && (
               <div className="mt-8 pt-6 border-t border-neutral-200 text-sm space-y-2" style={{ opacity: 0.85 }}>
                 {order.notes && <p><strong>{L.notes}: </strong>{order.notes}</p>}
                 {settings?.footer_note && <p className="italic">{settings.footer_note}</p>}

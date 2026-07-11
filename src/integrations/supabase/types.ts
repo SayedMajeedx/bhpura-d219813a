@@ -230,6 +230,14 @@ export type Database = {
           btn_secondary_bg: string | null
           btn_secondary_fg: string | null
           business_name: string
+          invoice_template: string
+          invoice_secondary_color: string | null
+          invoice_show_business_details: boolean
+          invoice_show_customer_contact: boolean
+          invoice_show_fulfillment: boolean
+          invoice_show_notes: boolean
+          invoice_title_en: string | null
+          invoice_title_ar: string | null
           card_enabled: boolean
           cod_enabled: boolean
           created_at: string
@@ -304,6 +312,14 @@ export type Database = {
           btn_secondary_bg?: string | null
           btn_secondary_fg?: string | null
           business_name?: string
+          invoice_template?: string
+          invoice_secondary_color?: string | null
+          invoice_show_business_details?: boolean
+          invoice_show_customer_contact?: boolean
+          invoice_show_fulfillment?: boolean
+          invoice_show_notes?: boolean
+          invoice_title_en?: string | null
+          invoice_title_ar?: string | null
           card_enabled?: boolean
           cod_enabled?: boolean
           created_at?: string
@@ -378,6 +394,14 @@ export type Database = {
           btn_secondary_bg?: string | null
           btn_secondary_fg?: string | null
           business_name?: string
+          invoice_template?: string
+          invoice_secondary_color?: string | null
+          invoice_show_business_details?: boolean
+          invoice_show_customer_contact?: boolean
+          invoice_show_fulfillment?: boolean
+          invoice_show_notes?: boolean
+          invoice_title_en?: string | null
+          invoice_title_ar?: string | null
           card_enabled?: boolean
           cod_enabled?: boolean
           created_at?: string
