@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useRef, useState } from "react";
-import { Html5Qrcode, Html5QrcodeSupportedFormats } from "html5-qrcode";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { BrowserCodeReader, BrowserMultiFormatReader, type IScannerControls } from "@zxing/browser";
+import { BarcodeFormat, DecodeHintType, NotFoundException } from "@zxing/library";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,429 +9,201 @@ import { Camera, Keyboard, RefreshCw, Upload, X, ZoomIn } from "lucide-react";
 
 type Props = {
   open: boolean;
-  onOpenChange: (v: boolean) => void;
+  onOpenChange: (value: boolean) => void;
   onDetected: (code: string) => void;
   cameraStreamPromise?: Promise<MediaStream> | null;
 };
 
-const SUPPORTED_FORMATS = [
-  Html5QrcodeSupportedFormats.QR_CODE,
-  Html5QrcodeSupportedFormats.EAN_13,
-  Html5QrcodeSupportedFormats.EAN_8,
-  Html5QrcodeSupportedFormats.CODE_128,
-  Html5QrcodeSupportedFormats.CODE_39,
-  Html5QrcodeSupportedFormats.CODE_93,
-  Html5QrcodeSupportedFormats.UPC_A,
-  Html5QrcodeSupportedFormats.UPC_E,
-  Html5QrcodeSupportedFormats.ITF,
-  Html5QrcodeSupportedFormats.CODABAR,
+type CameraInfo = { id: string; label: string };
+
+const FORMATS = [
+  BarcodeFormat.EAN_13,
+  BarcodeFormat.EAN_8,
+  BarcodeFormat.UPC_A,
+  BarcodeFormat.UPC_E,
+  BarcodeFormat.CODE_128,
+  BarcodeFormat.CODE_39,
+  BarcodeFormat.CODE_93,
+  BarcodeFormat.ITF,
+  BarcodeFormat.CODABAR,
+  BarcodeFormat.QR_CODE,
 ];
 
-const DECODE_REGION_ID = "barcode-scanner-decode-region";
+function cameraScore(label: string) {
+  const value = label.toLowerCase();
+  let score = 0;
+  if (/back|rear|environment/.test(value)) score += 30;
+  if (/wide/.test(value) && !/ultra/.test(value)) score += 10;
+  if (/main|camera 1/.test(value)) score += 5;
+  if (/front|user|facetime/.test(value)) score -= 50;
+  if (/ultra|telephoto/.test(value)) score -= 10;
+  return score;
+}
 
-export function BarcodeScanner({ open, onOpenChange, onDetected, cameraStreamPromise }: Props) {
+export function BarcodeScanner({ open, onOpenChange, onDetected }: Props) {
   const { lang } = useI18n();
   const isAr = lang === "ar";
-  const decoderRef = useRef<Html5Qrcode | null>(null);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const controlsRef = useRef<IScannerControls | null>(null);
+  const handledRef = useRef(false);
   const [error, setError] = useState<string | null>(null);
   const [starting, setStarting] = useState(false);
   const [manualCode, setManualCode] = useState("");
-  const [cameras, setCameras] = useState<Array<{ id: string; label: string }>>([]);
+  const [cameras, setCameras] = useState<CameraInfo[]>([]);
   const [activeCameraId, setActiveCameraId] = useState<string | null>(null);
   const [restartKey, setRestartKey] = useState(0);
   const [zoomRange, setZoomRange] = useState<{ min: number; max: number; step: number } | null>(null);
   const [zoom, setZoom] = useState(1);
-  const stoppedRef = useRef(false);
 
-  const getDecoder = useCallback(() => {
-    if (!decoderRef.current) {
-      decoderRef.current = new Html5Qrcode(DECODE_REGION_ID, {
-        verbose: false,
-        formatsToSupport: SUPPORTED_FORMATS,
-      });
-    }
-    return decoderRef.current;
+  const hints = useMemo(() => {
+    const map = new Map();
+    map.set(DecodeHintType.POSSIBLE_FORMATS, FORMATS);
+    map.set(DecodeHintType.TRY_HARDER, true);
+    map.set(DecodeHintType.ALSO_INVERTED, true);
+    return map;
   }, []);
 
-  const stopCamera = useCallback(async () => {
-    stoppedRef.current = true;
-    const decoder = decoderRef.current;
-    decoderRef.current = null;
-    if (decoder) {
-      try {
-        if (decoder.isScanning) await decoder.stop();
-      } catch {
-        /* noop */
-      }
-      try {
-        await decoder.clear();
-      } catch {
-        /* noop */
-      }
-    }
+  const stop = useCallback(() => {
+    controlsRef.current?.stop();
+    controlsRef.current = null;
+    const stream = videoRef.current?.srcObject as MediaStream | null;
+    stream?.getTracks().forEach((track) => track.stop());
+    if (videoRef.current) videoRef.current.srcObject = null;
   }, []);
 
-  const handleCameraError = useCallback((e: any) => {
-    const raw = String(e?.message || e || "");
-    const name = e?.name;
-    if (name === "NotAllowedError" || name === "PermissionDeniedError" || raw.includes("Permission denied")) {
-      setError(
-        isAr
-          ? "تم رفض إذن الكاميرا. فعّل الإذن من إعدادات المتصفح، أو استخدم زر التقاط صورة الكود."
-          : "Camera permission denied. Enable it in your browser settings, or use the Upload/Take Photo option.",
-      );
-    } else if (name === "NotFoundError" || name === "DevicesNotFoundError" || name === "OverconstrainedError") {
-      setError(
-        isAr
-          ? "لم يتم العثور على كاميرا مناسبة. استخدم زر التقاط صورة الكود."
-          : "No suitable camera found. Use the Upload/Take Photo option.",
-      );
-    } else if (name === "NotReadableError" || name === "TrackStartError") {
-      setError(
-        isAr
-          ? "الكاميرا مستخدمة من تطبيق آخر. أغلق التطبيقات الأخرى أو استخدم زر التقاط صورة الكود."
-          : "The camera is already in use. Close other camera apps or use the Upload/Take Photo option.",
-      );
-    } else {
-      setError(
-        isAr
-          ? "تعذر تشغيل الكاميرا. جرّب التقاط صورة الكود."
-          : "Unable to start the camera. Try the Upload/Take Photo option.",
-      );
-    }
-  }, [isAr]);
+  const finish = useCallback((value: string) => {
+    if (handledRef.current) return;
+    const code = value.replace(/[\u0000-\u001f\u007f]/g, "").trim();
+    if (!code) return;
+    handledRef.current = true;
+    stop();
+    onDetected(code);
+    onOpenChange(false);
+  }, [onDetected, onOpenChange, stop]);
+
+  const configureTrack = useCallback(() => {
+    window.setTimeout(() => {
+      const stream = videoRef.current?.srcObject as MediaStream | null;
+      const track = stream?.getVideoTracks()[0];
+      if (!track) return;
+      const capabilities = (track.getCapabilities?.() ?? {}) as any;
+      const advanced: any[] = [];
+      if (capabilities.focusMode?.includes?.("continuous")) advanced.push({ focusMode: "continuous" });
+      if (capabilities.exposureMode?.includes?.("continuous")) advanced.push({ exposureMode: "continuous" });
+      if (capabilities.whiteBalanceMode?.includes?.("continuous")) advanced.push({ whiteBalanceMode: "continuous" });
+      if (typeof capabilities.zoom?.min === "number" && typeof capabilities.zoom?.max === "number") {
+        const initial = Math.max(capabilities.zoom.min, Math.min(capabilities.zoom.max, 1));
+        setZoomRange({ min: capabilities.zoom.min, max: capabilities.zoom.max, step: capabilities.zoom.step || 0.1 });
+        setZoom(initial);
+        advanced.push({ zoom: initial });
+      } else {
+        setZoomRange(null);
+      }
+      if (advanced.length) void track.applyConstraints({ advanced } as any).catch(() => undefined);
+    }, 500);
+  }, []);
 
   useEffect(() => {
-    if (!open) return;
-    stoppedRef.current = false;
+    if (!open || !videoRef.current) return;
+    handledRef.current = false;
     setError(null);
     setStarting(true);
-
     let cancelled = false;
+    const reader = new BrowserMultiFormatReader(hints, 80);
 
     const start = async () => {
       try {
-        // Release the pre-warmed probe stream from the click handler; html5-qrcode
-        // will open its own stream and would otherwise hit NotReadableError.
-        let deviceId: string | undefined;
-        if (cameraStreamPromise) {
-          try {
-            const probe = await cameraStreamPromise;
-            const track = probe.getVideoTracks()[0];
-            deviceId = track?.getSettings?.().deviceId;
-            probe.getTracks().forEach((t) => t.stop());
-          } catch {
-            /* fall through — html5-qrcode will request its own */
-          }
-        }
-
-        // Ensure the decode region div is mounted.
-        await new Promise((r) => requestAnimationFrame(() => r(null)));
+        stop();
+        const devices = await BrowserCodeReader.listVideoInputDevices();
+        const mapped = devices.map((device) => ({ id: device.deviceId, label: device.label || `Camera ${device.deviceId.slice(0, 4)}` }));
         if (cancelled) return;
-
-        const decoder = getDecoder();
-
-        const available = await Html5Qrcode.getCameras().catch(() => []);
-        const mapped = available.map((camera) => ({ id: camera.id, label: camera.label || `Camera ${camera.id.slice(0, 4)}` }));
         setCameras(mapped);
-        const scoreCamera = (label: string) => {
-          const value = label.toLowerCase();
-          let score = 0;
-          if (/back|rear|environment/.test(value)) score += 20;
-          if (/wide/.test(value) && !/ultra/.test(value)) score += 8;
-          if (/main|camera 1/.test(value)) score += 4;
-          if (/front|user|facetime/.test(value)) score -= 30;
-          if (/ultra|telephoto/.test(value)) score -= 8;
-          return score;
-        };
-        const preferred = activeCameraId && mapped.some((camera) => camera.id === activeCameraId)
+        const selected = activeCameraId && mapped.some((camera) => camera.id === activeCameraId)
           ? activeCameraId
-          : [...mapped].sort((a, b) => scoreCamera(b.label) - scoreCamera(a.label))[0]?.id;
-        if (preferred) setActiveCameraId(preferred);
+          : [...mapped].sort((a, b) => cameraScore(b.label) - cameraScore(a.label))[0]?.id;
+        if (selected && selected !== activeCameraId) setActiveCameraId(selected);
 
-        const cameraConfig: MediaTrackConstraints = preferred
-          ? {
-              deviceId: { exact: preferred },
-              width: { ideal: 1920 },
-              height: { ideal: 1080 },
-              frameRate: { ideal: 30 },
-            }
-          : deviceId
-          ? {
-              deviceId: { exact: deviceId },
-              width: { ideal: 1920 },
-              height: { ideal: 1080 },
-              frameRate: { ideal: 30 },
-            }
-          : {
-              facingMode: { ideal: "environment" },
-              width: { ideal: 1920 },
-              height: { ideal: 1080 },
-              frameRate: { ideal: 30 },
-            };
-
-        const config = {
-          fps: 25,
-          qrbox: (viewfinderWidth: number, viewfinderHeight: number) => ({
-            width: Math.floor(viewfinderWidth * 0.9),
-            height: Math.floor(viewfinderHeight * 0.65),
-          }),
-          aspectRatio: 16 / 9,
-          disableFlip: false,
-          formatsToSupport: SUPPORTED_FORMATS,
-          videoConstraints: cameraConfig,
-          experimentalFeatures: { useBarCodeDetectorIfSupported: false },
-        };
-
-        const applyContinuousFocus = () => {
-          try {
-            const region = document.getElementById(DECODE_REGION_ID);
-            const video = region?.querySelector("video") as HTMLVideoElement | null;
-            const track = (video?.srcObject as MediaStream | null)?.getVideoTracks?.()[0];
-            if (!track) return;
-            const caps: any = track.getCapabilities?.() ?? {};
-            const advanced: any[] = [];
-            if (caps.focusMode?.includes?.("continuous")) advanced.push({ focusMode: "continuous" });
-            if (caps.exposureMode?.includes?.("continuous")) advanced.push({ exposureMode: "continuous" });
-            if (caps.whiteBalanceMode?.includes?.("continuous")) advanced.push({ whiteBalanceMode: "continuous" });
-            if (typeof caps.zoom?.min === "number" && typeof caps.zoom?.max === "number") {
-              const initialZoom = Math.min(caps.zoom.max, Math.max(caps.zoom.min, caps.zoom.min > 1 ? caps.zoom.min : 1));
-              setZoomRange({ min: caps.zoom.min, max: caps.zoom.max, step: caps.zoom.step || 0.1 });
-              setZoom(initialZoom);
-              advanced.push({ zoom: initialZoom });
-            } else {
-              setZoomRange(null);
-            }
-            if (advanced.length) void track.applyConstraints({ advanced } as any).catch(() => {});
-          } catch { /* noop */ }
-        };
-
-        const onSuccess = (decodedText: string) => {
-          if (stoppedRef.current) return;
-          stoppedRef.current = true;
-          onDetected(decodedText.trim());
-          void stopCamera();
-          onOpenChange(false);
-        };
-
-        const onFrameFail = () => {
-          /* per-frame no-match — ignore */
-        };
-
-        try {
-          await decoder.start(cameraConfig as any, config, onSuccess, onFrameFail);
-        } catch (err) {
-          // Retry with a looser facingMode fallback if exact deviceId failed.
-          if (deviceId) {
-            await decoder.start(
-              { facingMode: { ideal: "environment" } } as any,
-              config,
-              onSuccess,
-              onFrameFail,
-            );
-          } else {
-            throw err;
+        const controls = await reader.decodeFromVideoDevice(selected, videoRef.current!, (result, decodeError) => {
+          if (result) finish(result.getText());
+          if (decodeError && !(decodeError instanceof NotFoundException)) {
+            console.debug("[barcode-scanner] frame decode error", decodeError);
           }
-        }
-
-        // Give the video element a tick to attach, then enable continuous autofocus.
-        setTimeout(applyContinuousFocus, 600);
-
+        });
         if (cancelled) {
-          await stopCamera();
+          controls.stop();
           return;
         }
+        controlsRef.current = controls;
+        configureTrack();
         setStarting(false);
-      } catch (e: any) {
+      } catch (caught: any) {
+        if (cancelled) return;
         setStarting(false);
-        handleCameraError(e);
+        const denied = caught?.name === "NotAllowedError" || String(caught).toLowerCase().includes("permission");
+        setError(denied
+          ? (isAr ? "تم رفض إذن الكاميرا. فعّل الإذن من إعدادات المتصفح." : "Camera permission was denied. Enable it in browser settings.")
+          : (isAr ? "تعذر تشغيل الكاميرا. جرّب تبديل الكاميرا أو التقاط صورة." : "Could not start the camera. Try switching camera or taking a photo."));
       }
     };
-
     void start();
+    return () => { cancelled = true; stop(); };
+  }, [activeCameraId, configureTrack, finish, hints, isAr, open, restartKey, stop]);
 
-    return () => {
-      cancelled = true;
-      void stopCamera();
-    };
-  }, [cameraStreamPromise, getDecoder, handleCameraError, onDetected, onOpenChange, open, restartKey, stopCamera]);
-
-  const switchCamera = async () => {
+  const switchCamera = () => {
     if (cameras.length < 2) return;
     const current = cameras.findIndex((camera) => camera.id === activeCameraId);
     const next = cameras[(current + 1 + cameras.length) % cameras.length];
+    stop();
     setActiveCameraId(next.id);
-    await stopCamera();
-    stoppedRef.current = false;
     setRestartKey((value) => value + 1);
   };
 
-  const applyZoom = (nextZoom: number) => {
-    setZoom(nextZoom);
-    const region = document.getElementById(DECODE_REGION_ID);
-    const video = region?.querySelector("video") as HTMLVideoElement | null;
-    const track = (video?.srcObject as MediaStream | null)?.getVideoTracks?.()[0];
-    if (track) void track.applyConstraints({ advanced: [{ zoom: nextZoom } as any] }).catch(() => undefined);
+  const applyZoom = (value: number) => {
+    setZoom(value);
+    const stream = videoRef.current?.srcObject as MediaStream | null;
+    const track = stream?.getVideoTracks()[0];
+    if (track) void track.applyConstraints({ advanced: [{ zoom: value } as any] }).catch(() => undefined);
   };
 
-  const downscaleImage = async (file: File, maxEdge = 1600): Promise<File> => {
-    try {
-      const bitmap = await createImageBitmap(file);
-      const scale = Math.min(1, maxEdge / Math.max(bitmap.width, bitmap.height));
-      if (scale >= 1) return file;
-      const w = Math.round(bitmap.width * scale);
-      const h = Math.round(bitmap.height * scale);
-      const canvas = document.createElement("canvas");
-      canvas.width = w;
-      canvas.height = h;
-      const ctx = canvas.getContext("2d");
-      if (!ctx) return file;
-      ctx.drawImage(bitmap, 0, 0, w, h);
-      const blob: Blob | null = await new Promise((r) => canvas.toBlob(r, "image/jpeg", 0.92));
-      if (!blob) return file;
-      return new File([blob], file.name.replace(/\.[^.]+$/, "") + ".jpg", { type: "image/jpeg" });
-    } catch {
-      return file;
-    }
-  };
-
-  const handleFile = async (file: File) => {
+  const scanFile = async (file: File) => {
     setError(null);
-    await stopCamera();
-    const prepared = await downscaleImage(file);
-    // Use a fresh decoder instance for scanFile so it doesn't conflict with live scanning.
-    const scanDecoder = new Html5Qrcode(DECODE_REGION_ID, {
-      verbose: false,
-      formatsToSupport: SUPPORTED_FORMATS,
-    });
+    stop();
+    const objectUrl = URL.createObjectURL(file);
+    const reader = new BrowserMultiFormatReader(hints);
     try {
-      let text: string | null = null;
-      try {
-        text = await scanDecoder.scanFile(prepared, true);
-      } catch {
-        try {
-          text = await scanDecoder.scanFile(prepared, false);
-        } catch {
-          text = null;
-        }
-      }
-      if (text) {
-        stoppedRef.current = true;
-        onDetected(text.trim());
-        onOpenChange(false);
-        return;
-      }
-      setError(
-        isAr
-          ? "تعذر قراءة الباركود من الصورة. حاول التقاط صورة أوضح وأقرب."
-          : "Could not read the barcode from that image. Try a clearer, closer photo.",
-      );
+      const result = await reader.decodeFromImageUrl(objectUrl);
+      finish(result.getText());
+    } catch {
+      setError(isAr ? "لم نتمكن من قراءة الباركود من الصورة." : "Could not read a barcode from that image.");
     } finally {
-      try {
-        await scanDecoder.clear();
-      } catch {
-        /* noop */
-      }
+      URL.revokeObjectURL(objectUrl);
     }
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md p-0 overflow-hidden">
-        <DialogHeader className="p-4 pb-2 flex-row items-center justify-between">
+    <Dialog open={open} onOpenChange={(value) => { if (!value) stop(); onOpenChange(value); }}>
+      <DialogContent className="max-w-md overflow-hidden p-0">
+        <DialogHeader className="flex-row items-center justify-between p-4 pb-2">
           <DialogTitle>{isAr ? "مسح الباركود" : "Scan barcode"}</DialogTitle>
-          <Button variant="ghost" size="icon" onClick={() => onOpenChange(false)} aria-label="close">
-            <X className="h-4 w-4" />
-          </Button>
+          <Button variant="ghost" size="icon" onClick={() => onOpenChange(false)} aria-label="close"><X className="h-4 w-4" /></Button>
         </DialogHeader>
-        <div className="p-4 pt-0 space-y-3">
-          <div className="relative w-full aspect-video bg-black rounded-md overflow-hidden">
-            <div id={DECODE_REGION_ID} className="absolute inset-0 [&_video]:h-full [&_video]:w-full [&_video]:object-cover" />
+        <div className="space-y-3 p-4 pt-0">
+          <div className="relative aspect-video w-full overflow-hidden rounded-md bg-black">
+            <video ref={videoRef} muted playsInline autoPlay className="h-full w-full object-cover" />
             <div className="pointer-events-none absolute inset-x-[5%] top-1/2 h-[52%] -translate-y-1/2 rounded-lg border-[3px] border-white shadow-[0_0_0_999px_rgba(0,0,0,.28)]">
-              <span className="absolute -top-7 start-1/2 -translate-x-1/2 whitespace-nowrap rounded bg-black/70 px-2 py-1 text-[11px] font-medium text-white">
-                {isAr ? "باركود واحد داخل الإطار" : "One barcode inside the frame"}
-              </span>
+              <span className="absolute -top-7 start-1/2 -translate-x-1/2 whitespace-nowrap rounded bg-black/70 px-2 py-1 text-[11px] font-medium text-white">{isAr ? "باركود واحد داخل الإطار" : "One barcode inside the frame"}</span>
             </div>
-            {cameras.length > 1 && (
-              <Button type="button" size="icon" variant="secondary" className="absolute end-2 top-2 h-9 w-9 rounded-full" onClick={() => void switchCamera()} title={isAr ? "تبديل الكاميرا" : "Switch camera"}>
-                <RefreshCw className="h-4 w-4" />
-              </Button>
-            )}
+            {cameras.length > 1 && <Button type="button" size="icon" variant="secondary" className="absolute end-2 top-2 h-9 w-9 rounded-full" onClick={switchCamera}><RefreshCw className="h-4 w-4" /></Button>}
           </div>
-          {zoomRange && zoomRange.max > zoomRange.min && (
-            <div className="flex items-center gap-3 rounded-md border px-3 py-2">
-              <ZoomIn className="h-4 w-4 text-muted-foreground" />
-              <input type="range" className="min-w-0 flex-1 accent-current" min={zoomRange.min} max={zoomRange.max} step={zoomRange.step} value={zoom} onChange={(event) => applyZoom(Number(event.target.value))} aria-label={isAr ? "تكبير الكاميرا" : "Camera zoom"} />
-              <span className="w-9 text-end text-xs tabular-nums">{zoom.toFixed(1)}×</span>
-            </div>
-          )}
-          {starting && !error && (
-            <p className="text-xs text-muted-foreground text-center">
-              {isAr ? "جارٍ تشغيل الكاميرا..." : "Starting camera..."}
-            </p>
-          )}
-          {error && (
-            <p className="text-xs text-destructive text-center">{error}</p>
-          )}
-          <p className="text-xs text-muted-foreground text-center">
-            {isAr
-              ? "وجّه الكاميرا نحو الباركود بحيث يملأ الإطار."
-              : "Point the camera so the barcode fills the framed area."}
-          </p>
-
-          <div className="flex items-center gap-2 pt-1">
-            <div className="flex-1 h-px bg-border" />
-            <span className="text-[10px] uppercase tracking-wide text-muted-foreground">
-              {isAr ? "أو" : "or"}
-            </span>
-            <div className="flex-1 h-px bg-border" />
-          </div>
-
-          <Button
-            type="button"
-            variant="secondary"
-            size="sm"
-            className="w-full gap-2"
-            onClick={() => fileInputRef.current?.click()}
-          >
-            <Camera className="h-4 w-4" />
-            <Upload className="h-4 w-4 -ms-1" />
-            {isAr ? "التقاط صورة الكود" : "Upload or Take Photo"}
-          </Button>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*"
-            capture="environment"
-            className="hidden"
-            onChange={(e) => {
-              const f = e.target.files?.[0];
-              if (f) void handleFile(f);
-              e.target.value = "";
-            }}
-          />
-          <form
-            className="flex gap-2"
-            onSubmit={(event) => {
-              event.preventDefault();
-              const code = manualCode.trim();
-              if (!code) return;
-              onDetected(code);
-              onOpenChange(false);
-            }}
-          >
-            <div className="relative flex-1">
-              <Keyboard className="absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                dir="ltr"
-                className="ps-9 font-mono"
-                value={manualCode}
-                onChange={(event) => setManualCode(event.target.value)}
-                placeholder={isAr ? "امسح بجهاز خارجي أو أدخل الرمز" : "Use scanner gun or enter code"}
-                autoComplete="off"
-              />
-            </div>
+          {zoomRange && zoomRange.max > zoomRange.min && <div className="flex items-center gap-3 rounded-md border px-3 py-2"><ZoomIn className="h-4 w-4 text-muted-foreground" /><input type="range" className="min-w-0 flex-1" min={zoomRange.min} max={zoomRange.max} step={zoomRange.step} value={zoom} onChange={(event) => applyZoom(Number(event.target.value))} /><span className="w-9 text-end text-xs">{zoom.toFixed(1)}×</span></div>}
+          {starting && !error && <p className="text-center text-xs text-muted-foreground">{isAr ? "جارٍ تشغيل الماسح..." : "Starting scanner…"}</p>}
+          {error && <p className="text-center text-xs text-destructive">{error}</p>}
+          <p className="text-center text-xs text-muted-foreground">{isAr ? "قرّب باركوداً واحداً حتى تملأ الخطوط البيضاء الإطار." : "Move one barcode closer until its bars fill the frame."}</p>
+          <Button type="button" variant="secondary" size="sm" className="w-full gap-2" onClick={() => fileInputRef.current?.click()}><Camera className="h-4 w-4" /><Upload className="h-4 w-4 -ms-1" />{isAr ? "رفع أو التقاط صورة" : "Upload or Take Photo"}</Button>
+          <input ref={fileInputRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={(event) => { const file = event.target.files?.[0]; if (file) void scanFile(file); event.target.value = ""; }} />
+          <form className="flex gap-2" onSubmit={(event) => { event.preventDefault(); finish(manualCode); }}>
+            <div className="relative flex-1"><Keyboard className="absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" /><Input dir="ltr" className="ps-9 font-mono" value={manualCode} onChange={(event) => setManualCode(event.target.value)} placeholder={isAr ? "امسح بجهاز خارجي أو أدخل الرمز" : "Use scanner gun or enter code"} autoComplete="off" /></div>
             <Button type="submit" disabled={!manualCode.trim()}>{isAr ? "إضافة" : "Add"}</Button>
           </form>
         </div>
