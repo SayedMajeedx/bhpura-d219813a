@@ -8,9 +8,16 @@ export const getPublicInvoice = createServerFn({ method: "GET" })
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-    const { data: order, error } = await supabaseAdmin
-      .from("orders")
-      .select("*, customers(name, phone, email), order_items(*, products(name), product_variants(size, color, fabric))")
+    const { data: order, error } = await (supabaseAdmin
+      .from("orders") as any)
+      .select(`
+        id, invoice_number, order_date, status, payment_method, payment_status,
+        currency, notes, fulfillment_method, subtotal, discount, tax_amount,
+        tax_rate, shipping, total, advance_paid, shipping_address_id, user_id,
+        customers(name, phone, email, region),
+        order_items(description, quantity, unit_price, line_total, customization_total,
+          customizations, custom_field_values, products(name), product_variants(size, color, fabric))
+      `)
       .eq("public_invoice_token", data.id)
       .maybeSingle();
     if (error) {
@@ -18,9 +25,6 @@ export const getPublicInvoice = createServerFn({ method: "GET" })
       throw new Error("Unable to load invoice");
     }
     if (!order) return null;
-
-    // Never serialize the one-purpose email capability to an invoice viewer.
-    const { confirmation_email_token: _emailToken, ...publicOrder } = order as any;
 
     const { data: settings } = await supabaseAdmin
       .from("business_settings")
@@ -38,5 +42,7 @@ export const getPublicInvoice = createServerFn({ method: "GET" })
       shippingAddress = addr ?? null;
     }
 
-    return { order: publicOrder, settings, shippingAddress };
+    // The query above is intentionally allowlisted. Never replace it with `*`:
+    // new internal order fields must not become public automatically.
+    return { order, settings, shippingAddress };
   });

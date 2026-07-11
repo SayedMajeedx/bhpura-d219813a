@@ -9,11 +9,17 @@
 import { SMTPClient } from "https://deno.land/x/denomailer@1.6.0/mod.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
+const allowedOrigins = (Deno.env.get("ALLOWED_ORIGINS") ?? "https://bhpura.vercel.app")
+  .split(",").map((origin) => origin.trim()).filter(Boolean);
+function corsHeadersFor(req: Request) {
+  const origin = req.headers.get("origin") ?? "";
+  return {
+  "Access-Control-Allow-Origin": allowedOrigins.includes(origin) ? origin : allowedOrigins[0],
+  "Vary": "Origin",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-webhook-secret",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
-};
+  };
+}
 
 type Body = { order_id?: string; email_token?: string; lang?: "ar" | "en" };
 
@@ -203,15 +209,16 @@ async function sendAndLog(orderId: string, lang: "ar" | "en") {
   }
 }
 
-function json(data: unknown, status = 200) {
+function json(data: unknown, status: number, corsHeaders: Record<string, string>) {
   return new Response(JSON.stringify(data), {
     status, headers: { "Content-Type": "application/json", ...corsHeaders },
   });
 }
 
 Deno.serve(async (req) => {
+  const corsHeaders = corsHeadersFor(req);
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
-  if (req.method !== "POST") return json({ error: "Method not allowed" }, 405);
+  if (req.method !== "POST") return json({ error: "Method not allowed" }, 405, corsHeaders);
 
   // Auth is verified below. Merely looking like a Bearer token is not proof of
   // authentication (the public anon key is also normally sent as Bearer).
@@ -222,7 +229,7 @@ Deno.serve(async (req) => {
   let body: Body = {};
   try { body = await req.json(); } catch { /* noop */ }
   const orderId = body.order_id;
-  if (!orderId) return json({ error: "order_id required" }, 400);
+  if (!orderId) return json({ error: "order_id required" }, 400, corsHeaders);
   const lang: "ar" | "en" = body.lang === "ar" ? "ar" : "en";
 
   let authorized = secretOk;
@@ -257,9 +264,9 @@ Deno.serve(async (req) => {
       .maybeSingle();
     authorized = !!tokenMatch;
   }
-  if (!authorized) return json({ error: "Forbidden" }, 403);
+  if (!authorized) return json({ error: "Forbidden" }, 403, corsHeaders);
 
-  if (!SMTP_USER || !SMTP_PASS) return json({ error: "SMTP credentials not configured" }, 500);
+  if (!SMTP_USER || !SMTP_PASS) return json({ error: "SMTP credentials not configured" }, 500, corsHeaders);
 
   // Kick off SMTP work in the background; respond immediately so the client
   // isn't billed for the SMTP handshake latency.
@@ -267,10 +274,10 @@ Deno.serve(async (req) => {
   const runtime = (globalThis as any).EdgeRuntime;
   if (runtime?.waitUntil) {
     runtime.waitUntil(sendAndLog(orderId, lang));
-    return json({ ok: true, queued: true }, 202);
+    return json({ ok: true, queued: true }, 202, corsHeaders);
   }
 
   // Fallback: run inline (local dev / non-Supabase runtime)
   await sendAndLog(orderId, lang);
-  return json({ ok: true });
+  return json({ ok: true }, 200, corsHeaders);
 });

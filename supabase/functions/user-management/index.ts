@@ -1,8 +1,9 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.49.1";
 
+const allowedOrigin = Deno.env.get("ALLOWED_ORIGIN") ?? "https://bhpura.vercel.app";
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Origin": allowedOrigin,
   "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
   "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Client-Info, Apikey",
 };
@@ -89,8 +90,9 @@ Deno.serve(async (req: Request) => {
 
     const callerRole: string = callerProfile.role;
     const isAdmin = callerRole === "admin" || callerRole === "super_admin" || callerRole === "brand_admin";
-    const isSuperAdmin = callerRole === "super_admin" ||
-      callerProfile.email.toLowerCase() === "majeed@hotmail.it";
+    // Role is the sole authority. Never infer privileges from an editable
+    // profile field such as email.
+    const isSuperAdmin = callerRole === "super_admin";
     const isActive = callerProfile.status === "active";
 
     if (!isActive) {
@@ -144,7 +146,7 @@ Deno.serve(async (req: Request) => {
 
     console.error("[user-management] Error:", err);
     return new Response(
-      JSON.stringify({ error: err instanceof Error ? err.message : "Internal server error" }),
+      JSON.stringify({ error: "Internal server error" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
@@ -224,8 +226,7 @@ async function handleList(supabase: any, ctx: { isSuperAdmin: boolean; callerBra
     }
     query = query
       .eq("brand_id", ctx.callerBrandId)
-      .neq("role", "super_admin")
-      .neq("email", "majeed@hotmail.it");
+      .neq("role", "super_admin");
   }
 
   const { data: profiles, error } = await query;
@@ -238,8 +239,7 @@ async function handleList(supabase: any, ctx: { isSuperAdmin: boolean; callerBra
   const visibleProfiles = ctx.isSuperAdmin
     ? (profiles ?? [])
     : (profiles ?? []).filter((profile: any) =>
-        profile.role !== "super_admin" &&
-        String(profile.email ?? "").toLowerCase() !== "majeed@hotmail.it"
+        profile.role !== "super_admin"
       );
   return new Response(
     JSON.stringify({ profiles: visibleProfiles }),
@@ -354,14 +354,20 @@ async function handleUpdate(supabase: any, body: any, ctx: { userId: string; isS
     );
   }
 
-  const { data: target } = await supabase
+  const { data: target, error: targetError } = await supabase
     .from("profiles")
     .select("role, email, brand_id")
     .eq("id", userId)
     .maybeSingle();
 
-  const targetIsSuperAdmin = target?.role === "super_admin" ||
-    (target?.email || "").toLowerCase() === "majeed@hotmail.it";
+  if (targetError || !target) {
+    return new Response(
+      JSON.stringify({ error: "User profile not found" }),
+      { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
+
+  const targetIsSuperAdmin = target.role === "super_admin";
 
   if (targetIsSuperAdmin && !ctx.isSuperAdmin) {
     return new Response(
@@ -371,7 +377,7 @@ async function handleUpdate(supabase: any, body: any, ctx: { userId: string; isS
   }
 
   // Non-super-admins can only touch users in their own brand
-  if (!ctx.isSuperAdmin && target?.brand_id && target.brand_id !== ctx.callerBrandId) {
+  if (!ctx.isSuperAdmin && (!ctx.callerBrandId || target.brand_id !== ctx.callerBrandId)) {
     return new Response(
       JSON.stringify({ error: "You can only manage users in your own brand" }),
       { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -456,26 +462,26 @@ async function handleDelete(supabase: any, body: any, ctx: { userId: string; isS
     );
   }
 
-  const { data: target } = await supabase
+  const { data: target, error: targetError } = await supabase
     .from("profiles")
     .select("role, email, brand_id")
     .eq("id", userId)
     .maybeSingle();
 
-  const targetEmail = (target?.email || "").toLowerCase();
-  if (targetEmail === "majeed@hotmail.it") {
+  if (targetError || !target) {
     return new Response(
-      JSON.stringify({ error: "The primary super admin cannot be deleted" }),
-      { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      JSON.stringify({ error: "User profile not found" }),
+      { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
-  if (target?.role === "super_admin" && !ctx.isSuperAdmin) {
+
+  if (target.role === "super_admin" && !ctx.isSuperAdmin) {
     return new Response(
       JSON.stringify({ error: "Only a super admin can delete a super admin" }),
       { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
-  if (!ctx.isSuperAdmin && target?.brand_id && target.brand_id !== ctx.callerBrandId) {
+  if (!ctx.isSuperAdmin && (!ctx.callerBrandId || target.brand_id !== ctx.callerBrandId)) {
     return new Response(
       JSON.stringify({ error: "You can only delete users in your own brand" }),
       { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }

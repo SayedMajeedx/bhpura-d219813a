@@ -49,7 +49,7 @@ type Address = {
   is_default: boolean;
 };
 
-function DeleteAction({ message, onConfirm, mobile = false }: { message: string; onConfirm: () => void | Promise<void>; mobile?: boolean }) {
+function DeleteAction({ message, onConfirm, mobile = false }: { message: string; onConfirm: () => unknown | Promise<unknown>; mobile?: boolean }) {
   const t = useT();
   return (
     <AlertDialog>

@@ -3,8 +3,8 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
 
 const Input = z.object({
-  dataUrl: z.string().min(32).max(15_000_000),
-  mimeType: z.string().min(3).max(100),
+  dataUrl: z.string().min(32).max(8_500_000),
+  mimeType: z.enum(["image/jpeg", "image/png", "image/webp"]),
   targetLang: z.enum(["ar", "en"]).default("ar"),
 });
 
@@ -79,16 +79,22 @@ function extractBase64(dataUrl: string): string {
   const comma = dataUrl.indexOf(",");
   if (comma < 0) throw new Error("INVALID_RECEIPT_DATA");
   const metadata = dataUrl.slice(0, comma);
+  if (!/^data:image\/(jpeg|png|webp);base64$/i.test(metadata)) throw new Error("INVALID_RECEIPT_TYPE");
   if (!metadata.includes(";base64")) throw new Error("INVALID_RECEIPT_DATA");
   const base64 = dataUrl.slice(comma + 1).replace(/\s/g, "");
   if (!base64) throw new Error("INVALID_RECEIPT_DATA");
+  if (Math.floor(base64.length * 0.75) > 6_000_000) throw new Error("RECEIPT_TOO_LARGE");
   return base64;
 }
 
 export const scanReceipt = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((raw: unknown) => Input.parse(raw))
-  .handler(async ({ data }): Promise<ScannedExpense> => {
+  .handler(async ({ data, context }): Promise<ScannedExpense> => {
+    const { data: allowed, error: quotaError } = await (context.supabase.rpc as any)("consume_api_quota", {
+      p_action: "receipt_scan", p_limit: 20, p_window_minutes: 60,
+    });
+    if (quotaError || !allowed) throw new Error("RATE_LIMITED");
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) throw new Error("Missing GEMINI_API_KEY");
 
@@ -145,7 +151,8 @@ export const scanReceipt = createServerFn({ method: "POST" })
       if (response.status === 404 || /model.*(?:not found|no longer available)/i.test(providerMessage)) {
         throw new Error("GEMINI_MODEL_UNAVAILABLE");
       }
-      throw new Error(`Gemini API error ${response.status}: ${providerMessage.slice(0, 300)}`);
+      console.error(`[scanReceipt] Gemini API error ${response.status}: ${providerMessage.slice(0, 300)}`);
+      throw new Error("GEMINI_PROVIDER_ERROR");
     }
 
     const payload = (await response.json()) as {

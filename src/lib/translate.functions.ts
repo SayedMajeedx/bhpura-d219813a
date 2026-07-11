@@ -15,7 +15,11 @@ const Input = z.object({
 export const translateProductText = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((raw: unknown) => Input.parse(raw))
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
+    const { data: allowed, error: quotaError } = await (context.supabase.rpc as any)("consume_api_quota", {
+      p_action: "translation", p_limit: 100, p_window_minutes: 60,
+    });
+    if (quotaError || !allowed) throw new Error("RATE_LIMITED");
     if (data.from === data.to) return { text: data.text };
 
     const key = process.env.AZURE_TRANSLATOR_KEY;
@@ -48,7 +52,8 @@ export const translateProductText = createServerFn({ method: "POST" })
     if (res.status === 429) throw new Error("AZURE_TRANSLATOR_RATE_LIMITED");
     if (!res.ok) {
       const t = await res.text().catch(() => "");
-      throw new Error(`Azure translation error ${res.status}: ${t.slice(0, 200)}`);
+      console.error(`[translateProductText] Azure error ${res.status}: ${t.slice(0, 200)}`);
+      throw new Error("AZURE_TRANSLATOR_PROVIDER_ERROR");
     }
 
     const json = (await res.json()) as Array<{

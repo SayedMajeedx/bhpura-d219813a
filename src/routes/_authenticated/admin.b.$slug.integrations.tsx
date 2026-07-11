@@ -10,7 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
-import { Plug, Plus, Pencil, Trash2, Copy, Eye, EyeOff, ShieldAlert } from "lucide-react";
+import { Plug, Plus, Pencil, Trash2, Copy, ShieldAlert } from "lucide-react";
 import { toast } from "sonner";
 import { useT, useI18n } from "@/lib/i18n";
 import { useBrand } from "@/lib/brand-context";
@@ -24,8 +24,10 @@ type Row = {
   brand_id: string;
   provider: string;
   base_url: string | null;
-  api_key: string | null;
-  webhook_secret: string | null;
+  api_key_masked: string | null;
+  webhook_secret_masked: string | null;
+  has_api_key: boolean;
+  has_webhook_secret: boolean;
   is_active: boolean;
   notes: string | null;
   updated_at: string;
@@ -40,12 +42,6 @@ const PROVIDER_PRESETS = [
   { value: "custom", label: "Custom" },
 ];
 
-function mask(v: string | null | undefined) {
-  if (!v) return "—";
-  if (v.length <= 8) return `${v[0] ?? "•"}${"•".repeat(Math.max(0, v.length - 2))}${v[v.length - 1] ?? "•"}`;
-  return `${v.slice(0, 4)}${"•".repeat(6)}${v.slice(-4)}`;
-}
-
 function IntegrationsPage() {
   const t = useT();
   const { lang } = useI18n();
@@ -55,16 +51,11 @@ function IntegrationsPage() {
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Row | null>(null);
-  const [reveal, setReveal] = useState<Record<string, boolean>>({});
 
   const q = useQuery({
     queryKey: ["integrations", brandId],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("integration_credentials")
-        .select("*")
-        .eq("brand_id", brandId)
-        .order("provider");
+      const { data, error } = await (supabase.rpc as any)("list_integration_credentials", { p_brand_id: brandId });
       if (error) throw error;
       return (data ?? []) as Row[];
     },
@@ -72,7 +63,7 @@ function IntegrationsPage() {
 
   const del = async (id: string) => {
     if (!confirm(isAr ? "حذف هذا التكامل؟" : "Delete this integration?")) return;
-    const { error } = await supabase.from("integration_credentials").delete().eq("id", id);
+    const { error } = await (supabase.rpc as any)("delete_integration_credential", { p_id: id, p_brand_id: brandId });
     if (error) return toast.error(error.message);
     toast.success(t("common.delete"));
     qc.invalidateQueries({ queryKey: ["integrations", brandId] });
@@ -119,7 +110,6 @@ function IntegrationsPage() {
       ) : (
         <div className="grid gap-3">
           {(q.data ?? []).map((row) => {
-            const isRevealed = !!reveal[row.id];
             const webhookUrl = `${webhookBase}/${row.provider}/${brandId}`;
             const preset = PROVIDER_PRESETS.find((p) => p.value === row.provider);
             return (
@@ -139,8 +129,8 @@ function IntegrationsPage() {
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
-                  <MaskedRow label={t("integrations.apiKey")} value={row.api_key} revealed={isRevealed} onToggle={() => setReveal((s) => ({ ...s, [row.id]: !isRevealed }))} />
-                  <MaskedRow label={t("integrations.webhookSecret")} value={row.webhook_secret} revealed={isRevealed} onToggle={() => setReveal((s) => ({ ...s, [row.id]: !isRevealed }))} />
+                  <MaskedRow label={t("integrations.apiKey")} value={row.api_key_masked} />
+                  <MaskedRow label={t("integrations.webhookSecret")} value={row.webhook_secret_masked} />
                 </div>
 
                 <div className="mt-3 pt-3 border-t border-border text-xs">
@@ -163,19 +153,14 @@ function IntegrationsPage() {
   );
 }
 
-function MaskedRow({ label, value, revealed, onToggle }: { label: string; value: string | null; revealed: boolean; onToggle: () => void }) {
+function MaskedRow({ label, value }: { label: string; value: string | null }) {
   return (
     <div>
       <p className="text-xs text-muted-foreground mb-1">{label}</p>
       <div className="flex items-center gap-1">
         <code className="flex-1 truncate bg-secondary/40 rounded px-2 py-1 text-xs">
-          {revealed ? (value || "—") : mask(value)}
+          {value || "—"}
         </code>
-        {value && (
-          <Button variant="ghost" size="icon" onClick={onToggle}>
-            {revealed ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
-          </Button>
-        )}
       </div>
     </div>
   );
@@ -190,8 +175,8 @@ function IntegrationDialog({ brandId, row, onSaved }: { brandId: string; row: Ro
     provider: row?.provider ?? "aramex",
     provider_custom: row && !PROVIDER_PRESETS.find((p) => p.value === row.provider) ? row.provider : "",
     base_url: row?.base_url ?? "",
-    api_key: row?.api_key ?? "",
-    webhook_secret: row?.webhook_secret ?? "",
+    api_key: "",
+    webhook_secret: "",
     is_active: row?.is_active ?? true,
     notes: row?.notes ?? "",
   });
@@ -200,22 +185,16 @@ function IntegrationDialog({ brandId, row, onSaved }: { brandId: string; row: Ro
   const save = async () => {
     if (!providerValue) return toast.error(isAr ? "اسم الخدمة مطلوب" : "Provider is required");
     setSaving(true);
-    const payload = {
-      brand_id: brandId,
-      provider: providerValue,
-      base_url: form.base_url.trim() || null,
-      api_key: form.api_key.trim() || null,
-      webhook_secret: form.webhook_secret.trim() || null,
-      is_active: form.is_active,
-      notes: form.notes.trim() || null,
-    };
-    let error;
-    if (row) {
-      ({ error } = await supabase.from("integration_credentials").update(payload).eq("id", row.id));
-    } else {
-      const { data: { user } } = await supabase.auth.getUser();
-      ({ error } = await (supabase.from("integration_credentials") as any).insert({ ...payload, created_by: user?.id ?? null }));
-    }
+    const { error } = await (supabase.rpc as any)("save_integration_credential", {
+      p_id: row?.id ?? null,
+      p_brand_id: brandId,
+      p_provider: providerValue,
+      p_base_url: form.base_url.trim(),
+      p_api_key: form.api_key.trim(),
+      p_webhook_secret: form.webhook_secret.trim(),
+      p_is_active: form.is_active,
+      p_notes: form.notes.trim(),
+    });
     setSaving(false);
     if (error) return toast.error(error.message);
     toast.success(t("common.save"));
@@ -247,11 +226,11 @@ function IntegrationDialog({ brandId, row, onSaved }: { brandId: string; row: Ro
         </div>
         <div>
           <Label>{t("integrations.apiKey")}</Label>
-          <Input value={form.api_key} onChange={(e) => setForm({ ...form, api_key: e.target.value })} placeholder="sk_live_…" />
+          <Input type="password" value={form.api_key} onChange={(e) => setForm({ ...form, api_key: e.target.value })} placeholder={row?.has_api_key ? (isAr ? "اتركه فارغاً للاحتفاظ بالمفتاح الحالي" : "Leave blank to keep the current key") : "sk_live_…"} />
         </div>
         <div>
           <Label>{t("integrations.webhookSecret")}</Label>
-          <Input value={form.webhook_secret} onChange={(e) => setForm({ ...form, webhook_secret: e.target.value })} placeholder="whsec_…" />
+          <Input type="password" value={form.webhook_secret} onChange={(e) => setForm({ ...form, webhook_secret: e.target.value })} placeholder={row?.has_webhook_secret ? (isAr ? "اتركه فارغاً للاحتفاظ بالسر الحالي" : "Leave blank to keep the current secret") : "whsec_…"} />
         </div>
         <div>
           <Label>{t("integrations.notes")}</Label>
