@@ -16,6 +16,7 @@ import { BAHRAIN_REGIONS, regionLabel, formatAddressLine, type StructuredAddress
 import { PhoneInput } from "@/components/phone-input";
 import { useBrand } from "@/lib/brand-context";
 import { useRealtimeInvalidate } from "@/hooks/use-realtime-invalidate";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
 export const Route = createFileRoute("/_authenticated/admin/b/$slug/customers")({
   component: CustomersPage,
@@ -47,6 +48,23 @@ type Address = {
   flat: string | null;
   is_default: boolean;
 };
+
+function DeleteAction({ message, onConfirm, mobile = false }: { message: string; onConfirm: () => void | Promise<void>; mobile?: boolean }) {
+  const t = useT();
+  return (
+    <AlertDialog>
+      <AlertDialogTrigger asChild>
+        <Button type="button" className={mobile ? "h-11 w-11 touch-manipulation text-destructive" : "text-destructive"} variant="ghost" size="icon" aria-label={t("common.delete")}>
+          <Trash2 className={mobile ? "h-5 w-5" : "h-4 w-4"} />
+        </Button>
+      </AlertDialogTrigger>
+      <AlertDialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-lg">
+        <AlertDialogHeader><AlertDialogTitle>{t("common.delete")}</AlertDialogTitle><AlertDialogDescription>{message}</AlertDialogDescription></AlertDialogHeader>
+        <AlertDialogFooter><AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel><AlertDialogAction className="bg-destructive text-destructive-foreground hover:bg-destructive/90" onClick={() => void onConfirm()}>{t("common.delete")}</AlertDialogAction></AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
+}
 
 
 function CustomersPage() {
@@ -89,7 +107,6 @@ function CustomersPage() {
   });
 
   const del = async (id: string) => {
-    if (!confirm(t("customers.deleteConfirm"))) return;
     const { error } = await supabase.from("customers").delete().eq("id", id);
     if (error) toast.error(error.message);
     else { toast.success(t("common.delete")); qc.invalidateQueries({ queryKey: ["customers"] }); }
@@ -136,7 +153,7 @@ function CustomersPage() {
                     </div>
                     <div className="flex shrink-0 flex-col gap-1">
                       <Button className="h-11 w-11 touch-manipulation" variant="ghost" size="icon" onClick={() => { setEditing(c); setOpen(true); }}><Pencil className="h-5 w-5" /></Button>
-                      <Button className="h-11 w-11 touch-manipulation text-destructive" variant="ghost" size="icon" onClick={() => del(c.id)}><Trash2 className="h-5 w-5" /></Button>
+                      <DeleteAction message={t("customers.deleteConfirm")} onConfirm={() => del(c.id)} mobile />
                     </div>
                   </div>
                 </Card>
@@ -171,7 +188,7 @@ function CustomersPage() {
                   </td>
                   <td className="p-4 text-right">
                     <Button variant="ghost" size="icon" onClick={() => { setEditing(c); setOpen(true); }}><Pencil className="h-4 w-4" /></Button>
-                    <Button variant="ghost" size="icon" onClick={() => del(c.id)}><Trash2 className="h-4 w-4" /></Button>
+                    <DeleteAction message={t("customers.deleteConfirm")} onConfirm={() => del(c.id)} />
                   </td>
                 </tr>
               ))}
@@ -358,7 +375,6 @@ function AddressManager({ customerId, addresses, lang }: { customerId: string; a
   };
 
   const remove = async (id: string) => {
-    if (!confirm(t("customers.deleteAddressConfirm"))) return;
     const { error } = await supabase.from("customer_addresses").delete().eq("id", id);
     if (error) return toast.error(error.message);
     invalidate();
@@ -425,7 +441,7 @@ function AddressManager({ customerId, addresses, lang }: { customerId: string; a
                 </Button>
               )}
               <Button variant="ghost" size="icon" onClick={() => startEdit(a)}><Pencil className="h-4 w-4" /></Button>
-              <Button variant="ghost" size="icon" onClick={() => remove(a.id)}><Trash2 className="h-4 w-4" /></Button>
+              <DeleteAction message={t("customers.deleteAddressConfirm")} onConfirm={() => remove(a.id)} />
             </div>
           </li>
         ))}

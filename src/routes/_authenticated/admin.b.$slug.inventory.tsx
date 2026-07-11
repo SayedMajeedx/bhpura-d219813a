@@ -20,6 +20,7 @@ import { useRealtimeInvalidate } from "@/hooks/use-realtime-invalidate";
 import { Switch } from "@/components/ui/switch";
 import { ImageCropperDialog } from "@/components/image-cropper-dialog";
 import { BilingualField } from "@/components/bilingual-field";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
 /** Common measurement units the admin can pick from for a "size" variant. */
 const SIZE_UNITS = ["", "cm", "mm", "m", "inch", "ft", "kg", "g", "ml", "l"] as const;
@@ -58,6 +59,17 @@ type Variant = {
   size_unit: string | null;
 };
 type Customization = { id: string; name: string; price_delta: number };
+
+function InventoryDeleteAction({ message, onConfirm, mobile = false }: { message: string; onConfirm: () => void | Promise<void>; mobile?: boolean }) {
+  const t = useT();
+  return <AlertDialog>
+    <AlertDialogTrigger asChild><Button type="button" className={mobile ? "h-11 w-11 touch-manipulation text-destructive" : "text-destructive"} variant="ghost" size="icon" aria-label={t("common.delete")}><Trash2 className={mobile ? "h-5 w-5" : "h-4 w-4"} /></Button></AlertDialogTrigger>
+    <AlertDialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-lg">
+      <AlertDialogHeader><AlertDialogTitle>{t("common.delete")}</AlertDialogTitle><AlertDialogDescription>{message}</AlertDialogDescription></AlertDialogHeader>
+      <AlertDialogFooter><AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel><AlertDialogAction className="bg-destructive text-destructive-foreground hover:bg-destructive/90" onClick={() => void onConfirm()}>{t("common.delete")}</AlertDialogAction></AlertDialogFooter>
+    </AlertDialogContent>
+  </AlertDialog>;
+}
 
 function Inventory() {
   const t = useT();
@@ -162,7 +174,6 @@ function ProductsSection({ products, variants, businessName, onChanged }: { prod
   const [open, setOpen] = useState(false);
 
   const del = async (id: string) => {
-    if (!confirm(t("common.confirmDelete"))) return;
     const { error } = await supabase.from("products").delete().eq("id", id);
     if (error) toast.error(error.message); else { toast.success(t("common.delete")); onChanged(); }
   };
@@ -260,9 +271,7 @@ function ProductsSection({ products, variants, businessName, onChanged }: { prod
                     <Button variant="ghost" size="icon" onClick={() => { setEditing(p); setOpen(true); }}>
                       <Pencil className="h-4 w-4" />
                     </Button>
-                    <Button variant="ghost" size="icon" onClick={() => del(p.id)}>
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                    <InventoryDeleteAction message={t("common.confirmDelete")} onConfirm={() => del(p.id)} />
                   </div>
                 </div>
 
@@ -628,7 +637,6 @@ function VariantList({ productId, productName, businessName, variants, onChanged
     if (error) toast.error(error.message); else onChanged();
   };
   const del = async (id: string) => {
-    if (!confirm(t("inventory.deleteVariantConfirm"))) return;
     const { error } = await supabase.from("product_variants").delete().eq("id", id);
     if (error) toast.error(error.message); else onChanged();
   };
@@ -646,7 +654,7 @@ function VariantList({ productId, productName, businessName, variants, onChanged
             <div key={v.id} className="rounded-lg border border-border p-3 space-y-3">
               <div className="flex items-center justify-between gap-2">
                 <div className="font-medium">{[v.size, v.color, v.fabric].filter(Boolean).join(" · ") || (isAr ? "خيار المنتج" : "Product variant")}</div>
-                <Button className="h-11 w-11 touch-manipulation text-destructive" variant="ghost" size="icon" onClick={() => del(v.id)}><Trash2 className="h-4 w-4" /></Button>
+                <InventoryDeleteAction message={t("inventory.deleteVariantConfirm")} onConfirm={() => del(v.id)} mobile />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div><Label className="text-xs">{t("inventory.size")}</Label><Input defaultValue={v.size ?? ""} onBlur={(e) => update(v, { size: e.target.value || null })} /></div>
@@ -772,7 +780,7 @@ function VariantList({ productId, productName, businessName, variants, onChanged
                   <td className="py-2 pe-3 text-start"><input type="number" className="bg-transparent w-16 outline-none text-start" defaultValue={v.stock_main ?? 0} onBlur={(e) => update(v, { stock_main: Number(e.target.value) })} /></td>
                   <td className="py-2 pe-3 text-start"><input type="number" className="bg-transparent w-16 outline-none text-start" defaultValue={v.stock_incubator ?? 0} onBlur={(e) => update(v, { stock_incubator: Number(e.target.value) })} /></td>
                   <td className="py-2 pe-3 text-start font-medium">{(v.stock_main ?? 0) + (v.stock_incubator ?? 0)}</td>
-                  <td className="text-end"><Button variant="ghost" size="icon" onClick={() => del(v.id)}><Trash2 className="h-3 w-3" /></Button></td>
+                  <td className="text-end"><InventoryDeleteAction message={t("inventory.deleteVariantConfirm")} onConfirm={() => del(v.id)} /></td>
                 </tr>
               );
             })}
@@ -865,7 +873,7 @@ function CustomizationsSection({ brandId, items, onChanged }: { brandId: string;
                 <p className="font-medium">{i.name}</p>
                 <p className="text-xs text-muted-foreground">+ {formatMoney(Number(i.price_delta))}</p>
               </div>
-              <Button variant="ghost" size="icon" onClick={() => del(i.id)}><Trash2 className="h-4 w-4" /></Button>
+              <InventoryDeleteAction message={t("common.confirmDelete")} onConfirm={() => del(i.id)} />
             </li>
           ))}
         </ul>
