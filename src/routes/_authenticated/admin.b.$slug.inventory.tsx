@@ -679,11 +679,14 @@ function VariantList({ productId, productName, businessName, variants, onChanged
   const [row, setRow] = useState(empty);
 
   const genBarcode = () => {
-    const random = new Uint32Array(2);
+    const random = new Uint32Array(1);
     crypto.getRandomValues(random);
-    const time = Date.now().toString().slice(-8);
-    const entropy = `${random[0] % 10000}`.padStart(4, "0");
-    return `BQ${time}${entropy}`;
+    const body = `29${Date.now().toString().slice(-6)}${String(random[0] % 10000).padStart(4, "0")}`;
+    const weightedSum = body.split("").reduce(
+      (sum, digit, index) => sum + Number(digit) * (index % 2 === 0 ? 1 : 3),
+      0,
+    );
+    return `${body}${(10 - (weightedSum % 10)) % 10}`;
   };
 
   const normalizeBarcode = (value: unknown) => String(value ?? "").replace(/[\u0000-\u001f\u007f]/g, "").trim().toUpperCase();

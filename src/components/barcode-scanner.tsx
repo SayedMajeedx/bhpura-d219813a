@@ -141,16 +141,16 @@ export function BarcodeScanner({ open, onOpenChange, onDetected, cameraStreamPro
             };
 
         const config = {
-          fps: 15,
+          fps: 25,
           qrbox: (viewfinderWidth: number, viewfinderHeight: number) => ({
             width: Math.floor(viewfinderWidth * 0.9),
-            height: Math.floor(viewfinderHeight * 0.45),
+            height: Math.floor(viewfinderHeight * 0.65),
           }),
           aspectRatio: 16 / 9,
           disableFlip: false,
           formatsToSupport: SUPPORTED_FORMATS,
           videoConstraints: cameraConfig,
-          experimentalFeatures: { useBarCodeDetectorIfSupported: true },
+          experimentalFeatures: { useBarCodeDetectorIfSupported: false },
         };
 
         const applyContinuousFocus = () => {

@@ -26,7 +26,7 @@ export function BarcodeSvg({
     if (!ref.current || !value) return;
     try {
       JsBarcode(ref.current, value, {
-        format: "CODE128",
+        format: /^\d{13}$/.test(value) ? "EAN13" : "CODE128",
         height,
         width,
         fontSize,
@@ -78,7 +78,7 @@ export function printLabels(labels: LabelData[]) {
     const tmp = document.createElementNS("http://www.w3.org/2000/svg", "svg");
     try {
       JsBarcode(tmp, l.code, {
-        format: "CODE128",
+        format: /^\d{13}$/.test(l.code) ? "EAN13" : "CODE128",
         height: 54,
         width: 1.55,
         fontSize: 11,
