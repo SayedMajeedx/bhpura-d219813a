@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,7 +20,7 @@ import { useRealtimeInvalidate } from "@/hooks/use-realtime-invalidate";
 import { Switch } from "@/components/ui/switch";
 import { ImageCropperDialog } from "@/components/image-cropper-dialog";
 import { BilingualField } from "@/components/bilingual-field";
-import { uploadPublicMedia } from "@/lib/r2-upload";
+import { deletePublicMediaUrl, uploadPublicMedia } from "@/lib/r2-upload";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
 /** Common measurement units the admin can pick from for a "size" variant. */
@@ -171,18 +171,26 @@ function Inventory() {
 
 function ProductsSection({ products, variants, businessName, onChanged }: { products: Product[]; variants: Variant[]; businessName: string | null; onChanged: () => void }) {
   const t = useT();
+  const brand = useBrand();
+  const brandId = brand.id;
   const [editing, setEditing] = useState<Product | null>(null);
   const [open, setOpen] = useState(false);
 
   const del = async (id: string) => {
+    const product = products.find((item) => item.id === id);
     const { error } = await supabase.from("products").delete().eq("id", id);
-    if (error) toast.error(error.message); else { toast.success(t("common.delete")); onChanged(); }
+    if (error) toast.error(error.message); else {
+      const urls = new Set([
+        product?.image_url,
+        ...(product?.media ?? []).map((item) => item.url),
+      ].filter((url): url is string => Boolean(url)));
+      for (const url of urls) void deletePublicMediaUrl(brandId, url).catch(() => undefined);
+      toast.success(t("common.delete"));
+      onChanged();
+    }
   };
 
   const isAr = useI18n().lang === "ar";
-
-  const brand = useBrand();
-  const brandId = brand.id;
 
   const printAll = async () => {
     const labels: LabelData[] = [];
@@ -306,6 +314,16 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
   const [uploading, setUploading] = useState(false);
   const [cropSrc, setCropSrc] = useState<string | null>(null);
   const [pendingVideo, setPendingVideo] = useState<File | null>(null);
+  const uncommittedUploads = useRef(new Set<string>());
+  const removedCommittedMedia = useRef(new Set<string>());
+
+  useEffect(() => () => {
+    for (const url of uncommittedUploads.current) {
+      void deletePublicMediaUrl(brand.id, url).catch(() => undefined);
+    }
+    uncommittedUploads.current.clear();
+    removedCommittedMedia.current.clear();
+  }, [brand.id]);
 
   // Re-sync form whenever the edited product changes (or the dialog is reopened
   // with a different product) so previously-saved values are preserved as defaults
@@ -342,6 +360,7 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
       setUploading(true);
       const mediaBlob = blob.type ? blob : new Blob([blob], { type: kind === "image" ? "image/jpeg" : "video/mp4" });
       const url = await uploadPublicMedia(brand.id, mediaBlob, "product");
+      uncommittedUploads.current.add(url);
       setForm((f) => ({ ...f, media: [...f.media, { type: kind, url }] }));
       toast.success(isAr ? "تم الرفع" : "Uploaded");
     } catch (e: any) {
@@ -367,6 +386,18 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
   const handleCropConfirmed = async (blob: Blob) => {
     await uploadBlob(blob, "jpg", "image");
     setCropSrc(null);
+  };
+
+  const removeMedia = (index: number) => {
+    const media = form.media[index];
+    if (media && uncommittedUploads.current.delete(media.url)) {
+      void deletePublicMediaUrl(brand.id, media.url).catch(() => {
+        uncommittedUploads.current.add(media.url);
+      });
+    } else if (media) {
+      removedCommittedMedia.current.add(media.url);
+    }
+    setForm((current) => ({ ...current, media: current.media.filter((_, i) => i !== index) }));
   };
 
 
@@ -419,6 +450,11 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
       const { error } = await (supabase.from("products") as any).insert(payload);
       if (error) return toast.error(error.message);
     }
+    for (const url of removedCommittedMedia.current) {
+      void deletePublicMediaUrl(brand.id, url).catch(() => undefined);
+    }
+    removedCommittedMedia.current.clear();
+    uncommittedUploads.current.clear();
     toast.success(t("common.save"));
     onSaved();
   };
@@ -491,7 +527,7 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
                 <button
                   type="button"
                   className="absolute top-0.5 end-0.5 bg-background/80 rounded-full p-0.5"
-                  onClick={() => setForm({ ...form, media: form.media.filter((_, j) => j !== i) })}
+                  onClick={() => removeMedia(i)}
                 >
                   <Trash2 className="h-3 w-3" />
                 </button>

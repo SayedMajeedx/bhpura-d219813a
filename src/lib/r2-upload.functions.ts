@@ -1,5 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
-import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import { DeleteObjectCommand, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
@@ -27,6 +27,21 @@ function requiredEnv(name: string): string {
   return value;
 }
 
+function r2Client(): { client: S3Client; bucket: string; publicBaseUrl: string } {
+  const accountId = requiredEnv("R2_ACCOUNT_ID");
+  const accessKeyId = requiredEnv("R2_ACCESS_KEY_ID");
+  const secretAccessKey = requiredEnv("R2_SECRET_ACCESS_KEY");
+  return {
+    client: new S3Client({
+      region: "auto",
+      endpoint: `https://${accountId}.r2.cloudflarestorage.com`,
+      credentials: { accessKeyId, secretAccessKey },
+    }),
+    bucket: requiredEnv("R2_BUCKET_NAME"),
+    publicBaseUrl: requiredEnv("R2_PUBLIC_BASE_URL").replace(/\/+$/, ""),
+  };
+}
+
 export const createR2UploadUrl = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((raw: unknown) => Input.parse(raw))
@@ -44,17 +59,8 @@ export const createR2UploadUrl = createServerFn({ method: "POST" })
     if (data.size > maxSize) throw new Error("FILE_TOO_LARGE");
     if (isVideo && !["hero", "product"].includes(data.kind)) throw new Error("UNSUPPORTED_FILE_TYPE");
 
-    const accountId = requiredEnv("R2_ACCOUNT_ID");
-    const accessKeyId = requiredEnv("R2_ACCESS_KEY_ID");
-    const secretAccessKey = requiredEnv("R2_SECRET_ACCESS_KEY");
-    const bucket = requiredEnv("R2_BUCKET_NAME");
-    const publicBaseUrl = requiredEnv("R2_PUBLIC_BASE_URL").replace(/\/+$/, "");
+    const { client, bucket, publicBaseUrl } = r2Client();
     const key = `brands/${data.brandId}/${data.kind}/${crypto.randomUUID()}.${extension}`;
-    const client = new S3Client({
-      region: "auto",
-      endpoint: `https://${accountId}.r2.cloudflarestorage.com`,
-      credentials: { accessKeyId, secretAccessKey },
-    });
     const uploadUrl = await getSignedUrl(client, new PutObjectCommand({
       Bucket: bucket,
       Key: key,
@@ -62,4 +68,24 @@ export const createR2UploadUrl = createServerFn({ method: "POST" })
       CacheControl: "public, max-age=31536000, immutable",
     }), { expiresIn: 300 });
     return { uploadUrl, publicUrl: `${publicBaseUrl}/${key}`, key };
+  });
+
+const DeleteInput = z.object({
+  brandId: z.string().uuid(),
+  key: z.string().min(20).max(500),
+});
+
+export const deleteR2Object = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((raw: unknown) => DeleteInput.parse(raw))
+  .handler(async ({ data, context }) => {
+    const [{ data: canAccess }, { data: isAdmin }] = await Promise.all([
+      context.supabase.rpc("can_access_brand", { _brand_id: data.brandId }),
+      context.supabase.rpc("is_admin"),
+    ]);
+    if (!canAccess || !isAdmin) throw new Error("FORBIDDEN");
+    if (!data.key.startsWith(`brands/${data.brandId}/`)) throw new Error("INVALID_OBJECT_KEY");
+    const { client, bucket } = r2Client();
+    await client.send(new DeleteObjectCommand({ Bucket: bucket, Key: data.key }));
+    return { deleted: true };
   });

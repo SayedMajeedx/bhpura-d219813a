@@ -1,4 +1,4 @@
-import { createR2UploadUrl } from "@/lib/r2-upload.functions";
+import { createR2UploadUrl, deleteR2Object } from "@/lib/r2-upload.functions";
 
 export type PublicMediaKind = "logo" | "favicon" | "font" | "product" | "category" | "hero" | "page" | "payment-qr";
 
@@ -21,4 +21,15 @@ export async function uploadPublicMedia(brandId: string, file: Blob, kind: Publi
   });
   if (!response.ok) throw new Error(`R2 upload failed (${response.status})`);
   return signed.publicUrl;
+}
+
+export async function deletePublicMediaUrl(brandId: string, mediaUrl: string): Promise<void> {
+  let key: string;
+  try {
+    key = decodeURIComponent(new URL(mediaUrl).pathname.replace(/^\/+/, ""));
+  } catch {
+    return;
+  }
+  if (!key.startsWith(`brands/${brandId}/`)) return;
+  await deleteR2Object({ data: { brandId, key } });
 }
