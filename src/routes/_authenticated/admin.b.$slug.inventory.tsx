@@ -547,7 +547,16 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
             <p className="text-sm font-medium">{isAr ? "المنتج مفعّل في المتجر" : "Active in storefront"}</p>
             <p className="text-xs text-muted-foreground">{isAr ? "إظهار للعملاء في المتجر العام" : "Show to customers in the public storefront"}</p>
           </div>
-          <Switch checked={form.is_active} onCheckedChange={(v) => setForm({ ...form, is_active: v })} />
+          <div className="flex shrink-0 items-center gap-2">
+            <span className={`text-xs font-medium ${form.is_active ? "text-emerald-700" : "text-muted-foreground"}`}>
+              {form.is_active ? (isAr ? "مفعّل" : "Active") : (isAr ? "مخفي" : "Hidden")}
+            </span>
+            <Switch
+              checked={form.is_active}
+              onCheckedChange={(v) => setForm({ ...form, is_active: v })}
+              aria-label={isAr ? "إظهار المنتج في المتجر" : "Show product in storefront"}
+            />
+          </div>
         </div>
 
         <div className="space-y-2">

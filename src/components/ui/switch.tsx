@@ -6,8 +6,12 @@ import { cn } from "@/lib/utils";
 const Switch = React.forwardRef<
   React.ElementRef<typeof SwitchPrimitives.Root>,
   React.ComponentPropsWithoutRef<typeof SwitchPrimitives.Root>
->(({ className, ...props }, ref) => (
+>(({ className, dir, ...props }, ref) => (
   <SwitchPrimitives.Root
+    // Keep the mechanical movement consistent in RTL layouts. Without an
+    // explicit direction the thumb's transform can be mirrored outside the
+    // track by Safari/Chromium when an Arabic ancestor sets direction: rtl.
+    dir={dir ?? "ltr"}
     className={cn(
       // Always-visible border + distinct off-state so the control never blends into the surface.
       "peer inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full border-2 shadow-sm transition-colors",
@@ -24,7 +28,7 @@ const Switch = React.forwardRef<
   >
     <SwitchPrimitives.Thumb
       className={cn(
-        "pointer-events-none block h-5 w-5 rounded-full bg-background shadow-lg ring-0 border border-border transition-transform",
+        "pointer-events-none block h-5 w-5 rounded-full bg-background shadow-lg ring-0 border border-border transition-transform duration-200",
         "data-[state=checked]:translate-x-5 data-[state=unchecked]:translate-x-0",
       )}
     />
