@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { BrowserCodeReader, BrowserMultiFormatReader, type IScannerControls } from "@zxing/browser";
+import { BrowserMultiFormatReader, type IScannerControls } from "@zxing/browser";
 import { BarcodeFormat, DecodeHintType, NotFoundException } from "@zxing/library";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -28,17 +28,6 @@ const FORMATS = [
   BarcodeFormat.CODABAR,
   BarcodeFormat.QR_CODE,
 ];
-
-function cameraScore(label: string) {
-  const value = label.toLowerCase();
-  let score = 0;
-  if (/back|rear|environment/.test(value)) score += 30;
-  if (/wide/.test(value) && !/ultra/.test(value)) score += 10;
-  if (/main|camera 1/.test(value)) score += 5;
-  if (/front|user|facetime/.test(value)) score -= 50;
-  if (/ultra|telephoto/.test(value)) score -= 10;
-  return score;
-}
 
 export function BarcodeScanner({ open, onOpenChange, onDetected }: Props) {
   const { lang } = useI18n();
@@ -115,16 +104,35 @@ export function BarcodeScanner({ open, onOpenChange, onDetected }: Props) {
     const start = async () => {
       try {
         stop();
-        const devices = await BrowserCodeReader.listVideoInputDevices();
-        const mapped = devices.map((device) => ({ id: device.deviceId, label: device.label || `Camera ${device.deviceId.slice(0, 4)}` }));
-        if (cancelled) return;
-        setCameras(mapped);
-        const selected = activeCameraId && mapped.some((camera) => camera.id === activeCameraId)
-          ? activeCameraId
-          : [...mapped].sort((a, b) => cameraScore(b.label) - cameraScore(a.label))[0]?.id;
-        if (selected && selected !== activeCameraId) setActiveCameraId(selected);
+        const constraints: MediaStreamConstraints = {
+          audio: false,
+          video: activeCameraId
+            ? { deviceId: { exact: activeCameraId }, width: { ideal: 1920 }, height: { ideal: 1080 } }
+            : { facingMode: { ideal: "environment" }, width: { ideal: 1920 }, height: { ideal: 1080 } },
+        };
+        // Own the MediaStream directly. This avoids iOS WebKit producing a
+        // live-but-black preview when a decoder library attaches the stream.
+        const stream = await navigator.mediaDevices.getUserMedia(constraints);
+        if (cancelled) { stream.getTracks().forEach((track) => track.stop()); return; }
+        const video = videoRef.current!;
+        video.setAttribute("playsinline", "true");
+        video.setAttribute("webkit-playsinline", "true");
+        video.srcObject = stream;
+        await new Promise<void>((resolve) => {
+          if (video.readyState >= 1) resolve();
+          else video.onloadedmetadata = () => resolve();
+        });
+        await video.play();
 
-        const controls = await reader.decodeFromVideoDevice(selected, videoRef.current!, (result, decodeError) => {
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        const mapped = devices
+          .filter((device) => device.kind === "videoinput")
+          .map((device) => ({ id: device.deviceId, label: device.label || `Camera ${device.deviceId.slice(0, 4)}` }));
+        setCameras(mapped);
+        const currentId = stream.getVideoTracks()[0]?.getSettings().deviceId ?? null;
+        if (currentId) setActiveCameraId(currentId);
+
+        const controls = await reader.decodeFromStream(stream, video, (result, decodeError) => {
           if (result) finish(result.getText());
           if (decodeError && !(decodeError instanceof NotFoundException)) {
             console.debug("[barcode-scanner] frame decode error", decodeError);
@@ -135,11 +143,6 @@ export function BarcodeScanner({ open, onOpenChange, onDetected }: Props) {
           return;
         }
         controlsRef.current = controls;
-        // iOS WebKit can attach the MediaStream without beginning inline
-        // playback, leaving a black video element despite an active camera.
-        videoRef.current?.setAttribute("playsinline", "true");
-        videoRef.current?.setAttribute("webkit-playsinline", "true");
-        await videoRef.current?.play().catch(() => undefined);
         configureTrack();
         setStarting(false);
       } catch (caught: any) {
