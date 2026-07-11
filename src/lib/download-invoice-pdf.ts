@@ -86,8 +86,6 @@ export async function downloadInvoicePdf(
     }
     .pdf-render-root .pdf-totals-row {
       display: flex !important;
-      justify-content: flex-start !important;
-      direction: ltr !important;
     }
     .pdf-render-root .pdf-totals-block {
       width: 288px !important;
@@ -133,15 +131,32 @@ export async function downloadInvoicePdf(
     // Give the browser a tick to lay out the cloned subtree at the forced width.
     await new Promise((r) => requestAnimationFrame(() => r(null)));
     await document.fonts?.ready.catch(() => undefined);
-    await Promise.all(
-      Array.from(clone.querySelectorAll("img")).map((img) => {
-        if (img.complete) return Promise.resolve();
-        return new Promise<void>((resolve) => {
-          img.addEventListener("load", () => resolve(), { once: true });
-          img.addEventListener("error", () => resolve(), { once: true });
-        });
-      }),
-    );
+    await Promise.all(Array.from(clone.querySelectorAll("img")).map(async (img) => {
+      const src = img.currentSrc || img.src;
+      // Inline remote brand assets before html2canvas runs. A cloned image can
+      // otherwise be omitted even though it is visible in the live preview.
+      if (src && !src.startsWith("data:") && !src.startsWith("blob:")) {
+        try {
+          const response = await fetch(src, { mode: "cors", credentials: "omit" });
+          if (response.ok) {
+            const blob = await response.blob();
+            const dataUrl = await new Promise<string>((resolve, reject) => {
+              const reader = new FileReader();
+              reader.onload = () => resolve(String(reader.result));
+              reader.onerror = () => reject(reader.error);
+              reader.readAsDataURL(blob);
+            });
+            img.src = dataUrl;
+          }
+        } catch { /* keep the original URL as a fallback */ }
+      }
+      img.crossOrigin = "anonymous";
+      if (img.complete && img.naturalWidth > 0) return;
+      await new Promise<void>((resolve) => {
+        img.addEventListener("load", () => resolve(), { once: true });
+        img.addEventListener("error", () => resolve(), { once: true });
+      });
+    }));
 
     const canvas = await html2canvas(clone, {
       scale: 2,

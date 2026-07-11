@@ -180,6 +180,7 @@ function PublicInvoice() {
                 {settings?.logo_url && (
                   <img
                     src={settings.logo_url}
+                    crossOrigin="anonymous"
                     alt="logo"
                     className="pdf-brand-logo h-12 sm:h-14 max-w-full object-contain mb-2"
                     style={{ marginInlineEnd: "auto" }}
@@ -188,7 +189,8 @@ function PublicInvoice() {
                 <p className="font-semibold">{settings?.business_name}</p>
                 {showBusiness && <div className="text-xs mt-1 space-y-0.5" style={{ opacity: 0.72 }}>
                   {settings?.address && <p>{settings.address}</p>}
-                  <p>{[settings?.phone, settings?.email].filter(Boolean).join(" · ")}</p>
+                  {settings?.phone && <p dir="ltr" style={{ unicodeBidi: "isolate" }}>{settings.phone}</p>}
+                  {settings?.email && <p dir="ltr" style={{ unicodeBidi: "isolate" }}>{settings.email}</p>}
                   {settings?.vat_number && <p>{L.vatId}: {settings.vat_number}</p>}
                 </div>}
               </div>
@@ -207,7 +209,7 @@ function PublicInvoice() {
               <div className="mb-8" style={{ textAlign: "start" }}>
                 <p className="text-xs uppercase tracking-wider mb-1" style={{ opacity: 0.6 }}>{L.billTo}</p>
                 <p className="font-medium">{order.customers.name}</p>
-                {showContact && order.customers.phone && <p className="text-sm" style={{ opacity: 0.75 }}>{order.customers.phone}</p>}
+                {showContact && order.customers.phone && <p dir="ltr" className="text-sm" style={{ opacity: 0.75, unicodeBidi: "isolate" }}>{order.customers.phone}</p>}
                 {showContact && order.customers.email && <p className="text-sm" style={{ opacity: 0.75 }}>{order.customers.email}</p>}
                 {!showFulfillment && (addrLine || legacyRegion) && (
                   <div className="mt-3 pt-3 border-t border-neutral-200">
@@ -274,7 +276,7 @@ function PublicInvoice() {
             </div>
 
             {/* Totals block stays on the physical left side in both languages. */}
-            <div className="pdf-totals-row flex" style={{ justifyContent: "flex-start", direction: "ltr" }}>
+            <div className="pdf-totals-row flex" style={{ justifyContent: isRTL ? "flex-start" : "flex-end", direction: "ltr" }}>
               <div className="pdf-totals-block w-full sm:w-72 text-sm space-y-1" style={{ direction: isRTL ? "rtl" : "ltr" }}>
                 <div className="flex justify-between"><span style={{ opacity: 0.75 }}>{L.subtotal}</span><span>{money(order.subtotal)}</span></div>
                 {Number(order.discount) > 0 && <div className="flex justify-between"><span style={{ opacity: 0.75 }}>{L.discount}</span><span>− {money(order.discount)}</span></div>}

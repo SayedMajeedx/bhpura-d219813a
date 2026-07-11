@@ -1205,6 +1205,7 @@ function InvoicePreview({ order, items, settings, shippingAddress, paymentBadge 
                 >
                   <img
                     src={settings.logo_url}
+                    crossOrigin="anonymous"
                     alt="logo"
                     className="pdf-brand-logo"
                     draggable={false}
@@ -1222,7 +1223,8 @@ function InvoicePreview({ order, items, settings, shippingAddress, paymentBadge 
               <p className="font-semibold">{settings.business_name}</p>
               {settings.invoice_show_business_details !== false && <div className="text-xs mt-1 space-y-0.5" style={{ opacity: 0.7 }}>
                 {settings.address && <p>{settings.address}</p>}
-                <p>{[settings.phone, settings.email].filter(Boolean).join(" · ")}</p>
+                {settings.phone && <p dir="ltr" style={{ unicodeBidi: "isolate" }}>{settings.phone}</p>}
+                {settings.email && <p dir="ltr" style={{ unicodeBidi: "isolate" }}>{settings.email}</p>}
                 {settings.vat_number && <p>{isRTL ? "الرقم الضريبي" : "VAT"}: {settings.vat_number}</p>}
               </div>}
             </div>
@@ -1241,7 +1243,7 @@ function InvoicePreview({ order, items, settings, shippingAddress, paymentBadge 
             <div className="mb-8" style={{ textAlign: "start" }}>
               <p className="text-xs uppercase tracking-wider mb-1" style={{ opacity: 0.6 }}>{L.billTo}</p>
               <p className="font-medium">{order.customers.name}</p>
-              {settings.invoice_show_customer_contact !== false && order.customers.phone && <p className="text-sm" style={{ opacity: 0.75 }}>{num(order.customers.phone)}</p>}
+              {settings.invoice_show_customer_contact !== false && order.customers.phone && <p dir="ltr" className="text-sm" style={{ opacity: 0.75, unicodeBidi: "isolate" }}>{num(order.customers.phone)}</p>}
               {settings.invoice_show_customer_contact !== false && order.customers.email && <p className="text-sm" style={{ opacity: 0.75 }}>{order.customers.email}</p>}
               {(() => {
                 const detailed = shippingAddress
@@ -1368,7 +1370,7 @@ function InvoicePreview({ order, items, settings, shippingAddress, paymentBadge 
           </div>
 
           {/* Totals stay on the physical left side in both languages. */}
-          <div className="pdf-totals-row flex" style={{ justifyContent: "flex-start", direction: "ltr" }}>
+          <div className="pdf-totals-row flex" style={{ justifyContent: isRTL ? "flex-start" : "flex-end", direction: "ltr" }}>
             <div className="pdf-totals-block w-72 text-sm space-y-1" style={{ direction: isRTL ? "rtl" : "ltr" }}>
               <div className="flex justify-between"><span style={{ opacity: 0.75 }}>{L.subtotal}</span><span>{money(order.subtotal)}</span></div>
               {Number(order.discount) > 0 && <div className="flex justify-between"><span style={{ opacity: 0.75 }}>{L.discount}</span><span>− {money(order.discount)}</span></div>}
