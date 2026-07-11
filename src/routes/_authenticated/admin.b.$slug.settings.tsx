@@ -579,13 +579,13 @@ function ShippingSettingsCard({ brandId }: { brandId: string }) {
   const isAr = lang === "ar";
   const qc = useQueryClient();
   const [saving, setSaving] = useState(false);
-  const [state, setState] = useState<{ delivery_enabled: boolean; pickup_enabled: boolean; delivery_fee: number } | null>(null);
+  const [state, setState] = useState<{ delivery_enabled: boolean; pickup_enabled: boolean; digital_delivery_enabled: boolean; delivery_fee: number } | null>(null);
 
   const { data } = useQuery({
     queryKey: ["business-settings-shipping", brandId],
     queryFn: async () => {
       const { data, error } = await supabase.from("business_settings")
-        .select("delivery_enabled, pickup_enabled, delivery_fee")
+        .select("delivery_enabled, pickup_enabled, digital_delivery_enabled, delivery_fee")
         .eq("brand_id", brandId).maybeSingle();
       if (error) throw error;
       return data;
@@ -595,6 +595,7 @@ function ShippingSettingsCard({ brandId }: { brandId: string }) {
     if (data) setState({
       delivery_enabled: (data as any).delivery_enabled ?? true,
       pickup_enabled: (data as any).pickup_enabled ?? true,
+      digital_delivery_enabled: (data as any).digital_delivery_enabled ?? false,
       delivery_fee: Number((data as any).delivery_fee ?? 0),
     });
   }, [data]);
@@ -605,6 +606,7 @@ function ShippingSettingsCard({ brandId }: { brandId: string }) {
     const { error } = await (supabase.from("business_settings") as any).update({
       delivery_enabled: state.delivery_enabled,
       pickup_enabled: state.pickup_enabled,
+      digital_delivery_enabled: state.digital_delivery_enabled,
       delivery_fee: state.delivery_fee,
     }).eq("brand_id", brandId);
     setSaving(false);
@@ -628,6 +630,13 @@ function ShippingSettingsCard({ brandId }: { brandId: string }) {
       <div className="flex items-center justify-between rounded-md border border-border p-3">
         <p className="text-sm font-medium">{t("settings.pickupEnabled")}</p>
         <Switch checked={state.pickup_enabled} onCheckedChange={(v) => setState({ ...state, pickup_enabled: v })} />
+      </div>
+      <div className="flex items-center justify-between rounded-md border border-border p-3">
+        <div>
+          <p className="text-sm font-medium">{isAr ? "تفعيل التسليم الرقمي" : "Enable digital delivery"}</p>
+          <p className="text-xs text-muted-foreground">{isAr ? "إرسال المنتج عبر البريد الإلكتروني أو واتساب" : "Send products by email or WhatsApp"}</p>
+        </div>
+        <Switch checked={state.digital_delivery_enabled} onCheckedChange={(v) => setState({ ...state, digital_delivery_enabled: v })} />
       </div>
 
       <div>

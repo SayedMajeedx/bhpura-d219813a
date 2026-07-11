@@ -10,13 +10,13 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Loader2, CreditCard, Banknote, QrCode, Truck, Store, User } from "lucide-react";
+import { Loader2, CreditCard, Banknote, QrCode, Truck, Store, User, Download, Mail, MessageCircle } from "lucide-react";
 
 export const Route = createFileRoute("/$slug/checkout")({
   component: Checkout,
 });
 
-type Fulfillment = "delivery" | "pickup";
+type Fulfillment = "delivery" | "pickup" | "digital";
 
 function Checkout() {
   const { brand, settings, cart, cartTotal, currency, lang, t, clearCart, session } = useStorefront();
@@ -81,8 +81,9 @@ function Checkout() {
     const opts: Array<{ id: Fulfillment; ar: string; en: string; icon: any; fee: number }> = [];
     if (settings.delivery_enabled) opts.push({ id: "delivery", ar: "توصيل", en: "Delivery", icon: Truck, fee: settings.delivery_fee });
     if (settings.pickup_enabled) opts.push({ id: "pickup", ar: "استلام من الفرع", en: "Pickup from branch", icon: Store, fee: 0 });
+    if (settings.digital_delivery_enabled) opts.push({ id: "digital", ar: "تسليم رقمي", en: "Digital delivery", icon: Download, fee: 0 });
     return opts;
-  }, [settings.delivery_enabled, settings.pickup_enabled, settings.delivery_fee]);
+  }, [settings.delivery_enabled, settings.pickup_enabled, settings.digital_delivery_enabled, settings.delivery_fee]);
 
   const [fulfillment, setFulfillment] = useState<Fulfillment>(fulfillmentOptions[0]?.id ?? "delivery");
   useEffect(() => {
@@ -93,6 +94,8 @@ function Checkout() {
 
   const [branches, setBranches] = useState<Array<{ id: string; name_ar: string | null; name_en: string | null; location_ar: string | null; location_en: string | null; notes_ar: string | null; notes_en: string | null }>>([]);
   const [branchId, setBranchId] = useState<string>("");
+  const [digitalChannel, setDigitalChannel] = useState<"email" | "whatsapp">("email");
+  const [digitalContact, setDigitalContact] = useState("");
   useEffect(() => {
     if (!settings.pickup_enabled) return;
     (async () => {
@@ -124,7 +127,7 @@ function Checkout() {
   }
 
   const submit = async () => {
-    if (!form.name.trim() || !form.phone.trim()) {
+    if (!form.name.trim() || (fulfillment !== "digital" && !form.phone.trim())) {
       toast.error(t("الاسم والهاتف مطلوبان", "Name and phone are required"));
       return;
     }
@@ -142,6 +145,17 @@ function Checkout() {
       toast.error(t("اختر الفرع", "Select a branch"));
       return;
     }
+    if (fulfillment === "digital") {
+      const contact = digitalContact.trim();
+      if (!contact) {
+        toast.error(t("أدخل البريد الإلكتروني أو رقم/معرّف واتساب", "Enter the email or WhatsApp number/user ID"));
+        return;
+      }
+      if (digitalChannel === "email" && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contact)) {
+        toast.error(t("أدخل بريداً إلكترونياً صحيحاً", "Enter a valid email address"));
+        return;
+      }
+    }
     setSubmitting(true);
     try {
       const { data, error } = await supabase.rpc("place_storefront_order", {
@@ -149,7 +163,7 @@ function Checkout() {
         p_customer: {
           name: form.name,
           phone: form.phone,
-          email: form.email,
+          email: fulfillment === "digital" && digitalChannel === "email" ? digitalContact.trim() : form.email,
           label: form.label,
           region: form.region,
           block: form.block,
@@ -174,6 +188,8 @@ function Checkout() {
         p_notes: form.notes || undefined,
         p_fulfillment: fulfillment,
         p_branch_id: fulfillment === "pickup" ? (branchId || null) : null,
+        p_digital_channel: fulfillment === "digital" ? digitalChannel : null,
+        p_digital_contact: fulfillment === "digital" ? digitalContact.trim() : null,
       } as any);
       if (error) throw error;
       const orderId = (data as any)?.order_id;
@@ -181,7 +197,8 @@ function Checkout() {
       clearCart();
       toast.success(t("تم استلام طلبك!", "Order placed!"));
       // Fire-and-forget confirmation email (respects storefront language).
-      if (orderId && form.email) {
+      const confirmationEmail = fulfillment === "digital" && digitalChannel === "email" ? digitalContact.trim() : form.email;
+      if (orderId && confirmationEmail) {
         const emailLang = (typeof document !== "undefined" && document.documentElement.dir === "rtl") ? "ar" : "en";
         // Fire-and-forget; server returns 202 immediately and sends in background.
         supabase.functions.invoke("send-order-email", {
@@ -191,7 +208,7 @@ function Checkout() {
       navigate({
         to: "/$slug/thank-you/$orderId",
         params: { slug: brand.slug, orderId: String(orderId ?? "") },
-        search: { fulfillment },
+        search: { fulfillment, channel: fulfillment === "digital" ? digitalChannel : "email" },
       });
     } catch (e: any) {
       const msg = String(e?.message ?? e);
@@ -199,8 +216,10 @@ function Checkout() {
         toast.error(t("المخزون غير كافٍ لأحد المنتجات", "Insufficient stock for one item"));
       } else if (msg.includes("PAYMENT_METHOD_DISABLED")) {
         toast.error(t("طريقة الدفع غير متاحة", "Payment method unavailable"));
-      } else if (msg.includes("DELIVERY_DISABLED") || msg.includes("PICKUP_DISABLED")) {
+      } else if (msg.includes("DELIVERY_DISABLED") || msg.includes("PICKUP_DISABLED") || msg.includes("DIGITAL_DELIVERY_DISABLED")) {
         toast.error(t("طريقة التسليم غير متاحة", "Fulfillment method unavailable"));
+      } else if (msg.includes("DIGITAL_CONTACT") || msg.includes("DIGITAL_EMAIL") || msg.includes("DIGITAL_CHANNEL")) {
+        toast.error(t("تحقق من بيانات التسليم الرقمي", "Check the digital delivery details"));
       } else {
         toast.error(msg);
       }
@@ -320,6 +339,29 @@ function Checkout() {
                 })}
               </div>
             )}
+          </Card>
+        )}
+
+        {fulfillment === "digital" && (
+          <Card className="p-5 space-y-4">
+            <div>
+              <h2 className="font-display text-xl">{t("طريقة استلام المنتج الرقمي", "Digital delivery channel")}</h2>
+              <p className="text-sm text-muted-foreground">{t("اختر طريقة واحدة وأدخل بيانات الاستلام المطلوبة.", "Choose one channel and enter the required delivery contact.")}</p>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              {([
+                ["email", t("البريد الإلكتروني", "Email"), Mail],
+                ["whatsapp", t("واتساب", "WhatsApp"), MessageCircle],
+              ] as const).map(([channel, label, Icon]) => (
+                <button key={channel} type="button" onClick={() => { setDigitalChannel(channel); setDigitalContact(""); }} className="flex items-center gap-2 rounded-lg border p-3" style={digitalChannel === channel ? { borderColor: settings.primary_color, backgroundColor: `${settings.primary_color}11` } : undefined}>
+                  <Icon className="h-5 w-5" /><span>{label}</span>
+                </button>
+              ))}
+            </div>
+            <div>
+              <Label>{digitalChannel === "email" ? t("البريد الإلكتروني", "Email address") : t("رقم أو معرّف واتساب", "WhatsApp number or user ID")} *</Label>
+              <Input type={digitalChannel === "email" ? "email" : "text"} inputMode={digitalChannel === "email" ? "email" : "text"} value={digitalContact} onChange={(e) => setDigitalContact(e.target.value)} placeholder={digitalChannel === "email" ? "name@example.com" : t("مثال: +973… أو معرّف المستخدم", "e.g. +973… or user ID")} />
+            </div>
           </Card>
         )}
 

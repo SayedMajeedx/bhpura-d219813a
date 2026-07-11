@@ -33,6 +33,7 @@ export type PublicSettings = {
   footer_note: string | null;
   delivery_enabled: boolean;
   pickup_enabled: boolean;
+  digital_delivery_enabled: boolean;
   delivery_fee: number;
   // Theme customizer
   logo_size: number;

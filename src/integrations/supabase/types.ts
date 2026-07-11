@@ -236,6 +236,7 @@ export type Database = {
           currency: string
           default_tax_rate: number
           delivery_enabled: boolean
+          digital_delivery_enabled: boolean
           delivery_fee: number
           email: string | null
           email_footer_ar: string | null
@@ -309,6 +310,7 @@ export type Database = {
           currency?: string
           default_tax_rate?: number
           delivery_enabled?: boolean
+          digital_delivery_enabled?: boolean
           delivery_fee?: number
           email?: string | null
           email_footer_ar?: string | null
@@ -382,6 +384,7 @@ export type Database = {
           currency?: string
           default_tax_rate?: number
           delivery_enabled?: boolean
+          digital_delivery_enabled?: boolean
           delivery_fee?: number
           email?: string | null
           email_footer_ar?: string | null
@@ -921,6 +924,8 @@ export type Database = {
           customer_id: string | null
           discount: number
           fulfillment_method: string
+          digital_delivery_channel: string | null
+          digital_delivery_contact: string | null
           id: string
           invoice_number: number
           notes: string | null
@@ -952,6 +957,8 @@ export type Database = {
           customer_id?: string | null
           discount?: number
           fulfillment_method?: string
+          digital_delivery_channel?: string | null
+          digital_delivery_contact?: string | null
           id?: string
           invoice_number: number
           notes?: string | null
@@ -983,6 +990,8 @@ export type Database = {
           customer_id?: string | null
           discount?: number
           fulfillment_method?: string
+          digital_delivery_channel?: string | null
+          digital_delivery_contact?: string | null
           id?: string
           invoice_number?: number
           notes?: string | null

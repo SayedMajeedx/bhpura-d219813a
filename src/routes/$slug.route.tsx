@@ -72,6 +72,7 @@ export const Route = createFileRoute("/$slug")({
       footer_note: s?.footer_note ?? null,
       delivery_enabled: s?.delivery_enabled ?? true,
       pickup_enabled: s?.pickup_enabled ?? true,
+      digital_delivery_enabled: s?.digital_delivery_enabled ?? false,
       delivery_fee: Number(s?.delivery_fee ?? 0),
       logo_size: Number(s?.logo_size ?? 48),
       logo_align: (s?.logo_align ?? "left") as "left" | "center" | "right",

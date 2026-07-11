@@ -1195,10 +1195,25 @@ function InvoicePreview({ order, items, settings, shippingAddress, paymentBadge 
                 {isRTL ? "طريقة التسليم" : "Fulfillment"}
               </p>
               <p>
-                {order.fulfillment_method === "pickup"
-                  ? (isRTL ? "استلام من الفرع" : "Pickup from branch")
-                  : (isRTL ? "توصيل" : "Delivery")}
+                {order.fulfillment_method === "digital"
+                  ? (isRTL ? "تسليم رقمي" : "Digital delivery")
+                  : order.fulfillment_method === "pickup"
+                    ? (isRTL ? "استلام من الفرع" : "Pickup from branch")
+                    : (isRTL ? "توصيل" : "Delivery")}
               </p>
+              {order.fulfillment_method === "digital" && (
+                <div className="mt-2 rounded-md border border-neutral-200 p-3">
+                  <p className="text-xs uppercase tracking-wider" style={{ opacity: 0.6 }}>
+                    {isRTL ? "قناة التسليم الرقمي" : "Digital delivery channel"}
+                  </p>
+                  <p className="font-medium">
+                    {order.digital_delivery_channel === "whatsapp"
+                      ? (isRTL ? "واتساب" : "WhatsApp")
+                      : (isRTL ? "البريد الإلكتروني" : "Email")}
+                  </p>
+                  <p className="mt-1 break-all" dir="ltr">{order.digital_delivery_contact || "—"}</p>
+                </div>
+              )}
               {order.branch_id && (
                 <InvoiceBranchName brandId={order.brand_id} branchId={order.branch_id} isRTL={isRTL} />
               )}
