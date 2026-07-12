@@ -500,8 +500,12 @@ function CartDrawer({ children }: { children: React.ReactNode }) {
   return (
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>{children}</SheetTrigger>
-      <SheetContent side={lang === "ar" ? "left" : "right"} className="w-full sm:max-w-md flex flex-col">
-        <SheetHeader>
+      <SheetContent
+        side={lang === "ar" ? "left" : "right"}
+        dir={lang === "ar" ? "rtl" : "ltr"}
+        className={`w-full sm:max-w-md flex flex-col ${lang === "ar" ? "[&>button]:left-auto [&>button]:right-4" : ""}`}
+      >
+        <SheetHeader className={`${lang === "ar" ? "text-right sm:text-right pe-14" : "text-left sm:text-left pe-14"}`}>
           <SheetTitle>{t("سلة التسوق", "Your cart")}</SheetTitle>
         </SheetHeader>
 
