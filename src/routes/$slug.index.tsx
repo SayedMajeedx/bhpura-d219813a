@@ -272,7 +272,7 @@ function Categories({
   if (merged.length === 0) return null;
 
   return (
-    <div className={`${navigation ? "my-2 min-h-16 items-center justify-center border-b py-2" : "mb-8 justify-center"} flex flex-wrap gap-3`}>
+    <div dir={lang === "ar" ? "rtl" : "ltr"} className={`${navigation ? "my-2 min-h-16 w-full items-center justify-start border-b py-2 sm:justify-center" : "mb-8 justify-center"} flex flex-wrap gap-3`}>
       {navigation && <details className="group relative shrink-0">
         <summary className="flex h-11 cursor-pointer list-none items-center gap-2 rounded-xl border border-dashed px-5 font-semibold shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md [&::-webkit-details-marker]:hidden"><Grid2X2 className="h-5 w-5" /><span>{t("القائمة", "Menu")}</span><ChevronDown className="h-4 w-4 transition-transform group-open:rotate-180" /></summary>
         <div className="absolute start-0 top-full z-50 mt-2 w-[min(92vw,620px)] rounded-2xl border p-5 shadow-2xl" style={{ backgroundColor: menuBackground, color: menuText }}>
@@ -288,7 +288,7 @@ function Categories({
             key={c.key}
             to="/$slug/$category"
             params={{ slug: brand.slug, category: c.key }}
-            className={`shrink-0 px-4 py-2.5 ${navigation ? "rounded-xl border-transparent text-base font-semibold hover:-translate-y-0.5 hover:scale-[1.03] hover:shadow-sm" : "rounded-full border text-sm"} inline-flex items-center gap-2 transition-all duration-200 active:scale-95 ${
+            className={`shrink-0 px-4 py-2.5 ${navigation ? "hidden rounded-xl border-transparent text-base font-semibold hover:-translate-y-0.5 hover:scale-[1.03] hover:shadow-sm sm:inline-flex" : "inline-flex rounded-full border text-sm"} items-center gap-2 transition-all duration-200 active:scale-95 ${
               active ? "bg-neutral-900 text-white border-neutral-900" : "bg-white/80 text-neutral-800 border-neutral-200 hover:bg-neutral-100"
             }`}
           >
