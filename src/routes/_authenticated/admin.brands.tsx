@@ -13,6 +13,7 @@ import { Plus, Store, ExternalLink, Crown, Pencil, Trash2, AlertTriangle } from 
 import { toast } from "sonner";
 import { useI18n, useT } from "@/lib/i18n";
 import { SUPER_ADMIN_EMAIL } from "@/lib/profile-context";
+import { purgeBrandPublicMedia } from "@/lib/r2-upload";
 
 export const Route = createFileRoute("/_authenticated/admin/brands")({
   beforeLoad: async () => {
@@ -368,6 +369,7 @@ function DeleteBrandDialog({ brand, onDone }: { brand: Brand; onDone: () => void
   const [confirm, setConfirm] = useState("");
   const [hard, setHard] = useState(false);
   const [working, setWorking] = useState(false);
+  const [databasePurged, setDatabasePurged] = useState(false);
 
   const countsQ = useQuery({
     queryKey: ["brand-delete-counts", brand.id],
@@ -381,21 +383,27 @@ function DeleteBrandDialog({ brand, onDone }: { brand: Brand; onDone: () => void
     },
   });
   const counts = countsQ.data;
-  const canHardDelete = counts != null && counts.orders === 0 && counts.products === 0;
-
-  useEffect(() => {
-    if (!canHardDelete) setHard(false);
-  }, [canHardDelete]);
-
   const run = async () => {
     if (confirm.trim().toLowerCase() !== brand.slug.toLowerCase()) {
       toast.error(isAr ? "المعرّف غير مطابق" : "Slug does not match");
       return;
     }
     setWorking(true);
-    const { error } = await supabase.rpc("delete_brand", { p_brand_id: brand.id, p_hard: hard });
+    if (!databasePurged) {
+      const { error } = await supabase.rpc("delete_brand", { p_brand_id: brand.id, p_hard: hard });
+      if (error) { setWorking(false); return toast.error(error.message); }
+      if (hard) setDatabasePurged(true);
+    }
+    if (hard) {
+      try {
+        await purgeBrandPublicMedia(brand.id);
+      } catch (error: any) {
+        setWorking(false);
+        toast.error(isAr ? "تم حذف بيانات العلامة، لكن تعذر تنظيف ملفات R2. اضغط إعادة المحاولة." : "Brand data was deleted, but R2 cleanup failed. Click retry to finish media cleanup.", { duration: 10000 });
+        return;
+      }
+    }
     setWorking(false);
-    if (error) return toast.error(error.message);
     toast.success(t("brands.deleteSuccess"));
     onDone();
   };
@@ -408,7 +416,9 @@ function DeleteBrandDialog({ brand, onDone }: { brand: Brand; onDone: () => void
         </DialogTitle>
       </DialogHeader>
       <div className="space-y-3">
-        <p className="text-sm text-muted-foreground">{t("brands.deleteWarning")}</p>
+        <p className="text-sm text-muted-foreground">{hard
+          ? (isAr ? "سيؤدي الحذف النهائي إلى إزالة جميع المنتجات والطلبات والفواتير والعملاء والإعدادات والملفات نهائياً. لا يمكن التراجع." : "Permanent deletion removes all products, orders, invoices, customers, settings, and media. This cannot be undone.")
+          : t("brands.deleteWarning")}</p>
         {counts && (
           <div className="grid grid-cols-3 text-center rounded-md border border-border p-3 text-sm">
             <div><div className="font-display text-lg">{counts.orders}</div><div className="text-xs text-muted-foreground">{isAr ? "طلبات" : "Orders"}</div></div>
@@ -416,12 +426,11 @@ function DeleteBrandDialog({ brand, onDone }: { brand: Brand; onDone: () => void
             <div><div className="font-display text-lg">{counts.customers}</div><div className="text-xs text-muted-foreground">{isAr ? "عملاء" : "Customers"}</div></div>
           </div>
         )}
-        <label className={`flex items-start gap-2 rounded-md border p-3 text-sm ${canHardDelete ? "border-destructive/40 bg-destructive/5" : "opacity-50"}`}>
+        <label className="flex items-start gap-2 rounded-md border border-destructive/40 bg-destructive/5 p-3 text-sm">
           <input
             type="checkbox"
             className="mt-1"
             checked={hard}
-            disabled={!canHardDelete}
             onChange={(e) => setHard(e.target.checked)}
           />
           <span>{t("brands.deleteHardOption")}</span>
@@ -433,7 +442,7 @@ function DeleteBrandDialog({ brand, onDone }: { brand: Brand; onDone: () => void
       </div>
       <DialogFooter>
         <Button variant="destructive" onClick={run} disabled={working || confirm.trim().toLowerCase() !== brand.slug.toLowerCase()}>
-          {working ? "…" : hard ? (isAr ? "حذف نهائي" : "Permanently delete") : (isAr ? "تعطيل ومسح" : "Deactivate and remove")}
+          {working ? "…" : databasePurged ? (isAr ? "إعادة محاولة تنظيف الملفات" : "Retry media cleanup") : hard ? (isAr ? "حذف كل شيء نهائياً" : "Permanently delete everything") : (isAr ? "تعطيل ومسح" : "Deactivate and remove")}
         </Button>
       </DialogFooter>
     </DialogContent>

@@ -1,5 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
-import { DeleteObjectCommand, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import { DeleteObjectCommand, DeleteObjectsCommand, ListObjectsV2Command, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
@@ -88,4 +88,35 @@ export const deleteR2Object = createServerFn({ method: "POST" })
     const { client, bucket } = r2Client();
     await client.send(new DeleteObjectCommand({ Bucket: bucket, Key: data.key }));
     return { deleted: true };
+  });
+
+const PurgeBrandInput = z.object({ brandId: z.string().uuid() });
+
+/** Permanently removes every R2 object owned by one brand. Super-admin only. */
+export const purgeBrandR2Objects = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((raw: unknown) => PurgeBrandInput.parse(raw))
+  .handler(async ({ data, context }) => {
+    const { data: isSuperAdmin, error } = await context.supabase.rpc("is_super_admin");
+    if (error || !isSuperAdmin) throw new Error("FORBIDDEN");
+
+    const { client, bucket } = r2Client();
+    const prefix = `brands/${data.brandId}/`;
+    let continuationToken: string | undefined;
+    let deleted = 0;
+    do {
+      const listed = await client.send(new ListObjectsV2Command({
+        Bucket: bucket,
+        Prefix: prefix,
+        ContinuationToken: continuationToken,
+        MaxKeys: 1000,
+      }));
+      const objects = (listed.Contents ?? []).flatMap((object) => object.Key ? [{ Key: object.Key }] : []);
+      if (objects.length) {
+        await client.send(new DeleteObjectsCommand({ Bucket: bucket, Delete: { Objects: objects, Quiet: true } }));
+        deleted += objects.length;
+      }
+      continuationToken = listed.IsTruncated ? listed.NextContinuationToken : undefined;
+    } while (continuationToken);
+    return { deleted, prefix };
   });

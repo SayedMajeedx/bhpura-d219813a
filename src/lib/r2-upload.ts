@@ -1,4 +1,4 @@
-import { createR2UploadUrl, deleteR2Object } from "@/lib/r2-upload.functions";
+import { createR2UploadUrl, deleteR2Object, purgeBrandR2Objects } from "@/lib/r2-upload.functions";
 
 export type PublicMediaKind = "logo" | "favicon" | "font" | "product" | "category" | "hero" | "page" | "payment-qr";
 
@@ -32,4 +32,9 @@ export async function deletePublicMediaUrl(brandId: string, mediaUrl: string): P
   }
   if (!key.startsWith(`brands/${brandId}/`)) return;
   await deleteR2Object({ data: { brandId, key } });
+}
+
+export async function purgeBrandPublicMedia(brandId: string): Promise<number> {
+  const result = await purgeBrandR2Objects({ data: { brandId } });
+  return result.deleted;
 }
