@@ -46,7 +46,6 @@ type CategoryRow = {
 function StoreHome() {
   const { brand } = useStorefront();
   const [activeCat, setActiveCat] = useState<string | null>(null);
-  const [catalogSort, setCatalogSort] = useState<"new" | "old" | "price-low" | "price-high">("new");
 
   const { data: products, isLoading } = useQuery({
     queryKey: ["storefront", brand.slug, "products"],
@@ -83,10 +82,8 @@ function StoreHome() {
 
   const filtered = useMemo(() => {
     const list = products ?? [];
-    const scoped = activeCat ? list.filter((p) => p.category === activeCat) : [...list];
-    const price = (product: ProductRow) => Math.min(...product.product_variants.map((variant) => Number(variant.selling_price)).filter((value) => value > 0), Number.MAX_SAFE_INTEGER);
-    return scoped.sort((a, b) => catalogSort === "old" ? new Date(a.created_at).getTime() - new Date(b.created_at).getTime() : catalogSort === "price-low" ? price(a) - price(b) : catalogSort === "price-high" ? price(b) - price(a) : new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-  }, [products, activeCat, catalogSort]);
+    return activeCat ? list.filter((p) => p.category === activeCat) : list;
+  }, [products, activeCat]);
 
   const { data: bestSellerRows } = useQuery({
     queryKey: ["storefront", brand.slug, "best-sellers"],
@@ -113,7 +110,6 @@ function StoreHome() {
           <MerchandisingSection kind="best" products={bestSellers} />
         </>}
         <SectionHeading title={activeCat ? undefined : null} fallbackAr="كل المنتجات" fallbackEn="All products" />
-        <div className="mb-6 flex justify-end"><select value={catalogSort} onChange={(event) => setCatalogSort(event.target.value as typeof catalogSort)} className="h-10 rounded-lg border bg-background px-3 text-sm"><option value="new">الأحدث / Newest</option><option value="old">الأقدم / Oldest</option><option value="price-low">السعر: الأقل / Price: low</option><option value="price-high">السعر: الأعلى / Price: high</option></select></div>
         <ProductGrid
           products={filtered}
           loading={isLoading}
