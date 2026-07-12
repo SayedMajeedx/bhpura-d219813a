@@ -374,7 +374,6 @@ function Settings() {
         </TabsContent>
 
         <TabsContent value="storefront" className="space-y-6 mt-0">
-          <BrandHeroCard brandId={brandId} />
           <StorefrontCustomizerCard brandId={brandId} />
         </TabsContent>
 
@@ -707,12 +706,28 @@ function ShippingSettingsCard({ brandId }: { brandId: string }) {
 }
 
 
+function CustomizerNavigation({ active, onChange, isAr }: { active: "general" | "theme" | "content" | "promotions"; onChange: (value: "general" | "theme" | "content" | "promotions") => void; isAr: boolean }) {
+  const items = [
+    ["general", isAr ? "الهوية والعرض" : "General & Branding"],
+    ["theme", isAr ? "المظهر والتنسيق" : "Theme & Styling"],
+    ["content", isAr ? "المحتوى والرسائل" : "Content & Messaging"],
+    ["promotions", isAr ? "البنرات الترويجية" : "Promotional Banners"],
+  ] as const;
+  return <div className="grid grid-cols-2 gap-2 rounded-xl bg-muted/60 p-1 lg:grid-cols-4" role="tablist">{items.map(([value, label]) => <Button key={value} type="button" variant={active === value ? "default" : "ghost"} className="h-auto min-h-11 whitespace-normal px-3 py-2" onClick={() => onChange(value)} role="tab" aria-selected={active === value}>{label}</Button>)}</div>;
+}
+
+function ContentLanguageToggle({ value, onChange, isAr }: { value: "en" | "ar"; onChange: (value: "en" | "ar") => void; isAr: boolean }) {
+  return <div className="flex flex-col items-start justify-between gap-3 rounded-xl border bg-muted/20 p-3 sm:flex-row sm:items-center"><div><p className="text-sm font-medium">{isAr ? "لغة المحتوى" : "Content language"}</p><p className="text-xs text-muted-foreground">{isAr ? "اعرض وحرّر لغة واحدة في كل مرة." : "View and edit one language at a time."}</p></div><div className="grid w-full grid-cols-2 rounded-lg bg-muted p-1 sm:w-auto" dir="ltr"><Button type="button" size="sm" variant={value === "en" ? "default" : "ghost"} onClick={() => onChange("en")}>English (EN)</Button><Button type="button" size="sm" variant={value === "ar" ? "default" : "ghost"} onClick={() => onChange("ar")}>العربية (AR)</Button></div></div>;
+}
+
 function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
   const { lang } = useI18n();
   const isAr = lang === "ar";
   const qc = useQueryClient();
   const [saving, setSaving] = useState(false);
   const [uploadingFont, setUploadingFont] = useState<null | "en" | "ar">(null);
+  const [settingsTab, setSettingsTab] = useState<"general" | "theme" | "content" | "promotions">("general");
+  const [contentLanguage, setContentLanguage] = useState<"en" | "ar">(lang === "ar" ? "ar" : "en");
   const enFontInput = useRef<HTMLInputElement>(null);
   const arFontInput = useRef<HTMLInputElement>(null);
   const [state, setState] = useState<{
@@ -891,18 +906,15 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
   if (!state) return null;
 
   const ColorField = ({ label, value, onChange }: { label: string; value: string | null; onChange: (v: string | null) => void }) => (
-    <div>
+    <div className="space-y-1.5">
       <Label>{label}</Label>
-      <div className="flex items-center gap-2">
-        <input
-          type="color"
-          value={value ?? "#000000"}
-          onChange={(e) => onChange(e.target.value)}
-          className="h-9 w-12 rounded border border-border cursor-pointer"
-        />
-        <Input value={value ?? ""} placeholder={isAr ? "افتراضي" : "auto"} onChange={(e) => onChange(e.target.value || null)} />
+      <div className="flex min-h-10 items-center gap-2 rounded-lg border bg-background p-1.5">
+        <label className="relative h-8 w-12 shrink-0 cursor-pointer overflow-hidden rounded-md border shadow-sm" style={{ backgroundColor: value ?? "#ffffff" }}>
+          <input type="color" value={value ?? "#000000"} onChange={(e) => onChange(e.target.value)} className="absolute inset-0 h-full w-full cursor-pointer opacity-0" aria-label={label} />
+        </label>
+        <span className="min-w-0 flex-1 truncate px-1 font-mono text-xs text-muted-foreground">{value?.toUpperCase() ?? (isAr ? "اللون الافتراضي" : "Default color")}</span>
         {value && (
-          <Button type="button" variant="ghost" size="sm" onClick={() => onChange(null)}>
+          <Button type="button" variant="ghost" size="sm" className="shrink-0" onClick={() => onChange(null)}>
             {isAr ? "افتراضي" : "Reset"}
           </Button>
         )}
@@ -911,15 +923,18 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
   );
 
   return (
-    <Card className="p-6 space-y-6">
+    <Card className="p-5 space-y-6 sm:p-6" dir={isAr ? "rtl" : "ltr"}>
       <div>
-        <h2 className="font-display text-xl">{isAr ? "مظهر المتجر" : "Storefront Customizer"}</h2>
+        <h2 className="font-display text-2xl">{isAr ? "إعدادات واجهة المتجر" : "Storefront Settings"}</h2>
         <p className="text-sm text-muted-foreground">
           {isAr ? "خصّص شكل المتجر العام — يطبَّق فوراً بعد الحفظ" : "Customize the public storefront — applied instantly after saving"}
         </p>
       </div>
 
-      <div className="space-y-3">
+      <CustomizerNavigation active={settingsTab} onChange={setSettingsTab} isAr={isAr} />
+      {(settingsTab === "content" || settingsTab === "promotions") && <ContentLanguageToggle value={contentLanguage} onChange={setContentLanguage} isAr={isAr} />}
+
+      <div className={settingsTab === "general" ? "space-y-3" : "hidden"}>
         <h3 className="font-medium text-sm">{isAr ? "الشعار" : "Logo"}</h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
@@ -945,7 +960,7 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
           </div>
           <div className="sm:col-span-2 space-y-3 border-t border-border pt-4">
             <div>
-              <h3 className="font-medium text-sm">{isAr ? "ظهور هوية المتجر" : "Brand identity visibility"}</h3>
+              <h3 className="font-medium text-sm">{isAr ? "تفضيلات العرض" : "Display Preferences"}</h3>
               <p className="mt-1 text-xs text-muted-foreground">
                 {isAr ? "تبقى أسماء العلامة محفوظة للهوية والبحث، ويمكن إخفاؤها بشكل مستقل في كل قسم." : "Brand names remain saved for identity and SEO, but can be hidden independently in each storefront area."}
               </p>
@@ -957,28 +972,29 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
                 ["show_hero_about", isAr ? "إظهار النبذة في الواجهة" : "Show About text in hero"],
                 ["show_footer_name", isAr ? "إظهار اسم العلامة في التذييل" : "Show brand name in footer"],
               ] as const).map(([key, label]) => (
-                <div key={key} className="flex items-center justify-between gap-4 rounded-md border border-border p-3">
-                  <Label className="cursor-pointer">{label}</Label>
+                <div key={key} className="flex items-center justify-between gap-4 rounded-xl border border-border p-3">
+                  <div><Label className="cursor-pointer">{label}</Label><p className="mt-1 text-xs text-muted-foreground">{isAr ? "فعّل هذا الخيار لإظهار العنصر للعملاء في واجهة المتجر." : "Turn this on to show the element to customers on the storefront."}</p></div>
                   <Switch checked={state[key]} onCheckedChange={(checked) => setState({ ...state, [key]: checked })} />
                 </div>
               ))}
             </div>
           </div>
         </div>
+        <div className="pt-3"><BrandHeroCard brandId={brandId} /></div>
       </div>
 
-      <div className="space-y-4 rounded-md border border-border p-4">
+      <div className={settingsTab === "general" ? "space-y-4 rounded-xl border border-border p-4" : "hidden"}>
         <div className="flex items-center justify-between gap-4"><div><h3 className="font-medium text-sm">{isAr ? "شارات التنزيلات" : "Sale badges"}</h3><p className="mt-1 text-xs text-muted-foreground">{isAr ? "تحكم عام بإظهار شارات الخصم. ويمكن تخصيص كل منتج من المخزون." : "Master switch for discount badges. Individual products can be controlled in Inventory."}</p></div><Switch checked={state.global_sale_badges_enabled} onCheckedChange={(checked) => setState({ ...state, global_sale_badges_enabled: checked })} /></div>
       </div>
 
-      <div className="space-y-4 rounded-md border border-border p-4">
+      <div className={settingsTab === "content" ? "space-y-4 rounded-xl border border-border p-4" : "hidden"}>
         <div className="flex items-center justify-between gap-4"><div><h3 className="font-medium text-sm">{isAr ? "شريط الإعلانات" : "Announcement bar"}</h3><p className="mt-1 text-xs text-muted-foreground">{isAr ? "رسالة قابلة للتخصيص مع قواعد للصفحات والزوار." : "A customizable message with page and audience rules."}</p></div><Switch checked={state.announcement_enabled} onCheckedChange={(checked) => setState({ ...state, announcement_enabled: checked })} /></div>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2"><div><Label>English</Label><Input value={state.announcement_text_en ?? ""} onChange={(e) => setState({ ...state, announcement_text_en: e.target.value || null })} /></div><div><Label>العربية</Label><Input dir="rtl" value={state.announcement_text_ar ?? ""} onChange={(e) => setState({ ...state, announcement_text_ar: e.target.value || null })} /></div><ColorField label={isAr ? "الخلفية" : "Background"} value={state.announcement_bg} onChange={(v) => setState({ ...state, announcement_bg: v || "#111111" })} /><ColorField label={isAr ? "لون النص" : "Text color"} value={state.announcement_fg} onChange={(v) => setState({ ...state, announcement_fg: v || "#ffffff" })} /></div>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2"><div className="sm:col-span-2" dir={contentLanguage === "ar" ? "rtl" : "ltr"}><Label>{contentLanguage === "ar" ? "نص الإعلان" : "Announcement text"}</Label><Input className={contentLanguage === "ar" ? "text-right" : "text-left"} value={(contentLanguage === "ar" ? state.announcement_text_ar : state.announcement_text_en) ?? ""} onChange={(e) => setState({ ...state, [contentLanguage === "ar" ? "announcement_text_ar" : "announcement_text_en"]: e.target.value || null })} /></div><ColorField label={isAr ? "الخلفية" : "Background"} value={state.announcement_bg} onChange={(v) => setState({ ...state, announcement_bg: v || "#111111" })} /><ColorField label={isAr ? "لون النص" : "Text color"} value={state.announcement_fg} onChange={(v) => setState({ ...state, announcement_fg: v || "#ffffff" })} /></div>
         <div className="flex flex-wrap gap-3">{([['announcement_bold', isAr ? 'عريض' : 'Bold'], ['announcement_italic', isAr ? 'مائل' : 'Italic'], ['announcement_dismissible', isAr ? 'قابل للإغلاق' : 'Dismissible']] as const).map(([key,label]) => <div key={key} className="flex items-center gap-2 rounded-md border px-3 py-2"><Switch checked={state[key]} onCheckedChange={(checked) => setState({ ...state, [key]: checked })} /><Label>{label}</Label></div>)}</div>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2"><div><Label>{isAr ? "الصفحات" : "Pages"}</Label><Select value={state.announcement_scope} onValueChange={(v: any) => setState({ ...state, announcement_scope: v })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">{isAr ? "كل الصفحات" : "All pages"}</SelectItem><SelectItem value="home">{isAr ? "الرئيسية فقط" : "Homepage only"}</SelectItem><SelectItem value="catalog">{isAr ? "صفحات التسوق" : "Shopping pages"}</SelectItem><SelectItem value="checkout">{isAr ? "الدفع فقط" : "Checkout only"}</SelectItem></SelectContent></Select></div><div><Label>{isAr ? "الجمهور" : "Audience"}</Label><Select value={state.announcement_audience} onValueChange={(v: any) => setState({ ...state, announcement_audience: v })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">{isAr ? "الجميع" : "Everyone"}</SelectItem><SelectItem value="guest">{isAr ? "الزوار" : "Guests"}</SelectItem><SelectItem value="authenticated">{isAr ? "المسجلون" : "Signed-in customers"}</SelectItem></SelectContent></Select></div></div>
       </div>
 
-      <div className="space-y-4 rounded-md border border-border p-4">
+      <div className={settingsTab === "theme" ? "space-y-4 rounded-xl border border-border p-4" : "hidden"}>
         <div>
           <h3 className="font-medium text-sm">{isAr ? "ألوان المتجر" : "Storefront colors"}</h3>
           <p className="mt-1 text-xs text-muted-foreground">{isAr ? "هذه الألوان خاصة بالمتجر ولا تؤثر على الفواتير." : "These colors apply only to the storefront and never affect invoices."}</p>
@@ -990,7 +1006,7 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
         </div>
       </div>
 
-      <div className="space-y-4 rounded-md border border-border p-4">
+      <div className={settingsTab === "theme" ? "space-y-4 rounded-xl border border-border p-4" : "hidden"}>
         <div>
           <h3 className="font-medium text-sm">{isAr ? "خطوط المتجر" : "Storefront fonts"}</h3>
           <p className="mt-1 text-xs text-muted-foreground">{isAr ? "اختر خطاً مستقلاً لكل لغة في واجهة المتجر." : "Choose an independent website font for each storefront language."}</p>
@@ -1025,19 +1041,15 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
         </div>
       </div>
 
-      <div className="space-y-4 rounded-md border border-border p-4">
+      <div className={settingsTab === "content" ? "space-y-4 rounded-xl border border-border p-4" : "hidden"}>
         <div>
           <h3 className="font-medium text-sm">{isAr ? "عنوان الواجهة الرئيسي" : "Hero title"}</h3>
           <p className="mt-1 text-xs text-muted-foreground">{isAr ? "تحكم مستقل في اسم العلامة الظاهر فوق صورة الواجهة." : "Independent styling for the brand name displayed over the hero media."}</p>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <Label>{isAr ? "عنوان الواجهة بالإنجليزية" : "Hero title (English)"}</Label>
-            <Input value={state.hero_title_en ?? ""} placeholder={isAr ? "اتركه فارغاً لاستخدام اسم العلامة" : "Blank uses the English brand name"} onChange={(e) => setState({ ...state, hero_title_en: e.target.value || null })} />
-          </div>
-          <div>
-            <Label>{isAr ? "عنوان الواجهة بالعربية" : "Hero title (Arabic)"}</Label>
-            <Input dir="rtl" value={state.hero_title_ar ?? ""} placeholder={isAr ? "فارغ يستخدم اسم العلامة بالعربية" : "Blank uses the Arabic brand name"} onChange={(e) => setState({ ...state, hero_title_ar: e.target.value || null })} />
+          <div className="sm:col-span-2" dir={contentLanguage === "ar" ? "rtl" : "ltr"}>
+            <Label>{contentLanguage === "ar" ? "عنوان الواجهة" : "Hero title"}</Label>
+            <Input className={contentLanguage === "ar" ? "text-right" : "text-left"} value={(contentLanguage === "ar" ? state.hero_title_ar : state.hero_title_en) ?? ""} placeholder={contentLanguage === "ar" ? "فارغ يستخدم اسم العلامة بالعربية" : "Blank uses the English brand name"} onChange={(e) => setState({ ...state, [contentLanguage === "ar" ? "hero_title_ar" : "hero_title_en"]: e.target.value || null })} />
           </div>
           <div>
             <Label>{isAr ? "حجم العنوان (بكسل)" : "Title size (px)"}</Label>
@@ -1057,7 +1069,7 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
         </div>
       </div>
 
-      <div className="space-y-3">
+      <div className={settingsTab === "theme" ? "space-y-3" : "hidden"}>
         <h3 className="font-medium text-sm">{isAr ? "الترويسة والتذييل" : "Header & Footer"}</h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <ColorField label={isAr ? "خلفية الترويسة" : "Header background"} value={state.header_bg} onChange={(v) => setState({ ...state, header_bg: v })} />
@@ -1067,18 +1079,17 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
         </div>
       </div>
 
-      <div className="space-y-4 rounded-md border border-border p-4">
+      <div className={settingsTab === "content" ? "space-y-4 rounded-xl border border-border p-4" : "hidden"}>
         <div>
           <h3 className="font-medium text-sm">{isAr ? "قائمة المتجر" : "Storefront menu"}</h3>
           <p className="mt-1 text-xs text-muted-foreground">{isAr ? "خصص عنوان وألوان وروابط قائمة التنقل. الصفحات الإضافية تدار من الصفحات والسياسات." : "Customize the drawer title, colors, and core links. Additional links come from Pages & Policies."}</p>
         </div>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <div><Label>{isAr ? "عنوان القائمة بالإنجليزية" : "Menu title (English)"}</Label><Input value={state.menu_title_en ?? ""} placeholder={isAr ? "فارغ يستخدم اسم العلامة" : "Blank uses the brand name"} onChange={(e) => setState({ ...state, menu_title_en: e.target.value || null })} /></div>
-          <div><Label>{isAr ? "عنوان القائمة بالعربية" : "Menu title (Arabic)"}</Label><Input dir="rtl" value={state.menu_title_ar ?? ""} placeholder={isAr ? "فارغ يستخدم اسم العلامة" : "Blank uses the Arabic brand name"} onChange={(e) => setState({ ...state, menu_title_ar: e.target.value || null })} /></div>
+          <div className="sm:col-span-2" dir={contentLanguage === "ar" ? "rtl" : "ltr"}><Label>{contentLanguage === "ar" ? "عنوان القائمة" : "Menu title"}</Label><Input className={contentLanguage === "ar" ? "text-right" : "text-left"} value={(contentLanguage === "ar" ? state.menu_title_ar : state.menu_title_en) ?? ""} placeholder={contentLanguage === "ar" ? "فارغ يستخدم اسم العلامة بالعربية" : "Blank uses the brand name"} onChange={(e) => setState({ ...state, [contentLanguage === "ar" ? "menu_title_ar" : "menu_title_en"]: e.target.value || null })} /></div>
           <ColorField label={isAr ? "خلفية القائمة" : "Menu background"} value={state.menu_bg} onChange={(value) => setState({ ...state, menu_bg: value })} />
           <ColorField label={isAr ? "نص القائمة" : "Menu text"} value={state.menu_fg} onChange={(value) => setState({ ...state, menu_fg: value })} />
         </div>
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <div className={settingsTab === "content" ? "grid grid-cols-1 gap-3 sm:grid-cols-2" : "hidden"}>
           {([[
             "menu_show_home", isAr ? "إظهار الرئيسية" : "Show Home",
           ], [
@@ -1091,28 +1102,26 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
         </div>
       </div>
 
-      <div className="space-y-4 rounded-md border border-border p-4">
+      <div className={(settingsTab === "content" || settingsTab === "promotions") ? "space-y-4 rounded-xl border border-border p-4" : "hidden"}>
         <div><h3 className="font-medium text-sm">{isAr ? "أقسام الصفحة الرئيسية" : "Homepage merchandising"}</h3><p className="mt-1 text-xs text-muted-foreground">{isAr ? "خصص أربع بطاقات ترويجية وروابطها. مقاس التصميم الموصى به: 1200 × 600 بكسل (نسبة 2:1)." : "Customize four promotional cards and their destinations. Recommended artwork: 1200 × 600 px (2:1 ratio)."}</p></div>
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <div className={settingsTab === "content" ? "grid grid-cols-1 gap-3 sm:grid-cols-2" : "hidden"}>
           <div className="flex items-center justify-between gap-3 rounded-md border p-3"><Label>{isAr ? "إظهار وصل حديثاً" : "Show New arrivals"}</Label><Switch checked={state.show_new_arrivals} onCheckedChange={(checked) => setState({ ...state, show_new_arrivals: checked })} /></div>
           <div className="flex items-center justify-between gap-3 rounded-md border p-3"><Label>{isAr ? "إظهار الأكثر مبيعاً" : "Show Best sellers"}</Label><Switch checked={state.show_best_sellers} onCheckedChange={(checked) => setState({ ...state, show_best_sellers: checked })} /></div>
-          <div><Label>{isAr ? "عنوان وصل حديثاً بالإنجليزية" : "New arrivals title (English)"}</Label><Input value={state.new_arrivals_title_en ?? ""} placeholder="New arrivals" onChange={(e) => setState({ ...state, new_arrivals_title_en: e.target.value || null })} /></div>
-          <div><Label>{isAr ? "عنوان وصل حديثاً بالعربية" : "New arrivals title (Arabic)"}</Label><Input dir="rtl" value={state.new_arrivals_title_ar ?? ""} placeholder="وصل حديثاً" onChange={(e) => setState({ ...state, new_arrivals_title_ar: e.target.value || null })} /></div>
-          <div><Label>{isAr ? "عنوان الأكثر مبيعاً بالإنجليزية" : "Best sellers title (English)"}</Label><Input value={state.best_sellers_title_en ?? ""} placeholder="Best sellers" onChange={(e) => setState({ ...state, best_sellers_title_en: e.target.value || null })} /></div>
-          <div><Label>{isAr ? "عنوان الأكثر مبيعاً بالعربية" : "Best sellers title (Arabic)"}</Label><Input dir="rtl" value={state.best_sellers_title_ar ?? ""} placeholder="الأكثر مبيعاً" onChange={(e) => setState({ ...state, best_sellers_title_ar: e.target.value || null })} /></div>
+          <div dir={contentLanguage === "ar" ? "rtl" : "ltr"}><Label>{contentLanguage === "ar" ? "عنوان وصل حديثاً" : "New arrivals title"}</Label><Input className={contentLanguage === "ar" ? "text-right" : "text-left"} value={(contentLanguage === "ar" ? state.new_arrivals_title_ar : state.new_arrivals_title_en) ?? ""} placeholder={contentLanguage === "ar" ? "وصل حديثاً" : "New arrivals"} onChange={(e) => setState({ ...state, [contentLanguage === "ar" ? "new_arrivals_title_ar" : "new_arrivals_title_en"]: e.target.value || null })} /></div>
+          <div dir={contentLanguage === "ar" ? "rtl" : "ltr"}><Label>{contentLanguage === "ar" ? "عنوان الأكثر مبيعاً" : "Best sellers title"}</Label><Input className={contentLanguage === "ar" ? "text-right" : "text-left"} value={(contentLanguage === "ar" ? state.best_sellers_title_ar : state.best_sellers_title_en) ?? ""} placeholder={contentLanguage === "ar" ? "الأكثر مبيعاً" : "Best sellers"} onChange={(e) => setState({ ...state, [contentLanguage === "ar" ? "best_sellers_title_ar" : "best_sellers_title_en"]: e.target.value || null })} /></div>
         </div>
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <div className={settingsTab === "promotions" ? "grid grid-cols-1 gap-4 lg:grid-cols-2" : "hidden"}>
           {state.home_promo_cards.map((card, index) => <div key={index} className="space-y-3 rounded-xl border p-4">
-            <div className="flex items-center justify-between"><div><h4 className="font-medium">{isAr ? `البطاقة ${index + 1}` : `Card ${index + 1}`}</h4><p className="text-[11px] text-muted-foreground">1200 × 600 px</p></div>{card.image_url && <img src={card.image_url} alt="" className="aspect-[2/1] h-12 rounded object-cover" />}</div>
-            <div className="grid grid-cols-2 gap-2"><Input value={card.title_en} placeholder="English title" onChange={(e) => updatePromoCard(index, { title_en: e.target.value })} /><Input dir="rtl" value={card.title_ar} placeholder="العنوان العربي" onChange={(e) => updatePromoCard(index, { title_ar: e.target.value })} /><Input value={card.subtitle_en} placeholder="English subtitle" onChange={(e) => updatePromoCard(index, { subtitle_en: e.target.value })} /><Input dir="rtl" value={card.subtitle_ar} placeholder="الوصف العربي" onChange={(e) => updatePromoCard(index, { subtitle_ar: e.target.value })} /></div>
-            <div><Label>{isAr ? "الرابط أو المسار" : "Destination URL or path"}</Label><Input value={card.href} placeholder={isAr ? "/pura/search?q=abaya أو رابط كامل" : "/pura/search?q=abaya or a full URL"} onChange={(e) => updatePromoCard(index, { href: e.target.value })} /></div>
+            <div className="flex items-center justify-between"><div><h4 className="font-medium">{isAr ? `بنر ترويجي ${index + 1}` : `Promotion Banner ${index + 1}`}</h4><p className="text-[11px] text-muted-foreground">1200 × 600 px</p></div>{card.image_url && <img src={card.image_url} alt="" className="aspect-[2/1] h-12 rounded object-cover" />}</div>
+            <div className="grid gap-2" dir={contentLanguage === "ar" ? "rtl" : "ltr"}><div><Label>{contentLanguage === "ar" ? "عنوان البنر" : "Banner title"}</Label><Input className={contentLanguage === "ar" ? "text-right" : "text-left"} value={contentLanguage === "ar" ? card.title_ar : card.title_en} onChange={(e) => updatePromoCard(index, { [contentLanguage === "ar" ? "title_ar" : "title_en"]: e.target.value })} /></div><div><Label>{contentLanguage === "ar" ? "وصف البنر" : "Banner subtitle"}</Label><Input className={contentLanguage === "ar" ? "text-right" : "text-left"} value={contentLanguage === "ar" ? card.subtitle_ar : card.subtitle_en} onChange={(e) => updatePromoCard(index, { [contentLanguage === "ar" ? "subtitle_ar" : "subtitle_en"]: e.target.value })} /></div></div>
+            <div><Label>{isAr ? "رابط التوجيه عند الضغط" : "Banner Click Link"}</Label><Input value={card.href} placeholder={isAr ? "/pura/search?q=abaya أو رابط كامل" : "/pura/search?q=abaya or a full URL"} onChange={(e) => updatePromoCard(index, { href: e.target.value })} /></div>
             <div className="flex gap-2"><Input value={card.image_url} placeholder={isAr ? "رابط الصورة" : "Image URL"} onChange={(e) => updatePromoCard(index, { image_url: e.target.value })} /><label className="inline-flex h-10 cursor-pointer items-center rounded-md border px-3 text-sm"><Upload className="me-2 h-4 w-4" />{isAr ? "رفع" : "Upload"}<input type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files?.[0] && uploadPromoImage(index, e.target.files[0])} /></label></div>
             <div className="grid grid-cols-2 gap-2"><ColorField label={isAr ? "الخلفية" : "Background"} value={card.background_color} onChange={(value) => updatePromoCard(index, { background_color: value || "#f4f4f4" })} /><ColorField label={isAr ? "النص" : "Text"} value={card.text_color} onChange={(value) => updatePromoCard(index, { text_color: value || "#ffffff" })} /></div>
           </div>)}
         </div>
       </div>
 
-      <div className="space-y-3">
+      <div className={settingsTab === "theme" ? "space-y-3" : "hidden"}>
         <h3 className="font-medium text-sm">{isAr ? "الطباعة" : "Typography"}</h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <ColorField label={isAr ? "لون العناوين" : "Heading color"} value={state.heading_color} onChange={(v) => setState({ ...state, heading_color: v })} />
@@ -1120,7 +1129,7 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
         </div>
       </div>
 
-      <div className="space-y-3">
+      <div className={settingsTab === "theme" ? "space-y-3" : "hidden"}>
         <h3 className="font-medium text-sm">{isAr ? "الأزرار" : "Buttons"}</h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <ColorField label={isAr ? "خلفية الزر الأساسي (أضف للسلة)" : "Primary button bg (Add to cart)"} value={state.btn_primary_bg} onChange={(v) => setState({ ...state, btn_primary_bg: v })} />
@@ -1134,8 +1143,8 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
         </div>
       </div>
 
-      <div className="flex justify-end">
-        <Button size="sm" onClick={save} disabled={saving}>{isAr ? "حفظ مظهر المتجر" : "Save storefront theme"}</Button>
+      <div className="sticky bottom-3 z-10 flex justify-end rounded-xl border bg-background/95 p-3 shadow-lg backdrop-blur">
+        <Button onClick={save} disabled={saving}>{saving ? (isAr ? "جارٍ الحفظ..." : "Saving...") : (isAr ? "حفظ إعدادات المتجر" : "Save storefront settings")}</Button>
       </div>
     </Card>
   );
