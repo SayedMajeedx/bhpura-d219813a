@@ -73,6 +73,14 @@ export type PublicSettings = {
   socials: Array<{ name: string; url: string }>;
   whatsapp_enabled: boolean;
   whatsapp_number: string | null;
+  menu_bg: string | null;
+  menu_fg: string | null;
+  menu_title_en: string | null;
+  menu_title_ar: string | null;
+  menu_show_home: boolean;
+  menu_show_account: boolean;
+  menu_show_orders: boolean;
+  menu_show_pages: boolean;
 };
 
 export type CustomFieldValue = {

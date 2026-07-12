@@ -744,13 +744,21 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
     btn_secondary_fg: string | null;
     btn_checkout_bg: string | null;
     btn_checkout_fg: string | null;
+    menu_bg: string | null;
+    menu_fg: string | null;
+    menu_title_en: string | null;
+    menu_title_ar: string | null;
+    menu_show_home: boolean;
+    menu_show_account: boolean;
+    menu_show_orders: boolean;
+    menu_show_pages: boolean;
   } | null>(null);
 
   const { data } = useQuery({
     queryKey: ["business-settings-theme", brandId],
     queryFn: async () => {
       const { data, error } = await supabase.from("business_settings")
-        .select("logo_size, logo_align, show_header_name, show_hero_title, show_hero_about, show_footer_name, storefront_font_en, storefront_font_ar, storefront_font_en_url, storefront_font_ar_url, hero_title_en, hero_title_ar, hero_title_size, hero_title_color, hero_title_align, storefront_accent_color, storefront_background_color, storefront_text_color, header_bg, header_fg, footer_bg, footer_fg, heading_color, link_color, btn_primary_bg, btn_primary_fg, btn_secondary_bg, btn_secondary_fg, btn_checkout_bg, btn_checkout_fg")
+        .select("logo_size, logo_align, show_header_name, show_hero_title, show_hero_about, show_footer_name, storefront_font_en, storefront_font_ar, storefront_font_en_url, storefront_font_ar_url, hero_title_en, hero_title_ar, hero_title_size, hero_title_color, hero_title_align, storefront_accent_color, storefront_background_color, storefront_text_color, header_bg, header_fg, footer_bg, footer_fg, heading_color, link_color, btn_primary_bg, btn_primary_fg, btn_secondary_bg, btn_secondary_fg, btn_checkout_bg, btn_checkout_fg, menu_bg, menu_fg, menu_title_en, menu_title_ar, menu_show_home, menu_show_account, menu_show_orders, menu_show_pages")
         .eq("brand_id", brandId).maybeSingle();
       if (error) throw error;
       return data as any;
@@ -789,6 +797,14 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
       btn_secondary_fg: data.btn_secondary_fg ?? null,
       btn_checkout_bg: data.btn_checkout_bg ?? null,
       btn_checkout_fg: data.btn_checkout_fg ?? null,
+      menu_bg: data.menu_bg ?? null,
+      menu_fg: data.menu_fg ?? null,
+      menu_title_en: data.menu_title_en ?? null,
+      menu_title_ar: data.menu_title_ar ?? null,
+      menu_show_home: data.menu_show_home ?? true,
+      menu_show_account: data.menu_show_account ?? true,
+      menu_show_orders: data.menu_show_orders ?? true,
+      menu_show_pages: data.menu_show_pages ?? true,
     });
   }, [data]);
 
@@ -982,6 +998,30 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
           <ColorField label={isAr ? "نص الترويسة" : "Header text"} value={state.header_fg} onChange={(v) => setState({ ...state, header_fg: v })} />
           <ColorField label={isAr ? "خلفية التذييل" : "Footer background"} value={state.footer_bg} onChange={(v) => setState({ ...state, footer_bg: v })} />
           <ColorField label={isAr ? "نص التذييل" : "Footer text"} value={state.footer_fg} onChange={(v) => setState({ ...state, footer_fg: v })} />
+        </div>
+      </div>
+
+      <div className="space-y-4 rounded-md border border-border p-4">
+        <div>
+          <h3 className="font-medium text-sm">{isAr ? "قائمة المتجر" : "Storefront menu"}</h3>
+          <p className="mt-1 text-xs text-muted-foreground">{isAr ? "خصص عنوان وألوان وروابط قائمة التنقل. الصفحات الإضافية تدار من الصفحات والسياسات." : "Customize the drawer title, colors, and core links. Additional links come from Pages & Policies."}</p>
+        </div>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div><Label>{isAr ? "عنوان القائمة بالإنجليزية" : "Menu title (English)"}</Label><Input value={state.menu_title_en ?? ""} placeholder={isAr ? "فارغ يستخدم اسم العلامة" : "Blank uses the brand name"} onChange={(e) => setState({ ...state, menu_title_en: e.target.value || null })} /></div>
+          <div><Label>{isAr ? "عنوان القائمة بالعربية" : "Menu title (Arabic)"}</Label><Input dir="rtl" value={state.menu_title_ar ?? ""} placeholder={isAr ? "فارغ يستخدم اسم العلامة" : "Blank uses the Arabic brand name"} onChange={(e) => setState({ ...state, menu_title_ar: e.target.value || null })} /></div>
+          <ColorField label={isAr ? "خلفية القائمة" : "Menu background"} value={state.menu_bg} onChange={(value) => setState({ ...state, menu_bg: value })} />
+          <ColorField label={isAr ? "نص القائمة" : "Menu text"} value={state.menu_fg} onChange={(value) => setState({ ...state, menu_fg: value })} />
+        </div>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          {([[
+            "menu_show_home", isAr ? "إظهار الرئيسية" : "Show Home",
+          ], [
+            "menu_show_account", isAr ? "إظهار الحساب وتسجيل الدخول" : "Show Account / Sign in",
+          ], [
+            "menu_show_orders", isAr ? "إظهار طلباتي" : "Show My orders",
+          ], [
+            "menu_show_pages", isAr ? "إظهار الصفحات المخصصة" : "Show custom pages",
+          ]] as const).map(([key, label]) => <div key={key} className="flex items-center justify-between gap-4 rounded-md border border-border p-3"><Label className="cursor-pointer">{label}</Label><Switch checked={state[key]} onCheckedChange={(checked) => setState({ ...state, [key]: checked })} /></div>)}
         </div>
       </div>
 

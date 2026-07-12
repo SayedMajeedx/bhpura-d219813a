@@ -41,7 +41,7 @@ function SearchPage() {
         .select("id, name, name_ar, name_en, description, description_ar, description_en, category, image_url, media, product_variants(id, selling_price, stock_main)")
         .eq("brand_id", brand.id)
         .eq("is_active", true)
-        .or(`name.ilike.${pattern},name_ar.ilike.${pattern},name_en.ilike.${pattern},category.ilike.${pattern}`)
+        .or(`name.ilike.${pattern},name_ar.ilike.${pattern},name_en.ilike.${pattern}`)
         .limit(60);
       if (error) throw error;
       return (data ?? []) as unknown as ProductRow[];
