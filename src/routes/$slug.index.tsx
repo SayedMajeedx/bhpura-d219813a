@@ -24,6 +24,8 @@ export type ProductRow = {
   media: unknown;
   brand_id: string;
   created_at: string;
+  featured_trending?: boolean;
+  show_sale_badge?: boolean;
   product_variants: Array<{
     id: string;
     selling_price: number;
@@ -53,7 +55,7 @@ function StoreHome() {
       const { data, error } = await supabase
         .from("products")
         .select(
-          "id, name, name_ar, name_en, description, description_ar, description_en, category, image_url, media, brand_id, created_at, product_variants(id, selling_price, original_price, stock_main, size, color)",
+          "id, name, name_ar, name_en, description, description_ar, description_en, category, image_url, media, brand_id, created_at, featured_trending, show_sale_badge, product_variants(id, selling_price, original_price, stock_main, size, color)",
         )
         .eq("brand_id", brand.id)
         .eq("is_active", true)
@@ -98,6 +100,14 @@ function StoreHome() {
   const newest = (products ?? []).slice(0, 8);
   const bestIds = new Map((bestSellerRows ?? []).map((row, index) => [row.product_id, index]));
   const bestSellers = (products ?? []).filter((product) => bestIds.has(product.id)).sort((a, b) => (bestIds.get(a.id) ?? 99) - (bestIds.get(b.id) ?? 99));
+  const saleProducts = (products ?? []).filter((product) => product.product_variants.some((variant) => Number(variant.original_price || 0) > Number(variant.selling_price || 0))).slice(0, 8);
+  const { data: trendingRows } = useQuery({
+    queryKey: ["storefront", brand.slug, "trending"],
+    queryFn: async () => { const { data, error } = await (supabase.rpc as any)("get_storefront_trending", { p_brand_slug: brand.slug, p_limit: 8 }); if (error) throw error; return data ?? []; },
+    staleTime: 60_000,
+  });
+  const trendingIds = new Map((trendingRows ?? []).map((row: any, index: number) => [row.product_id, index]));
+  const trending = (products ?? []).filter((product) => trendingIds.has(product.id)).sort((a, b) => (trendingIds.get(a.id) ?? 99) - (trendingIds.get(b.id) ?? 99));
 
   return (
     <div>
@@ -108,6 +118,8 @@ function StoreHome() {
         {!activeCat && <>
           <MerchandisingSection kind="new" products={newest} />
           <MerchandisingSection kind="best" products={bestSellers} />
+          <MerchandisingSection kind="sale" products={saleProducts} />
+          <MerchandisingSection kind="trending" products={trending} bestSellerIds={new Set(bestIds.keys())} />
         </>}
         <SectionHeading title={activeCat ? undefined : null} fallbackAr="كل المنتجات" fallbackEn="All products" />
         <ProductGrid
@@ -143,14 +155,16 @@ function SectionHeading({ title, fallbackAr, fallbackEn }: { title?: string | nu
   return <div className="mb-5 flex items-end justify-between"><h2 className="font-display text-2xl sm:text-3xl" style={{ color: "var(--sf-heading)" }}>{title || (lang === "ar" ? fallbackAr : fallbackEn)}</h2><div className="h-px flex-1 bg-border ms-5" /></div>;
 }
 
-function MerchandisingSection({ kind, products }: { kind: "new" | "best"; products: ProductRow[] }) {
+function MerchandisingSection({ kind, products, bestSellerIds = new Set<string>() }: { kind: "new" | "best" | "sale" | "trending"; products: ProductRow[]; bestSellerIds?: Set<string> }) {
   const { settings, lang } = useStorefront();
   if (kind === "new" && !settings.show_new_arrivals) return null;
   if (kind === "best" && (!settings.show_best_sellers || !products.length)) return null;
+  if ((kind === "sale" || kind === "trending") && !products.length) return null;
   const title = kind === "new"
     ? (lang === "ar" ? settings.new_arrivals_title_ar : settings.new_arrivals_title_en)
-    : (lang === "ar" ? settings.best_sellers_title_ar : settings.best_sellers_title_en);
-  return <section className="mb-12"><SectionHeading title={title} fallbackAr={kind === "new" ? "وصل حديثاً" : "الأكثر مبيعاً"} fallbackEn={kind === "new" ? "New arrivals" : "Best sellers"} /><div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4 sm:gap-6">{products.map((product) => <ProductCard key={`${kind}-${product.id}`} product={product} />)}</div></section>;
+    : kind === "best" ? (lang === "ar" ? settings.best_sellers_title_ar : settings.best_sellers_title_en) : null;
+  const label = kind === "new" ? ["وصل حديثاً", "New arrivals"] : kind === "best" ? ["الأكثر مبيعاً", "Best sellers"] : kind === "sale" ? ["تنزيلات", "Sale"] : ["الرائج الآن", "Trending now"];
+  return <section className="mb-12"><SectionHeading title={title} fallbackAr={label[0]} fallbackEn={label[1]} /><div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4 sm:gap-6">{products.map((product) => <ProductCard key={`${kind}-${product.id}`} product={product} badge={kind === "trending" ? (bestSellerIds.has(product.id) ? "best" : "trending") : kind === "best" ? "best" : undefined} />)}</div></section>;
 }
 
 function HeroBanner() {
@@ -342,8 +356,8 @@ export function ProductGrid({ products, loading, categoryEmpty, onViewAll }: { p
   );
 }
 
-export function ProductCard({ product }: { product: ProductRow }) {
-  const { brand, currency, lang, t, isWishlisted, toggleWishlist } = useStorefront();
+export function ProductCard({ product, badge }: { product: ProductRow; badge?: "trending" | "best" }) {
+  const { brand, currency, lang, t, isWishlisted, toggleWishlist, settings } = useStorefront();
   const displayName = pickName(lang, product);
   const pricedVariants = product.product_variants.filter((variant) => Number(variant.selling_price || 0) > 0).sort((a, b) => a.selling_price - b.selling_price);
   const discountedVariant = pricedVariants.filter((variant) => Number(variant.original_price || 0) > Number(variant.selling_price || 0))[0];
@@ -365,9 +379,10 @@ export function ProductCard({ product }: { product: ProductRow }) {
       <button type="button" onClick={() => toggleWishlist(product.id)} aria-label={wished ? t("إزالة من المفضلة", "Remove from wishlist") : t("إضافة إلى المفضلة", "Add to wishlist")} className="absolute end-2 top-2 z-20 grid h-10 w-10 place-items-center rounded-full bg-white/95 text-neutral-900 shadow-md transition hover:scale-105">
         <Heart className={`h-5 w-5 ${wished ? "fill-red-600 text-red-600" : ""}`} />
       </button>
-      <Link to="/$slug/product/$id" params={{ slug: brand.slug, id: product.id }} className="block">
+      <Link to="/$slug/product/$id" params={{ slug: brand.slug, id: product.id }} className="block" onClick={() => { void (supabase.rpc as any)("record_storefront_product_engagement", { p_brand_slug: brand.slug, p_product_id: product.id, p_event: "click" }); }}>
       <div className="aspect-[3/4] rounded-xl overflow-hidden bg-muted relative">
-        {discountPercent > 0 && <span className="absolute start-0 top-0 z-10 rounded-ee-2xl bg-neutral-950 px-4 py-2 text-xs font-semibold text-white">{t(`وفر ${discountPercent}%`, `Save ${discountPercent}%`)}</span>}
+        {discountPercent > 0 && settings.global_sale_badges_enabled && product.show_sale_badge !== false && <span className="absolute start-0 top-0 z-10 rounded-ee-2xl bg-red-600 px-4 py-2 text-xs font-semibold text-white">{t(`وفر ${discountPercent}%`, `Sale ${discountPercent}% off`)}</span>}
+        {badge && !(discountPercent > 0 && settings.global_sale_badges_enabled && product.show_sale_badge !== false) && <span className={`absolute start-0 top-0 z-10 rounded-ee-2xl px-4 py-2 text-xs font-semibold text-white ${badge === "best" ? "bg-amber-600" : "bg-neutral-950"}`}>{badge === "best" ? t("الأكثر مبيعاً", "Best Seller") : t("رائج", "Trending")}</span>}
         {cover ? (
           <img
             src={cover}

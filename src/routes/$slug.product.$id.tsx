@@ -5,7 +5,7 @@ import { useStorefront, formatPrice, pickName, pickDescription, readableOn } fro
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useState, useMemo, useRef } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import { formatSizeWithUnit } from "@/components/bilingual-field";
 import { ChevronLeft, ChevronRight, ShoppingBag, AlertCircle, Heart } from "lucide-react";
 import { toast } from "sonner";
@@ -106,6 +106,12 @@ function ProductDetail() {
     () => (Array.isArray(product?.custom_fields) ? (product!.custom_fields as CustomField[]) : []),
     [product],
   );
+  useEffect(() => {
+    if (!product?.id) return;
+    const key = `product-view:${product.id}:${new Date().toISOString().slice(0, 10)}`;
+    try { if (sessionStorage.getItem(key)) return; sessionStorage.setItem(key, "1"); } catch {}
+    void (supabase.rpc as any)("record_storefront_product_engagement", { p_brand_slug: brand.slug, p_product_id: product.id, p_event: "view" });
+  }, [brand.slug, product?.id]);
 
   if (isLoading) {
     return (

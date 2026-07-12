@@ -51,6 +51,8 @@ type Product = {
   category: string | null;
   image_url: string | null;
   is_active: boolean;
+  featured_trending: boolean;
+  show_sale_badge: boolean;
   media: MediaItem[];
   custom_fields: CustomField[] | null;
 };
@@ -348,6 +350,8 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
     category: product?.category ?? "",
     image_url: product?.image_url ?? "",
     is_active: product?.is_active ?? true,
+    featured_trending: product?.featured_trending ?? false,
+    show_sale_badge: product?.show_sale_badge ?? true,
     media: (product?.media ?? []) as MediaItem[],
     custom_fields: (Array.isArray(product?.custom_fields) ? product!.custom_fields : []) as CustomField[],
   };
@@ -378,6 +382,8 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
       category: product?.category ?? "",
       image_url: product?.image_url ?? "",
       is_active: product?.is_active ?? true,
+      featured_trending: product?.featured_trending ?? false,
+      show_sale_badge: product?.show_sale_badge ?? true,
       media: (product?.media ?? []) as MediaItem[],
       custom_fields: (Array.isArray(product?.custom_fields) ? product!.custom_fields : []) as CustomField[],
     });
@@ -467,6 +473,8 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
         category: form.category,
         image_url: form.image_url,
         is_active: form.is_active,
+        featured_trending: form.featured_trending,
+        show_sale_badge: form.show_sale_badge,
         media: form.media as any,
         custom_fields: (form.custom_fields ?? []) as any,
       };
@@ -485,6 +493,8 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
         category: form.category,
         image_url: form.image_url,
         is_active: form.is_active,
+        featured_trending: form.featured_trending,
+        show_sale_badge: form.show_sale_badge,
         media: form.media as any,
         custom_fields: (form.custom_fields ?? []) as any,
       };
@@ -562,6 +572,10 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
               aria-label={isAr ? "إظهار المنتج في المتجر" : "Show product in storefront"}
             />
           </div>
+        </div>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <div className="flex items-center justify-between rounded-md border border-border p-3"><div><p className="text-sm font-medium">{isAr ? "إبراز في الرائج الآن" : "Feature in Trending now"}</p><p className="text-xs text-muted-foreground">{isAr ? "يعطي المنتج أولوية حتى تتوفر بيانات زيارات كافية." : "Prioritizes this product while traffic data grows."}</p></div><Switch checked={form.featured_trending} onCheckedChange={(v) => setForm({ ...form, featured_trending: v })} /></div>
+          <div className="flex items-center justify-between rounded-md border border-border p-3"><div><p className="text-sm font-medium">{isAr ? "إظهار شارة التنزيلات" : "Show Sale badge"}</p><p className="text-xs text-muted-foreground">{isAr ? "تظهر فقط عندما يكون السعر الأصلي أعلى." : "Shown only when an original price is higher."}</p></div><Switch checked={form.show_sale_badge} onCheckedChange={(v) => setForm({ ...form, show_sale_badge: v })} /></div>
         </div>
 
         <div className="space-y-2">

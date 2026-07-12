@@ -19,7 +19,7 @@ function CategoryPage() {
   const categoryQuery = useQuery({
     queryKey: ["storefront", brand.slug, "category", categorySlug],
     queryFn: async () => {
-      if (smartKind) return { id: smartKind, slug: categorySlug, name_en: smartKind === "new" ? "New arrivals" : smartKind === "best" ? "Most selling" : "Offers", name_ar: smartKind === "new" ? "وصل حديثاً" : smartKind === "best" ? "الأكثر مبيعاً" : "العروض", image_url: null };
+      if (smartKind) return { id: smartKind, slug: categorySlug, name_en: smartKind === "new" ? "New arrivals" : smartKind === "best" ? "Most selling" : "Sale", name_ar: smartKind === "new" ? "وصل حديثاً" : smartKind === "best" ? "الأكثر مبيعاً" : "تنزيلات", image_url: null };
       const { data, error } = await (supabase.from("categories") as any).select("id, slug, name_en, name_ar, image_url").eq("brand_id", brand.id).eq("is_active", true).eq("slug", categorySlug).maybeSingle();
       if (error) throw error;
       if (!data) throw notFound();

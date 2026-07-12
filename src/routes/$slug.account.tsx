@@ -275,7 +275,7 @@ function ProfileSection({ isAr }: { isAr: boolean }) {
   return (
     <Card
       dir={isAr ? "rtl" : "ltr"}
-      className={`p-5 sm:p-6 space-y-4 max-w-2xl ${isAr ? "text-right me-0 ms-auto" : "text-left ms-0 me-auto"}`}
+      className={`p-5 sm:p-6 space-y-4 max-w-2xl me-auto ${isAr ? "text-right" : "text-left"}`}
     >
       <div className="space-y-1.5">
         <Label className={isAr ? "block text-right" : "block text-left"}>{t("الاسم الكامل", "Full name")}</Label>

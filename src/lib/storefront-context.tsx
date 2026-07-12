@@ -99,6 +99,7 @@ export type PublicSettings = {
   announcement_dismissible: boolean;
   announcement_scope: "all" | "home" | "catalog" | "checkout";
   announcement_audience: "all" | "guest" | "authenticated";
+  global_sale_badges_enabled: boolean;
 };
 
 export type CustomFieldValue = {

@@ -130,6 +130,7 @@ export const Route = createFileRoute("/$slug")({
       announcement_dismissible: s?.announcement_dismissible ?? true,
       announcement_scope: s?.announcement_scope ?? "all",
       announcement_audience: s?.announcement_audience ?? "all",
+      global_sale_badges_enabled: s?.global_sale_badges_enabled ?? true,
     };
 
 
