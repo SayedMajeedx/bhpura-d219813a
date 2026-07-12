@@ -47,7 +47,11 @@ export const parseVariantPrompt = createServerFn({ method: "POST" })
     const { data: allowed, error: quotaError } = await (context.supabase.rpc as any)("consume_api_quota", {
       p_action: "variant_generation", p_limit: 30, p_window_minutes: 60,
     });
-    if (quotaError || !allowed) throw new Error("RATE_LIMITED");
+    if (quotaError) {
+      console.error(`[parseVariantPrompt] quota configuration error: ${quotaError.message}`);
+      throw new Error("QUOTA_CONFIGURATION_ERROR");
+    }
+    if (!allowed) throw new Error("RATE_LIMITED");
 
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) throw new Error("Missing GEMINI_API_KEY");

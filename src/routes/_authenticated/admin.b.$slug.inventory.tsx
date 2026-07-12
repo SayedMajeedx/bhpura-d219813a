@@ -715,7 +715,15 @@ function BulkVariantDialog({ productId, variants, canViewFinancials, onChanged }
     try { applyPlan(await parseVariantPrompt({ data: { prompt, language: isAr ? "ar" : "en" } })); }
     catch (error) {
       const message = error instanceof Error ? error.message : "";
-      toast.error(message.includes("RATE_LIMITED") ? (isAr ? "تم بلوغ حد الاستخدام، استخدم الإنشاء اليدوي مؤقتاً" : "AI limit reached; use the manual builder for now") : (isAr ? "تعذر فهم الطلب. يمكنك إدخال القيم يدوياً." : "Could not parse the request. You can enter the values manually."));
+      toast.error(
+        message.includes("RATE_LIMITED")
+          ? (isAr ? "تم بلوغ حد الاستخدام، استخدم الإنشاء اليدوي مؤقتاً" : "AI limit reached; use the manual builder for now")
+          : message.includes("QUOTA_CONFIGURATION_ERROR")
+            ? (isAr ? "يلزم تطبيق تحديث قاعدة البيانات الخاص بمنشئ المتغيرات" : "The variant-generator database update still needs to be applied")
+            : message.includes("GEMINI_AUTH_FAILED")
+              ? (isAr ? "مفتاح Gemini غير صالح أو غير متاح" : "The Gemini API key is invalid or unavailable")
+              : (isAr ? "تعذر فهم الطلب. يمكنك إدخال القيم يدوياً." : "Could not parse the request. You can enter the values manually."),
+      );
     } finally { setParsing(false); }
   };
   const buildPreview = () => {
