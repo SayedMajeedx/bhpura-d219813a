@@ -167,6 +167,9 @@ type StoreCtx = {
   toggleWishlist: (productId: string) => void;
   currency: string;
   session: Session | null;
+  isStoreMember: boolean;
+  membershipLoading: boolean;
+  refreshMembership: () => Promise<boolean>;
   signOut: () => Promise<void>;
 };
 
@@ -202,6 +205,8 @@ export function StorefrontProvider({
   const [cart, setCart] = useState<CartItem[]>([]);
   const [wishlist, setWishlist] = useState<string[]>([]);
   const [session, setSession] = useState<Session | null>(null);
+  const [isStoreMember, setIsStoreMember] = useState(false);
+  const [membershipLoading, setMembershipLoading] = useState(true);
 
   useEffect(() => {
     try {
@@ -230,11 +235,45 @@ export function StorefrontProvider({
     try { localStorage.setItem(wishlistKey, JSON.stringify(wishlist)); } catch {}
   }, [wishlist, wishlistKey]);
 
+  const checkMembership = useCallback(async (activeSession: Session | null): Promise<boolean> => {
+    if (!activeSession?.user) {
+      setIsStoreMember(false);
+      setMembershipLoading(false);
+      return false;
+    }
+    setMembershipLoading(true);
+    const { data, error } = await supabase.rpc("has_storefront_membership", {
+      p_brand_slug: brand.slug,
+    });
+    const member = !error && data === true;
+    if (error) console.error("Storefront membership check failed", error);
+    setIsStoreMember(member);
+    setMembershipLoading(false);
+    return member;
+  }, [brand.slug]);
+
+  const refreshMembership = useCallback(async (): Promise<boolean> => {
+    const { data } = await supabase.auth.getSession();
+    const activeSession = data.session ?? null;
+    setSession(activeSession);
+    return checkMembership(activeSession);
+  }, [checkMembership]);
+
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => setSession(data.session ?? null));
-    const { data } = supabase.auth.onAuthStateChange((_evt, s) => setSession(s));
-    return () => data.subscription.unsubscribe();
-  }, []);
+    let active = true;
+    supabase.auth.getSession().then(({ data }) => {
+      if (!active) return;
+      const nextSession = data.session ?? null;
+      setSession(nextSession);
+      void checkMembership(nextSession);
+    });
+    const { data } = supabase.auth.onAuthStateChange((_evt, nextSession) => {
+      setSession(nextSession);
+      // Run the RPC outside the auth callback to avoid blocking token storage.
+      window.setTimeout(() => { if (active) void checkMembership(nextSession); }, 0);
+    });
+    return () => { active = false; data.subscription.unsubscribe(); };
+  }, [checkMembership]);
 
   const setLang = useCallback(
     (l: StoreLang) => {
@@ -299,6 +338,7 @@ export function StorefrontProvider({
 
   const signOut = useCallback(async () => {
     await supabase.auth.signOut();
+    setIsStoreMember(false);
   }, []);
 
   const cartCount = useMemo(() => cart.reduce((s, c) => s + c.qty, 0), [cart]);
@@ -328,6 +368,9 @@ export function StorefrontProvider({
     toggleWishlist,
     currency: settings.currency || "BHD",
     session,
+    isStoreMember,
+    membershipLoading,
+    refreshMembership,
     signOut,
   };
 

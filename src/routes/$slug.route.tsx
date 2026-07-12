@@ -292,7 +292,7 @@ function WhatsAppFab() {
 }
 
 function StoreHeader() {
-  const { brand, settings, lang, setLang, t, cartCount, session, wishlistCount } = useStorefront();
+  const { brand, settings, lang, setLang, t, cartCount, session, isStoreMember, wishlistCount } = useStorefront();
   const displayName = lang === "ar" ? brand.name_ar || brand.name_en : brand.name_en;
   const align = settings.logo_align ?? "left";
   const logoSize = settings.logo_size || 40;
@@ -364,7 +364,7 @@ function StoreHeader() {
               <span className="hidden sm:inline">{lang === "ar" ? "English" : "العربية"}</span>
             </Button>
 
-            {session ? (
+            {session && isStoreMember ? (
               <Button asChild variant="ghost" size="sm" className="gap-1 hover:bg-black/5" style={{ color: "var(--sf-header-fg)" }}>
                 <Link to="/$slug/account" params={{ slug: brand.slug }} title={session.user?.email ?? ""}>
                   <User className="h-4 w-4" />
@@ -423,7 +423,7 @@ function AnnouncementBar() {
 }
 
 export function StorefrontMenu({ navigation = false }: { navigation?: boolean } = {}) {
-  const { brand, settings, lang, t, session } = useStorefront();
+  const { brand, settings, lang, t, session, isStoreMember } = useStorefront();
   const [open, setOpen] = useState(false);
   const displayName = lang === "ar" ? brand.name_ar || brand.name_en : brand.name_en;
   const menuTitle = (lang === "ar" ? settings.menu_title_ar || settings.menu_title_en : settings.menu_title_en || settings.menu_title_ar) || displayName;
@@ -460,7 +460,7 @@ export function StorefrontMenu({ navigation = false }: { navigation?: boolean } 
         </div>
         <nav className="min-h-0 flex-1 space-y-1 overflow-y-auto p-4" style={{ scrollbarWidth: "none" }}>
           {settings.menu_show_home && <Link to="/$slug" params={{ slug: brand.slug }} onClick={close} className="flex min-h-12 items-center gap-3 rounded-xl px-4 py-3 text-start transition-colors hover:bg-black/5"><Home className="h-5 w-5 shrink-0" /><span className="min-w-0 truncate">{t("الرئيسية", "Home")}</span></Link>}
-          {session ? <>
+          {session && isStoreMember ? <>
             {settings.menu_show_account && <Link to="/$slug/account" params={{ slug: brand.slug }} onClick={close} className="flex min-h-12 items-center gap-3 rounded-xl px-4 py-3 text-start transition-colors hover:bg-black/5"><User className="h-5 w-5 shrink-0" /><span className="min-w-0 truncate">{t("حسابي", "My account")}</span></Link>}
             {settings.menu_show_orders && <Link to="/$slug/account" params={{ slug: brand.slug }} onClick={close} className="flex min-h-12 items-center gap-3 rounded-xl px-4 py-3 text-start transition-colors hover:bg-black/5"><PackageSearch className="h-5 w-5 shrink-0" /><span className="min-w-0 truncate">{t("طلباتي", "My orders")}</span></Link>}
           </> : settings.menu_show_account && <Link to="/$slug/auth" params={{ slug: brand.slug }} onClick={close} className="flex min-h-12 items-center gap-3 rounded-xl px-4 py-3 text-start transition-colors hover:bg-black/5"><LogIn className="h-5 w-5 shrink-0" /><span className="min-w-0 truncate">{t("تسجيل الدخول", "Sign in")}</span></Link>}

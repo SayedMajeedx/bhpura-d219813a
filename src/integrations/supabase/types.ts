@@ -1317,6 +1317,14 @@ export type Database = {
         Args: { p_brand_slug: string; p_name?: string; p_phone?: string }
         Returns: Json
       }
+      has_storefront_membership: {
+        Args: { p_brand_slug: string }
+        Returns: boolean
+      }
+      activate_storefront_membership: {
+        Args: { p_brand_slug: string; p_name?: string; p_phone?: string }
+        Returns: Json
+      }
       place_storefront_order:
         | {
             Args: {
