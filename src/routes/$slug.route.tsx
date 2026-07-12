@@ -509,7 +509,7 @@ function CartDrawer({ children }: { children: React.ReactNode }) {
         dir={lang === "ar" ? "rtl" : "ltr"}
         className={`w-full sm:max-w-md flex flex-col ${lang === "ar" ? "[&>button]:left-auto [&>button]:right-4" : ""}`}
       >
-        <SheetHeader className={`${lang === "ar" ? "text-right sm:text-right pe-14" : "text-left sm:text-left pe-14"}`}>
+        <SheetHeader className={`${lang === "ar" ? "text-right sm:text-right pr-14" : "text-left sm:text-left pr-14"}`}>
           <SheetTitle>{t("سلة التسوق", "Your cart")}</SheetTitle>
         </SheetHeader>
 
