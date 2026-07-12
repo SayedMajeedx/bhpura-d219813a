@@ -506,6 +506,8 @@ function CartDrawer({ children }: { children: React.ReactNode }) {
     useStorefront();
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
+  const drawerCheckoutBg = settings.cart_drawer_checkout_bg ?? settings.btn_checkout_bg ?? settings.btn_primary_bg ?? settings.primary_color;
+  const drawerCheckoutFg = settings.cart_drawer_checkout_fg ?? settings.btn_checkout_fg ?? readableOn(drawerCheckoutBg, "#ffffff");
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
@@ -598,7 +600,7 @@ function CartDrawer({ children }: { children: React.ReactNode }) {
             </div>
             <Button
               className="w-full h-12"
-              style={{ backgroundColor: "var(--sf-cart-checkout-bg)", color: "var(--sf-cart-checkout-fg)", borderColor: "var(--sf-cart-checkout-bg)" }}
+              style={{ backgroundColor: drawerCheckoutBg, color: drawerCheckoutFg, borderColor: drawerCheckoutBg }}
               onClick={() => {
                 setOpen(false);
                 navigate({ to: "/$slug/checkout", params: { slug: brand.slug } });
