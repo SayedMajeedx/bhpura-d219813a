@@ -177,6 +177,10 @@ function ProductsSection({ products, variants, businessName, currency, onChanged
   const brandId = brand.id;
   const [editing, setEditing] = useState<Product | null>(null);
   const [open, setOpen] = useState(false);
+  // A new dialog session must always get fresh local form state. `editing` can
+  // remain null between two consecutive creates, so product id alone is not a
+  // sufficient reset key.
+  const [dialogSession, setDialogSession] = useState(0);
   const [search, setSearch] = useState("");
   const [stockFilter, setStockFilter] = useState<"all" | "low" | "out">("all");
   const [visibilityFilter, setVisibilityFilter] = useState<"all" | "active" | "hidden">("all");
@@ -276,9 +280,9 @@ function ProductsSection({ products, variants, businessName, currency, onChanged
         </Button>
         <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) setEditing(null); }}>
           <DialogTrigger asChild>
-            <Button onClick={() => setEditing(null)}><Plus className="h-4 w-4 me-2" /> {t("inventory.newProduct")}</Button>
+            <Button onClick={() => { setEditing(null); setDialogSession((value) => value + 1); }}><Plus className="h-4 w-4 me-2" /> {t("inventory.newProduct")}</Button>
           </DialogTrigger>
-          <ProductDialog product={editing} onSaved={() => { setOpen(false); setEditing(null); onChanged(); }} />
+          <ProductDialog key={`${editing?.id ?? "new"}-${dialogSession}`} product={editing} onSaved={() => { setOpen(false); setEditing(null); onChanged(); }} />
         </Dialog>
       </div>
 
@@ -314,7 +318,7 @@ function ProductsSection({ products, variants, businessName, currency, onChanged
                     </div>
                   </div>
                   <div className="flex gap-1">
-                    <Button variant="ghost" size="icon" onClick={() => { setEditing(p); setOpen(true); }}>
+                    <Button variant="ghost" size="icon" onClick={() => { setEditing(p); setDialogSession((value) => value + 1); setOpen(true); }}>
                       <Pencil className="h-4 w-4" />
                     </Button>
                     <InventoryDeleteAction message={t("common.confirmDelete")} onConfirm={() => del(p.id)} />
