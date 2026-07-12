@@ -383,24 +383,29 @@ function StorefrontMenu() {
           <span className="hidden lg:inline">{t("القائمة", "Menu")}</span>
         </Button>
       </SheetTrigger>
-      <SheetContent side={lang === "ar" ? "right" : "left"} className="w-[min(92vw,390px)] border-0 p-0 overflow-y-auto" style={{ backgroundColor: "var(--sf-header-bg)", color: "var(--sf-header-fg)" }}>
-        <div className="relative overflow-hidden border-b px-6 pb-6 pt-10" style={{ borderColor: "rgba(127,127,127,.18)" }}>
-          <div className="pointer-events-none absolute -end-16 -top-20 h-48 w-48 rounded-full opacity-10" style={{ backgroundColor: "var(--brand)" }} />
-          <div className="relative flex items-center gap-4">
-            {settings.logo_url && <img src={settings.logo_url} alt={displayName} className="h-16 w-16 rounded-2xl object-contain" />}
-            <div className="min-w-0"><SheetTitle className="truncate text-2xl font-display" style={{ color: "var(--sf-heading)" }}>{displayName}</SheetTitle><p className="mt-1 text-xs opacity-65">{t("اكتشف المتجر", "Explore our store")}</p></div>
+      <SheetContent
+        side={lang === "ar" ? "right" : "left"}
+        dir={lang === "ar" ? "rtl" : "ltr"}
+        className={`flex h-full w-[min(90vw,400px)] flex-col overflow-hidden border-0 p-0 shadow-2xl [&>button]:top-5 [&>button]:grid [&>button]:h-10 [&>button]:w-10 [&>button]:place-items-center [&>button]:rounded-full [&>button]:border [&>button]:bg-background/90 [&>button]:opacity-100 [&>button]:shadow-sm ${lang === "ar" ? "[&>button]:left-5 [&>button]:right-auto" : "[&>button]:right-5"}`}
+        style={{ backgroundColor: "var(--sf-header-bg)", color: "var(--sf-header-fg)" }}
+      >
+        <div className="relative shrink-0 overflow-hidden border-b px-6 pb-6 pt-7 pe-20" style={{ borderColor: "rgba(127,127,127,.18)" }}>
+          <div className="pointer-events-none absolute -end-16 -top-24 h-52 w-52 rounded-full opacity-[0.08]" style={{ backgroundColor: "var(--brand)" }} />
+          <div className="relative flex min-w-0 items-center gap-4">
+            {settings.logo_url && <div className="grid h-16 w-24 shrink-0 place-items-center overflow-hidden rounded-xl bg-white/5 p-1"><img src={settings.logo_url} alt={displayName} className="block max-h-full max-w-full object-contain" style={{ width: "auto", height: "auto" }} /></div>}
+            <div className="min-w-0 flex-1 text-start"><SheetTitle className="truncate text-2xl font-display" style={{ color: "var(--sf-heading)" }}>{displayName}</SheetTitle><p className="mt-1 truncate text-xs opacity-65">{t("اكتشف المتجر", "Explore our store")}</p></div>
           </div>
         </div>
-        <nav className="space-y-1 p-4">
-          <Link to="/$slug" params={{ slug: brand.slug }} onClick={close} className="flex items-center gap-3 rounded-xl px-4 py-3 transition-colors hover:bg-black/5"><Home className="h-5 w-5" /><span>{t("الرئيسية", "Home")}</span></Link>
+        <nav className="min-h-0 flex-1 space-y-1 overflow-y-auto p-4" style={{ scrollbarWidth: "none" }}>
+          <Link to="/$slug" params={{ slug: brand.slug }} onClick={close} className="flex min-h-12 items-center gap-3 rounded-xl px-4 py-3 text-start transition-colors hover:bg-black/5"><Home className="h-5 w-5 shrink-0" /><span className="min-w-0 truncate">{t("الرئيسية", "Home")}</span></Link>
           {session ? <>
-            <Link to="/$slug/account" params={{ slug: brand.slug }} onClick={close} className="flex items-center gap-3 rounded-xl px-4 py-3 transition-colors hover:bg-black/5"><User className="h-5 w-5" /><span>{t("حسابي", "My account")}</span></Link>
-            <Link to="/$slug/account" params={{ slug: brand.slug }} onClick={close} className="flex items-center gap-3 rounded-xl px-4 py-3 transition-colors hover:bg-black/5"><PackageSearch className="h-5 w-5" /><span>{t("طلباتي", "My orders")}</span></Link>
-          </> : <Link to="/$slug/auth" params={{ slug: brand.slug }} onClick={close} className="flex items-center gap-3 rounded-xl px-4 py-3 transition-colors hover:bg-black/5"><LogIn className="h-5 w-5" /><span>{t("تسجيل الدخول", "Sign in")}</span></Link>}
+            <Link to="/$slug/account" params={{ slug: brand.slug }} onClick={close} className="flex min-h-12 items-center gap-3 rounded-xl px-4 py-3 text-start transition-colors hover:bg-black/5"><User className="h-5 w-5 shrink-0" /><span className="min-w-0 truncate">{t("حسابي", "My account")}</span></Link>
+            <Link to="/$slug/account" params={{ slug: brand.slug }} onClick={close} className="flex min-h-12 items-center gap-3 rounded-xl px-4 py-3 text-start transition-colors hover:bg-black/5"><PackageSearch className="h-5 w-5 shrink-0" /><span className="min-w-0 truncate">{t("طلباتي", "My orders")}</span></Link>
+          </> : <Link to="/$slug/auth" params={{ slug: brand.slug }} onClick={close} className="flex min-h-12 items-center gap-3 rounded-xl px-4 py-3 text-start transition-colors hover:bg-black/5"><LogIn className="h-5 w-5 shrink-0" /><span className="min-w-0 truncate">{t("تسجيل الدخول", "Sign in")}</span></Link>}
           {pageLinks.length > 0 && <div className="my-3 border-t" style={{ borderColor: "rgba(127,127,127,.18)" }} />}
-          {pageLinks.map((page) => <Link key={page.index} to="/$slug/page/$idx" params={{ slug: brand.slug, idx: String(page.index) }} onClick={close} className="flex items-center gap-3 rounded-xl px-4 py-3 transition-colors hover:bg-black/5"><FileText className="h-5 w-5" /><span className="truncate">{page.title}</span></Link>)}
+          {pageLinks.map((page) => <Link key={page.index} to="/$slug/page/$idx" params={{ slug: brand.slug, idx: String(page.index) }} onClick={close} className="flex min-h-12 items-center gap-3 rounded-xl px-4 py-3 text-start transition-colors hover:bg-black/5"><FileText className="h-5 w-5 shrink-0" /><span className="min-w-0 truncate">{page.title}</span></Link>)}
         </nav>
-        <div className="mx-4 mt-4 rounded-2xl p-5 text-sm" style={{ backgroundColor: "color-mix(in srgb, var(--brand) 10%, transparent)" }}>
+        <div className="m-4 mt-2 shrink-0 rounded-2xl p-5 text-start text-sm" style={{ backgroundColor: "color-mix(in srgb, var(--brand) 10%, transparent)" }}>
           <p className="font-medium" style={{ color: "var(--sf-heading)" }}>{t("تسوق بكل سهولة", "Shopping made simple")}</p>
           <p className="mt-1 opacity-65">{t("تصفح المنتجات وتابع طلباتك من مكان واحد.", "Browse products and follow your orders in one place.")}</p>
         </div>
