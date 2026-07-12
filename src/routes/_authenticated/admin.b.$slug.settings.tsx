@@ -772,13 +772,15 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
     announcement_scope: "all" | "home" | "catalog" | "checkout";
     announcement_audience: "all" | "guest" | "authenticated";
     global_sale_badges_enabled: boolean;
+    cart_drawer_checkout_bg: string | null;
+    cart_drawer_checkout_fg: string | null;
   } | null>(null);
 
   const { data } = useQuery({
     queryKey: ["business-settings-theme", brandId],
     queryFn: async () => {
       const { data, error } = await supabase.from("business_settings")
-        .select("logo_size, logo_align, show_header_name, show_hero_title, show_hero_about, show_footer_name, storefront_font_en, storefront_font_ar, storefront_font_en_url, storefront_font_ar_url, hero_title_en, hero_title_ar, hero_title_size, hero_title_color, hero_title_align, storefront_accent_color, storefront_background_color, storefront_text_color, header_bg, header_fg, footer_bg, footer_fg, heading_color, link_color, btn_primary_bg, btn_primary_fg, btn_secondary_bg, btn_secondary_fg, btn_checkout_bg, btn_checkout_fg, menu_bg, menu_fg, menu_title_en, menu_title_ar, menu_show_home, menu_show_account, menu_show_orders, menu_show_pages, home_promo_cards, show_new_arrivals, show_best_sellers, new_arrivals_title_en, new_arrivals_title_ar, best_sellers_title_en, best_sellers_title_ar, announcement_enabled, announcement_text_en, announcement_text_ar, announcement_bg, announcement_fg, announcement_bold, announcement_italic, announcement_dismissible, announcement_scope, announcement_audience, global_sale_badges_enabled")
+        .select("logo_size, logo_align, show_header_name, show_hero_title, show_hero_about, show_footer_name, storefront_font_en, storefront_font_ar, storefront_font_en_url, storefront_font_ar_url, hero_title_en, hero_title_ar, hero_title_size, hero_title_color, hero_title_align, storefront_accent_color, storefront_background_color, storefront_text_color, header_bg, header_fg, footer_bg, footer_fg, heading_color, link_color, btn_primary_bg, btn_primary_fg, btn_secondary_bg, btn_secondary_fg, btn_checkout_bg, btn_checkout_fg, cart_drawer_checkout_bg, cart_drawer_checkout_fg, menu_bg, menu_fg, menu_title_en, menu_title_ar, menu_show_home, menu_show_account, menu_show_orders, menu_show_pages, home_promo_cards, show_new_arrivals, show_best_sellers, new_arrivals_title_en, new_arrivals_title_ar, best_sellers_title_en, best_sellers_title_ar, announcement_enabled, announcement_text_en, announcement_text_ar, announcement_bg, announcement_fg, announcement_bold, announcement_italic, announcement_dismissible, announcement_scope, announcement_audience, global_sale_badges_enabled")
         .eq("brand_id", brandId).maybeSingle();
       if (error) throw error;
       return data as any;
@@ -843,6 +845,8 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
       announcement_scope: data.announcement_scope ?? "all",
       announcement_audience: data.announcement_audience ?? "all",
       global_sale_badges_enabled: data.global_sale_badges_enabled ?? true,
+      cart_drawer_checkout_bg: data.cart_drawer_checkout_bg ?? null,
+      cart_drawer_checkout_fg: data.cart_drawer_checkout_fg ?? null,
     });
   }, [data]);
 
@@ -1125,6 +1129,8 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
           <ColorField label={isAr ? "نص الزر الثانوي" : "Secondary button text"} value={state.btn_secondary_fg} onChange={(v) => setState({ ...state, btn_secondary_fg: v })} />
           <ColorField label={isAr ? "خلفية زر إتمام الشراء" : "Checkout button bg"} value={state.btn_checkout_bg} onChange={(v) => setState({ ...state, btn_checkout_bg: v })} />
           <ColorField label={isAr ? "نص زر إتمام الشراء" : "Checkout button text"} value={state.btn_checkout_fg} onChange={(v) => setState({ ...state, btn_checkout_fg: v })} />
+          <ColorField label={isAr ? "خلفية زر السلة المنبثقة" : "Cart drawer checkout background"} value={state.cart_drawer_checkout_bg} onChange={(v) => setState({ ...state, cart_drawer_checkout_bg: v })} />
+          <ColorField label={isAr ? "نص زر السلة المنبثقة" : "Cart drawer checkout text"} value={state.cart_drawer_checkout_fg} onChange={(v) => setState({ ...state, cart_drawer_checkout_fg: v })} />
         </div>
       </div>
 

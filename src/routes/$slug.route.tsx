@@ -131,6 +131,8 @@ export const Route = createFileRoute("/$slug")({
       announcement_scope: s?.announcement_scope ?? "all",
       announcement_audience: s?.announcement_audience ?? "all",
       global_sale_badges_enabled: s?.global_sale_badges_enabled ?? true,
+      cart_drawer_checkout_bg: s?.cart_drawer_checkout_bg ?? null,
+      cart_drawer_checkout_fg: s?.cart_drawer_checkout_fg ?? null,
     };
 
 
@@ -216,6 +218,8 @@ function StoreShell() {
   const btnSecondaryFg = settings.btn_secondary_fg ?? readableOn(btnSecondaryBg, "#ffffff");
   const btnCheckoutBg = settings.btn_checkout_bg ?? btnPrimaryBg;
   const btnCheckoutFg = settings.btn_checkout_fg ?? readableOn(btnCheckoutBg, "#ffffff");
+  const cartDrawerCheckoutBg = settings.cart_drawer_checkout_bg ?? btnCheckoutBg;
+  const cartDrawerCheckoutFg = settings.cart_drawer_checkout_fg ?? readableOn(cartDrawerCheckoutBg, btnCheckoutFg);
   const headingColor = settings.heading_color ?? primary;
   const linkColor = settings.link_color ?? primary;
   const storefrontFont = lang === "ar" ? settings.storefront_font_ar : settings.storefront_font_en;
@@ -240,6 +244,8 @@ function StoreShell() {
           ["--sf-btn-secondary-fg" as any]: btnSecondaryFg,
           ["--sf-btn-checkout-bg" as any]: btnCheckoutBg,
           ["--sf-btn-checkout-fg" as any]: btnCheckoutFg,
+          ["--sf-cart-checkout-bg" as any]: cartDrawerCheckoutBg,
+          ["--sf-cart-checkout-fg" as any]: cartDrawerCheckoutFg,
           ["--sf-heading" as any]: headingColor,
           ["--sf-link" as any]: linkColor,
           ["--sf-font" as any]: `"${storefrontFontFamily}", sans-serif`,
@@ -592,7 +598,7 @@ function CartDrawer({ children }: { children: React.ReactNode }) {
             </div>
             <Button
               className="w-full h-12"
-              style={{ backgroundColor: "var(--sf-btn-checkout-bg)", color: "var(--sf-btn-checkout-fg)" }}
+              style={{ backgroundColor: "var(--sf-cart-checkout-bg)", color: "var(--sf-cart-checkout-fg)", borderColor: "var(--sf-cart-checkout-bg)" }}
               onClick={() => {
                 setOpen(false);
                 navigate({ to: "/$slug/checkout", params: { slug: brand.slug } });

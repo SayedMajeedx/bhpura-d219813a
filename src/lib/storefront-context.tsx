@@ -100,6 +100,8 @@ export type PublicSettings = {
   announcement_scope: "all" | "home" | "catalog" | "checkout";
   announcement_audience: "all" | "guest" | "authenticated";
   global_sale_badges_enabled: boolean;
+  cart_drawer_checkout_bg: string | null;
+  cart_drawer_checkout_fg: string | null;
 };
 
 export type CustomFieldValue = {
