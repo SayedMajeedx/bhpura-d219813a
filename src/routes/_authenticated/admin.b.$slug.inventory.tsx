@@ -22,6 +22,7 @@ import { ImageCropperDialog } from "@/components/image-cropper-dialog";
 import { BilingualField } from "@/components/bilingual-field";
 import { deletePublicMediaUrl, uploadPublicMedia } from "@/lib/r2-upload";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { parseVariantPrompt, type VariantGenerationPlan } from "@/lib/generate-variants.functions";
 
 /** Common measurement units the admin can pick from for a "size" variant. */
 const SIZE_UNITS = ["", "cm", "mm", "m", "inch", "ft", "kg", "g", "ml", "l"] as const;
@@ -673,6 +674,121 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
 }
 
 
+type BulkVariantRow = {
+  size: string; size_unit: string; color: string; fabric: string; sku: string; barcode: string;
+  cost_price: number; selling_price: number; stock_main: number; stock_incubator: number;
+};
+
+const splitVariantValues = (value: string) => [...new Set(value.split(/[\n,،]+/).map((item) => item.trim()).filter(Boolean))];
+const skuPart = (value: string) => value.normalize("NFKD").replace(/[^\p{L}\p{N}]+/gu, "-").replace(/^-|-$/g, "").toUpperCase();
+const makeEan13 = (used: Set<string>) => {
+  for (let attempt = 0; attempt < 20; attempt += 1) {
+    const bytes = new Uint32Array(2); crypto.getRandomValues(bytes);
+    const body = `29${String(bytes[0]).padStart(10, "0").slice(-10)}`;
+    const sum = body.split("").reduce((total, digit, index) => total + Number(digit) * (index % 2 === 0 ? 1 : 3), 0);
+    const code = `${body}${(10 - (sum % 10)) % 10}`;
+    if (!used.has(code)) { used.add(code); return code; }
+  }
+  throw new Error("BARCODE_GENERATION_FAILED");
+};
+
+function BulkVariantDialog({ productId, variants, canViewFinancials, onChanged }: { productId: string; variants: Variant[]; canViewFinancials: boolean; onChanged: () => void }) {
+  const { lang } = useI18n();
+  const isAr = lang === "ar";
+  const brand = useBrand();
+  const blank: VariantGenerationPlan = { base_sku: "", sizes: [], colors: [], fabric: "", size_unit: "", cost_price: 0, selling_price: 0, stock_main: 0, stock_incubator: 0 };
+  const [open, setOpen] = useState(false);
+  const [prompt, setPrompt] = useState("");
+  const [plan, setPlan] = useState<VariantGenerationPlan>(blank);
+  const [sizesText, setSizesText] = useState("");
+  const [colorsText, setColorsText] = useState("");
+  const [rows, setRows] = useState<BulkVariantRow[]>([]);
+  const [parsing, setParsing] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  const applyPlan = (next: VariantGenerationPlan) => {
+    setPlan(next); setSizesText(next.sizes.join(", ")); setColorsText(next.colors.join(", ")); setRows([]);
+  };
+  const parseWithAi = async () => {
+    if (prompt.trim().length < 3) return toast.error(isAr ? "اكتب وصفاً للمتغيرات أولاً" : "Describe the variants first");
+    setParsing(true);
+    try { applyPlan(await parseVariantPrompt({ data: { prompt, language: isAr ? "ar" : "en" } })); }
+    catch (error) {
+      const message = error instanceof Error ? error.message : "";
+      toast.error(message.includes("RATE_LIMITED") ? (isAr ? "تم بلوغ حد الاستخدام، استخدم الإنشاء اليدوي مؤقتاً" : "AI limit reached; use the manual builder for now") : (isAr ? "تعذر فهم الطلب. يمكنك إدخال القيم يدوياً." : "Could not parse the request. You can enter the values manually."));
+    } finally { setParsing(false); }
+  };
+  const buildPreview = () => {
+    const sizes = splitVariantValues(sizesText); const colors = splitVariantValues(colorsText);
+    const combinations = Math.max(1, sizes.length) * Math.max(1, colors.length);
+    if (combinations > 100) return toast.error(isAr ? "الحد الأقصى 100 متغير في المرة الواحدة" : "Maximum 100 variants per batch");
+    if (!plan.base_sku.trim()) return toast.error(isAr ? "أدخل رمز المنتج الأساسي" : "Enter a base SKU");
+    const usedBarcodes = new Set(variants.map((v) => v.barcode).filter(Boolean) as string[]);
+    const sizeAxis = sizes.length ? sizes : [""]; const colorAxis = colors.length ? colors : [""];
+    const generated = sizeAxis.flatMap((size) => colorAxis.map((color) => {
+      const suffix = [color, size].map(skuPart).filter(Boolean).join("-");
+      return { ...plan, size, color, size_unit: plan.size_unit, sku: `${skuPart(plan.base_sku)}${suffix ? `-${suffix}` : ""}`, barcode: makeEan13(usedBarcodes) } as BulkVariantRow;
+    }));
+    setRows(generated);
+  };
+  const patchRow = (index: number, patch: Partial<BulkVariantRow>) => setRows((current) => current.map((row, i) => i === index ? { ...row, ...patch } : row));
+  const saveAll = async () => {
+    const existingSkus = new Set(variants.map((v) => v.sku?.trim().toUpperCase()).filter(Boolean));
+    const existingBarcodes = new Set(variants.map((v) => v.barcode?.trim().toUpperCase()).filter(Boolean));
+    const seenSkus = new Set<string>(); const seenBarcodes = new Set<string>();
+    const invalid = rows.some((row) => {
+      const sku = row.sku.trim().toUpperCase(); const barcode = row.barcode.trim().toUpperCase();
+      const bad = !sku || !barcode || existingSkus.has(sku) || existingBarcodes.has(barcode) || seenSkus.has(sku) || seenBarcodes.has(barcode) || row.selling_price < 0 || row.cost_price < 0 || !Number.isInteger(row.stock_main) || row.stock_main < 0 || !Number.isInteger(row.stock_incubator) || row.stock_incubator < 0;
+      seenSkus.add(sku); seenBarcodes.add(barcode); return bad;
+    });
+    if (!rows.length || invalid) return toast.error(isAr ? "راجع الرموز والأسعار والمخزون؛ توجد قيمة ناقصة أو مكررة" : "Review SKUs, barcodes, prices, and stock; a value is missing or duplicated");
+    setSaving(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("AUTH_REQUIRED");
+      const { error } = await (supabase.from("product_variants") as any).insert(rows.map((row) => ({
+        user_id: user.id, brand_id: brand.id, product_id: productId,
+        size: row.size || null, size_unit: row.size_unit || null, color: row.color || null, fabric: row.fabric || null,
+        sku: row.sku.trim(), barcode: row.barcode.trim(), cost_price: canViewFinancials ? row.cost_price : 0,
+        selling_price: row.selling_price, stock_main: row.stock_main, stock_incubator: row.stock_incubator,
+      })));
+      if (error) throw error;
+      toast.success(isAr ? `تمت إضافة ${rows.length} متغير` : `${rows.length} variants added`);
+      setOpen(false); setRows([]); setPrompt(""); applyPlan(blank); onChanged();
+    } catch (error) { toast.error(error instanceof Error ? error.message : (isAr ? "فشل الحفظ" : "Save failed")); }
+    finally { setSaving(false); }
+  };
+
+  return <Dialog open={open} onOpenChange={setOpen}>
+    <DialogTrigger asChild><Button variant="outline" size="sm"><Wand2 className="me-2 h-4 w-4" />{isAr ? "إنشاء متغيرات متعددة" : "Bulk / AI variants"}</Button></DialogTrigger>
+    <DialogContent className="max-h-[90vh] max-w-6xl overflow-y-auto">
+      <DialogHeader><DialogTitle>{isAr ? "منشئ متغيرات المنتج" : "Product variant builder"}</DialogTitle></DialogHeader>
+      <div className="rounded-lg border bg-secondary/30 p-4 space-y-3">
+        <Label>{isAr ? "صف المتغيرات بالعربية أو الإنجليزية" : "Describe variants in English or Arabic"}</Label>
+        <textarea className="min-h-24 w-full rounded-md border border-input bg-background p-3 text-sm" value={prompt} onChange={(e) => setPrompt(e.target.value)} placeholder={isAr ? "مثال: كود NP24، الألوان أسود وأخضر وأبيض، المقاسات من 1 إلى 5، السعر 15 د.ب" : "Example: code NP24, black, green and white, sizes 1 to 5, priced at BHD 15"} />
+        <Button type="button" onClick={parseWithAi} disabled={parsing}>{parsing ? (isAr ? "جاري التحليل..." : "Parsing...") : (isAr ? "تحليل بالذكاء الاصطناعي" : "Parse with AI")}</Button>
+        <p className="text-xs text-muted-foreground">{isAr ? "الذكاء الاصطناعي يعبئ الحقول فقط. لن يتم حفظ شيء قبل المراجعة والتأكيد." : "AI only fills the fields. Nothing is saved until you review and confirm."}</p>
+      </div>
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <div><Label>{isAr ? "رمز المنتج الأساسي" : "Base SKU"}</Label><Input value={plan.base_sku} onChange={(e) => setPlan({ ...plan, base_sku: e.target.value })} /></div>
+        <div><Label>{isAr ? "المقاسات (بفاصلة)" : "Sizes (comma separated)"}</Label><Input value={sizesText} onChange={(e) => setSizesText(e.target.value)} /></div>
+        <div><Label>{isAr ? "الألوان (بفاصلة)" : "Colors (comma separated)"}</Label><Input value={colorsText} onChange={(e) => setColorsText(e.target.value)} /></div>
+        <div><Label>{isAr ? "الخامة" : "Fabric"}</Label><Input value={plan.fabric} onChange={(e) => setPlan({ ...plan, fabric: e.target.value })} /></div>
+        <div><Label>{isAr ? "وحدة المقاس" : "Size unit"}</Label><select className="h-10 w-full rounded-md border border-input bg-background px-3" value={plan.size_unit} onChange={(e) => setPlan({ ...plan, size_unit: e.target.value as VariantGenerationPlan["size_unit"] })}>{SIZE_UNITS.map((unit) => <option key={unit} value={unit}>{unit || "—"}</option>)}</select></div>
+        {canViewFinancials && <div><Label>{isAr ? "التكلفة" : "Cost"}</Label><Input type="number" min="0" step="0.01" value={plan.cost_price} onChange={(e) => setPlan({ ...plan, cost_price: Number(e.target.value) })} /></div>}
+        <div><Label>{isAr ? "سعر البيع" : "Selling price"}</Label><Input type="number" min="0" step="0.01" value={plan.selling_price} onChange={(e) => setPlan({ ...plan, selling_price: Number(e.target.value) })} /></div>
+        <div><Label>{isAr ? "مخزون الرئيسي" : "Main stock"}</Label><Input type="number" min="0" value={plan.stock_main} onChange={(e) => setPlan({ ...plan, stock_main: Number(e.target.value) })} /></div>
+        <div><Label>{isAr ? "مخزون الحاضنة" : "Incubator stock"}</Label><Input type="number" min="0" value={plan.stock_incubator} onChange={(e) => setPlan({ ...plan, stock_incubator: Number(e.target.value) })} /></div>
+      </div>
+      <Button type="button" variant="secondary" onClick={buildPreview}><Boxes className="me-2 h-4 w-4" />{isAr ? "إنشاء المعاينة" : "Build preview"}</Button>
+      {rows.length > 0 && <div className="space-y-2"><div className="flex items-center justify-between"><Label>{isAr ? `معاينة ${rows.length} متغير` : `Preview ${rows.length} variants`}</Label><span className="text-xs text-muted-foreground">{isAr ? "يمكن تعديل كل قيمة" : "Every value is editable"}</span></div>
+        <div className="overflow-x-auto rounded-lg border"><table className="w-full min-w-[1000px] text-sm"><thead className="bg-secondary"><tr>{[isAr ? "المقاس" : "Size", isAr ? "اللون" : "Color", isAr ? "الخامة" : "Fabric", "SKU", isAr ? "الباركود" : "Barcode", ...(canViewFinancials ? [isAr ? "التكلفة" : "Cost"] : []), isAr ? "السعر" : "Price", isAr ? "الرئيسي" : "Main", isAr ? "الحاضنة" : "Incubator", ""].map((label) => <th key={label} className="p-2 text-start">{label}</th>)}</tr></thead>
+          <tbody>{rows.map((row, index) => <tr key={`${index}-${row.barcode}`} className="border-t">{(["size", "color", "fabric", "sku", "barcode"] as const).map((field) => <td key={field} className="p-1"><Input className="h-8 min-w-24" value={row[field]} onChange={(e) => patchRow(index, { [field]: e.target.value })} /></td>)}{canViewFinancials && <td className="p-1"><Input className="h-8 w-24" type="number" min="0" step="0.01" value={row.cost_price} onChange={(e) => patchRow(index, { cost_price: Number(e.target.value) })} /></td>}<td className="p-1"><Input className="h-8 w-24" type="number" min="0" step="0.01" value={row.selling_price} onChange={(e) => patchRow(index, { selling_price: Number(e.target.value) })} /></td><td className="p-1"><Input className="h-8 w-20" type="number" min="0" value={row.stock_main} onChange={(e) => patchRow(index, { stock_main: Number(e.target.value) })} /></td><td className="p-1"><Input className="h-8 w-20" type="number" min="0" value={row.stock_incubator} onChange={(e) => patchRow(index, { stock_incubator: Number(e.target.value) })} /></td><td className="p-1"><Button type="button" size="icon" variant="ghost" onClick={() => setRows((current) => current.filter((_, i) => i !== index))}><Trash2 className="h-4 w-4 text-destructive" /></Button></td></tr>)}</tbody></table></div></div>}
+      <DialogFooter><Button variant="ghost" onClick={() => setOpen(false)}>{isAr ? "إلغاء" : "Cancel"}</Button><Button onClick={saveAll} disabled={!rows.length || saving}>{saving ? (isAr ? "جاري الحفظ..." : "Saving...") : (isAr ? `حفظ ${rows.length} متغير` : `Save ${rows.length} variants`)}</Button></DialogFooter>
+    </DialogContent>
+  </Dialog>;
+}
+
 function VariantList({ productId, productName, businessName, variants, onChanged }: { productId: string; productName: string; businessName: string | null; variants: Variant[]; onChanged: () => void }) {
   const t = useT();
   const { lang } = useI18n();
@@ -920,11 +1036,14 @@ function VariantList({ productId, productName, businessName, variants, onChanged
           </tbody>
         </table>
       </div>
-      {!adding && (
-        <Button variant="ghost" size="sm" className="mt-2" onClick={() => setAdding(true)}>
-          <Plus className="h-3 w-3 me-1" /> {t("inventory.addVariant")}
-        </Button>
-      )}
+      <div className="mt-3 flex flex-wrap gap-2">
+        {!adding && (
+          <Button variant="ghost" size="sm" onClick={() => setAdding(true)}>
+            <Plus className="h-3 w-3 me-1" /> {t("inventory.addVariant")}
+          </Button>
+        )}
+        <BulkVariantDialog productId={productId} variants={variants} canViewFinancials={canViewFinancials} onChanged={onChanged} />
+      </div>
     </div>
   );
 }
