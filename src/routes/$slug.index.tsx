@@ -10,7 +10,7 @@ export const Route = createFileRoute("/$slug/")({
   component: StoreHome,
 });
 
-type ProductRow = {
+export type ProductRow = {
   id: string;
   name: string;
   name_ar: string | null;
@@ -248,7 +248,7 @@ function Categories({
   onSelect: (c: string | null) => void;
   navigation?: boolean;
 }) {
-  const { t, lang } = useStorefront();
+  const { t, lang, brand } = useStorefront();
 
   // Merge admin-defined categories with any legacy categories referenced by products
   const merged = useMemo(() => {
@@ -270,22 +270,22 @@ function Categories({
 
   return (
     <div className={`${navigation ? "my-2 min-h-12 justify-start overflow-x-auto border-b py-2" : "mb-8 justify-center"} flex flex-nowrap gap-2`}>
-      <button
-        type="button"
-        onClick={() => onSelect(null)}
+      <Link
+        to="/$slug"
+        params={{ slug: brand.slug }}
         className={`shrink-0 px-4 py-2 ${navigation ? "rounded-lg border-transparent font-medium" : "rounded-full border"} text-sm transition-colors ${
           activeCat === null ? "bg-neutral-900 text-white border-neutral-900" : "bg-white/80 text-neutral-800 border-neutral-200 hover:bg-neutral-100"
         }`}
       >
         {t("الكل", "All")}
-      </button>
+      </Link>
       {merged.map((c) => {
         const active = activeCat === c.key;
         return (
-          <button
+          <Link
             key={c.key}
-            type="button"
-            onClick={() => onSelect(c.key)}
+            to="/$slug/$category"
+            params={{ slug: brand.slug, category: c.key }}
             className={`shrink-0 px-3 py-1.5 ${navigation ? "rounded-lg border-transparent font-medium" : "rounded-full border"} text-sm inline-flex items-center gap-2 transition-colors ${
               active ? "bg-neutral-900 text-white border-neutral-900" : "bg-white/80 text-neutral-800 border-neutral-200 hover:bg-neutral-100"
             }`}
@@ -294,14 +294,14 @@ function Categories({
               <img src={c.image} alt="" className="h-5 w-5 rounded-full object-cover" />
             )}
             {c.label}
-          </button>
+          </Link>
         );
       })}
     </div>
   );
 }
 
-function ProductGrid({ products, loading, categoryEmpty, onViewAll }: { products: ProductRow[]; loading: boolean; categoryEmpty: boolean; onViewAll: () => void }) {
+export function ProductGrid({ products, loading, categoryEmpty, onViewAll }: { products: ProductRow[]; loading: boolean; categoryEmpty: boolean; onViewAll: () => void }) {
   const { t } = useStorefront();
   if (loading) {
     return (
@@ -340,7 +340,7 @@ function ProductGrid({ products, loading, categoryEmpty, onViewAll }: { products
   );
 }
 
-function ProductCard({ product }: { product: ProductRow }) {
+export function ProductCard({ product }: { product: ProductRow }) {
   const { brand, currency, lang, t } = useStorefront();
   const displayName = pickName(lang, product);
   const prices = product.product_variants.map((v) => v.selling_price).filter((p) => p > 0);

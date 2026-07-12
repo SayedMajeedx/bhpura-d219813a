@@ -22,6 +22,7 @@ import { Route as SlugSearchRouteImport } from './routes/$slug.search'
 import { Route as SlugCheckoutRouteImport } from './routes/$slug.checkout'
 import { Route as SlugAuthRouteImport } from './routes/$slug.auth'
 import { Route as SlugAccountRouteImport } from './routes/$slug.account'
+import { Route as SlugCategoryRouteImport } from './routes/$slug.$category'
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin.index'
 import { Route as AuthenticatedAdminTeamRouteImport } from './routes/_authenticated/admin.team'
 import { Route as AuthenticatedAdminSettingsRouteImport } from './routes/_authenticated/admin.settings'
@@ -110,6 +111,11 @@ const SlugAuthRoute = SlugAuthRouteImport.update({
 const SlugAccountRoute = SlugAccountRouteImport.update({
   id: '/account',
   path: '/account',
+  getParentRoute: () => SlugRouteRoute,
+} as any)
+const SlugCategoryRoute = SlugCategoryRouteImport.update({
+  id: '/$category',
+  path: '/$category',
   getParentRoute: () => SlugRouteRoute,
 } as any)
 const AuthenticatedAdminIndexRoute = AuthenticatedAdminIndexRouteImport.update({
@@ -264,6 +270,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/$slug/$category': typeof SlugCategoryRoute
   '/$slug/account': typeof SlugAccountRoute
   '/$slug/auth': typeof SlugAuthRoute
   '/$slug/checkout': typeof SlugCheckoutRoute
@@ -302,6 +309,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/$slug/$category': typeof SlugCategoryRoute
   '/$slug/account': typeof SlugAccountRoute
   '/$slug/auth': typeof SlugAuthRoute
   '/$slug/checkout': typeof SlugCheckoutRoute
@@ -342,6 +350,7 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/$slug/$category': typeof SlugCategoryRoute
   '/$slug/account': typeof SlugAccountRoute
   '/$slug/auth': typeof SlugAuthRoute
   '/$slug/checkout': typeof SlugCheckoutRoute
@@ -383,6 +392,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/forgot-password'
     | '/reset-password'
+    | '/$slug/$category'
     | '/$slug/account'
     | '/$slug/auth'
     | '/$slug/checkout'
@@ -421,6 +431,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/forgot-password'
     | '/reset-password'
+    | '/$slug/$category'
     | '/$slug/account'
     | '/$slug/auth'
     | '/$slug/checkout'
@@ -460,6 +471,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/forgot-password'
     | '/reset-password'
+    | '/$slug/$category'
     | '/$slug/account'
     | '/$slug/auth'
     | '/$slug/checkout'
@@ -595,6 +607,13 @@ declare module '@tanstack/react-router' {
       path: '/account'
       fullPath: '/$slug/account'
       preLoaderRoute: typeof SlugAccountRouteImport
+      parentRoute: typeof SlugRouteRoute
+    }
+    '/$slug/$category': {
+      id: '/$slug/$category'
+      path: '/$category'
+      fullPath: '/$slug/$category'
+      preLoaderRoute: typeof SlugCategoryRouteImport
       parentRoute: typeof SlugRouteRoute
     }
     '/_authenticated/admin/': {
@@ -776,6 +795,7 @@ declare module '@tanstack/react-router' {
 }
 
 interface SlugRouteRouteChildren {
+  SlugCategoryRoute: typeof SlugCategoryRoute
   SlugAccountRoute: typeof SlugAccountRoute
   SlugAuthRoute: typeof SlugAuthRoute
   SlugCheckoutRoute: typeof SlugCheckoutRoute
@@ -787,6 +807,7 @@ interface SlugRouteRouteChildren {
 }
 
 const SlugRouteRouteChildren: SlugRouteRouteChildren = {
+  SlugCategoryRoute: SlugCategoryRoute,
   SlugAccountRoute: SlugAccountRoute,
   SlugAuthRoute: SlugAuthRoute,
   SlugCheckoutRoute: SlugCheckoutRoute,
