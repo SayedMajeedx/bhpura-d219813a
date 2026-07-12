@@ -5,7 +5,7 @@ import { useStorefront, formatPrice, pickName } from "@/lib/storefront-context";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useMemo, useState, useEffect, useRef } from "react";
-import { ChevronDown, FileText, Grid2X2 } from "lucide-react";
+import { ChevronDown, FileText, Grid2X2, Heart } from "lucide-react";
 
 export const Route = createFileRoute("/$slug/")({
   component: StoreHome,
@@ -101,7 +101,7 @@ function StoreHome() {
 
   return (
     <div>
-      <div className="mx-auto max-w-7xl px-4 sm:px-6"><Categories products={products ?? []} categories={categories ?? []} activeCat={activeCat} onSelect={setActiveCat} navigation /></div>
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 md:hidden"><Categories products={products ?? []} categories={categories ?? []} activeCat={activeCat} onSelect={setActiveCat} navigation /></div>
       <HeroBanner />
       <section className="mx-auto max-w-7xl px-4 sm:px-6 py-8 sm:py-10">
         <PromoCards />
@@ -343,7 +343,7 @@ export function ProductGrid({ products, loading, categoryEmpty, onViewAll }: { p
 }
 
 export function ProductCard({ product }: { product: ProductRow }) {
-  const { brand, currency, lang, t } = useStorefront();
+  const { brand, currency, lang, t, isWishlisted, toggleWishlist } = useStorefront();
   const displayName = pickName(lang, product);
   const pricedVariants = product.product_variants.filter((variant) => Number(variant.selling_price || 0) > 0).sort((a, b) => a.selling_price - b.selling_price);
   const discountedVariant = pricedVariants.filter((variant) => Number(variant.original_price || 0) > Number(variant.selling_price || 0))[0];
@@ -359,12 +359,13 @@ export function ProductCard({ product }: { product: ProductRow }) {
     : [];
   const cover = media.find((m) => m.type === "image")?.url || product.image_url;
 
+  const wished = isWishlisted(product.id);
   return (
-    <Link
-      to="/$slug/product/$id"
-      params={{ slug: brand.slug, id: product.id }}
-      className="group block"
-    >
+    <div className="group relative">
+      <button type="button" onClick={() => toggleWishlist(product.id)} aria-label={wished ? t("إزالة من المفضلة", "Remove from wishlist") : t("إضافة إلى المفضلة", "Add to wishlist")} className="absolute end-2 top-2 z-20 grid h-10 w-10 place-items-center rounded-full bg-white/95 text-neutral-900 shadow-md transition hover:scale-105">
+        <Heart className={`h-5 w-5 ${wished ? "fill-red-600 text-red-600" : ""}`} />
+      </button>
+      <Link to="/$slug/product/$id" params={{ slug: brand.slug, id: product.id }} className="block">
       <div className="aspect-[3/4] rounded-xl overflow-hidden bg-muted relative">
         {discountPercent > 0 && <span className="absolute start-0 top-0 z-10 rounded-ee-2xl bg-neutral-950 px-4 py-2 text-xs font-semibold text-white">{t(`وفر ${discountPercent}%`, `Save ${discountPercent}%`)}</span>}
         {cover ? (
@@ -394,6 +395,7 @@ export function ProductCard({ product }: { product: ProductRow }) {
           {originalPrice > minPrice && <span className="text-xs font-normal text-muted-foreground line-through">{formatPrice(originalPrice, currency, lang)}</span>}
         </div>
       </div>
-    </Link>
+      </Link>
+    </div>
   );
 }

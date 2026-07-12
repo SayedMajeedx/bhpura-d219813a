@@ -89,6 +89,16 @@ export type PublicSettings = {
   new_arrivals_title_ar: string | null;
   best_sellers_title_en: string | null;
   best_sellers_title_ar: string | null;
+  announcement_enabled: boolean;
+  announcement_text_en: string | null;
+  announcement_text_ar: string | null;
+  announcement_bg: string;
+  announcement_fg: string;
+  announcement_bold: boolean;
+  announcement_italic: boolean;
+  announcement_dismissible: boolean;
+  announcement_scope: "all" | "home" | "catalog" | "checkout";
+  announcement_audience: "all" | "guest" | "authenticated";
 };
 
 export type CustomFieldValue = {
@@ -107,6 +117,7 @@ export type CartItem = {
   name_en?: string | null;
   image: string | null;
   price: number;
+  original_price?: number | null;
   size: string | null;
   color: string | null;
   fabric?: string | null;
@@ -147,6 +158,10 @@ type StoreCtx = {
   clearCart: () => void;
   cartCount: number;
   cartTotal: number;
+  wishlist: string[];
+  wishlistCount: number;
+  isWishlisted: (productId: string) => boolean;
+  toggleWishlist: (productId: string) => void;
   currency: string;
   session: Session | null;
   signOut: () => Promise<void>;
@@ -178,9 +193,11 @@ export function StorefrontProvider({
 }) {
   const cartKey = `storefront-cart:${brand.slug}`;
   const langKey = `storefront-lang:${brand.slug}`;
+  const wishlistKey = `storefront-wishlist:${brand.slug}`;
 
   const [lang, setLangState] = useState<StoreLang>("ar");
   const [cart, setCart] = useState<CartItem[]>([]);
+  const [wishlist, setWishlist] = useState<string[]>([]);
   const [session, setSession] = useState<Session | null>(null);
 
   useEffect(() => {
@@ -195,14 +212,20 @@ export function StorefrontProvider({
           cart_line_id: item.cart_line_id || cartLineId(item as CartItem),
         })) as CartItem[]);
       }
+      const savedWishlist = localStorage.getItem(wishlistKey);
+      if (savedWishlist) setWishlist(Array.from(new Set(JSON.parse(savedWishlist) as string[])));
     } catch {}
-  }, [cartKey, langKey]);
+  }, [cartKey, langKey, wishlistKey]);
 
   useEffect(() => {
     try {
       localStorage.setItem(cartKey, JSON.stringify(cart));
     } catch {}
   }, [cart, cartKey]);
+
+  useEffect(() => {
+    try { localStorage.setItem(wishlistKey, JSON.stringify(wishlist)); } catch {}
+  }, [wishlist, wishlistKey]);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => setSession(data.session ?? null));
@@ -277,6 +300,10 @@ export function StorefrontProvider({
 
   const cartCount = useMemo(() => cart.reduce((s, c) => s + c.qty, 0), [cart]);
   const cartTotal = useMemo(() => cart.reduce((s, c) => s + c.qty * c.price, 0), [cart]);
+  const toggleWishlist = useCallback((productId: string) => {
+    setWishlist((items) => items.includes(productId) ? items.filter((id) => id !== productId) : [...items, productId]);
+  }, []);
+  const isWishlisted = useCallback((productId: string) => wishlist.includes(productId), [wishlist]);
 
   const value: StoreCtx = {
     brand,
@@ -292,6 +319,10 @@ export function StorefrontProvider({
     clearCart,
     cartCount,
     cartTotal,
+    wishlist,
+    wishlistCount: wishlist.length,
+    isWishlisted,
+    toggleWishlist,
     currency: settings.currency || "BHD",
     session,
     signOut,

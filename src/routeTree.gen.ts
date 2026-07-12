@@ -18,6 +18,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as SlugIndexRouteImport } from './routes/$slug.index'
 import { Route as InvoiceIdRouteImport } from './routes/invoice.$id'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
+import { Route as SlugWishlistRouteImport } from './routes/$slug.wishlist'
 import { Route as SlugSearchRouteImport } from './routes/$slug.search'
 import { Route as SlugCheckoutRouteImport } from './routes/$slug.checkout'
 import { Route as SlugAuthRouteImport } from './routes/$slug.auth'
@@ -92,6 +93,11 @@ const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
   id: '/admin',
   path: '/admin',
   getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const SlugWishlistRoute = SlugWishlistRouteImport.update({
+  id: '/wishlist',
+  path: '/wishlist',
+  getParentRoute: () => SlugRouteRoute,
 } as any)
 const SlugSearchRoute = SlugSearchRouteImport.update({
   id: '/search',
@@ -275,6 +281,7 @@ export interface FileRoutesByFullPath {
   '/$slug/auth': typeof SlugAuthRoute
   '/$slug/checkout': typeof SlugCheckoutRoute
   '/$slug/search': typeof SlugSearchRoute
+  '/$slug/wishlist': typeof SlugWishlistRoute
   '/admin': typeof AuthenticatedAdminRouteWithChildren
   '/invoice/$id': typeof InvoiceIdRoute
   '/$slug/': typeof SlugIndexRoute
@@ -314,6 +321,7 @@ export interface FileRoutesByTo {
   '/$slug/auth': typeof SlugAuthRoute
   '/$slug/checkout': typeof SlugCheckoutRoute
   '/$slug/search': typeof SlugSearchRoute
+  '/$slug/wishlist': typeof SlugWishlistRoute
   '/invoice/$id': typeof InvoiceIdRoute
   '/$slug': typeof SlugIndexRoute
   '/$slug/page/$idx': typeof SlugPageIdxRoute
@@ -355,6 +363,7 @@ export interface FileRoutesById {
   '/$slug/auth': typeof SlugAuthRoute
   '/$slug/checkout': typeof SlugCheckoutRoute
   '/$slug/search': typeof SlugSearchRoute
+  '/$slug/wishlist': typeof SlugWishlistRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRouteWithChildren
   '/invoice/$id': typeof InvoiceIdRoute
   '/$slug/': typeof SlugIndexRoute
@@ -397,6 +406,7 @@ export interface FileRouteTypes {
     | '/$slug/auth'
     | '/$slug/checkout'
     | '/$slug/search'
+    | '/$slug/wishlist'
     | '/admin'
     | '/invoice/$id'
     | '/$slug/'
@@ -436,6 +446,7 @@ export interface FileRouteTypes {
     | '/$slug/auth'
     | '/$slug/checkout'
     | '/$slug/search'
+    | '/$slug/wishlist'
     | '/invoice/$id'
     | '/$slug'
     | '/$slug/page/$idx'
@@ -476,6 +487,7 @@ export interface FileRouteTypes {
     | '/$slug/auth'
     | '/$slug/checkout'
     | '/$slug/search'
+    | '/$slug/wishlist'
     | '/_authenticated/admin'
     | '/invoice/$id'
     | '/$slug/'
@@ -580,6 +592,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin'
       preLoaderRoute: typeof AuthenticatedAdminRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/$slug/wishlist': {
+      id: '/$slug/wishlist'
+      path: '/wishlist'
+      fullPath: '/$slug/wishlist'
+      preLoaderRoute: typeof SlugWishlistRouteImport
+      parentRoute: typeof SlugRouteRoute
     }
     '/$slug/search': {
       id: '/$slug/search'
@@ -800,6 +819,7 @@ interface SlugRouteRouteChildren {
   SlugAuthRoute: typeof SlugAuthRoute
   SlugCheckoutRoute: typeof SlugCheckoutRoute
   SlugSearchRoute: typeof SlugSearchRoute
+  SlugWishlistRoute: typeof SlugWishlistRoute
   SlugIndexRoute: typeof SlugIndexRoute
   SlugPageIdxRoute: typeof SlugPageIdxRoute
   SlugProductIdRoute: typeof SlugProductIdRoute
@@ -812,6 +832,7 @@ const SlugRouteRouteChildren: SlugRouteRouteChildren = {
   SlugAuthRoute: SlugAuthRoute,
   SlugCheckoutRoute: SlugCheckoutRoute,
   SlugSearchRoute: SlugSearchRoute,
+  SlugWishlistRoute: SlugWishlistRoute,
   SlugIndexRoute: SlugIndexRoute,
   SlugPageIdxRoute: SlugPageIdxRoute,
   SlugProductIdRoute: SlugProductIdRoute,

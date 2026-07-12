@@ -1,4 +1,4 @@
-import { createFileRoute, Outlet, Link, notFound, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Outlet, Link, notFound, useNavigate, useLocation } from "@tanstack/react-router";
 import React, { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -21,7 +21,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import { ShoppingBag, Languages, Minus, Plus, Trash2, X, User, Search, Menu, Home, PackageSearch, FileText, LogIn } from "lucide-react";
+import { ShoppingBag, Languages, Minus, Plus, Trash2, X, User, Search, Menu, Home, PackageSearch, FileText, LogIn, Heart } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { faviconType, resolveBrandFavicon, useDynamicFavicon } from "@/lib/favicon";
 
@@ -120,6 +120,16 @@ export const Route = createFileRoute("/$slug")({
       new_arrivals_title_ar: s?.new_arrivals_title_ar ?? null,
       best_sellers_title_en: s?.best_sellers_title_en ?? null,
       best_sellers_title_ar: s?.best_sellers_title_ar ?? null,
+      announcement_enabled: s?.announcement_enabled ?? false,
+      announcement_text_en: s?.announcement_text_en ?? null,
+      announcement_text_ar: s?.announcement_text_ar ?? null,
+      announcement_bg: s?.announcement_bg ?? "#111111",
+      announcement_fg: s?.announcement_fg ?? "#ffffff",
+      announcement_bold: s?.announcement_bold ?? false,
+      announcement_italic: s?.announcement_italic ?? false,
+      announcement_dismissible: s?.announcement_dismissible ?? true,
+      announcement_scope: s?.announcement_scope ?? "all",
+      announcement_audience: s?.announcement_audience ?? "all",
     };
 
 
@@ -235,7 +245,11 @@ function StoreShell() {
       }
     >
       {storefrontFontUrl && <style>{`@font-face { font-family: 'StorefrontCustomFont'; src: url('${storefrontFontUrl}'); font-display: swap; }`}</style>}
-      <StoreHeader />
+      <div className="sticky top-0 z-40">
+        <AnnouncementBar />
+        <StoreHeader />
+        <DesktopStoreNavigation />
+      </div>
       <main className="flex-1">
         <Outlet />
       </main>
@@ -271,14 +285,14 @@ function WhatsAppFab() {
 }
 
 function StoreHeader() {
-  const { brand, settings, lang, setLang, t, cartCount, session } = useStorefront();
+  const { brand, settings, lang, setLang, t, cartCount, session, wishlistCount } = useStorefront();
   const displayName = lang === "ar" ? brand.name_ar || brand.name_en : brand.name_en;
   const align = settings.logo_align ?? "left";
   const logoSize = settings.logo_size || 40;
 
   return (
     <header
-      className="sticky top-0 z-40 w-full border-b backdrop-blur"
+      className="w-full border-b backdrop-blur"
       style={{
         backgroundColor: "var(--sf-header-bg)",
         color: "var(--sf-header-fg)",
@@ -306,6 +320,14 @@ function StoreHeader() {
                 }}
               />
             )}
+
+            <Button asChild variant="ghost" size="sm" className="relative gap-1 hover:bg-black/5" style={{ color: "var(--sf-header-fg)" }}>
+              <Link to="/$slug/wishlist" params={{ slug: brand.slug }}>
+                <Heart className="h-5 w-5" />
+                <span className="hidden sm:inline">{t("المفضلة", "Wishlist")}</span>
+                {wishlistCount > 0 && <span className="absolute -top-1 -right-1 grid h-[18px] min-w-[18px] place-items-center rounded-full px-1 text-[10px] font-semibold" style={{ backgroundColor: "var(--sf-btn-primary-bg)", color: "var(--sf-btn-primary-fg)" }}>{wishlistCount}</span>}
+              </Link>
+            </Button>
             {settings.show_header_name && <span
               className="font-display text-lg sm:text-xl truncate"
               style={{ color: "var(--sf-heading)" }}
@@ -377,6 +399,22 @@ function StoreHeader() {
   );
 }
 
+function AnnouncementBar() {
+  const { brand, settings, lang, session } = useStorefront();
+  const { pathname } = useLocation();
+  const text = lang === "ar" ? settings.announcement_text_ar || settings.announcement_text_en : settings.announcement_text_en || settings.announcement_text_ar;
+  const key = `announcement-dismissed:${brand.id}:${text ?? ""}`;
+  const [dismissed, setDismissed] = useState(() => { try { return sessionStorage.getItem(key) === "1"; } catch { return false; } });
+  const audienceOk = settings.announcement_audience === "all" || (settings.announcement_audience === "guest" ? !session : Boolean(session));
+  const relative = pathname.replace(`/${brand.slug}`, "") || "/";
+  const scopeOk = settings.announcement_scope === "all" || (settings.announcement_scope === "home" && relative === "/") || (settings.announcement_scope === "checkout" && relative.startsWith("/checkout")) || (settings.announcement_scope === "catalog" && !relative.startsWith("/checkout") && !relative.startsWith("/account") && !relative.startsWith("/auth"));
+  if (!settings.announcement_enabled || !text || dismissed || !audienceOk || !scopeOk) return null;
+  return <div className="relative px-12 py-2 text-center text-sm" style={{ backgroundColor: settings.announcement_bg, color: settings.announcement_fg, fontWeight: settings.announcement_bold ? 700 : 400, fontStyle: settings.announcement_italic ? "italic" : "normal" }}>
+    <span>{text}</span>
+    {settings.announcement_dismissible && <button type="button" className="absolute end-3 top-1/2 -translate-y-1/2 rounded-full p-1 hover:bg-white/15" aria-label="Dismiss announcement" onClick={() => { try { sessionStorage.setItem(key, "1"); } catch {} setDismissed(true); }}><X className="h-4 w-4" /></button>}
+  </div>;
+}
+
 export function StorefrontMenu({ navigation = false }: { navigation?: boolean } = {}) {
   const { brand, settings, lang, t, session } = useStorefront();
   const [open, setOpen] = useState(false);
@@ -431,6 +469,26 @@ export function StorefrontMenu({ navigation = false }: { navigation?: boolean } 
   );
 }
 
+function DesktopStoreNavigation() {
+  const { brand, lang, t } = useStorefront();
+  const { data = [] } = useQuery({
+    queryKey: ["storefront", brand.slug, "categories"],
+    queryFn: async () => {
+      const { data, error } = await (supabase.from("categories") as any).select("id, name_en, name_ar, slug, sort_order").eq("brand_id", brand.id).eq("is_active", true).order("sort_order", { ascending: true });
+      if (error) throw error;
+      return data ?? [];
+    },
+    staleTime: 60_000,
+  });
+  const isSale = (c: any) => /sale|offers?|discount|تنزيل|عروض/i.test(`${c.slug ?? ""} ${c.name_en ?? ""} ${c.name_ar ?? ""}`);
+  return <nav className="hidden border-b bg-[var(--sf-header-bg)] text-[var(--sf-header-fg)] shadow-sm md:block">
+    <div className="mx-auto flex min-h-14 max-w-7xl items-center justify-center gap-2 overflow-x-auto px-6 py-2">
+      <Link to="/$slug" params={{ slug: brand.slug }} className="shrink-0 rounded-xl border border-dashed px-5 py-2.5 font-semibold transition hover:-translate-y-0.5 hover:bg-black/5">{t("الصفحة الرئيسية", "Home")}</Link>
+      {data.map((c: any) => <Link key={c.id} to="/$slug/$category" params={{ slug: brand.slug, category: c.slug || c.name_en }} className={`shrink-0 rounded-xl px-5 py-2.5 text-base transition hover:-translate-y-0.5 hover:bg-black/5 ${isSale(c) ? "font-bold text-red-600" : "font-semibold"}`}>{lang === "ar" ? c.name_ar || c.name_en : c.name_en || c.name_ar}</Link>)}
+    </div>
+  </nav>;
+}
+
 
 function CartDrawer({ children }: { children: React.ReactNode }) {
   const { cart, cartTotal, currency, lang, t, updateQty, removeFromCart, brand, settings } =
@@ -478,7 +536,10 @@ function CartDrawer({ children }: { children: React.ReactNode }) {
                     </div>
                   )}
                   <div className="text-sm font-semibold mt-1" style={{ color: settings.primary_color }}>
-                    {formatPrice(item.price * item.qty, currency, lang)}
+                    <span className="flex flex-col items-end">
+                      <span>{formatPrice(item.price * item.qty, currency, lang)}</span>
+                      {Number(item.original_price || 0) > item.price && <span className="text-xs text-muted-foreground line-through">{formatPrice(Number(item.original_price) * item.qty, currency, lang)}</span>}
+                    </span>
                   </div>
                 </div>
                 <div className="flex flex-col items-center gap-1 shrink-0">
@@ -685,7 +746,7 @@ function StoreFooter() {
       }}
     >
       <div className="mx-auto max-w-7xl px-4 sm:px-6 text-center text-sm space-y-4" style={{ color: "var(--sf-footer-fg)" }}>
-        {settings.show_footer_name && <div className="font-medium" style={{ color: "var(--sf-heading)" }}>
+        {settings.show_footer_name && <div className="font-medium" style={{ color: "var(--sf-footer-fg)" }}>
           {lang === "ar" ? brand.name_ar || brand.name_en : brand.name_en}
         </div>}
         {socials.length > 0 && (
@@ -712,7 +773,7 @@ function StoreFooter() {
                 to="/$slug/page/$idx"
                 params={{ slug: brand.slug, idx: String(p.idx) }}
                 className="hover:underline underline-offset-4"
-                style={{ color: "var(--sf-link)" }}
+                style={{ color: "var(--sf-footer-fg)" }}
               >
                 {p.title}
               </Link>

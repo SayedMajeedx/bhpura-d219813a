@@ -74,7 +74,7 @@ function AccountPage() {
   }
 
   return (
-    <section className="mx-auto max-w-5xl px-4 sm:px-6 py-8 sm:py-12">
+    <section dir={isAr ? "rtl" : "ltr"} className={`mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-12 ${isAr ? "text-right" : "text-left"}`}>
       <div className="flex items-center justify-between mb-6 gap-4 flex-wrap">
         <div>
           <h1 className="font-display text-2xl sm:text-3xl" style={{ color: "var(--sf-heading)" }}>
@@ -85,8 +85,8 @@ function AccountPage() {
         <SignOutButton />
       </div>
 
-      <Tabs defaultValue="orders" className="w-full">
-        <TabsList className="grid w-full grid-cols-3 h-auto">
+      <Tabs defaultValue="orders" className="w-full rounded-2xl border bg-card p-3 shadow-sm sm:p-5">
+        <TabsList className="grid w-full grid-cols-3 h-auto rounded-xl p-1">
           <TabsTrigger value="orders" className="gap-2 py-2">
             <PackageSearch className="h-4 w-4" /> <span className="hidden sm:inline">{t("طلباتي", "My orders")}</span>
           </TabsTrigger>
@@ -275,7 +275,7 @@ function ProfileSection({ isAr }: { isAr: boolean }) {
   return (
     <Card
       dir={isAr ? "rtl" : "ltr"}
-      className={`p-5 sm:p-6 space-y-4 max-w-xl ${isAr ? "text-right ms-auto" : "text-left me-auto"}`}
+      className={`p-5 sm:p-6 space-y-4 max-w-2xl ${isAr ? "text-right me-0 ms-auto" : "text-left ms-0 me-auto"}`}
     >
       <div className="space-y-1.5">
         <Label className={isAr ? "block text-right" : "block text-left"}>{t("الاسم الكامل", "Full name")}</Label>

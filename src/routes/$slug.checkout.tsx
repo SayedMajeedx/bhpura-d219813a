@@ -480,7 +480,10 @@ function Checkout() {
                     </div>
                   ))}
                 </div>
-                <span>{formatPrice(c.price * c.qty, currency, lang)}</span>
+                <span className="flex flex-col items-end">
+                  <span>{formatPrice(c.price * c.qty, currency, lang)}</span>
+                  {Number(c.original_price || 0) > c.price && <span className="text-xs text-muted-foreground line-through">{formatPrice(Number(c.original_price) * c.qty, currency, lang)}</span>}
+                </span>
               </div>
             ))}
           </div>

@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useState, useMemo, useRef } from "react";
 import { formatSizeWithUnit } from "@/components/bilingual-field";
-import { ChevronLeft, ChevronRight, ShoppingBag, AlertCircle } from "lucide-react";
+import { ChevronLeft, ChevronRight, ShoppingBag, AlertCircle, Heart } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/$slug/product/$id")({
@@ -58,7 +58,7 @@ function variantSortKey(v: Variant): [number, string] {
 
 function ProductDetail() {
   const { id } = Route.useParams();
-  const { brand, settings, currency, lang, t, addToCart } = useStorefront();
+  const { brand, settings, currency, lang, t, addToCart, isWishlisted, toggleWishlist } = useStorefront();
   const navigate = useNavigate();
   const [mediaIdx, setMediaIdx] = useState(0);
   const [variantId, setVariantId] = useState<string | null>(null);
@@ -198,6 +198,7 @@ function ProductDetail() {
       name_en: product.name_en,
       image: media.find((m) => m.type === "image")?.url ?? product.image_url ?? null,
       price: variant!.selling_price,
+      original_price: variant!.original_price,
       size: variant!.size,
       color: variant!.color,
       fabric: variant!.fabric,
@@ -280,7 +281,7 @@ function ProductDetail() {
       </div>
 
       <div>
-        <h1 className="font-display text-2xl sm:text-3xl mb-1 sm:mb-2">{displayName}</h1>
+        <div className="mb-1 flex items-start justify-between gap-3 sm:mb-2"><h1 className="font-display text-2xl sm:text-3xl">{displayName}</h1><Button type="button" variant="outline" size="icon" className="shrink-0 rounded-full" onClick={() => toggleWishlist(product.id)} aria-label={t("المفضلة", "Wishlist")}><Heart className={`h-5 w-5 ${isWishlisted(product.id) ? "fill-red-600 text-red-600" : ""}`} /></Button></div>
         <div className="mb-3 flex flex-wrap items-center gap-3 text-xl font-semibold sm:mb-4 sm:text-2xl" style={{ color: primary }}>
           <span>{priceLabel}</span>{originalPrice > displayPrice && <span className="text-base font-normal text-muted-foreground line-through">{formatPrice(originalPrice, currency, lang)}</span>}{discountPercent > 0 && <span className="rounded-full bg-neutral-950 px-3 py-1 text-xs text-white">{t(`وفر ${discountPercent}%`, `Save ${discountPercent}%`)}</span>}
         </div>

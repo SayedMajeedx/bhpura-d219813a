@@ -761,13 +761,23 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
     new_arrivals_title_ar: string | null;
     best_sellers_title_en: string | null;
     best_sellers_title_ar: string | null;
+    announcement_enabled: boolean;
+    announcement_text_en: string | null;
+    announcement_text_ar: string | null;
+    announcement_bg: string;
+    announcement_fg: string;
+    announcement_bold: boolean;
+    announcement_italic: boolean;
+    announcement_dismissible: boolean;
+    announcement_scope: "all" | "home" | "catalog" | "checkout";
+    announcement_audience: "all" | "guest" | "authenticated";
   } | null>(null);
 
   const { data } = useQuery({
     queryKey: ["business-settings-theme", brandId],
     queryFn: async () => {
       const { data, error } = await supabase.from("business_settings")
-        .select("logo_size, logo_align, show_header_name, show_hero_title, show_hero_about, show_footer_name, storefront_font_en, storefront_font_ar, storefront_font_en_url, storefront_font_ar_url, hero_title_en, hero_title_ar, hero_title_size, hero_title_color, hero_title_align, storefront_accent_color, storefront_background_color, storefront_text_color, header_bg, header_fg, footer_bg, footer_fg, heading_color, link_color, btn_primary_bg, btn_primary_fg, btn_secondary_bg, btn_secondary_fg, btn_checkout_bg, btn_checkout_fg, menu_bg, menu_fg, menu_title_en, menu_title_ar, menu_show_home, menu_show_account, menu_show_orders, menu_show_pages, home_promo_cards, show_new_arrivals, show_best_sellers, new_arrivals_title_en, new_arrivals_title_ar, best_sellers_title_en, best_sellers_title_ar")
+        .select("logo_size, logo_align, show_header_name, show_hero_title, show_hero_about, show_footer_name, storefront_font_en, storefront_font_ar, storefront_font_en_url, storefront_font_ar_url, hero_title_en, hero_title_ar, hero_title_size, hero_title_color, hero_title_align, storefront_accent_color, storefront_background_color, storefront_text_color, header_bg, header_fg, footer_bg, footer_fg, heading_color, link_color, btn_primary_bg, btn_primary_fg, btn_secondary_bg, btn_secondary_fg, btn_checkout_bg, btn_checkout_fg, menu_bg, menu_fg, menu_title_en, menu_title_ar, menu_show_home, menu_show_account, menu_show_orders, menu_show_pages, home_promo_cards, show_new_arrivals, show_best_sellers, new_arrivals_title_en, new_arrivals_title_ar, best_sellers_title_en, best_sellers_title_ar, announcement_enabled, announcement_text_en, announcement_text_ar, announcement_bg, announcement_fg, announcement_bold, announcement_italic, announcement_dismissible, announcement_scope, announcement_audience")
         .eq("brand_id", brandId).maybeSingle();
       if (error) throw error;
       return data as any;
@@ -821,6 +831,16 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
       new_arrivals_title_ar: data.new_arrivals_title_ar ?? null,
       best_sellers_title_en: data.best_sellers_title_en ?? null,
       best_sellers_title_ar: data.best_sellers_title_ar ?? null,
+      announcement_enabled: data.announcement_enabled ?? false,
+      announcement_text_en: data.announcement_text_en ?? null,
+      announcement_text_ar: data.announcement_text_ar ?? null,
+      announcement_bg: data.announcement_bg ?? "#111111",
+      announcement_fg: data.announcement_fg ?? "#ffffff",
+      announcement_bold: data.announcement_bold ?? false,
+      announcement_italic: data.announcement_italic ?? false,
+      announcement_dismissible: data.announcement_dismissible ?? true,
+      announcement_scope: data.announcement_scope ?? "all",
+      announcement_audience: data.announcement_audience ?? "all",
     });
   }, [data]);
 
@@ -939,6 +959,13 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
             </div>
           </div>
         </div>
+      </div>
+
+      <div className="space-y-4 rounded-md border border-border p-4">
+        <div className="flex items-center justify-between gap-4"><div><h3 className="font-medium text-sm">{isAr ? "شريط الإعلانات" : "Announcement bar"}</h3><p className="mt-1 text-xs text-muted-foreground">{isAr ? "رسالة قابلة للتخصيص مع قواعد للصفحات والزوار." : "A customizable message with page and audience rules."}</p></div><Switch checked={state.announcement_enabled} onCheckedChange={(checked) => setState({ ...state, announcement_enabled: checked })} /></div>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2"><div><Label>English</Label><Input value={state.announcement_text_en ?? ""} onChange={(e) => setState({ ...state, announcement_text_en: e.target.value || null })} /></div><div><Label>العربية</Label><Input dir="rtl" value={state.announcement_text_ar ?? ""} onChange={(e) => setState({ ...state, announcement_text_ar: e.target.value || null })} /></div><ColorField label={isAr ? "الخلفية" : "Background"} value={state.announcement_bg} onChange={(v) => setState({ ...state, announcement_bg: v || "#111111" })} /><ColorField label={isAr ? "لون النص" : "Text color"} value={state.announcement_fg} onChange={(v) => setState({ ...state, announcement_fg: v || "#ffffff" })} /></div>
+        <div className="flex flex-wrap gap-3">{([['announcement_bold', isAr ? 'عريض' : 'Bold'], ['announcement_italic', isAr ? 'مائل' : 'Italic'], ['announcement_dismissible', isAr ? 'قابل للإغلاق' : 'Dismissible']] as const).map(([key,label]) => <div key={key} className="flex items-center gap-2 rounded-md border px-3 py-2"><Switch checked={state[key]} onCheckedChange={(checked) => setState({ ...state, [key]: checked })} /><Label>{label}</Label></div>)}</div>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2"><div><Label>{isAr ? "الصفحات" : "Pages"}</Label><Select value={state.announcement_scope} onValueChange={(v: any) => setState({ ...state, announcement_scope: v })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">{isAr ? "كل الصفحات" : "All pages"}</SelectItem><SelectItem value="home">{isAr ? "الرئيسية فقط" : "Homepage only"}</SelectItem><SelectItem value="catalog">{isAr ? "صفحات التسوق" : "Shopping pages"}</SelectItem><SelectItem value="checkout">{isAr ? "الدفع فقط" : "Checkout only"}</SelectItem></SelectContent></Select></div><div><Label>{isAr ? "الجمهور" : "Audience"}</Label><Select value={state.announcement_audience} onValueChange={(v: any) => setState({ ...state, announcement_audience: v })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">{isAr ? "الجميع" : "Everyone"}</SelectItem><SelectItem value="guest">{isAr ? "الزوار" : "Guests"}</SelectItem><SelectItem value="authenticated">{isAr ? "المسجلون" : "Signed-in customers"}</SelectItem></SelectContent></Select></div></div>
       </div>
 
       <div className="space-y-4 rounded-md border border-border p-4">
