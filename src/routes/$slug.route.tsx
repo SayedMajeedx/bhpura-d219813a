@@ -214,6 +214,8 @@ function StoreShell() {
   const btnPrimaryFg = settings.btn_primary_fg ?? readableOn(btnPrimaryBg, "#ffffff");
   const btnSecondaryBg = settings.btn_secondary_bg ?? "#111111";
   const btnSecondaryFg = settings.btn_secondary_fg ?? readableOn(btnSecondaryBg, "#ffffff");
+  const btnCheckoutBg = settings.btn_checkout_bg ?? btnPrimaryBg;
+  const btnCheckoutFg = settings.btn_checkout_fg ?? readableOn(btnCheckoutBg, "#ffffff");
   const headingColor = settings.heading_color ?? primary;
   const linkColor = settings.link_color ?? primary;
   const storefrontFont = lang === "ar" ? settings.storefront_font_ar : settings.storefront_font_en;
@@ -236,6 +238,8 @@ function StoreShell() {
           ["--sf-btn-primary-fg" as any]: btnPrimaryFg,
           ["--sf-btn-secondary-bg" as any]: btnSecondaryBg,
           ["--sf-btn-secondary-fg" as any]: btnSecondaryFg,
+          ["--sf-btn-checkout-bg" as any]: btnCheckoutBg,
+          ["--sf-btn-checkout-fg" as any]: btnCheckoutFg,
           ["--sf-heading" as any]: headingColor,
           ["--sf-link" as any]: linkColor,
           ["--sf-font" as any]: `"${storefrontFontFamily}", sans-serif`,
@@ -588,7 +592,7 @@ function CartDrawer({ children }: { children: React.ReactNode }) {
             </div>
             <Button
               className="w-full h-12"
-              style={{ backgroundColor: "var(--sf-btn-primary-bg)", color: "var(--sf-btn-primary-fg)" }}
+              style={{ backgroundColor: "var(--sf-btn-checkout-bg)", color: "var(--sf-btn-checkout-fg)" }}
               onClick={() => {
                 setOpen(false);
                 navigate({ to: "/$slug/checkout", params: { slug: brand.slug } });
