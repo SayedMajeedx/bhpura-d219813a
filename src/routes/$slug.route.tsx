@@ -21,7 +21,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import { ShoppingBag, Languages, Minus, Plus, Trash2, X, User, Search } from "lucide-react";
+import { ShoppingBag, Languages, Minus, Plus, Trash2, X, User, Search, Menu, Home, PackageSearch, FileText, LogIn } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { faviconType, resolveBrandFavicon, useDynamicFavicon } from "@/lib/favicon";
 
@@ -308,6 +308,7 @@ function StoreHeader() {
             className="flex items-center gap-1 sm:gap-2 shrink-0"
             style={{ color: "var(--sf-header-fg)" }}
           >
+            <StorefrontMenu />
             <Button
               variant="ghost"
               size="sm"
@@ -359,6 +360,52 @@ function StoreHeader() {
         </div>
       </div>
     </header>
+  );
+}
+
+function StorefrontMenu() {
+  const { brand, settings, lang, t, session } = useStorefront();
+  const [open, setOpen] = useState(false);
+  const displayName = lang === "ar" ? brand.name_ar || brand.name_en : brand.name_en;
+  const pageLinks = settings.pages
+    .map((page, index) => ({
+      index: index + 1,
+      title: lang === "ar" ? (page.title_ar || page.title_en) : (page.title_en || page.title_ar),
+    }))
+    .filter((page) => Boolean(page.title));
+  const close = () => setOpen(false);
+
+  return (
+    <Sheet open={open} onOpenChange={setOpen}>
+      <SheetTrigger asChild>
+        <Button variant="ghost" size="sm" className="gap-2 hover:bg-black/5" style={{ color: "var(--sf-header-fg)" }} aria-label={t("القائمة", "Menu")}>
+          <Menu className="h-5 w-5" />
+          <span className="hidden lg:inline">{t("القائمة", "Menu")}</span>
+        </Button>
+      </SheetTrigger>
+      <SheetContent side={lang === "ar" ? "right" : "left"} className="w-[min(92vw,390px)] border-0 p-0 overflow-y-auto" style={{ backgroundColor: "var(--sf-header-bg)", color: "var(--sf-header-fg)" }}>
+        <div className="relative overflow-hidden border-b px-6 pb-6 pt-10" style={{ borderColor: "rgba(127,127,127,.18)" }}>
+          <div className="pointer-events-none absolute -end-16 -top-20 h-48 w-48 rounded-full opacity-10" style={{ backgroundColor: "var(--brand)" }} />
+          <div className="relative flex items-center gap-4">
+            {settings.logo_url && <img src={settings.logo_url} alt={displayName} className="h-16 w-16 rounded-2xl object-contain" />}
+            <div className="min-w-0"><SheetTitle className="truncate text-2xl font-display" style={{ color: "var(--sf-heading)" }}>{displayName}</SheetTitle><p className="mt-1 text-xs opacity-65">{t("اكتشف المتجر", "Explore our store")}</p></div>
+          </div>
+        </div>
+        <nav className="space-y-1 p-4">
+          <Link to="/$slug" params={{ slug: brand.slug }} onClick={close} className="flex items-center gap-3 rounded-xl px-4 py-3 transition-colors hover:bg-black/5"><Home className="h-5 w-5" /><span>{t("الرئيسية", "Home")}</span></Link>
+          {session ? <>
+            <Link to="/$slug/account" params={{ slug: brand.slug }} onClick={close} className="flex items-center gap-3 rounded-xl px-4 py-3 transition-colors hover:bg-black/5"><User className="h-5 w-5" /><span>{t("حسابي", "My account")}</span></Link>
+            <Link to="/$slug/account" params={{ slug: brand.slug }} onClick={close} className="flex items-center gap-3 rounded-xl px-4 py-3 transition-colors hover:bg-black/5"><PackageSearch className="h-5 w-5" /><span>{t("طلباتي", "My orders")}</span></Link>
+          </> : <Link to="/$slug/auth" params={{ slug: brand.slug }} onClick={close} className="flex items-center gap-3 rounded-xl px-4 py-3 transition-colors hover:bg-black/5"><LogIn className="h-5 w-5" /><span>{t("تسجيل الدخول", "Sign in")}</span></Link>}
+          {pageLinks.length > 0 && <div className="my-3 border-t" style={{ borderColor: "rgba(127,127,127,.18)" }} />}
+          {pageLinks.map((page) => <Link key={page.index} to="/$slug/page/$idx" params={{ slug: brand.slug, idx: String(page.index) }} onClick={close} className="flex items-center gap-3 rounded-xl px-4 py-3 transition-colors hover:bg-black/5"><FileText className="h-5 w-5" /><span className="truncate">{page.title}</span></Link>)}
+        </nav>
+        <div className="mx-4 mt-4 rounded-2xl p-5 text-sm" style={{ backgroundColor: "color-mix(in srgb, var(--brand) 10%, transparent)" }}>
+          <p className="font-medium" style={{ color: "var(--sf-heading)" }}>{t("تسوق بكل سهولة", "Shopping made simple")}</p>
+          <p className="mt-1 opacity-65">{t("تصفح المنتجات وتابع طلباتك من مكان واحد.", "Browse products and follow your orders in one place.")}</p>
+        </div>
+      </SheetContent>
+    </Sheet>
   );
 }
 
@@ -497,14 +544,15 @@ function SearchBar() {
       const pattern = `%${debounced.replace(/[%_]/g, (m: string) => `\\${m}`)}%`;
       const { data, error } = await supabase
         .from("products")
-        .select("id, name, name_ar, name_en, image_url, product_variants(selling_price)")
+        .select("id, name, name_ar, name_en, category, image_url, media, product_variants(selling_price)")
         .eq("brand_id", brand.id)
         .eq("is_active", true)
-        .or(`name.ilike.${pattern},name_ar.ilike.${pattern},name_en.ilike.${pattern},description.ilike.${pattern},description_ar.ilike.${pattern},description_en.ilike.${pattern}`)
+        .or(`name.ilike.${pattern},name_ar.ilike.${pattern},name_en.ilike.${pattern},category.ilike.${pattern}`)
         .limit(8);
       if (error) throw error;
       return (data ?? []) as unknown as Array<{
-        id: string; name: string; name_ar: string | null; name_en: string | null; image_url: string | null;
+        id: string; name: string; name_ar: string | null; name_en: string | null; category: string | null; image_url: string | null;
+        media: Array<{ type: "image" | "video"; url: string }> | null;
         product_variants: Array<{ selling_price: number }>;
       }>;
     },
@@ -562,6 +610,7 @@ function SearchBar() {
               {results.map((p) => {
                 const displayName = pickName(lang, p);
                 const price = p.product_variants?.[0]?.selling_price ?? 0;
+                const imageUrl = p.image_url || p.media?.find((item) => item.type === "image")?.url || null;
                 return (
                   <li key={p.id}>
                     <Link
@@ -571,8 +620,8 @@ function SearchBar() {
                       className="flex items-center gap-3 px-3 py-2 hover:bg-black/5 dark:hover:bg-white/5"
                     >
                       <div className="h-12 w-12 shrink-0 rounded bg-muted overflow-hidden">
-                        {p.image_url && (
-                          <img src={p.image_url} alt={displayName} className="h-full w-full object-cover" />
+                        {imageUrl && (
+                          <img src={imageUrl} alt={displayName} className="h-full w-full object-cover" />
                         )}
                       </div>
                       <div className="flex-1 min-w-0">

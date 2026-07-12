@@ -15,7 +15,9 @@ type ProductRow = {
   description: string | null;
   description_ar: string | null;
   description_en: string | null;
+  category: string | null;
   image_url: string | null;
+  media: Array<{ type: "image" | "video"; url: string }> | null;
   product_variants: Array<{ id: string; selling_price: number; stock_main: number }>;
 };
 
@@ -36,10 +38,10 @@ function SearchPage() {
       const pattern = `%${term.replace(/[%_]/g, (m: string) => `\\${m}`)}%`;
       const { data, error } = await supabase
         .from("products")
-        .select("id, name, name_ar, name_en, description, description_ar, description_en, image_url, product_variants(id, selling_price, stock_main)")
+        .select("id, name, name_ar, name_en, description, description_ar, description_en, category, image_url, media, product_variants(id, selling_price, stock_main)")
         .eq("brand_id", brand.id)
         .eq("is_active", true)
-        .or(`name.ilike.${pattern},name_ar.ilike.${pattern},name_en.ilike.${pattern},description.ilike.${pattern},description_ar.ilike.${pattern},description_en.ilike.${pattern}`)
+        .or(`name.ilike.${pattern},name_ar.ilike.${pattern},name_en.ilike.${pattern},category.ilike.${pattern}`)
         .limit(60);
       if (error) throw error;
       return (data ?? []) as unknown as ProductRow[];
@@ -77,6 +79,7 @@ function SearchPage() {
           {results.map((p) => {
             const displayName = pickName(lang, p);
             const price = p.product_variants?.[0]?.selling_price ?? 0;
+            const imageUrl = p.image_url || p.media?.find((item) => item.type === "image")?.url || null;
             return (
               <Link
                 key={p.id}
@@ -85,8 +88,8 @@ function SearchPage() {
                 className="group block"
               >
                 <div className="aspect-[3/4] w-full overflow-hidden rounded-lg bg-muted">
-                  {p.image_url ? (
-                    <img src={p.image_url} alt={displayName} className="h-full w-full object-cover transition-transform group-hover:scale-105" />
+                  {imageUrl ? (
+                    <img src={imageUrl} alt={displayName} className="h-full w-full object-cover transition-transform group-hover:scale-105" />
                   ) : null}
                 </div>
                 <div className="mt-2">
