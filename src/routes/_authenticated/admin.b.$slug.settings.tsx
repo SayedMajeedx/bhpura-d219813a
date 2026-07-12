@@ -18,6 +18,7 @@ import { Switch } from "@/components/ui/switch";
 import { Trash2 } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { uploadPublicMedia } from "@/lib/r2-upload";
+import { PasskeySettings } from "@/components/passkey-settings";
 
 export const Route = createFileRoute("/_authenticated/admin/b/$slug/settings")({
   component: Settings,
@@ -142,6 +143,7 @@ function Settings() {
     { value: "payments", ar: "طرق الدفع", en: "Payment Methods" },
     { value: "branches", ar: "الفروع", en: "Branches" },
     { value: "emails", ar: "الإشعارات والبريد", en: "Notifications & Emails" },
+    { value: "security", ar: "الأمان والبصمة", en: "Security & Passkeys" },
   ];
 
   return (
@@ -388,6 +390,10 @@ function Settings() {
 
         <TabsContent value="emails" className="space-y-6 mt-0">
           <EmailSettingsCard brandId={brandId} />
+        </TabsContent>
+
+        <TabsContent value="security" className="mt-0">
+          <PasskeySettings />
         </TabsContent>
       </Tabs>
     </div>

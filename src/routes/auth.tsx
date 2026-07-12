@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,7 +9,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { useI18n } from "@/lib/i18n";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Languages, ShieldCheck } from "lucide-react";
+import { Fingerprint, Languages, ShieldCheck } from "lucide-react";
 import { applyRememberMe } from "@/lib/session-persistence";
 import { translateAuthError } from "@/lib/auth-errors";
 
@@ -25,6 +25,12 @@ function AuthPage() {
   const [password, setPassword] = useState("");
   const [remember, setRemember] = useState(true);
   const [loading, setLoading] = useState(false);
+  const [passkeyLoading, setPasskeyLoading] = useState(false);
+  const [passkeySupported, setPasskeySupported] = useState(false);
+
+  useEffect(() => {
+    setPasskeySupported(window.isSecureContext && typeof window.PublicKeyCredential !== "undefined");
+  }, []);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -40,6 +46,30 @@ function AuthPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const signInWithPasskey = async () => {
+    setPasskeyLoading(true);
+    try {
+      const { data, error } = await supabase.auth.signInWithPasskey();
+      if (error) throw error;
+      if (!data.user) throw new Error("Passkey sign-in did not return a user.");
+      const { data: profile, error: profileError } = await supabase
+        .from("profiles")
+        .select("role, status")
+        .eq("id", data.user.id)
+        .maybeSingle();
+      const dashboardRoles = new Set(["super_admin", "admin", "brand_admin", "staff"]);
+      if (profileError || !profile || profile.status !== "active" || !dashboardRoles.has(profile.role)) {
+        await supabase.auth.signOut();
+        throw new Error(lang === "ar" ? "هذا الحساب غير مخوّل لدخول لوحة التحكم." : "This account is not authorized for dashboard access.");
+      }
+      applyRememberMe(true);
+      await navigate({ to: "/admin" });
+    } catch (err: any) {
+      const cancelled = err?.name === "NotAllowedError" || /cancel|not allowed/i.test(err?.message ?? "");
+      toast.error(cancelled ? (lang === "ar" ? "تم إلغاء تسجيل الدخول بالبصمة." : "Biometric sign-in was cancelled.") : translateAuthError(err, lang as any));
+    } finally { setPasskeyLoading(false); }
   };
 
   return (
@@ -101,6 +131,16 @@ function AuthPage() {
               {loading ? t("common.pleaseWait") : t("auth.signIn")}
             </Button>
           </form>
+          {passkeySupported && (
+            <div className="mt-5 space-y-4">
+              <div className="flex items-center gap-3 text-xs text-muted-foreground"><span className="h-px flex-1 bg-border" /><span>{lang === "ar" ? "أو" : "or"}</span><span className="h-px flex-1 bg-border" /></div>
+              <Button type="button" variant="outline" className="h-12 w-full gap-2 border-primary/30 bg-primary/5 font-medium hover:bg-primary/10" disabled={passkeyLoading || loading} onClick={() => void signInWithPasskey()}>
+                <Fingerprint className="h-5 w-5 text-primary" />
+                {passkeyLoading ? t("common.pleaseWait") : (lang === "ar" ? "تسجيل الدخول بالبصمة" : "Sign in with Biometric")}
+              </Button>
+              <p className="text-center text-[11px] text-muted-foreground">{lang === "ar" ? "استخدم Face ID أو Touch ID أو مفتاح أمان مسجّل." : "Use a registered Face ID, Touch ID, device PIN, or security key."}</p>
+            </div>
+          )}
         </Card>
         <div className="mt-4 text-center">
           <Link to="/" className="text-xs text-muted-foreground hover:text-foreground">{t("auth.backHome")}</Link>
