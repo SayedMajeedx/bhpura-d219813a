@@ -5,7 +5,7 @@ import { useStorefront, formatPrice, pickName } from "@/lib/storefront-context";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useMemo, useState, useEffect, useRef } from "react";
-import { StorefrontMenu } from "@/routes/$slug.route";
+import { ChevronDown, FileText, Grid2X2 } from "lucide-react";
 
 export const Route = createFileRoute("/$slug/")({
   component: StoreHome,
@@ -249,7 +249,9 @@ function Categories({
   onSelect: (c: string | null) => void;
   navigation?: boolean;
 }) {
-  const { t, lang, brand } = useStorefront();
+  const { t, lang, brand, settings } = useStorefront();
+  const menuBackground = settings.menu_bg || settings.background_color || "#ffffff";
+  const menuText = settings.menu_fg || settings.text_color || "#111111";
 
   // Merge admin-defined categories with any legacy categories referenced by products
   const merged = useMemo(() => {
@@ -270,8 +272,15 @@ function Categories({
   if (merged.length === 0) return null;
 
   return (
-    <div className={`${navigation ? "my-2 min-h-16 items-center justify-center overflow-x-auto border-b py-2" : "mb-8 justify-center"} flex flex-nowrap gap-3`}>
-      {navigation && <StorefrontMenu navigation />}
+    <div className={`${navigation ? "my-2 min-h-16 items-center justify-center border-b py-2" : "mb-8 justify-center"} flex flex-wrap gap-3`}>
+      {navigation && <details className="group relative shrink-0">
+        <summary className="flex h-11 cursor-pointer list-none items-center gap-2 rounded-xl border border-dashed px-5 font-semibold shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md [&::-webkit-details-marker]:hidden"><Grid2X2 className="h-5 w-5" /><span>{t("القائمة", "Menu")}</span><ChevronDown className="h-4 w-4 transition-transform group-open:rotate-180" /></summary>
+        <div className="absolute start-0 top-full z-50 mt-2 w-[min(92vw,620px)] rounded-2xl border p-5 shadow-2xl" style={{ backgroundColor: menuBackground, color: menuText }}>
+          <div className="mb-3 flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-muted-foreground"><Grid2X2 className="h-4 w-4" />{t("الأقسام", "Categories")}</div>
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">{merged.map((item) => <Link key={`menu-${item.key}`} to="/$slug/$category" params={{ slug: brand.slug, category: item.key }} className="flex min-h-14 items-center gap-3 rounded-xl border p-3 transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:bg-secondary"><div className="grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-lg bg-muted">{item.image ? <img src={item.image} alt="" className="h-full w-full object-cover" /> : <Grid2X2 className="h-4 w-4 opacity-50" />}</div><span className="font-medium">{item.label}</span></Link>)}</div>
+          {settings.menu_show_pages && settings.pages.some((page) => page.title_ar || page.title_en) && <><div className="my-5 border-t" /><div className="mb-3 flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-muted-foreground"><FileText className="h-4 w-4" />{t("الصفحات", "Pages")}</div><div className="grid grid-cols-1 gap-2 sm:grid-cols-2">{settings.pages.map((page, index) => { const title = lang === "ar" ? page.title_ar || page.title_en : page.title_en || page.title_ar; return title ? <Link key={`page-${index}`} to="/$slug/page/$idx" params={{ slug: brand.slug, idx: String(index + 1) }} className="flex min-h-11 items-center gap-3 rounded-xl px-3 py-2 transition-colors hover:bg-secondary"><FileText className="h-4 w-4 shrink-0 opacity-60" /><span className="truncate">{title}</span></Link> : null; })}</div></>}
+        </div>
+      </details>}
       {merged.map((c) => {
         const active = activeCat === c.key;
         return (
