@@ -1,4 +1,4 @@
-import { createFileRoute, Outlet, Link, notFound, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Outlet, Link, notFound, useNavigate, useLocation } from "@tanstack/react-router";
 import React, { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -275,6 +275,8 @@ function StoreHeader() {
   const displayName = lang === "ar" ? brand.name_ar || brand.name_en : brand.name_en;
   const align = settings.logo_align ?? "left";
   const logoSize = settings.logo_size || 40;
+  const location = useLocation();
+  const isStoreHome = location.pathname.replace(/\/$/, "") === `/${brand.slug}`;
 
   return (
     <header
@@ -323,7 +325,7 @@ function StoreHeader() {
             className="flex items-center gap-1 sm:gap-2 shrink-0"
             style={{ color: "var(--sf-header-fg)" }}
           >
-            <StorefrontMenu />
+            {!isStoreHome && <StorefrontMenu />}
             <Button
               variant="ghost"
               size="sm"
@@ -378,7 +380,7 @@ function StoreHeader() {
   );
 }
 
-function StorefrontMenu() {
+export function StorefrontMenu({ navigation = false }: { navigation?: boolean } = {}) {
   const { brand, settings, lang, t, session } = useStorefront();
   const [open, setOpen] = useState(false);
   const displayName = lang === "ar" ? brand.name_ar || brand.name_en : brand.name_en;
@@ -396,9 +398,9 @@ function StorefrontMenu() {
   return (
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>
-        <Button variant="ghost" size="sm" className="gap-2 hover:bg-black/5" style={{ color: "var(--sf-header-fg)" }} aria-label={t("القائمة", "Menu")}>
+        <Button variant={navigation ? "outline" : "ghost"} size={navigation ? "default" : "sm"} className={`${navigation ? "h-11 shrink-0 rounded-xl border-dashed px-5 font-semibold shadow-sm hover:-translate-y-0.5 hover:shadow-md" : "hover:bg-black/5"} gap-2 transition-all duration-200`} style={{ color: navigation ? undefined : "var(--sf-header-fg)" }} aria-label={t("القائمة", "Menu")}>
           <Menu className="h-5 w-5" />
-          <span className="hidden lg:inline">{t("القائمة", "Menu")}</span>
+          <span className={navigation ? "inline" : "hidden lg:inline"}>{navigation ? t("كل الأقسام", "All categories") : t("القائمة", "Menu")}</span>
         </Button>
       </SheetTrigger>
       <SheetContent

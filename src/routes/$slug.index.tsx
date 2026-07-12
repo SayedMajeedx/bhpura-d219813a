@@ -5,6 +5,7 @@ import { useStorefront, formatPrice, pickName } from "@/lib/storefront-context";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useMemo, useState, useEffect, useRef } from "react";
+import { StorefrontMenu } from "@/routes/$slug.route";
 
 export const Route = createFileRoute("/$slug/")({
   component: StoreHome,
@@ -128,10 +129,10 @@ function PromoCards() {
     {cards.map((card, index) => {
       const title = lang === "ar" ? card.title_ar || card.title_en : card.title_en || card.title_ar;
       const subtitle = lang === "ar" ? card.subtitle_ar || card.subtitle_en : card.subtitle_en || card.subtitle_ar;
-      return <a key={index} href={card.href || "#products"} className="group relative min-h-44 overflow-hidden rounded-2xl border shadow-sm sm:min-h-56" style={{ backgroundColor: card.background_color || "#f4f4f4", color: card.text_color || "#111111" }}>
+      return <a key={index} href={card.href || "#products"} className="group relative aspect-[16/9] overflow-hidden rounded-2xl border shadow-sm sm:aspect-[2/1]" style={{ backgroundColor: card.background_color || "#f4f4f4", color: card.text_color || "#111111" }}>
         {card.image_url && <img src={card.image_url} alt={title || ""} className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" />}
         <div className="absolute inset-0 bg-gradient-to-r from-black/55 via-black/20 to-transparent" />
-        <div className="relative flex h-full min-h-44 flex-col justify-end p-6 sm:min-h-56"><h3 className="text-2xl font-semibold sm:text-3xl">{title}</h3>{subtitle && <p className="mt-1 max-w-md text-sm opacity-90">{subtitle}</p>}</div>
+        <div className="relative flex h-full flex-col justify-end p-6"><h3 className="text-2xl font-semibold sm:text-3xl">{title}</h3>{subtitle && <p className="mt-1 max-w-md text-sm opacity-90">{subtitle}</p>}</div>
       </a>;
     })}
   </div>;
@@ -269,16 +270,8 @@ function Categories({
   if (merged.length === 0) return null;
 
   return (
-    <div className={`${navigation ? "my-2 min-h-12 justify-start overflow-x-auto border-b py-2" : "mb-8 justify-center"} flex flex-nowrap gap-2`}>
-      <Link
-        to="/$slug"
-        params={{ slug: brand.slug }}
-        className={`shrink-0 px-4 py-2 ${navigation ? "rounded-lg border-transparent font-medium" : "rounded-full border"} text-sm transition-colors ${
-          activeCat === null ? "bg-neutral-900 text-white border-neutral-900" : "bg-white/80 text-neutral-800 border-neutral-200 hover:bg-neutral-100"
-        }`}
-      >
-        {t("الكل", "All")}
-      </Link>
+    <div className={`${navigation ? "my-2 min-h-16 items-center justify-center overflow-x-auto border-b py-2" : "mb-8 justify-center"} flex flex-nowrap gap-3`}>
+      {navigation && <StorefrontMenu navigation />}
       {merged.map((c) => {
         const active = activeCat === c.key;
         return (
@@ -286,7 +279,7 @@ function Categories({
             key={c.key}
             to="/$slug/$category"
             params={{ slug: brand.slug, category: c.key }}
-            className={`shrink-0 px-3 py-1.5 ${navigation ? "rounded-lg border-transparent font-medium" : "rounded-full border"} text-sm inline-flex items-center gap-2 transition-colors ${
+            className={`shrink-0 px-4 py-2.5 ${navigation ? "rounded-xl border-transparent text-base font-semibold hover:-translate-y-0.5 hover:scale-[1.03] hover:shadow-sm" : "rounded-full border text-sm"} inline-flex items-center gap-2 transition-all duration-200 active:scale-95 ${
               active ? "bg-neutral-900 text-white border-neutral-900" : "bg-white/80 text-neutral-800 border-neutral-200 hover:bg-neutral-100"
             }`}
           >
