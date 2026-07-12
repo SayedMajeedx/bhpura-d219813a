@@ -70,6 +70,16 @@ function createSupabaseClient() {
   });
 }
 
+function createPublicSupabaseClient() {
+  const url = import.meta.env.VITE_SUPABASE_URL || import.meta.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || import.meta.env.VITE_SUPABASE_ANON_KEY || import.meta.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || import.meta.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.SUPABASE_PUBLISHABLE_KEY || process.env.SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  if (!url || !key) throw new Error("Missing Supabase public configuration");
+  return createClient<Database>(url, key, {
+    global: { fetch: createSupabaseFetch(key) },
+    auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
+  });
+}
+
 let _supabase: ReturnType<typeof createSupabaseClient> | undefined;
 
 // Import the supabase client like this:
@@ -78,6 +88,15 @@ export const supabase = new Proxy({} as ReturnType<typeof createSupabaseClient>,
   get(_, prop, receiver) {
     if (!_supabase) _supabase = createSupabaseClient();
     return Reflect.get(_supabase, prop, receiver);
+  },
+});
+
+let _publicSupabase: ReturnType<typeof createPublicSupabaseClient> | undefined;
+/** Public storefront reads deliberately stay anonymous even when a shopper is signed in. */
+export const publicSupabase = new Proxy({} as ReturnType<typeof createPublicSupabaseClient>, {
+  get(_, prop, receiver) {
+    if (!_publicSupabase) _publicSupabase = createPublicSupabaseClient();
+    return Reflect.get(_publicSupabase, prop, receiver);
   },
 });
 

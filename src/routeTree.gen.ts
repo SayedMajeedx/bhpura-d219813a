@@ -21,6 +21,7 @@ import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/
 import { Route as SlugWishlistRouteImport } from './routes/$slug.wishlist'
 import { Route as SlugSearchRouteImport } from './routes/$slug.search'
 import { Route as SlugCheckoutRouteImport } from './routes/$slug.checkout'
+import { Route as SlugAuthConfirmedRouteImport } from './routes/$slug.auth-confirmed'
 import { Route as SlugAuthRouteImport } from './routes/$slug.auth'
 import { Route as SlugAccountRouteImport } from './routes/$slug.account'
 import { Route as SlugCategoryRouteImport } from './routes/$slug.$category'
@@ -107,6 +108,11 @@ const SlugSearchRoute = SlugSearchRouteImport.update({
 const SlugCheckoutRoute = SlugCheckoutRouteImport.update({
   id: '/checkout',
   path: '/checkout',
+  getParentRoute: () => SlugRouteRoute,
+} as any)
+const SlugAuthConfirmedRoute = SlugAuthConfirmedRouteImport.update({
+  id: '/auth-confirmed',
+  path: '/auth-confirmed',
   getParentRoute: () => SlugRouteRoute,
 } as any)
 const SlugAuthRoute = SlugAuthRouteImport.update({
@@ -279,6 +285,7 @@ export interface FileRoutesByFullPath {
   '/$slug/$category': typeof SlugCategoryRoute
   '/$slug/account': typeof SlugAccountRoute
   '/$slug/auth': typeof SlugAuthRoute
+  '/$slug/auth-confirmed': typeof SlugAuthConfirmedRoute
   '/$slug/checkout': typeof SlugCheckoutRoute
   '/$slug/search': typeof SlugSearchRoute
   '/$slug/wishlist': typeof SlugWishlistRoute
@@ -319,6 +326,7 @@ export interface FileRoutesByTo {
   '/$slug/$category': typeof SlugCategoryRoute
   '/$slug/account': typeof SlugAccountRoute
   '/$slug/auth': typeof SlugAuthRoute
+  '/$slug/auth-confirmed': typeof SlugAuthConfirmedRoute
   '/$slug/checkout': typeof SlugCheckoutRoute
   '/$slug/search': typeof SlugSearchRoute
   '/$slug/wishlist': typeof SlugWishlistRoute
@@ -361,6 +369,7 @@ export interface FileRoutesById {
   '/$slug/$category': typeof SlugCategoryRoute
   '/$slug/account': typeof SlugAccountRoute
   '/$slug/auth': typeof SlugAuthRoute
+  '/$slug/auth-confirmed': typeof SlugAuthConfirmedRoute
   '/$slug/checkout': typeof SlugCheckoutRoute
   '/$slug/search': typeof SlugSearchRoute
   '/$slug/wishlist': typeof SlugWishlistRoute
@@ -404,6 +413,7 @@ export interface FileRouteTypes {
     | '/$slug/$category'
     | '/$slug/account'
     | '/$slug/auth'
+    | '/$slug/auth-confirmed'
     | '/$slug/checkout'
     | '/$slug/search'
     | '/$slug/wishlist'
@@ -444,6 +454,7 @@ export interface FileRouteTypes {
     | '/$slug/$category'
     | '/$slug/account'
     | '/$slug/auth'
+    | '/$slug/auth-confirmed'
     | '/$slug/checkout'
     | '/$slug/search'
     | '/$slug/wishlist'
@@ -485,6 +496,7 @@ export interface FileRouteTypes {
     | '/$slug/$category'
     | '/$slug/account'
     | '/$slug/auth'
+    | '/$slug/auth-confirmed'
     | '/$slug/checkout'
     | '/$slug/search'
     | '/$slug/wishlist'
@@ -612,6 +624,13 @@ declare module '@tanstack/react-router' {
       path: '/checkout'
       fullPath: '/$slug/checkout'
       preLoaderRoute: typeof SlugCheckoutRouteImport
+      parentRoute: typeof SlugRouteRoute
+    }
+    '/$slug/auth-confirmed': {
+      id: '/$slug/auth-confirmed'
+      path: '/auth-confirmed'
+      fullPath: '/$slug/auth-confirmed'
+      preLoaderRoute: typeof SlugAuthConfirmedRouteImport
       parentRoute: typeof SlugRouteRoute
     }
     '/$slug/auth': {
@@ -817,6 +836,7 @@ interface SlugRouteRouteChildren {
   SlugCategoryRoute: typeof SlugCategoryRoute
   SlugAccountRoute: typeof SlugAccountRoute
   SlugAuthRoute: typeof SlugAuthRoute
+  SlugAuthConfirmedRoute: typeof SlugAuthConfirmedRoute
   SlugCheckoutRoute: typeof SlugCheckoutRoute
   SlugSearchRoute: typeof SlugSearchRoute
   SlugWishlistRoute: typeof SlugWishlistRoute
@@ -830,6 +850,7 @@ const SlugRouteRouteChildren: SlugRouteRouteChildren = {
   SlugCategoryRoute: SlugCategoryRoute,
   SlugAccountRoute: SlugAccountRoute,
   SlugAuthRoute: SlugAuthRoute,
+  SlugAuthConfirmedRoute: SlugAuthConfirmedRoute,
   SlugCheckoutRoute: SlugCheckoutRoute,
   SlugSearchRoute: SlugSearchRoute,
   SlugWishlistRoute: SlugWishlistRoute,

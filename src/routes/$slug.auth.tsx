@@ -66,8 +66,8 @@ function StorefrontAuth() {
       email: form.email.trim(),
       password: form.password,
       options: {
-        data: { name: form.name || undefined, phone: form.phone || undefined },
-        emailRedirectTo: `${window.location.origin}/${brand.slug}`,
+        data: { name: form.name || undefined, phone: form.phone || undefined, storefront_slug: brand.slug },
+        emailRedirectTo: new URL(`/${encodeURIComponent(brand.slug)}/auth-confirmed`, window.location.origin).toString(),
       },
     });
     if (error) { setWorking(false); return toast.error(translateAuthError(error, lang as any)); }

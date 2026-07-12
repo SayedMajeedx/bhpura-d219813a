@@ -1,7 +1,7 @@
 import { createFileRoute, Outlet, Link, notFound, useNavigate, useLocation } from "@tanstack/react-router";
 import React, { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { publicSupabase as supabase } from "@/integrations/supabase/client";
 import {
   StorefrontProvider,
   useStorefront,
@@ -35,11 +35,7 @@ export const Route = createFileRoute("/$slug")({
       .maybeSingle();
     if (brandErr || !brand) throw notFound();
 
-    const { data: settings } = await supabase
-      .from("brand_public_settings")
-      .select("*")
-      .eq("brand_id", brand.id)
-      .maybeSingle();
+    const { data: settings } = await supabase.from("brand_public_settings").select("*").eq("brand_id", brand.id).maybeSingle();
 
     const s = settings as any;
     const rawPages = Array.isArray(s?.pages) ? s.pages : [];

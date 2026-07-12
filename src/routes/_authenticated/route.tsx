@@ -8,18 +8,16 @@ export const Route = createFileRoute("/_authenticated")({
     const { data, error } = await supabase.auth.getUser();
     if (error || !data.user) throw redirect({ to: "/auth" });
 
-    // Check if user profile is active (if profile exists)
-    // Missing profiles are handled gracefully - treated as active admin
+    // Dashboard access is invite-only. Storefront shoppers intentionally have
+    // no dashboard profile and must never be treated as administrators.
     const { data: profile } = await supabase
       .from("profiles")
-      .select("status")
+      .select("status, role")
       .eq("id", data.user.id)
       .maybeSingle();
 
-    // Only force logout if profile explicitly exists and is inactive
-    // Users without profiles will get a fallback profile in profile-context
-    if (profile && profile.status === "inactive") {
-      await supabase.auth.signOut();
+    const dashboardRoles = new Set(["super_admin", "admin", "brand_admin", "staff"]);
+    if (!profile || profile.status !== "active" || !dashboardRoles.has(profile.role)) {
       throw redirect({ to: "/auth" });
     }
 
