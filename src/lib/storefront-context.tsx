@@ -3,6 +3,7 @@ import type { Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 
 export type StoreLang = "ar" | "en";
+export type HomePromoCard = { title_en: string; title_ar: string; subtitle_en: string; subtitle_ar: string; image_url: string; href: string; background_color: string; text_color: string };
 
 export type Brand = {
   id: string;
@@ -81,6 +82,13 @@ export type PublicSettings = {
   menu_show_account: boolean;
   menu_show_orders: boolean;
   menu_show_pages: boolean;
+  home_promo_cards: HomePromoCard[];
+  show_new_arrivals: boolean;
+  show_best_sellers: boolean;
+  new_arrivals_title_en: string | null;
+  new_arrivals_title_ar: string | null;
+  best_sellers_title_en: string | null;
+  best_sellers_title_ar: string | null;
 };
 
 export type CustomFieldValue = {

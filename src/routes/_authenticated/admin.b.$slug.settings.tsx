@@ -53,6 +53,8 @@ const FONT_PRESETS = [
 ];
 
 const STOREFRONT_EN_FONTS = ["Inter", "Poppins", "Montserrat", "Playfair Display", "Cormorant Garamond"];
+type HomePromoCard = { title_en: string; title_ar: string; subtitle_en: string; subtitle_ar: string; image_url: string; href: string; background_color: string; text_color: string };
+const EMPTY_PROMO_CARD: HomePromoCard = { title_en: "", title_ar: "", subtitle_en: "", subtitle_ar: "", image_url: "", href: "", background_color: "#f4f4f4", text_color: "#ffffff" };
 const STOREFRONT_AR_FONTS = ["Tajawal", "Cairo", "Noto Sans Arabic", "Noto Kufi Arabic"];
 
 function Settings() {
@@ -752,13 +754,20 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
     menu_show_account: boolean;
     menu_show_orders: boolean;
     menu_show_pages: boolean;
+    home_promo_cards: HomePromoCard[];
+    show_new_arrivals: boolean;
+    show_best_sellers: boolean;
+    new_arrivals_title_en: string | null;
+    new_arrivals_title_ar: string | null;
+    best_sellers_title_en: string | null;
+    best_sellers_title_ar: string | null;
   } | null>(null);
 
   const { data } = useQuery({
     queryKey: ["business-settings-theme", brandId],
     queryFn: async () => {
       const { data, error } = await supabase.from("business_settings")
-        .select("logo_size, logo_align, show_header_name, show_hero_title, show_hero_about, show_footer_name, storefront_font_en, storefront_font_ar, storefront_font_en_url, storefront_font_ar_url, hero_title_en, hero_title_ar, hero_title_size, hero_title_color, hero_title_align, storefront_accent_color, storefront_background_color, storefront_text_color, header_bg, header_fg, footer_bg, footer_fg, heading_color, link_color, btn_primary_bg, btn_primary_fg, btn_secondary_bg, btn_secondary_fg, btn_checkout_bg, btn_checkout_fg, menu_bg, menu_fg, menu_title_en, menu_title_ar, menu_show_home, menu_show_account, menu_show_orders, menu_show_pages")
+        .select("logo_size, logo_align, show_header_name, show_hero_title, show_hero_about, show_footer_name, storefront_font_en, storefront_font_ar, storefront_font_en_url, storefront_font_ar_url, hero_title_en, hero_title_ar, hero_title_size, hero_title_color, hero_title_align, storefront_accent_color, storefront_background_color, storefront_text_color, header_bg, header_fg, footer_bg, footer_fg, heading_color, link_color, btn_primary_bg, btn_primary_fg, btn_secondary_bg, btn_secondary_fg, btn_checkout_bg, btn_checkout_fg, menu_bg, menu_fg, menu_title_en, menu_title_ar, menu_show_home, menu_show_account, menu_show_orders, menu_show_pages, home_promo_cards, show_new_arrivals, show_best_sellers, new_arrivals_title_en, new_arrivals_title_ar, best_sellers_title_en, best_sellers_title_ar")
         .eq("brand_id", brandId).maybeSingle();
       if (error) throw error;
       return data as any;
@@ -805,6 +814,13 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
       menu_show_account: data.menu_show_account ?? true,
       menu_show_orders: data.menu_show_orders ?? true,
       menu_show_pages: data.menu_show_pages ?? true,
+      home_promo_cards: Array.from({ length: 4 }, (_, index) => ({ ...EMPTY_PROMO_CARD, ...((Array.isArray(data.home_promo_cards) ? data.home_promo_cards[index] : null) ?? {}) })),
+      show_new_arrivals: data.show_new_arrivals ?? true,
+      show_best_sellers: data.show_best_sellers ?? true,
+      new_arrivals_title_en: data.new_arrivals_title_en ?? null,
+      new_arrivals_title_ar: data.new_arrivals_title_ar ?? null,
+      best_sellers_title_en: data.best_sellers_title_en ?? null,
+      best_sellers_title_ar: data.best_sellers_title_ar ?? null,
     });
   }, [data]);
 
@@ -831,6 +847,19 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
     } finally {
       setUploadingFont(null);
     }
+  };
+
+  const updatePromoCard = (index: number, patch: Partial<HomePromoCard>) => setState((current) => current ? {
+    ...current,
+    home_promo_cards: current.home_promo_cards.map((card, cardIndex) => cardIndex === index ? { ...card, ...patch } : card),
+  } : current);
+
+  const uploadPromoImage = async (index: number, file: File) => {
+    try {
+      const url = await uploadPublicMedia(brandId, file, "hero");
+      updatePromoCard(index, { image_url: url });
+      toast.success(isAr ? "تم رفع صورة البطاقة — احفظ التغييرات" : "Card image uploaded — remember to save");
+    } catch (error: any) { toast.error(error.message ?? "Upload failed"); }
   };
 
   if (!state) return null;
@@ -1022,6 +1051,27 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
           ], [
             "menu_show_pages", isAr ? "إظهار الصفحات المخصصة" : "Show custom pages",
           ]] as const).map(([key, label]) => <div key={key} className="flex items-center justify-between gap-4 rounded-md border border-border p-3"><Label className="cursor-pointer">{label}</Label><Switch checked={state[key]} onCheckedChange={(checked) => setState({ ...state, [key]: checked })} /></div>)}
+        </div>
+      </div>
+
+      <div className="space-y-4 rounded-md border border-border p-4">
+        <div><h3 className="font-medium text-sm">{isAr ? "أقسام الصفحة الرئيسية" : "Homepage merchandising"}</h3><p className="mt-1 text-xs text-muted-foreground">{isAr ? "خصص أربع بطاقات ترويجية وروابطها، وتحكم في الأقسام التلقائية." : "Customize four promotional cards and their destinations, plus automatic product sections."}</p></div>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <div className="flex items-center justify-between gap-3 rounded-md border p-3"><Label>{isAr ? "إظهار وصل حديثاً" : "Show New arrivals"}</Label><Switch checked={state.show_new_arrivals} onCheckedChange={(checked) => setState({ ...state, show_new_arrivals: checked })} /></div>
+          <div className="flex items-center justify-between gap-3 rounded-md border p-3"><Label>{isAr ? "إظهار الأكثر مبيعاً" : "Show Best sellers"}</Label><Switch checked={state.show_best_sellers} onCheckedChange={(checked) => setState({ ...state, show_best_sellers: checked })} /></div>
+          <div><Label>{isAr ? "عنوان وصل حديثاً بالإنجليزية" : "New arrivals title (English)"}</Label><Input value={state.new_arrivals_title_en ?? ""} placeholder="New arrivals" onChange={(e) => setState({ ...state, new_arrivals_title_en: e.target.value || null })} /></div>
+          <div><Label>{isAr ? "عنوان وصل حديثاً بالعربية" : "New arrivals title (Arabic)"}</Label><Input dir="rtl" value={state.new_arrivals_title_ar ?? ""} placeholder="وصل حديثاً" onChange={(e) => setState({ ...state, new_arrivals_title_ar: e.target.value || null })} /></div>
+          <div><Label>{isAr ? "عنوان الأكثر مبيعاً بالإنجليزية" : "Best sellers title (English)"}</Label><Input value={state.best_sellers_title_en ?? ""} placeholder="Best sellers" onChange={(e) => setState({ ...state, best_sellers_title_en: e.target.value || null })} /></div>
+          <div><Label>{isAr ? "عنوان الأكثر مبيعاً بالعربية" : "Best sellers title (Arabic)"}</Label><Input dir="rtl" value={state.best_sellers_title_ar ?? ""} placeholder="الأكثر مبيعاً" onChange={(e) => setState({ ...state, best_sellers_title_ar: e.target.value || null })} /></div>
+        </div>
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+          {state.home_promo_cards.map((card, index) => <div key={index} className="space-y-3 rounded-xl border p-4">
+            <div className="flex items-center justify-between"><h4 className="font-medium">{isAr ? `البطاقة ${index + 1}` : `Card ${index + 1}`}</h4>{card.image_url && <img src={card.image_url} alt="" className="h-12 w-20 rounded object-cover" />}</div>
+            <div className="grid grid-cols-2 gap-2"><Input value={card.title_en} placeholder="English title" onChange={(e) => updatePromoCard(index, { title_en: e.target.value })} /><Input dir="rtl" value={card.title_ar} placeholder="العنوان العربي" onChange={(e) => updatePromoCard(index, { title_ar: e.target.value })} /><Input value={card.subtitle_en} placeholder="English subtitle" onChange={(e) => updatePromoCard(index, { subtitle_en: e.target.value })} /><Input dir="rtl" value={card.subtitle_ar} placeholder="الوصف العربي" onChange={(e) => updatePromoCard(index, { subtitle_ar: e.target.value })} /></div>
+            <div><Label>{isAr ? "الرابط أو المسار" : "Destination URL or path"}</Label><Input value={card.href} placeholder={isAr ? "/pura/search?q=abaya أو رابط كامل" : "/pura/search?q=abaya or a full URL"} onChange={(e) => updatePromoCard(index, { href: e.target.value })} /></div>
+            <div className="flex gap-2"><Input value={card.image_url} placeholder={isAr ? "رابط الصورة" : "Image URL"} onChange={(e) => updatePromoCard(index, { image_url: e.target.value })} /><label className="inline-flex h-10 cursor-pointer items-center rounded-md border px-3 text-sm"><Upload className="me-2 h-4 w-4" />{isAr ? "رفع" : "Upload"}<input type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files?.[0] && uploadPromoImage(index, e.target.files[0])} /></label></div>
+            <div className="grid grid-cols-2 gap-2"><ColorField label={isAr ? "الخلفية" : "Background"} value={card.background_color} onChange={(value) => updatePromoCard(index, { background_color: value || "#f4f4f4" })} /><ColorField label={isAr ? "النص" : "Text"} value={card.text_color} onChange={(value) => updatePromoCard(index, { text_color: value || "#ffffff" })} /></div>
+          </div>)}
         </div>
       </div>
 

@@ -22,6 +22,7 @@ type ProductRow = {
   image_url: string | null;
   media: unknown;
   brand_id: string;
+  created_at: string;
   product_variants: Array<{
     id: string;
     selling_price: number;
@@ -50,7 +51,7 @@ function StoreHome() {
       const { data, error } = await supabase
         .from("products")
         .select(
-          "id, name, name_ar, name_en, description, description_ar, description_en, category, image_url, media, brand_id, product_variants(id, selling_price, stock_main, size, color)",
+          "id, name, name_ar, name_en, description, description_ar, description_en, category, image_url, media, brand_id, created_at, product_variants(id, selling_price, stock_main, size, color)",
         )
         .eq("brand_id", brand.id)
         .eq("is_active", true)
@@ -83,16 +84,31 @@ function StoreHome() {
     return list.filter((p) => p.category === activeCat);
   }, [products, activeCat]);
 
+  const { data: bestSellerRows } = useQuery({
+    queryKey: ["storefront", brand.slug, "best-sellers"],
+    queryFn: async () => {
+      const { data, error } = await (supabase.rpc as any)("get_storefront_best_sellers", { p_brand_slug: brand.slug, p_limit: 8 });
+      if (error) throw error;
+      return (data ?? []) as Array<{ product_id: string; units_sold: number }>;
+    },
+    staleTime: 60_000,
+  });
+
+  const newest = (products ?? []).slice(0, 8);
+  const bestIds = new Map((bestSellerRows ?? []).map((row, index) => [row.product_id, index]));
+  const bestSellers = (products ?? []).filter((product) => bestIds.has(product.id)).sort((a, b) => (bestIds.get(a.id) ?? 99) - (bestIds.get(b.id) ?? 99));
+
   return (
     <div>
+      <div className="mx-auto max-w-7xl px-4 sm:px-6"><Categories products={products ?? []} categories={categories ?? []} activeCat={activeCat} onSelect={setActiveCat} navigation /></div>
       <HeroBanner />
-      <section className="mx-auto max-w-7xl px-4 sm:px-6 py-10 sm:py-14">
-        <Categories
-          products={products ?? []}
-          categories={categories ?? []}
-          activeCat={activeCat}
-          onSelect={setActiveCat}
-        />
+      <section className="mx-auto max-w-7xl px-4 sm:px-6 py-8 sm:py-10">
+        <PromoCards />
+        {!activeCat && <>
+          <MerchandisingSection kind="new" products={newest} />
+          <MerchandisingSection kind="best" products={bestSellers} />
+        </>}
+        <SectionHeading title={activeCat ? undefined : null} fallbackAr="كل المنتجات" fallbackEn="All products" />
         <ProductGrid
           products={filtered}
           loading={isLoading}
@@ -102,6 +118,38 @@ function StoreHome() {
       </section>
     </div>
   );
+}
+
+function PromoCards() {
+  const { settings, lang } = useStorefront();
+  const cards = settings.home_promo_cards.filter((card) => card && (card.image_url || card.title_en || card.title_ar));
+  if (!cards.length) return null;
+  return <div className="mb-12 grid grid-cols-1 gap-3 sm:grid-cols-2">
+    {cards.map((card, index) => {
+      const title = lang === "ar" ? card.title_ar || card.title_en : card.title_en || card.title_ar;
+      const subtitle = lang === "ar" ? card.subtitle_ar || card.subtitle_en : card.subtitle_en || card.subtitle_ar;
+      return <a key={index} href={card.href || "#products"} className="group relative min-h-44 overflow-hidden rounded-2xl border shadow-sm sm:min-h-56" style={{ backgroundColor: card.background_color || "#f4f4f4", color: card.text_color || "#111111" }}>
+        {card.image_url && <img src={card.image_url} alt={title || ""} className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" />}
+        <div className="absolute inset-0 bg-gradient-to-r from-black/55 via-black/20 to-transparent" />
+        <div className="relative flex h-full min-h-44 flex-col justify-end p-6 sm:min-h-56"><h3 className="text-2xl font-semibold sm:text-3xl">{title}</h3>{subtitle && <p className="mt-1 max-w-md text-sm opacity-90">{subtitle}</p>}</div>
+      </a>;
+    })}
+  </div>;
+}
+
+function SectionHeading({ title, fallbackAr, fallbackEn }: { title?: string | null; fallbackAr: string; fallbackEn: string }) {
+  const { lang } = useStorefront();
+  return <div className="mb-5 flex items-end justify-between"><h2 className="font-display text-2xl sm:text-3xl" style={{ color: "var(--sf-heading)" }}>{title || (lang === "ar" ? fallbackAr : fallbackEn)}</h2><div className="h-px flex-1 bg-border ms-5" /></div>;
+}
+
+function MerchandisingSection({ kind, products }: { kind: "new" | "best"; products: ProductRow[] }) {
+  const { settings, lang } = useStorefront();
+  if (kind === "new" && !settings.show_new_arrivals) return null;
+  if (kind === "best" && (!settings.show_best_sellers || !products.length)) return null;
+  const title = kind === "new"
+    ? (lang === "ar" ? settings.new_arrivals_title_ar : settings.new_arrivals_title_en)
+    : (lang === "ar" ? settings.best_sellers_title_ar : settings.best_sellers_title_en);
+  return <section className="mb-12"><SectionHeading title={title} fallbackAr={kind === "new" ? "وصل حديثاً" : "الأكثر مبيعاً"} fallbackEn={kind === "new" ? "New arrivals" : "Best sellers"} /><div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4 sm:gap-6">{products.map((product) => <ProductCard key={`${kind}-${product.id}`} product={product} />)}</div></section>;
 }
 
 function HeroBanner() {
@@ -192,11 +240,13 @@ function Categories({
   categories,
   activeCat,
   onSelect,
+  navigation = false,
 }: {
   products: ProductRow[];
   categories: CategoryRow[];
   activeCat: string | null;
   onSelect: (c: string | null) => void;
+  navigation?: boolean;
 }) {
   const { t, lang } = useStorefront();
 
@@ -219,11 +269,11 @@ function Categories({
   if (merged.length === 0) return null;
 
   return (
-    <div className="mb-8 flex flex-wrap gap-2 justify-center">
+    <div className={`${navigation ? "my-2 min-h-12 justify-start overflow-x-auto border-b py-2" : "mb-8 justify-center"} flex flex-nowrap gap-2`}>
       <button
         type="button"
         onClick={() => onSelect(null)}
-        className={`px-4 py-2 rounded-full text-sm border transition-colors ${
+        className={`shrink-0 px-4 py-2 ${navigation ? "rounded-lg border-transparent font-medium" : "rounded-full border"} text-sm transition-colors ${
           activeCat === null ? "bg-neutral-900 text-white border-neutral-900" : "bg-white/80 text-neutral-800 border-neutral-200 hover:bg-neutral-100"
         }`}
       >
@@ -236,7 +286,7 @@ function Categories({
             key={c.key}
             type="button"
             onClick={() => onSelect(c.key)}
-            className={`px-3 py-1.5 rounded-full text-sm border inline-flex items-center gap-2 transition-colors ${
+            className={`shrink-0 px-3 py-1.5 ${navigation ? "rounded-lg border-transparent font-medium" : "rounded-full border"} text-sm inline-flex items-center gap-2 transition-colors ${
               active ? "bg-neutral-900 text-white border-neutral-900" : "bg-white/80 text-neutral-800 border-neutral-200 hover:bg-neutral-100"
             }`}
           >

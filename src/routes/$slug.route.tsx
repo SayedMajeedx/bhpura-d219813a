@@ -113,6 +113,13 @@ export const Route = createFileRoute("/$slug")({
       menu_show_account: s?.menu_show_account ?? true,
       menu_show_orders: s?.menu_show_orders ?? true,
       menu_show_pages: s?.menu_show_pages ?? true,
+      home_promo_cards: Array.isArray(s?.home_promo_cards) ? s.home_promo_cards.slice(0, 4) : [],
+      show_new_arrivals: s?.show_new_arrivals ?? true,
+      show_best_sellers: s?.show_best_sellers ?? true,
+      new_arrivals_title_en: s?.new_arrivals_title_en ?? null,
+      new_arrivals_title_ar: s?.new_arrivals_title_ar ?? null,
+      best_sellers_title_en: s?.best_sellers_title_en ?? null,
+      best_sellers_title_ar: s?.best_sellers_title_ar ?? null,
     };
 
 
