@@ -21,6 +21,7 @@ type Variant = {
   color: string | null;
   fabric: string | null;
   selling_price: number;
+  original_price: number | null;
   stock_main: number;
 };
 
@@ -71,7 +72,7 @@ function ProductDetail() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("products")
-        .select("id, name, name_ar, name_en, description, description_ar, description_en, image_url, media, custom_fields, product_variants(id, size, size_unit, color, fabric, selling_price, stock_main)")
+        .select("id, name, name_ar, name_en, description, description_ar, description_en, image_url, media, custom_fields, product_variants(id, size, size_unit, color, fabric, selling_price, original_price, stock_main)")
         .eq("id", id)
         .eq("brand_id", brand.id)
         .eq("is_active", true)
@@ -212,6 +213,8 @@ function ProductDetail() {
   };
 
   const priceLabel = displayPrice > 0 ? formatPrice(displayPrice, currency, lang) : t("السعر عند الطلب", "Price on request");
+  const originalPrice = variant && Number(variant.original_price || 0) > Number(variant.selling_price) ? Number(variant.original_price) : 0;
+  const discountPercent = originalPrice > displayPrice ? Math.round((1 - displayPrice / originalPrice) * 100) : 0;
 
   return (
     <div className="mx-auto max-w-6xl px-4 sm:px-6 py-3 sm:py-10 grid md:grid-cols-2 gap-4 sm:gap-8 pb-28 md:pb-10">
@@ -278,8 +281,8 @@ function ProductDetail() {
 
       <div>
         <h1 className="font-display text-2xl sm:text-3xl mb-1 sm:mb-2">{displayName}</h1>
-        <div className="text-xl sm:text-2xl font-semibold mb-3 sm:mb-4" style={{ color: primary }}>
-          {priceLabel}
+        <div className="mb-3 flex flex-wrap items-center gap-3 text-xl font-semibold sm:mb-4 sm:text-2xl" style={{ color: primary }}>
+          <span>{priceLabel}</span>{originalPrice > displayPrice && <span className="text-base font-normal text-muted-foreground line-through">{formatPrice(originalPrice, currency, lang)}</span>}{discountPercent > 0 && <span className="rounded-full bg-neutral-950 px-3 py-1 text-xs text-white">{t(`وفر ${discountPercent}%`, `Save ${discountPercent}%`)}</span>}
         </div>
         {displayDescription && (
           <p className="text-muted-foreground mb-4 sm:mb-6 whitespace-pre-line text-sm sm:text-base">{displayDescription}</p>

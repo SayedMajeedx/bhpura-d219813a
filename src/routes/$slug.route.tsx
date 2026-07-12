@@ -566,7 +566,7 @@ function SearchBar() {
       const pattern = `%${debounced.replace(/[%_]/g, (m: string) => `\\${m}`)}%`;
       const { data, error } = await supabase
         .from("products")
-        .select("id, name, name_ar, name_en, category, image_url, media, product_variants(selling_price)")
+        .select("id, name, name_ar, name_en, category, image_url, media, product_variants(selling_price, original_price)")
         .eq("brand_id", brand.id)
         .eq("is_active", true)
         .or(`name.ilike.${pattern},name_ar.ilike.${pattern},name_en.ilike.${pattern}`)
@@ -575,7 +575,7 @@ function SearchBar() {
       return (data ?? []) as unknown as Array<{
         id: string; name: string; name_ar: string | null; name_en: string | null; category: string | null; image_url: string | null;
         media: Array<{ type: "image" | "video"; url: string }> | null;
-        product_variants: Array<{ selling_price: number }>;
+        product_variants: Array<{ selling_price: number; original_price: number | null }>;
       }>;
     },
     staleTime: 15_000,
@@ -632,6 +632,7 @@ function SearchBar() {
               {results.map((p) => {
                 const displayName = pickName(lang, p);
                 const price = p.product_variants?.[0]?.selling_price ?? 0;
+                const oldPrice = Number(p.product_variants?.[0]?.original_price ?? 0);
                 const imageUrl = p.image_url || p.media?.find((item) => item.type === "image")?.url || null;
                 return (
                   <li key={p.id}>
@@ -648,8 +649,8 @@ function SearchBar() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="text-sm font-medium truncate">{displayName}</div>
-                        <div className="text-xs" style={{ color: "var(--sf-heading)" }}>
-                          {formatPrice(Number(price), currency, lang)}
+                        <div className="flex items-baseline gap-2 text-xs" style={{ color: "var(--sf-heading)" }}>
+                          <span>{formatPrice(Number(price), currency, lang)}</span>{oldPrice > Number(price) && <span className="text-[10px] text-muted-foreground line-through">{formatPrice(oldPrice, currency, lang)}</span>}
                         </div>
                       </div>
                     </Link>

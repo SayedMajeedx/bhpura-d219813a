@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useStorefront, formatPrice, pickName } from "@/lib/storefront-context";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useMemo, useState } from "react";
 
 type SearchParams = { q: string };
 
@@ -18,7 +19,7 @@ type ProductRow = {
   category: string | null;
   image_url: string | null;
   media: Array<{ type: "image" | "video"; url: string }> | null;
-  product_variants: Array<{ id: string; selling_price: number; stock_main: number }>;
+  product_variants: Array<{ id: string; selling_price: number; original_price: number | null; stock_main: number }>;
 };
 
 export const Route = createFileRoute("/$slug/search")({
@@ -30,6 +31,7 @@ function SearchPage() {
   const { brand, lang, t, currency } = useStorefront();
   const { q } = Route.useSearch();
   const term = q.trim();
+  const [sort, setSort] = useState<"new" | "price-low" | "price-high">("new");
 
   const { data, isLoading } = useQuery({
     queryKey: ["storefront", brand.slug, "search", term],
@@ -38,10 +40,11 @@ function SearchPage() {
       const pattern = `%${term.replace(/[%_]/g, (m: string) => `\\${m}`)}%`;
       const { data, error } = await supabase
         .from("products")
-        .select("id, name, name_ar, name_en, description, description_ar, description_en, category, image_url, media, product_variants(id, selling_price, stock_main)")
+        .select("id, name, name_ar, name_en, description, description_ar, description_en, category, image_url, media, product_variants(id, selling_price, original_price, stock_main)")
         .eq("brand_id", brand.id)
         .eq("is_active", true)
         .or(`name.ilike.${pattern},name_ar.ilike.${pattern},name_en.ilike.${pattern}`)
+        .order("created_at", { ascending: false })
         .limit(60);
       if (error) throw error;
       return (data ?? []) as unknown as ProductRow[];
@@ -49,7 +52,11 @@ function SearchPage() {
     staleTime: 15_000,
   });
 
-  const results = data ?? [];
+  const results = useMemo(() => {
+    const rows = [...(data ?? [])];
+    const price = (product: ProductRow) => Number(product.product_variants?.[0]?.selling_price ?? Number.MAX_SAFE_INTEGER);
+    return rows.sort((a, b) => sort === "price-low" ? price(a) - price(b) : sort === "price-high" ? price(b) - price(a) : 0);
+  }, [data, sort]);
 
   return (
     <section className="mx-auto max-w-7xl px-4 sm:px-6 py-8 sm:py-12">
@@ -59,6 +66,7 @@ function SearchPage() {
       <p className="text-sm text-muted-foreground mb-6">
         {term ? t(`عن "${term}"`, `for "${term}"`) : t("اكتب كلمة للبحث", "Type a search term")}
       </p>
+      <div className="mb-6 flex justify-end"><select value={sort} onChange={(event) => setSort(event.target.value as typeof sort)} className="h-10 rounded-lg border bg-background px-3 text-sm"><option value="new">{t("الأحدث", "Newest")}</option><option value="price-low">{t("السعر: الأقل أولاً", "Price: low to high")}</option><option value="price-high">{t("السعر: الأعلى أولاً", "Price: high to low")}</option></select></div>
 
       {isLoading && (
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
@@ -79,6 +87,7 @@ function SearchPage() {
           {results.map((p) => {
             const displayName = pickName(lang, p);
             const price = p.product_variants?.[0]?.selling_price ?? 0;
+            const oldPrice = Number(p.product_variants?.[0]?.original_price ?? 0);
             const imageUrl = p.image_url || p.media?.find((item) => item.type === "image")?.url || null;
             return (
               <Link
@@ -94,8 +103,8 @@ function SearchPage() {
                 </div>
                 <div className="mt-2">
                   <div className="text-sm font-medium truncate">{displayName}</div>
-                  <div className="text-sm" style={{ color: "var(--sf-heading)" }}>
-                    {formatPrice(Number(price), currency, lang)}
+                  <div className="flex items-baseline gap-2 text-sm" style={{ color: "var(--sf-heading)" }}>
+                    <span>{formatPrice(Number(price), currency, lang)}</span>{oldPrice > Number(price) && <span className="text-xs text-muted-foreground line-through">{formatPrice(oldPrice, currency, lang)}</span>}
                   </div>
                 </div>
               </Link>

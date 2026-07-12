@@ -56,7 +56,7 @@ type Product = {
 };
 type Variant = {
   id: string; product_id: string; sku: string | null; size: string | null; color: string | null; fabric: string | null;
-  cost_price: number; selling_price: number; stock: number;
+  cost_price: number; selling_price: number; original_price: number | null; stock: number;
   stock_main: number; stock_incubator: number; barcode: string | null;
   size_unit: string | null;
 };
@@ -107,7 +107,7 @@ function Inventory() {
     queryFn: async () => {
       const { data, error } = await supabase.from("product_variants").select("*").eq("brand_id", brandId).order("created_at");
       if (error) throw error;
-      return data as Variant[];
+      return data as unknown as Variant[];
     },
   });
 
@@ -810,7 +810,7 @@ function VariantList({ productId, productName, businessName, variants, onChanged
   const [adding, setAdding] = useState(false);
   const empty = {
     size: "", size_unit: "", color: "", fabric: "", sku: "", barcode: "",
-    cost_price: "0", selling_price: "0",
+    cost_price: "0", selling_price: "0", original_price: "",
     stock_main: "0", stock_incubator: "0",
   };
   const [row, setRow] = useState(empty);
@@ -846,7 +846,7 @@ function VariantList({ productId, productName, businessName, variants, onChanged
       size: row.size || null, size_unit: row.size_unit || null,
       color: row.color || null, fabric: row.fabric || null,
       sku: row.sku || null, barcode: row.barcode.trim() || null,
-      cost_price: Number(row.cost_price), selling_price: Number(row.selling_price),
+      cost_price: Number(row.cost_price), selling_price: Number(row.selling_price), original_price: row.original_price ? Number(row.original_price) : null,
       stock_main: Number(row.stock_main), stock_incubator: Number(row.stock_incubator),
     });
     if (error) return toast.error(error.message);
@@ -858,7 +858,7 @@ function VariantList({ productId, productName, businessName, variants, onChanged
       toast.error(isAr ? "هذا الباركود مستخدم بالفعل لمنتج آخر" : "This barcode is already assigned to another variant");
       return;
     }
-    const { error } = await supabase.from("product_variants").update(patch).eq("id", v.id);
+    const { error } = await (supabase.from("product_variants") as any).update(patch).eq("id", v.id);
     if (error) toast.error(error.message); else onChanged();
   };
   const del = async (id: string) => {
@@ -890,6 +890,7 @@ function VariantList({ productId, productName, businessName, variants, onChanged
                 <div><Label className="text-xs">{barcodeLabel}</Label><Input defaultValue={v.barcode ?? ""} onBlur={(e) => update(v, { barcode: e.target.value.trim() || null })} /></div>
                 {canViewFinancials && <div><Label className="text-xs">{t("inventory.cost")}</Label><Input type="number" step="0.01" defaultValue={v.cost_price} onBlur={(e) => update(v, { cost_price: Number(e.target.value) })} /></div>}
                 <div><Label className="text-xs">{t("inventory.price")}</Label><Input type="number" step="0.01" defaultValue={v.selling_price} onBlur={(e) => update(v, { selling_price: Number(e.target.value) })} /></div>
+                <div><Label className="text-xs">{isAr ? "السعر قبل الخصم" : "Original price"}</Label><Input type="number" step="0.01" min="0" defaultValue={v.original_price ?? ""} onBlur={(e) => update(v, { original_price: e.target.value ? Number(e.target.value) : null })} /></div>
                 <div><Label className="text-xs">{mainLabel}</Label><Input type="number" defaultValue={v.stock_main ?? 0} onBlur={(e) => update(v, { stock_main: Number(e.target.value) })} /></div>
                 <div><Label className="text-xs">{incLabel}</Label><Input type="number" defaultValue={v.stock_incubator ?? 0} onBlur={(e) => update(v, { stock_incubator: Number(e.target.value) })} /></div>
               </div>
@@ -912,6 +913,7 @@ function VariantList({ productId, productName, businessName, variants, onChanged
               <div><Label className="text-xs">{barcodeLabel}</Label><Input value={row.barcode} onChange={(e) => setRow({ ...row, barcode: e.target.value })} /></div>
               {canViewFinancials && <div><Label className="text-xs">{t("inventory.cost")}</Label><Input type="number" step="0.01" value={row.cost_price} onChange={(e) => setRow({ ...row, cost_price: e.target.value })} /></div>}
               <div><Label className="text-xs">{t("inventory.price")}</Label><Input type="number" step="0.01" value={row.selling_price} onChange={(e) => setRow({ ...row, selling_price: e.target.value })} /></div>
+              <div><Label className="text-xs">{isAr ? "السعر قبل الخصم" : "Original price"}</Label><Input type="number" step="0.01" min="0" value={row.original_price} onChange={(e) => setRow({ ...row, original_price: e.target.value })} /></div>
               <div><Label className="text-xs">{mainLabel}</Label><Input type="number" value={row.stock_main} onChange={(e) => setRow({ ...row, stock_main: e.target.value })} /></div>
               <div><Label className="text-xs">{incLabel}</Label><Input type="number" value={row.stock_incubator} onChange={(e) => setRow({ ...row, stock_incubator: e.target.value })} /></div>
             </div>
@@ -931,6 +933,7 @@ function VariantList({ productId, productName, businessName, variants, onChanged
               <th className="py-2 pe-3 text-start">{barcodeLabel}</th>
               {canViewFinancials && <th className="py-2 pe-3 text-start">{t("inventory.cost")}</th>}
               <th className="py-2 pe-3 text-start">{t("inventory.price")}</th>
+              <th className="py-2 pe-3 text-start">{isAr ? "قبل الخصم" : "Original"}</th>
               {canViewFinancials && <th className="py-2 pe-3 text-start">{t("inventory.margin")}</th>}
               <th className="py-2 pe-3 text-start">{mainLabel}</th>
               <th className="py-2 pe-3 text-start">{incLabel}</th>
@@ -1001,6 +1004,7 @@ function VariantList({ productId, productName, businessName, variants, onChanged
                   </td>
                   {canViewFinancials && <td className="py-2 pe-3 text-start"><input type="number" step="0.01" className="bg-transparent w-20 outline-none text-start" defaultValue={v.cost_price} onBlur={(e) => update(v, { cost_price: Number(e.target.value) })} /></td>}
                   <td className="py-2 pe-3 text-start"><input type="number" step="0.01" className="bg-transparent w-24 outline-none text-start" defaultValue={v.selling_price} onBlur={(e) => update(v, { selling_price: Number(e.target.value) })} /></td>
+                  <td className="py-2 pe-3 text-start"><input type="number" step="0.01" min="0" className="bg-transparent w-24 outline-none text-start" defaultValue={v.original_price ?? ""} placeholder="—" onBlur={(e) => update(v, { original_price: e.target.value ? Number(e.target.value) : null })} /></td>
                   {canViewFinancials && <td className="py-2 pe-3 text-primary"><span className="inline-flex items-center gap-1"><TrendingUp className="h-3 w-3" />{margin.toFixed(0)}%</span></td>}
                   <td className="py-2 pe-3 text-start"><input type="number" className="bg-transparent w-16 outline-none text-start" defaultValue={v.stock_main ?? 0} onBlur={(e) => update(v, { stock_main: Number(e.target.value) })} /></td>
                   <td className="py-2 pe-3 text-start"><input type="number" className="bg-transparent w-16 outline-none text-start" defaultValue={v.stock_incubator ?? 0} onBlur={(e) => update(v, { stock_incubator: Number(e.target.value) })} /></td>
@@ -1038,6 +1042,7 @@ function VariantList({ productId, productName, businessName, variants, onChanged
                 </td>
                 {canViewFinancials && <td className="py-2 pe-3"><Input className="h-8 w-20 text-start" type="number" step="0.01" value={row.cost_price} onChange={(e) => setRow({ ...row, cost_price: e.target.value })} /></td>}
                 <td className="py-2 pe-3"><Input className="h-8 w-24 text-start" type="number" step="0.01" value={row.selling_price} onChange={(e) => setRow({ ...row, selling_price: e.target.value })} /></td>
+                <td className="py-2 pe-3"><Input className="h-8 w-24 text-start" type="number" step="0.01" min="0" value={row.original_price} placeholder="—" onChange={(e) => setRow({ ...row, original_price: e.target.value })} /></td>
                 {canViewFinancials && <td></td>}
                 <td className="py-2 pe-3"><Input className="h-8 w-16 text-start" type="number" value={row.stock_main} onChange={(e) => setRow({ ...row, stock_main: e.target.value })} /></td>
                 <td className="py-2 pe-3"><Input className="h-8 w-16 text-start" type="number" value={row.stock_incubator} onChange={(e) => setRow({ ...row, stock_incubator: e.target.value })} /></td>

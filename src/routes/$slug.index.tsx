@@ -27,6 +27,7 @@ export type ProductRow = {
   product_variants: Array<{
     id: string;
     selling_price: number;
+    original_price: number | null;
     stock_main: number;
     size: string | null;
     color: string | null;
@@ -45,6 +46,7 @@ type CategoryRow = {
 function StoreHome() {
   const { brand } = useStorefront();
   const [activeCat, setActiveCat] = useState<string | null>(null);
+  const [catalogSort, setCatalogSort] = useState<"new" | "old" | "price-low" | "price-high">("new");
 
   const { data: products, isLoading } = useQuery({
     queryKey: ["storefront", brand.slug, "products"],
@@ -52,7 +54,7 @@ function StoreHome() {
       const { data, error } = await supabase
         .from("products")
         .select(
-          "id, name, name_ar, name_en, description, description_ar, description_en, category, image_url, media, brand_id, created_at, product_variants(id, selling_price, stock_main, size, color)",
+          "id, name, name_ar, name_en, description, description_ar, description_en, category, image_url, media, brand_id, created_at, product_variants(id, selling_price, original_price, stock_main, size, color)",
         )
         .eq("brand_id", brand.id)
         .eq("is_active", true)
@@ -81,9 +83,10 @@ function StoreHome() {
 
   const filtered = useMemo(() => {
     const list = products ?? [];
-    if (!activeCat) return list;
-    return list.filter((p) => p.category === activeCat);
-  }, [products, activeCat]);
+    const scoped = activeCat ? list.filter((p) => p.category === activeCat) : [...list];
+    const price = (product: ProductRow) => Math.min(...product.product_variants.map((variant) => Number(variant.selling_price)).filter((value) => value > 0), Number.MAX_SAFE_INTEGER);
+    return scoped.sort((a, b) => catalogSort === "old" ? new Date(a.created_at).getTime() - new Date(b.created_at).getTime() : catalogSort === "price-low" ? price(a) - price(b) : catalogSort === "price-high" ? price(b) - price(a) : new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+  }, [products, activeCat, catalogSort]);
 
   const { data: bestSellerRows } = useQuery({
     queryKey: ["storefront", brand.slug, "best-sellers"],
@@ -110,6 +113,7 @@ function StoreHome() {
           <MerchandisingSection kind="best" products={bestSellers} />
         </>}
         <SectionHeading title={activeCat ? undefined : null} fallbackAr="كل المنتجات" fallbackEn="All products" />
+        <div className="mb-6 flex justify-end"><select value={catalogSort} onChange={(event) => setCatalogSort(event.target.value as typeof catalogSort)} className="h-10 rounded-lg border bg-background px-3 text-sm"><option value="new">الأحدث / Newest</option><option value="old">الأقدم / Oldest</option><option value="price-low">السعر: الأقل / Price: low</option><option value="price-high">السعر: الأعلى / Price: high</option></select></div>
         <ProductGrid
           products={filtered}
           loading={isLoading}
@@ -345,8 +349,12 @@ export function ProductGrid({ products, loading, categoryEmpty, onViewAll }: { p
 export function ProductCard({ product }: { product: ProductRow }) {
   const { brand, currency, lang, t } = useStorefront();
   const displayName = pickName(lang, product);
-  const prices = product.product_variants.map((v) => v.selling_price).filter((p) => p > 0);
-  const minPrice = prices.length ? Math.min(...prices) : 0;
+  const pricedVariants = product.product_variants.filter((variant) => Number(variant.selling_price || 0) > 0).sort((a, b) => a.selling_price - b.selling_price);
+  const discountedVariant = pricedVariants.filter((variant) => Number(variant.original_price || 0) > Number(variant.selling_price || 0))[0];
+  const displayVariant = discountedVariant ?? pricedVariants[0];
+  const minPrice = Number(displayVariant?.selling_price || 0);
+  const originalPrice = discountedVariant ? Number(discountedVariant.original_price) : 0;
+  const discountPercent = discountedVariant ? Math.round((1 - discountedVariant.selling_price / originalPrice) * 100) : 0;
   const totalStock = product.product_variants.reduce((s, v) => s + (v.stock_main || 0), 0);
   const oos = totalStock <= 0;
 
@@ -362,6 +370,7 @@ export function ProductCard({ product }: { product: ProductRow }) {
       className="group block"
     >
       <div className="aspect-[3/4] rounded-xl overflow-hidden bg-muted relative">
+        {discountPercent > 0 && <span className="absolute start-0 top-0 z-10 rounded-ee-2xl bg-neutral-950 px-4 py-2 text-xs font-semibold text-white">{t(`وفر ${discountPercent}%`, `Save ${discountPercent}%`)}</span>}
         {cover ? (
           <img
             src={cover}
@@ -384,8 +393,9 @@ export function ProductCard({ product }: { product: ProductRow }) {
       </div>
       <div className="mt-2">
         <div className="text-sm font-medium truncate">{displayName}</div>
-        <div className="text-sm font-semibold" style={{ color: "var(--sf-heading)" }}>
-          {minPrice > 0 ? formatPrice(minPrice, currency, lang) : t("السعر عند الطلب", "Price on request")}
+        <div className="flex flex-wrap items-baseline gap-2 text-sm font-semibold" style={{ color: "var(--sf-heading)" }}>
+          <span>{minPrice > 0 ? formatPrice(minPrice, currency, lang) : t("السعر عند الطلب", "Price on request")}</span>
+          {originalPrice > minPrice && <span className="text-xs font-normal text-muted-foreground line-through">{formatPrice(originalPrice, currency, lang)}</span>}
         </div>
       </div>
     </Link>
