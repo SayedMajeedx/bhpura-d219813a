@@ -50,7 +50,6 @@ export function BarcodeScanner({ open, onOpenChange, onDetected }: Props) {
     const map = new Map();
     map.set(DecodeHintType.POSSIBLE_FORMATS, FORMATS);
     map.set(DecodeHintType.TRY_HARDER, true);
-    map.set(DecodeHintType.ALSO_INVERTED, true);
     return map;
   }, []);
 
@@ -109,7 +108,7 @@ export function BarcodeScanner({ open, onOpenChange, onDetected }: Props) {
     setError(null);
     setStarting(true);
     let cancelled = false;
-    const reader = new BrowserMultiFormatReader(hints, 80);
+    const reader = new BrowserMultiFormatReader(hints, { delayBetweenScanAttempts: 80 });
 
     const start = async () => {
       try {
