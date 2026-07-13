@@ -1,4 +1,4 @@
-import { formatMoney } from "@/lib/format";
+import { formatDate, formatMoney } from "@/lib/format";
 
 type ThermalItem = {
   description: string;
@@ -93,7 +93,7 @@ export function printThermalReceipt(a: ThermalArgs) {
     .map(([k, v]) => `<div class="row"><span>${escapeHtml(k)}</span><span>${v}</span></div>`)
     .join("");
 
-  const dateStr = escapeHtml(new Date(a.orderDate).toLocaleDateString(locale));
+  const dateStr = escapeHtml(formatDate(a.orderDate, locale));
 
   const html = `<!doctype html>
 <html lang="${a.lang}" dir="${isRTL ? "rtl" : "ltr"}">

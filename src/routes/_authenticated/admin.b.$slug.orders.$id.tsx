@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ArrowLeft, Plus, Trash2, Printer, Save, Send, Search, Receipt, Link as LinkIcon, ScanLine, Mail, Loader2, Lock, Unlock } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { formatMoney } from "@/lib/format";
+import { formatDate, formatMoney } from "@/lib/format";
 import { useT, useI18n } from "@/lib/i18n";
 import { regionLabel, formatAddressLine, formatAddressDetailed, type StructuredAddress } from "@/lib/bahrain-regions";
 import { printThermalReceipt } from "@/lib/thermal-print";
@@ -1275,7 +1275,7 @@ function InvoicePreview({ order, items, settings, shippingAddress, paymentBadge 
             <div className="pdf-meta-block w-[48%] min-w-0" style={{ textAlign: "end" }}>
               <h1 className={`text-3xl sm:text-4xl font-display ${isRTL ? "" : "tracking-tight"}`} style={{ color, letterSpacing: isRTL ? "normal" : undefined, textTransform: "none" }}>{(isRTL ? settings.invoice_title_ar : settings.invoice_title_en) || L.invoice}</h1>
               <p className="text-lg mt-1">{L.invoiceNumber}: {num(order.invoice_number)}</p>
-              <p className="text-xs mt-2" style={{ opacity: 0.7 }}>{L.date}: {new Date(order.order_date).toLocaleDateString(isRTL ? "ar-BH" : undefined)}</p>
+              <p className="text-xs mt-2" style={{ opacity: 0.7 }}>{L.date}: {formatDate(order.created_at ?? order.order_date, isRTL ? "ar-BH" : "en-BH")}</p>
               <p className="text-xs" style={{ opacity: 0.7 }}>{L.status}: {PAYMENT_BADGE_LABEL[paymentBadge ?? "unpaid"][invoiceLang]}</p>
               {order.payment_method && (
                 <p className="text-xs" style={{ opacity: 0.7 }}>{L.paymentMethod}: {tPayment(order.payment_method, invoiceLang)}</p>
@@ -1549,7 +1549,7 @@ function SendInvoiceDialog({ order, totals, settings, currency }: { order: any; 
     customer_phone: order?.customers?.phone ?? "",
     business_name: brandFor("en", settings?.business_name),
     invoice_number: String(order?.invoice_number ?? ""),
-    date: new Date(order?.order_date).toLocaleDateString(),
+    date: formatDate(order?.created_at ?? order?.order_date, "en-BH"),
     total: formatMoney(totals.total, currency),
     notes: order?.notes ?? "",
   }), [order, totals, settings, currency]);

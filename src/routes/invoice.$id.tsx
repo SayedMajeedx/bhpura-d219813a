@@ -1,7 +1,7 @@
 import { createFileRoute, notFound } from "@tanstack/react-router";
 import { getPublicInvoice } from "@/lib/public-invoice.functions";
 import { useState } from "react";
-import { formatMoney } from "@/lib/format";
+import { formatDate, formatMoney } from "@/lib/format";
 import { formatAddressDetailed, regionLabel, type StructuredAddress } from "@/lib/bahrain-regions";
 import { resolvePaymentStatus, PAYMENT_BADGE_CLASSES, PAYMENT_BADGE_LABEL } from "@/lib/payment-status";
 
@@ -120,7 +120,7 @@ function PublicInvoice() {
         <div className="print:hidden mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-neutral-200 bg-white p-3 shadow-sm">
           <div>
             <p className="text-sm font-semibold">{settings?.business_name}</p>
-            <p className="text-xs text-neutral-500">#{order.invoice_number} · {new Date(order.order_date).toLocaleDateString(locale)}</p>
+            <p className="text-xs text-neutral-500">#{order.invoice_number} · {formatDate(order.created_at ?? order.order_date, locale)}</p>
           </div>
           <div className="flex flex-wrap items-center justify-end gap-2">
           <div className="inline-flex rounded-md border border-neutral-300 bg-white overflow-hidden text-xs">
@@ -196,7 +196,7 @@ function PublicInvoice() {
               <div className="pdf-meta-block w-[48%] min-w-0" style={{ textAlign: "end" }}>
                 <h1 style={{ color, letterSpacing: isRTL ? "normal" : undefined, textTransform: "none" }} className={`text-2xl sm:text-4xl font-semibold ${isRTL ? "" : "tracking-tight"}`}>{invoiceTitle}</h1>
                 <p className="text-sm sm:text-base mt-1">{L.number}: {order.invoice_number}</p>
-                <p className="text-xs mt-2" style={{ opacity: 0.7 }}>{L.date}: {new Date(order.order_date).toLocaleDateString(locale)}</p>
+                <p className="text-xs mt-2" style={{ opacity: 0.7 }}>{L.date}: {formatDate(order.created_at ?? order.order_date, locale)}</p>
                 <p className="text-xs" style={{ opacity: 0.7 }}>{L.status}: {PAYMENT_BADGE_LABEL[resolvePaymentStatus(order.payment_status, order.status, Number(order.total_amount || order.total || 0), Number(order.advance_paid || 0))][lang]}</p>
                 {order.payment_method && (
                   <p className="text-xs" style={{ opacity: 0.7 }}>{L.payment}: {PAY[order.payment_method]?.[lang] ?? order.payment_method}</p>

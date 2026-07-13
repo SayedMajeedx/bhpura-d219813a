@@ -21,7 +21,7 @@ export function derivePaymentStatus(
 ): PaymentBadge {
   const t = Number(total || 0);
   const a = Number(advance || 0);
-  const remaining = +(t - a).toFixed(2);
+  const remaining = +(t - a).toFixed(3);
   // Fully paid: remaining is exactly 0 (and there's a total), or manually marked paid with no outstanding balance
   if (t > 0 && remaining <= 0) return "paid";
   if (orderStatus === "paid" && remaining <= 0) return "paid";

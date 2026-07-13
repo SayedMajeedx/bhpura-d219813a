@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Package, Users, ReceiptText, TrendingUp, CalendarDays, Trophy, Wallet, PiggyBank } from "lucide-react";
-import { formatMoney } from "@/lib/format";
+import { formatDate, formatMoney } from "@/lib/format";
 import { useI18n, useT } from "@/lib/i18n";
 import { useProfile } from "@/lib/profile-context";
 import { useBrand } from "@/lib/brand-context";
@@ -234,7 +234,7 @@ function Dashboard() {
                 <li key={o.id} className="py-3 flex items-center justify-between gap-3 text-sm">
                   <Link to="/admin/b/$slug/orders/$id" params={{ slug, id: o.id }} className="min-w-0 truncate">
                     <span className="text-primary font-medium">#{o.invoice_number}</span>
-                    <span className="text-muted-foreground"> · {new Date(o.created_at).toLocaleDateString(locale)}</span>
+                    <span className="text-muted-foreground"> · {formatDate(o.created_at, locale)}</span>
                     {o.customers?.name && (
                       <span className="text-muted-foreground"> · {o.customers.name}</span>
                     )}

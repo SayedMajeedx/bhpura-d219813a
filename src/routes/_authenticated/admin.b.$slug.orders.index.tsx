@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Link as LinkIcon, Plus, ReceiptText, Trash2, Search, Clock3, CircleDollarSign, Truck } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { formatMoney } from "@/lib/format";
+import { formatDate, formatMoney } from "@/lib/format";
 import { toast } from "sonner";
 import { useT, useI18n } from "@/lib/i18n";
 import { resolvePaymentStatus, PAYMENT_BADGE_CLASSES } from "@/lib/payment-status";
@@ -44,6 +44,7 @@ async function copyInvoiceLink(id: string, t: (k: string) => string) {
 function OrdersList() {
   const t = useT();
   const { lang } = useI18n();
+  const locale = lang === "ar" ? "ar-BH" : "en-BH";
   const qc = useQueryClient();
   const navigate = useNavigate();
   const { slug } = Route.useParams();
@@ -165,7 +166,7 @@ function OrdersList() {
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0 flex-1">
                       <Link to="/admin/b/$slug/orders/$id" params={{ slug, id: o.id }} className="text-lg font-semibold text-primary">#{o.invoice_number}</Link>
-                      <div className="mt-1 text-xs text-muted-foreground">{new Date(o.order_date).toLocaleDateString()} · {o.customers?.name ?? t("orders.noCustomer")}</div>
+                      <div className="mt-1 text-xs text-muted-foreground">{formatDate(o.created_at ?? o.order_date, locale)} · {o.customers?.name ?? t("orders.noCustomer")}</div>
                       <div className="mt-3 flex flex-wrap items-center gap-2">
                         <span className="rounded bg-secondary px-2 py-1 text-[10px] uppercase tracking-wider">{t(`status.${o.status}`)}</span>
                         <span className={`rounded-full border px-2 py-0.5 text-[10px] uppercase tracking-wider ${PAYMENT_BADGE_CLASSES[badge]}`}>{t(`payStatus.${badge}`)}</span>
@@ -206,7 +207,7 @@ function OrdersList() {
                       #{o.invoice_number}
                     </Link>
                   </td>
-                  <td className="p-4 text-muted-foreground">{new Date(o.order_date).toLocaleDateString()}</td>
+                  <td className="p-4 text-muted-foreground">{formatDate(o.created_at ?? o.order_date, locale)}</td>
                   <td className="p-4">{o.customers?.name ?? <span className="text-muted-foreground italic">{t("orders.noCustomer")}</span>}</td>
                   <td className="p-4"><span className="text-xs uppercase tracking-wider px-2 py-1 rounded bg-secondary">{t(`status.${o.status}`)}</span></td>
                   <td className="p-4 text-end font-medium whitespace-nowrap">

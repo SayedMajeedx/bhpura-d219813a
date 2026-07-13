@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -19,8 +19,16 @@ import { useRealtimeInvalidate } from "@/hooks/use-realtime-invalidate";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
 export const Route = createFileRoute("/_authenticated/admin/b/$slug/customers")({
-  component: CustomersPage,
+  component: CustomersRoute,
 });
+
+function CustomersRoute() {
+  const { slug } = Route.useParams();
+  const pathname = useRouterState({ select: (state) => state.location.pathname });
+  const listPath = `/admin/b/${encodeURIComponent(slug)}/customers`;
+  if (pathname.replace(/\/+$/, "") !== listPath) return <Outlet />;
+  return <CustomersPage />;
+}
 
 type Customer = {
   id: string;
