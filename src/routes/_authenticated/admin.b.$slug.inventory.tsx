@@ -13,7 +13,7 @@ import { toast } from "sonner";
 import { formatMoney } from "@/lib/format";
 import { useT, useI18n } from "@/lib/i18n";
 import { ActivityLogList } from "@/components/activity-log-list";
-import { BarcodeSvg, PrintLabelButton, printLabels, type LabelData } from "@/components/barcode-label";
+import { PrintLabelButton, printLabels, type LabelData } from "@/components/barcode-label";
 import { useProfile } from "@/lib/profile-context";
 import { useBrand } from "@/lib/brand-context";
 import { useRealtimeInvalidate } from "@/hooks/use-realtime-invalidate";
@@ -936,23 +936,41 @@ function VariantList({ productId, productName, businessName, variants, onChanged
         )}
       </div>
 
-      <div className="hidden overflow-x-auto md:block">
-        <table className="w-full min-w-[900px] text-sm">
+      <div className="hidden w-full overflow-x-auto md:block">
+        <table
+          className="table-fixed text-sm"
+          style={{ width: canViewFinancials ? 1482 : 1290, minWidth: canViewFinancials ? 1482 : 1290 }}
+        >
+          <colgroup>
+            <col style={{ width: 150 }} />
+            <col style={{ width: 96 }} />
+            <col style={{ width: 96 }} />
+            <col style={{ width: 112 }} />
+            <col style={{ width: 190 }} />
+            {canViewFinancials && <col style={{ width: 96 }} />}
+            <col style={{ width: 104 }} />
+            <col style={{ width: 112 }} />
+            {canViewFinancials && <col style={{ width: 96 }} />}
+            <col style={{ width: 88 }} />
+            <col style={{ width: 112 }} />
+            <col style={{ width: 88 }} />
+            <col style={{ width: 142 }} />
+          </colgroup>
           <thead>
             <tr className="text-start text-xs uppercase tracking-wider text-muted-foreground">
-              <th className="py-2 pe-3 text-start">{t("inventory.size")}</th>
-              <th className="py-2 pe-3 text-start">{t("inventory.color")}</th>
-              <th className="py-2 pe-3 text-start">{t("inventory.fabric")}</th>
-              <th className="py-2 pe-3 text-start">{t("inventory.sku")}</th>
-              <th className="py-2 pe-3 text-start">{barcodeLabel}</th>
-              {canViewFinancials && <th className="py-2 pe-3 text-start">{t("inventory.cost")}</th>}
-              <th className="py-2 pe-3 text-start">{t("inventory.price")}</th>
-              <th className="py-2 pe-3 text-start">{isAr ? "قبل الخصم" : "Original"}</th>
-              {canViewFinancials && <th className="py-2 pe-3 text-start">{t("inventory.margin")}</th>}
-              <th className="py-2 pe-3 text-start">{mainLabel}</th>
-              <th className="py-2 pe-3 text-start">{incLabel}</th>
-              <th className="py-2 pe-3 text-start">{t("inventory.stock")}</th>
-              <th className="w-8"></th>
+              <th className="px-2 py-2 text-start">{t("inventory.size")}</th>
+              <th className="px-2 py-2 text-start">{t("inventory.color")}</th>
+              <th className="px-2 py-2 text-start">{t("inventory.fabric")}</th>
+              <th className="px-2 py-2 text-start">{t("inventory.sku")}</th>
+              <th className="px-2 py-2 text-start">{barcodeLabel}</th>
+              {canViewFinancials && <th className="min-w-24 whitespace-nowrap px-2 py-2 text-center">{t("inventory.cost")}</th>}
+              <th className="min-w-24 whitespace-nowrap px-2 py-2 text-center">{t("inventory.price")}</th>
+              <th className="min-w-28 whitespace-nowrap px-2 py-2 text-center">{isAr ? "قبل الخصم" : "Original"}</th>
+              {canViewFinancials && <th className="min-w-24 whitespace-nowrap px-2 py-2 text-center">{t("inventory.margin")}</th>}
+              <th className="min-w-22 whitespace-nowrap px-2 py-2 text-center">{mainLabel}</th>
+              <th className="min-w-28 whitespace-nowrap px-2 py-2 text-center">{incLabel}</th>
+              <th className="min-w-22 whitespace-nowrap px-2 py-2 text-center">{t("inventory.stock")}</th>
+              <th aria-label={isAr ? "الإجراءات" : "Actions"}></th>
             </tr>
           </thead>
           <tbody>
@@ -960,7 +978,7 @@ function VariantList({ productId, productName, businessName, variants, onChanged
               const margin = v.selling_price > 0 ? ((v.selling_price - v.cost_price) / v.selling_price) * 100 : 0;
               return (
                 <tr key={v.id} className="border-t border-border">
-                  <td className="py-2 pe-3 text-start">
+                  <td className="px-2 py-2 text-start">
                     <div className="inline-flex items-center gap-1">
                       <input className="bg-transparent w-16 outline-none text-start" defaultValue={v.size ?? ""} onBlur={(e) => update(v, { size: e.target.value || null })} />
                       <select
@@ -975,14 +993,13 @@ function VariantList({ productId, productName, businessName, variants, onChanged
                       </select>
                     </div>
                   </td>
-                  <td className="py-2 pe-3 text-start"><input className="bg-transparent w-20 outline-none text-start" defaultValue={v.color ?? ""} onBlur={(e) => update(v, { color: e.target.value || null })} /></td>
-                  <td className="py-2 pe-3 text-start"><input className="bg-transparent w-20 outline-none text-start" defaultValue={v.fabric ?? ""} onBlur={(e) => update(v, { fabric: e.target.value || null })} /></td>
-                  <td className="py-2 pe-3 text-start"><input className="bg-transparent w-24 outline-none text-start" defaultValue={v.sku ?? ""} onBlur={(e) => update(v, { sku: e.target.value || null })} /></td>
-                  <td className="py-2 pe-3 text-start">
-                    <div className="flex flex-col gap-1">
-                      <div className="inline-flex items-center gap-1">
+                  <td className="px-2 py-2 text-start"><input className="w-full bg-transparent outline-none text-start" defaultValue={v.color ?? ""} onBlur={(e) => update(v, { color: e.target.value || null })} /></td>
+                  <td className="px-2 py-2 text-start"><input className="w-full bg-transparent outline-none text-start" defaultValue={v.fabric ?? ""} onBlur={(e) => update(v, { fabric: e.target.value || null })} /></td>
+                  <td className="px-2 py-2 text-start"><input className="w-full bg-transparent outline-none text-start" defaultValue={v.sku ?? ""} onBlur={(e) => update(v, { sku: e.target.value || null })} /></td>
+                  <td className="px-2 py-2 text-start">
+                      <div className="flex min-w-0 items-center gap-1">
                         <input
-                          className="bg-transparent w-28 outline-none text-start font-mono text-xs"
+                          className="min-w-0 flex-1 bg-transparent font-mono text-xs outline-none text-start"
                           placeholder={isAr ? "بدون" : "None"}
                           defaultValue={v.barcode ?? ""}
                           onBlur={(e) => update(v, { barcode: e.target.value.trim() || null })}
@@ -1009,27 +1026,21 @@ function VariantList({ productId, productName, businessName, variants, onChanged
                           />
                         )}
                       </div>
-                      {v.barcode && (
-                        <div className="rounded bg-white p-1 inline-block w-fit">
-                          <BarcodeSvg value={v.barcode} height={32} width={1.2} fontSize={10} margin={0} />
-                        </div>
-                      )}
-                    </div>
                   </td>
-                  {canViewFinancials && <td className="py-2 pe-3 text-start"><input type="number" step="0.01" className="bg-transparent w-20 outline-none text-start" defaultValue={v.cost_price} onBlur={(e) => update(v, { cost_price: Number(e.target.value) })} /></td>}
-                  <td className="py-2 pe-3 text-start"><input type="number" step="0.01" className="bg-transparent w-24 outline-none text-start" defaultValue={v.selling_price} onBlur={(e) => update(v, { selling_price: Number(e.target.value) })} /></td>
-                  <td className="py-2 pe-3 text-start"><input type="number" step="0.01" min="0" className="bg-transparent w-24 outline-none text-start" defaultValue={v.original_price ?? ""} placeholder="—" onBlur={(e) => update(v, { original_price: e.target.value ? Number(e.target.value) : null })} /></td>
-                  {canViewFinancials && <td className="py-2 pe-3 text-primary"><span className="inline-flex items-center gap-1"><TrendingUp className="h-3 w-3" />{margin.toFixed(0)}%</span></td>}
-                  <td className="py-2 pe-3 text-start"><input type="number" className="bg-transparent w-16 outline-none text-start" defaultValue={v.stock_main ?? 0} onBlur={(e) => update(v, { stock_main: Number(e.target.value) })} /></td>
-                  <td className="py-2 pe-3 text-start"><input type="number" className="bg-transparent w-16 outline-none text-start" defaultValue={v.stock_incubator ?? 0} onBlur={(e) => update(v, { stock_incubator: Number(e.target.value) })} /></td>
-                  <td className="py-2 pe-3 text-start font-medium">{(v.stock_main ?? 0) + (v.stock_incubator ?? 0)}</td>
-                  <td className="text-end"><InventoryDeleteAction message={t("inventory.deleteVariantConfirm")} onConfirm={() => del(v.id)} /></td>
+                  {canViewFinancials && <td className="px-2 py-2 text-center"><input type="number" step="0.01" className="w-full bg-transparent text-center outline-none" defaultValue={v.cost_price} onBlur={(e) => update(v, { cost_price: Number(e.target.value) })} /></td>}
+                  <td className="px-2 py-2 text-center"><input type="number" step="0.01" className="w-full bg-transparent text-center outline-none" defaultValue={v.selling_price} onBlur={(e) => update(v, { selling_price: Number(e.target.value) })} /></td>
+                  <td className="px-2 py-2 text-center"><input type="number" step="0.01" min="0" className="w-full bg-transparent text-center outline-none" defaultValue={v.original_price ?? ""} placeholder="—" onBlur={(e) => update(v, { original_price: e.target.value ? Number(e.target.value) : null })} /></td>
+                  {canViewFinancials && <td className="px-2 py-2 text-center text-primary"><span className="inline-flex items-center justify-center gap-1"><TrendingUp className="h-3 w-3" />{margin.toFixed(0)}%</span></td>}
+                  <td className="px-2 py-2 text-center"><input type="number" className="w-full bg-transparent text-center outline-none" defaultValue={v.stock_main ?? 0} onBlur={(e) => update(v, { stock_main: Number(e.target.value) })} /></td>
+                  <td className="px-2 py-2 text-center"><input type="number" className="w-full bg-transparent text-center outline-none" defaultValue={v.stock_incubator ?? 0} onBlur={(e) => update(v, { stock_incubator: Number(e.target.value) })} /></td>
+                  <td className="px-2 py-2 text-center font-medium">{(v.stock_main ?? 0) + (v.stock_incubator ?? 0)}</td>
+                  <td className="px-2 text-center"><InventoryDeleteAction message={t("inventory.deleteVariantConfirm")} onConfirm={() => del(v.id)} /></td>
                 </tr>
               );
             })}
             {adding && (
               <tr className="border-t border-border bg-secondary/40">
-                <td className="py-2 pe-3">
+                <td className="px-2 py-2">
                   <div className="inline-flex items-center gap-1">
                     <Input className="h-8 w-16 text-start" value={row.size} onChange={(e) => setRow({ ...row, size: e.target.value })} />
                     <select
@@ -1043,25 +1054,25 @@ function VariantList({ productId, productName, businessName, variants, onChanged
                     </select>
                   </div>
                 </td>
-                <td className="py-2 pe-3"><Input className="h-8 w-20 text-start" value={row.color} onChange={(e) => setRow({ ...row, color: e.target.value })} /></td>
-                <td className="py-2 pe-3"><Input className="h-8 w-20 text-start" value={row.fabric} onChange={(e) => setRow({ ...row, fabric: e.target.value })} /></td>
-                <td className="py-2 pe-3"><Input className="h-8 w-24 text-start" value={row.sku} onChange={(e) => setRow({ ...row, sku: e.target.value })} /></td>
-                <td className="py-2 pe-3">
+                <td className="px-2 py-2"><Input className="h-8 w-full text-start" value={row.color} onChange={(e) => setRow({ ...row, color: e.target.value })} /></td>
+                <td className="px-2 py-2"><Input className="h-8 w-full text-start" value={row.fabric} onChange={(e) => setRow({ ...row, fabric: e.target.value })} /></td>
+                <td className="px-2 py-2"><Input className="h-8 w-full text-start" value={row.sku} onChange={(e) => setRow({ ...row, sku: e.target.value })} /></td>
+                <td className="px-2 py-2">
                   <div className="inline-flex items-center gap-1">
-                    <Input className="h-8 w-28 text-start font-mono text-xs" value={row.barcode} onChange={(e) => setRow({ ...row, barcode: e.target.value })} placeholder={isAr ? "اختياري" : "Optional"} />
+                    <Input className="h-8 min-w-0 flex-1 text-start font-mono text-xs" value={row.barcode} onChange={(e) => setRow({ ...row, barcode: e.target.value })} placeholder={isAr ? "اختياري" : "Optional"} />
                     <button type="button" className="text-muted-foreground hover:text-primary" onClick={() => setRow({ ...row, barcode: genBarcode() })}>
                       <Wand2 className="h-3 w-3" />
                     </button>
                   </div>
                 </td>
-                {canViewFinancials && <td className="py-2 pe-3"><Input className="h-8 w-20 text-start" type="number" step="0.01" value={row.cost_price} onChange={(e) => setRow({ ...row, cost_price: e.target.value })} /></td>}
-                <td className="py-2 pe-3"><Input className="h-8 w-24 text-start" type="number" step="0.01" value={row.selling_price} onChange={(e) => setRow({ ...row, selling_price: e.target.value })} /></td>
-                <td className="py-2 pe-3"><Input className="h-8 w-24 text-start" type="number" step="0.01" min="0" value={row.original_price} placeholder="—" onChange={(e) => setRow({ ...row, original_price: e.target.value })} /></td>
+                {canViewFinancials && <td className="px-2 py-2"><Input className="h-8 w-full text-center" type="number" step="0.01" value={row.cost_price} onChange={(e) => setRow({ ...row, cost_price: e.target.value })} /></td>}
+                <td className="px-2 py-2"><Input className="h-8 w-full text-center" type="number" step="0.01" value={row.selling_price} onChange={(e) => setRow({ ...row, selling_price: e.target.value })} /></td>
+                <td className="px-2 py-2"><Input className="h-8 w-full text-center" type="number" step="0.01" min="0" value={row.original_price} placeholder="—" onChange={(e) => setRow({ ...row, original_price: e.target.value })} /></td>
                 {canViewFinancials && <td></td>}
-                <td className="py-2 pe-3"><Input className="h-8 w-16 text-start" type="number" value={row.stock_main} onChange={(e) => setRow({ ...row, stock_main: e.target.value })} /></td>
-                <td className="py-2 pe-3"><Input className="h-8 w-16 text-start" type="number" value={row.stock_incubator} onChange={(e) => setRow({ ...row, stock_incubator: e.target.value })} /></td>
+                <td className="px-2 py-2"><Input className="h-8 w-full text-center" type="number" value={row.stock_main} onChange={(e) => setRow({ ...row, stock_main: e.target.value })} /></td>
+                <td className="px-2 py-2"><Input className="h-8 w-full text-center" type="number" value={row.stock_incubator} onChange={(e) => setRow({ ...row, stock_incubator: e.target.value })} /></td>
                 <td></td>
-                <td className="py-2"><div className="flex gap-1 justify-end"><Button size="sm" onClick={add}>{t("common.save")}</Button><Button size="sm" variant="ghost" onClick={() => setAdding(false)}>×</Button></div></td>
+                <td className="px-2 py-2"><div className="flex justify-center gap-1"><Button size="sm" onClick={add}>{t("common.save")}</Button><Button size="sm" variant="ghost" onClick={() => setAdding(false)}>×</Button></div></td>
               </tr>
             )}
           </tbody>
