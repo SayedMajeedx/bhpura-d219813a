@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Plus, Trash2, Printer, Save, Send, Search, Star, Receipt, Link as LinkIcon, ScanLine, Mail, Loader2 } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, Printer, Save, Send, Search, Receipt, Link as LinkIcon, ScanLine, Mail, Loader2, Lock, Unlock } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { formatMoney } from "@/lib/format";
@@ -21,6 +21,7 @@ import { ActivityLogList } from "@/components/activity-log-list";
 import { BarcodeScanner } from "@/components/barcode-scanner";
 import { PhoneInput } from "@/components/phone-input";
 import { useBrand } from "@/lib/brand-context";
+import { useProfile } from "@/lib/profile-context";
 
 function formatDeliveryAddress(
   c: { region?: string | null; road?: string | null; house?: string | null; flat?: string | null; address?: string | null; city?: string | null } | null | undefined,
@@ -106,6 +107,7 @@ function OrderDetail() {
   const { id, slug } = Route.useParams();
   const qc = useQueryClient();
   const brand = useBrand();
+  const { isAdmin } = useProfile();
   const brandId = brand.id;
 
   const orderQ = useQuery({
@@ -166,6 +168,9 @@ function OrderDetail() {
   const [order, setOrder] = useState<Order | null>(null);
   const [items, setItems] = useState<Item[]>([]);
   const [phoneSearch, setPhoneSearch] = useState("");
+  const [editingUnlocked, setEditingUnlocked] = useState(false);
+  const [hasSavedDraft, setHasSavedDraft] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (orderQ.data) {
@@ -180,8 +185,11 @@ function OrderDetail() {
         selected_variant: i.selected_variant ?? null,
         custom_field_values: normalizeCustomFieldValues(i.custom_field_values),
       })));
+      setEditingUnlocked(false);
     }
   }, [orderQ.data]);
+
+  useEffect(() => { setHasSavedDraft(false); }, [id]);
 
   const totals = useMemo(() => {
     const subtotal = items.reduce((s, i) => s + i.line_total, 0);
@@ -210,6 +218,14 @@ function OrderDetail() {
 
 
   const currency = order.currency ?? "BHD";
+  const serverOrder = orderQ.data as any;
+  const isClosedOrder = serverOrder?.status === "completed" || serverOrder?.status === "paid";
+  const isReadOnly = isClosedOrder && !editingUnlocked;
+  const isBlankDraft = serverOrder?.status === "draft"
+    && !serverOrder?.customer_id
+    && !serverOrder?.payment_method
+    && (serverOrder?.order_items?.length ?? 0) === 0;
+  const isCreationMode = isBlankDraft && !hasSavedDraft;
 
   const addItem = () => {
     setItems([...items, {
@@ -311,8 +327,17 @@ function OrderDetail() {
   const DEDUCTING = new Set(["confirmed", "paid", "shipped", "completed"]);
 
   const save = async () => {
+    if (isReadOnly) return;
+    const fulfillmentMethod = order.fulfillment_method ?? "delivery";
+    if (fulfillmentMethod === "pickup" && !order.branch_id) {
+      return toast.error(lang === "ar" ? "اختر فرع الاستلام" : "Select a pickup branch");
+    }
+    if (fulfillmentMethod === "delivery" && !order.shipping_address_id) {
+      return toast.error(lang === "ar" ? "اختر عنوان التوصيل" : "Select a delivery address");
+    }
+    setSaving(true);
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+    if (!user) { setSaving(false); return; }
 
     // Stock precheck when order will be in a deducting state.
     if (DEDUCTING.has(order.status)) {
@@ -334,6 +359,7 @@ function OrderDetail() {
         if (!v) continue;
         const available = Number(v.stock) + (prevByVariant.get(vid) ?? 0);
         if (want > available) {
+          setSaving(false);
           return toast.error(t("orderDetail.insufficientStock"));
         }
       }
@@ -341,9 +367,11 @@ function OrderDetail() {
 
     const { error: oe } = await supabase.from("orders").update({
       customer_id: order.customer_id, status: order.status, notes: order.notes,
-      shipping_address_id: order.shipping_address_id ?? null,
-      digital_delivery_channel: order.fulfillment_method === "digital" ? order.digital_delivery_channel : null,
-      digital_delivery_contact: order.fulfillment_method === "digital" ? order.digital_delivery_contact : null,
+      fulfillment_method: fulfillmentMethod,
+      branch_id: fulfillmentMethod === "pickup" ? order.branch_id ?? null : null,
+      shipping_address_id: fulfillmentMethod === "delivery" ? order.shipping_address_id ?? null : null,
+      digital_delivery_channel: fulfillmentMethod === "digital" ? order.digital_delivery_channel : null,
+      digital_delivery_contact: fulfillmentMethod === "digital" ? order.digital_delivery_contact : null,
       payment_method: order.payment_method ?? null,
       payment_status: order.payment_status ?? "unpaid",
       discount: totals.discount, tax_rate: order.tax_rate, tax_amount: totals.taxAmount,
@@ -351,7 +379,7 @@ function OrderDetail() {
       advance_paid: totals.advancePaid,
       currency, order_date: order.order_date,
     } as any).eq("id", order.id);
-    if (oe) return toast.error(oe.message);
+    if (oe) { setSaving(false); return toast.error(oe.message); }
 
     // ── Activity log: detect changes vs saved state
     const prev = (orderQ.data ?? {}) as any;
@@ -396,7 +424,7 @@ function OrderDetail() {
           location: i.location ?? "main",
         })),
       );
-      if (ie) return toast.error(ie.message);
+      if (ie) { setSaving(false); return toast.error(ie.message); }
     }
 
     // Sync inventory (deduct or restore based on status).
@@ -459,6 +487,9 @@ function OrderDetail() {
     if (logs.length > 0) await logActivityBatch(logs);
 
     toast.success("Saved");
+    setHasSavedDraft(true);
+    setEditingUnlocked(false);
+    setSaving(false);
     qc.invalidateQueries({ queryKey: ["order", id] });
     qc.invalidateQueries({ queryKey: ["orders"] });
     qc.invalidateQueries({ queryKey: ["variants"] });
@@ -553,11 +584,12 @@ function OrderDetail() {
           <ArrowLeft className="h-4 w-4" /> {t("orderDetail.back")}
         </Link>
         <div className="flex flex-wrap gap-2">
-          <SendInvoiceDialog order={order} totals={totals} settings={settingsQ.data} currency={currency} />
-          <ResendConfirmationEmailButton order={order} lang={lang} onDone={() => qc.invalidateQueries({ queryKey: ["order", id] })} />
-          <Button variant="outline" onClick={copyLink}><LinkIcon className="h-4 w-4 mr-2" /> {t("orders.copyLink")}</Button>
-          <Button variant="outline" onClick={printReceipt}><Receipt className="h-4 w-4 mr-2" /> {t("orders.printReceipt")}</Button>
-          <Button variant="outline" onClick={async () => {
+          {!isCreationMode && <>
+            <SendInvoiceDialog order={order} totals={totals} settings={settingsQ.data} currency={currency} />
+            <ResendConfirmationEmailButton order={order} lang={lang} onDone={() => qc.invalidateQueries({ queryKey: ["order", id] })} />
+            <Button variant="outline" onClick={copyLink}><LinkIcon className="h-4 w-4 mr-2" /> {t("orders.copyLink")}</Button>
+            <Button variant="outline" onClick={printReceipt}><Receipt className="h-4 w-4 mr-2" /> {t("orders.printReceipt")}</Button>
+            <Button variant="outline" onClick={async () => {
             try {
               const el = document.querySelector<HTMLElement>(".printable-invoice");
               const { downloadInvoicePdf } = await import("@/lib/download-invoice-pdf");
@@ -566,13 +598,29 @@ function OrderDetail() {
               console.error("PDF download failed", err);
               toast.error((err as Error)?.message ?? "PDF download failed");
             }
-          }}><Printer className="h-4 w-4 mr-2" /> {t("orders.printA4")}</Button>
-          <Button onClick={save}><Save className="h-4 w-4 mr-2" /> {t("common.save")}</Button>
+            }}><Printer className="h-4 w-4 mr-2" /> {t("orders.printA4")}</Button>
+          </>}
+          {isReadOnly ? (
+            isAdmin && <Button variant="outline" onClick={() => setEditingUnlocked(true)}><Unlock className="h-4 w-4 mr-2" />{lang === "ar" ? "فتح للتعديل" : "Unlock for editing"}</Button>
+          ) : (
+            <Button onClick={save} disabled={saving} className={isCreationMode ? "min-w-48" : undefined}>
+              {saving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
+              {isCreationMode ? (lang === "ar" ? "إنشاء وحفظ الطلب" : "Create & Save Order") : t("common.save")}
+            </Button>
+          )}
         </div>
       </div>
 
+      {isReadOnly && (
+        <div className="no-print mb-4 flex items-center gap-2 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+          <Lock className="h-4 w-4 shrink-0" />
+          {lang === "ar" ? "هذا طلب مغلق. الحقول مقفلة لحماية السجل التاريخي." : "This order is closed. Fields are locked to protect its history."}
+        </div>
+      )}
+
       {/* Editor - hidden on print */}
-      <div className="no-print space-y-4 mb-8">
+      <fieldset disabled={isReadOnly} className="no-print m-0 min-w-0 border-0 p-0 disabled:opacity-80">
+      <div className="space-y-4 mb-8">
         <Card className="p-6">
           <div className="mb-4">
             <Label className="flex items-center gap-2"><Search className="h-3 w-3" /> {t("customers.searchByPhone")}</Label>
@@ -656,13 +704,10 @@ function OrderDetail() {
             </div>
           </div>
           {order.customer_id && (() => {
-            const selected = (customersQ.data ?? []).find((c: any) => c.id === order.customer_id);
-            if (!selected) return null;
-            const customerAddrs = (addressesQ.data ?? []).filter((a) => a.customer_id === order.customer_id);
-            const defaultAddr = customerAddrs.find((a) => a.is_default);
-            const activeId = order.shipping_address_id ?? defaultAddr?.id ?? null;
-            const active = customerAddrs.find((a) => a.id === activeId) ?? null;
-            const legacyLines = formatDeliveryAddress(selected, lang);
+             const selected = (customersQ.data ?? []).find((c: any) => c.id === order.customer_id);
+             if (!selected) return null;
+             const customerAddrs = (addressesQ.data ?? []).filter((a) => a.customer_id === order.customer_id);
+             const legacyLines = formatDeliveryAddress(selected, lang);
             return (
               <div className="mt-4 pt-4 border-t border-border text-start">
                 <p className="text-xs uppercase tracking-wider text-muted-foreground mb-1">
@@ -676,38 +721,9 @@ function OrderDetail() {
                   </p>
                 )}
                 {selected.phone && <p className="text-sm text-muted-foreground">{selected.phone}</p>}
-                {order.fulfillment_method !== "digital" && (customerAddrs.length > 0 ? (
-                  <div className="mt-3 space-y-2">
-                    <Label className="text-xs">{t("orderDetail.chooseAddress")}</Label>
-                    <Select
-                      value={activeId ?? ""}
-                      onValueChange={(v) => setOrder({ ...order, shipping_address_id: v })}
-                    >
-                      <SelectTrigger className="text-start"><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        {customerAddrs.map((a) => (
-                          <SelectItem key={a.id} value={a.id}>
-                            {(a.label || t("customers.address"))}{a.is_default ? ` ★` : ""} — {formatAddressLine(a as StructuredAddress, lang) || "—"}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    {active && (
-                      <p className="text-sm text-muted-foreground">
-                        {formatAddressLine(active as StructuredAddress, lang) || "—"}
-                        {active.is_default && (
-                          <span className="ms-2 inline-flex items-center gap-1 text-xs text-primary">
-                            <Star className="h-3 w-3" /> {t("customers.default")}
-                          </span>
-                        )}
-                      </p>
-                    )}
-                  </div>
-                ) : legacyLines.length > 0 ? (
-                  legacyLines.map((l, i) => <p key={i} className="text-sm text-muted-foreground">{l}</p>)
-                ) : (
-                  <p className="text-sm text-muted-foreground italic">{t("orderDetail.noDeliveryAddress")}</p>
-                ))}
+                {order.fulfillment_method === "delivery" && legacyLines.length > 0 && customerAddrs.length === 0
+                  ? legacyLines.map((line, index) => <p key={index} className="text-sm text-muted-foreground">{line}</p>)
+                  : null}
               </div>
             );
           })()}
@@ -725,6 +741,8 @@ function OrderDetail() {
             const branchLocation = selectedBranch
               ? (lang === "ar" ? selectedBranch.location_ar || selectedBranch.location_en : selectedBranch.location_en || selectedBranch.location_ar)
               : null;
+            const customerAddresses = (addressesQ.data ?? []).filter((item) => item.customer_id === order.customer_id);
+            const defaultAddress = customerAddresses.find((item) => item.is_default) ?? customerAddresses[0] ?? null;
             const title = method === "digital"
               ? (lang === "ar" ? "تسليم رقمي" : "Digital delivery")
               : method === "pickup"
@@ -732,14 +750,28 @@ function OrderDetail() {
                 : (lang === "ar" ? "توصيل" : "Delivery");
             return (
               <div className="mt-5 overflow-hidden rounded-xl border bg-muted/20 text-start shadow-sm">
-                <div className="flex items-center justify-between gap-3 border-b bg-muted/50 px-4 py-3">
+                <div className="flex flex-col gap-3 border-b bg-muted/50 px-4 py-3 sm:flex-row sm:items-end sm:justify-between">
                   <div>
                     <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">{lang === "ar" ? "طريقة التسليم" : "Fulfillment"}</p>
                     <p className="text-lg font-semibold">{title}</p>
                   </div>
-                  <span className="rounded-full px-3 py-1 text-xs font-semibold" style={{ backgroundColor: `${settingsQ.data.primary_color}18`, color: settingsQ.data.primary_color }}>
-                    {method === "digital" ? (lang === "ar" ? "رقمي" : "Digital") : method === "pickup" ? (lang === "ar" ? "فرع" : "Branch") : (lang === "ar" ? "عنوان" : "Address")}
-                  </span>
+                  <div className="w-full sm:w-64">
+                    <Label className="sr-only">{lang === "ar" ? "طريقة التسليم" : "Fulfillment method"}</Label>
+                    <Select value={method} onValueChange={(value) => setOrder({
+                      ...order,
+                      fulfillment_method: value,
+                      branch_id: value === "pickup" ? order.branch_id ?? null : null,
+                      shipping_address_id: value === "delivery" ? order.shipping_address_id ?? defaultAddress?.id ?? null : null,
+                      shipping: value === "delivery" ? Number(order.shipping ?? 0) : 0,
+                    })}>
+                      <SelectTrigger className="bg-background"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="pickup">{lang === "ar" ? "استلام من الفرع" : "Pickup from Branch"}</SelectItem>
+                        <SelectItem value="delivery">{lang === "ar" ? "توصيل للمنزل" : "Home Delivery"}</SelectItem>
+                        {(method === "digital" || order.channel === "storefront") && <SelectItem value="digital">{lang === "ar" ? "تسليم رقمي" : "Digital Delivery"}</SelectItem>}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
                 <div className="p-4">
                   {method === "digital" ? (
@@ -760,16 +792,48 @@ function OrderDetail() {
                       </div>
                     </div>
                   ) : method === "pickup" ? (
-                    <div className="space-y-1">
-                      <p className="text-xs uppercase tracking-wider text-muted-foreground">{lang === "ar" ? "الفرع المختار" : "Selected branch"}</p>
-                      <p className="font-semibold">{branchName || (lang === "ar" ? "لم يتم تحديد فرع" : "No branch selected")}</p>
-                      {branchLocation && <p className="text-sm text-muted-foreground">{branchLocation}</p>}
+                    <div className="space-y-2">
+                      <Label>{lang === "ar" ? "فرع الاستلام" : "Pickup location"}</Label>
+                      <Select value={order.branch_id ?? ""} onValueChange={(branchId) => setOrder({ ...order, branch_id: branchId })}>
+                        <SelectTrigger className="text-start"><SelectValue placeholder={lang === "ar" ? "اختر الفرع" : "Select a branch"} /></SelectTrigger>
+                        <SelectContent>
+                          {(branchesQ.data ?? []).map((branch: any) => {
+                            const name = lang === "ar" ? branch.name_ar || branch.name_en : branch.name_en || branch.name_ar;
+                            const location = lang === "ar" ? branch.location_ar || branch.location_en : branch.location_en || branch.location_ar;
+                            return <SelectItem key={branch.id} value={branch.id}>{name}{location ? ` — ${location}` : ""}</SelectItem>;
+                          })}
+                        </SelectContent>
+                      </Select>
+                      {selectedBranch && <p className="text-sm text-muted-foreground"><span className="font-medium text-foreground">{branchName}</span>{branchLocation ? ` — ${branchLocation}` : ""}</p>}
                     </div>
                   ) : (
-                    <div className="space-y-1">
-                      <p className="text-xs uppercase tracking-wider text-muted-foreground">{lang === "ar" ? "عنوان التوصيل المختار" : "Selected delivery address"}</p>
-                      <p className="font-medium">{address || (lang === "ar" ? "لا يوجد عنوان توصيل" : "No delivery address available")}</p>
-                      <p className="text-sm text-muted-foreground">{lang === "ar" ? "رسوم التوصيل" : "Delivery fee"}: {formatMoney(Number(order.shipping ?? 0), order.currency ?? "BHD")}</p>
+                    <div className="grid gap-4 sm:grid-cols-[1fr_180px]">
+                      <div className="space-y-2">
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <Label>{lang === "ar" ? "عنوان التوصيل" : "Delivery address"}</Label>
+                          {defaultAddress && (
+                            <button type="button" className="text-xs font-medium text-primary hover:underline" onClick={() => setOrder({ ...order, shipping_address_id: defaultAddress.id })}>
+                              {lang === "ar" ? "استخدام عنوان ملف العميل" : "Use Customer Profile Address"}
+                            </button>
+                          )}
+                        </div>
+                        <Select value={order.shipping_address_id ?? ""} onValueChange={(addressId) => setOrder({ ...order, shipping_address_id: addressId })}>
+                          <SelectTrigger className="text-start"><SelectValue placeholder={lang === "ar" ? "اختر عنواناً" : "Select an address"} /></SelectTrigger>
+                          <SelectContent>
+                            {customerAddresses.map((savedAddress) => (
+                              <SelectItem key={savedAddress.id} value={savedAddress.id}>
+                                {(savedAddress.label || t("customers.address"))}{savedAddress.is_default ? " ★" : ""} — {formatAddressLine(savedAddress as StructuredAddress, lang) || "—"}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <p className="text-sm text-muted-foreground">{address || (lang === "ar" ? "لا يوجد عنوان توصيل محفوظ لهذا العميل" : "No saved delivery address for this customer")}</p>
+                      </div>
+                      <div>
+                        <Label>{lang === "ar" ? "رسوم التوصيل" : "Delivery fee"}</Label>
+                        <Input type="number" min={0} step="0.001" value={order.shipping ?? 0} onChange={(event) => setOrder({ ...order, shipping: Number(event.target.value) || 0 })} />
+                        <p className="mt-1 text-xs text-muted-foreground">{formatMoney(Number(order.shipping ?? 0), order.currency ?? "BHD")}</p>
+                      </div>
                     </div>
                   )}
                 </div>
@@ -984,6 +1048,7 @@ function OrderDetail() {
           </div>
         </Card>
       </div>
+      </fieldset>
 
       {/* Printable invoice */}
       {(() => {
