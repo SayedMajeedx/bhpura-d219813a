@@ -19,6 +19,7 @@ import { Trash2 } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { uploadPublicMedia } from "@/lib/r2-upload";
 import { PasskeySettings } from "@/components/passkey-settings";
+import { META_DESCRIPTION_LIMIT, META_TITLE_LIMIT, sanitizeMetaText } from "@/lib/seo";
 
 export const Route = createFileRoute("/_authenticated/admin/b/$slug/settings")({
   component: Settings,
@@ -386,6 +387,7 @@ function Settings() {
         </TabsContent>
 
         <TabsContent value="storefront" className="space-y-6 mt-0">
+          <StorefrontSeoCard brandId={brandId} />
           <StorefrontCustomizerCard brandId={brandId} />
         </TabsContent>
 
@@ -753,6 +755,45 @@ function ColorField({ label, value, onChange }: { label: string; value: string |
       </div>
     </div>
   );
+}
+
+function StorefrontSeoCard({ brandId }: { brandId: string }) {
+  const { lang } = useI18n();
+  const isAr = lang === "ar";
+  const qc = useQueryClient();
+  const [metaTitle, setMetaTitle] = useState("");
+  const [metaDescription, setMetaDescription] = useState("");
+  const [saving, setSaving] = useState(false);
+  const query = useQuery({
+    queryKey: ["brand-storefront-seo", brandId],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("brands").select("meta_title, meta_description").eq("id", brandId).single();
+      if (error) throw error;
+      return data;
+    },
+  });
+  useEffect(() => {
+    if (!query.data) return;
+    setMetaTitle(query.data.meta_title ?? "");
+    setMetaDescription(query.data.meta_description ?? "");
+  }, [query.data]);
+  const save = async () => {
+    setSaving(true);
+    const { error } = await supabase.from("brands").update({
+      meta_title: sanitizeMetaText(metaTitle, META_TITLE_LIMIT) || null,
+      meta_description: sanitizeMetaText(metaDescription, META_DESCRIPTION_LIMIT) || null,
+    }).eq("id", brandId);
+    setSaving(false);
+    if (error) return toast.error(error.message);
+    await qc.invalidateQueries({ queryKey: ["brand-storefront-seo", brandId] });
+    toast.success(isAr ? "تم حفظ إعدادات محركات البحث" : "Storefront SEO saved");
+  };
+  return <Card className="space-y-4 p-5">
+    <div><h2 className="font-display text-xl">{isAr ? "ظهور المتجر في محركات البحث" : "Storefront SEO"}</h2><p className="text-sm text-muted-foreground">{isAr ? "عنوان ووصف الصفحة الرئيسية عند ظهورها في Google أو مشاركتها." : "Control the homepage title and description shown in search and social sharing."}</p></div>
+    <div><div className="flex justify-between gap-3"><Label>{isAr ? "عنوان الصفحة الرئيسية" : "Homepage Meta Title"}</Label><span className="text-xs text-muted-foreground">{metaTitle.length}/{META_TITLE_LIMIT}</span></div><Input value={metaTitle} maxLength={META_TITLE_LIMIT} onChange={(event) => setMetaTitle(event.target.value)} dir={isAr ? "rtl" : "ltr"} placeholder={isAr ? "اسم المتجر ووصفه المختصر" : "Store name and concise value proposition"} /></div>
+    <div><div className="flex justify-between gap-3"><Label>{isAr ? "وصف الصفحة الرئيسية" : "Homepage Meta Description"}</Label><span className="text-xs text-muted-foreground">{metaDescription.length}/{META_DESCRIPTION_LIMIT}</span></div><Textarea value={metaDescription} maxLength={META_DESCRIPTION_LIMIT} rows={3} onChange={(event) => setMetaDescription(event.target.value)} dir={isAr ? "rtl" : "ltr"} placeholder={isAr ? "وصف جذاب ومختصر للمتجر" : "A concise and compelling storefront description"} /></div>
+    <Button onClick={save} disabled={saving || query.isLoading}>{saving ? (isAr ? "جاري الحفظ…" : "Saving…") : (isAr ? "حفظ إعدادات البحث" : "Save SEO settings")}</Button>
+  </Card>;
 }
 
 function StorefrontCustomizerCard({ brandId }: { brandId: string }) {

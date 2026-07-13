@@ -10,12 +10,21 @@ import { faviconType } from "@/lib/favicon";
 
 export const Route = createFileRoute("/$slug/$category")({
   loader: async ({ params }) => {
-    const { data: brand } = await supabase
+    let { data: brand, error: brandError } = await supabase
       .from("brands")
       .select("id, name_en, name_ar, logo_url, meta_title, meta_description")
       .eq("slug", params.slug)
       .eq("is_active", true)
       .maybeSingle();
+    if (brandError && /meta_(title|description)/i.test(brandError.message ?? "")) {
+      const legacy = await supabase
+        .from("brands")
+        .select("id, name_en, name_ar, logo_url")
+        .eq("slug", params.slug)
+        .eq("is_active", true)
+        .maybeSingle();
+      brand = legacy.data ? { ...legacy.data, meta_title: null, meta_description: null } as any : null;
+    }
     if (!brand) return { page: null, brand: null, faviconUrl: null };
     const { data: settings } = await supabase
       .from("brand_public_settings")
