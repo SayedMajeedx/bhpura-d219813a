@@ -128,7 +128,7 @@ function Checkout() {
       line_total: Number((item.price * item.qty).toFixed(3)),
     }));
     const { data, error } = await supabase.rpc("validate_promo_code" as any, {
-      p_brand_slug: brand.slug, p_code: code, p_subtotal: cartTotal, p_items: promoItems,
+      p_brand_slug: brand.slug, p_code: code, p_subtotal: cartTotal, p_items: promoItems, p_customer_id: null,
     });
     setCheckingPromo(false);
     if (error) return toast.error(t("تعذر التحقق من الرمز", "Could not validate this code"));
@@ -136,12 +136,13 @@ function Checkout() {
     if (!result?.valid) {
       setAppliedPromo(null);
       if (result?.reason === "MINIMUM_NOT_MET") return toast.error(t(`الحد الأدنى للطلب ${formatPrice(Number(result.minimum_order_amount), currency, lang)}`, `Minimum order is ${formatPrice(Number(result.minimum_order_amount), currency, lang)}`));
-      if (result?.reason === "CODE_INACTIVE") return toast.error(t("رمز الخصم غير نشط", "This promo code is inactive"));
-      if (result?.reason === "FIRST_ORDER_ONLY") return toast.error(t("هذا الرمز صالح لطلبك الأول فقط.", "This code is valid for your first order only."));
+      if (result?.reason === "CODE_INACTIVE") return toast.error(t("رمز الخصم هذا لم يعد نشطاً.", "This promotional code is no longer active."));
+      if (result?.reason === "FIRST_ORDER_ONLY") return toast.error(t("رمز الخصم هذا مخصص للعملاء الجدد فقط.", "This promo code is restricted to first-time customers only."));
       if (result?.reason === "AUTH_REQUIRED") return toast.error(t("سجّل الدخول لاستخدام هذا الرمز.", "Sign in to use this promo code."));
       if (result?.reason === "USAGE_LIMIT_REACHED") return toast.error(t("لقد وصلت إلى الحد المسموح لاستخدام هذا الرمز.", "You have reached this code's usage limit."));
-      if (result?.reason === "NO_ELIGIBLE_ITEMS") return toast.error(t("هذا الرمز لا ينطبق على المنتجات المخفضة في سلتك.", "This code does not apply to the sale items in your cart."));
-      return toast.error(t("رمز الخصم غير صحيح", "Invalid promo code"));
+      if (result?.reason === "NO_ELIGIBLE_ITEMS") return toast.error(t("لا يمكن تطبيق رمز الخصم هذا على المنتجات المخفضة مسبقاً.", "This promo code cannot be applied to items already on discount/sale."));
+      if (result?.reason === "CODE_NOT_FOUND") return toast.error(t("رمز الخصم غير موجود لهذا المتجر.", "This promo code does not exist for this brand."));
+      return toast.error(t("تعذر تطبيق رمز الخصم. تحقق من شروطه.", "This promo code could not be applied. Check its eligibility rules."));
     }
     setAppliedPromo({ code: result.code, amount: Number(result.discount_amount) });
     setPromoInput(result.code);
@@ -258,13 +259,13 @@ function Checkout() {
         toast.error(t("تحقق من بيانات التسليم الرقمي", "Check the digital delivery details"));
       } else if (msg.includes("PROMO_FIRST_ORDER_ONLY")) {
         setAppliedPromo(null);
-        toast.error(t("هذا الرمز صالح لطلبك الأول فقط.", "This code is valid for your first order only."));
+        toast.error(t("رمز الخصم هذا مخصص للعملاء الجدد فقط.", "This promo code is restricted to first-time customers only."));
       } else if (msg.includes("PROMO_USAGE_LIMIT_REACHED")) {
         setAppliedPromo(null);
         toast.error(t("لقد وصلت إلى الحد المسموح لاستخدام هذا الرمز.", "You have reached this code's usage limit."));
       } else if (msg.includes("PROMO_NO_ELIGIBLE_ITEMS")) {
         setAppliedPromo(null);
-        toast.error(t("هذا الرمز لا ينطبق على المنتجات المخفضة في سلتك.", "This code does not apply to the sale items in your cart."));
+        toast.error(t("لا يمكن تطبيق رمز الخصم هذا على المنتجات المخفضة مسبقاً.", "This promo code cannot be applied to items already on discount/sale."));
       } else if (msg.includes("PROMO_AUTH_REQUIRED")) {
         setAppliedPromo(null);
         toast.error(t("سجّل الدخول لاستخدام هذا الرمز.", "Sign in to use this promo code."));

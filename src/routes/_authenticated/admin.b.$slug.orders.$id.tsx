@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Plus, Trash2, Printer, Save, Send, Search, Receipt, Link as LinkIcon, ScanLine, Mail, Loader2, Lock, Unlock } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, Printer, Save, Send, Search, Receipt, Link as LinkIcon, ScanLine, Mail, Loader2, Lock, Unlock, X, Tag } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { formatDate, formatMoney } from "@/lib/format";
@@ -182,11 +182,15 @@ function OrderDetail() {
   const [editingUnlocked, setEditingUnlocked] = useState(false);
   const [hasSavedDraft, setHasSavedDraft] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [promoInput, setPromoInput] = useState("");
+  const [appliedPromo, setAppliedPromo] = useState<{ code: string; id: string; amount: number } | null>(null);
+  const [checkingPromo, setCheckingPromo] = useState(false);
+  const promoContextRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (orderQ.data) {
       setOrder(orderQ.data);
-      setItems((orderQ.data.order_items ?? []).map((i: any) => ({
+      const loadedItems = (orderQ.data.order_items ?? []).map((i: any) => ({
         id: i.id, product_id: i.product_id, variant_id: i.variant_id,
         description: i.description, quantity: i.quantity, unit_price: Number(i.unit_price),
         customizations: i.customizations ?? [],
@@ -195,8 +199,20 @@ function OrderDetail() {
         location: (i.location === "incubator" ? "incubator" : "main") as "main" | "incubator",
         selected_variant: i.selected_variant ?? null,
         custom_field_values: normalizeCustomFieldValues(i.custom_field_values),
-      })));
+      }));
+      setItems(loadedItems);
+      promoContextRef.current = JSON.stringify({
+        customer: (orderQ.data as any).customer_id ?? null,
+        items: loadedItems.map((item: Item) => [item.variant_id ?? null, item.quantity, Number(item.line_total).toFixed(3)]),
+      });
       setEditingUnlocked(false);
+      const savedPromo = (orderQ.data as any).promo_code;
+      setPromoInput(savedPromo ?? "");
+      setAppliedPromo(savedPromo ? {
+        code: savedPromo,
+        id: (orderQ.data as any).promo_code_id ?? "",
+        amount: Number((orderQ.data as any).discount ?? 0),
+      } : null);
     }
   }, [orderQ.data]);
 
@@ -223,6 +239,73 @@ function OrderDetail() {
     const remaining = Math.max(0, total - advancePaid);
     return { subtotal, discount, shipping, taxAmount, total, advancePaid, remaining };
   }, [items, order?.discount, order?.shipping, order?.tax_rate, order?.advance_paid]);
+
+  useEffect(() => {
+    const signature = JSON.stringify({
+      customer: order?.customer_id ?? null,
+      items: items.map((item) => [item.variant_id ?? null, item.quantity, Number(item.line_total).toFixed(3)]),
+    });
+    if (promoContextRef.current === null) {
+      promoContextRef.current = signature;
+      return;
+    }
+    if (promoContextRef.current !== signature) {
+      promoContextRef.current = signature;
+      if (appliedPromo) {
+        setAppliedPromo(null);
+        setPromoInput("");
+        setOrder((current: any) => current ? { ...current, discount: 0, promo_code: null, promo_code_id: null } : current);
+        toast.info(lang === "ar" ? "تمت إزالة رمز الخصم بعد تغيير العميل أو المنتجات." : "Promo code removed after the customer or items changed.");
+      }
+    }
+  }, [items, order?.customer_id, appliedPromo, lang]);
+
+  const promoFailureMessage = (result: any) => {
+    switch (result?.reason) {
+      case "FIRST_ORDER_ONLY": return lang === "ar" ? "رمز الخصم هذا مخصص للعملاء الجدد فقط." : "This promo code is restricted to first-time customers only.";
+      case "MINIMUM_NOT_MET": return lang === "ar"
+        ? `يتطلب رمز الخصم هذا حداً أدنى للشراء بقيمة ${formatMoney(Number(result.minimum_order_amount), "BHD")}.`
+        : `This promo code requires a minimum purchase value of ${formatMoney(Number(result.minimum_order_amount), "BHD")}.`;
+      case "NO_ELIGIBLE_ITEMS": return lang === "ar" ? "لا يمكن تطبيق رمز الخصم هذا على المنتجات المخفضة مسبقاً." : "This promo code cannot be applied to items already on discount/sale.";
+      case "CODE_INACTIVE": return lang === "ar" ? "رمز الخصم هذا لم يعد نشطاً." : "This promotional code is no longer active.";
+      case "USAGE_LIMIT_REACHED": return lang === "ar" ? "وصل هذا العميل إلى الحد المسموح لاستخدام الرمز." : "This customer has reached the usage limit for this promo code.";
+      case "CUSTOMER_REQUIRED": return lang === "ar" ? "اختر عميلاً قبل تطبيق رمز الخصم." : "Select a customer before applying this promo code.";
+      case "CODE_NOT_FOUND": return lang === "ar" ? "رمز الخصم غير موجود لهذا المتجر." : "This promo code does not exist for this brand.";
+      default: return lang === "ar" ? "تعذر تطبيق رمز الخصم. تحقق من شروط الرمز." : "This promo code could not be applied. Check its eligibility rules.";
+    }
+  };
+
+  const applyAdminPromo = async () => {
+    if (!order) return;
+    const code = promoInput.trim().toUpperCase();
+    if (!code) return toast.error(lang === "ar" ? "أدخل رمز الخصم." : "Enter a promo code.");
+    if (!items.length || totals.subtotal <= 0) return toast.error(lang === "ar" ? "أضف منتجات إلى الطلب أولاً." : "Add products to the order first.");
+    setCheckingPromo(true);
+    const { data, error } = await supabase.rpc("validate_promo_code" as any, {
+      p_brand_slug: brand.slug,
+      p_code: code,
+      p_subtotal: totals.subtotal,
+      p_items: items.map((item) => ({ variant_id: item.variant_id, line_total: Number(item.line_total.toFixed(3)) })),
+      p_customer_id: order.customer_id ?? null,
+    });
+    setCheckingPromo(false);
+    if (error) return toast.error(error.message || (lang === "ar" ? "تعذر التحقق من الرمز." : "Could not validate this promo code."));
+    const result = data as any;
+    if (!result?.valid) return toast.error(promoFailureMessage(result));
+    const amount = Number(result.discount_amount ?? 0);
+    const active = { code: String(result.code), id: String(result.promo_code_id), amount };
+    setPromoInput(active.code);
+    setAppliedPromo(active);
+    setOrder({ ...order, discount: amount, promo_code: active.code, promo_code_id: active.id });
+    toast.success(lang === "ar" ? "تم تطبيق رمز الخصم." : "Promo code applied.");
+  };
+
+  const removeAdminPromo = () => {
+    if (!order) return;
+    setAppliedPromo(null);
+    setPromoInput("");
+    setOrder({ ...order, discount: 0, promo_code: null, promo_code_id: null });
+  };
 
   const paymentBadge: PaymentBadge = useMemo(
     () => resolvePaymentStatus(order?.payment_status, order?.status, totals.total, totals.advancePaid),
@@ -396,6 +479,7 @@ function OrderDetail() {
       payment_method: order.payment_method ?? null,
       payment_status: order.payment_status ?? "unpaid",
       discount: totals.discount, tax_rate: order.tax_rate, tax_amount: totals.taxAmount,
+      promo_code: appliedPromo?.code ?? null, promo_code_id: appliedPromo?.id || null,
       shipping: totals.shipping, subtotal: totals.subtotal, total: totals.total,
       advance_paid: totals.advancePaid,
       currency, order_date: order.order_date,
@@ -1009,9 +1093,29 @@ function OrderDetail() {
               <Textarea value={order.notes ?? ""} onChange={(e) => setOrder({ ...order, notes: e.target.value })} rows={5} />
             </div>
             <div className="space-y-3">
+              <div className="rounded-lg border bg-muted/20 p-3 space-y-2">
+                <Label>{lang === "ar" ? "تطبيق رمز خصم" : "Apply Promo Code"}</Label>
+                {appliedPromo ? (
+                  <div className="flex items-center justify-between gap-3 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-emerald-900">
+                    <div className="flex min-w-0 items-center gap-2">
+                      <Tag className="h-4 w-4 shrink-0" />
+                      <span className="truncate font-mono font-semibold">{appliedPromo.code}</span>
+                      <span className="text-xs">− {formatMoney(appliedPromo.amount, currency)}</span>
+                    </div>
+                    <Button type="button" size="icon" variant="ghost" className="h-7 w-7 shrink-0" onClick={removeAdminPromo} disabled={isReadOnly} aria-label={lang === "ar" ? "إزالة رمز الخصم" : "Remove promo code"}><X className="h-4 w-4" /></Button>
+                  </div>
+                ) : (
+                  <div className="flex gap-2">
+                    <Input value={promoInput} onChange={(event) => setPromoInput(event.target.value.toUpperCase())} onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); void applyAdminPromo(); } }} placeholder="EID20" className="uppercase" disabled={isReadOnly || checkingPromo} />
+                    <Button type="button" variant="outline" onClick={applyAdminPromo} disabled={isReadOnly || checkingPromo}>{checkingPromo && <Loader2 className="me-2 h-4 w-4 animate-spin" />}{lang === "ar" ? "تطبيق" : "Apply"}</Button>
+                  </div>
+                )}
+                <p className="text-xs text-muted-foreground">{lang === "ar" ? "يتم التحقق من أهلية العميل والمنتجات والحد الأقصى تلقائياً." : "Customer eligibility, sale exclusions, and discount caps are checked automatically."}</p>
+              </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div><Label>{t("orderDetail.discount")}</Label>
-                  <Input type="number" step="0.01" value={order.discount} onChange={(e) => setOrder({ ...order, discount: Number(e.target.value) })} /></div>
+                  <Input type="number" step="0.001" value={order.discount} disabled={isReadOnly || !!appliedPromo} onChange={(e) => setOrder({ ...order, discount: Number(e.target.value) })} />
+                  {appliedPromo && <p className="mt-1 text-xs text-muted-foreground">{lang === "ar" ? "تم تثبيت الخصم بواسطة رمز الخصم." : "Locked to the validated promo amount."}</p>}</div>
                 <div><Label>{t("orderDetail.shipping")}</Label>
                   <Input type="number" step="0.01" value={order.shipping} onChange={(e) => setOrder({ ...order, shipping: Number(e.target.value) })} /></div>
               </div>

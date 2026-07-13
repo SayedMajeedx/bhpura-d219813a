@@ -17,11 +17,14 @@ ALTER TABLE public.promo_codes
   );
 
 DROP FUNCTION IF EXISTS public.validate_promo_code(text,text,numeric);
+DROP FUNCTION IF EXISTS public.validate_promo_code(text,text,numeric,jsonb);
+DROP FUNCTION IF EXISTS public.validate_promo_code(text,text,numeric,jsonb,uuid);
 CREATE FUNCTION public.validate_promo_code(
   p_brand_slug text,
   p_code text,
   p_subtotal numeric,
-  p_items jsonb DEFAULT NULL
+  p_items jsonb DEFAULT NULL,
+  p_customer_id uuid DEFAULT NULL
 ) RETURNS jsonb
 LANGUAGE plpgsql
 SECURITY DEFINER
@@ -31,6 +34,8 @@ DECLARE
   v_promo public.promo_codes%ROWTYPE;
   v_brand_id uuid;
   v_user_id uuid := auth.uid();
+  v_effective_customer_id uuid;
+  v_effective_auth_user_id uuid;
   v_discountable_subtotal numeric(14,3) := greatest(COALESCE(p_subtotal, 0), 0);
   v_discount numeric(14,3);
   v_historical_orders integer := 0;
@@ -40,7 +45,7 @@ BEGIN
     RETURN jsonb_build_object('valid', false, 'reason', 'CODE_REQUIRED');
   END IF;
 
-  SELECT pc, b.id INTO v_promo, v_brand_id
+  SELECT pc.* INTO v_promo
   FROM public.promo_codes pc
   JOIN public.brands b ON b.id = pc.brand_id
   WHERE b.slug = p_brand_slug AND b.is_active = true
@@ -49,6 +54,7 @@ BEGIN
   IF v_promo.id IS NULL THEN
     RETURN jsonb_build_object('valid', false, 'reason', 'CODE_NOT_FOUND');
   END IF;
+  v_brand_id := v_promo.brand_id;
   IF NOT v_promo.is_active THEN
     RETURN jsonb_build_object('valid', false, 'reason', 'CODE_INACTIVE');
   END IF;
@@ -58,14 +64,28 @@ BEGIN
   END IF;
 
   IF v_promo.first_time_customers_only OR v_promo.usage_limit_per_customer IS NOT NULL THEN
-    IF v_user_id IS NULL THEN
-      RETURN jsonb_build_object('valid', false, 'reason', 'AUTH_REQUIRED');
+    IF p_customer_id IS NOT NULL THEN
+      IF NOT (public.is_super_admin() OR (public.is_admin() AND public.current_brand_id() = v_brand_id)) THEN
+        RETURN jsonb_build_object('valid', false, 'reason', 'CUSTOMER_ACCESS_DENIED');
+      END IF;
+      SELECT c.id, c.auth_user_id INTO v_effective_customer_id, v_effective_auth_user_id
+      FROM public.customers c WHERE c.id = p_customer_id AND c.brand_id = v_brand_id;
+      IF v_effective_customer_id IS NULL THEN
+        RETURN jsonb_build_object('valid', false, 'reason', 'CUSTOMER_REQUIRED');
+      END IF;
+    ELSE
+      IF v_user_id IS NULL THEN
+        RETURN jsonb_build_object('valid', false, 'reason', 'AUTH_REQUIRED');
+      END IF;
+      v_effective_auth_user_id := v_user_id;
     END IF;
 
     SELECT count(*) INTO v_historical_orders
     FROM public.orders o
     JOIN public.customers c ON c.id = o.customer_id
-    WHERE o.brand_id = v_brand_id AND c.auth_user_id = v_user_id
+    WHERE o.brand_id = v_brand_id
+      AND ((v_effective_auth_user_id IS NOT NULL AND c.auth_user_id = v_effective_auth_user_id)
+        OR (v_effective_auth_user_id IS NULL AND c.id = v_effective_customer_id))
       AND (o.status IN ('completed', 'paid') OR o.payment_status = 'paid');
 
     IF v_promo.first_time_customers_only AND v_historical_orders > 0 THEN
@@ -76,7 +96,9 @@ BEGIN
       SELECT count(*) INTO v_prior_uses
       FROM public.orders o
       JOIN public.customers c ON c.id = o.customer_id
-      WHERE o.brand_id = v_brand_id AND c.auth_user_id = v_user_id
+      WHERE o.brand_id = v_brand_id
+        AND ((v_effective_auth_user_id IS NOT NULL AND c.auth_user_id = v_effective_auth_user_id)
+          OR (v_effective_auth_user_id IS NULL AND c.id = v_effective_customer_id))
         AND o.promo_code_id = v_promo.id
         AND COALESCE(o.status, '') NOT IN ('cancelled', 'draft');
       IF v_prior_uses >= v_promo.usage_limit_per_customer THEN
@@ -110,6 +132,7 @@ BEGIN
 
   RETURN jsonb_build_object(
     'valid', true, 'code', upper(v_promo.code),
+    'promo_code_id', v_promo.id,
     'discount_type', v_promo.discount_type,
     'discount_value', v_promo.discount_value,
     'discount_amount', v_discount,
@@ -120,8 +143,8 @@ BEGIN
 END;
 $$;
 
-REVOKE ALL ON FUNCTION public.validate_promo_code(text,text,numeric,jsonb) FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION public.validate_promo_code(text,text,numeric,jsonb) TO anon, authenticated;
+REVOKE ALL ON FUNCTION public.validate_promo_code(text,text,numeric,jsonb,uuid) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.validate_promo_code(text,text,numeric,jsonb,uuid) TO anon, authenticated;
 
 -- Recreate checkout wrapper so final validation uses authoritative saved order lines.
 CREATE OR REPLACE FUNCTION public.place_storefront_order(
@@ -177,7 +200,7 @@ BEGIN
     )), '[]'::jsonb) INTO v_authoritative_items
     FROM public.order_items oi WHERE oi.order_id = v_order.id;
 
-    v_promo := public.validate_promo_code(p_brand_slug, p_promo_code, v_order.subtotal, v_authoritative_items);
+    v_promo := public.validate_promo_code(p_brand_slug, p_promo_code, v_order.subtotal, v_authoritative_items, NULL);
     IF NOT COALESCE((v_promo->>'valid')::boolean, false) THEN
       RAISE EXCEPTION 'PROMO_%', COALESCE(v_promo->>'reason', 'INVALID');
     END IF;
@@ -199,3 +222,6 @@ $$;
 
 REVOKE ALL ON FUNCTION public.place_storefront_order(text,jsonb,jsonb,text,text,text,uuid,text,text,text) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.place_storefront_order(text,jsonb,jsonb,text,text,text,uuid,text,text,text) TO anon, authenticated;
+
+-- Make the new columns immediately visible to PostgREST after SQL Editor runs.
+NOTIFY pgrst, 'reload schema';
