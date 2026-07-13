@@ -47,35 +47,6 @@ function escapeHtml(s: unknown) {
   );
 }
 
-/**
- * Encode Unicode mail headers as short RFC 2047 Base64 encoded words.
- * Keeping each encoded word comfortably below the 75-character limit avoids
- * Outlook displaying a long Arabic subject as literal `=?utf-8?...` text.
- */
-function encodeMimeHeader(value: string) {
-  if (/^[\x20-\x7E]*$/.test(value)) return value;
-  const chunks: string[] = [];
-  let chunk = "";
-  let byteLength = 0;
-  for (const character of value) {
-    const characterBytes = new TextEncoder().encode(character).length;
-    if (chunk && byteLength + characterBytes > 30) {
-      chunks.push(chunk);
-      chunk = "";
-      byteLength = 0;
-    }
-    chunk += character;
-    byteLength += characterBytes;
-  }
-  if (chunk) chunks.push(chunk);
-  return chunks.map((part) => {
-    const bytes = new TextEncoder().encode(part);
-    let binary = "";
-    for (const byte of bytes) binary += String.fromCharCode(byte);
-    return `=?UTF-8?B?${btoa(binary)}?=`;
-  }).join(" ");
-}
-
 function fmt(n: number, currency: string, isAr: boolean) {
   try {
     return new Intl.NumberFormat(isAr ? "ar-BH" : "en-US", {
@@ -199,10 +170,9 @@ async function sendAndLog(orderId: string, lang: "ar" | "en") {
     const brandName = settings?.business_name ?? "Boutq";
     const senderName = settings?.email_sender_name?.trim() || brandName;
     const primary = settings?.primary_color ?? "#111827";
-    const rawSubject = isAr
-      ? `${brandName} — تأكيد الطلب #${order.invoice_number}`
-      : `${brandName} — Order confirmation #${order.invoice_number}`;
-    const subject = encodeMimeHeader(rawSubject);
+    // Keep the subject strictly ASCII for consistent rendering in Outlook and
+    // older mail clients. The message body remains fully localized.
+    const subject = `Order confirmation #${order.invoice_number}`;
     const html = renderHtml(order, order.order_items ?? [], brandName, primary, isAr);
 
     const client = new SMTPClient({

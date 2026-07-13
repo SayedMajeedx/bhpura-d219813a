@@ -177,7 +177,9 @@ export type Database = {
           hero_media: Json
           id: string
           is_active: boolean
-          logo_url: string | null
+            logo_url: string | null
+            meta_description: string | null
+            meta_title: string | null
           name_ar: string | null
           name_en: string
           primary_color: string | null
@@ -192,7 +194,9 @@ export type Database = {
           hero_media?: Json
           id?: string
           is_active?: boolean
-          logo_url?: string | null
+            logo_url?: string | null
+            meta_description?: string | null
+            meta_title?: string | null
           name_ar?: string | null
           name_en: string
           primary_color?: string | null
@@ -207,7 +211,9 @@ export type Database = {
           hero_media?: Json
           id?: string
           is_active?: boolean
-          logo_url?: string | null
+            logo_url?: string | null
+            meta_description?: string | null
+            meta_title?: string | null
           name_ar?: string | null
           name_en?: string
           primary_color?: string | null

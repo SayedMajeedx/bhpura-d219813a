@@ -18,10 +18,15 @@ function PageView() {
   const page = settings.pages[n - 1];
   const title = lang === "ar" ? (page.title_ar || page.title_en) : (page.title_en || page.title_ar);
   const content = lang === "ar" ? (page.content_ar || page.content_en) : (page.content_en || page.content_ar);
+  return <StorefrontPageContent page={page} />;
+}
+
+export function StorefrontPageContent({ page }: { page: ReturnType<typeof useStorefront>["settings"]["pages"][number] }) {
+  const { lang, brand, t } = useStorefront();
+  const title = lang === "ar" ? (page.title_ar || page.title_en) : (page.title_en || page.title_ar);
+  const content = lang === "ar" ? (page.content_ar || page.content_en) : (page.content_en || page.content_ar);
   const safeContent = renderRichTextContent(content);
-
   if (!title && !richTextHasContent(safeContent)) return <PageMissing />;
-
   return (
     <article className="mx-auto max-w-5xl px-4 sm:px-6 py-8 sm:py-14">
       <Link

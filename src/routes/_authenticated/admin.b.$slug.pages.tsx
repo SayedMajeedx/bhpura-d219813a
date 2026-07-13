@@ -17,18 +17,22 @@ import { useBrand } from "@/lib/brand-context";
 import { uploadPublicMedia } from "@/lib/r2-upload";
 import { RichTextEditor } from "@/components/rich-text-editor";
 import { normalizeRichTextValue, sanitizeRichTextHtml } from "@/lib/rich-text";
+import { META_DESCRIPTION_LIMIT, META_TITLE_LIMIT, sanitizeMetaText, uniquePageSlug } from "@/lib/seo";
 
 export const Route = createFileRoute("/_authenticated/admin/b/$slug/pages")({
   component: PagesAndPolicies,
 });
 
 type PageSlot = {
+  slug: string;
   title_ar: string;
   title_en: string;
   content_ar: string;
   content_en: string;
   image_url: string | null;
   image_position: "top" | "bottom";
+  meta_title: string;
+  meta_description: string;
 };
 
 type Social = { name: string; url: string };
@@ -37,12 +41,15 @@ type EditorLanguage = "en" | "ar";
 const SOCIAL_PLATFORMS = ["Instagram", "TikTok", "Facebook", "X", "Snapchat", "Custom Link"] as const;
 
 const emptyPage = (): PageSlot => ({
+  slug: "",
   title_ar: "",
   title_en: "",
   content_ar: "",
   content_en: "",
   image_url: null,
   image_position: "bottom",
+  meta_title: "",
+  meta_description: "",
 });
 
 const normalizePlatform = (name: string) =>
@@ -84,12 +91,15 @@ function PagesAndPolicies() {
     const rawPages = Array.isArray(data.pages) ? data.pages : [];
     setPages(
       rawPages.map((page: any) => ({
+        slug: page?.slug ?? "",
         title_ar: page?.title_ar ?? "",
         title_en: page?.title_en ?? "",
         content_ar: normalizeRichTextValue(page?.content_ar),
         content_en: normalizeRichTextValue(page?.content_en),
         image_url: page?.image_url ?? null,
         image_position: page?.image_position === "bottom" ? "bottom" : "top",
+        meta_title: page?.meta_title ?? "",
+        meta_description: page?.meta_description ?? "",
       })),
     );
     const rawSocials = Array.isArray(data.socials) ? data.socials : [];
@@ -145,13 +155,17 @@ function PagesAndPolicies() {
 
   const save = async () => {
     setSaving(true);
-    const cleanedPages = pages.map((page) => ({
+    const usedSlugs = new Set<string>();
+    const cleanedPages = pages.map((page, index) => ({
+      slug: uniquePageSlug(page.slug || page.title_en || page.title_ar || `page-${index + 1}`, usedSlugs),
       title_ar: page.title_ar.trim() || null,
       title_en: page.title_en.trim() || null,
       content_ar: sanitizeRichTextHtml(page.content_ar) || null,
       content_en: sanitizeRichTextHtml(page.content_en) || null,
       image_url: page.image_url || null,
       image_position: page.image_position,
+      meta_title: sanitizeMetaText(page.meta_title, META_TITLE_LIMIT) || null,
+      meta_description: sanitizeMetaText(page.meta_description, META_DESCRIPTION_LIMIT) || null,
     }));
     const cleanedSocials = socials
       .map((social) => ({ name: social.name.trim(), url: social.url.trim() }))
@@ -315,6 +329,50 @@ function PagesAndPolicies() {
                         placeholder={editorLanguage === "ar" ? "اكتب محتوى الصفحة هنا…" : "Write the page content here…"}
                       />
                     </div>
+
+                    <Card className="space-y-4 p-4">
+                      <div>
+                        <Label>{editorLanguage === "ar" ? "رابط الصفحة" : "Page URL slug"}</Label>
+                        <div className="mt-1 flex items-center gap-1 rounded-md border bg-muted/30 px-3">
+                          <span className="shrink-0 text-sm text-muted-foreground">/{brand.slug}/</span>
+                          <Input
+                            value={page.slug}
+                            onChange={(event) => updatePage(index, { slug: event.target.value.toLowerCase().replace(/[^a-z0-9\u0600-\u06ff-]/g, "-").replace(/-+/g, "-") })}
+                            placeholder="size-guide"
+                            className="border-0 bg-transparent px-0 shadow-none focus-visible:ring-0"
+                            dir="ltr"
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <div className="flex items-center justify-between gap-3">
+                          <Label>{editorLanguage === "ar" ? "عنوان محركات البحث" : "Meta Title"}</Label>
+                          <span className="text-xs text-muted-foreground">{page.meta_title.length}/{META_TITLE_LIMIT}</span>
+                        </div>
+                        <Input
+                          value={page.meta_title}
+                          maxLength={META_TITLE_LIMIT}
+                          onChange={(event) => updatePage(index, { meta_title: event.target.value })}
+                          dir={editorLanguage === "ar" ? "rtl" : "ltr"}
+                          className={editorLanguage === "ar" ? "text-right" : "text-left"}
+                          placeholder={editorLanguage === "ar" ? "عنوان واضح يظهر في نتائج البحث" : "A clear title for search results"}
+                        />
+                      </div>
+                      <div>
+                        <div className="flex items-center justify-between gap-3">
+                          <Label>{editorLanguage === "ar" ? "وصف محركات البحث" : "Meta Description"}</Label>
+                          <span className="text-xs text-muted-foreground">{page.meta_description.length}/{META_DESCRIPTION_LIMIT}</span>
+                        </div>
+                        <Input
+                          value={page.meta_description}
+                          maxLength={META_DESCRIPTION_LIMIT}
+                          onChange={(event) => updatePage(index, { meta_description: event.target.value })}
+                          dir={editorLanguage === "ar" ? "rtl" : "ltr"}
+                          className={editorLanguage === "ar" ? "text-right" : "text-left"}
+                          placeholder={editorLanguage === "ar" ? "وصف مختصر وجذاب للصفحة" : "A concise description of this page"}
+                        />
+                      </div>
+                    </Card>
 
                     <div>
                       <Label>{editorLanguage === "ar" ? "صورة الصفحة (اختيارية)" : "Page image (optional)"}</Label>

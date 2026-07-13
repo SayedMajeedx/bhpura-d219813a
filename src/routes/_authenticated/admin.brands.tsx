@@ -22,6 +22,7 @@ import { useI18n, useT } from "@/lib/i18n";
 import { SUPER_ADMIN_EMAIL } from "@/lib/profile-context";
 import { purgeBrandPublicMedia } from "@/lib/r2-upload";
 import { purgeBrandPrivateReceipts } from "@/lib/benefit-receipt.functions";
+import { META_DESCRIPTION_LIMIT, META_TITLE_LIMIT, sanitizeMetaText } from "@/lib/seo";
 
 export const Route = createFileRoute("/_authenticated/admin/brands")({
   beforeLoad: async () => {
@@ -52,6 +53,8 @@ type Brand = {
   primary_color: string | null;
   about_ar: string | null;
   about_en: string | null;
+  meta_title: string | null;
+  meta_description: string | null;
 };
 
 function BrandsPage() {
@@ -311,6 +314,8 @@ function EditBrandDialog({ brand, onSaved }: { brand: Brand; onSaved: () => void
     primary_color: brand.primary_color ?? "#8b6f47",
     about_ar: brand.about_ar ?? "",
     about_en: brand.about_en ?? "",
+    meta_title: brand.meta_title ?? "",
+    meta_description: brand.meta_description ?? "",
     is_active: brand.is_active,
   });
   const [saving, setSaving] = useState(false);
@@ -323,6 +328,8 @@ function EditBrandDialog({ brand, onSaved }: { brand: Brand; onSaved: () => void
       primary_color: brand.primary_color ?? "#8b6f47",
       about_ar: brand.about_ar ?? "",
       about_en: brand.about_en ?? "",
+      meta_title: brand.meta_title ?? "",
+      meta_description: brand.meta_description ?? "",
       is_active: brand.is_active,
     });
   }, [brand]);
@@ -341,6 +348,8 @@ function EditBrandDialog({ brand, onSaved }: { brand: Brand; onSaved: () => void
         primary_color: form.primary_color || null,
         about_ar: form.about_ar.trim() || null,
         about_en: form.about_en.trim() || null,
+        meta_title: sanitizeMetaText(form.meta_title, META_TITLE_LIMIT) || null,
+        meta_description: sanitizeMetaText(form.meta_description, META_DESCRIPTION_LIMIT) || null,
         is_active: form.is_active,
       })
       .eq("id", brand.id);
@@ -424,6 +433,35 @@ function EditBrandDialog({ brand, onSaved }: { brand: Brand; onSaved: () => void
             />
           </div>
         </div>
+        <Card className="space-y-4 p-4">
+          <div>
+            <div className="flex items-center justify-between gap-3">
+              <Label>{isAr ? "عنوان محركات البحث" : "Meta Title"}</Label>
+              <span className="text-xs text-muted-foreground">{form.meta_title.length}/{META_TITLE_LIMIT}</span>
+            </div>
+            <Input
+              value={form.meta_title}
+              maxLength={META_TITLE_LIMIT}
+              onChange={(event) => setForm({ ...form, meta_title: event.target.value })}
+              placeholder={isAr ? "عنوان المتجر في نتائج البحث" : "Store title shown in search results"}
+              dir={isAr ? "rtl" : "ltr"}
+            />
+          </div>
+          <div>
+            <div className="flex items-center justify-between gap-3">
+              <Label>{isAr ? "وصف محركات البحث" : "Meta Description"}</Label>
+              <span className="text-xs text-muted-foreground">{form.meta_description.length}/{META_DESCRIPTION_LIMIT}</span>
+            </div>
+            <Textarea
+              rows={3}
+              value={form.meta_description}
+              maxLength={META_DESCRIPTION_LIMIT}
+              onChange={(event) => setForm({ ...form, meta_description: event.target.value })}
+              placeholder={isAr ? "وصف مختصر وجذاب للمتجر" : "A concise description of this storefront"}
+              dir={isAr ? "rtl" : "ltr"}
+            />
+          </div>
+        </Card>
         <div className="flex items-center justify-between border border-border rounded-md p-3">
           <div>
             <p className="text-sm font-medium">{isAr ? "نشط" : "Active"}</p>

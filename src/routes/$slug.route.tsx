@@ -29,7 +29,7 @@ export const Route = createFileRoute("/$slug")({
   loader: async ({ params }) => {
     const { data: brand, error: brandErr } = await supabase
       .from("brands")
-      .select("id, slug, name_en, name_ar, logo_url, is_active, hero_media, primary_color, about_ar, about_en")
+      .select("id, slug, name_en, name_ar, logo_url, is_active, hero_media, primary_color, about_ar, about_en, meta_title, meta_description")
       .eq("slug", params.slug)
       .eq("is_active", true)
       .maybeSingle();
@@ -42,7 +42,8 @@ export const Route = createFileRoute("/$slug")({
 
     const s = settings as any;
     const rawPages = Array.isArray(s?.pages) ? s.pages : [];
-    const normalizedPages = rawPages.map((p: any) => ({
+    const normalizedPages = rawPages.map((p: any, index: number) => ({
+      slug: p?.slug ?? `page-${index + 1}`,
       title_ar: p?.title_ar ?? null,
       title_en: p?.title_en ?? null,
       content_ar: p?.content_ar ?? null,
@@ -50,6 +51,8 @@ export const Route = createFileRoute("/$slug")({
       image_url: p?.image_url ?? null,
       // Preserve the legacy layout (image above content) until an admin explicitly changes it.
       image_position: p?.image_position === "bottom" ? "bottom" : "top",
+      meta_title: p?.meta_title ?? null,
+      meta_description: p?.meta_description ?? null,
     }));
     const rawSocials = Array.isArray(s?.socials) ? s.socials : [];
     const normalizedSocials = rawSocials
@@ -149,8 +152,8 @@ export const Route = createFileRoute("/$slug")({
   head: ({ loaderData }) => {
     const b = loaderData?.brand;
     if (!b) return { meta: [{ title: "Storefront" }] };
-    const title = `${b.name_en} — Storefront`;
-    const desc = `Shop ${b.name_en}${b.name_ar ? " / " + b.name_ar : ""} online.`;
+    const title = b.meta_title || `${b.name_en} — Online Store`;
+    const desc = b.meta_description || `Shop ${b.name_en}${b.name_ar ? " / " + b.name_ar : ""} online.`;
     const img = b.logo_url ?? undefined;
     const favicon = resolveBrandFavicon(loaderData?.settings?.favicon_url, loaderData?.settings?.logo_url ?? b.logo_url);
     return {
@@ -162,6 +165,9 @@ export const Route = createFileRoute("/$slug")({
         { property: "og:type", content: "website" },
         ...(img ? [{ property: "og:image", content: img }] : []),
         { name: "twitter:card", content: img ? "summary_large_image" : "summary" },
+        { name: "twitter:title", content: title },
+        { name: "twitter:description", content: desc },
+        ...(img ? [{ name: "twitter:image", content: img }] : []),
       ],
       links: [{ rel: "icon", href: favicon, ...(faviconType(favicon) ? { type: faviconType(favicon) } : {}) }],
     };
@@ -438,6 +444,7 @@ export function StorefrontMenu({ navigation = false }: { navigation?: boolean } 
   const pageLinks = settings.pages
     .map((page, index) => ({
       index: index + 1,
+      slug: page.slug,
       title: lang === "ar" ? (page.title_ar || page.title_en) : (page.title_en || page.title_ar),
     }))
     .filter((page) => settings.menu_show_pages && Boolean(page.title));
@@ -471,7 +478,7 @@ export function StorefrontMenu({ navigation = false }: { navigation?: boolean } 
             {settings.menu_show_orders && <Link to="/$slug/account" params={{ slug: brand.slug }} onClick={close} className="flex min-h-12 items-center gap-3 rounded-xl px-4 py-3 text-start transition-colors hover:bg-black/5"><PackageSearch className="h-5 w-5 shrink-0" /><span className="min-w-0 truncate">{t("طلباتي", "My orders")}</span></Link>}
           </> : settings.menu_show_account && <Link to="/$slug/auth" params={{ slug: brand.slug }} onClick={close} className="flex min-h-12 items-center gap-3 rounded-xl px-4 py-3 text-start transition-colors hover:bg-black/5"><LogIn className="h-5 w-5 shrink-0" /><span className="min-w-0 truncate">{t("تسجيل الدخول", "Sign in")}</span></Link>}
           {pageLinks.length > 0 && <div className="my-3 border-t" style={{ borderColor: "rgba(127,127,127,.18)" }} />}
-          {pageLinks.map((page) => <Link key={page.index} to="/$slug/page/$idx" params={{ slug: brand.slug, idx: String(page.index) }} onClick={close} className="flex min-h-12 items-center gap-3 rounded-xl px-4 py-3 text-start transition-colors hover:bg-black/5"><FileText className="h-5 w-5 shrink-0" /><span className="min-w-0 truncate">{page.title}</span></Link>)}
+          {pageLinks.map((page) => <Link key={page.index} to="/$slug/$category" params={{ slug: brand.slug, category: page.slug }} onClick={close} className="flex min-h-12 items-center gap-3 rounded-xl px-4 py-3 text-start transition-colors hover:bg-black/5"><FileText className="h-5 w-5 shrink-0" /><span className="min-w-0 truncate">{page.title}</span></Link>)}
         </nav>
         <div className="m-4 mt-2 shrink-0 rounded-2xl border p-5 text-start text-sm" style={{ backgroundColor: menuBg, borderColor: `${settings.primary_color}55` }}>
           <p className="font-medium" style={{ color: menuFg }}>{t("تسوق بكل سهولة", "Shopping made simple")}</p>
@@ -750,6 +757,7 @@ function StoreFooter() {
   const pageLinks = settings.pages
     .map((p, i) => ({
       idx: i + 1,
+      slug: p.slug,
       title: lang === "ar" ? (p.title_ar || p.title_en) : (p.title_en || p.title_ar),
       hasContent: Boolean(p.title_ar || p.title_en),
     }))
@@ -789,8 +797,8 @@ function StoreFooter() {
             {pageLinks.map((p) => (
               <Link
                 key={p.idx}
-                to="/$slug/page/$idx"
-                params={{ slug: brand.slug, idx: String(p.idx) }}
+                to="/$slug/$category"
+                params={{ slug: brand.slug, category: p.slug }}
                 className="hover:underline underline-offset-4"
                 style={{ color: "var(--sf-footer-fg)" }}
               >
