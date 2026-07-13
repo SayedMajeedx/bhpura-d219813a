@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -9,7 +9,7 @@ import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Pencil, Trash2, Users, Star, Check } from "lucide-react";
+import { ChevronLeft, ChevronRight, Pencil, Plus, Search, Trash2, Users, Star, Check } from "lucide-react";
 import { toast } from "sonner";
 import { useT, useI18n } from "@/lib/i18n";
 import { BAHRAIN_REGIONS, regionLabel, formatAddressLine, type StructuredAddress } from "@/lib/bahrain-regions";
@@ -73,8 +73,13 @@ function CustomersPage() {
   const qc = useQueryClient();
   const brand = useBrand();
   const brandId = brand.id;
+  const { slug } = Route.useParams();
+  const navigate = useNavigate();
   const [open, setOpen] = useState(false);
-  const [editing, setEditing] = useState<Customer | null>(null);
+  const [search, setSearch] = useState("");
+  const [regionFilter, setRegionFilter] = useState("all");
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [page, setPage] = useState(1);
 
   useRealtimeInvalidate(
     [
@@ -106,6 +111,20 @@ function CustomersPage() {
     if (a.is_default) defaultByCustomer.set(a.customer_id, a);
   });
 
+  const normalizedSearch = search.trim().toLowerCase();
+  const filteredCustomers = (data ?? []).filter((customer) => {
+    const defaultAddress = defaultByCustomer.get(customer.id);
+    const customerRegion = defaultAddress?.region || customer.region || customer.city || "";
+    const matchesSearch = !normalizedSearch || [customer.name, customer.phone, customer.email]
+      .some((value) => String(value ?? "").toLowerCase().includes(normalizedSearch));
+    return matchesSearch && (regionFilter === "all" || customerRegion === regionFilter);
+  });
+  const pageCount = Math.max(1, Math.ceil(filteredCustomers.length / rowsPerPage));
+  const safePage = Math.min(page, pageCount);
+  const visibleCustomers = filteredCustomers.slice((safePage - 1) * rowsPerPage, safePage * rowsPerPage);
+
+  useEffect(() => setPage(1), [search, regionFilter, rowsPerPage]);
+
   const del = async (id: string) => {
     const { error } = await supabase.from("customers").delete().eq("id", id);
     if (error) toast.error(error.message);
@@ -119,30 +138,58 @@ function CustomersPage() {
           <h1 className="text-4xl font-display">{t("customers.title")}</h1>
           <p className="text-muted-foreground mt-1">{t("customers.subtitle")}</p>
         </div>
-        <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) setEditing(null); }}>
+        <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
-            <Button onClick={() => setEditing(null)}><Plus className="h-4 w-4 mr-2" /> {t("customers.new")}</Button>
+            <Button><Plus className="h-4 w-4 mr-2" /> {t("customers.new")}</Button>
           </DialogTrigger>
           <CustomerDialog
-            customer={editing}
-            onSaved={() => { setOpen(false); setEditing(null); qc.invalidateQueries({ queryKey: ["customers"] }); }}
+            customer={null}
+            onSaved={() => { setOpen(false); qc.invalidateQueries({ queryKey: ["customers"] }); }}
           />
         </Dialog>
       </div>
+
+      <Card className="sticky top-0 z-20 mb-5 border bg-background/95 p-3 shadow-sm backdrop-blur supports-[backdrop-filter]:bg-background/85 sm:p-4">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-[minmax(260px,1fr)_220px]">
+          <div className="relative">
+            <Search className="absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              className="ps-9"
+              placeholder={lang === "ar" ? "ابحث بالاسم أو الهاتف أو البريد الإلكتروني" : "Search by name, phone, or email"}
+            />
+          </div>
+          <Select value={regionFilter} onValueChange={setRegionFilter}>
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">{lang === "ar" ? "كل المناطق" : "All regions"}</SelectItem>
+              {BAHRAIN_REGIONS.map((region) => <SelectItem key={region.value} value={region.value}>{lang === "ar" ? region.ar : region.en}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </div>
+        <p className="mt-2 text-xs text-muted-foreground">{filteredCustomers.length} {lang === "ar" ? "عميل" : filteredCustomers.length === 1 ? "customer" : "customers"}</p>
+      </Card>
 
       {(data ?? []).length === 0 ? (
         <Card className="p-12 text-center">
           <Users className="h-10 w-10 mx-auto text-muted-foreground mb-3" />
           <p className="text-muted-foreground">{t("customers.none")}</p>
         </Card>
+      ) : filteredCustomers.length === 0 ? (
+        <Card className="p-10 text-center">
+          <Search className="mx-auto mb-3 h-8 w-8 text-muted-foreground" />
+          <p className="font-medium">{lang === "ar" ? "لا يوجد عملاء مطابقون" : "No matching customers"}</p>
+          <Button variant="ghost" className="mt-2" onClick={() => { setSearch(""); setRegionFilter("all"); }}>{lang === "ar" ? "مسح البحث والتصفية" : "Clear search and filters"}</Button>
+        </Card>
       ) : (
         <>
           <div className="space-y-3 sm:hidden">
-            {data!.map((c) => {
+            {visibleCustomers.map((c) => {
               const def = defaultByCustomer.get(c.id);
               const address = def ? (formatAddressLine(def, lang) || regionLabel(def.region, lang)) : (regionLabel(c.region, lang) || c.city);
               return (
-                <Card key={c.id} className="p-4">
+                <Card key={c.id} className="cursor-pointer p-4 transition-colors hover:bg-muted/30" onClick={() => navigate({ to: "/admin/b/$slug/customers/$customerId", params: { slug, customerId: c.id } })}>
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0 flex-1">
                       <div className="font-semibold">{c.name}</div>
@@ -151,8 +198,7 @@ function CustomersPage() {
                       {address && <div className="mt-2 text-xs text-muted-foreground">{address}</div>}
                       {c.notes && <div className="mt-2 text-xs text-muted-foreground">{c.notes}</div>}
                     </div>
-                    <div className="flex shrink-0 flex-col gap-1">
-                      <Button className="h-11 w-11 touch-manipulation" variant="ghost" size="icon" onClick={() => { setEditing(c); setOpen(true); }}><Pencil className="h-5 w-5" /></Button>
+                    <div className="flex shrink-0 flex-col gap-1" onClick={(event) => event.stopPropagation()}>
                       <DeleteAction message={t("customers.deleteConfirm")} onConfirm={() => del(c.id)} mobile />
                     </div>
                   </div>
@@ -178,8 +224,8 @@ function CustomersPage() {
               </tr>
             </thead>
             <tbody>
-              {data!.map((c) => (
-                <tr key={c.id} className="border-t border-border">
+              {visibleCustomers.map((c) => (
+                <tr key={c.id} tabIndex={0} className="cursor-pointer border-t border-border transition-colors hover:bg-muted/40 focus-visible:bg-muted/40 focus-visible:outline-none" onClick={() => navigate({ to: "/admin/b/$slug/customers/$customerId", params: { slug, customerId: c.id } })} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") navigate({ to: "/admin/b/$slug/customers/$customerId", params: { slug, customerId: c.id } }); }}>
                   <td className="p-4 text-start"><p className="font-medium">{c.name}</p>{c.notes && <p className="text-xs text-muted-foreground mt-1">{c.notes}</p>}</td>
                   <td className="p-4 text-start text-muted-foreground">
                     {c.phone && <div className="text-start" dir="ltr">{c.phone}</div>}
@@ -192,8 +238,7 @@ function CustomersPage() {
                       return regionLabel(c.region, lang) || c.city || "—";
                     })()}
                   </td>
-                  <td className="p-4 text-end whitespace-nowrap">
-                    <Button variant="ghost" size="icon" onClick={() => { setEditing(c); setOpen(true); }}><Pencil className="h-4 w-4" /></Button>
+                  <td className="p-4 text-end whitespace-nowrap" onClick={(event) => event.stopPropagation()}>
                     <DeleteAction message={t("customers.deleteConfirm")} onConfirm={() => del(c.id)} />
                   </td>
                 </tr>
@@ -202,6 +247,20 @@ function CustomersPage() {
           </table>
           </div>
           </Card>
+          <div className="mt-4 flex flex-col items-center justify-between gap-3 rounded-xl border bg-card px-4 py-3 sm:flex-row">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <span>{lang === "ar" ? "صفوف في الصفحة" : "Rows per page"}</span>
+              <Select value={String(rowsPerPage)} onValueChange={(value) => setRowsPerPage(Number(value))}>
+                <SelectTrigger className="h-8 w-20"><SelectValue /></SelectTrigger>
+                <SelectContent>{[10, 25, 50].map((count) => <SelectItem key={count} value={String(count)}>{count}</SelectItem>)}</SelectContent>
+              </Select>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-muted-foreground">{lang === "ar" ? `الصفحة ${safePage} من ${pageCount}` : `Page ${safePage} of ${pageCount}`}</span>
+              <Button variant="outline" size="sm" disabled={safePage <= 1} onClick={() => setPage((current) => Math.max(1, current - 1))}><ChevronLeft className="h-4 w-4" />{lang === "ar" ? "السابق" : "Previous"}</Button>
+              <Button variant="outline" size="sm" disabled={safePage >= pageCount} onClick={() => setPage((current) => Math.min(pageCount, current + 1))}>{lang === "ar" ? "التالي" : "Next"}<ChevronRight className="h-4 w-4" /></Button>
+            </div>
+          </div>
         </>
       )}
     </div>
@@ -212,6 +271,7 @@ function CustomerDialog({ customer, onSaved }: { customer: Customer | null; onSa
   const t = useT();
   const { lang } = useI18n();
   const qc = useQueryClient();
+  const brand = useBrand();
   const [f, setF] = useState({
     name: customer?.name ?? "",
     phone: customer?.phone ?? "",
@@ -247,6 +307,14 @@ function CustomerDialog({ customer, onSaved }: { customer: Customer | null; onSa
     if (!f.name.trim()) return toast.error(t("customers.name"));
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
+
+    const normalizedPhone = f.phone.replace(/\D/g, "");
+    if (normalizedPhone) {
+      const { data: phoneRows, error: phoneError } = await supabase.from("customers").select("id, phone").eq("brand_id", brand.id);
+      if (phoneError) return toast.error(phoneError.message);
+      const duplicate = (phoneRows ?? []).some((row) => row.id !== customer?.id && String(row.phone ?? "").replace(/\D/g, "") === normalizedPhone);
+      if (duplicate) return toast.error(lang === "ar" ? "يوجد عميل مسجل بهذا الرقم بالفعل. افتح ملف العميل الحالي بدلاً من إنشاء ملف مكرر." : "A customer with this phone number already exists. Open the existing profile instead of creating a duplicate.");
+    }
 
     if (!customer) {
       if (!initialAddr.region.trim() || !initialAddr.block.trim() || !initialAddr.road.trim() || !initialAddr.house.trim()) {
