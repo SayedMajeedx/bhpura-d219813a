@@ -73,7 +73,15 @@ export function sanitizeRichTextHtml(value: string | null | undefined) {
 export function renderRichTextContent(value: string | null | undefined) {
   if (!value) return "";
 
-  const html = marked.parse(value, {
+  // The WYSIWYG editor stores each entered line in a <p>. Markdown inside a
+  // raw HTML block is intentionally ignored by parsers, so unwrap only those
+  // paragraph containers first. Other rich HTML (notably tables) is retained.
+  const markdownSource = value
+    .replace(/<p(?:\s[^>]*)?>/gi, "")
+    .replace(/<\/p\s*>/gi, "\n\n")
+    .replace(/<br\s*\/?>/gi, "\n");
+
+  const html = marked.parse(markdownSource, {
     async: false,
     gfm: true,
     breaks: true,
