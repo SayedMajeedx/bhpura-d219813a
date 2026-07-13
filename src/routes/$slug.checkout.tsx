@@ -96,6 +96,9 @@ function Checkout() {
   const [branchId, setBranchId] = useState<string>("");
   const [digitalChannel, setDigitalChannel] = useState<"email" | "whatsapp">("email");
   const [digitalContact, setDigitalContact] = useState("");
+  const [promoInput, setPromoInput] = useState("");
+  const [appliedPromo, setAppliedPromo] = useState<{ code: string; amount: number } | null>(null);
+  const [checkingPromo, setCheckingPromo] = useState(false);
   useEffect(() => {
     if (!settings.pickup_enabled) return;
     (async () => {
@@ -111,7 +114,29 @@ function Checkout() {
   const branchLoc = (b: typeof branches[number]) => (lang === "ar" ? (b.location_ar || b.location_en || "") : (b.location_en || b.location_ar || ""));
 
   const shipping = fulfillment === "delivery" ? Number(settings.delivery_fee || 0) : 0;
-  const grandTotal = cartTotal + shipping;
+  const promoDiscount = Math.min(appliedPromo?.amount ?? 0, cartTotal);
+  const grandTotal = Math.max(0, cartTotal - promoDiscount) + shipping;
+
+  useEffect(() => { setAppliedPromo(null); }, [cartTotal, brand.id]);
+
+  const applyPromo = async () => {
+    const code = promoInput.trim().toUpperCase();
+    if (!code) return toast.error(t("أدخل رمز الخصم", "Enter a promo code"));
+    setCheckingPromo(true);
+    const { data, error } = await supabase.rpc("validate_promo_code" as any, { p_brand_slug: brand.slug, p_code: code, p_subtotal: cartTotal });
+    setCheckingPromo(false);
+    if (error) return toast.error(t("تعذر التحقق من الرمز", "Could not validate this code"));
+    const result = data as any;
+    if (!result?.valid) {
+      setAppliedPromo(null);
+      if (result?.reason === "MINIMUM_NOT_MET") return toast.error(t(`الحد الأدنى للطلب ${formatPrice(Number(result.minimum_order_amount), currency, lang)}`, `Minimum order is ${formatPrice(Number(result.minimum_order_amount), currency, lang)}`));
+      if (result?.reason === "CODE_INACTIVE") return toast.error(t("رمز الخصم غير نشط", "This promo code is inactive"));
+      return toast.error(t("رمز الخصم غير صحيح", "Invalid promo code"));
+    }
+    setAppliedPromo({ code: result.code, amount: Number(result.discount_amount) });
+    setPromoInput(result.code);
+    toast.success(t("تم تطبيق الخصم", "Promo code applied"));
+  };
 
   if (cart.length === 0) {
     return (
@@ -190,6 +215,7 @@ function Checkout() {
         p_branch_id: fulfillment === "pickup" ? (branchId || null) : null,
         p_digital_channel: fulfillment === "digital" ? digitalChannel : null,
         p_digital_contact: fulfillment === "digital" ? digitalContact.trim() : null,
+        p_promo_code: appliedPromo?.code ?? null,
       } as any);
       if (error) throw error;
       const orderId = (data as any)?.order_id;
@@ -220,6 +246,9 @@ function Checkout() {
         toast.error(t("طريقة التسليم غير متاحة", "Fulfillment method unavailable"));
       } else if (msg.includes("DIGITAL_CONTACT") || msg.includes("DIGITAL_EMAIL") || msg.includes("DIGITAL_CHANNEL")) {
         toast.error(t("تحقق من بيانات التسليم الرقمي", "Check the digital delivery details"));
+      } else if (msg.includes("PROMO_")) {
+        setAppliedPromo(null);
+        toast.error(t("رمز الخصم لم يعد صالحاً لهذا الطلب", "The promo code is no longer valid for this order"));
       } else {
         toast.error(msg);
       }
@@ -495,6 +524,17 @@ function Checkout() {
             <div className="flex justify-between">
               <span className="text-muted-foreground">{t("رسوم التوصيل", "Delivery fee")}</span>
               <span>{shipping > 0 ? formatPrice(shipping, currency, lang) : t("مجانًا", "Free")}</span>
+            </div>
+            {promoDiscount > 0 && <div className="flex justify-between font-medium text-emerald-700">
+              <span>{t("الخصم", "Discount")} ({appliedPromo?.code})</span>
+              <span>− {formatPrice(promoDiscount, currency, lang)}</span>
+            </div>}
+          </div>
+          <div className="space-y-2 rounded-lg border bg-muted/20 p-3">
+            <Label htmlFor="promo-code">{t("هل لديك رمز خصم؟", "Have a promo code?")}</Label>
+            <div className="flex gap-2">
+              <Input id="promo-code" value={promoInput} onChange={(e) => { const value = e.target.value.toUpperCase(); setPromoInput(value); if (appliedPromo && value !== appliedPromo.code) setAppliedPromo(null); }} onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); applyPromo(); } }} placeholder="EID20" className="uppercase" />
+              <Button type="button" variant="outline" onClick={applyPromo} disabled={checkingPromo}>{checkingPromo && <Loader2 className="me-2 h-4 w-4 animate-spin" />}{t("تطبيق", "Apply")}</Button>
             </div>
           </div>
           <div className="border-t pt-3 flex justify-between font-semibold text-lg">

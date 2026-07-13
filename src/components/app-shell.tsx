@@ -1,5 +1,5 @@
 import { Link, useRouterState, useNavigate, useParams } from "@tanstack/react-router";
-import { LayoutDashboard, Package, Users, ReceiptText, Settings, LogOut, Languages, Menu, Wallet, Megaphone, Shield, Store, Crown, Plug, Tags, FileText } from "lucide-react";
+import { LayoutDashboard, Package, Users, ReceiptText, Settings, LogOut, Languages, Menu, Wallet, Megaphone, Shield, Store, Crown, Plug, Tags, FileText, BadgePercent } from "lucide-react";
 import { useState, useEffect, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -60,6 +60,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         { to: "/admin/b/$slug/orders", params: { slug: activeSlug }, label: t("nav.orders"), icon: ReceiptText, section: lang === "ar" ? "المبيعات" : "Sales" },
         { to: "/admin/b/$slug/customers", params: { slug: activeSlug }, label: t("nav.customers"), icon: Users, section: lang === "ar" ? "المبيعات" : "Sales" },
         { to: "/admin/b/$slug/campaigns", params: { slug: activeSlug }, label: lang === "ar" ? "حملات الواتساب" : "WhatsApp Campaigns", icon: Megaphone, section: lang === "ar" ? "المبيعات" : "Sales" },
+        { to: "/admin/b/$slug/discounts", params: { slug: activeSlug }, label: lang === "ar" ? "رموز الخصم" : "Discount Codes", icon: BadgePercent, adminOnly: true, section: lang === "ar" ? "التسويق" : "Marketing" },
         { to: "/admin/b/$slug/inventory", params: { slug: activeSlug }, label: t("nav.inventory"), icon: Package, section: lang === "ar" ? "الكتالوج" : "Catalog" },
         { to: "/admin/b/$slug/categories", params: { slug: activeSlug }, label: lang === "ar" ? "الأقسام" : "Categories", icon: Tags, section: lang === "ar" ? "الكتالوج" : "Catalog" },
         { to: "/admin/b/$slug/expenses", params: { slug: activeSlug }, label: t("nav.expenses"), icon: Wallet, adminOnly: true, section: lang === "ar" ? "المالية" : "Finance" },

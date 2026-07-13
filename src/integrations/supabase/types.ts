@@ -959,6 +959,8 @@ export type Database = {
           order_date: string
           payment_method: string | null
           payment_status: string
+          promo_code: string | null
+          promo_code_id: string | null
           shipping: number
           shipping_address_id: string | null
           status: string
@@ -992,6 +994,8 @@ export type Database = {
           order_date?: string
           payment_method?: string | null
           payment_status?: string
+          promo_code?: string | null
+          promo_code_id?: string | null
           shipping?: number
           shipping_address_id?: string | null
           status?: string
@@ -1025,6 +1029,8 @@ export type Database = {
           order_date?: string
           payment_method?: string | null
           payment_status?: string
+          promo_code?: string | null
+          promo_code_id?: string | null
           shipping?: number
           shipping_address_id?: string | null
           status?: string
@@ -1204,6 +1210,50 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "products_brand_id_fkey"
+            columns: ["brand_id"]
+            isOneToOne: false
+            referencedRelation: "brands"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      promo_codes: {
+        Row: {
+          brand_id: string
+          code: string
+          created_at: string
+          discount_type: string
+          discount_value: number
+          id: string
+          is_active: boolean
+          minimum_order_amount: number | null
+          updated_at: string
+        }
+        Insert: {
+          brand_id: string
+          code: string
+          created_at?: string
+          discount_type: string
+          discount_value: number
+          id?: string
+          is_active?: boolean
+          minimum_order_amount?: number | null
+          updated_at?: string
+        }
+        Update: {
+          brand_id?: string
+          code?: string
+          created_at?: string
+          discount_type?: string
+          discount_value?: number
+          id?: string
+          is_active?: boolean
+          minimum_order_amount?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "promo_codes_brand_id_fkey"
             columns: ["brand_id"]
             isOneToOne: false
             referencedRelation: "brands"
