@@ -10,7 +10,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Loader2, CreditCard, Banknote, QrCode, Truck, Store, User, Download, Mail, MessageCircle } from "lucide-react";
+import { Loader2, CreditCard, Banknote, QrCode, Truck, Store, User, Download, Mail, MessageCircle, Copy, UploadCloud, CheckCircle2, X } from "lucide-react";
+import { uploadBenefitReceipt } from "@/lib/benefit-receipt";
 
 export const Route = createFileRoute("/$slug/checkout")({
   component: Checkout,
@@ -99,6 +100,7 @@ function Checkout() {
   const [promoInput, setPromoInput] = useState("");
   const [appliedPromo, setAppliedPromo] = useState<{ code: string; amount: number } | null>(null);
   const [checkingPromo, setCheckingPromo] = useState(false);
+  const [benefitReceipt, setBenefitReceipt] = useState<File | null>(null);
   useEffect(() => {
     if (!settings.pickup_enabled) return;
     (async () => {
@@ -177,6 +179,10 @@ function Checkout() {
       toast.error(t("اختر طريقة دفع", "Choose a payment method"));
       return;
     }
+    if (method === "benefit" && !benefitReceipt) {
+      toast.error(t("يرجى إرفاق صورة إيصال التحويل لتأكيد الطلب", "Please attach the transfer receipt to confirm your order"));
+      return;
+    }
     if (fulfillment === "pickup" && branches.length > 0 && !branchId) {
       toast.error(t("اختر الفرع", "Select a branch"));
       return;
@@ -194,6 +200,7 @@ function Checkout() {
     }
     setSubmitting(true);
     try {
+      const benefitReceiptId = method === "benefit" && benefitReceipt ? await uploadBenefitReceipt(brand.id, benefitReceipt) : null;
       const { data, error } = await supabase.rpc("place_storefront_order", {
         p_brand_slug: brand.slug,
         p_customer: {
@@ -227,6 +234,7 @@ function Checkout() {
         p_digital_channel: fulfillment === "digital" ? digitalChannel : null,
         p_digital_contact: fulfillment === "digital" ? digitalContact.trim() : null,
         p_promo_code: appliedPromo?.code ?? null,
+        p_benefit_receipt_id: benefitReceiptId,
       } as any);
       if (error) throw error;
       const orderId = (data as any)?.order_id;
@@ -269,6 +277,8 @@ function Checkout() {
       } else if (msg.includes("PROMO_AUTH_REQUIRED")) {
         setAppliedPromo(null);
         toast.error(t("سجّل الدخول لاستخدام هذا الرمز.", "Sign in to use this promo code."));
+      } else if (msg.includes("BENEFIT_RECEIPT")) {
+        toast.error(t("تعذر التحقق من إيصال التحويل. أعد رفع الصورة وحاول مرة أخرى.", "The transfer receipt could not be verified. Upload it again and retry."));
       } else if (msg.includes("PROMO_")) {
         setAppliedPromo(null);
         toast.error(t("رمز الخصم لم يعد صالحاً لهذا الطلب", "The promo code is no longer valid for this order"));
@@ -491,16 +501,29 @@ function Checkout() {
                 )}
               </p>
               {settings.benefit_qr_url ? (
-                <img
-                  src={settings.benefit_qr_url}
-                  alt="Benefit QR"
-                  className="mx-auto max-w-[240px] rounded-lg border bg-white p-2"
-                />
+                <div className="space-y-3">
+                  <img src={settings.benefit_qr_url} alt="Benefit QR" className="mx-auto max-w-[240px] rounded-lg border bg-white p-2" />
+                  <Button type="button" variant="outline" className="w-full sm:w-auto" onClick={async () => {
+                    try { const response = await fetch(settings.benefit_qr_url!); const blob = await response.blob(); const href = URL.createObjectURL(blob); const a = document.createElement("a"); a.href = href; a.download = `${brand.slug}-benefit-qr.png`; a.click(); URL.revokeObjectURL(href); }
+                    catch { window.open(settings.benefit_qr_url!, "_blank", "noopener,noreferrer"); }
+                  }}><Download className="me-2 h-4 w-4" />{t("اضغط هنا لحفظ الباركود في الاستوديو", "Save QR Code to Gallery")}</Button>
+                </div>
               ) : (
                 <p className="text-sm text-muted-foreground">
                   {t("لم يقم المتجر برفع رمز البنفت بعد.", "Store hasn't uploaded a Benefit QR yet.")}
                 </p>
               )}
+              {settings.benefit_account_number && <div className="mt-4 rounded-lg border bg-background p-3">
+                <p className="mb-2 break-all font-semibold" dir="ltr">{settings.benefit_account_number}</p>
+                <Button type="button" size="sm" variant="secondary" onClick={async () => { await navigator.clipboard.writeText(settings.benefit_account_number!); toast.success(t("تم نسخ رقم الحساب", "Account number copied")); }}><Copy className="me-2 h-4 w-4" />{t("نسخ رقم الحساب", "Copy Account Number")}</Button>
+              </div>}
+              <div className="mt-4 text-start">
+                <Label className="mb-2 block font-semibold">{t("يرجى إرفاق صورة إيصال التحويل لتأكيد الطلب", "Please attach a screenshot of the payment receipt")}</Label>
+                <label className="flex min-h-32 cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed bg-background p-4 text-center hover:bg-muted/40" onDragOver={(e) => e.preventDefault()} onDrop={(e) => { e.preventDefault(); const file = e.dataTransfer.files?.[0]; if (file) setBenefitReceipt(file); }}>
+                  <input type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={(e) => setBenefitReceipt(e.target.files?.[0] ?? null)} />
+                  {benefitReceipt ? <><CheckCircle2 className="mb-2 h-7 w-7 text-emerald-600" /><span className="max-w-full truncate font-medium">{benefitReceipt.name}</span><button type="button" className="mt-2 inline-flex items-center text-xs text-destructive" onClick={(e) => { e.preventDefault(); setBenefitReceipt(null); }}><X className="me-1 h-3 w-3" />{t("إزالة", "Remove")}</button></> : <><UploadCloud className="mb-2 h-8 w-8 text-muted-foreground" /><span>{t("اسحب الصورة هنا أو اضغط للاختيار", "Drop the image here or tap to choose")}</span><span className="mt-1 text-xs text-muted-foreground">JPG, PNG, WebP · 8 MB</span></>}
+                </label>
+              </div>
             </div>
           )}
 
@@ -570,7 +593,7 @@ function Checkout() {
               backgroundColor: settings.btn_checkout_bg ?? settings.primary_color,
               color: settings.btn_checkout_fg ?? "#fff",
             }}
-            disabled={submitting || availableMethods.length === 0 || fulfillmentOptions.length === 0}
+            disabled={submitting || availableMethods.length === 0 || fulfillmentOptions.length === 0 || (method === "benefit" && !benefitReceipt)}
             onClick={submit}
           >
             {submitting && <Loader2 className="h-4 w-4 me-2 animate-spin" />}
@@ -593,7 +616,7 @@ function Checkout() {
               backgroundColor: settings.btn_checkout_bg ?? settings.primary_color,
               color: settings.btn_checkout_fg ?? "#fff",
             }}
-            disabled={submitting || availableMethods.length === 0 || fulfillmentOptions.length === 0}
+            disabled={submitting || availableMethods.length === 0 || fulfillmentOptions.length === 0 || (method === "benefit" && !benefitReceipt)}
             onClick={submit}
           >
             {submitting && <Loader2 className="h-4 w-4 me-2 animate-spin" />}

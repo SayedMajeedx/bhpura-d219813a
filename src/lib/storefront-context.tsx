@@ -31,6 +31,7 @@ export type PublicSettings = {
   card_enabled: boolean;
   benefit_enabled: boolean;
   benefit_qr_url: string | null;
+  benefit_account_number: string | null;
   footer_note: string | null;
   delivery_enabled: boolean;
   pickup_enabled: boolean;

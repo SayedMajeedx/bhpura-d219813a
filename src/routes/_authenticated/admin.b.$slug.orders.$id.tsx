@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Plus, Trash2, Printer, Save, Send, Search, Receipt, Link as LinkIcon, ScanLine, Mail, Loader2, Lock, Unlock, X, Tag } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, Printer, Save, Send, Search, Receipt, Link as LinkIcon, ScanLine, Mail, Loader2, Lock, Unlock, X, Tag, CheckCircle2, ImageIcon } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { formatDate, formatMoney } from "@/lib/format";
@@ -120,6 +120,7 @@ function OrderDetail() {
   const brand = useBrand();
   const { isAdmin } = useProfile();
   const brandId = brand.id;
+  const [approvingBenefit, setApprovingBenefit] = useState(false);
 
   const orderQ = useQuery({
     queryKey: ["order", id],
@@ -156,6 +157,16 @@ function OrderDetail() {
       return (data ?? []) as SavedAddress[];
     },
   });
+
+  const approveBenefitPayment = async () => {
+    setApprovingBenefit(true);
+    const { error } = await supabase.rpc("approve_benefit_payment" as any, { p_order_id: id });
+    setApprovingBenefit(false);
+    if (error) return toast.error(error.message);
+    toast.success(lang === "ar" ? "تم التحقق من الدفع واعتماده" : "Payment verified and approved");
+    await orderQ.refetch();
+    qc.invalidateQueries({ queryKey: ["orders"] });
+  };
   const branchesQ = useQuery({
     queryKey: ["branches", brandId],
     queryFn: async () => {
@@ -1108,6 +1119,18 @@ function OrderDetail() {
               <Textarea value={order.notes ?? ""} onChange={(e) => setOrder({ ...order, notes: e.target.value })} rows={5} />
             </div>
             <div className="space-y-3">
+              {order.payment_method === "benefit" && order.benefit_receipt_url && (
+                <div className="rounded-xl border-2 border-amber-300 bg-amber-50 p-4 text-amber-950">
+                  <div className="mb-3 flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-2"><ImageIcon className="h-5 w-5" /><span className="font-semibold">{lang === "ar" ? "إيصال تحويل بنفت" : "Benefit transfer receipt"}</span></div>
+                    <span className={`rounded-full px-2 py-1 text-xs font-semibold ${order.payment_status === "paid" ? "bg-emerald-100 text-emerald-800" : "bg-amber-200 text-amber-900"}`}>{order.payment_status === "paid" ? (lang === "ar" ? "تم التحقق" : "Verified") : (lang === "ar" ? "بانتظار التحقق" : "Pending verification")}</span>
+                  </div>
+                  <a href={order.benefit_receipt_url} target="_blank" rel="noreferrer" className="block overflow-hidden rounded-lg border bg-white">
+                    <img src={order.benefit_receipt_url} alt="Benefit payment receipt" className="h-52 w-full object-contain" />
+                  </a>
+                  {order.payment_status !== "paid" && <Button type="button" className="mt-3 w-full bg-emerald-700 text-white hover:bg-emerald-800" onClick={approveBenefitPayment} disabled={approvingBenefit}>{approvingBenefit ? <Loader2 className="me-2 h-4 w-4 animate-spin" /> : <CheckCircle2 className="me-2 h-4 w-4" />}{lang === "ar" ? "اعتماد الدفع" : "Approve Payment"}</Button>}
+                </div>
+              )}
               <div className="rounded-lg border bg-muted/20 p-3 space-y-2">
                 <Label>{lang === "ar" ? "تطبيق رمز خصم" : "Apply Promo Code"}</Label>
                 {appliedPromo ? (

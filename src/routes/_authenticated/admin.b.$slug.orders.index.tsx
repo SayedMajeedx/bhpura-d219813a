@@ -110,7 +110,7 @@ function OrdersList() {
       && (statusFilter === "all" || order.status === statusFilter)
       && (fulfillmentFilter === "all" || order.fulfillment_method === fulfillmentFilter);
   });
-  const pendingCount = orders.filter((order) => ["pending", "draft"].includes(order.status)).length;
+  const pendingCount = orders.filter((order) => ["pending", "pending_verification", "draft"].includes(order.status)).length;
   const unpaidCount = orders.filter((order) => resolvePaymentStatus(order.payment_status, order.status, Number(order.total), Number(order.advance_paid ?? 0)) !== "paid").length;
   const openValue = orders.filter((order) => !["cancelled", "completed"].includes(order.status)).reduce((sum, order) => sum + Number(order.total || 0), 0);
   const currency = orders[0]?.currency ?? "BHD";
@@ -146,7 +146,7 @@ function OrdersList() {
       <Card className="mb-5 p-3 sm:p-4">
         <div className="grid grid-cols-1 sm:grid-cols-[minmax(220px,1fr)_180px_190px] gap-3">
           <div className="relative"><Search className="absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" /><Input className="ps-9" value={search} onChange={(e) => setSearch(e.target.value)} placeholder={lang === "ar" ? "ابحث بالرقم أو العميل أو جهة الاتصال" : "Search invoice, customer, or contact"} /></div>
-          <Select value={statusFilter} onValueChange={setStatusFilter}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">{t("orders.status")}: {lang === "ar" ? "الكل" : "All"}</SelectItem>{["pending", "draft", "confirmed", "paid", "shipped", "completed", "cancelled"].map((status) => <SelectItem key={status} value={status}>{t(`status.${status}`)}</SelectItem>)}</SelectContent></Select>
+          <Select value={statusFilter} onValueChange={setStatusFilter}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">{t("orders.status")}: {lang === "ar" ? "الكل" : "All"}</SelectItem>{["pending", "pending_verification", "draft", "confirmed", "paid", "shipped", "completed", "cancelled"].map((status) => <SelectItem key={status} value={status}>{status === "pending_verification" ? (lang === "ar" ? "بانتظار التحقق" : "Pending verification") : t(`status.${status}`)}</SelectItem>)}</SelectContent></Select>
           <Select value={fulfillmentFilter} onValueChange={setFulfillmentFilter}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">{t("fulfillment.title")}: {lang === "ar" ? "الكل" : "All"}</SelectItem><SelectItem value="delivery">{t("fulfillment.delivery")}</SelectItem><SelectItem value="pickup">{t("fulfillment.pickup")}</SelectItem><SelectItem value="digital">{lang === "ar" ? "تسليم رقمي" : "Digital delivery"}</SelectItem></SelectContent></Select>
         </div>
         <p className="mt-2 text-xs text-muted-foreground">{filteredOrders.length} / {orders.length}</p>
@@ -171,7 +171,7 @@ function OrdersList() {
                       <Link to="/admin/b/$slug/orders/$id" params={{ slug, id: o.id }} className="text-lg font-semibold text-primary">#{o.invoice_number}</Link>
                       <div className="mt-1 text-xs text-muted-foreground">{formatDate(o.created_at ?? o.order_date, locale)} · {o.customers?.name ?? t("orders.noCustomer")}</div>
                       <div className="mt-3 flex flex-wrap items-center gap-2">
-                        <span className="rounded bg-secondary px-2 py-1 text-[10px] uppercase tracking-wider">{t(`status.${o.status}`)}</span>
+                        <span className={`rounded px-2 py-1 text-[10px] uppercase tracking-wider ${o.status === "pending_verification" ? "bg-amber-100 text-amber-900 ring-1 ring-amber-300" : "bg-secondary"}`}>{o.status === "pending_verification" ? (lang === "ar" ? "بانتظار التحقق" : "Pending verification") : t(`status.${o.status}`)}</span>
                         <span className={`rounded-full border px-2 py-0.5 text-[10px] uppercase tracking-wider ${PAYMENT_BADGE_CLASSES[badge]}`}>{t(`payStatus.${badge}`)}</span>
                       </div>
                       <div className="mt-3 font-semibold">{formatMoney(Number(o.total), o.currency)}</div>
@@ -212,7 +212,7 @@ function OrdersList() {
                   </td>
                   <td className="p-4 text-muted-foreground">{formatDate(o.created_at ?? o.order_date, locale)}</td>
                   <td className="p-4">{o.customers?.name ?? <span className="text-muted-foreground italic">{t("orders.noCustomer")}</span>}</td>
-                  <td className="p-4"><span className="text-xs uppercase tracking-wider px-2 py-1 rounded bg-secondary">{t(`status.${o.status}`)}</span></td>
+                  <td className="p-4"><span className={`text-xs uppercase tracking-wider px-2 py-1 rounded ${o.status === "pending_verification" ? "bg-amber-100 text-amber-900 ring-1 ring-amber-300" : "bg-secondary"}`}>{o.status === "pending_verification" ? (lang === "ar" ? "بانتظار التحقق" : "Pending verification") : t(`status.${o.status}`)}</span></td>
                   <td className="p-4 text-end font-medium whitespace-nowrap">
                     <div className="inline-flex items-center gap-2">
                       <span>{formatMoney(Number(o.total), o.currency)}</span>

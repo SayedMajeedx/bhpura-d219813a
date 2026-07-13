@@ -423,14 +423,14 @@ function PaymentSettingsCard({ brandId }: { brandId: string }) {
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [state, setState] = useState<{
-    cod_enabled: boolean; card_enabled: boolean; benefit_enabled: boolean; benefit_qr_url: string | null;
+    cod_enabled: boolean; card_enabled: boolean; benefit_enabled: boolean; benefit_qr_url: string | null; benefit_account_number: string;
   } | null>(null);
 
   const { data } = useQuery({
     queryKey: ["business-settings-payments", brandId],
     queryFn: async () => {
-      const { data, error } = await supabase.from("business_settings")
-        .select("cod_enabled, card_enabled, benefit_enabled, benefit_qr_url")
+      const { data, error } = await (supabase.from("business_settings") as any)
+        .select("cod_enabled, card_enabled, benefit_enabled, benefit_qr_url, benefit_account_number")
         .eq("brand_id", brandId).maybeSingle();
       if (error) throw error;
       return data;
@@ -442,13 +442,14 @@ function PaymentSettingsCard({ brandId }: { brandId: string }) {
       card_enabled: data.card_enabled ?? false,
       benefit_enabled: data.benefit_enabled ?? false,
       benefit_qr_url: data.benefit_qr_url ?? null,
+      benefit_account_number: (data as any).benefit_account_number ?? "",
     });
   }, [data]);
 
   const save = async () => {
     if (!state) return;
     setSaving(true);
-    const { error } = await supabase.from("business_settings").update(state).eq("brand_id", brandId);
+    const { error } = await (supabase.from("business_settings") as any).update(state).eq("brand_id", brandId);
     setSaving(false);
     if (error) toast.error(error.message);
     else { toast.success(isAr ? "تم الحفظ" : "Saved"); qc.invalidateQueries({ queryKey: ["business-settings-payments", brandId] }); }
@@ -990,6 +991,10 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
                 </div>
               ))}
             </div>
+          </div>
+          <div className="space-y-1 pt-2">
+            <Label>{isAr ? "رقم الهاتف أو الحساب أو IBAN" : "Benefit phone, account number, or IBAN"}</Label>
+            <Input value={state.benefit_account_number} onChange={(e) => setState({ ...state, benefit_account_number: e.target.value })} placeholder={isAr ? "يظهر للعميل مع زر النسخ" : "Shown to customers with a copy button"} />
           </div>
         </div>
         <div className="pt-3"><BrandHeroCard brandId={brandId} /></div>

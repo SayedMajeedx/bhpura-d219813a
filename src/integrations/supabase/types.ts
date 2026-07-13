@@ -221,6 +221,7 @@ export type Database = {
           address: string | null
           background_color: string
           benefit_enabled: boolean
+          benefit_account_number: string | null
           benefit_qr_url: string | null
           brand_id: string
           btn_checkout_bg: string | null
@@ -303,6 +304,7 @@ export type Database = {
           address?: string | null
           background_color?: string
           benefit_enabled?: boolean
+          benefit_account_number?: string | null
           benefit_qr_url?: string | null
           brand_id: string
           btn_checkout_bg?: string | null
@@ -385,6 +387,7 @@ export type Database = {
           address?: string | null
           background_color?: string
           benefit_enabled?: boolean
+          benefit_account_number?: string | null
           benefit_qr_url?: string | null
           brand_id?: string
           btn_checkout_bg?: string | null
@@ -943,6 +946,10 @@ export type Database = {
       orders: {
         Row: {
           advance_paid: number
+          benefit_receipt_key: string | null
+          benefit_receipt_url: string | null
+          benefit_verified_at: string | null
+          benefit_verified_by: string | null
           branch_id: string | null
           brand_id: string
           channel: string
@@ -978,6 +985,10 @@ export type Database = {
         }
         Insert: {
           advance_paid?: number
+          benefit_receipt_key?: string | null
+          benefit_receipt_url?: string | null
+          benefit_verified_at?: string | null
+          benefit_verified_by?: string | null
           branch_id?: string | null
           brand_id: string
           channel?: string
@@ -1013,6 +1024,10 @@ export type Database = {
         }
         Update: {
           advance_paid?: number
+          benefit_receipt_key?: string | null
+          benefit_receipt_url?: string | null
+          benefit_verified_at?: string | null
+          benefit_verified_by?: string | null
           branch_id?: string | null
           brand_id?: string
           channel?: string

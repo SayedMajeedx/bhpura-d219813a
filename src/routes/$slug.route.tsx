@@ -35,7 +35,10 @@ export const Route = createFileRoute("/$slug")({
       .maybeSingle();
     if (brandErr || !brand) throw notFound();
 
-    const { data: settings } = await supabase.from("brand_public_settings").select("*").eq("brand_id", brand.id).maybeSingle();
+    const [{ data: settings }, { data: benefitSettings }] = await Promise.all([
+      supabase.from("brand_public_settings").select("*").eq("brand_id", brand.id).maybeSingle(),
+      supabase.rpc("get_public_benefit_settings" as any, { p_brand_id: brand.id }),
+    ]);
 
     const s = settings as any;
     const rawPages = Array.isArray(s?.pages) ? s.pages : [];
@@ -65,6 +68,7 @@ export const Route = createFileRoute("/$slug")({
       card_enabled: s?.card_enabled ?? false,
       benefit_enabled: s?.benefit_enabled ?? false,
       benefit_qr_url: s?.benefit_qr_url ?? null,
+      benefit_account_number: (benefitSettings as any[])?.[0]?.benefit_account_number ?? null,
       footer_note: s?.footer_note ?? null,
       delivery_enabled: s?.delivery_enabled ?? true,
       pickup_enabled: s?.pickup_enabled ?? true,
