@@ -862,6 +862,7 @@ export type Database = {
           id: string
           line_total: number
           location: string
+          original_price: number | null
           order_id: string
           product_id: string | null
           quantity: number
@@ -880,6 +881,7 @@ export type Database = {
           id?: string
           line_total?: number
           location?: string
+          original_price?: number | null
           order_id: string
           product_id?: string | null
           quantity?: number
@@ -898,6 +900,7 @@ export type Database = {
           id?: string
           line_total?: number
           location?: string
+          original_price?: number | null
           order_id?: string
           product_id?: string | null
           quantity?: number

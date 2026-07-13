@@ -80,7 +80,7 @@ function OrderErrorBoundary({ error }: { error?: Error }) {
 type Order = any;
 type Item = {
   id?: string; product_id?: string | null; variant_id?: string | null;
-  description: string; quantity: number; unit_price: number;
+  description: string; quantity: number; unit_price: number; original_price?: number | null;
   customizations: { name: string; price_delta: number }[];
   customization_total: number; line_total: number;
   location: "main" | "incubator";
@@ -193,6 +193,7 @@ function OrderDetail() {
       const loadedItems = (orderQ.data.order_items ?? []).map((i: any) => ({
         id: i.id, product_id: i.product_id, variant_id: i.variant_id,
         description: i.description, quantity: i.quantity, unit_price: Number(i.unit_price),
+        original_price: i.original_price == null ? null : Number(i.original_price),
         customizations: i.customizations ?? [],
         customization_total: Number(i.customization_total),
         line_total: Number(i.line_total),
@@ -333,7 +334,7 @@ function OrderDetail() {
 
   const addItem = () => {
     setItems([...items, {
-      description: "", quantity: 1, unit_price: 0, customizations: [],
+      description: "", quantity: 1, unit_price: 0, original_price: null, customizations: [],
       customization_total: 0, line_total: 0, location: "main",
     }]);
   };
@@ -381,6 +382,7 @@ function OrderDetail() {
       description: lines.filter(Boolean).join("\n"),
       quantity: 1,
       unit_price: Number(v.selling_price ?? 0),
+      original_price: v.original_price == null ? null : Number(v.original_price),
       customizations: [],
       customization_total: 0,
       line_total: Number(v.selling_price ?? 0),
@@ -418,7 +420,11 @@ function OrderDetail() {
     if (v.size) lines.push(`${sizeLabel}: ${v.size}`);
     if (v.color) lines.push(`${colorLabel}: ${v.color}`);
     if (v.fabric) lines.push(`${fabricLabel}: ${v.fabric}`);
-    updateItem(idx, { product_id: p.id, variant_id: v.id, description: lines.join("\n"), unit_price: Number(v.selling_price) });
+    updateItem(idx, {
+      product_id: p.id, variant_id: v.id, description: lines.join("\n"),
+      unit_price: Number(v.selling_price),
+      original_price: v.original_price == null ? null : Number(v.original_price),
+    });
   };
 
   const toggleCustom = (idx: number, c: { name: string; price_delta: number }) => {
@@ -525,6 +531,7 @@ function OrderDetail() {
           user_id: user.id, order_id: order.id,
           product_id: i.product_id ?? null, variant_id: i.variant_id ?? null,
           description: i.description, quantity: i.quantity, unit_price: i.unit_price,
+          original_price: i.original_price ?? null,
           customizations: i.customizations, customization_total: i.customization_total, line_total: i.line_total,
           location: i.location ?? "main",
         })),
@@ -998,7 +1005,15 @@ function OrderDetail() {
                   <div className="sm:col-span-2"><Label>{t("orderDetail.qty")}</Label>
                     <Input type="number" min={1} className="min-w-[70px] text-center" value={it.quantity} onChange={(e) => updateItem(idx, { quantity: Number(e.target.value) })} /></div>
                   <div className="sm:col-span-3"><Label>{t("orderDetail.unitPrice")}</Label>
-                    <Input type="number" step="0.01" value={it.unit_price} onChange={(e) => updateItem(idx, { unit_price: Number(e.target.value) })} /></div>
+                    <Input type="number" step="0.001" value={it.unit_price} onChange={(e) => updateItem(idx, { unit_price: Number(e.target.value) })} />
+                    {Number(it.original_price ?? (variant as any)?.original_price ?? 0) > Number(it.unit_price) && (
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        {isAr ? "السعر الأصلي" : "Original"}: <span className="line-through">{formatMoney(Number(it.original_price ?? (variant as any)?.original_price), currency)}</span>
+                        <span className="mx-1">·</span>
+                        {isAr ? "سعر التخفيض" : "Sale"}: <span className="font-medium text-foreground">{formatMoney(it.unit_price, currency)}</span>
+                      </p>
+                    )}
+                  </div>
                 </div>
 
                 {it.variant_id && (
@@ -1149,7 +1164,7 @@ function OrderDetail() {
               </div>
               <div className="border-t border-border pt-3 space-y-1 text-sm">
                 <Row label={t("orderDetail.subtotal")} value={formatMoney(totals.subtotal, currency)} />
-                <Row label={t("orderDetail.discount")} value={`− ${formatMoney(totals.discount, currency)}`} />
+                <Row label={`${t("orderDetail.discount")}${order.promo_code ? ` (Promo: ${order.promo_code})` : ""}`} value={`− ${formatMoney(totals.discount, currency)}`} />
                 <Row label={`${t("orderDetail.vat")} (${order.tax_rate}%)`} value={formatMoney(totals.taxAmount, currency)} />
                 <Row label={t("orderDetail.shipping")} value={formatMoney(totals.shipping, currency)} />
                 <div className="flex justify-between items-center pt-2 border-t border-border">
@@ -1534,7 +1549,14 @@ function InvoicePreview({ order, items, settings, shippingAddress, paymentBadge 
                       )}
                     </td>
                     <td className="p-3 text-end">{num(it.quantity)}</td>
-                    <td className="p-3 text-end whitespace-nowrap">{money(it.unit_price + it.customization_total)}</td>
+                    <td className="p-3 text-end whitespace-nowrap">
+                      {Number(it.original_price ?? 0) > Number(it.unit_price) ? (
+                        <span className="inline-flex flex-col items-end leading-tight">
+                          <span className="text-xs line-through" style={{ opacity: 0.6 }}>{money(Number(it.original_price) + it.customization_total)}</span>
+                          <span>{money(it.unit_price + it.customization_total)}</span>
+                        </span>
+                      ) : money(it.unit_price + it.customization_total)}
+                    </td>
                     <td className="p-3 font-medium text-end whitespace-nowrap">{money(it.line_total)}</td>
                   </tr>
                 ))}
@@ -1546,7 +1568,7 @@ function InvoicePreview({ order, items, settings, shippingAddress, paymentBadge 
           <div className="pdf-totals-row flex" style={{ justifyContent: isRTL ? "flex-start" : "flex-end", direction: "ltr" }}>
             <div className="pdf-totals-block w-72 text-sm space-y-1" style={{ direction: isRTL ? "rtl" : "ltr" }}>
               <div className="flex justify-between"><span style={{ opacity: 0.75 }}>{L.subtotal}</span><span>{money(order.subtotal)}</span></div>
-              {Number(order.discount) > 0 && <div className="flex justify-between"><span style={{ opacity: 0.75 }}>{L.discount}</span><span>− {money(order.discount)}</span></div>}
+              {Number(order.discount) > 0 && <div className="flex justify-between gap-4"><span style={{ opacity: 0.75 }}>{L.discount}{order.promo_code ? ` (Promo: ${order.promo_code})` : ""}</span><span>− {money(order.discount)}</span></div>}
               {Number(order.tax_rate) > 0 && <div className="flex justify-between"><span style={{ opacity: 0.75 }}>{L.vat} ({num(order.tax_rate)}%)</span><span>{money(order.tax_amount)}</span></div>}
               {Number(order.shipping) > 0 && <div className="flex justify-between"><span style={{ opacity: 0.75 }}>{L.shipping}</span><span>{money(order.shipping)}</span></div>}
               <div className="flex justify-between items-center pt-2 border-t-2" style={{ borderColor: color }}>

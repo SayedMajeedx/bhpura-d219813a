@@ -266,7 +266,14 @@ function PublicInvoice() {
                         {(it.custom_field_values ?? []).length > 0 && <div className="mt-1 text-xs space-y-0.5" style={{ opacity: 0.75 }}>{it.custom_field_values.map((field: any, fi: number) => <p key={fi}>{(isRTL ? field.label_ar || field.label_en : field.label_en || field.label_ar) || field.key}: {field.value}</p>)}</div>}
                       </td>
                       <td className="p-3 text-end">{it.quantity}</td>
-                      <td className="p-3 text-end whitespace-nowrap">{money(Number(it.unit_price) + Number(it.customization_total))}</td>
+                      <td className="p-3 text-end whitespace-nowrap">
+                        {Number(it.original_price ?? 0) > Number(it.unit_price) ? (
+                          <span className="inline-flex flex-col items-end leading-tight">
+                            <span className="text-xs line-through" style={{ opacity: 0.6 }}>{money(Number(it.original_price) + Number(it.customization_total))}</span>
+                            <span>{money(Number(it.unit_price) + Number(it.customization_total))}</span>
+                          </span>
+                        ) : money(Number(it.unit_price) + Number(it.customization_total))}
+                      </td>
                       <td className="p-3 text-end whitespace-nowrap font-medium">{money(it.line_total)}</td>
                     </tr>
                   ))}
@@ -278,7 +285,7 @@ function PublicInvoice() {
             <div className="pdf-totals-row flex" style={{ justifyContent: isRTL ? "flex-start" : "flex-end", direction: "ltr" }}>
               <div className="pdf-totals-block w-full sm:w-72 text-sm space-y-1" style={{ direction: isRTL ? "rtl" : "ltr" }}>
                 <div className="flex justify-between"><span style={{ opacity: 0.75 }}>{L.subtotal}</span><span>{money(order.subtotal)}</span></div>
-                {Number(order.discount) > 0 && <div className="flex justify-between"><span style={{ opacity: 0.75 }}>{L.discount}</span><span>− {money(order.discount)}</span></div>}
+                {Number(order.discount) > 0 && <div className="flex justify-between gap-4"><span style={{ opacity: 0.75 }}>{L.discount}{order.promo_code ? ` (Promo: ${order.promo_code})` : ""}</span><span>− {money(order.discount)}</span></div>}
                 {Number(order.tax_rate) > 0 && <div className="flex justify-between"><span style={{ opacity: 0.75 }}>{L.vat} ({order.tax_rate}%)</span><span>{money(order.tax_amount)}</span></div>}
                 {Number(order.shipping) > 0 && <div className="flex justify-between"><span style={{ opacity: 0.75 }}>{L.shipping}</span><span>{money(order.shipping)}</span></div>}
                 {(() => {
