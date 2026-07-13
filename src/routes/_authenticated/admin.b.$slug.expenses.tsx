@@ -11,6 +11,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -21,11 +23,13 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Plus, Pencil, Trash2, Wallet, Sparkles, Loader2, Store as StoreIcon, Calendar, Clock, Receipt } from "lucide-react";
+import { Plus, Pencil, Trash2, Wallet, Sparkles, Loader2, Store as StoreIcon, Calendar, Clock, Receipt, Check, ChevronsUpDown, UploadCloud, FileText, X } from "lucide-react";
 import { toast } from "sonner";
 import { formatMoney } from "@/lib/format";
 import { useI18n, useT } from "@/lib/i18n";
 import { useBrand } from "@/lib/brand-context";
+import { cn } from "@/lib/utils";
+import { deletePublicMediaUrl, uploadPublicMedia } from "@/lib/r2-upload";
 
 const MAX_SCANNER_REQUEST_BYTES = 2_500_000;
 
@@ -122,7 +126,37 @@ type Expense = {
   tax_amount?: number | null;
   tax_rate?: number | null;
   line_items?: ScannedLineItem[] | null;
+  receipt_url?: string | null;
 };
+
+type DatePreset = "today" | "week" | "month" | "custom";
+
+function localDateKey(date: Date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function presetRange(preset: Exclude<DatePreset, "custom">) {
+  const now = new Date();
+  if (preset === "today") {
+    const today = localDateKey(now);
+    return { from: today, to: today };
+  }
+  if (preset === "week") {
+    const monday = new Date(now);
+    const weekday = monday.getDay() || 7;
+    monday.setDate(monday.getDate() - weekday + 1);
+    const sunday = new Date(monday);
+    sunday.setDate(monday.getDate() + 6);
+    return { from: localDateKey(monday), to: localDateKey(sunday) };
+  }
+  return {
+    from: localDateKey(new Date(now.getFullYear(), now.getMonth(), 1)),
+    to: localDateKey(new Date(now.getFullYear(), now.getMonth() + 1, 0)),
+  };
+}
 
 function ExpensesPage() {
   const t = useT();
@@ -157,21 +191,39 @@ function ExpensesPage() {
   const [scanning, setScanning] = useState(false);
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [datePreset, setDatePreset] = useState<DatePreset>("month");
+  const initialMonth = useMemo(() => presetRange("month"), []);
+  const [customRange, setCustomRange] = useState(initialMonth);
   const fileRef = useRef<HTMLInputElement | null>(null);
   const scanFn = useServerFn(scanReceipt);
 
   const list = q.data ?? [];
+  const categories = useMemo(() => {
+    const canonical = new Map<string, string>();
+    list.forEach((expense) => {
+      const value = expense.category.trim();
+      if (value && !canonical.has(value.toLocaleLowerCase())) canonical.set(value.toLocaleLowerCase(), value);
+    });
+    return [...canonical.values()].sort((a, b) => a.localeCompare(b, locale));
+  }, [list, locale]);
+  const activeRange = datePreset === "custom" ? customRange : presetRange(datePreset);
+  const filteredList = useMemo(() => list.filter((expense) => {
+    const key = expense.expense_date.slice(0, 10);
+    return (!activeRange.from || key >= activeRange.from) && (!activeRange.to || key <= activeRange.to);
+  }), [list, activeRange.from, activeRange.to]);
   const currency = list[0]?.currency ?? "BHD";
-  const total = useMemo(() => list.reduce((s, e) => s + Number(e.amount || 0), 0), [list]);
+  const total = useMemo(() => filteredList.reduce((s, e) => s + Number(e.amount || 0), 0), [filteredList]);
 
   const del = async (id: string) => {
     setDeleting(true);
     try {
+      const target = list.find((expense) => expense.id === id);
       const { error } = await (supabase.from("expenses") as any).delete().eq("id", id);
       if (error) toast.error(error.message);
       else {
         toast.success(t("common.delete"));
         setDeleteTargetId(null);
+        if (target?.receipt_url) void deletePublicMediaUrl(brandId, target.receipt_url).catch(() => undefined);
         await qc.invalidateQueries({ queryKey: ["expenses"] });
       }
     } finally {
@@ -249,11 +301,36 @@ function ExpensesPage() {
             </DialogTrigger>
             <ExpenseDialog
               expense={editing}
+              categories={categories}
               onSaved={() => { setOpen(false); setEditing(null); qc.invalidateQueries({ queryKey: ["expenses"] }); }}
             />
           </Dialog>
         </div>
       </div>
+
+      <Card className="mb-4 p-3 sm:p-4">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-sm font-medium">{lang === "ar" ? "الفترة الزمنية" : "Date range"}</p>
+            <p className="text-xs text-muted-foreground">{lang === "ar" ? "تُحدّث القائمة والإجمالي معاً" : "Updates both the list and total"}</p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {(["today", "week", "month", "custom"] as DatePreset[]).map((preset) => (
+              <Button key={preset} type="button" size="sm" variant={datePreset === preset ? "default" : "outline"} onClick={() => setDatePreset(preset)}>
+                {lang === "ar"
+                  ? ({ today: "اليوم", week: "هذا الأسبوع", month: "هذا الشهر", custom: "مخصص" } as const)[preset]
+                  : ({ today: "Today", week: "This week", month: "This month", custom: "Custom" } as const)[preset]}
+              </Button>
+            ))}
+          </div>
+        </div>
+        {datePreset === "custom" && (
+          <div className="mt-3 grid gap-3 border-t pt-3 sm:grid-cols-2">
+            <div><Label>{lang === "ar" ? "من" : "From"}</Label><Input type="date" value={customRange.from} max={customRange.to || undefined} onChange={(e) => setCustomRange((range) => ({ ...range, from: e.target.value }))} /></div>
+            <div><Label>{lang === "ar" ? "إلى" : "To"}</Label><Input type="date" value={customRange.to} min={customRange.from || undefined} onChange={(e) => setCustomRange((range) => ({ ...range, to: e.target.value }))} /></div>
+          </div>
+        )}
+      </Card>
 
       <ReceiptReviewDialog
         open={reviewOpen}
@@ -297,7 +374,7 @@ function ExpensesPage() {
         </div>
       </Card>
 
-      {list.length === 0 ? (
+      {filteredList.length === 0 ? (
         <Card className="p-12 text-center">
           <Wallet className="h-10 w-10 mx-auto text-muted-foreground mb-3" />
           <p className="text-muted-foreground">{t("expenses.none")}</p>
@@ -306,7 +383,7 @@ function ExpensesPage() {
         <>
           {/* Mobile cards keep actions visible and provide reliable 44px touch targets. */}
           <div className="space-y-3 sm:hidden">
-            {list.map((e) => (
+            {filteredList.map((e) => (
               <Card key={e.id} className="p-4">
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0 flex-1">
@@ -324,6 +401,11 @@ function ExpensesPage() {
                     <p className="mt-2 font-semibold">
                       {formatMoney(Number(e.amount), e.currency, locale)}
                     </p>
+                    {e.receipt_url && (
+                      <a href={e.receipt_url} target="_blank" rel="noreferrer" className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline">
+                        <FileText className="h-3.5 w-3.5" /> {lang === "ar" ? "عرض الإيصال" : "View receipt"}
+                      </a>
+                    )}
                   </div>
                   <div className="flex shrink-0 items-center gap-1">
                     <Button
@@ -365,7 +447,7 @@ function ExpensesPage() {
                 </tr>
               </thead>
               <tbody>
-                {list.map((e) => (
+                {filteredList.map((e) => (
                   <tr key={e.id} className="border-t border-border">
                     <td className="p-3 whitespace-nowrap">{new Date(e.expense_date).toLocaleDateString(locale)}</td>
                     <td className="p-3 font-medium">{e.category}</td>
@@ -373,6 +455,11 @@ function ExpensesPage() {
                       {e.store_name ? <span className="font-medium text-foreground">{e.store_name}</span> : null}
                       {e.store_name && e.description ? " — " : null}
                       {e.description || (!e.store_name ? "—" : "")}
+                      {e.receipt_url && (
+                        <a href={e.receipt_url} target="_blank" rel="noreferrer" className="ms-2 inline-flex items-center gap-1 font-medium text-primary hover:underline">
+                          <FileText className="h-3.5 w-3.5" /> {lang === "ar" ? "الإيصال" : "Receipt"}
+                        </a>
+                      )}
                     </td>
                     <td className="p-3 text-end whitespace-nowrap font-medium">{formatMoney(Number(e.amount), e.currency, locale)}</td>
                     <td className="p-3 text-end whitespace-nowrap">
@@ -398,8 +485,14 @@ function ExpensesPage() {
 // ============================================================================
 // Basic (manual) add/edit dialog
 // ============================================================================
-function ExpenseDialog({ expense, onSaved }: { expense: Expense | null; onSaved: () => void }) {
+function ExpenseDialog({ expense, categories, onSaved }: { expense: Expense | null; categories: string[]; onSaved: () => void }) {
   const t = useT();
+  const { lang } = useI18n();
+  const brand = useBrand();
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [receiptFile, setReceiptFile] = useState<File | null>(null);
+  const [dragging, setDragging] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({
     category: expense?.category ?? "",
     description: expense?.description ?? "",
@@ -418,26 +511,58 @@ function ExpenseDialog({ expense, onSaved }: { expense: Expense | null; onSaved:
       expense_date: expense?.expense_date ?? new Date().toISOString().slice(0, 10),
       notes: expense?.notes ?? "",
     });
+    setReceiptFile(null);
   }, [expense]);
+
+  const chooseReceipt = (file: File | null) => {
+    if (!file) return;
+    if (!(file.type.startsWith("image/") || file.type === "application/pdf")) {
+      toast.error(lang === "ar" ? "اختر صورة أو ملف PDF" : "Choose an image or PDF file");
+      return;
+    }
+    if (file.size > 12 * 1024 * 1024) {
+      toast.error(lang === "ar" ? "حجم الملف يجب ألا يتجاوز 12 ميغابايت" : "File must be 12MB or smaller");
+      return;
+    }
+    setReceiptFile(file);
+  };
 
   const save = async () => {
     if (!form.category.trim()) return toast.error(t("expenses.category"));
+    setSaving(true);
+    let uploadedUrl: string | null = null;
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-    const payload = {
-      user_id: user.id,
-      category: form.category.trim(),
-      description: form.description.trim() || null,
-      amount: Number(form.amount) || 0,
-      currency: form.currency,
-      expense_date: form.expense_date,
-      notes: form.notes.trim() || null,
-    };
-    const { error } = expense
-      ? await (supabase.from("expenses") as any).update(payload).eq("id", expense.id)
-      : await (supabase.from("expenses") as any).insert(payload);
-    if (error) toast.error(error.message);
-    else { toast.success(t("common.save")); onSaved(); }
+    if (!user) { setSaving(false); return; }
+    try {
+      if (receiptFile) uploadedUrl = await uploadPublicMedia(brand.id, receiptFile, "expense-receipt");
+      const normalized = form.category.trim().replace(/\s+/g, " ");
+      const category = categories.find((item) => item.toLocaleLowerCase() === normalized.toLocaleLowerCase()) ?? normalized;
+      const payload = {
+        user_id: user.id,
+        brand_id: brand.id,
+        category,
+        description: form.description.trim() || null,
+        amount: Number(form.amount) || 0,
+        currency: form.currency,
+        expense_date: form.expense_date,
+        notes: form.notes.trim() || null,
+        receipt_url: uploadedUrl ?? expense?.receipt_url ?? null,
+      };
+      const { error } = expense
+        ? await (supabase.from("expenses") as any).update(payload).eq("id", expense.id)
+        : await (supabase.from("expenses") as any).insert(payload);
+      if (error) throw error;
+      if (uploadedUrl && expense?.receipt_url && uploadedUrl !== expense.receipt_url) {
+        void deletePublicMediaUrl(brand.id, expense.receipt_url).catch(() => undefined);
+      }
+      toast.success(t("common.save"));
+      onSaved();
+    } catch (error: any) {
+      if (uploadedUrl) void deletePublicMediaUrl(brand.id, uploadedUrl).catch(() => undefined);
+      toast.error(error?.message ?? (lang === "ar" ? "تعذر حفظ المصروف" : "Failed to save expense"));
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -448,7 +573,12 @@ function ExpenseDialog({ expense, onSaved }: { expense: Expense | null; onSaved:
       <div className="space-y-3">
         <div>
           <Label>{t("expenses.category")}</Label>
-          <Input placeholder={t("expenses.categoryPh")} value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} />
+          <CreatableCategorySelect
+            value={form.category}
+            categories={categories}
+            lang={lang}
+            onChange={(category) => setForm({ ...form, category })}
+          />
         </div>
         <div>
           <Label>{t("expenses.description")}</Label>
@@ -468,11 +598,73 @@ function ExpenseDialog({ expense, onSaved }: { expense: Expense | null; onSaved:
           <Label>{t("expenses.notes")}</Label>
           <Textarea rows={3} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
         </div>
+        <div>
+          <Label>{lang === "ar" ? "إرفاق إيصال (اختياري)" : "Upload receipt file (optional)"}</Label>
+          <input ref={fileInputRef} type="file" className="hidden" accept="image/*,application/pdf" onChange={(event) => chooseReceipt(event.target.files?.[0] ?? null)} />
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            onDragEnter={(event) => { event.preventDefault(); setDragging(true); }}
+            onDragOver={(event) => event.preventDefault()}
+            onDragLeave={() => setDragging(false)}
+            onDrop={(event) => { event.preventDefault(); setDragging(false); chooseReceipt(event.dataTransfer.files?.[0] ?? null); }}
+            className={cn("mt-1 flex min-h-28 w-full flex-col items-center justify-center rounded-lg border-2 border-dashed px-4 py-4 text-center transition-colors", dragging ? "border-primary bg-primary/5" : "border-border hover:border-primary/50 hover:bg-secondary/30")}
+          >
+            <UploadCloud className="mb-2 h-6 w-6 text-muted-foreground" />
+            <span className="text-sm font-medium">{lang === "ar" ? "اسحب الملف هنا أو اضغط للاختيار" : "Drop a file here or click to browse"}</span>
+            <span className="mt-1 text-xs text-muted-foreground">{lang === "ar" ? "صور أو PDF، حتى 12 ميغابايت" : "Images or PDF, up to 12MB"}</span>
+          </button>
+          {(receiptFile || expense?.receipt_url) && (
+            <div className="mt-2 flex items-center justify-between rounded-md border bg-secondary/30 px-3 py-2 text-sm">
+              <span className="flex min-w-0 items-center gap-2"><FileText className="h-4 w-4 shrink-0" /><span className="truncate">{receiptFile?.name ?? (lang === "ar" ? "الإيصال الحالي" : "Current receipt")}</span></span>
+              {receiptFile ? <Button type="button" variant="ghost" size="icon" className="h-8 w-8" onClick={() => setReceiptFile(null)}><X className="h-4 w-4" /></Button> : <a href={expense?.receipt_url ?? "#"} target="_blank" rel="noreferrer" className="text-xs font-medium text-primary hover:underline">{lang === "ar" ? "عرض" : "View"}</a>}
+            </div>
+          )}
+        </div>
       </div>
       <DialogFooter>
-        <Button onClick={save}>{t("common.save")}</Button>
+        <Button onClick={save} disabled={saving}>{saving && <Loader2 className="me-2 h-4 w-4 animate-spin" />}{t("common.save")}</Button>
       </DialogFooter>
     </DialogContent>
+  );
+}
+
+function CreatableCategorySelect({ value, categories, lang, onChange }: { value: string; categories: string[]; lang: "en" | "ar"; onChange: (value: string) => void }) {
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState("");
+  const normalizedQuery = query.trim().replace(/\s+/g, " ");
+  const exactMatch = categories.find((category) => category.toLocaleLowerCase() === normalizedQuery.toLocaleLowerCase());
+  const select = (category: string) => { onChange(category); setQuery(""); setOpen(false); };
+
+  return (
+    <Popover open={open} onOpenChange={(next) => { setOpen(next); if (!next) setQuery(""); }}>
+      <PopoverTrigger asChild>
+        <Button type="button" variant="outline" role="combobox" aria-expanded={open} className="mt-1 w-full justify-between font-normal">
+          <span className={cn("truncate", !value && "text-muted-foreground")}>{value || (lang === "ar" ? "اختر أو أنشئ فئة" : "Select or create a category")}</span>
+          <ChevronsUpDown className="ms-2 h-4 w-4 shrink-0 opacity-50" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
+        <Command shouldFilter={false}>
+          <CommandInput value={query} onValueChange={setQuery} placeholder={lang === "ar" ? "ابحث أو اكتب فئة جديدة..." : "Search or type a new category..."} dir={lang === "ar" ? "rtl" : "ltr"} />
+          <CommandList>
+            {!categories.length && !normalizedQuery && <CommandEmpty>{lang === "ar" ? "لا توجد فئات بعد" : "No categories yet"}</CommandEmpty>}
+            <CommandGroup heading={lang === "ar" ? "الفئات المستخدمة" : "Existing categories"}>
+              {categories.filter((category) => category.toLocaleLowerCase().includes(normalizedQuery.toLocaleLowerCase())).map((category) => (
+                <CommandItem key={category} value={category} onSelect={() => select(category)}>
+                  <Check className={cn("h-4 w-4", value === category ? "opacity-100" : "opacity-0")} /> {category}
+                </CommandItem>
+              ))}
+              {normalizedQuery && !exactMatch && (
+                <CommandItem value={`create-${normalizedQuery}`} onSelect={() => select(normalizedQuery)}>
+                  <Plus className="h-4 w-4" /> {lang === "ar" ? `إنشاء «${normalizedQuery}»` : `Create “${normalizedQuery}”`}
+                </CommandItem>
+              )}
+            </CommandGroup>
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
   );
 }
 

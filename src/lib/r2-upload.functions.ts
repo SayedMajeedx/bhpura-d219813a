@@ -4,7 +4,7 @@ import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
-const mediaKinds = ["logo", "favicon", "font", "product", "category", "hero", "page", "payment-qr"] as const;
+const mediaKinds = ["logo", "favicon", "font", "product", "category", "hero", "page", "payment-qr", "expense-receipt"] as const;
 const mimeToExtension: Record<string, string> = {
   "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp", "image/gif": "gif",
   "image/svg+xml": "svg", "image/x-icon": "ico", "image/vnd.microsoft.icon": "ico",
@@ -12,6 +12,7 @@ const mimeToExtension: Record<string, string> = {
   "font/woff": "woff", "font/woff2": "woff2", "font/ttf": "ttf", "font/otf": "otf",
   "application/font-woff": "woff", "application/x-font-ttf": "ttf",
   "application/x-font-opentype": "otf", "application/octet-stream": "bin",
+  "application/pdf": "pdf",
 };
 
 const Input = z.object({

@@ -1,6 +1,6 @@
 import { createR2UploadUrl, deleteR2Object, purgeBrandR2Objects } from "@/lib/r2-upload.functions";
 
-export type PublicMediaKind = "logo" | "favicon" | "font" | "product" | "category" | "hero" | "page" | "payment-qr";
+export type PublicMediaKind = "logo" | "favicon" | "font" | "product" | "category" | "hero" | "page" | "payment-qr" | "expense-receipt";
 
 function normalizedContentType(file: Blob, kind: PublicMediaKind): string {
   if (file.type) return file.type.toLowerCase();
