@@ -526,6 +526,7 @@ export type Database = {
           brand_id: string
           created_at: string
           customer_id: string
+          delivery_notes: string | null
           flat: string | null
           house: string | null
           id: string
@@ -541,6 +542,7 @@ export type Database = {
           brand_id: string
           created_at?: string
           customer_id: string
+          delivery_notes?: string | null
           flat?: string | null
           house?: string | null
           id?: string
@@ -556,6 +558,7 @@ export type Database = {
           brand_id?: string
           created_at?: string
           customer_id?: string
+          delivery_notes?: string | null
           flat?: string | null
           house?: string | null
           id?: string

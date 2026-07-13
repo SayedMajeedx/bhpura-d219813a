@@ -15,6 +15,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { PhoneInput } from "@/components/phone-input";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
+import { CustomerAddressManager, type ManagedCustomerAddress } from "@/components/customer-address-manager";
 
 export const Route = createFileRoute("/_authenticated/admin/b/$slug/customers/$customerId")({
   component: CustomerProfilePage,
@@ -28,16 +29,7 @@ type CustomerProfile = {
   notes: string | null;
 };
 
-type CustomerAddress = {
-  id: string;
-  label: string | null;
-  region: string | null;
-  block: string | null;
-  road: string | null;
-  house: string | null;
-  flat: string | null;
-  is_default: boolean;
-};
+type CustomerAddress = ManagedCustomerAddress;
 
 type CustomerOrder = {
   id: string;
@@ -78,7 +70,7 @@ function CustomerProfilePage() {
   const addressesQ = useQuery({
     queryKey: ["customer-profile-addresses", brand.id, customerId],
     queryFn: async () => {
-      const { data, error } = await supabase.from("customer_addresses").select("id, label, region, block, road, house, flat, is_default").eq("brand_id", brand.id).eq("customer_id", customerId).order("is_default", { ascending: false }).order("created_at");
+      const { data, error } = await supabase.from("customer_addresses").select("id, label, region, block, road, house, flat, delivery_notes, is_default").eq("brand_id", brand.id).eq("customer_id", customerId).order("is_default", { ascending: false }).order("created_at");
       if (error) throw error;
       return data as CustomerAddress[];
     },
@@ -124,6 +116,17 @@ function CustomerProfilePage() {
           </Card>
 
           <Card className="p-5">
+            <CustomerAddressManager
+              addresses={addressesQ.data ?? []}
+              loading={addressesQ.isLoading}
+              customerId={customerId}
+              brandId={brand.id}
+              lang={lang}
+              onChanged={() => qc.invalidateQueries({ queryKey: ["customer-profile-addresses", brand.id, customerId] })}
+            />
+          </Card>
+
+          <Card className="hidden">
             <div className="mb-4 flex items-center gap-2"><MapPin className="h-5 w-5 text-primary" /><h2 className="font-display text-lg">{lang === "ar" ? "عناوين التوصيل" : "Delivery Addresses"}</h2></div>
             {addressesQ.isLoading ? <p className="text-sm text-muted-foreground">{lang === "ar" ? "جاري التحميل…" : "Loading…"}</p> : (addressesQ.data ?? []).length === 0 ? <p className="text-sm text-muted-foreground">{lang === "ar" ? "لا توجد عناوين محفوظة." : "No saved delivery addresses."}</p> : <div className="space-y-3">{(addressesQ.data ?? []).map((address) => <div key={address.id} className="rounded-xl border p-3"><div className="mb-1 flex items-center justify-between gap-2"><span className="font-medium">{address.label || (lang === "ar" ? "عنوان التوصيل" : "Delivery address")}</span>{address.is_default && <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary">{lang === "ar" ? "افتراضي" : "Default"}</span>}</div><p className="text-sm leading-6 text-muted-foreground">{formatAddressLine(address, lang) || regionLabel(address.region, lang) || "—"}</p></div>)}</div>}
           </Card>
