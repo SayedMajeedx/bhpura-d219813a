@@ -30,10 +30,10 @@ Deno.serve(async (req: Request) => {
     // Get the authorization header
     const authHeader = req.headers.get("Authorization");
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      return new Response(
-        JSON.stringify({ error: "Missing or invalid authorization header" }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      return new Response(JSON.stringify({ error: "Missing or invalid authorization header" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     const token = authHeader.replace("Bearer ", "");
@@ -46,7 +46,7 @@ Deno.serve(async (req: Request) => {
     if (!anonKey) {
       return new Response(
         JSON.stringify({ error: "Missing SUPABASE_ANON_KEY or SUPABASE_PUBLISHABLE_KEY" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
 
@@ -57,22 +57,19 @@ Deno.serve(async (req: Request) => {
     });
 
     // Verify the caller is authenticated
-    const { data: { user }, error: userError } = await userClient.auth.getUser();
+    const {
+      data: { user },
+      error: userError,
+    } = await userClient.auth.getUser();
     if (userError || !user) {
-      return new Response(
-        JSON.stringify({ error: "Unauthorized: invalid session" }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      return new Response(JSON.stringify({ error: "Unauthorized: invalid session" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     const url = new URL(req.url);
     const action = url.searchParams.get("action");
-
-    // "ensure-profile" action is allowed for any authenticated user
-    if (action === "ensure-profile") {
-      const body = await req.json();
-      return await handleEnsureProfile(supabase, user.id, body.email || user.email);
-    }
 
     // All other actions require admin role.
     // SECURITY: fail closed. A missing profile (lookup error, race condition,
@@ -86,29 +83,30 @@ Deno.serve(async (req: Request) => {
     if (callerProfileError || !callerProfile) {
       return new Response(
         JSON.stringify({ error: "Forbidden: no profile found for this account" }),
-        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
 
     const callerRole: string = callerProfile.role;
-    const isAdmin = callerRole === "admin" || callerRole === "super_admin" || callerRole === "brand_admin";
+    const isAdmin =
+      callerRole === "admin" || callerRole === "super_admin" || callerRole === "brand_admin";
     // Role is the sole authority. Never infer privileges from an editable
     // profile field such as email.
     const isSuperAdmin = callerRole === "super_admin";
     const isActive = callerProfile.status === "active";
 
     if (!isActive) {
-      return new Response(
-        JSON.stringify({ error: "Forbidden: account inactive or suspended" }),
-        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      return new Response(JSON.stringify({ error: "Forbidden: account inactive or suspended" }), {
+        status: 403,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     if (!isAdmin) {
-      return new Response(
-        JSON.stringify({ error: "Forbidden: admin role required" }),
-        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      return new Response(JSON.stringify({ error: "Forbidden: admin role required" }), {
+        status: 403,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     const callerCtx = {
@@ -140,124 +138,70 @@ Deno.serve(async (req: Request) => {
 
       default:
         return new Response(
-          JSON.stringify({ error: "Invalid action. Use: list, create, update, delete, ensure-profile" }),
-          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          JSON.stringify({ error: "Invalid action. Use: list, create, update, delete" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
         );
     }
   } catch (err) {
-
     console.error("[user-management] Error:", err);
-    return new Response(
-      JSON.stringify({ error: "Internal server error" }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    return new Response(JSON.stringify({ error: "Internal server error" }), {
+      status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   }
 });
 
-async function handleEnsureProfile(supabase: any, userId: string, email: string) {
-  // Check if profile already exists
-  const { data: existing, error: checkError } = await supabase
-    .from("profiles")
-    .select("*")
-    .eq("id", userId)
-    .maybeSingle();
-
-  if (checkError) {
-    return new Response(
-      JSON.stringify({ error: checkError.message }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
-  }
-
-  if (existing) {
-    return new Response(
-      JSON.stringify({ profile: existing }),
-      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
-  }
-
-  // Create profile for user - first user becomes admin
-  const { count, error: countError } = await supabase
-    .from("profiles")
-    .select("*", { count: "exact", head: true });
-
-  if (countError) {
-    console.error("[user-management] Count error:", countError);
-  }
-
-  const role = (count ?? 0) === 0 ? "admin" : "staff";
-
-  const { data: newProfile, error: insertError } = await supabase
-    .from("profiles")
-    .insert({
-      id: userId,
-      email,
-      name: email.split("@")[0],
-      role,
-      status: "active",
-    })
-    .select()
-    .single();
-
-  if (insertError) {
-    return new Response(
-      JSON.stringify({ error: insertError.message }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
-  }
-
-  return new Response(
-    JSON.stringify({ profile: newProfile }),
-    { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-  );
-}
-
-async function handleList(supabase: any, ctx: { isSuperAdmin: boolean; callerBrandId: string | null }) {
+async function handleList(
+  supabase: any,
+  ctx: { isSuperAdmin: boolean; callerBrandId: string | null },
+) {
   let query = supabase
     .from("profiles")
-    .select("id, email, name, role, status, brand_id, created_at, updated_at, brand:brands(id, slug, name_en, name_ar, logo_url, is_active)")
+    .select(
+      "id, email, name, role, status, brand_id, created_at, updated_at, brand:brands(id, slug, name_en, name_ar, logo_url, is_active)",
+    )
     .order("created_at", { ascending: false });
 
   // Non-super-admins only see profiles inside their own brand
   if (!ctx.isSuperAdmin) {
     if (!ctx.callerBrandId) {
-      return new Response(
-        JSON.stringify({ profiles: [] }),
-        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      return new Response(JSON.stringify({ profiles: [] }), {
+        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
-    query = query
-      .eq("brand_id", ctx.callerBrandId)
-      .neq("role", "super_admin");
+    query = query.eq("brand_id", ctx.callerBrandId).neq("role", "super_admin");
   }
 
   const { data: profiles, error } = await query;
   if (error) {
-    return new Response(
-      JSON.stringify({ error: error.message }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    return new Response(JSON.stringify({ error: error.message }), {
+      status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   }
   const visibleProfiles = ctx.isSuperAdmin
     ? (profiles ?? [])
-    : (profiles ?? []).filter((profile: any) =>
-        profile.role !== "super_admin"
-      );
-  return new Response(
-    JSON.stringify({ profiles: visibleProfiles }),
-    { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-  );
+    : (profiles ?? []).filter((profile: any) => profile.role !== "super_admin");
+  return new Response(JSON.stringify({ profiles: visibleProfiles }), {
+    status: 200,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
 }
 
-async function handleCreate(supabase: any, body: any, ctx: { userId: string; isSuperAdmin: boolean; callerBrandId: string | null }) {
+async function handleCreate(
+  supabase: any,
+  body: any,
+  ctx: { userId: string; isSuperAdmin: boolean; callerBrandId: string | null },
+) {
   const { email, name, role, password } = body;
   let { brand_id } = body;
 
   if (!email || !password) {
-    return new Response(
-      JSON.stringify({ error: "Email and password are required" }),
-      { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    return new Response(JSON.stringify({ error: "Email and password are required" }), {
+      status: 400,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   }
 
   const userRole = role || "staff";
@@ -267,7 +211,7 @@ async function handleCreate(supabase: any, body: any, ctx: { userId: string; isS
   if (!validRoles.includes(userRole)) {
     return new Response(
       JSON.stringify({ error: `Invalid role. Allowed: ${validRoles.join(", ")}` }),
-      { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   }
 
@@ -275,18 +219,18 @@ async function handleCreate(supabase: any, body: any, ctx: { userId: string; isS
   if (!ctx.isSuperAdmin) {
     brand_id = ctx.callerBrandId;
     if (!brand_id) {
-      return new Response(
-        JSON.stringify({ error: "Your account has no brand assigned" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      return new Response(JSON.stringify({ error: "Your account has no brand assigned" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
   }
   // brand_admin/staff must have a brand
   if ((userRole === "brand_admin" || userRole === "staff") && !brand_id) {
-    return new Response(
-      JSON.stringify({ error: "brand_id is required for brand_admin/staff" }),
-      { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    return new Response(JSON.stringify({ error: "brand_id is required for brand_admin/staff" }), {
+      status: 400,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   }
 
   const { data: authData, error: authError } = await supabase.auth.admin.createUser({
@@ -297,18 +241,18 @@ async function handleCreate(supabase: any, body: any, ctx: { userId: string; isS
   });
 
   if (authError) {
-    return new Response(
-      JSON.stringify({ error: authError.message }),
-      { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    return new Response(JSON.stringify({ error: authError.message }), {
+      status: 400,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   }
 
   const userId = authData.user?.id;
   if (!userId) {
-    return new Response(
-      JSON.stringify({ error: "Failed to create user: no user ID returned" }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    return new Response(JSON.stringify({ error: "Failed to create user: no user ID returned" }), {
+      status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   }
 
   const updatePayload: Record<string, any> = {
@@ -336,7 +280,7 @@ async function handleCreate(supabase: any, body: any, ctx: { userId: string; isS
     await supabase.auth.admin.deleteUser(userId).catch(() => undefined);
     return new Response(
       JSON.stringify({ error: `Failed to create user profile: ${profileUpdateError.message}` }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   }
 
@@ -352,18 +296,22 @@ async function handleCreate(supabase: any, body: any, ctx: { userId: string; isS
         status: "active",
       },
     }),
-    { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
   );
 }
 
-async function handleUpdate(supabase: any, body: any, ctx: { userId: string; isSuperAdmin: boolean; callerBrandId: string | null }) {
+async function handleUpdate(
+  supabase: any,
+  body: any,
+  ctx: { userId: string; isSuperAdmin: boolean; callerBrandId: string | null },
+) {
   const { userId, role, status, name, brand_id } = body;
 
   if (!userId) {
-    return new Response(
-      JSON.stringify({ error: "userId is required" }),
-      { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    return new Response(JSON.stringify({ error: "userId is required" }), {
+      status: 400,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   }
 
   const { data: target, error: targetError } = await supabase
@@ -373,27 +321,27 @@ async function handleUpdate(supabase: any, body: any, ctx: { userId: string; isS
     .maybeSingle();
 
   if (targetError || !target) {
-    return new Response(
-      JSON.stringify({ error: "User profile not found" }),
-      { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    return new Response(JSON.stringify({ error: "User profile not found" }), {
+      status: 404,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   }
 
   const targetIsSuperAdmin = target.role === "super_admin";
 
   if (targetIsSuperAdmin && !ctx.isSuperAdmin) {
-    return new Response(
-      JSON.stringify({ error: "Only a super admin can modify a super admin" }),
-      { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    return new Response(JSON.stringify({ error: "Only a super admin can modify a super admin" }), {
+      status: 403,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   }
 
   // Non-super-admins can only touch users in their own brand
   if (!ctx.isSuperAdmin && (!ctx.callerBrandId || target.brand_id !== ctx.callerBrandId)) {
-    return new Response(
-      JSON.stringify({ error: "You can only manage users in your own brand" }),
-      { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    return new Response(JSON.stringify({ error: "You can only manage users in your own brand" }), {
+      status: 403,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   }
 
   const validRoles = ctx.isSuperAdmin
@@ -405,7 +353,7 @@ async function handleUpdate(supabase: any, body: any, ctx: { userId: string; isS
     if (!validRoles.includes(role)) {
       return new Response(
         JSON.stringify({ error: `Invalid role. Allowed: ${validRoles.join(", ")}` }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
     updates.role = role;
@@ -414,7 +362,7 @@ async function handleUpdate(supabase: any, body: any, ctx: { userId: string; isS
     if (!["active", "inactive"].includes(status)) {
       return new Response(
         JSON.stringify({ error: "Invalid status. Must be 'active' or 'inactive'" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
     updates.status = status;
@@ -428,50 +376,52 @@ async function handleUpdate(supabase: any, body: any, ctx: { userId: string; isS
   }
 
   if (Object.keys(updates).length === 0) {
-    return new Response(
-      JSON.stringify({ error: "No fields to update" }),
-      { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    return new Response(JSON.stringify({ error: "No fields to update" }), {
+      status: 400,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   }
 
-
-  const { error } = await supabase
-    .from("profiles")
-    .update(updates)
-    .eq("id", userId);
+  const { error } = await supabase.from("profiles").update(updates).eq("id", userId);
 
   if (error) {
-    return new Response(
-      JSON.stringify({ error: error.message }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    return new Response(JSON.stringify({ error: error.message }), {
+      status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   }
 
   if (status === "inactive") {
-    try { await supabase.auth.admin.signOut(userId, "global"); } catch (_) {}
+    try {
+      await supabase.auth.admin.signOut(userId, "global");
+    } catch (_) {}
   }
 
-  return new Response(
-    JSON.stringify({ success: true }),
-    { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-  );
+  return new Response(JSON.stringify({ success: true }), {
+    status: 200,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
 }
 
-async function handleDelete(supabase: any, body: any, ctx: { userId: string; isSuperAdmin: boolean; callerBrandId: string | null }) {
+async function handleDelete(
+  supabase: any,
+  body: any,
+  ctx: { userId: string; isSuperAdmin: boolean; callerBrandId: string | null },
+) {
   const { userId } = body;
 
   if (!userId) {
-    return new Response(
-      JSON.stringify({ error: "userId is required" }),
-      { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    return new Response(JSON.stringify({ error: "userId is required" }), {
+      status: 400,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   }
 
   if (userId === ctx.userId) {
-    return new Response(
-      JSON.stringify({ error: "You cannot delete your own account" }),
-      { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    return new Response(JSON.stringify({ error: "You cannot delete your own account" }), {
+      status: 400,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   }
 
   const { data: target, error: targetError } = await supabase
@@ -481,37 +431,36 @@ async function handleDelete(supabase: any, body: any, ctx: { userId: string; isS
     .maybeSingle();
 
   if (targetError || !target) {
-    return new Response(
-      JSON.stringify({ error: "User profile not found" }),
-      { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    return new Response(JSON.stringify({ error: "User profile not found" }), {
+      status: 404,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   }
 
   if (target.role === "super_admin" && !ctx.isSuperAdmin) {
-    return new Response(
-      JSON.stringify({ error: "Only a super admin can delete a super admin" }),
-      { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    return new Response(JSON.stringify({ error: "Only a super admin can delete a super admin" }), {
+      status: 403,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   }
   if (!ctx.isSuperAdmin && (!ctx.callerBrandId || target.brand_id !== ctx.callerBrandId)) {
-    return new Response(
-      JSON.stringify({ error: "You can only delete users in your own brand" }),
-      { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    return new Response(JSON.stringify({ error: "You can only delete users in your own brand" }), {
+      status: 403,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   }
 
   const { error } = await supabase.auth.admin.deleteUser(userId);
 
   if (error) {
-    return new Response(
-      JSON.stringify({ error: error.message }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    return new Response(JSON.stringify({ error: error.message }), {
+      status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   }
 
-  return new Response(
-    JSON.stringify({ success: true }),
-    { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-  );
+  return new Response(JSON.stringify({ success: true }), {
+    status: 200,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
 }
-
