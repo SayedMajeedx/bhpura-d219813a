@@ -18,10 +18,16 @@ export const Route = createFileRoute("/_authenticated/admin/b/$slug/discounts")(
 
 type Promo = {
   id: string; brand_id: string; code: string; discount_type: "percentage" | "fixed";
-  discount_value: number; minimum_order_amount: number | null; is_active: boolean; created_at: string;
+  discount_value: number; minimum_order_amount: number | null; maximum_discount_amount: number | null;
+  first_time_customers_only: boolean; exclude_sale_items: boolean; usage_limit_per_customer: number | null;
+  is_active: boolean; created_at: string;
 };
 type PromoForm = Omit<Promo, "id" | "brand_id" | "created_at">;
-const EMPTY: PromoForm = { code: "", discount_type: "percentage", discount_value: 0, minimum_order_amount: null, is_active: true };
+const EMPTY: PromoForm = {
+  code: "", discount_type: "percentage", discount_value: 0, minimum_order_amount: null,
+  maximum_discount_amount: null, first_time_customers_only: false, exclude_sale_items: false,
+  usage_limit_per_customer: null, is_active: true,
+};
 
 function DiscountCodes() {
   const brand = useBrand();
@@ -37,7 +43,7 @@ function DiscountCodes() {
     queryKey: ["promo-codes", brand.id],
     queryFn: async () => {
       const { data, error } = await (supabase.from("promo_codes" as any) as any)
-        .select("id,brand_id,code,discount_type,discount_value,minimum_order_amount,is_active,created_at")
+        .select("id,brand_id,code,discount_type,discount_value,minimum_order_amount,maximum_discount_amount,first_time_customers_only,exclude_sale_items,usage_limit_per_customer,is_active,created_at")
         .eq("brand_id", brand.id).order("created_at", { ascending: false });
       if (error) throw error;
       return (data ?? []) as Promo[];
@@ -45,13 +51,26 @@ function DiscountCodes() {
   });
 
   const beginCreate = () => { setEditing(null); setForm(EMPTY); setOpen(true); };
-  const beginEdit = (p: Promo) => { setEditing(p); setForm({ code: p.code, discount_type: p.discount_type, discount_value: p.discount_value, minimum_order_amount: p.minimum_order_amount, is_active: p.is_active }); setOpen(true); };
+  const beginEdit = (p: Promo) => { setEditing(p); setForm({
+    code: p.code, discount_type: p.discount_type, discount_value: p.discount_value,
+    minimum_order_amount: p.minimum_order_amount, maximum_discount_amount: p.maximum_discount_amount,
+    first_time_customers_only: p.first_time_customers_only, exclude_sale_items: p.exclude_sale_items,
+    usage_limit_per_customer: p.usage_limit_per_customer, is_active: p.is_active,
+  }); setOpen(true); };
   const save = async () => {
     const code = form.code.trim().toUpperCase();
     if (!/^[A-Z0-9_-]{2,32}$/.test(code)) return toast.error(ar ? "استخدم حروفاً وأرقاماً فقط (2–32)" : "Use 2–32 letters, numbers, hyphens, or underscores");
     if (!(form.discount_value > 0) || (form.discount_type === "percentage" && form.discount_value > 100)) return toast.error(ar ? "قيمة الخصم غير صحيحة" : "Enter a valid discount value");
+    if (form.maximum_discount_amount != null && form.maximum_discount_amount <= 0) return toast.error(ar ? "يجب أن يكون الحد الأقصى للخصم أكبر من صفر" : "Maximum discount must be greater than zero");
+    if (form.usage_limit_per_customer != null && (!Number.isInteger(form.usage_limit_per_customer) || form.usage_limit_per_customer < 1)) return toast.error(ar ? "حد الاستخدام يجب أن يكون رقماً صحيحاً موجباً" : "Usage limit must be a positive whole number");
     setSaving(true);
-    const payload = { ...form, code, brand_id: brand.id, discount_value: Number(form.discount_value.toFixed(3)), minimum_order_amount: form.minimum_order_amount == null ? null : Number(form.minimum_order_amount.toFixed(3)), updated_at: new Date().toISOString() };
+    const payload = {
+      ...form, code, brand_id: brand.id,
+      discount_value: Number(form.discount_value.toFixed(3)),
+      minimum_order_amount: form.minimum_order_amount == null ? null : Number(form.minimum_order_amount.toFixed(3)),
+      maximum_discount_amount: form.discount_type === "percentage" && form.maximum_discount_amount != null ? Number(form.maximum_discount_amount.toFixed(3)) : null,
+      updated_at: new Date().toISOString(),
+    };
     const query = editing
       ? (supabase.from("promo_codes" as any) as any).update(payload).eq("id", editing.id).eq("brand_id", brand.id)
       : (supabase.from("promo_codes" as any) as any).insert(payload);
@@ -77,11 +96,21 @@ function DiscountCodes() {
         <div className="grid place-items-center gap-3 p-12 text-center"><Tags className="h-10 w-10 text-muted-foreground"/><div><div className="font-medium">{ar ? "لا توجد رموز خصم" : "No promo codes yet"}</div><div className="text-sm text-muted-foreground">{ar ? "أنشئ أول عرض للمتجر." : "Create your first storefront offer."}</div></div><Button variant="outline" onClick={beginCreate}>{ar ? "+ إضافة رمز" : "+ Add code"}</Button></div> :
         <div className="overflow-x-auto"><table className="w-full min-w-[760px] text-sm"><thead className="border-b bg-muted/50"><tr>{[ar?"الرمز":"Code",ar?"النوع":"Type",ar?"القيمة":"Value",ar?"الحد الأدنى":"Minimum",ar?"الحالة":"Status",ar?"الإجراءات":"Actions"].map(x=><th key={x} className="px-4 py-3 text-start font-medium">{x}</th>)}</tr></thead><tbody>{promos.data.map(p=><tr key={p.id} className="border-b last:border-0"><td className="px-4 py-4 font-mono font-semibold">{p.code}</td><td className="px-4 py-4">{p.discount_type === "percentage" ? (ar?"نسبة مئوية":"Percentage") : (ar?"مبلغ ثابت":"Fixed BHD")}</td><td className="px-4 py-4 tabular-nums">{p.discount_type === "percentage" ? `${p.discount_value}%` : `BHD ${Number(p.discount_value).toFixed(3)}`}</td><td className="px-4 py-4 tabular-nums">{p.minimum_order_amount == null ? "—" : `BHD ${Number(p.minimum_order_amount).toFixed(3)}`}</td><td className="px-4 py-4"><span className={`rounded-full px-2.5 py-1 text-xs ${p.is_active?"bg-emerald-100 text-emerald-800":"bg-muted text-muted-foreground"}`}>{p.is_active?(ar?"نشط":"Active"):(ar?"متوقف":"Inactive")}</span></td><td className="px-4 py-4"><div className="flex gap-1"><Button size="icon" variant="ghost" onClick={()=>beginEdit(p)} aria-label="Edit"><Pencil className="h-4 w-4"/></Button><Button size="icon" variant="ghost" className="text-destructive" onClick={()=>remove(p)} aria-label="Delete"><Trash2 className="h-4 w-4"/></Button></div></td></tr>)}</tbody></table></div>}
     </Card>
-    <Dialog open={open} onOpenChange={setOpen}><DialogContent dir={ar?"rtl":"ltr"}><DialogHeader><DialogTitle>{editing?(ar?"تعديل رمز الخصم":"Edit Promo Code"):(ar?"إنشاء رمز خصم":"Create Promo Code")}</DialogTitle></DialogHeader><div className="space-y-4">
+    <Dialog open={open} onOpenChange={setOpen}><DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-xl" dir={ar?"rtl":"ltr"}><DialogHeader><DialogTitle>{editing?(ar?"تعديل رمز الخصم":"Edit Promo Code"):(ar?"إنشاء رمز خصم":"Create Promo Code")}</DialogTitle></DialogHeader><div className="space-y-4">
       <div><Label>{ar?"اسم الرمز":"Code Name"}</Label><Input value={form.code} onChange={e=>setForm({...form,code:e.target.value.toUpperCase()})} placeholder="EID20" className="uppercase" maxLength={32}/></div>
-      <div><Label>{ar?"نوع الخصم":"Discount Type"}</Label><Select value={form.discount_type} onValueChange={(v:"percentage"|"fixed")=>setForm({...form,discount_type:v})}><SelectTrigger><SelectValue/></SelectTrigger><SelectContent><SelectItem value="percentage">{ar?"نسبة مئوية %":"Percentage %"}</SelectItem><SelectItem value="fixed">{ar?"مبلغ ثابت د.ب":"Fixed Amount BHD"}</SelectItem></SelectContent></Select></div>
+      <div><Label>{ar?"نوع الخصم":"Discount Type"}</Label><Select value={form.discount_type} onValueChange={(v:"percentage"|"fixed")=>setForm({...form,discount_type:v,maximum_discount_amount:v==="percentage"?form.maximum_discount_amount:null})}><SelectTrigger><SelectValue/></SelectTrigger><SelectContent><SelectItem value="percentage">{ar?"نسبة مئوية %":"Percentage %"}</SelectItem><SelectItem value="fixed">{ar?"مبلغ ثابت د.ب":"Fixed Amount BHD"}</SelectItem></SelectContent></Select></div>
       <div><Label>{ar?"قيمة الخصم":"Discount Value"}</Label><Input type="number" min="0" max={form.discount_type==="percentage"?100:undefined} step={form.discount_type==="fixed"?"0.001":"0.01"} value={form.discount_value||""} onChange={e=>setForm({...form,discount_value:Number(e.target.value)})}/><p className="mt-1 text-xs text-muted-foreground">{form.discount_type==="fixed"?(ar?"يُحفظ بثلاث خانات عشرية.":"Saved with three decimal places."):(ar?"من 1 إلى 100%":"From 1 to 100%")}</p></div>
       <div><Label>{ar?"الحد الأدنى للطلب (اختياري)":"Minimum Order Amount (Optional)"}</Label><Input type="number" min="0" step="0.001" value={form.minimum_order_amount??""} onChange={e=>setForm({...form,minimum_order_amount:e.target.value===""?null:Number(e.target.value)})} placeholder="0.000"/></div>
+      {form.discount_type === "percentage" && <div className="space-y-3 rounded-lg border p-4">
+        <div className="flex items-center justify-between gap-4"><div><div className="font-medium">{ar?"تحديد حد أقصى للخصم":"Set maximum discount limit"}</div><div className="text-xs text-muted-foreground">{ar?"يمنع الخصم النسبي من تجاوز مبلغ محدد.":"Prevent a percentage discount from exceeding a fixed amount."}</div></div><Switch checked={form.maximum_discount_amount!=null} onCheckedChange={v=>setForm({...form,maximum_discount_amount:v?0.001:null})}/></div>
+        {form.maximum_discount_amount != null && <div><Label>{ar?"الحد الأقصى للخصم (د.ب)":"Maximum Discount Amount (BHD)"}</Label><Input type="number" min="0.001" step="0.001" value={form.maximum_discount_amount} onChange={e=>setForm({...form,maximum_discount_amount:Number(e.target.value)})} placeholder="0.000"/></div>}
+      </div>}
+      <div className="space-y-3 rounded-lg border p-4">
+        <div><div className="font-medium">{ar?"شروط الأهلية":"Eligibility Constraints"}</div><div className="text-xs text-muted-foreground">{ar?"حدد العملاء والمنتجات المؤهلة لهذا الرمز.":"Control which customers and products qualify."}</div></div>
+        <div className="flex items-center justify-between gap-4"><Label className="font-normal">{ar?"للعملاء الجدد فقط":"First-time customers only"}</Label><Switch checked={form.first_time_customers_only} onCheckedChange={v=>setForm({...form,first_time_customers_only:v})}/></div>
+        <div className="flex items-center justify-between gap-4"><Label className="font-normal">{ar?"استبعاد المنتجات المخفضة مسبقاً":"Exclude items already on sale"}</Label><Switch checked={form.exclude_sale_items} onCheckedChange={v=>setForm({...form,exclude_sale_items:v})}/></div>
+      </div>
+      <div><Label>{ar?"إجمالي مرات الاستخدام لكل عميل (اختياري)":"Total usage limit per customer (Optional)"}</Label><Input type="number" min="1" step="1" value={form.usage_limit_per_customer??""} onChange={e=>setForm({...form,usage_limit_per_customer:e.target.value===""?null:Number(e.target.value)})} placeholder={ar?"مثال: 1":"e.g. 1"}/></div>
       <div className="flex items-center justify-between rounded-lg border p-4"><div><div className="font-medium">{ar?"نشط":"Active"}</div><div className="text-xs text-muted-foreground">{ar?"يمكن للعملاء استخدام هذا الرمز.":"Customers can apply this code."}</div></div><Switch checked={form.is_active} onCheckedChange={v=>setForm({...form,is_active:v})}/></div>
       <div className="flex justify-end gap-2"><Button variant="outline" onClick={()=>setOpen(false)}>{ar?"إلغاء":"Cancel"}</Button><Button onClick={save} disabled={saving}>{saving?(ar?"جارٍ الحفظ…":"Saving…"):(ar?"حفظ الرمز":"Save Promo")}</Button></div>
     </div></DialogContent></Dialog>

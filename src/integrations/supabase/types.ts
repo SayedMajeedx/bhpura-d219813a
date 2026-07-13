@@ -1224,10 +1224,14 @@ export type Database = {
           created_at: string
           discount_type: string
           discount_value: number
+          exclude_sale_items: boolean
+          first_time_customers_only: boolean
           id: string
           is_active: boolean
+          maximum_discount_amount: number | null
           minimum_order_amount: number | null
           updated_at: string
+          usage_limit_per_customer: number | null
         }
         Insert: {
           brand_id: string
@@ -1235,10 +1239,14 @@ export type Database = {
           created_at?: string
           discount_type: string
           discount_value: number
+          exclude_sale_items?: boolean
+          first_time_customers_only?: boolean
           id?: string
           is_active?: boolean
+          maximum_discount_amount?: number | null
           minimum_order_amount?: number | null
           updated_at?: string
+          usage_limit_per_customer?: number | null
         }
         Update: {
           brand_id?: string
@@ -1246,10 +1254,14 @@ export type Database = {
           created_at?: string
           discount_type?: string
           discount_value?: number
+          exclude_sale_items?: boolean
+          first_time_customers_only?: boolean
           id?: string
           is_active?: boolean
+          maximum_discount_amount?: number | null
           minimum_order_amount?: number | null
           updated_at?: string
+          usage_limit_per_customer?: number | null
         }
         Relationships: [
           {
