@@ -946,7 +946,12 @@ export type Database = {
       orders: {
         Row: {
           advance_paid: number
+          benefit_receipt_delete_after: string | null
+          benefit_receipt_deleted_at: string | null
           benefit_receipt_key: string | null
+          benefit_receipt_rejected_at: string | null
+          benefit_receipt_rejected_by: string | null
+          benefit_receipt_uploaded_at: string | null
           benefit_receipt_url: string | null
           benefit_verified_at: string | null
           benefit_verified_by: string | null
@@ -985,7 +990,12 @@ export type Database = {
         }
         Insert: {
           advance_paid?: number
+          benefit_receipt_delete_after?: string | null
+          benefit_receipt_deleted_at?: string | null
           benefit_receipt_key?: string | null
+          benefit_receipt_rejected_at?: string | null
+          benefit_receipt_rejected_by?: string | null
+          benefit_receipt_uploaded_at?: string | null
           benefit_receipt_url?: string | null
           benefit_verified_at?: string | null
           benefit_verified_by?: string | null
@@ -1024,7 +1034,12 @@ export type Database = {
         }
         Update: {
           advance_paid?: number
+          benefit_receipt_delete_after?: string | null
+          benefit_receipt_deleted_at?: string | null
           benefit_receipt_key?: string | null
+          benefit_receipt_rejected_at?: string | null
+          benefit_receipt_rejected_by?: string | null
+          benefit_receipt_uploaded_at?: string | null
           benefit_receipt_url?: string | null
           benefit_verified_at?: string | null
           benefit_verified_by?: string | null

@@ -7,24 +7,79 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Plus, Trash2, Printer, Save, Send, Search, Receipt, Link as LinkIcon, ScanLine, Mail, Loader2, Lock, Unlock, X, Tag, CheckCircle2, ImageIcon } from "lucide-react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  ArrowLeft,
+  Plus,
+  Trash2,
+  Printer,
+  Save,
+  Send,
+  Search,
+  Receipt,
+  Link as LinkIcon,
+  ScanLine,
+  Mail,
+  Loader2,
+  Lock,
+  Unlock,
+  X,
+  Tag,
+  CheckCircle2,
+  ImageIcon,
+} from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogTrigger,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { formatDate, formatMoney } from "@/lib/format";
 import { useT, useI18n } from "@/lib/i18n";
-import { regionLabel, formatAddressLine, formatAddressDetailed, type StructuredAddress } from "@/lib/bahrain-regions";
+import {
+  regionLabel,
+  formatAddressLine,
+  formatAddressDetailed,
+  type StructuredAddress,
+} from "@/lib/bahrain-regions";
 import { printThermalReceipt } from "@/lib/thermal-print";
-import { resolvePaymentStatus, PAYMENT_BADGE_CLASSES, PAYMENT_BADGE_LABEL, PAYMENT_BADGE_VALUES, type PaymentBadge } from "@/lib/payment-status";
+import {
+  resolvePaymentStatus,
+  PAYMENT_BADGE_CLASSES,
+  PAYMENT_BADGE_LABEL,
+  PAYMENT_BADGE_VALUES,
+  type PaymentBadge,
+} from "@/lib/payment-status";
 import { logActivityBatch } from "@/lib/activity-log";
 import { ActivityLogList } from "@/components/activity-log-list";
 import { BarcodeScanner } from "@/components/barcode-scanner";
 import { PhoneInput } from "@/components/phone-input";
 import { useBrand } from "@/lib/brand-context";
 import { useProfile } from "@/lib/profile-context";
+import { getBenefitReceiptViewUrl, rejectBenefitReceipt } from "@/lib/benefit-receipt.functions";
 
 function formatDeliveryAddress(
-  c: { region?: string | null; road?: string | null; house?: string | null; flat?: string | null; address?: string | null; city?: string | null } | null | undefined,
+  c:
+    | {
+        region?: string | null;
+        road?: string | null;
+        house?: string | null;
+        flat?: string | null;
+        address?: string | null;
+        city?: string | null;
+      }
+    | null
+    | undefined,
   lang: "en" | "ar",
 ): string[] {
   if (!c) return [];
@@ -32,9 +87,10 @@ function formatDeliveryAddress(
   const road = c.road?.trim() || "";
   const house = c.house?.trim() || "";
   const flat = c.flat?.trim() || "";
-  const parts = lang === "ar"
-    ? [region, road, house, flat] // المنطقة، طريق، منزل، شقة
-    : [flat, house, road, region]; // Flat, House, Road, Region
+  const parts =
+    lang === "ar"
+      ? [region, road, house, flat] // المنطقة، طريق، منزل، شقة
+      : [flat, house, road, region]; // Flat, House, Road, Region
   const filtered = parts.filter((p) => p && p.length > 0);
   if (filtered.length === 0 && c.address) return c.address.split(/\r?\n/).filter(Boolean);
   const sep = lang === "ar" ? "، " : ", ";
@@ -51,7 +107,6 @@ type SavedAddress = {
   flat: string | null;
   is_default: boolean;
 };
-
 
 export const Route = createFileRoute("/_authenticated/admin/b/$slug/orders/$id")({
   component: OrderDetail,
@@ -76,19 +131,37 @@ function OrderErrorBoundary({ error }: { error?: Error }) {
   );
 }
 
-
 type Order = any;
 type Item = {
-  id?: string; product_id?: string | null; variant_id?: string | null;
-  description: string; quantity: number; unit_price: number; original_price?: number | null;
+  id?: string;
+  product_id?: string | null;
+  variant_id?: string | null;
+  description: string;
+  quantity: number;
+  unit_price: number;
+  original_price?: number | null;
   customizations: { name: string; price_delta: number }[];
-  customization_total: number; line_total: number;
+  customization_total: number;
+  line_total: number;
   location: "main" | "incubator";
   selected_variant?: { size?: string | null; color?: string | null; fabric?: string | null } | null;
-  custom_field_values?: Array<{ key: string; label_ar: string | null; label_en: string | null; value: string }>;
+  custom_field_values?: Array<{
+    key: string;
+    label_ar: string | null;
+    label_en: string | null;
+    value: string;
+  }>;
 };
 
-function BhdFeeInput({ value, disabled, onChange }: { value: number; disabled?: boolean; onChange: (value: number) => void }) {
+function BhdFeeInput({
+  value,
+  disabled,
+  onChange,
+}: {
+  value: number;
+  disabled?: boolean;
+  onChange: (value: number) => void;
+}) {
   const [display, setDisplay] = useState(Number(value || 0).toFixed(3));
   useEffect(() => setDisplay(Number(value || 0).toFixed(3)), [value]);
   const commit = () => {
@@ -96,7 +169,21 @@ function BhdFeeInput({ value, disabled, onChange }: { value: number; disabled?: 
     setDisplay(parsed.toFixed(3));
     onChange(parsed);
   };
-  return <Input inputMode="decimal" value={display} disabled={disabled} onChange={(event) => setDisplay(event.target.value.replace(/[^0-9.]/g, ""))} onBlur={commit} onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); commit(); } }} />;
+  return (
+    <Input
+      inputMode="decimal"
+      value={display}
+      disabled={disabled}
+      onChange={(event) => setDisplay(event.target.value.replace(/[^0-9.]/g, ""))}
+      onBlur={commit}
+      onKeyDown={(event) => {
+        if (event.key === "Enter") {
+          event.preventDefault();
+          commit();
+        }
+      }}
+    />
+  );
 }
 
 function normalizeCustomFieldValues(value: unknown): Item["custom_field_values"] {
@@ -121,6 +208,7 @@ function OrderDetail() {
   const { isAdmin } = useProfile();
   const brandId = brand.id;
   const [approvingBenefit, setApprovingBenefit] = useState(false);
+  const [rejectingBenefit, setRejectingBenefit] = useState(false);
 
   const orderQ = useQuery({
     queryKey: ["order", id],
@@ -133,29 +221,44 @@ function OrderDetail() {
       if (error) throw error;
       if (!data) throw new Error("Order not found. It may have been deleted.");
       return data as Order;
-
     },
   });
 
   const productsQ = useQuery({
     queryKey: ["products", brandId],
-    queryFn: async () => (await supabase.from("products").select("*").eq("brand_id", brandId)).data ?? [],
+    queryFn: async () =>
+      (await supabase.from("products").select("*").eq("brand_id", brandId)).data ?? [],
   });
   const variantsQ = useQuery({
     queryKey: ["variants", brandId],
-    queryFn: async () => (await supabase.from("product_variants").select("*").eq("brand_id", brandId)).data ?? [],
+    queryFn: async () =>
+      (await supabase.from("product_variants").select("*").eq("brand_id", brandId)).data ?? [],
   });
   const customersQ = useQuery({
     queryKey: ["customers", brandId],
-    queryFn: async () => (await supabase.from("customers").select("*").eq("brand_id", brandId).order("name")).data ?? [],
+    queryFn: async () =>
+      (await supabase.from("customers").select("*").eq("brand_id", brandId).order("name")).data ??
+      [],
   });
   const addressesQ = useQuery({
     queryKey: ["customer_addresses", brandId],
     queryFn: async () => {
-      const { data, error } = await supabase.from("customer_addresses").select("*").eq("brand_id", brandId);
+      const { data, error } = await supabase
+        .from("customer_addresses")
+        .select("*")
+        .eq("brand_id", brandId);
       if (error) throw error;
       return (data ?? []) as SavedAddress[];
     },
+  });
+
+  const receiptViewQ = useQuery({
+    queryKey: ["benefit-receipt-view", id, orderQ.data?.benefit_receipt_key],
+    enabled: Boolean(orderQ.data?.payment_method === "benefit" && orderQ.data?.benefit_receipt_key),
+    staleTime: 4 * 60 * 1000,
+    refetchInterval: 4 * 60 * 1000,
+    queryFn: async () => getBenefitReceiptViewUrl({ data: { orderId: id } }),
+    retry: false,
   });
 
   const approveBenefitPayment = async () => {
@@ -167,22 +270,62 @@ function OrderDetail() {
     await orderQ.refetch();
     qc.invalidateQueries({ queryKey: ["orders"] });
   };
+
+  const rejectBenefitPayment = async () => {
+    if (
+      !window.confirm(
+        lang === "ar"
+          ? "هل تريد رفض الإيصال؟ سيتم حذف صورة الإيصال الخاصة فوراً."
+          : "Reject this receipt? The private receipt image will be deleted immediately.",
+      )
+    ) {
+      return;
+    }
+    setRejectingBenefit(true);
+    try {
+      await rejectBenefitReceipt({ data: { orderId: id } });
+      toast.success(
+        lang === "ar" ? "تم رفض الإيصال وحذف الصورة" : "Receipt rejected and image deleted",
+      );
+      await orderQ.refetch();
+      qc.removeQueries({ queryKey: ["benefit-receipt-view", id] });
+      qc.invalidateQueries({ queryKey: ["orders"] });
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Unable to reject receipt");
+    } finally {
+      setRejectingBenefit(false);
+    }
+  };
   const branchesQ = useQuery({
     queryKey: ["branches", brandId],
     queryFn: async () => {
-      const { data, error } = await supabase.from("branches").select("id, name_ar, name_en, location_ar, location_en").eq("brand_id", brandId);
+      const { data, error } = await supabase
+        .from("branches")
+        .select("id, name_ar, name_en, location_ar, location_en")
+        .eq("brand_id", brandId);
       if (error) throw error;
       return data ?? [];
     },
   });
   const customQ = useQuery({
     queryKey: ["customizations", brandId],
-    queryFn: async () => (await supabase.from("customization_options").select("*").eq("brand_id", brandId).order("name")).data ?? [],
+    queryFn: async () =>
+      (
+        await supabase
+          .from("customization_options")
+          .select("*")
+          .eq("brand_id", brandId)
+          .order("name")
+      ).data ?? [],
   });
   const settingsQ = useQuery({
     queryKey: ["business-settings", brandId],
     queryFn: async () => {
-      const { data } = await supabase.from("business_settings").select("*").eq("brand_id", brandId).maybeSingle();
+      const { data } = await supabase
+        .from("business_settings")
+        .select("*")
+        .eq("brand_id", brandId)
+        .maybeSingle();
       return data;
     },
   });
@@ -194,7 +337,11 @@ function OrderDetail() {
   const [hasSavedDraft, setHasSavedDraft] = useState(false);
   const [saving, setSaving] = useState(false);
   const [promoInput, setPromoInput] = useState("");
-  const [appliedPromo, setAppliedPromo] = useState<{ code: string; id: string; amount: number } | null>(null);
+  const [appliedPromo, setAppliedPromo] = useState<{
+    code: string;
+    id: string;
+    amount: number;
+  } | null>(null);
   const [checkingPromo, setCheckingPromo] = useState(false);
   const promoContextRef = useRef<string | null>(null);
 
@@ -202,8 +349,12 @@ function OrderDetail() {
     if (orderQ.data) {
       setOrder(orderQ.data);
       const loadedItems = (orderQ.data.order_items ?? []).map((i: any) => ({
-        id: i.id, product_id: i.product_id, variant_id: i.variant_id,
-        description: i.description, quantity: i.quantity, unit_price: Number(i.unit_price),
+        id: i.id,
+        product_id: i.product_id,
+        variant_id: i.variant_id,
+        description: i.description,
+        quantity: i.quantity,
+        unit_price: Number(i.unit_price),
         original_price: i.original_price == null ? null : Number(i.original_price),
         customizations: i.customizations ?? [],
         customization_total: Number(i.customization_total),
@@ -215,29 +366,50 @@ function OrderDetail() {
       setItems(loadedItems);
       promoContextRef.current = JSON.stringify({
         customer: (orderQ.data as any).customer_id ?? null,
-        items: loadedItems.map((item: Item) => [item.variant_id ?? null, item.quantity, Number(item.line_total).toFixed(3)]),
+        items: loadedItems.map((item: Item) => [
+          item.variant_id ?? null,
+          item.quantity,
+          Number(item.line_total).toFixed(3),
+        ]),
       });
       setEditingUnlocked(false);
       const savedPromo = (orderQ.data as any).promo_code;
       setPromoInput(savedPromo ?? "");
-      setAppliedPromo(savedPromo ? {
-        code: savedPromo,
-        id: (orderQ.data as any).promo_code_id ?? "",
-        amount: Number((orderQ.data as any).discount ?? 0),
-      } : null);
+      setAppliedPromo(
+        savedPromo
+          ? {
+              code: savedPromo,
+              id: (orderQ.data as any).promo_code_id ?? "",
+              amount: Number((orderQ.data as any).discount ?? 0),
+            }
+          : null,
+      );
     }
   }, [orderQ.data]);
 
-  useEffect(() => { setHasSavedDraft(false); }, [id]);
+  useEffect(() => {
+    setHasSavedDraft(false);
+  }, [id]);
 
   // Backfill the tenant's flat delivery fee for untouched draft orders that
   // were created before the list-page initializer loaded the setting.
   useEffect(() => {
-    if (!order || !settingsQ.data || order.fulfillment_method !== "delivery" || Number(order.shipping ?? 0) !== 0) return;
+    if (
+      !order ||
+      !settingsQ.data ||
+      order.fulfillment_method !== "delivery" ||
+      Number(order.shipping ?? 0) !== 0
+    )
+      return;
     const source = orderQ.data as any;
-    const untouchedDraft = source?.status === "draft" && !source?.customer_id && !source?.payment_method && (source?.order_items?.length ?? 0) === 0;
+    const untouchedDraft =
+      source?.status === "draft" &&
+      !source?.customer_id &&
+      !source?.payment_method &&
+      (source?.order_items?.length ?? 0) === 0;
     const configuredFee = Number((settingsQ.data as any).delivery_fee ?? 0);
-    if (untouchedDraft && configuredFee > 0) setOrder((current: any) => current ? { ...current, shipping: configuredFee } : current);
+    if (untouchedDraft && configuredFee > 0)
+      setOrder((current: any) => (current ? { ...current, shipping: configuredFee } : current));
   }, [order?.id, order?.fulfillment_method, order?.shipping, orderQ.data, settingsQ.data]);
 
   const totals = useMemo(() => {
@@ -245,7 +417,7 @@ function OrderDetail() {
     const discount = Number(order?.discount ?? 0);
     const shipping = Number(order?.shipping ?? 0);
     const taxable = Math.max(0, subtotal - discount);
-    const taxAmount = taxable * Number(order?.tax_rate ?? 0) / 100;
+    const taxAmount = (taxable * Number(order?.tax_rate ?? 0)) / 100;
     const total = taxable + taxAmount + shipping;
     const advancePaid = Math.max(0, Number(order?.advance_paid ?? 0));
     const remaining = Math.max(0, total - advancePaid);
@@ -255,7 +427,11 @@ function OrderDetail() {
   useEffect(() => {
     const signature = JSON.stringify({
       customer: order?.customer_id ?? null,
-      items: items.map((item) => [item.variant_id ?? null, item.quantity, Number(item.line_total).toFixed(3)]),
+      items: items.map((item) => [
+        item.variant_id ?? null,
+        item.quantity,
+        Number(item.line_total).toFixed(3),
+      ]),
     });
     if (promoContextRef.current === null) {
       promoContextRef.current = signature;
@@ -266,24 +442,52 @@ function OrderDetail() {
       if (appliedPromo) {
         setAppliedPromo(null);
         setPromoInput("");
-        setOrder((current: any) => current ? { ...current, discount: 0, promo_code: null, promo_code_id: null } : current);
-        toast.info(lang === "ar" ? "تمت إزالة رمز الخصم بعد تغيير العميل أو المنتجات." : "Promo code removed after the customer or items changed.");
+        setOrder((current: any) =>
+          current ? { ...current, discount: 0, promo_code: null, promo_code_id: null } : current,
+        );
+        toast.info(
+          lang === "ar"
+            ? "تمت إزالة رمز الخصم بعد تغيير العميل أو المنتجات."
+            : "Promo code removed after the customer or items changed.",
+        );
       }
     }
   }, [items, order?.customer_id, appliedPromo, lang]);
 
   const promoFailureMessage = (result: any) => {
     switch (result?.reason) {
-      case "FIRST_ORDER_ONLY": return lang === "ar" ? "رمز الخصم هذا مخصص للعملاء الجدد فقط." : "This promo code is restricted to first-time customers only.";
-      case "MINIMUM_NOT_MET": return lang === "ar"
-        ? `يتطلب رمز الخصم هذا حداً أدنى للشراء بقيمة ${formatMoney(Number(result.minimum_order_amount), "BHD")}.`
-        : `This promo code requires a minimum purchase value of ${formatMoney(Number(result.minimum_order_amount), "BHD")}.`;
-      case "NO_ELIGIBLE_ITEMS": return lang === "ar" ? "لا يمكن تطبيق رمز الخصم هذا على المنتجات المخفضة مسبقاً." : "This promo code cannot be applied to items already on discount/sale.";
-      case "CODE_INACTIVE": return lang === "ar" ? "رمز الخصم هذا لم يعد نشطاً." : "This promotional code is no longer active.";
-      case "USAGE_LIMIT_REACHED": return lang === "ar" ? "وصل هذا العميل إلى الحد المسموح لاستخدام الرمز." : "This customer has reached the usage limit for this promo code.";
-      case "CUSTOMER_REQUIRED": return lang === "ar" ? "اختر عميلاً قبل تطبيق رمز الخصم." : "Select a customer before applying this promo code.";
-      case "CODE_NOT_FOUND": return lang === "ar" ? "رمز الخصم غير موجود لهذا المتجر." : "This promo code does not exist for this brand.";
-      default: return lang === "ar" ? "تعذر تطبيق رمز الخصم. تحقق من شروط الرمز." : "This promo code could not be applied. Check its eligibility rules.";
+      case "FIRST_ORDER_ONLY":
+        return lang === "ar"
+          ? "رمز الخصم هذا مخصص للعملاء الجدد فقط."
+          : "This promo code is restricted to first-time customers only.";
+      case "MINIMUM_NOT_MET":
+        return lang === "ar"
+          ? `يتطلب رمز الخصم هذا حداً أدنى للشراء بقيمة ${formatMoney(Number(result.minimum_order_amount), "BHD")}.`
+          : `This promo code requires a minimum purchase value of ${formatMoney(Number(result.minimum_order_amount), "BHD")}.`;
+      case "NO_ELIGIBLE_ITEMS":
+        return lang === "ar"
+          ? "لا يمكن تطبيق رمز الخصم هذا على المنتجات المخفضة مسبقاً."
+          : "This promo code cannot be applied to items already on discount/sale.";
+      case "CODE_INACTIVE":
+        return lang === "ar"
+          ? "رمز الخصم هذا لم يعد نشطاً."
+          : "This promotional code is no longer active.";
+      case "USAGE_LIMIT_REACHED":
+        return lang === "ar"
+          ? "وصل هذا العميل إلى الحد المسموح لاستخدام الرمز."
+          : "This customer has reached the usage limit for this promo code.";
+      case "CUSTOMER_REQUIRED":
+        return lang === "ar"
+          ? "اختر عميلاً قبل تطبيق رمز الخصم."
+          : "Select a customer before applying this promo code.";
+      case "CODE_NOT_FOUND":
+        return lang === "ar"
+          ? "رمز الخصم غير موجود لهذا المتجر."
+          : "This promo code does not exist for this brand.";
+      default:
+        return lang === "ar"
+          ? "تعذر تطبيق رمز الخصم. تحقق من شروط الرمز."
+          : "This promo code could not be applied. Check its eligibility rules.";
     }
   };
 
@@ -291,17 +495,27 @@ function OrderDetail() {
     if (!order) return;
     const code = promoInput.trim().toUpperCase();
     if (!code) return toast.error(lang === "ar" ? "أدخل رمز الخصم." : "Enter a promo code.");
-    if (!items.length || totals.subtotal <= 0) return toast.error(lang === "ar" ? "أضف منتجات إلى الطلب أولاً." : "Add products to the order first.");
+    if (!items.length || totals.subtotal <= 0)
+      return toast.error(
+        lang === "ar" ? "أضف منتجات إلى الطلب أولاً." : "Add products to the order first.",
+      );
     setCheckingPromo(true);
     const { data, error } = await supabase.rpc("validate_promo_code" as any, {
       p_brand_slug: brand.slug,
       p_code: code,
       p_subtotal: totals.subtotal,
-      p_items: items.map((item) => ({ variant_id: item.variant_id, line_total: Number(item.line_total.toFixed(3)) })),
+      p_items: items.map((item) => ({
+        variant_id: item.variant_id,
+        line_total: Number(item.line_total.toFixed(3)),
+      })),
       p_customer_id: order.customer_id ?? null,
     });
     setCheckingPromo(false);
-    if (error) return toast.error(error.message || (lang === "ar" ? "تعذر التحقق من الرمز." : "Could not validate this promo code."));
+    if (error)
+      return toast.error(
+        error.message ||
+          (lang === "ar" ? "تعذر التحقق من الرمز." : "Could not validate this promo code."),
+      );
     const result = data as any;
     if (!result?.valid) return toast.error(promoFailureMessage(result));
     const amount = Number(result.discount_amount ?? 0);
@@ -320,7 +534,8 @@ function OrderDetail() {
   };
 
   const paymentBadge: PaymentBadge = useMemo(
-    () => resolvePaymentStatus(order?.payment_status, order?.status, totals.total, totals.advancePaid),
+    () =>
+      resolvePaymentStatus(order?.payment_status, order?.status, totals.total, totals.advancePaid),
     [order?.payment_status, order?.status, totals.total, totals.advancePaid],
   );
 
@@ -328,26 +543,33 @@ function OrderDetail() {
   const [cameraStreamPromise, setCameraStreamPromise] = useState<Promise<MediaStream> | null>(null);
   const cameraStreamRef = useRef<MediaStream | null>(null);
 
-
-
   if (!order || !settingsQ.data) return <div className="p-8">Loading…</div>;
-
 
   const currency = order.currency ?? "BHD";
   const serverOrder = orderQ.data as any;
   const isClosedOrder = serverOrder?.status === "completed" || serverOrder?.status === "paid";
   const isReadOnly = isClosedOrder && !editingUnlocked;
-  const isBlankDraft = serverOrder?.status === "draft"
-    && !serverOrder?.customer_id
-    && !serverOrder?.payment_method
-    && (serverOrder?.order_items?.length ?? 0) === 0;
+  const isBlankDraft =
+    serverOrder?.status === "draft" &&
+    !serverOrder?.customer_id &&
+    !serverOrder?.payment_method &&
+    (serverOrder?.order_items?.length ?? 0) === 0;
   const isCreationMode = isBlankDraft && !hasSavedDraft;
 
   const addItem = () => {
-    setItems([...items, {
-      description: "", quantity: 1, unit_price: 0, original_price: null, customizations: [],
-      customization_total: 0, line_total: 0, location: "main",
-    }]);
+    setItems([
+      ...items,
+      {
+        description: "",
+        quantity: 1,
+        unit_price: 0,
+        original_price: null,
+        customizations: [],
+        customization_total: 0,
+        line_total: 0,
+        location: "main",
+      },
+    ]);
   };
 
   const openBarcodeScanner = () => {
@@ -359,20 +581,23 @@ function OrderDetail() {
     setScannerOpen(true);
   };
 
-
   const handleScanned = (code: string) => {
-    const normalizeScan = (value: unknown) => String(value ?? "")
-      .replace(/[\u0000-\u001f\u007f]/g, "")
-      .trim()
-      .toUpperCase();
+    const normalizeScan = (value: unknown) =>
+      String(value ?? "")
+        .replace(/[\u0000-\u001f\u007f]/g, "")
+        .trim()
+        .toUpperCase();
     const trimmed = normalizeScan(code);
     if (!trimmed) return;
     const variants = variantsQ.data ?? [];
     const products = productsQ.data ?? [];
-    const v = variants.find((x: any) => normalizeScan(x.barcode) === trimmed)
-      ?? variants.find((x: any) => normalizeScan(x.sku) === trimmed);
+    const v =
+      variants.find((x: any) => normalizeScan(x.barcode) === trimmed) ??
+      variants.find((x: any) => normalizeScan(x.sku) === trimmed);
     if (!v) {
-      toast.error(lang === "ar" ? `لم يتم العثور على الباركود: ${trimmed}` : `Barcode not found: ${trimmed}`);
+      toast.error(
+        lang === "ar" ? `لم يتم العثور على الباركود: ${trimmed}` : `Barcode not found: ${trimmed}`,
+      );
       return;
     }
     const p = products.find((x: any) => x.id === v.product_id);
@@ -400,11 +625,14 @@ function OrderDetail() {
       location: preferred,
     };
     setItems((prev) => {
-      const existingIndex = prev.findIndex((item) => item.variant_id === v.id && item.location === preferred && !(item.customizations?.length));
+      const existingIndex = prev.findIndex(
+        (item) =>
+          item.variant_id === v.id && item.location === preferred && !item.customizations?.length,
+      );
       if (existingIndex < 0) return [...prev, newItem];
-      return prev.map((item, index) => index === existingIndex
-        ? recalc({ ...item, quantity: Number(item.quantity) + 1 })
-        : item);
+      return prev.map((item, index) =>
+        index === existingIndex ? recalc({ ...item, quantity: Number(item.quantity) + 1 }) : item,
+      );
     });
     toast.success(isAr ? "تمت إضافة القطعة" : "Item added");
   };
@@ -416,7 +644,7 @@ function OrderDetail() {
   };
 
   const updateItem = (idx: number, patch: Partial<Item>) => {
-    setItems(items.map((it, i) => i === idx ? recalc({ ...it, ...patch }) : it));
+    setItems(items.map((it, i) => (i === idx ? recalc({ ...it, ...patch }) : it)));
   };
 
   const pickVariant = (idx: number, variantId: string) => {
@@ -432,7 +660,9 @@ function OrderDetail() {
     if (v.color) lines.push(`${colorLabel}: ${v.color}`);
     if (v.fabric) lines.push(`${fabricLabel}: ${v.fabric}`);
     updateItem(idx, {
-      product_id: p.id, variant_id: v.id, description: lines.join("\n"),
+      product_id: p.id,
+      variant_id: v.id,
+      description: lines.join("\n"),
       unit_price: Number(v.selling_price),
       original_price: v.original_price == null ? null : Number(v.original_price),
     });
@@ -441,7 +671,9 @@ function OrderDetail() {
   const toggleCustom = (idx: number, c: { name: string; price_delta: number }) => {
     const it = items[idx];
     const exists = it.customizations.find((x) => x.name === c.name);
-    const newCust = exists ? it.customizations.filter((x) => x.name !== c.name) : [...it.customizations, c];
+    const newCust = exists
+      ? it.customizations.filter((x) => x.name !== c.name)
+      : [...it.customizations, c];
     updateItem(idx, { customizations: newCust });
   };
 
@@ -457,8 +689,13 @@ function OrderDetail() {
       return toast.error(lang === "ar" ? "اختر عنوان التوصيل" : "Select a delivery address");
     }
     setSaving(true);
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) { setSaving(false); return; }
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) {
+      setSaving(false);
+      return;
+    }
 
     // Stock precheck when order will be in a deducting state.
     if (DEDUCTING.has(order.status)) {
@@ -468,12 +705,18 @@ function OrderDetail() {
       const prevByVariant = new Map<string, number>();
       for (const p of priorItems as any[]) {
         if (!p.variant_id) continue;
-        prevByVariant.set(p.variant_id, (prevByVariant.get(p.variant_id) ?? 0) + Number(p.quantity));
+        prevByVariant.set(
+          p.variant_id,
+          (prevByVariant.get(p.variant_id) ?? 0) + Number(p.quantity),
+        );
       }
       const wantByVariant = new Map<string, number>();
       for (const it of items) {
         if (!it.variant_id) continue;
-        wantByVariant.set(it.variant_id, (wantByVariant.get(it.variant_id) ?? 0) + Number(it.quantity));
+        wantByVariant.set(
+          it.variant_id,
+          (wantByVariant.get(it.variant_id) ?? 0) + Number(it.quantity),
+        );
       }
       for (const [vid, want] of wantByVariant) {
         const v = variants.find((x: any) => x.id === vid);
@@ -486,22 +729,39 @@ function OrderDetail() {
       }
     }
 
-    const { error: oe } = await supabase.from("orders").update({
-      customer_id: order.customer_id, status: order.status, notes: order.notes,
-      fulfillment_method: fulfillmentMethod,
-      branch_id: fulfillmentMethod === "pickup" ? order.branch_id ?? null : null,
-      shipping_address_id: fulfillmentMethod === "delivery" ? order.shipping_address_id ?? null : null,
-      digital_delivery_channel: fulfillmentMethod === "digital" ? order.digital_delivery_channel : null,
-      digital_delivery_contact: fulfillmentMethod === "digital" ? order.digital_delivery_contact : null,
-      payment_method: order.payment_method ?? null,
-      payment_status: order.payment_status ?? "unpaid",
-      discount: totals.discount, tax_rate: order.tax_rate, tax_amount: totals.taxAmount,
-      promo_code: appliedPromo?.code ?? null, promo_code_id: appliedPromo?.id || null,
-      shipping: totals.shipping, subtotal: totals.subtotal, total: totals.total,
-      advance_paid: totals.advancePaid,
-      currency, order_date: order.order_date,
-    } as any).eq("id", order.id);
-    if (oe) { setSaving(false); return toast.error(oe.message); }
+    const { error: oe } = await supabase
+      .from("orders")
+      .update({
+        customer_id: order.customer_id,
+        status: order.status,
+        notes: order.notes,
+        fulfillment_method: fulfillmentMethod,
+        branch_id: fulfillmentMethod === "pickup" ? (order.branch_id ?? null) : null,
+        shipping_address_id:
+          fulfillmentMethod === "delivery" ? (order.shipping_address_id ?? null) : null,
+        digital_delivery_channel:
+          fulfillmentMethod === "digital" ? order.digital_delivery_channel : null,
+        digital_delivery_contact:
+          fulfillmentMethod === "digital" ? order.digital_delivery_contact : null,
+        payment_method: order.payment_method ?? null,
+        payment_status: order.payment_status ?? "unpaid",
+        discount: totals.discount,
+        tax_rate: order.tax_rate,
+        tax_amount: totals.taxAmount,
+        promo_code: appliedPromo?.code ?? null,
+        promo_code_id: appliedPromo?.id || null,
+        shipping: totals.shipping,
+        subtotal: totals.subtotal,
+        total: totals.total,
+        advance_paid: totals.advancePaid,
+        currency,
+        order_date: order.order_date,
+      } as any)
+      .eq("id", order.id);
+    if (oe) {
+      setSaving(false);
+      return toast.error(oe.message);
+    }
 
     // ── Activity log: detect changes vs saved state
     const prev = (orderQ.data ?? {}) as any;
@@ -539,15 +799,24 @@ function OrderDetail() {
     if (items.length > 0) {
       const { error: ie } = await (supabase.from("order_items") as any).insert(
         items.map((i) => ({
-          user_id: user.id, order_id: order.id,
-          product_id: i.product_id ?? null, variant_id: i.variant_id ?? null,
-          description: i.description, quantity: i.quantity, unit_price: i.unit_price,
+          user_id: user.id,
+          order_id: order.id,
+          product_id: i.product_id ?? null,
+          variant_id: i.variant_id ?? null,
+          description: i.description,
+          quantity: i.quantity,
+          unit_price: i.unit_price,
           original_price: i.original_price ?? null,
-          customizations: i.customizations, customization_total: i.customization_total, line_total: i.line_total,
+          customizations: i.customizations,
+          customization_total: i.customization_total,
+          line_total: i.line_total,
           location: i.location ?? "main",
         })),
       );
-      if (ie) { setSaving(false); return toast.error(ie.message); }
+      if (ie) {
+        setSaving(false);
+        return toast.error(ie.message);
+      }
     }
 
     // Sync inventory (deduct or restore based on status).
@@ -587,19 +856,23 @@ function OrderDetail() {
         if (delta === 0) continue;
         const v = variants.find((x: any) => x.id === vid) as any;
         const p = v ? (productsQ.data ?? []).find((x: any) => x.id === v.product_id) : null;
-        const vLabel = v ? `${(p as any)?.name ?? ""}${v.size ? ` · ${v.size}` : ""}${v.color ? ` · ${v.color}` : ""}` : vid;
+        const vLabel = v
+          ? `${(p as any)?.name ?? ""}${v.size ? ` · ${v.size}` : ""}${v.color ? ` · ${v.color}` : ""}`
+          : vid;
         const before = Number(v?.stock ?? 0) + (prevByV.get(vid) ?? 0);
         const after = before - (wantByV.get(vid) ?? 0);
         const inv = order.invoice_number ?? "";
         if (delta > 0) {
           logs.push({
-            action: "stock_change", order_id: order.id,
+            action: "stock_change",
+            order_id: order.id,
             en: `Stock decreased from ${before} to ${after} for ${vLabel} due to Order #${inv}`,
             ar: `انخفض المخزون من ${before} إلى ${after} لـ ${vLabel} بسبب الطلب رقم ${inv}`,
           } as any);
         } else {
           logs.push({
-            action: "stock_change", order_id: order.id,
+            action: "stock_change",
+            order_id: order.id,
             en: `Stock restored from ${before} to ${after} for ${vLabel} due to Order #${inv}`,
             ar: `استُعيد المخزون من ${before} إلى ${after} لـ ${vLabel} بسبب الطلب رقم ${inv}`,
           } as any);
@@ -618,7 +891,6 @@ function OrderDetail() {
     qc.invalidateQueries({ queryKey: ["variants"] });
     qc.invalidateQueries({ queryKey: ["activity_logs"] });
   };
-
 
   const copyLink = async () => {
     const url = `${window.location.origin}/invoice/${order.public_invoice_token}`;
@@ -645,9 +917,7 @@ function OrderDetail() {
     const settings: any = settingsQ.data ?? {};
     const LEGACY = new Set(["Abaya Atelier", "أباية أتيليه"]);
     const rawBrand = (settings.business_name ?? "").trim();
-    const brand = !rawBrand || LEGACY.has(rawBrand)
-      ? (lang === "ar" ? "بيورا" : "Pura")
-      : rawBrand;
+    const brand = !rawBrand || LEGACY.has(rawBrand) ? (lang === "ar" ? "بيورا" : "Pura") : rawBrand;
 
     const paymentLabel = order.payment_method ? t(`payment.${order.payment_method}`) : "";
     const statusLabel = t(`status.${order.status}`);
@@ -692,8 +962,9 @@ function OrderDetail() {
         vat: t("orderDetail.vat"),
         shipping: t("orderDetail.shipping"),
         grandTotal: t("orderDetail.grandTotal"),
-        thankYou: settings.footer_note?.trim()
-          || (lang === "ar" ? "شكراً لتسوّقكم معنا" : "Thank you for your order"),
+        thankYou:
+          settings.footer_note?.trim() ||
+          (lang === "ar" ? "شكراً لتسوّقكم معنا" : "Thank you for your order"),
       },
       footerNote: null,
     });
@@ -703,32 +974,73 @@ function OrderDetail() {
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-6xl mx-auto">
       <div className="no-print mb-6 flex flex-wrap items-center justify-between gap-3">
-        <Link to="/admin/b/$slug/orders" params={{ slug }} className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-2">
+        <Link
+          to="/admin/b/$slug/orders"
+          params={{ slug }}
+          className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-2"
+        >
           <ArrowLeft className="h-4 w-4" /> {t("orderDetail.back")}
         </Link>
         <div className="flex flex-wrap gap-2">
-          {!isCreationMode && <>
-            <SendInvoiceDialog order={order} totals={totals} settings={settingsQ.data} currency={currency} />
-            <ResendConfirmationEmailButton order={order} lang={lang} onDone={() => qc.invalidateQueries({ queryKey: ["order", id] })} />
-            <Button variant="outline" onClick={copyLink}><LinkIcon className="h-4 w-4 mr-2" /> {t("orders.copyLink")}</Button>
-            <Button variant="outline" onClick={printReceipt}><Receipt className="h-4 w-4 mr-2" /> {t("orders.printReceipt")}</Button>
-            <Button variant="outline" onClick={async () => {
-            try {
-              const el = document.querySelector<HTMLElement>(".printable-invoice");
-              const { downloadInvoicePdf } = await import("@/lib/download-invoice-pdf");
-              await downloadInvoicePdf(el, `invoice-${order.invoice_number ?? order.id}`);
-            } catch (err) {
-              console.error("PDF download failed", err);
-              toast.error((err as Error)?.message ?? "PDF download failed");
-            }
-            }}><Printer className="h-4 w-4 mr-2" /> {t("orders.printA4")}</Button>
-          </>}
+          {!isCreationMode && (
+            <>
+              <SendInvoiceDialog
+                order={order}
+                totals={totals}
+                settings={settingsQ.data}
+                currency={currency}
+              />
+              <ResendConfirmationEmailButton
+                order={order}
+                lang={lang}
+                onDone={() => qc.invalidateQueries({ queryKey: ["order", id] })}
+              />
+              <Button variant="outline" onClick={copyLink}>
+                <LinkIcon className="h-4 w-4 mr-2" /> {t("orders.copyLink")}
+              </Button>
+              <Button variant="outline" onClick={printReceipt}>
+                <Receipt className="h-4 w-4 mr-2" /> {t("orders.printReceipt")}
+              </Button>
+              <Button
+                variant="outline"
+                onClick={async () => {
+                  try {
+                    const el = document.querySelector<HTMLElement>(".printable-invoice");
+                    const { downloadInvoicePdf } = await import("@/lib/download-invoice-pdf");
+                    await downloadInvoicePdf(el, `invoice-${order.invoice_number ?? order.id}`);
+                  } catch (err) {
+                    console.error("PDF download failed", err);
+                    toast.error((err as Error)?.message ?? "PDF download failed");
+                  }
+                }}
+              >
+                <Printer className="h-4 w-4 mr-2" /> {t("orders.printA4")}
+              </Button>
+            </>
+          )}
           {isReadOnly ? (
-            isAdmin && <Button variant="outline" onClick={() => setEditingUnlocked(true)}><Unlock className="h-4 w-4 mr-2" />{lang === "ar" ? "فتح للتعديل" : "Unlock for editing"}</Button>
+            isAdmin && (
+              <Button variant="outline" onClick={() => setEditingUnlocked(true)}>
+                <Unlock className="h-4 w-4 mr-2" />
+                {lang === "ar" ? "فتح للتعديل" : "Unlock for editing"}
+              </Button>
+            )
           ) : (
-            <Button onClick={save} disabled={saving} className={isCreationMode ? "min-w-48" : undefined}>
-              {saving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
-              {isCreationMode ? (lang === "ar" ? "إنشاء وحفظ الطلب" : "Create & Save Order") : t("common.save")}
+            <Button
+              onClick={save}
+              disabled={saving}
+              className={isCreationMode ? "min-w-48" : undefined}
+            >
+              {saving ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <Save className="h-4 w-4 mr-2" />
+              )}
+              {isCreationMode
+                ? lang === "ar"
+                  ? "إنشاء وحفظ الطلب"
+                  : "Create & Save Order"
+                : t("common.save")}
             </Button>
           )}
         </div>
@@ -737,500 +1049,946 @@ function OrderDetail() {
       {isReadOnly && (
         <div className="no-print mb-4 flex items-center gap-2 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
           <Lock className="h-4 w-4 shrink-0" />
-          {lang === "ar" ? "هذا طلب مغلق. الحقول مقفلة لحماية السجل التاريخي." : "This order is closed. Fields are locked to protect its history."}
+          {lang === "ar"
+            ? "هذا طلب مغلق. الحقول مقفلة لحماية السجل التاريخي."
+            : "This order is closed. Fields are locked to protect its history."}
         </div>
       )}
 
       {/* Editor - hidden on print */}
-      <fieldset disabled={isReadOnly} className="no-print m-0 min-w-0 border-0 p-0 disabled:opacity-80">
-      <div className="space-y-4 mb-8">
-        <Card className="p-6">
-          <div className="mb-4">
-            <Label className="flex items-center gap-2"><Search className="h-3 w-3" /> {t("customers.searchByPhone")}</Label>
-            <Input
-              className="text-start"
-              placeholder={t("customers.searchByPhonePh")}
-              value={phoneSearch}
-              onChange={(e) => {
-                const q = e.target.value;
-                setPhoneSearch(q);
-                const digits = q.replace(/\D/g, "");
-                if (digits.length < 3) return;
-                const match = (customersQ.data ?? []).find((c: any) =>
-                  (c.phone ?? "").replace(/\D/g, "").includes(digits),
-                );
-                if (match) {
-                  const def = (addressesQ.data ?? []).find((a) => a.customer_id === match.id && a.is_default)
-                    ?? (addressesQ.data ?? []).find((a) => a.customer_id === match.id);
-                  setOrder({ ...order, customer_id: match.id, shipping_address_id: def?.id ?? null });
-                }
-              }}
-            />
-            {phoneSearch.replace(/\D/g, "").length >= 3 && !(customersQ.data ?? []).some((c: any) => (c.phone ?? "").replace(/\D/g, "").includes(phoneSearch.replace(/\D/g, ""))) && (
-              <p className="text-xs text-muted-foreground mt-1 italic">{t("customers.noMatch")}</p>
-            )}
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-            <div>
-              <Label>{t("orderDetail.customer")}</Label>
-              <Select value={order.customer_id ?? "none"} onValueChange={(v) => {
-                const cid = v === "none" ? null : v;
-                const def = cid ? (addressesQ.data ?? []).find((a) => a.customer_id === cid && a.is_default)
-                  ?? (addressesQ.data ?? []).find((a) => a.customer_id === cid) : null;
-                setOrder({ ...order, customer_id: cid, shipping_address_id: def?.id ?? null });
-              }}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">{t("orderDetail.noCustomerOption")}</SelectItem>
-                  {(customersQ.data ?? []).map((c: any) => (
-                    <SelectItem key={c.id} value={c.id}>{c.name}{c.phone ? ` — ${c.phone}` : ""}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label>{t("orderDetail.orderDate")}</Label>
-              <Input type="date" value={order.order_date} onChange={(e) => setOrder({ ...order, order_date: e.target.value })} />
-            </div>
-            <div>
-              <Label>{t("orderDetail.status")}</Label>
-              <Select value={order.status} onValueChange={(v) => setOrder({ ...order, status: v })}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="draft">{t("status.draft")}</SelectItem>
-                  <SelectItem value="confirmed">{t("status.confirmed")}</SelectItem>
-                  <SelectItem value="paid">{t("status.paid")}</SelectItem>
-                  <SelectItem value="shipped">{t("status.shipped")}</SelectItem>
-                  <SelectItem value="completed">{t("status.completed")}</SelectItem>
-                  <SelectItem value="cancelled">{t("status.cancelled")}</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label>{t("orderDetail.paymentMethod")}</Label>
-              <Select
-                value={order.payment_method ?? "none"}
-                onValueChange={(v) => setOrder({ ...order, payment_method: v === "none" ? null : v })}
-              >
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">{t("orderDetail.selectPayment")}</SelectItem>
-                  <SelectItem value="cash">{t("payment.cash")}</SelectItem>
-                  <SelectItem value="card">{t("payment.card")}</SelectItem>
-                  <SelectItem value="bank_transfer">{t("payment.bank_transfer")}</SelectItem>
-                  <SelectItem value="benefit">{t("payment.benefit")}</SelectItem>
-                  <SelectItem value="apple_pay">{t("payment.apple_pay")}</SelectItem>
-                  <SelectItem value="google_pay">{t("payment.google_pay")}</SelectItem>
-                  <SelectItem value="cod">{t("payment.cod")}</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-          {order.customer_id && (() => {
-             const selected = (customersQ.data ?? []).find((c: any) => c.id === order.customer_id);
-             if (!selected) return null;
-             const customerAddrs = (addressesQ.data ?? []).filter((a) => a.customer_id === order.customer_id);
-             const legacyLines = formatDeliveryAddress(selected, lang);
-            return (
-              <div className="mt-4 pt-4 border-t border-border text-start">
-                <p className="text-xs uppercase tracking-wider text-muted-foreground mb-1">
-                  {order.fulfillment_method === "digital" ? (lang === "ar" ? "بيانات العميل" : "Customer details") : t("orderDetail.deliveryAddress")}
-                </p>
-                <p className="font-medium">{selected.name}</p>
-                {selected.email && (
-                  <p className="text-sm text-muted-foreground flex items-center gap-1.5 break-all">
-                    <Mail className="h-3.5 w-3.5 shrink-0" />
-                    <a href={`mailto:${selected.email}`} className="hover:underline">{selected.email}</a>
+      <fieldset
+        disabled={isReadOnly}
+        className="no-print m-0 min-w-0 border-0 p-0 disabled:opacity-80"
+      >
+        <div className="space-y-4 mb-8">
+          <Card className="p-6">
+            <div className="mb-4">
+              <Label className="flex items-center gap-2">
+                <Search className="h-3 w-3" /> {t("customers.searchByPhone")}
+              </Label>
+              <Input
+                className="text-start"
+                placeholder={t("customers.searchByPhonePh")}
+                value={phoneSearch}
+                onChange={(e) => {
+                  const q = e.target.value;
+                  setPhoneSearch(q);
+                  const digits = q.replace(/\D/g, "");
+                  if (digits.length < 3) return;
+                  const match = (customersQ.data ?? []).find((c: any) =>
+                    (c.phone ?? "").replace(/\D/g, "").includes(digits),
+                  );
+                  if (match) {
+                    const def =
+                      (addressesQ.data ?? []).find(
+                        (a) => a.customer_id === match.id && a.is_default,
+                      ) ?? (addressesQ.data ?? []).find((a) => a.customer_id === match.id);
+                    setOrder({
+                      ...order,
+                      customer_id: match.id,
+                      shipping_address_id: def?.id ?? null,
+                    });
+                  }
+                }}
+              />
+              {phoneSearch.replace(/\D/g, "").length >= 3 &&
+                !(customersQ.data ?? []).some((c: any) =>
+                  (c.phone ?? "").replace(/\D/g, "").includes(phoneSearch.replace(/\D/g, "")),
+                ) && (
+                  <p className="text-xs text-muted-foreground mt-1 italic">
+                    {t("customers.noMatch")}
                   </p>
                 )}
-                {selected.phone && <p className="text-sm text-muted-foreground">{selected.phone}</p>}
-                {order.fulfillment_method === "delivery" && legacyLines.length > 0 && customerAddrs.length === 0
-                  ? legacyLines.map((line, index) => <p key={index} className="text-sm text-muted-foreground">{line}</p>)
-                  : null}
-              </div>
-            );
-          })()}
-          {(() => {
-            const method = order.fulfillment_method ?? "delivery";
-            const deliveryEnabled = Boolean((settingsQ.data as any).delivery_enabled);
-            const pickupEnabled = Boolean((settingsQ.data as any).pickup_enabled);
-            const digitalEnabled = Boolean((settingsQ.data as any).digital_delivery_enabled);
-            const defaultDeliveryFee = Number((settingsQ.data as any).delivery_fee ?? 0);
-            const selectedCustomer = (customersQ.data ?? []).find((c: any) => c.id === order.customer_id);
-            const selectedAddress = (addressesQ.data ?? []).find((a) => a.id === order.shipping_address_id);
-            const selectedBranch = (branchesQ.data ?? []).find((b: any) => b.id === order.branch_id);
-            const address = selectedAddress
-              ? formatAddressLine(selectedAddress as StructuredAddress, lang)
-              : formatDeliveryAddress(selectedCustomer, lang).join("، ");
-            const branchName = selectedBranch
-              ? (lang === "ar" ? selectedBranch.name_ar || selectedBranch.name_en : selectedBranch.name_en || selectedBranch.name_ar)
-              : null;
-            const branchLocation = selectedBranch
-              ? (lang === "ar" ? selectedBranch.location_ar || selectedBranch.location_en : selectedBranch.location_en || selectedBranch.location_ar)
-              : null;
-            const customerAddresses = (addressesQ.data ?? []).filter((item) => item.customer_id === order.customer_id);
-            const defaultAddress = customerAddresses.find((item) => item.is_default) ?? customerAddresses[0] ?? null;
-            const title = method === "digital"
-              ? (lang === "ar" ? "تسليم رقمي" : "Digital delivery")
-              : method === "pickup"
-                ? (lang === "ar" ? "استلام من الفرع" : "Pickup from branch")
-                : (lang === "ar" ? "توصيل" : "Delivery");
-            return (
-              <div className="mt-5 overflow-hidden rounded-xl border bg-muted/20 text-start shadow-sm">
-                <div className="flex flex-col gap-3 border-b bg-muted/50 px-4 py-3 sm:flex-row sm:items-end sm:justify-between">
-                  <div>
-                    <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">{lang === "ar" ? "طريقة التسليم" : "Fulfillment"}</p>
-                    <p className="text-lg font-semibold">{title}</p>
-                  </div>
-                  <div className="w-full sm:w-64">
-                    <Label className="sr-only">{lang === "ar" ? "طريقة التسليم" : "Fulfillment method"}</Label>
-                    <Select value={method} onValueChange={(value) => setOrder({
-                      ...order,
-                      fulfillment_method: value,
-                      branch_id: value === "pickup" ? order.branch_id ?? null : null,
-                      shipping_address_id: value === "delivery" ? order.shipping_address_id ?? defaultAddress?.id ?? null : null,
-                      shipping: value === "delivery" ? (isCreationMode ? defaultDeliveryFee : Number(order.shipping ?? defaultDeliveryFee)) : 0,
-                    })}>
-                      <SelectTrigger className="bg-background"><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        {(pickupEnabled || method === "pickup") && <SelectItem value="pickup">{lang === "ar" ? "استلام من الفرع" : "Pickup from Branch"}</SelectItem>}
-                        {(deliveryEnabled || method === "delivery") && <SelectItem value="delivery">{lang === "ar" ? "توصيل للمنزل" : "Home Delivery"}</SelectItem>}
-                        {(digitalEnabled || method === "digital") && <SelectItem value="digital">{lang === "ar" ? "تسليم رقمي" : "Digital Delivery"}</SelectItem>}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-                <div className="p-4">
-                  {method === "digital" ? (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      <div>
-                        <Label>{lang === "ar" ? "قناة التسليم" : "Delivery channel"}</Label>
-                        <Select value={order.digital_delivery_channel ?? "email"} onValueChange={(value) => setOrder({ ...order, digital_delivery_channel: value })}>
-                          <SelectTrigger><SelectValue /></SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="email">{lang === "ar" ? "البريد الإلكتروني" : "Email"}</SelectItem>
-                            <SelectItem value="whatsapp">{lang === "ar" ? "واتساب" : "WhatsApp"}</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div>
-                        <Label>{order.digital_delivery_channel === "whatsapp" ? (lang === "ar" ? "رقم أو معرّف واتساب" : "WhatsApp number or user ID") : (lang === "ar" ? "البريد الإلكتروني" : "Email address")}</Label>
-                        <Input dir="ltr" value={order.digital_delivery_contact ?? ""} onChange={(e) => setOrder({ ...order, digital_delivery_contact: e.target.value })} />
-                      </div>
-                    </div>
-                  ) : method === "pickup" ? (
-                    <div className="space-y-2">
-                      <Label>{lang === "ar" ? "فرع الاستلام" : "Pickup location"}</Label>
-                      <Select value={order.branch_id ?? ""} onValueChange={(branchId) => setOrder({ ...order, branch_id: branchId })}>
-                        <SelectTrigger className="text-start"><SelectValue placeholder={lang === "ar" ? "اختر الفرع" : "Select a branch"} /></SelectTrigger>
-                        <SelectContent>
-                          {(branchesQ.data ?? []).map((branch: any) => {
-                            const name = lang === "ar" ? branch.name_ar || branch.name_en : branch.name_en || branch.name_ar;
-                            const location = lang === "ar" ? branch.location_ar || branch.location_en : branch.location_en || branch.location_ar;
-                            return <SelectItem key={branch.id} value={branch.id}>{name}{location ? ` — ${location}` : ""}</SelectItem>;
-                          })}
-                        </SelectContent>
-                      </Select>
-                      {selectedBranch && <p className="text-sm text-muted-foreground"><span className="font-medium text-foreground">{branchName}</span>{branchLocation ? ` — ${branchLocation}` : ""}</p>}
-                    </div>
-                  ) : (
-                    <div className="grid gap-4 sm:grid-cols-[1fr_180px]">
-                      <div className="space-y-2">
-                        <div className="flex flex-wrap items-center justify-between gap-2">
-                          <Label>{lang === "ar" ? "عنوان التوصيل" : "Delivery address"}</Label>
-                          {defaultAddress && (
-                            <button type="button" className="text-xs font-medium text-primary hover:underline" onClick={() => setOrder({ ...order, shipping_address_id: defaultAddress.id })}>
-                              {lang === "ar" ? "استخدام عنوان ملف العميل" : "Use Customer Profile Address"}
-                            </button>
-                          )}
-                        </div>
-                        <Select value={order.shipping_address_id ?? ""} onValueChange={(addressId) => setOrder({ ...order, shipping_address_id: addressId })}>
-                          <SelectTrigger className="text-start"><SelectValue placeholder={lang === "ar" ? "اختر عنواناً" : "Select an address"} /></SelectTrigger>
-                          <SelectContent>
-                            {customerAddresses.map((savedAddress) => (
-                              <SelectItem key={savedAddress.id} value={savedAddress.id}>
-                                {(savedAddress.label || t("customers.address"))}{savedAddress.is_default ? " ★" : ""} — {formatAddressLine(savedAddress as StructuredAddress, lang) || "—"}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <p className="text-sm text-muted-foreground">{address || (lang === "ar" ? "لا يوجد عنوان توصيل محفوظ لهذا العميل" : "No saved delivery address for this customer")}</p>
-                      </div>
-                      <div>
-                        <Label>{lang === "ar" ? "رسوم التوصيل" : "Delivery fee"}</Label>
-                        <BhdFeeInput value={Number(order.shipping ?? 0)} disabled={isReadOnly} onChange={(shipping) => setOrder({ ...order, shipping })} />
-                        <p className="mt-1 text-xs text-muted-foreground">{formatMoney(Number(order.shipping ?? 0), order.currency ?? "BHD")}</p>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-            );
-          })()}
-        </Card>
-
-        <Card className="p-6">
-          <div className="flex items-center justify-between mb-4 gap-2 flex-wrap">
-            <h3 className="font-display text-lg">{t("orderDetail.lineItems")}</h3>
-            <div className="flex items-center gap-2">
-              <Button size="sm" variant="outline" onClick={openBarcodeScanner}>
-                <ScanLine className="h-3 w-3 mr-1" /> {lang === "ar" ? "مسح الباركود" : "Scan Barcode"}
-              </Button>
-              <Button size="sm" variant="outline" onClick={addItem}>
-                <Plus className="h-3 w-3 mr-1" /> {t("orderDetail.addLine")}
-              </Button>
             </div>
-          </div>
-          {items.length === 0 && <p className="text-sm text-muted-foreground">{t("orderDetail.noLines")}</p>}
-          <div className="space-y-4">
-            {items.map((it, idx) => {
-              const variant = it.variant_id ? (variantsQ.data ?? []).find((x: any) => x.id === it.variant_id) : null;
-              const mainStock = Number((variant as any)?.stock_main ?? 0);
-              const incStock = Number((variant as any)?.stock_incubator ?? 0);
-              const isAr = lang === "ar";
-              return (
-              <div key={idx} className="border border-border rounded-lg p-4 space-y-3">
-                <div className="grid grid-cols-1 sm:grid-cols-12 gap-3">
-                  <div className="sm:col-span-4">
-                    <Label>{t("orderDetail.fromInventory")}</Label>
-                    <Select value={it.variant_id ?? "custom"} onValueChange={(v) => v !== "custom" && pickVariant(idx, v)}>
-                      <SelectTrigger><SelectValue placeholder={t("orderDetail.pickVariant")} /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="custom">{t("orderDetail.customLine")}</SelectItem>
-                        {(variantsQ.data ?? []).map((v: any) => {
-                          const p = productsQ.data?.find((x: any) => x.id === v.product_id);
-                          if (!p) return null;
-                          return (
-                            <SelectItem key={v.id} value={v.id}>
-                              {p.name} {v.size ? `· ${v.size}` : ""} {v.color ? `· ${v.color}` : ""} — {formatMoney(v.selling_price, currency)}
-                            </SelectItem>
-                          );
-                        })}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="sm:col-span-3">
-                    <Label>{t("orderDetail.description")}</Label>
-                    <Textarea rows={3} value={it.description} onChange={(e) => updateItem(idx, { description: e.target.value })} className="text-sm leading-snug" />
-                  </div>
-                  <div className="sm:col-span-2"><Label>{t("orderDetail.qty")}</Label>
-                    <Input type="number" min={1} className="min-w-[70px] text-center" value={it.quantity} onChange={(e) => updateItem(idx, { quantity: Number(e.target.value) })} /></div>
-                  <div className="sm:col-span-3"><Label>{t("orderDetail.unitPrice")}</Label>
-                    <Input type="number" step="0.001" value={it.unit_price} onChange={(e) => updateItem(idx, { unit_price: Number(e.target.value) })} />
-                    {Number(it.original_price ?? (variant as any)?.original_price ?? 0) > Number(it.unit_price) && (
-                      <p className="mt-1 text-xs text-muted-foreground">
-                        {isAr ? "السعر الأصلي" : "Original"}: <span className="line-through">{formatMoney(Number(it.original_price ?? (variant as any)?.original_price), currency)}</span>
-                        <span className="mx-1">·</span>
-                        {isAr ? "سعر التخفيض" : "Sale"}: <span className="font-medium text-foreground">{formatMoney(it.unit_price, currency)}</span>
-                      </p>
-                    )}
-                  </div>
-                </div>
-
-                {it.variant_id && (
-                  <div>
-                    <Label className="text-xs">{isAr ? "الموقع (خصم من)" : "Location (deduct from)"}</Label>
-                    <div className="flex flex-wrap gap-2 mt-1">
-                      {([
-                        { key: "main", en: `Direct Sales · Main (${mainStock})`, ar: `الرئيسي (${mainStock})` },
-                        { key: "incubator", en: `Incubator (${incStock})`, ar: `الحاضنة (${incStock})` },
-                      ] as const).map((opt) => {
-                        const active = it.location === opt.key;
-                        return (
-                          <button
-                            key={opt.key}
-                            type="button"
-                            onClick={() => updateItem(idx, { location: opt.key })}
-                            className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${
-                              active
-                                ? "bg-primary text-primary-foreground border-primary"
-                                : "border-border hover:bg-secondary"
-                            }`}
-                          >
-                            {isAr ? opt.ar : opt.en}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
-
-                {(it.selected_variant || (it.custom_field_values && it.custom_field_values.length > 0)) && (
-                  <div className="rounded-md border border-border bg-muted/40 p-3 text-xs space-y-1">
-                    <div className="font-medium text-sm">
-                      {isAr ? "اختيارات العميل" : "Customer selections"}
-                    </div>
-                    {it.selected_variant && (
-                      <div className="flex flex-wrap gap-x-3 gap-y-1">
-                        {it.selected_variant.size && <span><b>{isAr ? "المقاس" : "Size"}:</b> {it.selected_variant.size}</span>}
-                        {it.selected_variant.color && <span><b>{isAr ? "اللون" : "Color"}:</b> {it.selected_variant.color}</span>}
-                        {it.selected_variant.fabric && <span><b>{isAr ? "القماش" : "Fabric"}:</b> {it.selected_variant.fabric}</span>}
-                      </div>
-                    )}
-                    {it.custom_field_values && it.custom_field_values.length > 0 && (
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-0.5 pt-1">
-                        {it.custom_field_values.map((cf, i) => (
-                          <div key={i}>
-                            <b>{isAr ? (cf.label_ar || cf.label_en || cf.key) : (cf.label_en || cf.label_ar || cf.key)}:</b> {cf.value}
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                )}
-
-
-                <div>
-                  <Label className="text-xs">{t("orderDetail.customizations")}</Label>
-                  <div className="flex flex-wrap gap-2 mt-1">
-                    {(customQ.data ?? []).map((c: any) => {
-                      const active = it.customizations.some((x) => x.name === c.name);
-                      return (
-                        <button key={c.id} type="button"
-                          onClick={() => toggleCustom(idx, { name: c.name, price_delta: Number(c.price_delta) })}
-                          className={`text-xs px-2 py-1 rounded-full border ${active ? "bg-primary text-primary-foreground border-primary" : "border-border hover:bg-secondary"}`}>
-                          {c.name} +{formatMoney(c.price_delta, currency)}
-                        </button>
-                      );
-                    })}
-                    {(customQ.data ?? []).length === 0 && <span className="text-xs text-muted-foreground">{t("orderDetail.addonsHint")}</span>}
-                  </div>
-                </div>
-                <div className="flex items-center justify-between pt-2 border-t border-border">
-                  <span className="text-sm text-muted-foreground">{t("orderDetail.lineTotal")}</span>
-                  <div className="flex items-center gap-3">
-                    <span className="font-medium">{formatMoney(it.line_total, currency)}</span>
-                    <Button variant="ghost" size="icon" onClick={() => setItems(items.filter((_, i) => i !== idx))}>
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              </div>
-              );
-            })}
-          </div>
-          <BarcodeScanner open={scannerOpen} onOpenChange={setScannerOpen} onDetected={handleScanned} cameraStreamPromise={cameraStreamPromise} />
-        </Card>
-
-        <Card className="p-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <Label>{t("orderDetail.notes")}</Label>
-              <Textarea value={order.notes ?? ""} onChange={(e) => setOrder({ ...order, notes: e.target.value })} rows={5} />
-            </div>
-            <div className="space-y-3">
-              {order.payment_method === "benefit" && order.benefit_receipt_url && (
-                <div className="rounded-xl border-2 border-amber-300 bg-amber-50 p-4 text-amber-950">
-                  <div className="mb-3 flex items-center justify-between gap-3">
-                    <div className="flex items-center gap-2"><ImageIcon className="h-5 w-5" /><span className="font-semibold">{lang === "ar" ? "إيصال تحويل بنفت" : "Benefit transfer receipt"}</span></div>
-                    <span className={`rounded-full px-2 py-1 text-xs font-semibold ${order.payment_status === "paid" ? "bg-emerald-100 text-emerald-800" : "bg-amber-200 text-amber-900"}`}>{order.payment_status === "paid" ? (lang === "ar" ? "تم التحقق" : "Verified") : (lang === "ar" ? "بانتظار التحقق" : "Pending verification")}</span>
-                  </div>
-                  <a href={order.benefit_receipt_url} target="_blank" rel="noreferrer" className="block overflow-hidden rounded-lg border bg-white">
-                    <img src={order.benefit_receipt_url} alt="Benefit payment receipt" className="h-52 w-full object-contain" />
-                  </a>
-                  {order.payment_status !== "paid" && <Button type="button" className="mt-3 w-full bg-emerald-700 text-white hover:bg-emerald-800" onClick={approveBenefitPayment} disabled={approvingBenefit}>{approvingBenefit ? <Loader2 className="me-2 h-4 w-4 animate-spin" /> : <CheckCircle2 className="me-2 h-4 w-4" />}{lang === "ar" ? "اعتماد الدفع" : "Approve Payment"}</Button>}
-                </div>
-              )}
-              <div className="rounded-lg border bg-muted/20 p-3 space-y-2">
-                <Label>{lang === "ar" ? "تطبيق رمز خصم" : "Apply Promo Code"}</Label>
-                {appliedPromo ? (
-                  <div className="flex items-center justify-between gap-3 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-emerald-900">
-                    <div className="flex min-w-0 items-center gap-2">
-                      <Tag className="h-4 w-4 shrink-0" />
-                      <span className="truncate font-mono font-semibold">{appliedPromo.code}</span>
-                      <span className="text-xs">− {formatMoney(appliedPromo.amount, currency)}</span>
-                    </div>
-                    <Button type="button" size="icon" variant="ghost" className="h-7 w-7 shrink-0" onClick={removeAdminPromo} disabled={isReadOnly} aria-label={lang === "ar" ? "إزالة رمز الخصم" : "Remove promo code"}><X className="h-4 w-4" /></Button>
-                  </div>
-                ) : (
-                  <div className="flex gap-2">
-                    <Input value={promoInput} onChange={(event) => setPromoInput(event.target.value.toUpperCase())} onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); void applyAdminPromo(); } }} placeholder="EID20" className="uppercase" disabled={isReadOnly || checkingPromo} />
-                    <Button type="button" variant="outline" onClick={applyAdminPromo} disabled={isReadOnly || checkingPromo}>{checkingPromo && <Loader2 className="me-2 h-4 w-4 animate-spin" />}{lang === "ar" ? "تطبيق" : "Apply"}</Button>
-                  </div>
-                )}
-                <p className="text-xs text-muted-foreground">{lang === "ar" ? "يتم التحقق من أهلية العميل والمنتجات والحد الأقصى تلقائياً." : "Customer eligibility, sale exclusions, and discount caps are checked automatically."}</p>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div><Label>{t("orderDetail.discount")}</Label>
-                  <Input type="number" step="0.001" value={order.discount} disabled={isReadOnly || !!appliedPromo} onChange={(e) => setOrder({ ...order, discount: Number(e.target.value) })} />
-                  {appliedPromo && <p className="mt-1 text-xs text-muted-foreground">{lang === "ar" ? "تم تثبيت الخصم بواسطة رمز الخصم." : "Locked to the validated promo amount."}</p>}</div>
-                <div><Label>{t("orderDetail.shipping")}</Label>
-                  <Input type="number" step="0.01" value={order.shipping} onChange={(e) => setOrder({ ...order, shipping: Number(e.target.value) })} /></div>
-              </div>
-              <div><Label>{t("orderDetail.taxRate")}</Label>
-                <Input type="number" step="0.01" value={order.tax_rate} onChange={(e) => setOrder({ ...order, tax_rate: Number(e.target.value) })} /></div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
               <div>
-                <Label>{t("orderDetail.advancePaid")}</Label>
-                <Input
-                  type="number"
-                  step="0.01"
-                  min={0}
-                  value={order.advance_paid ?? 0}
-                  onChange={(e) => setOrder({ ...order, advance_paid: Number(e.target.value) })}
-                />
-              </div>
-              <div>
-                <Label>{t("orderDetail.paymentStatus")}</Label>
+                <Label>{t("orderDetail.customer")}</Label>
                 <Select
-                  value={order.payment_status ?? "unpaid"}
-                  onValueChange={(v) => setOrder({ ...order, payment_status: v })}
+                  value={order.customer_id ?? "none"}
+                  onValueChange={(v) => {
+                    const cid = v === "none" ? null : v;
+                    const def = cid
+                      ? ((addressesQ.data ?? []).find(
+                          (a) => a.customer_id === cid && a.is_default,
+                        ) ?? (addressesQ.data ?? []).find((a) => a.customer_id === cid))
+                      : null;
+                    setOrder({ ...order, customer_id: cid, shipping_address_id: def?.id ?? null });
+                  }}
                 >
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {PAYMENT_BADGE_VALUES.map((v) => (
-                      <SelectItem key={v} value={v}>{t(`payStatus.${v}`)}</SelectItem>
+                    <SelectItem value="none">{t("orderDetail.noCustomerOption")}</SelectItem>
+                    {(customersQ.data ?? []).map((c: any) => (
+                      <SelectItem key={c.id} value={c.id}>
+                        {c.name}
+                        {c.phone ? ` — ${c.phone}` : ""}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
-              <div className="border-t border-border pt-3 space-y-1 text-sm">
-                <Row label={t("orderDetail.subtotal")} value={formatMoney(totals.subtotal, currency)} />
-                <Row label={`${t("orderDetail.discount")}${order.promo_code ? ` (Promo: ${order.promo_code})` : ""}`} value={`− ${formatMoney(totals.discount, currency)}`} />
-                <Row label={`${t("orderDetail.vat")} (${order.tax_rate}%)`} value={formatMoney(totals.taxAmount, currency)} />
-                <Row label={t("orderDetail.shipping")} value={formatMoney(totals.shipping, currency)} />
-                <div className="flex justify-between items-center pt-2 border-t border-border">
-                  <span className="font-display text-lg">{t("orderDetail.total")}</span>
-                  <div className="flex items-center gap-2">
-                    <span className="font-display text-lg">{formatMoney(totals.total, currency)}</span>
-                    <span
-                      className={`text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full border ${PAYMENT_BADGE_CLASSES[paymentBadge]}`}
-                    >
-                      {t(`payStatus.${paymentBadge}`)}
-                    </span>
-                  </div>
-                </div>
-                {totals.advancePaid > 0 && (
-                  <>
-                    <Row label={t("orderDetail.advancePaid")} value={`− ${formatMoney(totals.advancePaid, currency)}`} />
-                    <div className="flex justify-between pt-1 font-medium">
-                      <span>{t("orderDetail.remaining")}</span>
-                      <span>{formatMoney(totals.remaining, currency)}</span>
-                    </div>
-                  </>
-                )}
+              <div>
+                <Label>{t("orderDetail.orderDate")}</Label>
+                <Input
+                  type="date"
+                  value={order.order_date}
+                  onChange={(e) => setOrder({ ...order, order_date: e.target.value })}
+                />
+              </div>
+              <div>
+                <Label>{t("orderDetail.status")}</Label>
+                <Select
+                  value={order.status}
+                  onValueChange={(v) => setOrder({ ...order, status: v })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="draft">{t("status.draft")}</SelectItem>
+                    <SelectItem value="confirmed">{t("status.confirmed")}</SelectItem>
+                    <SelectItem value="paid">{t("status.paid")}</SelectItem>
+                    <SelectItem value="shipped">{t("status.shipped")}</SelectItem>
+                    <SelectItem value="completed">{t("status.completed")}</SelectItem>
+                    <SelectItem value="cancelled">{t("status.cancelled")}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>{t("orderDetail.paymentMethod")}</Label>
+                <Select
+                  value={order.payment_method ?? "none"}
+                  onValueChange={(v) =>
+                    setOrder({ ...order, payment_method: v === "none" ? null : v })
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">{t("orderDetail.selectPayment")}</SelectItem>
+                    <SelectItem value="cash">{t("payment.cash")}</SelectItem>
+                    <SelectItem value="card">{t("payment.card")}</SelectItem>
+                    <SelectItem value="bank_transfer">{t("payment.bank_transfer")}</SelectItem>
+                    <SelectItem value="benefit">{t("payment.benefit")}</SelectItem>
+                    <SelectItem value="apple_pay">{t("payment.apple_pay")}</SelectItem>
+                    <SelectItem value="google_pay">{t("payment.google_pay")}</SelectItem>
+                    <SelectItem value="cod">{t("payment.cod")}</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
-          </div>
-        </Card>
-      </div>
+            {order.customer_id &&
+              (() => {
+                const selected = (customersQ.data ?? []).find(
+                  (c: any) => c.id === order.customer_id,
+                );
+                if (!selected) return null;
+                const customerAddrs = (addressesQ.data ?? []).filter(
+                  (a) => a.customer_id === order.customer_id,
+                );
+                const legacyLines = formatDeliveryAddress(selected, lang);
+                return (
+                  <div className="mt-4 pt-4 border-t border-border text-start">
+                    <p className="text-xs uppercase tracking-wider text-muted-foreground mb-1">
+                      {order.fulfillment_method === "digital"
+                        ? lang === "ar"
+                          ? "بيانات العميل"
+                          : "Customer details"
+                        : t("orderDetail.deliveryAddress")}
+                    </p>
+                    <p className="font-medium">{selected.name}</p>
+                    {selected.email && (
+                      <p className="text-sm text-muted-foreground flex items-center gap-1.5 break-all">
+                        <Mail className="h-3.5 w-3.5 shrink-0" />
+                        <a href={`mailto:${selected.email}`} className="hover:underline">
+                          {selected.email}
+                        </a>
+                      </p>
+                    )}
+                    {selected.phone && (
+                      <p className="text-sm text-muted-foreground">{selected.phone}</p>
+                    )}
+                    {order.fulfillment_method === "delivery" &&
+                    legacyLines.length > 0 &&
+                    customerAddrs.length === 0
+                      ? legacyLines.map((line, index) => (
+                          <p key={index} className="text-sm text-muted-foreground">
+                            {line}
+                          </p>
+                        ))
+                      : null}
+                  </div>
+                );
+              })()}
+            {(() => {
+              const method = order.fulfillment_method ?? "delivery";
+              const deliveryEnabled = Boolean((settingsQ.data as any).delivery_enabled);
+              const pickupEnabled = Boolean((settingsQ.data as any).pickup_enabled);
+              const digitalEnabled = Boolean((settingsQ.data as any).digital_delivery_enabled);
+              const defaultDeliveryFee = Number((settingsQ.data as any).delivery_fee ?? 0);
+              const selectedCustomer = (customersQ.data ?? []).find(
+                (c: any) => c.id === order.customer_id,
+              );
+              const selectedAddress = (addressesQ.data ?? []).find(
+                (a) => a.id === order.shipping_address_id,
+              );
+              const selectedBranch = (branchesQ.data ?? []).find(
+                (b: any) => b.id === order.branch_id,
+              );
+              const address = selectedAddress
+                ? formatAddressLine(selectedAddress as StructuredAddress, lang)
+                : formatDeliveryAddress(selectedCustomer, lang).join("، ");
+              const branchName = selectedBranch
+                ? lang === "ar"
+                  ? selectedBranch.name_ar || selectedBranch.name_en
+                  : selectedBranch.name_en || selectedBranch.name_ar
+                : null;
+              const branchLocation = selectedBranch
+                ? lang === "ar"
+                  ? selectedBranch.location_ar || selectedBranch.location_en
+                  : selectedBranch.location_en || selectedBranch.location_ar
+                : null;
+              const customerAddresses = (addressesQ.data ?? []).filter(
+                (item) => item.customer_id === order.customer_id,
+              );
+              const defaultAddress =
+                customerAddresses.find((item) => item.is_default) ?? customerAddresses[0] ?? null;
+              const title =
+                method === "digital"
+                  ? lang === "ar"
+                    ? "تسليم رقمي"
+                    : "Digital delivery"
+                  : method === "pickup"
+                    ? lang === "ar"
+                      ? "استلام من الفرع"
+                      : "Pickup from branch"
+                    : lang === "ar"
+                      ? "توصيل"
+                      : "Delivery";
+              return (
+                <div className="mt-5 overflow-hidden rounded-xl border bg-muted/20 text-start shadow-sm">
+                  <div className="flex flex-col gap-3 border-b bg-muted/50 px-4 py-3 sm:flex-row sm:items-end sm:justify-between">
+                    <div>
+                      <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                        {lang === "ar" ? "طريقة التسليم" : "Fulfillment"}
+                      </p>
+                      <p className="text-lg font-semibold">{title}</p>
+                    </div>
+                    <div className="w-full sm:w-64">
+                      <Label className="sr-only">
+                        {lang === "ar" ? "طريقة التسليم" : "Fulfillment method"}
+                      </Label>
+                      <Select
+                        value={method}
+                        onValueChange={(value) =>
+                          setOrder({
+                            ...order,
+                            fulfillment_method: value,
+                            branch_id: value === "pickup" ? (order.branch_id ?? null) : null,
+                            shipping_address_id:
+                              value === "delivery"
+                                ? (order.shipping_address_id ?? defaultAddress?.id ?? null)
+                                : null,
+                            shipping:
+                              value === "delivery"
+                                ? isCreationMode
+                                  ? defaultDeliveryFee
+                                  : Number(order.shipping ?? defaultDeliveryFee)
+                                : 0,
+                          })
+                        }
+                      >
+                        <SelectTrigger className="bg-background">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {(pickupEnabled || method === "pickup") && (
+                            <SelectItem value="pickup">
+                              {lang === "ar" ? "استلام من الفرع" : "Pickup from Branch"}
+                            </SelectItem>
+                          )}
+                          {(deliveryEnabled || method === "delivery") && (
+                            <SelectItem value="delivery">
+                              {lang === "ar" ? "توصيل للمنزل" : "Home Delivery"}
+                            </SelectItem>
+                          )}
+                          {(digitalEnabled || method === "digital") && (
+                            <SelectItem value="digital">
+                              {lang === "ar" ? "تسليم رقمي" : "Digital Delivery"}
+                            </SelectItem>
+                          )}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <div className="p-4">
+                    {method === "digital" ? (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                          <Label>{lang === "ar" ? "قناة التسليم" : "Delivery channel"}</Label>
+                          <Select
+                            value={order.digital_delivery_channel ?? "email"}
+                            onValueChange={(value) =>
+                              setOrder({ ...order, digital_delivery_channel: value })
+                            }
+                          >
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="email">
+                                {lang === "ar" ? "البريد الإلكتروني" : "Email"}
+                              </SelectItem>
+                              <SelectItem value="whatsapp">
+                                {lang === "ar" ? "واتساب" : "WhatsApp"}
+                              </SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div>
+                          <Label>
+                            {order.digital_delivery_channel === "whatsapp"
+                              ? lang === "ar"
+                                ? "رقم أو معرّف واتساب"
+                                : "WhatsApp number or user ID"
+                              : lang === "ar"
+                                ? "البريد الإلكتروني"
+                                : "Email address"}
+                          </Label>
+                          <Input
+                            dir="ltr"
+                            value={order.digital_delivery_contact ?? ""}
+                            onChange={(e) =>
+                              setOrder({ ...order, digital_delivery_contact: e.target.value })
+                            }
+                          />
+                        </div>
+                      </div>
+                    ) : method === "pickup" ? (
+                      <div className="space-y-2">
+                        <Label>{lang === "ar" ? "فرع الاستلام" : "Pickup location"}</Label>
+                        <Select
+                          value={order.branch_id ?? ""}
+                          onValueChange={(branchId) => setOrder({ ...order, branch_id: branchId })}
+                        >
+                          <SelectTrigger className="text-start">
+                            <SelectValue
+                              placeholder={lang === "ar" ? "اختر الفرع" : "Select a branch"}
+                            />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {(branchesQ.data ?? []).map((branch: any) => {
+                              const name =
+                                lang === "ar"
+                                  ? branch.name_ar || branch.name_en
+                                  : branch.name_en || branch.name_ar;
+                              const location =
+                                lang === "ar"
+                                  ? branch.location_ar || branch.location_en
+                                  : branch.location_en || branch.location_ar;
+                              return (
+                                <SelectItem key={branch.id} value={branch.id}>
+                                  {name}
+                                  {location ? ` — ${location}` : ""}
+                                </SelectItem>
+                              );
+                            })}
+                          </SelectContent>
+                        </Select>
+                        {selectedBranch && (
+                          <p className="text-sm text-muted-foreground">
+                            <span className="font-medium text-foreground">{branchName}</span>
+                            {branchLocation ? ` — ${branchLocation}` : ""}
+                          </p>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="grid gap-4 sm:grid-cols-[1fr_180px]">
+                        <div className="space-y-2">
+                          <div className="flex flex-wrap items-center justify-between gap-2">
+                            <Label>{lang === "ar" ? "عنوان التوصيل" : "Delivery address"}</Label>
+                            {defaultAddress && (
+                              <button
+                                type="button"
+                                className="text-xs font-medium text-primary hover:underline"
+                                onClick={() =>
+                                  setOrder({ ...order, shipping_address_id: defaultAddress.id })
+                                }
+                              >
+                                {lang === "ar"
+                                  ? "استخدام عنوان ملف العميل"
+                                  : "Use Customer Profile Address"}
+                              </button>
+                            )}
+                          </div>
+                          <Select
+                            value={order.shipping_address_id ?? ""}
+                            onValueChange={(addressId) =>
+                              setOrder({ ...order, shipping_address_id: addressId })
+                            }
+                          >
+                            <SelectTrigger className="text-start">
+                              <SelectValue
+                                placeholder={lang === "ar" ? "اختر عنواناً" : "Select an address"}
+                              />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {customerAddresses.map((savedAddress) => (
+                                <SelectItem key={savedAddress.id} value={savedAddress.id}>
+                                  {savedAddress.label || t("customers.address")}
+                                  {savedAddress.is_default ? " ★" : ""} —{" "}
+                                  {formatAddressLine(savedAddress as StructuredAddress, lang) ||
+                                    "—"}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <p className="text-sm text-muted-foreground">
+                            {address ||
+                              (lang === "ar"
+                                ? "لا يوجد عنوان توصيل محفوظ لهذا العميل"
+                                : "No saved delivery address for this customer")}
+                          </p>
+                        </div>
+                        <div>
+                          <Label>{lang === "ar" ? "رسوم التوصيل" : "Delivery fee"}</Label>
+                          <BhdFeeInput
+                            value={Number(order.shipping ?? 0)}
+                            disabled={isReadOnly}
+                            onChange={(shipping) => setOrder({ ...order, shipping })}
+                          />
+                          <p className="mt-1 text-xs text-muted-foreground">
+                            {formatMoney(Number(order.shipping ?? 0), order.currency ?? "BHD")}
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })()}
+          </Card>
+
+          <Card className="p-6">
+            <div className="flex items-center justify-between mb-4 gap-2 flex-wrap">
+              <h3 className="font-display text-lg">{t("orderDetail.lineItems")}</h3>
+              <div className="flex items-center gap-2">
+                <Button size="sm" variant="outline" onClick={openBarcodeScanner}>
+                  <ScanLine className="h-3 w-3 mr-1" />{" "}
+                  {lang === "ar" ? "مسح الباركود" : "Scan Barcode"}
+                </Button>
+                <Button size="sm" variant="outline" onClick={addItem}>
+                  <Plus className="h-3 w-3 mr-1" /> {t("orderDetail.addLine")}
+                </Button>
+              </div>
+            </div>
+            {items.length === 0 && (
+              <p className="text-sm text-muted-foreground">{t("orderDetail.noLines")}</p>
+            )}
+            <div className="space-y-4">
+              {items.map((it, idx) => {
+                const variant = it.variant_id
+                  ? (variantsQ.data ?? []).find((x: any) => x.id === it.variant_id)
+                  : null;
+                const mainStock = Number((variant as any)?.stock_main ?? 0);
+                const incStock = Number((variant as any)?.stock_incubator ?? 0);
+                const isAr = lang === "ar";
+                return (
+                  <div key={idx} className="border border-border rounded-lg p-4 space-y-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-12 gap-3">
+                      <div className="sm:col-span-4">
+                        <Label>{t("orderDetail.fromInventory")}</Label>
+                        <Select
+                          value={it.variant_id ?? "custom"}
+                          onValueChange={(v) => v !== "custom" && pickVariant(idx, v)}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder={t("orderDetail.pickVariant")} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="custom">{t("orderDetail.customLine")}</SelectItem>
+                            {(variantsQ.data ?? []).map((v: any) => {
+                              const p = productsQ.data?.find((x: any) => x.id === v.product_id);
+                              if (!p) return null;
+                              return (
+                                <SelectItem key={v.id} value={v.id}>
+                                  {p.name} {v.size ? `· ${v.size}` : ""}{" "}
+                                  {v.color ? `· ${v.color}` : ""} —{" "}
+                                  {formatMoney(v.selling_price, currency)}
+                                </SelectItem>
+                              );
+                            })}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="sm:col-span-3">
+                        <Label>{t("orderDetail.description")}</Label>
+                        <Textarea
+                          rows={3}
+                          value={it.description}
+                          onChange={(e) => updateItem(idx, { description: e.target.value })}
+                          className="text-sm leading-snug"
+                        />
+                      </div>
+                      <div className="sm:col-span-2">
+                        <Label>{t("orderDetail.qty")}</Label>
+                        <Input
+                          type="number"
+                          min={1}
+                          className="min-w-[70px] text-center"
+                          value={it.quantity}
+                          onChange={(e) => updateItem(idx, { quantity: Number(e.target.value) })}
+                        />
+                      </div>
+                      <div className="sm:col-span-3">
+                        <Label>{t("orderDetail.unitPrice")}</Label>
+                        <Input
+                          type="number"
+                          step="0.001"
+                          value={it.unit_price}
+                          onChange={(e) => updateItem(idx, { unit_price: Number(e.target.value) })}
+                        />
+                        {Number(it.original_price ?? (variant as any)?.original_price ?? 0) >
+                          Number(it.unit_price) && (
+                          <p className="mt-1 text-xs text-muted-foreground">
+                            {isAr ? "السعر الأصلي" : "Original"}:{" "}
+                            <span className="line-through">
+                              {formatMoney(
+                                Number(it.original_price ?? (variant as any)?.original_price),
+                                currency,
+                              )}
+                            </span>
+                            <span className="mx-1">·</span>
+                            {isAr ? "سعر التخفيض" : "Sale"}:{" "}
+                            <span className="font-medium text-foreground">
+                              {formatMoney(it.unit_price, currency)}
+                            </span>
+                          </p>
+                        )}
+                      </div>
+                    </div>
+
+                    {it.variant_id && (
+                      <div>
+                        <Label className="text-xs">
+                          {isAr ? "الموقع (خصم من)" : "Location (deduct from)"}
+                        </Label>
+                        <div className="flex flex-wrap gap-2 mt-1">
+                          {(
+                            [
+                              {
+                                key: "main",
+                                en: `Direct Sales · Main (${mainStock})`,
+                                ar: `الرئيسي (${mainStock})`,
+                              },
+                              {
+                                key: "incubator",
+                                en: `Incubator (${incStock})`,
+                                ar: `الحاضنة (${incStock})`,
+                              },
+                            ] as const
+                          ).map((opt) => {
+                            const active = it.location === opt.key;
+                            return (
+                              <button
+                                key={opt.key}
+                                type="button"
+                                onClick={() => updateItem(idx, { location: opt.key })}
+                                className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${
+                                  active
+                                    ? "bg-primary text-primary-foreground border-primary"
+                                    : "border-border hover:bg-secondary"
+                                }`}
+                              >
+                                {isAr ? opt.ar : opt.en}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+
+                    {(it.selected_variant ||
+                      (it.custom_field_values && it.custom_field_values.length > 0)) && (
+                      <div className="rounded-md border border-border bg-muted/40 p-3 text-xs space-y-1">
+                        <div className="font-medium text-sm">
+                          {isAr ? "اختيارات العميل" : "Customer selections"}
+                        </div>
+                        {it.selected_variant && (
+                          <div className="flex flex-wrap gap-x-3 gap-y-1">
+                            {it.selected_variant.size && (
+                              <span>
+                                <b>{isAr ? "المقاس" : "Size"}:</b> {it.selected_variant.size}
+                              </span>
+                            )}
+                            {it.selected_variant.color && (
+                              <span>
+                                <b>{isAr ? "اللون" : "Color"}:</b> {it.selected_variant.color}
+                              </span>
+                            )}
+                            {it.selected_variant.fabric && (
+                              <span>
+                                <b>{isAr ? "القماش" : "Fabric"}:</b> {it.selected_variant.fabric}
+                              </span>
+                            )}
+                          </div>
+                        )}
+                        {it.custom_field_values && it.custom_field_values.length > 0 && (
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-0.5 pt-1">
+                            {it.custom_field_values.map((cf, i) => (
+                              <div key={i}>
+                                <b>
+                                  {isAr
+                                    ? cf.label_ar || cf.label_en || cf.key
+                                    : cf.label_en || cf.label_ar || cf.key}
+                                  :
+                                </b>{" "}
+                                {cf.value}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    <div>
+                      <Label className="text-xs">{t("orderDetail.customizations")}</Label>
+                      <div className="flex flex-wrap gap-2 mt-1">
+                        {(customQ.data ?? []).map((c: any) => {
+                          const active = it.customizations.some((x) => x.name === c.name);
+                          return (
+                            <button
+                              key={c.id}
+                              type="button"
+                              onClick={() =>
+                                toggleCustom(idx, {
+                                  name: c.name,
+                                  price_delta: Number(c.price_delta),
+                                })
+                              }
+                              className={`text-xs px-2 py-1 rounded-full border ${active ? "bg-primary text-primary-foreground border-primary" : "border-border hover:bg-secondary"}`}
+                            >
+                              {c.name} +{formatMoney(c.price_delta, currency)}
+                            </button>
+                          );
+                        })}
+                        {(customQ.data ?? []).length === 0 && (
+                          <span className="text-xs text-muted-foreground">
+                            {t("orderDetail.addonsHint")}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between pt-2 border-t border-border">
+                      <span className="text-sm text-muted-foreground">
+                        {t("orderDetail.lineTotal")}
+                      </span>
+                      <div className="flex items-center gap-3">
+                        <span className="font-medium">{formatMoney(it.line_total, currency)}</span>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => setItems(items.filter((_, i) => i !== idx))}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            <BarcodeScanner
+              open={scannerOpen}
+              onOpenChange={setScannerOpen}
+              onDetected={handleScanned}
+              cameraStreamPromise={cameraStreamPromise}
+            />
+          </Card>
+
+          <Card className="p-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <Label>{t("orderDetail.notes")}</Label>
+                <Textarea
+                  value={order.notes ?? ""}
+                  onChange={(e) => setOrder({ ...order, notes: e.target.value })}
+                  rows={5}
+                />
+              </div>
+              <div className="space-y-3">
+                {order.payment_method === "benefit" && order.benefit_receipt_key && (
+                  <div className="rounded-xl border-2 border-amber-300 bg-amber-50 p-4 text-amber-950">
+                    <div className="mb-3 flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-2">
+                        <ImageIcon className="h-5 w-5" />
+                        <span className="font-semibold">
+                          {lang === "ar" ? "إيصال تحويل بنفت" : "Benefit transfer receipt"}
+                        </span>
+                      </div>
+                      <span
+                        className={`rounded-full px-2 py-1 text-xs font-semibold ${order.payment_status === "paid" ? "bg-emerald-100 text-emerald-800" : "bg-amber-200 text-amber-900"}`}
+                      >
+                        {order.payment_status === "paid"
+                          ? lang === "ar"
+                            ? "تم التحقق"
+                            : "Verified"
+                          : lang === "ar"
+                            ? "بانتظار التحقق"
+                            : "Pending verification"}
+                      </span>
+                    </div>
+                    {receiptViewQ.isLoading ? (
+                      <div className="flex h-52 items-center justify-center rounded-lg border bg-white">
+                        <Loader2 className="h-6 w-6 animate-spin" />
+                      </div>
+                    ) : receiptViewQ.data?.url ? (
+                      <a
+                        href={receiptViewQ.data.url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="block overflow-hidden rounded-lg border bg-white"
+                      >
+                        <img
+                          src={receiptViewQ.data.url}
+                          alt="Benefit payment receipt"
+                          className="h-52 w-full object-contain"
+                        />
+                      </a>
+                    ) : (
+                      <div className="rounded-lg border bg-white p-5 text-center text-sm text-muted-foreground">
+                        {order.benefit_receipt_deleted_at
+                          ? lang === "ar"
+                            ? "تم حذف صورة الإيصال حسب سياسة الاحتفاظ."
+                            : "Receipt image removed under the retention policy."
+                          : lang === "ar"
+                            ? "تعذر تحميل صورة الإيصال الخاصة."
+                            : "The private receipt could not be loaded."}
+                      </div>
+                    )}
+                    {order.payment_status !== "paid" && (
+                      <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
+                        <Button
+                          type="button"
+                          className="bg-emerald-700 text-white hover:bg-emerald-800"
+                          onClick={approveBenefitPayment}
+                          disabled={approvingBenefit || rejectingBenefit}
+                        >
+                          {approvingBenefit ? (
+                            <Loader2 className="me-2 h-4 w-4 animate-spin" />
+                          ) : (
+                            <CheckCircle2 className="me-2 h-4 w-4" />
+                          )}
+                          {lang === "ar" ? "اعتماد الدفع" : "Approve Payment"}
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="destructive"
+                          onClick={rejectBenefitPayment}
+                          disabled={approvingBenefit || rejectingBenefit}
+                        >
+                          {rejectingBenefit && <Loader2 className="me-2 h-4 w-4 animate-spin" />}
+                          {lang === "ar" ? "رفض الإيصال" : "Reject Receipt"}
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                )}
+                <div className="rounded-lg border bg-muted/20 p-3 space-y-2">
+                  <Label>{lang === "ar" ? "تطبيق رمز خصم" : "Apply Promo Code"}</Label>
+                  {appliedPromo ? (
+                    <div className="flex items-center justify-between gap-3 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-emerald-900">
+                      <div className="flex min-w-0 items-center gap-2">
+                        <Tag className="h-4 w-4 shrink-0" />
+                        <span className="truncate font-mono font-semibold">
+                          {appliedPromo.code}
+                        </span>
+                        <span className="text-xs">
+                          − {formatMoney(appliedPromo.amount, currency)}
+                        </span>
+                      </div>
+                      <Button
+                        type="button"
+                        size="icon"
+                        variant="ghost"
+                        className="h-7 w-7 shrink-0"
+                        onClick={removeAdminPromo}
+                        disabled={isReadOnly}
+                        aria-label={lang === "ar" ? "إزالة رمز الخصم" : "Remove promo code"}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="flex gap-2">
+                      <Input
+                        value={promoInput}
+                        onChange={(event) => setPromoInput(event.target.value.toUpperCase())}
+                        onKeyDown={(event) => {
+                          if (event.key === "Enter") {
+                            event.preventDefault();
+                            void applyAdminPromo();
+                          }
+                        }}
+                        placeholder="EID20"
+                        className="uppercase"
+                        disabled={isReadOnly || checkingPromo}
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={applyAdminPromo}
+                        disabled={isReadOnly || checkingPromo}
+                      >
+                        {checkingPromo && <Loader2 className="me-2 h-4 w-4 animate-spin" />}
+                        {lang === "ar" ? "تطبيق" : "Apply"}
+                      </Button>
+                    </div>
+                  )}
+                  <p className="text-xs text-muted-foreground">
+                    {lang === "ar"
+                      ? "يتم التحقق من أهلية العميل والمنتجات والحد الأقصى تلقائياً."
+                      : "Customer eligibility, sale exclusions, and discount caps are checked automatically."}
+                  </p>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <Label>{t("orderDetail.discount")}</Label>
+                    <Input
+                      type="number"
+                      step="0.001"
+                      value={order.discount}
+                      disabled={isReadOnly || !!appliedPromo}
+                      onChange={(e) => setOrder({ ...order, discount: Number(e.target.value) })}
+                    />
+                    {appliedPromo && (
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        {lang === "ar"
+                          ? "تم تثبيت الخصم بواسطة رمز الخصم."
+                          : "Locked to the validated promo amount."}
+                      </p>
+                    )}
+                  </div>
+                  <div>
+                    <Label>{t("orderDetail.shipping")}</Label>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      value={order.shipping}
+                      onChange={(e) => setOrder({ ...order, shipping: Number(e.target.value) })}
+                    />
+                  </div>
+                </div>
+                <div>
+                  <Label>{t("orderDetail.taxRate")}</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    value={order.tax_rate}
+                    onChange={(e) => setOrder({ ...order, tax_rate: Number(e.target.value) })}
+                  />
+                </div>
+                <div>
+                  <Label>{t("orderDetail.advancePaid")}</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    min={0}
+                    value={order.advance_paid ?? 0}
+                    onChange={(e) => setOrder({ ...order, advance_paid: Number(e.target.value) })}
+                  />
+                </div>
+                <div>
+                  <Label>{t("orderDetail.paymentStatus")}</Label>
+                  <Select
+                    value={order.payment_status ?? "unpaid"}
+                    onValueChange={(v) => setOrder({ ...order, payment_status: v })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {PAYMENT_BADGE_VALUES.map((v) => (
+                        <SelectItem key={v} value={v}>
+                          {t(`payStatus.${v}`)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="border-t border-border pt-3 space-y-1 text-sm">
+                  <Row
+                    label={t("orderDetail.subtotal")}
+                    value={formatMoney(totals.subtotal, currency)}
+                  />
+                  <Row
+                    label={`${t("orderDetail.discount")}${order.promo_code ? ` (Promo: ${order.promo_code})` : ""}`}
+                    value={`− ${formatMoney(totals.discount, currency)}`}
+                  />
+                  <Row
+                    label={`${t("orderDetail.vat")} (${order.tax_rate}%)`}
+                    value={formatMoney(totals.taxAmount, currency)}
+                  />
+                  <Row
+                    label={t("orderDetail.shipping")}
+                    value={formatMoney(totals.shipping, currency)}
+                  />
+                  <div className="flex justify-between items-center pt-2 border-t border-border">
+                    <span className="font-display text-lg">{t("orderDetail.total")}</span>
+                    <div className="flex items-center gap-2">
+                      <span className="font-display text-lg">
+                        {formatMoney(totals.total, currency)}
+                      </span>
+                      <span
+                        className={`text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full border ${PAYMENT_BADGE_CLASSES[paymentBadge]}`}
+                      >
+                        {t(`payStatus.${paymentBadge}`)}
+                      </span>
+                    </div>
+                  </div>
+                  {totals.advancePaid > 0 && (
+                    <>
+                      <Row
+                        label={t("orderDetail.advancePaid")}
+                        value={`− ${formatMoney(totals.advancePaid, currency)}`}
+                      />
+                      <div className="flex justify-between pt-1 font-medium">
+                        <span>{t("orderDetail.remaining")}</span>
+                        <span>{formatMoney(totals.remaining, currency)}</span>
+                      </div>
+                    </>
+                  )}
+                </div>
+              </div>
+            </div>
+          </Card>
+        </div>
       </fieldset>
 
       {/* Printable invoice */}
       {(() => {
         const addrs = (addressesQ.data ?? []).filter((a) => a.customer_id === order.customer_id);
-        const chosen = addrs.find((a) => a.id === order.shipping_address_id)
-          ?? addrs.find((a) => a.is_default)
-          ?? null;
+        const chosen =
+          addrs.find((a) => a.id === order.shipping_address_id) ??
+          addrs.find((a) => a.is_default) ??
+          null;
         return (
-      <InvoicePreview
-        order={{ ...order, subtotal: totals.subtotal, tax_amount: totals.taxAmount, total: totals.total, advance_paid: totals.advancePaid }}
-        items={items}
-        settings={settingsQ.data}
-        shippingAddress={chosen}
-        paymentBadge={paymentBadge}
-      />
+          <InvoicePreview
+            order={{
+              ...order,
+              subtotal: totals.subtotal,
+              tax_amount: totals.taxAmount,
+              total: totals.total,
+              advance_paid: totals.advancePaid,
+            }}
+            items={items}
+            settings={settingsQ.data}
+            shippingAddress={chosen}
+            paymentBadge={paymentBadge}
+          />
         );
       })()}
       <div className="max-w-6xl mx-auto p-4 sm:p-6 lg:p-8 no-print">
@@ -1243,29 +2001,62 @@ function OrderDetail() {
 function Row({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex justify-between text-muted-foreground">
-      <span>{label}</span><span>{value}</span>
+      <span>{label}</span>
+      <span>{value}</span>
     </div>
   );
 }
 
 const INVOICE_LABELS = {
   en: {
-    invoice: "INVOICE", invoiceNumber: "Invoice #",
-    date: "Date", status: "Status", billTo: "Bill to",
-    paymentMethod: "Payment method", vatLabel: "VAT",
-    item: "Item", description: "Description", qty: "Qty", unit: "Unit Price", price: "Price", total: "Total",
-    subtotal: "Subtotal", discount: "Discount", vat: "VAT", shipping: "Shipping", grandTotal: "Grand Total",
-    notes: "Notes", warmRegards: "Warm regards",
-    language: "Language", english: "English", arabic: "العربية",
+    invoice: "INVOICE",
+    invoiceNumber: "Invoice #",
+    date: "Date",
+    status: "Status",
+    billTo: "Bill to",
+    paymentMethod: "Payment method",
+    vatLabel: "VAT",
+    item: "Item",
+    description: "Description",
+    qty: "Qty",
+    unit: "Unit Price",
+    price: "Price",
+    total: "Total",
+    subtotal: "Subtotal",
+    discount: "Discount",
+    vat: "VAT",
+    shipping: "Shipping",
+    grandTotal: "Grand Total",
+    notes: "Notes",
+    warmRegards: "Warm regards",
+    language: "Language",
+    english: "English",
+    arabic: "العربية",
   },
   ar: {
-    invoice: "فاتورة", invoiceNumber: "رقم الفاتورة",
-    date: "التاريخ", status: "الحالة", billTo: "فاتورة إلى",
-    paymentMethod: "طريقة الدفع", vatLabel: "الرقم الضريبي",
-    item: "الصنف", description: "الوصف", qty: "الكمية", unit: "سعر الوحدة", price: "السعر", total: "الإجمالي",
-    subtotal: "المجموع الفرعي", discount: "الخصم", vat: "ضريبة القيمة المضافة", shipping: "الشحن", grandTotal: "الإجمالي الكلي",
-    notes: "ملاحظات", warmRegards: "مع أطيب التحيات",
-    language: "اللغة", english: "English", arabic: "العربية",
+    invoice: "فاتورة",
+    invoiceNumber: "رقم الفاتورة",
+    date: "التاريخ",
+    status: "الحالة",
+    billTo: "فاتورة إلى",
+    paymentMethod: "طريقة الدفع",
+    vatLabel: "الرقم الضريبي",
+    item: "الصنف",
+    description: "الوصف",
+    qty: "الكمية",
+    unit: "سعر الوحدة",
+    price: "السعر",
+    total: "الإجمالي",
+    subtotal: "المجموع الفرعي",
+    discount: "الخصم",
+    vat: "ضريبة القيمة المضافة",
+    shipping: "الشحن",
+    grandTotal: "الإجمالي الكلي",
+    notes: "ملاحظات",
+    warmRegards: "مع أطيب التحيات",
+    language: "اللغة",
+    english: "English",
+    arabic: "العربية",
   },
 } as const;
 const BRAND: Record<"en" | "ar", string> = { en: "Pura", ar: "بيورا" };
@@ -1309,11 +2100,19 @@ function tPayment(s: string | null | undefined, lang: "en" | "ar") {
 
 // Localize numerals (Arabic-Indic) inside a rendered money/number string
 function toArabicDigits(str: string) {
-  const map = ["٠","١","٢","٣","٤","٥","٦","٧","٨","٩"];
+  const map = ["٠", "١", "٢", "٣", "٤", "٥", "٦", "٧", "٨", "٩"];
   return str.replace(/[0-9]/g, (d) => map[+d]);
 }
 
-function InvoiceBranchName({ brandId, branchId, isRTL }: { brandId: string; branchId: string; isRTL: boolean }) {
+function InvoiceBranchName({
+  brandId,
+  branchId,
+  isRTL,
+}: {
+  brandId: string;
+  branchId: string;
+  isRTL: boolean;
+}) {
   const q = useQuery({
     queryKey: ["branch", brandId, branchId],
     queryFn: async () => {
@@ -1328,16 +2127,29 @@ function InvoiceBranchName({ brandId, branchId, isRTL }: { brandId: string; bran
   });
   const b = q.data;
   if (!b) return null;
-  const name = isRTL ? (b.name_ar || b.name_en) : (b.name_en || b.name_ar);
-  const loc = isRTL ? (b.location_ar || b.location_en) : (b.location_en || b.location_ar);
+  const name = isRTL ? b.name_ar || b.name_en : b.name_en || b.name_ar;
+  const loc = isRTL ? b.location_ar || b.location_en : b.location_en || b.location_ar;
   return (
     <p className="text-sm" style={{ opacity: 0.85 }}>
-      {name}{loc ? ` — ${loc}` : ""}
+      {name}
+      {loc ? ` — ${loc}` : ""}
     </p>
   );
 }
 
-function InvoicePreview({ order, items, settings, shippingAddress, paymentBadge }: { order: any; items: Item[]; settings: any; shippingAddress?: SavedAddress | null; paymentBadge?: PaymentBadge }) {
+function InvoicePreview({
+  order,
+  items,
+  settings,
+  shippingAddress,
+  paymentBadge,
+}: {
+  order: any;
+  items: Item[];
+  settings: any;
+  shippingAddress?: SavedAddress | null;
+  paymentBadge?: PaymentBadge;
+}) {
   const currency = order.currency;
   const color = settings.primary_color || "#8b6f47";
   const bg = settings.background_color || "#ffffff";
@@ -1366,7 +2178,6 @@ function InvoicePreview({ order, items, settings, shippingAddress, paymentBadge 
       ? "'InvoiceCustomFont', sans-serif"
       : `"${settings.font_family || "Cormorant Garamond"}", serif`;
 
-
   return (
     <div className="space-y-2">
       {/* Invoice controls (not printed) */}
@@ -1394,14 +2205,33 @@ function InvoicePreview({ order, items, settings, shippingAddress, paymentBadge 
         dir={isRTL ? "rtl" : "ltr"}
         lang={invoiceLang}
         className={`printable-invoice pdf-invoice-root overflow-hidden ${template === "minimal" ? "" : "rounded-lg border border-border shadow-lg"}`}
-        style={{ backgroundColor: bg, color: text, fontFamily: family, fontSize: `${fontSize}px`, printColorAdjust: "exact", WebkitPrintColorAdjust: "exact" } as any}
+        style={
+          {
+            backgroundColor: bg,
+            color: text,
+            fontFamily: family,
+            fontSize: `${fontSize}px`,
+            printColorAdjust: "exact",
+            WebkitPrintColorAdjust: "exact",
+          } as any
+        }
       >
         {settings.font_url && !isRTL && (
           <style>{`@font-face { font-family: 'InvoiceCustomFont'; src: url('${settings.font_url}'); font-display: swap; }`}</style>
         )}
         {/* Browser print overrides removed — PDF is generated via html2pdf directly from the live DOM,
             preserving the exact colors and typography configured by the user. */}
-        <div className="pdf-invoice-body p-4 sm:p-8 md:p-10 print:p-10" style={{ borderTop: template === "minimal" ? "0" : template === "classic" ? `2px solid ${color}` : `8px solid ${color}` }}>
+        <div
+          className="pdf-invoice-body p-4 sm:p-8 md:p-10 print:p-10"
+          style={{
+            borderTop:
+              template === "minimal"
+                ? "0"
+                : template === "classic"
+                  ? `2px solid ${color}`
+                  : `8px solid ${color}`,
+          }}
+        >
           {/*
             Layout rule:
             - EN (LTR): brand block on the LEFT, invoice meta on the RIGHT
@@ -1432,30 +2262,93 @@ function InvoicePreview({ order, items, settings, shippingAddress, paymentBadge 
                 </div>
               )}
               <p className="font-semibold">{settings.business_name}</p>
-              {settings.invoice_show_business_details !== false && <div className="text-xs mt-1 space-y-0.5" style={{ opacity: 0.7 }}>
-                {settings.address && <p>{settings.address}</p>}
-                {settings.phone && <p dir="ltr" style={{ unicodeBidi: "isolate", textAlign: isRTL ? "right" : "left" }}>{settings.phone}</p>}
-                {settings.email && <p dir="ltr" style={{ unicodeBidi: "isolate", textAlign: isRTL ? "right" : "left" }}>{settings.email}</p>}
-                {settings.vat_number && <p>{isRTL ? "الرقم الضريبي" : "VAT"}: {settings.vat_number}</p>}
-              </div>}
+              {settings.invoice_show_business_details !== false && (
+                <div className="text-xs mt-1 space-y-0.5" style={{ opacity: 0.7 }}>
+                  {settings.address && <p>{settings.address}</p>}
+                  {settings.phone && (
+                    <p
+                      dir="ltr"
+                      style={{ unicodeBidi: "isolate", textAlign: isRTL ? "right" : "left" }}
+                    >
+                      {settings.phone}
+                    </p>
+                  )}
+                  {settings.email && (
+                    <p
+                      dir="ltr"
+                      style={{ unicodeBidi: "isolate", textAlign: isRTL ? "right" : "left" }}
+                    >
+                      {settings.email}
+                    </p>
+                  )}
+                  {settings.vat_number && (
+                    <p>
+                      {isRTL ? "الرقم الضريبي" : "VAT"}: {settings.vat_number}
+                    </p>
+                  )}
+                </div>
+              )}
             </div>
             <div className="pdf-meta-block w-[48%] min-w-0" style={{ textAlign: "end" }}>
-              <h1 className={`text-3xl sm:text-4xl font-display ${isRTL ? "" : "tracking-tight"}`} style={{ color, letterSpacing: isRTL ? "normal" : undefined, textTransform: "none" }}>{(isRTL ? settings.invoice_title_ar : settings.invoice_title_en) || L.invoice}</h1>
-              <p className="text-lg mt-1">{L.invoiceNumber}: {num(order.invoice_number)}</p>
-              <p className="text-xs mt-2" style={{ opacity: 0.7 }}>{L.date}: {formatDate(order.created_at ?? order.order_date, isRTL ? "ar-BH" : "en-BH")}</p>
-              <p className="text-xs" style={{ opacity: 0.7 }}>{L.status}: {PAYMENT_BADGE_LABEL[paymentBadge ?? "unpaid"][invoiceLang]}</p>
+              <h1
+                className={`text-3xl sm:text-4xl font-display ${isRTL ? "" : "tracking-tight"}`}
+                style={{
+                  color,
+                  letterSpacing: isRTL ? "normal" : undefined,
+                  textTransform: "none",
+                }}
+              >
+                {(isRTL ? settings.invoice_title_ar : settings.invoice_title_en) || L.invoice}
+              </h1>
+              <p className="text-lg mt-1">
+                {L.invoiceNumber}: {num(order.invoice_number)}
+              </p>
+              <p className="text-xs mt-2" style={{ opacity: 0.7 }}>
+                {L.date}:{" "}
+                {formatDate(order.created_at ?? order.order_date, isRTL ? "ar-BH" : "en-BH")}
+              </p>
+              <p className="text-xs" style={{ opacity: 0.7 }}>
+                {L.status}: {PAYMENT_BADGE_LABEL[paymentBadge ?? "unpaid"][invoiceLang]}
+              </p>
               {order.payment_method && (
-                <p className="text-xs" style={{ opacity: 0.7 }}>{L.paymentMethod}: {tPayment(order.payment_method, invoiceLang)}</p>
+                <p className="text-xs" style={{ opacity: 0.7 }}>
+                  {L.paymentMethod}: {tPayment(order.payment_method, invoiceLang)}
+                </p>
               )}
             </div>
           </div>
 
           {order.customers && (
             <div className="mb-8" style={{ textAlign: "start" }}>
-              <p className={`text-xs mb-1 ${isRTL ? "" : "uppercase tracking-wider"}`} style={{ opacity: 0.6, letterSpacing: isRTL ? "normal" : undefined }}>{L.billTo}</p>
+              <p
+                className={`text-xs mb-1 ${isRTL ? "" : "uppercase tracking-wider"}`}
+                style={{ opacity: 0.6, letterSpacing: isRTL ? "normal" : undefined }}
+              >
+                {L.billTo}
+              </p>
               <p className="font-medium">{order.customers.name}</p>
-              {settings.invoice_show_customer_contact !== false && order.customers.phone && <p dir="ltr" className="text-sm" style={{ opacity: 0.75, unicodeBidi: "isolate", textAlign: isRTL ? "right" : "left" }}>{num(order.customers.phone)}</p>}
-              {settings.invoice_show_customer_contact !== false && order.customers.email && <p dir="ltr" className="text-sm" style={{ opacity: 0.75, textAlign: isRTL ? "right" : "left" }}>{order.customers.email}</p>}
+              {settings.invoice_show_customer_contact !== false && order.customers.phone && (
+                <p
+                  dir="ltr"
+                  className="text-sm"
+                  style={{
+                    opacity: 0.75,
+                    unicodeBidi: "isolate",
+                    textAlign: isRTL ? "right" : "left",
+                  }}
+                >
+                  {num(order.customers.phone)}
+                </p>
+              )}
+              {settings.invoice_show_customer_contact !== false && order.customers.email && (
+                <p
+                  dir="ltr"
+                  className="text-sm"
+                  style={{ opacity: 0.75, textAlign: isRTL ? "right" : "left" }}
+                >
+                  {order.customers.email}
+                </p>
+              )}
               {(() => {
                 const detailed = shippingAddress
                   ? formatAddressDetailed(shippingAddress as StructuredAddress, invoiceLang)
@@ -1464,7 +2357,10 @@ function InvoicePreview({ order, items, settings, shippingAddress, paymentBadge 
                 if (!detailed && legacy.length === 0) return null;
                 return (
                   <div className="mt-3 pt-3 border-t border-neutral-200">
-                    <p className={`text-xs mb-1 ${isRTL ? "" : "uppercase tracking-wider"}`} style={{ opacity: 0.6, letterSpacing: isRTL ? "normal" : undefined }}>
+                    <p
+                      className={`text-xs mb-1 ${isRTL ? "" : "uppercase tracking-wider"}`}
+                      style={{ opacity: 0.6, letterSpacing: isRTL ? "normal" : undefined }}
+                    >
                       {isRTL ? "عنوان التوصيل" : "Delivery address"}
                     </p>
                     {detailed ? (
@@ -1473,7 +2369,11 @@ function InvoicePreview({ order, items, settings, shippingAddress, paymentBadge 
                       </p>
                     ) : (
                       legacy.map((l, i) => (
-                        <p key={i} className="text-sm whitespace-pre-line" style={{ opacity: 0.85 }}>
+                        <p
+                          key={i}
+                          className="text-sm whitespace-pre-line"
+                          style={{ opacity: 0.85 }}
+                        >
                           {isRTL ? toArabicDigits(l) : l}
                         </p>
                       ))
@@ -1484,38 +2384,62 @@ function InvoicePreview({ order, items, settings, shippingAddress, paymentBadge 
             </div>
           )}
 
-          {settings.invoice_show_fulfillment !== false && (order.fulfillment_method || order.branch_id) && (
-            <div className="mb-6 rounded-lg p-4 text-sm" style={{ textAlign: "start", backgroundColor: secondary }}>
-              <p className={`text-xs mb-1 ${isRTL ? "" : "uppercase tracking-wider"}`} style={{ opacity: 0.6, letterSpacing: isRTL ? "normal" : undefined }}>
-                {isRTL ? "طريقة التسليم" : "Fulfillment"}
-              </p>
-              <p>
-                {order.fulfillment_method === "digital"
-                  ? (isRTL ? "تسليم رقمي" : "Digital delivery")
-                  : order.fulfillment_method === "pickup"
-                    ? (isRTL ? "استلام من الفرع" : "Pickup from branch")
-                    : (isRTL ? "توصيل" : "Delivery")}
-              </p>
-              {order.fulfillment_method === "digital" && (
-                <div className="mt-2 rounded-md border border-neutral-200 p-3">
-                  <p className={`text-xs ${isRTL ? "" : "uppercase tracking-wider"}`} style={{ opacity: 0.6, letterSpacing: isRTL ? "normal" : undefined }}>
-                    {isRTL ? "قناة التسليم الرقمي" : "Digital delivery channel"}
-                  </p>
-                  <p className="font-medium">
-                    {order.digital_delivery_channel === "whatsapp"
-                      ? (isRTL ? "واتساب" : "WhatsApp")
-                      : (isRTL ? "البريد الإلكتروني" : "Email")}
-                  </p>
-                  <p className="mt-1 break-all" dir="ltr">{order.digital_delivery_contact || "—"}</p>
-                </div>
-              )}
-              {order.branch_id && (
-                <InvoiceBranchName brandId={order.brand_id} branchId={order.branch_id} isRTL={isRTL} />
-              )}
-            </div>
-          )}
-
-
+          {settings.invoice_show_fulfillment !== false &&
+            (order.fulfillment_method || order.branch_id) && (
+              <div
+                className="mb-6 rounded-lg p-4 text-sm"
+                style={{ textAlign: "start", backgroundColor: secondary }}
+              >
+                <p
+                  className={`text-xs mb-1 ${isRTL ? "" : "uppercase tracking-wider"}`}
+                  style={{ opacity: 0.6, letterSpacing: isRTL ? "normal" : undefined }}
+                >
+                  {isRTL ? "طريقة التسليم" : "Fulfillment"}
+                </p>
+                <p>
+                  {order.fulfillment_method === "digital"
+                    ? isRTL
+                      ? "تسليم رقمي"
+                      : "Digital delivery"
+                    : order.fulfillment_method === "pickup"
+                      ? isRTL
+                        ? "استلام من الفرع"
+                        : "Pickup from branch"
+                      : isRTL
+                        ? "توصيل"
+                        : "Delivery"}
+                </p>
+                {order.fulfillment_method === "digital" && (
+                  <div className="mt-2 rounded-md border border-neutral-200 p-3">
+                    <p
+                      className={`text-xs ${isRTL ? "" : "uppercase tracking-wider"}`}
+                      style={{ opacity: 0.6, letterSpacing: isRTL ? "normal" : undefined }}
+                    >
+                      {isRTL ? "قناة التسليم الرقمي" : "Digital delivery channel"}
+                    </p>
+                    <p className="font-medium">
+                      {order.digital_delivery_channel === "whatsapp"
+                        ? isRTL
+                          ? "واتساب"
+                          : "WhatsApp"
+                        : isRTL
+                          ? "البريد الإلكتروني"
+                          : "Email"}
+                    </p>
+                    <p className="mt-1 break-all" dir="ltr">
+                      {order.digital_delivery_contact || "—"}
+                    </p>
+                  </div>
+                )}
+                {order.branch_id && (
+                  <InvoiceBranchName
+                    brandId={order.brand_id}
+                    branchId={order.branch_id}
+                    isRTL={isRTL}
+                  />
+                )}
+              </div>
+            )}
 
           <div className="pdf-table-wrap -mx-4 sm:mx-0 overflow-x-auto print:overflow-visible print:mx-0">
             <table className="pdf-line-items w-full min-w-[520px] text-sm mb-6">
@@ -1532,14 +2456,19 @@ function InvoicePreview({ order, items, settings, shippingAddress, paymentBadge 
                   <tr key={i} className="border-b border-neutral-200 align-top">
                     <td className="p-3 text-start">
                       {(() => {
-                        const raw = (it.description || "—").split(/\r?\n/).map((s) => s.trim()).filter(Boolean);
+                        const raw = (it.description || "—")
+                          .split(/\r?\n/)
+                          .map((s) => s.trim())
+                          .filter(Boolean);
                         const [head, ...rest] = raw.length ? raw : ["—"];
                         return (
                           <>
                             <p className="font-medium">{head}</p>
                             {rest.length > 0 && (
                               <div className="text-xs mt-0.5 leading-snug" style={{ opacity: 0.7 }}>
-                                {rest.map((line, li) => (<div key={li}>{line}</div>))}
+                                {rest.map((line, li) => (
+                                  <div key={li}>{line}</div>
+                                ))}
                               </div>
                             )}
                           </>
@@ -1548,24 +2477,37 @@ function InvoicePreview({ order, items, settings, shippingAddress, paymentBadge 
                       {it.customizations.length > 0 && (
                         <ul className="mt-1 text-xs space-y-0.5" style={{ opacity: 0.75 }}>
                           {it.customizations.map((c, ci) => (
-                            <li key={ci}>+ {c.name} ({money(c.price_delta)})</li>
+                            <li key={ci}>
+                              + {c.name} ({money(c.price_delta)})
+                            </li>
                           ))}
                         </ul>
                       )}
-                      {it.selected_variant && (it.selected_variant.size || it.selected_variant.color || it.selected_variant.fabric) && (
-                        <p className="mt-1 text-xs" style={{ opacity: 0.75 }}>
-                          {[
-                            it.selected_variant.size && `${isRTL ? "المقاس" : "Size"}: ${it.selected_variant.size}`,
-                            it.selected_variant.color && `${isRTL ? "اللون" : "Color"}: ${it.selected_variant.color}`,
-                            it.selected_variant.fabric && `${isRTL ? "القماش" : "Fabric"}: ${it.selected_variant.fabric}`,
-                          ].filter(Boolean).join(" · ")}
-                        </p>
-                      )}
+                      {it.selected_variant &&
+                        (it.selected_variant.size ||
+                          it.selected_variant.color ||
+                          it.selected_variant.fabric) && (
+                          <p className="mt-1 text-xs" style={{ opacity: 0.75 }}>
+                            {[
+                              it.selected_variant.size &&
+                                `${isRTL ? "المقاس" : "Size"}: ${it.selected_variant.size}`,
+                              it.selected_variant.color &&
+                                `${isRTL ? "اللون" : "Color"}: ${it.selected_variant.color}`,
+                              it.selected_variant.fabric &&
+                                `${isRTL ? "القماش" : "Fabric"}: ${it.selected_variant.fabric}`,
+                            ]
+                              .filter(Boolean)
+                              .join(" · ")}
+                          </p>
+                        )}
                       {it.custom_field_values && it.custom_field_values.length > 0 && (
                         <ul className="mt-1 text-xs space-y-0.5" style={{ opacity: 0.75 }}>
                           {it.custom_field_values.map((cf, ci) => (
                             <li key={ci}>
-                              {isRTL ? (cf.label_ar || cf.label_en || cf.key) : (cf.label_en || cf.label_ar || cf.key)}: {cf.value}
+                              {isRTL
+                                ? cf.label_ar || cf.label_en || cf.key
+                                : cf.label_en || cf.label_ar || cf.key}
+                              : {cf.value}
                             </li>
                           ))}
                         </ul>
@@ -1575,12 +2517,18 @@ function InvoicePreview({ order, items, settings, shippingAddress, paymentBadge 
                     <td className="p-3 text-end whitespace-nowrap">
                       {Number(it.original_price ?? 0) > Number(it.unit_price) ? (
                         <span className="inline-flex flex-col items-end leading-tight">
-                          <span className="text-xs line-through" style={{ opacity: 0.6 }}>{money(Number(it.original_price) + it.customization_total)}</span>
+                          <span className="text-xs line-through" style={{ opacity: 0.6 }}>
+                            {money(Number(it.original_price) + it.customization_total)}
+                          </span>
                           <span>{money(it.unit_price + it.customization_total)}</span>
                         </span>
-                      ) : money(it.unit_price + it.customization_total)}
+                      ) : (
+                        money(it.unit_price + it.customization_total)
+                      )}
                     </td>
-                    <td className="p-3 font-medium text-end whitespace-nowrap">{money(it.line_total)}</td>
+                    <td className="p-3 font-medium text-end whitespace-nowrap">
+                      {money(it.line_total)}
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -1588,20 +2536,57 @@ function InvoicePreview({ order, items, settings, shippingAddress, paymentBadge 
           </div>
 
           {/* Totals stay on the physical left side in both languages. */}
-          <div className="pdf-totals-row flex" style={{ justifyContent: isRTL ? "flex-start" : "flex-end", direction: "ltr" }}>
-            <div className="pdf-totals-block w-72 text-sm space-y-1" style={{ direction: isRTL ? "rtl" : "ltr" }}>
-              <div className="flex justify-between"><span style={{ opacity: 0.75 }}>{L.subtotal}</span><span>{money(order.subtotal)}</span></div>
-              {Number(order.discount) > 0 && <div className="flex justify-between gap-4"><span style={{ opacity: 0.75 }}>{L.discount}{order.promo_code ? ` (Promo: ${order.promo_code})` : ""}</span><span>− {money(order.discount)}</span></div>}
-              {Number(order.tax_rate) > 0 && <div className="flex justify-between"><span style={{ opacity: 0.75 }}>{L.vat} ({num(order.tax_rate)}%)</span><span>{money(order.tax_amount)}</span></div>}
-              {Number(order.shipping) > 0 && <div className="flex justify-between"><span style={{ opacity: 0.75 }}>{L.shipping}</span><span>{money(order.shipping)}</span></div>}
-              <div className="flex justify-between items-center pt-2 border-t-2" style={{ borderColor: color }}>
+          <div
+            className="pdf-totals-row flex"
+            style={{ justifyContent: isRTL ? "flex-start" : "flex-end", direction: "ltr" }}
+          >
+            <div
+              className="pdf-totals-block w-72 text-sm space-y-1"
+              style={{ direction: isRTL ? "rtl" : "ltr" }}
+            >
+              <div className="flex justify-between">
+                <span style={{ opacity: 0.75 }}>{L.subtotal}</span>
+                <span>{money(order.subtotal)}</span>
+              </div>
+              {Number(order.discount) > 0 && (
+                <div className="flex justify-between gap-4">
+                  <span style={{ opacity: 0.75 }}>
+                    {L.discount}
+                    {order.promo_code ? ` (Promo: ${order.promo_code})` : ""}
+                  </span>
+                  <span>− {money(order.discount)}</span>
+                </div>
+              )}
+              {Number(order.tax_rate) > 0 && (
+                <div className="flex justify-between">
+                  <span style={{ opacity: 0.75 }}>
+                    {L.vat} ({num(order.tax_rate)}%)
+                  </span>
+                  <span>{money(order.tax_amount)}</span>
+                </div>
+              )}
+              {Number(order.shipping) > 0 && (
+                <div className="flex justify-between">
+                  <span style={{ opacity: 0.75 }}>{L.shipping}</span>
+                  <span>{money(order.shipping)}</span>
+                </div>
+              )}
+              <div
+                className="flex justify-between items-center pt-2 border-t-2"
+                style={{ borderColor: color }}
+              >
                 <span className="font-display text-lg" style={{ color }}>
                   {invoiceLang === "ar" ? "المبلغ الإجمالي" : "Total Amount"}
                 </span>
                 <div className="flex items-center gap-2">
-                  <span className="font-display text-lg" style={{ color }}>{money(order.total)}</span>
+                  <span className="font-display text-lg" style={{ color }}>
+                    {money(order.total)}
+                  </span>
                   {paymentBadge && (
-                    <span className={`text-[10px] px-2 py-0.5 rounded-full border ${isRTL ? "" : "uppercase tracking-wider"} ${PAYMENT_BADGE_CLASSES[paymentBadge]}`} style={{ letterSpacing: isRTL ? "normal" : undefined }}>
+                    <span
+                      className={`text-[10px] px-2 py-0.5 rounded-full border ${isRTL ? "" : "uppercase tracking-wider"} ${PAYMENT_BADGE_CLASSES[paymentBadge]}`}
+                      style={{ letterSpacing: isRTL ? "normal" : undefined }}
+                    >
                       {PAYMENT_BADGE_LABEL[paymentBadge][invoiceLang]}
                     </span>
                   )}
@@ -1620,19 +2605,31 @@ function InvoicePreview({ order, items, settings, shippingAddress, paymentBadge 
                     style={{ backgroundColor: `${color}1a`, color }}
                   >
                     <span>{invoiceLang === "ar" ? "المتبقي للاستحقاق" : "Remaining Due"}</span>
-                    <span>{money(Math.max(0, Number(order.total) - Number(order.advance_paid)))}</span>
+                    <span>
+                      {money(Math.max(0, Number(order.total) - Number(order.advance_paid)))}
+                    </span>
                   </div>
                 </>
               )}
             </div>
           </div>
 
-
           {settings.invoice_show_notes !== false && (order.notes || settings.footer_note) && (
-            <div className="mt-10 pt-6 border-t border-neutral-200 text-sm space-y-2" style={{ opacity: 0.85 }}>
-              {order.notes && <p><strong>{L.notes}: </strong>{order.notes}</p>}
+            <div
+              className="mt-10 pt-6 border-t border-neutral-200 text-sm space-y-2"
+              style={{ opacity: 0.85 }}
+            >
+              {order.notes && (
+                <p>
+                  <strong>{L.notes}: </strong>
+                  {order.notes}
+                </p>
+              )}
               {settings.footer_note && <p className="italic">{settings.footer_note}</p>}
-              <p className="italic">{L.warmRegards},<br/>{brandFor(invoiceLang, settings.business_name)}</p>
+              <p className="italic">
+                {L.warmRegards},<br />
+                {brandFor(invoiceLang, settings.business_name)}
+              </p>
             </div>
           )}
         </div>
@@ -1641,24 +2638,54 @@ function InvoicePreview({ order, items, settings, shippingAddress, paymentBadge 
   );
 }
 
-type Tpl = { id: string; name: string; channel: "email" | "whatsapp" | "both"; subject: string | null; body: string; is_default: boolean };
+type Tpl = {
+  id: string;
+  name: string;
+  channel: "email" | "whatsapp" | "both";
+  subject: string | null;
+  body: string;
+  is_default: boolean;
+};
 
-function ResendConfirmationEmailButton({ order, lang, onDone }: { order: any; lang: "ar" | "en"; onDone: () => void }) {
+function ResendConfirmationEmailButton({
+  order,
+  lang,
+  onDone,
+}: {
+  order: any;
+  lang: "ar" | "en";
+  onDone: () => void;
+}) {
   const [sending, setSending] = useState(false);
   const status: string = order?.confirmation_email_status ?? "pending";
   const sentAt = order?.confirmation_email_sent_at as string | null | undefined;
   const err = order?.confirmation_email_error as string | null | undefined;
 
   const color =
-    status === "sent" ? "text-green-600"
-    : status === "failed" ? "text-destructive"
-    : "text-muted-foreground";
+    status === "sent"
+      ? "text-green-600"
+      : status === "failed"
+        ? "text-destructive"
+        : "text-muted-foreground";
 
-  const label = lang === "ar"
-    ? (status === "sent" ? "إعادة إرسال البريد" : status === "failed" ? "إعادة المحاولة" : "إرسال بريد التأكيد")
-    : (status === "sent" ? "Resend confirmation email" : status === "failed" ? "Retry confirmation email" : "Send confirmation email");
+  const label =
+    lang === "ar"
+      ? status === "sent"
+        ? "إعادة إرسال البريد"
+        : status === "failed"
+          ? "إعادة المحاولة"
+          : "إرسال بريد التأكيد"
+      : status === "sent"
+        ? "Resend confirmation email"
+        : status === "failed"
+          ? "Retry confirmation email"
+          : "Send confirmation email";
 
-  const title = err ? `${lang === "ar" ? "فشل: " : "Failed: "}${err}` : sentAt ? `${lang === "ar" ? "أُرسل: " : "Sent: "}${new Date(sentAt).toLocaleString()}` : undefined;
+  const title = err
+    ? `${lang === "ar" ? "فشل: " : "Failed: "}${err}`
+    : sentAt
+      ? `${lang === "ar" ? "أُرسل: " : "Sent: "}${new Date(sentAt).toLocaleString()}`
+      : undefined;
 
   const onClick = async () => {
     if (!order?.id) return;
@@ -1683,14 +2710,15 @@ function ResendConfirmationEmailButton({ order, lang, onDone }: { order: any; la
 
   return (
     <Button variant="outline" onClick={onClick} disabled={sending} title={title}>
-      {sending
-        ? <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-        : <Mail className={`h-4 w-4 mr-2 ${color}`} />}
+      {sending ? (
+        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+      ) : (
+        <Mail className={`h-4 w-4 mr-2 ${color}`} />
+      )}
       {label}
     </Button>
   );
 }
-
 
 function renderTemplate(str: string, vars: Record<string, string>) {
   return str.replace(/\{\{\s*(\w+)\s*\}\}/g, (_, k) => vars[k] ?? "");
@@ -1711,29 +2739,46 @@ Warm regards,
 {{business_name}}`;
 }
 
-function SendInvoiceDialog({ order, totals, settings, currency }: { order: any; totals: any; settings: any; currency: string }) {
+function SendInvoiceDialog({
+  order,
+  totals,
+  settings,
+  currency,
+}: {
+  order: any;
+  totals: any;
+  settings: any;
+  currency: string;
+}) {
   const t = useT();
   const [open, setOpen] = useState(false);
   const [manageOpen, setManageOpen] = useState(false);
   const qc = useQueryClient();
 
-  const vars = useMemo(() => ({
-    customer_name: order?.customers?.name ?? "there",
-    customer_email: order?.customers?.email ?? "",
-    customer_phone: order?.customers?.phone ?? "",
-    business_name: brandFor("en", settings?.business_name),
-    invoice_number: String(order?.invoice_number ?? ""),
-    date: formatDate(order?.created_at ?? order?.order_date, "en-BH"),
-    total: formatMoney(totals.total, currency),
-    notes: order?.notes ?? "",
-  }), [order, totals, settings, currency]);
+  const vars = useMemo(
+    () => ({
+      customer_name: order?.customers?.name ?? "there",
+      customer_email: order?.customers?.email ?? "",
+      customer_phone: order?.customers?.phone ?? "",
+      business_name: brandFor("en", settings?.business_name),
+      invoice_number: String(order?.invoice_number ?? ""),
+      date: formatDate(order?.created_at ?? order?.order_date, "en-BH"),
+      total: formatMoney(totals.total, currency),
+      notes: order?.notes ?? "",
+    }),
+    [order, totals, settings, currency],
+  );
 
   const brand = useBrand();
   const brandId = brand.id;
   const templatesQ = useQuery({
     queryKey: ["message-templates", brandId],
     queryFn: async () => {
-      const { data, error } = await supabase.from("message_templates").select("*").eq("brand_id", brandId).order("created_at");
+      const { data, error } = await supabase
+        .from("message_templates")
+        .select("*")
+        .eq("brand_id", brandId)
+        .order("created_at");
       if (error) throw error;
       return (data ?? []) as Tpl[];
     },
@@ -1759,10 +2804,12 @@ function SendInvoiceDialog({ order, totals, settings, currency }: { order: any; 
     if (def) setSelectedId(def.id);
   }, [templatesQ.data, selectedId]);
 
-
   const openWhatsApp = () => {
     const digits = (phone || "").replace(/[^\d]/g, "");
-    if (!digits) return toast.error("This customer has no phone on file — add it in Customers or type one here (with country code)");
+    if (!digits)
+      return toast.error(
+        "This customer has no phone on file — add it in Customers or type one here (with country code)",
+      );
     // Explicitly inject the live invoice link (same URL as the "Copy invoice link" button)
     // into the {{Dynamic Invoice Link}} placeholder before encoding for WhatsApp.
     const origin = typeof window !== "undefined" ? window.location.origin : "";
@@ -1776,28 +2823,39 @@ function SendInvoiceDialog({ order, totals, settings, currency }: { order: any; 
     <>
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogTrigger asChild>
-          <Button variant="outline"><Send className="h-4 w-4 mr-2" /> {t("orderDetail.sendInvoiceWa")}</Button>
+          <Button variant="outline">
+            <Send className="h-4 w-4 mr-2" /> {t("orderDetail.sendInvoiceWa")}
+          </Button>
         </DialogTrigger>
         <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{t("orderDetail.sendInvoiceWa")}</DialogTitle>
-            <DialogDescription>Pick a template, tweak the message, then open WhatsApp.</DialogDescription>
+            <DialogDescription>
+              Pick a template, tweak the message, then open WhatsApp.
+            </DialogDescription>
           </DialogHeader>
 
           <div className="flex gap-2 items-end">
             <div className="flex-1">
               <Label>Template</Label>
               <Select value={selectedId} onValueChange={setSelectedId}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="__default">— Built-in default —</SelectItem>
                   {(templatesQ.data ?? []).map((t) => (
-                    <SelectItem key={t.id} value={t.id}>{t.name}{t.is_default ? " ★" : ""}</SelectItem>
+                    <SelectItem key={t.id} value={t.id}>
+                      {t.name}
+                      {t.is_default ? " ★" : ""}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
-            <Button variant="outline" size="sm" onClick={() => setManageOpen(true)}>Manage</Button>
+            <Button variant="outline" size="sm" onClick={() => setManageOpen(true)}>
+              Manage
+            </Button>
           </div>
 
           <div className="space-y-3 mt-4">
@@ -1809,9 +2867,14 @@ function SendInvoiceDialog({ order, totals, settings, currency }: { order: any; 
               <Label>Message</Label>
               <Textarea rows={10} value={message} onChange={(e) => setMessage(e.target.value)} />
             </div>
-            <p className="text-xs text-muted-foreground">Opens WhatsApp Web or the WhatsApp app with the message pre-filled — you send it manually. Attach the printed PDF there if needed.</p>
+            <p className="text-xs text-muted-foreground">
+              Opens WhatsApp Web or the WhatsApp app with the message pre-filled — you send it
+              manually. Attach the printed PDF there if needed.
+            </p>
             <DialogFooter>
-              <Button onClick={openWhatsApp}><Send className="h-4 w-4 mr-2" /> Open WhatsApp</Button>
+              <Button onClick={openWhatsApp}>
+                <Send className="h-4 w-4 mr-2" /> Open WhatsApp
+              </Button>
             </DialogFooter>
           </div>
         </DialogContent>
@@ -1827,17 +2890,27 @@ function SendInvoiceDialog({ order, totals, settings, currency }: { order: any; 
   );
 }
 
-
-function ManageTemplatesDialog({ open, onOpenChange, templates, onChanged }: {
-  open: boolean; onOpenChange: (o: boolean) => void; templates: Tpl[]; onChanged: () => void;
+function ManageTemplatesDialog({
+  open,
+  onOpenChange,
+  templates,
+  onChanged,
+}: {
+  open: boolean;
+  onOpenChange: (o: boolean) => void;
+  templates: Tpl[];
+  onChanged: () => void;
 }) {
   const [editing, setEditing] = useState<Partial<Tpl> | null>(null);
 
-  const startNew = () => setEditing({ name: "", channel: "both", subject: "", body: defaultBody(), is_default: false });
+  const startNew = () =>
+    setEditing({ name: "", channel: "both", subject: "", body: defaultBody(), is_default: false });
 
   const save = async () => {
     if (!editing?.name || !editing?.body) return toast.error("Name and body are required");
-    const { data: { user } } = await supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
     if (!user) return;
     const payload = {
       user_id: user.id,
@@ -1876,25 +2949,41 @@ function ManageTemplatesDialog({ open, onOpenChange, templates, onChanged }: {
         <DialogHeader>
           <DialogTitle>Message templates</DialogTitle>
           <DialogDescription>
-            Use placeholders like <code>{"{{customer_name}}"}</code>, <code>{"{{business_name}}"}</code>, <code>{"{{invoice_number}}"}</code>, <code>{"{{date}}"}</code>, <code>{"{{total}}"}</code>, <code>{"{{notes}}"}</code>.
+            Use placeholders like <code>{"{{customer_name}}"}</code>,{" "}
+            <code>{"{{business_name}}"}</code>, <code>{"{{invoice_number}}"}</code>,{" "}
+            <code>{"{{date}}"}</code>, <code>{"{{total}}"}</code>, <code>{"{{notes}}"}</code>.
           </DialogDescription>
         </DialogHeader>
 
         {!editing && (
           <div className="space-y-2">
             <div className="flex justify-end">
-              <Button size="sm" onClick={startNew}><Plus className="h-3 w-3 mr-1" /> New template</Button>
+              <Button size="sm" onClick={startNew}>
+                <Plus className="h-3 w-3 mr-1" /> New template
+              </Button>
             </div>
-            {templates.length === 0 && <p className="text-sm text-muted-foreground">No templates yet.</p>}
+            {templates.length === 0 && (
+              <p className="text-sm text-muted-foreground">No templates yet.</p>
+            )}
             {templates.map((t) => (
-              <div key={t.id} className="flex items-center justify-between border border-border rounded-md p-3">
+              <div
+                key={t.id}
+                className="flex items-center justify-between border border-border rounded-md p-3"
+              >
                 <div>
-                  <p className="font-medium text-sm">{t.name} {t.is_default && <span className="text-xs text-primary">★ default</span>}</p>
+                  <p className="font-medium text-sm">
+                    {t.name}{" "}
+                    {t.is_default && <span className="text-xs text-primary">★ default</span>}
+                  </p>
                   <p className="text-xs text-muted-foreground">{t.channel}</p>
                 </div>
                 <div className="flex gap-2">
-                  <Button size="sm" variant="outline" onClick={() => setEditing(t)}>Edit</Button>
-                  <Button size="sm" variant="ghost" onClick={() => remove(t.id)}><Trash2 className="h-4 w-4" /></Button>
+                  <Button size="sm" variant="outline" onClick={() => setEditing(t)}>
+                    Edit
+                  </Button>
+                  <Button size="sm" variant="ghost" onClick={() => remove(t.id)}>
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
                 </div>
               </div>
             ))}
@@ -1906,12 +2995,20 @@ function ManageTemplatesDialog({ open, onOpenChange, templates, onChanged }: {
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <Label>Name</Label>
-                <Input value={editing.name ?? ""} onChange={(e) => setEditing({ ...editing, name: e.target.value })} />
+                <Input
+                  value={editing.name ?? ""}
+                  onChange={(e) => setEditing({ ...editing, name: e.target.value })}
+                />
               </div>
               <div>
                 <Label>Channel</Label>
-                <Select value={editing.channel ?? "both"} onValueChange={(v) => setEditing({ ...editing, channel: v as Tpl["channel"] })}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                <Select
+                  value={editing.channel ?? "both"}
+                  onValueChange={(v) => setEditing({ ...editing, channel: v as Tpl["channel"] })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="both">Both</SelectItem>
                     <SelectItem value="email">Email only</SelectItem>
@@ -1922,18 +3019,31 @@ function ManageTemplatesDialog({ open, onOpenChange, templates, onChanged }: {
             </div>
             <div>
               <Label>Email subject (optional)</Label>
-              <Input value={editing.subject ?? ""} onChange={(e) => setEditing({ ...editing, subject: e.target.value })} />
+              <Input
+                value={editing.subject ?? ""}
+                onChange={(e) => setEditing({ ...editing, subject: e.target.value })}
+              />
             </div>
             <div>
               <Label>Body</Label>
-              <Textarea rows={12} value={editing.body ?? ""} onChange={(e) => setEditing({ ...editing, body: e.target.value })} />
+              <Textarea
+                rows={12}
+                value={editing.body ?? ""}
+                onChange={(e) => setEditing({ ...editing, body: e.target.value })}
+              />
             </div>
             <label className="flex items-center gap-2 text-sm">
-              <input type="checkbox" checked={!!editing.is_default} onChange={(e) => setEditing({ ...editing, is_default: e.target.checked })} />
+              <input
+                type="checkbox"
+                checked={!!editing.is_default}
+                onChange={(e) => setEditing({ ...editing, is_default: e.target.checked })}
+              />
               Use as default template
             </label>
             <DialogFooter>
-              <Button variant="ghost" onClick={() => setEditing(null)}>Cancel</Button>
+              <Button variant="ghost" onClick={() => setEditing(null)}>
+                Cancel
+              </Button>
               <Button onClick={save}>Save template</Button>
             </DialogFooter>
           </div>
@@ -1942,4 +3052,3 @@ function ManageTemplatesDialog({ open, onOpenChange, templates, onChanged }: {
     </Dialog>
   );
 }
-

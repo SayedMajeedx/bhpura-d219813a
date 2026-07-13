@@ -8,16 +8,26 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { Plus, Store, ExternalLink, Crown, Pencil, Trash2, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { useI18n, useT } from "@/lib/i18n";
 import { SUPER_ADMIN_EMAIL } from "@/lib/profile-context";
 import { purgeBrandPublicMedia } from "@/lib/r2-upload";
+import { purgeBrandPrivateReceipts } from "@/lib/benefit-receipt.functions";
 
 export const Route = createFileRoute("/_authenticated/admin/brands")({
   beforeLoad: async () => {
-    const { data: { user } } = await supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
     if (!user) throw redirect({ to: "/auth" });
     const email = (user.email || "").toLowerCase();
     const { data: profile } = await supabase
@@ -89,7 +99,12 @@ function BrandsPage() {
               <Plus className="h-4 w-4 me-2" /> {lang === "ar" ? "علامة تجارية جديدة" : "New Brand"}
             </Button>
           </DialogTrigger>
-          <NewBrandDialog onSaved={() => { setOpen(false); refresh(); }} />
+          <NewBrandDialog
+            onSaved={() => {
+              setOpen(false);
+              refresh();
+            }}
+          />
         </Dialog>
       </div>
 
@@ -106,7 +121,11 @@ function BrandsPage() {
             <Card key={b.id} className="p-5">
               <div className="flex items-center gap-3 mb-3">
                 {b.logo_url ? (
-                  <img src={b.logo_url} alt={b.name_en} className="h-10 w-10 rounded object-contain bg-secondary" />
+                  <img
+                    src={b.logo_url}
+                    alt={b.name_en}
+                    className="h-10 w-10 rounded object-contain bg-secondary"
+                  />
                 ) : (
                   <div className="h-10 w-10 rounded bg-secondary grid place-items-center">
                     <Store className="h-5 w-5 text-muted-foreground" />
@@ -138,7 +157,12 @@ function BrandsPage() {
                   <Pencil className="h-3.5 w-3.5 me-1.5" />
                   {lang === "ar" ? "تعديل" : "Edit"}
                 </Button>
-                <Button variant="ghost" size="sm" className="text-destructive hover:bg-destructive/10" onClick={() => setDeleting(b)}>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-destructive hover:bg-destructive/10"
+                  onClick={() => setDeleting(b)}
+                >
                   <Trash2 className="h-3.5 w-3.5 me-1.5" />
                   {lang === "ar" ? "حذف" : "Delete"}
                 </Button>
@@ -150,12 +174,24 @@ function BrandsPage() {
 
       {editing && (
         <Dialog open={!!editing} onOpenChange={(v) => !v && setEditing(null)}>
-          <EditBrandDialog brand={editing} onSaved={() => { setEditing(null); refresh(); }} />
+          <EditBrandDialog
+            brand={editing}
+            onSaved={() => {
+              setEditing(null);
+              refresh();
+            }}
+          />
         </Dialog>
       )}
       {deleting && (
         <Dialog open={!!deleting} onOpenChange={(v) => !v && setDeleting(null)}>
-          <DeleteBrandDialog brand={deleting} onDone={() => { setDeleting(null); refresh(); }} />
+          <DeleteBrandDialog
+            brand={deleting}
+            onDone={() => {
+              setDeleting(null);
+              refresh();
+            }}
+          />
         </Dialog>
       )}
     </div>
@@ -179,7 +215,9 @@ function NewBrandDialog({ onSaved }: { onSaved: () => void }) {
     }
     setSaving(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       const { error } = await (supabase.from("brands") as any).insert({
         slug,
         name_en: form.name_en.trim(),
@@ -205,7 +243,9 @@ function NewBrandDialog({ onSaved }: { onSaved: () => void }) {
       </DialogHeader>
       <div className="space-y-3">
         <div>
-          <Label>{lang === "ar" ? "الاسم بالإنجليزية (يدوي)" : "Brand Name — English (manual)"}</Label>
+          <Label>
+            {lang === "ar" ? "الاسم بالإنجليزية (يدوي)" : "Brand Name — English (manual)"}
+          </Label>
           <Input
             autoComplete="off"
             autoCorrect="off"
@@ -244,11 +284,17 @@ function NewBrandDialog({ onSaved }: { onSaved: () => void }) {
         </div>
         <div>
           <Label>{lang === "ar" ? "رابط الشعار" : "Logo URL"}</Label>
-          <Input value={form.logo_url} onChange={(e) => setForm({ ...form, logo_url: e.target.value })} placeholder="https://…" />
+          <Input
+            value={form.logo_url}
+            onChange={(e) => setForm({ ...form, logo_url: e.target.value })}
+            placeholder="https://…"
+          />
         </div>
       </div>
       <DialogFooter>
-        <Button onClick={submit} disabled={saving}>{lang === "ar" ? "إنشاء" : "Create"}</Button>
+        <Button onClick={submit} disabled={saving}>
+          {lang === "ar" ? "إنشاء" : "Create"}
+        </Button>
       </DialogFooter>
     </DialogContent>
   );
@@ -287,15 +333,17 @@ function EditBrandDialog({ brand, onSaved }: { brand: Brand; onSaved: () => void
       return;
     }
     setSaving(true);
-    const { error } = await (supabase.from("brands") as any).update({
-      name_en: form.name_en.trim(),
-      name_ar: form.name_ar.trim() || null,
-      logo_url: form.logo_url.trim() || null,
-      primary_color: form.primary_color || null,
-      about_ar: form.about_ar.trim() || null,
-      about_en: form.about_en.trim() || null,
-      is_active: form.is_active,
-    }).eq("id", brand.id);
+    const { error } = await (supabase.from("brands") as any)
+      .update({
+        name_en: form.name_en.trim(),
+        name_ar: form.name_ar.trim() || null,
+        logo_url: form.logo_url.trim() || null,
+        primary_color: form.primary_color || null,
+        about_ar: form.about_ar.trim() || null,
+        about_en: form.about_en.trim() || null,
+        is_active: form.is_active,
+      })
+      .eq("id", brand.id);
     setSaving(false);
     if (error) return toast.error(error.message);
     toast.success(t("brands.updateSuccess"));
@@ -305,58 +353,96 @@ function EditBrandDialog({ brand, onSaved }: { brand: Brand; onSaved: () => void
   return (
     <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
       <DialogHeader>
-        <DialogTitle>{t("brands.editTitle")} — {brand.name_en}</DialogTitle>
+        <DialogTitle>
+          {t("brands.editTitle")} — {brand.name_en}
+        </DialogTitle>
       </DialogHeader>
       <div className="space-y-3">
         <div>
           <Label>{isAr ? "المعرّف" : "Slug"}</Label>
           <Input value={brand.slug} readOnly disabled />
           <p className="text-xs text-muted-foreground mt-1">
-            {isAr ? "لا يمكن تغيير المعرّف لأنه مستخدم في الروابط والفواتير." : "Slug can't be changed — it's used in URLs and invoice links."}
+            {isAr
+              ? "لا يمكن تغيير المعرّف لأنه مستخدم في الروابط والفواتير."
+              : "Slug can't be changed — it's used in URLs and invoice links."}
           </p>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
             <Label>{isAr ? "الاسم (إنجليزي)" : "Name (English)"}</Label>
-            <Input value={form.name_en} onChange={(e) => setForm({ ...form, name_en: e.target.value })} />
+            <Input
+              value={form.name_en}
+              onChange={(e) => setForm({ ...form, name_en: e.target.value })}
+            />
           </div>
           <div>
             <Label>{isAr ? "الاسم (عربي)" : "Name (Arabic)"}</Label>
-            <Input value={form.name_ar} onChange={(e) => setForm({ ...form, name_ar: e.target.value })} />
+            <Input
+              value={form.name_ar}
+              onChange={(e) => setForm({ ...form, name_ar: e.target.value })}
+            />
           </div>
         </div>
         <div>
           <Label>{isAr ? "رابط الشعار" : "Logo URL"}</Label>
-          <Input value={form.logo_url} onChange={(e) => setForm({ ...form, logo_url: e.target.value })} placeholder="https://…" />
+          <Input
+            value={form.logo_url}
+            onChange={(e) => setForm({ ...form, logo_url: e.target.value })}
+            placeholder="https://…"
+          />
         </div>
         <div>
           <Label>{isAr ? "لون العلامة" : "Brand color"}</Label>
           <div className="flex items-center gap-2">
-            <input type="color" value={form.primary_color} onChange={(e) => setForm({ ...form, primary_color: e.target.value })}
-              className="h-9 w-12 rounded border border-border cursor-pointer" />
-            <Input value={form.primary_color} onChange={(e) => setForm({ ...form, primary_color: e.target.value })} />
+            <input
+              type="color"
+              value={form.primary_color}
+              onChange={(e) => setForm({ ...form, primary_color: e.target.value })}
+              className="h-9 w-12 rounded border border-border cursor-pointer"
+            />
+            <Input
+              value={form.primary_color}
+              onChange={(e) => setForm({ ...form, primary_color: e.target.value })}
+            />
           </div>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
             <Label>{isAr ? "نبذة (عربي)" : "About (Arabic)"}</Label>
-            <Textarea rows={3} value={form.about_ar} onChange={(e) => setForm({ ...form, about_ar: e.target.value })} />
+            <Textarea
+              rows={3}
+              value={form.about_ar}
+              onChange={(e) => setForm({ ...form, about_ar: e.target.value })}
+            />
           </div>
           <div>
             <Label>{isAr ? "نبذة (إنجليزي)" : "About (English)"}</Label>
-            <Textarea rows={3} value={form.about_en} onChange={(e) => setForm({ ...form, about_en: e.target.value })} />
+            <Textarea
+              rows={3}
+              value={form.about_en}
+              onChange={(e) => setForm({ ...form, about_en: e.target.value })}
+            />
           </div>
         </div>
         <div className="flex items-center justify-between border border-border rounded-md p-3">
           <div>
             <p className="text-sm font-medium">{isAr ? "نشط" : "Active"}</p>
-            <p className="text-xs text-muted-foreground">{isAr ? "إذا كانت غير نشطة، لن تظهر في المتجر." : "Inactive brands are hidden from the storefront."}</p>
+            <p className="text-xs text-muted-foreground">
+              {isAr
+                ? "إذا كانت غير نشطة، لن تظهر في المتجر."
+                : "Inactive brands are hidden from the storefront."}
+            </p>
           </div>
-          <Switch checked={form.is_active} onCheckedChange={(v) => setForm({ ...form, is_active: v })} />
+          <Switch
+            checked={form.is_active}
+            onCheckedChange={(v) => setForm({ ...form, is_active: v })}
+          />
         </div>
       </div>
       <DialogFooter>
-        <Button onClick={save} disabled={saving}>{t("common.save")}</Button>
+        <Button onClick={save} disabled={saving}>
+          {t("common.save")}
+        </Button>
       </DialogFooter>
     </DialogContent>
   );
@@ -375,9 +461,18 @@ function DeleteBrandDialog({ brand, onDone }: { brand: Brand; onDone: () => void
     queryKey: ["brand-delete-counts", brand.id],
     queryFn: async () => {
       const [{ count: orders }, { count: products }, { count: customers }] = await Promise.all([
-        supabase.from("orders").select("id", { head: true, count: "exact" }).eq("brand_id", brand.id),
-        supabase.from("products").select("id", { head: true, count: "exact" }).eq("brand_id", brand.id),
-        supabase.from("customers").select("id", { head: true, count: "exact" }).eq("brand_id", brand.id),
+        supabase
+          .from("orders")
+          .select("id", { head: true, count: "exact" })
+          .eq("brand_id", brand.id),
+        supabase
+          .from("products")
+          .select("id", { head: true, count: "exact" })
+          .eq("brand_id", brand.id),
+        supabase
+          .from("customers")
+          .select("id", { head: true, count: "exact" })
+          .eq("brand_id", brand.id),
       ]);
       return { orders: orders ?? 0, products: products ?? 0, customers: customers ?? 0 };
     },
@@ -391,15 +486,26 @@ function DeleteBrandDialog({ brand, onDone }: { brand: Brand; onDone: () => void
     setWorking(true);
     if (!databasePurged) {
       const { error } = await supabase.rpc("delete_brand", { p_brand_id: brand.id, p_hard: hard });
-      if (error) { setWorking(false); return toast.error(error.message); }
+      if (error) {
+        setWorking(false);
+        return toast.error(error.message);
+      }
       if (hard) setDatabasePurged(true);
     }
     if (hard) {
       try {
-        await purgeBrandPublicMedia(brand.id);
+        await Promise.all([
+          purgeBrandPublicMedia(brand.id),
+          purgeBrandPrivateReceipts({ data: { brandId: brand.id } }),
+        ]);
       } catch (error: any) {
         setWorking(false);
-        toast.error(isAr ? "تم حذف بيانات العلامة، لكن تعذر تنظيف ملفات R2. اضغط إعادة المحاولة." : "Brand data was deleted, but R2 cleanup failed. Click retry to finish media cleanup.", { duration: 10000 });
+        toast.error(
+          isAr
+            ? "تم حذف بيانات العلامة، لكن تعذر تنظيف ملفات R2. اضغط إعادة المحاولة."
+            : "Brand data was deleted, but R2 cleanup failed. Click retry to finish media cleanup.",
+          { duration: 10000 },
+        );
         return;
       }
     }
@@ -416,14 +522,27 @@ function DeleteBrandDialog({ brand, onDone }: { brand: Brand; onDone: () => void
         </DialogTitle>
       </DialogHeader>
       <div className="space-y-3">
-        <p className="text-sm text-muted-foreground">{hard
-          ? (isAr ? "سيؤدي الحذف النهائي إلى إزالة جميع المنتجات والطلبات والفواتير والعملاء والإعدادات والملفات نهائياً. لا يمكن التراجع." : "Permanent deletion removes all products, orders, invoices, customers, settings, and media. This cannot be undone.")
-          : t("brands.deleteWarning")}</p>
+        <p className="text-sm text-muted-foreground">
+          {hard
+            ? isAr
+              ? "سيؤدي الحذف النهائي إلى إزالة جميع المنتجات والطلبات والفواتير والعملاء والإعدادات والملفات نهائياً. لا يمكن التراجع."
+              : "Permanent deletion removes all products, orders, invoices, customers, settings, and media. This cannot be undone."
+            : t("brands.deleteWarning")}
+        </p>
         {counts && (
           <div className="grid grid-cols-3 text-center rounded-md border border-border p-3 text-sm">
-            <div><div className="font-display text-lg">{counts.orders}</div><div className="text-xs text-muted-foreground">{isAr ? "طلبات" : "Orders"}</div></div>
-            <div><div className="font-display text-lg">{counts.products}</div><div className="text-xs text-muted-foreground">{isAr ? "منتجات" : "Products"}</div></div>
-            <div><div className="font-display text-lg">{counts.customers}</div><div className="text-xs text-muted-foreground">{isAr ? "عملاء" : "Customers"}</div></div>
+            <div>
+              <div className="font-display text-lg">{counts.orders}</div>
+              <div className="text-xs text-muted-foreground">{isAr ? "طلبات" : "Orders"}</div>
+            </div>
+            <div>
+              <div className="font-display text-lg">{counts.products}</div>
+              <div className="text-xs text-muted-foreground">{isAr ? "منتجات" : "Products"}</div>
+            </div>
+            <div>
+              <div className="font-display text-lg">{counts.customers}</div>
+              <div className="text-xs text-muted-foreground">{isAr ? "عملاء" : "Customers"}</div>
+            </div>
           </div>
         )}
         <label className="flex items-start gap-2 rounded-md border border-destructive/40 bg-destructive/5 p-3 text-sm">
@@ -437,12 +556,32 @@ function DeleteBrandDialog({ brand, onDone }: { brand: Brand; onDone: () => void
         </label>
         <div>
           <Label>{t("brands.deleteConfirmText")}</Label>
-          <Input value={confirm} onChange={(e) => setConfirm(e.target.value)} placeholder={brand.slug} />
+          <Input
+            value={confirm}
+            onChange={(e) => setConfirm(e.target.value)}
+            placeholder={brand.slug}
+          />
         </div>
       </div>
       <DialogFooter>
-        <Button variant="destructive" onClick={run} disabled={working || confirm.trim().toLowerCase() !== brand.slug.toLowerCase()}>
-          {working ? "…" : databasePurged ? (isAr ? "إعادة محاولة تنظيف الملفات" : "Retry media cleanup") : hard ? (isAr ? "حذف كل شيء نهائياً" : "Permanently delete everything") : (isAr ? "تعطيل ومسح" : "Deactivate and remove")}
+        <Button
+          variant="destructive"
+          onClick={run}
+          disabled={working || confirm.trim().toLowerCase() !== brand.slug.toLowerCase()}
+        >
+          {working
+            ? "…"
+            : databasePurged
+              ? isAr
+                ? "إعادة محاولة تنظيف الملفات"
+                : "Retry media cleanup"
+              : hard
+                ? isAr
+                  ? "حذف كل شيء نهائياً"
+                  : "Permanently delete everything"
+                : isAr
+                  ? "تعطيل ومسح"
+                  : "Deactivate and remove"}
         </Button>
       </DialogFooter>
     </DialogContent>
