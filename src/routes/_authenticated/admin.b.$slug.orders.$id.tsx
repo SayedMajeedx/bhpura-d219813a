@@ -263,12 +263,37 @@ function OrderDetail() {
 
   const approveBenefitPayment = async () => {
     setApprovingBenefit(true);
-    const { error } = await supabase.rpc("approve_benefit_payment" as any, { p_order_id: id });
-    setApprovingBenefit(false);
-    if (error) return toast.error(error.message);
-    toast.success(lang === "ar" ? "تم التحقق من الدفع واعتماده" : "Payment verified and approved");
-    await orderQ.refetch();
-    qc.invalidateQueries({ queryKey: ["orders"] });
+    try {
+      const { error } = await supabase.rpc("approve_benefit_payment" as any, { p_order_id: id });
+      if (error) throw error;
+
+      await orderQ.refetch();
+      qc.invalidateQueries({ queryKey: ["orders"] });
+      toast.success(lang === "ar" ? "تم التحقق من الدفع واعتماده" : "Payment verified and approved");
+
+      // A delivered email cannot be edited in-place. Send a fresh confirmation
+      // after approval so the customer receives the now-authoritative Paid
+      // status and the complete updated financial summary.
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData.session?.access_token;
+      const { data: emailData, error: emailError } = await supabase.functions.invoke("send-order-email", {
+        body: { order_id: id, lang },
+        headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : undefined,
+      });
+      if (emailError || (emailData as any)?.error) {
+        toast.warning(
+          lang === "ar"
+            ? "تم اعتماد الدفع، لكن تعذر إرسال رسالة حالة الدفع المحدثة"
+            : "Payment approved, but the updated payment email could not be sent",
+        );
+      } else {
+        toast.success(lang === "ar" ? "تم إرسال تأكيد الدفع للعميل" : "Paid confirmation sent to customer");
+      }
+    } catch (error: any) {
+      toast.error(error?.message ?? (lang === "ar" ? "تعذر اعتماد الدفع" : "Could not approve payment"));
+    } finally {
+      setApprovingBenefit(false);
+    }
   };
 
   const rejectBenefitPayment = async () => {

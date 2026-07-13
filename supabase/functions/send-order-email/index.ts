@@ -57,8 +57,20 @@ function fmt(n: number, currency: string, isAr: boolean) {
   }
 }
 
-function paymentStatusLabel(status: string | null | undefined, isAr: boolean) {
+function paymentStatusLabel(
+  status: string | null | undefined,
+  isAr: boolean,
+  paymentMethod?: string | null,
+  orderStatus?: string | null,
+) {
   const normalized = String(status ?? "").toLowerCase().replace(/[_-]/g, " ");
+  const normalizedOrder = String(orderStatus ?? "").toLowerCase().replace(/[_-]/g, " ");
+  // Benefit receipts are not unpaid while waiting for an administrator to
+  // validate them. Once approved, payment_status becomes paid and the normal
+  // paid label below is used by every subsequent email/resend.
+  if (paymentMethod === "benefit" && normalizedOrder === "pending verification" && normalized !== "paid") {
+    return isAr ? "بانتظار التحقق من الدفع" : "Pending payment validation";
+  }
   if (isAr) {
     if (normalized.includes("partial")) return "مدفوع جزئياً";
     if (normalized.includes("unpaid") || normalized.includes("pending")) return "غير مدفوع";
@@ -93,35 +105,55 @@ function renderHtml(o: any, items: any[], brandName: string, primary: string, is
   const advancePaid = Number(o.advance_paid || 0);
   const total = Number(o.total || 0);
   const remaining = Math.max(total - advancePaid, 0);
-  const paymentStatus = paymentStatusLabel(o.payment_status, isAr);
+  const paymentStatus = paymentStatusLabel(o.payment_status, isAr, o.payment_method, o.status);
+  const promoCode = String(o.promo_code ?? "").trim();
+  const paymentMethodLabel = isAr ? "طريقة الدفع" : "Payment method";
+  const fulfillmentLabel = isAr ? "طريقة الاستلام" : "Fulfillment";
+  const promoLabel = isAr ? "رمز الخصم" : "Promo code";
+  const paymentMethod = o.payment_method === "benefit"
+    ? (isAr ? "بنفت باي" : "Benefit Pay")
+    : o.payment_method === "cod"
+      ? (isAr ? "الدفع عند الاستلام" : "Cash on delivery")
+      : o.payment_method === "card"
+        ? (isAr ? "بطاقة" : "Card")
+        : (o.payment_method || (isAr ? "غير محدد" : "Not specified"));
+  const fulfillment = o.fulfillment_method === "delivery"
+    ? (isAr ? "توصيل" : "Home delivery")
+    : o.fulfillment_method === "pickup"
+      ? (isAr ? "استلام من الفرع" : "Pickup from branch")
+      : o.fulfillment_method === "digital"
+        ? (isAr ? "توصيل رقمي" : "Digital delivery")
+        : (o.fulfillment_method || (isAr ? "غير محدد" : "Not specified"));
   const showVat = o.tax_rate !== null && o.tax_rate !== undefined || taxAmount > 0;
-  const showPaymentSummary = !!o.payment_status || advancePaid > 0;
+  const showPaymentSummary = !!o.payment_status || advancePaid > 0 || !!o.payment_method;
   const rows = items.map((i: any) =>
-    `<tr><td style="padding:10px 8px;border-bottom:1px solid #eee">${escapeHtml(i.description)}</td>` +
+    `<tr><td style="padding:10px 8px;border-bottom:1px solid #eee;text-align:${isAr ? "right" : "left"};unicode-bidi:plaintext">${escapeHtml(i.description)}</td>` +
     `<td style="padding:10px 8px;border-bottom:1px solid #eee;text-align:center">${i.quantity}</td>` +
     `<td style="padding:10px 8px;border-bottom:1px solid #eee;text-align:${align}">${fmt(Number(i.unit_price), cur, isAr)}</td>` +
     `<td style="padding:10px 8px;border-bottom:1px solid #eee;text-align:${align}">${fmt(Number(i.line_total), cur, isAr)}</td></tr>`
   ).join("");
   return `<!doctype html><html lang="${isAr ? "ar" : "en"}" dir="${dir}"><head><meta charset="utf-8"><title>${escapeHtml(brandName)} — ${L.inv} ${escapeHtml(o.invoice_number)}</title></head>
-<body style="margin:0;background:#f7f7f8;font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;color:#111">
-<div style="max-width:640px;margin:0 auto;background:#fff">
+<body dir="${dir}" style="margin:0;background:#f7f7f8;font-family:Arial,'Segoe UI',Tahoma,sans-serif;color:#111;direction:${dir};text-align:${isAr ? "right" : "left"}">
+<div dir="${dir}" style="max-width:640px;margin:0 auto;background:#fff;direction:${dir};text-align:${isAr ? "right" : "left"}">
 <div style="padding:24px 28px;background:${primary};color:#fff"><h1 style="margin:0;font-size:22px">${escapeHtml(brandName)}</h1><p style="margin:6px 0 0;opacity:.9">${L.greet}</p></div>
 <div style="padding:24px 28px">
 <p style="margin:0 0 16px">${L.intro}</p>
 <p style="margin:0 0 4px"><strong>${L.inv}:</strong> ${escapeHtml(o.invoice_number)}</p>
 <p style="margin:0 0 16px"><strong>${L.date}:</strong> ${new Date(o.order_date).toLocaleDateString(isAr ? "ar-BH" : "en-US")}</p>
-<table style="width:100%;border-collapse:collapse;margin-top:8px;font-size:14px"><thead><tr>
+<table dir="${dir}" style="width:100%;border-collapse:collapse;margin-top:8px;font-size:14px;direction:${dir};text-align:${isAr ? "right" : "left"}"><thead><tr>
 <th style="padding:10px 8px;border-bottom:2px solid #111;text-align:${isAr ? "right" : "left"}">${L.item}</th>
 <th style="padding:10px 8px;border-bottom:2px solid #111;text-align:center">${L.qty}</th>
 <th style="padding:10px 8px;border-bottom:2px solid #111;text-align:${align}">${L.price}</th>
 <th style="padding:10px 8px;border-bottom:2px solid #111;text-align:${align}">${L.total}</th>
 </tr></thead><tbody>${rows}</tbody></table>
-<table style="width:100%;margin-top:16px;font-size:14px">
+<table dir="${dir}" style="width:100%;margin-top:16px;font-size:14px;direction:${dir}">
 <tr><td style="padding:4px 8px">${L.subtotal}</td><td style="padding:4px 8px;text-align:${align}">${fmt(Number(o.subtotal), cur, isAr)}</td></tr>
-${discount > 0 ? `<tr><td style="padding:4px 8px">${L.discount}</td><td style="padding:4px 8px;text-align:${align}">- ${fmt(discount, cur, isAr)}</td></tr>` : ""}
+<tr><td style="padding:4px 8px">${L.discount}${promoCode ? ` <span style="color:#666">(${promoLabel}: ${escapeHtml(promoCode)})</span>` : ""}</td><td style="padding:4px 8px;text-align:${align}">- ${fmt(discount, cur, isAr)}</td></tr>
 ${showVat ? `<tr><td style="padding:4px 8px">${L.vat}${Number.isFinite(taxRate) ? ` (${taxRate}%)` : ""}</td><td style="padding:4px 8px;text-align:${align}">${fmt(taxAmount, cur, isAr)}</td></tr>` : ""}
-${shipping ? `<tr><td style="padding:4px 8px">${L.shipping}</td><td style="padding:4px 8px;text-align:${align}">${fmt(shipping, cur, isAr)}</td></tr>` : ""}
+<tr><td style="padding:4px 8px">${L.shipping}</td><td style="padding:4px 8px;text-align:${align}">${fmt(shipping, cur, isAr)}</td></tr>
 <tr><td style="padding:8px;font-weight:700;border-top:1px solid #ddd">${L.grand}</td><td style="padding:8px;font-weight:700;text-align:${align};border-top:1px solid #ddd">${fmt(total, cur, isAr)}</td></tr>
+<tr><td style="padding:8px 8px 4px">${paymentMethodLabel}</td><td style="padding:8px 8px 4px;text-align:${align}">${escapeHtml(paymentMethod)}</td></tr>
+<tr><td style="padding:4px 8px">${fulfillmentLabel}</td><td style="padding:4px 8px;text-align:${align}">${escapeHtml(fulfillment)}</td></tr>
 ${showPaymentSummary ? `<tr><td style="padding:8px 8px 4px">${L.paymentStatus}</td><td style="padding:8px 8px 4px;text-align:${align}"><span style="display:inline-block;padding:3px 8px;border-radius:999px;background:#eaf2ff;color:#1558d6;border:1px solid #b8d2ff;font-size:12px">${escapeHtml(paymentStatus)}</span></td></tr>` : ""}
 ${advancePaid > 0 ? `<tr><td style="padding:4px 8px">${L.advance}</td><td style="padding:4px 8px;text-align:${align}">- ${fmt(advancePaid, cur, isAr)}</td></tr>` : ""}
 ${advancePaid > 0 ? `<tr><td style="padding:8px;font-weight:700">${L.remaining}</td><td style="padding:8px;font-weight:700;text-align:${align}">${fmt(remaining, cur, isAr)}</td></tr>` : ""}
@@ -139,8 +171,8 @@ async function sendAndLog(orderId: string, lang: "ar" | "en") {
     const { data: order, error: oe } = await admin
       .from("orders")
       .select(`
-        id, brand_id, invoice_number, order_date, subtotal, discount, tax_amount, tax_rate,
-        shipping, total, currency, customer_id, advance_paid, payment_status,
+        id, brand_id, invoice_number, order_date, status, subtotal, discount, promo_code, tax_amount, tax_rate,
+        shipping, total, currency, customer_id, advance_paid, payment_status, payment_method, fulfillment_method,
         order_items ( description, quantity, unit_price, line_total ),
         customer:customers ( email, name )
       `)
