@@ -87,6 +87,7 @@ function Settings() {
   });
 
   const [f, setF] = useState<Settings | null>(null);
+  const [activeTab, setActiveTab] = useState("business");
   useEffect(() => {
     if (data) {
       const trimmed = (data.business_name ?? "").trim();
@@ -147,16 +148,27 @@ function Settings() {
     { value: "emails", ar: "الإشعارات والبريد", en: "Notifications & Emails" },
     { value: "security", ar: "الأمان والبصمة", en: "Security & Passkeys" },
   ];
+  const TAB_HEADERS: Record<string, { en: string; enDescription: string; ar: string; arDescription: string }> = {
+    business: { en: "Business Profile Settings", enDescription: "Manage your business identity and contact information.", ar: "إعدادات الملف التجاري", arDescription: "إدارة هوية النشاط ومعلومات التواصل." },
+    invoice: { en: "Invoice Settings", enDescription: "Customize how your invoices look and print.", ar: "إعدادات الفاتورة", arDescription: "تخصيص شكل الفاتورة والطباعة." },
+    storefront: { en: "Storefront Settings", enDescription: "Customize your public store appearance and content.", ar: "إعدادات واجهة المتجر", arDescription: "تخصيص مظهر ومحتوى المتجر العام." },
+    checkout: { en: "Checkout & Fulfillment Settings", enDescription: "Manage fulfillment methods, delivery options, and global flat rates.", ar: "إعدادات الدفع والتسليم", arDescription: "إدارة طرق التسليم وخيارات التوصيل والرسوم العامة الثابتة." },
+    payments: { en: "Payment Method Settings", enDescription: "Choose the payment methods available to customers.", ar: "إعدادات طرق الدفع", arDescription: "اختيار طرق الدفع المتاحة للعملاء." },
+    branches: { en: "Branch Settings", enDescription: "Manage pickup locations and branch information.", ar: "إعدادات الفروع", arDescription: "إدارة مواقع الاستلام وبيانات الفروع." },
+    emails: { en: "Notifications & Email Settings", enDescription: "Configure customer notifications and outgoing email.", ar: "إعدادات الإشعارات والبريد", arDescription: "إعداد إشعارات العملاء والبريد الصادر." },
+    security: { en: "Security & Passkey Settings", enDescription: "Manage secure biometric sign-in for your account.", ar: "إعدادات الأمان والبصمة", arDescription: "إدارة تسجيل الدخول الآمن والبصمة للحساب." },
+  };
+  const activeHeader = TAB_HEADERS[activeTab] ?? TAB_HEADERS.business;
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-5xl mx-auto">
       {f.font_url && (
         <style>{`@font-face { font-family: 'CustomFont'; src: url('${f.font_url}'); font-display: swap; }`}</style>
       )}
-      <h1 className="text-4xl font-display mb-2">{t("settings.title")}</h1>
-      <p className="text-muted-foreground mb-6">{t("settings.subtitle")}</p>
+      <h1 className="text-4xl font-display mb-2">{lang === "ar" ? activeHeader.ar : activeHeader.en}</h1>
+      <p className="text-muted-foreground mb-6">{lang === "ar" ? activeHeader.arDescription : activeHeader.enDescription}</p>
 
-      <Tabs defaultValue="business" className="w-full">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="mb-6 flex h-auto w-full flex-wrap justify-start gap-1 bg-muted/60 p-1">
           {TABS.map((tab) => (
             <TabsTrigger key={tab.value} value={tab.value} className="data-[state=active]:bg-background data-[state=active]:shadow-sm">

@@ -82,12 +82,15 @@ function OrdersList() {
   const create = async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
-    const { data: settings } = await supabase.from("business_settings").select("currency, default_tax_rate").eq("brand_id", brandId).maybeSingle();
+    const { data: settings } = await supabase.from("business_settings").select("currency, default_tax_rate, delivery_enabled, pickup_enabled, digital_delivery_enabled, delivery_fee").eq("brand_id", brandId).maybeSingle();
     const currency = settings?.currency ?? "BHD";
     const taxRate = settings?.default_tax_rate ?? 15;
+    const fulfillmentMethod = settings?.delivery_enabled ? "delivery" : settings?.pickup_enabled ? "pickup" : (settings as any)?.digital_delivery_enabled ? "digital" : "delivery";
+    const deliveryFee = fulfillmentMethod === "delivery" ? Number(settings?.delivery_fee ?? 0) : 0;
     const { data: order, error } = await (supabase.from("orders") as any).insert({
       // The database trigger allocates the real brand-scoped number atomically.
       user_id: user.id, brand_id: brandId, invoice_number: 0, currency, tax_rate: taxRate,
+      fulfillment_method: fulfillmentMethod, shipping: deliveryFee, total: deliveryFee,
     }).select().single();
     if (error) return toast.error(error.message);
     navigate({ to: "/admin/b/$slug/orders/$id", params: { slug, id: order.id } });

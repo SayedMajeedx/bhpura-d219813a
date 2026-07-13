@@ -88,6 +88,17 @@ type Item = {
   custom_field_values?: Array<{ key: string; label_ar: string | null; label_en: string | null; value: string }>;
 };
 
+function BhdFeeInput({ value, disabled, onChange }: { value: number; disabled?: boolean; onChange: (value: number) => void }) {
+  const [display, setDisplay] = useState(Number(value || 0).toFixed(3));
+  useEffect(() => setDisplay(Number(value || 0).toFixed(3)), [value]);
+  const commit = () => {
+    const parsed = Math.max(0, Number(display) || 0);
+    setDisplay(parsed.toFixed(3));
+    onChange(parsed);
+  };
+  return <Input inputMode="decimal" value={display} disabled={disabled} onChange={(event) => setDisplay(event.target.value.replace(/[^0-9.]/g, ""))} onBlur={commit} onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); commit(); } }} />;
+}
+
 function normalizeCustomFieldValues(value: unknown): Item["custom_field_values"] {
   if (Array.isArray(value)) return value as Item["custom_field_values"];
   if (value && typeof value === "object") {
@@ -190,6 +201,16 @@ function OrderDetail() {
   }, [orderQ.data]);
 
   useEffect(() => { setHasSavedDraft(false); }, [id]);
+
+  // Backfill the tenant's flat delivery fee for untouched draft orders that
+  // were created before the list-page initializer loaded the setting.
+  useEffect(() => {
+    if (!order || !settingsQ.data || order.fulfillment_method !== "delivery" || Number(order.shipping ?? 0) !== 0) return;
+    const source = orderQ.data as any;
+    const untouchedDraft = source?.status === "draft" && !source?.customer_id && !source?.payment_method && (source?.order_items?.length ?? 0) === 0;
+    const configuredFee = Number((settingsQ.data as any).delivery_fee ?? 0);
+    if (untouchedDraft && configuredFee > 0) setOrder((current: any) => current ? { ...current, shipping: configuredFee } : current);
+  }, [order?.id, order?.fulfillment_method, order?.shipping, orderQ.data, settingsQ.data]);
 
   const totals = useMemo(() => {
     const subtotal = items.reduce((s, i) => s + i.line_total, 0);
@@ -729,6 +750,10 @@ function OrderDetail() {
           })()}
           {(() => {
             const method = order.fulfillment_method ?? "delivery";
+            const deliveryEnabled = Boolean((settingsQ.data as any).delivery_enabled);
+            const pickupEnabled = Boolean((settingsQ.data as any).pickup_enabled);
+            const digitalEnabled = Boolean((settingsQ.data as any).digital_delivery_enabled);
+            const defaultDeliveryFee = Number((settingsQ.data as any).delivery_fee ?? 0);
             const selectedCustomer = (customersQ.data ?? []).find((c: any) => c.id === order.customer_id);
             const selectedAddress = (addressesQ.data ?? []).find((a) => a.id === order.shipping_address_id);
             const selectedBranch = (branchesQ.data ?? []).find((b: any) => b.id === order.branch_id);
@@ -762,13 +787,13 @@ function OrderDetail() {
                       fulfillment_method: value,
                       branch_id: value === "pickup" ? order.branch_id ?? null : null,
                       shipping_address_id: value === "delivery" ? order.shipping_address_id ?? defaultAddress?.id ?? null : null,
-                      shipping: value === "delivery" ? Number(order.shipping ?? 0) : 0,
+                      shipping: value === "delivery" ? (isCreationMode ? defaultDeliveryFee : Number(order.shipping ?? defaultDeliveryFee)) : 0,
                     })}>
                       <SelectTrigger className="bg-background"><SelectValue /></SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="pickup">{lang === "ar" ? "استلام من الفرع" : "Pickup from Branch"}</SelectItem>
-                        <SelectItem value="delivery">{lang === "ar" ? "توصيل للمنزل" : "Home Delivery"}</SelectItem>
-                        {(method === "digital" || order.channel === "storefront") && <SelectItem value="digital">{lang === "ar" ? "تسليم رقمي" : "Digital Delivery"}</SelectItem>}
+                        {(pickupEnabled || method === "pickup") && <SelectItem value="pickup">{lang === "ar" ? "استلام من الفرع" : "Pickup from Branch"}</SelectItem>}
+                        {(deliveryEnabled || method === "delivery") && <SelectItem value="delivery">{lang === "ar" ? "توصيل للمنزل" : "Home Delivery"}</SelectItem>}
+                        {(digitalEnabled || method === "digital") && <SelectItem value="digital">{lang === "ar" ? "تسليم رقمي" : "Digital Delivery"}</SelectItem>}
                       </SelectContent>
                     </Select>
                   </div>
@@ -831,7 +856,7 @@ function OrderDetail() {
                       </div>
                       <div>
                         <Label>{lang === "ar" ? "رسوم التوصيل" : "Delivery fee"}</Label>
-                        <Input type="number" min={0} step="0.001" value={order.shipping ?? 0} onChange={(event) => setOrder({ ...order, shipping: Number(event.target.value) || 0 })} />
+                        <BhdFeeInput value={Number(order.shipping ?? 0)} disabled={isReadOnly} onChange={(shipping) => setOrder({ ...order, shipping })} />
                         <p className="mt-1 text-xs text-muted-foreground">{formatMoney(Number(order.shipping ?? 0), order.currency ?? "BHD")}</p>
                       </div>
                     </div>
