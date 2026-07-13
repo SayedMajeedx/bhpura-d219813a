@@ -2,7 +2,7 @@ import { createFileRoute, notFound, Link } from "@tanstack/react-router";
 import { useStorefront } from "@/lib/storefront-context";
 import { Card } from "@/components/ui/card";
 import { ChevronLeft } from "lucide-react";
-import { richTextHasContent, sanitizeRichTextHtml } from "@/lib/rich-text";
+import { renderRichTextContent, richTextHasContent } from "@/lib/rich-text";
 
 export const Route = createFileRoute("/$slug/page/$idx")({
   component: PageView,
@@ -18,7 +18,7 @@ function PageView() {
   const page = settings.pages[n - 1];
   const title = lang === "ar" ? (page.title_ar || page.title_en) : (page.title_en || page.title_ar);
   const content = lang === "ar" ? (page.content_ar || page.content_en) : (page.content_en || page.content_ar);
-  const safeContent = sanitizeRichTextHtml(content);
+  const safeContent = renderRichTextContent(content);
 
   if (!title && !richTextHasContent(safeContent)) return <PageMissing />;
 
@@ -45,7 +45,7 @@ function PageView() {
         <div className="max-w-full overflow-x-auto">
           <div
             dir={lang === "ar" ? "rtl" : "ltr"}
-            className="max-w-none text-base leading-8 [&_a]:text-[var(--sf-link)] [&_a]:underline [&_h1]:mb-5 [&_h1]:mt-8 [&_h1]:font-display [&_h1]:text-4xl [&_h2]:mb-4 [&_h2]:mt-7 [&_h2]:font-display [&_h2]:text-3xl [&_h3]:mb-3 [&_h3]:mt-6 [&_h3]:font-display [&_h3]:text-2xl [&_h4]:mb-2 [&_h4]:mt-5 [&_h4]:text-xl [&_li]:my-1 [&_ol]:my-4 [&_ol]:list-decimal [&_ol]:ps-7 [&_p]:my-4 [&_ul]:my-4 [&_ul]:list-disc [&_ul]:ps-7 [&_table]:my-6 [&_table]:min-w-full [&_table]:border-collapse [&_th]:whitespace-nowrap [&_th]:border [&_th]:bg-black/5 [&_th]:p-3 [&_th]:font-semibold [&_td]:border [&_td]:p-3"
+            className="max-w-none text-base leading-8 [&_a]:text-[var(--sf-link)] [&_a]:underline [&_blockquote]:my-5 [&_blockquote]:border-s-4 [&_blockquote]:border-black/15 [&_blockquote]:ps-4 [&_blockquote]:italic [&_code]:rounded [&_code]:bg-black/5 [&_code]:px-1.5 [&_code]:py-0.5 [&_del]:opacity-70 [&_h1]:mb-5 [&_h1]:mt-8 [&_h1]:font-display [&_h1]:text-4xl [&_h2]:mb-4 [&_h2]:mt-7 [&_h2]:font-display [&_h2]:text-3xl [&_h3]:mb-3 [&_h3]:mt-6 [&_h3]:font-display [&_h3]:text-2xl [&_h4]:mb-2 [&_h4]:mt-5 [&_h4]:text-xl [&_hr]:my-7 [&_hr]:border-black/10 [&_li]:my-1 [&_ol]:my-4 [&_ol]:list-decimal [&_ol]:ps-7 [&_p]:my-4 [&_pre]:my-5 [&_pre]:overflow-x-auto [&_pre]:rounded-lg [&_pre]:bg-black/5 [&_pre]:p-4 [&_pre_code]:bg-transparent [&_pre_code]:p-0 [&_ul]:my-4 [&_ul]:list-disc [&_ul]:ps-7 [&_table]:my-6 [&_table]:min-w-full [&_table]:border-collapse [&_th]:whitespace-nowrap [&_th]:border [&_th]:bg-black/5 [&_th]:p-3 [&_th]:font-semibold [&_td]:border [&_td]:p-3"
             dangerouslySetInnerHTML={{ __html: safeContent }}
           />
         </div>

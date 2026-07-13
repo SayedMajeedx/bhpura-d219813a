@@ -1,3 +1,5 @@
+import { marked } from "marked";
+
 const ALLOWED_TAGS = new Set([
   "p",
   "br",
@@ -21,6 +23,11 @@ const ALLOWED_TAGS = new Set([
   "th",
   "td",
   "caption",
+  "blockquote",
+  "code",
+  "pre",
+  "hr",
+  "del",
 ]);
 
 const SAFE_LINK = /^(https?:\/\/|mailto:|tel:|#|\/)/i;
@@ -57,6 +64,22 @@ export function sanitizeRichTextHtml(value: string | null | undefined) {
       return `<a href="${escapedHref}" target="_blank" rel="noopener noreferrer">`;
     })
     .join("");
+}
+
+/**
+ * Converts CMS content from Markdown (while preserving existing editor HTML),
+ * then applies the same strict allow-list used by the rich-text editor.
+ */
+export function renderRichTextContent(value: string | null | undefined) {
+  if (!value) return "";
+
+  const html = marked.parse(value, {
+    async: false,
+    gfm: true,
+    breaks: true,
+  }) as string;
+
+  return sanitizeRichTextHtml(html);
 }
 
 export function richTextHasContent(value: string | null | undefined) {
