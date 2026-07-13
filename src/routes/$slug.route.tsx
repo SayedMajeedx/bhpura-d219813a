@@ -48,6 +48,8 @@ export const Route = createFileRoute("/$slug")({
       content_ar: p?.content_ar ?? null,
       content_en: p?.content_en ?? null,
       image_url: p?.image_url ?? null,
+      // Preserve the legacy layout (image above content) until an admin explicitly changes it.
+      image_position: p?.image_position === "bottom" ? "bottom" : "top",
     }));
     const rawSocials = Array.isArray(s?.socials) ? s.socials : [];
     const normalizedSocials = rawSocials

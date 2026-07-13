@@ -11,7 +11,16 @@ const ALLOWED_TAGS = new Set([
   "h2",
   "h3",
   "h4",
+  "h1",
   "a",
+  "table",
+  "thead",
+  "tbody",
+  "tfoot",
+  "tr",
+  "th",
+  "td",
+  "caption",
 ]);
 
 const SAFE_LINK = /^(https?:\/\/|mailto:|tel:|#|\/)/i;

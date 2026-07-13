@@ -28,6 +28,7 @@ type PageSlot = {
   content_ar: string;
   content_en: string;
   image_url: string | null;
+  image_position: "top" | "bottom";
 };
 
 type Social = { name: string; url: string };
@@ -41,6 +42,7 @@ const emptyPage = (): PageSlot => ({
   content_ar: "",
   content_en: "",
   image_url: null,
+  image_position: "bottom",
 });
 
 const normalizePlatform = (name: string) =>
@@ -87,6 +89,7 @@ function PagesAndPolicies() {
         content_ar: normalizeRichTextValue(page?.content_ar),
         content_en: normalizeRichTextValue(page?.content_en),
         image_url: page?.image_url ?? null,
+        image_position: page?.image_position === "bottom" ? "bottom" : "top",
       })),
     );
     const rawSocials = Array.isArray(data.socials) ? data.socials : [];
@@ -148,6 +151,7 @@ function PagesAndPolicies() {
       content_ar: sanitizeRichTextHtml(page.content_ar) || null,
       content_en: sanitizeRichTextHtml(page.content_en) || null,
       image_url: page.image_url || null,
+      image_position: page.image_position,
     }));
     const cleanedSocials = socials
       .map((social) => ({ name: social.name.trim(), url: social.url.trim() }))
@@ -314,7 +318,17 @@ function PagesAndPolicies() {
 
                     <div>
                       <Label>{editorLanguage === "ar" ? "صورة الصفحة (اختيارية)" : "Page image (optional)"}</Label>
-                      <div className="mt-2 flex flex-wrap items-center gap-3">
+                      <div className="mt-2 max-w-sm">
+                        <Label>{editorLanguage === "ar" ? "موقع الصورة" : "Image Position"}</Label>
+                        <Select value={page.image_position} onValueChange={(value: "top" | "bottom") => updatePage(index, { image_position: value })}>
+                          <SelectTrigger><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="bottom">{editorLanguage === "ar" ? "أسفل النص - حجم كامل" : "Bottom - Full Width"}</SelectItem>
+                            <SelectItem value="top">{editorLanguage === "ar" ? "أعلى النص - بنر عريض" : "Top - Banner"}</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="mt-3 flex flex-wrap items-center gap-3">
                         <input ref={(element) => { fileInputs.current[index] = element; }} type="file" accept="image/*" className="hidden" onChange={(event) => { const file = event.target.files?.[0]; if (file) onPickImage(index, file); event.target.value = ""; }} />
                         <Button type="button" variant="outline" size="sm" onClick={() => fileInputs.current[index]?.click()} disabled={uploadingIdx === index}>
                           <Upload className="h-4 w-4" />

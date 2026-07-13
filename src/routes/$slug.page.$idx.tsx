@@ -23,7 +23,7 @@ function PageView() {
   if (!title && !richTextHasContent(safeContent)) return <PageMissing />;
 
   return (
-    <article className="mx-auto max-w-3xl px-4 sm:px-6 py-8 sm:py-14">
+    <article className="mx-auto max-w-5xl px-4 sm:px-6 py-8 sm:py-14">
       <Link
         to="/$slug"
         params={{ slug: brand.slug }}
@@ -33,24 +33,25 @@ function PageView() {
         <ChevronLeft className="h-4 w-4" />
         {t("العودة إلى المتجر", "Back to store")}
       </Link>
+      {page.image_url && page.image_position === "top" && (
+        <img src={page.image_url} alt={title ?? ""} className="mb-8 h-auto max-h-[350px] w-full rounded-xl object-cover" />
+      )}
       {title && (
         <h1 className="font-display text-3xl sm:text-4xl mb-6" style={{ color: "var(--sf-heading)" }}>
           {title}
         </h1>
       )}
-      {page.image_url && (
-        <img
-          src={page.image_url}
-          alt={title ?? ""}
-          className="w-full rounded-lg mb-6 object-cover max-h-[520px]"
-        />
-      )}
       {richTextHasContent(safeContent) && (
-        <div
-          dir={lang === "ar" ? "rtl" : "ltr"}
-          className="max-w-none text-base leading-8 [&_a]:text-[var(--sf-link)] [&_a]:underline [&_h2]:mb-4 [&_h2]:mt-7 [&_h2]:font-display [&_h2]:text-3xl [&_h3]:mb-3 [&_h3]:mt-6 [&_h3]:font-display [&_h3]:text-2xl [&_h4]:mb-2 [&_h4]:mt-5 [&_h4]:text-xl [&_li]:my-1 [&_ol]:my-4 [&_ol]:list-decimal [&_ol]:ps-7 [&_p]:my-4 [&_ul]:my-4 [&_ul]:list-disc [&_ul]:ps-7"
-          dangerouslySetInnerHTML={{ __html: safeContent }}
-        />
+        <div className="max-w-full overflow-x-auto">
+          <div
+            dir={lang === "ar" ? "rtl" : "ltr"}
+            className="max-w-none text-base leading-8 [&_a]:text-[var(--sf-link)] [&_a]:underline [&_h1]:mb-5 [&_h1]:mt-8 [&_h1]:font-display [&_h1]:text-4xl [&_h2]:mb-4 [&_h2]:mt-7 [&_h2]:font-display [&_h2]:text-3xl [&_h3]:mb-3 [&_h3]:mt-6 [&_h3]:font-display [&_h3]:text-2xl [&_h4]:mb-2 [&_h4]:mt-5 [&_h4]:text-xl [&_li]:my-1 [&_ol]:my-4 [&_ol]:list-decimal [&_ol]:ps-7 [&_p]:my-4 [&_ul]:my-4 [&_ul]:list-disc [&_ul]:ps-7 [&_table]:my-6 [&_table]:min-w-full [&_table]:border-collapse [&_th]:whitespace-nowrap [&_th]:border [&_th]:bg-black/5 [&_th]:p-3 [&_th]:font-semibold [&_td]:border [&_td]:p-3"
+            dangerouslySetInnerHTML={{ __html: safeContent }}
+          />
+        </div>
+      )}
+      {page.image_url && page.image_position === "bottom" && (
+        <img src={page.image_url} alt={title ?? ""} className="mt-8 h-auto w-full rounded-xl object-contain" />
       )}
     </article>
   );

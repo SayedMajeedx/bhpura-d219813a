@@ -7,6 +7,7 @@ import {
   Link2,
   List,
   ListOrdered,
+  Table2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -47,6 +48,19 @@ export function RichTextEditor({
     run("createLink", url);
   };
 
+  const addTable = () => {
+    const rowsInput = window.prompt(direction === "rtl" ? "عدد الصفوف" : "Number of rows", "3");
+    if (rowsInput === null) return;
+    const columnsInput = window.prompt(direction === "rtl" ? "عدد الأعمدة" : "Number of columns", "3");
+    if (columnsInput === null) return;
+    const rows = Math.min(20, Math.max(1, Number.parseInt(rowsInput, 10) || 0));
+    const columns = Math.min(10, Math.max(1, Number.parseInt(columnsInput, 10) || 0));
+    if (!rows || !columns) return;
+    const header = `<thead><tr>${Array.from({ length: columns }, (_, index) => `<th>${direction === "rtl" ? `عنوان ${index + 1}` : `Heading ${index + 1}`}</th>`).join("")}</tr></thead>`;
+    const body = `<tbody>${Array.from({ length: rows }, () => `<tr>${Array.from({ length: columns }, () => "<td>&nbsp;</td>").join("")}</tr>`).join("")}</tbody>`;
+    run("insertHTML", `<table>${header}${body}</table><p><br></p>`);
+  };
+
   const tools = [
     { label: direction === "rtl" ? "عريض" : "Bold", icon: Bold, action: () => run("bold") },
     { label: direction === "rtl" ? "مائل" : "Italic", icon: Italic, action: () => run("italic") },
@@ -55,6 +69,7 @@ export function RichTextEditor({
     { label: direction === "rtl" ? "قائمة نقطية" : "Bullet list", icon: List, action: () => run("insertUnorderedList") },
     { label: direction === "rtl" ? "قائمة مرقمة" : "Numbered list", icon: ListOrdered, action: () => run("insertOrderedList") },
     { label: direction === "rtl" ? "إضافة رابط" : "Add link", icon: Link2, action: addLink },
+    { label: direction === "rtl" ? "إضافة جدول" : "Insert table", icon: Table2, action: addTable },
   ];
 
   return (
@@ -92,6 +107,7 @@ export function RichTextEditor({
           "[&_a]:text-primary [&_a]:underline [&_h2]:mb-3 [&_h2]:mt-4 [&_h2]:text-2xl [&_h2]:font-semibold",
           "[&_h3]:mb-2 [&_h3]:mt-3 [&_h3]:text-xl [&_h3]:font-semibold [&_li]:my-1",
           "[&_ol]:my-3 [&_ol]:list-decimal [&_ol]:ps-6 [&_p]:my-2 [&_ul]:my-3 [&_ul]:list-disc [&_ul]:ps-6",
+          "[&_table]:my-4 [&_table]:w-full [&_table]:border-collapse [&_th]:border [&_th]:bg-muted [&_th]:p-2 [&_th]:font-semibold [&_td]:border [&_td]:p-2",
           direction === "rtl" ? "text-right" : "text-left",
         )}
       />
