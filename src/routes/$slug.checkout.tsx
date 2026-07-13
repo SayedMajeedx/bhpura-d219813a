@@ -277,6 +277,8 @@ function Checkout() {
       } else if (msg.includes("PROMO_AUTH_REQUIRED")) {
         setAppliedPromo(null);
         toast.error(t("سجّل الدخول لاستخدام هذا الرمز.", "Sign in to use this promo code."));
+      } else if (msg.includes("RECEIPT_STORAGE_UNREACHABLE")) {
+        toast.error(t("تعذر الوصول إلى التخزين الآمن للإيصال. حاول مرة أخرى أو تواصل مع المتجر.", "The secure receipt upload could not be reached. Please retry or contact the store."));
       } else if (msg.includes("BENEFIT_RECEIPT")) {
         toast.error(t("تعذر التحقق من إيصال التحويل. أعد رفع الصورة وحاول مرة أخرى.", "The transfer receipt could not be verified. Upload it again and retry."));
       } else if (msg.includes("PROMO_")) {
