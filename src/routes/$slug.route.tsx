@@ -27,25 +27,27 @@ import { faviconType, resolveBrandFavicon, useDynamicFavicon } from "@/lib/favic
 
 export const Route = createFileRoute("/$slug")({
   loader: async ({ params }) => {
-    let { data: brand, error: brandErr } = await supabase
+    const { data: baseBrand, error: brandErr } = await supabase
       .from("brands")
-      .select("id, slug, name_en, name_ar, logo_url, is_active, hero_media, primary_color, about_ar, about_en, meta_title, meta_description")
+      .select("id, slug, name_en, name_ar, logo_url, is_active, hero_media, primary_color, about_ar, about_en")
       .eq("slug", params.slug)
       .eq("is_active", true)
       .maybeSingle();
-    // Keep storefronts online during staged deployments where the frontend
-    // reaches production shortly before the additive SEO migration.
-    if (brandErr && /meta_(title|description)/i.test(brandErr.message ?? "")) {
-      const legacy = await supabase
-        .from("brands")
-        .select("id, slug, name_en, name_ar, logo_url, is_active, hero_media, primary_color, about_ar, about_en")
-        .eq("slug", params.slug)
-        .eq("is_active", true)
-        .maybeSingle();
-      brand = legacy.data ? { ...legacy.data, meta_title: null, meta_description: null } as any : null;
-      brandErr = legacy.error;
-    }
-    if (brandErr || !brand) throw notFound();
+    if (brandErr || !baseBrand) throw notFound();
+
+    // SEO is deliberately non-critical. An older PostgREST schema cache may
+    // not know these additive columns yet, but that must never take a live
+    // storefront offline.
+    const { data: seoBrand } = await supabase
+      .from("brands")
+      .select("meta_title, meta_description")
+      .eq("id", baseBrand.id)
+      .maybeSingle();
+    const brand = {
+      ...baseBrand,
+      meta_title: (seoBrand as any)?.meta_title ?? null,
+      meta_description: (seoBrand as any)?.meta_description ?? null,
+    };
 
     const [{ data: settings }, { data: benefitSettings }] = await Promise.all([
       supabase.from("brand_public_settings").select("*").eq("brand_id", brand.id).maybeSingle(),

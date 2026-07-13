@@ -10,22 +10,23 @@ import { faviconType } from "@/lib/favicon";
 
 export const Route = createFileRoute("/$slug/$category")({
   loader: async ({ params }) => {
-    let { data: brand, error: brandError } = await supabase
+    const { data: baseBrand, error: brandError } = await supabase
       .from("brands")
-      .select("id, name_en, name_ar, logo_url, meta_title, meta_description")
+      .select("id, name_en, name_ar, logo_url")
       .eq("slug", params.slug)
       .eq("is_active", true)
       .maybeSingle();
-    if (brandError && /meta_(title|description)/i.test(brandError.message ?? "")) {
-      const legacy = await supabase
-        .from("brands")
-        .select("id, name_en, name_ar, logo_url")
-        .eq("slug", params.slug)
-        .eq("is_active", true)
-        .maybeSingle();
-      brand = legacy.data ? { ...legacy.data, meta_title: null, meta_description: null } as any : null;
-    }
-    if (!brand) return { page: null, brand: null, faviconUrl: null };
+    if (brandError || !baseBrand) return { page: null, brand: null, faviconUrl: null };
+    const { data: seoBrand } = await supabase
+      .from("brands")
+      .select("meta_title, meta_description")
+      .eq("id", baseBrand.id)
+      .maybeSingle();
+    const brand = {
+      ...baseBrand,
+      meta_title: (seoBrand as any)?.meta_title ?? null,
+      meta_description: (seoBrand as any)?.meta_description ?? null,
+    };
     const { data: settings } = await supabase
       .from("brand_public_settings")
       .select("pages, logo_url, favicon_url")
