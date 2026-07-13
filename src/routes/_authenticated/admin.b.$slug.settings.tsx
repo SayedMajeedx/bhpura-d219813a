@@ -733,6 +733,28 @@ function ContentLanguageToggle({ value, onChange, isAr }: { value: "en" | "ar"; 
   return <div className="flex flex-col items-start justify-between gap-3 rounded-xl border bg-muted/20 p-3 sm:flex-row sm:items-center"><div><p className="text-sm font-medium">{isAr ? "لغة المحتوى" : "Content language"}</p><p className="text-xs text-muted-foreground">{isAr ? "اعرض وحرّر لغة واحدة في كل مرة." : "View and edit one language at a time."}</p></div><div className="grid w-full grid-cols-2 rounded-lg bg-muted p-1 sm:w-auto" dir="ltr"><Button type="button" size="sm" variant={value === "en" ? "default" : "ghost"} onClick={() => onChange("en")}>English (EN)</Button><Button type="button" size="sm" variant={value === "ar" ? "default" : "ghost"} onClick={() => onChange("ar")}>العربية (AR)</Button></div></div>;
 }
 
+function ColorField({ label, value, onChange }: { label: string; value: string | null; onChange: (v: string | null) => void }) {
+  const { lang } = useI18n();
+  const isAr = lang === "ar";
+
+  return (
+    <div className="space-y-1.5">
+      <Label>{label}</Label>
+      <div className="flex min-h-10 items-center gap-2 rounded-lg border bg-background p-1.5">
+        <label className="relative h-8 w-12 shrink-0 cursor-pointer overflow-hidden rounded-md border shadow-sm" style={{ backgroundColor: value ?? "#ffffff" }}>
+          <input type="color" value={value ?? "#000000"} onChange={(e) => onChange(e.target.value)} className="absolute inset-0 h-full w-full cursor-pointer opacity-0" aria-label={label} />
+        </label>
+        <span className="min-w-0 flex-1 truncate px-1 font-mono text-xs text-muted-foreground">{value?.toUpperCase() ?? (isAr ? "اللون الافتراضي" : "Default color")}</span>
+        {value && (
+          <Button type="button" variant="ghost" size="sm" className="shrink-0" onClick={() => onChange(null)}>
+            {isAr ? "افتراضي" : "Reset"}
+          </Button>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
   const { lang } = useI18n();
   const isAr = lang === "ar";
@@ -917,23 +939,6 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
   };
 
   if (!state) return null;
-
-  const ColorField = ({ label, value, onChange }: { label: string; value: string | null; onChange: (v: string | null) => void }) => (
-    <div className="space-y-1.5">
-      <Label>{label}</Label>
-      <div className="flex min-h-10 items-center gap-2 rounded-lg border bg-background p-1.5">
-        <label className="relative h-8 w-12 shrink-0 cursor-pointer overflow-hidden rounded-md border shadow-sm" style={{ backgroundColor: value ?? "#ffffff" }}>
-          <input type="color" value={value ?? "#000000"} onChange={(e) => onChange(e.target.value)} className="absolute inset-0 h-full w-full cursor-pointer opacity-0" aria-label={label} />
-        </label>
-        <span className="min-w-0 flex-1 truncate px-1 font-mono text-xs text-muted-foreground">{value?.toUpperCase() ?? (isAr ? "اللون الافتراضي" : "Default color")}</span>
-        {value && (
-          <Button type="button" variant="ghost" size="sm" className="shrink-0" onClick={() => onChange(null)}>
-            {isAr ? "افتراضي" : "Reset"}
-          </Button>
-        )}
-      </div>
-    </div>
-  );
 
   return (
     <Card className="p-5 space-y-6 sm:p-6" dir={isAr ? "rtl" : "ltr"}>
