@@ -9,6 +9,7 @@ import { useState, useMemo, useRef, useEffect } from "react";
 import { formatSizeWithUnit } from "@/components/bilingual-field";
 import { ChevronLeft, ChevronRight, ShoppingBag, AlertCircle, Heart } from "lucide-react";
 import { toast } from "sonner";
+import { trackStorefrontEvent } from "@/lib/storefront-analytics";
 
 export const Route = createFileRoute("/$slug/product/$id")({
   component: ProductDetail,
@@ -98,6 +99,15 @@ function ProductDetail() {
       return data as unknown as Product | null;
     },
   });
+
+  useEffect(() => {
+    if (!product) return;
+    const first = product.product_variants?.[0];
+    trackStorefrontEvent("view_item", {
+      currency, value: Number(first?.selling_price ?? 0), content_ids: [product.id], content_type: "product",
+      items: [{ item_id: product.id, item_name: pickName(lang, product), price: Number(first?.selling_price ?? 0) }],
+    }, product.id);
+  }, [product?.id, currency, lang]);
 
   const { data: recommendationCatalog = [] } = useQuery({
     queryKey: ["storefront", brand.slug, "product-recommendations"],

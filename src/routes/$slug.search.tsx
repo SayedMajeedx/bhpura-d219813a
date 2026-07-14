@@ -4,7 +4,8 @@ import { publicSupabase as supabase } from "@/integrations/supabase/client";
 import { useStorefront, formatPrice, pickName } from "@/lib/storefront-context";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { trackStorefrontEvent } from "@/lib/storefront-analytics";
 
 type SearchParams = { q: string };
 
@@ -32,6 +33,7 @@ function SearchPage() {
   const { q } = Route.useSearch();
   const term = q.trim();
   const [sort, setSort] = useState<"new" | "price-low" | "price-high">("new");
+  useEffect(() => { if (term) trackStorefrontEvent("search", { search_string: term }, term.toLowerCase()); }, [term]);
 
   const { data, isLoading } = useQuery({
     queryKey: ["storefront", brand.slug, "search", term],

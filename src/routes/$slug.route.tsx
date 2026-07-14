@@ -24,6 +24,7 @@ import {
 import { ShoppingBag, Languages, Minus, Plus, Trash2, X, User, Search, Menu, Home, PackageSearch, FileText, LogIn, Heart, Grid2X2, ChevronDown } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { faviconType, resolveBrandFavicon, useDynamicFavicon } from "@/lib/favicon";
+import { StorefrontAnalytics } from "@/components/storefront-analytics";
 
 export const Route = createFileRoute("/$slug")({
   loader: async ({ params }) => {
@@ -38,7 +39,7 @@ export const Route = createFileRoute("/$slug")({
     // SEO is deliberately non-critical. An older PostgREST schema cache may
     // not know these additive columns yet, but that must never take a live
     // storefront offline.
-    const [{ data: seoBrand }, { data: settings }, { data: benefitSettings }] = await Promise.all([
+    const [{ data: seoBrand }, { data: settings }, { data: benefitSettings }, { data: trackingSettings }] = await Promise.all([
       supabase
         .from("brands")
         .select("meta_title, meta_description")
@@ -46,6 +47,7 @@ export const Route = createFileRoute("/$slug")({
         .maybeSingle(),
       supabase.from("brand_public_settings").select("*").eq("brand_id", baseBrand.id).maybeSingle(),
       supabase.rpc("get_public_benefit_settings" as any, { p_brand_id: baseBrand.id }),
+      (supabase as any).from("brand_tracking_settings").select("google_analytics_enabled, google_analytics_id, meta_pixel_enabled, meta_pixel_id, consent_required").eq("brand_id", baseBrand.id).maybeSingle(),
     ]);
     const brand = {
       ...baseBrand,
@@ -152,6 +154,11 @@ export const Route = createFileRoute("/$slug")({
       global_sale_badges_enabled: s?.global_sale_badges_enabled ?? true,
       cart_drawer_checkout_bg: s?.cart_drawer_checkout_bg ?? null,
       cart_drawer_checkout_fg: s?.cart_drawer_checkout_fg ?? null,
+      google_analytics_enabled: Boolean((trackingSettings as any)?.google_analytics_enabled),
+      google_analytics_id: (trackingSettings as any)?.google_analytics_id ?? null,
+      meta_pixel_enabled: Boolean((trackingSettings as any)?.meta_pixel_enabled),
+      meta_pixel_id: (trackingSettings as any)?.meta_pixel_id ?? null,
+      analytics_consent_required: (trackingSettings as any)?.consent_required ?? true,
     };
 
 
@@ -203,6 +210,7 @@ function StorefrontLayout() {
   useDynamicFavicon(settings.favicon_url, settings.logo_url ?? brand.logo_url);
   return (
     <StorefrontProvider brand={brand} settings={settings}>
+      <StorefrontAnalytics />
       <StoreShell />
     </StorefrontProvider>
   );
@@ -963,6 +971,9 @@ function StoreFooter() {
           </nav>
         )}
         {settings.footer_note && <div>{settings.footer_note}</div>}
+        {settings.analytics_consent_required && <button type="button" className="min-h-11 text-xs underline underline-offset-4" style={{ color: "var(--sf-footer-fg)" }} onClick={() => window.dispatchEvent(new Event("boutq:privacy-preferences"))}>
+          {t("خيارات الخصوصية", "Privacy choices")}
+        </button>}
         <div>© {new Date().getFullYear()} — {t("جميع الحقوق محفوظة", "All rights reserved")}</div>
       </div>
     </footer>

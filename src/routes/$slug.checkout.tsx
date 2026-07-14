@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "sonner";
 import { Loader2, CreditCard, Banknote, QrCode, Truck, Store, User, Download, Mail, MessageCircle, Copy, UploadCloud, CheckCircle2, X } from "lucide-react";
 import { uploadBenefitReceipt } from "@/lib/benefit-receipt";
+import { trackStorefrontEvent } from "@/lib/storefront-analytics";
 
 export const Route = createFileRoute("/$slug/checkout")({
   component: Checkout,
@@ -118,6 +119,14 @@ function Checkout() {
   const shipping = fulfillment === "delivery" ? Number(settings.delivery_fee || 0) : 0;
   const promoDiscount = Math.min(appliedPromo?.amount ?? 0, cartTotal);
   const grandTotal = Math.max(0, cartTotal - promoDiscount) + shipping;
+
+  useEffect(() => {
+    if (!cart.length) return;
+    trackStorefrontEvent("begin_checkout", {
+      currency, value: Number(cartTotal.toFixed(3)),
+      items: cart.map((item) => ({ item_id: item.product_id, item_name: item.name, price: item.price, quantity: item.qty })),
+    }, cart.map((item) => `${item.cart_line_id}:${item.qty}`).join("|"));
+  }, [cart, cartTotal, currency]);
 
   useEffect(() => { setAppliedPromo(null); }, [cart, brand.id]);
 
@@ -239,6 +248,11 @@ function Checkout() {
       if (error) throw error;
       const orderId = (data as any)?.order_id;
       const confirmationEmailToken = (data as any)?.confirmation_email_token;
+      trackStorefrontEvent("purchase", {
+        transaction_id: String(orderId ?? ""), currency, value: Number(grandTotal.toFixed(3)),
+        shipping: Number(shipping.toFixed(3)), coupon: appliedPromo?.code ?? undefined,
+        items: cart.map((item) => ({ item_id: item.product_id, item_name: item.name, price: item.price, quantity: item.qty })),
+      }, String(orderId ?? ""));
       clearCart();
       toast.success(t("تم استلام طلبك!", "Order placed!"));
       // Fire-and-forget confirmation email (respects storefront language).

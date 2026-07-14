@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, useCallback, useMemo, type ReactNode } from "react";
 import type { Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
+import { trackStorefrontEvent } from "@/lib/storefront-analytics";
 
 export type StoreLang = "ar" | "en";
 export type HomePromoCard = { title_en: string; title_ar: string; subtitle_en: string; subtitle_ar: string; image_url: string; href: string; background_color: string; text_color: string };
@@ -126,6 +127,11 @@ export type PublicSettings = {
   global_sale_badges_enabled: boolean;
   cart_drawer_checkout_bg: string | null;
   cart_drawer_checkout_fg: string | null;
+  google_analytics_enabled: boolean;
+  google_analytics_id: string | null;
+  meta_pixel_enabled: boolean;
+  meta_pixel_id: string | null;
+  analytics_consent_required: boolean;
 };
 
 export type CustomFieldValue = {
@@ -336,7 +342,14 @@ export function StorefrontProvider({
       if (availableForLine <= 0) return prev;
       return [...prev, { ...item, cart_line_id: lineId, qty: Math.min(item.qty, availableForLine) }];
     });
-  }, []);
+    trackStorefrontEvent("add_to_cart", {
+      currency: settings.currency,
+      value: Number((item.price * item.qty).toFixed(3)),
+      content_ids: [item.product_id],
+      content_type: "product",
+      items: [{ item_id: item.product_id, item_name: item.name, price: item.price, quantity: item.qty }],
+    });
+  }, [settings.currency]);
 
   const removeFromCart = useCallback((cart_line_id: string) => {
     setCart((prev) => prev.filter((c) => c.cart_line_id !== cart_line_id));
