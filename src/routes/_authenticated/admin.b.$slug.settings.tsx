@@ -723,7 +723,7 @@ function HeroSlideLivePreview({ slide, isAr, color }: { slide: HeroSlide; isAr: 
         {button && <span className="mt-3 w-fit rounded-full px-4 py-2 text-xs font-semibold text-white" style={{ backgroundColor: color }}>{button}</span>}
       </div>}
       <div dir="ltr" className="pointer-events-none absolute inset-x-3 bottom-3 flex justify-between text-white mix-blend-difference">
-        <span className="grid h-9 w-9 place-items-center border border-current text-2xl font-extralight">‹</span><span className="grid h-9 w-9 place-items-center border border-current text-2xl font-extralight">›</span>
+        <span className="grid h-9 w-9 place-items-center text-3xl font-extralight">‹</span><span className="grid h-9 w-9 place-items-center text-3xl font-extralight">›</span>
       </div>
     </div>
   </div>;

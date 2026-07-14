@@ -84,8 +84,8 @@ export function ImageCropperDialog({ open, imageSrc, aspect = 3 / 4, onCancel, o
               <Cropper image={imageSrc} crop={crop} zoom={zoom} aspect={aspect} onCropChange={() => {}} onZoomChange={() => {}} objectFit="contain" />
             </div>
             <div className="pointer-events-none absolute inset-x-3 bottom-3 flex items-end justify-between text-white mix-blend-difference">
-              <span className="grid h-9 w-9 place-items-center border border-current text-2xl font-extralight leading-none">‹</span>
-              <span className="grid h-9 w-9 place-items-center border border-current text-2xl font-extralight leading-none">›</span>
+              <span className="grid h-9 w-9 place-items-center text-3xl font-extralight leading-none">‹</span>
+              <span className="grid h-9 w-9 place-items-center text-3xl font-extralight leading-none">›</span>
             </div>
           </div>
         </div>}
