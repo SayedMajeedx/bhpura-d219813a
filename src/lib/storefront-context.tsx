@@ -13,6 +13,8 @@ export type HeroContentSlide = {
   body_en: string;
   body_ar: string;
   media_url: string;
+  media_url_en?: string;
+  media_url_ar?: string;
   button_en: string;
   button_ar: string;
   button_href: string;
