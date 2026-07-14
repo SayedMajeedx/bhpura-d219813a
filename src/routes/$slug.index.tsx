@@ -212,12 +212,12 @@ function HeroContentCarousel({ slides }: { slides: import("@/lib/storefront-cont
   };
   return (
     <div className="relative w-full max-w-xl overflow-hidden rounded-2xl bg-white/85 shadow-lg backdrop-blur">
-      <div ref={scroller} dir="ltr" className="flex snap-x snap-mandatory overflow-x-auto overscroll-x-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" onScroll={(event) => { const width = event.currentTarget.clientWidth; if (width) setIdx(Math.round(event.currentTarget.scrollLeft / width)); }}>
-        {slides.map((slide) => {
+      <div ref={scroller} dir="ltr" className="flex snap-x snap-mandatory scroll-smooth overflow-x-auto overscroll-x-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" onScroll={(event) => { const width = event.currentTarget.clientWidth; if (width) setIdx(Math.round(event.currentTarget.scrollLeft / width)); }}>
+        {slides.map((slide, slideIndex) => {
           const title = lang === "ar" ? slide.title_ar || slide.title_en : slide.title_en || slide.title_ar;
           const body = lang === "ar" ? slide.body_ar || slide.body_en : slide.body_en || slide.body_ar;
           const button = lang === "ar" ? slide.button_ar || slide.button_en : slide.button_en || slide.button_ar;
-          return <article key={slide.id} dir={lang === "ar" ? "rtl" : "ltr"} className="min-w-full snap-center">
+          return <article key={slide.id} dir={lang === "ar" ? "rtl" : "ltr"} className={`min-w-full snap-center snap-always transition-[opacity,transform] duration-500 ease-out ${slideIndex === idx ? "scale-100 opacity-100" : "scale-[0.985] opacity-80"}`}>
             {slide.type === "image" && slide.media_url ? <img src={slide.media_url} alt={title || ""} className="h-[260px] w-full object-cover sm:h-[320px]" /> : slide.type === "video" && slide.media_url ? <video src={slide.media_url} controls playsInline preload="metadata" className="h-[260px] w-full bg-black object-contain sm:h-[320px]" /> : <div className="flex min-h-[260px] flex-col justify-center p-6 sm:min-h-[300px] sm:p-8" style={{ textAlign: settings.hero_title_align }}>
               {settings.show_hero_title && title && <h1 className="mb-3 leading-tight" style={{ color: settings.hero_title_color ?? "var(--sf-heading)", fontSize: `clamp(1.875rem, 5vw, ${settings.hero_title_size}px)`, fontFamily: "var(--sf-font)" }}>{title}</h1>}
               {settings.show_hero_about && body && <p className="mb-4 text-sm text-neutral-700 sm:text-base">{body}</p>}
@@ -226,7 +226,11 @@ function HeroContentCarousel({ slides }: { slides: import("@/lib/storefront-cont
           </article>;
         })}
       </div>
-      {slides.length > 1 && <><button type="button" onClick={() => goTo(idx - 1)} aria-label="Previous hero slide" className="absolute start-2 top-1/2 grid h-10 w-10 -translate-y-1/2 place-items-center rounded-full bg-white/90 shadow-md"><ChevronLeft className="h-5 w-5" /></button><button type="button" onClick={() => goTo(idx + 1)} aria-label="Next hero slide" className="absolute end-2 top-1/2 grid h-10 w-10 -translate-y-1/2 place-items-center rounded-full bg-white/90 shadow-md"><ChevronRight className="h-5 w-5" /></button><div className="absolute bottom-3 left-1/2 flex -translate-x-1/2 gap-1.5 rounded-full bg-black/30 px-2 py-1.5">{slides.map((slide, dot) => <button key={slide.id} type="button" onClick={() => goTo(dot)} aria-label={`Hero slide ${dot + 1}`} className={`h-2 rounded-full transition-all ${dot === idx ? "w-5 bg-white" : "w-2 bg-white/60"}`} />)}</div></>}
+      {slides.length > 1 && <div dir="ltr" className="flex h-14 items-center justify-between gap-3 border-t border-black/5 bg-white/70 px-3 sm:px-4">
+        <button type="button" onClick={() => goTo(idx - 1)} aria-label={lang === "ar" ? "الشريحة السابقة" : "Previous hero slide"} className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-black/10 bg-white shadow-sm transition hover:scale-105 hover:shadow-md active:scale-95"><ChevronLeft className="h-5 w-5" /></button>
+        <div className="flex min-w-0 items-center justify-center gap-2">{slides.map((slide, dot) => <button key={slide.id} type="button" onClick={() => goTo(dot)} aria-label={`${lang === "ar" ? "الشريحة" : "Hero slide"} ${dot + 1}`} aria-current={dot === idx ? "true" : undefined} className={`h-2.5 rounded-full transition-all duration-300 ${dot === idx ? "w-7 bg-neutral-800" : "w-2.5 bg-neutral-400 hover:bg-neutral-600"}`} />)}</div>
+        <button type="button" onClick={() => goTo(idx + 1)} aria-label={lang === "ar" ? "الشريحة التالية" : "Next hero slide"} className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-black/10 bg-white shadow-sm transition hover:scale-105 hover:shadow-md active:scale-95"><ChevronRight className="h-5 w-5" /></button>
+      </div>}
     </div>
   );
 }

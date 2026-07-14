@@ -567,7 +567,9 @@ function BrandHeroCard({ brandId }: { brandId: string }) {
   const uploadSlideMedia = async (file: File, index: number) => {
     try {
       setUploading(true);
-      const url = await uploadPublicMedia(brandId, file, "hero-slide");
+      // Hero slide assets share the secured hero namespace. The upload API only
+      // accepts known media kinds, and both hero images and videos are allowed.
+      const url = await uploadPublicMedia(brandId, file, "hero");
       const type: "image" | "video" = file.type.startsWith("video") ? "video" : "image";
       setState((current) => current ? { ...current, slides: current.slides.map((slide, slideIndex) => slideIndex === index ? { ...slide, type, media_url: url } : slide) } : current);
       toast.success(isAr ? "تم الرفع — لا تنسَ الحفظ" : "Uploaded — remember to save");
