@@ -416,6 +416,9 @@ function Settings() {
 }
 
 type MediaItem = { type: "image" | "video"; url: string };
+type HeroSlide = { id: string; type: "text" | "image" | "video"; title_en: string; title_ar: string; body_en: string; body_ar: string; media_url: string; button_en: string; button_ar: string; button_href: string };
+type HeroState = { background: MediaItem | null; slides: HeroSlide[]; primary_color: string | null; about_ar: string | null; about_en: string | null };
+const emptyHeroSlide = (): HeroSlide => ({ id: crypto.randomUUID(), type: "text", title_en: "", title_ar: "", body_en: "", body_ar: "", media_url: "", button_en: "Shop now", button_ar: "تسوّق الآن", button_href: "#products" });
 
 function PaymentSettingsCard({ brandId }: { brandId: string }) {
   const { lang } = useI18n();
@@ -524,7 +527,7 @@ function BrandHeroCard({ brandId }: { brandId: string }) {
   const qc = useQueryClient();
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const [state, setState] = useState<{ hero_media: MediaItem[]; primary_color: string | null; about_ar: string | null; about_en: string | null } | null>(null);
+  const [state, setState] = useState<HeroState | null>(null);
 
   const { data } = useQuery({
     queryKey: ["brand-hero", brandId],
@@ -537,31 +540,46 @@ function BrandHeroCard({ brandId }: { brandId: string }) {
   });
 
   useEffect(() => {
-    if (data) setState({
-      hero_media: Array.isArray(data.hero_media) ? (data.hero_media as any) : [],
+    if (!data) return;
+    const raw = data.hero_media as any;
+    const legacy = Array.isArray(raw) ? raw : [];
+    setState({
+      background: raw && !Array.isArray(raw) ? raw.background ?? null : legacy[0] ?? null,
+      slides: raw && !Array.isArray(raw) && Array.isArray(raw.slides) ? raw.slides.slice(0, 5) : [],
       primary_color: data.primary_color ?? null,
       about_ar: data.about_ar ?? null,
       about_en: data.about_en ?? null,
     });
   }, [data]);
 
-  const uploadMedia = async (file: File) => {
+  const uploadBackground = async (file: File) => {
     try {
       setUploading(true);
       const url = await uploadPublicMedia(brandId, file, "hero");
       const type: "image" | "video" = file.type.startsWith("video") ? "video" : "image";
-      setState((s) => (s ? { ...s, hero_media: [...s.hero_media, { type, url }] } : s));
+      setState((s) => (s ? { ...s, background: { type, url } } : s));
       toast.success(isAr ? "تم الرفع — لا تنسَ الحفظ" : "Uploaded — remember to save");
     } catch (e: any) {
       toast.error(e.message ?? "Upload failed");
     } finally { setUploading(false); }
   };
 
+  const uploadSlideMedia = async (file: File, index: number) => {
+    try {
+      setUploading(true);
+      const url = await uploadPublicMedia(brandId, file, "hero-slide");
+      const type: "image" | "video" = file.type.startsWith("video") ? "video" : "image";
+      setState((current) => current ? { ...current, slides: current.slides.map((slide, slideIndex) => slideIndex === index ? { ...slide, type, media_url: url } : slide) } : current);
+      toast.success(isAr ? "تم الرفع — لا تنسَ الحفظ" : "Uploaded — remember to save");
+    } catch (error: any) { toast.error(error.message ?? "Upload failed"); }
+    finally { setUploading(false); }
+  };
+
   const save = async () => {
     if (!state) return;
     setSaving(true);
     const { error } = await supabase.from("brands").update({
-      hero_media: state.hero_media as any,
+      hero_media: { background: state.background, slides: state.slides.slice(0, 5) } as any,
       primary_color: state.primary_color,
       about_ar: state.about_ar,
       about_en: state.about_en,
@@ -581,28 +599,15 @@ function BrandHeroCard({ brandId }: { brandId: string }) {
       </div>
 
       <div className="space-y-2">
-        <Label>{isAr ? "وسائط الواجهة" : "Hero media"}</Label>
+        <Label>{isAr ? "خلفية الواجهة الثابتة" : "Fixed hero background"}</Label>
+        <p className="text-xs text-muted-foreground">{isAr ? "تبقى ثابتة أثناء التنقل بين الشرائح." : "Stays fixed while customers swipe between slides."}</p>
         <div className="flex flex-wrap gap-2">
-          {state.hero_media.map((m, i) => (
-            <div key={i} className="relative w-28 h-20 rounded-md border border-border overflow-hidden bg-secondary">
-              {m.type === "video" ? (
-                <video src={m.url} className="w-full h-full object-cover" muted />
-              ) : (
-                <img src={m.url} alt="" className="w-full h-full object-cover" />
-              )}
-              <button type="button" className="absolute top-0.5 end-0.5 bg-background/80 rounded-full p-0.5"
-                onClick={() => setState({ ...state, hero_media: state.hero_media.filter((_, j) => j !== i) })}>
-                <Trash2 className="h-3 w-3" />
-              </button>
-            </div>
-          ))}
-          <label className="w-28 h-20 rounded-md border border-dashed border-border flex items-center justify-center text-xs text-muted-foreground cursor-pointer hover:bg-secondary">
-            {uploading ? "…" : (isAr ? "+ إضافة" : "+ Add")}
-            <input type="file" accept="image/*,video/*" className="hidden"
-              onChange={(e) => e.target.files?.[0] && uploadMedia(e.target.files[0])} />
-          </label>
+          {state.background && <div className="relative h-24 w-40 overflow-hidden rounded-md border bg-secondary">{state.background.type === "video" ? <video src={state.background.url} className="h-full w-full object-cover" muted /> : <img src={state.background.url} alt="" className="h-full w-full object-cover" />}<button type="button" className="absolute end-1 top-1 rounded-full bg-background/90 p-1" onClick={() => setState({ ...state, background: null })}><Trash2 className="h-3 w-3" /></button></div>}
+          <label className="flex h-24 w-40 cursor-pointer items-center justify-center rounded-md border border-dashed text-xs text-muted-foreground hover:bg-secondary">{uploading ? "…" : (isAr ? "رفع الخلفية" : "Upload background")}<input type="file" accept="image/*,video/*" className="hidden" onChange={(e) => e.target.files?.[0] && uploadBackground(e.target.files[0])} /></label>
         </div>
       </div>
+
+      <HeroSlidesEditor state={state} setState={setState} isAr={isAr} uploading={uploading} uploadSlideMedia={uploadSlideMedia} />
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
@@ -632,6 +637,27 @@ function BrandHeroCard({ brandId }: { brandId: string }) {
       </div>
     </Card>
   );
+}
+
+function HeroSlidesEditor({ state, setState, isAr, uploading, uploadSlideMedia }: { state: HeroState; setState: (state: HeroState) => void; isAr: boolean; uploading: boolean; uploadSlideMedia: (file: File, index: number) => Promise<void> }) {
+  const update = (index: number, patch: Partial<HeroSlide>) => setState({ ...state, slides: state.slides.map((slide, slideIndex) => slideIndex === index ? { ...slide, ...patch } : slide) });
+  return <div className="space-y-3 border-t pt-5">
+    <div className="flex items-center justify-between gap-3">
+      <div><Label>{isAr ? "شرائح محتوى الواجهة" : "Hero content slides"}</Label><p className="text-xs text-muted-foreground">{isAr ? "حتى 5 شرائح قابلة للسحب: نص أو صورة أو فيديو." : "Up to 5 swipeable text, image, or video slides."}</p></div>
+      <Button type="button" variant="outline" disabled={state.slides.length >= 5} onClick={() => setState({ ...state, slides: [...state.slides, emptyHeroSlide()] })}>{isAr ? "+ شريحة" : "+ Add slide"}</Button>
+    </div>
+    {state.slides.length === 0 && <div className="rounded-xl border border-dashed p-5 text-center text-sm text-muted-foreground">{isAr ? "سيستمر عرض النص الحالي حتى تضيف أول شريحة." : "The current hero text remains until you add the first slide."}</div>}
+    {state.slides.map((slide, index) => <div key={slide.id} className="space-y-3 rounded-xl border p-4">
+      <div className="flex items-center justify-between gap-3"><strong>{isAr ? `الشريحة ${index + 1}` : `Slide ${index + 1}`}</strong><Button type="button" variant="ghost" size="icon" onClick={() => setState({ ...state, slides: state.slides.filter((_, itemIndex) => itemIndex !== index) })}><Trash2 className="h-4 w-4" /></Button></div>
+      <div><Label>{isAr ? "نوع المحتوى" : "Content type"}</Label><Select value={slide.type} onValueChange={(value: "text" | "image" | "video") => update(index, { type: value })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="text">{isAr ? "نص" : "Text"}</SelectItem><SelectItem value="image">{isAr ? "صورة" : "Image"}</SelectItem><SelectItem value="video">{isAr ? "فيديو" : "Video"}</SelectItem></SelectContent></Select></div>
+      {slide.type !== "text" && <div className="space-y-2">{slide.media_url && (slide.type === "video" ? <video src={slide.media_url} className="h-36 w-full rounded-lg bg-black object-contain" muted /> : <img src={slide.media_url} alt="" className="h-36 w-full rounded-lg object-cover" />)}<label className="flex h-12 cursor-pointer items-center justify-center rounded-lg border border-dashed text-sm text-muted-foreground">{uploading ? "…" : (isAr ? "رفع الوسائط" : "Upload media")}<input type="file" accept={slide.type === "video" ? "video/*" : "image/*"} className="hidden" onChange={(event) => event.target.files?.[0] && uploadSlideMedia(event.target.files[0], index)} /></label></div>}
+      {slide.type === "text" && <>
+        <div className="grid gap-3 sm:grid-cols-2"><div><Label>Title — English</Label><Input value={slide.title_en} onChange={(event) => update(index, { title_en: event.target.value })} /></div><div><Label>العنوان — عربي</Label><Input dir="rtl" value={slide.title_ar} onChange={(event) => update(index, { title_ar: event.target.value })} /></div></div>
+        <div className="grid gap-3 sm:grid-cols-2"><div><Label>Text — English</Label><Textarea value={slide.body_en} onChange={(event) => update(index, { body_en: event.target.value })} /></div><div><Label>النص — عربي</Label><Textarea dir="rtl" value={slide.body_ar} onChange={(event) => update(index, { body_ar: event.target.value })} /></div></div>
+        <div className="grid gap-3 sm:grid-cols-3"><div><Label>Button — English</Label><Input value={slide.button_en} onChange={(event) => update(index, { button_en: event.target.value })} /></div><div><Label>الزر — عربي</Label><Input dir="rtl" value={slide.button_ar} onChange={(event) => update(index, { button_ar: event.target.value })} /></div><div><Label>{isAr ? "رابط الزر" : "Button link"}</Label><Input value={slide.button_href} onChange={(event) => update(index, { button_href: event.target.value })} placeholder="#products" /></div></div>
+      </>}
+    </div>)}
+  </div>;
 }
 
 function ShippingSettingsCard({ brandId }: { brandId: string }) {
@@ -788,6 +814,7 @@ function StorefrontSeoCard({ brandId }: { brandId: string }) {
     await qc.invalidateQueries({ queryKey: ["brand-storefront-seo", brandId] });
     toast.success(isAr ? "تم حفظ إعدادات محركات البحث" : "Storefront SEO saved");
   };
+
   return <Card className="space-y-4 p-5">
     <div><h2 className="font-display text-xl">{isAr ? "ظهور المتجر في محركات البحث" : "Storefront SEO"}</h2><p className="text-sm text-muted-foreground">{isAr ? "عنوان ووصف الصفحة الرئيسية عند ظهورها في Google أو مشاركتها." : "Control the homepage title and description shown in search and social sharing."}</p></div>
     <div><div className="flex justify-between gap-3"><Label>{isAr ? "عنوان الصفحة الرئيسية" : "Homepage Meta Title"}</Label><span className="text-xs text-muted-foreground">{metaTitle.length}/{META_TITLE_LIMIT}</span></div><Input value={metaTitle} maxLength={META_TITLE_LIMIT} onChange={(event) => setMetaTitle(event.target.value)} dir={isAr ? "rtl" : "ltr"} placeholder={isAr ? "اسم المتجر ووصفه المختصر" : "Store name and concise value proposition"} /></div>

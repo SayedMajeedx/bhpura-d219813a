@@ -154,11 +154,18 @@ export const Route = createFileRoute("/$slug")({
     };
 
 
-    const heroArr = Array.isArray(brand.hero_media)
-      ? (brand.hero_media as unknown as Array<{ type: "image" | "video"; url: string }>)
-      : [];
+    const rawHero = brand.hero_media as any;
+    const legacyHero = Array.isArray(rawHero) ? rawHero : [];
+    const heroConfig = {
+      background: rawHero && !Array.isArray(rawHero) && rawHero.background
+        ? rawHero.background
+        : legacyHero[0] ?? null,
+      slides: rawHero && !Array.isArray(rawHero) && Array.isArray(rawHero.slides)
+        ? rawHero.slides.slice(0, 5)
+        : [],
+    };
     return {
-      brand: { ...brand, hero_media: heroArr } as unknown as Brand,
+      brand: { ...brand, hero_media: heroConfig } as unknown as Brand,
       settings: safeSettings,
     };
   },

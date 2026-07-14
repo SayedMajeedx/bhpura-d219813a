@@ -5,7 +5,7 @@ import { useStorefront, formatPrice, pickName } from "@/lib/storefront-context";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useMemo, useState, useEffect, useRef } from "react";
-import { ChevronDown, FileText, Grid2X2, Heart } from "lucide-react";
+import { ChevronDown, ChevronLeft, ChevronRight, FileText, Grid2X2, Heart } from "lucide-react";
 
 export const Route = createFileRoute("/$slug/")({
   component: StoreHome,
@@ -167,13 +167,24 @@ function MerchandisingSection({ kind, products, bestSellerIds = new Set<string>(
 }
 
 function HeroBanner() {
-  const { brand, settings, t, lang } = useStorefront();
-  const media = brand.hero_media && brand.hero_media.length > 0 ? brand.hero_media : null;
+  const { brand, settings } = useStorefront();
+  const background = brand.hero_media?.background;
+  const slides = brand.hero_media?.slides?.length ? brand.hero_media.slides : [{
+    id: "legacy-hero", type: "text" as const,
+    title_en: settings.hero_title_en || brand.name_en,
+    title_ar: settings.hero_title_ar || brand.name_ar || brand.name_en,
+    body_en: brand.about_en || "A curated collection made for you.",
+    body_ar: brand.about_ar || "مجموعة مختارة بعناية لك.",
+    media_url: "", button_en: "Shop now", button_ar: "تسوّق الآن", button_href: "#products",
+  }];
 
   return (
     <section className="relative w-full overflow-hidden min-h-[300px] sm:min-h-[55vh] sm:max-h-[640px]">
-      {media ? (
-        <HeroCarousel items={media} />
+      {background ? (
+        <div className="absolute inset-0">
+          {background.type === "video" ? <video src={background.url} autoPlay muted loop playsInline preload="metadata" className="h-full w-full object-cover" /> : <img src={background.url} alt="" className="h-full w-full object-cover" decoding="async" fetchPriority="high" />}
+          <div className="absolute inset-0 bg-black/20" />
+        </div>
       ) : (
         <div
           className="absolute inset-0"
@@ -184,55 +195,38 @@ function HeroBanner() {
       )}
 
       <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 h-full flex items-center min-h-[300px] sm:min-h-[55vh]">
-        <div className="max-w-xl w-full bg-white/85 backdrop-blur rounded-2xl p-6 sm:p-8 shadow-lg" style={{ textAlign: settings.hero_title_align }}>
-          {settings.show_hero_title && <h1
-              className="mb-3 leading-tight"
-              style={{ color: settings.hero_title_color ?? "var(--sf-heading)", fontSize: `clamp(1.875rem, 5vw, ${settings.hero_title_size}px)`, fontFamily: "var(--sf-font)" }}
-          >
-              {lang === "ar"
-                ? settings.hero_title_ar || brand.name_ar || brand.name_en
-                : settings.hero_title_en || brand.name_en}
-          </h1>}
-          {settings.show_hero_about && <p className="text-sm sm:text-base text-neutral-700 mb-4">
-            {(lang === "ar" ? brand.about_ar : brand.about_en) ||
-              t("مجموعة مختارة بعناية لك.", "A curated collection made for you.")}
-          </p>}
-          <a
-            href="#products"
-            className="inline-flex items-center px-6 py-3 rounded-full font-semibold"
-            style={{ backgroundColor: "var(--sf-btn-primary-bg)", color: "var(--sf-btn-primary-fg)" }}
-          >
-            {t("تسوّق الآن", "Shop now")}
-          </a>
-        </div>
+        <HeroContentCarousel slides={slides} />
       </div>
     </section>
   );
 }
 
-function HeroCarousel({ items }: { items: Array<{ type: "image" | "video"; url: string }> }) {
+function HeroContentCarousel({ slides }: { slides: import("@/lib/storefront-context").HeroContentSlide[] }) {
+  const { settings, lang } = useStorefront();
   const [idx, setIdx] = useState(0);
-  const timer = useRef<number | null>(null);
-
-  useEffect(() => {
-    if (items.length <= 1 || items[idx]?.type === "video") return;
-    timer.current = window.setTimeout(() => setIdx((i) => (i + 1) % items.length), 6000);
-    return () => {
-      if (timer.current) window.clearTimeout(timer.current);
-    };
-  }, [idx, items]);
-
-  const active = items[idx];
+  const scroller = useRef<HTMLDivElement>(null);
+  const goTo = (next: number) => {
+    const safe = (next + slides.length) % slides.length;
+    setIdx(safe);
+    scroller.current?.scrollTo({ left: safe * scroller.current.clientWidth, behavior: "smooth" });
+  };
   return (
-    <div className="absolute inset-0">
-      <div key={`${idx}-${active.url}`} className="absolute inset-0 animate-in fade-in duration-700">
-        {active.type === "video" ? (
-          <video src={active.url} autoPlay muted loop playsInline preload="metadata" className="h-full w-full object-cover" />
-        ) : (
-          <img src={active.url} alt="" className="h-full w-full object-cover" decoding="async" fetchPriority={idx === 0 ? "high" : "auto"} />
-        )}
+    <div className="relative w-full max-w-xl overflow-hidden rounded-2xl bg-white/85 shadow-lg backdrop-blur">
+      <div ref={scroller} dir="ltr" className="flex snap-x snap-mandatory overflow-x-auto overscroll-x-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" onScroll={(event) => { const width = event.currentTarget.clientWidth; if (width) setIdx(Math.round(event.currentTarget.scrollLeft / width)); }}>
+        {slides.map((slide) => {
+          const title = lang === "ar" ? slide.title_ar || slide.title_en : slide.title_en || slide.title_ar;
+          const body = lang === "ar" ? slide.body_ar || slide.body_en : slide.body_en || slide.body_ar;
+          const button = lang === "ar" ? slide.button_ar || slide.button_en : slide.button_en || slide.button_ar;
+          return <article key={slide.id} dir={lang === "ar" ? "rtl" : "ltr"} className="min-w-full snap-center">
+            {slide.type === "image" && slide.media_url ? <img src={slide.media_url} alt={title || ""} className="h-[260px] w-full object-cover sm:h-[320px]" /> : slide.type === "video" && slide.media_url ? <video src={slide.media_url} controls playsInline preload="metadata" className="h-[260px] w-full bg-black object-contain sm:h-[320px]" /> : <div className="flex min-h-[260px] flex-col justify-center p-6 sm:min-h-[300px] sm:p-8" style={{ textAlign: settings.hero_title_align }}>
+              {settings.show_hero_title && title && <h1 className="mb-3 leading-tight" style={{ color: settings.hero_title_color ?? "var(--sf-heading)", fontSize: `clamp(1.875rem, 5vw, ${settings.hero_title_size}px)`, fontFamily: "var(--sf-font)" }}>{title}</h1>}
+              {settings.show_hero_about && body && <p className="mb-4 text-sm text-neutral-700 sm:text-base">{body}</p>}
+              {button && <div><a href={slide.button_href || "#products"} className="inline-flex items-center rounded-full px-6 py-3 font-semibold" style={{ backgroundColor: "var(--sf-btn-primary-bg)", color: "var(--sf-btn-primary-fg)" }}>{button}</a></div>}
+            </div>}
+          </article>;
+        })}
       </div>
-      <div className="absolute inset-0 bg-black/20" />
+      {slides.length > 1 && <><button type="button" onClick={() => goTo(idx - 1)} aria-label="Previous hero slide" className="absolute start-2 top-1/2 grid h-10 w-10 -translate-y-1/2 place-items-center rounded-full bg-white/90 shadow-md"><ChevronLeft className="h-5 w-5" /></button><button type="button" onClick={() => goTo(idx + 1)} aria-label="Next hero slide" className="absolute end-2 top-1/2 grid h-10 w-10 -translate-y-1/2 place-items-center rounded-full bg-white/90 shadow-md"><ChevronRight className="h-5 w-5" /></button><div className="absolute bottom-3 left-1/2 flex -translate-x-1/2 gap-1.5 rounded-full bg-black/30 px-2 py-1.5">{slides.map((slide, dot) => <button key={slide.id} type="button" onClick={() => goTo(dot)} aria-label={`Hero slide ${dot + 1}`} className={`h-2 rounded-full transition-all ${dot === idx ? "w-5 bg-white" : "w-2 bg-white/60"}`} />)}</div></>}
     </div>
   );
 }

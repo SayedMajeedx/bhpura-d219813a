@@ -4,6 +4,20 @@ import { supabase } from "@/integrations/supabase/client";
 
 export type StoreLang = "ar" | "en";
 export type HomePromoCard = { title_en: string; title_ar: string; subtitle_en: string; subtitle_ar: string; image_url: string; href: string; background_color: string; text_color: string };
+export type HeroMediaItem = { type: "image" | "video"; url: string };
+export type HeroContentSlide = {
+  id: string;
+  type: "text" | "image" | "video";
+  title_en: string;
+  title_ar: string;
+  body_en: string;
+  body_ar: string;
+  media_url: string;
+  button_en: string;
+  button_ar: string;
+  button_href: string;
+};
+export type HeroMediaConfig = { background: HeroMediaItem | null; slides: HeroContentSlide[] };
 
 export type Brand = {
   id: string;
@@ -11,7 +25,7 @@ export type Brand = {
   name_en: string;
   name_ar: string | null;
   logo_url: string | null;
-  hero_media: Array<{ type: "image" | "video"; url: string }>;
+  hero_media: HeroMediaConfig;
   primary_color: string | null;
   about_ar: string | null;
   about_en: string | null;
