@@ -422,9 +422,14 @@ function StoreHeader() {
           </div>
         </div>
 
-        {/* Mobile search */}
-        <div className="md:hidden pb-1">
-          <SearchBar />
+        {/* Mobile: keep Menu beside Search in the sticky header. */}
+        <div dir="ltr" className="flex items-center gap-2 pb-1 md:hidden">
+          <div className={lang === "ar" ? "order-2 shrink-0" : "order-1 shrink-0"}>
+            <StorefrontMenu mobileHeader />
+          </div>
+          <div className={lang === "ar" ? "order-1 min-w-0 flex-1" : "order-2 min-w-0 flex-1"}>
+            <SearchBar />
+          </div>
         </div>
       </div>
     </header>
@@ -447,7 +452,7 @@ function AnnouncementBar() {
   </div>;
 }
 
-export function StorefrontMenu({ navigation = false }: { navigation?: boolean } = {}) {
+export function StorefrontMenu({ navigation = false, mobileHeader = false }: { navigation?: boolean; mobileHeader?: boolean } = {}) {
   const { brand, settings, lang, t, session, isStoreMember } = useStorefront();
   const [open, setOpen] = useState(false);
   const displayName = lang === "ar" ? brand.name_ar || brand.name_en : brand.name_en;
@@ -466,9 +471,9 @@ export function StorefrontMenu({ navigation = false }: { navigation?: boolean } 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>
-        <Button variant={navigation ? "outline" : "ghost"} size={navigation ? "default" : "sm"} className={`${navigation ? "h-11 shrink-0 rounded-xl border-dashed px-5 font-semibold shadow-sm hover:-translate-y-0.5 hover:shadow-md" : "hover:bg-black/5"} gap-2 transition-all duration-200`} style={{ color: navigation ? undefined : "var(--sf-header-fg)" }} aria-label={t("القائمة", "Menu")}>
+        <Button variant={navigation || mobileHeader ? "outline" : "ghost"} size={navigation || mobileHeader ? "default" : "sm"} className={`${navigation ? "h-11 shrink-0 rounded-xl border-dashed px-5 font-semibold shadow-sm hover:-translate-y-0.5 hover:shadow-md" : mobileHeader ? "h-11 shrink-0 rounded-lg px-3 font-medium" : "hover:bg-black/5"} gap-2 transition-all duration-200`} style={{ color: navigation || mobileHeader ? undefined : "var(--sf-header-fg)" }} aria-label={t("القائمة", "Menu")}>
           <Menu className="h-5 w-5" />
-          <span className={navigation ? "inline" : "hidden lg:inline"}>{navigation ? t("كل الأقسام", "All categories") : t("القائمة", "Menu")}</span>
+          <span className={navigation || mobileHeader ? "inline" : "hidden lg:inline"}>{navigation ? t("كل الأقسام", "All categories") : t("القائمة", "Menu")}</span>
         </Button>
       </SheetTrigger>
       <SheetContent

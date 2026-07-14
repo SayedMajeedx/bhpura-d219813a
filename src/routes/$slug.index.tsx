@@ -111,7 +111,6 @@ function StoreHome() {
 
   return (
     <div>
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 md:hidden"><Categories products={products ?? []} categories={categories ?? []} activeCat={activeCat} onSelect={setActiveCat} navigation /></div>
       <HeroBanner />
       <section className="mx-auto max-w-7xl px-4 sm:px-6 py-8 sm:py-10">
         <PromoCards />
