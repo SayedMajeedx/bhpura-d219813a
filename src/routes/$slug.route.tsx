@@ -21,7 +21,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import { ShoppingBag, Languages, Minus, Plus, Trash2, X, User, Search, Menu, Home, PackageSearch, FileText, LogIn, Heart } from "lucide-react";
+import { ShoppingBag, Languages, Minus, Plus, Trash2, X, User, Search, Menu, Home, PackageSearch, FileText, LogIn, Heart, Grid2X2, ChevronDown } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { faviconType, resolveBrandFavicon, useDynamicFavicon } from "@/lib/favicon";
 
@@ -425,7 +425,7 @@ function StoreHeader() {
         {/* Mobile: keep Menu beside Search in the sticky header. */}
         <div dir="ltr" className="flex items-center gap-2 pb-1 md:hidden">
           <div className={lang === "ar" ? "order-2 shrink-0" : "order-1 shrink-0"}>
-            <StorefrontMenu mobileHeader />
+            <MobileStorefrontDropdown />
           </div>
           <div className={lang === "ar" ? "order-1 min-w-0 flex-1" : "order-2 min-w-0 flex-1"}>
             <SearchBar />
@@ -452,7 +452,113 @@ function AnnouncementBar() {
   </div>;
 }
 
-export function StorefrontMenu({ navigation = false, mobileHeader = false }: { navigation?: boolean; mobileHeader?: boolean } = {}) {
+function MobileStorefrontDropdown() {
+  const { brand, settings, lang, t } = useStorefront();
+  const detailsRef = useRef<HTMLDetailsElement>(null);
+  const menuBackground = settings.menu_bg || settings.background_color || "#ffffff";
+  const menuText = settings.menu_fg || settings.text_color || "#111111";
+  const { data: categories = [] } = useQuery({
+    queryKey: ["storefront", brand.slug, "categories"],
+    queryFn: async () => {
+      const { data, error } = await (supabase.from("categories") as any)
+        .select("id, name_en, name_ar, slug, image_url, sort_order")
+        .eq("brand_id", brand.id)
+        .eq("is_active", true)
+        .order("sort_order", { ascending: true });
+      if (error) throw error;
+      return data ?? [];
+    },
+    staleTime: 60_000,
+  });
+  const close = () => {
+    if (detailsRef.current) detailsRef.current.open = false;
+  };
+  useEffect(() => {
+    const onPointerDown = (event: PointerEvent) => {
+      if (detailsRef.current?.open && !detailsRef.current.contains(event.target as Node)) close();
+    };
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") close();
+    };
+    document.addEventListener("pointerdown", onPointerDown);
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("pointerdown", onPointerDown);
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, []);
+  const pages = settings.pages
+    .map((page, index) => ({
+      key: `${page.slug}-${index}`,
+      slug: page.slug,
+      title: lang === "ar" ? page.title_ar || page.title_en : page.title_en || page.title_ar,
+    }))
+    .filter((page) => settings.menu_show_pages && Boolean(page.title));
+
+  return (
+    <details ref={detailsRef} dir={lang === "ar" ? "rtl" : "ltr"} className="group relative">
+      <summary className="flex h-11 cursor-pointer list-none items-center gap-2 rounded-lg border px-3 font-medium shadow-sm transition-colors hover:bg-black/5 [&::-webkit-details-marker]:hidden">
+        <Grid2X2 className="h-4 w-4" />
+        <span>{t("القائمة", "Menu")}</span>
+        <ChevronDown className="h-4 w-4 transition-transform group-open:rotate-180" />
+      </summary>
+      <div
+        className={`absolute top-full z-50 mt-2 w-[min(88vw,24rem)] rounded-2xl border p-4 shadow-2xl ${lang === "ar" ? "end-0" : "start-0"}`}
+        style={{ backgroundColor: menuBackground, color: menuText }}
+      >
+        <div className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider opacity-65">
+          <Grid2X2 className="h-4 w-4" />
+          {t("الأقسام", "Categories")}
+        </div>
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+          {categories.map((category: any) => {
+            const categorySlug = category.slug || category.name_en;
+            const label = lang === "ar" ? category.name_ar || category.name_en : category.name_en || category.name_ar;
+            return (
+              <Link
+                key={category.id}
+                to="/$slug/$category"
+                params={{ slug: brand.slug, category: categorySlug }}
+                onClick={close}
+                className="flex min-h-12 items-center gap-3 rounded-xl border p-2.5 transition-colors hover:bg-black/5"
+              >
+                <div className="grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-lg bg-muted">
+                  {category.image_url ? <img src={category.image_url} alt="" className="h-full w-full object-cover" /> : <Grid2X2 className="h-4 w-4 opacity-50" />}
+                </div>
+                <span className="truncate font-medium">{label}</span>
+              </Link>
+            );
+          })}
+        </div>
+        {pages.length > 0 && (
+          <>
+            <div className="my-4 border-t" />
+            <div className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider opacity-65">
+              <FileText className="h-4 w-4" />
+              {t("الصفحات", "Pages")}
+            </div>
+            <div className="space-y-1">
+              {pages.map((page) => (
+                <Link
+                  key={page.key}
+                  to="/$slug/$category"
+                  params={{ slug: brand.slug, category: page.slug }}
+                  onClick={close}
+                  className="flex min-h-11 items-center gap-3 rounded-lg px-3 py-2 hover:bg-black/5"
+                >
+                  <FileText className="h-4 w-4 shrink-0 opacity-60" />
+                  <span className="truncate">{page.title}</span>
+                </Link>
+              ))}
+            </div>
+          </>
+        )}
+      </div>
+    </details>
+  );
+}
+
+export function StorefrontMenu({ navigation = false }: { navigation?: boolean } = {}) {
   const { brand, settings, lang, t, session, isStoreMember } = useStorefront();
   const [open, setOpen] = useState(false);
   const displayName = lang === "ar" ? brand.name_ar || brand.name_en : brand.name_en;
@@ -471,9 +577,9 @@ export function StorefrontMenu({ navigation = false, mobileHeader = false }: { n
   return (
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>
-        <Button variant={navigation || mobileHeader ? "outline" : "ghost"} size={navigation || mobileHeader ? "default" : "sm"} className={`${navigation ? "h-11 shrink-0 rounded-xl border-dashed px-5 font-semibold shadow-sm hover:-translate-y-0.5 hover:shadow-md" : mobileHeader ? "h-11 shrink-0 rounded-lg px-3 font-medium" : "hover:bg-black/5"} gap-2 transition-all duration-200`} style={{ color: navigation || mobileHeader ? undefined : "var(--sf-header-fg)" }} aria-label={t("القائمة", "Menu")}>
+        <Button variant={navigation ? "outline" : "ghost"} size={navigation ? "default" : "sm"} className={`${navigation ? "h-11 shrink-0 rounded-xl border-dashed px-5 font-semibold shadow-sm hover:-translate-y-0.5 hover:shadow-md" : "hover:bg-black/5"} gap-2 transition-all duration-200`} style={{ color: navigation ? undefined : "var(--sf-header-fg)" }} aria-label={t("القائمة", "Menu")}>
           <Menu className="h-5 w-5" />
-          <span className={navigation || mobileHeader ? "inline" : "hidden lg:inline"}>{navigation ? t("كل الأقسام", "All categories") : t("القائمة", "Menu")}</span>
+          <span className={navigation ? "inline" : "hidden lg:inline"}>{navigation ? t("كل الأقسام", "All categories") : t("القائمة", "Menu")}</span>
         </Button>
       </SheetTrigger>
       <SheetContent
