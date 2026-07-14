@@ -88,6 +88,7 @@ export type PublicSettings = {
     content_ar: string | null;
     content_en: string | null;
     image_url: string | null;
+    menu_icon_url: string | null;
     image_position: "top" | "bottom";
     meta_title: string | null;
     meta_description: string | null;

@@ -62,6 +62,7 @@ export const Route = createFileRoute("/$slug")({
       content_ar: p?.content_ar ?? null,
       content_en: p?.content_en ?? null,
       image_url: p?.image_url ?? null,
+      menu_icon_url: p?.menu_icon_url ?? null,
       // Preserve the legacy layout (image above content) until an admin explicitly changes it.
       image_position: p?.image_position === "bottom" ? "bottom" : "top",
       meta_title: p?.meta_title ?? null,
@@ -469,7 +470,7 @@ function MobileStorefrontDropdown() {
     queryKey: ["storefront", brand.slug, "categories"],
     queryFn: async () => {
       const { data, error } = await (supabase.from("categories") as any)
-        .select("id, name_en, name_ar, slug, image_url, sort_order")
+        .select("id, name_en, name_ar, slug, image_url, menu_icon_url, sort_order")
         .eq("brand_id", brand.id)
         .eq("is_active", true)
         .order("sort_order", { ascending: true });
@@ -508,6 +509,7 @@ function MobileStorefrontDropdown() {
       key: `${page.slug}-${index}`,
       slug: page.slug,
       title: lang === "ar" ? page.title_ar || page.title_en : page.title_en || page.title_ar,
+      iconUrl: page.menu_icon_url,
     }))
     .filter((page) => settings.menu_show_pages && Boolean(page.title));
 
@@ -548,7 +550,7 @@ function MobileStorefrontDropdown() {
                 className="flex min-h-12 items-center gap-3 rounded-xl border p-2.5 transition-colors hover:bg-black/5"
               >
                 <div className="grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-lg bg-muted">
-                  {category.image_url ? <img src={category.image_url} alt="" className="h-full w-full object-cover" /> : <Grid2X2 className="h-4 w-4 opacity-50" />}
+                  {category.menu_icon_url ? <img src={category.menu_icon_url} alt="" className="h-6 w-6 object-contain" /> : <Grid2X2 className="h-4 w-4 opacity-50" />}
                 </div>
                 <span className="truncate font-medium">{label}</span>
               </Link>
@@ -571,7 +573,7 @@ function MobileStorefrontDropdown() {
                   onClick={close}
                   className="flex min-h-11 items-center gap-3 rounded-lg px-3 py-2 hover:bg-black/5"
                 >
-                  <FileText className="h-4 w-4 shrink-0 opacity-60" />
+                  {page.iconUrl ? <img src={page.iconUrl} alt="" className="h-6 w-6 shrink-0 object-contain" /> : <FileText className="h-4 w-4 shrink-0 opacity-60" />}
                   <span className="truncate">{page.title}</span>
                 </Link>
               ))}

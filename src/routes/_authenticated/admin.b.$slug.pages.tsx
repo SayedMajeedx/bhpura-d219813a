@@ -30,6 +30,7 @@ type PageSlot = {
   content_ar: string;
   content_en: string;
   image_url: string | null;
+  menu_icon_url: string | null;
   image_position: "top" | "bottom";
   meta_title: string;
   meta_description: string;
@@ -47,6 +48,7 @@ const emptyPage = (): PageSlot => ({
   content_ar: "",
   content_en: "",
   image_url: null,
+  menu_icon_url: null,
   image_position: "bottom",
   meta_title: "",
   meta_description: "",
@@ -82,9 +84,11 @@ function PagesAndPolicies() {
   const [waNumber, setWaNumber] = useState("");
   const [saving, setSaving] = useState(false);
   const [uploadingIdx, setUploadingIdx] = useState<number | null>(null);
+  const [uploadingIconIdx, setUploadingIconIdx] = useState<number | null>(null);
   const [openPages, setOpenPages] = useState<string[]>([]);
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const fileInputs = useRef<Array<HTMLInputElement | null>>([]);
+  const iconInputs = useRef<Array<HTMLInputElement | null>>([]);
 
   useEffect(() => {
     if (!data) return;
@@ -97,6 +101,7 @@ function PagesAndPolicies() {
         content_ar: normalizeRichTextValue(page?.content_ar),
         content_en: normalizeRichTextValue(page?.content_en),
         image_url: page?.image_url ?? null,
+        menu_icon_url: page?.menu_icon_url ?? null,
         image_position: page?.image_position === "bottom" ? "bottom" : "top",
         meta_title: page?.meta_title ?? "",
         meta_description: page?.meta_description ?? "",
@@ -153,6 +158,19 @@ function PagesAndPolicies() {
     }
   };
 
+  const onPickMenuIcon = async (index: number, file: File) => {
+    try {
+      setUploadingIconIdx(index);
+      const url = await uploadPublicMedia(brandId, file, "page");
+      updatePage(index, { menu_icon_url: url });
+      toast.success(isAr ? "تم رفع الأيقونة — تذكّر الحفظ" : "Icon uploaded — remember to save");
+    } catch (error: any) {
+      toast.error(error.message ?? (isAr ? "تعذّر رفع الأيقونة" : "Icon upload failed"));
+    } finally {
+      setUploadingIconIdx(null);
+    }
+  };
+
   const save = async () => {
     setSaving(true);
     const usedSlugs = new Set<string>();
@@ -163,6 +181,7 @@ function PagesAndPolicies() {
       content_ar: sanitizeRichTextHtml(page.content_ar) || null,
       content_en: sanitizeRichTextHtml(page.content_en) || null,
       image_url: page.image_url || null,
+      menu_icon_url: page.menu_icon_url || null,
       image_position: page.image_position,
       meta_title: sanitizeMetaText(page.meta_title, META_TITLE_LIMIT) || null,
       meta_description: sanitizeMetaText(page.meta_description, META_DESCRIPTION_LIMIT) || null,
@@ -373,6 +392,24 @@ function PagesAndPolicies() {
                         />
                       </div>
                     </Card>
+
+                    <div className="rounded-xl border p-4">
+                      <Label>{editorLanguage === "ar" ? "أيقونة الصفحة في القائمة (اختيارية)" : "Page menu icon (optional)"}</Label>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        {editorLanguage === "ar" ? "المقاس الموصى به: 128×128 بكسل، مربع — SVG أو PNG أو WebP" : "Recommended: 128×128px, square — SVG, PNG, or WebP"}
+                      </p>
+                      <div className="mt-3 flex flex-wrap items-center gap-3">
+                        <div className="grid h-14 w-14 place-items-center overflow-hidden rounded-xl border bg-muted">
+                          {page.menu_icon_url ? <img src={page.menu_icon_url} alt="" className="h-9 w-9 object-contain" /> : <ImagePlus className="h-5 w-5 text-muted-foreground" />}
+                        </div>
+                        <input ref={(element) => { iconInputs.current[index] = element; }} type="file" accept="image/svg+xml,image/png,image/webp" className="hidden" onChange={(event) => { const file = event.target.files?.[0]; if (file) void onPickMenuIcon(index, file); event.target.value = ""; }} />
+                        <Button type="button" variant="outline" size="sm" onClick={() => iconInputs.current[index]?.click()} disabled={uploadingIconIdx === index}>
+                          <Upload className="h-4 w-4" />
+                          {uploadingIconIdx === index ? "…" : editorLanguage === "ar" ? "رفع الأيقونة" : "Upload icon"}
+                        </Button>
+                        {page.menu_icon_url && <Button type="button" variant="ghost" size="sm" onClick={() => updatePage(index, { menu_icon_url: null })}><Trash2 className="h-4 w-4" />{editorLanguage === "ar" ? "إزالة" : "Remove"}</Button>}
+                      </div>
+                    </div>
 
                     <div>
                       <Label>{editorLanguage === "ar" ? "صورة الصفحة (اختيارية)" : "Page image (optional)"}</Label>

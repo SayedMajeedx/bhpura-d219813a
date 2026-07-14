@@ -25,6 +25,7 @@ type Category = {
   name_ar: string | null;
   slug: string | null;
   image_url: string | null;
+  menu_icon_url: string | null;
   sort_order: number;
   is_active: boolean;
 };
@@ -161,11 +162,14 @@ function CategoryDialog({ brandId, category, onSaved }: { brandId: string; categ
     name_ar: category?.name_ar ?? "",
     slug: category?.slug ?? "",
     image_url: category?.image_url ?? "",
+    menu_icon_url: category?.menu_icon_url ?? "",
     sort_order: category?.sort_order ?? 0,
     is_active: category?.is_active ?? true,
   });
   const [uploading, setUploading] = useState(false);
+  const [uploadingIcon, setUploadingIcon] = useState(false);
   const fileInput = useRef<HTMLInputElement>(null);
+  const iconInput = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     setForm({
@@ -173,6 +177,7 @@ function CategoryDialog({ brandId, category, onSaved }: { brandId: string; categ
       name_ar: category?.name_ar ?? "",
       slug: category?.slug ?? "",
       image_url: category?.image_url ?? "",
+      menu_icon_url: category?.menu_icon_url ?? "",
       sort_order: category?.sort_order ?? 0,
       is_active: category?.is_active ?? true,
     });
@@ -188,6 +193,18 @@ function CategoryDialog({ brandId, category, onSaved }: { brandId: string; categ
     } finally { setUploading(false); }
   };
 
+  const uploadIcon = async (file: File) => {
+    try {
+      setUploadingIcon(true);
+      const url = await uploadPublicMedia(brandId, file, "category");
+      setForm((current) => ({ ...current, menu_icon_url: url }));
+    } catch (error: any) {
+      toast.error(error.message ?? "Icon upload failed");
+    } finally {
+      setUploadingIcon(false);
+    }
+  };
+
   const save = async () => {
     if (!form.name_en.trim()) return toast.error(isAr ? "الاسم بالإنجليزي مطلوب" : "English name required");
     const payload = {
@@ -196,6 +213,7 @@ function CategoryDialog({ brandId, category, onSaved }: { brandId: string; categ
       name_ar: form.name_ar.trim() || null,
       slug: (form.slug.trim() || slugify(form.name_en)) || null,
       image_url: form.image_url || null,
+      menu_icon_url: form.menu_icon_url || null,
       sort_order: Number(form.sort_order) || 0,
       is_active: form.is_active,
     };
@@ -248,6 +266,25 @@ function CategoryDialog({ brandId, category, onSaved }: { brandId: string; categ
                 <Upload className="h-4 w-4" />
               </Button>
             </div>
+          </div>
+        </div>
+
+        <div>
+          <Label>{isAr ? "أيقونة القائمة (اختيارية)" : "Menu icon (optional)"}</Label>
+          <p className="mb-2 text-xs text-muted-foreground">
+            {isAr ? "المقاس الموصى به: 128×128 بكسل، مربع — SVG أو PNG أو WebP" : "Recommended: 128×128px, square — SVG, PNG, or WebP"}
+          </p>
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="grid h-14 w-14 shrink-0 place-items-center overflow-hidden rounded-xl border bg-muted">
+              {form.menu_icon_url ? <img src={form.menu_icon_url} alt="" className="h-9 w-9 object-contain" /> : <Tags className="h-5 w-5 text-muted-foreground" />}
+            </div>
+            <Input className="min-w-48 flex-1" value={form.menu_icon_url} onChange={(event) => setForm({ ...form, menu_icon_url: event.target.value })} placeholder="https://..." />
+            <input ref={iconInput} type="file" accept="image/svg+xml,image/png,image/webp" className="hidden" onChange={(event) => { const file = event.target.files?.[0]; if (file) void uploadIcon(file); event.target.value = ""; }} />
+            <Button type="button" variant="outline" onClick={() => iconInput.current?.click()} disabled={uploadingIcon}>
+              <Upload className="h-4 w-4" />
+              {uploadingIcon ? "…" : isAr ? "رفع" : "Upload"}
+            </Button>
+            {form.menu_icon_url && <Button type="button" variant="ghost" onClick={() => setForm({ ...form, menu_icon_url: "" })}>{isAr ? "إزالة" : "Remove"}</Button>}
           </div>
         </div>
 
