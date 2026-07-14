@@ -55,11 +55,11 @@ export function ImageCropperDialog({ open, imageSrc, aspect = 3 / 4, onCancel, o
 
   return (
     <Dialog open={open} onOpenChange={(o) => { if (!o && !busy) onCancel(); }}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-h-[90dvh] max-w-2xl overflow-y-auto overscroll-contain">
         <DialogHeader>
           <DialogTitle>{isAr ? "قص الصورة" : "Crop image"}</DialogTitle>
         </DialogHeader>
-        <div className="relative h-[min(52vh,420px)] w-full overflow-hidden rounded-md bg-muted">
+        <div className="relative h-[min(38vh,320px)] min-h-52 w-full shrink-0 overflow-hidden rounded-md bg-muted">
           {imageSrc && (
             <Cropper
               image={imageSrc}
@@ -77,9 +77,13 @@ export function ImageCropperDialog({ open, imageSrc, aspect = 3 / 4, onCancel, o
           <label className="text-xs text-muted-foreground">{isAr ? "التكبير" : "Zoom"}</label>
           <Slider min={1} max={4} step={0.05} value={[zoom]} onValueChange={(v) => setZoom(v[0] ?? 1)} />
         </div>
-        {heroPreview && imageSrc && <div className="space-y-2">
-          <p className="text-xs font-medium text-muted-foreground">{isAr ? "معاينة مباشرة للواجهة" : "Live storefront preview"}</p>
-          <div className="relative aspect-video w-full overflow-hidden rounded-md border bg-muted">
+        {heroPreview && imageSrc && <details className="group rounded-md border bg-background">
+          <summary className="flex cursor-pointer list-none items-center justify-between px-3 py-2 text-sm font-medium [&::-webkit-details-marker]:hidden">
+            <span>{isAr ? "معاينة الواجهة" : "Storefront preview"}</span>
+            <span aria-hidden="true" className="text-muted-foreground transition-transform group-open:rotate-180">⌄</span>
+          </summary>
+          <div className="px-3 pb-3">
+          <div className="relative mx-auto aspect-video w-full max-w-md overflow-hidden rounded-md border bg-muted">
             <div className="pointer-events-none absolute inset-0">
               <Cropper image={imageSrc} crop={crop} zoom={zoom} aspect={aspect} onCropChange={() => {}} onZoomChange={() => {}} objectFit="contain" />
             </div>
@@ -88,8 +92,9 @@ export function ImageCropperDialog({ open, imageSrc, aspect = 3 / 4, onCancel, o
               <span className="grid h-9 w-9 place-items-center text-3xl font-extralight leading-none">›</span>
             </div>
           </div>
-        </div>}
-        <DialogFooter>
+          </div>
+        </details>}
+        <DialogFooter className="sticky -bottom-1 z-10 border-t bg-background py-2">
           <Button variant="outline" onClick={onCancel} disabled={busy}>{isAr ? "إلغاء" : "Cancel"}</Button>
           <Button onClick={handleConfirm} disabled={busy || !area}>
             {busy && <Loader2 className="h-4 w-4 me-2 animate-spin" />}

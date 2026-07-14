@@ -714,9 +714,12 @@ function HeroSlideLivePreview({ slide, isAr, color }: { slide: HeroSlide; isAr: 
   const title = isAr ? slide.title_ar || slide.title_en : slide.title_en || slide.title_ar;
   const body = isAr ? slide.body_ar || slide.body_en : slide.body_en || slide.body_ar;
   const button = isAr ? slide.button_ar || slide.button_en : slide.button_en || slide.button_ar;
-  return <div className="space-y-2 border-t pt-3">
-    <p className="text-xs font-medium text-muted-foreground">{isAr ? "معاينة مباشرة للمتجر" : "Live storefront preview"}</p>
-    <div dir={isAr ? "rtl" : "ltr"} className="relative aspect-video w-full overflow-hidden rounded-lg border bg-neutral-100">
+  return <details className="group border-t pt-3">
+    <summary className="flex cursor-pointer list-none items-center justify-between rounded-md border px-3 py-2 text-sm font-medium hover:bg-secondary [&::-webkit-details-marker]:hidden">
+      <span>{isAr ? "معاينة المتجر" : "Storefront preview"}</span>
+      <span aria-hidden="true" className="text-muted-foreground transition-transform group-open:rotate-180">⌄</span>
+    </summary>
+    <div dir={isAr ? "rtl" : "ltr"} className="relative mx-auto mt-3 aspect-video w-full max-w-md overflow-hidden rounded-lg border bg-neutral-100">
       {slide.type === "image" && slide.media_url ? <img src={slide.media_url} alt="" className="h-full w-full object-cover" /> : slide.type === "video" && slide.media_url ? <video src={slide.media_url} muted playsInline className="h-full w-full bg-black object-contain" /> : <div className="flex h-full flex-col justify-center p-5 pb-16 sm:p-8 sm:pb-16">
         {title && <strong className="mb-2 text-xl sm:text-3xl" style={{ color }}>{title}</strong>}
         {body && <p className="line-clamp-2 text-xs text-neutral-700 sm:text-sm">{body}</p>}
@@ -726,7 +729,7 @@ function HeroSlideLivePreview({ slide, isAr, color }: { slide: HeroSlide; isAr: 
         <span className="grid h-9 w-9 place-items-center text-3xl font-extralight">‹</span><span className="grid h-9 w-9 place-items-center text-3xl font-extralight">›</span>
       </div>
     </div>
-  </div>;
+  </details>;
 }
 
 function ShippingSettingsCard({ brandId }: { brandId: string }) {
