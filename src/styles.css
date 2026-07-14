@@ -135,6 +135,12 @@
   th, td { color: inherit; }
 }
 
+/* Keep keyboard focus visible even when branded controls reset native styles. */
+.storefront-shell :where(a[href], button, input, select, textarea, summary, [tabindex]:not([tabindex="-1"])):focus-visible {
+  outline: 3px solid #2563eb !important;
+  outline-offset: 3px !important;
+}
+
 
 html.lang-ar body,
 html.lang-ar h1,

@@ -38,21 +38,20 @@ export const Route = createFileRoute("/$slug")({
     // SEO is deliberately non-critical. An older PostgREST schema cache may
     // not know these additive columns yet, but that must never take a live
     // storefront offline.
-    const { data: seoBrand } = await supabase
-      .from("brands")
-      .select("meta_title, meta_description")
-      .eq("id", baseBrand.id)
-      .maybeSingle();
+    const [{ data: seoBrand }, { data: settings }, { data: benefitSettings }] = await Promise.all([
+      supabase
+        .from("brands")
+        .select("meta_title, meta_description")
+        .eq("id", baseBrand.id)
+        .maybeSingle(),
+      supabase.from("brand_public_settings").select("*").eq("brand_id", baseBrand.id).maybeSingle(),
+      supabase.rpc("get_public_benefit_settings" as any, { p_brand_id: baseBrand.id }),
+    ]);
     const brand = {
       ...baseBrand,
       meta_title: (seoBrand as any)?.meta_title ?? null,
       meta_description: (seoBrand as any)?.meta_description ?? null,
     };
-
-    const [{ data: settings }, { data: benefitSettings }] = await Promise.all([
-      supabase.from("brand_public_settings").select("*").eq("brand_id", brand.id).maybeSingle(),
-      supabase.rpc("get_public_benefit_settings" as any, { p_brand_id: brand.id }),
-    ]);
 
     const s = settings as any;
     const rawPages = Array.isArray(s?.pages) ? s.pages : [];
@@ -250,7 +249,7 @@ function StoreShell() {
 
   return (
     <div
-      className="min-h-screen flex flex-col"
+      className="storefront-shell min-h-screen flex flex-col"
       style={
         {
           backgroundColor: settings.background_color,
@@ -337,7 +336,7 @@ function StoreHeader() {
           <Link
             to="/$slug"
             params={{ slug: brand.slug }}
-            className={`flex items-center gap-3 min-w-0 ${align === "center" ? "sm:mx-auto" : ""}`}
+            className={`flex min-h-11 items-center gap-3 min-w-0 ${align === "center" ? "sm:mx-auto" : ""}`}
             style={{ color: "var(--sf-header-fg)" }}
           >
             {settings.logo_url && (
@@ -354,7 +353,7 @@ function StoreHeader() {
               />
             )}
 
-            <Button asChild variant="ghost" size="sm" className="relative gap-1 hover:bg-black/5" style={{ color: "var(--sf-header-fg)" }}>
+            <Button asChild variant="ghost" size="sm" className="relative min-h-11 min-w-11 gap-1 hover:bg-black/5" style={{ color: "var(--sf-header-fg)" }}>
               <Link to="/$slug/wishlist" params={{ slug: brand.slug }}>
                 <Heart className="h-5 w-5" />
                 <span className="hidden sm:inline">{t("المفضلة", "Wishlist")}</span>
@@ -381,7 +380,7 @@ function StoreHeader() {
             <Button
               variant="ghost"
               size="sm"
-              className="gap-1 hover:bg-black/5"
+              className="min-h-11 min-w-11 gap-1 hover:bg-black/5"
               style={{ color: "var(--sf-header-fg)" }}
               onClick={() => setLang(lang === "ar" ? "en" : "ar")}
               aria-label="Language switch"
@@ -391,14 +390,14 @@ function StoreHeader() {
             </Button>
 
             {session && isStoreMember ? (
-              <Button asChild variant="ghost" size="sm" className="gap-1 hover:bg-black/5" style={{ color: "var(--sf-header-fg)" }}>
+              <Button asChild variant="ghost" size="sm" className="min-h-11 min-w-11 gap-1 hover:bg-black/5" style={{ color: "var(--sf-header-fg)" }}>
                 <Link to="/$slug/account" params={{ slug: brand.slug }} title={session.user?.email ?? ""}>
                   <User className="h-4 w-4" />
                   <span className="hidden sm:inline max-w-[120px] truncate">{t("لوحة التحكم", "Dashboard")}</span>
                 </Link>
               </Button>
             ) : (
-              <Button asChild variant="ghost" size="sm" className="gap-1 hover:bg-black/5" style={{ color: "var(--sf-header-fg)" }}>
+              <Button asChild variant="ghost" size="sm" className="min-h-11 min-w-11 gap-1 hover:bg-black/5" style={{ color: "var(--sf-header-fg)" }}>
                 <Link to="/$slug/auth" params={{ slug: brand.slug }}>
                   <User className="h-4 w-4" />
                   <span className="hidden sm:inline">{t("دخول", "Sign in")}</span>
@@ -407,7 +406,7 @@ function StoreHeader() {
             )}
 
             <CartDrawer>
-              <Button variant="ghost" size="sm" className="relative gap-1 hover:bg-black/5" style={{ color: "var(--sf-header-fg)" }}>
+              <Button variant="ghost" size="sm" className="relative min-h-11 min-w-11 gap-1 hover:bg-black/5" style={{ color: "var(--sf-header-fg)" }}>
                 <ShoppingBag className="h-5 w-5" />
                 <span className="hidden sm:inline">{t("السلة", "Cart")}</span>
                 {cartCount > 0 && (
@@ -444,7 +443,7 @@ function AnnouncementBar() {
   if (!settings.announcement_enabled || !text || dismissed || !audienceOk || !scopeOk) return null;
   return <div className="relative px-12 py-2 text-center text-sm" style={{ backgroundColor: settings.announcement_bg, color: settings.announcement_fg, fontWeight: settings.announcement_bold ? 700 : 400, fontStyle: settings.announcement_italic ? "italic" : "normal" }}>
     <span>{text}</span>
-    {settings.announcement_dismissible && <button type="button" className="absolute end-3 top-1/2 -translate-y-1/2 rounded-full p-1 hover:bg-white/15" aria-label="Dismiss announcement" onClick={() => { try { sessionStorage.setItem(key, "1"); } catch {} setDismissed(true); }}><X className="h-4 w-4" /></button>}
+    {settings.announcement_dismissible && <button type="button" className="absolute end-1 top-1/2 grid h-11 w-11 -translate-y-1/2 place-items-center rounded-full hover:bg-white/15" aria-label="Dismiss announcement" onClick={() => { try { sessionStorage.setItem(key, "1"); } catch {} setDismissed(true); }}><X className="h-4 w-4" /></button>}
   </div>;
 }
 
@@ -585,7 +584,7 @@ function CartDrawer({ children }: { children: React.ReactNode }) {
                 <div className="flex flex-col items-center gap-1 shrink-0">
                   <div className="flex items-center border rounded">
                     <button
-                      className="px-2 py-1"
+                      className="grid h-11 w-11 place-items-center"
                       onClick={() => updateQty(item.cart_line_id, item.qty - 1)}
                       aria-label="decrease"
                     >
@@ -593,7 +592,7 @@ function CartDrawer({ children }: { children: React.ReactNode }) {
                     </button>
                     <span className="px-2 text-sm min-w-[24px] text-center">{item.qty}</span>
                     <button
-                      className="px-2 py-1 disabled:opacity-40"
+                      className="grid h-11 w-11 place-items-center disabled:opacity-40"
                       disabled={item.qty >= item.max_stock}
                       onClick={() => updateQty(item.cart_line_id, item.qty + 1)}
                       aria-label="increase"
@@ -602,7 +601,7 @@ function CartDrawer({ children }: { children: React.ReactNode }) {
                     </button>
                   </div>
                   <button
-                    className="text-xs text-red-600 flex items-center gap-1"
+                    className="flex min-h-11 items-center gap-1 px-2 text-xs text-red-600"
                     onClick={() => removeFromCart(item.cart_line_id)}
                   >
                     <Trash2 className="h-3 w-3" />
@@ -705,7 +704,7 @@ function SearchBar() {
           onFocus={() => { setFocused(true); setOpen(true); }}
           onBlur={() => setFocused(false)}
           placeholder={t("ابحث عن منتج...", "Search for products...")}
-          className={`h-10 bg-white/70 dark:bg-black/20 border-black/10 ${lang === "ar" ? "pr-9" : "pl-9"}`}
+          className={`h-11 bg-white/70 dark:bg-black/20 border-black/10 ${lang === "ar" ? "pr-9" : "pl-9"}`}
           inputMode="search"
           enterKeyHint="search"
           aria-label={t("ابحث عن منتج", "Search products")}
@@ -798,7 +797,7 @@ function StoreFooter() {
                 href={s.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="hover:underline underline-offset-4"
+                className="inline-flex min-h-11 items-center hover:underline underline-offset-4"
                 style={{ color: "var(--sf-footer-fg)" }}
               >
                 {s.name}
@@ -813,7 +812,7 @@ function StoreFooter() {
                 key={p.idx}
                 to="/$slug/$category"
                 params={{ slug: brand.slug, category: p.slug }}
-                className="hover:underline underline-offset-4"
+                className="inline-flex min-h-11 items-center hover:underline underline-offset-4"
                 style={{ color: "var(--sf-footer-fg)" }}
               >
                 {p.title}

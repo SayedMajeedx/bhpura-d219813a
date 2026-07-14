@@ -142,9 +142,9 @@ function PromoCards() {
       const title = lang === "ar" ? card.title_ar || card.title_en : card.title_en || card.title_ar;
       const subtitle = lang === "ar" ? card.subtitle_ar || card.subtitle_en : card.subtitle_en || card.subtitle_ar;
       return <a key={index} href={card.href || "#products"} className="group relative aspect-[16/9] overflow-hidden rounded-2xl border shadow-sm sm:aspect-[2/1]" style={{ backgroundColor: card.background_color || "#f4f4f4", color: card.text_color || "#111111" }}>
-        {card.image_url && <img src={card.image_url} alt={title || ""} className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" />}
+        {card.image_url && <img src={card.image_url} alt={title || ""} className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" loading="lazy" decoding="async" />}
         <div className="absolute inset-0 bg-gradient-to-r from-black/55 via-black/20 to-transparent" />
-        <div className="relative flex h-full flex-col justify-end p-6"><h3 className="text-2xl font-semibold sm:text-3xl">{title}</h3>{subtitle && <p className="mt-1 max-w-md text-sm opacity-90">{subtitle}</p>}</div>
+        <div className="relative flex h-full flex-col justify-end p-6"><h2 className="text-2xl font-semibold sm:text-3xl">{title}</h2>{subtitle && <p className="mt-1 max-w-md text-sm opacity-90">{subtitle}</p>}</div>
       </a>;
     })}
   </div>;
@@ -223,28 +223,16 @@ function HeroCarousel({ items }: { items: Array<{ type: "image" | "video"; url: 
     };
   }, [idx, items]);
 
+  const active = items[idx];
   return (
     <div className="absolute inset-0">
-      {items.map((m, i) => (
-        <div
-          key={i}
-          className="absolute inset-0 transition-opacity duration-1000"
-          style={{ opacity: i === idx ? 1 : 0 }}
-        >
-          {m.type === "video" ? (
-            <video
-              src={m.url}
-              autoPlay
-              muted
-              loop
-              playsInline
-              className="w-full h-full object-cover"
-            />
-          ) : (
-            <img src={m.url} alt="" className="w-full h-full object-cover" />
-          )}
-        </div>
-      ))}
+      <div key={`${idx}-${active.url}`} className="absolute inset-0 animate-in fade-in duration-700">
+        {active.type === "video" ? (
+          <video src={active.url} autoPlay muted loop playsInline preload="metadata" className="h-full w-full object-cover" />
+        ) : (
+          <img src={active.url} alt="" className="h-full w-full object-cover" decoding="async" fetchPriority={idx === 0 ? "high" : "auto"} />
+        )}
+      </div>
       <div className="absolute inset-0 bg-black/20" />
     </div>
   );
@@ -376,7 +364,7 @@ export function ProductCard({ product, badge }: { product: ProductRow; badge?: "
   const wished = isWishlisted(product.id);
   return (
     <div className="group relative">
-      <button type="button" onClick={() => toggleWishlist(product.id)} aria-label={wished ? t("إزالة من المفضلة", "Remove from wishlist") : t("إضافة إلى المفضلة", "Add to wishlist")} className="absolute end-2 top-2 z-20 grid h-10 w-10 place-items-center rounded-full bg-white/95 text-neutral-900 shadow-md transition hover:scale-105">
+      <button type="button" onClick={() => toggleWishlist(product.id)} aria-label={wished ? t("إزالة من المفضلة", "Remove from wishlist") : t("إضافة إلى المفضلة", "Add to wishlist")} className="absolute end-2 top-2 z-20 grid h-11 w-11 place-items-center rounded-full bg-white/95 text-neutral-900 shadow-md transition hover:scale-105">
         <Heart className={`h-5 w-5 ${wished ? "fill-red-600 text-red-600" : ""}`} />
       </button>
       <Link to="/$slug/product/$id" params={{ slug: brand.slug, id: product.id }} className="block" onClick={() => { void (supabase.rpc as any)("record_storefront_product_engagement", { p_brand_slug: brand.slug, p_product_id: product.id, p_event: "click" }); }}>
@@ -389,6 +377,7 @@ export function ProductCard({ product, badge }: { product: ProductRow; badge?: "
             alt={displayName}
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
             loading="lazy"
+            decoding="async"
           />
         ) : (
           <div className="w-full h-full grid place-items-center text-muted-foreground text-xs">
