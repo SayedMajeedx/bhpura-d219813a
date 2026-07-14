@@ -526,18 +526,20 @@ function MobileStorefrontDropdown() {
         <ChevronDown className="h-4 w-4 transition-transform group-open:rotate-180" />
       </summary>
       <div
-        className={`absolute top-full z-50 mt-2 max-h-[min(70dvh,32rem)] w-[min(88vw,24rem)] touch-pan-y overflow-y-auto overscroll-contain rounded-2xl border p-4 shadow-2xl ${lang === "ar" ? "right-0" : "left-0"}`}
+        className={`absolute top-full z-50 mt-2 max-h-[min(58dvh,26rem)] w-[min(88vw,23rem)] touch-pan-y overflow-y-auto overscroll-contain rounded-2xl border p-3 shadow-2xl ${lang === "ar" ? "right-0" : "left-0"}`}
         style={{
           backgroundColor: menuBackground,
           color: menuText,
           WebkitOverflowScrolling: "touch",
+          fontSize: "16px",
+          lineHeight: "1.35",
         }}
       >
-        <div className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider opacity-65">
+        <div className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider opacity-65">
           <Grid2X2 className="h-4 w-4" />
           {t("الأقسام", "Categories")}
         </div>
-        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-2">
           {categories.map((category: any) => {
             const categorySlug = category.slug || category.name_en;
             const label = lang === "ar" ? category.name_ar || category.name_en : category.name_en || category.name_ar;
@@ -547,19 +549,19 @@ function MobileStorefrontDropdown() {
                 to="/$slug/$category"
                 params={{ slug: brand.slug, category: categorySlug }}
                 onClick={close}
-                className="flex min-h-12 items-center gap-3 rounded-xl border p-2.5 transition-colors hover:bg-black/5"
+                className="flex min-h-12 items-center gap-3 rounded-xl border px-2.5 py-2 transition-colors hover:bg-black/5"
               >
-                <div className="grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-lg bg-muted">
-                  {category.menu_icon_url ? <img src={category.menu_icon_url} alt="" className="h-6 w-6 object-contain" /> : <Grid2X2 className="h-4 w-4 opacity-50" />}
+                <div className="grid h-9 w-9 shrink-0 place-items-center overflow-hidden rounded-lg bg-muted">
+                  {category.menu_icon_url ? <img src={category.menu_icon_url} alt="" className="h-5 w-5 object-contain" /> : <Grid2X2 className="h-4 w-4 opacity-50" />}
                 </div>
-                <span className="truncate font-medium">{label}</span>
+                <span className="truncate font-medium" style={{ fontSize: "0.95rem", lineHeight: "1.3rem" }}>{label}</span>
               </Link>
             );
           })}
         </div>
         {pages.length > 0 && (
           <>
-            <div className="my-4 border-t" />
+            <div className="my-3 border-t" />
             <div className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider opacity-65">
               <FileText className="h-4 w-4" />
               {t("الصفحات", "Pages")}
@@ -571,10 +573,12 @@ function MobileStorefrontDropdown() {
                   to="/$slug/$category"
                   params={{ slug: brand.slug, category: page.slug }}
                   onClick={close}
-                  className="flex min-h-11 items-center gap-3 rounded-lg px-3 py-2 hover:bg-black/5"
+                  className="flex min-h-11 items-center gap-3 rounded-lg px-2.5 py-2 transition-colors hover:bg-black/5"
                 >
-                  {page.iconUrl ? <img src={page.iconUrl} alt="" className="h-6 w-6 shrink-0 object-contain" /> : <FileText className="h-4 w-4 shrink-0 opacity-60" />}
-                  <span className="truncate">{page.title}</span>
+                  <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-black/5">
+                    {page.iconUrl ? <img src={page.iconUrl} alt="" className="h-5 w-5 object-contain" /> : <FileText className="h-4 w-4 opacity-60" />}
+                  </span>
+                  <span className="truncate" style={{ fontSize: "0.95rem", lineHeight: "1.3rem" }}>{page.title}</span>
                 </Link>
               ))}
             </div>
