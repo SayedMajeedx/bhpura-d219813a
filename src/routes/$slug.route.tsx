@@ -455,6 +455,7 @@ function AnnouncementBar() {
 function MobileStorefrontDropdown() {
   const { brand, settings, lang, t } = useStorefront();
   const detailsRef = useRef<HTMLDetailsElement>(null);
+  const [isOpen, setIsOpen] = useState(false);
   const menuBackground = settings.menu_bg || settings.background_color || "#ffffff";
   const menuText = settings.menu_fg || settings.text_color || "#111111";
   const { data: categories = [] } = useQuery({
@@ -487,6 +488,14 @@ function MobileStorefrontDropdown() {
       document.removeEventListener("keydown", onKeyDown);
     };
   }, []);
+  useEffect(() => {
+    if (!isOpen) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [isOpen]);
   const pages = settings.pages
     .map((page, index) => ({
       key: `${page.slug}-${index}`,
@@ -496,15 +505,24 @@ function MobileStorefrontDropdown() {
     .filter((page) => settings.menu_show_pages && Boolean(page.title));
 
   return (
-    <details ref={detailsRef} dir={lang === "ar" ? "rtl" : "ltr"} className="group relative">
+    <details
+      ref={detailsRef}
+      dir={lang === "ar" ? "rtl" : "ltr"}
+      className="group relative"
+      onToggle={(event) => setIsOpen(event.currentTarget.open)}
+    >
       <summary className="flex h-11 cursor-pointer list-none items-center gap-2 rounded-lg border px-3 font-medium shadow-sm transition-colors hover:bg-black/5 [&::-webkit-details-marker]:hidden">
         <Grid2X2 className="h-4 w-4" />
         <span>{t("القائمة", "Menu")}</span>
         <ChevronDown className="h-4 w-4 transition-transform group-open:rotate-180" />
       </summary>
       <div
-        className={`absolute top-full z-50 mt-2 w-[min(88vw,24rem)] rounded-2xl border p-4 shadow-2xl ${lang === "ar" ? "end-0" : "start-0"}`}
-        style={{ backgroundColor: menuBackground, color: menuText }}
+        className={`absolute top-full z-50 mt-2 max-h-[min(70dvh,32rem)] w-[min(88vw,24rem)] touch-pan-y overflow-y-auto overscroll-contain rounded-2xl border p-4 shadow-2xl ${lang === "ar" ? "end-0" : "start-0"}`}
+        style={{
+          backgroundColor: menuBackground,
+          color: menuText,
+          WebkitOverflowScrolling: "touch",
+        }}
       >
         <div className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider opacity-65">
           <Grid2X2 className="h-4 w-4" />
