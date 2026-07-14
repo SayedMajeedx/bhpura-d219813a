@@ -36,6 +36,7 @@ type CustomField = {
 
 type Product = {
   id: string;
+  category: string | null;
   name: string;
   name_ar: string | null;
   name_en: string | null;
@@ -46,6 +47,22 @@ type Product = {
   media: unknown;
   custom_fields: CustomField[] | null;
   product_variants: Variant[];
+};
+
+type RecommendationProduct = {
+  id: string;
+  name: string;
+  name_ar: string | null;
+  name_en: string | null;
+  category: string | null;
+  image_url: string | null;
+  media: unknown;
+  product_variants: Array<{
+    id: string;
+    selling_price: number;
+    original_price: number | null;
+    stock_main: number;
+  }>;
 };
 
 /** Natural sort key: extract leading number so "52" < "54" < "60". */
@@ -72,7 +89,7 @@ function ProductDetail() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("products")
-        .select("id, name, name_ar, name_en, description, description_ar, description_en, image_url, media, custom_fields, product_variants(id, size, size_unit, color, fabric, selling_price, original_price, stock_main)")
+        .select("id, category, name, name_ar, name_en, description, description_ar, description_en, image_url, media, custom_fields, product_variants(id, size, size_unit, color, fabric, selling_price, original_price, stock_main)")
         .eq("id", id)
         .eq("brand_id", brand.id)
         .eq("is_active", true)
@@ -81,6 +98,51 @@ function ProductDetail() {
       return data as unknown as Product | null;
     },
   });
+
+  const { data: recommendationCatalog = [] } = useQuery({
+    queryKey: ["storefront", brand.slug, "product-recommendations"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("products")
+        .select("id, name, name_ar, name_en, category, image_url, media, product_variants(id, selling_price, original_price, stock_main)")
+        .eq("brand_id", brand.id)
+        .eq("is_active", true)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return (data ?? []) as unknown as RecommendationProduct[];
+    },
+    staleTime: 30_000,
+  });
+
+  const { data: bestSellerRows = [] } = useQuery({
+    queryKey: ["storefront", brand.slug, "best-sellers"],
+    queryFn: async () => {
+      const { data, error } = await (supabase.rpc as any)("get_storefront_best_sellers", {
+        p_brand_slug: brand.slug,
+        p_limit: 10,
+      });
+      if (error) throw error;
+      return (data ?? []) as Array<{ product_id: string; units_sold: number }>;
+    },
+    staleTime: 60_000,
+  });
+
+  const relatedProducts = useMemo(
+    () => product?.category
+      ? recommendationCatalog
+          .filter((item) => item.id !== product.id && item.category === product.category)
+          .slice(0, 8)
+      : [],
+    [product, recommendationCatalog],
+  );
+  const relatedIds = useMemo(() => new Set(relatedProducts.map((item) => item.id)), [relatedProducts]);
+  const bestSellingProducts = useMemo(() => {
+    const ranks = new Map(bestSellerRows.map((row, index) => [row.product_id, index]));
+    return recommendationCatalog
+      .filter((item) => item.id !== product?.id && !relatedIds.has(item.id) && ranks.has(item.id))
+      .sort((a, b) => (ranks.get(a.id) ?? 99) - (ranks.get(b.id) ?? 99))
+      .slice(0, 8);
+  }, [bestSellerRows, product?.id, recommendationCatalog, relatedIds]);
 
   const media = useMemo(() => {
     if (!product) return [];
@@ -224,7 +286,8 @@ function ProductDetail() {
   const discountPercent = originalPrice > displayPrice ? Math.round((1 - displayPrice / originalPrice) * 100) : 0;
 
   return (
-    <div className="mx-auto max-w-6xl px-4 sm:px-6 py-3 sm:py-10 grid md:grid-cols-2 gap-4 sm:gap-8 pb-28 md:pb-10">
+    <div className="mx-auto max-w-6xl px-4 sm:px-6 py-3 sm:py-10 pb-28 md:pb-10">
+      <div className="grid md:grid-cols-2 gap-4 sm:gap-8">
       <div>
         <div className="relative aspect-square bg-muted rounded-2xl overflow-hidden">
           {media.length > 0 ? (
@@ -451,6 +514,96 @@ function ProductDetail() {
           </Button>
         </div>
       </div>
+      </div>
+
+      {(relatedProducts.length > 0 || bestSellingProducts.length > 0) && (
+        <div className="mt-10 space-y-9 border-t pt-8 sm:mt-14 sm:pt-10">
+          {relatedProducts.length > 0 && (
+            <RecommendationRail
+              title={t("قد يعجبك أيضاً", "You may also like")}
+              products={relatedProducts}
+            />
+          )}
+          {bestSellingProducts.length > 0 && (
+            <RecommendationRail
+              title={t("اشتراها العملاء أيضاً", "Customers also bought")}
+              products={bestSellingProducts}
+            />
+          )}
+        </div>
+      )}
     </div>
+  );
+}
+
+function RecommendationRail({ title, products }: { title: string; products: RecommendationProduct[] }) {
+  const { brand, currency, lang, t } = useStorefront();
+
+  return (
+    <section aria-label={title}>
+      <div className="mb-4 flex items-end justify-between gap-3">
+        <h2 className="font-display text-xl sm:text-2xl">{title}</h2>
+        <span className="hidden text-xs text-muted-foreground sm:block">
+          {t("اسحب للمزيد", "Scroll for more")}
+        </span>
+      </div>
+      <div className="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-2 sm:mx-0 sm:gap-4 sm:px-0 [scrollbar-width:thin]">
+        {products.map((item) => {
+          const variants = item.product_variants
+            .filter((variant) => Number(variant.selling_price || 0) > 0)
+            .sort((a, b) => Number(a.selling_price) - Number(b.selling_price));
+          const discounted = variants.find((variant) => Number(variant.original_price || 0) > Number(variant.selling_price || 0));
+          const priced = discounted ?? variants[0];
+          const media = Array.isArray(item.media) ? item.media as Array<{ type: string; url: string }> : [];
+          const cover = media.find((entry) => entry.type === "image")?.url || item.image_url;
+          const name = pickName(lang, item);
+
+          return (
+            <Link
+              key={item.id}
+              to="/$slug/product/$id"
+              params={{ slug: brand.slug, id: item.id }}
+              className="group w-[8.75rem] shrink-0 snap-start sm:w-[10.5rem]"
+              onClick={() => {
+                void (supabase.rpc as any)("record_storefront_product_engagement", {
+                  p_brand_slug: brand.slug,
+                  p_product_id: item.id,
+                  p_event: "click",
+                });
+              }}
+            >
+              <div className="aspect-[3/4] overflow-hidden rounded-xl bg-muted">
+                {cover ? (
+                  <img
+                    src={cover}
+                    alt={name}
+                    className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                    loading="lazy"
+                    decoding="async"
+                  />
+                ) : (
+                  <div className="grid h-full place-items-center px-3 text-center text-xs text-muted-foreground">
+                    {t("لا توجد صورة", "No image")}
+                  </div>
+                )}
+              </div>
+              <div className="mt-2 min-w-0">
+                <div className="line-clamp-2 min-h-10 text-sm font-medium leading-5">{name}</div>
+                {priced && (
+                  <div className="mt-1 flex flex-wrap items-baseline gap-x-2 text-xs font-semibold" style={{ color: "var(--sf-heading)" }}>
+                    <span>{formatPrice(Number(priced.selling_price), currency, lang)}</span>
+                    {Number(priced.original_price || 0) > Number(priced.selling_price) && (
+                      <span className="font-normal text-muted-foreground line-through">
+                        {formatPrice(Number(priced.original_price), currency, lang)}
+                      </span>
+                    )}
+                  </div>
+                )}
+              </div>
+            </Link>
+          );
+        })}
+      </div>
+    </section>
   );
 }
