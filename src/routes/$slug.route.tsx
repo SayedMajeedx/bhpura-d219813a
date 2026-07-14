@@ -517,7 +517,7 @@ function MobileStorefrontDropdown() {
         <ChevronDown className="h-4 w-4 transition-transform group-open:rotate-180" />
       </summary>
       <div
-        className={`absolute top-full z-50 mt-2 max-h-[min(70dvh,32rem)] w-[min(88vw,24rem)] touch-pan-y overflow-y-auto overscroll-contain rounded-2xl border p-4 shadow-2xl ${lang === "ar" ? "end-0" : "start-0"}`}
+        className={`absolute top-full z-50 mt-2 max-h-[min(70dvh,32rem)] w-[min(88vw,24rem)] touch-pan-y overflow-y-auto overscroll-contain rounded-2xl border p-4 shadow-2xl ${lang === "ar" ? "right-0" : "left-0"}`}
         style={{
           backgroundColor: menuBackground,
           color: menuText,
