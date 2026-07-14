@@ -179,7 +179,7 @@ function HeroBanner() {
   }];
 
   return (
-    <section className="relative w-full overflow-hidden min-h-[300px] sm:min-h-[55vh] sm:max-h-[640px]">
+    <section className="relative w-full overflow-hidden min-h-[360px] sm:min-h-[55vh] sm:max-h-[640px]">
       {background ? (
         <div className="absolute inset-0">
           {background.type === "video" ? <video src={background.url} autoPlay muted loop playsInline preload="metadata" className="h-full w-full object-cover" /> : <img src={background.url} alt="" className="h-full w-full object-cover" decoding="async" fetchPriority="high" />}
@@ -194,7 +194,7 @@ function HeroBanner() {
         />
       )}
 
-      <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 h-full flex items-center min-h-[300px] sm:min-h-[55vh]">
+      <div className="relative z-10 mx-auto flex h-full min-h-[360px] max-w-7xl items-center px-4 sm:min-h-[55vh] sm:px-6">
         <HeroContentCarousel slides={slides} />
       </div>
     </section>
@@ -211,17 +211,17 @@ function HeroContentCarousel({ slides }: { slides: import("@/lib/storefront-cont
     scroller.current?.scrollTo({ left: safe * scroller.current.clientWidth, behavior: "smooth" });
   };
   return (
-    <div className="relative isolate w-full max-w-xl overflow-hidden rounded-2xl bg-white/85 shadow-lg backdrop-blur [clip-path:inset(0_round_1rem)] [transform:translateZ(0)]">
+    <div className="relative isolate w-[88%] max-w-xl overflow-hidden rounded-2xl bg-white/85 shadow-lg backdrop-blur [clip-path:inset(0_round_1rem)] [transform:translateZ(0)] sm:w-full">
       <div ref={scroller} dir="ltr" className="flex snap-x snap-mandatory scroll-smooth overflow-x-auto overflow-y-hidden rounded-2xl overscroll-x-contain [clip-path:inset(0_round_1rem)] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" onScroll={(event) => { const width = event.currentTarget.clientWidth; if (width) setIdx(Math.round(event.currentTarget.scrollLeft / width)); }}>
         {slides.map((slide, slideIndex) => {
           const title = lang === "ar" ? slide.title_ar || slide.title_en : slide.title_en || slide.title_ar;
           const body = lang === "ar" ? slide.body_ar || slide.body_en : slide.body_en || slide.body_ar;
           const button = lang === "ar" ? slide.button_ar || slide.button_en : slide.button_en || slide.button_ar;
           return <article key={slide.id} dir={lang === "ar" ? "rtl" : "ltr"} className={`min-w-full snap-center snap-always overflow-hidden rounded-2xl transition-[opacity,transform] duration-500 ease-out [clip-path:inset(0_round_1rem)] ${slideIndex === idx ? "scale-100 opacity-100" : "scale-[0.985] opacity-80"}`}>
-            {slide.type === "image" && slide.media_url ? <img src={slide.media_url} alt={title || ""} className="h-[260px] w-full rounded-2xl object-cover sm:h-[320px]" /> : slide.type === "video" && slide.media_url ? <video src={slide.media_url} controls playsInline preload="metadata" className="h-[260px] w-full rounded-2xl bg-black object-contain sm:h-[320px]" /> : <div className="flex min-h-[260px] flex-col justify-center rounded-2xl p-6 pb-20 sm:min-h-[300px] sm:p-8 sm:pb-20" style={{ textAlign: settings.hero_title_align }}>
-              {settings.show_hero_title && title && <h1 className="mb-3 leading-tight" style={{ color: settings.hero_title_color ?? "var(--sf-heading)", fontSize: `clamp(1.875rem, 5vw, ${settings.hero_title_size}px)`, fontFamily: "var(--sf-font)" }}>{title}</h1>}
-              {settings.show_hero_about && body && <p className="mb-4 text-sm text-neutral-700 sm:text-base">{body}</p>}
-              {button && <div><a href={slide.button_href || "#products"} className="inline-flex items-center rounded-full px-6 py-3 font-semibold" style={{ backgroundColor: "var(--sf-btn-primary-bg)", color: "var(--sf-btn-primary-fg)" }}>{button}</a></div>}
+            {slide.type === "image" && slide.media_url ? <img src={slide.media_url} alt={title || ""} className="h-[220px] w-full rounded-2xl object-cover sm:h-[320px]" /> : slide.type === "video" && slide.media_url ? <video src={slide.media_url} controls playsInline preload="metadata" className="h-[220px] w-full rounded-2xl bg-black object-contain sm:h-[320px]" /> : <div className="flex min-h-[220px] flex-col justify-center rounded-2xl px-5 pb-16 pt-5 sm:min-h-[300px] sm:p-8 sm:pb-20" style={{ textAlign: settings.hero_title_align }}>
+              {settings.show_hero_title && title && <h1 className="mb-2 leading-tight sm:mb-3" style={{ color: settings.hero_title_color ?? "var(--sf-heading)", fontSize: `clamp(1.5rem, 5vw, ${settings.hero_title_size}px)`, fontFamily: "var(--sf-font)" }}>{title}</h1>}
+              {settings.show_hero_about && body && <p className="mb-3 line-clamp-4 text-xs leading-relaxed text-neutral-700 sm:mb-4 sm:line-clamp-none sm:text-base">{body}</p>}
+              {button && <div><a href={slide.button_href || "#products"} className="inline-flex items-center rounded-full px-5 py-2.5 text-sm font-semibold sm:px-6 sm:py-3 sm:text-base" style={{ backgroundColor: "var(--sf-btn-primary-bg)", color: "var(--sf-btn-primary-fg)" }}>{button}</a></div>}
             </div>}
           </article>;
         })}
