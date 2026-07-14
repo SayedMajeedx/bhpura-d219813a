@@ -19,7 +19,7 @@ const Input = z.object({
   brandId: z.string().uuid(),
   kind: z.enum(mediaKinds),
   contentType: z.string().min(3).max(100),
-  size: z.number().int().positive().max(50 * 1024 * 1024),
+  size: z.number().int().positive().max(100 * 1024 * 1024),
 });
 
 function requiredEnv(name: string): string {
@@ -56,7 +56,7 @@ export const createR2UploadUrl = createServerFn({ method: "POST" })
     const extension = mimeToExtension[data.contentType.toLowerCase()];
     if (!extension) throw new Error("UNSUPPORTED_FILE_TYPE");
     const isVideo = data.contentType.startsWith("video/");
-    const maxSize = isVideo ? 50 * 1024 * 1024 : data.kind === "font" ? 10 * 1024 * 1024 : 12 * 1024 * 1024;
+    const maxSize = isVideo ? 100 * 1024 * 1024 : data.kind === "font" ? 10 * 1024 * 1024 : 12 * 1024 * 1024;
     if (data.size > maxSize) throw new Error("FILE_TOO_LARGE");
     if (isVideo && !["hero", "product"].includes(data.kind)) throw new Error("UNSUPPORTED_FILE_TYPE");
 

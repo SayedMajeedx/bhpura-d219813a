@@ -20,6 +20,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { uploadPublicMedia } from "@/lib/r2-upload";
 import { PasskeySettings } from "@/components/passkey-settings";
 import { META_DESCRIPTION_LIMIT, META_TITLE_LIMIT, sanitizeMetaText } from "@/lib/seo";
+import { ImageCropperDialog } from "@/components/image-cropper-dialog";
 
 export const Route = createFileRoute("/_authenticated/admin/b/$slug/settings")({
   component: Settings,
@@ -420,6 +421,19 @@ type HeroSlide = { id: string; type: "text" | "image" | "video"; title_en: strin
 type HeroState = { background: MediaItem | null; slides: HeroSlide[]; primary_color: string | null; about_ar: string | null; about_en: string | null };
 const emptyHeroSlide = (): HeroSlide => ({ id: crypto.randomUUID(), type: "text", title_en: "", title_ar: "", body_en: "", body_ar: "", media_url: "", button_en: "Shop now", button_ar: "تسوّق الآن", button_href: "#products" });
 
+async function heroVideoDuration(file: File): Promise<number> {
+  const url = URL.createObjectURL(file);
+  try {
+    return await new Promise<number>((resolve, reject) => {
+      const video = document.createElement("video");
+      video.preload = "metadata";
+      video.onloadedmetadata = () => resolve(video.duration);
+      video.onerror = () => reject(new Error("Unable to read video metadata"));
+      video.src = url;
+    });
+  } finally { URL.revokeObjectURL(url); }
+}
+
 function PaymentSettingsCard({ brandId }: { brandId: string }) {
   const { lang } = useI18n();
   const isAr = lang === "ar";
@@ -527,6 +541,8 @@ function BrandHeroCard({ brandId }: { brandId: string }) {
   const qc = useQueryClient();
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [cropSrc, setCropSrc] = useState<string | null>(null);
+  const [cropSlideIndex, setCropSlideIndex] = useState<number | null>(null);
   const [state, setState] = useState<HeroState | null>(null);
 
   const { data } = useQuery({
@@ -564,7 +580,7 @@ function BrandHeroCard({ brandId }: { brandId: string }) {
     } finally { setUploading(false); }
   };
 
-  const uploadSlideMedia = async (file: File, index: number) => {
+  const uploadSlideMedia = async (file: Blob, index: number) => {
     try {
       setUploading(true);
       // Hero slide assets share the secured hero namespace. The upload API only
@@ -575,6 +591,29 @@ function BrandHeroCard({ brandId }: { brandId: string }) {
       toast.success(isAr ? "تم الرفع — لا تنسَ الحفظ" : "Uploaded — remember to save");
     } catch (error: any) { toast.error(error.message ?? "Upload failed"); }
     finally { setUploading(false); }
+  };
+
+  const chooseSlideMedia = async (file: File, index: number) => {
+    if (file.type.startsWith("image/")) {
+      const reader = new FileReader();
+      reader.onload = () => { setCropSlideIndex(index); setCropSrc(String(reader.result)); };
+      reader.readAsDataURL(file);
+      return;
+    }
+    if (!file.type.startsWith("video/")) return toast.error(isAr ? "صيغة الملف غير مدعومة" : "Unsupported file type");
+    if (file.size > 100 * 1024 * 1024) return toast.error(isAr ? "يجب ألا يتجاوز الفيديو 100 ميجابايت" : "Video must be 100 MB or smaller");
+    try {
+      const duration = await heroVideoDuration(file);
+      if (!Number.isFinite(duration) || duration > 15.25) return toast.error(isAr ? "يجب ألا تتجاوز مدة الفيديو 15 ثانية" : "Video must be 15 seconds or shorter");
+      await uploadSlideMedia(file, index);
+    } catch (error: any) { toast.error(error.message ?? "Unable to validate video"); }
+  };
+
+  const confirmHeroCrop = async (blob: Blob) => {
+    if (cropSlideIndex == null) return;
+    await uploadSlideMedia(blob, cropSlideIndex);
+    setCropSrc(null);
+    setCropSlideIndex(null);
   };
 
   const save = async () => {
@@ -609,7 +648,9 @@ function BrandHeroCard({ brandId }: { brandId: string }) {
         </div>
       </div>
 
-      <HeroSlidesEditor state={state} setState={setState} isAr={isAr} uploading={uploading} uploadSlideMedia={uploadSlideMedia} />
+      <HeroSlidesEditor state={state} setState={setState} isAr={isAr} uploading={uploading} uploadSlideMedia={chooseSlideMedia} />
+
+      <ImageCropperDialog open={Boolean(cropSrc)} imageSrc={cropSrc} aspect={16 / 9} outputWidth={1920} outputHeight={1080} heroPreview busy={uploading} onCancel={() => { setCropSrc(null); setCropSlideIndex(null); }} onConfirm={confirmHeroCrop} />
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
@@ -652,13 +693,39 @@ function HeroSlidesEditor({ state, setState, isAr, uploading, uploadSlideMedia }
     {state.slides.map((slide, index) => <div key={slide.id} className="space-y-3 rounded-xl border p-4">
       <div className="flex items-center justify-between gap-3"><strong>{isAr ? `الشريحة ${index + 1}` : `Slide ${index + 1}`}</strong><Button type="button" variant="ghost" size="icon" onClick={() => setState({ ...state, slides: state.slides.filter((_, itemIndex) => itemIndex !== index) })}><Trash2 className="h-4 w-4" /></Button></div>
       <div><Label>{isAr ? "نوع المحتوى" : "Content type"}</Label><Select value={slide.type} onValueChange={(value: "text" | "image" | "video") => update(index, { type: value })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="text">{isAr ? "نص" : "Text"}</SelectItem><SelectItem value="image">{isAr ? "صورة" : "Image"}</SelectItem><SelectItem value="video">{isAr ? "فيديو" : "Video"}</SelectItem></SelectContent></Select></div>
-      {slide.type !== "text" && <div className="space-y-2">{slide.media_url && (slide.type === "video" ? <video src={slide.media_url} className="h-36 w-full rounded-lg bg-black object-contain" muted /> : <img src={slide.media_url} alt="" className="h-36 w-full rounded-lg object-cover" />)}<label className="flex h-12 cursor-pointer items-center justify-center rounded-lg border border-dashed text-sm text-muted-foreground">{uploading ? "…" : (isAr ? "رفع الوسائط" : "Upload media")}<input type="file" accept={slide.type === "video" ? "video/*" : "image/*"} className="hidden" onChange={(event) => event.target.files?.[0] && uploadSlideMedia(event.target.files[0], index)} /></label></div>}
+      {slide.type !== "text" && <div className="space-y-2">
+        {slide.media_url && (slide.type === "video" ? <video src={slide.media_url} className="aspect-video w-full rounded-lg bg-black object-contain" muted controls /> : <img src={slide.media_url} alt="" className="aspect-video w-full rounded-lg object-cover" />)}
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+          <label className="flex h-12 min-w-44 cursor-pointer items-center justify-center rounded-lg border border-dashed px-4 text-sm text-muted-foreground hover:bg-secondary">{uploading ? "…" : (isAr ? "رفع الوسائط" : "Upload media")}<input type="file" accept={slide.type === "video" ? "video/mp4" : "image/jpeg,image/png,image/webp"} className="hidden" onChange={(event) => { const file = event.target.files?.[0]; if (file) void uploadSlideMedia(file, index); event.target.value = ""; }} /></label>
+          <span className="rounded-md bg-secondary px-3 py-2 text-xs leading-relaxed text-muted-foreground">{slide.type === "video" ? (isAr ? "الموصى به: أفقي 16:9 | 15 ثانية كحد أقصى | 100MB كحد أقصى | MP4" : "Recommended: 16:9 Horizontal | Max 15s | Max 100MB | MP4") : (isAr ? "الموصى به: 1920×1080 بكسل (16:9) | JPG، PNG، WebP" : "Recommended: 1920x1080px (16:9) | JPG, PNG, WebP")}</span>
+        </div>
+      </div>}
       {slide.type === "text" && <>
         <div className="grid gap-3 sm:grid-cols-2"><div><Label>Title — English</Label><Input value={slide.title_en} onChange={(event) => update(index, { title_en: event.target.value })} /></div><div><Label>العنوان — عربي</Label><Input dir="rtl" value={slide.title_ar} onChange={(event) => update(index, { title_ar: event.target.value })} /></div></div>
         <div className="grid gap-3 sm:grid-cols-2"><div><Label>Text — English</Label><Textarea value={slide.body_en} onChange={(event) => update(index, { body_en: event.target.value })} /></div><div><Label>النص — عربي</Label><Textarea dir="rtl" value={slide.body_ar} onChange={(event) => update(index, { body_ar: event.target.value })} /></div></div>
         <div className="grid gap-3 sm:grid-cols-3"><div><Label>Button — English</Label><Input value={slide.button_en} onChange={(event) => update(index, { button_en: event.target.value })} /></div><div><Label>الزر — عربي</Label><Input dir="rtl" value={slide.button_ar} onChange={(event) => update(index, { button_ar: event.target.value })} /></div><div><Label>{isAr ? "رابط الزر" : "Button link"}</Label><Input value={slide.button_href} onChange={(event) => update(index, { button_href: event.target.value })} placeholder="#products" /></div></div>
       </>}
+      <HeroSlideLivePreview slide={slide} isAr={isAr} color={state.primary_color ?? "#330a0a"} />
     </div>)}
+  </div>;
+}
+
+function HeroSlideLivePreview({ slide, isAr, color }: { slide: HeroSlide; isAr: boolean; color: string }) {
+  const title = isAr ? slide.title_ar || slide.title_en : slide.title_en || slide.title_ar;
+  const body = isAr ? slide.body_ar || slide.body_en : slide.body_en || slide.body_ar;
+  const button = isAr ? slide.button_ar || slide.button_en : slide.button_en || slide.button_ar;
+  return <div className="space-y-2 border-t pt-3">
+    <p className="text-xs font-medium text-muted-foreground">{isAr ? "معاينة مباشرة للمتجر" : "Live storefront preview"}</p>
+    <div dir={isAr ? "rtl" : "ltr"} className="relative aspect-video w-full overflow-hidden rounded-lg border bg-neutral-100">
+      {slide.type === "image" && slide.media_url ? <img src={slide.media_url} alt="" className="h-full w-full object-cover" /> : slide.type === "video" && slide.media_url ? <video src={slide.media_url} muted playsInline className="h-full w-full bg-black object-contain" /> : <div className="flex h-full flex-col justify-center p-5 pb-16 sm:p-8 sm:pb-16">
+        {title && <strong className="mb-2 text-xl sm:text-3xl" style={{ color }}>{title}</strong>}
+        {body && <p className="line-clamp-2 text-xs text-neutral-700 sm:text-sm">{body}</p>}
+        {button && <span className="mt-3 w-fit rounded-full px-4 py-2 text-xs font-semibold text-white" style={{ backgroundColor: color }}>{button}</span>}
+      </div>}
+      <div dir="ltr" className="pointer-events-none absolute inset-x-3 bottom-3 flex justify-between text-white mix-blend-difference">
+        <span className="grid h-9 w-9 place-items-center border border-current text-2xl font-extralight">‹</span><span className="grid h-9 w-9 place-items-center border border-current text-2xl font-extralight">›</span>
+      </div>
+    </div>
   </div>;
 }
 

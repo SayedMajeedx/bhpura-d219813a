@@ -14,9 +14,12 @@ type Props = {
   onCancel: () => void;
   onConfirm: (blob: Blob) => void | Promise<void>;
   busy?: boolean;
+  outputWidth?: number;
+  outputHeight?: number;
+  heroPreview?: boolean;
 };
 
-async function getCroppedBlob(imageSrc: string, area: Area): Promise<Blob> {
+async function getCroppedBlob(imageSrc: string, area: Area, outputWidth?: number, outputHeight?: number): Promise<Blob> {
   const image = await new Promise<HTMLImageElement>((resolve, reject) => {
     const img = new Image();
     img.crossOrigin = "anonymous";
@@ -25,17 +28,17 @@ async function getCroppedBlob(imageSrc: string, area: Area): Promise<Blob> {
     img.src = imageSrc;
   });
   const canvas = document.createElement("canvas");
-  canvas.width = Math.round(area.width);
-  canvas.height = Math.round(area.height);
+  canvas.width = outputWidth ?? Math.round(area.width);
+  canvas.height = outputHeight ?? Math.round(area.height);
   const ctx = canvas.getContext("2d");
   if (!ctx) throw new Error("Canvas unsupported");
-  ctx.drawImage(image, area.x, area.y, area.width, area.height, 0, 0, area.width, area.height);
+  ctx.drawImage(image, area.x, area.y, area.width, area.height, 0, 0, canvas.width, canvas.height);
   return await new Promise<Blob>((resolve, reject) => {
     canvas.toBlob((b) => (b ? resolve(b) : reject(new Error("Failed to encode image"))), "image/jpeg", 0.92);
   });
 }
 
-export function ImageCropperDialog({ open, imageSrc, aspect = 3 / 4, onCancel, onConfirm, busy }: Props) {
+export function ImageCropperDialog({ open, imageSrc, aspect = 3 / 4, onCancel, onConfirm, busy, outputWidth, outputHeight, heroPreview = false }: Props) {
   const { lang } = useI18n();
   const isAr = lang === "ar";
   const [crop, setCrop] = useState({ x: 0, y: 0 });
@@ -46,7 +49,7 @@ export function ImageCropperDialog({ open, imageSrc, aspect = 3 / 4, onCancel, o
 
   const handleConfirm = async () => {
     if (!imageSrc || !area) return;
-    const blob = await getCroppedBlob(imageSrc, area);
+    const blob = await getCroppedBlob(imageSrc, area, outputWidth, outputHeight);
     await onConfirm(blob);
   };
 
@@ -56,7 +59,7 @@ export function ImageCropperDialog({ open, imageSrc, aspect = 3 / 4, onCancel, o
         <DialogHeader>
           <DialogTitle>{isAr ? "قص الصورة" : "Crop image"}</DialogTitle>
         </DialogHeader>
-        <div className="relative w-full h-[420px] bg-muted rounded-md overflow-hidden">
+        <div className="relative h-[min(52vh,420px)] w-full overflow-hidden rounded-md bg-muted">
           {imageSrc && (
             <Cropper
               image={imageSrc}
@@ -74,6 +77,18 @@ export function ImageCropperDialog({ open, imageSrc, aspect = 3 / 4, onCancel, o
           <label className="text-xs text-muted-foreground">{isAr ? "التكبير" : "Zoom"}</label>
           <Slider min={1} max={4} step={0.05} value={[zoom]} onValueChange={(v) => setZoom(v[0] ?? 1)} />
         </div>
+        {heroPreview && imageSrc && <div className="space-y-2">
+          <p className="text-xs font-medium text-muted-foreground">{isAr ? "معاينة مباشرة للواجهة" : "Live storefront preview"}</p>
+          <div className="relative aspect-video w-full overflow-hidden rounded-md border bg-muted">
+            <div className="pointer-events-none absolute inset-0">
+              <Cropper image={imageSrc} crop={crop} zoom={zoom} aspect={aspect} onCropChange={() => {}} onZoomChange={() => {}} objectFit="contain" />
+            </div>
+            <div className="pointer-events-none absolute inset-x-3 bottom-3 flex items-end justify-between text-white mix-blend-difference">
+              <span className="grid h-9 w-9 place-items-center border border-current text-2xl font-extralight leading-none">‹</span>
+              <span className="grid h-9 w-9 place-items-center border border-current text-2xl font-extralight leading-none">›</span>
+            </div>
+          </div>
+        </div>}
         <DialogFooter>
           <Button variant="outline" onClick={onCancel} disabled={busy}>{isAr ? "إلغاء" : "Cancel"}</Button>
           <Button onClick={handleConfirm} disabled={busy || !area}>
