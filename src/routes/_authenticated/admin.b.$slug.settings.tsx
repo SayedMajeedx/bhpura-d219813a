@@ -717,6 +717,11 @@ function HeroSlidesEditor({ state, setState, isAr, uploading, uploadSlideMedia }
           </div>;
         })}
       </div>}
+      {slide.type !== "text" && <div>
+        <Label>{isAr ? "رابط الشريحة عند الضغط" : "Slide click link"}</Label>
+        <Input dir="ltr" value={slide.button_href} onChange={(event) => update(index, { button_href: event.target.value })} placeholder={`/${isAr ? "اسم-القسم" : "category-or-page"}`} />
+        <p className="mt-1 text-xs text-muted-foreground">{isAr ? "عند الضغط على الصورة أو الفيديو، سينتقل العميل إلى هذا الرابط." : "Clicking the image or video sends the customer to this page."}</p>
+      </div>}
       {slide.type !== "text" && <div className="hidden space-y-2">
         {slide.media_url && (slide.type === "video" ? <video src={slide.media_url} className="aspect-video w-full rounded-lg bg-black object-contain" muted controls /> : <img src={slide.media_url} alt="" className="aspect-video w-full rounded-lg object-cover" />)}
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
@@ -745,7 +750,7 @@ function HeroSlideLivePreview({ slide, isAr, color }: { slide: HeroSlide; isAr: 
       <span aria-hidden="true" className="text-muted-foreground transition-transform group-open:rotate-180">⌄</span>
     </summary>
     <div dir={isAr ? "rtl" : "ltr"} className="relative mx-auto mt-3 aspect-video w-full max-w-md overflow-hidden rounded-lg border bg-neutral-100">
-      {slide.type === "image" && mediaUrl ? <img src={mediaUrl} alt="" className="h-full w-full object-cover" /> : slide.type === "video" && mediaUrl ? <video src={mediaUrl} muted playsInline className="h-full w-full bg-black object-contain" /> : <div className="flex h-full flex-col justify-center p-5 pb-16 sm:p-8 sm:pb-16">
+      {slide.type === "image" && mediaUrl ? <img src={mediaUrl} alt="" className="h-full w-full object-cover" /> : slide.type === "video" && mediaUrl ? <video src={mediaUrl} muted autoPlay loop playsInline disablePictureInPicture className="h-full w-full object-cover" /> : <div className="flex h-full flex-col justify-center p-5 pb-16 sm:p-8 sm:pb-16">
         {title && <strong className="mb-2 text-xl sm:text-3xl" style={{ color }}>{title}</strong>}
         {body && <p className="line-clamp-2 text-xs text-neutral-700 sm:text-sm">{body}</p>}
         {button && <span className="mt-3 w-fit rounded-full px-4 py-2 text-xs font-semibold text-white" style={{ backgroundColor: color }}>{button}</span>}

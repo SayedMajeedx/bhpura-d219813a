@@ -201,6 +201,20 @@ function HeroBanner() {
   );
 }
 
+function HeroCarouselVideo({ src, active, className }: { src: string; active: boolean; className?: string }) {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+    if (active) {
+      void video.play().catch(() => undefined);
+    } else {
+      video.pause();
+    }
+  }, [active, src]);
+  return <video ref={videoRef} src={src} muted loop playsInline autoPlay={active} preload="metadata" disablePictureInPicture className={className} />;
+}
+
 function HeroContentCarousel({ slides }: { slides: import("@/lib/storefront-context").HeroContentSlide[] }) {
   const { settings, lang } = useStorefront();
   const [idx, setIdx] = useState(0);
@@ -211,7 +225,7 @@ function HeroContentCarousel({ slides }: { slides: import("@/lib/storefront-cont
     scroller.current?.scrollTo({ left: safe * scroller.current.clientWidth, behavior: "smooth" });
   };
   return (
-    <div className="relative isolate w-[88%] max-w-xl overflow-hidden rounded-2xl bg-white/85 shadow-lg backdrop-blur [clip-path:inset(0_round_1rem)] [transform:translateZ(0)] sm:w-full">
+    <div className="relative isolate w-[88%] max-w-xl overflow-hidden rounded-2xl bg-transparent shadow-lg [clip-path:inset(0_round_1rem)] [transform:translateZ(0)] sm:w-full">
       <div ref={scroller} dir="ltr" className="flex snap-x snap-mandatory scroll-smooth overflow-x-auto overflow-y-hidden rounded-2xl overscroll-x-contain [clip-path:inset(0_round_1rem)] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" onScroll={(event) => { const width = event.currentTarget.clientWidth; if (width) setIdx(Math.round(event.currentTarget.scrollLeft / width)); }}>
         {slides.map((slide, slideIndex) => {
           const title = lang === "ar" ? slide.title_ar || slide.title_en : slide.title_en || slide.title_ar;
@@ -219,7 +233,7 @@ function HeroContentCarousel({ slides }: { slides: import("@/lib/storefront-cont
           const button = lang === "ar" ? slide.button_ar || slide.button_en : slide.button_en || slide.button_ar;
           const mediaUrl = (lang === "ar" ? slide.media_url_ar : slide.media_url_en) || slide.media_url || (lang === "ar" ? slide.media_url_en : slide.media_url_ar) || "";
           return <article key={slide.id} dir={lang === "ar" ? "rtl" : "ltr"} className={`min-w-full snap-center snap-always overflow-hidden rounded-2xl transition-[opacity,transform] duration-500 ease-out [clip-path:inset(0_round_1rem)] ${slideIndex === idx ? "scale-100 opacity-100" : "scale-[0.985] opacity-80"}`}>
-            {slide.type === "image" && mediaUrl ? <img src={mediaUrl} alt={title || ""} className="h-[220px] w-full rounded-2xl object-cover sm:h-[320px]" /> : slide.type === "video" && mediaUrl ? <video src={mediaUrl} controls playsInline preload="metadata" className="h-[220px] w-full rounded-2xl bg-black object-contain sm:h-[320px]" /> : <div className="flex min-h-[220px] flex-col justify-center rounded-2xl px-5 pb-16 pt-5 sm:min-h-[300px] sm:p-8 sm:pb-20" style={{ textAlign: settings.hero_title_align }}>
+            {slide.type === "image" && mediaUrl ? <a href={slide.button_href || "#products"} className="block h-[220px] w-full overflow-hidden rounded-2xl sm:h-[320px]"><img src={mediaUrl} alt={title || ""} className="h-full w-full object-cover" /></a> : slide.type === "video" && mediaUrl ? <a href={slide.button_href || "#products"} className="block h-[220px] w-full cursor-pointer overflow-hidden rounded-2xl sm:h-[320px]" aria-label={title || (lang === "ar" ? "فتح الرابط" : "Open link")}><HeroCarouselVideo src={mediaUrl} active={slideIndex === idx} className="pointer-events-none h-full w-full object-cover" /></a> : <div className="flex min-h-[220px] flex-col justify-center rounded-2xl bg-white/85 px-5 pb-16 pt-5 backdrop-blur sm:min-h-[300px] sm:p-8 sm:pb-20" style={{ textAlign: settings.hero_title_align }}>
               {settings.show_hero_title && title && <h1 className="mb-2 leading-tight sm:mb-3" style={{ color: settings.hero_title_color ?? "var(--sf-heading)", fontSize: `clamp(1.5rem, 5vw, ${settings.hero_title_size}px)`, fontFamily: "var(--sf-font)" }}>{title}</h1>}
               {settings.show_hero_about && body && <p className="mb-3 line-clamp-4 text-xs leading-relaxed text-neutral-700 sm:mb-4 sm:line-clamp-none sm:text-base">{body}</p>}
               {button && <div><a href={slide.button_href || "#products"} className="inline-flex items-center rounded-full px-5 py-2.5 text-sm font-semibold sm:px-6 sm:py-3 sm:text-base" style={{ backgroundColor: "var(--sf-btn-primary-bg)", color: "var(--sf-btn-primary-fg)" }}>{button}</a></div>}
