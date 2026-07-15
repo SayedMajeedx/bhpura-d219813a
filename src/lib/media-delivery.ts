@@ -8,10 +8,10 @@ const PRESET_WIDTHS: Record<ResponsiveImagePreset, number[]> = {
   content: [480, 768, 960, 1280, 1600],
 };
 
-// Image Transformations are enabled on the public storefront zone. R2's
-// custom media hostname is the source origin, not the hostname that should
-// receive `/cdn-cgi/image` transformation requests.
-const CLOUDFLARE_IMAGE_TRANSFORM_ORIGIN = "https://boutq.store";
+// The storefront itself is served directly by Vercel, while this R2 custom
+// hostname is orange-cloud proxied and can serve Cloudflare's managed
+// `/cdn-cgi/image` endpoint without a Vercel redirect intercepting the URL.
+const CLOUDFLARE_IMAGE_TRANSFORM_ORIGIN = "https://media.boutq.store";
 
 export function imageWidths(preset: ResponsiveImagePreset): number[] {
   return PRESET_WIDTHS[preset];
@@ -25,9 +25,11 @@ export function cloudflareImageUrl(source: string, width: number, quality = 82):
     // `onerror=redirect` makes Cloudflare serve the original R2 asset instead
     // of breaking the storefront, and the free plan never overage-bills.
     const options = `width=${width},fit=scale-down,quality=${quality},format=auto,metadata=none,onerror=redirect`;
-    // Always ask the storefront zone to perform the transformation. Supplying
-    // the complete source URL is required here because the originals live on
-    // the separate `media.boutq.store` R2 custom domain.
+    if (url.hostname === "media.boutq.store") {
+      // A same-host path keeps the source eligible for `onerror=redirect` and
+      // does not require opening transformations to arbitrary remote origins.
+      return `${CLOUDFLARE_IMAGE_TRANSFORM_ORIGIN}/cdn-cgi/image/${options}${url.pathname}${url.search}`;
+    }
     return `${CLOUDFLARE_IMAGE_TRANSFORM_ORIGIN}/cdn-cgi/image/${options}/${encodeURI(url.toString())}`;
   } catch {
     return source;
