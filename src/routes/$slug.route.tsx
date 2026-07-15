@@ -265,6 +265,19 @@ function StoreShell() {
   const storefrontFontUrl = lang === "ar" ? settings.storefront_font_ar_url : settings.storefront_font_en_url;
   const storefrontFontFamily = storefrontFontUrl ? "StorefrontCustomFont" : storefrontFont;
 
+  useEffect(() => {
+    if (storefrontFontUrl || !storefrontFont) return;
+    const globallyLoaded = new Set(["Inter", "Cormorant Garamond", "Tajawal"]);
+    if (globallyLoaded.has(storefrontFont)) return;
+    const id = `storefront-font-${storefrontFont.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`;
+    if (document.getElementById(id)) return;
+    const link = document.createElement("link");
+    link.id = id;
+    link.rel = "stylesheet";
+    link.href = `https://fonts.googleapis.com/css2?family=${encodeURIComponent(storefrontFont).replace(/%20/g, "+")}:wght@400;500;600;700&display=swap`;
+    document.head.appendChild(link);
+  }, [storefrontFont, storefrontFontUrl]);
+
   return (
     <div
       className="storefront-shell min-h-screen flex flex-col"
@@ -564,7 +577,7 @@ function MobileStorefrontDropdown() {
                 className="flex min-h-12 items-center gap-3 rounded-xl border px-2.5 py-2 transition-colors hover:bg-black/5"
               >
                 <div className="grid h-9 w-9 shrink-0 place-items-center overflow-hidden rounded-lg bg-muted">
-                  {category.menu_icon_url ? <img src={category.menu_icon_url} alt="" className="h-5 w-5 object-contain" /> : <Grid2X2 className="h-4 w-4 opacity-50" />}
+                  {category.menu_icon_url ? <img src={category.menu_icon_url} width={20} height={20} loading="lazy" decoding="async" alt="" className="h-5 w-5 object-contain" /> : <Grid2X2 className="h-4 w-4 opacity-50" />}
                 </div>
                 <span className="truncate font-medium" style={{ fontSize: "0.95rem", lineHeight: "1.3rem" }}>{label}</span>
               </Link>

@@ -212,6 +212,11 @@ function HeroContentCarousel({ slides }: { slides: import("@/lib/storefront-cont
   const { settings, lang } = useStorefront();
   const [idx, setIdx] = useState(0);
   const scroller = useRef<HTMLDivElement>(null);
+  const scrollFrame = useRef<number | null>(null);
+
+  useEffect(() => () => {
+    if (scrollFrame.current !== null) cancelAnimationFrame(scrollFrame.current);
+  }, []);
 
   const goTo = (next: number) => {
     const safe = (next + slides.length) % slides.length;
@@ -220,7 +225,17 @@ function HeroContentCarousel({ slides }: { slides: import("@/lib/storefront-cont
   };
   return (
     <div className="relative isolate w-[88%] max-w-xl overflow-hidden rounded-2xl bg-transparent shadow-lg [clip-path:inset(0_round_1rem)] [transform:translateZ(0)] sm:w-full">
-      <div ref={scroller} dir="ltr" className="flex items-stretch snap-x snap-mandatory scroll-smooth overflow-x-auto overflow-y-hidden rounded-2xl overscroll-x-contain [clip-path:inset(0_round_1rem)] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" onScroll={(event) => { const width = event.currentTarget.clientWidth; if (width) setIdx(Math.round(event.currentTarget.scrollLeft / width)); }}>
+      <div ref={scroller} dir="ltr" className="flex items-stretch snap-x snap-mandatory scroll-smooth overflow-x-auto overflow-y-hidden rounded-2xl overscroll-x-contain [clip-path:inset(0_round_1rem)] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" onScroll={(event) => {
+        const element = event.currentTarget;
+        if (scrollFrame.current !== null) return;
+        scrollFrame.current = requestAnimationFrame(() => {
+          scrollFrame.current = null;
+          const width = element.clientWidth;
+          if (!width) return;
+          const nextIndex = Math.round(element.scrollLeft / width);
+          setIdx((current) => current === nextIndex ? current : nextIndex);
+        });
+      }}>
         {slides.map((slide, slideIndex) => {
           const title = lang === "ar" ? slide.title_ar || slide.title_en : slide.title_en || slide.title_ar;
           const body = lang === "ar" ? slide.body_ar || slide.body_en : slide.body_en || slide.body_ar;
@@ -397,6 +412,7 @@ export function ProductCard({ product, badge }: { product: ProductRow; badge?: "
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
             loading="lazy"
             decoding="async"
+            quality={76}
           />
         ) : (
           <div className="w-full h-full grid place-items-center text-muted-foreground text-xs">
