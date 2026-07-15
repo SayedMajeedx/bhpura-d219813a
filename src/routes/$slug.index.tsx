@@ -208,13 +208,30 @@ function HeroContentCarousel({ slides }: { slides: import("@/lib/storefront-cont
   const [activeHeight, setActiveHeight] = useState<number | null>(null);
   const scroller = useRef<HTMLDivElement>(null);
   const slideRefs = useRef<Array<HTMLElement | null>>([]);
+  const activeHeightRef = useRef<number | null>(null);
+  const heightTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     const slide = slideRefs.current[idx];
     if (!slide) return;
     const updateHeight = () => {
       const nextHeight = Math.ceil(slide.getBoundingClientRect().height);
-      if (nextHeight > 0) setActiveHeight(nextHeight);
+      if (nextHeight <= 0) return;
+      if (heightTimerRef.current) clearTimeout(heightTimerRef.current);
+
+      const currentHeight = activeHeightRef.current;
+      const applyHeight = () => {
+        activeHeightRef.current = nextHeight;
+        setActiveHeight(nextHeight);
+      };
+
+      // Keep the taller frame while the horizontal movement finishes. This
+      // prevents text -> video transitions from collapsing mid-swipe.
+      if (currentHeight !== null && nextHeight < currentHeight) {
+        heightTimerRef.current = setTimeout(applyHeight, 320);
+      } else {
+        applyHeight();
+      }
     };
     updateHeight();
     const observer = new ResizeObserver(updateHeight);
@@ -223,6 +240,7 @@ function HeroContentCarousel({ slides }: { slides: import("@/lib/storefront-cont
     return () => {
       observer.disconnect();
       window.removeEventListener("resize", updateHeight);
+      if (heightTimerRef.current) clearTimeout(heightTimerRef.current);
     };
   }, [idx, lang, slides.length]);
 
@@ -233,7 +251,7 @@ function HeroContentCarousel({ slides }: { slides: import("@/lib/storefront-cont
   };
   return (
     <div className="relative isolate w-[88%] max-w-xl overflow-hidden rounded-2xl bg-transparent shadow-lg [clip-path:inset(0_round_1rem)] [transform:translateZ(0)] sm:w-full">
-      <div ref={scroller} dir="ltr" className="flex items-start snap-x snap-mandatory scroll-smooth overflow-x-auto overflow-y-hidden rounded-2xl overscroll-x-contain transition-[height] duration-500 ease-out [clip-path:inset(0_round_1rem)] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" style={{ height: activeHeight ? `${activeHeight}px` : undefined }} onScroll={(event) => { const width = event.currentTarget.clientWidth; if (width) setIdx(Math.round(event.currentTarget.scrollLeft / width)); }}>
+      <div ref={scroller} dir="ltr" className="flex items-center snap-x snap-mandatory scroll-smooth overflow-x-auto overflow-y-hidden rounded-2xl overscroll-x-contain transition-[height] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] [clip-path:inset(0_round_1rem)] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" style={{ height: activeHeight ? `${activeHeight}px` : undefined }} onScroll={(event) => { const width = event.currentTarget.clientWidth; if (width) setIdx(Math.round(event.currentTarget.scrollLeft / width)); }}>
         {slides.map((slide, slideIndex) => {
           const title = lang === "ar" ? slide.title_ar || slide.title_en : slide.title_en || slide.title_ar;
           const body = lang === "ar" ? slide.body_ar || slide.body_en : slide.body_en || slide.body_ar;
