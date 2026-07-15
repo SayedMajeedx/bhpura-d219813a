@@ -205,44 +205,7 @@ function HeroBanner() {
 function HeroContentCarousel({ slides }: { slides: import("@/lib/storefront-context").HeroContentSlide[] }) {
   const { settings, lang } = useStorefront();
   const [idx, setIdx] = useState(0);
-  const [activeHeight, setActiveHeight] = useState<number | null>(null);
   const scroller = useRef<HTMLDivElement>(null);
-  const slideRefs = useRef<Array<HTMLElement | null>>([]);
-  const activeHeightRef = useRef<number | null>(null);
-  const heightTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  useEffect(() => {
-    const slide = slideRefs.current[idx];
-    if (!slide) return;
-    const updateHeight = () => {
-      const nextHeight = Math.ceil(slide.getBoundingClientRect().height);
-      if (nextHeight <= 0) return;
-      if (heightTimerRef.current) clearTimeout(heightTimerRef.current);
-
-      const currentHeight = activeHeightRef.current;
-      const applyHeight = () => {
-        activeHeightRef.current = nextHeight;
-        setActiveHeight(nextHeight);
-      };
-
-      // Keep the taller frame while the horizontal movement finishes. This
-      // prevents text -> video transitions from collapsing mid-swipe.
-      if (currentHeight !== null && nextHeight < currentHeight) {
-        heightTimerRef.current = setTimeout(applyHeight, 320);
-      } else {
-        applyHeight();
-      }
-    };
-    updateHeight();
-    const observer = new ResizeObserver(updateHeight);
-    observer.observe(slide);
-    window.addEventListener("resize", updateHeight);
-    return () => {
-      observer.disconnect();
-      window.removeEventListener("resize", updateHeight);
-      if (heightTimerRef.current) clearTimeout(heightTimerRef.current);
-    };
-  }, [idx, lang, slides.length]);
 
   const goTo = (next: number) => {
     const safe = (next + slides.length) % slides.length;
@@ -251,7 +214,7 @@ function HeroContentCarousel({ slides }: { slides: import("@/lib/storefront-cont
   };
   return (
     <div className="relative isolate w-[88%] max-w-xl overflow-hidden rounded-2xl bg-transparent shadow-lg [clip-path:inset(0_round_1rem)] [transform:translateZ(0)] sm:w-full">
-      <div ref={scroller} dir="ltr" className="flex items-center snap-x snap-mandatory scroll-smooth overflow-x-auto overflow-y-hidden rounded-2xl overscroll-x-contain transition-[height] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] [clip-path:inset(0_round_1rem)] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" style={{ height: activeHeight ? `${activeHeight}px` : undefined }} onScroll={(event) => { const width = event.currentTarget.clientWidth; if (width) setIdx(Math.round(event.currentTarget.scrollLeft / width)); }}>
+      <div ref={scroller} dir="ltr" className="flex items-stretch snap-x snap-mandatory scroll-smooth overflow-x-auto overflow-y-hidden rounded-2xl overscroll-x-contain [clip-path:inset(0_round_1rem)] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" onScroll={(event) => { const width = event.currentTarget.clientWidth; if (width) setIdx(Math.round(event.currentTarget.scrollLeft / width)); }}>
         {slides.map((slide, slideIndex) => {
           const title = lang === "ar" ? slide.title_ar || slide.title_en : slide.title_en || slide.title_ar;
           const body = lang === "ar" ? slide.body_ar || slide.body_en : slide.body_en || slide.body_ar;
@@ -259,11 +222,11 @@ function HeroContentCarousel({ slides }: { slides: import("@/lib/storefront-cont
           const mediaUrl = (lang === "ar" ? slide.media_url_ar : slide.media_url_en) || slide.media_url || (lang === "ar" ? slide.media_url_en : slide.media_url_ar) || "";
           const streamIframeUrl = (lang === "ar" ? slide.media_iframe_url_ar : slide.media_iframe_url_en) || (lang === "ar" ? slide.media_iframe_url_en : slide.media_iframe_url_ar) || "";
           const posterUrl = (lang === "ar" ? slide.media_poster_url_ar : slide.media_poster_url_en) || (lang === "ar" ? slide.media_poster_url_en : slide.media_poster_url_ar) || mediaUrl;
-          return <article ref={(node) => { slideRefs.current[slideIndex] = node; }} key={slide.id} dir={lang === "ar" ? "rtl" : "ltr"} className={`min-w-full snap-center snap-always overflow-hidden rounded-2xl transition-[opacity,transform] duration-500 ease-out [clip-path:inset(0_round_1rem)] ${slideIndex === idx ? "scale-100 opacity-100" : "scale-[0.985] opacity-80"}`}>
-            {slide.type === "image" && mediaUrl ? <a href={slide.button_href || "#products"} className="block h-[220px] w-full overflow-hidden rounded-2xl sm:h-[320px]"><ResponsiveImage src={mediaUrl} preset="hero" sizes="100vw" alt={title || ""} className="h-full w-full object-cover" fetchPriority={slideIndex === 0 ? "high" : "auto"} loading={slideIndex === 0 ? "eager" : "lazy"} /></a> : slide.type === "video" && (mediaUrl || streamIframeUrl) ? <a href={slide.button_href || "#products"} className="block aspect-video w-full cursor-pointer overflow-hidden rounded-2xl sm:aspect-auto sm:h-[320px]" aria-label={title || (lang === "ar" ? "فتح الرابط" : "Open link")}><OptimizedVideo src={streamIframeUrl ? undefined : mediaUrl} streamIframeUrl={streamIframeUrl} poster={posterUrl} active={slideIndex === idx} className="pointer-events-none h-full w-full object-contain sm:object-cover" wrapperClassName="pointer-events-none h-full w-full overflow-hidden" /></a> : <div className="flex h-[220px] flex-col justify-center overflow-hidden rounded-2xl bg-white/85 px-5 pb-16 pt-5 backdrop-blur sm:h-[320px] sm:p-8 sm:pb-20" style={{ textAlign: settings.hero_title_align }}>
-              {settings.show_hero_title && title && <h1 className="mb-2 leading-tight sm:mb-3" style={{ color: settings.hero_title_color ?? "var(--sf-heading)", fontSize: `clamp(1.5rem, 5vw, ${settings.hero_title_size}px)`, fontFamily: "var(--sf-font)" }}>{title}</h1>}
-              {settings.show_hero_about && body && <p className="mb-3 line-clamp-4 text-xs leading-relaxed text-neutral-700 sm:mb-4 sm:line-clamp-none sm:text-base">{body}</p>}
-              {button && <div><a href={slide.button_href || "#products"} className="inline-flex items-center rounded-full px-5 py-2.5 text-sm font-semibold sm:px-6 sm:py-3 sm:text-base" style={{ backgroundColor: "var(--sf-btn-primary-bg)", color: "var(--sf-btn-primary-fg)" }}>{button}</a></div>}
+          return <article key={slide.id} dir={lang === "ar" ? "rtl" : "ltr"} className={`aspect-video min-w-full snap-center snap-always overflow-hidden rounded-2xl transition-[opacity,transform] duration-500 ease-out [clip-path:inset(0_round_1rem)] sm:aspect-auto ${slideIndex === idx ? "scale-100 opacity-100" : "scale-[0.985] opacity-80"}`}>
+            {slide.type === "image" && mediaUrl ? <a href={slide.button_href || "#products"} className="block h-full w-full overflow-hidden rounded-2xl sm:h-[320px]"><ResponsiveImage src={mediaUrl} preset="hero" sizes="100vw" alt={title || ""} className="h-full w-full object-cover" fetchPriority={slideIndex === 0 ? "high" : "auto"} loading={slideIndex === 0 ? "eager" : "lazy"} /></a> : slide.type === "video" && (mediaUrl || streamIframeUrl) ? <a href={slide.button_href || "#products"} className="block h-full w-full cursor-pointer overflow-hidden rounded-2xl sm:h-[320px]" aria-label={title || (lang === "ar" ? "فتح الرابط" : "Open link")}><OptimizedVideo src={streamIframeUrl ? undefined : mediaUrl} streamIframeUrl={streamIframeUrl} poster={posterUrl} active={slideIndex === idx} className="pointer-events-none h-full w-full object-contain sm:object-cover" wrapperClassName="pointer-events-none h-full w-full overflow-hidden" /></a> : <div className="flex h-full flex-col justify-center overflow-hidden rounded-2xl bg-white/85 px-4 pb-11 pt-3 backdrop-blur sm:h-[320px] sm:p-8 sm:pb-20" style={{ textAlign: settings.hero_title_align }}>
+              {settings.show_hero_title && title && <h1 className="mb-1 leading-tight sm:mb-3" style={{ color: settings.hero_title_color ?? "var(--sf-heading)", fontSize: `clamp(1.25rem, 5vw, ${settings.hero_title_size}px)`, fontFamily: "var(--sf-font)" }}>{title}</h1>}
+              {settings.show_hero_about && body && <p className="mb-2 line-clamp-2 text-[11px] leading-relaxed text-neutral-700 sm:mb-4 sm:line-clamp-none sm:text-base">{body}</p>}
+              {button && <div><a href={slide.button_href || "#products"} className="inline-flex items-center rounded-full px-4 py-2 text-xs font-semibold sm:px-6 sm:py-3 sm:text-base" style={{ backgroundColor: "var(--sf-btn-primary-bg)", color: "var(--sf-btn-primary-fg)" }}>{button}</a></div>}
             </div>}
           </article>;
         })}
