@@ -6,6 +6,7 @@ import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useMemo, useState, useEffect, useRef } from "react";
 import { ChevronDown, ChevronLeft, ChevronRight, FileText, Grid2X2, Heart } from "lucide-react";
+import { OptimizedVideo, ResponsiveImage } from "@/components/responsive-media";
 
 export const Route = createFileRoute("/$slug/")({
   component: StoreHome,
@@ -141,7 +142,7 @@ function PromoCards() {
       const title = lang === "ar" ? card.title_ar || card.title_en : card.title_en || card.title_ar;
       const subtitle = lang === "ar" ? card.subtitle_ar || card.subtitle_en : card.subtitle_en || card.subtitle_ar;
       return <a key={index} href={card.href || "#products"} className="group relative aspect-[16/9] overflow-hidden rounded-2xl border shadow-sm sm:aspect-[2/1]" style={{ backgroundColor: card.background_color || "#f4f4f4", color: card.text_color || "#111111" }}>
-        {card.image_url && <img src={card.image_url} alt={title || ""} className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" loading="lazy" decoding="async" />}
+        {card.image_url && <ResponsiveImage src={card.image_url} preset="content" sizes="(min-width: 640px) 50vw, 100vw" alt={title || ""} className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" loading="lazy" decoding="async" />}
         <div className="absolute inset-0 bg-gradient-to-r from-black/55 via-black/20 to-transparent" />
         <div className="relative flex h-full flex-col justify-end p-6"><h2 className="text-2xl font-semibold sm:text-3xl">{title}</h2>{subtitle && <p className="mt-1 max-w-md text-sm opacity-90">{subtitle}</p>}</div>
       </a>;
@@ -182,7 +183,7 @@ function HeroBanner() {
     <section className="relative w-full overflow-hidden min-h-[360px] sm:min-h-[55vh] sm:max-h-[640px]">
       {background ? (
         <div className="absolute inset-0">
-          {background.type === "video" ? <video src={background.url} autoPlay muted loop playsInline preload="metadata" className="h-full w-full object-cover" /> : <img src={background.url} alt="" className="h-full w-full object-cover" decoding="async" fetchPriority="high" />}
+          {background.type === "video" ? <OptimizedVideo src={background.url} active className="h-full w-full object-cover" /> : <ResponsiveImage src={background.url} preset="hero" sizes="100vw" alt="" className="h-full w-full object-cover" decoding="async" fetchPriority="high" />}
           <div className="absolute inset-0 bg-black/20" />
         </div>
       ) : (
@@ -199,20 +200,6 @@ function HeroBanner() {
       </div>
     </section>
   );
-}
-
-function HeroCarouselVideo({ src, active, className }: { src: string; active: boolean; className?: string }) {
-  const videoRef = useRef<HTMLVideoElement>(null);
-  useEffect(() => {
-    const video = videoRef.current;
-    if (!video) return;
-    if (active) {
-      void video.play().catch(() => undefined);
-    } else {
-      video.pause();
-    }
-  }, [active, src]);
-  return <video ref={videoRef} src={src} muted loop playsInline autoPlay={active} preload="metadata" disablePictureInPicture className={className} />;
 }
 
 function HeroContentCarousel({ slides }: { slides: import("@/lib/storefront-context").HeroContentSlide[] }) {
@@ -232,8 +219,10 @@ function HeroContentCarousel({ slides }: { slides: import("@/lib/storefront-cont
           const body = lang === "ar" ? slide.body_ar || slide.body_en : slide.body_en || slide.body_ar;
           const button = lang === "ar" ? slide.button_ar || slide.button_en : slide.button_en || slide.button_ar;
           const mediaUrl = (lang === "ar" ? slide.media_url_ar : slide.media_url_en) || slide.media_url || (lang === "ar" ? slide.media_url_en : slide.media_url_ar) || "";
+          const streamIframeUrl = (lang === "ar" ? slide.media_iframe_url_ar : slide.media_iframe_url_en) || (lang === "ar" ? slide.media_iframe_url_en : slide.media_iframe_url_ar) || "";
+          const posterUrl = (lang === "ar" ? slide.media_poster_url_ar : slide.media_poster_url_en) || (lang === "ar" ? slide.media_poster_url_en : slide.media_poster_url_ar) || mediaUrl;
           return <article key={slide.id} dir={lang === "ar" ? "rtl" : "ltr"} className={`min-w-full snap-center snap-always overflow-hidden rounded-2xl transition-[opacity,transform] duration-500 ease-out [clip-path:inset(0_round_1rem)] ${slideIndex === idx ? "scale-100 opacity-100" : "scale-[0.985] opacity-80"}`}>
-            {slide.type === "image" && mediaUrl ? <a href={slide.button_href || "#products"} className="block h-[220px] w-full overflow-hidden rounded-2xl sm:h-[320px]"><img src={mediaUrl} alt={title || ""} className="h-full w-full object-cover" /></a> : slide.type === "video" && mediaUrl ? <a href={slide.button_href || "#products"} className="block h-[220px] w-full cursor-pointer overflow-hidden rounded-2xl sm:h-[320px]" aria-label={title || (lang === "ar" ? "فتح الرابط" : "Open link")}><HeroCarouselVideo src={mediaUrl} active={slideIndex === idx} className="pointer-events-none h-full w-full object-cover" /></a> : <div className="flex h-[220px] flex-col justify-center overflow-hidden rounded-2xl bg-white/85 px-5 pb-16 pt-5 backdrop-blur sm:h-[320px] sm:p-8 sm:pb-20" style={{ textAlign: settings.hero_title_align }}>
+            {slide.type === "image" && mediaUrl ? <a href={slide.button_href || "#products"} className="block h-[220px] w-full overflow-hidden rounded-2xl sm:h-[320px]"><ResponsiveImage src={mediaUrl} preset="hero" sizes="100vw" alt={title || ""} className="h-full w-full object-cover" fetchPriority={slideIndex === 0 ? "high" : "auto"} loading={slideIndex === 0 ? "eager" : "lazy"} /></a> : slide.type === "video" && (mediaUrl || streamIframeUrl) ? <a href={slide.button_href || "#products"} className="block h-[220px] w-full cursor-pointer overflow-hidden rounded-2xl sm:h-[320px]" aria-label={title || (lang === "ar" ? "فتح الرابط" : "Open link")}><OptimizedVideo src={streamIframeUrl ? undefined : mediaUrl} streamIframeUrl={streamIframeUrl} poster={posterUrl} active={slideIndex === idx} className="pointer-events-none h-full w-full object-cover" wrapperClassName="pointer-events-none h-full w-full overflow-hidden" /></a> : <div className="flex h-[220px] flex-col justify-center overflow-hidden rounded-2xl bg-white/85 px-5 pb-16 pt-5 backdrop-blur sm:h-[320px] sm:p-8 sm:pb-20" style={{ textAlign: settings.hero_title_align }}>
               {settings.show_hero_title && title && <h1 className="mb-2 leading-tight sm:mb-3" style={{ color: settings.hero_title_color ?? "var(--sf-heading)", fontSize: `clamp(1.5rem, 5vw, ${settings.hero_title_size}px)`, fontFamily: "var(--sf-font)" }}>{title}</h1>}
               {settings.show_hero_about && body && <p className="mb-3 line-clamp-4 text-xs leading-relaxed text-neutral-700 sm:mb-4 sm:line-clamp-none sm:text-base">{body}</p>}
               {button && <div><a href={slide.button_href || "#products"} className="inline-flex items-center rounded-full px-5 py-2.5 text-sm font-semibold sm:px-6 sm:py-3 sm:text-base" style={{ backgroundColor: "var(--sf-btn-primary-bg)", color: "var(--sf-btn-primary-fg)" }}>{button}</a></div>}
@@ -291,7 +280,7 @@ function Categories({
         <summary className="flex h-11 cursor-pointer list-none items-center gap-2 rounded-xl border border-dashed px-5 font-semibold shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md [&::-webkit-details-marker]:hidden"><Grid2X2 className="h-5 w-5" /><span>{t("القائمة", "Menu")}</span><ChevronDown className="h-4 w-4 transition-transform group-open:rotate-180" /></summary>
         <div className="absolute start-0 top-full z-50 mt-2 w-[min(92vw,620px)] rounded-2xl border p-5 shadow-2xl" style={{ backgroundColor: menuBackground, color: menuText }}>
           <div className="mb-3 flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-muted-foreground"><Grid2X2 className="h-4 w-4" />{t("الأقسام", "Categories")}</div>
-          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">{merged.map((item) => <Link key={`menu-${item.key}`} to="/$slug/$category" params={{ slug: brand.slug, category: item.key }} className="flex min-h-14 items-center gap-3 rounded-xl border p-3 transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:bg-secondary"><div className="grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-lg bg-muted">{item.image ? <img src={item.image} alt="" className="h-full w-full object-cover" /> : <Grid2X2 className="h-4 w-4 opacity-50" />}</div><span className="font-medium">{item.label}</span></Link>)}</div>
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">{merged.map((item) => <Link key={`menu-${item.key}`} to="/$slug/$category" params={{ slug: brand.slug, category: item.key }} className="flex min-h-14 items-center gap-3 rounded-xl border p-3 transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:bg-secondary"><div className="grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-lg bg-muted">{item.image ? <ResponsiveImage src={item.image} preset="thumb" sizes="40px" alt="" className="h-full w-full object-cover" /> : <Grid2X2 className="h-4 w-4 opacity-50" />}</div><span className="font-medium">{item.label}</span></Link>)}</div>
           {settings.menu_show_pages && settings.pages.some((page) => page.title_ar || page.title_en) && <><div className="my-5 border-t" /><div className="mb-3 flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-muted-foreground"><FileText className="h-4 w-4" />{t("الصفحات", "Pages")}</div><div className="grid grid-cols-1 gap-2 sm:grid-cols-2">{settings.pages.map((page, index) => { const title = lang === "ar" ? page.title_ar || page.title_en : page.title_en || page.title_ar; return title ? <Link key={`page-${index}`} to="/$slug/$category" params={{ slug: brand.slug, category: page.slug }} className="flex min-h-11 items-center gap-3 rounded-xl px-3 py-2 transition-colors hover:bg-secondary"><FileText className="h-4 w-4 shrink-0 opacity-60" /><span className="truncate">{title}</span></Link> : null; })}</div></>}
         </div>
       </details>}
@@ -307,7 +296,7 @@ function Categories({
             }`}
           >
             {c.image && (
-              <img src={c.image} alt="" className="h-5 w-5 rounded-full object-cover" />
+              <ResponsiveImage src={c.image} preset="thumb" sizes="20px" alt="" className="h-5 w-5 rounded-full object-cover" />
             )}
             {c.label}
           </Link>
@@ -384,8 +373,10 @@ export function ProductCard({ product, badge }: { product: ProductRow; badge?: "
         {discountPercent > 0 && settings.global_sale_badges_enabled && product.show_sale_badge !== false && <span className="absolute start-0 top-0 z-10 rounded-ee-2xl bg-red-600 px-4 py-2 text-xs font-semibold text-white">{t(`وفر ${discountPercent}%`, `Sale ${discountPercent}% off`)}</span>}
         {badge && !(discountPercent > 0 && settings.global_sale_badges_enabled && product.show_sale_badge !== false) && <span className={`absolute start-0 top-0 z-10 rounded-ee-2xl px-4 py-2 text-xs font-semibold text-white ${badge === "best" ? "bg-amber-600" : "bg-neutral-950"}`}>{badge === "best" ? t("الأكثر مبيعاً", "Best Seller") : t("رائج", "Trending")}</span>}
         {cover ? (
-          <img
+          <ResponsiveImage
             src={cover}
+            preset="card"
+            sizes="(min-width: 1024px) 25vw, (min-width: 768px) 33vw, 50vw"
             alt={displayName}
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
             loading="lazy"

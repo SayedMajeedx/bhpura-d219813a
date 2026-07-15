@@ -21,6 +21,7 @@ import { uploadPublicMedia } from "@/lib/r2-upload";
 import { PasskeySettings } from "@/components/passkey-settings";
 import { META_DESCRIPTION_LIMIT, META_TITLE_LIMIT, sanitizeMetaText } from "@/lib/seo";
 import { ImageCropperDialog } from "@/components/image-cropper-dialog";
+import { OptimizedVideo, ResponsiveImage } from "@/components/responsive-media";
 
 export const Route = createFileRoute("/_authenticated/admin/b/$slug/settings")({
   component: Settings,
@@ -417,7 +418,7 @@ function Settings() {
 }
 
 type MediaItem = { type: "image" | "video"; url: string };
-type HeroSlide = { id: string; type: "text" | "image" | "video"; title_en: string; title_ar: string; body_en: string; body_ar: string; media_url: string; media_url_en?: string; media_url_ar?: string; button_en: string; button_ar: string; button_href: string };
+type HeroSlide = { id: string; type: "text" | "image" | "video"; title_en: string; title_ar: string; body_en: string; body_ar: string; media_url: string; media_url_en?: string; media_url_ar?: string; media_stream_uid_en?: string; media_stream_uid_ar?: string; media_iframe_url_en?: string; media_iframe_url_ar?: string; media_poster_url_en?: string; media_poster_url_ar?: string; button_en: string; button_ar: string; button_href: string };
 type HeroState = { background: MediaItem | null; slides: HeroSlide[]; primary_color: string | null; about_ar: string | null; about_en: string | null };
 const emptyHeroSlide = (): HeroSlide => ({ id: crypto.randomUUID(), type: "text", title_en: "", title_ar: "", body_en: "", body_ar: "", media_url: "", button_en: "Shop now", button_ar: "تسوّق الآن", button_href: "#products" });
 
@@ -589,12 +590,13 @@ function BrandHeroCard({ brandId }: { brandId: string }) {
   const uploadSlideMedia = async (file: Blob, index: number, language: "en" | "ar" = "en") => {
     try {
       setUploading(true);
-      // Hero slide assets share the secured hero namespace. The upload API only
-      // accepts known media kinds, and both hero images and videos are allowed.
-      const url = await uploadPublicMedia(brandId, file, "hero");
       const type: "image" | "video" = file.type.startsWith("video") ? "video" : "image";
       const mediaField = language === "ar" ? "media_url_ar" : "media_url_en";
-      setState((current) => current ? { ...current, slides: current.slides.map((slide, slideIndex) => slideIndex === index ? { ...slide, type, [mediaField]: url } : slide) } : current);
+      const url = await uploadPublicMedia(brandId, file, "hero");
+      const streamPatch = language === "ar"
+        ? { media_stream_uid_ar: "", media_iframe_url_ar: "", media_poster_url_ar: "" }
+        : { media_stream_uid_en: "", media_iframe_url_en: "", media_poster_url_en: "" };
+      setState((current) => current ? { ...current, slides: current.slides.map((slide, slideIndex) => slideIndex === index ? { ...slide, type, [mediaField]: url, ...streamPatch } : slide) } : current);
       toast.success(isAr ? "تم الرفع — لا تنسَ الحفظ" : "Uploaded — remember to save");
     } catch (error: any) { toast.error(error.message ?? "Upload failed"); }
     finally { setUploading(false); }
@@ -691,6 +693,15 @@ function BrandHeroCard({ brandId }: { brandId: string }) {
 
 function HeroSlidesEditor({ state, setState, isAr, uploading, uploadSlideMedia }: { state: HeroState; setState: (state: HeroState) => void; isAr: boolean; uploading: boolean; uploadSlideMedia: (file: File, index: number, language?: "en" | "ar") => Promise<void> }) {
   const update = (index: number, patch: Partial<HeroSlide>) => setState({ ...state, slides: state.slides.map((slide, slideIndex) => slideIndex === index ? { ...slide, ...patch } : slide) });
+  /* Existing videos remain in R2 on the free-only media plan.
+      toast.success(isAr ? "تم إرسال الفيديو القديم للتحسين. احفظ الإعدادات." : "Existing video queued for optimization. Save the settings.");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not optimize this video");
+    } finally {
+      setOptimizing(null);
+    }
+  };
+  */
   return <div className="space-y-3 border-t pt-5">
     <div className="flex items-center justify-between gap-3">
       <div><Label>{isAr ? "شرائح محتوى الواجهة" : "Hero content slides"}</Label><p className="text-xs text-muted-foreground">{isAr ? "حتى 5 شرائح قابلة للسحب: نص أو صورة أو فيديو." : "Up to 5 swipeable text, image, or video slides."}</p></div>
@@ -703,12 +714,14 @@ function HeroSlidesEditor({ state, setState, isAr, uploading, uploadSlideMedia }
       {slide.type !== "text" && <div className="grid gap-3 sm:grid-cols-2">
         {(["en", "ar"] as const).map((language) => {
           const mediaUrl = (language === "ar" ? slide.media_url_ar : slide.media_url_en) || slide.media_url;
+          const streamIframeUrl = language === "ar" ? slide.media_iframe_url_ar : slide.media_iframe_url_en;
+          const posterUrl = (language === "ar" ? slide.media_poster_url_ar : slide.media_poster_url_en) || mediaUrl;
           return <div key={language} className="space-y-2 rounded-lg border p-3" dir={language === "ar" ? "rtl" : "ltr"}>
             <div className="flex items-center justify-between gap-2">
               <Label>{language === "ar" ? "الوسائط العربية" : "English media"}</Label>
               {mediaUrl && <Button type="button" size="sm" variant="ghost" onClick={() => update(index, language === "ar" ? { media_url_ar: "" } : { media_url_en: "" })}>{language === "ar" ? "إزالة" : "Remove"}</Button>}
             </div>
-            {mediaUrl && (slide.type === "video" ? <video src={mediaUrl} className="aspect-video w-full rounded-lg bg-black object-contain" muted controls /> : <img src={mediaUrl} alt="" className="aspect-video w-full rounded-lg object-cover" />)}
+            {mediaUrl && (slide.type === "video" ? <OptimizedVideo src={streamIframeUrl ? undefined : mediaUrl} streamIframeUrl={streamIframeUrl} poster={posterUrl} className="aspect-video w-full rounded-lg bg-black object-cover" wrapperClassName="aspect-video w-full overflow-hidden rounded-lg bg-black" /> : <ResponsiveImage src={mediaUrl} preset="hero" alt="" className="aspect-video w-full rounded-lg object-cover" />)}
             <label className="flex h-12 cursor-pointer items-center justify-center rounded-lg border border-dashed px-4 text-sm text-muted-foreground hover:bg-secondary">
               {uploading ? "…" : (language === "ar" ? "رفع وسائط عربية" : "Upload English media")}
               <input type="file" accept={slide.type === "video" ? "video/mp4" : "image/jpeg,image/png,image/webp"} className="hidden" onChange={(event) => { const file = event.target.files?.[0]; if (file) void uploadSlideMedia(file, index, language); event.target.value = ""; }} />

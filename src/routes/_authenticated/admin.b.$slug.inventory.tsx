@@ -23,6 +23,7 @@ import { BilingualField } from "@/components/bilingual-field";
 import { deletePublicMediaUrl, uploadPublicMedia } from "@/lib/r2-upload";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { parseVariantPrompt, type VariantGenerationPlan } from "@/lib/generate-variants.functions";
+import { OptimizedVideo, ResponsiveImage } from "@/components/responsive-media";
 
 /** Common measurement units the admin can pick from for a "size" variant. */
 const SIZE_UNITS = ["", "cm", "mm", "m", "inch", "ft", "kg", "g", "ml", "l"] as const;
@@ -31,7 +32,7 @@ export const Route = createFileRoute("/_authenticated/admin/b/$slug/inventory")(
   component: Inventory,
 });
 
-type MediaItem = { type: "image" | "video"; url: string };
+type MediaItem = { type: "image" | "video"; url: string; stream_uid?: string; stream_iframe_url?: string; poster_url?: string };
 type CustomField = {
   key: string;
   label_ar: string | null;
@@ -584,9 +585,9 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
             {form.media.map((m, i) => (
               <div key={i} className="relative w-20 h-20 rounded-md border border-border overflow-hidden bg-secondary">
                 {m.type === "video" ? (
-                  <video src={m.url} className="w-full h-full object-cover" muted />
+                  <OptimizedVideo src={m.stream_iframe_url ? undefined : m.url} streamIframeUrl={m.stream_iframe_url} poster={m.poster_url ?? m.url} className="h-full w-full object-cover" wrapperClassName="h-full w-full overflow-hidden" />
                 ) : (
-                  <img src={m.url} alt="" className="w-full h-full object-cover" />
+                  <ResponsiveImage src={m.url} preset="thumb" sizes="80px" alt="" className="w-full h-full object-cover" />
                 )}
                 <button
                   type="button"
@@ -611,6 +612,16 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
               />
             </label>
           </div>
+          {/* Paid video transcoding is intentionally disabled on the free-only media plan.
+            try {
+              setUploading(true);
+              const migrated = await Promise.all(form.media.map(async (item) => item.type === "video" && !item.stream_uid && item.url ? { ...item, ...(await optimizeExistingVideo(brand.id, item.url)) } : item));
+              setForm((current) => ({ ...current, media: migrated }));
+              toast.success(isAr ? "بدأ تحسين الفيديوهات الحالية — احفظ المنتج" : "Existing videos are being optimized — save the product");
+            } catch (error: any) { toast.error(error.message ?? "Unable to optimize existing videos"); }
+            finally { setUploading(false); }
+          }}>{isAr ? "تحسين الفيديوهات الحالية" : "Optimize existing videos"}</Button>}
+          */}
         </div>
       </div>
       <ImageCropperDialog

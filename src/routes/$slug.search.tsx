@@ -6,6 +6,7 @@ import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useEffect, useMemo, useState } from "react";
 import { trackStorefrontEvent } from "@/lib/storefront-analytics";
+import { ResponsiveImage } from "@/components/responsive-media";
 
 type SearchParams = { q: string };
 
@@ -100,7 +101,7 @@ function SearchPage() {
               >
                 <div className="aspect-[3/4] w-full overflow-hidden rounded-lg bg-muted">
                   {imageUrl ? (
-                    <img src={imageUrl} alt={displayName} className="h-full w-full object-cover transition-transform group-hover:scale-105" />
+                    <ResponsiveImage src={imageUrl} preset="card" sizes="(min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw" alt={displayName} className="h-full w-full object-cover transition-transform group-hover:scale-105" />
                   ) : null}
                 </div>
                 <div className="mt-2">

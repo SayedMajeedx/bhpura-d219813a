@@ -7,6 +7,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useMemo, useState } from "react";
 import { StorefrontPageContent } from "@/routes/$slug.page.$idx";
 import { faviconType } from "@/lib/favicon";
+import { ResponsiveImage } from "@/components/responsive-media";
 
 export const Route = createFileRoute("/$slug/$category")({
   loader: async ({ params }) => {
@@ -124,7 +125,7 @@ function CategoryPage() {
   return <main>
     <section className="border-b" style={{ backgroundColor: "var(--sf-header-bg)", color: "var(--sf-header-fg)" }}><div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-12">
       <Link to="/$slug" params={{ slug: brand.slug }} className="mb-5 inline-flex items-center gap-1 text-sm opacity-70 hover:opacity-100"><BackIcon className="h-4 w-4" />{t("العودة للمتجر", "Back to store")}</Link>
-      <div className="flex items-center gap-5">{category?.image_url && <img src={category.image_url} alt="" className="h-20 w-20 rounded-2xl object-cover sm:h-28 sm:w-28" />}<div><p className="text-xs uppercase tracking-[0.2em] opacity-60">{t("القسم", "Category")}</p><h1 className="mt-1 font-display text-3xl sm:text-5xl" style={{ color: "var(--sf-heading)" }}>{title}</h1></div></div>
+      <div className="flex items-center gap-5">{category?.image_url && <ResponsiveImage src={category.image_url} preset="thumb" sizes="112px" alt="" className="h-20 w-20 rounded-2xl object-cover sm:h-28 sm:w-28" />}<div><p className="text-xs uppercase tracking-[0.2em] opacity-60">{t("القسم", "Category")}</p><h1 className="mt-1 font-display text-3xl sm:text-5xl" style={{ color: "var(--sf-heading)" }}>{title}</h1></div></div>
     </div></section>
     <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6"><div className="mb-6 flex justify-end"><select value={sort} onChange={(event) => setSort(event.target.value as typeof sort)} className="h-11 rounded-lg border bg-background px-3 text-sm"><option value="new">{t("الأحدث أولاً", "Newest first")}</option><option value="old">{t("الأقدم أولاً", "Oldest first")}</option><option value="price-low">{t("السعر: الأقل أولاً", "Price: low to high")}</option><option value="price-high">{t("السعر: الأعلى أولاً", "Price: high to low")}</option></select></div><ProductGrid products={sortedProducts} loading={categoryQuery.isLoading || productsQuery.isLoading} categoryEmpty onViewAll={() => { window.location.href = `/${brand.slug}`; }} /></section>
   </main>;

@@ -10,6 +10,7 @@ import { formatSizeWithUnit } from "@/components/bilingual-field";
 import { ChevronLeft, ChevronRight, ShoppingBag, AlertCircle, Heart } from "lucide-react";
 import { toast } from "sonner";
 import { trackStorefrontEvent } from "@/lib/storefront-analytics";
+import { OptimizedVideo, ResponsiveImage } from "@/components/responsive-media";
 
 export const Route = createFileRoute("/$slug/product/$id")({
   component: ProductDetail,
@@ -157,7 +158,7 @@ function ProductDetail() {
   const media = useMemo(() => {
     if (!product) return [];
     const arr = Array.isArray(product.media)
-      ? (product.media as Array<{ type: "image" | "video"; url: string }>)
+      ? (product.media as Array<{ type: "image" | "video"; url: string; stream_uid?: string; stream_iframe_url?: string; poster_url?: string }>)
       : [];
     if (arr.length > 0) return arr;
     if (product.image_url) return [{ type: "image" as const, url: product.image_url }];
@@ -303,14 +304,15 @@ function ProductDetail() {
           {media.length > 0 ? (
             <>
               {media[mediaIdx].type === "video" ? (
-                <video
-                  src={media[mediaIdx].url}
-                  controls
-                  playsInline
-                  className="w-full h-full object-contain bg-black"
+                <OptimizedVideo
+                  src={media[mediaIdx].stream_iframe_url ? undefined : media[mediaIdx].url}
+                  streamIframeUrl={media[mediaIdx].stream_iframe_url}
+                  poster={media[mediaIdx].poster_url ?? media[mediaIdx].url}
+                  className="h-full w-full bg-black object-contain"
+                  wrapperClassName="h-full w-full overflow-hidden bg-black"
                 />
               ) : (
-                <img src={media[mediaIdx].url} alt={displayName} className="w-full h-full object-cover" />
+                <ResponsiveImage src={media[mediaIdx].url} preset="product" sizes="(min-width: 1024px) 55vw, 100vw" alt={displayName} className="w-full h-full object-cover" fetchPriority="high" />
               )}
               {media.length > 1 && (
                 <>
@@ -351,7 +353,7 @@ function ProductDetail() {
                 {m.type === "video" ? (
                   <div className="w-full h-full bg-black grid place-items-center text-white text-[10px]">▶</div>
                 ) : (
-                  <img src={m.url} alt="" className="w-full h-full object-cover" />
+                  <ResponsiveImage src={m.url} preset="thumb" sizes="80px" alt="" className="w-full h-full object-cover" />
                 )}
               </button>
             ))}
