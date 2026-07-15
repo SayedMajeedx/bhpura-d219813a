@@ -37,16 +37,13 @@ export function OptimizedVideo({ src, poster, streamIframeUrl, active = true, cl
   const optimizedMobileSrc = src ? imageKitVideoUrl(src, "mobile") : null;
   const generatedPoster = src ? imageKitVideoPosterUrl(src) : null;
   const resolvedPoster = isLikelyImageUrl(poster) ? poster : generatedPoster;
-  const [useOptimizedSource, setUseOptimizedSource] = useState(Boolean(optimizedDesktopSrc));
-
-  useEffect(() => setUseOptimizedSource(Boolean(optimizedDesktopSrc)), [optimizedDesktopSrc, src]);
 
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
     if (active) void video.play().catch(() => undefined);
     else video.pause();
-  }, [active, src, useOptimizedSource]);
+  }, [active, src, optimizedDesktopSrc, optimizedMobileSrc]);
 
   if (streamIframeUrl) {
     const separator = streamIframeUrl.includes("?") ? "&" : "?";
@@ -63,7 +60,12 @@ export function OptimizedVideo({ src, poster, streamIframeUrl, active = true, cl
     </div>;
   }
 
-  const sourceKey = useOptimizedSource ? `${optimizedMobileSrc}|${optimizedDesktopSrc}` : src ?? "";
+  // When ImageKit can represent this asset, keep the browser on ImageKit. A
+  // media element may emit a transient error while responsive sources are
+  // being selected or a carousel slide is paused. Falling back to the R2 URL
+  // in that situation downloads the original MP4 in addition to the optimized
+  // rendition and defeats the delivery optimization.
+  const sourceKey = optimizedDesktopSrc ? `${optimizedMobileSrc}|${optimizedDesktopSrc}` : src ?? "";
   return <video
     ref={videoRef}
     key={sourceKey}
@@ -76,11 +78,10 @@ export function OptimizedVideo({ src, poster, streamIframeUrl, active = true, cl
     className={className}
     {...props}
     onError={(event) => {
-      if (useOptimizedSource && src) setUseOptimizedSource(false);
       props.onError?.(event);
     }}
   >
-    {useOptimizedSource && optimizedDesktopSrc ? <>
+    {optimizedDesktopSrc ? <>
       {optimizedMobileSrc ? <source src={optimizedMobileSrc} media="(max-width: 767px)" /> : null}
       <source src={optimizedDesktopSrc} />
     </> : src ? <source src={src} /> : null}
