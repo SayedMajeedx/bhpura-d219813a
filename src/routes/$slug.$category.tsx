@@ -1,4 +1,4 @@
-import { createFileRoute, Link, notFound } from "@tanstack/react-router";
+import { createFileRoute, Link, notFound, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { publicSupabase as supabase } from "@/integrations/supabase/client";
 import { useStorefront } from "@/lib/storefront-context";
@@ -74,6 +74,7 @@ function CategoryPage() {
   const { category: categorySlug } = Route.useParams();
   const cmsPage = settings.pages.find((page) => page.slug === categorySlug);
   const [sort, setSort] = useState<"new" | "old" | "price-low" | "price-high">("new");
+  const navigate = useNavigate();
   const smartKind = ["new-arrivals", "new"].includes(categorySlug) ? "new" : ["most-selling", "best-sellers", "best-selling"].includes(categorySlug) ? "best" : ["offers", "sale", "discounts"].includes(categorySlug) ? "offers" : null;
   const categoryQuery = useQuery({
     queryKey: ["storefront", brand.slug, "category", categorySlug],
@@ -85,6 +86,9 @@ function CategoryPage() {
       return data as { id: string; slug: string; name_en: string; name_ar: string | null; image_url: string | null };
     },
     enabled: !cmsPage,
+    staleTime: 5 * 60_000,
+    gcTime: 30 * 60_000,
+    refetchOnWindowFocus: false,
   });
   const category = categoryQuery.data;
   const productsQuery = useQuery({
@@ -112,6 +116,9 @@ function CategoryPage() {
       if (error) throw error;
       return (data ?? []) as unknown as ProductRow[];
     },
+    staleTime: 5 * 60_000,
+    gcTime: 30 * 60_000,
+    refetchOnWindowFocus: false,
   });
   const title = category ? (lang === "ar" ? category.name_ar || category.name_en : category.name_en) : "";
   const sortedProducts = useMemo(() => {
@@ -127,7 +134,7 @@ function CategoryPage() {
       <Link to="/$slug" params={{ slug: brand.slug }} className="mb-5 inline-flex items-center gap-1 text-sm opacity-70 hover:opacity-100"><BackIcon className="h-4 w-4" />{t("العودة للمتجر", "Back to store")}</Link>
       <div className="flex items-center gap-5">{category?.image_url && <ResponsiveImage src={category.image_url} preset="thumb" sizes="112px" alt="" className="h-20 w-20 rounded-2xl object-cover sm:h-28 sm:w-28" />}<div><p className="text-xs uppercase tracking-[0.2em] opacity-60">{t("القسم", "Category")}</p><h1 className="mt-1 font-display text-3xl sm:text-5xl" style={{ color: "var(--sf-heading)" }}>{title}</h1></div></div>
     </div></section>
-    <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6"><div className="mb-6 flex justify-end"><select value={sort} onChange={(event) => setSort(event.target.value as typeof sort)} className="h-11 rounded-lg border bg-background px-3 text-sm"><option value="new">{t("الأحدث أولاً", "Newest first")}</option><option value="old">{t("الأقدم أولاً", "Oldest first")}</option><option value="price-low">{t("السعر: الأقل أولاً", "Price: low to high")}</option><option value="price-high">{t("السعر: الأعلى أولاً", "Price: high to low")}</option></select></div><ProductGrid products={sortedProducts} loading={categoryQuery.isLoading || productsQuery.isLoading} categoryEmpty onViewAll={() => { window.location.href = `/${brand.slug}`; }} /></section>
+    <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6"><div className="mb-6 flex justify-end"><select value={sort} onChange={(event) => setSort(event.target.value as typeof sort)} className="h-11 rounded-lg border bg-background px-3 text-sm"><option value="new">{t("الأحدث أولاً", "Newest first")}</option><option value="old">{t("الأقدم أولاً", "Oldest first")}</option><option value="price-low">{t("السعر: الأقل أولاً", "Price: low to high")}</option><option value="price-high">{t("السعر: الأعلى أولاً", "Price: high to low")}</option></select></div><ProductGrid products={sortedProducts} loading={categoryQuery.isLoading || productsQuery.isLoading} categoryEmpty onViewAll={() => { void navigate({ to: "/$slug", params: { slug: brand.slug } }); }} /></section>
   </main>;
 }
 

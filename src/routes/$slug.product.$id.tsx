@@ -99,6 +99,9 @@ function ProductDetail() {
       if (error) throw error;
       return data as unknown as Product | null;
     },
+    staleTime: 5 * 60_000,
+    gcTime: 30 * 60_000,
+    refetchOnWindowFocus: false,
   });
 
   useEffect(() => {
@@ -122,7 +125,9 @@ function ProductDetail() {
       if (error) throw error;
       return (data ?? []) as unknown as RecommendationProduct[];
     },
-    staleTime: 30_000,
+    staleTime: 5 * 60_000,
+    gcTime: 30 * 60_000,
+    refetchOnWindowFocus: false,
   });
 
   const { data: bestSellerRows = [] } = useQuery({
@@ -135,7 +140,9 @@ function ProductDetail() {
       if (error) throw error;
       return (data ?? []) as Array<{ product_id: string; units_sold: number }>;
     },
-    staleTime: 60_000,
+    staleTime: 5 * 60_000,
+    gcTime: 30 * 60_000,
+    refetchOnWindowFocus: false,
   });
 
   const relatedProducts = useMemo(

@@ -4,7 +4,7 @@ import { publicSupabase as supabase } from "@/integrations/supabase/client";
 import { useStorefront, formatPrice, pickName } from "@/lib/storefront-context";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useMemo, useState, useEffect, useRef } from "react";
+import { useMemo, useState, useEffect, useRef, type AnchorHTMLAttributes } from "react";
 import { ChevronDown, ChevronLeft, ChevronRight, FileText, Grid2X2, Heart } from "lucide-react";
 import { OptimizedVideo, ResponsiveImage } from "@/components/responsive-media";
 
@@ -64,9 +64,9 @@ function StoreHome() {
       if (error) throw error;
       return (data ?? []) as unknown as ProductRow[];
     },
-    staleTime: 30_000,
-    refetchOnWindowFocus: true,
-    refetchOnMount: "always",
+    staleTime: 5 * 60_000,
+    gcTime: 30 * 60_000,
+    refetchOnWindowFocus: false,
   });
 
   const { data: categories } = useQuery({
@@ -80,7 +80,9 @@ function StoreHome() {
       if (error) throw error;
       return (data ?? []) as CategoryRow[];
     },
-    staleTime: 60_000,
+    staleTime: 5 * 60_000,
+    gcTime: 30 * 60_000,
+    refetchOnWindowFocus: false,
   });
 
   const filtered = useMemo(() => {
@@ -95,7 +97,9 @@ function StoreHome() {
       if (error) throw error;
       return (data ?? []) as Array<{ product_id: string; units_sold: number }>;
     },
-    staleTime: 60_000,
+    staleTime: 5 * 60_000,
+    gcTime: 30 * 60_000,
+    refetchOnWindowFocus: false,
   });
 
   const newest = (products ?? []).slice(0, 8);
@@ -105,7 +109,9 @@ function StoreHome() {
   const { data: trendingRows } = useQuery({
     queryKey: ["storefront", brand.slug, "trending"],
     queryFn: async () => { const { data, error } = await (supabase.rpc as any)("get_storefront_trending", { p_brand_slug: brand.slug, p_limit: 8 }); if (error) throw error; return data ?? []; },
-    staleTime: 60_000,
+    staleTime: 5 * 60_000,
+    gcTime: 30 * 60_000,
+    refetchOnWindowFocus: false,
   });
   const trendingIds = new Map((trendingRows ?? []).map((row: any, index: number) => [row.product_id, index]));
   const trending = (products ?? []).filter((product) => trendingIds.has(product.id)).sort((a, b) => (trendingIds.get(a.id) ?? 99) - (trendingIds.get(b.id) ?? 99));
@@ -141,11 +147,11 @@ function PromoCards() {
     {cards.map((card, index) => {
       const title = lang === "ar" ? card.title_ar || card.title_en : card.title_en || card.title_ar;
       const subtitle = lang === "ar" ? card.subtitle_ar || card.subtitle_en : card.subtitle_en || card.subtitle_ar;
-      return <a key={index} href={card.href || "#products"} className="group relative aspect-[16/9] overflow-hidden rounded-2xl border shadow-sm sm:aspect-[2/1]" style={{ backgroundColor: card.background_color || "#f4f4f4", color: card.text_color || "#111111" }}>
+      return <StorefrontLink key={index} href={card.href || "#products"} className="group relative aspect-[16/9] overflow-hidden rounded-2xl border shadow-sm sm:aspect-[2/1]" style={{ backgroundColor: card.background_color || "#f4f4f4", color: card.text_color || "#111111" }}>
         {card.image_url && <ResponsiveImage src={card.image_url} preset="content" sizes="(min-width: 640px) 50vw, 100vw" alt={title || ""} className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" loading="lazy" decoding="async" />}
         <div className="absolute inset-0 bg-gradient-to-r from-black/55 via-black/20 to-transparent" />
         <div className="relative flex h-full flex-col justify-end p-6"><h2 className="text-2xl font-semibold sm:text-3xl">{title}</h2>{subtitle && <p className="mt-1 max-w-md text-sm opacity-90">{subtitle}</p>}</div>
-      </a>;
+      </StorefrontLink>;
     })}
   </div>;
 }
@@ -223,10 +229,10 @@ function HeroContentCarousel({ slides }: { slides: import("@/lib/storefront-cont
           const streamIframeUrl = (lang === "ar" ? slide.media_iframe_url_ar : slide.media_iframe_url_en) || (lang === "ar" ? slide.media_iframe_url_en : slide.media_iframe_url_ar) || "";
           const posterUrl = (lang === "ar" ? slide.media_poster_url_ar : slide.media_poster_url_en) || (lang === "ar" ? slide.media_poster_url_en : slide.media_poster_url_ar) || mediaUrl;
           return <article key={slide.id} dir={lang === "ar" ? "rtl" : "ltr"} className={`aspect-video min-w-full snap-center snap-always overflow-hidden rounded-2xl transition-[opacity,transform] duration-500 ease-out [clip-path:inset(0_round_1rem)] sm:aspect-auto ${slideIndex === idx ? "scale-100 opacity-100" : "scale-[0.985] opacity-80"}`}>
-            {slide.type === "image" && mediaUrl ? <a href={slide.button_href || "#products"} className="block h-full w-full overflow-hidden rounded-2xl sm:h-[320px]"><ResponsiveImage src={mediaUrl} preset="hero" sizes="100vw" alt={title || ""} className="h-full w-full object-cover" fetchPriority={slideIndex === 0 ? "high" : "auto"} loading={slideIndex === 0 ? "eager" : "lazy"} /></a> : slide.type === "video" && (mediaUrl || streamIframeUrl) ? <a href={slide.button_href || "#products"} className="block h-full w-full cursor-pointer overflow-hidden rounded-2xl sm:h-[320px]" aria-label={title || (lang === "ar" ? "فتح الرابط" : "Open link")}><OptimizedVideo src={streamIframeUrl ? undefined : mediaUrl} streamIframeUrl={streamIframeUrl} poster={posterUrl} active={slideIndex === idx} className="pointer-events-none h-full w-full object-contain sm:object-cover" wrapperClassName="pointer-events-none h-full w-full overflow-hidden" /></a> : <div className="flex h-full flex-col justify-center overflow-hidden rounded-2xl bg-white/85 px-4 pb-11 pt-3 backdrop-blur sm:h-[320px] sm:p-8 sm:pb-20" style={{ textAlign: settings.hero_title_align }}>
+            {slide.type === "image" && mediaUrl ? <StorefrontLink href={slide.button_href || "#products"} className="block h-full w-full overflow-hidden rounded-2xl sm:h-[320px]"><ResponsiveImage src={mediaUrl} preset="hero" sizes="100vw" alt={title || ""} className="h-full w-full object-cover" fetchPriority={slideIndex === 0 ? "high" : "auto"} loading={slideIndex === 0 ? "eager" : "lazy"} /></StorefrontLink> : slide.type === "video" && (mediaUrl || streamIframeUrl) ? <StorefrontLink href={slide.button_href || "#products"} className="block h-full w-full cursor-pointer overflow-hidden rounded-2xl sm:h-[320px]" aria-label={title || (lang === "ar" ? "فتح الرابط" : "Open link")}><OptimizedVideo src={streamIframeUrl ? undefined : mediaUrl} streamIframeUrl={streamIframeUrl} poster={posterUrl} active={slideIndex === idx} className="pointer-events-none h-full w-full object-contain sm:object-cover" wrapperClassName="pointer-events-none h-full w-full overflow-hidden" /></StorefrontLink> : <div className="flex h-full flex-col justify-center overflow-hidden rounded-2xl bg-white/85 px-4 pb-11 pt-3 backdrop-blur sm:h-[320px] sm:p-8 sm:pb-20" style={{ textAlign: settings.hero_title_align }}>
               {settings.show_hero_title && title && <h1 className="mb-1 leading-tight sm:mb-3" style={{ color: settings.hero_title_color ?? "var(--sf-heading)", fontSize: `clamp(1.25rem, 5vw, ${settings.hero_title_size}px)`, fontFamily: "var(--sf-font)" }}>{title}</h1>}
               {settings.show_hero_about && body && <p className="mb-2 line-clamp-2 text-[11px] leading-relaxed text-neutral-700 sm:mb-4 sm:line-clamp-none sm:text-base">{body}</p>}
-              {button && <div><a href={slide.button_href || "#products"} className="inline-flex items-center rounded-full px-4 py-2 text-xs font-semibold sm:px-6 sm:py-3 sm:text-base" style={{ backgroundColor: "var(--sf-btn-primary-bg)", color: "var(--sf-btn-primary-fg)" }}>{button}</a></div>}
+              {button && <div><StorefrontLink href={slide.button_href || "#products"} className="inline-flex items-center rounded-full px-4 py-2 text-xs font-semibold sm:px-6 sm:py-3 sm:text-base" style={{ backgroundColor: "var(--sf-btn-primary-bg)", color: "var(--sf-btn-primary-fg)" }}>{button}</StorefrontLink></div>}
             </div>}
           </article>;
         })}
@@ -238,6 +244,15 @@ function HeroContentCarousel({ slides }: { slides: import("@/lib/storefront-cont
       </div>}
     </div>
   );
+}
+
+function StorefrontLink({ href, ...props }: { href: string } & Omit<AnchorHTMLAttributes<HTMLAnchorElement>, "href">) {
+  const value = String(href || "#products").trim();
+  const internalAbsolute = /^https?:\/\/(?:www\.)?(?:boutq\.store|bhpura\.vercel\.app)(?:\/|$)/i.test(value);
+  const destination = internalAbsolute ? value.replace(/^https?:\/\/[^/]+/i, "") || "/" : value;
+  const external = /^(?:https?:)?\/\//i.test(destination) || /^(?:mailto|tel):/i.test(destination);
+  if (external || destination.startsWith("#")) return <a href={destination} {...props} />;
+  return <Link to={destination as any} preload="intent" {...(props as any)} />;
 }
 
 function Categories({
@@ -369,7 +384,7 @@ export function ProductCard({ product, badge }: { product: ProductRow; badge?: "
       <button type="button" onClick={() => toggleWishlist(product.id)} aria-label={wished ? t("إزالة من المفضلة", "Remove from wishlist") : t("إضافة إلى المفضلة", "Add to wishlist")} className="absolute end-2 top-2 z-20 grid h-11 w-11 place-items-center rounded-full bg-white/95 text-neutral-900 shadow-md transition hover:scale-105">
         <Heart className={`h-5 w-5 ${wished ? "fill-red-600 text-red-600" : ""}`} />
       </button>
-      <Link to="/$slug/product/$id" params={{ slug: brand.slug, id: product.id }} className="block" onClick={() => { void (supabase.rpc as any)("record_storefront_product_engagement", { p_brand_slug: brand.slug, p_product_id: product.id, p_event: "click" }); }}>
+      <Link to="/$slug/product/$id" params={{ slug: brand.slug, id: product.id }} preload="intent" className="block" onClick={() => { void (supabase.rpc as any)("record_storefront_product_engagement", { p_brand_slug: brand.slug, p_product_id: product.id, p_event: "click" }); }}>
       <div className="aspect-[3/4] rounded-xl overflow-hidden bg-muted relative">
         {discountPercent > 0 && settings.global_sale_badges_enabled && product.show_sale_badge !== false && <span className="absolute start-0 top-0 z-10 rounded-ee-2xl bg-red-600 px-4 py-2 text-xs font-semibold text-white">{t(`وفر ${discountPercent}%`, `Sale ${discountPercent}% off`)}</span>}
         {badge && !(discountPercent > 0 && settings.global_sale_badges_enabled && product.show_sale_badge !== false) && <span className={`absolute start-0 top-0 z-10 rounded-ee-2xl px-4 py-2 text-xs font-semibold text-white ${badge === "best" ? "bg-amber-600" : "bg-neutral-950"}`}>{badge === "best" ? t("الأكثر مبيعاً", "Best Seller") : t("رائج", "Trending")}</span>}

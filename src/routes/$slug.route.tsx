@@ -27,6 +27,8 @@ import { faviconType, resolveBrandFavicon, useDynamicFavicon } from "@/lib/favic
 import { StorefrontAnalytics } from "@/components/storefront-analytics";
 
 export const Route = createFileRoute("/$slug")({
+  staleTime: 5 * 60_000,
+  preloadStaleTime: 5 * 60_000,
   loader: async ({ params }) => {
     const { data: baseBrand, error: brandErr } = await supabase
       .from("brands")
@@ -485,7 +487,9 @@ function MobileStorefrontDropdown() {
       if (error) throw error;
       return data ?? [];
     },
-    staleTime: 60_000,
+    staleTime: 5 * 60_000,
+    gcTime: 30 * 60_000,
+    refetchOnWindowFocus: false,
   });
   const close = () => {
     if (detailsRef.current) detailsRef.current.open = false;
@@ -661,7 +665,9 @@ function DesktopStoreNavigation() {
       if (error) throw error;
       return data ?? [];
     },
-    staleTime: 60_000,
+    staleTime: 5 * 60_000,
+    gcTime: 30 * 60_000,
+    refetchOnWindowFocus: false,
   });
   const isSale = (c: any) => /sale|offers?|discount|تنزيل|عروض/i.test(`${c.slug ?? ""} ${c.name_en ?? ""} ${c.name_ar ?? ""}`);
   return <nav className="hidden border-b bg-[var(--sf-header-bg)] text-[var(--sf-header-fg)] shadow-sm md:block">
