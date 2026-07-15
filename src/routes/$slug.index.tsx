@@ -180,7 +180,7 @@ function HeroBanner() {
   }];
 
   return (
-    <section className="relative w-full overflow-hidden min-h-[360px] sm:min-h-[55vh] sm:max-h-[640px]">
+    <section className="relative w-full overflow-hidden py-6 sm:min-h-[55vh] sm:max-h-[640px] sm:py-0">
       {background ? (
         <div className="absolute inset-0">
           {background.type === "video" ? <OptimizedVideo src={background.url} active className="h-full w-full object-cover" /> : <ResponsiveImage src={background.url} preset="hero" sizes="100vw" alt="" className="h-full w-full object-cover" decoding="async" fetchPriority="high" />}
@@ -195,7 +195,7 @@ function HeroBanner() {
         />
       )}
 
-      <div className="relative z-10 mx-auto flex h-full min-h-[360px] max-w-7xl items-center px-4 sm:min-h-[55vh] sm:px-6">
+      <div className="relative z-10 mx-auto flex max-w-7xl items-center px-4 sm:min-h-[55vh] sm:px-6">
         <HeroContentCarousel slides={slides} />
       </div>
     </section>
@@ -205,7 +205,27 @@ function HeroBanner() {
 function HeroContentCarousel({ slides }: { slides: import("@/lib/storefront-context").HeroContentSlide[] }) {
   const { settings, lang } = useStorefront();
   const [idx, setIdx] = useState(0);
+  const [activeHeight, setActiveHeight] = useState<number | null>(null);
   const scroller = useRef<HTMLDivElement>(null);
+  const slideRefs = useRef<Array<HTMLElement | null>>([]);
+
+  useEffect(() => {
+    const slide = slideRefs.current[idx];
+    if (!slide) return;
+    const updateHeight = () => {
+      const nextHeight = Math.ceil(slide.getBoundingClientRect().height);
+      if (nextHeight > 0) setActiveHeight(nextHeight);
+    };
+    updateHeight();
+    const observer = new ResizeObserver(updateHeight);
+    observer.observe(slide);
+    window.addEventListener("resize", updateHeight);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("resize", updateHeight);
+    };
+  }, [idx, lang, slides.length]);
+
   const goTo = (next: number) => {
     const safe = (next + slides.length) % slides.length;
     setIdx(safe);
@@ -213,7 +233,7 @@ function HeroContentCarousel({ slides }: { slides: import("@/lib/storefront-cont
   };
   return (
     <div className="relative isolate w-[88%] max-w-xl overflow-hidden rounded-2xl bg-transparent shadow-lg [clip-path:inset(0_round_1rem)] [transform:translateZ(0)] sm:w-full">
-      <div ref={scroller} dir="ltr" className="flex snap-x snap-mandatory scroll-smooth overflow-x-auto overflow-y-hidden rounded-2xl overscroll-x-contain [clip-path:inset(0_round_1rem)] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" onScroll={(event) => { const width = event.currentTarget.clientWidth; if (width) setIdx(Math.round(event.currentTarget.scrollLeft / width)); }}>
+      <div ref={scroller} dir="ltr" className="flex items-start snap-x snap-mandatory scroll-smooth overflow-x-auto overflow-y-hidden rounded-2xl overscroll-x-contain transition-[height] duration-500 ease-out [clip-path:inset(0_round_1rem)] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" style={{ height: activeHeight ? `${activeHeight}px` : undefined }} onScroll={(event) => { const width = event.currentTarget.clientWidth; if (width) setIdx(Math.round(event.currentTarget.scrollLeft / width)); }}>
         {slides.map((slide, slideIndex) => {
           const title = lang === "ar" ? slide.title_ar || slide.title_en : slide.title_en || slide.title_ar;
           const body = lang === "ar" ? slide.body_ar || slide.body_en : slide.body_en || slide.body_ar;
@@ -221,7 +241,7 @@ function HeroContentCarousel({ slides }: { slides: import("@/lib/storefront-cont
           const mediaUrl = (lang === "ar" ? slide.media_url_ar : slide.media_url_en) || slide.media_url || (lang === "ar" ? slide.media_url_en : slide.media_url_ar) || "";
           const streamIframeUrl = (lang === "ar" ? slide.media_iframe_url_ar : slide.media_iframe_url_en) || (lang === "ar" ? slide.media_iframe_url_en : slide.media_iframe_url_ar) || "";
           const posterUrl = (lang === "ar" ? slide.media_poster_url_ar : slide.media_poster_url_en) || (lang === "ar" ? slide.media_poster_url_en : slide.media_poster_url_ar) || mediaUrl;
-          return <article key={slide.id} dir={lang === "ar" ? "rtl" : "ltr"} className={`min-w-full snap-center snap-always overflow-hidden rounded-2xl transition-[opacity,transform] duration-500 ease-out [clip-path:inset(0_round_1rem)] ${slideIndex === idx ? "scale-100 opacity-100" : "scale-[0.985] opacity-80"}`}>
+          return <article ref={(node) => { slideRefs.current[slideIndex] = node; }} key={slide.id} dir={lang === "ar" ? "rtl" : "ltr"} className={`min-w-full snap-center snap-always overflow-hidden rounded-2xl transition-[opacity,transform] duration-500 ease-out [clip-path:inset(0_round_1rem)] ${slideIndex === idx ? "scale-100 opacity-100" : "scale-[0.985] opacity-80"}`}>
             {slide.type === "image" && mediaUrl ? <a href={slide.button_href || "#products"} className="block h-[220px] w-full overflow-hidden rounded-2xl sm:h-[320px]"><ResponsiveImage src={mediaUrl} preset="hero" sizes="100vw" alt={title || ""} className="h-full w-full object-cover" fetchPriority={slideIndex === 0 ? "high" : "auto"} loading={slideIndex === 0 ? "eager" : "lazy"} /></a> : slide.type === "video" && (mediaUrl || streamIframeUrl) ? <a href={slide.button_href || "#products"} className="block aspect-video w-full cursor-pointer overflow-hidden rounded-2xl sm:aspect-auto sm:h-[320px]" aria-label={title || (lang === "ar" ? "فتح الرابط" : "Open link")}><OptimizedVideo src={streamIframeUrl ? undefined : mediaUrl} streamIframeUrl={streamIframeUrl} poster={posterUrl} active={slideIndex === idx} className="pointer-events-none h-full w-full object-contain sm:object-cover" wrapperClassName="pointer-events-none h-full w-full overflow-hidden" /></a> : <div className="flex h-[220px] flex-col justify-center overflow-hidden rounded-2xl bg-white/85 px-5 pb-16 pt-5 backdrop-blur sm:h-[320px] sm:p-8 sm:pb-20" style={{ textAlign: settings.hero_title_align }}>
               {settings.show_hero_title && title && <h1 className="mb-2 leading-tight sm:mb-3" style={{ color: settings.hero_title_color ?? "var(--sf-heading)", fontSize: `clamp(1.5rem, 5vw, ${settings.hero_title_size}px)`, fontFamily: "var(--sf-font)" }}>{title}</h1>}
               {settings.show_hero_about && body && <p className="mb-3 line-clamp-4 text-xs leading-relaxed text-neutral-700 sm:mb-4 sm:line-clamp-none sm:text-base">{body}</p>}
