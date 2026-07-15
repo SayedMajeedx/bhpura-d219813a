@@ -31,14 +31,15 @@ type OptimizedVideoProps = Omit<VideoHTMLAttributes<HTMLVideoElement>, "src" | "
   wrapperClassName?: string;
 };
 
-export function OptimizedVideo({ src, poster, streamIframeUrl, active = true, className, wrapperClassName, ...props }: OptimizedVideoProps) {
+export function OptimizedVideo({ src, poster, streamIframeUrl, active = true, className, wrapperClassName, preload, ...props }: OptimizedVideoProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
-  const optimizedSrc = src ? imageKitVideoUrl(src) : null;
+  const optimizedDesktopSrc = src ? imageKitVideoUrl(src, "desktop") : null;
+  const optimizedMobileSrc = src ? imageKitVideoUrl(src, "mobile") : null;
   const generatedPoster = src ? imageKitVideoPosterUrl(src) : null;
   const resolvedPoster = isLikelyImageUrl(poster) ? poster : generatedPoster;
-  const [useOptimizedSource, setUseOptimizedSource] = useState(Boolean(optimizedSrc));
+  const [useOptimizedSource, setUseOptimizedSource] = useState(Boolean(optimizedDesktopSrc));
 
-  useEffect(() => setUseOptimizedSource(Boolean(optimizedSrc)), [optimizedSrc, src]);
+  useEffect(() => setUseOptimizedSource(Boolean(optimizedDesktopSrc)), [optimizedDesktopSrc, src]);
 
   useEffect(() => {
     const video = videoRef.current;
@@ -62,16 +63,15 @@ export function OptimizedVideo({ src, poster, streamIframeUrl, active = true, cl
     </div>;
   }
 
-  const activeSrc = useOptimizedSource && optimizedSrc ? optimizedSrc : src ?? undefined;
+  const sourceKey = useOptimizedSource ? `${optimizedMobileSrc}|${optimizedDesktopSrc}` : src ?? "";
   return <video
     ref={videoRef}
-    key={activeSrc}
-    src={activeSrc}
+    key={sourceKey}
     poster={resolvedPoster ?? undefined}
     muted
     loop
     playsInline
-    preload="none"
+    preload={preload ?? (active ? "metadata" : "none")}
     disablePictureInPicture
     className={className}
     {...props}
@@ -79,5 +79,10 @@ export function OptimizedVideo({ src, poster, streamIframeUrl, active = true, cl
       if (useOptimizedSource && src) setUseOptimizedSource(false);
       props.onError?.(event);
     }}
-  />;
+  >
+    {useOptimizedSource && optimizedDesktopSrc ? <>
+      {optimizedMobileSrc ? <source src={optimizedMobileSrc} media="(max-width: 767px)" /> : null}
+      <source src={optimizedDesktopSrc} />
+    </> : src ? <source src={src} /> : null}
+  </video>;
 }

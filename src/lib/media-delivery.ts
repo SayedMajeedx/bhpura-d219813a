@@ -8,6 +8,11 @@ const PRESET_WIDTHS: Record<ResponsiveImagePreset, number[]> = {
   content: [480, 768, 960, 1280, 1600],
 };
 
+// Image Transformations are enabled on the public storefront zone. R2's
+// custom media hostname is the source origin, not the hostname that should
+// receive `/cdn-cgi/image` transformation requests.
+const CLOUDFLARE_IMAGE_TRANSFORM_ORIGIN = "https://boutq.store";
+
 export function imageWidths(preset: ResponsiveImagePreset): number[] {
   return PRESET_WIDTHS[preset];
 }
@@ -20,14 +25,10 @@ export function cloudflareImageUrl(source: string, width: number, quality = 82):
     // `onerror=redirect` makes Cloudflare serve the original R2 asset instead
     // of breaking the storefront, and the free plan never overage-bills.
     const options = `width=${width},fit=scale-down,quality=${quality},format=auto,metadata=none,onerror=redirect`;
-    // R2 media is served from a Cloudflare-controlled custom hostname, so the
-    // transformation can use the same-origin path and retain an inexpensive
-    // original fallback when transformations are unavailable.
-    if (url.hostname === "media.boutq.store" || url.hostname.endsWith(".boutq.store")) {
-      return `${url.origin}/cdn-cgi/image/${options}${url.pathname}${url.search}`;
-    }
-    const zoneOrigin = typeof window === "undefined" ? "https://boutq.store" : window.location.origin;
-    return `${zoneOrigin}/cdn-cgi/image/${options}/${encodeURI(url.toString())}`;
+    // Always ask the storefront zone to perform the transformation. Supplying
+    // the complete source URL is required here because the originals live on
+    // the separate `media.boutq.store` R2 custom domain.
+    return `${CLOUDFLARE_IMAGE_TRANSFORM_ORIGIN}/cdn-cgi/image/${options}/${encodeURI(url.toString())}`;
   } catch {
     return source;
   }
@@ -38,7 +39,8 @@ export function cloudflareImageSrcSet(source: string, preset: ResponsiveImagePre
 }
 
 const IMAGEKIT_URL_ENDPOINT = (import.meta.env.VITE_IMAGEKIT_URL_ENDPOINT || "").trim().replace(/\/+$/, "");
-const IMAGEKIT_VIDEO_TRANSFORMATION = "w-1280,q-55,f-auto,ac-none";
+const IMAGEKIT_DESKTOP_VIDEO_TRANSFORMATION = "w-1280,q-55,f-auto,ac-none";
+const IMAGEKIT_MOBILE_VIDEO_TRANSFORMATION = "w-720,q-48,f-auto,ac-none";
 
 function imageKitAssetPath(source: string): string | null {
   if (!IMAGEKIT_URL_ENDPOINT || !source || source.startsWith("data:")) return null;
@@ -67,10 +69,13 @@ function imageKitAssetPath(source: string): string | null {
  * Keeping this transformation stable prevents every viewport from consuming a
  * separate video-processing unit on the free plan.
  */
-export function imageKitVideoUrl(source: string): string | null {
+export function imageKitVideoUrl(source: string, viewport: "mobile" | "desktop" = "desktop"): string | null {
   const assetPath = imageKitAssetPath(source);
   if (!assetPath) return null;
-  return `${IMAGEKIT_URL_ENDPOINT}/tr:${IMAGEKIT_VIDEO_TRANSFORMATION}/${assetPath}`;
+  const transformation = viewport === "mobile"
+    ? IMAGEKIT_MOBILE_VIDEO_TRANSFORMATION
+    : IMAGEKIT_DESKTOP_VIDEO_TRANSFORMATION;
+  return `${IMAGEKIT_URL_ENDPOINT}/tr:${transformation}/${assetPath}`;
 }
 
 export function imageKitVideoPosterUrl(source: string): string | null {
