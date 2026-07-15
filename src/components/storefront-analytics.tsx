@@ -42,13 +42,15 @@ export function StorefrontAnalytics() {
     const gaId = settings.google_analytics_enabled && /^G-[A-Z0-9]+$/.test(settings.google_analytics_id || "") ? settings.google_analytics_id : null;
     const metaId = settings.meta_pixel_enabled && /^\d{5,30}$/.test(settings.meta_pixel_id || "") ? settings.meta_pixel_id : null;
     const w = window as any;
-    if (effective.analytics && gaId) {
+    // Load GA whenever it is configured so Google can verify the installation.
+    // Consent remains denied until the visitor explicitly enables analytics.
+    if (gaId) {
       if (!document.getElementById("boutq-ga4")) {
         const script = document.createElement("script"); script.id = "boutq-ga4"; script.async = true;
         script.src = `https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(gaId)}`; document.head.appendChild(script);
       }
-      w.gtag("consent", "update", { analytics_storage: "granted" });
       w.gtag("js", new Date()); w.gtag("config", gaId, { send_page_view: false });
+      w.gtag("consent", "update", { analytics_storage: effective.analytics ? "granted" : "denied" });
     } else {
       w.gtag("consent", "update", { analytics_storage: "denied" });
     }
