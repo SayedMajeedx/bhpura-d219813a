@@ -31,7 +31,10 @@ export const Route = createFileRoute("/_authenticated/admin/")({
         .eq("id", profile.brand_id)
         .maybeSingle();
       if (brand?.slug) {
-        throw redirect({ to: "/admin/b/$slug/dashboard", params: { slug: brand.slug } });
+        throw redirect({
+          to: profile?.role === "courier" ? "/admin/b/$slug/orders" : "/admin/b/$slug/dashboard",
+          params: { slug: brand.slug },
+        });
       }
     }
 

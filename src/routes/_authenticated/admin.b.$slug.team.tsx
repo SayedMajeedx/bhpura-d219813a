@@ -263,12 +263,18 @@ function TeamManagement() {
                         {isAr ? "موظف" : "Staff"}
                       </div>
                     </SelectItem>
-                    <SelectItem value="admin">
+                    <SelectItem value="courier">
+                      <div className="flex items-center gap-2">
+                        <Users className="h-4 w-4" />
+                        {isAr ? "مندوب توصيل" : "Courier"}
+                      </div>
+                    </SelectItem>
+                    {isSuperAdmin && <SelectItem value="admin">
                       <div className="flex items-center gap-2">
                         <Shield className="h-4 w-4" />
                         {isAr ? "مدير" : "Admin"}
                       </div>
-                    </SelectItem>
+                    </SelectItem>}
                     {isSuperAdmin && (
                       <SelectItem value="brand_admin">
                         <div className="flex items-center gap-2">
@@ -357,6 +363,11 @@ function TeamManagement() {
                           <>
                             <Shield className="h-3 w-3" />
                             {isAr ? "مدير" : "Admin"}
+                          </>
+                        ) : member.role === "courier" ? (
+                          <>
+                            <Users className="h-3 w-3" />
+                            {isAr ? "مندوب توصيل" : "Courier"}
                           </>
                         ) : (
                           <>
@@ -483,12 +494,18 @@ function TeamManagement() {
                         {isAr ? "موظف" : "Staff"}
                       </div>
                     </SelectItem>
-                    <SelectItem value="admin">
+                    <SelectItem value="courier">
+                      <div className="flex items-center gap-2">
+                        <Users className="h-4 w-4" />
+                        {isAr ? "مندوب توصيل" : "Courier"}
+                      </div>
+                    </SelectItem>
+                    {isSuperAdmin && <SelectItem value="admin">
                       <div className="flex items-center gap-2">
                         <Shield className="h-4 w-4" />
                         {isAr ? "مدير" : "Admin"}
                       </div>
-                    </SelectItem>
+                    </SelectItem>}
                     {(isSuperAdmin || editing.role === "brand_admin") && (
                       <SelectItem value="brand_admin">
                         <div className="flex items-center gap-2">

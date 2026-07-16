@@ -26,6 +26,7 @@ import { toast } from "sonner";
 import { useT, useI18n } from "@/lib/i18n";
 import { resolvePaymentStatus, PAYMENT_BADGE_CLASSES } from "@/lib/payment-status";
 import { useBrand } from "@/lib/brand-context";
+import { useProfile } from "@/lib/profile-context";
 import { useRealtimeInvalidate } from "@/hooks/use-realtime-invalidate";
 import { useState } from "react";
 import {
@@ -74,6 +75,7 @@ function OrdersList() {
   const navigate = useNavigate();
   const { slug } = Route.useParams();
   const brand = useBrand();
+  const { isCourier } = useProfile();
   const brandId = brand.id;
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   const [search, setSearch] = useState("");
@@ -89,13 +91,18 @@ function OrdersList() {
   );
 
   const { data } = useQuery({
-    queryKey: ["orders", brandId],
+    queryKey: ["orders", brandId, isCourier ? "assigned-courier" : "office"],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from("orders")
-        .select("*, customers(name)")
-        .eq("brand_id", brandId)
-        .order("created_at", { ascending: false });
+        .select("*, customers(name, phone, region, road, house, flat, address, city)")
+        .eq("brand_id", brandId);
+      if (isCourier) {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return [];
+        query = query.eq("assigned_to", user.id).eq("fulfillment_method", "delivery");
+      }
+      const { data, error } = await query.order("created_at", { ascending: false });
       if (error) throw error;
       return data as any[];
     },
@@ -198,12 +205,12 @@ function OrdersList() {
           <h1 className="truncate text-3xl sm:text-4xl font-display">{t("orders.title")}</h1>
           <p className="text-sm text-muted-foreground mt-1 truncate">{t("orders.subtitle")}</p>
         </div>
-        <Button onClick={create} className="shrink-0">
+        {!isCourier && <Button onClick={create} className="shrink-0">
           <Plus className="h-4 w-4 mr-2" /> {t("orders.new")}
-        </Button>
+        </Button>}
       </div>
 
-      <div className="mb-5 grid grid-cols-2 lg:grid-cols-4 gap-3">
+      {!isCourier && <div className="mb-5 grid grid-cols-2 lg:grid-cols-4 gap-3">
         {[
           [ReceiptText, t("orders.title"), String(orders.length)],
           [Clock3, t("status.pending"), String(pendingCount)],
@@ -225,7 +232,7 @@ function OrdersList() {
             </Card>
           );
         })}
-      </div>
+      </div>}
 
       <Card className="mb-5 p-3 sm:p-4">
         <div className="grid grid-cols-1 sm:grid-cols-[minmax(220px,1fr)_180px_190px] gap-3">
@@ -359,7 +366,7 @@ function OrdersList() {
                         {formatMoney(Number(o.total), o.currency)}
                       </div>
                     </div>
-                    <div className="flex shrink-0 flex-col gap-1">
+                    {!isCourier && <div className="flex shrink-0 flex-col gap-1">
                       <Button
                         className="h-11 w-11 touch-manipulation"
                         variant="ghost"
@@ -378,7 +385,7 @@ function OrdersList() {
                       >
                         <Trash2 className="h-5 w-5" />
                       </Button>
-                    </div>
+                    </div>}
                   </div>
                 </Card>
               );
@@ -459,6 +466,7 @@ function OrdersList() {
                         </div>
                       </td>
                       <td className="p-4 text-end whitespace-nowrap">
+                        {!isCourier && <>
                         <Button
                           variant="ghost"
                           size="icon"
@@ -471,6 +479,7 @@ function OrdersList() {
                         <Button variant="ghost" size="icon" onClick={() => setDeleteTarget(o.id)}>
                           <Trash2 className="h-4 w-4" />
                         </Button>
+                        </>}
                       </td>
                     </tr>
                   ))}
@@ -480,7 +489,7 @@ function OrdersList() {
           </Card>
         </>
       )}
-      <AlertDialog
+      {!isCourier && <AlertDialog
         open={deleteTarget !== null}
         onOpenChange={(open) => {
           if (!open) setDeleteTarget(null);
@@ -503,7 +512,7 @@ function OrdersList() {
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
-      </AlertDialog>
+      </AlertDialog>}
     </div>
   );
 }

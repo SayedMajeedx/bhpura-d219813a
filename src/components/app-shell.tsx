@@ -17,7 +17,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
   const { t, lang, setLang } = useI18n();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const { profile, isAdmin, isSuperAdmin, isLoading, profileError, signOutAndRedirect } = useProfile();
+  const { profile, isAdmin, isSuperAdmin, isCourier, isLoading, profileError, signOutAndRedirect } = useProfile();
 
   // Extract slug from current URL when inside /b/:slug/*
   const routeParams = useParams({ strict: false }) as { slug?: string };
@@ -55,6 +55,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const nav = useMemo(() => {
     const items: { to: string; params?: any; label: string; icon: typeof LayoutDashboard; adminOnly?: boolean; section: string }[] = [];
     if (activeSlug) {
+      if (isCourier) {
+        items.push({ to: "/admin/b/$slug/orders", params: { slug: activeSlug }, label: t("nav.orders"), icon: ReceiptText, section: lang === "ar" ? "التوصيل" : "Delivery" });
+        return items;
+      }
       items.push(
         { to: "/admin/b/$slug/dashboard", params: { slug: activeSlug }, label: t("nav.dashboard"), icon: LayoutDashboard, section: lang === "ar" ? "نظرة عامة" : "Overview" },
         { to: "/admin/b/$slug/orders", params: { slug: activeSlug }, label: t("nav.orders"), icon: ReceiptText, section: lang === "ar" ? "المبيعات" : "Sales" },
@@ -74,7 +78,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
     }
     return items.filter((item) => !item.adminOnly || isAdmin);
-  }, [t, lang, isAdmin, activeSlug]);
+  }, [t, lang, isAdmin, isCourier, activeSlug]);
 
   const signOut = async () => {
     await supabase.auth.signOut();
@@ -127,7 +131,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </div>
       )}
 
-      {activeSlug && (
+      {activeSlug && !isCourier && (
         <div className="px-3 pt-3">
           <a
             href={`/${activeSlug}`}

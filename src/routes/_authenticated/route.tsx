@@ -16,7 +16,7 @@ export const Route = createFileRoute("/_authenticated")({
       .eq("id", data.user.id)
       .maybeSingle();
 
-    const dashboardRoles = new Set(["super_admin", "admin", "brand_admin", "staff"]);
+    const dashboardRoles = new Set(["super_admin", "admin", "brand_admin", "staff", "courier"]);
     if (!profile || profile.status !== "active" || !dashboardRoles.has(profile.role)) {
       throw redirect({ to: "/auth" });
     }

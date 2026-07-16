@@ -199,25 +199,73 @@ function normalizeCustomFieldValues(value: unknown): Item["custom_field_values"]
   return [];
 }
 
+function CourierOrderView({ order, slug, onUpdated }: { order: any; slug: string; onUpdated: () => void }) {
+  const { lang } = useI18n();
+  const [notes, setNotes] = useState(order.delivery_notes ?? "");
+  const [saving, setSaving] = useState(false);
+  const updateStatus = async (status: string) => {
+    setSaving(true);
+    try {
+      const { error } = await (supabase.rpc as any)("courier_update_delivery", { p_order_id: order.id, p_status: status, p_notes: notes || null });
+      if (error) throw error;
+      toast.success(lang === "ar" ? "تم تحديث حالة التوصيل" : "Delivery status updated");
+      onUpdated();
+    } catch (error: any) {
+      toast.error(error?.message ?? "Unable to update delivery");
+    } finally { setSaving(false); }
+  };
+  const address = formatDeliveryAddress(order.customers, lang).join(" ");
+  return (
+    <div className="p-4 sm:p-6 max-w-3xl mx-auto space-y-4">
+      <Link to="/admin/b/$slug/orders" params={{ slug }} className="text-sm text-muted-foreground">← {lang === "ar" ? "الطلبات المسندة" : "Assigned orders"}</Link>
+      <Card className="p-5 space-y-4">
+        <div className="flex items-start justify-between gap-3">
+          <div><p className="text-xs text-muted-foreground">{lang === "ar" ? "طلب التوصيل" : "Delivery order"}</p><h1 className="text-2xl font-display">#{order.invoice_number}</h1></div>
+          <span className="rounded-full bg-primary/10 px-3 py-1 text-sm font-medium text-primary">{order.fulfillment_status || "assigned"}</span>
+        </div>
+        <div className="grid sm:grid-cols-2 gap-4 rounded-xl border p-4">
+          <div><p className="text-xs text-muted-foreground">{lang === "ar" ? "العميل" : "Customer"}</p><p className="font-semibold">{order.customers?.name || "—"}</p></div>
+          <div><p className="text-xs text-muted-foreground">{lang === "ar" ? "الهاتف" : "Phone"}</p><a dir="ltr" className="font-semibold underline" href={`tel:${order.customers?.phone || ""}`}>{order.customers?.phone || "—"}</a></div>
+          <div className="sm:col-span-2"><p className="text-xs text-muted-foreground">{lang === "ar" ? "عنوان التوصيل" : "Delivery address"}</p><p className="font-medium">{address || order.customers?.address || "—"}</p></div>
+          {order.payment_method === "cod" && <div className="sm:col-span-2 rounded-lg bg-amber-50 p-3 text-amber-900"><strong>{lang === "ar" ? "تحصيل عند التسليم" : "Collect on delivery"}</strong>: {formatMoney(Number(order.total || 0), order.currency || "BHD")}</div>}
+        </div>
+        <div><p className="mb-2 text-sm font-medium">{lang === "ar" ? "محتويات الطلب" : "Order items"}</p>{(order.order_items ?? []).map((item: any) => <div key={item.id} className="flex justify-between border-b py-2 text-sm"><span>{item.description}</span><span>× {item.quantity}</span></div>)}</div>
+        <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder={lang === "ar" ? "ملاحظات التوصيل" : "Delivery notes"} />
+        <div className="grid grid-cols-2 gap-2">
+          <Button disabled={saving} variant="outline" onClick={() => updateStatus("out_for_delivery")}>{lang === "ar" ? "خرج للتوصيل" : "Out for delivery"}</Button>
+          <Button disabled={saving} onClick={() => updateStatus("delivered")}>{lang === "ar" ? "تم التسليم" : "Delivered"}</Button>
+          <Button disabled={saving} variant="destructive" onClick={() => updateStatus("delivery_failed")}>{lang === "ar" ? "تعذر التسليم" : "Delivery failed"}</Button>
+          <Button disabled={saving} variant="outline" onClick={() => updateStatus("returned")}>{lang === "ar" ? "مرتجع" : "Returned"}</Button>
+        </div>
+      </Card>
+    </div>
+  );
+}
+
 function OrderDetail() {
   const t = useT();
   const { lang } = useI18n();
   const { id, slug } = Route.useParams();
   const qc = useQueryClient();
   const brand = useBrand();
-  const { isAdmin } = useProfile();
+  const { isAdmin, isCourier } = useProfile();
   const brandId = brand.id;
   const [approvingBenefit, setApprovingBenefit] = useState(false);
   const [rejectingBenefit, setRejectingBenefit] = useState(false);
 
   const orderQ = useQuery({
-    queryKey: ["order", id],
+    queryKey: ["order", id, isCourier ? "assigned-courier" : "office"],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from("orders")
         .select("*, customers(*), order_items(*)")
-        .eq("id", id)
-        .maybeSingle();
+        .eq("id", id);
+      if (isCourier) {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) throw new Error("Not authenticated");
+        query = query.eq("assigned_to", user.id).eq("fulfillment_method", "delivery");
+      }
+      const { data, error } = await query.maybeSingle();
       if (error) throw error;
       if (!data) throw new Error("Order not found. It may have been deleted.");
       return data as Order;
@@ -240,6 +288,21 @@ function OrderDetail() {
       (await supabase.from("customers").select("*").eq("brand_id", brandId).order("name")).data ??
       [],
   });
+  const couriersQ = useQuery({
+    queryKey: ["couriers", brandId],
+    enabled: isAdmin,
+    queryFn: async () => {
+      const { data, error } = await supabase.from("profiles").select("id, name, email").eq("brand_id", brandId).eq("role", "courier").eq("status", "active").order("name");
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+  const assignCourier = async (courierId: string) => {
+    const { error } = await (supabase.rpc as any)("assign_order_courier", { p_order_id: id, p_courier_id: courierId === "unassigned" ? null : courierId });
+    if (error) return toast.error(error.message);
+    toast.success(lang === "ar" ? "تم تحديث مندوب التوصيل" : "Courier assignment updated");
+    await orderQ.refetch();
+  };
   const addressesQ = useQuery({
     queryKey: ["customer_addresses", brandId],
     queryFn: async () => {
@@ -996,6 +1059,10 @@ function OrderDetail() {
     if (!ok) toast.error(t("orders.popupBlocked"));
   };
 
+  if (isCourier && orderQ.data) {
+    return <CourierOrderView order={orderQ.data} slug={slug} onUpdated={() => { void orderQ.refetch(); }} />;
+  }
+
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-6xl mx-auto">
       <div className="no-print mb-6 flex flex-wrap items-center justify-between gap-3">
@@ -1350,6 +1417,18 @@ function OrderDetail() {
                     </div>
                   </div>
                   <div className="p-4">
+                    {method === "delivery" && isAdmin && (
+                      <div className="mb-4 rounded-lg border bg-background p-3">
+                        <Label>{lang === "ar" ? "مندوب التوصيل المسند" : "Assigned courier"}</Label>
+                        <Select value={order.assigned_to ?? "unassigned"} onValueChange={assignCourier}>
+                          <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="unassigned">{lang === "ar" ? "غير مسند" : "Unassigned"}</SelectItem>
+                            {(couriersQ.data ?? []).map((courier: any) => <SelectItem key={courier.id} value={courier.id}>{courier.name || courier.email}</SelectItem>)}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
                     {method === "digital" ? (
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div>

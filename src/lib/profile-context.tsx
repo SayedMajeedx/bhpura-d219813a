@@ -2,7 +2,7 @@ import { createContext, useContext, useEffect, useState, useCallback, type React
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "@tanstack/react-router";
 
-export type UserRole = "super_admin" | "admin" | "brand_admin" | "staff";
+export type UserRole = "super_admin" | "admin" | "brand_admin" | "staff" | "courier";
 export type UserStatus = "active" | "inactive";
 
 export const SUPER_ADMIN_EMAIL = "majeed@hotmail.it";
@@ -34,6 +34,7 @@ type ProfileContextType = {
   isAdmin: boolean;
   isSuperAdmin: boolean;
   isBrandAdmin: boolean;
+  isCourier: boolean;
   isActive: boolean;
   profileError: boolean;
   canViewFinancials: boolean;
@@ -159,6 +160,7 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
   const isActive = profile?.status === "active";
   const isSuperAdmin = isActive && (profile?.role === "super_admin" || emailIsSuperAdmin);
   const isBrandAdmin = isActive && profile?.role === "brand_admin";
+  const isCourier = isActive && profile?.role === "courier";
   const isAdmin = isActive && (profile?.role === "admin" || isBrandAdmin || isSuperAdmin);
   // Only admins (incl. super admin, brand admin) can view financial data
   const canViewFinancials = isAdmin && isActive;
@@ -171,6 +173,7 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
         isAdmin,
         isSuperAdmin,
         isBrandAdmin,
+        isCourier,
         isActive,
         profileError,
         canViewFinancials,
