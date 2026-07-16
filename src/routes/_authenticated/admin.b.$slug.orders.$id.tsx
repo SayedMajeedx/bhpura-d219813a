@@ -274,16 +274,19 @@ function OrderDetail() {
 
   const productsQ = useQuery({
     queryKey: ["products", brandId],
+    enabled: !isCourier,
     queryFn: async () =>
       (await supabase.from("products").select("*").eq("brand_id", brandId)).data ?? [],
   });
   const variantsQ = useQuery({
     queryKey: ["variants", brandId],
+    enabled: !isCourier,
     queryFn: async () =>
       (await supabase.from("product_variants").select("*").eq("brand_id", brandId)).data ?? [],
   });
   const customersQ = useQuery({
     queryKey: ["customers", brandId],
+    enabled: !isCourier,
     queryFn: async () =>
       (await supabase.from("customers").select("*").eq("brand_id", brandId).order("name")).data ??
       [],
@@ -305,6 +308,7 @@ function OrderDetail() {
   };
   const addressesQ = useQuery({
     queryKey: ["customer_addresses", brandId],
+    enabled: !isCourier,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("customer_addresses")
@@ -317,7 +321,7 @@ function OrderDetail() {
 
   const receiptViewQ = useQuery({
     queryKey: ["benefit-receipt-view", id, orderQ.data?.benefit_receipt_key],
-    enabled: Boolean(orderQ.data?.payment_method === "benefit" && orderQ.data?.benefit_receipt_key),
+    enabled: !isCourier && Boolean(orderQ.data?.payment_method === "benefit" && orderQ.data?.benefit_receipt_key),
     staleTime: 4 * 60 * 1000,
     refetchInterval: 4 * 60 * 1000,
     queryFn: async () => getBenefitReceiptViewUrl({ data: { orderId: id } }),
@@ -386,6 +390,7 @@ function OrderDetail() {
   };
   const branchesQ = useQuery({
     queryKey: ["branches", brandId],
+    enabled: !isCourier,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("branches")
@@ -397,6 +402,7 @@ function OrderDetail() {
   });
   const customQ = useQuery({
     queryKey: ["customizations", brandId],
+    enabled: !isCourier,
     queryFn: async () =>
       (
         await supabase
@@ -408,6 +414,7 @@ function OrderDetail() {
   });
   const settingsQ = useQuery({
     queryKey: ["business-settings", brandId],
+    enabled: !isCourier,
     queryFn: async () => {
       const { data } = await supabase
         .from("business_settings")
@@ -631,7 +638,44 @@ function OrderDetail() {
   const [cameraStreamPromise, setCameraStreamPromise] = useState<Promise<MediaStream> | null>(null);
   const cameraStreamRef = useRef<MediaStream | null>(null);
 
-  if (!order || !settingsQ.data) return <div className="p-8">Loading…</div>;
+  if (orderQ.isError) {
+    return (
+      <div className="mx-auto max-w-2xl p-6 sm:p-8">
+        <Card className="space-y-4 p-6">
+          <h1 className="text-xl font-semibold">
+            {lang === "ar" ? "تعذر فتح الطلب" : "Unable to open this order"}
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            {orderQ.error instanceof Error
+              ? orderQ.error.message
+              : lang === "ar"
+                ? "تأكد من أن الطلب مسند إليك ثم حاول مرة أخرى."
+                : "Confirm that this delivery order is assigned to you, then try again."}
+          </p>
+          <div className="flex flex-wrap gap-2">
+            <Button onClick={() => void orderQ.refetch()}>
+              {lang === "ar" ? "إعادة المحاولة" : "Try again"}
+            </Button>
+            <Button asChild variant="outline">
+              <Link to="/admin/b/$slug/orders" params={{ slug }}>
+                {lang === "ar" ? "العودة إلى الطلبات" : "Back to orders"}
+              </Link>
+            </Button>
+          </div>
+        </Card>
+      </div>
+    );
+  }
+
+  if (!order) return <div className="p-8">Loading…</div>;
+
+  // Courier access is intentionally limited by RLS. Their focused delivery
+  // view must not wait for office-only settings, catalogue, or CRM queries.
+  if (isCourier) {
+    return <CourierOrderView order={orderQ.data} slug={slug} onUpdated={() => { void orderQ.refetch(); }} />;
+  }
+
+  if (settingsQ.isPending || !settingsQ.data) return <div className="p-8">Loading…</div>;
 
   const currency = order.currency ?? "BHD";
   const serverOrder = orderQ.data as any;
@@ -1058,10 +1102,6 @@ function OrderDetail() {
     });
     if (!ok) toast.error(t("orders.popupBlocked"));
   };
-
-  if (isCourier && orderQ.data) {
-    return <CourierOrderView order={orderQ.data} slug={slug} onUpdated={() => { void orderQ.refetch(); }} />;
-  }
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-6xl mx-auto">
