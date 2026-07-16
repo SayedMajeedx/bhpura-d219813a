@@ -151,6 +151,17 @@ html.lang-ar .font-display {
   letter-spacing: 0;
 }
 
+/* The chosen brand font is a storefront-wide setting. Keep this scoped to the
+   storefront so admin and printable invoice typography remain independent. */
+.storefront-shell,
+.storefront-shell * {
+  font-family: var(--sf-font) !important;
+}
+
+.storefront-shell :where(input, textarea, select, button)::placeholder {
+  font-family: var(--sf-font) !important;
+}
+
 /* Hide default browser spinner arrows on number inputs */
 input::-webkit-outer-spin-button,
 input::-webkit-inner-spin-button {

@@ -160,7 +160,15 @@ function StorefrontAuth() {
           <Button className="h-11 w-full" style={{ backgroundColor: settings.primary_color, color: "#fff" }} onClick={signUp} disabled={working}>{working && <Loader2 className="me-2 h-4 w-4 animate-spin" />}{t("إنشاء حساب في هذا المتجر", "Create account for this store")}</Button>
         </TabsContent>
       </Tabs>
-      <div className="text-center text-sm"><Link to="/$slug/checkout" params={{ slug: brand.slug }} className="text-muted-foreground underline">{t("متابعة كضيف", "Continue as guest")}</Link></div>
+      <div className="text-center text-sm">
+        <Link
+          to="/$slug"
+          params={{ slug: brand.slug }}
+          className="text-muted-foreground underline underline-offset-4"
+        >
+          {t("متابعة كضيف", "Continue as guest")}
+        </Link>
+      </div>
     </Card>
   </div>;
 }
