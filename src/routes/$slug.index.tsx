@@ -230,6 +230,18 @@ function HeroContentCarousel({ slides }: { slides: import("@/lib/storefront-cont
     window.setTimeout(() => { blockedClick.current = false; }, 0);
   };
 
+  // Keep exactly one upcoming optimized video warm. This avoids the visible
+  // loading pause when a text/image slide advances to video without fetching
+  // every carousel asset (or ever falling back to the original R2 MP4).
+  let preparedVideoIndex = -1;
+  for (let offset = 1; offset < slides.length; offset += 1) {
+    const candidate = (idx + offset) % slides.length;
+    if (slides[candidate]?.type === "video") {
+      preparedVideoIndex = candidate;
+      break;
+    }
+  }
+
   return (
     <div className="relative isolate w-[88%] max-w-xl overflow-hidden rounded-2xl bg-transparent shadow-lg [clip-path:inset(0_round_1rem)] [transform:translateZ(0)] sm:w-full">
       <div
@@ -252,7 +264,7 @@ function HeroContentCarousel({ slides }: { slides: import("@/lib/storefront-cont
           const streamIframeUrl = (lang === "ar" ? slide.media_iframe_url_ar : slide.media_iframe_url_en) || (lang === "ar" ? slide.media_iframe_url_en : slide.media_iframe_url_ar) || "";
           const posterUrl = (lang === "ar" ? slide.media_poster_url_ar : slide.media_poster_url_en) || (lang === "ar" ? slide.media_poster_url_en : slide.media_poster_url_ar) || mediaUrl;
           return <article key={slide.id} dir={lang === "ar" ? "rtl" : "ltr"} aria-hidden={slideIndex !== idx} className={`col-start-1 row-start-1 aspect-video min-w-0 overflow-hidden rounded-2xl transition-[opacity,transform,filter] duration-[680ms] ease-[cubic-bezier(0.22,1,0.36,1)] [backface-visibility:hidden] [clip-path:inset(0_round_1rem)] will-change-[opacity,transform] sm:duration-[720ms] ${slideIndex === idx ? "z-10 pointer-events-auto translate-y-0 scale-100 opacity-100 blur-0" : "z-0 pointer-events-none translate-y-1 scale-[0.992] opacity-0 blur-[1px]"}`}>
-            {slide.type === "image" && mediaUrl ? <StorefrontLink href={slide.button_href || "#products"} className="block h-full w-full overflow-hidden rounded-2xl sm:h-[320px]"><ResponsiveImage src={mediaUrl} preset="hero" sizes="100vw" alt={title || ""} className="h-full w-full object-cover" fetchPriority={slideIndex === 0 ? "high" : "auto"} loading={slideIndex === 0 ? "eager" : "lazy"} /></StorefrontLink> : slide.type === "video" && (mediaUrl || streamIframeUrl) ? <StorefrontLink href={slide.button_href || "#products"} className="block h-full w-full cursor-pointer overflow-hidden rounded-2xl sm:h-[320px]" aria-label={title || (lang === "ar" ? "فتح الرابط" : "Open link")}><OptimizedVideo src={streamIframeUrl ? undefined : mediaUrl} streamIframeUrl={streamIframeUrl} poster={posterUrl} active={slideIndex === idx} className="pointer-events-none h-full w-full object-contain sm:object-cover" wrapperClassName="pointer-events-none h-full w-full overflow-hidden" /></StorefrontLink> : <div className="flex h-full flex-col justify-center overflow-hidden rounded-2xl bg-white/85 px-4 pb-11 pt-3 backdrop-blur sm:h-[320px] sm:p-8 sm:pb-20" style={{ textAlign: settings.hero_title_align }}>
+            {slide.type === "image" && mediaUrl ? <StorefrontLink href={slide.button_href || "#products"} className="block h-full w-full overflow-hidden rounded-2xl sm:h-[320px]"><ResponsiveImage src={mediaUrl} preset="hero" sizes="100vw" alt={title || ""} className="h-full w-full object-cover" fetchPriority={slideIndex === 0 ? "high" : "auto"} loading={slideIndex === 0 ? "eager" : "lazy"} /></StorefrontLink> : slide.type === "video" && (mediaUrl || streamIframeUrl) ? <StorefrontLink href={slide.button_href || "#products"} className="block h-full w-full cursor-pointer overflow-hidden rounded-2xl sm:h-[320px]" aria-label={title || (lang === "ar" ? "فتح الرابط" : "Open link")}><OptimizedVideo src={streamIframeUrl ? undefined : mediaUrl} streamIframeUrl={streamIframeUrl} poster={posterUrl} active={slideIndex === idx} prepare={!streamIframeUrl && slideIndex === preparedVideoIndex} preload={slideIndex === idx ? "auto" : undefined} className="pointer-events-none h-full w-full object-contain sm:object-cover" wrapperClassName="pointer-events-none h-full w-full overflow-hidden" /></StorefrontLink> : <div className="flex h-full flex-col justify-center overflow-hidden rounded-2xl bg-white/85 px-4 pb-11 pt-3 backdrop-blur sm:h-[320px] sm:p-8 sm:pb-20" style={{ textAlign: settings.hero_title_align }}>
               {settings.show_hero_title && title && <h1 className="mb-1 leading-tight sm:mb-3" style={{ color: settings.hero_title_color ?? "var(--sf-heading)", fontSize: `clamp(1.25rem, 5vw, ${settings.hero_title_size}px)`, fontFamily: "var(--sf-font)" }}>{title}</h1>}
               {settings.show_hero_about && body && <p className="mb-2 line-clamp-2 text-[11px] leading-relaxed text-neutral-700 sm:mb-4 sm:line-clamp-none sm:text-base">{body}</p>}
               {button && <div><StorefrontLink href={slide.button_href || "#products"} className="inline-flex items-center rounded-full px-4 py-2 text-xs font-semibold sm:px-6 sm:py-3 sm:text-base" style={{ backgroundColor: "var(--sf-btn-primary-bg)", color: "var(--sf-btn-primary-fg)" }}>{button}</StorefrontLink></div>}

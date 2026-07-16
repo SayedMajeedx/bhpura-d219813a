@@ -35,10 +35,11 @@ type OptimizedVideoProps = Omit<VideoHTMLAttributes<HTMLVideoElement>, "src" | "
   poster?: string | null;
   streamIframeUrl?: string | null;
   active?: boolean;
+  prepare?: boolean;
   wrapperClassName?: string;
 };
 
-export function OptimizedVideo({ src, poster, streamIframeUrl, active = true, className, wrapperClassName, preload, ...props }: OptimizedVideoProps) {
+export function OptimizedVideo({ src, poster, streamIframeUrl, active = true, prepare = false, className, wrapperClassName, preload, ...props }: OptimizedVideoProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const optimizedDesktopSrc = src ? imageKitVideoUrl(src, "desktop") : null;
   const optimizedMobileSrc = src ? imageKitVideoUrl(src, "mobile") : null;
@@ -70,7 +71,7 @@ export function OptimizedVideo({ src, poster, streamIframeUrl, active = true, cl
   // Inactive carousel slides should not mount a video element. Even with
   // preload="none", browsers may fetch source metadata and posters for every
   // mounted video, delaying the active slide and the rest of the first screen.
-  if (!active && resolvedPoster) {
+  if (!active && !prepare && resolvedPoster) {
     return <div className={wrapperClassName ?? className}>
       <ResponsiveImage
         src={resolvedPoster}
@@ -97,7 +98,7 @@ export function OptimizedVideo({ src, poster, streamIframeUrl, active = true, cl
     muted
     loop
     playsInline
-    preload={preload ?? (active ? "metadata" : "none")}
+    preload={preload ?? (active || prepare ? "auto" : "none")}
     disablePictureInPicture
     className={className}
     {...props}
