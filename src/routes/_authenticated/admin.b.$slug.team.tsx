@@ -142,13 +142,13 @@ function TeamManagement() {
   };
 
   const handleAdd = async () => {
-    if (!form.email.trim() || !form.password.trim()) {
-      toast.error(isAr ? "البريد الإلكتروني وكلمة المرور مطلوبان" : "Email and password are required");
+    if (!form.email.trim()) {
+      toast.error(isAr ? "البريد الإلكتروني مطلوب" : "Email is required");
       return;
     }
 
     try {
-      await callUserManagement("create", {
+      const result = await callUserManagement("create", {
         email: form.email.trim(),
         name: form.name.trim() || undefined,
         password: form.password,
@@ -156,7 +156,9 @@ function TeamManagement() {
         // Attach the new user to the brand this team page is scoped to
         brand_id: form.role === "super_admin" ? null : brand.id,
       });
-      toast.success(isAr ? "تمت إضافة المستخدم بنجاح" : "User added successfully");
+      toast.success(result.linked_existing_identity
+        ? (isAr ? "تم منح حساب العميل الحالي صلاحية الفريق مع الاحتفاظ بكلمة مروره وبياناته" : "Team access added to the existing customer account. Its password and customer data were preserved.")
+        : (isAr ? "تمت إضافة المستخدم بنجاح" : "User added successfully"));
       setAddOpen(false);
       resetForm();
       qc.invalidateQueries({ queryKey: ["staff"] });
@@ -241,7 +243,7 @@ function TeamManagement() {
                 />
               </div>
               <div>
-                <Label>{t("auth.password")} <span className="text-destructive">*</span></Label>
+                <Label>{isAr ? "كلمة المرور (للحسابات الجديدة فقط)" : "Password (new accounts only)"}</Label>
                 <Input
                   type="password"
                   className="text-start"
@@ -249,6 +251,11 @@ function TeamManagement() {
                   onChange={(e) => setForm({ ...form, password: e.target.value })}
                   placeholder={isAr ? "كلمة مرور مؤقتة" : "Temporary password"}
                 />
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {isAr
+                    ? "اتركها فارغة إذا كان البريد مرتبطاً بحساب عميل حالي؛ لن تتغير كلمة مروره."
+                    : "Leave blank when the email belongs to an existing customer; their current password will not change."}
+                </p>
               </div>
               <div>
                 <Label>{isAr ? "الدور" : "Role"}</Label>
@@ -584,15 +591,15 @@ function TeamManagement() {
                 <>
                   {isAr ? (
                     <>
-                      هل أنت متأكد من حذف <strong>{deleteConfirm.name || deleteConfirm.email}</strong>؟
+                      هل أنت متأكد من إزالة صلاحية الفريق عن <strong>{deleteConfirm.name || deleteConfirm.email}</strong>؟
                       <br />
-                      سيتم حذف جميع بيانات المستخدم نهائياً. لا يمكن التراجع عن هذا الإجراء.
+                      إذا كان لديه حساب عميل فسيتم الاحتفاظ بملفه وكلمة مروره وطلباته وعناوينه.
                     </>
                   ) : (
                     <>
                       Are you sure you want to delete <strong>{deleteConfirm.name || deleteConfirm.email}</strong>?
                       <br />
-                      All user data will be permanently deleted. This action cannot be undone.
+                      Team access will be removed. If this person also has a customer account, their profile, password, orders, and addresses will be preserved.
                     </>
                   )}
                 </>

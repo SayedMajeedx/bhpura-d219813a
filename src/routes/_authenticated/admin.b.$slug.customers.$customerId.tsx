@@ -162,13 +162,15 @@ function EditCustomerDialog({ customer, brandId, open, onOpenChange, onSaved }: 
   const save = async () => {
     if (!form.name.trim()) return toast.error(lang === "ar" ? "اسم العميل مطلوب." : "Customer name is required.");
     const phone = form.phone.replace(/\D/g, "");
-    if (phone) {
-      const { data, error } = await supabase.from("customers").select("id, phone").eq("brand_id", brandId);
+    const email = form.email.trim().toLowerCase();
+    if (phone || email) {
+      const { data, error } = await supabase.from("customers").select("id, phone, email").eq("brand_id", brandId);
       if (error) return toast.error(error.message);
-      if ((data ?? []).some((row) => row.id !== customer.id && String(row.phone ?? "").replace(/\D/g, "") === phone)) return toast.error(lang === "ar" ? "رقم الهاتف مرتبط بملف عميل آخر." : "This phone number belongs to another customer profile.");
+      if (phone && (data ?? []).some((row) => row.id !== customer.id && String(row.phone ?? "").replace(/\D/g, "") === phone)) return toast.error(lang === "ar" ? "رقم الهاتف مرتبط بملف عميل آخر." : "This phone number belongs to another customer profile.");
+      if (email && (data ?? []).some((row) => row.id !== customer.id && String(row.email ?? "").trim().toLowerCase() === email)) return toast.error(lang === "ar" ? "البريد الإلكتروني مرتبط بملف عميل آخر." : "This email belongs to another customer profile.");
     }
     setSaving(true);
-    const { error } = await supabase.from("customers").update({ name: form.name.trim(), phone: form.phone.trim() || null, email: form.email.trim() || null, notes: form.notes.trim() || null }).eq("brand_id", brandId).eq("id", customer.id);
+    const { error } = await supabase.from("customers").update({ name: form.name.trim(), phone: phone || null, email: email || null, notes: form.notes.trim() || null }).eq("brand_id", brandId).eq("id", customer.id);
     setSaving(false);
     if (error) return toast.error(error.message);
     toast.success(lang === "ar" ? "تم تحديث ملف العميل" : "Customer profile updated");

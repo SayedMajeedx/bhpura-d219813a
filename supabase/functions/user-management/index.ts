@@ -197,8 +197,10 @@ async function handleCreate(
   const { email, name, role, password } = body;
   let { brand_id } = body;
 
-  if (!email || !password) {
-    return new Response(JSON.stringify({ error: "Email and password are required" }), {
+  const normalizedEmail = String(email ?? "").trim().toLowerCase();
+
+  if (!normalizedEmail) {
+    return new Response(JSON.stringify({ error: "Email is required" }), {
       status: 400,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
@@ -233,21 +235,74 @@ async function handleCreate(
     });
   }
 
-  const { data: authData, error: authError } = await supabase.auth.admin.createUser({
-    email,
-    password,
-    email_confirm: true,
-    user_metadata: { name: name || email.split("@")[0] },
-  });
+  // Supabase Auth has one global email namespace. A shopper may therefore
+  // already own this identity even though they have never had team access.
+  // Reuse that identity and attach only the separate team profile/role.
+  const existingAuthUser = await findAuthUserByEmail(supabase, normalizedEmail);
+  let userId = existingAuthUser?.id as string | undefined;
+  let createdAuthUser = false;
 
-  if (authError) {
-    return new Response(JSON.stringify({ error: authError.message }), {
-      status: 400,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+  if (userId) {
+    const { data: existingProfile, error: existingProfileError } = await supabase
+      .from("profiles")
+      .select("id, role, status, brand_id")
+      .eq("id", userId)
+      .maybeSingle();
+    if (existingProfileError) {
+      return new Response(JSON.stringify({ error: existingProfileError.message }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const { count: customerIdentityCount, error: customerIdentityError } = await supabase
+      .from("customers")
+      .select("id", { count: "exact", head: true })
+      .eq("auth_user_id", userId);
+    if (customerIdentityError) {
+      return new Response(JSON.stringify({ error: customerIdentityError.message }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Customer sign-ups receive an unassigned default staff profile from the
+    // auth trigger. Confirm the matching CRM identity before treating that
+    // otherwise ambiguous profile as a shopper rather than workforce access.
+    const isUnassignedCustomerProfile = (customerIdentityCount ?? 0) > 0 && (
+      !existingProfile || (existingProfile.brand_id === null && existingProfile.role === "staff")
+    );
+    if (!isUnassignedCustomerProfile) {
+      return new Response(JSON.stringify({
+        error: "This email already has a team account. Edit the existing team member instead.",
+      }), {
+        status: 409,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+  } else {
+    if (!String(password ?? "").trim()) {
+      return new Response(JSON.stringify({ error: "A temporary password is required for a new account" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+      email: normalizedEmail,
+      password,
+      email_confirm: true,
+      user_metadata: { name: name || normalizedEmail.split("@")[0] },
     });
+    if (authError) {
+      return new Response(JSON.stringify({ error: authError.message }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    userId = authData.user?.id;
+    createdAuthUser = true;
   }
 
-  const userId = authData.user?.id;
   if (!userId) {
     return new Response(JSON.stringify({ error: "Failed to create user: no user ID returned" }), {
       status: 500,
@@ -257,8 +312,8 @@ async function handleCreate(
 
   const updatePayload: Record<string, any> = {
     id: userId,
-    email,
-    name: name || email.split("@")[0],
+    email: normalizedEmail,
+    name: name || normalizedEmail.split("@")[0],
     role: userRole,
     status: "active",
   };
@@ -277,7 +332,9 @@ async function handleCreate(
   if (profileUpdateError) {
     console.error("[user-management] Profile update error:", profileUpdateError);
     // Do not leave an inaccessible orphaned auth account when profile creation fails.
-    await supabase.auth.admin.deleteUser(userId).catch(() => undefined);
+    if (createdAuthUser) {
+      await supabase.auth.admin.deleteUser(userId).catch(() => undefined);
+    }
     return new Response(
       JSON.stringify({ error: `Failed to create user profile: ${profileUpdateError.message}` }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
@@ -287,10 +344,11 @@ async function handleCreate(
   return new Response(
     JSON.stringify({
       success: true,
+      linked_existing_identity: !createdAuthUser,
       user: {
         id: userId,
-        email,
-        name: name || email.split("@")[0],
+        email: normalizedEmail,
+        name: name || normalizedEmail.split("@")[0],
         role: userRole,
         brand_id: updatePayload.brand_id,
         status: "active",
@@ -450,6 +508,43 @@ async function handleDelete(
     });
   }
 
+  const { count: customerIdentityCount, error: customerIdentityError } = await supabase
+    .from("customers")
+    .select("id", { count: "exact", head: true })
+    .eq("auth_user_id", userId);
+  if (customerIdentityError) {
+    return new Response(JSON.stringify({ error: customerIdentityError.message }), {
+      status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+
+  // Removing employment must never delete an independently owned storefront
+  // customer account, its orders, addresses, or password.
+  if ((customerIdentityCount ?? 0) > 0) {
+    const { error: unlinkError } = await supabase.from("profiles").upsert({
+      id: userId,
+      email: target.email,
+      name: target.email?.split("@")[0] || "Customer",
+      role: "staff",
+      status: "active",
+      brand_id: null,
+    }, { onConflict: "id" });
+    if (unlinkError) {
+      return new Response(JSON.stringify({ error: unlinkError.message }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    try {
+      await supabase.auth.admin.signOut(userId, "global");
+    } catch (_) {}
+    return new Response(JSON.stringify({ success: true, identity_preserved: true }), {
+      status: 200,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+
   const { error } = await supabase.auth.admin.deleteUser(userId);
 
   if (error) {
@@ -463,4 +558,18 @@ async function handleDelete(
     status: 200,
     headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
+}
+
+async function findAuthUserByEmail(supabase: any, email: string) {
+  // The Admin API does not expose a direct get-by-email method. Walk bounded
+  // pages so this remains reliable after the project grows beyond 1,000 users.
+  for (let page = 1; page <= 100; page += 1) {
+    const { data, error } = await supabase.auth.admin.listUsers({ page, perPage: 1000 });
+    if (error) throw error;
+    const users = data?.users ?? [];
+    const match = users.find((user: any) => String(user.email ?? "").trim().toLowerCase() === email);
+    if (match) return match;
+    if (users.length < 1000) break;
+  }
+  return null;
 }

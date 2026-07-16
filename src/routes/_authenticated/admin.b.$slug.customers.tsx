@@ -317,11 +317,14 @@ function CustomerDialog({ customer, onSaved }: { customer: Customer | null; onSa
     if (!user) return;
 
     const normalizedPhone = f.phone.replace(/\D/g, "");
-    if (normalizedPhone) {
-      const { data: phoneRows, error: phoneError } = await supabase.from("customers").select("id, phone").eq("brand_id", brand.id);
+    const normalizedEmail = f.email.trim().toLowerCase();
+    if (normalizedPhone || normalizedEmail) {
+      const { data: phoneRows, error: phoneError } = await supabase.from("customers").select("id, phone, email").eq("brand_id", brand.id);
       if (phoneError) return toast.error(phoneError.message);
-      const duplicate = (phoneRows ?? []).some((row) => row.id !== customer?.id && String(row.phone ?? "").replace(/\D/g, "") === normalizedPhone);
-      if (duplicate) return toast.error(lang === "ar" ? "يوجد عميل مسجل بهذا الرقم بالفعل. افتح ملف العميل الحالي بدلاً من إنشاء ملف مكرر." : "A customer with this phone number already exists. Open the existing profile instead of creating a duplicate.");
+      const duplicatePhone = normalizedPhone && (phoneRows ?? []).some((row) => row.id !== customer?.id && String(row.phone ?? "").replace(/\D/g, "") === normalizedPhone);
+      const duplicateEmail = normalizedEmail && (phoneRows ?? []).some((row) => row.id !== customer?.id && String(row.email ?? "").trim().toLowerCase() === normalizedEmail);
+      if (duplicatePhone) return toast.error(lang === "ar" ? "رقم الهاتف مرتبط بملف عميل موجود بالفعل." : "A customer with this phone number already exists. Open the existing profile instead.");
+      if (duplicateEmail) return toast.error(lang === "ar" ? "البريد الإلكتروني مرتبط بملف عميل موجود بالفعل." : "A customer with this email already exists. Open the existing profile instead.");
     }
 
     if (!customer) {
@@ -335,7 +338,8 @@ function CustomerDialog({ customer, onSaved }: { customer: Customer | null; onSa
         initialAddr.flat && `Flat ${initialAddr.flat}`,
       ].filter(Boolean).join(" · ");
       const { data: created, error } = await (supabase.from("customers") as any).insert({
-        name: f.name, phone: f.phone, email: f.email, notes: f.notes,
+        name: f.name.trim(), phone: normalizedPhone || null, email: normalizedEmail || null, notes: f.notes,
+        brand_id: brand.id,
         region: initialAddr.region, block: initialAddr.block,
         road: initialAddr.road, house: initialAddr.house, flat: initialAddr.flat || null,
         city: initialAddr.region, address: composedAddress,
@@ -352,8 +356,8 @@ function CustomerDialog({ customer, onSaved }: { customer: Customer | null; onSa
     } else {
 
       const { error } = await supabase.from("customers").update({
-        name: f.name, phone: f.phone, email: f.email, notes: f.notes,
-      }).eq("id", customer.id);
+        name: f.name.trim(), phone: normalizedPhone || null, email: normalizedEmail || null, notes: f.notes,
+      }).eq("brand_id", brand.id).eq("id", customer.id);
       if (error) return toast.error(error.message);
     }
     toast.success(t("common.save"));

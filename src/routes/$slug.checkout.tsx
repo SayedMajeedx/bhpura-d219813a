@@ -295,6 +295,10 @@ function Checkout() {
         toast.error(t("تعذر الوصول إلى التخزين الآمن للإيصال. حاول مرة أخرى أو تواصل مع المتجر.", "The secure receipt upload could not be reached. Please retry or contact the store."));
       } else if (msg.includes("BENEFIT_RECEIPT")) {
         toast.error(t("تعذر التحقق من إيصال التحويل. أعد رفع الصورة وحاول مرة أخرى.", "The transfer receipt could not be verified. Upload it again and retry."));
+      } else if (msg.includes("CUSTOMER_ACCOUNT_EXISTS_SIGN_IN_REQUIRED")) {
+        toast.error(t("هذا البريد الإلكتروني أو رقم الهاتف مرتبط بحساب موجود. سجّل الدخول لإكمال الطلب بأمان.", "This email or phone belongs to an existing account. Sign in to continue securely."));
+      } else if (msg.includes("CUSTOMER_CONTACT_ALREADY_REGISTERED")) {
+        toast.error(t("البريد الإلكتروني أو رقم الهاتف مستخدم في حساب عميل آخر.", "This email or phone is already used by another customer account."));
       } else if (msg.includes("PROMO_")) {
         setAppliedPromo(null);
         toast.error(t("رمز الخصم لم يعد صالحاً لهذا الطلب", "The promo code is no longer valid for this order"));
