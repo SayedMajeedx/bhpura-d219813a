@@ -266,10 +266,43 @@ async function handleCreate(
       });
     }
 
+    // Some legacy/guest customer rows predate auth_user_id linking. The Auth
+    // email is verified by Supabase, so an exact same-brand email match is a
+    // safe fallback for identifying the existing shopper identity. Never use
+    // a customer record from another tenant for this decision.
+    const { data: emailCustomerRows, error: emailCustomerError } = await supabase
+      .from("customers")
+      .select("id, auth_user_id")
+      .eq("brand_id", brand_id)
+      .eq("email", normalizedEmail);
+    if (emailCustomerError) {
+      return new Response(JSON.stringify({ error: emailCustomerError.message }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const matchingEmailCustomers = (emailCustomerRows ?? []).filter((customer: any) =>
+      !customer.auth_user_id || customer.auth_user_id === userId
+    );
+    const conflictingEmailCustomer = (emailCustomerRows ?? []).some((customer: any) =>
+      customer.auth_user_id && customer.auth_user_id !== userId
+    );
+    if (conflictingEmailCustomer) {
+      return new Response(JSON.stringify({
+        error: "This customer email is linked to a different sign-in identity. Review the customer profile before granting team access.",
+      }), {
+        status: 409,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     // Customer sign-ups receive an unassigned default staff profile from the
-    // auth trigger. Confirm the matching CRM identity before treating that
-    // otherwise ambiguous profile as a shopper rather than workforce access.
-    const isUnassignedCustomerProfile = (customerIdentityCount ?? 0) > 0 && (
+    // auth trigger. A null brand means it is not visible team access. Permit
+    // attaching it when either auth_user_id or the verified, tenant-scoped
+    // email proves that this identity belongs to a customer.
+    const hasCustomerIdentity = (customerIdentityCount ?? 0) > 0 || matchingEmailCustomers.length > 0;
+    const isUnassignedCustomerProfile = hasCustomerIdentity && (
       !existingProfile || (existingProfile.brand_id === null && existingProfile.role === "staff")
     );
     if (!isUnassignedCustomerProfile) {
@@ -279,6 +312,25 @@ async function handleCreate(
         status: 409,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
+    }
+
+    // Backfill legacy CRM rows so future checks use the stronger immutable
+    // auth identity rather than relying on email matching.
+    const legacyCustomerIds = matchingEmailCustomers
+      .filter((customer: any) => !customer.auth_user_id)
+      .map((customer: any) => customer.id);
+    if (legacyCustomerIds.length > 0) {
+      const { error: customerLinkError } = await supabase
+        .from("customers")
+        .update({ auth_user_id: userId })
+        .in("id", legacyCustomerIds)
+        .is("auth_user_id", null);
+      if (customerLinkError) {
+        return new Response(JSON.stringify({ error: customerLinkError.message }), {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
     }
   } else {
     if (!String(password ?? "").trim()) {
