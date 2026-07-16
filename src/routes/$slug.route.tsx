@@ -1,4 +1,4 @@
-import { createFileRoute, Outlet, Link, notFound, useNavigate, useLocation } from "@tanstack/react-router";
+import { createFileRoute, Outlet, Link, notFound, useNavigate, useLocation, useRouter } from "@tanstack/react-router";
 import React, { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { publicSupabase as supabase } from "@/integrations/supabase/client";
@@ -221,6 +221,7 @@ function StorefrontLayout() {
 function StoreShell() {
   const { brand, settings, lang } = useStorefront();
   const qc = useQueryClient();
+  const router = useRouter();
 
   // Realtime: refresh product / variant queries when inventory changes for this brand
   useEffect(() => {
@@ -240,11 +241,18 @@ function StoreShell() {
           qc.invalidateQueries({ queryKey: ["storefront", brand.slug] });
         },
       )
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "business_settings", filter: `brand_id=eq.${brand.id}` },
+        () => {
+          void router.invalidate();
+        },
+      )
       .subscribe();
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [brand.id, brand.slug, qc]);
+  }, [brand.id, brand.slug, qc, router]);
 
   const primary = settings.primary_color;
   const headerBg = settings.header_bg ?? settings.background_color ?? "#ffffff";

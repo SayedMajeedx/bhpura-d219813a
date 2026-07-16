@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useRouter } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -942,6 +942,7 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
   const { lang } = useI18n();
   const isAr = lang === "ar";
   const qc = useQueryClient();
+  const router = useRouter();
   const [saving, setSaving] = useState(false);
   const [uploadingFont, setUploadingFont] = useState<null | "en" | "ar">(null);
   const [settingsTab, setSettingsTab] = useState<"general" | "theme" | "content" | "promotions">("general");
@@ -1089,7 +1090,7 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
     const { error } = await (supabase.from("business_settings") as any).update(state).eq("brand_id", brandId);
     setSaving(false);
     if (error) toast.error(error.message);
-    else { toast.success(isAr ? "تم الحفظ" : "Saved"); qc.invalidateQueries({ queryKey: ["business-settings-theme", brandId] }); }
+    else { toast.success(isAr ? "تم الحفظ" : "Saved"); await qc.invalidateQueries({ queryKey: ["business-settings-theme", brandId] }); await router.invalidate(); }
   };
 
   const uploadStorefrontFont = async (file: File, language: "en" | "ar") => {
