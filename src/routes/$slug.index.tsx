@@ -211,36 +211,39 @@ function HeroBanner() {
 function HeroContentCarousel({ slides }: { slides: import("@/lib/storefront-context").HeroContentSlide[] }) {
   const { settings, lang } = useStorefront();
   const [idx, setIdx] = useState(0);
-  const scroller = useRef<HTMLDivElement>(null);
-  const scrollFrame = useRef<number | null>(null);
-
-  useEffect(() => () => {
-    if (scrollFrame.current !== null) cancelAnimationFrame(scrollFrame.current);
-  }, []);
+  const touchStartX = useRef<number | null>(null);
+  const blockedClick = useRef(false);
 
   const goTo = (next: number) => {
     const safe = (next + slides.length) % slides.length;
     setIdx(safe);
-    // Mobile keeps the native swipeable track. Desktop uses a layered
-    // crossfade so text, image, and video slides share one consistent motion.
-    if (typeof window !== "undefined" && !window.matchMedia("(min-width: 640px)").matches) {
-      scroller.current?.scrollTo({ left: safe * scroller.current.clientWidth, behavior: "smooth" });
-    }
   };
+
+  const finishSwipe = (endX: number | undefined) => {
+    const startX = touchStartX.current;
+    touchStartX.current = null;
+    if (startX == null || endX == null) return;
+    const distance = endX - startX;
+    if (Math.abs(distance) < 42) return;
+    blockedClick.current = true;
+    goTo(distance < 0 ? idx + 1 : idx - 1);
+    window.setTimeout(() => { blockedClick.current = false; }, 0);
+  };
+
   return (
     <div className="relative isolate w-[88%] max-w-xl overflow-hidden rounded-2xl bg-transparent shadow-lg [clip-path:inset(0_round_1rem)] [transform:translateZ(0)] sm:w-full">
-      <div ref={scroller} dir="ltr" className="flex items-stretch snap-x snap-mandatory scroll-smooth overflow-x-auto overflow-y-hidden rounded-2xl overscroll-x-contain [clip-path:inset(0_round_1rem)] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:grid sm:snap-none sm:overflow-hidden sm:scroll-auto" onScroll={(event) => {
-        if (typeof window !== "undefined" && window.matchMedia("(min-width: 640px)").matches) return;
-        const element = event.currentTarget;
-        if (scrollFrame.current !== null) return;
-        scrollFrame.current = requestAnimationFrame(() => {
-          scrollFrame.current = null;
-          const width = element.clientWidth;
-          if (!width) return;
-          const nextIndex = Math.round(element.scrollLeft / width);
-          setIdx((current) => current === nextIndex ? current : nextIndex);
-        });
-      }}>
+      <div
+        dir="ltr"
+        className="grid items-stretch overflow-hidden rounded-2xl [clip-path:inset(0_round_1rem)] touch-pan-y"
+        onTouchStart={(event) => { touchStartX.current = event.touches[0]?.clientX ?? null; }}
+        onTouchEnd={(event) => finishSwipe(event.changedTouches[0]?.clientX)}
+        onTouchCancel={() => { touchStartX.current = null; }}
+        onClickCapture={(event) => {
+          if (!blockedClick.current) return;
+          event.preventDefault();
+          event.stopPropagation();
+        }}
+      >
         {slides.map((slide, slideIndex) => {
           const title = lang === "ar" ? slide.title_ar || slide.title_en : slide.title_en || slide.title_ar;
           const body = lang === "ar" ? slide.body_ar || slide.body_en : slide.body_en || slide.body_ar;
@@ -248,7 +251,7 @@ function HeroContentCarousel({ slides }: { slides: import("@/lib/storefront-cont
           const mediaUrl = (lang === "ar" ? slide.media_url_ar : slide.media_url_en) || slide.media_url || (lang === "ar" ? slide.media_url_en : slide.media_url_ar) || "";
           const streamIframeUrl = (lang === "ar" ? slide.media_iframe_url_ar : slide.media_iframe_url_en) || (lang === "ar" ? slide.media_iframe_url_en : slide.media_iframe_url_ar) || "";
           const posterUrl = (lang === "ar" ? slide.media_poster_url_ar : slide.media_poster_url_en) || (lang === "ar" ? slide.media_poster_url_en : slide.media_poster_url_ar) || mediaUrl;
-          return <article key={slide.id} dir={lang === "ar" ? "rtl" : "ltr"} aria-hidden={slideIndex !== idx} className={`aspect-video min-w-full snap-center snap-always overflow-hidden rounded-2xl transition-[opacity,transform] duration-500 ease-out [backface-visibility:hidden] [clip-path:inset(0_round_1rem)] sm:col-start-1 sm:row-start-1 sm:min-w-0 sm:snap-none sm:transition-[opacity,transform] sm:duration-[720ms] sm:ease-[cubic-bezier(0.22,1,0.36,1)] sm:will-change-[opacity,transform] ${slideIndex === idx ? "scale-100 opacity-100 sm:z-10 sm:pointer-events-auto sm:translate-y-0" : "scale-[0.985] opacity-80 sm:z-0 sm:pointer-events-none sm:translate-y-1.5 sm:scale-[0.992] sm:opacity-0"}`}>
+          return <article key={slide.id} dir={lang === "ar" ? "rtl" : "ltr"} aria-hidden={slideIndex !== idx} className={`col-start-1 row-start-1 aspect-video min-w-0 overflow-hidden rounded-2xl transition-[opacity,transform,filter] duration-[680ms] ease-[cubic-bezier(0.22,1,0.36,1)] [backface-visibility:hidden] [clip-path:inset(0_round_1rem)] will-change-[opacity,transform] sm:duration-[720ms] ${slideIndex === idx ? "z-10 pointer-events-auto translate-y-0 scale-100 opacity-100 blur-0" : "z-0 pointer-events-none translate-y-1 scale-[0.992] opacity-0 blur-[1px]"}`}>
             {slide.type === "image" && mediaUrl ? <StorefrontLink href={slide.button_href || "#products"} className="block h-full w-full overflow-hidden rounded-2xl sm:h-[320px]"><ResponsiveImage src={mediaUrl} preset="hero" sizes="100vw" alt={title || ""} className="h-full w-full object-cover" fetchPriority={slideIndex === 0 ? "high" : "auto"} loading={slideIndex === 0 ? "eager" : "lazy"} /></StorefrontLink> : slide.type === "video" && (mediaUrl || streamIframeUrl) ? <StorefrontLink href={slide.button_href || "#products"} className="block h-full w-full cursor-pointer overflow-hidden rounded-2xl sm:h-[320px]" aria-label={title || (lang === "ar" ? "فتح الرابط" : "Open link")}><OptimizedVideo src={streamIframeUrl ? undefined : mediaUrl} streamIframeUrl={streamIframeUrl} poster={posterUrl} active={slideIndex === idx} className="pointer-events-none h-full w-full object-contain sm:object-cover" wrapperClassName="pointer-events-none h-full w-full overflow-hidden" /></StorefrontLink> : <div className="flex h-full flex-col justify-center overflow-hidden rounded-2xl bg-white/85 px-4 pb-11 pt-3 backdrop-blur sm:h-[320px] sm:p-8 sm:pb-20" style={{ textAlign: settings.hero_title_align }}>
               {settings.show_hero_title && title && <h1 className="mb-1 leading-tight sm:mb-3" style={{ color: settings.hero_title_color ?? "var(--sf-heading)", fontSize: `clamp(1.25rem, 5vw, ${settings.hero_title_size}px)`, fontFamily: "var(--sf-font)" }}>{title}</h1>}
               {settings.show_hero_about && body && <p className="mb-2 line-clamp-2 text-[11px] leading-relaxed text-neutral-700 sm:mb-4 sm:line-clamp-none sm:text-base">{body}</p>}
