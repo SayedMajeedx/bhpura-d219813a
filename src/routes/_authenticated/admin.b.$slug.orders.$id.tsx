@@ -214,7 +214,14 @@ function CourierOrderView({ order, slug, onUpdated }: { order: any; slug: string
       toast.error(error?.message ?? "Unable to update delivery");
     } finally { setSaving(false); }
   };
-  const address = formatDeliveryAddress(order.customers, lang).join(" ");
+  // The delivery destination belongs to the order, not necessarily to the
+  // customer's legacy profile fields. A shopper can choose any saved address
+  // at checkout, so couriers must always see the address referenced by the
+  // order's shipping_address_id.
+  const selectedAddress = Array.isArray(order.shipping_address)
+    ? order.shipping_address[0]
+    : order.shipping_address;
+  const address = formatDeliveryAddress(selectedAddress ?? order.customers, lang).join(" ");
   return (
     <div className="p-4 sm:p-6 max-w-3xl mx-auto space-y-4">
       <Link to="/admin/b/$slug/orders" params={{ slug }} className="text-sm text-muted-foreground">← {lang === "ar" ? "الطلبات المسندة" : "Assigned orders"}</Link>
@@ -226,7 +233,7 @@ function CourierOrderView({ order, slug, onUpdated }: { order: any; slug: string
         <div className="grid sm:grid-cols-2 gap-4 rounded-xl border p-4">
           <div><p className="text-xs text-muted-foreground">{lang === "ar" ? "العميل" : "Customer"}</p><p className="font-semibold">{order.customers?.name || "—"}</p></div>
           <div><p className="text-xs text-muted-foreground">{lang === "ar" ? "الهاتف" : "Phone"}</p><a dir="ltr" className="font-semibold underline" href={`tel:${order.customers?.phone || ""}`}>{order.customers?.phone || "—"}</a></div>
-          <div className="sm:col-span-2"><p className="text-xs text-muted-foreground">{lang === "ar" ? "عنوان التوصيل" : "Delivery address"}</p><p className="font-medium">{address || order.customers?.address || "—"}</p></div>
+          <div className="sm:col-span-2"><p className="text-xs text-muted-foreground">{lang === "ar" ? "عنوان التوصيل" : "Delivery address"}</p><p className="font-medium">{address || selectedAddress?.address || order.customers?.address || "—"}</p></div>
           {order.payment_method === "cod" && <div className="sm:col-span-2 rounded-lg bg-amber-50 p-3 text-amber-900"><strong>{lang === "ar" ? "تحصيل عند التسليم" : "Collect on delivery"}</strong>: {formatMoney(Number(order.total || 0), order.currency || "BHD")}</div>}
         </div>
         <div><p className="mb-2 text-sm font-medium">{lang === "ar" ? "محتويات الطلب" : "Order items"}</p>{(order.order_items ?? []).map((item: any) => <div key={item.id} className="flex justify-between border-b py-2 text-sm"><span>{item.description}</span><span>× {item.quantity}</span></div>)}</div>
@@ -258,7 +265,9 @@ function OrderDetail() {
     queryFn: async () => {
       let query = supabase
         .from("orders")
-        .select("*, customers(*), order_items(*)")
+        .select(
+          "*, customers(*), order_items(*), shipping_address:customer_addresses!orders_shipping_address_id_fkey(*)",
+        )
         .eq("id", id);
       if (isCourier) {
         const { data: { user } } = await supabase.auth.getUser();
