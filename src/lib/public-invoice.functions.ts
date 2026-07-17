@@ -13,7 +13,7 @@ export const getPublicInvoice = createServerFn({ method: "GET" })
       .select(`
         id, invoice_number, order_date, created_at, status, payment_method, payment_status,
         currency, notes, fulfillment_method, subtotal, discount, promo_code, tax_amount,
-        tax_rate, shipping, total, advance_paid, shipping_address_id, user_id, brand_id,
+        tax_rate, shipping, total, advance_paid, shipping_address_id, delivery_address_snapshot, user_id, brand_id,
         branch_id, digital_delivery_channel, digital_delivery_contact,
         customers(name, phone, email, region),
         order_items(description, quantity, unit_price, original_price, line_total, customization_total,
@@ -33,11 +33,11 @@ export const getPublicInvoice = createServerFn({ method: "GET" })
       .eq("brand_id", order.brand_id)
       .maybeSingle();
 
-    let shippingAddress: any = null;
-    if (order.shipping_address_id) {
+    let shippingAddress: any = order.delivery_address_snapshot ?? null;
+    if (!shippingAddress && order.shipping_address_id) {
       const { data: addr } = await supabaseAdmin
         .from("customer_addresses")
-        .select("label, region, road, house, flat, is_default")
+        .select("label, region, block, road, house, flat, floor, landmark, formatted_address, latitude, longitude, place_id, delivery_notes, is_default")
         .eq("id", order.shipping_address_id)
         .maybeSingle();
       shippingAddress = addr ?? null;

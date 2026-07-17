@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { Loader2, LogOut, Plus, Trash2, PackageSearch, MapPin, User as UserIcon } from "lucide-react";
 import { BAHRAIN_REGIONS, regionLabel } from "@/lib/bahrain-regions";
+import { DeliveryAddressCard } from "@/components/delivery-address-card";
 
 export const Route = createFileRoute("/$slug/account")({
   component: AccountPage,
@@ -47,6 +48,13 @@ type Address = {
   road: string | null;
   house: string | null;
   flat: string | null;
+  floor: string | null;
+  landmark: string | null;
+  formatted_address: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  place_id: string | null;
+  delivery_notes: string | null;
   is_default: boolean;
 };
 
@@ -332,6 +340,9 @@ const emptyAddress = () => ({
   road: "",
   house: "",
   flat: "",
+  floor: "",
+  landmark: "",
+  delivery_notes: "",
   is_default: false,
 });
 
@@ -349,7 +360,7 @@ function AddressesSection({ isAr, lang }: { isAr: boolean; lang: "ar" | "en" }) 
     queryFn: async (): Promise<Address[]> => {
       const { data, error } = await supabase
         .from("customer_addresses")
-        .select("id, brand_id, customer_id, label, region, block, road, house, flat, is_default")
+        .select("id, brand_id, customer_id, label, region, block, road, house, flat, floor, landmark, formatted_address, latitude, longitude, place_id, delivery_notes, is_default")
         .eq("customer_id", customer!.id)
         .order("is_default", { ascending: false })
         .order("created_at", { ascending: false });
@@ -388,6 +399,9 @@ function AddressesSection({ isAr, lang }: { isAr: boolean; lang: "ar" | "en" }) 
       road: form.road.trim() || null,
       house: form.house.trim() || null,
       flat: form.flat.trim() || null,
+      floor: form.floor.trim() || null,
+      landmark: form.landmark.trim() || null,
+      delivery_notes: form.delivery_notes.trim() || null,
       is_default: form.is_default,
     });
     setSaving(false);
@@ -432,15 +446,7 @@ function AddressesSection({ isAr, lang }: { isAr: boolean; lang: "ar" | "en" }) 
                 </Badge>
               )}
             </div>
-            <div className="text-sm text-muted-foreground leading-relaxed">
-              {[
-                a.region && regionLabel(a.region, lang),
-                a.block && `${t("مجمع", "Block")} ${a.block}`,
-                a.road && `${t("طريق", "Road")} ${a.road}`,
-                a.house && `${t("مبنى", "Building")} ${a.house}`,
-                a.flat && `${t("شقة", "Flat")} ${a.flat}`,
-              ].filter(Boolean).join(" · ")}
-            </div>
+            <DeliveryAddressCard address={a} lang={lang} compact showLabel={false} />
           </div>
           <div className="flex gap-2">
             {!a.is_default && (
@@ -489,6 +495,18 @@ function AddressesSection({ isAr, lang }: { isAr: boolean; lang: "ar" | "en" }) 
             <div>
               <Label>{t("رقم الشقة (اختياري)", "Flat (optional)")}</Label>
               <Input value={form.flat} onChange={(e) => setForm({ ...form, flat: e.target.value })} />
+            </div>
+            <div>
+              <Label>{t("الطابق (اختياري)", "Floor (optional)")}</Label>
+              <Input value={form.floor} onChange={(e) => setForm({ ...form, floor: e.target.value })} />
+            </div>
+            <div>
+              <Label>{t("علامة مميزة (اختياري)", "Landmark (optional)")}</Label>
+              <Input value={form.landmark} onChange={(e) => setForm({ ...form, landmark: e.target.value })} />
+            </div>
+            <div className="sm:col-span-2">
+              <Label>{t("ملاحظات التوصيل (اختياري)", "Delivery notes (optional)")}</Label>
+              <Input value={form.delivery_notes} onChange={(e) => setForm({ ...form, delivery_notes: e.target.value })} />
             </div>
           </div>
           <label className="flex items-center gap-2 text-sm">

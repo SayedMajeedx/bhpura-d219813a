@@ -1,7 +1,7 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { MapPin, Pencil, Plus, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { formatAddressLine, regionLabel } from "@/lib/bahrain-regions";
+import { DeliveryAddressCard } from "@/components/delivery-address-card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -18,6 +18,8 @@ export type ManagedCustomerAddress = {
   road: string | null;
   house: string | null;
   flat: string | null;
+  floor: string | null;
+  landmark: string | null;
   delivery_notes: string | null;
   is_default: boolean;
 };
@@ -28,6 +30,8 @@ type AddressForm = {
   road: string;
   house: string;
   flat: string;
+  floor: string;
+  landmark: string;
   region: string;
   delivery_notes: string;
 };
@@ -38,6 +42,8 @@ const EMPTY_FORM: AddressForm = {
   road: "",
   house: "",
   flat: "",
+  floor: "",
+  landmark: "",
   region: "",
   delivery_notes: "",
 };
@@ -72,6 +78,8 @@ export function CustomerAddressManager({
       road: editing.road ?? "",
       house: editing.house ?? "",
       flat: editing.flat ?? "",
+      floor: editing.floor ?? "",
+      landmark: editing.landmark ?? "",
       region: editing.region ?? "",
       delivery_notes: editing.delivery_notes ?? "",
     } : EMPTY_FORM);
@@ -100,6 +108,8 @@ export function CustomerAddressManager({
       road: form.road.trim(),
       house: form.house.trim(),
       flat: form.flat.trim() || null,
+      floor: form.floor.trim() || null,
+      landmark: form.landmark.trim() || null,
       delivery_notes: form.delivery_notes.trim() || null,
     };
 
@@ -196,8 +206,7 @@ export function CustomerAddressManager({
                     <span className="font-medium">{address.label || (isAr ? "عنوان التوصيل" : "Delivery address")}</span>
                     {address.is_default && <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary">{isAr ? "افتراضي" : "Default"}</span>}
                   </div>
-                  <p className="text-sm leading-6 text-muted-foreground">{formatAddressLine(address, lang) || regionLabel(address.region, lang) || "—"}</p>
-                  {address.delivery_notes && <p className="mt-2 rounded-lg bg-muted/50 px-2.5 py-2 text-xs text-muted-foreground">{address.delivery_notes}</p>}
+                  <DeliveryAddressCard address={address} lang={lang} compact showLabel={false} />
                 </div>
                 <div className="flex shrink-0 gap-1">
                   <Button type="button" variant="ghost" size="icon" className="h-8 w-8" onClick={() => startEdit(address)} aria-label={isAr ? "تعديل العنوان" : "Edit address"}><Pencil className="h-4 w-4" /></Button>
@@ -219,6 +228,8 @@ export function CustomerAddressManager({
             <Field label={isAr ? "الطريق" : "Road"} required><Input value={form.road} onChange={(event) => setForm({ ...form, road: event.target.value })} /></Field>
             <Field label={isAr ? "المبنى / المنزل" : "Building / House"} required><Input value={form.house} onChange={(event) => setForm({ ...form, house: event.target.value })} /></Field>
             <Field label={isAr ? "الشقة" : "Flat"}><Input value={form.flat} onChange={(event) => setForm({ ...form, flat: event.target.value })} /></Field>
+            <Field label={isAr ? "الطابق" : "Floor"}><Input value={form.floor} onChange={(event) => setForm({ ...form, floor: event.target.value })} /></Field>
+            <Field label={isAr ? "علامة مميزة قريبة" : "Nearby Landmark"}><Input value={form.landmark} onChange={(event) => setForm({ ...form, landmark: event.target.value })} /></Field>
             <div className="sm:col-span-2"><Field label={isAr ? "ملاحظات خاصة للتوصيل" : "Special Delivery Notes"}><Textarea rows={3} value={form.delivery_notes} onChange={(event) => setForm({ ...form, delivery_notes: event.target.value })} placeholder={isAr ? "مثال: الاتصال عند الوصول" : "Example: Call when you arrive"} /></Field></div>
           </div>
           <DialogFooter><Button type="button" variant="outline" onClick={() => setOpen(false)}>{isAr ? "إلغاء" : "Cancel"}</Button><Button type="button" onClick={() => void save()} disabled={saving}>{saving ? (isAr ? "جاري الحفظ…" : "Saving…") : (isAr ? "حفظ العنوان" : "Save Address")}</Button></DialogFooter>

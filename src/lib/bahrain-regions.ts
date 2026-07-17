@@ -48,6 +48,13 @@ export type StructuredAddress = {
   road?: string | null;
   house?: string | null;
   flat?: string | null;
+  floor?: string | null;
+  landmark?: string | null;
+  formatted_address?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
+  place_id?: string | null;
+  delivery_notes?: string | null;
   is_default?: boolean;
 };
 

@@ -537,10 +537,16 @@ export type Database = {
           customer_id: string
           delivery_notes: string | null
           flat: string | null
+          floor: string | null
+          formatted_address: string | null
           house: string | null
           id: string
           is_default: boolean
           label: string | null
+          landmark: string | null
+          latitude: number | null
+          longitude: number | null
+          place_id: string | null
           region: string | null
           road: string | null
           updated_at: string
@@ -553,10 +559,16 @@ export type Database = {
           customer_id: string
           delivery_notes?: string | null
           flat?: string | null
+          floor?: string | null
+          formatted_address?: string | null
           house?: string | null
           id?: string
           is_default?: boolean
           label?: string | null
+          landmark?: string | null
+          latitude?: number | null
+          longitude?: number | null
+          place_id?: string | null
           region?: string | null
           road?: string | null
           updated_at?: string
@@ -569,10 +581,16 @@ export type Database = {
           customer_id?: string
           delivery_notes?: string | null
           flat?: string | null
+          floor?: string | null
+          formatted_address?: string | null
           house?: string | null
           id?: string
           is_default?: boolean
           label?: string | null
+          landmark?: string | null
+          latitude?: number | null
+          longitude?: number | null
+          place_id?: string | null
           region?: string | null
           road?: string | null
           updated_at?: string
@@ -974,6 +992,7 @@ export type Database = {
           fulfillment_method: string
           digital_delivery_channel: string | null
           digital_delivery_contact: string | null
+          delivery_address_snapshot: Json | null
           id: string
           invoice_number: number
           notes: string | null
@@ -1018,6 +1037,7 @@ export type Database = {
           fulfillment_method?: string
           digital_delivery_channel?: string | null
           digital_delivery_contact?: string | null
+          delivery_address_snapshot?: Json | null
           id?: string
           invoice_number: number
           notes?: string | null
@@ -1062,6 +1082,7 @@ export type Database = {
           fulfillment_method?: string
           digital_delivery_channel?: string | null
           digital_delivery_contact?: string | null
+          delivery_address_snapshot?: Json | null
           id?: string
           invoice_number?: number
           notes?: string | null

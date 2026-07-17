@@ -67,6 +67,7 @@ import { PhoneInput } from "@/components/phone-input";
 import { useBrand } from "@/lib/brand-context";
 import { useProfile } from "@/lib/profile-context";
 import { getBenefitReceiptViewUrl, rejectBenefitReceipt } from "@/lib/benefit-receipt.functions";
+import { DeliveryAddressCard } from "@/components/delivery-address-card";
 
 function formatDeliveryAddress(
   c:
@@ -102,9 +103,17 @@ type SavedAddress = {
   customer_id: string;
   label: string | null;
   region: string | null;
+  block: string | null;
   road: string | null;
   house: string | null;
   flat: string | null;
+  floor: string | null;
+  landmark: string | null;
+  formatted_address: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  place_id: string | null;
+  delivery_notes: string | null;
   is_default: boolean;
 };
 
@@ -218,10 +227,15 @@ function CourierOrderView({ order, slug, onUpdated }: { order: any; slug: string
   // customer's legacy profile fields. A shopper can choose any saved address
   // at checkout, so couriers must always see the address referenced by the
   // order's shipping_address_id.
-  const selectedAddress = Array.isArray(order.shipping_address)
+  const liveAddress = Array.isArray(order.shipping_address)
     ? order.shipping_address[0]
     : order.shipping_address;
-  const address = formatDeliveryAddress(selectedAddress ?? order.customers, lang).join(" ");
+  const selectedAddress = order.delivery_address_snapshot ?? liveAddress;
+  const address =
+    selectedAddress?.formatted_address ||
+    selectedAddress?.address ||
+    order.customers?.address ||
+    null;
   return (
     <div className="p-4 sm:p-6 max-w-3xl mx-auto space-y-4">
       <Link to="/admin/b/$slug/orders" params={{ slug }} className="text-sm text-muted-foreground">← {lang === "ar" ? "الطلبات المسندة" : "Assigned orders"}</Link>
@@ -230,12 +244,17 @@ function CourierOrderView({ order, slug, onUpdated }: { order: any; slug: string
           <div><p className="text-xs text-muted-foreground">{lang === "ar" ? "طلب التوصيل" : "Delivery order"}</p><h1 className="text-2xl font-display">#{order.invoice_number}</h1></div>
           <span className="rounded-full bg-primary/10 px-3 py-1 text-sm font-medium text-primary">{order.fulfillment_status || "assigned"}</span>
         </div>
-        <div className="grid sm:grid-cols-2 gap-4 rounded-xl border p-4">
+        <div className="grid sm:grid-cols-2 gap-4 rounded-xl border p-4 [&>div:nth-child(3)]:hidden">
           <div><p className="text-xs text-muted-foreground">{lang === "ar" ? "العميل" : "Customer"}</p><p className="font-semibold">{order.customers?.name || "—"}</p></div>
           <div><p className="text-xs text-muted-foreground">{lang === "ar" ? "الهاتف" : "Phone"}</p><a dir="ltr" className="font-semibold underline" href={`tel:${order.customers?.phone || ""}`}>{order.customers?.phone || "—"}</a></div>
           <div className="sm:col-span-2"><p className="text-xs text-muted-foreground">{lang === "ar" ? "عنوان التوصيل" : "Delivery address"}</p><p className="font-medium">{address || selectedAddress?.address || order.customers?.address || "—"}</p></div>
           {order.payment_method === "cod" && <div className="sm:col-span-2 rounded-lg bg-amber-50 p-3 text-amber-900"><strong>{lang === "ar" ? "تحصيل عند التسليم" : "Collect on delivery"}</strong>: {formatMoney(Number(order.total || 0), order.currency || "BHD")}</div>}
         </div>
+        <DeliveryAddressCard
+          address={selectedAddress ?? order.customers}
+          lang={lang}
+          compact
+        />
         <div><p className="mb-2 text-sm font-medium">{lang === "ar" ? "محتويات الطلب" : "Order items"}</p>{(order.order_items ?? []).map((item: any) => <div key={item.id} className="flex justify-between border-b py-2 text-sm"><span>{item.description}</span><span>× {item.quantity}</span></div>)}</div>
         <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder={lang === "ar" ? "ملاحظات التوصيل" : "Delivery notes"} />
         <div className="grid grid-cols-2 gap-2">
@@ -1376,6 +1395,19 @@ function OrderDetail() {
               const selectedAddress = (addressesQ.data ?? []).find(
                 (a) => a.id === order.shipping_address_id,
               );
+              const storedAddressSnapshot = (order as any).delivery_address_snapshot as
+                | StructuredAddress
+                | null;
+              const snapshotMatchesSavedSelection =
+                storedAddressSnapshot &&
+                (!order.shipping_address_id ||
+                  !storedAddressSnapshot.id ||
+                  storedAddressSnapshot.id === order.shipping_address_id);
+              const addressSnapshot =
+                (snapshotMatchesSavedSelection ? storedAddressSnapshot : null) ??
+                selectedAddress ??
+                storedAddressSnapshot ??
+                (selectedCustomer as StructuredAddress | null);
               const selectedBranch = (branchesQ.data ?? []).find(
                 (b: any) => b.id === order.branch_id,
               );
@@ -1599,7 +1631,15 @@ function OrderDetail() {
                               ))}
                             </SelectContent>
                           </Select>
-                          <p className="text-sm text-muted-foreground">
+                          {addressSnapshot && (
+                            <DeliveryAddressCard
+                              address={addressSnapshot}
+                              lang={lang}
+                              compact
+                              showLabel={false}
+                            />
+                          )}
+                          <p className="hidden text-sm text-muted-foreground">
                             {address ||
                               (lang === "ar"
                                 ? "لا يوجد عنوان توصيل محفوظ لهذا العميل"
@@ -2125,6 +2165,7 @@ function OrderDetail() {
       {(() => {
         const addrs = (addressesQ.data ?? []).filter((a) => a.customer_id === order.customer_id);
         const chosen =
+          ((order as any).delivery_address_snapshot as SavedAddress | null) ??
           addrs.find((a) => a.id === order.shipping_address_id) ??
           addrs.find((a) => a.is_default) ??
           null;
