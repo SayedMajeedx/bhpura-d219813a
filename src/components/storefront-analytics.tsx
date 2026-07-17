@@ -13,11 +13,23 @@ export function StorefrontAnalytics() {
   const { brand, settings, lang, t } = useStorefront();
   const location = useLocation();
   const storageKey = `boutq-consent:${brand.id}`;
-  const [choice, setChoice] = useState<Choice>(() => {
-    if (typeof window === "undefined") return empty;
-    try { return JSON.parse(localStorage.getItem(storageKey) || "null") || empty; } catch { return empty; }
-  });
-  const [visible, setVisible] = useState(() => !choice.decided);
+  const [choice, setChoice] = useState<Choice>(empty);
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem(storageKey);
+      if (stored) {
+        const parsed = JSON.parse(stored) as Choice;
+        setChoice(parsed);
+        if (!parsed.decided) setVisible(true);
+      } else {
+        setVisible(true);
+      }
+    } catch {
+      setVisible(true);
+    }
+  }, [storageKey]);
   const [customizing, setCustomizing] = useState(false);
   const effective = useMemo(() => settings.analytics_consent_required ? choice : {
     decided: true,

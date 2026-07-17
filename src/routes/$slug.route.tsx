@@ -496,7 +496,14 @@ function AnnouncementBar() {
   const { pathname } = useLocation();
   const text = lang === "ar" ? settings.announcement_text_ar || settings.announcement_text_en : settings.announcement_text_en || settings.announcement_text_ar;
   const key = `announcement-dismissed:${brand.id}:${text ?? ""}`;
-  const [dismissed, setDismissed] = useState(() => { try { return sessionStorage.getItem(key) === "1"; } catch { return false; } });
+  const [dismissed, setDismissed] = useState(false);
+  useEffect(() => {
+    try {
+      if (sessionStorage.getItem(key) === "1") {
+        setDismissed(true);
+      }
+    } catch {}
+  }, [key]);
   const audienceOk = settings.announcement_audience === "all" || (settings.announcement_audience === "guest" ? !session : Boolean(session));
   const relative = pathname.replace(`/${brand.slug}`, "") || "/";
   const scopeOk = settings.announcement_scope === "all" || (settings.announcement_scope === "home" && relative === "/") || (settings.announcement_scope === "checkout" && relative.startsWith("/checkout")) || (settings.announcement_scope === "catalog" && !relative.startsWith("/checkout") && !relative.startsWith("/account") && !relative.startsWith("/auth"));
