@@ -228,10 +228,21 @@ function CourierOrderView({ order, slug, onUpdated }: { order: any; slug: string
   const [notes, setNotes] = useState(order.delivery_notes ?? "");
   const [saving, setSaving] = useState(false);
   const [codConfirmed, setCodConfirmed] = useState(Boolean(order.cod_collected_at));
-  const amountDue = Math.max(0, Number(order.total || 0) - Number(order.advance_paid || 0));
+  const advancePaid = Math.max(0, Number(order.advance_paid || 0));
+  const orderTotal = Number(order.total || 0);
+  const amountDue = Math.max(0, orderTotal - advancePaid);
   const [codAmount, setCodAmount] = useState(amountDue.toFixed(3));
   const isCod = ["cod", "cash_on_delivery"].includes(String(order.payment_method ?? "").toLowerCase());
   const deliveryComplete = order.fulfillment_status === "delivered";
+  const currency = order.currency || "BHD";
+
+  // Resolve payment badge using the same logic as the admin view
+  const payStatus = resolvePaymentStatus(
+    order.payment_status,
+    order.status,
+    orderTotal,
+    advancePaid,
+  );
   const messageQ = useQuery({
     queryKey: ["courier-delivery-message", order.id],
     queryFn: async () => {
@@ -308,20 +319,77 @@ function CourierOrderView({ order, slug, onUpdated }: { order: any; slug: string
       <Card className="p-5 space-y-4">
         <div className="flex items-start justify-between gap-3">
           <div><p className="text-xs text-muted-foreground">{lang === "ar" ? "طلب التوصيل" : "Delivery order"}</p><h1 className="text-2xl font-display">#{order.invoice_number}</h1></div>
-          <span className="rounded-full bg-primary/10 px-3 py-1 text-sm font-medium text-primary">{order.fulfillment_status || "assigned"}</span>
+          <div className="flex flex-col items-end gap-2">
+            <span className="rounded-full bg-primary/10 px-3 py-1 text-sm font-medium text-primary">{order.fulfillment_status || "assigned"}</span>
+            {/* Payment status badge */}
+            <span className={`rounded-full border px-3 py-1 text-xs font-bold tracking-wide ${PAYMENT_BADGE_CLASSES[payStatus]}`}>
+              {lang === "ar" ? PAYMENT_BADGE_LABEL[payStatus].ar : PAYMENT_BADGE_LABEL[payStatus].en}
+            </span>
+          </div>
         </div>
         <div className="grid sm:grid-cols-2 gap-4 rounded-xl border p-4 [&>div:nth-child(3)]:hidden">
           <div><p className="text-xs text-muted-foreground">{lang === "ar" ? "العميل" : "Customer"}</p><p className="font-semibold">{order.customers?.name || "—"}</p></div>
           <div><p className="text-xs text-muted-foreground">{lang === "ar" ? "الهاتف" : "Phone"}</p><a dir="ltr" className="font-semibold underline" href={`tel:${order.customers?.phone || ""}`}>{order.customers?.phone || "—"}</a></div>
           <div className="sm:col-span-2"><p className="text-xs text-muted-foreground">{lang === "ar" ? "عنوان التوصيل" : "Delivery address"}</p><p className="font-medium">{address || selectedAddress?.address || order.customers?.address || "—"}</p></div>
-          {isCod && <div className={`sm:col-span-2 rounded-lg p-3 ${order.cod_collected_at ? "bg-emerald-50 text-emerald-900" : "bg-amber-50 text-amber-900"}`}><strong>{order.cod_collected_at ? (lang === "ar" ? "تم استلام المبلغ" : "Cash received") : (lang === "ar" ? "تحصيل عند التسليم" : "Collect on delivery")}</strong>: {formatMoney(order.cod_collected_at ? Number(order.cod_collected_amount || 0) : amountDue, order.currency || "BHD")}</div>}
+          {isCod && <div className={`sm:col-span-2 rounded-lg p-3 ${order.cod_collected_at ? "bg-emerald-50 text-emerald-900" : "bg-amber-50 text-amber-900"}`}><strong>{order.cod_collected_at ? (lang === "ar" ? "تم استلام المبلغ" : "Cash received") : (lang === "ar" ? "تحصيل عند التسليم" : "Collect on delivery")}</strong>: {formatMoney(order.cod_collected_at ? Number(order.cod_collected_amount || 0) : amountDue, currency)}</div>}
         </div>
         <DeliveryAddressCard
           address={selectedAddress ?? order.customers}
           lang={lang}
           compact
         />
-        <div><p className="mb-2 text-sm font-medium">{lang === "ar" ? "محتويات الطلب" : "Order items"}</p>{(order.order_items ?? []).map((item: any) => <div key={item.id} className="flex justify-between border-b py-2 text-sm"><span>{item.description}</span><span>× {item.quantity}</span></div>)}</div>
+
+        {/* Price breakdown */}
+        <div className="rounded-xl border p-4 space-y-1">
+          <p className="mb-2 text-sm font-semibold">{lang === "ar" ? "تفاصيل الطلب والسعر" : "Order & price breakdown"}</p>
+          {(order.order_items ?? []).map((item: any) => (
+            <div key={item.id} className="flex justify-between border-b py-2 text-sm gap-2">
+              <span className="flex-1 min-w-0">
+                <span className="block font-medium">{item.description}</span>
+                <span className="text-xs text-muted-foreground">
+                  {item.quantity} × {formatMoney(Number(item.unit_price || 0), currency)}
+                </span>
+              </span>
+              <span className="font-semibold tabular-nums shrink-0">{formatMoney(Number(item.line_total || item.unit_price * item.quantity || 0), currency)}</span>
+            </div>
+          ))}
+          {Number(order.shipping || 0) > 0 && (
+            <div className="flex justify-between py-2 text-sm">
+              <span className="text-muted-foreground">{lang === "ar" ? "رسوم التوصيل" : "Delivery fee"}</span>
+              <span className="tabular-nums">{formatMoney(Number(order.shipping), currency)}</span>
+            </div>
+          )}
+          {Number(order.discount || 0) > 0 && (
+            <div className="flex justify-between py-2 text-sm">
+              <span className="text-muted-foreground">{lang === "ar" ? "الخصم" : "Discount"}</span>
+              <span className="tabular-nums text-emerald-700">− {formatMoney(Number(order.discount), currency)}</span>
+            </div>
+          )}
+          <div className="flex justify-between pt-2 border-t font-bold text-sm">
+            <span>{lang === "ar" ? "الإجمالي" : "Total"}</span>
+            <span className="tabular-nums">{formatMoney(orderTotal, currency)}</span>
+          </div>
+          {/* Partial payment detail */}
+          {payStatus === "partial" && advancePaid > 0 && (
+            <>
+              <div className="flex justify-between text-sm text-blue-700">
+                <span>{lang === "ar" ? "مبلغ مدفوع مسبقاً" : "Advance paid"}</span>
+                <span className="tabular-nums">− {formatMoney(advancePaid, currency)}</span>
+              </div>
+              <div className="flex justify-between text-sm font-semibold text-amber-800 border-t pt-2">
+                <span>{lang === "ar" ? "المبلغ المتبقي" : "Remaining due"}</span>
+                <span className="tabular-nums">{formatMoney(amountDue, currency)}</span>
+              </div>
+            </>
+          )}
+          {payStatus === "paid" && (
+            <div className="flex justify-between text-sm font-semibold text-emerald-700 border-t pt-2">
+              <span>{lang === "ar" ? "الحالة" : "Status"}</span>
+              <span>{lang === "ar" ? "✓ تم الدفع بالكامل" : "✓ Fully paid"}</span>
+            </div>
+          )}
+        </div>
+
         <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder={lang === "ar" ? "ملاحظات التوصيل" : "Delivery notes"} />
         {isCod && !order.cod_collected_at && (
           <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 space-y-3">
@@ -349,6 +417,7 @@ function CourierOrderView({ order, slug, onUpdated }: { order: any; slug: string
     </div>
   );
 }
+
 
 function OrderDetail() {
   const t = useT();

@@ -23,7 +23,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Plus, Pencil, Trash2, Wallet, Sparkles, Loader2, Store as StoreIcon, Calendar, Clock, Receipt, Check, ChevronsUpDown, UploadCloud, FileText, X } from "lucide-react";
+import { Plus, Pencil, Trash2, Wallet, Sparkles, Loader2, Store as StoreIcon, Calendar, Clock, Receipt, Check, ChevronsUpDown, UploadCloud, FileText, X, Download, ChevronDown, ChevronRight, Package } from "lucide-react";
 import { toast } from "sonner";
 import { formatMoney } from "@/lib/format";
 import { useI18n, useT } from "@/lib/i18n";
@@ -214,6 +214,69 @@ function ExpensesPage() {
   const currency = list[0]?.currency ?? "BHD";
   const total = useMemo(() => filteredList.reduce((s, e) => s + Number(e.amount || 0), 0), [filteredList]);
 
+  // ── COGS: fetch orders in the active date range and join variant cost_price ──
+  const cogsQ = useQuery({
+    queryKey: ["cogs", brandId, activeRange.from, activeRange.to],
+    queryFn: async () => {
+      let q2 = (supabase as any)
+        .from("orders")
+        .select(
+          "id, invoice_number, created_at, currency, order_items(id, description, quantity, unit_price, line_total, variant_id, product_variants:variant_id(cost_price))",
+        )
+        .eq("brand_id", brandId)
+        .in("status", ["confirmed", "paid", "shipped", "completed"])
+        .order("created_at", { ascending: false });
+      if (activeRange.from) q2 = q2.gte("created_at", activeRange.from);
+      if (activeRange.to) {
+        // Include the whole last day
+        const endDay = new Date(activeRange.to);
+        endDay.setDate(endDay.getDate() + 1);
+        q2 = q2.lt("created_at", endDay.toISOString().slice(0, 10));
+      }
+      const { data, error } = await q2;
+      if (error) { console.error("[cogs]", error); return []; }
+      return (data ?? []) as CogOrder[];
+    },
+  });
+
+  const downloadCogsCsv = () => {
+    const rows = cogsQ.data ?? [];
+    const lines: string[] = [
+      lang === "ar"
+        ? "التاريخ,رقم الطلب,المنتج,الكمية,تكلفة الوحدة,إجمالي التكلفة"
+        : "Date,Order #,Product,Qty,Unit Cost,Total Cost",
+    ];
+    let grandTotal = 0;
+    for (const order of rows) {
+      for (const item of (order.order_items ?? [])) {
+        const cost = Number((item as any).product_variants?.cost_price ?? 0);
+        const itemTotal = cost * Number(item.quantity);
+        grandTotal += itemTotal;
+        lines.push(
+          [
+            new Date(order.created_at).toLocaleDateString(locale),
+            `#${order.invoice_number}`,
+            `"${(item.description ?? "").replace(/"/g, '""')}"`,
+            item.quantity,
+            cost.toFixed(3),
+            itemTotal.toFixed(3),
+          ].join(","),
+        );
+      }
+    }
+    lines.push("");
+    lines.push(lang === "ar" ? `,,,,الإجمالي,${grandTotal.toFixed(3)}` : `,,,,Total,${grandTotal.toFixed(3)}`);
+    const blob = new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    const from = activeRange.from || "start";
+    const to = activeRange.to || "end";
+    a.download = `cogs_${from}_${to}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   const del = async (id: string) => {
     setDeleting(true);
     try {
@@ -373,6 +436,16 @@ function ExpensesPage() {
           <span className="text-2xl font-display">{formatMoney(total, currency, locale)}</span>
         </div>
       </Card>
+
+      {/* Cost of Goods Sold auto-section */}
+      <CogsSection
+        orders={cogsQ.data ?? []}
+        loading={cogsQ.isLoading}
+        currency={currency}
+        locale={locale}
+        lang={lang}
+        onDownload={downloadCogsCsv}
+      />
 
       {filteredList.length === 0 ? (
         <Card className="p-12 text-center">
@@ -906,5 +979,155 @@ function ReceiptReviewDialog({
         </DialogFooter>
       </DialogContent>
     </Dialog>
+  );
+}
+
+// ============================================================================
+// Types for COGS
+// ============================================================================
+type CogItem = {
+  id: string;
+  description: string;
+  quantity: number;
+  unit_price: number;
+  line_total: number;
+  variant_id: string | null;
+  product_variants?: { cost_price: number } | null;
+};
+type CogOrder = {
+  id: string;
+  invoice_number: number;
+  created_at: string;
+  currency: string;
+  order_items: CogItem[];
+};
+
+// ============================================================================
+// COGS Section Component
+// ============================================================================
+function CogsSection({
+  orders, loading, currency, locale, lang, onDownload,
+}: {
+  orders: CogOrder[];
+  loading: boolean;
+  currency: string;
+  locale: string;
+  lang: "en" | "ar";
+  onDownload: () => void;
+}) {
+  const [expanded, setExpanded] = useState(false);
+
+  const { totalCogs, ordersWithCogs } = useMemo(() => {
+    let totalCogs = 0;
+    const ordersWithCogs = orders
+      .map((order) => {
+        const items = (order.order_items ?? []).map((item) => {
+          const cost = Number(item.product_variants?.cost_price ?? 0);
+          const itemCogs = cost * Number(item.quantity);
+          return { ...item, cost, itemCogs };
+        });
+        const orderCogs = items.reduce((s, i) => s + i.itemCogs, 0);
+        totalCogs += orderCogs;
+        return { ...order, items, orderCogs };
+      })
+      .filter((o) => o.orderCogs > 0);
+    return { totalCogs, ordersWithCogs };
+  }, [orders]);
+
+  const hasCogs = ordersWithCogs.length > 0;
+
+  return (
+    <Card className="mb-6 overflow-hidden">
+      <div className="flex items-center justify-between p-4 sm:p-5">
+        <button
+          type="button"
+          className="flex items-center gap-2 text-start flex-1"
+          onClick={() => setExpanded((v) => !v)}
+        >
+          <Package className="h-4 w-4 text-muted-foreground shrink-0" />
+          <div>
+            <p className="text-sm font-semibold">
+              {lang === "ar" ? "تكلفة البضاعة المباعة (COGS)" : "Cost of Goods Sold (COGS)"}
+            </p>
+            <p className="text-xs text-muted-foreground">
+              {lang === "ar"
+                ? "محسوبة تلقائياً من تكلفة المتغيرات في الطلبات المكتملة"
+                : "Auto-calculated from variant cost prices of completed orders"}
+            </p>
+          </div>
+          {expanded ? <ChevronDown className="h-4 w-4 ms-auto text-muted-foreground" /> : <ChevronRight className="h-4 w-4 ms-auto text-muted-foreground" />}
+        </button>
+        <div className="flex items-center gap-3 ms-4">
+          {loading ? (
+            <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+          ) : (
+            <span className="text-xl font-display tabular-nums">
+              {formatMoney(totalCogs, currency, locale)}
+            </span>
+          )}
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            disabled={!hasCogs}
+            onClick={onDownload}
+            className="shrink-0"
+          >
+            <Download className="h-3.5 w-3.5 me-1.5" />
+            {lang === "ar" ? "تنزيل CSV" : "Download CSV"}
+          </Button>
+        </div>
+      </div>
+
+      {expanded && (
+        <div className="border-t">
+          {!hasCogs && !loading && (
+            <p className="p-6 text-center text-sm text-muted-foreground">
+              {lang === "ar"
+                ? "لا توجد بيانات تكلفة للطلبات في هذه الفترة. تأكد من إدخال تكلفة المتغيرات في المخزون."
+                : "No cost data found for orders in this period. Make sure variant cost prices are set in Inventory."}
+            </p>
+          )}
+          {ordersWithCogs.map((order) => (
+            <div key={order.id} className="border-b last:border-b-0">
+              <div className="flex items-center justify-between px-4 py-2 bg-secondary/30">
+                <span className="text-xs font-semibold text-muted-foreground">
+                  #{order.invoice_number} &nbsp;·&nbsp; {new Date(order.created_at).toLocaleDateString(locale)}
+                </span>
+                <span className="text-xs font-bold tabular-nums">
+                  {formatMoney(order.orderCogs, order.currency, locale)}
+                </span>
+              </div>
+              <table className="w-full text-sm">
+                <thead className="text-xs text-muted-foreground">
+                  <tr>
+                    <th className="px-4 py-1.5 text-start font-medium">{lang === "ar" ? "المنتج" : "Product"}</th>
+                    <th className="px-4 py-1.5 text-center font-medium">{lang === "ar" ? "الكمية" : "Qty"}</th>
+                    <th className="px-4 py-1.5 text-end font-medium">{lang === "ar" ? "تكلفة الوحدة" : "Unit cost"}</th>
+                    <th className="px-4 py-1.5 text-end font-medium">{lang === "ar" ? "إجمالي التكلفة" : "Total cost"}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {order.items.filter((i) => i.itemCogs > 0).map((item) => (
+                    <tr key={item.id} className="border-t">
+                      <td className="px-4 py-2 max-w-[200px] truncate">{item.description}</td>
+                      <td className="px-4 py-2 text-center tabular-nums">{item.quantity}</td>
+                      <td className="px-4 py-2 text-end tabular-nums">{formatMoney(item.cost, currency, locale)}</td>
+                      <td className="px-4 py-2 text-end tabular-nums font-medium">{formatMoney(item.itemCogs, currency, locale)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ))}
+          {hasCogs && (
+            <div className="flex justify-between items-center px-4 py-3 bg-secondary/20 font-bold text-sm">
+              <span>{lang === "ar" ? "إجمالي تكلفة البضاعة" : "Total COGS"}</span>
+              <span className="tabular-nums">{formatMoney(totalCogs, currency, locale)}</span>
+            </div>
+          )}
+        </div>
+      )}
+    </Card>
   );
 }
