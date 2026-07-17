@@ -27,6 +27,9 @@ import { toast } from "sonner";
 import { useBrand } from "@/lib/brand-context";
 
 export const Route = createFileRoute("/_authenticated/admin/b/$slug/campaigns")({
+  validateSearch: (search: Record<string, unknown>) => ({
+    segment: (typeof search.segment === "string" ? search.segment : "All") as "All" | "VIP" | "Churn Risk" | "New Buyer",
+  }),
   component: CampaignsPage,
 });
 
@@ -43,6 +46,16 @@ function CampaignsPage() {
   const qc = useQueryClient();
   const brand = useBrand();
   const brandId = brand.id;
+
+  const { segment } = Route.useSearch();
+  const [selectedSegment, setSelectedSegment] = useState<"All" | "VIP" | "Churn Risk" | "New Buyer">(segment || "All");
+  const [selectedCustomerIds, setSelectedCustomerIds] = useState<string[]>([]);
+
+  useEffect(() => {
+    if (segment) {
+      setSelectedSegment(segment);
+    }
+  }, [segment]);
 
   const [message, setMessage] = useState(isAr ? DEFAULT_AR : DEFAULT_EN);
   const [selectedId, setSelectedId] = useState<string>("");
@@ -90,17 +103,75 @@ function CampaignsPage() {
   });
 
   const ordersQ = useQuery({
-    queryKey: ["campaigns-order-counts", brandId],
+    queryKey: ["campaigns-customer-orders", brandId],
     queryFn: async () => {
-      const { data, error } = await supabase.from("orders").select("customer_id").eq("brand_id", brandId);
+      const { data, error } = await supabase
+        .from("orders")
+        .select("id, customer_id, total, created_at, status")
+        .eq("brand_id", brandId)
+        .in("status", ["confirmed", "paid", "shipped", "completed"]);
       if (error) throw error;
-      const counts: Record<string, number> = {};
-      (data ?? []).forEach((o: { customer_id: string | null }) => {
-        if (o.customer_id) counts[o.customer_id] = (counts[o.customer_id] ?? 0) + 1;
-      });
-      return counts;
+      return data as Array<{ id: string; customer_id: string | null; total: number; created_at: string; status: string }>;
     },
   });
+
+  const customerCrmStats = useMemo(() => {
+    const map = new Map<string, {
+      totalOrders: number;
+      lifetimeSpend: number;
+      lastOrderDate: string | null;
+      badge: "VIP" | "Churn Risk" | "New Buyer" | "Regular" | null;
+    }>();
+
+    const orders = ordersQ.data ?? [];
+    const nowMs = new Date().getTime();
+    const sixtyDaysMs = 60 * 24 * 60 * 60 * 1000;
+
+    const ordersByCustomer = new Map<string, typeof orders>();
+    orders.forEach((o) => {
+      if (o.customer_id) {
+        if (!ordersByCustomer.has(o.customer_id)) {
+          ordersByCustomer.set(o.customer_id, []);
+        }
+        ordersByCustomer.get(o.customer_id)!.push(o);
+      }
+    });
+
+    ordersByCustomer.forEach((custOrders, customerId) => {
+      const totalOrders = custOrders.length;
+      const lifetimeSpend = custOrders.reduce((sum, o) => sum + Number(o.total || 0), 0);
+      
+      let lastOrderDate: string | null = null;
+      let lastOrderMs = 0;
+      custOrders.forEach((o) => {
+        const ms = new Date(o.created_at).getTime();
+        if (ms > lastOrderMs) {
+          lastOrderMs = ms;
+          lastOrderDate = o.created_at;
+        }
+      });
+
+      let badge: "VIP" | "Churn Risk" | "New Buyer" | "Regular" | null = null;
+      if (lifetimeSpend > 250) {
+        badge = "VIP";
+      } else if (lastOrderMs > 0 && (nowMs - lastOrderMs) > sixtyDaysMs) {
+        badge = "Churn Risk";
+      } else if (totalOrders === 1) {
+        badge = "New Buyer";
+      } else if (totalOrders > 1) {
+        badge = "Regular";
+      }
+
+      map.set(customerId, {
+        totalOrders,
+        lifetimeSpend,
+        lastOrderDate,
+        badge,
+      });
+    });
+
+    return map;
+  }, [ordersQ.data]);
 
   const businessQ = useQuery({
     queryKey: ["campaigns-business", brandId],
@@ -191,16 +262,52 @@ function CampaignsPage() {
   const filtered = useMemo(() => {
     const list = customersQ.data ?? [];
     const q = search.trim().toLowerCase();
-    if (!q) return list;
-    return list.filter(
+
+    const segmentFiltered = list.filter((c) => {
+      if (selectedSegment === "All") return true;
+      const stats = customerCrmStats.get(c.id);
+      const badge = stats?.badge || "Regular";
+      return badge === selectedSegment;
+    });
+
+    if (!q) return segmentFiltered;
+    return segmentFiltered.filter(
       (c) => c.name.toLowerCase().includes(q) || (c.phone ?? "").toLowerCase().includes(q),
     );
-  }, [customersQ.data, search]);
+  }, [customersQ.data, search, selectedSegment, customerCrmStats]);
+
+  // Pre-populate checkboxes on segment/filter change
+  useEffect(() => {
+    const validIds = filtered.filter((c) => c.phone && c.phone.trim()).map((c) => c.id);
+    setSelectedCustomerIds(validIds);
+  }, [filtered]);
+
+  const toggleSelectAll = () => {
+    const validFiltered = filtered.filter((c) => c.phone && c.phone.trim());
+    const allSelected = validFiltered.every((c) => selectedCustomerIds.includes(c.id));
+    if (allSelected) {
+      setSelectedCustomerIds((prev) => prev.filter((id) => !validFiltered.some((c) => c.id === id)));
+    } else {
+      setSelectedCustomerIds((prev) => {
+        const next = [...prev];
+        validFiltered.forEach((c) => {
+          if (!next.includes(c.id)) next.push(c.id);
+        });
+        return next;
+      });
+    }
+  };
+
+  const toggleSelectCustomer = (id: string) => {
+    setSelectedCustomerIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+    );
+  };
 
   const buildMessage = (customerName: string) =>
     message
-      .replaceAll("{{customer_name}}", customerName || "")
-      .replaceAll("{{business_name}}", businessName || "");
+      .replace(/\{\{customer_name\}\}/g, customerName || "")
+      .replace(/\{\{business_name\}\}/g, businessName || "");
 
   const send = (c: Customer) => {
     if (!c.phone || !c.phone.trim()) {
@@ -220,9 +327,9 @@ function CampaignsPage() {
 
   // Launch bulk campaign wizard modal pre-population
   const launchBulkCampaign = () => {
-    const list = filtered.filter((c) => c.phone && c.phone.trim());
+    const list = filtered.filter((c) => selectedCustomerIds.includes(c.id) && c.phone && c.phone.trim());
     if (list.length === 0) {
-      toast.error(isAr ? "لا يوجد عملاء مؤهلون ولديهم أرقام هواتف" : "No eligible customers with phone numbers");
+      toast.error(isAr ? "لا يوجد عملاء محددون لديهم أرقام هواتف" : "No selected customers with phone numbers");
       return;
     }
     setBulkQueue(list);
@@ -367,6 +474,72 @@ function CampaignsPage() {
         </div>
       </div>
 
+      {/* Target Audience Segment Filter Toolbar */}
+      <Card className="p-4 sm:p-5 mb-6 space-y-4 bg-gradient-to-r from-primary/5 via-secondary/10 to-background border-primary/10">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <Label className="text-sm font-semibold text-foreground flex items-center gap-1.5">
+              <span className="inline-flex h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+              {isAr ? "🎯 الفئة المستهدفة للحملة" : "🎯 Target Campaign Audience"}
+            </Label>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              {isAr ? "قم بتصفية مستقبلي البث باستخدام تصنيفات CRM الذكية" : "Filter broadcast recipients using smart CRM categories"}
+            </p>
+          </div>
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+            <div className="w-full sm:w-56 shrink-0">
+              <Select value={selectedSegment} onValueChange={(val: any) => setSelectedSegment(val)}>
+                <SelectTrigger className="w-full bg-background border-input text-sm">
+                  <SelectValue placeholder={isAr ? "اختر شريحة..." : "Select segment..."} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="All">{isAr ? "كل العملاء (All)" : "All Customers"}</SelectItem>
+                  <SelectItem value="VIP">{isAr ? "كبار العملاء (VIP)" : "VIP"}</SelectItem>
+                  <SelectItem value="Churn Risk">{isAr ? "معرض للمغادرة (Churn Risk)" : "Churn Risk"}</SelectItem>
+                  <SelectItem value="New Buyer">{isAr ? "مشتري جديد (New Buyer)" : "New Buyer"}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </div>
+
+        {/* Quick horizontal filter pill shortcuts */}
+        <div className="flex flex-wrap items-center gap-2 border-t border-border/60 pt-3">
+          <span className="text-xs text-muted-foreground">{isAr ? "فئات سريعة:" : "Quick filters:"}</span>
+          {(["All", "VIP", "Churn Risk", "New Buyer"] as const).map((seg) => {
+            const isActive = selectedSegment === seg;
+            let count = 0;
+            if (seg === "All") {
+              count = customersQ.data?.length ?? 0;
+            } else {
+              count = (customersQ.data ?? []).filter((c) => customerCrmStats.get(c.id)?.badge === seg).length;
+            }
+            return (
+              <button
+                key={seg}
+                type="button"
+                onClick={() => setSelectedSegment(seg)}
+                className={`px-2.5 py-1 rounded-full text-xs font-semibold transition-all flex items-center gap-1.5 ${
+                  isActive
+                    ? "bg-primary text-primary-foreground shadow-sm scale-102"
+                    : "bg-background border border-input text-muted-foreground hover:bg-secondary/40"
+                }`}
+              >
+                {seg === "All" && (isAr ? "الكل" : "All")}
+                {seg === "VIP" && (isAr ? "كبار العملاء" : "VIP")}
+                {seg === "Churn Risk" && (isAr ? "معرض للمغادرة" : "Churn Risk")}
+                {seg === "New Buyer" && (isAr ? "مشترون جدد" : "New Buyer")}
+                <span className={`inline-flex items-center justify-center rounded-full px-1.5 py-0.5 text-[10px] font-bold ${
+                  isActive ? "bg-primary-foreground/20 text-primary-foreground" : "bg-muted text-muted-foreground"
+                }`}>
+                  {count}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </Card>
+
       <Card className="p-4 sm:p-6 mb-6 space-y-4">
         {/* Template picker + actions */}
         <div className="flex flex-col sm:flex-row gap-3 sm:items-end">
@@ -474,9 +647,16 @@ function CampaignsPage() {
                 </Button>
               )}
             </div>
-            <Button size="sm" className="bg-primary text-primary-foreground hover:bg-primary/90 font-medium" onClick={launchBulkCampaign}>
+            <Button
+              size="sm"
+              className="bg-primary text-primary-foreground hover:bg-primary/90 font-medium"
+              onClick={launchBulkCampaign}
+              disabled={selectedCustomerIds.length === 0}
+            >
               <Megaphone className="h-4 w-4 me-1.5" />
-              {isAr ? "إطلاق حملة جماعية" : "Launch Bulk Campaign"}
+              {isAr
+                ? `إطلاق حملة جماعية (المستهدفة: ${selectedCustomerIds.length})`
+                : `Launch Bulk Campaign (Targeting: ${selectedCustomerIds.length})`}
             </Button>
           </div>
         </div>
@@ -487,32 +667,82 @@ function CampaignsPage() {
           </div>
         ) : (
           <>
+          {/* Mobile checklist view */}
           <div className="space-y-3 p-3 sm:hidden">
+            <div className="flex items-center justify-between border-b pb-2 px-1 text-xs text-muted-foreground">
+              <span className="font-semibold">{isAr ? "تحديد الكل" : "Select All"}</span>
+              <input
+                type="checkbox"
+                className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary accent-primary cursor-pointer"
+                checked={filtered.length > 0 && filtered.filter((c) => c.phone && c.phone.trim()).every((c) => selectedCustomerIds.includes(c.id))}
+                onChange={toggleSelectAll}
+              />
+            </div>
             {filtered.map((c) => {
               const isSent = !!sent[c.id];
-              const orderCount = ordersQ.data?.[c.id] ?? 0;
+              const stats = customerCrmStats.get(c.id);
+              const orderCount = stats?.totalOrders ?? 0;
+              const isChecked = selectedCustomerIds.includes(c.id);
               return (
-                <div key={c.id} className={`rounded-lg border p-3 ${isSent ? "bg-emerald-500/10" : "bg-background"}`}>
-                  <div className="font-medium">{c.name}</div>
-                  <div className="mt-1 text-sm text-muted-foreground" dir="ltr">{c.phone || "—"}</div>
-                  <div className="mt-1 text-xs text-muted-foreground">{isAr ? "إجمالي الطلبات" : "Total orders"}: {orderCount}</div>
-                  <div className="mt-3">
-                    {isSent ? (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 px-2 py-1 text-xs font-medium text-emerald-700"><Check className="h-3 w-3" />{isAr ? "تم الإرسال" : "Sent"}</span>
-                    ) : (
-                      <Button className="w-full" size="sm" onClick={() => send(c)} disabled={!c.phone}><MessageCircle className="me-2 h-4 w-4" />{isAr ? "إرسال عبر الواتساب" : "Send via WhatsApp"}</Button>
+                <div key={c.id} className={`rounded-lg border p-3 transition-colors ${isChecked ? "border-primary/40 bg-primary/5" : "bg-background"} ${isSent ? "opacity-75" : ""}`}>
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-start gap-2.5 min-w-0">
+                      <input
+                        type="checkbox"
+                        className="mt-1 h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary accent-primary cursor-pointer"
+                        checked={isChecked}
+                        onChange={() => toggleSelectCustomer(c.id)}
+                        disabled={!c.phone}
+                      />
+                      <div className="min-w-0">
+                        <div className="font-semibold text-foreground truncate">{c.name}</div>
+                        <div className="text-xs text-muted-foreground mt-0.5" dir="ltr">{c.phone || "—"}</div>
+                      </div>
+                    </div>
+                    {stats?.badge && (
+                      <span className={`inline-flex shrink-0 items-center rounded-full px-1.5 py-0.5 text-[10px] font-bold ${
+                        stats.badge === "VIP" ? "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400" :
+                        stats.badge === "Churn Risk" ? "bg-rose-100 text-rose-800 dark:bg-rose-900/30 dark:text-rose-400" :
+                        stats.badge === "New Buyer" ? "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400" :
+                        "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300"
+                      }`}>
+                        {stats.badge}
+                      </span>
                     )}
+                  </div>
+                  <div className="mt-2 flex items-center justify-between gap-3 text-xs text-muted-foreground border-t border-border/40 pt-2">
+                    <span>{isAr ? "إجمالي الطلبات" : "Total orders"}: {orderCount}</span>
+                    <div>
+                      {isSent ? (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 px-2 py-0.5 font-medium text-emerald-700 dark:text-emerald-400"><Check className="h-3 w-3" />{isAr ? "تم الإرسال" : "Sent"}</span>
+                      ) : (
+                        <Button size="sm" className="h-7 text-[11px]" variant="outline" onClick={() => send(c)} disabled={!c.phone}><MessageCircle className="me-1 h-3 w-3" />{isAr ? "إرسال" : "Send"}</Button>
+                      )}
+                    </div>
                   </div>
                 </div>
               );
             })}
           </div>
+
+          {/* Desktop table view */}
           <div className="hidden overflow-x-auto sm:block">
             <table className="w-full min-w-[560px] text-sm">
               <thead className="bg-secondary/50">
                 <tr>
+                  <th className="p-4 w-12 text-center">
+                    <input
+                      type="checkbox"
+                      className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary accent-primary cursor-pointer"
+                      checked={filtered.length > 0 && filtered.filter((c) => c.phone && c.phone.trim()).every((c) => selectedCustomerIds.includes(c.id))}
+                      onChange={toggleSelectAll}
+                    />
+                  </th>
                   <th className="p-4 font-medium text-start">{isAr ? "الاسم" : "Name"}</th>
                   <th className="p-4 font-medium text-start">{isAr ? "الهاتف" : "Phone"}</th>
+                  <th className="p-4 font-medium text-start">
+                    {isAr ? "الشريحة (RFM)" : "CRM Segment"}
+                  </th>
                   <th className="p-4 font-medium text-start">
                     {isAr ? "إجمالي الطلبات" : "Total Orders"}
                   </th>
@@ -522,19 +752,44 @@ function CampaignsPage() {
               <tbody>
                 {filtered.map((c) => {
                   const isSent = !!sent[c.id];
-                  const orderCount = ordersQ.data?.[c.id] ?? 0;
+                  const stats = customerCrmStats.get(c.id);
+                  const orderCount = stats?.totalOrders ?? 0;
+                  const isChecked = selectedCustomerIds.includes(c.id);
                   return (
                     <tr
                       key={c.id}
-                      className={`border-t border-border transition-colors ${
-                        isSent ? "bg-emerald-500/10" : ""
-                      }`}
+                      className={`border-t border-border transition-colors hover:bg-secondary/20 ${
+                        isChecked ? "bg-primary/5 hover:bg-primary/10" : ""
+                      } ${isSent ? "opacity-75" : ""}`}
                     >
+                      <td className="p-4 text-center">
+                        <input
+                          type="checkbox"
+                          className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary accent-primary cursor-pointer"
+                          checked={isChecked}
+                          onChange={() => toggleSelectCustomer(c.id)}
+                          disabled={!c.phone}
+                        />
+                      </td>
                       <td className="p-4 font-medium">{c.name}</td>
-                      <td className="p-4 text-muted-foreground" dir="ltr">
+                      <td className="p-4 text-muted-foreground font-mono" dir="ltr">
                         {c.phone || "—"}
                       </td>
-                      <td className="p-4 text-muted-foreground">{orderCount}</td>
+                      <td className="p-4">
+                        {stats?.badge ? (
+                          <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-bold ${
+                            stats.badge === "VIP" ? "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400" :
+                            stats.badge === "Churn Risk" ? "bg-rose-100 text-rose-800 dark:bg-rose-900/30 dark:text-rose-400" :
+                            stats.badge === "New Buyer" ? "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400" :
+                            "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300"
+                          }`}>
+                            {stats.badge}
+                          </span>
+                        ) : (
+                          <span className="text-muted-foreground text-xs">—</span>
+                        )}
+                      </td>
+                      <td className="p-4 text-muted-foreground font-mono">{orderCount}</td>
                       <td className="p-4 text-end">
                         {isSent ? (
                           <span className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 font-medium">

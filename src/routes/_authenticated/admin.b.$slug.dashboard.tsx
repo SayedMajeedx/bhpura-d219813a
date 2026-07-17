@@ -2,181 +2,497 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
-import { Package, Users, ReceiptText, TrendingUp, CalendarDays, Trophy, Wallet, PiggyBank } from "lucide-react";
+import {
+  Package,
+  Users,
+  ReceiptText,
+  TrendingUp,
+  CalendarDays,
+  Trophy,
+  Wallet,
+  PiggyBank,
+  AlertTriangle,
+  AlertCircle,
+  ArrowUpRight,
+  ShieldCheck,
+  Zap
+} from "lucide-react";
 import { formatDate, formatMoney } from "@/lib/format";
 import { useI18n, useT } from "@/lib/i18n";
 import { useProfile } from "@/lib/profile-context";
 import { useBrand } from "@/lib/brand-context";
+import { useMemo } from "react";
 
 export const Route = createFileRoute("/_authenticated/admin/b/$slug/dashboard")({
   component: Dashboard,
 });
 
-function startOfMonthISO() {
-  const d = new Date();
-  return new Date(d.getFullYear(), d.getMonth(), 1).toISOString();
-}
-function startOfTodayISO() {
-  const d = new Date();
-  return new Date(d.getFullYear(), d.getMonth(), d.getDate()).toISOString();
-}
-
 function Dashboard() {
   const t = useT();
   const { lang } = useI18n();
+  const isAr = lang === "ar";
   const { canViewFinancials } = useProfile();
   const { slug } = Route.useParams();
   const brand = useBrand();
   const brandId = brand.id;
   const locale = lang === "ar" ? "ar-BH" : "en-US";
 
-  const { data } = useQuery({
-    queryKey: ["dashboard-stats", brandId],
+  // 1. Fetch Business settings (business name, currency, etc.)
+  const businessSettings = useQuery({
+    queryKey: ["dashboard-business-settings", brandId],
     queryFn: async () => {
-      const [products, customers, orders, variants, items, expenses] = await Promise.all([
-        supabase.from("products").select("id", { count: "exact", head: true }).eq("brand_id", brandId),
-        supabase.from("customers").select("id", { count: "exact", head: true }).eq("brand_id", brandId),
-        supabase
-          .from("orders")
-          .select("total, currency, status, created_at, order_date, invoice_number, id, customers(name)")
-          .eq("brand_id", brandId)
-          .order("created_at", { ascending: false }),
-        supabase.from("product_variants").select("stock").eq("brand_id", brandId),
-        supabase.from("order_items").select("description, quantity").eq("brand_id", brandId),
-        (supabase.from("expenses") as any).select("amount, expense_date").eq("brand_id", brandId),
-      ]);
-
-      const monthStart = startOfMonthISO();
-      const todayStart = startOfTodayISO();
-
-      const allOrders = (orders.data ?? []) as any[];
-      const currency = allOrders[0]?.currency ?? "BHD";
-
-      const revenueMonth = allOrders
-        .filter((o) => new Date(o.created_at).toISOString() >= monthStart)
-        .reduce((s, o) => s + Number(o.total || 0), 0);
-
-      const ordersToday = allOrders.filter(
-        (o) => new Date(o.created_at).toISOString() >= todayStart,
-      ).length;
-
-      const totalRevenue = allOrders.reduce((s, o) => s + Number(o.total || 0), 0);
-
-      const allExpenses = ((expenses as any).data ?? []) as { amount: number; expense_date: string }[];
-      const totalExpenses = allExpenses.reduce((s, e) => s + Number(e.amount || 0), 0);
-      const expensesMonth = allExpenses
-        .filter((e) => new Date(e.expense_date).toISOString() >= monthStart)
-        .reduce((s, e) => s + Number(e.amount || 0), 0);
-      const netProfit = totalRevenue - totalExpenses;
-
-      const stock = (variants.data ?? []).reduce((s: number, v: any) => s + (v.stock ?? 0), 0);
-
-      const tallies = new Map<string, number>();
-      for (const it of (items.data ?? []) as any[]) {
-        const key = (it.description || "").trim() || "—";
-        tallies.set(key, (tallies.get(key) ?? 0) + Number(it.quantity || 0));
-      }
-      const topSelling = Array.from(tallies.entries())
-        .filter(([, q]) => q > 0)
-        .sort((a, b) => b[1] - a[1])
-        .slice(0, 3)
-        .map(([description, quantity]) => ({ description, quantity }));
-
-      return {
-        products: products.count ?? 0,
-        customers: customers.count ?? 0,
-        ordersCount: allOrders.length,
-        revenue: totalRevenue,
-        revenueMonth,
-        ordersToday,
-        currency,
-        stock,
-        recent: allOrders.slice(0, 5),
-        topSelling,
-        totalExpenses,
-        expensesMonth,
-        netProfit,
-      };
+      const { data, error } = await supabase
+        .from("business_settings")
+        .select("business_name, currency")
+        .eq("brand_id", brandId)
+        .maybeSingle();
+      if (error) throw error;
+      return data ?? { business_name: "", currency: "BHD" };
     },
   });
 
-  // Build stats array based on user role - financials only for admins
-  const primary = [
+  const currency = businessSettings.data?.currency ?? "BHD";
+
+  // 2. Fetch all products
+  const productsQ = useQuery({
+    queryKey: ["dashboard-products", brandId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("products")
+        .select("id, name, name_ar, name_en, category, is_active")
+        .eq("brand_id", brandId);
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+  // 3. Fetch all variants (with stock levels, created_at date, and cost price)
+  const variantsQ = useQuery({
+    queryKey: ["dashboard-variants", brandId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("product_variants")
+        .select("id, product_id, size, color, selling_price, cost_price, stock_main, stock_incubator, created_at")
+        .eq("brand_id", brandId);
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+  // 4. Fetch all customers
+  const customersQ = useQuery({
+    queryKey: ["dashboard-customers", brandId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("customers")
+        .select("id, name, phone")
+        .eq("brand_id", brandId);
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+  // 5. Fetch all orders (and order items)
+  const ordersQ = useQuery({
+    queryKey: ["dashboard-orders-with-items", brandId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("orders")
+        .select("id, invoice_number, created_at, currency, total, status, customer_id, customers(name), order_items(id, description, quantity, unit_price, line_total, variant_id)")
+        .eq("brand_id", brandId)
+        .in("status", ["confirmed", "paid", "shipped", "completed"])
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data as any[];
+    },
+  });
+
+  // 6. Fetch all manual expenses (for OPEX summing)
+  const expensesQ = useQuery({
+    queryKey: ["dashboard-expenses", brandId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("expenses")
+        .select("amount, expense_date")
+        .eq("brand_id", brandId);
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
+  const isLoading =
+    businessSettings.isLoading ||
+    productsQ.isLoading ||
+    variantsQ.isLoading ||
+    customersQ.isLoading ||
+    ordersQ.isLoading ||
+    expensesQ.isLoading;
+
+  // Financial intelligence aggregations (Revenue, COGS, OPEX, Net Profit, Gross Margin %)
+  const financials = useMemo(() => {
+    const orders = ordersQ.data ?? [];
+    const expenses = expensesQ.data ?? [];
+    const variants = variantsQ.data ?? [];
+
+    const variantCostMap = new Map<string, number>();
+    variants.forEach((v) => {
+      variantCostMap.set(v.id, Number(v.cost_price || 0));
+    });
+
+    const revenue = orders.reduce((sum, o) => sum + Number(o.total || 0), 0);
+
+    let cogs = 0;
+    orders.forEach((order) => {
+      (order.order_items ?? []).forEach((item) => {
+        const cost = variantCostMap.get(item.variant_id) ?? 0;
+        cogs += cost * Number(item.quantity || 0);
+      });
+    });
+
+    const opex = expenses.reduce((sum, e) => sum + Number(e.amount || 0), 0);
+
+    const totalExpenses = cogs + opex;
+    const netProfit = revenue - totalExpenses;
+    const grossMarginPercent = revenue > 0 ? ((revenue - cogs) / revenue) * 100 : 0;
+
+    return {
+      revenue,
+      cogs,
+      opex,
+      totalExpenses,
+      netProfit,
+      grossMarginPercent,
+    };
+  }, [ordersQ.data, expensesQ.data, variantsQ.data]);
+
+  // CRM segmentation distribution & alerts
+  const crmStats = useMemo(() => {
+    const orders = ordersQ.data ?? [];
+    const customers = customersQ.data ?? [];
+
+    const nowMs = new Date().getTime();
+    const sixtyDaysMs = 60 * 24 * 60 * 60 * 1000;
+
+    const ordersByCustomer = new Map<string, typeof orders>();
+    orders.forEach((o) => {
+      if (o.customer_id) {
+        if (!ordersByCustomer.has(o.customer_id)) {
+          ordersByCustomer.set(o.customer_id, []);
+        }
+        ordersByCustomer.get(o.customer_id)!.push(o);
+      }
+    });
+
+    let vipCount = 0;
+    let churnRiskCount = 0;
+    const churnRiskVips: Array<{ id: string; name: string }> = [];
+
+    customers.forEach((c) => {
+      const custOrders = ordersByCustomer.get(c.id) ?? [];
+      const totalOrders = custOrders.length;
+      const lifetimeSpend = custOrders.reduce((sum, o) => sum + Number(o.total || 0), 0);
+      
+      let lastOrderMs = 0;
+      custOrders.forEach((o) => {
+        const ms = new Date(o.created_at).getTime();
+        if (ms > lastOrderMs) lastOrderMs = ms;
+      });
+
+      const isVip = lifetimeSpend > 250;
+      const isIdle60 = lastOrderMs > 0 && (nowMs - lastOrderMs) > sixtyDaysMs;
+
+      if (isVip) {
+        vipCount++;
+        if (isIdle60) {
+          churnRiskVips.push({ id: c.id, name: c.name });
+        }
+      }
+
+      if (isIdle60) {
+        churnRiskCount++;
+      }
+    });
+
+    return {
+      vipCount,
+      churnRiskCount,
+      churnRiskVips,
+    };
+  }, [ordersQ.data, customersQ.data]);
+
+  // Inventory velocity & stock depletion calculations
+  const inventoryIntel = useMemo(() => {
+    const products = productsQ.data ?? [];
+    const variants = variantsQ.data ?? [];
+    const orders = ordersQ.data ?? [];
+
+    const past45Days = new Date();
+    past45Days.setDate(past45Days.getDate() - 45);
+    const past45DaysMs = past45Days.getTime();
+
+    // 1. Calculate sales per variant in the past 45 days
+    const salesByVariant = new Map<string, number>();
+
+    orders.forEach((order) => {
+      const orderTime = new Date(order.created_at).getTime();
+      if (orderTime >= past45DaysMs) {
+        (order.order_items ?? []).forEach((item) => {
+          if (item.variant_id) {
+            salesByVariant.set(
+              item.variant_id,
+              (salesByVariant.get(item.variant_id) ?? 0) + Number(item.quantity || 0)
+            );
+          }
+        });
+      }
+    });
+
+    // 2. Helpers for Stock & Velocity
+    const getVariantStock = (v: any) => Number(v.stock_main || 0) + Number(v.stock_incubator || 0);
+
+    const getVariantDailyVelocity = (v: any) => {
+      const qtySold = salesByVariant.get(v.id) || 0;
+      const variantCreatedAt = v.created_at ? new Date(v.created_at) : null;
+      const daysElapsed = variantCreatedAt 
+        ? Math.max(1, Math.min(45, Math.ceil((new Date().getTime() - variantCreatedAt.getTime()) / (1000 * 60 * 60 * 24))))
+        : 45;
+      return qtySold / daysElapsed;
+    };
+
+    // Low stock count & Dead stock count
+    let deadStockCount = 0;
+    variants.forEach((v) => {
+      const qtySold = salesByVariant.get(v.id) || 0;
+      if (qtySold === 0) {
+        deadStockCount++;
+      }
+    });
+
+    // Product stock map and product weekly sales map
+    const productStockMap = new Map<string, number>();
+    const productWeeklySalesMap = new Map<string, number>();
+
+    products.forEach((product) => {
+      const pVariants = variants.filter((v) => v.product_id === product.id);
+      const stock = pVariants.reduce((sum, v) => sum + getVariantStock(v), 0);
+      productStockMap.set(product.id, stock);
+
+      const productDailyVelocity = pVariants.reduce((sum, v) => sum + getVariantDailyVelocity(v), 0);
+      productWeeklySalesMap.set(product.id, productDailyVelocity * 7);
+    });
+
+    let lowStockCount = 0;
+    products.forEach((product) => {
+      const stock = productStockMap.get(product.id) ?? 0;
+      const weeklySales = productWeeklySalesMap.get(product.id) ?? 0;
+      if (stock < weeklySales) {
+        lowStockCount++;
+      }
+    });
+
+    // 3. Top Moving Items (sorted by total units sold in past 45 days)
+    const productSalesMap = new Map<string, number>();
+    orders.forEach((order) => {
+      const orderTime = new Date(order.created_at).getTime();
+      if (orderTime >= past45DaysMs) {
+        (order.order_items ?? []).forEach((item) => {
+          if (item.variant_id) {
+            const variant = variants.find((v) => v.id === item.variant_id);
+            if (variant) {
+              productSalesMap.set(
+                variant.product_id,
+                (productSalesMap.get(variant.product_id) ?? 0) + Number(item.quantity || 0)
+              );
+            }
+          }
+        });
+      }
+    });
+
+    const movingItems = products
+      .map((p) => {
+        const pVariants = variants.filter((v) => v.product_id === p.id);
+        const unitsSold = productSalesMap.get(p.id) ?? 0;
+        const stock = productStockMap.get(p.id) ?? 0;
+        
+        // Product velocity and days left
+        const productDailyVelocity = pVariants.reduce((sum, v) => sum + getVariantDailyVelocity(v), 0);
+        let daysLeft = Infinity;
+        if (productDailyVelocity > 0) {
+          daysLeft = Math.ceil(stock / productDailyVelocity);
+        }
+
+        return {
+          id: p.id,
+          title: lang === "ar" ? p.name_ar || p.name : p.name_en || p.name,
+          unitsSold,
+          stock,
+          daysLeft,
+          dailyVelocity: productDailyVelocity,
+        };
+      })
+      .filter((item) => item.unitsSold > 0)
+      .sort((a, b) => b.unitsSold - a.unitsSold);
+
+    // 4. Low Stock Variants (for sidebar alerts)
+    const lowStockVariants: Array<{
+      id: string;
+      name: string;
+      stock: number;
+      daysLeft: number;
+    }> = [];
+
+    variants.forEach((v) => {
+      const product = products.find((p) => p.id === v.product_id);
+      if (!product) return;
+
+      const stock = getVariantStock(v);
+      const dailyVelocity = getVariantDailyVelocity(v);
+      if (dailyVelocity > 0) {
+        const daysLeft = Math.ceil(stock / dailyVelocity);
+        if (daysLeft <= 14) { // flag if depletes in 14 days
+          const sizeText = v.size ? ` (${v.size})` : "";
+          const colorText = v.color ? ` - ${v.color}` : "";
+          const pName = lang === "ar" ? product.name_ar || product.name : product.name_en || product.name;
+          lowStockVariants.push({
+            id: v.id,
+            name: `${pName}${sizeText}${colorText}`,
+            stock,
+            daysLeft,
+          });
+        }
+      } else if (stock === 0) {
+        const sizeText = v.size ? ` (${v.size})` : "";
+        const colorText = v.color ? ` - ${v.color}` : "";
+        const pName = lang === "ar" ? product.name_ar || product.name : product.name_en || product.name;
+        lowStockVariants.push({
+          id: v.id,
+          name: `${pName}${sizeText}${colorText}`,
+          stock: 0,
+          daysLeft: 0,
+        });
+      }
+    });
+
+    return {
+      deadStockCount,
+      lowStockCount,
+      movingItems,
+      lowStockVariants: lowStockVariants.sort((a, b) => a.daysLeft - b.daysLeft).slice(0, 5),
+    };
+  }, [productsQ.data, variantsQ.data, ordersQ.data, lang]);
+
+  // Loading skeleton placeholder layout (Wow factor, micro-animations)
+  if (isLoading) {
+    return (
+      <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-8 animate-pulse">
+        <div className="space-y-3">
+          <div className="h-9 w-48 bg-muted rounded-md" />
+          <div className="h-4 w-64 bg-muted rounded-sm" />
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="h-28 bg-muted rounded-xl border" />
+          ))}
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2 h-96 bg-muted rounded-xl border" />
+          <div className="lg:col-span-1 h-96 bg-muted rounded-xl border" />
+        </div>
+      </div>
+    );
+  }
+
+  // Build high-level cards
+  const kpis = [
     ...(canViewFinancials
       ? [
           {
-            label: t("dashboard.revenueMonth"),
-            value: data ? formatMoney(data.revenueMonth, data.currency, locale) : "—",
+            label: isAr ? "الإيرادات وصافي الربح" : "Revenue & Net Profit",
+            value: formatMoney(financials.revenue, currency, locale),
+            subValue: `${isAr ? "صافي الربح" : "Net Profit"}: ${formatMoney(financials.netProfit, currency, locale)}`,
             icon: TrendingUp,
-            financial: true,
+            color: "text-emerald-500",
+            bg: "from-emerald-500/10 via-transparent to-transparent",
+            border: "hover:border-emerald-500/20"
           },
           {
-            label: t("dashboard.totalExpenses"),
-            value: data ? formatMoney(data.totalExpenses, data.currency, locale) : "—",
-            icon: Wallet,
-            financial: true,
-          },
-          {
-            label: t("dashboard.netProfit"),
-            value: data ? formatMoney(data.netProfit, data.currency, locale) : "—",
+            label: isAr ? "نسبة هامش الربح الإجمالي" : "Gross Margin %",
+            value: `${financials.grossMarginPercent.toFixed(1)}%`,
+            subValue: `${isAr ? "تكلفة المبيعات" : "COGS"}: ${formatMoney(financials.cogs, currency, locale)}`,
             icon: PiggyBank,
-            hint: t("dashboard.netProfitFormula"),
-            financial: true,
+            color: "text-blue-500",
+            bg: "from-blue-500/10 via-transparent to-transparent",
+            border: "hover:border-blue-500/20"
           },
         ]
       : []),
     {
-      label: t("dashboard.ordersToday"),
-      value: data ? String(data.ordersToday) : "—",
-      icon: CalendarDays,
-    },
-    {
-      label: t("dashboard.customers"),
-      value: data ? String(data.customers) : "—",
-      icon: Users,
-    },
-    {
-      label: t("dashboard.unitsInStock"),
-      value: data ? String(data.stock) : "—",
+      label: isAr ? "البضائع الراكدة والمنخفضة" : "Dead & Low Stock Items",
+      value: `${inventoryIntel.deadStockCount} / ${inventoryIntel.lowStockCount}`,
+      subValue: `${isAr ? "الراكدة" : "Dead"}: ${inventoryIntel.deadStockCount} | ${isAr ? "المنخفضة" : "Low"}: ${inventoryIntel.lowStockCount}`,
       icon: Package,
+      color: "text-amber-500",
+      bg: "from-amber-500/10 via-transparent to-transparent",
+      border: "hover:border-amber-500/20"
+    },
+    {
+      label: isAr ? "توزيع مستويات العملاء" : "Customer Tier Distribution",
+      value: `${crmStats.vipCount} / ${crmStats.churnRiskCount}`,
+      subValue: `VIP: ${crmStats.vipCount} | Churn Risk: ${crmStats.churnRiskCount}`,
+      icon: Users,
+      color: "text-indigo-500",
+      bg: "from-indigo-500/10 via-transparent to-transparent",
+      border: "hover:border-indigo-500/20"
     },
   ];
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto">
-      <div className="mb-6 sm:mb-8">
-        <h1 className="text-3xl sm:text-4xl font-display">{t("dashboard.title")}</h1>
-        <div className="mt-4 flex gap-2 overflow-x-auto pb-1">
-          <Link to="/admin/b/$slug/orders" params={{ slug }} className="inline-flex h-10 shrink-0 items-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground">
-            <ReceiptText className="me-2 h-4 w-4" />{lang === "ar" ? "الطلبات" : "Orders"}
+    <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-6 sm:space-y-8">
+      {/* Upper header */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-3xl sm:text-4xl font-display font-bold tracking-tight text-foreground flex items-center gap-2">
+            <Zap className="h-8 w-8 text-primary animate-pulse" />
+            {t("dashboard.title")}
+          </h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            {isAr ? "نظرة عامة على أداء النشاط ومقاييس التجزئة الذكية" : "Real-time retail finance and customer CRM analytics insights."}
+          </p>
+        </div>
+        {/* Navigation Quicklinks */}
+        <div className="flex flex-wrap gap-2">
+          <Link to="/admin/b/$slug/orders" params={{ slug }} className="inline-flex h-9 shrink-0 items-center rounded-lg bg-primary px-4 text-xs font-semibold text-primary-foreground hover:bg-primary/90 transition-all shadow-sm">
+            <ReceiptText className="me-1.5 h-3.5 w-3.5" />{isAr ? "الطلبات" : "Orders"}
           </Link>
-          <Link to="/admin/b/$slug/inventory" params={{ slug }} className="inline-flex h-10 shrink-0 items-center rounded-md border border-input bg-background px-4 text-sm font-medium">
-            <Package className="me-2 h-4 w-4" />{lang === "ar" ? "المنتجات" : "Products"}
+          <Link to="/admin/b/$slug/inventory" params={{ slug }} className="inline-flex h-9 shrink-0 items-center rounded-lg border border-input bg-background px-4 text-xs font-semibold text-foreground hover:bg-secondary/40 transition-all">
+            <Package className="me-1.5 h-3.5 w-3.5" />{isAr ? "المنتجات" : "Products"}
           </Link>
-          <Link to="/admin/b/$slug/customers" params={{ slug }} className="inline-flex h-10 shrink-0 items-center rounded-md border border-input bg-background px-4 text-sm font-medium">
-            <Users className="me-2 h-4 w-4" />{lang === "ar" ? "العملاء" : "Customers"}
+          <Link to="/admin/b/$slug/customers" params={{ slug }} className="inline-flex h-9 shrink-0 items-center rounded-lg border border-input bg-background px-4 text-xs font-semibold text-foreground hover:bg-secondary/40 transition-all">
+            <Users className="me-1.5 h-3.5 w-3.5" />{isAr ? "العملاء" : "Customers"}
           </Link>
           {canViewFinancials && (
-            <Link to="/admin/b/$slug/expenses" params={{ slug }} className="inline-flex h-10 shrink-0 items-center rounded-md border border-input bg-background px-4 text-sm font-medium">
-              <Wallet className="me-2 h-4 w-4" />{lang === "ar" ? "المصروفات" : "Expenses"}
+            <Link to="/admin/b/$slug/expenses" params={{ slug }} className="inline-flex h-9 shrink-0 items-center rounded-lg border border-input bg-background px-4 text-xs font-semibold text-foreground hover:bg-secondary/40 transition-all">
+              <Wallet className="me-1.5 h-3.5 w-3.5" />{isAr ? "المصروفات" : "Expenses"}
             </Link>
           )}
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 mb-6 sm:mb-8">
-        {primary.map((s) => {
-          const Icon = s.icon;
+      {/* KPI Row (Gridded and responsive) */}
+      <div className={`grid grid-cols-1 sm:grid-cols-2 ${canViewFinancials ? "lg:grid-cols-4" : "lg:grid-cols-2"} gap-4`}>
+        {kpis.map((k) => {
+          const Icon = k.icon;
           return (
-            <Card key={s.label} className="p-5 sm:p-6">
+            <Card key={k.label} className={`relative overflow-hidden p-5 transition-all duration-300 bg-gradient-to-br ${k.bg} hover:shadow-md hover:-translate-y-0.5 border border-border ${k.border}`}>
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
-                  <p className="text-xs uppercase tracking-wider text-muted-foreground">{s.label}</p>
-                  <p className="text-2xl sm:text-3xl font-display mt-2 truncate">{s.value}</p>
-                  {(s as any).hint && <p className="text-[10px] text-muted-foreground mt-1">{(s as any).hint}</p>}
+                  <p className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground/80">{k.label}</p>
+                  <p className="text-2xl sm:text-3xl font-display font-extrabold text-foreground mt-2.5 truncate">{k.value}</p>
+                  <p className="text-xs text-muted-foreground/90 font-medium mt-1 truncate">{k.subValue}</p>
                 </div>
-                <div className="h-10 w-10 shrink-0 rounded-full bg-secondary flex items-center justify-center">
-                  <Icon className="h-5 w-5 text-primary" />
+                <div className={`h-10 w-10 shrink-0 rounded-xl bg-secondary/80 flex items-center justify-center ${k.color}`}>
+                  <Icon className="h-5 w-5" />
                 </div>
               </div>
             </Card>
@@ -184,67 +500,187 @@ function Dashboard() {
         })}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-        <Card className="p-5 sm:p-6">
-          <div className="flex items-center gap-2 mb-1">
-            <Trophy className="h-4 w-4 text-primary" />
-            <h2 className="text-lg sm:text-xl font-display">{t("dashboard.topSelling")}</h2>
-          </div>
-          <p className="text-xs text-muted-foreground mb-4">{t("dashboard.topSellingSubtitle")}</p>
-          {(data?.topSelling ?? []).length === 0 ? (
-            <p className="text-sm text-muted-foreground">{t("dashboard.noTopSelling")}</p>
-          ) : (
-            <ul className="space-y-3">
-              {data!.topSelling.map((row, i) => {
-                const max = data!.topSelling[0]!.quantity || 1;
-                const pct = Math.max(6, Math.round((row.quantity / max) * 100));
-                return (
-                  <li key={i}>
-                    <div className="flex items-center justify-between gap-3 mb-1">
-                      <div className="flex items-center gap-2 min-w-0">
-                        <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-secondary text-xs font-medium">
-                          {i + 1}
-                        </span>
-                        <span className="truncate text-sm font-medium">{row.description}</span>
-                      </div>
-                      <span className="shrink-0 text-xs text-muted-foreground">
-                        {row.quantity} {t("dashboard.unitsSold")}
-                      </span>
-                    </div>
-                    <div className="h-1.5 rounded-full bg-secondary overflow-hidden">
-                      <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${pct}%` }} />
-                    </div>
-                  </li>
-                );
-              })}
-            </ul>
-          )}
-        </Card>
+      {/* Two Column Actionable Layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+        {/* Left Column (65%) - Top Moving Items */}
+        <div className="lg:col-span-2 space-y-6">
+          <Card className="p-5 sm:p-6 border border-border hover:shadow-sm transition-shadow">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+              <div>
+                <div className="flex items-center gap-2">
+                  <Trophy className="h-5 w-5 text-amber-500" />
+                  <h2 className="text-xl font-display font-bold text-foreground">{isAr ? "المنتجات الأكثر حركة ورواجًا" : "Top Moving Items"}</h2>
+                </div>
+                <p className="text-xs text-muted-foreground mt-0.5">{isAr ? "أعلى مبيعات المنتجات في الـ 45 يومًا الماضية ومعدل نفادها" : "Top item sales in the past 45 days matched with velocity runway."}</p>
+              </div>
+              <span className="inline-flex shrink-0 items-center gap-1 text-[11px] px-2.5 py-1 rounded-full bg-secondary text-muted-foreground font-semibold">
+                {isAr ? "مفلترة: آخر 45 يومًا" : "Past 45 days window"}
+              </span>
+            </div>
 
-        <Card className="p-5 sm:p-6">
-          <div className="flex items-center gap-2 mb-4">
-            <ReceiptText className="h-4 w-4 text-primary" />
-            <h2 className="text-lg sm:text-xl font-display">{t("dashboard.recentOrders")}</h2>
-          </div>
-          {(data?.recent ?? []).length === 0 ? (
-            <p className="text-sm text-muted-foreground">{t("dashboard.noOrders")}</p>
-          ) : (
-            <ul className="divide-y divide-border">
-              {data!.recent.map((o: any) => (
-                <li key={o.id} className="py-3 flex items-center justify-between gap-3 text-sm">
-                  <Link to="/admin/b/$slug/orders/$id" params={{ slug, id: o.id }} className="min-w-0 truncate">
-                    <span className="text-primary font-medium">#{o.invoice_number}</span>
-                    <span className="text-muted-foreground"> · {formatDate(o.created_at, locale)}</span>
-                    {o.customers?.name && (
-                      <span className="text-muted-foreground"> · {o.customers.name}</span>
-                    )}
-                  </Link>
-                  <span className="shrink-0 font-medium">{formatMoney(Number(o.total), o.currency, locale)}</span>
-                </li>
-              ))}
-            </ul>
-          )}
-        </Card>
+            {inventoryIntel.movingItems.length === 0 ? (
+              <div className="p-12 text-center text-muted-foreground bg-secondary/10 rounded-xl border border-dashed border-border">
+                {isAr ? "لا توجد بيانات كافية لعرض المنتجات الأكثر حركة." : "Insufficient sales volume to map item movement."}
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="text-xs font-bold text-muted-foreground uppercase border-b border-border bg-secondary/10">
+                      <th className="p-3 text-start">{isAr ? "المنتج" : "Product"}</th>
+                      <th className="p-3 text-center w-28">{isAr ? "الوحدات المباعة" : "Units Sold"}</th>
+                      <th className="p-3 text-center w-28">{isAr ? "المخزون المتبقي" : "Remaining Stock"}</th>
+                      <th className="p-3 text-end w-36">{isAr ? "النفاد المتوقع" : "Days Left"}</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border/60">
+                    {inventoryIntel.movingItems.slice(0, 8).map((item) => {
+                      const velocityText = item.daysLeft === Infinity 
+                        ? (isAr ? "∞ مستقر" : "∞ Stable") 
+                        : `${item.daysLeft} ${isAr ? "أيام" : "days"}`;
+
+                      const runwayColor = item.daysLeft <= 7 
+                        ? "text-rose-600 bg-rose-500/10 dark:text-rose-400" 
+                        : item.daysLeft <= 14 
+                        ? "text-amber-600 bg-amber-500/10 dark:text-amber-400" 
+                        : "text-emerald-600 bg-emerald-500/10 dark:text-emerald-400";
+
+                      return (
+                        <tr key={item.id} className="hover:bg-secondary/10 transition-colors">
+                          <td className="p-3 font-semibold text-foreground truncate max-w-[200px] sm:max-w-xs">{item.title}</td>
+                          <td className="p-3 text-center font-mono font-bold text-foreground">{item.unitsSold}</td>
+                          <td className="p-3 text-center font-mono font-medium text-muted-foreground">{item.stock}</td>
+                          <td className="p-3 text-end">
+                            <span className={`inline-flex items-center justify-center text-xs font-bold px-2 py-0.5 rounded-full ${runwayColor}`}>
+                              {velocityText}
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </Card>
+
+          {/* Recent Orders Card */}
+          <Card className="p-5 sm:p-6 border border-border hover:shadow-sm transition-shadow">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <ReceiptText className="h-5 w-5 text-primary" />
+                <h2 className="text-xl font-display font-bold text-foreground">{t("dashboard.recentOrders")}</h2>
+              </div>
+              <Link to="/admin/b/$slug/orders" params={{ slug }} className="text-xs text-primary font-semibold hover:underline flex items-center gap-0.5">
+                {isAr ? "عرض الكل" : "View All"} <ArrowUpRight className="h-3 w-3" />
+              </Link>
+            </div>
+            
+            {(ordersQ.data ?? []).length === 0 ? (
+              <p className="p-6 text-sm text-center text-muted-foreground bg-secondary/10 rounded-xl border border-dashed">{t("dashboard.noOrders")}</p>
+            ) : (
+              <ul className="divide-y divide-border">
+                {(ordersQ.data ?? []).slice(0, 5).map((o: any) => (
+                  <li key={o.id} className="py-3 flex items-center justify-between gap-3 text-sm hover:bg-secondary/5 px-2 rounded-lg transition-colors">
+                    <Link to="/admin/b/$slug/orders/$id" params={{ slug, id: o.id }} className="min-w-0 truncate">
+                      <span className="text-primary font-bold hover:underline">#{o.invoice_number}</span>
+                      <span className="text-muted-foreground"> · {formatDate(o.created_at, locale)}</span>
+                      {o.customers?.name && (
+                        <span className="text-foreground/90 font-medium block sm:inline sm:ms-2">· {o.customers.name}</span>
+                      )}
+                    </Link>
+                    <span className="shrink-0 font-bold text-foreground font-mono">{formatMoney(Number(o.total), o.currency, locale)}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </Card>
+        </div>
+
+        {/* Right Column (35% Sticky Sidebar) - Operational Alert Center */}
+        <div className="lg:col-span-1 lg:sticky lg:top-6 space-y-6">
+          <Card className="p-5 border border-border bg-card/60 backdrop-blur-sm space-y-4 shadow-sm">
+            <div className="flex items-center gap-2 pb-3 border-b border-border/80">
+              <AlertCircle className="h-5 w-5 text-rose-500 animate-bounce" />
+              <h3 className="font-display font-bold text-lg text-foreground">{isAr ? "مركز الإنذار والعمليات" : "Operational Alerts"}</h3>
+            </div>
+
+            <div className="space-y-3.5">
+              {/* Alert Segment: Low Stock Warnings */}
+              <div>
+                <h4 className="text-xs uppercase font-bold text-muted-foreground tracking-wider mb-2">{isAr ? "⚠️ تحذيرات مستويات المخزون" : "⚠️ Low Stock Warnings"}</h4>
+                {inventoryIntel.lowStockVariants.length === 0 ? (
+                  <p className="text-xs text-muted-foreground bg-secondary/10 p-3 rounded-lg border border-dashed border-border">{isAr ? "جميع البضائع مستقرة ومغذية بشكل كافٍ." : "All variants fully stock stable."}</p>
+                ) : (
+                  <div className="space-y-2">
+                    {inventoryIntel.lowStockVariants.map((item) => (
+                      <div key={item.id} className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg space-y-1">
+                        <div className="flex justify-between items-start gap-2">
+                          <span className="text-xs font-bold text-foreground truncate max-w-[150px]">{item.name}</span>
+                          <span className="text-[10px] shrink-0 font-bold bg-amber-500/20 text-amber-700 dark:text-amber-400 px-1.5 py-0.5 rounded-full">
+                            {item.stock === 0 ? (isAr ? "نفذ" : "Out of stock") : `${item.stock} ${isAr ? "وحدات" : "units"}`}
+                          </span>
+                        </div>
+                        <p className="text-[10px] text-amber-800 dark:text-amber-300 font-medium">
+                          {item.stock === 0 
+                            ? (isAr ? "🚨 لا توجد كميات للبيع!" : "🚨 No quantities left for sale!") 
+                            : isAr 
+                            ? `سوف ينفد المخزون بالكامل في غضون ${item.daysLeft} أيام` 
+                            : `Will completely deplete in ${item.daysLeft} days`}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Alert Segment: Retention Alerts */}
+              <div>
+                <h4 className="text-xs uppercase font-bold text-muted-foreground tracking-wider mb-2">{isAr ? "🚨 حملات استعادة العملاء" : "🚨 Retention Alerts"}</h4>
+                {crmStats.churnRiskVips.length === 0 ? (
+                  <p className="text-xs text-muted-foreground bg-secondary/10 p-3 rounded-lg border border-dashed border-border">{isAr ? "لا يوجد عملاء VIP معرضون للمغادرة حاليًا." : "No VIP customers in retention danger."}</p>
+                ) : (
+                  <div className="space-y-2">
+                    <div className="p-3 bg-rose-500/10 border border-rose-500/20 rounded-lg space-y-2">
+                      <div className="flex justify-between items-start">
+                        <span className="text-xs font-bold text-rose-800 dark:text-rose-400">{isAr ? "عملاء VIP معرضون للمغادرة" : "VIP Churn Risk Alerts"}</span>
+                        <span className="text-[10px] font-bold bg-rose-500/20 text-rose-700 dark:text-rose-400 px-1.5 py-0.5 rounded-full">
+                          {crmStats.churnRiskVips.length} {isAr ? "عملاء" : "VIPs"}
+                        </span>
+                      </div>
+                      <p className="text-[10px] text-rose-700 dark:text-rose-300 leading-relaxed">
+                        {isAr 
+                          ? "لم يقم كبار العملاء هؤلاء بأي طلبات جديدة في الـ 60 يومًا الماضية. بادر بإعادتهم الآن!" 
+                          : "High-value VIP spenders with no orders in past 60 days. Launch outreach campaign immediately!"}
+                      </p>
+                      <div className="flex flex-wrap gap-1 border-t border-rose-500/10 pt-2">
+                        {crmStats.churnRiskVips.slice(0, 3).map((v) => (
+                          <span key={v.id} className="text-[9px] font-semibold bg-rose-500/10 text-rose-900 dark:text-rose-300 px-2 py-0.5 rounded-md">
+                            👤 {v.name}
+                          </span>
+                        ))}
+                        {crmStats.churnRiskVips.length > 3 && (
+                          <span className="text-[9px] font-semibold text-rose-700 dark:text-rose-400 px-1 py-0.5">
+                            +{crmStats.churnRiskVips.length - 3} {isAr ? "المزيد" : "more"}
+                          </span>
+                        )}
+                      </div>
+                      {/* PRE-FILTER LINK DEEP LINK TO CAMPAIGNS PAGE */}
+                      <Link
+                        to="/admin/b/$slug/campaigns"
+                        params={{ slug }}
+                        search={{ segment: "Churn Risk" }}
+                        className="mt-1.5 inline-flex items-center justify-center text-center w-full px-3 py-1.5 rounded-md bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold transition-colors shadow-sm gap-1"
+                      >
+                        🚀 {isAr ? "إطلاق حملة استهداف الشريحة" : "Launch Target Campaign"}
+                      </Link>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </Card>
+        </div>
       </div>
     </div>
   );
