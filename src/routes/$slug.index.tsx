@@ -109,51 +109,39 @@ function StoreHome() {
     refetchOnWindowFocus: false,
   });
 
-  // Deduplicate products sequentially across shelves
+  // Directly map merchandising sections with NO deduplication logic
   const { newest, bestSellers, saleProducts, trending } = useMemo(() => {
     const list = products ?? [];
-    const displayedIds = new Set<string>();
 
-    // Helper to track displayed IDs
-    const addToDisplayed = (items: ProductRow[]) => {
-      items.forEach(p => displayedIds.add(p.id));
-    };
+    // 1. New Arrivals
+    const newestList = list.slice(0, 8);
 
-    // 1. New Arrivals (highest priority)
-    const rawNewest = list.slice(0, 8);
-    addToDisplayed(rawNewest);
-
-    // 2. Best Sellers
+    // 2. Best Sellers (mapped to RPC best sellers)
     const bestIds = new Map((bestSellerRows ?? []).map((row, index) => [row.product_id, index]));
-    const rawBest = list
+    const bestSellersList = list
       .filter((p) => bestIds.has(p.id))
-      .sort((a, b) => (bestIds.get(a.id) ?? 99) - (bestIds.get(b.id) ?? 99));
-    const dedupedBest = rawBest.filter(p => !displayedIds.has(p.id)).slice(0, 8);
-    const finalBest = dedupedBest.length >= 2 ? dedupedBest : rawBest.slice(0, 8);
-    addToDisplayed(finalBest);
+      .sort((a, b) => (bestIds.get(a.id) ?? 99) - (bestIds.get(b.id) ?? 99))
+      .slice(0, 8);
 
-    // 3. Sale
-    const rawSale = list.filter((p) =>
-      p.product_variants.some((v) => Number(v.original_price || 0) > Number(v.selling_price || 0))
-    );
-    const dedupedSale = rawSale.filter(p => !displayedIds.has(p.id)).slice(0, 8);
-    const finalSale = dedupedSale.length >= 2 ? dedupedSale : rawSale.slice(0, 8);
-    addToDisplayed(finalSale);
+    // 3. Sale (where original_price > selling_price)
+    const saleList = list
+      .filter((p) =>
+        p.product_variants.some((v) => Number(v.original_price || 0) > Number(v.selling_price || 0))
+      )
+      .slice(0, 8);
 
-    // 4. Trending Now
+    // 4. Trending Now (mapped to RPC trending)
     const trendingIds = new Map((trendingRows ?? []).map((row: any, index: number) => [row.product_id, index]));
-    const rawTrending = list
+    const trendingList = list
       .filter((p) => trendingIds.has(p.id))
-      .sort((a, b) => (trendingIds.get(a.id) ?? 99) - (trendingIds.get(b.id) ?? 99));
-    const dedupedTrending = rawTrending.filter(p => !displayedIds.has(p.id)).slice(0, 8);
-    const finalTrending = dedupedTrending.length >= 2 ? dedupedTrending : rawTrending.slice(0, 8);
-    addToDisplayed(finalTrending);
+      .sort((a, b) => (trendingIds.get(a.id) ?? 99) - (trendingIds.get(b.id) ?? 99))
+      .slice(0, 8);
 
     return {
-      newest: rawNewest,
-      bestSellers: finalBest,
-      saleProducts: finalSale,
-      trending: finalTrending,
+      newest: newestList,
+      bestSellers: bestSellersList,
+      saleProducts: saleList,
+      trending: trendingList,
     };
   }, [products, bestSellerRows, trendingRows]);
 
