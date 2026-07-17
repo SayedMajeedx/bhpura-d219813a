@@ -21,7 +21,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Check, MessageCircle, Search, Megaphone, Save, Trash2, Plus, Play, Pause, Square, ExternalLink, ShieldCheck } from "lucide-react";
+import { Check, MessageCircle, Search, Megaphone, Save, Trash2, Plus, Play, Pause, Square, ExternalLink, ShieldCheck, Download } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
 import { toast } from "sonner";
 import { useBrand } from "@/lib/brand-context";
@@ -74,6 +74,7 @@ function CampaignsPage() {
   const [bulkDelay, setBulkDelay] = useState(2500); // milliseconds
   const [bulkQueue, setBulkQueue] = useState<Customer[]>([]);
   const [bulkSent, setBulkSent] = useState<Record<string, "queued" | "sending" | "sent" | "skipped">>({});
+  const bulkWindowRef = useRef<Window | null>(null);
 
   const templatesQ = useQuery({
     queryKey: ["campaign-templates", brandId],
@@ -343,6 +344,46 @@ function CampaignsPage() {
     setBulkOpen(true);
   };
 
+  // Pre-open campaign workspace window under direct user click event (avoids popup blockers)
+  const handleStartAutomated = () => {
+    try {
+      const win = window.open("", "whatsapp_campaign_window", "noopener,noreferrer");
+      bulkWindowRef.current = win;
+    } catch (e) {
+      console.error("Failed to pre-initialize campaign tab", e);
+    }
+    setBulkActive(true);
+  };
+
+  // Export selected segments to a CSV format compatible with free Chrome/browser bulk-sender extensions
+  const exportBulkCampaignCsv = () => {
+    const list = filtered.filter((c) => selectedCustomerIds.includes(c.id) && c.phone && c.phone.trim());
+    if (list.length === 0) {
+      toast.error(isAr ? "لا يوجد عملاء محددون لديهم أرقام هواتف" : "No selected customers with phone numbers");
+      return;
+    }
+
+    const headers = ["Phone", "Name", "Message"];
+    const rows = list.map((c) => {
+      const phone = c.phone?.replace(/[^\d]/g, "") || "";
+      const name = c.name || "";
+      const msg = buildMessage(name).replace(/"/g, '""');
+      return `"${phone}","${name}","${msg}"`;
+    });
+
+    // Unicode BOM prefix (\uFEFF) to natively preserve Arabic / RTL characters in Microsoft Excel
+    const csvContent = "\uFEFF" + [headers.join(","), ...rows].join("\n");
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `whatsapp_campaign_${brandId}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast.success(isAr ? "تم تصدير ملف CSV بنجاح!" : "Campaign CSV exported successfully!");
+  };
+
   // Keep references updated for the asynchronous recursion timers
   const activeRef = useRef(bulkActive);
   const indexRef = useRef(bulkIndex);
@@ -387,7 +428,19 @@ function CampaignsPage() {
       if (phone) {
         const textPayload = buildMessage(customer.name);
         const url = `https://wa.me/${phone}?text=${encodeURIComponent(textPayload)}`;
-        window.open(url, "_blank", "noopener,noreferrer");
+        
+        try {
+          // Re-use dedicated workspace tab to bypass standard browser popup blocker policies
+          if (bulkWindowRef.current && !bulkWindowRef.current.closed) {
+            bulkWindowRef.current.location.href = url;
+          } else {
+            const win = window.open(url, "whatsapp_campaign_window", "noopener,noreferrer");
+            bulkWindowRef.current = win;
+          }
+        } catch (err) {
+          const win = window.open(url, "whatsapp_campaign_window", "noopener,noreferrer");
+          bulkWindowRef.current = win;
+        }
         
         setBulkSent((prev) => ({ ...prev, [customer.id]: "sent" }));
         setSent((prev) => ({ ...prev, [customer.id]: true }));
@@ -439,7 +492,19 @@ function CampaignsPage() {
     if (phone) {
       const textPayload = buildMessage(customer.name);
       const url = `https://wa.me/${phone}?text=${encodeURIComponent(textPayload)}`;
-      window.open(url, "_blank", "noopener,noreferrer");
+      
+      try {
+        if (bulkWindowRef.current && !bulkWindowRef.current.closed) {
+          bulkWindowRef.current.location.href = url;
+          try { bulkWindowRef.current.focus(); } catch {}
+        } else {
+          const win = window.open(url, "whatsapp_campaign_window", "noopener,noreferrer");
+          bulkWindowRef.current = win;
+        }
+      } catch (err) {
+        const win = window.open(url, "whatsapp_campaign_window", "noopener,noreferrer");
+        bulkWindowRef.current = win;
+      }
       
       setBulkSent((prev) => ({ ...prev, [customer.id]: "sent" }));
       setSent((prev) => ({ ...prev, [customer.id]: true }));
@@ -647,6 +712,16 @@ function CampaignsPage() {
                 </Button>
               )}
             </div>
+            <Button
+              size="sm"
+              variant="outline"
+              className="border-dashed hover:bg-secondary font-medium"
+              onClick={exportBulkCampaignCsv}
+              disabled={selectedCustomerIds.length === 0}
+            >
+              <Download className="h-4 w-4 me-1.5" />
+              {isAr ? "تصدير ملف CSV للواتساب" : "Export Campaign CSV"}
+            </Button>
             <Button
               size="sm"
               className="bg-primary text-primary-foreground hover:bg-primary/90 font-medium"
@@ -994,7 +1069,7 @@ function CampaignsPage() {
                       {isAr ? "إيقاف مؤقت" : "Pause Queue"}
                     </Button>
                   ) : (
-                    <Button onClick={() => setBulkActive(true)} disabled={bulkIndex >= bulkQueue.length} className="bg-emerald-600 hover:bg-emerald-500 text-white font-medium flex items-center gap-1.5">
+                    <Button onClick={handleStartAutomated} disabled={bulkIndex >= bulkQueue.length} className="bg-emerald-600 hover:bg-emerald-500 text-white font-medium flex items-center gap-1.5">
                       <Play className="h-4 w-4" />
                       {bulkIndex === 0 ? (isAr ? "بدء الإرسال التلقائي" : "Start Automated Send") : (isAr ? "استئناف" : "Resume Queue")}
                     </Button>
