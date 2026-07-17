@@ -136,6 +136,10 @@ FROM public.business_settings bs
 JOIN public.brands b ON b.id = bs.brand_id
 WHERE b.is_active = true;
 
+-- Grant column-level select privileges on the newly exposed columns in the view
+GRANT SELECT (vat_inclusive, shipping_zones) ON public.business_settings TO anon, authenticated;
+
 GRANT SELECT ON public.brand_public_settings TO anon, authenticated;
 
 NOTIFY pgrst, 'reload schema';
+
