@@ -139,7 +139,16 @@ WHERE b.is_active = true;
 -- Grant column-level select privileges on the newly exposed columns in the view
 GRANT SELECT (vat_inclusive, shipping_zones) ON public.business_settings TO anon, authenticated;
 
+-- Grant select on new payments settings columns to authenticated
+GRANT SELECT (card_processing_fee, benefit_processing_fee, card_public_key, card_secret_key) 
+  ON public.business_settings TO authenticated;
+
+-- Grant select on public card gateway key to anonymous users as well
+GRANT SELECT (card_public_key) 
+  ON public.business_settings TO anon;
+
 GRANT SELECT ON public.brand_public_settings TO anon, authenticated;
 
 NOTIFY pgrst, 'reload schema';
+
 
