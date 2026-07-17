@@ -452,7 +452,7 @@ function StoreHeader() {
               </Button>
             ) : (
               <Button asChild variant="ghost" size="sm" className="min-h-11 min-w-11 gap-1 hover:bg-black/5" style={{ color: "var(--sf-header-fg)" }}>
-                <Link to="/$slug/auth" params={{ slug: brand.slug }} search={{ redirect: window.location.pathname + window.location.search }}>
+                <Link to="/$slug/auth" params={{ slug: brand.slug }} search={{ redirect: typeof window !== "undefined" ? window.location.pathname + window.location.search : "" }}>
                   <User className="h-4 w-4" />
                   <span className="hidden sm:inline">{t("دخول", "Sign in")}</span>
                 </Link>
@@ -679,7 +679,7 @@ export function StorefrontMenu({ navigation = false }: { navigation?: boolean } 
           {session && isStoreMember ? <>
             {settings.menu_show_account && <Link to="/$slug/account" params={{ slug: brand.slug }} onClick={close} className="flex min-h-12 items-center gap-3 rounded-xl px-4 py-3 text-start transition-colors hover:bg-black/5"><User className="h-5 w-5 shrink-0" /><span className="min-w-0 truncate">{t("حسابي", "My account")}</span></Link>}
             {settings.menu_show_orders && <Link to="/$slug/account" params={{ slug: brand.slug }} onClick={close} className="flex min-h-12 items-center gap-3 rounded-xl px-4 py-3 text-start transition-colors hover:bg-black/5"><PackageSearch className="h-5 w-5 shrink-0" /><span className="min-w-0 truncate">{t("طلباتي", "My orders")}</span></Link>}
-          </> : settings.menu_show_account && <Link to="/$slug/auth" params={{ slug: brand.slug }} search={{ redirect: window.location.pathname + window.location.search }} onClick={close} className="flex min-h-12 items-center gap-3 rounded-xl px-4 py-3 text-start transition-colors hover:bg-black/5"><LogIn className="h-5 w-5 shrink-0" /><span className="min-w-0 truncate">{t("تسجيل الدخول", "Sign in")}</span></Link>}
+          </> : settings.menu_show_account && <Link to="/$slug/auth" params={{ slug: brand.slug }} search={{ redirect: typeof window !== "undefined" ? window.location.pathname + window.location.search : "" }} onClick={close} className="flex min-h-12 items-center gap-3 rounded-xl px-4 py-3 text-start transition-colors hover:bg-black/5"><LogIn className="h-5 w-5 shrink-0" /><span className="min-w-0 truncate">{t("تسجيل الدخول", "Sign in")}</span></Link>}
           {pageLinks.length > 0 && <div className="my-3 border-t" style={{ borderColor: "rgba(127,127,127,.18)" }} />}
           {pageLinks.map((page) => <Link key={page.index} to="/$slug/$category" params={{ slug: brand.slug, category: page.slug }} onClick={close} className="flex min-h-12 items-center gap-3 rounded-xl px-4 py-3 text-start transition-colors hover:bg-black/5"><FileText className="h-5 w-5 shrink-0" /><span className="min-w-0 truncate">{page.title}</span></Link>)}
         </nav>
