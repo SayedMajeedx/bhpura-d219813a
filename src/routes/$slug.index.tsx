@@ -145,14 +145,33 @@ function StoreHome() {
     };
   }, [products, bestSellerRows, trendingRows]);
 
-  // All Products Grid (bottom section) - Bypasses deduplication entirely on any state (active filter or default)
+  // All Products Grid (bottom section) - Filters smart tabs dynamically to avoid empty states
   const filtered = useMemo(() => {
     const list = products ?? [];
     if (activeCat) {
-      return list.filter((p) => p.category === activeCat);
+      const catSlug = activeCat.toLowerCase().replace(/\s+/g, "-");
+      const isNew = ["new-arrivals", "new"].includes(catSlug);
+      const isBest = ["most-selling", "best-sellers", "best-selling"].includes(catSlug);
+      const isSale = ["offers", "sale", "discounts"].includes(catSlug);
+
+      if (isNew) {
+        return list;
+      }
+      if (isBest) {
+        const bestIds = new Map((bestSellerRows ?? []).map((row, index) => [row.product_id, index]));
+        return list
+          .filter((p) => bestIds.has(p.id))
+          .sort((a, b) => (bestIds.get(a.id) ?? 99) - (bestIds.get(b.id) ?? 99));
+      }
+      if (isSale) {
+        return list.filter((p) =>
+          p.product_variants.some((v) => Number(v.original_price || 0) > Number(v.selling_price || 0))
+        );
+      }
+      return list.filter((p) => p.category === activeCat || p.category?.toLowerCase() === catSlug);
     }
     return list;
-  }, [products, activeCat]);
+  }, [products, activeCat, bestSellerRows]);
 
   const bestIdsKeys = useMemo(() => {
     return new Set((bestSellerRows ?? []).map(row => row.product_id));
@@ -322,6 +341,7 @@ function MerchandisingSection({
           <ProductCard
             key={`${kind}-${product.id}`}
             product={product}
+            className="flex-shrink-0 w-[72vw] sm:w-[45vw] md:w-[28vw] min-w-[240px] snap-start md:w-auto md:shrink md:snap-align-none"
             badge={
               kind === "trending"
                 ? bestSellerIds.has(product.id)
@@ -559,7 +579,7 @@ export function ProductGrid({ products, loading, categoryEmpty, onViewAll }: { p
   );
 }
 
-export function ProductCard({ product, badge }: { product: ProductRow; badge?: "trending" | "best" }) {
+export function ProductCard({ product, badge, className }: { product: ProductRow; badge?: "trending" | "best"; className?: string }) {
   const { brand, currency, lang, t, isWishlisted, toggleWishlist, settings } = useStorefront();
   const displayName = pickName(lang, product);
   const pricedVariants = product.product_variants.filter((variant) => Number(variant.selling_price || 0) > 0).sort((a, b) => a.selling_price - b.selling_price);
@@ -595,7 +615,7 @@ export function ProductCard({ product, badge }: { product: ProductRow; badge?: "
   }
 
   return (
-    <div className="group relative flex-shrink-0 w-[72vw] sm:w-[45vw] md:w-[28vw] min-w-[240px] snap-start md:w-auto md:shrink md:snap-align-none">
+    <div className={`group relative ${className || "w-full"}`}>
       <button
         type="button"
         onClick={() => toggleWishlist(product.id)}
