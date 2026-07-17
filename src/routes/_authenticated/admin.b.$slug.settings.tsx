@@ -223,8 +223,8 @@ function Settings() {
             </div>
             <div className="flex items-center justify-between rounded-md border border-border p-3 bg-secondary/10">
               <div>
-                <p className="text-sm font-medium">{isAr ? "أسعار المنتجات شاملة ضريبة القيمة المضافة" : "Product prices are inclusive of Tax/VAT"}</p>
-                <p className="text-xs text-muted-foreground mt-0.5">{isAr ? "إذا تم تفعيله، سيتم حساب ضريبة القيمة المضافة كجزء من السعر الحالي بدلاً من إضافتها فوقه" : "If enabled, VAT is derived as part of the current price instead of appended on top"}</p>
+                <p className="text-sm font-medium">{lang === "ar" ? "أسعار المنتجات شاملة ضريبة القيمة المضافة" : "Product prices are inclusive of Tax/VAT"}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">{lang === "ar" ? "إذا تم تفعيله، سيتم حساب ضريبة القيمة المضافة كجزء من السعر الحالي بدلاً من إضافتها فوقه" : "If enabled, VAT is derived as part of the current price instead of appended on top"}</p>
               </div>
               <Switch checked={f.vat_inclusive ?? false} onCheckedChange={(v) => setF({ ...f, vat_inclusive: v })} />
             </div>
