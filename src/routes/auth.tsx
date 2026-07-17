@@ -104,8 +104,8 @@ function AuthPage() {
             <ShieldCheck className="h-4 w-4 mt-0.5 shrink-0 text-primary" />
             <span>
               {lang === "ar"
-                ? "الوصول للوحة التحكم بالدعوة فقط. يقوم المسؤول العام بإنشاء حسابات مسؤولي المتاجر، ويمكن لكل مسؤول متجر إضافة موظفيه من قسم الفريق."
-                : "Access is invite-only. The super admin creates brand admin accounts, and each brand admin can add staff from the Team section."}
+                ? "يقتصر الدخول على الشركاء المعتمدين ومندوبي التوصيل. يرجى استخدام بيانات الاعتماد الصادرة عن إدارة البوتيك."
+                : "Access restricted to authorized partners and logistics couriers. Please use your credentials issued by the boutique administrator."}
             </span>
           </p>
           <form onSubmit={submit} className="space-y-4">
