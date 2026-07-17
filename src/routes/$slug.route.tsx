@@ -29,6 +29,9 @@ import { StorefrontAnalytics } from "@/components/storefront-analytics";
 export const Route = createFileRoute("/$slug")({
   staleTime: 5 * 60_000,
   preloadStaleTime: 5 * 60_000,
+  headers: () => ({
+    "Cache-Control": "public, max-age=5, stale-while-revalidate=30",
+  }),
   loader: async ({ params }) => {
     const { data: baseBrand, error: brandErr } = await supabase
       .from("brands")
@@ -531,6 +534,7 @@ function MobileStorefrontDropdown() {
       if (error) throw error;
       return data ?? [];
     },
+    enabled: isOpen,
     staleTime: 5 * 60_000,
     gcTime: 30 * 60_000,
     refetchOnWindowFocus: false,
@@ -675,26 +679,30 @@ export function StorefrontMenu({ navigation = false }: { navigation?: boolean } 
         className={`flex h-full w-[min(90vw,400px)] flex-col overflow-hidden border-0 p-0 shadow-2xl [&>button]:top-5 [&>button]:grid [&>button]:h-10 [&>button]:w-10 [&>button]:place-items-center [&>button]:rounded-full [&>button]:border [&>button]:bg-background/90 [&>button]:opacity-100 [&>button]:shadow-sm ${lang === "ar" ? "[&>button]:left-5 [&>button]:right-auto" : "[&>button]:right-5"}`}
         style={{ backgroundColor: menuBg, color: menuFg, zIndex: 60 }}
       >
-        <div className="relative shrink-0 overflow-hidden border-b px-6 pb-6 pt-7 pe-20" style={{ borderColor: "rgba(127,127,127,.18)" }}>
-          <div className="pointer-events-none absolute -end-16 -top-24 h-52 w-52 rounded-full opacity-[0.08]" style={{ backgroundColor: settings.primary_color }} />
-          <div className="relative flex min-w-0 items-center gap-4">
-            {settings.logo_url && <div className="grid h-16 w-24 shrink-0 place-items-center overflow-hidden rounded-xl bg-white/5 p-1"><img src={settings.logo_url} alt={displayName} className="block max-h-full max-w-full object-contain" style={{ width: "auto", height: "auto" }} /></div>}
-            <div className="min-w-0 flex-1 text-start"><SheetTitle className="truncate text-2xl font-display" style={{ color: menuFg }}>{menuTitle}</SheetTitle><p className="mt-1 truncate text-xs opacity-65">{t("اكتشف المتجر", "Explore our store")}</p></div>
-          </div>
-        </div>
-        <nav className="min-h-0 flex-1 space-y-1 overflow-y-auto p-4" style={{ scrollbarWidth: "none" }}>
-          {settings.menu_show_home && <Link to="/$slug" params={{ slug: brand.slug }} onClick={close} className="flex min-h-12 items-center gap-3 rounded-xl px-4 py-3 text-start transition-colors hover:bg-black/5"><Home className="h-5 w-5 shrink-0" /><span className="min-w-0 truncate">{t("الرئيسية", "Home")}</span></Link>}
-          {session && isStoreMember ? <>
-            {settings.menu_show_account && <Link to="/$slug/account" params={{ slug: brand.slug }} onClick={close} className="flex min-h-12 items-center gap-3 rounded-xl px-4 py-3 text-start transition-colors hover:bg-black/5"><User className="h-5 w-5 shrink-0" /><span className="min-w-0 truncate">{t("حسابي", "My account")}</span></Link>}
-            {settings.menu_show_orders && <Link to="/$slug/account" params={{ slug: brand.slug }} onClick={close} className="flex min-h-12 items-center gap-3 rounded-xl px-4 py-3 text-start transition-colors hover:bg-black/5"><PackageSearch className="h-5 w-5 shrink-0" /><span className="min-w-0 truncate">{t("طلباتي", "My orders")}</span></Link>}
-          </> : settings.menu_show_account && <Link to="/$slug/auth" params={{ slug: brand.slug }} search={{ redirect: typeof window !== "undefined" ? window.location.pathname + window.location.search : "" }} onClick={close} className="flex min-h-12 items-center gap-3 rounded-xl px-4 py-3 text-start transition-colors hover:bg-black/5"><LogIn className="h-5 w-5 shrink-0" /><span className="min-w-0 truncate">{t("تسجيل الدخول", "Sign in")}</span></Link>}
-          {pageLinks.length > 0 && <div className="my-3 border-t" style={{ borderColor: "rgba(127,127,127,.18)" }} />}
-          {pageLinks.map((page) => <Link key={page.index} to="/$slug/$category" params={{ slug: brand.slug, category: page.slug }} onClick={close} className="flex min-h-12 items-center gap-3 rounded-xl px-4 py-3 text-start transition-colors hover:bg-black/5"><FileText className="h-5 w-5 shrink-0" /><span className="min-w-0 truncate">{page.title}</span></Link>)}
-        </nav>
-        <div className="m-4 mt-2 shrink-0 rounded-2xl border p-5 text-start text-sm" style={{ backgroundColor: menuBg, borderColor: `${settings.primary_color}55` }}>
-          <p className="font-medium" style={{ color: menuFg }}>{t("تسوق بكل سهولة", "Shopping made simple")}</p>
-          <p className="mt-1 opacity-65">{t("تصفح المنتجات وتابع طلباتك من مكان واحد.", "Browse products and follow your orders in one place.")}</p>
-        </div>
+        {open && (
+          <>
+            <div className="relative shrink-0 overflow-hidden border-b px-6 pb-6 pt-7 pe-20" style={{ borderColor: "rgba(127,127,127,.18)" }}>
+              <div className="pointer-events-none absolute -end-16 -top-24 h-52 w-52 rounded-full opacity-[0.08]" style={{ backgroundColor: settings.primary_color }} />
+              <div className="relative flex min-w-0 items-center gap-4">
+                {settings.logo_url && <div className="grid h-16 w-24 shrink-0 place-items-center overflow-hidden rounded-xl bg-white/5 p-1"><img src={settings.logo_url} alt={displayName} className="block max-h-full max-w-full object-contain" style={{ width: "auto", height: "auto" }} /></div>}
+                <div className="min-w-0 flex-1 text-start"><SheetTitle className="truncate text-2xl font-display" style={{ color: menuFg }}>{menuTitle}</SheetTitle><p className="mt-1 truncate text-xs opacity-65">{t("اكتشف المتجر", "Explore our store")}</p></div>
+              </div>
+            </div>
+            <nav className="min-h-0 flex-1 space-y-1 overflow-y-auto p-4" style={{ scrollbarWidth: "none" }}>
+              {settings.menu_show_home && <Link to="/$slug" params={{ slug: brand.slug }} onClick={close} className="flex min-h-12 items-center gap-3 rounded-xl px-4 py-3 text-start transition-colors hover:bg-black/5"><Home className="h-5 w-5 shrink-0" /><span className="min-w-0 truncate">{t("الرئيسية", "Home")}</span></Link>}
+              {session && isStoreMember ? <>
+                {settings.menu_show_account && <Link to="/$slug/account" params={{ slug: brand.slug }} onClick={close} className="flex min-h-12 items-center gap-3 rounded-xl px-4 py-3 text-start transition-colors hover:bg-black/5"><User className="h-5 w-5 shrink-0" /><span className="min-w-0 truncate">{t("حسابي", "My account")}</span></Link>}
+                {settings.menu_show_orders && <Link to="/$slug/account" params={{ slug: brand.slug }} onClick={close} className="flex min-h-12 items-center gap-3 rounded-xl px-4 py-3 text-start transition-colors hover:bg-black/5"><PackageSearch className="h-5 w-5 shrink-0" /><span className="min-w-0 truncate">{t("طلباتي", "My orders")}</span></Link>}
+              </> : settings.menu_show_account && <Link to="/$slug/auth" params={{ slug: brand.slug }} search={{ redirect: typeof window !== "undefined" ? window.location.pathname + window.location.search : "" }} onClick={close} className="flex min-h-12 items-center gap-3 rounded-xl px-4 py-3 text-start transition-colors hover:bg-black/5"><LogIn className="h-5 w-5 shrink-0" /><span className="min-w-0 truncate">{t("تسجيل الدخول", "Sign in")}</span></Link>}
+              {pageLinks.length > 0 && <div className="my-3 border-t" style={{ borderColor: "rgba(127,127,127,.18)" }} />}
+              {pageLinks.map((page) => <Link key={page.index} to="/$slug/$category" params={{ slug: brand.slug, category: page.slug }} onClick={close} className="flex min-h-12 items-center gap-3 rounded-xl px-4 py-3 text-start transition-colors hover:bg-black/5"><FileText className="h-5 w-5 shrink-0" /><span className="min-w-0 truncate">{page.title}</span></Link>)}
+            </nav>
+            <div className="m-4 mt-2 shrink-0 rounded-2xl border p-5 text-start text-sm" style={{ backgroundColor: menuBg, borderColor: `${settings.primary_color}55` }}>
+              <p className="font-medium" style={{ color: menuFg }}>{t("تسوق بكل سهولة", "Shopping made simple")}</p>
+              <p className="mt-1 opacity-65">{t("تصفح المنتجات وتابع طلباتك من مكان واحد.", "Browse products and follow your orders in one place.")}</p>
+            </div>
+          </>
+        )}
       </SheetContent>
     </Sheet>
   );
@@ -739,98 +747,102 @@ function CartDrawer({ children }: { children: React.ReactNode }) {
         dir={lang === "ar" ? "rtl" : "ltr"}
         className={`w-full sm:max-w-md flex flex-col ${lang === "ar" ? "[&>button]:left-auto [&>button]:right-4" : ""}`}
       >
-        <SheetHeader className={`${lang === "ar" ? "text-right sm:text-right pr-14" : "text-left sm:text-left pr-14"}`}>
-          <SheetTitle>{t("سلة التسوق", "Your cart")}</SheetTitle>
-        </SheetHeader>
+        {open && (
+          <>
+            <SheetHeader className={`${lang === "ar" ? "text-right sm:text-right pr-14" : "text-left sm:text-left pr-14"}`}>
+              <SheetTitle>{t("سلة التسوق", "Your cart")}</SheetTitle>
+            </SheetHeader>
 
-        <div className="flex-1 overflow-auto py-4 space-y-3">
-          {cart.length === 0 ? (
-            <div className="text-center text-muted-foreground py-12">
-              {t("السلة فارغة", "Your cart is empty")}
-            </div>
-          ) : (
-            cart.map((item) => {
-              const displayName = pickName(lang, { name: item.name, name_ar: item.name_ar, name_en: item.name_en });
-              return (
-              <div key={item.cart_line_id} className="flex gap-3 border rounded-lg p-2 items-center">
-                {item.image ? (
-                  <img src={item.image} alt={displayName} className="h-16 w-16 rounded object-cover shrink-0" />
-                ) : (
-                  <div className="h-16 w-16 rounded bg-muted shrink-0" />
-                )}
-                <div className="flex-1 min-w-0">
-                  <div className="font-medium truncate">{displayName}</div>
-                  <div className="text-xs text-muted-foreground">
-                    {[item.size, item.color, item.fabric].filter(Boolean).join(" · ")}
-                  </div>
-                  {(item.custom_fields ?? []).length > 0 && (
-                    <div className="mt-1 space-y-0.5 text-xs text-muted-foreground">
-                      {item.custom_fields!.map((field) => (
-                        <div key={field.key} className="break-words">
-                          <span className="font-medium text-foreground/80">
-                            {lang === "ar" ? (field.label_ar || field.label_en || field.key) : (field.label_en || field.label_ar || field.key)}:
-                          </span>{" "}{field.value}
+            <div className="flex-1 overflow-auto py-4 space-y-3">
+              {cart.length === 0 ? (
+                <div className="text-center text-muted-foreground py-12">
+                  {t("السلة فارغة", "Your cart is empty")}
+                </div>
+              ) : (
+                cart.map((item) => {
+                  const displayName = pickName(lang, { name: item.name, name_ar: item.name_ar, name_en: item.name_en });
+                  return (
+                  <div key={item.cart_line_id} className="flex gap-3 border rounded-lg p-2 items-center">
+                    {item.image ? (
+                      <img src={item.image} alt={displayName} className="h-16 w-16 rounded object-cover shrink-0" />
+                    ) : (
+                      <div className="h-16 w-16 rounded bg-muted shrink-0" />
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <div className="font-medium truncate">{displayName}</div>
+                      <div className="text-xs text-muted-foreground">
+                        {[item.size, item.color, item.fabric].filter(Boolean).join(" · ")}
+                      </div>
+                      {(item.custom_fields ?? []).length > 0 && (
+                        <div className="mt-1 space-y-0.5 text-xs text-muted-foreground">
+                          {item.custom_fields!.map((field) => (
+                            <div key={field.key} className="break-words">
+                              <span className="font-medium text-foreground/80">
+                                {lang === "ar" ? (field.label_ar || field.label_en || field.key) : (field.label_en || field.label_ar || field.key)}:
+                              </span>{" "}{field.value}
+                            </div>
+                          ))}
                         </div>
-                      ))}
+                      )}
+                      <div className="text-sm font-semibold mt-1" style={{ color: settings.primary_color }}>
+                        <span className="flex flex-col items-end">
+                          <span>{formatPrice(item.price * item.qty, currency, lang)}</span>
+                          {Number(item.original_price || 0) > item.price && <span className="text-xs text-muted-foreground line-through">{formatPrice(Number(item.original_price) * item.qty, currency, lang)}</span>}
+                        </span>
+                      </div>
                     </div>
-                  )}
-                  <div className="text-sm font-semibold mt-1" style={{ color: settings.primary_color }}>
-                    <span className="flex flex-col items-end">
-                      <span>{formatPrice(item.price * item.qty, currency, lang)}</span>
-                      {Number(item.original_price || 0) > item.price && <span className="text-xs text-muted-foreground line-through">{formatPrice(Number(item.original_price) * item.qty, currency, lang)}</span>}
-                    </span>
+                    <div className="flex flex-col items-center gap-1 shrink-0">
+                      <div className="flex items-center border rounded">
+                        <button
+                          className="grid h-11 w-11 place-items-center"
+                          onClick={() => updateQty(item.cart_line_id, item.qty - 1)}
+                          aria-label="decrease"
+                        >
+                          <Minus className="h-3 w-3" />
+                        </button>
+                        <span className="px-2 text-sm min-w-[24px] text-center">{item.qty}</span>
+                        <button
+                          className="grid h-11 w-11 place-items-center disabled:opacity-40"
+                          disabled={item.qty >= item.max_stock}
+                          onClick={() => updateQty(item.cart_line_id, item.qty + 1)}
+                          aria-label="increase"
+                        >
+                          <Plus className="h-3 w-3" />
+                        </button>
+                      </div>
+                      <button
+                        className="flex min-h-11 items-center gap-1 px-2 text-xs text-red-600"
+                        onClick={() => removeFromCart(item.cart_line_id)}
+                      >
+                        <Trash2 className="h-3 w-3" />
+                        {t("حذف", "Remove")}
+                      </button>
+                    </div>
                   </div>
-                </div>
-                <div className="flex flex-col items-center gap-1 shrink-0">
-                  <div className="flex items-center border rounded">
-                    <button
-                      className="grid h-11 w-11 place-items-center"
-                      onClick={() => updateQty(item.cart_line_id, item.qty - 1)}
-                      aria-label="decrease"
-                    >
-                      <Minus className="h-3 w-3" />
-                    </button>
-                    <span className="px-2 text-sm min-w-[24px] text-center">{item.qty}</span>
-                    <button
-                      className="grid h-11 w-11 place-items-center disabled:opacity-40"
-                      disabled={item.qty >= item.max_stock}
-                      onClick={() => updateQty(item.cart_line_id, item.qty + 1)}
-                      aria-label="increase"
-                    >
-                      <Plus className="h-3 w-3" />
-                    </button>
-                  </div>
-                  <button
-                    className="flex min-h-11 items-center gap-1 px-2 text-xs text-red-600"
-                    onClick={() => removeFromCart(item.cart_line_id)}
-                  >
-                    <Trash2 className="h-3 w-3" />
-                    {t("حذف", "Remove")}
-                  </button>
-                </div>
-              </div>
-              );
-            })
-          )}
-        </div>
-
-        {cart.length > 0 && (
-          <div className="border-t pt-4 space-y-3">
-            <div className="flex justify-between text-lg font-semibold">
-              <span>{t("الإجمالي", "Total")}</span>
-              <span style={{ color: settings.primary_color }}>{formatPrice(cartTotal, currency, lang)}</span>
+                  );
+                })
+              )}
             </div>
-            <Button
-              className="w-full h-12"
-              style={{ backgroundColor: drawerCheckoutBg, color: drawerCheckoutFg, borderColor: drawerCheckoutBg }}
-              onClick={() => {
-                setOpen(false);
-                navigate({ to: "/$slug/checkout", params: { slug: brand.slug } });
-              }}
-            >
-              {t("إتمام الشراء", "Checkout")}
-            </Button>
-          </div>
+
+            {cart.length > 0 && (
+              <div className="border-t pt-4 space-y-3">
+                <div className="flex justify-between text-lg font-semibold">
+                  <span>{t("الإجمالي", "Total")}</span>
+                  <span style={{ color: settings.primary_color }}>{formatPrice(cartTotal, currency, lang)}</span>
+                </div>
+                <Button
+                  className="w-full h-12"
+                  style={{ backgroundColor: drawerCheckoutBg, color: drawerCheckoutFg, borderColor: drawerCheckoutBg }}
+                  onClick={() => {
+                    setOpen(false);
+                    navigate({ to: "/$slug/checkout", params: { slug: brand.slug } });
+                  }}
+                >
+                  {t("إتمام الشراء", "Checkout")}
+                </Button>
+              </div>
+            )}
+          </>
         )}
       </SheetContent>
     </Sheet>
