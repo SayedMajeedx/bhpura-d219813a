@@ -21,6 +21,10 @@ export function ActivityLogList({ orderId, productId, variantIds, scope = "order
 
   const q = useQuery({
     queryKey: ["activity_logs", { orderId, productId, variantIds, scope, limit, brandId }],
+    // Realtime is best-effort on mobile connections. Polling keeps the audit
+    // trail accurate for office users after a courier updates an order.
+    refetchInterval: 10_000,
+    refetchOnWindowFocus: true,
     queryFn: async () => {
       let query: any = (supabase.from("activity_logs") as any)
         .select("*")

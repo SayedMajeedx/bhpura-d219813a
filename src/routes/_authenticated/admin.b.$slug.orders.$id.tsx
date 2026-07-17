@@ -218,17 +218,19 @@ function fillCourierMessage(template: string, order: any, brandName: string) {
   return template
     .replaceAll("{{customer_name}}", order.customers?.name || "Customer")
     .replaceAll("{{invoice_number}}", String(order.invoice_number ?? ""))
-    .replaceAll("{{brand_name}}", brandName);
+    .replaceAll("{{brand_name}}", brandName)
+    .replaceAll("{{total}}", formatMoney(Number(order.total ?? 0), order.currency || "BHD"))
+    .replaceAll("{{customer_phone}}", String(order.customers?.phone ?? ""));
 }
 
-function CourierOrderView({ order, slug, onUpdated }: { order: any; slug: string; onUpdated: () => void }) {
+function CourierOrderView({ order, slug, onUpdated }: { order: any; slug: string; onUpdated: () => void | Promise<void> }) {
   const { lang } = useI18n();
   const [notes, setNotes] = useState(order.delivery_notes ?? "");
   const [saving, setSaving] = useState(false);
   const [codConfirmed, setCodConfirmed] = useState(Boolean(order.cod_collected_at));
   const amountDue = Math.max(0, Number(order.total || 0) - Number(order.advance_paid || 0));
   const [codAmount, setCodAmount] = useState(amountDue.toFixed(3));
-  const isCod = order.payment_method === "cod";
+  const isCod = ["cod", "cash_on_delivery"].includes(String(order.payment_method ?? "").toLowerCase());
   const deliveryComplete = order.fulfillment_status === "delivered";
   const messageQ = useQuery({
     queryKey: ["courier-delivery-message", order.id],
@@ -361,6 +363,10 @@ function OrderDetail() {
 
   const orderQ = useQuery({
     queryKey: ["order", id, isCourier ? "assigned-courier" : "office"],
+    // A courier can be working from a phone with an intermittent realtime
+    // socket. Keep both courier and office views synchronized regardless.
+    refetchInterval: isCourier ? 10_000 : 30_000,
+    refetchOnWindowFocus: true,
     queryFn: async () => {
       let query = supabase
         .from("orders")
@@ -560,6 +566,7 @@ function OrderDetail() {
   const [items, setItems] = useState<Item[]>([]);
   const [phoneSearch, setPhoneSearch] = useState("");
   const [editingUnlocked, setEditingUnlocked] = useState(false);
+  const [invoicePreviewOpen, setInvoicePreviewOpen] = useState(false);
   const [hasSavedDraft, setHasSavedDraft] = useState(false);
   const [saving, setSaving] = useState(false);
   const [promoInput, setPromoInput] = useState("");
@@ -803,7 +810,13 @@ function OrderDetail() {
   // Courier access is intentionally limited by RLS. Their focused delivery
   // view must not wait for office-only settings, catalogue, or CRM queries.
   if (isCourier) {
-    return <CourierOrderView order={orderQ.data} slug={slug} onUpdated={() => { void orderQ.refetch(); }} />;
+    return <CourierOrderView order={orderQ.data} slug={slug} onUpdated={async () => {
+      await Promise.all([
+        orderQ.refetch(),
+        qc.invalidateQueries({ queryKey: ["orders"] }),
+        qc.invalidateQueries({ queryKey: ["activity_logs"] }),
+      ]);
+    }} />;
   }
 
   if (settingsQ.isPending || !settingsQ.data) return <div className="p-8">Loading…</div>;
@@ -1235,8 +1248,8 @@ function OrderDetail() {
   };
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 max-w-6xl mx-auto">
-      <div className="no-print mb-6 flex flex-wrap items-center justify-between gap-3">
+    <div className="mx-auto max-w-[1500px] p-3 sm:p-5 lg:p-6">
+      <div className="no-print mb-4 flex flex-wrap items-center justify-between gap-3">
         <Link
           to="/admin/b/$slug/orders"
           params={{ slug }}
@@ -1292,7 +1305,7 @@ function OrderDetail() {
             <Button
               onClick={save}
               disabled={saving}
-              className={isCreationMode ? "min-w-48" : undefined}
+              className={`${isCreationMode ? "min-w-48" : ""} lg:hidden`}
             >
               {saving ? (
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -1323,8 +1336,8 @@ function OrderDetail() {
         disabled={isReadOnly}
         className="no-print m-0 min-w-0 border-0 p-0 disabled:opacity-80"
       >
-        <div className="space-y-4 mb-8">
-          <Card className="p-6">
+        <div className="mb-6 grid items-start gap-4 lg:grid-cols-[minmax(0,1.9fr)_minmax(320px,1fr)]">
+          <Card className="p-4 sm:p-5 lg:col-start-1 lg:row-start-1">
             <div className="mb-4">
               <Label className="flex items-center gap-2">
                 <Search className="h-3 w-3" /> {t("customers.searchByPhone")}
@@ -1363,7 +1376,7 @@ function OrderDetail() {
                   </p>
                 )}
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
               <div>
                 <Label>{t("orderDetail.customer")}</Label>
                 <Select
@@ -1392,7 +1405,7 @@ function OrderDetail() {
                   </SelectContent>
                 </Select>
               </div>
-              <div>
+              <div className="lg:hidden">
                 <Label>{t("orderDetail.orderDate")}</Label>
                 <Input
                   type="date"
@@ -1400,7 +1413,7 @@ function OrderDetail() {
                   onChange={(e) => setOrder({ ...order, order_date: e.target.value })}
                 />
               </div>
-              <div>
+              <div className="lg:hidden">
                 <Label>{t("orderDetail.status")}</Label>
                 <Select
                   value={order.status}
@@ -1419,7 +1432,7 @@ function OrderDetail() {
                   </SelectContent>
                 </Select>
               </div>
-              <div>
+              <div className="lg:hidden">
                 <Label>{t("orderDetail.paymentMethod")}</Label>
                 <Select
                   value={order.payment_method ?? "none"}
@@ -1781,9 +1794,18 @@ function OrderDetail() {
                 </div>
               );
             })()}
+            <div className="mt-4 hidden lg:block">
+              <Label>{t("orderDetail.notes")}</Label>
+              <Textarea
+                value={order.notes ?? ""}
+                onChange={(e) => setOrder({ ...order, notes: e.target.value })}
+                rows={3}
+                placeholder={lang === "ar" ? "ملاحظات داخلية للطلب" : "Internal order notes"}
+              />
+            </div>
           </Card>
 
-          <Card className="p-6">
+          <Card className="p-4 sm:p-5 lg:col-start-1 lg:row-start-2">
             <div className="flex items-center justify-between mb-4 gap-2 flex-wrap">
               <h3 className="font-display text-lg">{t("orderDetail.lineItems")}</h3>
               <div className="flex items-center gap-2">
@@ -1799,7 +1821,7 @@ function OrderDetail() {
             {items.length === 0 && (
               <p className="text-sm text-muted-foreground">{t("orderDetail.noLines")}</p>
             )}
-            <div className="space-y-4">
+            <div className="space-y-3">
               {items.map((it, idx) => {
                 const variant = it.variant_id
                   ? (variantsQ.data ?? []).find((x: any) => x.id === it.variant_id)
@@ -1808,7 +1830,7 @@ function OrderDetail() {
                 const incStock = Number((variant as any)?.stock_incubator ?? 0);
                 const isAr = lang === "ar";
                 return (
-                  <div key={idx} className="border border-border rounded-lg p-4 space-y-3">
+                  <div key={idx} className="space-y-2 rounded-lg border border-border p-3">
                     <div className="grid grid-cols-1 sm:grid-cols-12 gap-3">
                       <div className="sm:col-span-4">
                         <Label>{t("orderDetail.fromInventory")}</Label>
@@ -2020,9 +2042,52 @@ function OrderDetail() {
             />
           </Card>
 
-          <Card className="p-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
+          <Card className="p-4 sm:p-5 lg:sticky lg:top-4 lg:col-start-2 lg:row-start-1 lg:row-span-2 lg:max-h-[calc(100vh-2rem)] lg:overflow-y-auto">
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-1">
+                <div>
+                  <Label>{t("orderDetail.orderDate")}</Label>
+                  <Input
+                    type="date"
+                    value={order.order_date}
+                    onChange={(e) => setOrder({ ...order, order_date: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <Label>{t("orderDetail.status")}</Label>
+                  <Select value={order.status} onValueChange={(status) => setOrder({ ...order, status })}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="draft">{t("status.draft")}</SelectItem>
+                      <SelectItem value="confirmed">{t("status.confirmed")}</SelectItem>
+                      <SelectItem value="paid">{t("status.paid")}</SelectItem>
+                      <SelectItem value="shipped">{t("status.shipped")}</SelectItem>
+                      <SelectItem value="completed">{t("status.completed")}</SelectItem>
+                      <SelectItem value="cancelled">{t("status.cancelled")}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="sm:col-span-2 lg:col-span-1">
+                  <Label>{t("orderDetail.paymentMethod")}</Label>
+                  <Select
+                    value={order.payment_method ?? "none"}
+                    onValueChange={(payment_method) => setOrder({ ...order, payment_method: payment_method === "none" ? null : payment_method })}
+                  >
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">{t("orderDetail.selectPayment")}</SelectItem>
+                      <SelectItem value="cash">{t("payment.cash")}</SelectItem>
+                      <SelectItem value="card">{t("payment.card")}</SelectItem>
+                      <SelectItem value="bank_transfer">{t("payment.bank_transfer")}</SelectItem>
+                      <SelectItem value="benefit">{t("payment.benefit")}</SelectItem>
+                      <SelectItem value="apple_pay">{t("payment.apple_pay")}</SelectItem>
+                      <SelectItem value="google_pay">{t("payment.google_pay")}</SelectItem>
+                      <SelectItem value="cod">{t("payment.cod")}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="lg:hidden">
                 <Label>{t("orderDetail.notes")}</Label>
                 <Textarea
                   value={order.notes ?? ""}
@@ -2230,7 +2295,7 @@ function OrderDetail() {
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="border-t border-border pt-3 space-y-1 text-sm">
+                <div className="space-y-1 border-t border-border pt-3 text-sm">
                   <Row
                     label={t("orderDetail.subtotal")}
                     value={formatMoney(totals.subtotal, currency)}
@@ -2273,12 +2338,32 @@ function OrderDetail() {
                     </>
                   )}
                 </div>
+                {!isReadOnly && (
+                  <Button onClick={save} disabled={saving} className="hidden w-full lg:flex">
+                    {saving ? <Loader2 className="me-2 h-4 w-4 animate-spin" /> : <Save className="me-2 h-4 w-4" />}
+                    {isCreationMode
+                      ? lang === "ar" ? "إنشاء وحفظ الطلب" : "Create & Save Order"
+                      : t("common.save")}
+                  </Button>
+                )}
               </div>
             </div>
           </Card>
         </div>
       </fieldset>
 
+      <div className="no-print mb-4 rounded-xl border bg-card">
+        <button
+          type="button"
+          onClick={() => setInvoicePreviewOpen((open) => !open)}
+          className="flex w-full items-center justify-between px-4 py-3 text-start font-medium hover:bg-muted/40"
+          aria-expanded={invoicePreviewOpen}
+        >
+          <span>{lang === "ar" ? "معاينة الفاتورة" : "Preview Invoice"}</span>
+          <span className="text-sm text-muted-foreground">{invoicePreviewOpen ? "−" : "+"}</span>
+        </button>
+      </div>
+      <div className={invoicePreviewOpen ? "block" : "hidden print:block"}>
       {/* Printable invoice */}
       {(() => {
         const addrs = (addressesQ.data ?? []).filter((a) => a.customer_id === order.customer_id);
@@ -2303,6 +2388,7 @@ function OrderDetail() {
           />
         );
       })()}
+      </div>
       <div className="max-w-6xl mx-auto p-4 sm:p-6 lg:p-8 no-print">
         <ActivityLogList orderId={order.id} scope="order" brandId={brand.id} />
       </div>

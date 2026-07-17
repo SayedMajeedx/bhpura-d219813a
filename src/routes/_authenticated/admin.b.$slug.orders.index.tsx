@@ -90,6 +90,11 @@ function deliveryStatusPresentation(status: string | null | undefined, lang: "en
       ar: "فشل التوصيل",
       className: "bg-red-50 text-red-800 ring-red-200",
     },
+    delivery_failed: {
+      en: "Delivery failed",
+      ar: "فشل التوصيل",
+      className: "bg-red-50 text-red-800 ring-red-200",
+    },
     returned: {
       en: "Returned",
       ar: "مرتجع",
@@ -125,6 +130,10 @@ function OrdersList() {
 
   const { data } = useQuery({
     queryKey: ["orders", brandId, isCourier ? "assigned-courier" : "office"],
+    // Realtime can briefly disconnect on a courier's mobile device. A small
+    // interval makes order state changes reliably appear in every workspace.
+    refetchInterval: isCourier ? 10_000 : 30_000,
+    refetchOnWindowFocus: true,
     queryFn: async () => {
       let query = supabase
         .from("orders")
