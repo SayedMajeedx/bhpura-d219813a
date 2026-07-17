@@ -77,13 +77,18 @@ function BrandLayout() {
   );
 }
 
-function BrandError() {
+function BrandError({ error }: { error?: any }) {
   const t = useT();
   return (
     <div className="p-8 max-w-lg mx-auto">
       <Card className="p-8 text-center">
         <h2 className="text-xl font-display mb-2">{t("app.title")}</h2>
-        <p className="text-muted-foreground">Brand not found or unavailable.</p>
+        <p className="text-muted-foreground mb-4">Brand not found or unavailable.</p>
+        {error && (
+          <div className="text-left p-4 bg-destructive/10 text-destructive rounded-md text-xs font-mono break-all whitespace-pre-wrap">
+            {error.message || String(error)}
+          </div>
+        )}
       </Card>
     </div>
   );
