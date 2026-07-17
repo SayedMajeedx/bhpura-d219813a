@@ -114,9 +114,14 @@ function StoreHome() {
     const list = products ?? [];
     const displayedIds = new Set<string>();
 
+    // Helper to track displayed IDs
+    const addToDisplayed = (items: ProductRow[]) => {
+      items.forEach(p => displayedIds.add(p.id));
+    };
+
     // 1. New Arrivals (highest priority)
     const rawNewest = list.slice(0, 8);
-    rawNewest.forEach(p => displayedIds.add(p.id));
+    addToDisplayed(rawNewest);
 
     // 2. Best Sellers
     const bestIds = new Map((bestSellerRows ?? []).map((row, index) => [row.product_id, index]));
@@ -124,14 +129,16 @@ function StoreHome() {
       .filter((p) => bestIds.has(p.id))
       .sort((a, b) => (bestIds.get(a.id) ?? 99) - (bestIds.get(b.id) ?? 99));
     const dedupedBest = rawBest.filter(p => !displayedIds.has(p.id)).slice(0, 8);
-    dedupedBest.forEach(p => displayedIds.add(p.id));
+    const finalBest = dedupedBest.length >= 2 ? dedupedBest : rawBest.slice(0, 8);
+    addToDisplayed(finalBest);
 
     // 3. Sale
     const rawSale = list.filter((p) =>
       p.product_variants.some((v) => Number(v.original_price || 0) > Number(v.selling_price || 0))
     );
     const dedupedSale = rawSale.filter(p => !displayedIds.has(p.id)).slice(0, 8);
-    dedupedSale.forEach(p => displayedIds.add(p.id));
+    const finalSale = dedupedSale.length >= 2 ? dedupedSale : rawSale.slice(0, 8);
+    addToDisplayed(finalSale);
 
     // 4. Trending Now
     const trendingIds = new Map((trendingRows ?? []).map((row: any, index: number) => [row.product_id, index]));
@@ -139,13 +146,14 @@ function StoreHome() {
       .filter((p) => trendingIds.has(p.id))
       .sort((a, b) => (trendingIds.get(a.id) ?? 99) - (trendingIds.get(b.id) ?? 99));
     const dedupedTrending = rawTrending.filter(p => !displayedIds.has(p.id)).slice(0, 8);
-    dedupedTrending.forEach(p => displayedIds.add(p.id));
+    const finalTrending = dedupedTrending.length >= 2 ? dedupedTrending : rawTrending.slice(0, 8);
+    addToDisplayed(finalTrending);
 
     return {
       newest: rawNewest,
-      bestSellers: dedupedBest,
-      saleProducts: dedupedSale,
-      trending: dedupedTrending,
+      bestSellers: finalBest,
+      saleProducts: finalSale,
+      trending: finalTrending,
     };
   }, [products, bestSellerRows, trendingRows]);
 
@@ -183,7 +191,7 @@ function StoreHome() {
           </div>
           <div className="mt-16 pt-12 border-t border-neutral-100/50">
             <SectionHeading fallbackAr="كل المنتجات" fallbackEn="All products" />
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-6">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
               {Array.from({ length: 4 }).map((_, i) => (
                 <div key={i} className="space-y-2">
                   <Skeleton className="aspect-[3/4] rounded-xl w-full animate-pulse bg-neutral-100" />
@@ -290,10 +298,10 @@ function SkeletonMerchandisingSection({ label }: { label: [string, string] }) {
       <SectionHeading fallbackAr={label[0]} fallbackEn={label[1]} />
       <div 
         dir={lang === "ar" ? "rtl" : "ltr"}
-        className="flex overflow-x-auto flex-nowrap md:grid md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-6 scrollbar-none pb-4 md:pb-0"
+        className="flex overflow-x-auto flex-nowrap md:grid md:grid-cols-3 lg:grid-cols-4 gap-4 px-4 md:px-0 md:gap-6 scrollbar-none pb-4 md:pb-0"
       >
         {Array.from({ length: 4 }).map((_, i) => (
-          <div key={i} className="w-[72vw] sm:w-[48vw] shrink-0 md:w-auto md:shrink space-y-2">
+          <div key={i} className="flex-shrink-0 w-[72vw] sm:w-[45vw] md:w-[28vw] min-w-[240px] md:w-auto md:shrink space-y-2">
             <Skeleton className="aspect-[3/4] rounded-xl w-full animate-pulse bg-neutral-100" />
             <Skeleton className="h-4 w-3/4 animate-pulse bg-neutral-100" />
             <Skeleton className="h-4 w-1/3 animate-pulse bg-neutral-100" />
@@ -328,7 +336,7 @@ function MerchandisingSection({
       <SectionHeading title={title} fallbackAr={label[0]} fallbackEn={label[1]} />
       <div 
         dir={lang === "ar" ? "rtl" : "ltr"}
-        className="flex overflow-x-auto flex-nowrap md:grid md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-6 scrollbar-none pb-4 md:pb-0 snap-x snap-mandatory"
+        className="flex overflow-x-auto flex-nowrap md:grid md:grid-cols-3 lg:grid-cols-4 gap-4 px-4 md:px-0 md:gap-6 scrollbar-none pb-4 md:pb-0 snap-x snap-mandatory"
       >
         {products.map((product) => (
           <ProductCard
@@ -536,7 +544,7 @@ export function ProductGrid({ products, loading, categoryEmpty, onViewAll }: { p
   const { t } = useStorefront();
   if (loading) {
     return (
-      <div id="products" className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-6">
+      <div id="products" className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
         {Array.from({ length: 4 }).map((_, i) => (
           <div key={i} className="space-y-2">
             <Skeleton className="aspect-[3/4] rounded-xl w-full bg-neutral-100" />
@@ -563,7 +571,7 @@ export function ProductGrid({ products, loading, categoryEmpty, onViewAll }: { p
   }
 
   return (
-    <div id="products" className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-6">
+    <div id="products" className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
       {products.map((p) => (
         <ProductCard key={p.id} product={p} />
       ))}
@@ -607,7 +615,7 @@ export function ProductCard({ product, badge }: { product: ProductRow; badge?: "
   }
 
   return (
-    <div className="group relative w-[72vw] sm:w-[48vw] shrink-0 snap-start md:w-auto md:shrink md:snap-align-none">
+    <div className="group relative flex-shrink-0 w-[72vw] sm:w-[45vw] md:w-[28vw] min-w-[240px] snap-start md:w-auto md:shrink md:snap-align-none">
       <button
         type="button"
         onClick={() => toggleWishlist(product.id)}
