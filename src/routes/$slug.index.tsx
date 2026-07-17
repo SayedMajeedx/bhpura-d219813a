@@ -467,7 +467,7 @@ function HeroContentCarousel({ slides }: { slides: import("@/lib/storefront-cont
 
 function StorefrontLink({ href, ...props }: { href: string } & Omit<AnchorHTMLAttributes<HTMLAnchorElement>, "href">) {
   const value = String(href || "#products").trim();
-  const internalAbsolute = /^https?:\/\/(?:www\.)?(?:boutq\.store|bhpura\.vercel\.app)(?:\/|$)/i.test(value);
+  const internalAbsolute = /^https?:\/\/(?:www\.)?(?:[a-zA-Z0-9-]+\.)?(?:boutq\.store|vercel\.app)(?:\/|$)/i.test(value);
   const destination = internalAbsolute ? value.replace(/^https?:\/\/[^/]+/i, "") || "/" : value;
   const external = /^(?:https?:)?\/\//i.test(destination) || /^(?:mailto|tel):/i.test(destination);
   if (external || destination.startsWith("#")) return <a href={destination} {...props} />;

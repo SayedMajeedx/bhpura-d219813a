@@ -1272,7 +1272,7 @@ function OrderDetail() {
     const settings: any = settingsQ.data ?? {};
     const LEGACY = new Set(["Abaya Atelier", "أباية أتيليه"]);
     const rawBrand = (settings.business_name ?? "").trim();
-    const brand = !rawBrand || LEGACY.has(rawBrand) ? (lang === "ar" ? "بيورا" : "Pura") : rawBrand;
+    const brand = !rawBrand || LEGACY.has(rawBrand) ? (lang === "ar" ? "بوتك" : "Boutq") : rawBrand;
 
     const paymentLabel = order.payment_method ? t(`payment.${order.payment_method}`) : "";
     const statusLabel = t(`status.${order.status}`);
@@ -2536,7 +2536,7 @@ const INVOICE_LABELS = {
     arabic: "العربية",
   },
 } as const;
-const BRAND: Record<"en" | "ar", string> = { en: "Pura", ar: "بيورا" };
+const BRAND: Record<"en" | "ar", string> = { en: "Boutq", ar: "بوتك" };
 const LEGACY_BRAND_NAMES = new Set(["Abaya Atelier", "أباية أتيليه"]);
 function brandFor(lang: "en" | "ar", stored?: string | null) {
   const s = (stored ?? "").trim();

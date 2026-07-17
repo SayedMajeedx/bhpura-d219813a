@@ -45,7 +45,7 @@ export const Route = createFileRoute("/_authenticated/admin/")({
     const { data: fallback } = await supabase
       .from("brands")
       .select("slug")
-      .eq("slug", "pura")
+      .limit(1)
       .maybeSingle();
     if (fallback?.slug) {
       throw redirect({ to: "/admin/b/$slug/dashboard", params: { slug: fallback.slug } });

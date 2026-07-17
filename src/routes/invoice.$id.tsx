@@ -15,7 +15,7 @@ export const Route = createFileRoute("/invoice/$id")({
   component: PublicInvoice,
   head: ({ loaderData }) => {
     const inv = loaderData?.order?.invoice_number;
-    const brand = loaderData?.settings?.business_name || "Pura";
+    const brand = loaderData?.settings?.business_name || "Boutq";
     const title = inv ? `Invoice #${inv} — ${brand}` : `Invoice — ${brand}`;
     return {
       meta: [

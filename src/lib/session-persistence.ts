@@ -11,8 +11,8 @@
 //    is missing (i.e. the browser session ended / a fresh tab was opened),
 //    we sign the user out before any protected route can hydrate.
 
-const REMEMBER_KEY = "pura.auth.rememberMe";
-const TAB_ALIVE_KEY = "pura.auth.tabAlive";
+const REMEMBER_KEY = "boutq.auth.rememberMe";
+const TAB_ALIVE_KEY = "boutq.auth.tabAlive";
 
 export function applyRememberMe(remember: boolean) {
   if (typeof window === "undefined") return;
