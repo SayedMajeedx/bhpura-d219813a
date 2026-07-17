@@ -1,6 +1,6 @@
 import { createFileRoute, Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,6 +17,7 @@ import { PhoneInput } from "@/components/phone-input";
 import { useBrand } from "@/lib/brand-context";
 import { useRealtimeInvalidate } from "@/hooks/use-realtime-invalidate";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { formatMoney } from "@/lib/format";
 
 export const Route = createFileRoute("/_authenticated/admin/b/$slug/customers")({
   component: CustomersRoute,
@@ -119,6 +120,86 @@ function CustomersPage() {
     if (a.is_default) defaultByCustomer.set(a.customer_id, a);
   });
 
+  const businessName = useQuery({
+    queryKey: ["business-name", brandId],
+    queryFn: async () => {
+      const { data } = await supabase.from("business_settings").select("business_name, currency").eq("brand_id", brandId).maybeSingle();
+      return data ?? null;
+    },
+  });
+  const currency = businessName.data?.currency ?? "BHD";
+
+  const ordersQ = useQuery({
+    queryKey: ["customer-orders", brandId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("orders")
+        .select("id, customer_id, total, created_at, status")
+        .eq("brand_id", brandId)
+        .in("status", ["confirmed", "paid", "shipped", "completed"]);
+      if (error) throw error;
+      return data as Array<{ id: string; customer_id: string; total: number; created_at: string; status: string }>;
+    },
+  });
+
+  const customerCrmStats = useMemo(() => {
+    const map = new Map<string, {
+      totalOrders: number;
+      lifetimeSpend: number;
+      lastOrderDate: string | null;
+      badge: "VIP" | "Churn Risk" | "New Buyer" | "Regular" | null;
+    }>();
+
+    const orders = ordersQ.data ?? [];
+    const nowMs = new Date().getTime();
+    const sixtyDaysMs = 60 * 24 * 60 * 60 * 1000;
+
+    const ordersByCustomer = new Map<string, typeof orders>();
+    orders.forEach((o) => {
+      if (o.customer_id) {
+        if (!ordersByCustomer.has(o.customer_id)) {
+          ordersByCustomer.set(o.customer_id, []);
+        }
+        ordersByCustomer.get(o.customer_id)!.push(o);
+      }
+    });
+
+    ordersByCustomer.forEach((custOrders, customerId) => {
+      const totalOrders = custOrders.length;
+      const lifetimeSpend = custOrders.reduce((sum, o) => sum + Number(o.total || 0), 0);
+      
+      let lastOrderDate: string | null = null;
+      let lastOrderMs = 0;
+      custOrders.forEach((o) => {
+        const ms = new Date(o.created_at).getTime();
+        if (ms > lastOrderMs) {
+          lastOrderMs = ms;
+          lastOrderDate = o.created_at;
+        }
+      });
+
+      let badge: "VIP" | "Churn Risk" | "New Buyer" | "Regular" | null = null;
+      if (lifetimeSpend > 250) {
+        badge = "VIP";
+      } else if (lastOrderMs > 0 && (nowMs - lastOrderMs) > sixtyDaysMs) {
+        badge = "Churn Risk";
+      } else if (totalOrders === 1) {
+        badge = "New Buyer";
+      } else if (totalOrders > 1) {
+        badge = "Regular";
+      }
+
+      map.set(customerId, {
+        totalOrders,
+        lifetimeSpend,
+        lastOrderDate,
+        badge,
+      });
+    });
+
+    return map;
+  }, [ordersQ.data]);
+
   const normalizedSearch = search.trim().toLowerCase();
   const filteredCustomers = (data ?? []).filter((customer) => {
     const defaultAddress = defaultByCustomer.get(customer.id);
@@ -196,15 +277,49 @@ function CustomersPage() {
             {visibleCustomers.map((c) => {
               const def = defaultByCustomer.get(c.id);
               const address = def ? (formatAddressLine(def, lang) || regionLabel(def.region, lang)) : (regionLabel(c.region, lang) || c.city);
+              const stats = customerCrmStats.get(c.id) || { totalOrders: 0, lifetimeSpend: 0, lastOrderDate: null, badge: null };
               return (
                 <Card key={c.id} className="cursor-pointer p-4 transition-colors hover:bg-muted/30" onClick={() => navigate({ to: "/admin/b/$slug/customers/$customerId", params: { slug, customerId: c.id } })}>
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0 flex-1">
-                      <div className="font-semibold">{c.name}</div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="font-semibold">{c.name}</span>
+                        {(() => {
+                          if (stats.badge === "VIP") {
+                            return (
+                              <span className="inline-flex items-center gap-1 rounded-full border border-amber-200/60 bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-800 dark:bg-amber-950/40 dark:text-amber-400">
+                                <Star className="h-2.5 w-2.5 fill-amber-500 stroke-amber-500" />
+                                {lang === "ar" ? "مميز" : "VIP"}
+                              </span>
+                            );
+                          }
+                          if (stats.badge === "Churn Risk") {
+                            return (
+                              <span className="inline-flex items-center rounded-full border border-rose-200 bg-rose-50 px-2 py-0.5 text-[10px] font-medium text-rose-700 dark:bg-rose-950/40 dark:text-rose-400">
+                                {lang === "ar" ? "راكد" : "Churn"}
+                              </span>
+                            );
+                          }
+                          if (stats.badge === "New Buyer") {
+                            return (
+                              <span className="inline-flex items-center rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[10px] font-medium text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400">
+                                {lang === "ar" ? "جديد" : "New"}
+                              </span>
+                            );
+                          }
+                          return null;
+                        })()}
+                      </div>
                       {c.phone && <div className="mt-1 text-sm text-muted-foreground" dir="ltr">{c.phone}</div>}
                       {c.email && <div className="break-all text-sm text-muted-foreground">{c.email}</div>}
                       {address && <div className="mt-2 text-xs text-muted-foreground">{address}</div>}
                       {c.notes && <div className="mt-2 text-xs text-muted-foreground">{c.notes}</div>}
+                      
+                      <div className="mt-2 flex items-center gap-3 text-xs border-t border-border/50 pt-2 text-muted-foreground">
+                        <span>{lang === "ar" ? "الطلبات:" : "Orders:"} <b className="text-foreground">{stats.totalOrders}</b></span>
+                        <span>•</span>
+                        <span>{lang === "ar" ? "الإنفاق:" : "Spend:"} <b className="text-foreground">{formatMoney(stats.lifetimeSpend, currency)}</b></span>
+                      </div>
                     </div>
                     <div className="flex shrink-0 flex-col gap-1" onClick={(event) => event.stopPropagation()}>
                       <DeleteAction message={t("customers.deleteConfirm")} onConfirm={() => del(c.id)} mobile />
@@ -218,39 +333,77 @@ function CustomersPage() {
           <div className="overflow-x-auto">
           <table className="w-full min-w-[560px] table-fixed text-sm">
             <colgroup>
-              <col className="w-[28%]" />
-              <col className="w-[32%]" />
-              <col className="w-[28%]" />
-              <col className="w-[12%]" />
+              <col style={{ width: "24%" }} />
+              <col style={{ width: "22%" }} />
+              <col style={{ width: "14%" }} />
+              <col style={{ width: "16%" }} />
+              <col style={{ width: "16%" }} />
+              <col style={{ width: "8%" }} />
             </colgroup>
             <thead className="bg-secondary/50">
               <tr>
                 <th className="p-4 text-start font-medium">{t("customers.name")}</th>
                 <th className="p-4 text-start font-medium">{t("customers.contact")}</th>
-                <th className="p-4 text-start font-medium">{t("customers.region")}</th>
+                <th className="p-4 text-center font-medium">{lang === "ar" ? "الطلبات" : "Total Orders"}</th>
+                <th className="p-4 text-center font-medium">{lang === "ar" ? "إجمالي الإنفاق" : "Lifetime Spend"}</th>
+                <th className="p-4 text-center font-medium">{lang === "ar" ? "التصنيف" : "Segment"}</th>
                 <th className="p-4 text-end"><span className="sr-only">{t("common.actions")}</span></th>
               </tr>
             </thead>
             <tbody>
-              {visibleCustomers.map((c) => (
-                <tr key={c.id} tabIndex={0} className="cursor-pointer border-t border-border transition-colors hover:bg-muted/40 focus-visible:bg-muted/40 focus-visible:outline-none" onClick={() => navigate({ to: "/admin/b/$slug/customers/$customerId", params: { slug, customerId: c.id } })} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") navigate({ to: "/admin/b/$slug/customers/$customerId", params: { slug, customerId: c.id } }); }}>
-                  <td className="p-4 text-start"><p className="font-medium">{c.name}</p>{c.notes && <p className="text-xs text-muted-foreground mt-1">{c.notes}</p>}</td>
-                  <td className="p-4 text-start text-muted-foreground">
-                    {c.phone && <div className="text-start" dir="ltr">{c.phone}</div>}
-                    {c.email && <div>{c.email}</div>}
-                  </td>
-                  <td className="p-4 text-start text-muted-foreground">
-                    {(() => {
-                      const def = defaultByCustomer.get(c.id);
-                      if (def) return formatAddressLine(def, lang) || regionLabel(def.region, lang) || "—";
-                      return regionLabel(c.region, lang) || c.city || "—";
-                    })()}
-                  </td>
-                  <td className="p-4 text-end whitespace-nowrap" onClick={(event) => event.stopPropagation()}>
-                    <DeleteAction message={t("customers.deleteConfirm")} onConfirm={() => del(c.id)} />
-                  </td>
-                </tr>
-              ))}
+              {visibleCustomers.map((c) => {
+                const stats = customerCrmStats.get(c.id) || { totalOrders: 0, lifetimeSpend: 0, lastOrderDate: null, badge: null };
+                return (
+                  <tr key={c.id} tabIndex={0} className="cursor-pointer border-t border-border transition-colors hover:bg-muted/40 focus-visible:bg-muted/40 focus-visible:outline-none" onClick={() => navigate({ to: "/admin/b/$slug/customers/$customerId", params: { slug, customerId: c.id } })} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") navigate({ to: "/admin/b/$slug/customers/$customerId", params: { slug, customerId: c.id } }); }}>
+                    <td className="p-4 text-start">
+                      <p className="font-medium text-foreground">{c.name}</p>
+                      {c.notes && <p className="text-xs text-muted-foreground mt-1 line-clamp-1 max-w-[200px]">{c.notes}</p>}
+                    </td>
+                    <td className="p-4 text-start text-muted-foreground">
+                      {c.phone && <div className="text-start text-xs font-mono" dir="ltr">{c.phone}</div>}
+                      {c.email && <div className="text-xs truncate max-w-[180px]">{c.email}</div>}
+                    </td>
+                    <td className="p-4 text-center font-medium">
+                      {stats.totalOrders}
+                    </td>
+                    <td className="p-4 text-center font-semibold text-foreground">
+                      {formatMoney(stats.lifetimeSpend, currency)}
+                    </td>
+                    <td className="p-4 text-center">
+                      <div className="flex justify-center items-center">
+                        {(() => {
+                          if (stats.badge === "VIP") {
+                            return (
+                              <span className="inline-flex items-center gap-1 rounded-full border border-amber-200/60 bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-800 dark:bg-amber-950/40 dark:text-amber-400">
+                                <Star className="h-3 w-3 fill-amber-500 stroke-amber-500" />
+                                {lang === "ar" ? "مميز" : "VIP"}
+                              </span>
+                            );
+                          }
+                          if (stats.badge === "Churn Risk") {
+                            return (
+                              <span className="inline-flex items-center rounded-full border border-rose-200 bg-rose-50 px-2 py-0.5 text-xs font-medium text-rose-700 dark:bg-rose-950/40 dark:text-rose-400">
+                                {lang === "ar" ? "راكد" : "Churn Risk"}
+                              </span>
+                            );
+                          }
+                          if (stats.badge === "New Buyer") {
+                            return (
+                              <span className="inline-flex items-center rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400">
+                                {lang === "ar" ? "جديد" : "New Buyer"}
+                              </span>
+                            );
+                          }
+                          return <span className="text-xs text-muted-foreground">—</span>;
+                        })()}
+                      </div>
+                    </td>
+                    <td className="p-4 text-end whitespace-nowrap" onClick={(event) => event.stopPropagation()}>
+                      <DeleteAction message={t("customers.deleteConfirm")} onConfirm={() => del(c.id)} />
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
           </div>

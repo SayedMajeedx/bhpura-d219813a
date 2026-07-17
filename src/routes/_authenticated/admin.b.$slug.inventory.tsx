@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
-import { Plus, Pencil, Trash2, Package, TrendingUp, Wand as Wand2, Printer, Search, AlertTriangle, Boxes } from "lucide-react";
+import { Plus, Pencil, Trash2, Package, TrendingUp, Wand as Wand2, Printer, Search, AlertTriangle, Boxes, ChevronDown } from "lucide-react";
 import { toast } from "sonner";
 import { formatMoney } from "@/lib/format";
 import { useT, useI18n } from "@/lib/i18n";
@@ -131,6 +131,22 @@ function Inventory() {
     },
   });
 
+  const salesHistory = useQuery({
+    queryKey: ["inventory-sales-past45", brandId],
+    queryFn: async () => {
+      const past45Days = new Date();
+      past45Days.setDate(past45Days.getDate() - 45);
+      const { data, error } = await supabase
+        .from("orders")
+        .select("id, created_at, order_items(variant_id, quantity)")
+        .eq("brand_id", brandId)
+        .in("status", ["confirmed", "paid", "shipped", "completed"])
+        .gte("created_at", past45Days.toISOString());
+      if (error) throw error;
+      return (data ?? []) as any[];
+    },
+  });
+
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto">
       <div className="mb-6 flex items-center justify-between">
@@ -158,6 +174,7 @@ function Inventory() {
           businessName={businessName.data?.business_name ?? null}
           currency={businessName.data?.currency ?? "BHD"}
           onChanged={() => { qc.invalidateQueries({ queryKey: ["products"] }); qc.invalidateQueries({ queryKey: ["variants"] }); }}
+          salesHistory={salesHistory.data ?? []}
         />
       ) : (
         <CustomizationsSection
@@ -174,19 +191,43 @@ function Inventory() {
   );
 }
 
-function ProductsSection({ products, variants, businessName, currency, onChanged }: { products: Product[]; variants: Variant[]; businessName: string | null; currency: string; onChanged: () => void }) {
+function ProductsSection({ products, variants, businessName, currency, onChanged, salesHistory }: { products: Product[]; variants: Variant[]; businessName: string | null; currency: string; onChanged: () => void; salesHistory: any[] }) {
   const t = useT();
   const brand = useBrand();
   const brandId = brand.id;
   const [editing, setEditing] = useState<Product | null>(null);
   const [open, setOpen] = useState(false);
-  // A new dialog session must always get fresh local form state. `editing` can
-  // remain null between two consecutive creates, so product id alone is not a
-  // sufficient reset key.
   const [dialogSession, setDialogSession] = useState(0);
   const [search, setSearch] = useState("");
   const [stockFilter, setStockFilter] = useState<"all" | "low" | "out">("all");
   const [visibilityFilter, setVisibilityFilter] = useState<"all" | "active" | "hidden">("all");
+  const [expandedProducts, setExpandedProducts] = useState<Record<string, boolean>>({});
+
+  const toggleProduct = (productId: string) => {
+    setExpandedProducts((prev) => ({
+      ...prev,
+      [productId]: !prev[productId],
+    }));
+  };
+
+  const salesByVariant = useMemo(() => {
+    const map = new Map<string, number>();
+    salesHistory.forEach((order: any) => {
+      (order.order_items ?? []).forEach((item: any) => {
+        if (item.variant_id) {
+          const qty = Number(item.quantity || 0);
+          map.set(item.variant_id, (map.get(item.variant_id) || 0) + qty);
+        }
+      });
+    });
+    return map;
+  }, [salesHistory]);
+
+  const productWeeklySales = (productId: string) => {
+    const pVariants = variants.filter((v) => v.product_id === productId);
+    const productSalesCount = pVariants.reduce((sum, v) => sum + (salesByVariant.get(v.id) || 0), 0);
+    return productSalesCount / (45 / 7);
+  };
 
   const del = async (id: string) => {
     const product = products.find((item) => item.id === id);
@@ -210,12 +251,18 @@ function ProductsSection({ products, variants, businessName, currency, onChanged
     const searchable = [product.name, product.name_ar, product.name_en, product.category, ...productVariants.flatMap((variant) => [variant.sku, variant.barcode, variant.size, variant.color])].join(" ").toLowerCase();
     const stock = productStock(product.id);
     return (!normalizedSearch || searchable.includes(normalizedSearch))
-      && (stockFilter === "all" || (stockFilter === "out" ? stock <= 0 : stock > 0 && stock <= 5))
+      && (stockFilter === "all" || (stockFilter === "out" ? stock <= 0 : stock < productWeeklySales(product.id)))
       && (visibilityFilter === "all" || (visibilityFilter === "active" ? product.is_active : !product.is_active));
   });
   const totalUnits = products.reduce((sum, product) => sum + productStock(product.id), 0);
-  const lowStock = products.filter((product) => { const stock = productStock(product.id); return stock > 0 && stock <= 5; }).length;
-  const outOfStock = products.filter((product) => productStock(product.id) <= 0).length;
+  
+  const lowStock = products.filter((product) => {
+    const stock = productStock(product.id);
+    const weeklySales = productWeeklySales(product.id);
+    return stock < weeklySales;
+  }).length;
+
+  const deadStock = variants.filter((v) => (salesByVariant.get(v.id) || 0) === 0).length;
 
   const printAll = async () => {
     const labels: LabelData[] = [];
@@ -264,7 +311,7 @@ function ProductsSection({ products, variants, businessName, currency, onChanged
           [Package, isAr ? "المنتجات" : "Products", products.length],
           [Boxes, isAr ? "إجمالي الوحدات" : "Total units", totalUnits],
           [AlertTriangle, isAr ? "مخزون منخفض" : "Low stock", lowStock],
-          [TrendingUp, isAr ? "نفد المخزون" : "Out of stock", outOfStock],
+          [TrendingUp, isAr ? "بضائع راكدة" : "Dead Stock Items", deadStock],
         ].map(([Icon, label, value], index) => { const StatIcon = Icon as typeof Package; return <Card key={index} className="p-3 sm:p-4"><div className="flex items-center gap-3"><div className={`rounded-lg p-2 ${index >= 2 && Number(value) > 0 ? "bg-amber-100 text-amber-700" : "bg-primary/10 text-primary"}`}><StatIcon className="h-4 w-4" /></div><div className="min-w-0"><p className="text-xs text-muted-foreground truncate">{String(label)}</p><p className="font-semibold">{String(value)}</p></div></div></Card>; })}
       </div>
 
@@ -302,33 +349,68 @@ function ProductsSection({ products, variants, businessName, currency, onChanged
             const pVariants = variants.filter((v) => v.product_id === p.id);
             const stockTotal = pVariants.reduce((s, v) => s + Number(v.stock_main || 0) + Number(v.stock_incubator || 0), 0);
             const prices = pVariants.map((v) => Number(v.selling_price || 0)).filter(Number.isFinite);
+            const isExpanded = !!expandedProducts[p.id];
+
             return (
-              <Card key={p.id} className="p-6">
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex gap-4 flex-1">
+              <Card 
+                key={p.id} 
+                className="p-4 sm:p-6 transition-all duration-150 hover:border-primary/20 hover:shadow-xs cursor-pointer"
+                onClick={() => toggleProduct(p.id)}
+              >
+                <div className="flex items-center justify-between gap-4">
+                  <div className="flex gap-4 flex-1 min-w-0">
                     {p.image_url && (
-                      <img src={p.image_url} alt={p.name} className="w-20 h-24 object-cover rounded-md border border-border" />
+                      <img src={p.image_url} alt={p.name} className="w-12 h-14 sm:w-20 sm:h-24 object-cover rounded-md border border-border shrink-0" />
                     )}
-                    <div className="flex-1">
-                      <div className="flex flex-wrap items-center gap-2"><h3 className="text-lg font-display">{(isAr ? (p.name_ar || p.name_en) : (p.name_en || p.name_ar)) || p.name}</h3><span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${p.is_active ? "bg-emerald-100 text-emerald-700" : "bg-muted text-muted-foreground"}`}>{p.is_active ? (isAr ? "ظاهر" : "Active") : (isAr ? "مخفي" : "Hidden")}</span></div>
-                      {p.category && <p className="text-xs text-muted-foreground">{p.category}</p>}
-                      {(() => {
+                    <div className="flex-1 min-w-0">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <h3 className="text-base sm:text-lg font-display truncate">{(isAr ? (p.name_ar || p.name_en) : (p.name_en || p.name_ar)) || p.name}</h3>
+                        <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${p.is_active ? "bg-emerald-100 text-emerald-700" : "bg-muted text-muted-foreground"}`}>
+                          {p.is_active ? (isAr ? "ظاهر" : "Active") : (isAr ? "مخفي" : "Hidden")}
+                        </span>
+                      </div>
+                      {p.category && <p className="text-xs text-muted-foreground mt-0.5">{p.category}</p>}
+                      
+                      {isExpanded && (() => {
                         const desc = isAr ? (p.description_ar || p.description_en) : (p.description_en || p.description_ar);
                         const fallback = desc || p.description;
-                        return fallback ? <p className="text-sm text-muted-foreground mt-1">{fallback}</p> : null;
+                        return fallback ? <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{fallback}</p> : null;
                       })()}
-                      <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs"><span className={stockTotal <= 0 ? "font-semibold text-destructive" : stockTotal <= 5 ? "font-semibold text-amber-600" : "text-muted-foreground"}>{stockTotal <= 0 ? (isAr ? "نفد المخزون" : "Out of stock") : `${stockTotal} ${t("inventory.inStock")}`}</span><span className="text-muted-foreground">{pVariants.length} {t("inventory.variantsCount")}</span>{prices.length > 0 && <span className="font-medium">{formatMoney(Math.min(...prices), currency)}{Math.max(...prices) !== Math.min(...prices) ? ` – ${formatMoney(Math.max(...prices), currency)}` : ""}</span>}</div>
+                      
+                      <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs">
+                        <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${
+                          stockTotal <= 0 
+                            ? "bg-rose-100 text-rose-700 dark:bg-rose-950/40 dark:text-rose-400" 
+                            : stockTotal <= 5 
+                            ? "bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400" 
+                            : "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400"
+                        }`}>
+                          {stockTotal <= 0 ? (isAr ? "نفد المخزون" : "Out of stock") : `${stockTotal} ${t("inventory.inStock")}`}
+                        </span>
+                        <span className="text-muted-foreground">{pVariants.length} {t("inventory.variantsCount")}</span>
+                        {prices.length > 0 && (
+                          <span className="font-medium text-foreground bg-secondary/50 px-2 py-0.5 rounded-sm">
+                            {formatMoney(Math.min(...prices), currency)}{Math.max(...prices) !== Math.min(...prices) ? ` – ${formatMoney(Math.max(...prices), currency)}` : ""}
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
-                  <div className="flex gap-1">
-                    <Button variant="ghost" size="icon" onClick={() => { setEditing(p); setDialogSession((value) => value + 1); setOpen(true); }}>
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                    <InventoryDeleteAction message={t("common.confirmDelete")} onConfirm={() => del(p.id)} />
+                  
+                  <div className="flex items-center gap-2 shrink-0">
+                    <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
+                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { setEditing(p); setDialogSession((value) => value + 1); setOpen(true); }}>
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <InventoryDeleteAction message={t("common.confirmDelete")} onConfirm={() => del(p.id)} />
+                    </div>
+                    <ChevronDown className={`h-5 w-5 text-muted-foreground transition-transform duration-200 ${isExpanded ? "rotate-180" : ""}`} />
                   </div>
                 </div>
 
-                <VariantList productId={p.id} productName={p.name} businessName={businessName} variants={pVariants} onChanged={onChanged} />
+                {isExpanded && (
+                  <VariantList productId={p.id} productName={p.name} businessName={businessName} variants={pVariants} onChanged={onChanged} salesByVariant={salesByVariant} />
+                )}
               </Card>
             );
           })}
@@ -371,9 +453,6 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
     removedCommittedMedia.current.clear();
   }, [brand.id]);
 
-  // Re-sync form whenever the edited product changes (or the dialog is reopened
-  // with a different product) so previously-saved values are preserved as defaults
-  // and unmodified fields are never overwritten with blanks.
   useEffect(() => {
     setForm({
       name_ar: product?.name_ar ?? "",
@@ -425,7 +504,6 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
       void uploadBlob(file, ext, "video").finally(() => setPendingVideo(null));
       return;
     }
-    // Route images through the interactive cropper
     const reader = new FileReader();
     reader.onload = () => setCropSrc(String(reader.result));
     reader.readAsDataURL(file);
@@ -448,8 +526,6 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
     setForm((current) => ({ ...current, media: current.media.filter((_, i) => i !== index) }));
   };
 
-
-
   const save = async () => {
     const nameAr = form.name_ar.trim();
     const nameEn = form.name_en.trim();
@@ -457,13 +533,10 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
-    // Keep legacy 'name' / 'description' populated (fallback + order_items)
     const legacyName = nameEn || nameAr;
     const legacyDesc = form.description_en.trim() || form.description_ar.trim() || null;
 
     if (product) {
-      // Partial update: only send the fields owned by this form. Do NOT include
-      // user_id (would clobber original owner) or brand_id (would break tenancy).
       const patch = {
         name: legacyName,
         name_ar: nameAr || null,
@@ -612,16 +685,6 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
               />
             </label>
           </div>
-          {/* Paid video transcoding is intentionally disabled on the free-only media plan.
-            try {
-              setUploading(true);
-              const migrated = await Promise.all(form.media.map(async (item) => item.type === "video" && !item.stream_uid && item.url ? { ...item, ...(await optimizeExistingVideo(brand.id, item.url)) } : item));
-              setForm((current) => ({ ...current, media: migrated }));
-              toast.success(isAr ? "بدأ تحسين الفيديوهات الحالية — احفظ المنتج" : "Existing videos are being optimized — save the product");
-            } catch (error: any) { toast.error(error.message ?? "Unable to optimize existing videos"); }
-            finally { setUploading(false); }
-          }}>{isAr ? "تحسين الفيديوهات الحالية" : "Optimize existing videos"}</Button>}
-          */}
         </div>
       </div>
       <ImageCropperDialog
@@ -708,7 +771,7 @@ type BulkVariantRow = {
   cost_price: number; selling_price: number; stock_main: number; stock_incubator: number;
 };
 
-const splitVariantValues = (value: string) => [...new Set(value.split(/[\n,،]+/).map((item) => item.trim()).filter(Boolean))];
+const splitVariantValues = (value: string) => [...new Set(value.split(/[\n,，]+/).map((item) => item.trim()).filter(Boolean))];
 const skuPart = (value: string) => value.normalize("NFKD").replace(/[^\p{L}\p{N}]+/gu, "-").replace(/^-|-$/g, "").toUpperCase();
 const makeEan13 = (used: Set<string>) => {
   for (let attempt = 0; attempt < 20; attempt += 1) {
@@ -826,7 +889,7 @@ function BulkVariantDialog({ productId, variants, canViewFinancials, onChanged }
   </Dialog>;
 }
 
-function VariantList({ productId, productName, businessName, variants, onChanged }: { productId: string; productName: string; businessName: string | null; variants: Variant[]; onChanged: () => void }) {
+function VariantList({ productId, productName, businessName, variants, onChanged, salesByVariant }: { productId: string; productName: string; businessName: string | null; variants: Variant[]; onChanged: () => void; salesByVariant: Map<string, number> }) {
   const t = useT();
   const { lang } = useI18n();
   const isAr = lang === "ar";
@@ -921,6 +984,27 @@ function VariantList({ productId, productName, businessName, variants, onChanged
               </div>
               <div className="flex items-center justify-between rounded-md bg-secondary/50 px-3 py-2 text-sm">
                 <span>{t("inventory.stock")}: <b>{(v.stock_main ?? 0) + (v.stock_incubator ?? 0)}</b></span>
+                {(() => {
+                  const stock = (v.stock_main ?? 0) + (v.stock_incubator ?? 0);
+                  const qtySold = salesByVariant.get(v.id) || 0;
+                  const dailyVelocity = qtySold / 45;
+                  
+                  let runRateText = isAr ? "لا مبيعات مؤخراً" : "No recent sales";
+                  let runRateColor = "text-muted-foreground";
+                  
+                  if (stock <= 0) {
+                    runRateText = isAr ? "نفد المخزون" : "Out of stock";
+                    runRateColor = "text-rose-600 dark:text-rose-500 font-medium";
+                  } else if (dailyVelocity > 0) {
+                    const days = Math.ceil(stock / dailyVelocity);
+                    runRateText = isAr ? `ينفد خلال ${days} يوم` : `Out of stock in ${days} days`;
+                    runRateColor = days <= 7 
+                      ? "text-amber-600 dark:text-amber-500 font-semibold animate-pulse" 
+                      : "text-emerald-600 dark:text-emerald-500 font-medium";
+                  }
+                  
+                  return <span className={`text-xs ${runRateColor}`}>{runRateText}</span>;
+                })()}
                 {canViewFinancials && <span className="text-primary">{t("inventory.margin")}: {margin.toFixed(0)}%</span>}
               </div>
             </div>
@@ -1044,7 +1128,30 @@ function VariantList({ productId, productName, businessName, variants, onChanged
                   {canViewFinancials && <td className="px-2 py-2 text-center text-primary"><span className="inline-flex items-center justify-center gap-1"><TrendingUp className="h-3 w-3" />{margin.toFixed(0)}%</span></td>}
                   <td className="px-2 py-2 text-center"><input type="number" className="w-full bg-transparent text-center outline-none" defaultValue={v.stock_main ?? 0} onBlur={(e) => update(v, { stock_main: Number(e.target.value) })} /></td>
                   <td className="px-2 py-2 text-center"><input type="number" className="w-full bg-transparent text-center outline-none" defaultValue={v.stock_incubator ?? 0} onBlur={(e) => update(v, { stock_incubator: Number(e.target.value) })} /></td>
-                  <td className="px-2 py-2 text-center font-medium">{(v.stock_main ?? 0) + (v.stock_incubator ?? 0)}</td>
+                  <td className="px-2 py-2 text-center">
+                    <div className="font-medium text-sm">{(v.stock_main ?? 0) + (v.stock_incubator ?? 0)}</div>
+                    {(() => {
+                      const stock = (v.stock_main ?? 0) + (v.stock_incubator ?? 0);
+                      const qtySold = salesByVariant.get(v.id) || 0;
+                      const dailyVelocity = qtySold / 45;
+                      
+                      let runRateText = isAr ? "لا مبيعات" : "No sales";
+                      let runRateColor = "text-muted-foreground/80";
+                      
+                      if (stock <= 0) {
+                        runRateText = isAr ? "نفد" : "Out of stock";
+                        runRateColor = "text-rose-600 dark:text-rose-400 font-medium";
+                      } else if (dailyVelocity > 0) {
+                        const days = Math.ceil(stock / dailyVelocity);
+                        runRateText = isAr ? `ينفد في ${days} ي` : `${days} d left`;
+                        runRateColor = days <= 7 
+                          ? "text-amber-600 dark:text-amber-400 font-semibold" 
+                          : "text-emerald-600 dark:text-emerald-400";
+                      }
+                      
+                      return <div className={`text-[10px] mt-0.5 whitespace-nowrap leading-none ${runRateColor}`}>{runRateText}</div>;
+                    })()}
+                  </td>
                   <td className="px-2 text-center"><InventoryDeleteAction message={t("inventory.deleteVariantConfirm")} onConfirm={() => del(v.id)} /></td>
                 </tr>
               );
