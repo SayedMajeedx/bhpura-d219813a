@@ -389,7 +389,7 @@ function Checkout() {
               <p className="text-sm min-w-0 break-words">{t("لديك حساب؟ سجّل الدخول لملء البيانات تلقائيًا.", "Have an account? Sign in to prefill your details.")}</p>
             </div>
             <Button asChild size="sm" variant="outline" className="shrink-0">
-              <Link to="/$slug/auth" params={{ slug: brand.slug }} search={{ redirect: window.location.pathname }}>{t("سجّل الدخول", "Sign in")}</Link>
+              <Link to="/$slug/auth" params={{ slug: brand.slug }} search={{ redirect: typeof window !== "undefined" ? window.location.pathname : "" }}>{t("سجّل الدخول", "Sign in")}</Link>
             </Button>
           </Card>
         )}
