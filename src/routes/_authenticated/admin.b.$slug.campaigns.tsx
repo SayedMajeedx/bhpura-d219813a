@@ -347,7 +347,7 @@ function CampaignsPage() {
   // Pre-open campaign workspace window under direct user click event (avoids popup blockers)
   const handleStartAutomated = () => {
     try {
-      const win = window.open("", "whatsapp_campaign_window", "noopener,noreferrer");
+      const win = window.open("about:blank", "whatsapp_campaign_window");
       bulkWindowRef.current = win;
     } catch (e) {
       console.error("Failed to pre-initialize campaign tab", e);
@@ -434,11 +434,11 @@ function CampaignsPage() {
           if (bulkWindowRef.current && !bulkWindowRef.current.closed) {
             bulkWindowRef.current.location.href = url;
           } else {
-            const win = window.open(url, "whatsapp_campaign_window", "noopener,noreferrer");
+            const win = window.open(url, "whatsapp_campaign_window");
             bulkWindowRef.current = win;
           }
         } catch (err) {
-          const win = window.open(url, "whatsapp_campaign_window", "noopener,noreferrer");
+          const win = window.open(url, "whatsapp_campaign_window");
           bulkWindowRef.current = win;
         }
         
@@ -498,11 +498,11 @@ function CampaignsPage() {
           bulkWindowRef.current.location.href = url;
           try { bulkWindowRef.current.focus(); } catch {}
         } else {
-          const win = window.open(url, "whatsapp_campaign_window", "noopener,noreferrer");
+          const win = window.open(url, "whatsapp_campaign_window");
           bulkWindowRef.current = win;
         }
       } catch (err) {
-        const win = window.open(url, "whatsapp_campaign_window", "noopener,noreferrer");
+        const win = window.open(url, "whatsapp_campaign_window");
         bulkWindowRef.current = win;
       }
       
