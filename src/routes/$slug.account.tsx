@@ -77,13 +77,17 @@ function statusMeta(status: string, isAr: boolean) {
 function AccountPage() {
   const { brand, session, isStoreMember, membershipLoading, t, lang, currency } = useStorefront();
   const isAr = lang === "ar";
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   if (membershipLoading) {
     return <div className="grid min-h-[45vh] place-items-center"><Loader2 className="h-7 w-7 animate-spin" /></div>;
   }
 
   if (!session || !isStoreMember) {
-    return <Navigate to="/$slug/auth" params={{ slug: brand.slug }} search={{ redirect: typeof window !== "undefined" ? window.location.pathname : "" }} />;
+    return <Navigate to="/$slug/auth" params={{ slug: brand.slug }} search={{ redirect: mounted ? window.location.pathname : "" }} />;
   }
 
   return (
