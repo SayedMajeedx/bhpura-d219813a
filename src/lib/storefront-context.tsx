@@ -133,6 +133,8 @@ export type PublicSettings = {
   global_sale_badges_enabled: boolean;
   cart_drawer_checkout_bg: string | null;
   cart_drawer_checkout_fg: string | null;
+  vat_inclusive?: boolean;
+  shipping_zones?: Array<{ id: string; name_en: string; name_ar: string; fee: number }>;
   google_analytics_enabled: boolean;
   google_analytics_id: string | null;
   meta_pixel_enabled: boolean;

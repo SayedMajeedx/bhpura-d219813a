@@ -214,6 +214,19 @@ function ExpensesPage() {
   const currency = list[0]?.currency ?? "BHD";
   const total = useMemo(() => filteredList.reduce((s, e) => s + Number(e.amount || 0), 0), [filteredList]);
 
+  const settingsQ = useQuery({
+    queryKey: ["expenses-business-settings", brandId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("business_settings")
+        .select("card_processing_fee, benefit_processing_fee")
+        .eq("brand_id", brandId)
+        .maybeSingle();
+      if (error) throw error;
+      return data ?? { card_processing_fee: 0, benefit_processing_fee: 0 };
+    },
+  });
+
   // ── COGS: fetch orders in the active date range and join variant cost_price ──
   const cogsQ = useQuery({
     queryKey: ["cogs", brandId, activeRange.from, activeRange.to],
@@ -221,7 +234,7 @@ function ExpensesPage() {
       let q2 = (supabase as any)
         .from("orders")
         .select(
-          "id, invoice_number, created_at, currency, total, order_items(id, description, quantity, unit_price, line_total, variant_id, product_variants:variant_id(cost_price))",
+          "id, invoice_number, created_at, currency, total, payment_method, order_items(id, description, quantity, unit_price, line_total, variant_id, product_variants:variant_id(cost_price))",
         )
         .eq("brand_id", brandId)
         .in("status", ["confirmed", "paid", "shipped", "completed"])
@@ -347,7 +360,23 @@ function ExpensesPage() {
     return sum;
   }, [cogsQ.data]);
 
-  const totalOpex = total; // Sum of manually created operating expenses
+  const cardFeePercent = Number((settingsQ.data as any)?.card_processing_fee ?? 0);
+  const benefitFeePercent = Number((settingsQ.data as any)?.benefit_processing_fee ?? 0);
+
+  const paymentProcessingFees = useMemo(() => {
+    let sum = 0;
+    (cogsQ.data ?? []).forEach((o) => {
+      const totalVal = Number(o.total || 0);
+      if (o.payment_method === "card") {
+        sum += totalVal * (cardFeePercent / 100);
+      } else if (o.payment_method === "benefit") {
+        sum += totalVal * (benefitFeePercent / 100);
+      }
+    });
+    return sum;
+  }, [cogsQ.data, cardFeePercent, benefitFeePercent]);
+
+  const totalOpex = total + paymentProcessingFees; // Sum of manually created operating expenses + payment processing fees
   const totalExpenses = totalCogs + totalOpex;
   const netProfit = totalRevenue - totalExpenses;
   const marginPercentage = totalRevenue > 0 ? (netProfit / totalRevenue) * 100 : 0;

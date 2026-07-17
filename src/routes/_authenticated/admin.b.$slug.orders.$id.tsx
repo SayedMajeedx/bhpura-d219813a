@@ -720,12 +720,21 @@ function OrderDetail() {
     const discount = Number(order?.discount ?? 0);
     const shipping = Number(order?.shipping ?? 0);
     const taxable = Math.max(0, subtotal - discount);
-    const taxAmount = (taxable * Number(order?.tax_rate ?? 0)) / 100;
-    const total = taxable + taxAmount + shipping;
+    const isInclusive = Boolean((settingsQ.data as any)?.vat_inclusive);
+    const taxRate = Number(order?.tax_rate ?? 0);
+    let taxAmount = 0;
+    let total = 0;
+    if (isInclusive) {
+      taxAmount = taxable - (taxable / (1 + (taxRate / 100)));
+      total = taxable + shipping;
+    } else {
+      taxAmount = (taxable * taxRate) / 100;
+      total = taxable + taxAmount + shipping;
+    }
     const advancePaid = Math.max(0, Number(order?.advance_paid ?? 0));
     const remaining = Math.max(0, total - advancePaid);
     return { subtotal, discount, shipping, taxAmount, total, advancePaid, remaining };
-  }, [items, order?.discount, order?.shipping, order?.tax_rate, order?.advance_paid]);
+  }, [items, order?.discount, order?.shipping, order?.tax_rate, order?.advance_paid, settingsQ.data]);
 
   useEffect(() => {
     const signature = JSON.stringify({

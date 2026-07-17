@@ -171,7 +171,19 @@ function Checkout() {
   const branchLabel = (b: typeof branches[number]) => (lang === "ar" ? (b.name_ar || b.name_en || "") : (b.name_en || b.name_ar || ""));
   const branchLoc = (b: typeof branches[number]) => (lang === "ar" ? (b.location_ar || b.location_en || "") : (b.location_en || b.location_ar || ""));
 
-  const shipping = fulfillment === "delivery" ? Number(settings.delivery_fee || 0) : 0;
+  const [selectedZoneId, setSelectedZoneId] = useState<string>("");
+  const zones = settings.shipping_zones ?? [];
+  useEffect(() => {
+    if (zones.length > 0) {
+      setSelectedZoneId((cur) => cur || zones[0].id);
+    }
+  }, [zones]);
+
+  const selectedZone = zones.find((z) => z.id === selectedZoneId);
+
+  const shipping = fulfillment === "delivery"
+    ? (zones.length > 0 ? (selectedZone?.fee ?? 0) : Number(settings.delivery_fee || 0))
+    : 0;
   const promoDiscount = Math.min(appliedPromo?.amount ?? 0, cartTotal);
   const grandTotal = Math.max(0, cartTotal - promoDiscount) + shipping;
 
@@ -299,6 +311,8 @@ function Checkout() {
         p_digital_contact: fulfillment === "digital" ? digitalContact.trim() : null,
         p_promo_code: appliedPromo?.code ?? null,
         p_benefit_receipt_id: benefitReceiptId,
+        p_shipping_fee: fulfillment === "delivery" ? (zones.length > 0 ? (selectedZone?.fee ?? 0) : Number(settings.delivery_fee || 0)) : 0,
+        p_shipping_zone: fulfillment === "delivery" ? (zones.length > 0 ? (selectedZone ? (lang === "ar" ? selectedZone.name_ar : selectedZone.name_en) : null) : (lang === "ar" ? "توصيل" : "Delivery")) : null,
       } as any);
       if (error) throw error;
       const orderId = (data as any)?.order_id;
@@ -523,6 +537,33 @@ function Checkout() {
                     <SelectItem value="manual">{t("إدخال يدوي / عنوان جديد", "Enter manually / New address")}</SelectItem>
                   </SelectContent>
                 </Select>
+              </div>
+            )}
+
+            {zones.length > 0 && (
+              <div className="mb-4">
+                <Label className="font-semibold text-sm mb-1.5 block">{t("منطقة الشحن والتوصيل", "Shipping & Delivery Zone")} *</Label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {zones.map((z) => {
+                    const active = z.id === selectedZoneId;
+                    return (
+                      <button
+                        key={z.id}
+                        type="button"
+                        onClick={() => setSelectedZoneId(z.id)}
+                        className="flex items-center justify-between p-3 rounded-lg border text-sm transition-all text-start cursor-pointer hover:bg-secondary/5"
+                        style={active ? { borderColor: settings.primary_color, backgroundColor: `${settings.primary_color}11` } : undefined}
+                      >
+                        <div>
+                          <p className="font-medium">{lang === "ar" ? z.name_ar : z.name_en}</p>
+                        </div>
+                        <div className="text-end font-mono font-semibold" style={active ? { color: settings.primary_color } : undefined}>
+                          {z.fee > 0 ? formatPrice(z.fee, currency, lang) : t("مجانًا", "Free")}
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
             )}
 

@@ -43,11 +43,11 @@ function Dashboard() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("business_settings")
-        .select("business_name, currency")
+        .select("business_name, currency, card_processing_fee, benefit_processing_fee")
         .eq("brand_id", brandId)
         .maybeSingle();
       if (error) throw error;
-      return data ?? { business_name: "", currency: "BHD" };
+      return data ?? { business_name: "", currency: "BHD", card_processing_fee: 0, benefit_processing_fee: 0 };
     },
   });
 
@@ -98,7 +98,7 @@ function Dashboard() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("orders")
-        .select("id, invoice_number, created_at, currency, total, status, customer_id, customers(name), order_items(id, description, quantity, unit_price, line_total, variant_id)")
+        .select("id, invoice_number, created_at, currency, total, status, customer_id, customers(name), payment_method, order_items(id, variant_id, quantity, unit_price, line_total)")
         .eq("brand_id", brandId)
         .in("status", ["confirmed", "paid", "shipped", "completed"])
         .order("created_at", { ascending: false });
@@ -149,7 +149,20 @@ function Dashboard() {
       });
     });
 
-    const opex = expenses.reduce((sum, e) => sum + Number(e.amount || 0), 0);
+    const cardFeePercent = Number((businessSettings.data as any)?.card_processing_fee ?? 0);
+    const benefitFeePercent = Number((businessSettings.data as any)?.benefit_processing_fee ?? 0);
+
+    let paymentProcessingFees = 0;
+    orders.forEach((o) => {
+      const totalVal = Number(o.total || 0);
+      if (o.payment_method === "card") {
+        paymentProcessingFees += totalVal * (cardFeePercent / 100);
+      } else if (o.payment_method === "benefit") {
+        paymentProcessingFees += totalVal * (benefitFeePercent / 100);
+      }
+    });
+
+    const opex = expenses.reduce((sum, e) => sum + Number(e.amount || 0), 0) + paymentProcessingFees;
 
     const totalExpenses = cogs + opex;
     const netProfit = revenue - totalExpenses;
@@ -163,7 +176,7 @@ function Dashboard() {
       netProfit,
       grossMarginPercent,
     };
-  }, [ordersQ.data, expensesQ.data, variantsQ.data]);
+  }, [ordersQ.data, expensesQ.data, variantsQ.data, businessSettings.data]);
 
   // CRM segmentation distribution & alerts
   const crmStats = useMemo(() => {

@@ -9,7 +9,7 @@ import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Upload } from "lucide-react";
+import { Upload, Eye, EyeOff } from "lucide-react";
 import { useT, useI18n } from "@/lib/i18n";
 import { PhoneInput } from "@/components/phone-input";
 import { Rnd } from "react-rnd";
@@ -220,6 +220,13 @@ function Settings() {
               <div><Label>{t("settings.vat")}</Label><Input value={f.vat_number ?? ""} onChange={(e) => setF({ ...f, vat_number: e.target.value })} /></div>
               <div><Label>{t("settings.currency")}</Label><Input value={f.currency} onChange={(e) => setF({ ...f, currency: e.target.value.toUpperCase() })} /></div>
               <div><Label>{t("settings.defaultVat")}</Label><Input type="number" step="0.01" value={f.default_tax_rate} onChange={(e) => setF({ ...f, default_tax_rate: Number(e.target.value) })} /></div>
+            </div>
+            <div className="flex items-center justify-between rounded-md border border-border p-3 bg-secondary/10">
+              <div>
+                <p className="text-sm font-medium">{isAr ? "أسعار المنتجات شاملة ضريبة القيمة المضافة" : "Product prices are inclusive of Tax/VAT"}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">{isAr ? "إذا تم تفعيله، سيتم حساب ضريبة القيمة المضافة كجزء من السعر الحالي بدلاً من إضافتها فوقه" : "If enabled, VAT is derived as part of the current price instead of appended on top"}</p>
+              </div>
+              <Switch checked={f.vat_inclusive ?? false} onCheckedChange={(v) => setF({ ...f, vat_inclusive: v })} />
             </div>
             <div><Label>{t("settings.footer")}</Label><Textarea placeholder={t("settings.footerPh")} value={f.footer_note ?? ""} onChange={(e) => setF({ ...f, footer_note: e.target.value })} /></div>
           </Card>
@@ -442,15 +449,24 @@ function PaymentSettingsCard({ brandId }: { brandId: string }) {
   const qrInput = useRef<HTMLInputElement>(null);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [showSecretKey, setShowSecretKey] = useState(false);
   const [state, setState] = useState<{
-    cod_enabled: boolean; card_enabled: boolean; benefit_enabled: boolean; benefit_qr_url: string | null; benefit_account_number: string;
+    cod_enabled: boolean;
+    card_enabled: boolean;
+    benefit_enabled: boolean;
+    benefit_qr_url: string | null;
+    benefit_account_number: string;
+    card_processing_fee: number;
+    benefit_processing_fee: number;
+    card_public_key: string;
+    card_secret_key: string;
   } | null>(null);
 
   const { data } = useQuery({
     queryKey: ["business-settings-payments", brandId],
     queryFn: async () => {
       const { data, error } = await (supabase.from("business_settings") as any)
-        .select("cod_enabled, card_enabled, benefit_enabled, benefit_qr_url, benefit_account_number")
+        .select("cod_enabled, card_enabled, benefit_enabled, benefit_qr_url, benefit_account_number, card_processing_fee, benefit_processing_fee, card_public_key, card_secret_key")
         .eq("brand_id", brandId).maybeSingle();
       if (error) throw error;
       return data;
@@ -463,6 +479,10 @@ function PaymentSettingsCard({ brandId }: { brandId: string }) {
       benefit_enabled: data.benefit_enabled ?? false,
       benefit_qr_url: data.benefit_qr_url ?? null,
       benefit_account_number: (data as any).benefit_account_number ?? "",
+      card_processing_fee: Number((data as any).card_processing_fee ?? 0),
+      benefit_processing_fee: Number((data as any).benefit_processing_fee ?? 0),
+      card_public_key: (data as any).card_public_key ?? "",
+      card_secret_key: (data as any).card_secret_key ?? "",
     });
   }, [data]);
 
@@ -489,47 +509,152 @@ function PaymentSettingsCard({ brandId }: { brandId: string }) {
   if (!state) return null;
 
   return (
-    <Card className="p-6 space-y-4">
+    <Card className="p-6 space-y-6">
       <div>
         <h2 className="font-display text-xl">{isAr ? "إعدادات الدفع" : "Payment Settings"}</h2>
-        <p className="text-sm text-muted-foreground">{isAr ? "التحكم بوسائل الدفع المتاحة للعملاء في المتجر" : "Control which payment methods are shown to storefront customers"}</p>
+        <p className="text-sm text-muted-foreground">{isAr ? "التحكم بوسائل الدفع المتاحة للعملاء في المتجر مع رسوم العمليات والمفاتيح" : "Control payment options, processing fees, and credentials"}</p>
       </div>
 
-      {[
-        { key: "cod_enabled" as const, ar: "الدفع عند الاستلام", en: "Cash on Delivery" },
-        { key: "card_enabled" as const, ar: "بطاقة ائتمان", en: "Card Payment" },
-        { key: "benefit_enabled" as const, ar: "بنفت باي (Benefit Pay)", en: "Benefit Pay" },
-      ].map((row) => (
-        <div key={row.key} className="flex items-center justify-between rounded-md border border-border p-3">
-          <p className="text-sm font-medium">{isAr ? row.ar : row.en}</p>
-          <Switch checked={state[row.key]} onCheckedChange={(v) => setState({ ...state, [row.key]: v })} />
-        </div>
-      ))}
-
-      {state.benefit_enabled && (
-        <div className="rounded-md border border-border p-3 space-y-2">
-          <Label>{isAr ? "رمز QR لبنفت باي" : "Benefit Pay QR image"}</Label>
-          <div className="flex items-center gap-3">
-            {state.benefit_qr_url && (
-              <img src={state.benefit_qr_url} alt="QR" className="w-24 h-24 object-contain border border-border rounded" />
-            )}
-            <div className="flex gap-2">
-              <input ref={qrInput} type="file" accept="image/*" className="hidden"
-                onChange={(e) => e.target.files?.[0] && uploadQr(e.target.files[0])} />
-              <Button type="button" variant="outline" size="sm" onClick={() => qrInput.current?.click()} disabled={uploading}>
-                <Upload className="h-4 w-4 me-1" /> {uploading ? "…" : isAr ? "رفع" : "Upload"}
-              </Button>
-              {state.benefit_qr_url && (
-                <Button type="button" variant="ghost" size="sm" onClick={() => setState({ ...state, benefit_qr_url: null })}>
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              )}
+      <div className="space-y-4">
+        {/* COD Block */}
+        <div className="rounded-lg border border-border p-4 space-y-3 bg-secondary/5 transition-all">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-semibold">{isAr ? "الدفع عند الاستلام" : "Cash on Delivery"}</p>
+              <p className="text-xs text-muted-foreground">{isAr ? "تمكين العملاء من الدفع نقداً عند استلام الطلب" : "Allow customers to pay in cash upon receiving their order"}</p>
             </div>
+            <Switch checked={state.cod_enabled} onCheckedChange={(v) => setState({ ...state, cod_enabled: v })} />
           </div>
         </div>
-      )}
 
-      <div className="flex justify-end">
+        {/* Card Payment Block */}
+        <div className="rounded-lg border border-border p-4 space-y-4 bg-secondary/5 transition-all">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-semibold">{isAr ? "بوابة دفع بالبطاقة" : "Card Payment Gateways"}</p>
+              <p className="text-xs text-muted-foreground">{isAr ? "تفعيل الدفع بالبطاقة الائتمانية عبر بوابة الدفع الآمنة" : "Enable online credit/debit card processing"}</p>
+            </div>
+            <Switch checked={state.card_enabled} onCheckedChange={(v) => setState({ ...state, card_enabled: v })} />
+          </div>
+          {state.card_enabled && (
+            <div className="pt-3 border-t border-border space-y-4 animate-in fade-in-50 duration-200">
+              <div>
+                <Label className="text-xs font-semibold">{isAr ? "نسبة رسوم معالجة البطاقة المقدرة (%)" : "Estimated Card Processing Fee (%)"}</Label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  min={0}
+                  max={100}
+                  value={state.card_processing_fee}
+                  onChange={(e) => setState({ ...state, card_processing_fee: Math.max(0, Number(e.target.value)) })}
+                  placeholder="2.50"
+                  className="mt-1"
+                />
+                <p className="text-[11px] text-muted-foreground mt-1">
+                  {isAr ? "تستخدم هذه النسبة تلقائياً في حسابات الأرباح والخسائر والمصاريف التشغيلية لكل طلب" : "Calculated automatically in your P&L expenses for card transactions"}
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-xs font-semibold">{isAr ? "المفتاح العام (Public Key)" : "Public / Publishable API Key"}</Label>
+                  <Input
+                    type="text"
+                    value={state.card_public_key}
+                    onChange={(e) => setState({ ...state, card_public_key: e.target.value })}
+                    placeholder="pk_live_..."
+                    className="mt-1 font-mono text-xs"
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs font-semibold">{isAr ? "المفتاح السري (Secret Key / Merchant ID)" : "Secret API Key / Merchant ID"}</Label>
+                  <div className="relative mt-1">
+                    <Input
+                      type={showSecretKey ? "text" : "password"}
+                      value={state.card_secret_key}
+                      onChange={(e) => setState({ ...state, card_secret_key: e.target.value })}
+                      placeholder="sk_live_..."
+                      className="font-mono text-xs pe-10"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowSecretKey(!showSecretKey)}
+                      className="absolute inset-y-0 end-0 px-3 flex items-center text-muted-foreground hover:text-foreground"
+                    >
+                      {showSecretKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Benefit Pay Block */}
+        <div className="rounded-lg border border-border p-4 space-y-4 bg-secondary/5 transition-all">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-semibold">{isAr ? "بنفت باي (BenefitPay)" : "BenefitPay"}</p>
+              <p className="text-xs text-muted-foreground">{isAr ? "تفعيل تحويلات بنفت باي المباشرة مع إرفاق الإيصال" : "Enable direct BenefitPay transfers with receipt uploads"}</p>
+            </div>
+            <Switch checked={state.benefit_enabled} onCheckedChange={(v) => setState({ ...state, benefit_enabled: v })} />
+          </div>
+          {state.benefit_enabled && (
+            <div className="pt-3 border-t border-border space-y-4 animate-in fade-in-50 duration-200">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-xs font-semibold">{isAr ? "نسبة رسوم معالجة بنفت باي (%)" : "Estimated BenefitPay Processing Fee (%)"}</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    min={0}
+                    max={100}
+                    value={state.benefit_processing_fee}
+                    onChange={(e) => setState({ ...state, benefit_processing_fee: Math.max(0, Number(e.target.value)) })}
+                    placeholder="1.00"
+                    className="mt-1"
+                  />
+                  <p className="text-[11px] text-muted-foreground mt-1">
+                    {isAr ? "تستخدم لحساب تكاليف المعالجة تلقائياً" : "Used to compute processing costs automatically"}
+                  </p>
+                </div>
+                <div>
+                  <Label className="text-xs font-semibold">{isAr ? "رقم الهاتف أو الحساب أو IBAN" : "Benefit phone, account number, or IBAN"}</Label>
+                  <Input
+                    value={state.benefit_account_number}
+                    onChange={(e) => setState({ ...state, benefit_account_number: e.target.value })}
+                    placeholder={isAr ? "يظهر للعميل لنسخه مباشرة" : "Shown to customer with copy button"}
+                    className="mt-1 text-sm font-semibold"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <Label className="text-xs font-semibold">{isAr ? "رمز QR لبنفت باي" : "Benefit Pay QR image"}</Label>
+                <div className="flex items-center gap-4 mt-1">
+                  {state.benefit_qr_url && (
+                    <img src={state.benefit_qr_url} alt="QR" className="w-20 h-24 object-contain border border-border rounded bg-white p-1 shadow-sm" />
+                  )}
+                  <div className="flex gap-2">
+                    <input ref={qrInput} type="file" accept="image/*" className="hidden"
+                      onChange={(e) => e.target.files?.[0] && uploadQr(e.target.files[0])} />
+                    <Button type="button" variant="outline" size="sm" onClick={() => qrInput.current?.click()} disabled={uploading}>
+                      <Upload className="h-4 w-4 me-1" /> {uploading ? "…" : isAr ? "رفع" : "Upload"}
+                    </Button>
+                    {state.benefit_qr_url && (
+                      <Button type="button" variant="ghost" size="sm" onClick={() => setState({ ...state, benefit_qr_url: null })} className="text-destructive hover:text-destructive">
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div className="flex justify-end pt-2">
         <Button size="sm" onClick={save} disabled={saving}>{isAr ? "حفظ إعدادات الدفع" : "Save payment settings"}</Button>
       </div>
     </Card>
@@ -782,38 +907,74 @@ function ShippingSettingsCard({ brandId }: { brandId: string }) {
   const qc = useQueryClient();
   const [saving, setSaving] = useState(false);
   const [state, setState] = useState<{ delivery_enabled: boolean; pickup_enabled: boolean; digital_delivery_enabled: boolean; delivery_fee: number } | null>(null);
+  const [zones, setZones] = useState<Array<{ id: string; name_en: string; name_ar: string; fee: number }>>([]);
+  const [newZone, setNewZone] = useState({ name_en: "", name_ar: "", fee: "" });
 
   const { data } = useQuery({
     queryKey: ["business-settings-shipping", brandId],
     queryFn: async () => {
       const { data, error } = await supabase.from("business_settings")
-        .select("delivery_enabled, pickup_enabled, digital_delivery_enabled, delivery_fee")
+        .select("delivery_enabled, pickup_enabled, digital_delivery_enabled, delivery_fee, shipping_zones")
         .eq("brand_id", brandId).maybeSingle();
       if (error) throw error;
       return data;
     },
   });
   useEffect(() => {
-    if (data) setState({
-      delivery_enabled: (data as any).delivery_enabled ?? true,
-      pickup_enabled: (data as any).pickup_enabled ?? true,
-      digital_delivery_enabled: (data as any).digital_delivery_enabled ?? false,
-      delivery_fee: Number((data as any).delivery_fee ?? 0),
-    });
+    if (data) {
+      setState({
+        delivery_enabled: (data as any).delivery_enabled ?? true,
+        pickup_enabled: (data as any).pickup_enabled ?? true,
+        digital_delivery_enabled: (data as any).digital_delivery_enabled ?? false,
+        delivery_fee: Number((data as any).delivery_fee ?? 0),
+      });
+      try {
+        const rawZones = (data as any).shipping_zones;
+        const parsed = Array.isArray(rawZones) ? rawZones : JSON.parse(rawZones || "[]");
+        setZones(parsed.map((z: any) => ({
+          id: z.id || crypto.randomUUID(),
+          name_en: String(z.name_en || ""),
+          name_ar: String(z.name_ar || ""),
+          fee: Number(z.fee ?? 0)
+        })));
+      } catch (e) {
+        setZones([]);
+      }
+    }
   }, [data]);
 
   const save = async () => {
     if (!state) return;
     setSaving(true);
-    const { error } = await (supabase.from("business_settings") as any).update({
+    const { error } = await supabase.from("business_settings").update({
       delivery_enabled: state.delivery_enabled,
       pickup_enabled: state.pickup_enabled,
       digital_delivery_enabled: state.digital_delivery_enabled,
       delivery_fee: state.delivery_fee,
+      shipping_zones: zones,
     }).eq("brand_id", brandId);
     setSaving(false);
     if (error) toast.error(error.message);
     else { toast.success(isAr ? "تم الحفظ" : "Saved"); qc.invalidateQueries({ queryKey: ["business-settings-shipping", brandId] }); }
+  };
+
+  const addZone = () => {
+    if (!newZone.name_en.trim() || !newZone.name_ar.trim() || newZone.fee === "") {
+      toast.error(isAr ? "الرجاء تعبئة جميع الحقول لإضافة منطقة" : "Please fill all fields to add a zone");
+      return;
+    }
+    const zone = {
+      id: crypto.randomUUID(),
+      name_en: newZone.name_en.trim(),
+      name_ar: newZone.name_ar.trim(),
+      fee: Math.max(0, Number(newZone.fee)),
+    };
+    setZones([...zones, zone]);
+    setNewZone({ name_en: "", name_ar: "", fee: "" });
+  };
+
+  const removeZone = (id: string) => {
+    setZones(zones.filter((z) => z.id !== id));
   };
 
   if (!state) return null;
@@ -841,20 +1002,106 @@ function ShippingSettingsCard({ brandId }: { brandId: string }) {
         <Switch checked={state.digital_delivery_enabled} onCheckedChange={(v) => setState({ ...state, digital_delivery_enabled: v })} />
       </div>
 
-      <div>
-        <Label>{t("settings.deliveryFee")}</Label>
-        <Input
-          type="number"
-          step="0.01"
-          min={0}
-          value={state.delivery_fee}
-          onChange={(e) => setState({ ...state, delivery_fee: Math.max(0, Number(e.target.value)) })}
-          disabled={!state.delivery_enabled}
-        />
-        <p className="text-xs text-muted-foreground mt-1">{t("settings.deliveryFeeHint")}</p>
-      </div>
+      {state.delivery_enabled && (
+        <div className="space-y-4 border-t border-border pt-4 animate-in fade-in-50 duration-200">
+          <div>
+            <h3 className="text-sm font-semibold mb-2">{isAr ? "مناطق تسعير التوصيل والشحن" : "Shipping & Delivery Pricing Zones"}</h3>
+            <p className="text-xs text-muted-foreground mb-4">
+              {isAr ? "أنشئ مناطق توصيل مخصصة بأسعار مختلفة (مثال: البحرين محلي، شحن السعودية، دولي مجلس التعاون). سيختار العميل منطقته عند الدفع." : "Create custom shipping zones with distinct fees. Customers will select their zone during checkout."}
+            </p>
+          </div>
 
-      <div className="flex justify-end">
+          {/* Zones Table / List */}
+          {zones.length > 0 ? (
+            <div className="rounded-lg border border-border overflow-hidden bg-background">
+              <table className="w-full text-sm text-left rtl:text-right">
+                <thead className="bg-secondary/10 text-xs font-semibold text-muted-foreground border-b border-border">
+                  <tr>
+                    <th className="p-3">{isAr ? "المنطقة (إنجليزي)" : "Zone Name (EN)"}</th>
+                    <th className="p-3">{isAr ? "المنطقة (عربي)" : "Zone Name (AR)"}</th>
+                    <th className="p-3 w-32">{isAr ? "رسوم التوصيل" : "Fee"}</th>
+                    <th className="p-3 w-12"></th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {zones.map((z) => (
+                    <tr key={z.id} className="hover:bg-secondary/5 transition-colors">
+                      <td className="p-3 font-medium">{z.name_en}</td>
+                      <td className="p-3 font-medium">{z.name_ar}</td>
+                      <td className="p-3 font-mono font-semibold">{z.fee.toFixed(3)}</td>
+                      <td className="p-3 text-center">
+                        <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10" onClick={() => removeZone(z.id)}>
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div className="rounded-lg border border-dashed border-border p-6 text-center text-sm text-muted-foreground bg-secondary/5">
+              {isAr ? "لا توجد مناطق شحن معرفة بعد. سيتم استخدام السعر الافتراضي أدناه لجميع الطلبات." : "No shipping zones defined yet. The default delivery fee below will be used as a fallback."}
+            </div>
+          )}
+
+          {/* Add New Zone Form */}
+          <div className="rounded-lg border border-border p-4 bg-secondary/10 space-y-3">
+            <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">{isAr ? "إضافة منطقة جديدة" : "Add New Shipping Zone"}</h4>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div>
+                <Input
+                  type="text"
+                  placeholder={isAr ? "الاسم بالإنجليزي (مثال: KSA Shipping)" : "EN Name (e.g. KSA Shipping)"}
+                  value={newZone.name_en}
+                  onChange={(e) => setNewZone({ ...newZone, name_en: e.target.value })}
+                  className="text-xs"
+                />
+              </div>
+              <div>
+                <Input
+                  type="text"
+                  placeholder={isAr ? "الاسم بالعربي (مثال: شحن السعودية)" : "AR Name (e.g. شحن السعودية)"}
+                  value={newZone.name_ar}
+                  onChange={(e) => setNewZone({ ...newZone, name_ar: e.target.value })}
+                  className="text-xs text-right"
+                  dir="rtl"
+                />
+              </div>
+              <div className="flex gap-2">
+                <Input
+                  type="number"
+                  step="0.01"
+                  min={0}
+                  placeholder={isAr ? "الرسوم" : "Fee"}
+                  value={newZone.fee}
+                  onChange={(e) => setNewZone({ ...newZone, fee: e.target.value })}
+                  className="text-xs"
+                />
+                <Button type="button" size="sm" className="shrink-0 text-xs bg-primary hover:bg-primary/90" onClick={addZone}>
+                  {isAr ? "إضافة" : "Add"}
+                </Button>
+              </div>
+            </div>
+          </div>
+
+          {/* Default / Fallback Delivery Fee */}
+          <div className="pt-3 border-t border-border">
+            <Label className="text-xs font-semibold">{isAr ? "رسوم التوصيل الافتراضية / الاحتياطية" : "Default / Fallback Delivery Fee"}</Label>
+            <Input
+              type="number"
+              step="0.01"
+              min={0}
+              value={state.delivery_fee}
+              onChange={(e) => setState({ ...state, delivery_fee: Math.max(0, Number(e.target.value)) })}
+              className="mt-1"
+            />
+            <p className="text-[11px] text-muted-foreground mt-1">{t("settings.deliveryFeeHint")}</p>
+          </div>
+        </div>
+      )}
+
+      <div className="flex justify-end pt-2">
         <Button size="sm" onClick={save} disabled={saving}>{t("settings.save")}</Button>
       </div>
     </Card>
@@ -1507,6 +1754,12 @@ function EmailSettingsCard({ brandId }: { brandId: string }) {
     courier_out_for_delivery_message_en: string;
   } | null>(null);
   const [saving, setSaving] = useState(false);
+
+  const introArRef = useRef<HTMLTextAreaElement>(null);
+  const introEnRef = useRef<HTMLTextAreaElement>(null);
+  const whatsappArRef = useRef<HTMLTextAreaElement>(null);
+  const whatsappEnRef = useRef<HTMLTextAreaElement>(null);
+
   useEffect(() => {
     (async () => {
       const { data } = await supabase
@@ -1526,6 +1779,7 @@ function EmailSettingsCard({ brandId }: { brandId: string }) {
       });
     })();
   }, [brandId]);
+
   const save = async () => {
     if (!state) return;
     setSaving(true);
@@ -1544,7 +1798,53 @@ function EmailSettingsCard({ brandId }: { brandId: string }) {
     setSaving(false);
     if (error) toast.error(error.message); else toast.success(isAr ? "تم الحفظ" : "Saved");
   };
+
+  const injectPlaceholder = (
+    ref: React.RefObject<HTMLTextAreaElement>,
+    field: "email_intro_ar" | "email_intro_en" | "courier_out_for_delivery_message_ar" | "courier_out_for_delivery_message_en",
+    placeholder: string
+  ) => {
+    const el = ref.current;
+    if (!el || !state) return;
+    const start = el.selectionStart;
+    const end = el.selectionEnd;
+    const text = el.value;
+    const before = text.substring(0, start);
+    const after = text.substring(end);
+    const newValue = before + placeholder + after;
+    setState({ ...state, [field]: newValue });
+    
+    setTimeout(() => {
+      el.focus();
+      const newCursorPos = start + placeholder.length;
+      el.setSelectionRange(newCursorPos, newCursorPos);
+    }, 50);
+  };
+
+  const variables = [
+    { value: "{{customer_name}}", label: isAr ? "اسم العميل" : "Customer" },
+    { value: "{{invoice_number}}", label: isAr ? "رقم الفاتورة" : "Invoice #" },
+    { value: "{{brand_name}}", label: isAr ? "اسم العلامة" : "Brand Name" },
+  ];
+
+  const renderPills = (ref: React.RefObject<HTMLTextAreaElement>, field: "email_intro_ar" | "email_intro_en" | "courier_out_for_delivery_message_ar" | "courier_out_for_delivery_message_en") => (
+    <div className="flex flex-wrap gap-1.5 mt-2">
+      {variables.map((v) => (
+        <button
+          key={v.value}
+          type="button"
+          onClick={() => injectPlaceholder(ref, field, v.value)}
+          className="inline-flex items-center rounded-full bg-secondary/80 hover:bg-secondary border border-border px-2.5 py-0.5 text-[11px] font-medium text-foreground transition-colors shadow-xs cursor-pointer select-none"
+        >
+          <span className="text-muted-foreground">{v.label}:</span>
+          <span className="ms-1 font-mono text-primary font-semibold">{v.value}</span>
+        </button>
+      ))}
+    </div>
+  );
+
   if (!state) return null;
+
   return (
     <Card className="p-6 space-y-4">
       <div>
@@ -1557,20 +1857,22 @@ function EmailSettingsCard({ brandId }: { brandId: string }) {
         <Label>{isAr ? "اسم المُرسِل (يظهر في البريد)" : "Sender display name (From)"}</Label>
         <Input value={state.email_sender_name} onChange={(e) => setState({ ...state, email_sender_name: e.target.value })} placeholder={isAr ? "مثل: متجر بيورا" : "e.g. Pura Store"} />
       </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="space-y-1">
           <Label>{isAr ? "نص الترحيب (عربي)" : "Intro (Arabic)"}</Label>
-          <Textarea rows={3} value={state.email_intro_ar} onChange={(e) => setState({ ...state, email_intro_ar: e.target.value })} />
+          <Textarea ref={introArRef} rows={3} value={state.email_intro_ar} onChange={(e) => setState({ ...state, email_intro_ar: e.target.value })} />
+          {renderPills(introArRef, "email_intro_ar")}
         </div>
-        <div>
+        <div className="space-y-1">
           <Label>{isAr ? "نص الترحيب (إنجليزي)" : "Intro (English)"}</Label>
-          <Textarea rows={3} value={state.email_intro_en} onChange={(e) => setState({ ...state, email_intro_en: e.target.value })} />
+          <Textarea ref={introEnRef} rows={3} value={state.email_intro_en} onChange={(e) => setState({ ...state, email_intro_en: e.target.value })} />
+          {renderPills(introEnRef, "email_intro_en")}
         </div>
-        <div>
+        <div className="space-y-1">
           <Label>{isAr ? "التذييل (عربي)" : "Footer (Arabic)"}</Label>
           <Textarea rows={2} value={state.email_footer_ar} onChange={(e) => setState({ ...state, email_footer_ar: e.target.value })} />
         </div>
-        <div>
+        <div className="space-y-1">
           <Label>{isAr ? "التذييل (إنجليزي)" : "Footer (English)"}</Label>
           <Textarea rows={2} value={state.email_footer_en} onChange={(e) => setState({ ...state, email_footer_en: e.target.value })} />
         </div>
@@ -1579,21 +1881,23 @@ function EmailSettingsCard({ brandId }: { brandId: string }) {
         <div>
           <h4 className="font-semibold">{isAr ? "رسالة واتساب عند خروج الطلب للتوصيل" : "Out-for-delivery WhatsApp message"}</h4>
           <p className="text-xs text-muted-foreground">
-            {isAr ? "المتغيرات المتاحة" : "Available variables"}: {"{{customer_name}}"}, {"{{invoice_number}}"}, {"{{brand_name}}"}
+            {isAr ? "انقر على الأزرار أدناه لإدراج المتغيرات في موضع المؤشر:" : "Click on the buttons below to inject variables at cursor selection index:"}
           </p>
         </div>
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <div>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="space-y-1">
             <Label>{isAr ? "الرسالة بالعربية" : "Arabic message"}</Label>
-            <Textarea dir="rtl" rows={4} value={state.courier_out_for_delivery_message_ar} onChange={(e) => setState({ ...state, courier_out_for_delivery_message_ar: e.target.value })} />
+            <Textarea ref={whatsappArRef} dir="rtl" rows={4} value={state.courier_out_for_delivery_message_ar} onChange={(e) => setState({ ...state, courier_out_for_delivery_message_ar: e.target.value })} />
+            {renderPills(whatsappArRef, "courier_out_for_delivery_message_ar")}
           </div>
-          <div>
+          <div className="space-y-1">
             <Label>{isAr ? "الرسالة بالإنجليزية" : "English message"}</Label>
-            <Textarea dir="ltr" rows={4} value={state.courier_out_for_delivery_message_en} onChange={(e) => setState({ ...state, courier_out_for_delivery_message_en: e.target.value })} />
+            <Textarea ref={whatsappEnRef} dir="ltr" rows={4} value={state.courier_out_for_delivery_message_en} onChange={(e) => setState({ ...state, courier_out_for_delivery_message_en: e.target.value })} />
+            {renderPills(whatsappEnRef, "courier_out_for_delivery_message_en")}
           </div>
         </div>
       </div>
-      <div className="flex justify-end">
+      <div className="flex justify-end pt-2">
         <Button size="sm" onClick={save} disabled={saving}>{isAr ? "حفظ إعدادات البريد" : "Save email settings"}</Button>
       </div>
     </Card>

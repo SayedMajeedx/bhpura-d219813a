@@ -97,6 +97,21 @@ export const Route = createFileRoute("/$slug")({
       pickup_enabled: s?.pickup_enabled ?? true,
       digital_delivery_enabled: s?.digital_delivery_enabled ?? false,
       delivery_fee: Number(s?.delivery_fee ?? 0),
+      vat_inclusive: Boolean(s?.vat_inclusive ?? false),
+      shipping_zones: (() => {
+        try {
+          const raw = s?.shipping_zones;
+          const parsed = Array.isArray(raw) ? raw : JSON.parse(raw || "[]");
+          return parsed.map((z: any) => ({
+            id: String(z.id || ""),
+            name_en: String(z.name_en || ""),
+            name_ar: String(z.name_ar || ""),
+            fee: Number(z.fee ?? 0)
+          }));
+        } catch (e) {
+          return [];
+        }
+      })(),
       logo_size: Number(s?.logo_size ?? 48),
       logo_align: (s?.logo_align ?? "left") as "left" | "center" | "right",
       show_header_name: s?.show_header_name ?? true,
