@@ -196,11 +196,12 @@ export const Route = createFileRoute("/$slug")({
   },
   head: ({ loaderData }) => {
     const b = loaderData?.brand;
+    const settings = loaderData?.settings;
     if (!b) return { meta: [{ title: "Storefront" }] };
-    const title = b.meta_title || `${b.name_en} — Online Store`;
+    const title = b.meta_title || settings?.business_name || `${b.name_en} — Online Store`;
     const desc = b.meta_description || `Shop ${b.name_en}${b.name_ar ? " / " + b.name_ar : ""} online.`;
-    const img = b.logo_url ?? undefined;
-    const favicon = resolveBrandFavicon(loaderData?.settings?.favicon_url, loaderData?.settings?.logo_url ?? b.logo_url);
+    const img = settings?.logo_url || b.logo_url || "https://boutq.store/og-placeholder.png";
+    const favicon = resolveBrandFavicon(settings?.favicon_url, settings?.logo_url ?? b.logo_url);
     return {
       meta: [
         { title },
@@ -208,11 +209,11 @@ export const Route = createFileRoute("/$slug")({
         { property: "og:title", content: title },
         { property: "og:description", content: desc },
         { property: "og:type", content: "website" },
-        ...(img ? [{ property: "og:image", content: img }] : []),
-        { name: "twitter:card", content: img ? "summary_large_image" : "summary" },
+        { property: "og:image", content: img },
+        { name: "twitter:card", content: "summary_large_image" },
         { name: "twitter:title", content: title },
         { name: "twitter:description", content: desc },
-        ...(img ? [{ name: "twitter:image", content: img }] : []),
+        { name: "twitter:image", content: img },
       ],
       links: [{ rel: "icon", href: favicon, ...(faviconType(favicon) ? { type: faviconType(favicon) } : {}) }],
     };

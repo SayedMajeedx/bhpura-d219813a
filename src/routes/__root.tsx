@@ -77,8 +77,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:title", content: "Boutq — Boutique Management" },
       { name: "twitter:description", content: "A private portal to manage your boutique inventory, customers, orders, and custom invoices." },
-      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/b26fc069-5f5a-43c1-a738-7d6c45af8303/id-preview-566e20f3--da1d9ef6-5df7-4eb3-8b43-30af971b895b.lovable.app-1783246493735.png" },
-      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/b26fc069-5f5a-43c1-a738-7d6c45af8303/id-preview-566e20f3--da1d9ef6-5df7-4eb3-8b43-30af971b895b.lovable.app-1783246493735.png" },
+      { property: "og:image", content: "https://boutq.store/og-placeholder.png" },
+      { name: "twitter:image", content: "https://boutq.store/og-placeholder.png" },
     ],
     links: [
       { rel: "stylesheet", href: appCss },

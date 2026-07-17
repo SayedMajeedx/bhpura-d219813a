@@ -47,7 +47,7 @@ export const Route = createFileRoute("/$slug/$category")({
     if (!page || !brand) return {};
     const title = page.meta_title || page.title_en || page.title_ar || brand.meta_title || brand.name_en;
     const description = page.meta_description || brand.meta_description || `Learn more about ${brand.name_en}.`;
-    const image = page.image_url || brand.logo_url || undefined;
+    const image = page.image_url || brand.logo_url || "https://boutq.store/og-placeholder.png";
     const favicon = loaderData?.faviconUrl;
     return {
       meta: [
@@ -56,11 +56,11 @@ export const Route = createFileRoute("/$slug/$category")({
         { property: "og:title", content: title },
         { property: "og:description", content: description },
         { property: "og:type", content: "website" },
-        ...(image ? [{ property: "og:image", content: image }] : []),
-        { name: "twitter:card", content: image ? "summary_large_image" : "summary" },
+        { property: "og:image", content: image },
+        { name: "twitter:card", content: "summary_large_image" },
         { name: "twitter:title", content: title },
         { name: "twitter:description", content: description },
-        ...(image ? [{ name: "twitter:image", content: image }] : []),
+        { name: "twitter:image", content: image },
       ],
       links: favicon ? [{ rel: "icon", href: favicon, ...(faviconType(favicon) ? { type: faviconType(favicon) } : {}) }] : [],
     };
