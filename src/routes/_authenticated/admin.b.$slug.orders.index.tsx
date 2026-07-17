@@ -67,6 +67,39 @@ async function copyInvoiceLink(id: string, t: (k: string) => string) {
   }
 }
 
+function deliveryStatusPresentation(status: string | null | undefined, lang: "en" | "ar") {
+  const normalized = String(status ?? "").toLowerCase();
+  const labels: Record<string, { en: string; ar: string; className: string }> = {
+    assigned: {
+      en: "Assigned",
+      ar: "تم التعيين",
+      className: "bg-slate-100 text-slate-700 ring-slate-200",
+    },
+    out_for_delivery: {
+      en: "Out for delivery",
+      ar: "خرج للتوصيل",
+      className: "bg-blue-50 text-blue-800 ring-blue-200",
+    },
+    delivered: {
+      en: "Delivered",
+      ar: "تم التوصيل",
+      className: "bg-emerald-50 text-emerald-800 ring-emerald-200",
+    },
+    failed: {
+      en: "Delivery failed",
+      ar: "فشل التوصيل",
+      className: "bg-red-50 text-red-800 ring-red-200",
+    },
+    returned: {
+      en: "Returned",
+      ar: "مرتجع",
+      className: "bg-amber-50 text-amber-800 ring-amber-200",
+    },
+  };
+  const item = labels[normalized];
+  return item ? { label: item[lang], className: item.className } : null;
+}
+
 function OrdersList() {
   const t = useT();
   const { lang } = useI18n();
@@ -331,6 +364,10 @@ function OrdersList() {
                 Number(o.total),
                 Number((o as any).advance_paid ?? 0),
               );
+              const deliveryBadge =
+                o.fulfillment_method === "delivery"
+                  ? deliveryStatusPresentation((o as any).fulfillment_status, lang)
+                  : null;
               return (
                 <Card key={o.id} className="p-4">
                   <div className="flex items-start justify-between gap-3">
@@ -361,6 +398,13 @@ function OrdersList() {
                         >
                           {t(`payStatus.${badge}`)}
                         </span>
+                        {deliveryBadge && (
+                          <span
+                            className={`rounded-full px-2 py-0.5 text-[10px] font-medium ring-1 ${deliveryBadge.className}`}
+                          >
+                            {deliveryBadge.label}
+                          </span>
+                        )}
                       </div>
                       <div className="mt-3 font-semibold">
                         {formatMoney(Number(o.total), o.currency)}
@@ -413,7 +457,12 @@ function OrdersList() {
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredOrders.map((o) => (
+                  {filteredOrders.map((o) => {
+                    const deliveryBadge =
+                      o.fulfillment_method === "delivery"
+                        ? deliveryStatusPresentation((o as any).fulfillment_status, lang)
+                        : null;
+                    return (
                     <tr key={o.id} className="border-t border-border hover:bg-secondary/30">
                       <td className="p-4">
                         <Link
@@ -435,15 +484,24 @@ function OrdersList() {
                         )}
                       </td>
                       <td className="p-4">
-                        <span
-                          className={`text-xs uppercase tracking-wider px-2 py-1 rounded ${o.status === "pending_verification" ? "bg-amber-100 text-amber-900 ring-1 ring-amber-300" : "bg-secondary"}`}
-                        >
-                          {o.status === "pending_verification"
-                            ? lang === "ar"
-                              ? "بانتظار التحقق"
-                              : "Pending verification"
-                            : t(`status.${o.status}`)}
-                        </span>
+                        <div className="flex flex-wrap gap-1.5">
+                          <span
+                            className={`text-xs uppercase tracking-wider px-2 py-1 rounded ${o.status === "pending_verification" ? "bg-amber-100 text-amber-900 ring-1 ring-amber-300" : "bg-secondary"}`}
+                          >
+                            {o.status === "pending_verification"
+                              ? lang === "ar"
+                                ? "بانتظار التحقق"
+                                : "Pending verification"
+                              : t(`status.${o.status}`)}
+                          </span>
+                          {deliveryBadge && (
+                            <span
+                              className={`rounded-full px-2 py-1 text-[10px] font-medium ring-1 ${deliveryBadge.className}`}
+                            >
+                              {deliveryBadge.label}
+                            </span>
+                          )}
+                        </div>
                       </td>
                       <td className="p-4 text-end font-medium whitespace-nowrap">
                         <div className="inline-flex items-center gap-2">
@@ -482,7 +540,8 @@ function OrdersList() {
                         </>}
                       </td>
                     </tr>
-                  ))}
+                    );
+                  })}
                 </tbody>
               </table>
             </div>

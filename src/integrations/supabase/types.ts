@@ -259,6 +259,8 @@ export type Database = {
           email_intro_ar: string | null
           email_intro_en: string | null
           email_sender_name: string | null
+          courier_out_for_delivery_message_ar: string | null
+          courier_out_for_delivery_message_en: string | null
           favicon_url: string | null
           font_family: string
           font_size: number
@@ -342,6 +344,8 @@ export type Database = {
           email_intro_ar?: string | null
           email_intro_en?: string | null
           email_sender_name?: string | null
+          courier_out_for_delivery_message_ar?: string | null
+          courier_out_for_delivery_message_en?: string | null
           favicon_url?: string | null
           font_family?: string
           font_size?: number
@@ -425,6 +429,8 @@ export type Database = {
           email_intro_ar?: string | null
           email_intro_en?: string | null
           email_sender_name?: string | null
+          courier_out_for_delivery_message_ar?: string | null
+          courier_out_for_delivery_message_en?: string | null
           favicon_url?: string | null
           font_family?: string
           font_size?: number
@@ -988,11 +994,16 @@ export type Database = {
           created_at: string
           currency: string
           customer_id: string | null
+          cod_collected_amount: number | null
+          cod_collected_at: string | null
+          cod_collected_by: string | null
           discount: number
           fulfillment_method: string
           digital_delivery_channel: string | null
           digital_delivery_contact: string | null
           delivery_address_snapshot: Json | null
+          delivery_status_updated_at: string | null
+          delivery_status_updated_by: string | null
           id: string
           invoice_number: number
           notes: string | null
@@ -1033,11 +1044,16 @@ export type Database = {
           created_at?: string
           currency?: string
           customer_id?: string | null
+          cod_collected_amount?: number | null
+          cod_collected_at?: string | null
+          cod_collected_by?: string | null
           discount?: number
           fulfillment_method?: string
           digital_delivery_channel?: string | null
           digital_delivery_contact?: string | null
           delivery_address_snapshot?: Json | null
+          delivery_status_updated_at?: string | null
+          delivery_status_updated_by?: string | null
           id?: string
           invoice_number: number
           notes?: string | null
@@ -1078,11 +1094,16 @@ export type Database = {
           created_at?: string
           currency?: string
           customer_id?: string | null
+          cod_collected_amount?: number | null
+          cod_collected_at?: string | null
+          cod_collected_by?: string | null
           discount?: number
           fulfillment_method?: string
           digital_delivery_channel?: string | null
           digital_delivery_contact?: string | null
           delivery_address_snapshot?: Json | null
+          delivery_status_updated_at?: string | null
+          delivery_status_updated_by?: string | null
           id?: string
           invoice_number?: number
           notes?: string | null

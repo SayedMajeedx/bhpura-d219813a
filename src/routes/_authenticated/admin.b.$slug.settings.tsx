@@ -1503,13 +1503,15 @@ function EmailSettingsCard({ brandId }: { brandId: string }) {
     email_intro_en: string;
     email_footer_ar: string;
     email_footer_en: string;
+    courier_out_for_delivery_message_ar: string;
+    courier_out_for_delivery_message_en: string;
   } | null>(null);
   const [saving, setSaving] = useState(false);
   useEffect(() => {
     (async () => {
       const { data } = await supabase
         .from("business_settings")
-        .select("email_sender_name, email_intro_ar, email_intro_en, email_footer_ar, email_footer_en")
+        .select("email_sender_name, email_intro_ar, email_intro_en, email_footer_ar, email_footer_en, courier_out_for_delivery_message_ar, courier_out_for_delivery_message_en")
         .eq("brand_id", brandId)
         .maybeSingle();
       if (!data) return;
@@ -1519,6 +1521,8 @@ function EmailSettingsCard({ brandId }: { brandId: string }) {
         email_intro_en: (data as any).email_intro_en ?? "",
         email_footer_ar: (data as any).email_footer_ar ?? "",
         email_footer_en: (data as any).email_footer_en ?? "",
+        courier_out_for_delivery_message_ar: (data as any).courier_out_for_delivery_message_ar ?? "",
+        courier_out_for_delivery_message_en: (data as any).courier_out_for_delivery_message_en ?? "",
       });
     })();
   }, [brandId]);
@@ -1533,6 +1537,8 @@ function EmailSettingsCard({ brandId }: { brandId: string }) {
         email_intro_en: state.email_intro_en.trim() || null,
         email_footer_ar: state.email_footer_ar.trim() || null,
         email_footer_en: state.email_footer_en.trim() || null,
+        courier_out_for_delivery_message_ar: state.courier_out_for_delivery_message_ar.trim() || null,
+        courier_out_for_delivery_message_en: state.courier_out_for_delivery_message_en.trim() || null,
       } as any)
       .eq("brand_id", brandId);
     setSaving(false);
@@ -1567,6 +1573,24 @@ function EmailSettingsCard({ brandId }: { brandId: string }) {
         <div>
           <Label>{isAr ? "التذييل (إنجليزي)" : "Footer (English)"}</Label>
           <Textarea rows={2} value={state.email_footer_en} onChange={(e) => setState({ ...state, email_footer_en: e.target.value })} />
+        </div>
+      </div>
+      <div className="space-y-3 rounded-lg border p-4">
+        <div>
+          <h4 className="font-semibold">{isAr ? "رسالة واتساب عند خروج الطلب للتوصيل" : "Out-for-delivery WhatsApp message"}</h4>
+          <p className="text-xs text-muted-foreground">
+            {isAr ? "المتغيرات المتاحة" : "Available variables"}: {"{{customer_name}}"}, {"{{invoice_number}}"}, {"{{brand_name}}"}
+          </p>
+        </div>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <div>
+            <Label>{isAr ? "الرسالة بالعربية" : "Arabic message"}</Label>
+            <Textarea dir="rtl" rows={4} value={state.courier_out_for_delivery_message_ar} onChange={(e) => setState({ ...state, courier_out_for_delivery_message_ar: e.target.value })} />
+          </div>
+          <div>
+            <Label>{isAr ? "الرسالة بالإنجليزية" : "English message"}</Label>
+            <Textarea dir="ltr" rows={4} value={state.courier_out_for_delivery_message_en} onChange={(e) => setState({ ...state, courier_out_for_delivery_message_en: e.target.value })} />
+          </div>
         </div>
       </div>
       <div className="flex justify-end">
