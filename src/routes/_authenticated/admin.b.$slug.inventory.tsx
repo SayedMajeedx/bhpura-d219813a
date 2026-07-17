@@ -61,7 +61,7 @@ type Variant = {
   id: string; product_id: string; sku: string | null; size: string | null; color: string | null; fabric: string | null;
   cost_price: number; selling_price: number; original_price: number | null; stock: number;
   stock_main: number; stock_incubator: number; barcode: string | null;
-  size_unit: string | null;
+  size_unit: string | null; created_at?: string;
 };
 type Customization = { id: string; name: string; price_delta: number };
 
@@ -225,8 +225,15 @@ function ProductsSection({ products, variants, businessName, currency, onChanged
 
   const productWeeklySales = (productId: string) => {
     const pVariants = variants.filter((v) => v.product_id === productId);
-    const productSalesCount = pVariants.reduce((sum, v) => sum + (salesByVariant.get(v.id) || 0), 0);
-    return productSalesCount / (45 / 7);
+    const productDailyVelocity = pVariants.reduce((sum, v) => {
+      const qtySold = salesByVariant.get(v.id) || 0;
+      const variantCreatedAt = v.created_at ? new Date(v.created_at) : null;
+      const daysElapsed = variantCreatedAt 
+        ? Math.max(1, Math.min(45, Math.ceil((new Date().getTime() - variantCreatedAt.getTime()) / (1000 * 60 * 60 * 24))))
+        : 45;
+      return sum + (qtySold / daysElapsed);
+    }, 0);
+    return productDailyVelocity * 7;
   };
 
   const del = async (id: string) => {
@@ -987,7 +994,11 @@ function VariantList({ productId, productName, businessName, variants, onChanged
                 {(() => {
                   const stock = (v.stock_main ?? 0) + (v.stock_incubator ?? 0);
                   const qtySold = salesByVariant.get(v.id) || 0;
-                  const dailyVelocity = qtySold / 45;
+                  const variantCreatedAt = v.created_at ? new Date(v.created_at) : null;
+                  const daysElapsed = variantCreatedAt 
+                    ? Math.max(1, Math.min(45, Math.ceil((new Date().getTime() - variantCreatedAt.getTime()) / (1000 * 60 * 60 * 24))))
+                    : 45;
+                  const dailyVelocity = qtySold / daysElapsed;
                   
                   let runRateText = isAr ? "لا مبيعات مؤخراً" : "No recent sales";
                   let runRateColor = "text-muted-foreground";
@@ -1133,7 +1144,11 @@ function VariantList({ productId, productName, businessName, variants, onChanged
                     {(() => {
                       const stock = (v.stock_main ?? 0) + (v.stock_incubator ?? 0);
                       const qtySold = salesByVariant.get(v.id) || 0;
-                      const dailyVelocity = qtySold / 45;
+                      const variantCreatedAt = v.created_at ? new Date(v.created_at) : null;
+                      const daysElapsed = variantCreatedAt 
+                        ? Math.max(1, Math.min(45, Math.ceil((new Date().getTime() - variantCreatedAt.getTime()) / (1000 * 60 * 60 * 24))))
+                        : 45;
+                      const dailyVelocity = qtySold / daysElapsed;
                       
                       let runRateText = isAr ? "لا مبيعات" : "No sales";
                       let runRateColor = "text-muted-foreground/80";
