@@ -236,7 +236,8 @@ function CourierOrderView({ order, slug, onUpdated }: { order: any; slug: string
   const deliveryComplete = order.fulfillment_status === "delivered";
   const currency = order.currency || "BHD";
 
-  // Resolve payment badge using the same logic as the admin view
+  const isCodOrHasDue = isCod || amountDue > 0;
+
   const payStatus = resolvePaymentStatus(
     order.payment_status,
     order.status,
@@ -265,8 +266,8 @@ function CourierOrderView({ order, slug, onUpdated }: { order: any; slug: string
         p_order_id: order.id,
         p_status: status,
         p_notes: notes || null,
-        p_cod_collected: status === "delivered" && isCod ? codConfirmed : false,
-        p_cod_amount: status === "delivered" && isCod ? Number(codAmount) : null,
+        p_cod_collected: status === "delivered" && isCodOrHasDue ? codConfirmed : false,
+        p_cod_amount: status === "delivered" && isCodOrHasDue ? Number(codAmount) : null,
       });
       if (error) throw error;
       toast.success(lang === "ar" ? "تم تحديث حالة التوصيل" : "Delivery status updated");
@@ -331,7 +332,7 @@ function CourierOrderView({ order, slug, onUpdated }: { order: any; slug: string
           <div><p className="text-xs text-muted-foreground">{lang === "ar" ? "العميل" : "Customer"}</p><p className="font-semibold">{order.customers?.name || "—"}</p></div>
           <div><p className="text-xs text-muted-foreground">{lang === "ar" ? "الهاتف" : "Phone"}</p><a dir="ltr" className="font-semibold underline" href={`tel:${order.customers?.phone || ""}`}>{order.customers?.phone || "—"}</a></div>
           <div className="sm:col-span-2"><p className="text-xs text-muted-foreground">{lang === "ar" ? "عنوان التوصيل" : "Delivery address"}</p><p className="font-medium">{address || selectedAddress?.address || order.customers?.address || "—"}</p></div>
-          {isCod && <div className={`sm:col-span-2 rounded-lg p-3 ${order.cod_collected_at ? "bg-emerald-50 text-emerald-900" : "bg-amber-50 text-amber-900"}`}><strong>{order.cod_collected_at ? (lang === "ar" ? "تم استلام المبلغ" : "Cash received") : (lang === "ar" ? "تحصيل عند التسليم" : "Collect on delivery")}</strong>: {formatMoney(order.cod_collected_at ? Number(order.cod_collected_amount || 0) : amountDue, currency)}</div>}
+          {isCodOrHasDue && <div className={`sm:col-span-2 rounded-lg p-3 ${order.cod_collected_at ? "bg-emerald-50 text-emerald-900" : "bg-amber-50 text-amber-900"}`}><strong>{order.cod_collected_at ? (lang === "ar" ? "تم استلام المبلغ" : "Cash received") : (lang === "ar" ? "تحصيل عند التسليم" : "Collect on delivery")}</strong>: {formatMoney(order.cod_collected_at ? Number(order.cod_collected_amount || 0) : amountDue, currency)}</div>}
         </div>
         <DeliveryAddressCard
           address={selectedAddress ?? order.customers}
@@ -391,7 +392,7 @@ function CourierOrderView({ order, slug, onUpdated }: { order: any; slug: string
         </div>
 
         <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder={lang === "ar" ? "ملاحظات التوصيل" : "Delivery notes"} />
-        {isCod && !order.cod_collected_at && (
+        {isCodOrHasDue && !order.cod_collected_at && (
           <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 space-y-3">
             <div>
               <p className="font-semibold text-amber-950">{lang === "ar" ? "تأكيد استلام الدفع النقدي" : "Confirm cash collection"}</p>
@@ -409,7 +410,7 @@ function CourierOrderView({ order, slug, onUpdated }: { order: any; slug: string
         )}
         <div className="grid grid-cols-2 gap-2">
           <Button disabled={saving || deliveryComplete} variant="outline" onClick={() => updateStatus("out_for_delivery")}>{lang === "ar" ? "خرج للتوصيل وإرسال واتساب" : "Out for delivery & WhatsApp"}</Button>
-          <Button disabled={saving || deliveryComplete || (isCod && !order.cod_collected_at && !codConfirmed)} onClick={() => updateStatus("delivered")}>{lang === "ar" ? "تم التسليم" : "Delivered"}</Button>
+          <Button disabled={saving || deliveryComplete || (isCodOrHasDue && !order.cod_collected_at && !codConfirmed)} onClick={() => updateStatus("delivered")}>{lang === "ar" ? "تم التسليم" : "Delivered"}</Button>
           <Button disabled={saving || deliveryComplete} variant="destructive" onClick={() => updateStatus("delivery_failed")}>{lang === "ar" ? "تعذر التسليم" : "Delivery failed"}</Button>
           <Button disabled={saving || deliveryComplete} variant="outline" onClick={() => updateStatus("returned")}>{lang === "ar" ? "مرتجع" : "Returned"}</Button>
         </div>
