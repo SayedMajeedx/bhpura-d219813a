@@ -157,22 +157,14 @@ function StoreHome() {
     };
   }, [products, bestSellerRows, trendingRows]);
 
-  // All Products Grid (bottom section)
+  // All Products Grid (bottom section) - Bypasses deduplication entirely on any state (active filter or default)
   const filtered = useMemo(() => {
     const list = products ?? [];
     if (activeCat) {
       return list.filter((p) => p.category === activeCat);
-    } else {
-      // Exclude products already displayed in any shelf above to keep feed fresh
-      const shelfIds = new Set([
-        ...newest.map((p) => p.id),
-        ...bestSellers.map((p) => p.id),
-        ...saleProducts.map((p) => p.id),
-        ...trending.map((p) => p.id),
-      ]);
-      return list.filter((p) => !shelfIds.has(p.id));
     }
-  }, [products, activeCat, newest, bestSellers, saleProducts, trending]);
+    return list;
+  }, [products, activeCat]);
 
   const bestIdsKeys = useMemo(() => {
     return new Set((bestSellerRows ?? []).map(row => row.product_id));
