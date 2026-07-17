@@ -11,11 +11,26 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { translateAuthError } from "@/lib/auth-errors";
 
-export const Route = createFileRoute("/$slug/auth")({ component: StorefrontAuth });
+export const Route = createFileRoute("/$slug/auth")({
+  validateSearch: (search: Record<string, unknown>) => ({
+    redirect: typeof search.redirect === "string" ? search.redirect : undefined,
+  }),
+  component: StorefrontAuth,
+});
 
 function StorefrontAuth() {
   const { brand, settings, t, lang, session, isStoreMember, membershipLoading, refreshMembership } = useStorefront();
+  const { redirect } = Route.useSearch();
   const navigate = useNavigate();
+
+  const performRedirect = () => {
+    if (redirect && !redirect.includes("/auth")) {
+      void navigate({ to: redirect as any });
+    } else {
+      navigate({ to: "/$slug", params: { slug: brand.slug } });
+    }
+  };
+
   const [tab, setTab] = useState<"signin" | "signup">("signin");
   const [form, setForm] = useState({ name: "", email: "", phone: "", password: "" });
   const [working, setWorking] = useState(false);
@@ -24,12 +39,16 @@ function StorefrontAuth() {
   useEffect(() => {
     if (membershipLoading || !session) return;
     if (isStoreMember) {
-      navigate({ to: "/$slug", params: { slug: brand.slug }, replace: true });
+      if (redirect && !redirect.includes("/auth")) {
+        void navigate({ to: redirect as any, replace: true });
+      } else {
+        navigate({ to: "/$slug", params: { slug: brand.slug }, replace: true });
+      }
     } else {
       setTab("signup");
       setForm((current) => ({ ...current, email: session.user.email ?? current.email }));
     }
-  }, [brand.slug, isStoreMember, membershipLoading, navigate, session]);
+  }, [brand.slug, isStoreMember, membershipLoading, navigate, session, redirect]);
 
   const activateMembership = async (): Promise<boolean> => {
     const { error } = await supabase.rpc("activate_storefront_membership", {
@@ -66,7 +85,7 @@ function StorefrontAuth() {
     await refreshMembership();
     setWorking(false);
     toast.success(t("مرحباً بعودتك!", "Welcome back!"));
-    navigate({ to: "/$slug/checkout", params: { slug: brand.slug } });
+    performRedirect();
   };
 
   const signUp = async () => {
@@ -79,7 +98,7 @@ function StorefrontAuth() {
       setWorking(false);
       if (!activated) return;
       toast.success(t("تم إنشاء حسابك في هذا المتجر!", "Your account for this store is ready!"));
-      navigate({ to: "/$slug/checkout", params: { slug: brand.slug } });
+      performRedirect();
       return;
     }
 
@@ -93,7 +112,7 @@ function StorefrontAuth() {
       setWorking(false);
       if (!activated) return;
       toast.success(t("تم إنشاء حسابك في هذا المتجر!", "Your account for this store is ready!"));
-      navigate({ to: "/$slug/checkout", params: { slug: brand.slug } });
+      performRedirect();
       return;
     }
 
@@ -124,7 +143,7 @@ function StorefrontAuth() {
     setWorking(false);
     if (!activated) return;
     toast.success(t("تم إنشاء الحساب!", "Account created!"));
-    navigate({ to: "/$slug/checkout", params: { slug: brand.slug } });
+    performRedirect();
   };
 
   if (session && membershipLoading) return <div className="grid min-h-[45vh] place-items-center"><Loader2 className="h-7 w-7 animate-spin" /></div>;

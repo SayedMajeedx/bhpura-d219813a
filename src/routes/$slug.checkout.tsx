@@ -36,6 +36,8 @@ function Checkout() {
     flat: "",
     notes: "",
   });
+  const [savedAddresses, setSavedAddresses] = useState<any[]>([]);
+  const [selectedAddressId, setSelectedAddressId] = useState<string>("");
 
   // Pre-fill from linked customer when signed in
   useEffect(() => {
@@ -44,22 +46,47 @@ function Checkout() {
       try {
         const { data: customer } = await supabase
           .from("customers")
-          .select("name, phone, email, region, block, road, house, flat")
+          .select("id, name, phone, email, region, block, road, house, flat")
           .eq("brand_id", brand.id)
           .eq("auth_user_id", session.user.id)
           .maybeSingle();
+
         if (customer) {
-          setForm((f) => ({
-            ...f,
-            name: f.name || customer.name || "",
-            phone: f.phone || customer.phone || "",
-            email: f.email || customer.email || session.user.email || "",
-            region: f.region || customer.region || "",
-            block: f.block || (customer as any).block || "",
-            road: f.road || customer.road || "",
-            house: f.house || customer.house || "",
-            flat: f.flat || customer.flat || "",
-          }));
+          // Fetch saved addresses from customer_addresses
+          const { data: addresses } = await supabase
+            .from("customer_addresses")
+            .select("id, label, region, block, road, house, flat, is_default")
+            .eq("customer_id", customer.id);
+
+          if (addresses && addresses.length > 0) {
+            setSavedAddresses(addresses);
+            const defaultAddr = addresses.find((a) => a.is_default) || addresses[0];
+            setSelectedAddressId(defaultAddr.id);
+            setForm((f) => ({
+              ...f,
+              name: f.name || customer.name || "",
+              phone: f.phone || customer.phone || "",
+              email: f.email || customer.email || session.user.email || "",
+              label: defaultAddr.label || "",
+              region: defaultAddr.region || "",
+              block: defaultAddr.block || "",
+              road: defaultAddr.road || "",
+              house: defaultAddr.house || "",
+              flat: defaultAddr.flat || "",
+            }));
+          } else {
+            setForm((f) => ({
+              ...f,
+              name: f.name || customer.name || "",
+              phone: f.phone || customer.phone || "",
+              email: f.email || customer.email || session.user.email || "",
+              region: f.region || customer.region || "",
+              block: f.block || (customer as any).block || "",
+              road: f.road || customer.road || "",
+              house: f.house || customer.house || "",
+              flat: f.flat || customer.flat || "",
+            }));
+          }
         } else if (session.user.email) {
           setForm((f) => ({ ...f, email: f.email || session.user.email || "" }));
         }
@@ -68,6 +95,34 @@ function Checkout() {
       }
     })();
   }, [session, brand.id]);
+
+  const handleAddressChange = (addressId: string) => {
+    setSelectedAddressId(addressId);
+    if (addressId === "manual") {
+      setForm((f) => ({
+        ...f,
+        label: "",
+        region: "",
+        block: "",
+        road: "",
+        house: "",
+        flat: "",
+      }));
+    } else {
+      const selected = savedAddresses.find((a) => a.id === addressId);
+      if (selected) {
+        setForm((f) => ({
+          ...f,
+          label: selected.label || "",
+          region: selected.region || "",
+          block: selected.block || "",
+          road: selected.road || "",
+          house: selected.house || "",
+          flat: selected.flat || "",
+        }));
+      }
+    }
+  };
 
   const availableMethods: Array<{ id: "cod" | "card" | "benefit"; ar: string; en: string; icon: any }> = [
     settings.cod_enabled && { id: "cod" as const, ar: "الدفع عند الاستلام", en: "Cash on delivery", icon: Banknote },
@@ -320,7 +375,7 @@ function Checkout() {
               <p className="text-sm min-w-0 break-words">{t("لديك حساب؟ سجّل الدخول لملء البيانات تلقائيًا.", "Have an account? Sign in to prefill your details.")}</p>
             </div>
             <Button asChild size="sm" variant="outline" className="shrink-0">
-              <Link to="/$slug/auth" params={{ slug: brand.slug }}>{t("سجّل الدخول", "Sign in")}</Link>
+              <Link to="/$slug/auth" params={{ slug: brand.slug }} search={{ redirect: window.location.pathname }}>{t("سجّل الدخول", "Sign in")}</Link>
             </Button>
           </Card>
         )}
@@ -451,14 +506,34 @@ function Checkout() {
         {fulfillment === "delivery" && (
           <Card className="p-5 space-y-4">
             <h2 className="font-display text-xl">{t("عنوان التوصيل", "Delivery address")}</h2>
+            
+            {savedAddresses.length > 0 && (
+              <div className="mb-4">
+                <Label>{t("اختر من العناوين المحفوظة", "Choose from saved addresses")}</Label>
+                <Select value={selectedAddressId} onValueChange={(v) => handleAddressChange(v)}>
+                  <SelectTrigger className="w-full mt-1.5">
+                    <SelectValue placeholder={t("اختر عنواناً", "Select an address")} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {savedAddresses.map((a) => (
+                      <SelectItem key={a.id} value={a.id}>
+                        {a.label || t("عنوان", "Address")} - {a.region}, {t("مجمع", "Block")} {a.block}, {t("طريق", "Road")} {a.road}, {t("منزل", "House")} {a.house}
+                      </SelectItem>
+                    ))}
+                    <SelectItem value="manual">{t("إدخال يدوي / عنوان جديد", "Enter manually / New address")}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <Label>{t("لقب العنوان", "Address label")}</Label>
-                <Input placeholder={t("مثل: المنزل، المكتب", "e.g. Home, Work")} value={form.label} onChange={(e) => setForm({ ...form, label: e.target.value })} />
+                <Input placeholder={t("مثل: المنزل، المكتب", "e.g. Home, Work")} value={form.label} onChange={(e) => { setSelectedAddressId("manual"); setForm({ ...form, label: e.target.value }); }} />
               </div>
               <div>
                 <Label>{t("المنطقة", "Region")} *</Label>
-                <Select value={form.region} onValueChange={(v) => setForm({ ...form, region: v })}>
+                <Select value={form.region} onValueChange={(v) => { setSelectedAddressId("manual"); setForm({ ...form, region: v }); }}>
                   <SelectTrigger><SelectValue placeholder={t("اختر المنطقة", "Select region")} /></SelectTrigger>
                   <SelectContent>
                     {BAHRAIN_REGIONS.map((r) => (
@@ -469,19 +544,19 @@ function Checkout() {
               </div>
               <div>
                 <Label>{t("المجمع", "Block")} *</Label>
-                <Input placeholder={t("مثال: 428", "e.g. 428")} value={form.block} onChange={(e) => setForm({ ...form, block: e.target.value })} />
+                <Input placeholder={t("مثال: 428", "e.g. 428")} value={form.block} onChange={(e) => { setSelectedAddressId("manual"); setForm({ ...form, block: e.target.value }); }} />
               </div>
               <div>
                 <Label>{t("الطريق / الشارع", "Road / Avenue")} *</Label>
-                <Input placeholder={t("مثال: 2825", "e.g. 2825")} value={form.road} onChange={(e) => setForm({ ...form, road: e.target.value })} />
+                <Input placeholder={t("مثال: 2825", "e.g. 2825")} value={form.road} onChange={(e) => { setSelectedAddressId("manual"); setForm({ ...form, road: e.target.value }); }} />
               </div>
               <div>
                 <Label>{t("منزل / بناية", "House / Building")} *</Label>
-                <Input placeholder={t("مثال: 12", "e.g. 12")} value={form.house} onChange={(e) => setForm({ ...form, house: e.target.value })} />
+                <Input placeholder={t("مثال: 12", "e.g. 12")} value={form.house} onChange={(e) => { setSelectedAddressId("manual"); setForm({ ...form, house: e.target.value }); }} />
               </div>
               <div>
                 <Label>{t("شقة (اختياري)", "Flat (optional)")}</Label>
-                <Input placeholder={t("مثال: 4", "e.g. 4")} value={form.flat} onChange={(e) => setForm({ ...form, flat: e.target.value })} />
+                <Input placeholder={t("مثال: 4", "e.g. 4")} value={form.flat} onChange={(e) => { setSelectedAddressId("manual"); setForm({ ...form, flat: e.target.value }); }} />
               </div>
             </div>
           </Card>

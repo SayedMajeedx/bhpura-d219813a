@@ -82,7 +82,7 @@ function AccountPage() {
   }
 
   if (!session || !isStoreMember) {
-    return <Navigate to="/$slug/auth" params={{ slug: brand.slug }} />;
+    return <Navigate to="/$slug/auth" params={{ slug: brand.slug }} search={{ redirect: window.location.pathname }} />;
   }
 
   return (
