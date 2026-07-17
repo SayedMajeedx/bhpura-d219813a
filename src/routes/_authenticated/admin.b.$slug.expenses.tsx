@@ -221,7 +221,7 @@ function ExpensesPage() {
       let q2 = (supabase as any)
         .from("orders")
         .select(
-          "id, invoice_number, created_at, currency, order_items(id, description, quantity, unit_price, line_total, variant_id, product_variants:variant_id(cost_price))",
+          "id, invoice_number, created_at, currency, total, order_items(id, description, quantity, unit_price, line_total, variant_id, product_variants:variant_id(cost_price))",
         )
         .eq("brand_id", brandId)
         .in("status", ["confirmed", "paid", "shipped", "completed"])
@@ -331,69 +331,79 @@ function ExpensesPage() {
     }
   };
 
+  // ── Calculation of Retail Standard Profit & Loss Metrics ──
+  const totalRevenue = useMemo(() => {
+    return (cogsQ.data ?? []).reduce((s, o) => s + Number(o.total || 0), 0);
+  }, [cogsQ.data]);
+
+  const totalCogs = useMemo(() => {
+    let sum = 0;
+    (cogsQ.data ?? []).forEach((order) => {
+      (order.order_items ?? []).forEach((item) => {
+        const cost = Number((item as any).product_variants?.cost_price ?? 0);
+        sum += cost * Number(item.quantity);
+      });
+    });
+    return sum;
+  }, [cogsQ.data]);
+
+  const totalOpex = total; // Sum of manually created operating expenses
+  const totalExpenses = totalCogs + totalOpex;
+  const netProfit = totalRevenue - totalExpenses;
+  const marginPercentage = totalRevenue > 0 ? (netProfit / totalRevenue) * 100 : 0;
+
   return (
-    <div className="p-4 sm:p-6 lg:p-8 max-w-5xl mx-auto">
-      <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
+    <div className="p-4 sm:p-6 lg:p-8 max-w-6xl mx-auto space-y-6">
+      {/* Page Header */}
+      <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-3xl sm:text-4xl font-display">{t("expenses.title")}</h1>
+          <h1 className="text-3xl sm:text-4xl font-display font-bold tracking-tight text-foreground">{t("expenses.title")}</h1>
           <p className="text-muted-foreground mt-1">{t("expenses.subtitle")}</p>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <input
-            ref={fileRef}
-            type="file"
-            accept="image/*,application/pdf"
-            capture="environment"
-            className="hidden"
-            onChange={(e) => onFilePicked(e.target.files?.[0] ?? null)}
-          />
-          <Button
-            variant="outline"
-            onClick={() => fileRef.current?.click()}
-            disabled={scanning}
-            className="border-primary/40 text-primary hover:bg-primary/5"
-          >
-            {scanning ? <Loader2 className="h-4 w-4 me-2 animate-spin" /> : <Sparkles className="h-4 w-4 me-2" />}
-            {lang === "ar" ? "مسح فاتورة بالذكاء الاصطناعي" : "Scan receipt with AI"}
-          </Button>
-          <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) setEditing(null); }}>
-            <DialogTrigger asChild>
-              <Button onClick={() => setEditing(null)}>
-                <Plus className="h-4 w-4 me-2" /> {t("expenses.add")}
-              </Button>
-            </DialogTrigger>
-            <ExpenseDialog
-              expense={editing}
-              categories={categories}
-              onSaved={() => { setOpen(false); setEditing(null); qc.invalidateQueries({ queryKey: ["expenses"] }); }}
-            />
-          </Dialog>
-        </div>
+        {/* Date Filter preset cards */}
+        <Card className="p-2 flex flex-wrap gap-1.5 bg-secondary/20 border-border">
+          {(["today", "week", "month", "custom"] as DatePreset[]).map((preset) => (
+            <Button
+              key={preset}
+              type="button"
+              size="sm"
+              variant={datePreset === preset ? "default" : "ghost"}
+              onClick={() => setDatePreset(preset)}
+              className="text-xs h-8"
+            >
+              {lang === "ar"
+                ? ({ today: "اليوم", week: "الأسبوع", month: "الشهر", custom: "مخصص" } as const)[preset]
+                : ({ today: "Today", week: "This week", month: "This month", custom: "Custom" } as const)[preset]}
+            </Button>
+          ))}
+        </Card>
       </div>
 
-      <Card className="mb-4 p-3 sm:p-4">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <p className="text-sm font-medium">{lang === "ar" ? "الفترة الزمنية" : "Date range"}</p>
-            <p className="text-xs text-muted-foreground">{lang === "ar" ? "تُحدّث القائمة والإجمالي معاً" : "Updates both the list and total"}</p>
+      {/* Custom Date Range Picker */}
+      {datePreset === "custom" && (
+        <Card className="p-4 border-dashed border-primary/20">
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div>
+              <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{lang === "ar" ? "من تاريخ" : "From Date"}</Label>
+              <Input type="date" value={customRange.from} max={customRange.to || undefined} onChange={(e) => setCustomRange((range) => ({ ...range, from: e.target.value }))} className="mt-1 h-9 text-sm" />
+            </div>
+            <div>
+              <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{lang === "ar" ? "إلى تاريخ" : "To Date"}</Label>
+              <Input type="date" value={customRange.to} min={customRange.from || undefined} onChange={(e) => setCustomRange((range) => ({ ...range, to: e.target.value }))} className="mt-1 h-9 text-sm" />
+            </div>
           </div>
-          <div className="flex flex-wrap gap-2">
-            {(["today", "week", "month", "custom"] as DatePreset[]).map((preset) => (
-              <Button key={preset} type="button" size="sm" variant={datePreset === preset ? "default" : "outline"} onClick={() => setDatePreset(preset)}>
-                {lang === "ar"
-                  ? ({ today: "اليوم", week: "هذا الأسبوع", month: "هذا الشهر", custom: "مخصص" } as const)[preset]
-                  : ({ today: "Today", week: "This week", month: "This month", custom: "Custom" } as const)[preset]}
-              </Button>
-            ))}
-          </div>
-        </div>
-        {datePreset === "custom" && (
-          <div className="mt-3 grid gap-3 border-t pt-3 sm:grid-cols-2">
-            <div><Label>{lang === "ar" ? "من" : "From"}</Label><Input type="date" value={customRange.from} max={customRange.to || undefined} onChange={(e) => setCustomRange((range) => ({ ...range, from: e.target.value }))} /></div>
-            <div><Label>{lang === "ar" ? "إلى" : "To"}</Label><Input type="date" value={customRange.to} min={customRange.from || undefined} onChange={(e) => setCustomRange((range) => ({ ...range, to: e.target.value }))} /></div>
-          </div>
-        )}
-      </Card>
+        </Card>
+      )}
+
+      {/* Hidden file input for scanner */}
+      <input
+        ref={fileRef}
+        type="file"
+        accept="image/*,application/pdf"
+        capture="environment"
+        className="hidden"
+        onChange={(e) => onFilePicked(e.target.files?.[0] ?? null)}
+      />
 
       <ReceiptReviewDialog
         open={reviewOpen}
@@ -427,130 +437,238 @@ function ExpensesPage() {
         </AlertDialogContent>
       </AlertDialog>
 
-      <Card className="p-5 sm:p-6 mb-6">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2 text-muted-foreground">
-            <Wallet className="h-4 w-4" />
-            <span className="text-xs uppercase tracking-wider">{t("expenses.total")}</span>
+      {/* Top 3-Column KPI Metric Cards Layout */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {/* Card 1: COGS */}
+        <Card className="p-5 flex flex-col justify-between hover:shadow-md transition-all duration-200">
+          <div>
+            <div className="flex items-center gap-2 text-muted-foreground mb-1.5">
+              <Package className="h-4 w-4 shrink-0 text-muted-foreground/80" />
+              <span className="text-xs uppercase tracking-wider font-semibold">
+                {lang === "ar" ? "تكلفة البضاعة المباعة (COGS)" : "Cost of Goods Sold (COGS)"}
+              </span>
+            </div>
+            <p className="text-xs text-muted-foreground mb-3">
+              {lang === "ar" ? "تحديث تلقائي من مبيعات المتغيرات" : "Auto-calculated from product variant costs"}
+            </p>
           </div>
-          <span className="text-2xl font-display">{formatMoney(total, currency, locale)}</span>
+          <span className="text-2xl font-display font-semibold text-foreground tabular-nums">
+            {cogsQ.isLoading ? (
+              <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+            ) : (
+              formatMoney(totalCogs, currency, locale)
+            )}
+          </span>
+        </Card>
+
+        {/* Card 2: OPEX */}
+        <Card className="p-5 flex flex-col justify-between hover:shadow-md transition-all duration-200">
+          <div>
+            <div className="flex items-center gap-2 text-muted-foreground mb-1.5">
+              <Receipt className="h-4 w-4 shrink-0 text-muted-foreground/80" />
+              <span className="text-xs uppercase tracking-wider font-semibold">
+                {lang === "ar" ? "المصاريف التشغيلية (OPEX)" : "Operating Expenses (OPEX)"}
+              </span>
+            </div>
+            <p className="text-xs text-muted-foreground mb-3">
+              {lang === "ar" ? "إجمالي الفواتير والمصاريف المدخلة" : "Sum of manually logged business expenses"}
+            </p>
+          </div>
+          <span className="text-2xl font-display font-semibold text-foreground tabular-nums">
+            {formatMoney(totalOpex, currency, locale)}
+          </span>
+        </Card>
+
+        {/* Card 3: Total Expenses (Primary Focus Metric) */}
+        <Card className="p-5 flex flex-col justify-between border-2 border-primary bg-primary/5 shadow-sm hover:shadow-md transition-all duration-200">
+          <div>
+            <div className="flex items-center gap-2 text-primary mb-1.5">
+              <Wallet className="h-4 w-4 shrink-0 text-primary" />
+              <span className="text-xs uppercase tracking-wider font-bold">
+                {lang === "ar" ? "إجمالي المصاريف" : "Total Expenses"}
+              </span>
+            </div>
+            <p className="text-xs text-primary/80 mb-3">
+              {lang === "ar" ? "تكلفة البضاعة + المصاريف التشغيلية" : "COGS + OPEX aggregated total"}
+            </p>
+          </div>
+          <span className="text-3xl font-display font-bold text-primary tabular-nums">
+            {cogsQ.isLoading ? (
+              <Loader2 className="h-5 w-5 animate-spin text-primary" />
+            ) : (
+              formatMoney(totalExpenses, currency, locale)
+            )}
+          </span>
+        </Card>
+      </div>
+
+      {/* Net Profit Summary Widget Block */}
+      <Card className="overflow-hidden border border-border bg-card shadow-sm">
+        <div className="p-5 sm:p-6 bg-gradient-to-r from-secondary/30 via-background to-secondary/15">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <h3 className="text-base font-semibold text-foreground flex items-center gap-2">
+                <Sparkles className="h-4.5 w-4.5 text-primary" />
+                {lang === "ar" ? "ملخص صافي الأرباح" : "Net Profit Summary"}
+              </h3>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {lang === "ar" ? "المعادلة الرياضية: الإيرادات من الطلبات المكتملة مطروحاً منها التكلفة الإجمالية للمشروع" : "Standard: Revenue from completed orders minus all business costs"}
+              </p>
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="text-end">
+                <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-bold">
+                  {lang === "ar" ? "صافي الأرباح" : "Net Profit"}
+                </p>
+                <p className={`text-2xl font-display font-bold ${netProfit >= 0 ? "text-emerald-600 dark:text-emerald-500" : "text-rose-600 dark:text-rose-500"}`}>
+                  {cogsQ.isLoading ? "..." : formatMoney(netProfit, currency, locale)}
+                </p>
+              </div>
+              <div className={`px-2.5 py-1.5 rounded-lg text-xs font-bold shrink-0 ${netProfit >= 0 ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-400" : "bg-rose-100 text-rose-800 dark:bg-rose-950/40 dark:text-rose-400"}`}>
+                {cogsQ.isLoading ? "..." : `${marginPercentage.toFixed(1)}%`} {lang === "ar" ? "هامش" : "Margin"}
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-6 pt-5 border-t border-border/60">
+            <div>
+              <span className="text-xs text-muted-foreground block">{lang === "ar" ? "إجمالي الإيرادات (المبيعات)" : "Total Revenue (Sales)"}</span>
+              <span className="text-sm font-semibold tabular-nums text-foreground">{cogsQ.isLoading ? "..." : formatMoney(totalRevenue, currency, locale)}</span>
+            </div>
+            <div>
+              <span className="text-xs text-muted-foreground block">{lang === "ar" ? "تكلفة البضاعة المباعة" : "COGS (Product Costs)"}</span>
+              <span className="text-sm font-semibold tabular-nums text-foreground/80">− {cogsQ.isLoading ? "..." : formatMoney(totalCogs, currency, locale)}</span>
+            </div>
+            <div>
+              <span className="text-xs text-muted-foreground block">{lang === "ar" ? "المصاريف التشغيلية" : "OPEX (Operations)"}</span>
+              <span className="text-sm font-semibold tabular-nums text-foreground/80">− {formatMoney(totalOpex, currency, locale)}</span>
+            </div>
+            <div>
+              <span className="text-xs text-muted-foreground block">{lang === "ar" ? "صافي الربح الفعلي" : "Net Profit"}</span>
+              <span className={`text-sm font-bold tabular-nums ${netProfit >= 0 ? "text-emerald-600 dark:text-emerald-500" : "text-rose-600 dark:text-rose-500"}`}>
+                {cogsQ.isLoading ? "..." : formatMoney(netProfit, currency, locale)}
+              </span>
+            </div>
+          </div>
         </div>
       </Card>
 
-      {/* Cost of Goods Sold auto-section */}
-      <CogsSection
-        orders={cogsQ.data ?? []}
-        loading={cogsQ.isLoading}
-        currency={currency}
-        locale={locale}
-        lang={lang}
-        onDownload={downloadCogsCsv}
-      />
+      {/* Side-by-Side Dual Column Layout (Desktop) */}
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+        {/* Left Column (60%): Cost of Goods Sold Collapsible Section */}
+        <div className="lg:col-span-3 space-y-4">
+          <CogsSection
+            orders={cogsQ.data ?? []}
+            loading={cogsQ.isLoading}
+            currency={currency}
+            locale={locale}
+            lang={lang}
+            onDownload={downloadCogsCsv}
+          />
+        </div>
 
-      {filteredList.length === 0 ? (
-        <Card className="p-12 text-center">
-          <Wallet className="h-10 w-10 mx-auto text-muted-foreground mb-3" />
-          <p className="text-muted-foreground">{t("expenses.none")}</p>
-        </Card>
-      ) : (
-        <>
-          {/* Mobile cards keep actions visible and provide reliable 44px touch targets. */}
-          <div className="space-y-3 sm:hidden">
-            {filteredList.map((e) => (
-              <Card key={e.id} className="p-4">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                      <span className="font-medium">{e.category}</span>
-                      <span className="text-xs text-muted-foreground">
-                        {new Date(e.expense_date).toLocaleDateString(locale)}
-                      </span>
-                    </div>
-                    <p className="mt-1 break-words text-sm text-muted-foreground">
-                      {e.store_name ? <span className="font-medium text-foreground">{e.store_name}</span> : null}
-                      {e.store_name && e.description ? " — " : null}
-                      {e.description || (!e.store_name ? "—" : "")}
-                    </p>
-                    <p className="mt-2 font-semibold">
-                      {formatMoney(Number(e.amount), e.currency, locale)}
-                    </p>
-                    {e.receipt_url && (
-                      <a href={e.receipt_url} target="_blank" rel="noreferrer" className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline">
-                        <FileText className="h-3.5 w-3.5" /> {lang === "ar" ? "عرض الإيصال" : "View receipt"}
-                      </a>
-                    )}
-                  </div>
-                  <div className="flex shrink-0 items-center gap-1">
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="h-11 w-11 touch-manipulation"
-                      aria-label={lang === "ar" ? "تعديل المصروف" : "Edit expense"}
-                      onClick={() => { setEditing(e); setOpen(true); }}
-                    >
-                      <Pencil className="h-5 w-5" />
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="h-11 w-11 touch-manipulation text-destructive hover:text-destructive"
-                      aria-label={lang === "ar" ? "حذف المصروف" : "Delete expense"}
-                      onClick={() => setDeleteTargetId(e.id)}
-                    >
-                      <Trash2 className="h-5 w-5" />
-                    </Button>
-                  </div>
-                </div>
-              </Card>
-            ))}
+        {/* Right Column (40%): Operating Expenses (OPEX) */}
+        <div className="lg:col-span-2 space-y-4">
+          {/* Header and Anchored Actions Directly Above the OPEX List */}
+          <div className="flex flex-wrap items-center justify-between gap-2 bg-secondary/10 p-3 rounded-lg border">
+            <div>
+              <h2 className="text-sm font-bold text-foreground">
+                {lang === "ar" ? "المصاريف التشغيلية" : "Operating Expenses"}
+              </h2>
+              <span className="text-[10px] text-muted-foreground block">
+                {filteredList.length} {lang === "ar" ? "سجلات مصروفات" : "logged items"}
+              </span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => fileRef.current?.click()}
+                disabled={scanning}
+                className="border-primary/30 text-primary hover:bg-primary/5 text-xs h-8 px-2.5 shrink-0"
+              >
+                {scanning ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
+              </Button>
+              <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) setEditing(null); }}>
+                <DialogTrigger asChild>
+                  <Button size="sm" className="text-xs h-8 px-2.5 shrink-0" onClick={() => setEditing(null)}>
+                    <Plus className="h-3.5 w-3.5 me-1" />
+                    {lang === "ar" ? "إضافة" : "Add"}
+                  </Button>
+                </DialogTrigger>
+                <ExpenseDialog
+                  expense={editing}
+                  categories={categories}
+                  onSaved={() => { setOpen(false); setEditing(null); qc.invalidateQueries({ queryKey: ["expenses"] }); }}
+                />
+              </Dialog>
+            </div>
           </div>
 
-          <Card className="hidden overflow-hidden sm:block">
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[640px] text-sm">
-              <thead className="bg-secondary/50 text-xs uppercase tracking-wider text-muted-foreground">
-                <tr>
-                  <th className="p-3 text-start">{t("expenses.date")}</th>
-                  <th className="p-3 text-start">{t("expenses.category")}</th>
-                  <th className="p-3 text-start">{t("expenses.description")}</th>
-                  <th className="p-3 text-end">{t("expenses.amount")}</th>
-                  <th className="p-3 text-end w-24"></th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredList.map((e) => (
-                  <tr key={e.id} className="border-t border-border">
-                    <td className="p-3 whitespace-nowrap">{new Date(e.expense_date).toLocaleDateString(locale)}</td>
-                    <td className="p-3 font-medium">{e.category}</td>
-                    <td className="p-3 text-muted-foreground">
-                      {e.store_name ? <span className="font-medium text-foreground">{e.store_name}</span> : null}
-                      {e.store_name && e.description ? " — " : null}
-                      {e.description || (!e.store_name ? "—" : "")}
-                      {e.receipt_url && (
-                        <a href={e.receipt_url} target="_blank" rel="noreferrer" className="ms-2 inline-flex items-center gap-1 font-medium text-primary hover:underline">
-                          <FileText className="h-3.5 w-3.5" /> {lang === "ar" ? "الإيصال" : "Receipt"}
-                        </a>
-                      )}
-                    </td>
-                    <td className="p-3 text-end whitespace-nowrap font-medium">{formatMoney(Number(e.amount), e.currency, locale)}</td>
-                    <td className="p-3 text-end whitespace-nowrap">
-                      <Button variant="ghost" size="icon" onClick={() => { setEditing(e); setOpen(true); }}>
+          {/* OPEX List of items using highly polished cards (perfectly fits 40% column size) */}
+          <div className="space-y-3">
+            {filteredList.length === 0 ? (
+              <Card className="p-8 text-center border-dashed">
+                <Wallet className="h-8 w-8 mx-auto text-muted-foreground/60 mb-2" />
+                <p className="text-xs text-muted-foreground">{t("expenses.none")}</p>
+              </Card>
+            ) : (
+              filteredList.map((e) => (
+                <Card key={e.id} className="p-4 hover:border-primary/30 transition-all duration-150 shadow-xs relative overflow-hidden group">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                        <span className="font-semibold text-sm text-foreground">{e.category}</span>
+                        <span className="text-[10px] bg-secondary px-1.5 py-0.5 rounded text-muted-foreground font-medium">
+                          {new Date(e.expense_date).toLocaleDateString(locale)}
+                        </span>
+                      </div>
+                      <p className="mt-1.5 break-words text-xs text-muted-foreground leading-relaxed">
+                        {e.store_name ? <span className="font-semibold text-foreground/90">{e.store_name}</span> : null}
+                        {e.store_name && e.description ? " — " : null}
+                        {e.description || (!e.store_name ? "—" : "")}
+                      </p>
+                      <div className="mt-2.5 flex items-center justify-between">
+                        <span className="font-bold text-sm text-foreground tabular-nums">
+                          {formatMoney(Number(e.amount), e.currency, locale)}
+                        </span>
+                        {e.receipt_url && (
+                          <a href={e.receipt_url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-[10px] font-semibold text-primary hover:underline">
+                            <FileText className="h-3 w-3" /> {lang === "ar" ? "إيصال" : "Receipt"}
+                          </a>
+                        )}
+                      </div>
+                    </div>
+                    {/* Compact actions shown inside card */}
+                    <div className="flex shrink-0 items-center gap-1">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                        aria-label={lang === "ar" ? "تعديل" : "Edit"}
+                        onClick={() => { setEditing(e); setOpen(true); }}
+                      >
                         <Pencil className="h-4 w-4" />
                       </Button>
-                      <Button variant="ghost" size="icon" onClick={() => setDeleteTargetId(e.id)}>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                        aria-label={lang === "ar" ? "حذف" : "Delete"}
+                        onClick={() => setDeleteTargetId(e.id)}
+                      >
                         <Trash2 className="h-4 w-4" />
                       </Button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-              </table>
-            </div>
-          </Card>
-        </>
-      )}
+                    </div>
+                  </div>
+                </Card>
+              ))
+            )}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
@@ -999,6 +1117,7 @@ type CogOrder = {
   invoice_number: number;
   created_at: string;
   currency: string;
+  total: number;
   order_items: CogItem[];
 };
 

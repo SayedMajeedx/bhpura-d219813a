@@ -54,7 +54,8 @@ export function PhoneInput({
         </SelectContent>
       </Select>
       <Input
-        className="text-start flex-1"
+        className="flex-1 text-left"
+        dir="ltr"
         inputMode="tel"
         placeholder={placeholder ?? "12345678"}
         value={local}

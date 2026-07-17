@@ -14,6 +14,7 @@ import { toast } from "sonner";
 import { Loader2, LogOut, Plus, Trash2, PackageSearch, MapPin, User as UserIcon } from "lucide-react";
 import { BAHRAIN_REGIONS, regionLabel } from "@/lib/bahrain-regions";
 import { DeliveryAddressCard } from "@/components/delivery-address-card";
+import { PhoneInput } from "@/components/phone-input";
 
 export const Route = createFileRoute("/$slug/account")({
   component: AccountPage,
@@ -301,13 +302,10 @@ function ProfileSection({ isAr }: { isAr: boolean }) {
       </div>
       <div className="space-y-1.5">
         <Label className={isAr ? "block text-right" : "block text-left"}>{t("رقم الهاتف", "Phone number")}</Label>
-        <Input
+        <PhoneInput
           value={form.phone}
-          onChange={(e) => setForm({ ...form, phone: e.target.value })}
-          inputMode="tel"
-          dir="ltr"
-          className="text-left"
-          placeholder="+97312345678"
+          onChange={(phone) => setForm({ ...form, phone })}
+          placeholder="12345678"
         />
       </div>
       <div className="space-y-1.5">
