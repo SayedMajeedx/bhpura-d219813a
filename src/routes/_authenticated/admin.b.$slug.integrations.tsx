@@ -39,10 +39,17 @@ const PROVIDER_PRESETS = [
   { value: "stripe", label: "Stripe" },
   { value: "tap", label: "Tap Payments" },
   { value: "benefit", label: "Benefit Pay" },
-  { value: "zoho_customer_email", label: "Zoho Customer Email (SMTP)" },
+  { value: "resend_customer_email", label: "Resend Customer Email" },
   { value: "sendpulse_admin", label: "SendPulse Admin Notifications" },
   { value: "custom", label: "Custom" },
 ];
+
+const getProviderIcon = (provider: string) => {
+  if (provider === "resend_customer_email" || provider === "sendpulse_admin") return <Mail className="h-5 w-5 text-primary" />;
+  if (provider === "stripe" || provider === "tap" || provider === "benefit") return <CreditCard className="h-5 w-5 text-indigo-500" />;
+  if (provider === "aramex" || provider === "posta_plus") return <Truck className="h-5 w-5 text-amber-500" />;
+  return <Plug className="h-5 w-5 text-muted-foreground" />;
+};
 
 function IntegrationsPage() {
   const t = useT();
@@ -114,53 +121,65 @@ function IntegrationsPage() {
           <p className="text-muted-foreground">{t("integrations.none")}</p>
         </Card>
       ) : (
-        <div className="grid gap-3">
+        <div className="grid gap-4">
           {(q.data ?? []).map((row) => {
             const webhookUrl = `${webhookBase}/${row.provider}/${brandId}`;
             const preset = PROVIDER_PRESETS.find((p) => p.value === row.provider);
-            const isDirectEmailProvider = row.provider === "zoho_customer_email" || row.provider === "sendpulse_admin";
+            const isDirectEmailProvider = row.provider === "resend_customer_email" || row.provider === "sendpulse_admin";
             return (
-              <Card key={row.id} className="p-5">
-                <div className="flex items-start justify-between gap-3 mb-3">
-                  <div className="min-w-0">
-                    <div className="font-display text-lg truncate">{preset?.label ?? row.provider}</div>
-                    <div className="text-xs text-muted-foreground truncate">{row.base_url || "—"}</div>
+              <Card key={row.id} className="p-6 border border-border bg-card/60 backdrop-blur-sm shadow-sm hover:shadow-md transition-all duration-200">
+                <div className="flex items-start justify-between gap-4 mb-4">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="p-2.5 rounded-lg bg-secondary/50 border border-secondary shrink-0">
+                      {getProviderIcon(row.provider)}
+                    </div>
+                    <div className="min-w-0">
+                      <div className="font-display text-xl tracking-tight text-foreground truncate">{preset?.label ?? row.provider}</div>
+                      <div className="text-xs text-muted-foreground truncate font-mono mt-0.5">{row.base_url || "—"}</div>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    <span className={`text-xs uppercase tracking-wider px-2 py-1 rounded ${row.is_active ? "bg-primary/10 text-primary" : "bg-secondary text-muted-foreground"}`}>
+                  <div className="flex items-center gap-1 shrink-0">
+                    <span className={`text-xs px-2.5 py-0.5 rounded-full font-medium border ${
+                      row.is_active 
+                        ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20" 
+                        : "bg-slate-500/10 text-slate-500 border-slate-500/20"
+                    }`}>
                       {row.is_active ? t("integrations.active") : isAr ? "معطّل" : "Off"}
                     </span>
-                    <Button variant="ghost" size="icon" onClick={() => { setEditing(row); setOpen(true); }}><Pencil className="h-4 w-4" /></Button>
-                    <Button variant="ghost" size="icon" onClick={() => del(row.id)}><Trash2 className="h-4 w-4" /></Button>
+                    <Button variant="ghost" size="icon" onClick={() => { setEditing(row); setOpen(true); }} className="h-8 w-8 text-muted-foreground hover:text-foreground"><Pencil className="h-4 w-4" /></Button>
+                    <Button variant="ghost" size="icon" onClick={() => del(row.id)} className="h-8 w-8 text-muted-foreground hover:text-destructive"><Trash2 className="h-4 w-4" /></Button>
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
-                  <MaskedRow label={t("integrations.apiKey")} value={row.api_key_masked} />
-                  <MaskedRow label={t("integrations.webhookSecret")} value={row.webhook_secret_masked} />
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm bg-secondary/20 border border-secondary/30 rounded-lg p-4">
+                  <MaskedRow label={row.provider === "resend_customer_email" ? (isAr ? "بريد المُرسل المعتمد" : "Verified sender email") : t("integrations.apiKey")} value={row.api_key_masked} />
+                  <MaskedRow label={row.provider === "resend_customer_email" ? (isAr ? "مفتاح API الخاص بـ Resend" : "Resend API key") : t("integrations.webhookSecret")} value={row.webhook_secret_masked} />
                 </div>
 
-                <div className="mt-3 pt-3 border-t border-border text-xs">
+                <div className="mt-4 pt-4 border-t border-border/80 text-xs">
                   {isDirectEmailProvider ? (
-                    <p className="text-muted-foreground">
-                      {isAr
-                        ? "يستخدم هذا المزود مباشرةً من خدمة البريد الآمنة في Boutq. لا يلزم إعداد رابط Webhook لدى المزود."
-                        : "This provider is used directly by Boutq's secure email service. No provider webhook URL is required."}
-                    </p>
+                    <div className="flex items-center gap-2 text-muted-foreground bg-primary/5 border border-primary/10 rounded-lg px-3 py-2.5">
+                      <Mail className="h-4 w-4 text-primary shrink-0" />
+                      <p className="leading-normal">
+                        {isAr
+                          ? "يستخدم هذا المزود مباشرةً من خدمة البريد الآمنة في Boutق عبر اتصال بروتوكول HTTP الآمن. لا يلزم إعداد رابط Webhook لدى المزود."
+                          : "This provider is used directly by Boutq's secure email service over high-speed HTTPS. No provider webhook URL is required."}
+                      </p>
+                    </div>
                   ) : (
-                    <>
-                      <p className="text-muted-foreground mb-1">{t("integrations.webhookHint")}</p>
-                      <div className="flex items-center gap-2">
-                        <code className="flex-1 truncate bg-secondary/40 rounded px-2 py-1">{webhookUrl}</code>
-                        <Button variant="ghost" size="sm" onClick={() => { navigator.clipboard?.writeText(webhookUrl); toast.success("Copied"); }}>
-                          <Copy className="h-3 w-3" />
+                    <div className="bg-secondary/10 border border-secondary/20 rounded-lg p-3">
+                      <p className="text-muted-foreground mb-1.5 font-medium">{t("integrations.webhookHint")}</p>
+                      <div className="flex items-center gap-2 bg-background/50 border rounded-md p-1.5 pl-3">
+                        <code className="flex-1 truncate font-mono text-xs">{webhookUrl}</code>
+                        <Button variant="ghost" size="sm" onClick={() => { navigator.clipboard?.writeText(webhookUrl); toast.success("Copied"); }} className="h-7 px-2 shrink-0">
+                          <Copy className="h-3.5 w-3.5" />
                         </Button>
                       </div>
-                    </>
+                    </div>
                   )}
                 </div>
 
-                {row.notes && <p className="text-xs text-muted-foreground mt-3 italic">{row.notes}</p>}
+                {row.notes && <p className="text-xs text-muted-foreground mt-3 italic bg-secondary/10 px-3 py-1.5 rounded border border-secondary/20">{row.notes}</p>}
               </Card>
             );
           })}
@@ -225,7 +244,7 @@ function EmailActivityCard({ brandId, isAr }: { brandId: string; isAr: boolean }
     return isAr ? key : key.replace(/\b\w/g, (letter) => letter.toUpperCase());
   };
   const providerLabel = (provider: string | null) => {
-    if (provider === "zoho_customer_email" || provider === "zoho") return "Zoho SMTP";
+    if (provider === "resend_customer_email" || provider === "resend") return "Resend";
     if (provider === "sendpulse_admin" || provider === "sendpulse") return "SendPulse";
     return provider || "—";
   };
@@ -544,19 +563,19 @@ function IntegrationDialog({ brandId, row, onSaved }: { brandId: string; row: Ro
     });
   }, [row]);
   const providerValue = useMemo(() => form.provider === "custom" ? form.provider_custom.trim() : form.provider, [form.provider, form.provider_custom]);
-  const isZohoCustomerEmail = providerValue === "zoho_customer_email";
+  const isResendCustomerEmail = providerValue === "resend_customer_email";
   const isSendPulseAdmin = providerValue === "sendpulse_admin";
-  const fieldLabels = isZohoCustomerEmail
+  const fieldLabels = isResendCustomerEmail
     ? {
-        base: isAr ? "خادم SMTP" : "SMTP host",
-        api: isAr ? "بريد الإرسال من زوهو" : "Zoho sending email",
-        secret: isAr ? "كلمة مرور تطبيق زوهو" : "Zoho app password",
-        basePlaceholder: "smtp.zoho.com:465",
-        apiPlaceholder: "orders@yourbrand.com",
-        secretPlaceholder: "Zoho app password",
+        base: isAr ? "بريد المُرسل المعتمد" : "Verified sender email",
+        api: isAr ? "مفتاح API الخاص بـ Resend" : "Resend API key",
+        secret: isAr ? "غير مستخدم (اختياري)" : "Unused (optional)",
+        basePlaceholder: "orders@yourbrand.com",
+        apiPlaceholder: "re_123456789...",
+        secretPlaceholder: "Unused / Optional",
         help: isAr
-          ? "يُستخدم لإرسال رسائل الطلبات للعملاء. أنشئ كلمة مرور تطبيق من زوهو ولا تستخدم كلمة مرور بريدك العادية."
-          : "Used for customer order emails. Create a Zoho app password; never use your normal mailbox password.",
+          ? "يُستخدم لإرسال رسائل تأكيد الطلب للعملاء عبر واجهة برمجة التطبيقات (API) الخاصة بـ Resend. أدخل بريدك الإلكتروني المعتمد ومفتاح API الخاص بك."
+          : "Used for customer order emails via Resend's high-speed HTTP REST API. Enter your verified sender email and your Resend API Key.",
       }
     : isSendPulseAdmin
       ? {

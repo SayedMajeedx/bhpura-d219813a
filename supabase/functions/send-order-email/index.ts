@@ -315,9 +315,9 @@ async function getIntegration(brandId: string, provider: string) {
 }
 
 async function customerEmailConfigurationError(brandId: string) {
-  const integration = await getIntegration(brandId, "zoho_customer_email");
+  const integration = await getIntegration(brandId, "resend_customer_email");
   if (!integration) return "Customer email is not configured for this brand";
-  if (!integration.base_url?.trim() || !integration.api_key?.trim() || !integration.webhook_secret?.trim()) {
+  if (!integration.base_url?.trim() || !integration.api_key?.trim()) {
     return "Customer email configuration is incomplete for this brand";
   }
   return null;
@@ -354,24 +354,13 @@ async function sendCustomerEmail(input: {
   lang: "ar" | "en";
   event: NotificationEvent;
 }) {
-  const integration = await getIntegration(input.order.brand_id, "zoho_customer_email");
+  const integration = await getIntegration(input.order.brand_id, "resend_customer_email");
   const configurationError = await customerEmailConfigurationError(input.order.brand_id);
   if (!integration || configurationError) throw new Error(configurationError ?? "Customer email is not configured for this brand");
-  const endpoint = parseSmtpHost(integration?.base_url);
-  const fromAddress = integration.api_key?.trim();
-  const password = integration.webhook_secret?.trim();
-  if (!fromAddress || !password) {
+  const fromAddress = integration.base_url?.trim();
+  const apiKey = integration.api_key?.trim();
+  if (!fromAddress || !apiKey) {
     throw new Error("Customer email configuration is incomplete for this brand");
-  }
-  const config: SmtpConfig = {
-    host: endpoint.host,
-    port: endpoint.port,
-    username: fromAddress,
-    password,
-    fromAddress,
-  };
-  if (!config.username || !config.password) {
-    throw new Error("Customer email SMTP is not configured for this brand");
   }
 
   const brandName = input.settings?.business_name ?? "Boutq";
@@ -379,24 +368,24 @@ async function sendCustomerEmail(input: {
   const primary = input.settings?.primary_color ?? "#111827";
   const subject = subjectForEvent(input.event, input.order.invoice_number, brandName);
   const html = renderHtml(input.order, input.order.order_items ?? [], brandName, primary, input.lang === "ar", input.event);
-  const isPort465 = config.port === 465;
-  const client = new SMTPClient({
-    connection: {
-      hostname: config.host,
-      port: config.port,
-      tls: isPort465,
-      auth: { username: config.username, password: config.password },
+
+  const response = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
     },
-    pool: false,
-    debug: { log: false, allowUnsecure: false, encodeLB: false, noStartTLS: isPort465 },
+    body: JSON.stringify({
+      from: `${senderName} <${fromAddress}>`,
+      to: [input.to],
+      subject,
+      html,
+    }),
   });
-  try {
-    await Promise.race([
-      client.send({ from: `${senderName} <${config.fromAddress}>`, to: input.to, subject, html, content: "auto" }),
-      new Promise((_r, reject) => setTimeout(() => reject(new Error("SMTP timeout")), 1_500)),
-    ]);
-  } finally {
-    try { await client.close(); } catch { /* noop */ }
+
+  if (!response.ok) {
+    const details = (await response.text()).slice(0, 300);
+    throw new Error(`Resend delivery failed (${response.status})${details ? `: ${details}` : ""}`);
   }
 }
 
@@ -557,12 +546,12 @@ async function sendAndLog(
         } catch (ue) {
           console.warn("[send-order-email] failed to update order status", ue);
         }
-        await auditNotification({ brandId: order.brand_id, orderId, event, channel: "customer", status: "skipped", provider: "zoho_customer_email", error });
+        await auditNotification({ brandId: order.brand_id, orderId, event, channel: "customer", status: "skipped", provider: "resend_customer_email", error });
         return { status: "skipped", error };
       } else {
         try {
           await sendCustomerEmail({ order, settings, to, lang, event });
-          await auditNotification({ brandId: order.brand_id, orderId, event, channel: "customer", recipient: to, provider: "zoho_customer_email", status: "sent" });
+          await auditNotification({ brandId: order.brand_id, orderId, event, channel: "customer", recipient: to, provider: "resend_customer_email", status: "sent" });
           try {
             await admin.from("orders").update({
               confirmation_email_status: "sent",
@@ -575,7 +564,7 @@ async function sendAndLog(
           return { status: "sent" };
         } catch (error: any) {
           const message = String(error?.message ?? error ?? "Customer email failed").slice(0, 500);
-          await auditNotification({ brandId: order.brand_id, orderId, event, channel: "customer", recipient: to, provider: "zoho_customer_email", status: "failed", error: message });
+          await auditNotification({ brandId: order.brand_id, orderId, event, channel: "customer", recipient: to, provider: "resend_customer_email", status: "failed", error: message });
           try {
             await admin.from("orders").update({ confirmation_email_status: "failed", confirmation_email_error: message }).eq("id", orderId);
           } catch (ue) {
