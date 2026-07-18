@@ -21,6 +21,7 @@ import { formatDate, formatMoney } from "@/lib/format";
 import { useI18n, useT } from "@/lib/i18n";
 import { useProfile } from "@/lib/profile-context";
 import { useBrand } from "@/lib/brand-context";
+import { useRealtimeInvalidate } from "@/hooks/use-realtime-invalidate";
 import { useMemo } from "react";
 
 export const Route = createFileRoute("/_authenticated/admin/b/$slug/dashboard")({
@@ -90,6 +91,11 @@ function Dashboard() {
       if (error) throw error;
       return data ?? [];
     },
+    // Customer PII is intentionally not published to Supabase Realtime.
+    // This keeps the dashboard current without exposing customer records on a
+    // websocket channel.
+    refetchInterval: 30_000,
+    refetchOnWindowFocus: true,
   });
 
   // 5. Fetch all orders (and order items)
@@ -107,6 +113,26 @@ function Dashboard() {
     },
   });
 
+  // Keep the operational feed separate from revenue reporting. Pending
+  // BenefitPay orders belong in "Recent orders" even before they are paid.
+  const recentOrdersQ = useQuery({
+    queryKey: ["dashboard-recent-orders", brandId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("orders")
+        .select("id, invoice_number, created_at, currency, total, status, payment_status, customers(name)")
+        .eq("brand_id", brandId)
+        .order("created_at", { ascending: false })
+        .order("invoice_number", { ascending: false })
+        .limit(5);
+      if (error) throw error;
+      return data as any[];
+    },
+    // A small resilience fallback if a browser temporarily loses its realtime socket.
+    refetchInterval: 30_000,
+    refetchOnWindowFocus: true,
+  });
+
   // 6. Fetch all manual expenses (for OPEX summing)
   const expensesQ = useQuery({
     queryKey: ["dashboard-expenses", brandId],
@@ -120,12 +146,27 @@ function Dashboard() {
     },
   });
 
+  useRealtimeInvalidate(
+    [
+      { table: "orders", brandId, queryKey: ["dashboard-orders-with-items", brandId] },
+      { table: "orders", brandId, queryKey: ["dashboard-recent-orders", brandId] },
+      { table: "orders", brandId, queryKey: ["dashboard-customers", brandId] },
+      { table: "order_items", brandId, queryKey: ["dashboard-orders-with-items", brandId] },
+      { table: "products", brandId, queryKey: ["dashboard-products", brandId] },
+      { table: "product_variants", brandId, queryKey: ["dashboard-variants", brandId] },
+      { table: "expenses", brandId, queryKey: ["dashboard-expenses", brandId] },
+      { table: "business_settings", brandId, queryKey: ["dashboard-business-settings", brandId] },
+    ],
+    `dashboard-realtime:${brandId}`,
+  );
+
   const isLoading =
     businessSettings.isLoading ||
     productsQ.isLoading ||
     variantsQ.isLoading ||
     customersQ.isLoading ||
     ordersQ.isLoading ||
+    recentOrdersQ.isLoading ||
     expensesQ.isLoading;
 
   // Financial intelligence aggregations (Revenue, COGS, OPEX, Net Profit, Gross Margin %)
@@ -589,11 +630,11 @@ function Dashboard() {
               </Link>
             </div>
             
-            {(ordersQ.data ?? []).length === 0 ? (
+            {(recentOrdersQ.data ?? []).length === 0 ? (
               <p className="p-6 text-sm text-center text-muted-foreground bg-secondary/10 rounded-xl border border-dashed">{t("dashboard.noOrders")}</p>
             ) : (
               <ul className="divide-y divide-border">
-                {(ordersQ.data ?? []).slice(0, 5).map((o: any) => (
+                {(recentOrdersQ.data ?? []).map((o: any) => (
                   <li key={o.id} className="py-3 flex items-center justify-between gap-3 text-sm hover:bg-secondary/5 px-2 rounded-lg transition-colors">
                     <Link to="/admin/b/$slug/orders/$id" params={{ slug, id: o.id }} className="min-w-0 truncate">
                       <span className="text-primary font-bold hover:underline">#{o.invoice_number}</span>
