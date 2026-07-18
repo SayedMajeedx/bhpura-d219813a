@@ -1,5 +1,46 @@
 -- Migration: Secure Constraint-Safe Guest Checkout and Backend Guest Order Consolidation
 
+-- 1. Create a secure RPC function to check registered customer presence (bypassing RLS safely)
+CREATE OR REPLACE FUNCTION public.check_registered_customer_exists(
+  p_brand_id uuid,
+  p_email text,
+  p_phone text
+) RETURNS boolean
+LANGUAGE plpgsql SECURITY DEFINER SET search_path = public
+AS $$
+DECLARE
+  v_exists boolean := false;
+BEGIN
+  -- Perform check within customers table (isolated from admin/staff profiles table)
+  IF p_email IS NOT NULL AND NULLIF(trim(p_email), '') IS NOT NULL THEN
+    SELECT EXISTS (
+      SELECT 1 FROM public.customers
+      WHERE brand_id = p_brand_id
+        AND auth_user_id IS NOT NULL
+        AND lower(email) = lower(trim(p_email))
+    ) INTO v_exists;
+  END IF;
+
+  IF NOT v_exists AND p_phone IS NOT NULL AND NULLIF(trim(p_phone), '') IS NOT NULL THEN
+    SELECT EXISTS (
+      SELECT 1 FROM public.customers
+      WHERE brand_id = p_brand_id
+        AND auth_user_id IS NOT NULL
+        -- Trim and extract digits for robust phone checking
+        AND regexp_replace(phone, '\D', '', 'g') = regexp_replace(trim(p_phone), '\D', '', 'g')
+    ) INTO v_exists;
+  END IF;
+
+  RETURN v_exists;
+END;
+$$;
+
+-- Allow executing by anonymous/public storefront users
+REVOKE ALL ON FUNCTION public.check_registered_customer_exists(uuid, text, text) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.check_registered_customer_exists(uuid, text, text) TO anon, authenticated;
+
+
+-- 2. Correct place_storefront_order_core to swap update order (customer_addresses FIRST, orders SECOND)
 CREATE OR REPLACE FUNCTION public.place_storefront_order_core(
   p_brand_slug text, p_customer jsonb, p_items jsonb, p_payment_method text,
   p_notes text DEFAULT NULL, p_fulfillment text DEFAULT 'delivery', p_branch_id uuid DEFAULT NULL,
@@ -112,13 +153,15 @@ BEGIN
 
   -- Handle merging/resolution
   IF v_matched_customer_id IS NOT NULL AND v_matched_customer_id <> v_customer_id THEN
-    -- A matching profile exists, link this order to it
-    UPDATE public.orders SET customer_id = v_matched_customer_id WHERE id = v_order.id;
+    -- A matching profile exists:
     
-    -- Link any addresses created on this checkout pass to the matched profile
+    -- 1. FIRST update the customer_id on public.customer_addresses (repointing address)
     UPDATE public.customer_addresses SET customer_id = v_matched_customer_id WHERE customer_id = v_customer_id;
     
-    -- Safely delete the temporary blank guest customer record
+    -- 2. SECOND update the customer_id on public.orders (the address customer_id is already correct, so trigger is happy!)
+    UPDATE public.orders SET customer_id = v_matched_customer_id WHERE id = v_order.id;
+    
+    -- 3. Safely delete the temporary blank guest customer record
     DELETE FROM public.customers WHERE id = v_customer_id;
     
     -- Redirect pointer to the matched profile

@@ -54,22 +54,18 @@ function Checkout() {
   const checkRegisteredAccount = async (field: "email" | "phone", value: string) => {
     if (!value || session || ignoredAccountWarning) return;
     try {
-      const query = supabase
-        .from("customers")
-        .select("id")
-        .eq("brand_id", brand.id)
-        .not("auth_user_id", "is", null);
+      const { data: exists, error } = await supabase.rpc("check_registered_customer_exists", {
+        p_brand_id: brand.id,
+        p_email: field === "email" ? value.trim() : null,
+        p_phone: field === "phone" ? value.trim() : null,
+      });
 
-      if (field === "email") {
-        query.ilike("email", value.trim());
-      } else {
-        const cleanPhone = value.replace(/[^\d]/g, "");
-        if (cleanPhone.length < 5) return;
-        query.eq("phone", cleanPhone);
+      if (error) {
+        console.error("Error executing check_registered_customer_exists RPC:", error);
+        return;
       }
 
-      const { data } = await query.limit(1);
-      if (data && data.length > 0) {
+      if (exists === true) {
         setShowAccountPopup({
           show: true,
           field,
@@ -77,7 +73,7 @@ function Checkout() {
         });
       }
     } catch (e) {
-      console.error("Failed to check registered account", e);
+      console.error("Failed to check registered account via RPC", e);
     }
   };
 
