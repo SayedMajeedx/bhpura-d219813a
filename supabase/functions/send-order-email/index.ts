@@ -41,11 +41,6 @@ type Body = {
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const SMTP_HOST = Deno.env.get("ZOHO_SMTP_HOST") ?? "smtp.zoho.com";
-const SMTP_PORT = Number(Deno.env.get("ZOHO_SMTP_PORT") ?? "465");
-const SMTP_USER = Deno.env.get("ZOHO_SMTP_USER") ?? "";
-const SMTP_PASS = Deno.env.get("ZOHO_SMTP_PASS") ?? "";
-const FROM_ADDRESS = Deno.env.get("ORDER_EMAIL_FROM_ADDRESS") ?? "no-reply@boutq.store";
 const WEBHOOK_SECRET = Deno.env.get("ORDER_EMAIL_WEBHOOK_SECRET") ?? "";
 
 // deno-lint-ignore no-explicit-any
@@ -70,7 +65,7 @@ type SmtpConfig = {
 function parseSmtpHost(value: string | null | undefined) {
   const raw = String(value ?? "").trim().replace(/^smtps?:\/\//i, "");
   const [host, port] = raw.split(":");
-  return { host: host || SMTP_HOST, port: Number(port) || SMTP_PORT };
+  return { host: host || "smtp.zoho.com", port: Number(port) || 465 };
 }
 
 function eventCopy(
@@ -275,13 +270,21 @@ async function sendCustomerEmail(input: {
   event: NotificationEvent;
 }) {
   const integration = await getIntegration(input.order.brand_id, "zoho_customer_email");
+  if (!integration) {
+    throw new Error("Customer email is not configured for this brand");
+  }
   const endpoint = parseSmtpHost(integration?.base_url);
+  const fromAddress = integration.api_key?.trim();
+  const password = integration.webhook_secret?.trim();
+  if (!fromAddress || !password) {
+    throw new Error("Customer email configuration is incomplete for this brand");
+  }
   const config: SmtpConfig = {
     host: endpoint.host,
     port: endpoint.port,
-    username: integration?.api_key?.trim() || SMTP_USER,
-    password: integration?.webhook_secret?.trim() || SMTP_PASS,
-    fromAddress: integration?.api_key?.trim() || FROM_ADDRESS,
+    username: fromAddress,
+    password,
+    fromAddress,
   };
   if (!config.username || !config.password) {
     throw new Error("Customer email SMTP is not configured for this brand");
@@ -408,11 +411,11 @@ async function sendAndLog(orderId: string, lang: "ar" | "en", event: Notificatio
         confirmation_email_status: "failed",
         confirmation_email_error: "No customer email on file",
       }).eq("id", orderId);
-      await auditNotification({ brandId: order.brand_id, orderId, event, channel: "customer", status: "skipped", provider: "zoho_smtp", error: "No customer email on file" });
+      await auditNotification({ brandId: order.brand_id, orderId, event, channel: "customer", status: "skipped", provider: "zoho_customer_email", error: "No customer email on file" });
     } else {
       try {
         await sendCustomerEmail({ order, settings, to, lang, event });
-        await auditNotification({ brandId: order.brand_id, orderId, event, channel: "customer", recipient: to, provider: "zoho_smtp", status: "sent" });
+        await auditNotification({ brandId: order.brand_id, orderId, event, channel: "customer", recipient: to, provider: "zoho_customer_email", status: "sent" });
         await admin.from("orders").update({
           confirmation_email_status: "sent",
           confirmation_email_sent_at: new Date().toISOString(),
@@ -420,7 +423,7 @@ async function sendAndLog(orderId: string, lang: "ar" | "en", event: Notificatio
         }).eq("id", orderId);
       } catch (error: any) {
         const message = String(error?.message ?? error ?? "Customer email failed").slice(0, 500);
-        await auditNotification({ brandId: order.brand_id, orderId, event, channel: "customer", recipient: to, provider: "zoho_smtp", status: "failed", error: message });
+        await auditNotification({ brandId: order.brand_id, orderId, event, channel: "customer", recipient: to, provider: "zoho_customer_email", status: "failed", error: message });
         await admin.from("orders").update({ confirmation_email_status: "failed", confirmation_email_error: message }).eq("id", orderId);
       }
     }
