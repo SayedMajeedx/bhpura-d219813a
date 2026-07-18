@@ -16,7 +16,7 @@ CREATE TABLE IF NOT EXISTS public.brand_notification_recipients (
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now(),
   CONSTRAINT brand_notification_recipients_email_format
-    CHECK (email ~ '^[^@[:space:]]+@[^@[:space:]]+\\.[^@[:space:]]+$')
+    CHECK (email ~ '^[^@[:space:]]+@[^@[:space:]]+[.][^@[:space:]]+$')
 );
 
 CREATE UNIQUE INDEX IF NOT EXISTS brand_notification_recipients_brand_email_unique
