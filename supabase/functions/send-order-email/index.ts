@@ -107,6 +107,49 @@ function eventCopy(
   return { title: "We received your order", body: "Your order was received. Payment will be confirmed after it is reviewed." };
 }
 
+function adminEventCopy(
+  event: NotificationEvent,
+  rejectionReason?: string | null,
+  paymentMethod?: string | null,
+) {
+  if (event === "order_placed") {
+    return {
+      title: "New Order Placed",
+      body: paymentMethod === "benefit"
+        ? "A new BenefitPay order has been placed and is waiting for payment validation."
+        : "A new order has been placed on your store."
+    };
+  }
+  if (event === "benefit_payment_approved") {
+    return {
+      title: "BenefitPay Receipt Approved",
+      body: "A BenefitPay receipt has been reviewed and approved."
+    };
+  }
+  if (event === "benefit_payment_rejected") {
+    return {
+      title: "BenefitPay Receipt Rejected",
+      body: `A BenefitPay receipt has been rejected. Reason: ${rejectionReason || "Not specified"}`
+    };
+  }
+  if (event === "order_cancelled") {
+    return {
+      title: "Order Cancelled",
+      body: "An order has been cancelled."
+    };
+  }
+  if (event === "order_delivered") {
+    return {
+      title: "Order Delivered",
+      body: "An order has been marked as delivered."
+    };
+  }
+  return {
+    title: "Order Updated",
+    body: "An order has been updated."
+  };
+}
+
 function fmt(n: number, currency: string, isAr: boolean) {
   try {
     return new Intl.NumberFormat(isAr ? "ar-BH" : "en-US", {
@@ -293,6 +336,17 @@ function subjectForEvent(event: NotificationEvent, invoiceNumber: unknown, brand
   return `${label[event]} #${invoiceNumber} - ${brandName}`;
 }
 
+function adminSubjectForEvent(event: NotificationEvent, invoiceNumber: unknown, brandName: string) {
+  const label: Record<NotificationEvent, string> = {
+    order_placed: "New Order",
+    benefit_payment_approved: "Payment Approved",
+    benefit_payment_rejected: "Payment Rejected",
+    order_cancelled: "Order Cancelled",
+    order_delivered: "Order Delivered",
+  };
+  return `[${label[event]}] #${invoiceNumber} - ${brandName}`;
+}
+
 async function sendCustomerEmail(input: {
   order: any;
   settings: any;
@@ -338,7 +392,7 @@ async function sendCustomerEmail(input: {
   try {
     await Promise.race([
       client.send({ from: `${senderName} <${config.fromAddress}>`, to: input.to, subject, html, content: "auto" }),
-      new Promise((_r, reject) => setTimeout(() => reject(new Error("SMTP timeout")), 3_000)),
+      new Promise((_r, reject) => setTimeout(() => reject(new Error("SMTP timeout")), 1_500)),
     ]);
   } finally {
     try { await client.close(); } catch { /* noop */ }
@@ -409,9 +463,8 @@ async function sendAdminNotification(input: {
     throw new Error(`SendPulse authorization failed (${tokenResponse.status})${details ? `: ${details}` : ""}`);
   }
   const accessToken = (await tokenResponse.json()).access_token;
-  const eventMessage = eventCopy(
+  const eventMessage = adminEventCopy(
     input.event,
-    input.lang === "ar",
     input.order.benefit_receipt_rejection_reason,
     input.order.payment_method,
   );
@@ -424,7 +477,7 @@ async function sendAdminNotification(input: {
     email: {
       html: `<h2>${escapeHtml(eventMessage.title)}</h2><p>${escapeHtml(eventMessage.body)}</p><p><strong>Order #${escapeHtml(input.order.invoice_number)}</strong></p><p><a href="${orderUrl}">Open order in Boutq</a></p>`,
       text: `${eventMessage.title}\n${eventMessage.body}\nOrder #${input.order.invoice_number}\n${orderUrl}`,
-      subject: subjectForEvent(input.event, input.order.invoice_number, brandName),
+      subject: adminSubjectForEvent(input.event, input.order.invoice_number, brandName),
       from: { name: brandName, email: fromAddress },
       to: recipients.map((recipient) => ({ email: recipient.email, ...(recipient.name ? { name: recipient.name } : {}) })),
     },
@@ -643,33 +696,26 @@ Deno.serve(async (req, info) => {
   const configurationError = await customerEmailConfigurationError(emailOrder.brand_id);
   if (waitForDelivery && configurationError) return json({ error: configurationError }, 422, corsHeaders);
 
-  // The dashboard's explicit Send/Resend action must only report success after
-  // Zoho has accepted the message. Checkout notifications remain asynchronous
-  // so placing an order is not held up by an SMTP handshake.
-  if (waitForDelivery) {
-    const result = await sendAndLog(orderId, lang, event);
-    if (result.customer.status !== "sent") {
-      return json({ error: result.customer.error ?? "Customer email could not be sent", customer: result.customer, admin: result.admin }, 422, corsHeaders);
-    }
-    return json({ ok: true, status: "sent", customer: result.customer, admin: result.admin }, 200, corsHeaders);
+  // Execute synchronously to ensure Zoho SMTP timeouts (optimized to 1.5s)
+  // are caught, completed, and logged successfully in the database, without
+  // ever having the serverless worker container suspend/terminate our process.
+  const result = await sendAndLog(orderId, lang, event);
+
+  // If the dashboard explicitly requested wait_for_delivery (Send/Resend) and it failed,
+  // report a 422 error on the admin panel.
+  if (waitForDelivery && result.customer.status !== "sent") {
+    return json({
+      error: result.customer.error ?? "Customer email could not be sent",
+      customer: result.customer,
+      admin: result.admin
+    }, 422, corsHeaders);
   }
 
-  // Kick off SMTP work in the background; respond immediately so the client
-  // isn't billed for the SMTP handshake latency.
-  const promise = sendAndLog(orderId, lang, event).catch((err) => {
-    console.error("[send-order-email] background execution failed", err);
-  });
-
-  // Support Supabase context.waitUntil, Vercel/Cloudflare runtime.waitUntil, or fallback to simple fire-and-forget
-  // deno-lint-ignore no-explicit-any
-  const ctx = info as any;
-  // deno-lint-ignore no-explicit-any
-  const runtime = (globalThis as any).EdgeRuntime;
-  if (ctx?.waitUntil) {
-    ctx.waitUntil(promise);
-  } else if (runtime?.waitUntil) {
-    runtime.waitUntil(promise);
-  }
-
-  return json({ ok: true, queued: true }, 202, corsHeaders);
+  // For storefront checkout, we always return a 200 OK so checkout is never blocked
+  // even if customer-side Zoho SMTP failed/timed out.
+  return json({
+    ok: true,
+    customer: result.customer,
+    admin: result.admin
+  }, 200, corsHeaders);
 });
