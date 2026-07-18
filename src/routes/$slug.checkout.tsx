@@ -249,6 +249,11 @@ function Checkout() {
       toast.error(t("الاسم والهاتف مطلوبان", "Name and phone are required"));
       return;
     }
+    const customerEmail = form.email.trim();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(customerEmail)) {
+      toast.error(t("يرجى إدخال بريد إلكتروني صحيح لتصلك تحديثات الطلب", "Enter a valid email address to receive order updates"));
+      return;
+    }
     if (fulfillment === "delivery") {
       if (!form.region || !form.block.trim() || !form.road.trim() || !form.house.trim()) {
         toast.error(t("يرجى تعبئة كامل عنوان التوصيل", "Please complete the delivery address"));
@@ -286,7 +291,7 @@ function Checkout() {
         p_customer: {
           name: form.name,
           phone: form.phone,
-          email: fulfillment === "digital" && digitalChannel === "email" ? digitalContact.trim() : form.email,
+          email: customerEmail,
           label: form.label,
           region: form.region,
           block: form.block,
@@ -329,12 +334,12 @@ function Checkout() {
       clearCart();
       toast.success(t("تم استلام طلبك!", "Order placed!"));
       // Fire-and-forget confirmation email (respects storefront language).
-      const confirmationEmail = fulfillment === "digital" && digitalChannel === "email" ? digitalContact.trim() : form.email;
+      const confirmationEmail = customerEmail;
       if (orderId && confirmationEmail) {
         const emailLang = (typeof document !== "undefined" && document.documentElement.dir === "rtl") ? "ar" : "en";
         // Fire-and-forget; server returns 202 immediately and sends in background.
         supabase.functions.invoke("send-order-email", {
-          body: { order_id: orderId, email_token: confirmationEmailToken, lang: emailLang },
+          body: { order_id: orderId, email_token: confirmationEmailToken, lang: emailLang, event: "order_placed" },
         }).catch((err) => console.warn("[send-order-email]", err));
       }
       navigate({
@@ -411,7 +416,7 @@ function Checkout() {
             </div>
             <div className="sm:col-span-2">
               <Label>{t("البريد الإلكتروني", "Email")}</Label>
-              <Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
+              <Input required type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
             </div>
           </div>
           <div>

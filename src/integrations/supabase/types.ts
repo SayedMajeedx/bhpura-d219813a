@@ -981,6 +981,7 @@ export type Database = {
           benefit_receipt_key: string | null
           benefit_receipt_rejected_at: string | null
           benefit_receipt_rejected_by: string | null
+          benefit_receipt_rejection_reason: string | null
           benefit_receipt_uploaded_at: string | null
           benefit_receipt_url: string | null
           benefit_verified_at: string | null
@@ -1031,6 +1032,7 @@ export type Database = {
           benefit_receipt_key?: string | null
           benefit_receipt_rejected_at?: string | null
           benefit_receipt_rejected_by?: string | null
+          benefit_receipt_rejection_reason?: string | null
           benefit_receipt_uploaded_at?: string | null
           benefit_receipt_url?: string | null
           benefit_verified_at?: string | null
@@ -1081,6 +1083,7 @@ export type Database = {
           benefit_receipt_key?: string | null
           benefit_receipt_rejected_at?: string | null
           benefit_receipt_rejected_by?: string | null
+          benefit_receipt_rejection_reason?: string | null
           benefit_receipt_uploaded_at?: string | null
           benefit_receipt_url?: string | null
           benefit_verified_at?: string | null

@@ -22,6 +22,10 @@ const FinalizeInput = z.object({
   objectKey: z.string().min(30).max(500),
 });
 const OrderInput = z.object({ orderId: z.string().uuid() });
+const RejectInput = z.object({
+  orderId: z.string().uuid(),
+  reason: z.string().trim().min(3).max(500),
+});
 
 export const createBenefitReceiptUpload = createServerFn({ method: "POST" })
   .inputValidator((raw: unknown) => CreateInput.parse(raw))
@@ -130,11 +134,11 @@ export const getBenefitReceiptViewUrl = createServerFn({ method: "POST" })
 
 export const rejectBenefitReceipt = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((raw: unknown) => OrderInput.parse(raw))
+  .inputValidator((raw: unknown) => RejectInput.parse(raw))
   .handler(async ({ data, context }) => {
     const { data: result, error } = await context.supabase.rpc(
       "reject_benefit_payment" as never,
-      { p_order_id: data.orderId } as never,
+      { p_order_id: data.orderId, p_reason: data.reason } as never,
     );
     if (error) throw error;
     const objectKey = (result as { object_key?: string } | null)?.object_key;

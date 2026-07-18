@@ -430,6 +430,8 @@ function OrderDetail() {
   const brandId = brand.id;
   const [approvingBenefit, setApprovingBenefit] = useState(false);
   const [rejectingBenefit, setRejectingBenefit] = useState(false);
+  const [rejectReasonOpen, setRejectReasonOpen] = useState(false);
+  const [rejectReason, setRejectReason] = useState("");
 
   const orderQ = useQuery({
     queryKey: ["order", id, isCourier ? "assigned-courier" : "office"],
@@ -551,7 +553,7 @@ function OrderDetail() {
       const { data: sessionData } = await supabase.auth.getSession();
       const accessToken = sessionData.session?.access_token;
       const { data: emailData, error: emailError } = await supabase.functions.invoke("send-order-email", {
-        body: { order_id: id, lang },
+        body: { order_id: id, lang, event: "benefit_payment_approved" },
         headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : undefined,
       });
       if (emailError || (emailData as any)?.error) {
@@ -571,24 +573,34 @@ function OrderDetail() {
   };
 
   const rejectBenefitPayment = async () => {
-    if (
-      !window.confirm(
-        lang === "ar"
-          ? "هل تريد رفض الإيصال؟ سيتم حذف صورة الإيصال الخاصة فوراً."
-          : "Reject this receipt? The private receipt image will be deleted immediately.",
-      )
-    ) {
+    const reason = rejectReason.trim();
+    if (reason.length < 3) {
+      toast.error(lang === "ar" ? "يرجى إدخال سبب الرفض ليظهر للعميل" : "Enter a rejection reason for the customer");
       return;
     }
     setRejectingBenefit(true);
     try {
-      await rejectBenefitReceipt({ data: { orderId: id } });
+      await rejectBenefitReceipt({ data: { orderId: id, reason } });
       toast.success(
         lang === "ar" ? "تم رفض الإيصال وحذف الصورة" : "Receipt rejected and image deleted",
       );
       await orderQ.refetch();
       qc.removeQueries({ queryKey: ["benefit-receipt-view", id] });
       qc.invalidateQueries({ queryKey: ["orders"] });
+      setRejectReasonOpen(false);
+      setRejectReason("");
+
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData.session?.access_token;
+      const { data: emailData, error: emailError } = await supabase.functions.invoke("send-order-email", {
+        body: { order_id: id, lang, event: "benefit_payment_rejected" },
+        headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : undefined,
+      });
+      if (emailError || (emailData as any)?.error) {
+        toast.warning(lang === "ar" ? "تم رفض الإيصال، لكن تعذر إرسال رسالة التحديث للعميل" : "Receipt rejected, but the customer update email could not be sent");
+      } else {
+        toast.success(lang === "ar" ? "تم إرسال سبب الرفض للعميل" : "Rejection update sent to customer");
+      }
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Unable to reject receipt");
     } finally {
@@ -2242,7 +2254,7 @@ function OrderDetail() {
                         <Button
                           type="button"
                           variant="destructive"
-                          onClick={rejectBenefitPayment}
+                          onClick={() => setRejectReasonOpen(true)}
                           disabled={approvingBenefit || rejectingBenefit}
                         >
                           {rejectingBenefit && <Loader2 className="me-2 h-4 w-4 animate-spin" />}
@@ -2250,6 +2262,52 @@ function OrderDetail() {
                         </Button>
                       </div>
                     )}
+                    <Dialog
+                      open={rejectReasonOpen}
+                      onOpenChange={(open) => {
+                        setRejectReasonOpen(open);
+                        if (!open) setRejectReason("");
+                      }}
+                    >
+                      <DialogContent className="max-w-md">
+                        <DialogHeader>
+                          <DialogTitle>{lang === "ar" ? "رفض إيصال بنفت باي" : "Reject BenefitPay receipt"}</DialogTitle>
+                          <DialogDescription>
+                            {lang === "ar"
+                              ? "سيُرسل سبب الرفض للعميل، وستُحذف صورة الإيصال الخاصة فوراً."
+                              : "The reason will be emailed to the customer and the private receipt image will be deleted immediately."}
+                          </DialogDescription>
+                        </DialogHeader>
+                        <div className="space-y-2">
+                          <Label htmlFor="benefit-rejection-reason">
+                            {lang === "ar" ? "سبب الرفض" : "Rejection reason"}
+                          </Label>
+                          <Textarea
+                            id="benefit-rejection-reason"
+                            value={rejectReason}
+                            onChange={(event) => setRejectReason(event.target.value)}
+                            maxLength={500}
+                            dir={lang === "ar" ? "rtl" : "ltr"}
+                            placeholder={lang === "ar" ? "مثال: الإيصال غير واضح أو لا يطابق مبلغ الطلب" : "For example: receipt is unclear or does not match the order amount"}
+                          />
+                          <p className="text-xs text-muted-foreground">{rejectReason.trim().length}/500</p>
+                        </div>
+                        <DialogFooter>
+                          <Button type="button" variant="outline" onClick={() => setRejectReasonOpen(false)}>
+                            {lang === "ar" ? "إلغاء" : "Cancel"}
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="destructive"
+                            onClick={rejectBenefitPayment}
+                            disabled={rejectingBenefit || rejectReason.trim().length < 3}
+                          >
+                            {rejectingBenefit && <Loader2 className="me-2 h-4 w-4 animate-spin" />}
+                            {lang === "ar" ? "رفض الإيصال وإرسال السبب" : "Reject and notify customer"}
+                          </Button>
+                        </DialogFooter>
+                      </DialogContent>
+                    </Dialog>
                   </div>
                 )}
                 <div className="rounded-lg border bg-muted/20 p-3 space-y-2">

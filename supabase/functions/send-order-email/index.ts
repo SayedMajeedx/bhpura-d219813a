@@ -25,7 +25,19 @@ function corsHeadersFor(req: Request) {
   };
 }
 
-type Body = { order_id?: string; email_token?: string; lang?: "ar" | "en" };
+type NotificationEvent =
+  | "order_placed"
+  | "benefit_payment_approved"
+  | "benefit_payment_rejected"
+  | "order_cancelled"
+  | "order_delivered";
+
+type Body = {
+  order_id?: string;
+  email_token?: string;
+  lang?: "ar" | "en";
+  event?: NotificationEvent;
+};
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -45,6 +57,50 @@ function escapeHtml(s: unknown) {
   return String(s ?? "").replace(/[&<>"']/g, (c) =>
     ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]!),
   );
+}
+
+type SmtpConfig = {
+  host: string;
+  port: number;
+  username: string;
+  password: string;
+  fromAddress: string;
+};
+
+function parseSmtpHost(value: string | null | undefined) {
+  const raw = String(value ?? "").trim().replace(/^smtps?:\/\//i, "");
+  const [host, port] = raw.split(":");
+  return { host: host || SMTP_HOST, port: Number(port) || SMTP_PORT };
+}
+
+function eventCopy(
+  event: NotificationEvent,
+  isAr: boolean,
+  rejectionReason?: string | null,
+  paymentMethod?: string | null,
+) {
+  if (event === "order_placed") {
+    if (isAr) {
+      return paymentMethod === "benefit"
+        ? { title: "تم استلام طلبك", body: "تم استلام طلبك. إيصال بنفت باي قيد التحقق." }
+        : { title: "تم استلام طلبك", body: "تم استلام طلبك بنجاح. سنرسل لك تحديثات الطلب عبر البريد الإلكتروني." };
+    }
+    return paymentMethod === "benefit"
+      ? { title: "We received your order", body: "We received your BenefitPay order. Your payment is pending validation." }
+      : { title: "We received your order", body: "We received your order. We will email you as it progresses." };
+  }
+  if (isAr) {
+    if (event === "benefit_payment_approved") return { title: "تم تأكيد دفعتك", body: "تمت مراجعة إيصال بنفت باي وتأكيد الدفع بنجاح." };
+    if (event === "benefit_payment_rejected") return { title: "تعذر قبول دفعتك", body: `سبب الرفض: ${rejectionReason || "يرجى التواصل مع المتجر."}` };
+    if (event === "order_cancelled") return { title: "تم إلغاء طلبك", body: "تم إلغاء طلبك. يرجى التواصل مع المتجر إذا كان لديك أي استفسار." };
+    if (event === "order_delivered") return { title: "تم تسليم طلبك", body: "تم تسليم طلبك بنجاح. شكرًا لتسوقك معنا." };
+    if (event === "order_placed") return { title: "تم استلام طلبك", body: "تم استلام طلبك. سيتم التحقق من الدفع قبل تأكيده." };
+  }
+  if (event === "benefit_payment_approved") return { title: "Your payment is confirmed", body: "Your BenefitPay receipt was reviewed and your payment has been approved." };
+  if (event === "benefit_payment_rejected") return { title: "Your payment needs attention", body: `Reason: ${rejectionReason || "Please contact the store."}` };
+  if (event === "order_cancelled") return { title: "Your order was cancelled", body: "Your order has been cancelled. Please contact the store if you need help." };
+  if (event === "order_delivered") return { title: "Your order was delivered", body: "Your order has been delivered. Thank you for shopping with us." };
+  return { title: "We received your order", body: "Your order was received. Payment will be confirmed after it is reviewed." };
 }
 
 function fmt(n: number, currency: string, isAr: boolean) {
@@ -83,7 +139,14 @@ function paymentStatusLabel(
   return status || "Not specified";
 }
 
-function renderHtml(o: any, items: any[], brandName: string, primary: string, isAr: boolean) {
+function renderHtml(
+  o: any,
+  items: any[],
+  brandName: string,
+  primary: string,
+  isAr: boolean,
+  event: NotificationEvent,
+) {
   const dir = isAr ? "rtl" : "ltr";
   const L = isAr
     ? { greet: "شكراً لطلبك", intro: "تم استلام طلبك بنجاح. تفاصيله أدناه:", inv: "رقم الفاتورة", date: "التاريخ",
@@ -106,6 +169,7 @@ function renderHtml(o: any, items: any[], brandName: string, primary: string, is
   const total = Number(o.total || 0);
   const remaining = Math.max(total - advancePaid, 0);
   const paymentStatus = paymentStatusLabel(o.payment_status, isAr, o.payment_method, o.status);
+  const eventMessage = eventCopy(event, isAr, o.benefit_receipt_rejection_reason, o.payment_method);
   const promoCode = String(o.promo_code ?? "").trim();
   const paymentMethodLabel = isAr ? "طريقة الدفع" : "Payment method";
   const fulfillmentLabel = isAr ? "طريقة الاستلام" : "Fulfillment";
@@ -137,6 +201,7 @@ function renderHtml(o: any, items: any[], brandName: string, primary: string, is
 <div dir="${dir}" style="max-width:640px;margin:0 auto;background:#fff;direction:${dir};text-align:${isAr ? "right" : "left"}">
 <div style="padding:24px 28px;background:${primary};color:#fff"><h1 style="margin:0;font-size:22px">${escapeHtml(brandName)}</h1><p style="margin:6px 0 0;opacity:.9">${L.greet}</p></div>
 <div style="padding:24px 28px">
+<div style="margin:0 0 18px;padding:14px 16px;border-radius:10px;background:#f7f5f4;border:1px solid #eee;direction:${dir};text-align:${isAr ? "right" : "left"}"><strong>${escapeHtml(eventMessage.title)}</strong><div style="margin-top:5px;color:#444;line-height:1.55">${escapeHtml(eventMessage.body)}</div></div>
 <p style="margin:0 0 16px">${L.intro}</p>
 <p style="margin:0 0 4px"><strong>${L.inv}:</strong> ${escapeHtml(o.invoice_number)}</p>
 <p style="margin:0 0 16px"><strong>${L.date}:</strong> ${new Date(o.order_date).toLocaleDateString(isAr ? "ar-BH" : "en-US")}</p>
@@ -164,7 +229,153 @@ ${advancePaid > 0 ? `<tr><td style="padding:8px;font-weight:700">${L.remaining}<
 </div></body></html>`;
 }
 
-async function sendAndLog(orderId: string, lang: "ar" | "en") {
+async function auditNotification(input: {
+  brandId: string;
+  orderId: string;
+  event: NotificationEvent;
+  channel: "customer" | "admin";
+  recipient?: string | null;
+  provider?: string | null;
+  status: "sent" | "failed" | "skipped";
+  error?: string | null;
+}) {
+  try {
+    await admin.from("brand_email_notifications").insert({
+      brand_id: input.brandId,
+      order_id: input.orderId,
+      event_type: input.event,
+      channel: input.channel,
+      recipient: input.recipient ?? null,
+      provider: input.provider ?? null,
+      status: input.status,
+      error_message: input.error?.slice(0, 500) ?? null,
+    });
+  } catch (error) {
+    // The email itself must not fail because the audit migration was not yet applied.
+    console.warn("[send-order-email] audit unavailable", String(error));
+  }
+}
+
+async function getIntegration(brandId: string, provider: string) {
+  const { data, error } = await admin
+    .from("integration_credentials")
+    .select("base_url, api_key, webhook_secret, is_active")
+    .eq("brand_id", brandId)
+    .eq("provider", provider)
+    .maybeSingle();
+  if (error) console.warn(`[send-order-email] ${provider} lookup failed`, error.message);
+  return data?.is_active ? data : null;
+}
+
+async function sendCustomerEmail(input: {
+  order: any;
+  settings: any;
+  to: string;
+  lang: "ar" | "en";
+  event: NotificationEvent;
+}) {
+  const integration = await getIntegration(input.order.brand_id, "zoho_customer_email");
+  const endpoint = parseSmtpHost(integration?.base_url);
+  const config: SmtpConfig = {
+    host: endpoint.host,
+    port: endpoint.port,
+    username: integration?.api_key?.trim() || SMTP_USER,
+    password: integration?.webhook_secret?.trim() || SMTP_PASS,
+    fromAddress: integration?.api_key?.trim() || FROM_ADDRESS,
+  };
+  if (!config.username || !config.password) {
+    throw new Error("Customer email SMTP is not configured for this brand");
+  }
+
+  const brandName = input.settings?.business_name ?? "Boutq";
+  const senderName = input.settings?.email_sender_name?.trim() || brandName;
+  const primary = input.settings?.primary_color ?? "#111827";
+  const subject = `Order update #${input.order.invoice_number}`;
+  const html = renderHtml(input.order, input.order.order_items ?? [], brandName, primary, input.lang === "ar", input.event);
+  const client = new SMTPClient({
+    connection: {
+      hostname: config.host,
+      port: config.port,
+      tls: true,
+      auth: { username: config.username, password: config.password },
+    },
+    pool: false,
+    debug: { log: false, allowUnsecure: false, encodeLB: false, noStartTLS: true },
+  });
+  try {
+    await Promise.race([
+      client.send({ from: `${senderName} <${config.fromAddress}>`, to: input.to, subject, html, content: "auto" }),
+      new Promise((_r, reject) => setTimeout(() => reject(new Error("SMTP timeout")), 20_000)),
+    ]);
+  } finally {
+    try { await client.close(); } catch { /* noop */ }
+  }
+}
+
+async function sendAdminNotification(input: {
+  order: any;
+  settings: any;
+  event: NotificationEvent;
+  lang: "ar" | "en";
+}) {
+  const integration = await getIntegration(input.order.brand_id, "sendpulse_admin");
+  if (!integration) {
+    await auditNotification({ brandId: input.order.brand_id, orderId: input.order.id, event: input.event, channel: "admin", status: "skipped", provider: "sendpulse" });
+    return;
+  }
+  const { data: profiles } = await admin.from("profiles")
+    .select("email, name")
+    .eq("brand_id", input.order.brand_id)
+    .eq("status", "active")
+    .in("role", ["admin", "brand_admin"]);
+  const recipients = [...new Set((profiles ?? []).map((profile: any) => String(profile.email ?? "").trim()).filter(Boolean))];
+  if (!recipients.length) {
+    await auditNotification({ brandId: input.order.brand_id, orderId: input.order.id, event: input.event, channel: "admin", status: "skipped", provider: "sendpulse" });
+    return;
+  }
+  const clientId = integration.api_key?.trim();
+  const clientSecret = integration.webhook_secret?.trim();
+  const fromAddress = integration.base_url?.trim();
+  if (!clientId || !clientSecret || !fromAddress) throw new Error("SendPulse credentials are incomplete");
+  const tokenResponse = await fetch("https://api.sendpulse.com/oauth/access_token", {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({ grant_type: "client_credentials", client_id: clientId, client_secret: clientSecret }),
+  });
+  if (!tokenResponse.ok) throw new Error(`SendPulse authorization failed (${tokenResponse.status})`);
+  const accessToken = (await tokenResponse.json()).access_token;
+  const eventMessage = eventCopy(
+    input.event,
+    input.lang === "ar",
+    input.order.benefit_receipt_rejection_reason,
+    input.order.payment_method,
+  );
+  const brandName = input.settings?.business_name ?? "Boutq";
+  const brandSlug = String(input.order.brand?.slug ?? "").trim();
+  const orderUrl = brandSlug
+    ? `https://boutq.store/admin/b/${encodeURIComponent(brandSlug)}/orders/${input.order.id}`
+    : "https://boutq.store/admin";
+  const payload = {
+    email: {
+      html: `<h2>${escapeHtml(eventMessage.title)}</h2><p>${escapeHtml(eventMessage.body)}</p><p><strong>Order #${escapeHtml(input.order.invoice_number)}</strong></p><p><a href="${orderUrl}">Open order in Boutq</a></p>`,
+      text: `${eventMessage.title}\n${eventMessage.body}\nOrder #${input.order.invoice_number}\n${orderUrl}`,
+      subject: `Order update #${input.order.invoice_number}`,
+      from: { name: brandName, email: fromAddress },
+      to: recipients.map((email) => ({ email })),
+    },
+  };
+  const sendResponse = await fetch("https://api.sendpulse.com/smtp/emails", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  if (!sendResponse.ok) throw new Error(`SendPulse delivery failed (${sendResponse.status})`);
+  await Promise.all(recipients.map((recipient) => auditNotification({
+    brandId: input.order.brand_id, orderId: input.order.id, event: input.event, channel: "admin", recipient, provider: "sendpulse", status: "sent",
+  })));
+}
+
+async function sendAndLog(orderId: string, lang: "ar" | "en", event: NotificationEvent) {
   try {
     // Query the order and its direct relationships only. business_settings is
     // linked to brands, not orders, so fetch it separately by order.brand_id.
@@ -173,6 +384,8 @@ async function sendAndLog(orderId: string, lang: "ar" | "en") {
       .select(`
         id, brand_id, invoice_number, order_date, status, subtotal, discount, promo_code, tax_amount, tax_rate,
         shipping, total, currency, customer_id, advance_paid, payment_status, payment_method, fulfillment_method,
+        benefit_receipt_rejection_reason,
+        brand:brands ( slug ),
         order_items ( description, quantity, unit_price, line_total ),
         customer:customers ( email, name )
       `)
@@ -195,44 +408,28 @@ async function sendAndLog(orderId: string, lang: "ar" | "en") {
         confirmation_email_status: "failed",
         confirmation_email_error: "No customer email on file",
       }).eq("id", orderId);
-      return;
+      await auditNotification({ brandId: order.brand_id, orderId, event, channel: "customer", status: "skipped", provider: "zoho_smtp", error: "No customer email on file" });
+    } else {
+      try {
+        await sendCustomerEmail({ order, settings, to, lang, event });
+        await auditNotification({ brandId: order.brand_id, orderId, event, channel: "customer", recipient: to, provider: "zoho_smtp", status: "sent" });
+        await admin.from("orders").update({
+          confirmation_email_status: "sent",
+          confirmation_email_sent_at: new Date().toISOString(),
+          confirmation_email_error: null,
+        }).eq("id", orderId);
+      } catch (error: any) {
+        const message = String(error?.message ?? error ?? "Customer email failed").slice(0, 500);
+        await auditNotification({ brandId: order.brand_id, orderId, event, channel: "customer", recipient: to, provider: "zoho_smtp", status: "failed", error: message });
+        await admin.from("orders").update({ confirmation_email_status: "failed", confirmation_email_error: message }).eq("id", orderId);
+      }
     }
-
-    const isAr = lang === "ar";
-    const brandName = settings?.business_name ?? "Boutq";
-    const senderName = settings?.email_sender_name?.trim() || brandName;
-    const primary = settings?.primary_color ?? "#111827";
-    // Keep the subject strictly ASCII for consistent rendering in Outlook and
-    // older mail clients. The message body remains fully localized.
-    const subject = `Order confirmation #${order.invoice_number}`;
-    const html = renderHtml(order, order.order_items ?? [], brandName, primary, isAr);
-
-    const client = new SMTPClient({
-      connection: {
-        hostname: SMTP_HOST,
-        port: SMTP_PORT,
-        tls: true,
-        auth: { username: SMTP_USER, password: SMTP_PASS },
-      },
-      pool: false,
-      debug: { log: false, allowUnsecure: false, encodeLB: false, noStartTLS: true },
-    });
 
     try {
-      // Hard 20s timeout to guarantee we never wedge the runtime
-      await Promise.race([
-        client.send({ from: `${senderName} <${FROM_ADDRESS}>`, to, subject, html, content: "auto" }),
-        new Promise((_r, reject) => setTimeout(() => reject(new Error("SMTP timeout")), 20_000)),
-      ]);
-    } finally {
-      try { await client.close(); } catch { /* noop */ }
+      await sendAdminNotification({ order, settings, event, lang });
+    } catch (error: any) {
+      await auditNotification({ brandId: order.brand_id, orderId, event, channel: "admin", provider: "sendpulse", status: "failed", error: String(error?.message ?? error) });
     }
-
-    await admin.from("orders").update({
-      confirmation_email_status: "sent",
-      confirmation_email_sent_at: new Date().toISOString(),
-      confirmation_email_error: null,
-    }).eq("id", orderId);
   } catch (err: any) {
     const msg = String(err?.message ?? err ?? "Unknown error").slice(0, 500);
     console.error("[send-order-email] failed", msg);
@@ -267,8 +464,12 @@ Deno.serve(async (req) => {
   const orderId = body.order_id;
   if (!orderId) return json({ error: "order_id required" }, 400, corsHeaders);
   const lang: "ar" | "en" = body.lang === "ar" ? "ar" : "en";
+  const event: NotificationEvent = ["order_placed", "benefit_payment_approved", "benefit_payment_rejected", "order_cancelled", "order_delivered"].includes(body.event ?? "")
+    ? body.event as NotificationEvent
+    : "order_placed";
 
   let authorized = secretOk;
+  let privileged = secretOk;
   const token = authz.toLowerCase().startsWith("bearer ") ? authz.slice(7).trim() : "";
   if (!authorized && token) {
     const { data: userData } = await admin.auth.getUser(token);
@@ -284,6 +485,7 @@ Deno.serve(async (req) => {
         ["admin", "brand_admin", "super_admin"].includes(profile.role) &&
         (profile.role === "super_admin" || profile.brand_id === order?.brand_id);
       authorized = customerOwnsOrder || isActiveAdmin;
+      privileged = isActiveAdmin;
     }
   }
 
@@ -301,19 +503,18 @@ Deno.serve(async (req) => {
     authorized = !!tokenMatch;
   }
   if (!authorized) return json({ error: "Forbidden" }, 403, corsHeaders);
-
-  if (!SMTP_USER || !SMTP_PASS) return json({ error: "SMTP credentials not configured" }, 500, corsHeaders);
+  if (event !== "order_placed" && !privileged) return json({ error: "Forbidden" }, 403, corsHeaders);
 
   // Kick off SMTP work in the background; respond immediately so the client
   // isn't billed for the SMTP handshake latency.
   // deno-lint-ignore no-explicit-any
   const runtime = (globalThis as any).EdgeRuntime;
   if (runtime?.waitUntil) {
-    runtime.waitUntil(sendAndLog(orderId, lang));
+    runtime.waitUntil(sendAndLog(orderId, lang, event));
     return json({ ok: true, queued: true }, 202, corsHeaders);
   }
 
   // Fallback: run inline (local dev / non-Supabase runtime)
-  await sendAndLog(orderId, lang);
+  await sendAndLog(orderId, lang, event);
   return json({ ok: true }, 200, corsHeaders);
 });

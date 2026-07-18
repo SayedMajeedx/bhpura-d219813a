@@ -39,6 +39,8 @@ const PROVIDER_PRESETS = [
   { value: "stripe", label: "Stripe" },
   { value: "tap", label: "Tap Payments" },
   { value: "benefit", label: "Benefit Pay" },
+  { value: "zoho_customer_email", label: "Zoho Customer Email (SMTP)" },
+  { value: "sendpulse_admin", label: "SendPulse Admin Notifications" },
   { value: "custom", label: "Custom" },
 ];
 
@@ -262,6 +264,41 @@ function IntegrationDialog({ brandId, row, onSaved }: { brandId: string; row: Ro
     });
   }, [row]);
   const providerValue = useMemo(() => form.provider === "custom" ? form.provider_custom.trim() : form.provider, [form.provider, form.provider_custom]);
+  const isZohoCustomerEmail = providerValue === "zoho_customer_email";
+  const isSendPulseAdmin = providerValue === "sendpulse_admin";
+  const fieldLabels = isZohoCustomerEmail
+    ? {
+        base: isAr ? "خادم SMTP" : "SMTP host",
+        api: isAr ? "بريد الإرسال من زوهو" : "Zoho sending email",
+        secret: isAr ? "كلمة مرور تطبيق زوهو" : "Zoho app password",
+        basePlaceholder: "smtp.zoho.com:465",
+        apiPlaceholder: "orders@yourbrand.com",
+        secretPlaceholder: "Zoho app password",
+        help: isAr
+          ? "يُستخدم لإرسال رسائل الطلبات للعملاء. أنشئ كلمة مرور تطبيق من زوهو ولا تستخدم كلمة مرور بريدك العادية."
+          : "Used for customer order emails. Create a Zoho app password; never use your normal mailbox password.",
+      }
+    : isSendPulseAdmin
+      ? {
+          base: isAr ? "بريد المُرسل المعتمد" : "Verified sender email",
+          api: isAr ? "معرّف عميل SendPulse" : "SendPulse client ID",
+          secret: isAr ? "سر عميل SendPulse" : "SendPulse client secret",
+          basePlaceholder: "notifications@yourbrand.com",
+          apiPlaceholder: "SendPulse client ID",
+          secretPlaceholder: "SendPulse client secret",
+          help: isAr
+            ? "يُستخدم لإرسال تفاصيل الطلب الداخلية إلى مديري هذه العلامة التجارية فقط."
+            : "Used only for internal notifications sent to this brand's active administrators.",
+        }
+      : {
+          base: t("integrations.baseUrl"),
+          api: t("integrations.apiKey"),
+          secret: t("integrations.webhookSecret"),
+          basePlaceholder: "https://api.provider.com",
+          apiPlaceholder: "sk_live_…",
+          secretPlaceholder: "whsec_…",
+          help: null,
+        };
 
   const save = async () => {
     if (!providerValue) return toast.error(isAr ? "اسم الخدمة مطلوب" : "Provider is required");
@@ -301,17 +338,18 @@ function IntegrationDialog({ brandId, row, onSaved }: { brandId: string; row: Ro
               value={form.provider_custom} onChange={(e) => setForm({ ...form, provider_custom: e.target.value })} />
           )}
         </div>
+        {fieldLabels.help && <p className="rounded-md border border-primary/20 bg-primary/5 px-3 py-2 text-sm text-muted-foreground">{fieldLabels.help}</p>}
         <div>
-          <Label>{t("integrations.baseUrl")}</Label>
-          <Input value={form.base_url} onChange={(e) => setForm({ ...form, base_url: e.target.value })} placeholder="https://api.provider.com" />
+          <Label>{fieldLabels.base}</Label>
+          <Input value={form.base_url} onChange={(e) => setForm({ ...form, base_url: e.target.value })} placeholder={fieldLabels.basePlaceholder} />
         </div>
         <div>
-          <Label>{t("integrations.apiKey")}</Label>
-          <Input type="password" value={form.api_key} onChange={(e) => setForm({ ...form, api_key: e.target.value })} placeholder={row?.has_api_key ? (isAr ? "اتركه فارغاً للاحتفاظ بالمفتاح الحالي" : "Leave blank to keep the current key") : "sk_live_…"} />
+          <Label>{fieldLabels.api}</Label>
+          <Input type="password" value={form.api_key} onChange={(e) => setForm({ ...form, api_key: e.target.value })} placeholder={row?.has_api_key ? (isAr ? "اتركه فارغاً للاحتفاظ بالمفتاح الحالي" : "Leave blank to keep the current key") : fieldLabels.apiPlaceholder} />
         </div>
         <div>
-          <Label>{t("integrations.webhookSecret")}</Label>
-          <Input type="password" value={form.webhook_secret} onChange={(e) => setForm({ ...form, webhook_secret: e.target.value })} placeholder={row?.has_webhook_secret ? (isAr ? "اتركه فارغاً للاحتفاظ بالسر الحالي" : "Leave blank to keep the current secret") : "whsec_…"} />
+          <Label>{fieldLabels.secret}</Label>
+          <Input type="password" value={form.webhook_secret} onChange={(e) => setForm({ ...form, webhook_secret: e.target.value })} placeholder={row?.has_webhook_secret ? (isAr ? "اتركه فارغاً للاحتفاظ بالسر الحالي" : "Leave blank to keep the current secret") : fieldLabels.secretPlaceholder} />
         </div>
         <div>
           <Label>{t("integrations.notes")}</Label>
