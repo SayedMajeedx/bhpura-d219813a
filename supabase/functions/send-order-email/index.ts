@@ -338,7 +338,7 @@ async function sendCustomerEmail(input: {
   try {
     await Promise.race([
       client.send({ from: `${senderName} <${config.fromAddress}>`, to: input.to, subject, html, content: "auto" }),
-      new Promise((_r, reject) => setTimeout(() => reject(new Error("SMTP timeout")), 20_000)),
+      new Promise((_r, reject) => setTimeout(() => reject(new Error("SMTP timeout")), 3_000)),
     ]);
   } finally {
     try { await client.close(); } catch { /* noop */ }
@@ -489,52 +489,65 @@ async function sendAndLog(
 
     const to = (order.customer?.email ?? "").trim();
     let customerResult: CustomerEmailDeliveryResult;
-    if (!to) {
-      const error = "No customer email on file";
-      try {
-        await admin.from("orders").update({
-          confirmation_email_status: "failed",
-          confirmation_email_error: error,
-        }).eq("id", orderId);
-      } catch (ue) {
-        console.warn("[send-order-email] failed to update order status", ue);
-      }
-      await auditNotification({ brandId: order.brand_id, orderId, event, channel: "customer", status: "skipped", provider: "zoho_customer_email", error });
-      customerResult = { status: "skipped", error };
-    } else {
-      try {
-        await sendCustomerEmail({ order, settings, to, lang, event });
-        await auditNotification({ brandId: order.brand_id, orderId, event, channel: "customer", recipient: to, provider: "zoho_customer_email", status: "sent" });
+    let adminResult: AdminEmailDeliveryResult;
+
+    // Define customer delivery routine
+    const customerPromise = (async (): Promise<CustomerEmailDeliveryResult> => {
+      if (!to) {
+        const error = "No customer email on file";
         try {
           await admin.from("orders").update({
-            confirmation_email_status: "sent",
-            confirmation_email_sent_at: new Date().toISOString(),
-            confirmation_email_error: null,
+            confirmation_email_status: "failed",
+            confirmation_email_error: error,
           }).eq("id", orderId);
         } catch (ue) {
           console.warn("[send-order-email] failed to update order status", ue);
         }
-        customerResult = { status: "sent" };
-      } catch (error: any) {
-        const message = String(error?.message ?? error ?? "Customer email failed").slice(0, 500);
-        await auditNotification({ brandId: order.brand_id, orderId, event, channel: "customer", recipient: to, provider: "zoho_customer_email", status: "failed", error: message });
+        await auditNotification({ brandId: order.brand_id, orderId, event, channel: "customer", status: "skipped", provider: "zoho_customer_email", error });
+        return { status: "skipped", error };
+      } else {
         try {
-          await admin.from("orders").update({ confirmation_email_status: "failed", confirmation_email_error: message }).eq("id", orderId);
-        } catch (ue) {
-          console.warn("[send-order-email] failed to update order status", ue);
+          await sendCustomerEmail({ order, settings, to, lang, event });
+          await auditNotification({ brandId: order.brand_id, orderId, event, channel: "customer", recipient: to, provider: "zoho_customer_email", status: "sent" });
+          try {
+            await admin.from("orders").update({
+              confirmation_email_status: "sent",
+              confirmation_email_sent_at: new Date().toISOString(),
+              confirmation_email_error: null,
+            }).eq("id", orderId);
+          } catch (ue) {
+            console.warn("[send-order-email] failed to update order status", ue);
+          }
+          return { status: "sent" };
+        } catch (error: any) {
+          const message = String(error?.message ?? error ?? "Customer email failed").slice(0, 500);
+          await auditNotification({ brandId: order.brand_id, orderId, event, channel: "customer", recipient: to, provider: "zoho_customer_email", status: "failed", error: message });
+          try {
+            await admin.from("orders").update({ confirmation_email_status: "failed", confirmation_email_error: message }).eq("id", orderId);
+          } catch (ue) {
+            console.warn("[send-order-email] failed to update order status", ue);
+          }
+          return { status: "failed", error: message };
         }
-        customerResult = { status: "failed", error: message };
       }
-    }
+    })();
 
-    let adminResult: AdminEmailDeliveryResult;
-    try {
-      adminResult = await sendAdminNotification({ order, settings, event, lang });
-    } catch (error: any) {
-      const message = String(error?.message ?? error ?? "Admin notification failed").slice(0, 500);
-      await auditNotification({ brandId: order.brand_id, orderId, event, channel: "admin", provider: "sendpulse", status: "failed", error: message });
-      adminResult = { status: "failed", error: message };
-    }
+    // Define admin delivery routine
+    const adminPromise = (async (): Promise<AdminEmailDeliveryResult> => {
+      try {
+        return await sendAdminNotification({ order, settings, event, lang });
+      } catch (error: any) {
+        const message = String(error?.message ?? error ?? "Admin notification failed").slice(0, 500);
+        await auditNotification({ brandId: order.brand_id, orderId, event, channel: "admin", provider: "sendpulse", status: "failed", error: message });
+        return { status: "failed", error: message };
+      }
+    })();
+
+    // Run both concurrently in parallel
+    const [cRes, aRes] = await Promise.all([customerPromise, adminPromise]);
+    customerResult = cRes;
+    adminResult = aRes;
+
     return { customer: customerResult, admin: adminResult };
   } catch (err: any) {
     const msg = String(err?.message ?? err ?? "Unknown error").slice(0, 500);
@@ -558,7 +571,7 @@ function json(data: unknown, status: number, corsHeaders: Record<string, string>
   });
 }
 
-Deno.serve(async (req) => {
+Deno.serve(async (req, info) => {
   const corsHeaders = corsHeadersFor(req);
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
   if (req.method !== "POST") return json({ error: "Method not allowed" }, 405, corsHeaders);
@@ -643,17 +656,20 @@ Deno.serve(async (req) => {
 
   // Kick off SMTP work in the background; respond immediately so the client
   // isn't billed for the SMTP handshake latency.
+  const promise = sendAndLog(orderId, lang, event).catch((err) => {
+    console.error("[send-order-email] background execution failed", err);
+  });
+
+  // Support Supabase context.waitUntil, Vercel/Cloudflare runtime.waitUntil, or fallback to simple fire-and-forget
+  // deno-lint-ignore no-explicit-any
+  const ctx = info as any;
   // deno-lint-ignore no-explicit-any
   const runtime = (globalThis as any).EdgeRuntime;
-  if (runtime?.waitUntil) {
-    runtime.waitUntil(sendAndLog(orderId, lang, event));
-    return json({ ok: true, queued: true }, 202, corsHeaders);
+  if (ctx?.waitUntil) {
+    ctx.waitUntil(promise);
+  } else if (runtime?.waitUntil) {
+    runtime.waitUntil(promise);
   }
 
-  // Fallback: run inline (local dev / non-Supabase runtime)
-  const result = await sendAndLog(orderId, lang, event);
-  if (result.customer.status !== "sent") {
-    return json({ error: result.customer.error ?? "Customer email could not be sent", customer: result.customer, admin: result.admin }, 422, corsHeaders);
-  }
-  return json({ ok: true, status: "sent", customer: result.customer, admin: result.admin }, 200, corsHeaders);
+  return json({ ok: true, queued: true }, 202, corsHeaders);
 });
