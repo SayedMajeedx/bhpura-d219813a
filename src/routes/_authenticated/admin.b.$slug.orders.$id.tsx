@@ -3229,12 +3229,12 @@ function ResendConfirmationEmailButton({
       const { data: sessionData } = await supabase.auth.getSession();
       const accessToken = sessionData.session?.access_token;
       const { data, error } = await supabase.functions.invoke("send-order-email", {
-        body: { order_id: order.id, lang },
+      body: { order_id: order.id, lang, wait_for_delivery: true },
         headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : undefined,
       });
       if (error) throw error;
       if ((data as any)?.error) throw new Error(String((data as any).error));
-      toast.success(lang === "ar" ? "تمت جدولة بريد التأكيد للإرسال" : "Confirmation email queued for delivery");
+      toast.success(lang === "ar" ? "تم إرسال بريد التأكيد" : "Confirmation email sent");
     } catch (e: any) {
       toast.error(e?.message ?? (lang === "ar" ? "فشل الإرسال" : "Failed to send"));
     } finally {

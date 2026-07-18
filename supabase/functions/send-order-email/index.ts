@@ -386,7 +386,16 @@ async function sendAdminNotification(input: {
   })));
 }
 
-async function sendAndLog(orderId: string, lang: "ar" | "en", event: NotificationEvent) {
+type CustomerEmailDeliveryResult = {
+  status: "sent" | "failed" | "skipped";
+  error?: string;
+};
+
+async function sendAndLog(
+  orderId: string,
+  lang: "ar" | "en",
+  event: NotificationEvent,
+): Promise<CustomerEmailDeliveryResult> {
   try {
     // Query the order and its direct relationships only. business_settings is
     // linked to brands, not orders, so fetch it separately by order.brand_id.
@@ -414,12 +423,15 @@ async function sendAndLog(orderId: string, lang: "ar" | "en", event: Notificatio
     if (se) console.warn("[send-order-email] settings lookup failed", se.message);
 
     const to = (order.customer?.email ?? "").trim();
+    let customerResult: CustomerEmailDeliveryResult;
     if (!to) {
+      const error = "No customer email on file";
       await admin.from("orders").update({
         confirmation_email_status: "failed",
-        confirmation_email_error: "No customer email on file",
+        confirmation_email_error: error,
       }).eq("id", orderId);
-      await auditNotification({ brandId: order.brand_id, orderId, event, channel: "customer", status: "skipped", provider: "zoho_customer_email", error: "No customer email on file" });
+      await auditNotification({ brandId: order.brand_id, orderId, event, channel: "customer", status: "skipped", provider: "zoho_customer_email", error });
+      customerResult = { status: "skipped", error };
     } else {
       try {
         await sendCustomerEmail({ order, settings, to, lang, event });
@@ -429,10 +441,12 @@ async function sendAndLog(orderId: string, lang: "ar" | "en", event: Notificatio
           confirmation_email_sent_at: new Date().toISOString(),
           confirmation_email_error: null,
         }).eq("id", orderId);
+        customerResult = { status: "sent" };
       } catch (error: any) {
         const message = String(error?.message ?? error ?? "Customer email failed").slice(0, 500);
         await auditNotification({ brandId: order.brand_id, orderId, event, channel: "customer", recipient: to, provider: "zoho_customer_email", status: "failed", error: message });
         await admin.from("orders").update({ confirmation_email_status: "failed", confirmation_email_error: message }).eq("id", orderId);
+        customerResult = { status: "failed", error: message };
       }
     }
 
@@ -441,6 +455,7 @@ async function sendAndLog(orderId: string, lang: "ar" | "en", event: Notificatio
     } catch (error: any) {
       await auditNotification({ brandId: order.brand_id, orderId, event, channel: "admin", provider: "sendpulse", status: "failed", error: String(error?.message ?? error) });
     }
+    return customerResult;
   } catch (err: any) {
     const msg = String(err?.message ?? err ?? "Unknown error").slice(0, 500);
     console.error("[send-order-email] failed", msg);
@@ -450,6 +465,7 @@ async function sendAndLog(orderId: string, lang: "ar" | "en", event: Notificatio
         confirmation_email_error: msg,
       }).eq("id", orderId);
     } catch { /* noop */ }
+    return { status: "failed", error: msg };
   }
 }
 
@@ -475,6 +491,7 @@ Deno.serve(async (req) => {
   const orderId = body.order_id;
   if (!orderId) return json({ error: "order_id required" }, 400, corsHeaders);
   const lang: "ar" | "en" = body.lang === "ar" ? "ar" : "en";
+  const waitForDelivery = body.wait_for_delivery === true;
   const event: NotificationEvent = ["order_placed", "benefit_payment_approved", "benefit_payment_rejected", "order_cancelled", "order_delivered"].includes(body.event ?? "")
     ? body.event as NotificationEvent
     : "order_placed";
@@ -527,6 +544,17 @@ Deno.serve(async (req) => {
   if (emailOrderError || !emailOrder) return json({ error: "Order not found" }, 404, corsHeaders);
   const configurationError = await customerEmailConfigurationError(emailOrder.brand_id);
   if (configurationError) return json({ error: configurationError }, 422, corsHeaders);
+
+  // The dashboard's explicit Send/Resend action must only report success after
+  // Zoho has accepted the message. Checkout notifications remain asynchronous
+  // so placing an order is not held up by an SMTP handshake.
+  if (waitForDelivery) {
+    const result = await sendAndLog(orderId, lang, event);
+    if (result.status !== "sent") {
+      return json({ error: result.error ?? "Customer email could not be sent" }, 422, corsHeaders);
+    }
+    return json({ ok: true, status: "sent" }, 200, corsHeaders);
+  }
 
   // Kick off SMTP work in the background; respond immediately so the client
   // isn't billed for the SMTP handshake latency.
