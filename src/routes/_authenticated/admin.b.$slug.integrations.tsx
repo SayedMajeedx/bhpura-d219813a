@@ -233,6 +233,13 @@ function EmailActivityCard({ brandId, isAr }: { brandId: string; isAr: boolean }
     if (isAr) return status === "sent" ? "تم قبول الإرسال" : status === "failed" ? "فشل" : "تم التخطي";
     return status === "sent" ? "Accepted" : status === "failed" ? "Failed" : "Skipped";
   };
+  const detailLabel = (row: EmailActivityRow) => {
+    if (row.error_message) return row.error_message;
+    if (row.status !== "skipped") return "—";
+    return row.channel === "admin"
+      ? "No SendPulse request was made. Check this brand's SendPulse connection and active notification recipients."
+      : "No email was sent because this message was not eligible for delivery.";
+  };
   const statusClass = (status: EmailActivityRow["status"]) =>
     status === "sent"
       ? "bg-emerald-500/10 text-emerald-700"
@@ -296,7 +303,7 @@ function EmailActivityCard({ brandId, isAr }: { brandId: string; isAr: boolean }
                   <td className="px-3 py-3">{providerLabel(row.provider)}</td>
                   <td className="px-3 py-3"><span className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${statusClass(row.status)}`}>{statusLabel(row.status)}</span></td>
                   <td className="px-3 py-3">{row.invoice_number ? `#${row.invoice_number}` : "—"}</td>
-                  <td className="px-3 py-3 max-w-[260px] break-words text-muted-foreground">{row.error_message || "—"}</td>
+                  <td className="px-3 py-3 max-w-[320px] break-words text-muted-foreground">{detailLabel(row)}</td>
                   <td className="px-3 py-3 whitespace-nowrap text-muted-foreground">{new Date(row.created_at).toLocaleString(isAr ? "ar-BH" : "en-GB")}</td>
                 </tr>
               ))}
