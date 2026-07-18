@@ -262,6 +262,15 @@ async function getIntegration(brandId: string, provider: string) {
   return data?.is_active ? data : null;
 }
 
+async function customerEmailConfigurationError(brandId: string) {
+  const integration = await getIntegration(brandId, "zoho_customer_email");
+  if (!integration) return "Customer email is not configured for this brand";
+  if (!integration.api_key?.trim() || !integration.webhook_secret?.trim()) {
+    return "Customer email configuration is incomplete for this brand";
+  }
+  return null;
+}
+
 async function sendCustomerEmail(input: {
   order: any;
   settings: any;
@@ -270,9 +279,8 @@ async function sendCustomerEmail(input: {
   event: NotificationEvent;
 }) {
   const integration = await getIntegration(input.order.brand_id, "zoho_customer_email");
-  if (!integration) {
-    throw new Error("Customer email is not configured for this brand");
-  }
+  const configurationError = await customerEmailConfigurationError(input.order.brand_id);
+  if (!integration || configurationError) throw new Error(configurationError ?? "Customer email is not configured for this brand");
   const endpoint = parseSmtpHost(integration?.base_url);
   const fromAddress = integration.api_key?.trim();
   const password = integration.webhook_secret?.trim();
@@ -507,6 +515,18 @@ Deno.serve(async (req) => {
   }
   if (!authorized) return json({ error: "Forbidden" }, 403, corsHeaders);
   if (event !== "order_placed" && !privileged) return json({ error: "Forbidden" }, 403, corsHeaders);
+
+  // Do this lightweight validation before acknowledging a queued email. It
+  // prevents the dashboard from claiming a message was sent when the brand
+  // has not configured its own customer-email mailbox yet.
+  const { data: emailOrder, error: emailOrderError } = await admin
+    .from("orders")
+    .select("brand_id")
+    .eq("id", orderId)
+    .maybeSingle();
+  if (emailOrderError || !emailOrder) return json({ error: "Order not found" }, 404, corsHeaders);
+  const configurationError = await customerEmailConfigurationError(emailOrder.brand_id);
+  if (configurationError) return json({ error: configurationError }, 422, corsHeaders);
 
   // Kick off SMTP work in the background; respond immediately so the client
   // isn't billed for the SMTP handshake latency.
