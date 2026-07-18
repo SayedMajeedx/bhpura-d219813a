@@ -379,15 +379,16 @@ async function sendCustomerEmail(input: {
   const primary = input.settings?.primary_color ?? "#111827";
   const subject = subjectForEvent(input.event, input.order.invoice_number, brandName);
   const html = renderHtml(input.order, input.order.order_items ?? [], brandName, primary, input.lang === "ar", input.event);
+  const isPort465 = config.port === 465;
   const client = new SMTPClient({
     connection: {
       hostname: config.host,
       port: config.port,
-      tls: true,
+      tls: isPort465,
       auth: { username: config.username, password: config.password },
     },
     pool: false,
-    debug: { log: false, allowUnsecure: false, encodeLB: false, noStartTLS: true },
+    debug: { log: false, allowUnsecure: false, encodeLB: false, noStartTLS: isPort465 },
   });
   try {
     await Promise.race([
