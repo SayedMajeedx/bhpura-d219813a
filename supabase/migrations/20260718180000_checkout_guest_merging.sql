@@ -156,7 +156,17 @@ BEGIN
     -- A matching profile exists:
     
     -- 1. FIRST update the customer_id on public.customer_addresses (repointing address)
-    UPDATE public.customer_addresses SET customer_id = v_matched_customer_id WHERE customer_id = v_customer_id;
+    -- If the matched customer already has a default address, set the repointed address to is_default = false
+    UPDATE public.customer_addresses
+    SET customer_id = v_matched_customer_id,
+        is_default = CASE
+          WHEN EXISTS (
+            SELECT 1 FROM public.customer_addresses
+            WHERE customer_id = v_matched_customer_id AND is_default
+          ) THEN false
+          ELSE is_default
+        END
+    WHERE customer_id = v_customer_id;
     
     -- 2. SECOND update the customer_id on public.orders (the address customer_id is already correct, so trigger is happy!)
     UPDATE public.orders SET customer_id = v_matched_customer_id WHERE id = v_order.id;
@@ -187,8 +197,10 @@ BEGIN
           AND ((v_phone IS NOT NULL AND phone = v_phone) OR (v_email IS NOT NULL AND lower(email) = lower(v_email)))
       );
 
-    -- Consolidate guest addresses
-    UPDATE public.customer_addresses SET customer_id = v_customer_id
+    -- Consolidate guest addresses (unconditionally setting is_default = false for consolidated guest addresses to avoid constraints)
+    UPDATE public.customer_addresses
+    SET customer_id = v_customer_id,
+        is_default = false
       WHERE customer_id IN (
         SELECT id FROM public.customers
         WHERE brand_id = v_brand_id
