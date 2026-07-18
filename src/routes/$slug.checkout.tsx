@@ -333,14 +333,18 @@ function Checkout() {
       }, String(orderId ?? ""));
       clearCart();
       toast.success(t("تم استلام طلبك!", "Order placed!"));
-      // Fire-and-forget confirmation email (respects storefront language).
-      const confirmationEmail = customerEmail;
-      if (orderId && confirmationEmail) {
+      // Notify after every successful storefront order, including guest
+      // checkouts that intentionally have no customer email. The edge
+      // function records a skipped customer-email channel where needed while
+      // still attempting the tenant's independent admin notification route.
+      if (orderId && confirmationEmailToken) {
         const emailLang = (typeof document !== "undefined" && document.documentElement.dir === "rtl") ? "ar" : "en";
         // Fire-and-forget; server returns 202 immediately and sends in background.
-        supabase.functions.invoke("send-order-email", {
+        void supabase.functions.invoke("send-order-email", {
           body: { order_id: orderId, email_token: confirmationEmailToken, lang: emailLang, event: "order_placed" },
-        }).catch((err) => console.warn("[send-order-email]", err));
+        }).then(({ error }) => {
+          if (error) console.warn("[send-order-email]", error);
+        });
       }
       navigate({
         to: "/$slug/thank-you/$orderId",

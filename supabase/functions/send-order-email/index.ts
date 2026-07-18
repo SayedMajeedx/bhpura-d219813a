@@ -604,9 +604,11 @@ Deno.serve(async (req) => {
   if (!authorized) return json({ error: "Forbidden" }, 403, corsHeaders);
   if (event !== "order_placed" && !privileged) return json({ error: "Forbidden" }, 403, corsHeaders);
 
-  // Do this lightweight validation before acknowledging a queued email. It
-  // prevents the dashboard from claiming a message was sent when the brand
-  // has not configured its own customer-email mailbox yet.
+  // An explicit dashboard Send/Resend action must fail fast when the brand
+  // has not configured its customer mailbox. Storefront checkout, including
+  // guest checkout, must still continue into sendAndLog so each independent
+  // channel is attempted and audited: a missing Zoho configuration must not
+  // suppress a configured SendPulse admin alert.
   const { data: emailOrder, error: emailOrderError } = await admin
     .from("orders")
     .select("brand_id")
@@ -614,7 +616,7 @@ Deno.serve(async (req) => {
     .maybeSingle();
   if (emailOrderError || !emailOrder) return json({ error: "Order not found" }, 404, corsHeaders);
   const configurationError = await customerEmailConfigurationError(emailOrder.brand_id);
-  if (configurationError) return json({ error: configurationError }, 422, corsHeaders);
+  if (waitForDelivery && configurationError) return json({ error: configurationError }, 422, corsHeaders);
 
   // The dashboard's explicit Send/Resend action must only report success after
   // Zoho has accepted the message. Checkout notifications remain asynchronous
