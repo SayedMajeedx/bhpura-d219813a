@@ -491,26 +491,38 @@ async function sendAndLog(
     let customerResult: CustomerEmailDeliveryResult;
     if (!to) {
       const error = "No customer email on file";
-      await admin.from("orders").update({
-        confirmation_email_status: "failed",
-        confirmation_email_error: error,
-      }).eq("id", orderId);
+      try {
+        await admin.from("orders").update({
+          confirmation_email_status: "failed",
+          confirmation_email_error: error,
+        }).eq("id", orderId);
+      } catch (ue) {
+        console.warn("[send-order-email] failed to update order status", ue);
+      }
       await auditNotification({ brandId: order.brand_id, orderId, event, channel: "customer", status: "skipped", provider: "zoho_customer_email", error });
       customerResult = { status: "skipped", error };
     } else {
       try {
         await sendCustomerEmail({ order, settings, to, lang, event });
         await auditNotification({ brandId: order.brand_id, orderId, event, channel: "customer", recipient: to, provider: "zoho_customer_email", status: "sent" });
-        await admin.from("orders").update({
-          confirmation_email_status: "sent",
-          confirmation_email_sent_at: new Date().toISOString(),
-          confirmation_email_error: null,
-        }).eq("id", orderId);
+        try {
+          await admin.from("orders").update({
+            confirmation_email_status: "sent",
+            confirmation_email_sent_at: new Date().toISOString(),
+            confirmation_email_error: null,
+          }).eq("id", orderId);
+        } catch (ue) {
+          console.warn("[send-order-email] failed to update order status", ue);
+        }
         customerResult = { status: "sent" };
       } catch (error: any) {
         const message = String(error?.message ?? error ?? "Customer email failed").slice(0, 500);
         await auditNotification({ brandId: order.brand_id, orderId, event, channel: "customer", recipient: to, provider: "zoho_customer_email", status: "failed", error: message });
-        await admin.from("orders").update({ confirmation_email_status: "failed", confirmation_email_error: message }).eq("id", orderId);
+        try {
+          await admin.from("orders").update({ confirmation_email_status: "failed", confirmation_email_error: message }).eq("id", orderId);
+        } catch (ue) {
+          console.warn("[send-order-email] failed to update order status", ue);
+        }
         customerResult = { status: "failed", error: message };
       }
     }
