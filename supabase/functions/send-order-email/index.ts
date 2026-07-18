@@ -45,6 +45,7 @@ type Body = {
   email_token?: string;
   lang?: "ar" | "en";
   event?: NotificationEvent;
+  wait_for_delivery?: boolean;
 };
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
@@ -273,10 +274,23 @@ async function getIntegration(brandId: string, provider: string) {
 async function customerEmailConfigurationError(brandId: string) {
   const integration = await getIntegration(brandId, "zoho_customer_email");
   if (!integration) return "Customer email is not configured for this brand";
-  if (!integration.api_key?.trim() || !integration.webhook_secret?.trim()) {
+  if (!integration.base_url?.trim() || !integration.api_key?.trim() || !integration.webhook_secret?.trim()) {
     return "Customer email configuration is incomplete for this brand";
   }
   return null;
+}
+
+// Keep all subjects ASCII-only. This avoids malformed MIME subjects in mailbox
+// clients that do not decode Arabic encoded-word headers reliably.
+function subjectForEvent(event: NotificationEvent, invoiceNumber: unknown, brandName: string) {
+  const label: Record<NotificationEvent, string> = {
+    order_placed: "Order Confirmation",
+    benefit_payment_approved: "Payment Confirmed",
+    benefit_payment_rejected: "Payment Requires Attention",
+    order_cancelled: "Order Cancelled",
+    order_delivered: "Order Delivered",
+  };
+  return `${label[event]} #${invoiceNumber} - ${brandName}`;
 }
 
 async function sendCustomerEmail(input: {
@@ -309,7 +323,7 @@ async function sendCustomerEmail(input: {
   const brandName = input.settings?.business_name ?? "Boutq";
   const senderName = input.settings?.email_sender_name?.trim() || brandName;
   const primary = input.settings?.primary_color ?? "#111827";
-  const subject = `Order update #${input.order.invoice_number}`;
+  const subject = subjectForEvent(input.event, input.order.invoice_number, brandName);
   const html = renderHtml(input.order, input.order.order_items ?? [], brandName, primary, input.lang === "ar", input.event);
   const client = new SMTPClient({
     connection: {
@@ -336,11 +350,12 @@ async function sendAdminNotification(input: {
   settings: any;
   event: NotificationEvent;
   lang: "ar" | "en";
-}) {
+}): Promise<AdminEmailDeliveryResult> {
   const integration = await getIntegration(input.order.brand_id, "sendpulse_admin");
   if (!integration) {
-    await auditNotification({ brandId: input.order.brand_id, orderId: input.order.id, event: input.event, channel: "admin", status: "skipped", provider: "sendpulse" });
-    return;
+    const error = "SendPulse admin notifications are not configured for this brand";
+    await auditNotification({ brandId: input.order.brand_id, orderId: input.order.id, event: input.event, channel: "admin", status: "skipped", provider: "sendpulse", error });
+    return { status: "skipped", error };
   }
   const { data: profiles, error: profilesError } = await admin.from("profiles")
     .select("email, name")
@@ -376,8 +391,9 @@ async function sendAdminNotification(input: {
   }
   const recipients = [...recipientMap.values()];
   if (!recipients.length) {
-    await auditNotification({ brandId: input.order.brand_id, orderId: input.order.id, event: input.event, channel: "admin", status: "skipped", provider: "sendpulse" });
-    return;
+    const error = "No active brand administrator or notification recipient is configured";
+    await auditNotification({ brandId: input.order.brand_id, orderId: input.order.id, event: input.event, channel: "admin", status: "skipped", provider: "sendpulse", error });
+    return { status: "skipped", error };
   }
   const clientId = integration.api_key?.trim();
   const clientSecret = integration.webhook_secret?.trim();
@@ -388,7 +404,10 @@ async function sendAdminNotification(input: {
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: new URLSearchParams({ grant_type: "client_credentials", client_id: clientId, client_secret: clientSecret }),
   });
-  if (!tokenResponse.ok) throw new Error(`SendPulse authorization failed (${tokenResponse.status})`);
+  if (!tokenResponse.ok) {
+    const details = (await tokenResponse.text()).slice(0, 300);
+    throw new Error(`SendPulse authorization failed (${tokenResponse.status})${details ? `: ${details}` : ""}`);
+  }
   const accessToken = (await tokenResponse.json()).access_token;
   const eventMessage = eventCopy(
     input.event,
@@ -405,7 +424,7 @@ async function sendAdminNotification(input: {
     email: {
       html: `<h2>${escapeHtml(eventMessage.title)}</h2><p>${escapeHtml(eventMessage.body)}</p><p><strong>Order #${escapeHtml(input.order.invoice_number)}</strong></p><p><a href="${orderUrl}">Open order in Boutq</a></p>`,
       text: `${eventMessage.title}\n${eventMessage.body}\nOrder #${input.order.invoice_number}\n${orderUrl}`,
-      subject: `Order update #${input.order.invoice_number}`,
+      subject: subjectForEvent(input.event, input.order.invoice_number, brandName),
       from: { name: brandName, email: fromAddress },
       to: recipients.map((recipient) => ({ email: recipient.email, ...(recipient.name ? { name: recipient.name } : {}) })),
     },
@@ -415,10 +434,14 @@ async function sendAdminNotification(input: {
     headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" },
     body: JSON.stringify(payload),
   });
-  if (!sendResponse.ok) throw new Error(`SendPulse delivery failed (${sendResponse.status})`);
+  if (!sendResponse.ok) {
+    const details = (await sendResponse.text()).slice(0, 300);
+    throw new Error(`SendPulse delivery failed (${sendResponse.status})${details ? `: ${details}` : ""}`);
+  }
   await Promise.all(recipients.map((recipient) => auditNotification({
     brandId: input.order.brand_id, orderId: input.order.id, event: input.event, channel: "admin", recipient: recipient.email, provider: "sendpulse", status: "sent",
   })));
+  return { status: "sent" };
 }
 
 type CustomerEmailDeliveryResult = {
@@ -426,11 +449,18 @@ type CustomerEmailDeliveryResult = {
   error?: string;
 };
 
+type AdminEmailDeliveryResult = CustomerEmailDeliveryResult;
+
+type NotificationDeliveryResult = {
+  customer: CustomerEmailDeliveryResult;
+  admin: AdminEmailDeliveryResult;
+};
+
 async function sendAndLog(
   orderId: string,
   lang: "ar" | "en",
   event: NotificationEvent,
-): Promise<CustomerEmailDeliveryResult> {
+): Promise<NotificationDeliveryResult> {
   try {
     // Query the order and its direct relationships only. business_settings is
     // linked to brands, not orders, so fetch it separately by order.brand_id.
@@ -485,12 +515,15 @@ async function sendAndLog(
       }
     }
 
+    let adminResult: AdminEmailDeliveryResult;
     try {
-      await sendAdminNotification({ order, settings, event, lang });
+      adminResult = await sendAdminNotification({ order, settings, event, lang });
     } catch (error: any) {
-      await auditNotification({ brandId: order.brand_id, orderId, event, channel: "admin", provider: "sendpulse", status: "failed", error: String(error?.message ?? error) });
+      const message = String(error?.message ?? error ?? "Admin notification failed").slice(0, 500);
+      await auditNotification({ brandId: order.brand_id, orderId, event, channel: "admin", provider: "sendpulse", status: "failed", error: message });
+      adminResult = { status: "failed", error: message };
     }
-    return customerResult;
+    return { customer: customerResult, admin: adminResult };
   } catch (err: any) {
     const msg = String(err?.message ?? err ?? "Unknown error").slice(0, 500);
     console.error("[send-order-email] failed", msg);
@@ -500,7 +533,10 @@ async function sendAndLog(
         confirmation_email_error: msg,
       }).eq("id", orderId);
     } catch { /* noop */ }
-    return { status: "failed", error: msg };
+    return {
+      customer: { status: "failed", error: msg },
+      admin: { status: "skipped", error: "Order email processing did not complete" },
+    };
   }
 }
 
@@ -585,10 +621,10 @@ Deno.serve(async (req) => {
   // so placing an order is not held up by an SMTP handshake.
   if (waitForDelivery) {
     const result = await sendAndLog(orderId, lang, event);
-    if (result.status !== "sent") {
-      return json({ error: result.error ?? "Customer email could not be sent" }, 422, corsHeaders);
+    if (result.customer.status !== "sent") {
+      return json({ error: result.customer.error ?? "Customer email could not be sent", customer: result.customer, admin: result.admin }, 422, corsHeaders);
     }
-    return json({ ok: true, status: "sent" }, 200, corsHeaders);
+    return json({ ok: true, status: "sent", customer: result.customer, admin: result.admin }, 200, corsHeaders);
   }
 
   // Kick off SMTP work in the background; respond immediately so the client
@@ -601,6 +637,9 @@ Deno.serve(async (req) => {
   }
 
   // Fallback: run inline (local dev / non-Supabase runtime)
-  await sendAndLog(orderId, lang, event);
-  return json({ ok: true }, 200, corsHeaders);
+  const result = await sendAndLog(orderId, lang, event);
+  if (result.customer.status !== "sent") {
+    return json({ error: result.customer.error ?? "Customer email could not be sent", customer: result.customer, admin: result.admin }, 422, corsHeaders);
+  }
+  return json({ ok: true, status: "sent", customer: result.customer, admin: result.admin }, 200, corsHeaders);
 });

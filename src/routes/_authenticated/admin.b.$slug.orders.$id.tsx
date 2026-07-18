@@ -3234,7 +3234,9 @@ function ResendConfirmationEmailButton({
       });
       if (error) throw error;
       if ((data as any)?.error) throw new Error(String((data as any).error));
-      toast.success(lang === "ar" ? "تم إرسال بريد التأكيد" : "Confirmation email sent");
+      toast.success(lang === "ar"
+        ? "تم قبول بريد العميل للإرسال. راجع سجل المراسلات لمتابعة الحالة."
+        : "Customer email accepted by the provider. Track it in Communications.");
     } catch (e: any) {
       toast.error(e?.message ?? (lang === "ar" ? "فشل الإرسال" : "Failed to send"));
     } finally {

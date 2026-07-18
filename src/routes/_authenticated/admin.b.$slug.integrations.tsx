@@ -10,7 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
-import { Plug, Plus, Pencil, Trash2, Copy, ShieldAlert } from "lucide-react";
+import { Plug, Plus, Pencil, Trash2, Copy, ShieldAlert, Mail, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { useT, useI18n } from "@/lib/i18n";
 import { useBrand } from "@/lib/brand-context";
@@ -106,6 +106,7 @@ function IntegrationsPage() {
 
       <AnalyticsTrackingCard brandId={brandId} isAr={isAr} />
       <AdminNotificationRecipientsCard brandId={brandId} isAr={isAr} />
+      <EmailActivityCard brandId={brandId} isAr={isAr} />
 
       {q.data && q.data.length === 0 ? (
         <Card className="p-12 text-center">
@@ -117,6 +118,7 @@ function IntegrationsPage() {
           {(q.data ?? []).map((row) => {
             const webhookUrl = `${webhookBase}/${row.provider}/${brandId}`;
             const preset = PROVIDER_PRESETS.find((p) => p.value === row.provider);
+            const isDirectEmailProvider = row.provider === "zoho_customer_email" || row.provider === "sendpulse_admin";
             return (
               <Card key={row.id} className="p-5">
                 <div className="flex items-start justify-between gap-3 mb-3">
@@ -139,13 +141,23 @@ function IntegrationsPage() {
                 </div>
 
                 <div className="mt-3 pt-3 border-t border-border text-xs">
-                  <p className="text-muted-foreground mb-1">{t("integrations.webhookHint")}</p>
-                  <div className="flex items-center gap-2">
-                    <code className="flex-1 truncate bg-secondary/40 rounded px-2 py-1">{webhookUrl}</code>
-                    <Button variant="ghost" size="sm" onClick={() => { navigator.clipboard?.writeText(webhookUrl); toast.success("Copied"); }}>
-                      <Copy className="h-3 w-3" />
-                    </Button>
-                  </div>
+                  {isDirectEmailProvider ? (
+                    <p className="text-muted-foreground">
+                      {isAr
+                        ? "يستخدم هذا المزود مباشرةً من خدمة البريد الآمنة في Boutq. لا يلزم إعداد رابط Webhook لدى المزود."
+                        : "This provider is used directly by Boutq's secure email service. No provider webhook URL is required."}
+                    </p>
+                  ) : (
+                    <>
+                      <p className="text-muted-foreground mb-1">{t("integrations.webhookHint")}</p>
+                      <div className="flex items-center gap-2">
+                        <code className="flex-1 truncate bg-secondary/40 rounded px-2 py-1">{webhookUrl}</code>
+                        <Button variant="ghost" size="sm" onClick={() => { navigator.clipboard?.writeText(webhookUrl); toast.success("Copied"); }}>
+                          <Copy className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    </>
+                  )}
                 </div>
 
                 {row.notes && <p className="text-xs text-muted-foreground mt-3 italic">{row.notes}</p>}
@@ -155,6 +167,144 @@ function IntegrationsPage() {
         </div>
       )}
     </div>
+  );
+}
+
+type EmailActivityRow = {
+  id: string;
+  order_id: string | null;
+  invoice_number: number | null;
+  event_type: string;
+  channel: "customer" | "admin";
+  recipient: string | null;
+  provider: string | null;
+  status: "sent" | "failed" | "skipped";
+  error_message: string | null;
+  created_at: string;
+};
+
+function EmailActivityCard({ brandId, isAr }: { brandId: string; isAr: boolean }) {
+  const [channel, setChannel] = useState<"all" | "customer" | "admin">("all");
+  const q = useQuery({
+    queryKey: ["brand-email-notifications", brandId],
+    queryFn: async () => {
+      const { data, error } = await (supabase.rpc as any)("list_brand_email_notifications", {
+        p_brand_id: brandId,
+        p_limit: 100,
+        p_offset: 0,
+      });
+      if (error) throw error;
+      return (data ?? []) as EmailActivityRow[];
+    },
+    refetchInterval: 30_000,
+  });
+
+  const rows = (q.data ?? []).filter((row) => channel === "all" || row.channel === channel);
+  const labels = {
+    title: isAr ? "سجل المراسلات والبريد" : "Communications & email activity",
+    description: isAr
+      ? "سجل لكل رسالة عميل أو تنبيه إداري: المزود والمستلم والنتيجة. حالة «تم القبول» تعني أن المزود قبل الإرسال؛ تعرض سجلات Zoho أو SendPulse حالة التسليم النهائية عند توفرها."
+      : "A record of every customer email and internal alert, including provider, recipient, and outcome. “Accepted” means the provider accepted the send; Zoho or SendPulse delivery reports remain the source of final inbox, bounce, and reply status.",
+    all: isAr ? "الكل" : "All messages",
+    customer: isAr ? "رسائل العملاء" : "Customer emails",
+    admin: isAr ? "تنبيهات الإدارة" : "Admin alerts",
+    event: isAr ? "الحدث" : "Event",
+    recipient: isAr ? "المستلم" : "Recipient",
+    channel: isAr ? "النوع" : "Channel",
+    provider: isAr ? "المزود" : "Provider",
+    result: isAr ? "النتيجة" : "Result",
+    order: isAr ? "الطلب" : "Order",
+    details: isAr ? "التفاصيل" : "Details",
+    time: isAr ? "الوقت" : "Time",
+    empty: isAr ? "لا توجد رسائل مسجلة لهذه العلامة بعد." : "No email activity has been recorded for this brand yet.",
+    refresh: isAr ? "تحديث" : "Refresh",
+  };
+
+  const eventLabel = (event: string) => {
+    const key = event.replaceAll("_", " ");
+    return isAr ? key : key.replace(/\b\w/g, (letter) => letter.toUpperCase());
+  };
+  const providerLabel = (provider: string | null) => {
+    if (provider === "zoho_customer_email" || provider === "zoho") return "Zoho SMTP";
+    if (provider === "sendpulse_admin" || provider === "sendpulse") return "SendPulse";
+    return provider || "—";
+  };
+  const statusLabel = (status: EmailActivityRow["status"]) => {
+    if (isAr) return status === "sent" ? "تم قبول الإرسال" : status === "failed" ? "فشل" : "تم التخطي";
+    return status === "sent" ? "Accepted" : status === "failed" ? "Failed" : "Skipped";
+  };
+  const statusClass = (status: EmailActivityRow["status"]) =>
+    status === "sent"
+      ? "bg-emerald-500/10 text-emerald-700"
+      : status === "failed"
+        ? "bg-destructive/10 text-destructive"
+        : "bg-secondary text-muted-foreground";
+
+  return (
+    <Card className="mb-6 p-5" dir={isAr ? "rtl" : "ltr"}>
+      <div className="flex flex-wrap items-start justify-between gap-3 mb-4">
+        <div className="flex gap-3">
+          <Mail className="h-5 w-5 mt-0.5 text-primary" />
+          <div>
+            <h2 className="font-display text-xl">{labels.title}</h2>
+            <p className="text-sm text-muted-foreground max-w-3xl mt-1">{labels.description}</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <Select value={channel} onValueChange={(value) => setChannel(value as "all" | "customer" | "admin")}>
+            <SelectTrigger className="w-[160px]"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">{labels.all}</SelectItem>
+              <SelectItem value="customer">{labels.customer}</SelectItem>
+              <SelectItem value="admin">{labels.admin}</SelectItem>
+            </SelectContent>
+          </Select>
+          <Button variant="outline" size="sm" onClick={() => { void q.refetch(); }} disabled={q.isFetching}>
+            <RefreshCw className={`h-4 w-4 ${q.isFetching ? "animate-spin" : ""}`} />
+            <span className="sr-only">{labels.refresh}</span>
+          </Button>
+        </div>
+      </div>
+
+      {q.isError ? (
+        <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive">
+          {isAr ? "تعذر تحميل سجل البريد. تأكد من تشغيل ترحيل سجل المراسلات." : "Could not load email activity. Ensure the communications-log migration has been applied."}
+        </div>
+      ) : rows.length === 0 ? (
+        <div className="rounded-lg border border-dashed p-7 text-center text-sm text-muted-foreground">{labels.empty}</div>
+      ) : (
+        <div className="overflow-x-auto rounded-lg border">
+          <table className="w-full min-w-[900px] text-sm">
+            <thead className="bg-muted/50 text-xs uppercase tracking-wide text-muted-foreground">
+              <tr>
+                <th className="px-3 py-3 text-start">{labels.event}</th>
+                <th className="px-3 py-3 text-start">{labels.recipient}</th>
+                <th className="px-3 py-3 text-start">{labels.channel}</th>
+                <th className="px-3 py-3 text-start">{labels.provider}</th>
+                <th className="px-3 py-3 text-start">{labels.result}</th>
+                <th className="px-3 py-3 text-start">{labels.order}</th>
+                <th className="px-3 py-3 text-start">{labels.details}</th>
+                <th className="px-3 py-3 text-start">{labels.time}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((row) => (
+                <tr key={row.id} className="border-t align-top">
+                  <td className="px-3 py-3 font-medium whitespace-nowrap">{eventLabel(row.event_type)}</td>
+                  <td className="px-3 py-3" dir="ltr">{row.recipient || "—"}</td>
+                  <td className="px-3 py-3">{row.channel === "customer" ? labels.customer : labels.admin}</td>
+                  <td className="px-3 py-3">{providerLabel(row.provider)}</td>
+                  <td className="px-3 py-3"><span className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${statusClass(row.status)}`}>{statusLabel(row.status)}</span></td>
+                  <td className="px-3 py-3">{row.invoice_number ? `#${row.invoice_number}` : "—"}</td>
+                  <td className="px-3 py-3 max-w-[260px] break-words text-muted-foreground">{row.error_message || "—"}</td>
+                  <td className="px-3 py-3 whitespace-nowrap text-muted-foreground">{new Date(row.created_at).toLocaleString(isAr ? "ar-BH" : "en-GB")}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </Card>
   );
 }
 
