@@ -587,6 +587,10 @@ async function sendAndLog(
 
     // Define admin delivery routine
     const adminPromise = (async (): Promise<AdminEmailDeliveryResult> => {
+      // Admins only receive 'order_placed' (new order) and 'order_delivered' (order delivered)
+      if (!["order_placed", "order_delivered"].includes(event)) {
+        return { status: "skipped" };
+      }
       try {
         return await sendAdminNotification({ order, settings, event, lang });
       } catch (error: any) {
