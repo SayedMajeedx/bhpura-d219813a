@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { Loader2, CreditCard, Banknote, QrCode, Truck, Store, User, Download, Mail, MessageCircle, Copy, UploadCloud, CheckCircle2, X } from "lucide-react";
 import { uploadBenefitReceipt } from "@/lib/benefit-receipt";
@@ -42,6 +43,43 @@ function Checkout() {
   });
   const [savedAddresses, setSavedAddresses] = useState<any[]>([]);
   const [selectedAddressId, setSelectedAddressId] = useState<string>("");
+
+  const [showAccountPopup, setShowAccountPopup] = useState<{ show: boolean; field: "email" | "phone" | null; value: string }>({
+    show: false,
+    field: null,
+    value: "",
+  });
+  const [ignoredAccountWarning, setIgnoredAccountWarning] = useState(false);
+
+  const checkRegisteredAccount = async (field: "email" | "phone", value: string) => {
+    if (!value || session || ignoredAccountWarning) return;
+    try {
+      const query = supabase
+        .from("customers")
+        .select("id")
+        .eq("brand_id", brand.id)
+        .not("auth_user_id", "is", null);
+
+      if (field === "email") {
+        query.ilike("email", value.trim());
+      } else {
+        const cleanPhone = value.replace(/[^\d]/g, "");
+        if (cleanPhone.length < 5) return;
+        query.eq("phone", cleanPhone);
+      }
+
+      const { data } = await query.limit(1);
+      if (data && data.length > 0) {
+        setShowAccountPopup({
+          show: true,
+          field,
+          value,
+        });
+      }
+    } catch (e) {
+      console.error("Failed to check registered account", e);
+    }
+  };
 
   // Pre-fill from linked customer when signed in
   useEffect(() => {
@@ -416,11 +454,11 @@ function Checkout() {
             </div>
             <div>
               <Label>{t("رقم الهاتف", "Phone")} *</Label>
-              <Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
+              <Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} onBlur={(e) => checkRegisteredAccount("phone", e.target.value)} />
             </div>
             <div className="sm:col-span-2">
               <Label>{t("البريد الإلكتروني", "Email")}</Label>
-              <Input required type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
+              <Input required type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} onBlur={(e) => checkRegisteredAccount("email", e.target.value)} />
             </div>
           </div>
           <div>
@@ -773,6 +811,60 @@ function Checkout() {
           </Button>
         </div>
       </div>
+
+      <Dialog
+        open={showAccountPopup.show}
+        onOpenChange={(open) => {
+          if (!open) {
+            setShowAccountPopup({ show: false, field: null, value: "" });
+            setIgnoredAccountWarning(true);
+          }
+        }}
+      >
+        <DialogContent className="max-w-md p-6" dir={lang === "ar" ? "rtl" : "ltr"}>
+          <DialogHeader>
+            <DialogTitle className="text-xl font-display text-start">
+              {t("لديك حساب بالفعل!", "You have an account already!")}
+            </DialogTitle>
+            <DialogDescription className="text-sm mt-3 text-start leading-relaxed text-muted-foreground">
+              {showAccountPopup.field === "email"
+                ? t(
+                    `تم العثور على حساب مسجل بالبريد الإلكتروني (${showAccountPopup.value}). هل ترغب في تسجيل الدخول لتتبع طلباتك وتسهيل ملء بياناتك، أم تفضل المتابعة كزائر؟`,
+                    `A registered account already exists for this email (${showAccountPopup.value}). Would you like to sign in to track your orders, or continue placing this order as a guest?`
+                  )
+                : t(
+                    `تم العثور على حساب مسجل برقم الهاتف (${showAccountPopup.value}). هل ترغب في تسجيل الدخول لتتبع طلباتك وتسهيل ملء بياناتك، أم تفضل المتابعة كزائر؟`,
+                    `A registered account already exists for this phone number (${showAccountPopup.value}). Would you like to sign in to track your orders, or continue placing this order as a guest?`
+                  )}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="mt-5 flex flex-col sm:flex-row gap-2 justify-end">
+            <Button
+              variant="outline"
+              className="w-full sm:w-auto h-11"
+              onClick={() => {
+                setShowAccountPopup({ show: false, field: null, value: "" });
+                setIgnoredAccountWarning(true);
+              }}
+            >
+              {t("المتابعة كزائر", "Continue as guest")}
+            </Button>
+            <Button
+              className="w-full sm:w-auto h-11"
+              style={{ backgroundColor: settings.primary_color, color: "#fff" }}
+              asChild
+            >
+              <Link
+                to="/$slug/auth"
+                params={{ slug: brand.slug }}
+                search={{ redirect: mounted ? window.location.pathname : "" }}
+              >
+                {t("تسجيل الدخول", "Sign in")}
+              </Link>
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
