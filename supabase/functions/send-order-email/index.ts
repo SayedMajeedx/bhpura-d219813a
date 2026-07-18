@@ -32,6 +32,14 @@ type NotificationEvent =
   | "order_cancelled"
   | "order_delivered";
 
+const NOTIFICATION_RECIPIENT_EVENT_FIELD: Record<NotificationEvent, string> = {
+  order_placed: "receive_order_placed",
+  benefit_payment_approved: "receive_benefit_payment_approved",
+  benefit_payment_rejected: "receive_benefit_payment_rejected",
+  order_cancelled: "receive_order_cancelled",
+  order_delivered: "receive_order_delivered",
+};
+
 type Body = {
   order_id?: string;
   email_token?: string;
@@ -334,12 +342,39 @@ async function sendAdminNotification(input: {
     await auditNotification({ brandId: input.order.brand_id, orderId: input.order.id, event: input.event, channel: "admin", status: "skipped", provider: "sendpulse" });
     return;
   }
-  const { data: profiles } = await admin.from("profiles")
+  const { data: profiles, error: profilesError } = await admin.from("profiles")
     .select("email, name")
     .eq("brand_id", input.order.brand_id)
     .eq("status", "active")
     .in("role", ["admin", "brand_admin"]);
-  const recipients = [...new Set((profiles ?? []).map((profile: any) => String(profile.email ?? "").trim()).filter(Boolean))];
+
+  if (profilesError) throw new Error(`Could not load brand administrators: ${profilesError.message}`);
+
+  // Custom recipients are additive and event-specific. The migration may not
+  // have been applied on an older project yet, so retain the secure brand-admin
+  // default rather than failing all internal email during that short period.
+  const eventField = NOTIFICATION_RECIPIENT_EVENT_FIELD[input.event];
+  const { data: configuredRecipients, error: configuredRecipientsError } = await admin
+    .from("brand_notification_recipients")
+    .select("email, name")
+    .eq("brand_id", input.order.brand_id)
+    .eq("active", true)
+    .eq(eventField, true);
+
+  const recipientTableUnavailable = configuredRecipientsError?.code === "42P01"
+    || configuredRecipientsError?.code === "PGRST205";
+  if (configuredRecipientsError && !recipientTableUnavailable) {
+    throw new Error(`Could not load notification recipients: ${configuredRecipientsError.message}`);
+  }
+
+  const recipientMap = new Map<string, { email: string; name?: string }>();
+  for (const recipient of [...(profiles ?? []), ...(configuredRecipients ?? [])] as any[]) {
+    const email = String(recipient.email ?? "").trim().toLowerCase();
+    if (!email || recipientMap.has(email)) continue;
+    const name = String(recipient.name ?? "").trim();
+    recipientMap.set(email, { email, ...(name ? { name } : {}) });
+  }
+  const recipients = [...recipientMap.values()];
   if (!recipients.length) {
     await auditNotification({ brandId: input.order.brand_id, orderId: input.order.id, event: input.event, channel: "admin", status: "skipped", provider: "sendpulse" });
     return;
@@ -372,7 +407,7 @@ async function sendAdminNotification(input: {
       text: `${eventMessage.title}\n${eventMessage.body}\nOrder #${input.order.invoice_number}\n${orderUrl}`,
       subject: `Order update #${input.order.invoice_number}`,
       from: { name: brandName, email: fromAddress },
-      to: recipients.map((email) => ({ email })),
+      to: recipients.map((recipient) => ({ email: recipient.email, ...(recipient.name ? { name: recipient.name } : {}) })),
     },
   };
   const sendResponse = await fetch("https://api.sendpulse.com/smtp/emails", {
@@ -382,7 +417,7 @@ async function sendAdminNotification(input: {
   });
   if (!sendResponse.ok) throw new Error(`SendPulse delivery failed (${sendResponse.status})`);
   await Promise.all(recipients.map((recipient) => auditNotification({
-    brandId: input.order.brand_id, orderId: input.order.id, event: input.event, channel: "admin", recipient, provider: "sendpulse", status: "sent",
+    brandId: input.order.brand_id, orderId: input.order.id, event: input.event, channel: "admin", recipient: recipient.email, provider: "sendpulse", status: "sent",
   })));
 }
 

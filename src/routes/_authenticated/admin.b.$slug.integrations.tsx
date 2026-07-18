@@ -105,6 +105,7 @@ function IntegrationsPage() {
       </Card>
 
       <AnalyticsTrackingCard brandId={brandId} isAr={isAr} />
+      <AdminNotificationRecipientsCard brandId={brandId} isAr={isAr} />
 
       {q.data && q.data.length === 0 ? (
         <Card className="p-12 text-center">
@@ -221,6 +222,128 @@ function AnalyticsTrackingCard({ brandId, isAr }: { brandId: string; isAr: boole
       </div>
       <div className="flex items-center justify-between gap-3 rounded-lg border p-4"><div><Label>{isAr ? "طلب موافقة الزائر" : "Require visitor consent"}</Label><p className="text-xs text-muted-foreground">{isAr ? "موصى به للخصوصية والامتثال." : "Recommended for privacy and compliance."}</p></div><Switch checked={form.consent_required} onCheckedChange={(v) => setForm((f) => ({ ...f, consent_required: v }))} /></div>
       <Button onClick={save} disabled={saving || q.isLoading}>{saving ? (isAr ? "جارٍ الحفظ..." : "Saving...") : (isAr ? "حفظ إعدادات التتبع" : "Save tracking settings")}</Button>
+    </div>
+  </Card>;
+}
+
+type NotificationRecipient = {
+  id: string;
+  brand_id: string;
+  email: string;
+  name: string | null;
+  receive_order_placed: boolean;
+  receive_benefit_payment_approved: boolean;
+  receive_benefit_payment_rejected: boolean;
+  receive_order_cancelled: boolean;
+  receive_order_delivered: boolean;
+  active: boolean;
+};
+
+const NOTIFICATION_EVENT_FIELDS = [
+  { key: "receive_order_placed", en: "New order / awaiting payment validation", ar: "طلب جديد / بانتظار التحقق" },
+  { key: "receive_benefit_payment_approved", en: "BenefitPay approved", ar: "تم اعتماد بينفت" },
+  { key: "receive_benefit_payment_rejected", en: "BenefitPay rejected", ar: "تم رفض بينفت" },
+  { key: "receive_order_cancelled", en: "Order cancelled", ar: "إلغاء طلب" },
+  { key: "receive_order_delivered", en: "Order delivered", ar: "تم توصيل الطلب" },
+] as const;
+
+function AdminNotificationRecipientsCard({ brandId, isAr }: { brandId: string; isAr: boolean }) {
+  const qc = useQueryClient();
+  const [adding, setAdding] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const emptyForm = {
+    name: "",
+    email: "",
+    receive_order_placed: true,
+    receive_benefit_payment_approved: true,
+    receive_benefit_payment_rejected: true,
+    receive_order_cancelled: true,
+    receive_order_delivered: true,
+  };
+  const [form, setForm] = useState(emptyForm);
+  const q = useQuery({
+    queryKey: ["brand-notification-recipients", brandId],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from("brand_notification_recipients")
+        .select("*")
+        .eq("brand_id", brandId)
+        .order("created_at", { ascending: true });
+      if (error) {
+        // The UI remains usable before the SQL migration has been applied.
+        if (error.code === "42P01" || /brand_notification_recipients/i.test(error.message ?? "")) return [] as NotificationRecipient[];
+        throw error;
+      }
+      return (data ?? []) as NotificationRecipient[];
+    },
+  });
+  const refresh = () => qc.invalidateQueries({ queryKey: ["brand-notification-recipients", brandId] });
+  const saveNew = async () => {
+    const email = form.email.trim().toLowerCase();
+    if (!/^\S+@\S+\.\S+$/.test(email)) return toast.error(isAr ? "أدخل بريداً إلكترونياً صحيحاً" : "Enter a valid email address");
+    setSaving(true);
+    const { error } = await (supabase as any).from("brand_notification_recipients").insert({
+      brand_id: brandId,
+      name: form.name.trim() || null,
+      email,
+      ...Object.fromEntries(NOTIFICATION_EVENT_FIELDS.map(({ key }) => [key, form[key]])),
+    });
+    setSaving(false);
+    if (error) return toast.error(error.code === "23505" ? (isAr ? "هذا البريد مضاف بالفعل لهذه العلامة" : "This email is already added for this brand") : error.message);
+    setForm(emptyForm);
+    setAdding(false);
+    refresh();
+    toast.success(isAr ? "تمت إضافة المستلم" : "Recipient added");
+  };
+  const update = async (id: string, changes: Partial<NotificationRecipient>) => {
+    const { error } = await (supabase as any).from("brand_notification_recipients").update(changes).eq("id", id).eq("brand_id", brandId);
+    if (error) return toast.error(error.message);
+    refresh();
+  };
+  const remove = async (id: string) => {
+    if (!confirm(isAr ? "حذف هذا المستلم؟" : "Remove this recipient?")) return;
+    const { error } = await (supabase as any).from("brand_notification_recipients").delete().eq("id", id).eq("brand_id", brandId);
+    if (error) return toast.error(error.message);
+    refresh();
+  };
+
+  return <Card className="mb-6 p-5" dir={isAr ? "rtl" : "ltr"}>
+    <div className="flex flex-wrap items-start justify-between gap-3">
+      <div>
+        <h2 className="font-display text-xl">{isAr ? "مستلمو تنبيهات الإدارة" : "Admin notification recipients"}</h2>
+        <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
+          {isAr
+            ? "يتلقى مديرو العلامة النشطون جميع التنبيهات تلقائياً. أضف مستلمين اختياريين، مثل المالك أو مدير المخزون، لكل نوع من التنبيهات أدناه."
+            : "Active Brand Admins receive every internal alert automatically. Add optional recipients, such as an owner or stock manager, for selected notifications below."}
+        </p>
+      </div>
+      <Button variant="outline" onClick={() => setAdding((value) => !value)}><Plus className="me-2 h-4 w-4" />{isAr ? "إضافة مستلم" : "Add recipient"}</Button>
+    </div>
+
+    {adding && <div className="mt-5 rounded-lg border bg-muted/20 p-4 space-y-4">
+      <div className="grid gap-3 sm:grid-cols-2">
+        <div><Label>{isAr ? "الاسم (اختياري)" : "Name (optional)"}</Label><Input value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} /></div>
+        <div><Label>{isAr ? "البريد الإلكتروني" : "Email address"}</Label><Input type="email" dir="ltr" value={form.email} onChange={(event) => setForm({ ...form, email: event.target.value })} /></div>
+      </div>
+      <div className="grid gap-2 sm:grid-cols-2">
+        {NOTIFICATION_EVENT_FIELDS.map(({ key, en, ar }) => <label key={key} className="flex cursor-pointer items-center gap-2 rounded border bg-background px-3 py-2 text-sm">
+          <input type="checkbox" checked={form[key]} onChange={(event) => setForm({ ...form, [key]: event.target.checked })} />
+          {isAr ? ar : en}
+        </label>)}
+      </div>
+      <div className="flex justify-end gap-2"><Button variant="outline" onClick={() => setAdding(false)}>{isAr ? "إلغاء" : "Cancel"}</Button><Button onClick={saveNew} disabled={saving}>{saving ? (isAr ? "جارٍ الحفظ..." : "Saving...") : (isAr ? "حفظ المستلم" : "Save recipient")}</Button></div>
+    </div>}
+
+    <div className="mt-5 space-y-3">
+      {q.isLoading ? <p className="text-sm text-muted-foreground">{isAr ? "جارٍ التحميل..." : "Loading..."}</p> : q.data?.length ? q.data.map((recipient) => <div key={recipient.id} className="rounded-lg border p-4">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div><p className="font-medium">{recipient.name || recipient.email}</p>{recipient.name && <p className="text-sm text-muted-foreground" dir="ltr">{recipient.email}</p>}</div>
+          <div className="flex items-center gap-2"><label className="flex items-center gap-2 text-sm"><Switch checked={recipient.active} onCheckedChange={(active) => update(recipient.id, { active })} />{recipient.active ? (isAr ? "مفعّل" : "Active") : (isAr ? "معطّل" : "Off")}</label><Button variant="ghost" size="icon" aria-label={isAr ? "حذف المستلم" : "Remove recipient"} onClick={() => remove(recipient.id)}><Trash2 className="h-4 w-4" /></Button></div>
+        </div>
+        <div className="mt-3 grid gap-2 sm:grid-cols-2">
+          {NOTIFICATION_EVENT_FIELDS.map(({ key, en, ar }) => <label key={key} className="flex cursor-pointer items-center gap-2 text-xs text-muted-foreground"><input type="checkbox" checked={Boolean(recipient[key])} onChange={(event) => update(recipient.id, { [key]: event.target.checked } as Partial<NotificationRecipient>)} />{isAr ? ar : en}</label>)}
+        </div>
+      </div>) : <p className="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">{isAr ? "لا توجد مستلمات إضافية. سيستمر إرسال التنبيهات لمديري العلامة النشطين فقط." : "No additional recipients yet. Notifications will continue to go only to active Brand Admins."}</p>}
     </div>
   </Card>;
 }
