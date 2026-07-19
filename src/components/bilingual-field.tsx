@@ -60,7 +60,7 @@ export function BilingualField({
       const msg = String(e?.message ?? e);
       if (msg.includes("CREDITS_EXHAUSTED")) toast.error(isAr ? "نفدت الأرصدة" : "AI credits exhausted");
       else if (msg.includes("RATE_LIMITED")) toast.error(isAr ? "الكثير من الطلبات، حاول بعد قليل" : "Rate limited — try again shortly");
-      else toast.error(isAr ? "تعذر الترجمة" : "Translation failed");
+      else toast.error((isAr ? "تعذر الترجمة: " : "Translation failed: ") + msg);
     } finally {
       setBusy(null);
     }
