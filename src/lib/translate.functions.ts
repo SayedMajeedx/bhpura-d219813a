@@ -1,5 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
-import { requireSupabaseAuth, getEnvVariableAsync } from "@/integrations/supabase/auth-middleware";
+import { requireSupabaseAuth, getEnvVariableAsync, getEnvDiagnostics } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
 
 const Input = z.object({
@@ -26,7 +26,10 @@ export const translateProductText = createServerFn({ method: "POST" })
     if (data.from === data.to) return { text: data.text };
 
     const apiKey = await getEnvVariableAsync("GEMINI_API_KEY");
-    if (!apiKey) throw new Error("Missing GEMINI_API_KEY");
+    if (!apiKey) {
+      const diag = await getEnvDiagnostics();
+      throw new Error(`Missing GEMINI_API_KEY. Available keys: [${diag.keys.join(", ")}]. (Cloudflare: ${diag.hasCloudflare}, Node: ${diag.hasProcess})`);
+    }
 
     const systemInstruction = [
       "You are a premium, luxury bilingual copywriter and translator specializing in high-end fashion, beauty, and retail boutique brands.",

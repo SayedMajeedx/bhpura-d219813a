@@ -69,6 +69,49 @@ export async function getEnvVariableAsync(name: string): Promise<string | undefi
   return getEnvVariable(name);
 }
 
+export async function getEnvDiagnostics(): Promise<{ keys: string[]; hasProcess: boolean; hasCloudflare: boolean }> {
+  const keys = new Set<string>();
+  let hasProcess = false;
+  let hasCloudflare = false;
+
+  if (typeof process !== "undefined" && process.env) {
+    hasProcess = true;
+    Object.keys(process.env).forEach(k => keys.add(k));
+  }
+
+  if (typeof window === "undefined") {
+    try {
+      const vinxiHttp = "vinxi/http";
+      const { getEvent } = await import(vinxiHttp);
+      const event = getEvent();
+      const env = event?.context?.cloudflare?.env || (event?.context as any)?.env;
+      if (env) {
+        hasCloudflare = true;
+        Object.keys(env).forEach(k => keys.add(k));
+      }
+    } catch {}
+  }
+
+  try {
+    const metaEnv = (import.meta as any).env;
+    if (metaEnv) {
+      Object.keys(metaEnv).forEach(k => keys.add(k));
+    }
+  } catch {}
+
+  // Filter out sensitive-looking keys for safety, but keep key schemas
+  const filteredKeys = Array.from(keys).map(k => {
+    if (k.length > 30) return `${k.substring(0, 5)}... (len: ${k.length})`;
+    return k;
+  });
+
+  return {
+    keys: filteredKeys,
+    hasProcess,
+    hasCloudflare
+  };
+}
+
 
 
 function isNewSupabaseApiKey(value: string): boolean {
