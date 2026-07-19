@@ -31,7 +31,7 @@ export const translateProductText = createServerFn({ method: "POST" })
 
     if (!apiKey) {
       const diag = await getEnvDiagnostics();
-      throw new Error(`Missing GEMINI_API_KEY. To fix this instantly, please go to Settings -> Integrations, add a new "Gemini AI Translation" integration, and paste your Gemini API Key there! Available keys: [${diag.keys.join(", ")}]. (Cloudflare: ${diag.hasCloudflare}, Node: ${diag.hasProcess})`);
+      throw new Error(`Missing GEMINI_API_KEY. Trace: [${creds.diagnostics || "no-trace"}]. Available env keys: [${diag.keys.join(", ")}]. (Cloudflare: ${diag.hasCloudflare}, Node: ${diag.hasProcess})`);
     }
 
     const systemInstruction = [

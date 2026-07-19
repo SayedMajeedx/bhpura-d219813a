@@ -250,49 +250,76 @@ export const requireSupabaseAuth = createMiddleware({ type: 'function' }).server
 export async function getGeminiCredentials(
   supabase: any,
   userId: string
-): Promise<{ apiKey: string | undefined; model: string | undefined }> {
+): Promise<{ 
+  apiKey: string | undefined; 
+  model: string | undefined;
+  diagnostics?: string;
+}> {
   let apiKey = await getEnvVariableAsync("GEMINI_API_KEY");
   let model: string | undefined = undefined;
+  const traces: string[] = [];
+
+  traces.push(`Env key state: ${apiKey ? "present" : "absent"}`);
+  traces.push(`User ID: ${userId}`);
 
   // 1. Try secure Postgres RPC (recommended, needs no service_role key on Cloudflare)
   try {
-    const { data: profile } = await supabase
+    const { data: profile, error: profileErr } = await supabase
       .from("profiles")
-      .select("brand_id")
+      .select("brand_id, role, status")
       .eq("id", userId)
       .single();
+    
+    if (profileErr) {
+      traces.push(`[RPC] profile err: ${profileErr.message}`);
+    } else {
+      traces.push(`[RPC] profile: brand_id=${profile?.brand_id}, role=${profile?.role}, status=${profile?.status}`);
+    }
     
     if (profile?.brand_id) {
       const { data, error } = await supabase.rpc("get_gemini_credential", {
         p_brand_id: profile.brand_id
       });
       
-      if (!error && data && data.length > 0) {
-        const integration = data[0];
-        if (integration?.api_key) {
-          apiKey = integration.api_key;
-          if (integration.base_url) {
-            model = integration.base_url.trim();
+      if (error) {
+        traces.push(`[RPC] rpc err: ${error.message} (code: ${error.code})`);
+      } else {
+        traces.push(`[RPC] rpc returned ${data?.length ?? 0} rows`);
+        if (data && data.length > 0) {
+          const integration = data[0];
+          traces.push(`[RPC] integration: has_key=${!!integration?.api_key}, base_url=${integration?.base_url}`);
+          if (integration?.api_key) {
+            apiKey = integration.api_key;
+            if (integration.base_url) {
+              model = integration.base_url.trim();
+            }
+            traces.push(`[RPC] Key loaded from RPC successfully!`);
+            return { apiKey, model, diagnostics: traces.join(" | ") };
           }
-          return { apiKey, model };
         }
       }
     }
-  } catch (e) {
-    console.warn("[getGeminiCredentials] RPC method failed (may need database function created):", e);
+  } catch (e: any) {
+    traces.push(`[RPC] exception: ${e.message}`);
   }
 
   // 2. Fall back to direct table select via supabaseAdmin (requires service_role key)
   try {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: profile } = await supabaseAdmin
+    const { data: profile, error: adminProfileErr } = await supabaseAdmin
       .from("profiles")
       .select("brand_id")
       .eq("id", userId)
       .single();
     
+    if (adminProfileErr) {
+      traces.push(`[Admin] profile err: ${adminProfileErr.message}`);
+    } else {
+      traces.push(`[Admin] profile: brand_id=${profile?.brand_id}`);
+    }
+    
     if (profile?.brand_id) {
-      const { data: integration } = await supabaseAdmin
+      const { data: integration, error: adminIntErr } = await supabaseAdmin
         .from("integration_credentials")
         .select("api_key, base_url")
         .eq("brand_id", profile.brand_id)
@@ -300,17 +327,23 @@ export async function getGeminiCredentials(
         .eq("is_active", true)
         .maybeSingle();
       
-      if (integration?.api_key) {
-        apiKey = integration.api_key;
-        if (integration.base_url) {
-          model = integration.base_url.trim();
+      if (adminIntErr) {
+        traces.push(`[Admin] credentials query err: ${adminIntErr.message}`);
+      } else {
+        traces.push(`[Admin] credentials query success: has_row=${!!integration}`);
+        if (integration?.api_key) {
+          apiKey = integration.api_key;
+          if (integration.base_url) {
+            model = integration.base_url.trim();
+          }
+          traces.push(`[Admin] Key loaded from Admin fallback successfully!`);
         }
       }
     }
-  } catch (e) {
-    console.error("[getGeminiCredentials] admin fallback failed:", e);
+  } catch (e: any) {
+    traces.push(`[Admin] exception: ${e.message}`);
   }
 
-  return { apiKey, model };
+  return { apiKey, model, diagnostics: traces.join(" | ") };
 }
 
