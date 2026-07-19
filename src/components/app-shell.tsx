@@ -207,8 +207,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="min-h-screen flex bg-background">
-      <aside className="no-print hidden md:flex w-64 border-r border-sidebar-border bg-sidebar text-sidebar-foreground flex-col">
+    <div className="h-screen flex bg-background overflow-hidden">
+      <aside className="no-print hidden md:flex w-64 border-r border-sidebar-border bg-sidebar text-sidebar-foreground flex-col shrink-0">
         {SidebarContent}
       </aside>
 
@@ -253,8 +253,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </div>
       </div>
 
-      <main className="flex-1 overflow-auto print-area pt-14 md:pt-0 bg-background/95">
-        <header className="no-print hidden md:flex h-14 border-b border-border bg-card items-center justify-between px-8">
+      <main className="flex-1 flex flex-col print-area pt-14 md:pt-0 bg-background/95 overflow-hidden">
+        <header className="no-print hidden md:flex h-14 border-b border-border bg-card shrink-0 items-center justify-between px-8">
           <div className="font-display font-medium text-lg text-foreground">
             {currentPageLabel || ""}
           </div>
@@ -275,7 +275,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </div>
         </header>
 
-        <div className="min-h-[calc(100vh-3.5rem)]">
+        <div className="flex-1 overflow-auto min-h-0">
           {children}
         </div>
       </main>
