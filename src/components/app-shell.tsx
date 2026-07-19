@@ -155,7 +155,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       {activeSlug && !isCourier && (
         <div className="px-3 pt-3">
           <a
-            href={`/${activeSlug}`}
+            href={
+              typeof window !== "undefined" && 
+              window.location.hostname.toLowerCase() !== "localhost" && 
+              window.location.hostname.toLowerCase() !== "127.0.0.1"
+                ? `https://${activeSlug}.boutq.store`
+                : `/${activeSlug}`
+            }
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center justify-center gap-2 rounded-md bg-sidebar-primary px-3 py-2 text-sm font-medium text-sidebar-primary-foreground shadow-sm hover:opacity-90 transition-opacity"
