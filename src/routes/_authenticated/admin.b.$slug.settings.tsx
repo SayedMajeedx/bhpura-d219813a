@@ -19,6 +19,7 @@ import { Trash2 } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { uploadPublicMedia } from "@/lib/r2-upload";
 import { PasskeySettings } from "@/components/passkey-settings";
+import { SubscriptionCard } from "@/components/subscription-card";
 import { META_DESCRIPTION_LIMIT, META_TITLE_LIMIT, sanitizeMetaText } from "@/lib/seo";
 import { ImageCropperDialog } from "@/components/image-cropper-dialog";
 import { OptimizedVideo, ResponsiveImage } from "@/components/responsive-media";
@@ -150,6 +151,7 @@ function Settings() {
     { value: "branches", ar: "الفروع", en: "Branches" },
     { value: "emails", ar: "الإشعارات والبريد", en: "Notifications & Emails" },
     { value: "security", ar: "الأمان والبصمة", en: "Security & Passkeys" },
+    { value: "subscription", ar: "إدارة الاشتراك", en: "Platform Subscription" },
   ];
   const TAB_HEADERS: Record<string, { en: string; enDescription: string; ar: string; arDescription: string }> = {
     business: { en: "Business Profile Settings", enDescription: "Manage your business identity and contact information.", ar: "إعدادات الملف التجاري", arDescription: "إدارة هوية النشاط ومعلومات التواصل." },
@@ -160,6 +162,7 @@ function Settings() {
     branches: { en: "Branch Settings", enDescription: "Manage pickup locations and branch information.", ar: "إعدادات الفروع", arDescription: "إدارة مواقع الاستلام وبيانات الفروع." },
     emails: { en: "Notifications & Email Settings", enDescription: "Configure customer notifications and outgoing email.", ar: "إعدادات الإشعارات والبريد", arDescription: "إعداد إشعارات العملاء والبريد الصادر." },
     security: { en: "Security & Passkey Settings", enDescription: "Manage secure biometric sign-in for your account.", ar: "إعدادات الأمان والبصمة", arDescription: "إدارة تسجيل الدخول الآمن والبصمة للحساب." },
+    subscription: { en: "Subscription Settings", enDescription: "Manage your boutique monthly or annual subscription plans and payments.", ar: "إعدادات الاشتراك", arDescription: "إدارة خطط اشتراك البوتيك الشهرية والسنوية والمدفوعات." },
   };
   const activeHeader = TAB_HEADERS[activeTab] ?? TAB_HEADERS.business;
 
@@ -418,6 +421,10 @@ function Settings() {
 
         <TabsContent value="security" className="mt-0">
           <PasskeySettings />
+        </TabsContent>
+
+        <TabsContent value="subscription" className="mt-0">
+          <SubscriptionCard brand={brand} />
         </TabsContent>
       </Tabs>
     </div>

@@ -8,6 +8,12 @@ export type Brand = {
   logo_url: string | null;
   favicon_url?: string | null;
   is_active: boolean;
+  subscription_tier?: string | null;
+  subscription_status?: string | null;
+  subscription_expires_at?: string | null;
+  payment_receipt_url?: string | null;
+  payment_receipt_uploaded_at?: string | null;
+  custom_domain?: string | null;
 };
 
 const BrandContext = createContext<Brand | null>(null);

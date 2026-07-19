@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
   Dialog,
   DialogContent,
@@ -16,13 +17,35 @@ import {
   DialogTrigger,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Plus, Store, ExternalLink, Crown, Pencil, Trash2, AlertTriangle } from "lucide-react";
+import { 
+  Plus, 
+  Store, 
+  ExternalLink, 
+  Crown, 
+  Pencil, 
+  Trash2, 
+  AlertTriangle, 
+  DollarSign, 
+  Users, 
+  Clock, 
+  Eye, 
+  CheckCircle, 
+  XCircle, 
+  TrendingUp,
+  Loader2,
+  CalendarRange
+} from "lucide-react";
 import { toast } from "sonner";
 import { useI18n, useT } from "@/lib/i18n";
 import { SUPER_ADMIN_EMAIL } from "@/lib/profile-context";
 import { purgeBrandPublicMedia } from "@/lib/r2-upload";
 import { purgeBrandPrivateReceipts } from "@/lib/benefit-receipt.functions";
 import { META_DESCRIPTION_LIMIT, META_TITLE_LIMIT, sanitizeMetaText } from "@/lib/seo";
+import { 
+  getSubscriptionReceiptViewUrl, 
+  approveSubscriptionSaaS, 
+  rejectSubscriptionSaaS 
+} from "@/lib/saas-subscription.functions";
 
 export const Route = createFileRoute("/_authenticated/admin/brands")({
   beforeLoad: async () => {
@@ -55,6 +78,12 @@ type Brand = {
   about_en: string | null;
   meta_title: string | null;
   meta_description: string | null;
+  subscription_tier: "basic" | "growth" | "enterprise" | null;
+  subscription_status: "active" | "pending_verification" | "suspended" | null;
+  subscription_expires_at: string | null;
+  payment_receipt_url: string | null;
+  payment_receipt_uploaded_at: string | null;
+  custom_domain: string | null;
 };
 
 function BrandsPage() {
@@ -64,6 +93,14 @@ function BrandsPage() {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Brand | null>(null);
   const [deleting, setDeleting] = useState<Brand | null>(null);
+  const [activeTab, setActiveTab] = useState("all-stores");
+
+  // Approval Dialog States
+  const [approvingBrand, setApprovingBrand] = useState<Brand | null>(null);
+  const [approveTier, setApproveTier] = useState<"basic" | "growth" | "enterprise">("basic");
+  const [approveMonths, setApproveMonths] = useState<number>(1);
+  const [approving, setApproving] = useState(false);
+  const [rejecting, setRejecting] = useState<string | null>(null);
 
   const q = useQuery({
     queryKey: ["brands"],
@@ -80,26 +117,83 @@ function BrandsPage() {
   const brands = q.data ?? [];
   const refresh = () => qc.invalidateQueries({ queryKey: ["brands"] });
 
+  // Filter pending approvals
+  const pendingApprovals = brands.filter(b => b.subscription_status === "pending_verification" && b.payment_receipt_url);
+
+  // Compute Platform KPI Stats
+  const activeSaaSCount = brands.filter(b => b.subscription_status === "active").length;
+  
+  // Calculate SaaS MRR in BHD
+  const totalMRR = brands.reduce((sum, b) => {
+    if (b.subscription_status !== "active") return sum;
+    if (b.subscription_tier === "growth") return sum + 49;
+    if (b.subscription_tier === "basic" || !b.subscription_tier) return sum + 19;
+    return sum;
+  }, 0);
+
+  const handleViewReceipt = async (objectKey: string) => {
+    try {
+      const { viewUrl } = await getSubscriptionReceiptViewUrl({ objectKey });
+      window.open(viewUrl, "_blank");
+    } catch (err: any) {
+      toast.error(err.message || "Failed to generate private view URL.");
+    }
+  };
+
+  const handleApprove = async () => {
+    if (!approvingBrand) return;
+    setApproving(true);
+    try {
+      await approveSubscriptionSaaS({
+        brandId: approvingBrand.id,
+        tier: approveTier,
+        months: approveMonths
+      });
+      toast.success(lang === "ar" ? "تم تفعيل الاشتراك وتمديد الصلاحية بنجاح!" : "Subscription approved and extended successfully!");
+      setApprovingBrand(null);
+      refresh();
+    } catch (err: any) {
+      toast.error(err.message || "Failed to approve subscription.");
+    } finally {
+      setApproving(false);
+    }
+  };
+
+  const handleReject = async (brandId: string) => {
+    if (!confirm(lang === "ar" ? "هل أنت متأكد من رفض هذا الإيصال؟ سيتم حذف الملف وتعليق المتجر." : "Are you sure you want to reject this receipt? The file will be purged and account suspended.")) return;
+    setRejecting(brandId);
+    try {
+      await rejectSubscriptionSaaS({ brandId });
+      toast.success(lang === "ar" ? "تم رفض وإزالة الإيصال بنجاح." : "Receipt rejected and storage cleaned.");
+      refresh();
+    } catch (err: any) {
+      toast.error(err.message || "Failed to reject subscription.");
+    } finally {
+      setRejecting(null);
+    }
+  };
+
   return (
-    <div className="p-4 sm:p-6 lg:p-8 max-w-5xl mx-auto">
-      <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
+    <div className="p-4 sm:p-6 lg:p-8 max-w-5xl mx-auto space-y-8">
+      {/* Header Panel */}
+      <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-primary mb-1">
-            <Crown className="h-3.5 w-3.5" /> {lang === "ar" ? "المدير الأعلى" : "Super Admin"}
+            <Crown className="h-3.5 w-3.5 text-amber-500 animate-pulse" /> {lang === "ar" ? "المدير الأعلى" : "Super Admin Cockpit"}
           </div>
-          <h1 className="text-3xl sm:text-4xl font-display">
-            {lang === "ar" ? "العلامات التجارية" : "Brands"}
+          <h1 className="text-3xl sm:text-4xl font-display font-medium">
+            {lang === "ar" ? "لوحة تحكم SaaS الموحدة" : "PURA SaaS Dashboard"}
           </h1>
-          <p className="text-muted-foreground mt-1">
+          <p className="text-muted-foreground mt-1 text-xs sm:text-sm">
             {lang === "ar"
-              ? "إدارة العلامات التجارية وعزل بيانات كل علامة تجارية."
-              : "Create and manage the brands (tenants) hosted on this platform."}
+              ? "مراقبة الإيرادات، إدارة العلامات والمحلات الفردية، وتوثيق اشتراكات بنفت بي الخصوصية."
+              : "Monitor platform MRR, approve private BenefitPay subscriptions, and manage multi-tenant shops."}
           </p>
         </div>
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
-            <Button>
-              <Plus className="h-4 w-4 me-2" /> {lang === "ar" ? "علامة تجارية جديدة" : "New Brand"}
+            <Button className="h-11">
+              <Plus className="h-4 w-4 me-2" /> {lang === "ar" ? "إطلاق بوتيك جديد" : "Deploy New Boutique"}
             </Button>
           </DialogTrigger>
           <NewBrandDialog
@@ -111,70 +205,323 @@ function BrandsPage() {
         </Dialog>
       </div>
 
-      {brands.length === 0 ? (
-        <Card className="p-12 text-center">
-          <Store className="h-10 w-10 mx-auto text-muted-foreground mb-3" />
-          <p className="text-muted-foreground">
-            {lang === "ar" ? "لم يتم إنشاء أي علامة تجارية بعد." : "No brands yet."}
-          </p>
+      {/* Modern SaaS KPI Stats Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        {/* KPI: Total Brands */}
+        <Card className="p-5 border-zinc-100 dark:border-zinc-800/80 shadow-sm flex items-center gap-4 relative overflow-hidden">
+          <div className="p-3 rounded-full bg-primary/5 text-primary">
+            <Users className="h-6 w-6" />
+          </div>
+          <div>
+            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest block">{lang === "ar" ? "إجمالي البوتيكات" : "Total Boutique Tenants"}</span>
+            <span className="text-2xl font-bold font-display mt-0.5 block">{brands.length}</span>
+          </div>
         </Card>
-      ) : (
-        <div className="grid gap-3 sm:grid-cols-2">
-          {brands.map((b) => (
-            <Card key={b.id} className="p-5">
-              <div className="flex items-center gap-3 mb-3">
-                {b.logo_url ? (
-                  <img
-                    src={b.logo_url}
-                    alt={b.name_en}
-                    className="h-10 w-10 rounded object-contain bg-secondary"
-                  />
-                ) : (
-                  <div className="h-10 w-10 rounded bg-secondary grid place-items-center">
-                    <Store className="h-5 w-5 text-muted-foreground" />
-                  </div>
-                )}
-                <div className="min-w-0 flex-1">
-                  <div className="font-display text-lg truncate">{b.name_en}</div>
-                  <div className="text-xs text-muted-foreground truncate">/{b.slug}</div>
-                </div>
-                {!b.is_active && (
-                  <span className="text-xs uppercase tracking-wider px-2 py-1 rounded bg-secondary text-muted-foreground">
-                    {lang === "ar" ? "غير مفعل" : "Inactive"}
-                  </span>
-                )}
-              </div>
-              <div className="flex flex-wrap gap-2">
-                <Button asChild variant="secondary" size="sm">
-                  <Link to="/admin/b/$slug/dashboard" params={{ slug: b.slug }}>
-                    {lang === "ar" ? "فتح لوحة التحكم" : "Open workspace"}
-                  </Link>
-                </Button>
-                <Button asChild variant="outline" size="sm">
-                  <Link to="/$slug" params={{ slug: b.slug }}>
-                    <ExternalLink className="h-3.5 w-3.5 me-1.5" />
-                    {lang === "ar" ? "المتجر" : "Storefront"}
-                  </Link>
-                </Button>
-                <Button variant="outline" size="sm" onClick={() => setEditing(b)}>
-                  <Pencil className="h-3.5 w-3.5 me-1.5" />
-                  {lang === "ar" ? "تعديل" : "Edit"}
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="text-destructive hover:bg-destructive/10"
-                  onClick={() => setDeleting(b)}
-                >
-                  <Trash2 className="h-3.5 w-3.5 me-1.5" />
-                  {lang === "ar" ? "حذف" : "Delete"}
-                </Button>
-              </div>
+
+        {/* KPI: Active SaaS Subscriptions */}
+        <Card className="p-5 border-zinc-100 dark:border-zinc-800/80 shadow-sm flex items-center gap-4 relative overflow-hidden">
+          <div className="p-3 rounded-full bg-emerald-500/5 text-emerald-500">
+            <TrendingUp className="h-6 w-6" />
+          </div>
+          <div>
+            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest block">{lang === "ar" ? "الاشتراكات النشطة" : "Active SaaS Subscriptions"}</span>
+            <span className="text-2xl font-bold font-display text-emerald-600 dark:text-emerald-500 mt-0.5 block">{activeSaaSCount}</span>
+          </div>
+        </Card>
+
+        {/* KPI: SaaS Platform MRR */}
+        <Card className="p-5 border-zinc-100 dark:border-zinc-800/80 shadow-sm flex items-center gap-4 relative overflow-hidden">
+          <div className="p-3 rounded-full bg-blue-500/5 text-blue-500">
+            <DollarSign className="h-6 w-6" />
+          </div>
+          <div>
+            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest block">{lang === "ar" ? "الإيراد الشهري المتكرر (MRR)" : "Monthly Recurring Revenue"}</span>
+            <span className="text-2xl font-bold font-display text-blue-600 dark:text-blue-500 mt-0.5 block">{totalMRR} BHD</span>
+          </div>
+        </Card>
+      </div>
+
+      {/* Interactive Tabs Layout */}
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="grid w-full grid-cols-2 max-w-md h-11 mb-6 bg-muted/60 p-1">
+          <TabsTrigger value="all-stores" className="h-9 font-medium text-xs">
+            {lang === "ar" ? "المحلات المتاحة" : "All Shops"} ({brands.length})
+          </TabsTrigger>
+          <TabsTrigger value="receipt-approvals" className="h-9 font-medium text-xs relative">
+            {lang === "ar" ? "إيصالات الاشتراكات" : "Receipt Approvals"} 
+            {pendingApprovals.length > 0 && (
+              <span className="absolute -top-1.5 -right-1.5 h-5 w-5 bg-rose-500 text-white rounded-full text-[10px] flex items-center justify-center font-bold animate-bounce">
+                {pendingApprovals.length}
+              </span>
+            )}
+          </TabsTrigger>
+        </TabsList>
+
+        {/* TAB CONTENT: All Registered Tenants */}
+        <TabsContent value="all-stores" className="space-y-4">
+          {brands.length === 0 ? (
+            <Card className="p-12 text-center">
+              <Store className="h-10 w-10 mx-auto text-muted-foreground mb-3" />
+              <p className="text-muted-foreground">
+                {lang === "ar" ? "لم يتم إنشاء أي علامة تجارية بعد." : "No brands yet."}
+              </p>
             </Card>
-          ))}
-        </div>
+          ) : (
+            <div className="grid gap-4 sm:grid-cols-2">
+              {brands.map((b) => (
+                <Card key={b.id} className="p-5 border-zinc-100 dark:border-zinc-800/80 shadow-sm relative overflow-hidden flex flex-col justify-between h-56">
+                  <div>
+                    <div className="flex items-center gap-3 mb-3">
+                      {b.logo_url ? (
+                        <img
+                          src={b.logo_url}
+                          alt={b.name_en}
+                          className="h-10 w-10 rounded object-contain bg-secondary border border-zinc-100 dark:border-zinc-800"
+                        />
+                      ) : (
+                        <div className="h-10 w-10 rounded bg-secondary grid place-items-center border border-zinc-100 dark:border-zinc-800">
+                          <Store className="h-5 w-5 text-muted-foreground" />
+                        </div>
+                      )}
+                      <div className="min-w-0 flex-1">
+                        <div className="font-display font-medium text-lg truncate flex items-center gap-2">
+                          <span>{lang === "ar" ? b.name_ar || b.name_en : b.name_en}</span>
+                        </div>
+                        <div className="text-xs text-muted-foreground truncate font-mono">bh.pura/{b.slug}</div>
+                      </div>
+                      
+                      {/* Subscription status badges */}
+                      <div className="flex flex-col items-end gap-1 shrink-0">
+                        {b.subscription_status === "active" ? (
+                          <Badge className="bg-emerald-500 text-white hover:bg-emerald-600 text-[10px]">
+                            {b.subscription_tier === "growth" ? "Growth VIP" : "Basic"}
+                          </Badge>
+                        ) : b.subscription_status === "pending_verification" ? (
+                          <Badge className="bg-amber-500 text-white hover:bg-amber-600 text-[10px] animate-pulse">
+                            Pending
+                          </Badge>
+                        ) : (
+                          <Badge className="bg-zinc-400 text-white hover:bg-zinc-500 text-[10px]">
+                            Unpaid
+                          </Badge>
+                        )}
+                        {b.subscription_expires_at && (
+                          <span className="text-[9px] text-muted-foreground font-semibold flex items-center gap-0.5">
+                            <Clock className="h-2.5 w-2.5" />
+                            {new Date(b.subscription_expires_at).toLocaleDateString(lang === "ar" ? "ar-BH" : "en-US", { month: "short", day: "numeric" })}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-wrap gap-1.5 border-t border-zinc-50 dark:border-zinc-900 pt-3">
+                    <Button asChild variant="secondary" size="sm" className="flex-1 h-9">
+                      <Link to="/admin/b/$slug/dashboard" params={{ slug: b.slug }}>
+                        {lang === "ar" ? "اللوحة" : "Dashboard"}
+                      </Link>
+                    </Button>
+                    <Button asChild variant="outline" size="sm" className="flex-1 h-9">
+                      <Link to="/$slug" params={{ slug: b.slug }}>
+                        <ExternalLink className="h-3.5 w-3.5 me-1" />
+                        {lang === "ar" ? "المتجر" : "Storefront"}
+                      </Link>
+                    </Button>
+                    <Button variant="outline" size="sm" className="h-9" onClick={() => setEditing(b)}>
+                      <Pencil className="h-3.5 w-3.5" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-destructive hover:bg-destructive/10 h-9"
+                      onClick={() => setDeleting(b)}
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
+                </Card>
+              ))}
+            </div>
+          )}
+        </TabsContent>
+
+        {/* TAB CONTENT: Subscription Receipt Approvals Queue */}
+        <TabsContent value="receipt-approvals" className="space-y-4">
+          {pendingApprovals.length === 0 ? (
+            <Card className="p-12 text-center border-dashed border-zinc-200 dark:border-zinc-800">
+              <CheckCircle className="h-10 w-10 mx-auto text-emerald-500 mb-3 animate-bounce" />
+              <h3 className="font-display font-medium text-lg">{lang === "ar" ? "قائمة المراجعة فارغة تماماً!" : "Inbox is perfectly clean!"}</h3>
+              <p className="text-muted-foreground text-xs mt-1">
+                {lang === "ar" ? "لا توجد إيصالات دفع معلقة للمراجعة في الوقت الحالي." : "No boutique payment receipts are awaiting approval at the moment."}
+              </p>
+            </Card>
+          ) : (
+            <div className="space-y-3">
+              {pendingApprovals.map((b) => (
+                <Card key={b.id} className="p-5 border-zinc-100 dark:border-zinc-800/80 shadow-sm flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                  <div className="flex items-center gap-3">
+                    <div className="h-11 w-11 rounded-full bg-amber-500/5 grid place-items-center text-amber-500">
+                      <Clock className="h-5 w-5 animate-pulse" />
+                    </div>
+                    <div>
+                      <h4 className="font-display font-medium text-base text-zinc-900 dark:text-zinc-100">
+                        {lang === "ar" ? b.name_ar || b.name_en : b.name_en}
+                      </h4>
+                      <p className="text-xs text-muted-foreground font-mono">/{b.slug} • ID: {b.id.substring(0, 8)}...</p>
+                      {b.payment_receipt_uploaded_at && (
+                        <p className="text-[10px] text-zinc-400 mt-1">
+                          {lang === "ar" ? "تم الرفع:" : "Uploaded:"} {new Date(b.payment_receipt_uploaded_at).toLocaleString(lang === "ar" ? "ar-BH" : "en-US")}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    {/* View R2 Receipt Button */}
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="gap-1 text-xs font-medium"
+                      onClick={() => b.payment_receipt_url && handleViewReceipt(b.payment_receipt_url)}
+                    >
+                      <Eye className="h-4 w-4 text-primary" />
+                      <span>{lang === "ar" ? "عرض إيصال R2" : "View Receipt"}</span>
+                    </Button>
+
+                    {/* Open Approve Dialog */}
+                    <Button 
+                      size="sm" 
+                      className="bg-emerald-600 hover:bg-emerald-700 text-white gap-1 text-xs font-medium"
+                      onClick={() => {
+                        setApprovingBrand(b);
+                        setApproveTier("basic");
+                        setApproveMonths(1);
+                      }}
+                    >
+                      <CheckCircle className="h-4 w-4" />
+                      <span>{lang === "ar" ? "اعتماد" : "Approve"}</span>
+                    </Button>
+
+                    {/* Reject Receipt */}
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      disabled={rejecting === b.id}
+                      className="text-rose-500 hover:text-rose-600 hover:bg-rose-500/5 gap-1 text-xs font-medium"
+                      onClick={() => handleReject(b.id)}
+                    >
+                      {rejecting === b.id ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <XCircle className="h-4 w-4" />
+                      )}
+                      <span>{lang === "ar" ? "رفض" : "Reject"}</span>
+                    </Button>
+                  </div>
+                </Card>
+              ))}
+            </div>
+          )}
+        </TabsContent>
+      </Tabs>
+
+      {/* DIALOG: Approve Subscription & Assign Tier/Expires Date */}
+      {approvingBrand && (
+        <Dialog open={!!approvingBrand} onOpenChange={(v) => !v && setApprovingBrand(null)}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle className="font-display font-medium flex items-center gap-2">
+                <CheckCircle className="h-5 w-5 text-emerald-500" />
+                <span>{lang === "ar" ? "اعتماد اشتراك البوتيك" : "Approve SaaS Subscription"}</span>
+              </DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 py-3">
+              <div className="p-3 bg-zinc-50 dark:bg-zinc-950 border border-zinc-100 dark:border-zinc-900 rounded-md">
+                <p className="text-xs text-muted-foreground uppercase font-bold tracking-widest">{lang === "ar" ? "المحل المختار" : "Boutique Brand"}</p>
+                <p className="font-display font-semibold mt-0.5 text-foreground">{approvingBrand.name_en}</p>
+              </div>
+
+              {/* Tier Selection */}
+              <div className="space-y-2">
+                <Label className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">{lang === "ar" ? "تحديد باقة الاشتراك" : "Assign Plan Tier"}</Label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setApproveTier("basic")}
+                    className={`p-3 rounded border text-left flex flex-col justify-between h-20 transition-all ${
+                      approveTier === "basic"
+                        ? "border-primary bg-primary/[0.02] ring-1 ring-primary"
+                        : "border-zinc-200 dark:border-zinc-800 bg-background hover:border-zinc-300"
+                    }`}
+                  >
+                    <span className="font-semibold text-xs text-foreground">{lang === "ar" ? "الباقة الأساسية" : "Basic Boutique"}</span>
+                    <span className="text-[10px] text-muted-foreground">19 BHD/month</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setApproveTier("growth")}
+                    className={`p-3 rounded border text-left flex flex-col justify-between h-20 transition-all ${
+                      approveTier === "growth"
+                        ? "border-primary bg-primary/[0.02] ring-1 ring-primary"
+                        : "border-zinc-200 dark:border-zinc-800 bg-background hover:border-zinc-300"
+                    }`}
+                  >
+                    <span className="font-semibold text-xs text-foreground">{lang === "ar" ? "الباقة المتقدمة" : "Growth VIP"}</span>
+                    <span className="text-[10px] text-muted-foreground">49 BHD/month</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Month Selection */}
+              <div className="space-y-2">
+                <Label htmlFor="approve-months" className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+                  {lang === "ar" ? "مدة الترخيص (أشهر)" : "SaaS License Duration (Months)"}
+                </Label>
+                <div className="grid grid-cols-4 gap-2">
+                  {[1, 3, 6, 12].map((m) => (
+                    <button
+                      key={m}
+                      type="button"
+                      onClick={() => setApproveMonths(m)}
+                      className={`h-10 rounded border font-medium text-xs transition-all ${
+                        approveMonths === m
+                          ? "border-primary bg-primary/5 text-primary"
+                          : "border-zinc-200 dark:border-zinc-800 bg-background hover:border-zinc-300"
+                      }`}
+                    >
+                      {m} {lang === "ar" ? "شهر" : "M"}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+            <DialogFooter className="gap-2">
+              <Button variant="outline" onClick={() => setApprovingBrand(null)} disabled={approving}>
+                {lang === "ar" ? "إلغاء" : "Cancel"}
+              </Button>
+              <Button 
+                onClick={handleApprove} 
+                disabled={approving} 
+                className="bg-emerald-600 hover:bg-emerald-700 text-white gap-1.5"
+              >
+                {approving ? (
+                  <>
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    <span>{lang === "ar" ? "جاري الاعتماد..." : "Activating..."}</span>
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle className="h-3.5 w-3.5" />
+                    <span>{lang === "ar" ? "تفعيل الحساب الآن" : "Authorize & Activate"}</span>
+                  </>
+                )}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       )}
 
+      {/* Dialogs: Edit / Delete */}
       {editing && (
         <Dialog open={!!editing} onOpenChange={(v) => !v && setEditing(null)}>
           <EditBrandDialog
@@ -221,16 +568,20 @@ function NewBrandDialog({ onSaved }: { onSaved: () => void }) {
       const {
         data: { user },
       } = await supabase.auth.getUser();
-      const { error } = await (supabase.from("brands") as any).insert({
-        slug,
-        name_en: form.name_en.trim(),
-        name_ar: form.name_ar.trim() || null,
-        logo_url: form.logo_url.trim() || null,
-        is_active: true,
-        created_by: user?.id ?? null,
+      
+      // Deploying tenant using RPC for instant, correct seeding!
+      const { error } = await supabase.rpc("create_tenant_with_defaults", {
+        p_slug: slug,
+        p_name_en: form.name_en.trim(),
+        p_name_ar: form.name_ar.trim() || null,
+        p_primary_color: "#800020",
+        p_owner_id: user?.id ?? "00000000-0000-0000-0000-000000000000",
+        p_owner_email: user?.email ?? "super_admin@pura.bh",
+        p_owner_name: "Super Admin Deployment"
       });
+
       if (error) throw error;
-      toast.success(lang === "ar" ? "تم الحفظ" : "Saved");
+      toast.success(lang === "ar" ? "تم تهيئة المتجر وإطلاقه بنجاح!" : "Tenant database provisioned and live!");
       onSaved();
     } catch (err: any) {
       toast.error(err?.message ?? "Error");
@@ -284,14 +635,6 @@ function NewBrandDialog({ onSaved }: { onSaved: () => void }) {
               ? "يُكتب يدويًا ولا يُشتق من الاسم. سيظهر في /admin/b/{المعرّف} و /{المعرّف}."
               : "Typed manually — never auto-generated from the name. Used in /admin/b/{slug} and /{slug}."}
           </p>
-        </div>
-        <div>
-          <Label>{lang === "ar" ? "رابط الشعار" : "Logo URL"}</Label>
-          <Input
-            value={form.logo_url}
-            onChange={(e) => setForm({ ...form, logo_url: e.target.value })}
-            placeholder="https://…"
-          />
         </div>
       </div>
       <DialogFooter>
