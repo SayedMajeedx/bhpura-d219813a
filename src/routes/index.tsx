@@ -14,7 +14,8 @@ export const Route = createFileRoute("/")({
       hostname === "127.0.0.1" || 
       hostname.endsWith(".pura.bh") || 
       hostname === "pura.bh" || 
-      hostname.endsWith(".pages.dev") || // Cloudflare free preview domains
+      hostname.endsWith(".pages.dev") || // Cloudflare Pages preview domains
+      hostname.endsWith(".workers.dev") || // Cloudflare Workers production domains
       hostname.endsWith(".vercel.app");  // Vercel fallback domains
 
     if (isPlatformDomain) {
@@ -24,7 +25,7 @@ export const Route = createFileRoute("/")({
 
     // 2. Custom Domain Mapping: Check if this custom hostname is bound to a boutique brand
     try {
-      const { data: brand, error } = await supabase
+      const { data: brand } = await supabase
         .from("brands")
         .select("slug")
         .eq("custom_domain", hostname)
