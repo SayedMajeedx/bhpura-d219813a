@@ -254,6 +254,35 @@ export async function getGeminiCredentials(
   let apiKey = await getEnvVariableAsync("GEMINI_API_KEY");
   let model: string | undefined = undefined;
 
+  // 1. Try secure Postgres RPC (recommended, needs no service_role key on Cloudflare)
+  try {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("brand_id")
+      .eq("id", userId)
+      .single();
+    
+    if (profile?.brand_id) {
+      const { data, error } = await supabase.rpc("get_gemini_credential", {
+        p_brand_id: profile.brand_id
+      });
+      
+      if (!error && data && data.length > 0) {
+        const integration = data[0];
+        if (integration?.api_key) {
+          apiKey = integration.api_key;
+          if (integration.base_url) {
+            model = integration.base_url.trim();
+          }
+          return { apiKey, model };
+        }
+      }
+    }
+  } catch (e) {
+    console.warn("[getGeminiCredentials] RPC method failed (may need database function created):", e);
+  }
+
+  // 2. Fall back to direct table select via supabaseAdmin (requires service_role key)
   try {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: profile } = await supabaseAdmin
@@ -279,7 +308,7 @@ export async function getGeminiCredentials(
       }
     }
   } catch (e) {
-    console.error("[getGeminiCredentials] Error querying database for custom Gemini integration:", e);
+    console.error("[getGeminiCredentials] admin fallback failed:", e);
   }
 
   return { apiKey, model };
