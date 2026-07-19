@@ -254,7 +254,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       </div>
 
       <main className="flex-1 overflow-auto print-area pt-14 md:pt-0 bg-background/95">
-        <header className="no-print hidden md:flex h-14 border-b border-border bg-card/60 backdrop-blur-md sticky top-0 z-30 items-center justify-between px-8">
+        <header className="no-print hidden md:flex h-14 border-b border-border bg-card items-center justify-between px-8">
           <div className="font-display font-medium text-lg text-foreground">
             {currentPageLabel || ""}
           </div>

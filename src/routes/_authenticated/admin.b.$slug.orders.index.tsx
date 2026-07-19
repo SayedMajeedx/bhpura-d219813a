@@ -665,14 +665,14 @@ function OrdersList() {
 
             <div className="flex items-center gap-1">
               <Button variant="outline" size="sm" className="h-8 w-8 p-0" onClick={() => setPage((p) => Math.max(p - 1, 1))} disabled={page === 1}>
-                <ChevronLeft className="h-4 w-4" />
+                {lang === "ar" ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
                 <span className="sr-only">Previous page</span>
               </Button>
               <div className="text-xs px-2 text-muted-foreground">
                 {lang === "ar" ? `صفحة ${page} من ${totalPages}` : `Page ${page} of ${totalPages}`}
               </div>
               <Button variant="outline" size="sm" className="h-8 w-8 p-0" onClick={() => setPage((p) => Math.min(p + 1, totalPages))} disabled={page === totalPages}>
-                <ChevronRight className="h-4 w-4" />
+                {lang === "ar" ? <ChevronLeft className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
                 <span className="sr-only">Next page</span>
               </Button>
             </div>
