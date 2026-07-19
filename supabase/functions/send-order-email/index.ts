@@ -15,13 +15,22 @@ const allowedOrigins = Array.from(new Set([
   "https://www.boutq.store",
   "https://bhpura.vercel.app",
 ].map((origin) => origin.trim()).filter(Boolean)));
+
 function corsHeadersFor(req: Request) {
   const origin = req.headers.get("origin") ?? "";
+  const isAllowed = allowedOrigins.includes(origin) || 
+    origin.endsWith(".pages.dev") || 
+    origin.endsWith(".workers.dev") || 
+    origin.endsWith(".vercel.app") || 
+    origin.startsWith("http://localhost:") || 
+    origin.startsWith("https://localhost:") ||
+    origin === "null";
+  
   return {
-  "Access-Control-Allow-Origin": allowedOrigins.includes(origin) ? origin : allowedOrigins[0],
-  "Vary": "Origin",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-webhook-secret",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Access-Control-Allow-Origin": isAllowed ? origin : (allowedOrigins[0] || "*"),
+    "Vary": "Origin",
+    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-webhook-secret",
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
   };
 }
 
