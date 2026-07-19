@@ -272,6 +272,20 @@ function CourierOrderView({ order, slug, onUpdated }: { order: any; slug: string
       if (error) throw error;
       toast.success(lang === "ar" ? "تم تحديث حالة التوصيل" : "Delivery status updated");
       await onUpdated();
+      if (status === "delivered") {
+        void (async () => {
+          try {
+            const { data: { session } } = await supabase.auth.getSession();
+            const accessToken = session?.access_token;
+            await supabase.functions.invoke("send-order-email", {
+              body: { order_id: order.id, event: "order_delivered", lang },
+              headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : undefined,
+            });
+          } catch (e) {
+            console.warn("[courier delivered email trigger error]", e);
+          }
+        })();
+      }
       if (status === "out_for_delivery") {
         if (phone) {
           const settings = messageQ.data;
@@ -1132,8 +1146,12 @@ function OrderDetail() {
 
     // ── Activity log: detect changes vs saved state
     const prev = (orderQ.data ?? {}) as any;
+    const prevStatus = prev.status;
+    const newStatus = order.status;
+    const statusChanged = prevStatus !== newStatus;
+
     const logs: Array<{ action: string; en: string; ar: string; order_id: string }> = [];
-    if (prev.status !== order.status) {
+    if (statusChanged) {
       logs.push({
         action: "status_change",
         order_id: order.id,
@@ -1257,6 +1275,31 @@ function OrderDetail() {
     qc.invalidateQueries({ queryKey: ["orders"] });
     qc.invalidateQueries({ queryKey: ["variants"] });
     qc.invalidateQueries({ queryKey: ["activity_logs"] });
+
+    // Trigger emails on status transitions
+    if (statusChanged) {
+      let emailEvent: string | null = null;
+      if (newStatus === "completed" || newStatus === "delivered") {
+        emailEvent = "order_delivered";
+      } else if (newStatus === "cancelled") {
+        emailEvent = "order_cancelled";
+      }
+
+      if (emailEvent) {
+        void (async () => {
+          try {
+            const { data: { session } } = await supabase.auth.getSession();
+            const accessToken = session?.access_token;
+            await supabase.functions.invoke("send-order-email", {
+              body: { order_id: order.id, event: emailEvent, lang },
+              headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : undefined,
+            });
+          } catch (e) {
+            console.warn("[save statusChange email trigger error]", e);
+          }
+        })();
+      }
+    }
   };
 
   const copyLink = async () => {
