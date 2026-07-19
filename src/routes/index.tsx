@@ -43,7 +43,26 @@ function IndexRedirector() {
           return;
         }
 
-        // Custom Domain Mapping: Check if this custom hostname is bound to a boutique brand
+        // 1. Boutq Wildcard Subdomain Mapping (e.g., pura.boutq.store -> slug "pura")
+        if (hostname.endsWith(".boutq.store") && hostname !== "boutq.store") {
+          const subdomain = hostname.slice(0, -12); // Extract "pura" from "pura.boutq.store"
+          const { data: brand } = await (supabase as any)
+            .from("brands")
+            .select("slug")
+            .or(`slug.eq.${subdomain},custom_domain.eq.${hostname}`)
+            .eq("is_active", true)
+            .maybeSingle();
+
+          if (brand?.slug) {
+            void navigate({ 
+              to: "/$slug", 
+              params: { slug: brand.slug } 
+            });
+            return;
+          }
+        }
+
+        // 2. Custom Domain Mapping: Check if this custom hostname is bound to a boutique brand
         const { data: brand } = await (supabase as any)
           .from("brands")
           .select("slug")
