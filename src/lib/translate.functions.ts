@@ -9,7 +9,7 @@ const Input = z.object({
 });
 
 // Trigger build to reload environment variables on Cloudflare Pages
-const MODEL = "gemini-1.5-flash";
+const MODEL = "gemini-3.1-flash-lite";
 
 /**
  * One-shot premium merchant text translation and copywriting localization via Google Gemini.
