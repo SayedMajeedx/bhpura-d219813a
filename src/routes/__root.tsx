@@ -14,6 +14,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { I18nProvider } from "@/lib/i18n";
 import { installNumericInputBehavior } from "@/lib/numeric-input-behavior";
 import { ProfileProvider } from "@/lib/profile-context";
+import { getEnvVariable } from "@/integrations/supabase/auth-middleware";
 
 function NotFoundComponent() {
   return (
@@ -97,9 +98,20 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 });
 
 function RootShell({ children }: { children: ReactNode }) {
+  const imageKitEndpoint = getEnvVariable("VITE_IMAGEKIT_URL_ENDPOINT") || "";
+
   return (
     <html lang="en" suppressHydrationWarning>
-      <head><HeadContent /></head>
+      <head>
+        <HeadContent />
+        {imageKitEndpoint && (
+          <script
+            dangerouslySetInnerHTML={{
+              __html: `window.__PUBLIC_ENV__ = { VITE_IMAGEKIT_URL_ENDPOINT: ${JSON.stringify(imageKitEndpoint)} };`,
+            }}
+          />
+        )}
+      </head>
       <body suppressHydrationWarning>
         {children}
         <Scripts />

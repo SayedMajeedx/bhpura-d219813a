@@ -1,0 +1,25 @@
+{
+  "timestamp": "2026-07-19T20:24:24.111Z",
+  "storefront": {
+    "status": "SUCCESS",
+    "details": [
+      "✔ Storefront Catalog: Verified. Retrieved 3 products for active tenant 'pura'.",
+      "    - Product: Abaya Code PR1 | Active: undefined",
+      "    - Product: Abaya Code PR2 | Active: undefined",
+      "    - Product: Dress - PR3 | Active: undefined"
+    ]
+  },
+  "workspace": {
+    "status": "SUCCESS",
+    "details": [
+      "⚠️ GEMINI_API_KEY is missing in local .env - skipping translation runtime test."
+    ]
+  },
+  "controlTower": {
+    "status": "SUCCESS",
+    "details": [
+      "✔ KPI Platform MRR: Verified. Total SaaS platform MRR calculated at **0 BHD**.",
+      "    - Active SaaS Brands: 0"
+    ]
+  }
+}

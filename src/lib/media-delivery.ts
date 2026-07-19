@@ -22,15 +22,17 @@ export function cloudflareImageUrl(source: string, width: number, quality = 82):
     const url = new URL(source, typeof window === "undefined" ? "https://boutq.store" : window.location.origin);
     const options = `width=${width},fit=scale-down,quality=${quality},format=auto,metadata=none,onerror=redirect`;
     
-    // Now that the site is on Cloudflare Pages, we can use the current active origin (e.g. boutq.store) 
-    // to run the /cdn-cgi/image service natively, falling back to CLOUDFLARE_IMAGE_TRANSFORM_ORIGIN during SSR.
+    // 1. If the source is on the media.boutq.store custom domain, we run same-host transformations 
+    // directly on media.boutq.store, which natively supports Cloudflare Image Resizing.
+    if (url.hostname === "media.boutq.store" || url.hostname.endsWith(".boutq.store")) {
+      return `https://media.boutq.store/cdn-cgi/image/${options}${url.pathname}${url.search}`;
+    }
+
+    // 2. Otherwise, request transformations from the current active storefront origin (or zone)
     const transformOrigin = (typeof window !== "undefined" && window.location.origin)
       ? window.location.origin
       : CLOUDFLARE_IMAGE_TRANSFORM_ORIGIN;
 
-    if (url.hostname === "media.boutq.store") {
-      return `${transformOrigin}/cdn-cgi/image/${options}${url.pathname}${url.search}`;
-    }
     return `${transformOrigin}/cdn-cgi/image/${options}/${encodeURI(url.toString())}`;
   } catch {
     return source;
@@ -42,13 +44,22 @@ export function cloudflareImageSrcSet(source: string, preset: ResponsiveImagePre
 }
 
 /**
- * Robust getter for the ImageKit URL endpoint, supporting both compiled VITE_ pre-bakes 
- * and dynamic Cloudflare Page dashboard context lookups at runtime.
+ * Robust getter for the ImageKit URL endpoint, supporting both compiled VITE_ pre-bakes,
+ * dynamic window environment variables injected during SSR layout script hydration, 
+ * and dynamic Cloudflare Page dashboard context lookups at server runtime.
  */
 function getImageKitEndpoint(): string {
+  // 1. Try static client-side build injection
   const staticVal = (import.meta.env.VITE_IMAGEKIT_URL_ENDPOINT || "").trim();
   if (staticVal) return staticVal.replace(/\/+$/, "");
 
+  // 2. Try window global injected during SSR layout script dehydration
+  if (typeof window !== "undefined") {
+    const injectedVal = ((window as any).__PUBLIC_ENV__?.VITE_IMAGEKIT_URL_ENDPOINT || "").trim();
+    if (injectedVal) return injectedVal.replace(/\/+$/, "");
+  }
+
+  // 3. Try dynamic server-side worker context lookup
   const dynamicVal = (getEnvVariable("VITE_IMAGEKIT_URL_ENDPOINT") || getEnvVariable("IMAGEKIT_URL_ENDPOINT") || "").trim();
   return dynamicVal.replace(/\/+$/, "");
 }
