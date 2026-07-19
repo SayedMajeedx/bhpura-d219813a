@@ -21,33 +21,35 @@ async function handleProxy(request: Request, path: string) {
   const urlObj = new URL(request.url);
   const targetUrl = `${realUrl}/${path}${urlObj.search}`;
   
-  // Create sanitized headers to avoid intermediate proxy conflicts
+  // Forward essential database headers + standard browser headers
+  // Stripping cookies, cf-headers, and host headers to prevent security & TLS handshake conflicts
   const headers = new Headers();
-  const blockedHeaders = [
-    "host",
-    "connection",
-    "keep-alive",
-    "content-length",
-    "transfer-encoding",
-    "accept-encoding",
-    "origin",
-    "referer",
-    "cf-connecting-ip",
-    "cf-worker",
-    "cf-ray",
-    "cf-visitor",
-    "x-real-ip",
-    "x-forwarded-for",
-    "x-forwarded-proto"
+  const allowedHeaders = [
+    "apikey",
+    "authorization",
+    "content-type",
+    "prefer",
+    "range",
+    "x-client-info",
+    "user-agent",
+    "accept",
+    "accept-language",
+    "sec-ch-ua",
+    "sec-ch-ua-mobile",
+    "sec-ch-ua-platform",
+    "sec-fetch-dest",
+    "sec-fetch-mode",
+    "sec-fetch-site",
+    "sec-fetch-user"
   ];
   
   request.headers.forEach((value, key) => {
-    if (!blockedHeaders.includes(key.toLowerCase())) {
+    if (allowedHeaders.includes(key.toLowerCase())) {
       headers.set(key, value);
     }
   });
-  
-  // Ensure the apikey header is present (crucial for Supabase auth and routing)
+
+  // Ensure the apikey is present for standard Supabase routing
   const apikey = request.headers.get("apikey") || request.headers.get("x-client-info");
   if (apikey) {
     headers.set("apikey", apikey);
@@ -68,7 +70,7 @@ async function handleProxy(request: Request, path: string) {
       method: request.method,
       headers,
       body,
-      redirect: "manual", // Prevent automatic redirection following on server side (crucial for OAuth redirects)
+      redirect: "manual", // Prevent automatic redirection following (crucial for passing OAuth redirects back to client)
     });
     
     // Copy response headers
