@@ -10,6 +10,9 @@ export function getEnvVariable(name: string): string | undefined {
 
   // 1. Try process.env
   if (typeof process !== "undefined") {
+    if (name === "GEMINI_API_KEY") {
+      console.log(`[Env Debug] process.env keys:`, Object.keys(process.env || {}));
+    }
     if (process.env?.[name]) return process.env[name];
     if (process.env?.[viteName]) return process.env[viteName];
     if (process.env?.[unprefixed]) return process.env[unprefixed];
@@ -49,10 +52,17 @@ export async function getEnvVariableAsync(name: string): Promise<string | undefi
       const { getEvent } = await import(vinxiHttp);
       const event = getEvent();
       const env = event?.context?.cloudflare?.env || (event?.context as any)?.env;
+      if (name === "GEMINI_API_KEY") {
+        console.log(`[Env Debug] Cloudflare env keys:`, Object.keys(env || {}));
+      }
       if (env?.[name]) return env[name];
       if (env?.[viteName]) return env[viteName];
       if (env?.[unprefixed]) return env[unprefixed];
-    } catch {}
+    } catch (e) {
+      if (name === "GEMINI_API_KEY") {
+        console.error(`[Env Debug] Error reading Cloudflare context:`, e);
+      }
+    }
   }
 
   // 2. Fall back to standard synchronous checks
