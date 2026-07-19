@@ -28,16 +28,14 @@ function createSupabaseFetch(supabaseKey: string): typeof fetch {
 
 
 function createSupabaseClient() {
-  let SUPABASE_URL = "";
-  if (typeof window !== "undefined") {
-    SUPABASE_URL = `${window.location.origin}/api/supabase`;
-  } else {
-    SUPABASE_URL =
-      import.meta.env.VITE_SUPABASE_URL ||
-      import.meta.env.NEXT_PUBLIC_SUPABASE_URL ||
-      process.env.SUPABASE_URL ||
-      process.env.NEXT_PUBLIC_SUPABASE_URL;
-  }
+  // Use import.meta.env for client-side (Vite build-time replacement)
+  // Fall back to process.env for SSR (server-side rendering)
+  // Also support VITE_SUPABASE_ANON_KEY and NEXT_PUBLIC_ prefixes
+  let SUPABASE_URL =
+    import.meta.env.VITE_SUPABASE_URL ||
+    import.meta.env.NEXT_PUBLIC_SUPABASE_URL ||
+    process.env.SUPABASE_URL ||
+    process.env.NEXT_PUBLIC_SUPABASE_URL;
 
   if (SUPABASE_URL && !SUPABASE_URL.startsWith('http://') && !SUPABASE_URL.startsWith('https://')) {
     SUPABASE_URL = `https://${SUPABASE_URL}`;
@@ -77,13 +75,7 @@ function createSupabaseClient() {
 }
 
 function createPublicSupabaseClient() {
-  let url = "";
-  if (typeof window !== "undefined") {
-    url = `${window.location.origin}/api/supabase`;
-  } else {
-    url = import.meta.env.VITE_SUPABASE_URL || import.meta.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
-  }
-
+  let url = import.meta.env.VITE_SUPABASE_URL || import.meta.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
   if (url && !url.startsWith('http://') && !url.startsWith('https://')) {
     url = `https://${url}`;
   }
