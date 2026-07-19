@@ -8,6 +8,7 @@ const Input = z.object({
   to: z.enum(["ar", "en"]),
 });
 
+// Trigger build to reload environment variables on Cloudflare Pages
 const MODEL = "gemini-1.5-flash";
 
 /**
