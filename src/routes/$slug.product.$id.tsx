@@ -593,12 +593,13 @@ function RecommendationRail({ title, products }: { title: string; products: Reco
             >
               <div className="aspect-[3/4] overflow-hidden rounded-xl bg-muted">
                 {cover ? (
-                  <img
+                  <ResponsiveImage
                     src={cover}
+                    preset="thumb"
+                    sizes="(min-width: 640px) 168px, 140px"
                     alt={name}
                     className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                     loading="lazy"
-                    decoding="async"
                   />
                 ) : (
                   <div className="grid h-full place-items-center px-3 text-center text-xs text-muted-foreground">
