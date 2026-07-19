@@ -12,6 +12,11 @@ import {
   Clock3,
   CircleDollarSign,
   Truck,
+  ArrowUpDown,
+  ArrowUp,
+  ArrowDown,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import {
@@ -28,7 +33,7 @@ import { resolvePaymentStatus, PAYMENT_BADGE_CLASSES } from "@/lib/payment-statu
 import { useBrand } from "@/lib/brand-context";
 import { useProfile } from "@/lib/profile-context";
 import { useRealtimeInvalidate } from "@/hooks/use-realtime-invalidate";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -119,6 +124,16 @@ function OrdersList() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [fulfillmentFilter, setFulfillmentFilter] = useState("all");
+
+  const [sortField, setSortField] = useState<"invoice_number" | "created_at" | "customer" | "status" | "total">("created_at");
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(7);
+
+  // Reset page when sorting, search, filters or page size change
+  useEffect(() => {
+    setPage(1);
+  }, [search, statusFilter, fulfillmentFilter, sortField, sortDirection, pageSize]);
 
   useRealtimeInvalidate(
     [
@@ -212,6 +227,65 @@ function OrdersList() {
       (fulfillmentFilter === "all" || order.fulfillment_method === fulfillmentFilter)
     );
   });
+
+  const sortedOrders = useMemo(() => {
+    const list = [...filteredOrders];
+    list.sort((a, b) => {
+      let valA: any = "";
+      let valB: any = "";
+
+      if (sortField === "invoice_number") {
+        valA = a.invoice_number ?? 0;
+        valB = b.invoice_number ?? 0;
+        return sortDirection === "asc" ? valA - valB : valB - valA;
+      } else if (sortField === "created_at") {
+        valA = new Date(a.created_at ?? a.order_date).getTime();
+        valB = new Date(b.created_at ?? b.order_date).getTime();
+        return sortDirection === "asc" ? valA - valB : valB - valA;
+      } else if (sortField === "customer") {
+        valA = a.customers?.name ?? "";
+        valB = b.customers?.name ?? "";
+      } else if (sortField === "status") {
+        valA = a.status ?? "";
+        valB = b.status ?? "";
+      } else if (sortField === "total") {
+        valA = Number(a.total ?? 0);
+        valB = Number(b.total ?? 0);
+        return sortDirection === "asc" ? valA - valB : valB - valA;
+      }
+
+      valA = String(valA).toLowerCase();
+      valB = String(valB).toLowerCase();
+
+      if (valA < valB) return sortDirection === "asc" ? -1 : 1;
+      if (valA > valB) return sortDirection === "asc" ? 1 : -1;
+      return 0;
+    });
+    return list;
+  }, [filteredOrders, sortField, sortDirection]);
+
+  const paginatedOrders = useMemo(() => {
+    const start = (page - 1) * pageSize;
+    return sortedOrders.slice(start, start + pageSize);
+  }, [sortedOrders, page, pageSize]);
+
+  const totalPages = Math.ceil(sortedOrders.length / pageSize) || 1;
+
+  const toggleSort = (field: typeof sortField) => {
+    if (sortField === field) {
+      setSortDirection((prev) => (prev === "asc" ? "desc" : "asc"));
+    } else {
+      setSortField(field);
+      setSortDirection("desc");
+    }
+  };
+
+  const renderSortIcon = (field: typeof sortField) => {
+    if (sortField !== field) return <ArrowUpDown className="ms-1.5 h-3.5 w-3.5 opacity-50 shrink-0 inline text-muted-foreground" />;
+    return sortDirection === "asc" 
+      ? <ArrowUp className="ms-1.5 h-3.5 w-3.5 text-primary shrink-0 inline" /> 
+      : <ArrowDown className="ms-1.5 h-3.5 w-3.5 text-primary shrink-0 inline" />;
+  };
   const pendingCount = orders.filter((order) =>
     ["pending", "pending_verification", "draft"].includes(order.status),
   ).length;
@@ -366,7 +440,7 @@ function OrdersList() {
       ) : (
         <>
           <div className="space-y-3 sm:hidden">
-            {filteredOrders.map((o) => {
+            {paginatedOrders.map((o) => {
               const badge = resolvePaymentStatus(
                 (o as any).payment_status,
                 o.status,
@@ -455,18 +529,28 @@ function OrdersList() {
                   <col className="w-[19%]" />
                   <col className="w-[12%]" />
                 </colgroup>
-                <thead className="bg-secondary/50">
+                <thead className="bg-secondary/50 select-none text-xs uppercase tracking-wide">
                   <tr>
-                    <th className="p-4 text-start font-medium">{t("orders.invoice")}</th>
-                    <th className="p-4 text-start font-medium">{t("orders.date")}</th>
-                    <th className="p-4 text-start font-medium">{t("orders.customer")}</th>
-                    <th className="p-4 text-start font-medium">{t("orders.status")}</th>
-                    <th className="p-4 text-end font-medium">{t("orders.total")}</th>
-                    <th className="p-4 text-end">{t("orders.actions")}</th>
+                    <th className="p-4 text-start font-medium cursor-pointer hover:bg-secondary/75 transition-colors" onClick={() => toggleSort("invoice_number")}>
+                      <span className="flex items-center">{t("orders.invoice")} {renderSortIcon("invoice_number")}</span>
+                    </th>
+                    <th className="p-4 text-start font-medium cursor-pointer hover:bg-secondary/75 transition-colors" onClick={() => toggleSort("created_at")}>
+                      <span className="flex items-center">{t("orders.date")} {renderSortIcon("created_at")}</span>
+                    </th>
+                    <th className="p-4 text-start font-medium cursor-pointer hover:bg-secondary/75 transition-colors" onClick={() => toggleSort("customer")}>
+                      <span className="flex items-center">{t("orders.customer")} {renderSortIcon("customer")}</span>
+                    </th>
+                    <th className="p-4 text-start font-medium cursor-pointer hover:bg-secondary/75 transition-colors" onClick={() => toggleSort("status")}>
+                      <span className="flex items-center">{t("orders.status")} {renderSortIcon("status")}</span>
+                    </th>
+                    <th className="p-4 text-end font-medium cursor-pointer hover:bg-secondary/75 transition-colors" onClick={() => toggleSort("total")}>
+                      <span className="flex items-center justify-end">{t("orders.total")} {renderSortIcon("total")}</span>
+                    </th>
+                    <th className="p-4 text-end font-medium">{t("orders.actions")}</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredOrders.map((o) => {
+                  {paginatedOrders.map((o) => {
                     const deliveryBadge =
                       o.fulfillment_method === "delivery"
                         ? deliveryStatusPresentation((o as any).fulfillment_status, lang)
@@ -555,6 +639,44 @@ function OrdersList() {
               </table>
             </div>
           </Card>
+
+          {/* Pagination Controls */}
+          <div className="flex flex-wrap items-center justify-between gap-4 p-4 mt-4 bg-card rounded-lg border border-border text-sm select-none">
+            <div className="flex items-center gap-2">
+              <span className="text-muted-foreground text-xs sm:text-sm">
+                {lang === "ar" ? "الطلبات لكل صفحة:" : "Orders per page:"}
+              </span>
+              <Select value={String(pageSize)} onValueChange={(v) => setPageSize(Number(v))}>
+                <SelectTrigger className="h-8 w-20 text-xs"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="7">7</SelectItem>
+                  <SelectItem value="10">10</SelectItem>
+                  <SelectItem value="25">25</SelectItem>
+                  <SelectItem value="50">50</SelectItem>
+                  <SelectItem value="100">100</SelectItem>
+                </SelectContent>
+              </Select>
+              <span className="text-muted-foreground text-xs ms-2">
+                {lang === "ar" 
+                  ? `عرض ${Math.min((page - 1) * pageSize + 1, sortedOrders.length)}-${Math.min(page * pageSize, sortedOrders.length)} من ${sortedOrders.length} طلب`
+                  : `Showing ${Math.min((page - 1) * pageSize + 1, sortedOrders.length)}-${Math.min(page * pageSize, sortedOrders.length)} of ${sortedOrders.length} orders`}
+              </span>
+            </div>
+
+            <div className="flex items-center gap-1">
+              <Button variant="outline" size="sm" className="h-8 w-8 p-0" onClick={() => setPage((p) => Math.max(p - 1, 1))} disabled={page === 1}>
+                <ChevronLeft className="h-4 w-4" />
+                <span className="sr-only">Previous page</span>
+              </Button>
+              <div className="text-xs px-2 text-muted-foreground">
+                {lang === "ar" ? `صفحة ${page} من ${totalPages}` : `Page ${page} of ${totalPages}`}
+              </div>
+              <Button variant="outline" size="sm" className="h-8 w-8 p-0" onClick={() => setPage((p) => Math.min(p + 1, totalPages))} disabled={page === totalPages}>
+                <ChevronRight className="h-4 w-4" />
+                <span className="sr-only">Next page</span>
+              </Button>
+            </div>
+          </div>
         </>
       )}
       {!isCourier && <AlertDialog

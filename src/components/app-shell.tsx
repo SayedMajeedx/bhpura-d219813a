@@ -1,5 +1,5 @@
 import { Link, useRouterState, useNavigate, useParams } from "@tanstack/react-router";
-import { LayoutDashboard, Package, Users, ReceiptText, Settings, LogOut, Languages, Menu, Wallet, Megaphone, Shield, Store, Crown, Plug, Tags, FileText, BadgePercent } from "lucide-react";
+import { LayoutDashboard, Package, Users, ReceiptText, Settings, LogOut, Languages, Menu, Wallet, Megaphone, Shield, Store, Crown, Plug, Tags, FileText, BadgePercent, Mail } from "lucide-react";
 import { useState, useEffect, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -65,14 +65,15 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         { to: "/admin/b/$slug/customers", params: { slug: activeSlug }, label: t("nav.customers"), icon: Users, section: lang === "ar" ? "المبيعات" : "Sales" },
         { to: "/admin/b/$slug/campaigns", params: { slug: activeSlug }, label: lang === "ar" ? "حملات الواتساب" : "WhatsApp Campaigns", icon: Megaphone, section: lang === "ar" ? "المبيعات" : "Sales" },
         { to: "/admin/b/$slug/discounts", params: { slug: activeSlug }, label: lang === "ar" ? "رموز الخصم" : "Discount Codes", icon: BadgePercent, adminOnly: true, section: lang === "ar" ? "التسويق" : "Marketing" },
-        { to: "/admin/b/$slug/inventory", params: { slug: activeSlug }, label: t("nav.inventory"), icon: Package, section: lang === "ar" ? "الكتالوج" : "Catalog" },
-        { to: "/admin/b/$slug/categories", params: { slug: activeSlug }, label: lang === "ar" ? "الأقسام" : "Categories", icon: Tags, section: lang === "ar" ? "الكتالوج" : "Catalog" },
-        { to: "/admin/b/$slug/expenses", params: { slug: activeSlug }, label: t("nav.expenses"), icon: Wallet, adminOnly: true, section: lang === "ar" ? "المالية" : "Finance" },
       );
+      items.push({ to: "/admin/b/$slug/inventory", params: { slug: activeSlug }, label: t("nav.inventory"), icon: Package, section: lang === "ar" ? "الكتالوج" : "Catalog" });
+      items.push({ to: "/admin/b/$slug/categories", params: { slug: activeSlug }, label: lang === "ar" ? "الأقسام" : "Categories", icon: Tags, section: lang === "ar" ? "الكتالوج" : "Catalog" });
+      items.push({ to: "/admin/b/$slug/expenses", params: { slug: activeSlug }, label: t("nav.expenses"), icon: Wallet, adminOnly: true, section: lang === "ar" ? "المالية" : "Finance" });
       if (isAdmin) {
         items.push({ to: "/admin/b/$slug/team", params: { slug: activeSlug }, label: lang === "ar" ? "إدارة الموظفين" : "Team Management", icon: Shield, section: lang === "ar" ? "الوصول" : "Access" });
         items.push({ to: "/admin/b/$slug/integrations", params: { slug: activeSlug }, label: t("nav.integrations"), icon: Plug, section: lang === "ar" ? "واجهة المتجر" : "Storefront" });
       }
+      items.push({ to: "/admin/b/$slug/communications", params: { slug: activeSlug }, label: lang === "ar" ? "الاتصالات" : "Communications", icon: Mail, section: lang === "ar" ? "واجهة المتجر" : "Storefront" });
       items.push({ to: "/admin/b/$slug/pages", params: { slug: activeSlug }, label: lang === "ar" ? "الصفحات والسياسات" : "Pages & Policies", icon: FileText, section: lang === "ar" ? "واجهة المتجر" : "Storefront" });
       items.push({ to: "/admin/b/$slug/settings", params: { slug: activeSlug }, label: t("nav.settings"), icon: Settings, section: lang === "ar" ? "واجهة المتجر" : "Storefront" });
 
@@ -174,21 +175,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           );
         })}
       </nav>
-      <div className="p-3 border-t border-sidebar-border space-y-2">
-        <div className="flex items-center gap-2 px-2">
-          <Languages className="h-4 w-4 text-sidebar-foreground/70" />
-          <Select value={lang} onValueChange={(v) => setLang(v as "en" | "ar")}>
-            <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="en">English</SelectItem>
-              <SelectItem value="ar">العربية</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        <Button variant="ghost" className="w-full justify-start" onClick={signOut}>
-          <LogOut className="h-4 w-4 mr-2" /> {t("nav.signOut")}
-        </Button>
-      </div>
     </>
   );
 
@@ -241,15 +227,57 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             {SidebarContent}
           </SheetContent>
         </Sheet>
-        <div className="min-w-0 text-center leading-tight">
+        <div className="min-w-0 text-center leading-tight flex-1 px-2">
           <h1 className="truncate text-base font-display text-sidebar-foreground">{brandLabel}</h1>
           {currentPageLabel && <div className="truncate text-[10px] text-sidebar-foreground/70">{currentPageLabel}</div>}
         </div>
-        <div className="w-9" />
+        <div className="flex items-center gap-1 shrink-0">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 text-sidebar-foreground/80 hover:text-sidebar-foreground"
+            onClick={() => setLang(lang === "en" ? "ar" : "en")}
+            aria-label="Toggle language"
+          >
+            <span className="text-[10px] font-bold uppercase">{lang === "en" ? "AR" : "EN"}</span>
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 text-sidebar-foreground/80 hover:text-sidebar-foreground"
+            onClick={signOut}
+            aria-label={t("nav.signOut")}
+          >
+            <LogOut className="h-4 w-4" />
+          </Button>
+        </div>
       </div>
 
-      <main className="flex-1 overflow-auto print-area pt-14 md:pt-0">
-        {children}
+      <main className="flex-1 overflow-auto print-area pt-14 md:pt-0 bg-background/95">
+        <header className="no-print hidden md:flex h-14 border-b border-border bg-card/60 backdrop-blur-md sticky top-0 z-30 items-center justify-between px-8">
+          <div className="font-display font-medium text-lg text-foreground">
+            {currentPageLabel || ""}
+          </div>
+          <div className="flex items-center gap-6">
+            <div className="flex items-center gap-2">
+              <Languages className="h-4 w-4 text-muted-foreground" />
+              <Select value={lang} onValueChange={(v) => setLang(v as "en" | "ar")}>
+                <SelectTrigger className="h-8 text-xs w-28"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="en">English</SelectItem>
+                  <SelectItem value="ar">العربية</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <Button variant="ghost" size="sm" className="h-8 gap-2 text-xs text-muted-foreground hover:text-foreground" onClick={signOut}>
+              <LogOut className="h-3.5 w-3.5" /> {t("nav.signOut")}
+            </Button>
+          </div>
+        </header>
+
+        <div className="min-h-[calc(100vh-3.5rem)]">
+          {children}
+        </div>
       </main>
     </div>
   );
