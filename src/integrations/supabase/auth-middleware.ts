@@ -38,6 +38,27 @@ export function getEnvVariable(name: string): string | undefined {
   return undefined;
 }
 
+export async function getEnvVariableAsync(name: string): Promise<string | undefined> {
+  const viteName = name.startsWith("VITE_") ? name : `VITE_${name}`;
+  const unprefixed = name.startsWith("VITE_") ? name.slice(5) : name;
+
+  // 1. Try Cloudflare request context (runtime environment variables)
+  if (typeof window === "undefined") {
+    try {
+      const vinxiHttp = "vinxi/http";
+      const { getEvent } = await import(vinxiHttp);
+      const event = getEvent();
+      const env = event?.context?.cloudflare?.env || (event?.context as any)?.env;
+      if (env?.[name]) return env[name];
+      if (env?.[viteName]) return env[viteName];
+      if (env?.[unprefixed]) return env[unprefixed];
+    } catch {}
+  }
+
+  // 2. Fall back to standard synchronous checks
+  return getEnvVariable(name);
+}
+
 
 
 function isNewSupabaseApiKey(value: string): boolean {
@@ -67,11 +88,11 @@ function createSupabaseFetch(supabaseKey: string): typeof fetch {
 export const requireSupabaseAuth = createMiddleware({ type: 'function' }).server(
   async ({ next }) => {
     
-    let SUPABASE_URL = getEnvVariable('SUPABASE_URL') || getEnvVariable('VITE_SUPABASE_URL');
+    let SUPABASE_URL = (await getEnvVariableAsync('SUPABASE_URL')) || (await getEnvVariableAsync('VITE_SUPABASE_URL'));
     if (SUPABASE_URL && !SUPABASE_URL.startsWith('http://') && !SUPABASE_URL.startsWith('https://')) {
       SUPABASE_URL = `https://${SUPABASE_URL}`;
     }
-    const SUPABASE_PUBLISHABLE_KEY = getEnvVariable('SUPABASE_PUBLISHABLE_KEY') || getEnvVariable('VITE_SUPABASE_ANON_KEY') || getEnvVariable('VITE_SUPABASE_PUBLISHABLE_KEY');
+    const SUPABASE_PUBLISHABLE_KEY = (await getEnvVariableAsync('SUPABASE_PUBLISHABLE_KEY')) || (await getEnvVariableAsync('VITE_SUPABASE_ANON_KEY')) || (await getEnvVariableAsync('VITE_SUPABASE_PUBLISHABLE_KEY'));
 
     if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
       const missing = [

@@ -1,5 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
-import { requireSupabaseAuth, getEnvVariable } from "@/integrations/supabase/auth-middleware";
+import { requireSupabaseAuth, getEnvVariableAsync } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
 
 const Input = z.object({
@@ -53,7 +53,7 @@ export const parseVariantPrompt = createServerFn({ method: "POST" })
     }
     if (!allowed) throw new Error("RATE_LIMITED");
 
-    const apiKey = getEnvVariable("GEMINI_API_KEY");
+    const apiKey = await getEnvVariableAsync("GEMINI_API_KEY");
     if (!apiKey) throw new Error("Missing GEMINI_API_KEY");
 
     const instruction = [
