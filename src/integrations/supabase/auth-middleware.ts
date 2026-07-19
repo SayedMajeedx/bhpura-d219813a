@@ -262,117 +262,176 @@ export async function getGeminiCredentials(
   traces.push(`Env key state: ${apiKey ? "present" : "absent"}`);
   traces.push(`User ID: ${userId}`);
 
-  try {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  // Resolve profile and brand_id
+  let resolvedBrandId: string | null = null;
+  let profile: any = null;
 
-    // 1. Fetch user profile to get brand_id and role
-    const { data: profile, error: profileErr } = await supabaseAdmin
+  // 1. Try fetching profile using the user-authenticated supabase client first!
+  // This is 100% safe, respects RLS, and doesn't require any service role key.
+  try {
+    const { data: p, error: pErr } = await supabase
       .from("profiles")
       .select("brand_id, role, status")
       .eq("id", userId)
       .single();
     
-    if (profileErr) {
-      traces.push(`[Profile] fetch err: ${profileErr.message}`);
+    if (pErr) {
+      traces.push(`[User Client Profile] fetch err: ${pErr.message}`);
     } else {
-      traces.push(`[Profile] loaded: brand_id=${profile?.brand_id}, role=${profile?.role}, status=${profile?.status}`);
+      profile = p;
+      traces.push(`[User Client Profile] loaded: brand_id=${profile?.brand_id}, role=${profile?.role}, status=${profile?.status}`);
     }
+  } catch (uEx: any) {
+    traces.push(`[User Client Profile] exception: ${uEx.message}`);
+  }
 
-    // 2. Resolve active brand ID from either URL referer or profile fallback
-    let resolvedBrandId: string | null = null;
+  // 2. If user-authenticated profile query failed/empty, try admin client if available
+  if (!profile) {
     try {
-      const { getRequest: getReq } = await import("@tanstack/react-start/server");
-      const request = getReq();
-      const referer = request?.headers?.get("referer");
-      traces.push(`[Referer] ${referer || "none"}`);
-      if (referer) {
-        const url = new URL(referer);
-        const match = url.pathname.match(/\/admin\/b\/([^/]+)/);
-        if (match && match[1]) {
-          const slug = match[1].toLowerCase().trim();
-          traces.push(`[Referer] parsed slug: ${slug}`);
-          const { data: brand, error: brandErr } = await supabaseAdmin
-            .from("brands")
-            .select("id")
-            .eq("slug", slug)
-            .single();
-          
-          if (brandErr) {
-            traces.push(`[Referer] brand query err: ${brandErr.message}`);
-          } else if (brand?.id) {
-            resolvedBrandId = brand.id;
-            traces.push(`[Referer] resolved brand_id: ${resolvedBrandId}`);
-          }
-        }
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      const { data: p, error: pErr } = await supabaseAdmin
+        .from("profiles")
+        .select("brand_id, role, status")
+        .eq("id", userId)
+        .single();
+      if (pErr) {
+        traces.push(`[Admin Profile] fetch err: ${pErr.message}`);
+      } else {
+        profile = p;
+        traces.push(`[Admin Profile] loaded: brand_id=${profile?.brand_id}, role=${profile?.role}, status=${profile?.status}`);
       }
-    } catch (refererEx: any) {
-      traces.push(`[Referer] resolution exception: ${refererEx.message}`);
+    } catch (adminEx: any) {
+      traces.push(`[Admin Profile] exception: ${adminEx.message}`);
     }
+  }
 
-    if (!resolvedBrandId && profile?.brand_id) {
-      resolvedBrandId = profile.brand_id;
-      traces.push(`[Fallback] using profile brand_id: ${resolvedBrandId}`);
-    }
-
-    if (resolvedBrandId) {
-      // A. Try secure Postgres RPC with resolved brand_id
-      try {
-        const { data, error: rpcErr } = await supabase.rpc("get_gemini_credential", {
-          p_brand_id: resolvedBrandId
-        });
+  // 3. Resolve active brand ID from either URL referer or profile fallback
+  try {
+    const { getRequest: getReq } = await import("@tanstack/react-start/server");
+    const request = getReq();
+    const referer = request?.headers?.get("referer");
+    traces.push(`[Referer] ${referer || "none"}`);
+    if (referer) {
+      const url = new URL(referer);
+      const match = url.pathname.match(/\/admin\/b\/([^/]+)/);
+      if (match && match[1]) {
+        const slug = match[1].toLowerCase().trim();
+        traces.push(`[Referer] parsed slug: ${slug}`);
         
-        if (rpcErr) {
-          traces.push(`[RPC] rpc err: ${rpcErr.message} (code: ${rpcErr.code})`);
+        // Try resolving brand ID using user-authenticated client first
+        const { data: brand, error: brandErr } = await supabase
+          .from("brands")
+          .select("id")
+          .eq("slug", slug)
+          .single();
+        
+        if (!brandErr && brand?.id) {
+          resolvedBrandId = brand.id;
+          traces.push(`[Referer User Client] resolved brand_id: ${resolvedBrandId}`);
         } else {
-          traces.push(`[RPC] rpc returned ${data?.length ?? 0} rows`);
-          if (data && data.length > 0) {
-            const integration = data[0];
-            traces.push(`[RPC] integration: has_key=${!!integration?.api_key}, base_url=${integration?.base_url}`);
-            if (integration?.api_key) {
-              apiKey = integration.api_key;
-              if (integration.base_url) {
-                model = integration.base_url.trim();
-              }
-              traces.push(`[RPC] Key loaded successfully via RPC!`);
-              return { apiKey, model, diagnostics: traces.join(" | ") };
+          traces.push(`[Referer User Client] brand query err: ${brandErr?.message || "empty"}`);
+          // Try admin fallback if user-authenticated query failed
+          try {
+            const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+            const { data: abrand, error: abrandErr } = await supabaseAdmin
+              .from("brands")
+              .select("id")
+              .eq("slug", slug)
+              .single();
+            if (!abrandErr && abrand?.id) {
+              resolvedBrandId = abrand.id;
+              traces.push(`[Referer Admin] resolved brand_id: ${resolvedBrandId}`);
             }
-          }
+          } catch {}
         }
-      } catch (rpcEx: any) {
-        traces.push(`[RPC] exception: ${rpcEx.message}`);
       }
+    }
+  } catch (refererEx: any) {
+    traces.push(`[Referer] resolution exception: ${refererEx.message}`);
+  }
 
-      // B. Try Admin fallback with resolved brand_id
-      try {
-        const { data: integration, error: adminIntErr } = await supabaseAdmin
-          .from("integration_credentials")
-          .select("api_key, base_url")
-          .eq("brand_id", resolvedBrandId)
-          .eq("provider", "gemini")
-          .eq("is_active", true)
-          .maybeSingle();
-        
-        if (adminIntErr) {
-          traces.push(`[Admin] query err: ${adminIntErr.message}`);
-        } else {
-          traces.push(`[Admin] query success: has_row=${!!integration}`);
+  if (!resolvedBrandId && profile?.brand_id) {
+    resolvedBrandId = profile.brand_id;
+    traces.push(`[Fallback] using profile brand_id: ${resolvedBrandId}`);
+  }
+
+  if (resolvedBrandId) {
+    // Try secure Postgres RPC with resolved brand_id using user's client
+    try {
+      const { data, error: rpcErr } = await supabase.rpc("get_gemini_credential", {
+        p_brand_id: resolvedBrandId
+      });
+      
+      if (rpcErr) {
+        traces.push(`[RPC] rpc err: ${rpcErr.message} (code: ${rpcErr.code})`);
+      } else {
+        traces.push(`[RPC] rpc returned ${data?.length ?? 0} rows`);
+        if (data && data.length > 0) {
+          const integration = data[0];
+          traces.push(`[RPC] integration: has_key=${!!integration?.api_key}, base_url=${integration?.base_url}`);
           if (integration?.api_key) {
             apiKey = integration.api_key;
             if (integration.base_url) {
               model = integration.base_url.trim();
             }
-            traces.push(`[Admin] Key loaded successfully via Admin fallback!`);
+            traces.push(`[RPC] Key loaded successfully via RPC!`);
+            return { apiKey, model, diagnostics: traces.join(" | ") };
           }
         }
-      } catch (adminEx: any) {
-        traces.push(`[Admin] exception: ${adminEx.message}`);
       }
-    } else {
-      traces.push(`[Error] Could not resolve brand_id from profile or referer`);
+    } catch (rpcEx: any) {
+      traces.push(`[RPC] exception: ${rpcEx.message}`);
     }
 
-  } catch (e: any) {
-    traces.push(`[Global] exception: ${e.message}`);
+    // Double fallback: try direct table query using user-authenticated client (respecting RLS)
+    try {
+      const { data: integration, error: directErr } = await supabase
+        .from("integration_credentials")
+        .select("api_key, base_url")
+        .eq("brand_id", resolvedBrandId)
+        .eq("provider", "gemini")
+        .eq("is_active", true)
+        .maybeSingle();
+      
+      if (!directErr && integration?.api_key) {
+        apiKey = integration.api_key;
+        if (integration.base_url) {
+          model = integration.base_url.trim();
+        }
+        traces.push(`[Direct User Client] Key loaded successfully!`);
+        return { apiKey, model, diagnostics: traces.join(" | ") };
+      } else if (directErr) {
+        traces.push(`[Direct User Client] query err: ${directErr.message}`);
+      }
+    } catch (directEx: any) {
+      traces.push(`[Direct User Client] exception: ${directEx.message}`);
+    }
+
+    // Triple fallback: admin client (only if service role key is present)
+    try {
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      const { data: integration, error: adminIntErr } = await supabaseAdmin
+        .from("integration_credentials")
+        .select("api_key, base_url")
+        .eq("brand_id", resolvedBrandId)
+        .eq("provider", "gemini")
+        .eq("is_active", true)
+        .maybeSingle();
+      
+      if (!adminIntErr && integration?.api_key) {
+        apiKey = integration.api_key;
+        if (integration.base_url) {
+          model = integration.base_url.trim();
+        }
+        traces.push(`[Admin] Key loaded successfully via direct table fallback!`);
+      } else if (adminIntErr) {
+        traces.push(`[Admin] direct table fallback query err: ${adminIntErr.message}`);
+      }
+    } catch (adminEx: any) {
+      traces.push(`[Admin] direct table fallback exception: ${adminEx.message}`);
+    }
+  } else {
+    traces.push(`[Error] Could not resolve brand_id from profile or referer`);
   }
 
   return { apiKey, model, diagnostics: traces.join(" | ") };
