@@ -79,7 +79,7 @@ export const translateProductText = createServerFn({ method: "POST" })
       method: "POST",
       headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
       body: JSON.stringify({
-        systemInstruction: { parts: [{ text: systemInstruction }] },
+        system_instruction: { parts: [{ text: systemInstruction }] },
         contents: [{ role: "user", parts: [{ text: data.text }] }],
         generationConfig: { 
           temperature: 0.2, 
@@ -95,7 +95,7 @@ export const translateProductText = createServerFn({ method: "POST" })
         method: "POST",
         headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
         body: JSON.stringify({
-          systemInstruction: { parts: [{ text: systemInstruction }] },
+          system_instruction: { parts: [{ text: systemInstruction }] },
           contents: [{ role: "user", parts: [{ text: data.text }] }],
           generationConfig: { 
             temperature: 0.2, 
