@@ -1,3 +1,5 @@
+import { getEnvVariable } from "@/integrations/supabase/auth-middleware";
+
 export type ResponsiveImagePreset = "thumb" | "card" | "product" | "hero" | "content";
 
 const PRESET_WIDTHS: Record<ResponsiveImagePreset, number[]> = {
@@ -8,9 +10,6 @@ const PRESET_WIDTHS: Record<ResponsiveImagePreset, number[]> = {
   content: [480, 768, 960, 1280, 1600],
 };
 
-// The storefront itself is served directly by Vercel, while this R2 custom
-// hostname is orange-cloud proxied and can serve Cloudflare's managed
-// `/cdn-cgi/image` endpoint without a Vercel redirect intercepting the URL.
 const CLOUDFLARE_IMAGE_TRANSFORM_ORIGIN = "https://media.boutq.store";
 
 export function imageWidths(preset: ResponsiveImagePreset): number[] {
@@ -21,16 +20,18 @@ export function cloudflareImageUrl(source: string, width: number, quality = 82):
   if (!source || source.startsWith("data:") || source.toLowerCase().includes(".svg")) return source;
   try {
     const url = new URL(source, typeof window === "undefined" ? "https://boutq.store" : window.location.origin);
-    // The Free Images plan stops creating new variants at its monthly limit.
-    // `onerror=redirect` makes Cloudflare serve the original R2 asset instead
-    // of breaking the storefront, and the free plan never overage-bills.
     const options = `width=${width},fit=scale-down,quality=${quality},format=auto,metadata=none,onerror=redirect`;
+    
+    // Now that the site is on Cloudflare Pages, we can use the current active origin (e.g. boutq.store) 
+    // to run the /cdn-cgi/image service natively, falling back to CLOUDFLARE_IMAGE_TRANSFORM_ORIGIN during SSR.
+    const transformOrigin = (typeof window !== "undefined" && window.location.origin)
+      ? window.location.origin
+      : CLOUDFLARE_IMAGE_TRANSFORM_ORIGIN;
+
     if (url.hostname === "media.boutq.store") {
-      // A same-host path keeps the source eligible for `onerror=redirect` and
-      // does not require opening transformations to arbitrary remote origins.
-      return `${CLOUDFLARE_IMAGE_TRANSFORM_ORIGIN}/cdn-cgi/image/${options}${url.pathname}${url.search}`;
+      return `${transformOrigin}/cdn-cgi/image/${options}${url.pathname}${url.search}`;
     }
-    return `${CLOUDFLARE_IMAGE_TRANSFORM_ORIGIN}/cdn-cgi/image/${options}/${encodeURI(url.toString())}`;
+    return `${transformOrigin}/cdn-cgi/image/${options}/${encodeURI(url.toString())}`;
   } catch {
     return source;
   }
@@ -40,15 +41,27 @@ export function cloudflareImageSrcSet(source: string, preset: ResponsiveImagePre
   return imageWidths(preset).map((width) => `${cloudflareImageUrl(source, width, quality)} ${width}w`).join(", ");
 }
 
-const IMAGEKIT_URL_ENDPOINT = (import.meta.env.VITE_IMAGEKIT_URL_ENDPOINT || "").trim().replace(/\/+$/, "");
+/**
+ * Robust getter for the ImageKit URL endpoint, supporting both compiled VITE_ pre-bakes 
+ * and dynamic Cloudflare Page dashboard context lookups at runtime.
+ */
+function getImageKitEndpoint(): string {
+  const staticVal = (import.meta.env.VITE_IMAGEKIT_URL_ENDPOINT || "").trim();
+  if (staticVal) return staticVal.replace(/\/+$/, "");
+
+  const dynamicVal = (getEnvVariable("VITE_IMAGEKIT_URL_ENDPOINT") || getEnvVariable("IMAGEKIT_URL_ENDPOINT") || "").trim();
+  return dynamicVal.replace(/\/+$/, "");
+}
+
 const IMAGEKIT_DESKTOP_VIDEO_TRANSFORMATION = "w-1280,q-55,f-auto,ac-none";
 const IMAGEKIT_MOBILE_VIDEO_TRANSFORMATION = "w-720,q-48,f-auto,ac-none";
 
 function imageKitAssetPath(source: string): string | null {
-  if (!IMAGEKIT_URL_ENDPOINT || !source || source.startsWith("data:")) return null;
+  const endpoint = getImageKitEndpoint();
+  if (!endpoint || !source || source.startsWith("data:")) return null;
   try {
     const sourceUrl = new URL(source);
-    const endpointUrl = new URL(IMAGEKIT_URL_ENDPOINT);
+    const endpointUrl = new URL(endpoint);
     const isPublicR2Media = sourceUrl.hostname === "media.boutq.store" || sourceUrl.hostname.endsWith(".boutq.store");
     const isImageKitAsset = sourceUrl.hostname === endpointUrl.hostname && sourceUrl.pathname.startsWith(endpointUrl.pathname);
     if (!isPublicR2Media && !isImageKitAsset) return null;
@@ -74,16 +87,18 @@ function imageKitAssetPath(source: string): string | null {
 export function imageKitVideoUrl(source: string, viewport: "mobile" | "desktop" = "desktop"): string | null {
   const assetPath = imageKitAssetPath(source);
   if (!assetPath) return null;
+  const endpoint = getImageKitEndpoint();
   const transformation = viewport === "mobile"
     ? IMAGEKIT_MOBILE_VIDEO_TRANSFORMATION
     : IMAGEKIT_DESKTOP_VIDEO_TRANSFORMATION;
-  return `${IMAGEKIT_URL_ENDPOINT}/tr:${transformation}/${assetPath}`;
+  return `${endpoint}/tr:${transformation}/${assetPath}`;
 }
 
 export function imageKitVideoPosterUrl(source: string): string | null {
   const assetPath = imageKitAssetPath(source);
   if (!assetPath) return null;
-  return `${IMAGEKIT_URL_ENDPOINT}/${assetPath}/ik-thumbnail.jpg?tr=w-1280,q-72,f-webp`;
+  const endpoint = getImageKitEndpoint();
+  return `${endpoint}/${assetPath}/ik-thumbnail.jpg?tr=w-1280,q-72,f-webp`;
 }
 
 export function isLikelyImageUrl(source?: string | null): boolean {
