@@ -255,14 +255,15 @@ export async function getGeminiCredentials(
   let model: string | undefined = undefined;
 
   try {
-    const { data: profile } = await supabase
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: profile } = await supabaseAdmin
       .from("profiles")
       .select("brand_id")
       .eq("id", userId)
       .single();
     
     if (profile?.brand_id) {
-      const { data: integration } = await supabase
+      const { data: integration } = await supabaseAdmin
         .from("integration_credentials")
         .select("api_key, base_url")
         .eq("brand_id", profile.brand_id)
