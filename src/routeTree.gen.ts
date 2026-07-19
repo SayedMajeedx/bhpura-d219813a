@@ -26,6 +26,7 @@ import { Route as SlugAuthRouteImport } from './routes/$slug.auth'
 import { Route as SlugAccountRouteImport } from './routes/$slug.account'
 import { Route as SlugCategoryRouteImport } from './routes/$slug.$category'
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin.index'
+import { Route as ApiSupabaseSplatRouteImport } from './routes/api.supabase.$'
 import { Route as ApiCronCleanupBenefitReceiptsRouteImport } from './routes/api.cron.cleanup-benefit-receipts'
 import { Route as AuthenticatedAdminTeamRouteImport } from './routes/_authenticated/admin.team'
 import { Route as AuthenticatedAdminSettingsRouteImport } from './routes/_authenticated/admin.settings'
@@ -137,6 +138,11 @@ const AuthenticatedAdminIndexRoute = AuthenticatedAdminIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AuthenticatedAdminRoute,
+} as any)
+const ApiSupabaseSplatRoute = ApiSupabaseSplatRouteImport.update({
+  id: '/api/supabase/$',
+  path: '/api/supabase/$',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const ApiCronCleanupBenefitReceiptsRoute =
   ApiCronCleanupBenefitReceiptsRouteImport.update({
@@ -325,6 +331,7 @@ export interface FileRoutesByFullPath {
   '/admin/settings': typeof AuthenticatedAdminSettingsRoute
   '/admin/team': typeof AuthenticatedAdminTeamRoute
   '/api/cron/cleanup-benefit-receipts': typeof ApiCronCleanupBenefitReceiptsRoute
+  '/api/supabase/$': typeof ApiSupabaseSplatRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
   '/admin/b/$slug': typeof AuthenticatedAdminBSlugRouteRouteWithChildren
   '/admin/b/$slug/campaigns': typeof AuthenticatedAdminBSlugCampaignsRoute
@@ -368,6 +375,7 @@ export interface FileRoutesByTo {
   '/admin/settings': typeof AuthenticatedAdminSettingsRoute
   '/admin/team': typeof AuthenticatedAdminTeamRoute
   '/api/cron/cleanup-benefit-receipts': typeof ApiCronCleanupBenefitReceiptsRoute
+  '/api/supabase/$': typeof ApiSupabaseSplatRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
   '/admin/b/$slug': typeof AuthenticatedAdminBSlugRouteRouteWithChildren
   '/admin/b/$slug/campaigns': typeof AuthenticatedAdminBSlugCampaignsRoute
@@ -415,6 +423,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/settings': typeof AuthenticatedAdminSettingsRoute
   '/_authenticated/admin/team': typeof AuthenticatedAdminTeamRoute
   '/api/cron/cleanup-benefit-receipts': typeof ApiCronCleanupBenefitReceiptsRoute
+  '/api/supabase/$': typeof ApiSupabaseSplatRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
   '/_authenticated/admin/b/$slug': typeof AuthenticatedAdminBSlugRouteRouteWithChildren
   '/_authenticated/admin/b/$slug/campaigns': typeof AuthenticatedAdminBSlugCampaignsRoute
@@ -462,6 +471,7 @@ export interface FileRouteTypes {
     | '/admin/settings'
     | '/admin/team'
     | '/api/cron/cleanup-benefit-receipts'
+    | '/api/supabase/$'
     | '/admin/'
     | '/admin/b/$slug'
     | '/admin/b/$slug/campaigns'
@@ -505,6 +515,7 @@ export interface FileRouteTypes {
     | '/admin/settings'
     | '/admin/team'
     | '/api/cron/cleanup-benefit-receipts'
+    | '/api/supabase/$'
     | '/admin'
     | '/admin/b/$slug'
     | '/admin/b/$slug/campaigns'
@@ -551,6 +562,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/settings'
     | '/_authenticated/admin/team'
     | '/api/cron/cleanup-benefit-receipts'
+    | '/api/supabase/$'
     | '/_authenticated/admin/'
     | '/_authenticated/admin/b/$slug'
     | '/_authenticated/admin/b/$slug/campaigns'
@@ -578,6 +590,7 @@ export interface RootRouteChildren {
   ResetPasswordRoute: typeof ResetPasswordRoute
   InvoiceIdRoute: typeof InvoiceIdRoute
   ApiCronCleanupBenefitReceiptsRoute: typeof ApiCronCleanupBenefitReceiptsRoute
+  ApiSupabaseSplatRoute: typeof ApiSupabaseSplatRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -700,6 +713,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin/'
       preLoaderRoute: typeof AuthenticatedAdminIndexRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/api/supabase/$': {
+      id: '/api/supabase/$'
+      path: '/api/supabase/$'
+      fullPath: '/api/supabase/$'
+      preLoaderRoute: typeof ApiSupabaseSplatRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/api/cron/cleanup-benefit-receipts': {
       id: '/api/cron/cleanup-benefit-receipts'
@@ -1036,6 +1056,7 @@ const rootRouteChildren: RootRouteChildren = {
   ResetPasswordRoute: ResetPasswordRoute,
   InvoiceIdRoute: InvoiceIdRoute,
   ApiCronCleanupBenefitReceiptsRoute: ApiCronCleanupBenefitReceiptsRoute,
+  ApiSupabaseSplatRoute: ApiSupabaseSplatRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
