@@ -10,6 +10,9 @@ import { faviconType } from "@/lib/favicon";
 import { ResponsiveImage } from "@/components/responsive-media";
 
 export const Route = createFileRoute("/$slug/$category")({
+  headers: () => ({
+    "Cache-Control": "public, max-age=10, stale-while-revalidate=60",
+  }),
   loader: async ({ params }) => {
     const { data: baseBrand, error: brandError } = await supabase
       .from("brands")

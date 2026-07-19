@@ -29,9 +29,9 @@ import { StorefrontAnalytics } from "@/components/storefront-analytics";
 export const Route = createFileRoute("/$slug")({
   staleTime: 5 * 60_000,
   preloadStaleTime: 5 * 60_000,
-  // headers: () => ({
-  //   "Cache-Control": "public, max-age=5, stale-while-revalidate=30",
-  // }),
+  headers: () => ({
+    "Cache-Control": "public, max-age=10, stale-while-revalidate=60",
+  }),
   loader: async ({ params }) => {
     const { data: baseBrand, error: brandErr } = await supabase
       .from("brands")
