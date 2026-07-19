@@ -21,11 +21,22 @@ async function handleProxy(request: Request, path: string) {
   const urlObj = new URL(request.url);
   const targetUrl = `${realUrl}/${path}${urlObj.search}`;
   
-  // Forward essential database headers + standard browser headers
-  // Stripping cookies, cf-headers, and host headers to prevent security & TLS handshake conflicts
   const headers = new Headers();
+  
+  // Fetch standard public anon key to act as context identity for top-level OAuth pages
+  const SUPABASE_PUBLISHABLE_KEY =
+    process.env.SUPABASE_PUBLISHABLE_KEY ||
+    process.env.SUPABASE_ANON_KEY ||
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlrY2lhaG51cWhlbXZueWZieXAiLCJyb2xlIjoiYW5vbiIsImlhdCI6MTcyNzA4NjQyOCwiZXhwIjoyMDQyNjYyNDI4fQ.n-u09H9vj7S96N1H8pW6bE5B8_Yc7f_1350_5-m_864"; // Direct secure fallback if not loaded in env context
+
+  // Always append standard routing context headers so Supabase knows which project is requesting
+  headers.set("apikey", SUPABASE_PUBLISHABLE_KEY);
+
+  // Copy ONLY standard allowed browser client headers
+  // We explicitly exclude "sec-fetch-*" headers which trigger security handshakes & TypeError inside Cloudflare Workers
   const allowedHeaders = [
-    "apikey",
     "authorization",
     "content-type",
     "prefer",
@@ -33,27 +44,15 @@ async function handleProxy(request: Request, path: string) {
     "x-client-info",
     "user-agent",
     "accept",
-    "accept-language",
-    "sec-ch-ua",
-    "sec-ch-ua-mobile",
-    "sec-ch-ua-platform",
-    "sec-fetch-dest",
-    "sec-fetch-mode",
-    "sec-fetch-site",
-    "sec-fetch-user"
+    "accept-language"
   ];
   
   request.headers.forEach((value, key) => {
-    if (allowedHeaders.includes(key.toLowerCase())) {
+    const lowerKey = key.toLowerCase();
+    if (allowedHeaders.includes(lowerKey)) {
       headers.set(key, value);
     }
   });
-
-  // Ensure the apikey is present for standard Supabase routing
-  const apikey = request.headers.get("apikey") || request.headers.get("x-client-info");
-  if (apikey) {
-    headers.set("apikey", apikey);
-  }
 
   // Read request body for modifying requests (POST, PUT, PATCH)
   let body: any = null;
@@ -76,8 +75,9 @@ async function handleProxy(request: Request, path: string) {
     // Copy response headers
     const resHeaders = new Headers();
     response.headers.forEach((value, key) => {
+      const lowerKey = key.toLowerCase();
       // Avoid forwarding block-listed or compression mismatching response headers
-      if (!["content-encoding", "transfer-encoding", "connection"].includes(key.toLowerCase())) {
+      if (!["content-encoding", "transfer-encoding", "connection", "set-cookie"].includes(lowerKey)) {
         resHeaders.set(key, value);
       }
     });
