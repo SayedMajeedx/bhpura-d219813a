@@ -74,7 +74,8 @@ export const translateProductText = createServerFn({ method: "POST" })
       "- Return ONLY the final translated text. Do not add any introduction, explanations, notes, quote marks, or extra comments.",
     ].join("\n");
 
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${finalModel}:generateContent`, {
+    let activeApiVersion = "v1";
+    let response = await fetch(`https://generativelanguage.googleapis.com/${activeApiVersion}/models/${finalModel}:generateContent`, {
       method: "POST",
       headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
       body: JSON.stringify({
@@ -87,15 +88,37 @@ export const translateProductText = createServerFn({ method: "POST" })
       }),
     });
 
+    // If stable v1 returns 404, gracefully fall back to v1beta
+    if (response.status === 404) {
+      const fallbackApiVersion = "v1beta";
+      const fallbackResponse = await fetch(`https://generativelanguage.googleapis.com/${fallbackApiVersion}/models/${finalModel}:generateContent`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
+        body: JSON.stringify({
+          systemInstruction: { parts: [{ text: systemInstruction }] },
+          contents: [{ role: "user", parts: [{ text: data.text }] }],
+          generationConfig: { 
+            temperature: 0.2, 
+            maxOutputTokens: 2048,
+          },
+        }),
+      });
+
+      if (fallbackResponse.ok || fallbackResponse.status !== 404) {
+        activeApiVersion = fallbackApiVersion;
+        response = fallbackResponse;
+      }
+    }
+
     if (response.status === 429) throw new Error("RATE_LIMITED");
     if (response.status === 401 || response.status === 403) throw new Error("GEMINI_AUTH_FAILED");
     if (!response.ok) {
       const details = await response.text().catch(() => "");
       console.error(`[translateProductText] Gemini error ${response.status}: ${details.slice(0, 300)}`);
       if (response.status === 404) {
-        throw new Error(`GEMINI_MODEL_UNAVAILABLE (Tried model: "${finalModel}". Response: ${details.slice(0, 150)})`);
+        throw new Error(`GEMINI_MODEL_UNAVAILABLE (Tried model: "${finalModel}" on API: "${activeApiVersion}". Response: ${details.slice(0, 150)})`);
       }
-      throw new Error(`GEMINI_PROVIDER_ERROR (Status: ${response.status}. Response: ${details.slice(0, 150)})`);
+      throw new Error(`GEMINI_PROVIDER_ERROR (Status: ${response.status}. API: "${activeApiVersion}". Response: ${details.slice(0, 150)})`);
     }
 
     const payload = await response.json() as { candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }> };
