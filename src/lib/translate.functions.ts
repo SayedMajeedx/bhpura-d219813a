@@ -1,5 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
-import { requireSupabaseAuth, getEnvVariableAsync, getEnvDiagnostics } from "@/integrations/supabase/auth-middleware";
+import { requireSupabaseAuth, getEnvVariableAsync, getEnvDiagnostics, getGeminiCredentials } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
 
 const Input = z.object({
@@ -25,10 +25,13 @@ export const translateProductText = createServerFn({ method: "POST" })
     if (quotaError || !allowed) throw new Error("RATE_LIMITED");
     if (data.from === data.to) return { text: data.text };
 
-    const apiKey = await getEnvVariableAsync("GEMINI_API_KEY");
+    const creds = await getGeminiCredentials(context.supabase, context.userId);
+    const apiKey = creds.apiKey;
+    const model = creds.model || MODEL;
+
     if (!apiKey) {
       const diag = await getEnvDiagnostics();
-      throw new Error(`Missing GEMINI_API_KEY. Available keys: [${diag.keys.join(", ")}]. (Cloudflare: ${diag.hasCloudflare}, Node: ${diag.hasProcess})`);
+      throw new Error(`Missing GEMINI_API_KEY. To fix this instantly, please go to Settings -> Integrations, add a new "Gemini AI Translation" integration, and paste your Gemini API Key there! Available keys: [${diag.keys.join(", ")}]. (Cloudflare: ${diag.hasCloudflare}, Node: ${diag.hasProcess})`);
     }
 
     const systemInstruction = [
@@ -42,7 +45,7 @@ export const translateProductText = createServerFn({ method: "POST" })
       "- Return ONLY the final translated text. Do not add any introduction, explanations, notes, quote marks, or extra comments.",
     ].join("\n");
 
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`, {
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
       method: "POST",
       headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
       body: JSON.stringify({

@@ -10,7 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
-import { Plug, Plus, Pencil, Trash2, Copy, ShieldAlert, Mail, RefreshCw } from "lucide-react";
+import { Plug, Plus, Pencil, Trash2, Copy, ShieldAlert, Mail, RefreshCw, Sparkles, CreditCard, Truck } from "lucide-react";
 import { toast } from "sonner";
 import { useT, useI18n } from "@/lib/i18n";
 import { useBrand } from "@/lib/brand-context";
@@ -39,12 +39,14 @@ const PROVIDER_PRESETS = [
   { value: "stripe", label: "Stripe" },
   { value: "tap", label: "Tap Payments" },
   { value: "benefit", label: "Benefit Pay" },
+  { value: "gemini", label: "Gemini AI translation & copywriting" },
   { value: "resend_customer_email", label: "Resend Customer Email" },
   { value: "sendpulse_admin", label: "SendPulse Admin Notifications" },
   { value: "custom", label: "Custom" },
 ];
 
 const getProviderIcon = (provider: string) => {
+  if (provider === "gemini") return <Sparkles className="h-5 w-5 text-purple-500" />;
   if (provider === "resend_customer_email" || provider === "sendpulse_admin") return <Mail className="h-5 w-5 text-primary" />;
   if (provider === "stripe" || provider === "tap" || provider === "benefit") return <CreditCard className="h-5 w-5 text-indigo-500" />;
   if (provider === "aramex" || provider === "posta_plus") return <Truck className="h-5 w-5 text-amber-500" />;
@@ -123,7 +125,7 @@ function IntegrationsPage() {
           {(q.data ?? []).map((row) => {
             const webhookUrl = `${webhookBase}/${row.provider}/${brandId}`;
             const preset = PROVIDER_PRESETS.find((p) => p.value === row.provider);
-            const isDirectEmailProvider = row.provider === "resend_customer_email" || row.provider === "sendpulse_admin";
+            const isNoWebhookProvider = row.provider === "resend_customer_email" || row.provider === "sendpulse_admin" || row.provider === "gemini";
             return (
               <Card key={row.id} className="p-6 border border-border bg-card/60 backdrop-blur-sm shadow-sm hover:shadow-md transition-all duration-200">
                 <div className="flex items-start justify-between gap-4 mb-4">
@@ -133,7 +135,7 @@ function IntegrationsPage() {
                     </div>
                     <div className="min-w-0">
                       <div className="font-display text-xl tracking-tight text-foreground truncate">{preset?.label ?? row.provider}</div>
-                      <div className="text-xs text-muted-foreground truncate font-mono mt-0.5">{row.base_url || "—"}</div>
+                      <div className="text-xs text-muted-foreground truncate font-mono mt-0.5">{row.base_url || (row.provider === "gemini" ? "gemini-1.5-flash" : "—")}</div>
                     </div>
                   </div>
                   <div className="flex items-center gap-1 shrink-0">
@@ -150,18 +152,40 @@ function IntegrationsPage() {
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm bg-secondary/20 border border-secondary/30 rounded-lg p-4">
-                  <MaskedRow label={row.provider === "resend_customer_email" ? (isAr ? "بريد المُرسل المعتمد" : "Verified sender email") : t("integrations.apiKey")} value={row.api_key_masked} />
-                  <MaskedRow label={row.provider === "resend_customer_email" ? (isAr ? "مفتاح API الخاص بـ Resend" : "Resend API key") : t("integrations.webhookSecret")} value={row.webhook_secret_masked} />
+                  <MaskedRow 
+                    label={
+                      row.provider === "resend_customer_email" 
+                        ? (isAr ? "بريد المُرسل المعتمد" : "Verified sender email") 
+                        : row.provider === "gemini"
+                        ? (isAr ? "نموذج الذكاء الاصطناعي (اختياري)" : "AI Model (Optional)")
+                        : t("integrations.apiKey")
+                    } 
+                    value={row.provider === "gemini" ? (row.base_url || "gemini-1.5-flash") : row.api_key_masked} 
+                  />
+                  <MaskedRow 
+                    label={
+                      row.provider === "resend_customer_email" 
+                        ? (isAr ? "مفتاح API الخاص بـ Resend" : "Resend API key") 
+                        : row.provider === "gemini"
+                        ? (isAr ? "مفتاح API الخاص بـ Gemini" : "Gemini API key")
+                        : t("integrations.webhookSecret")
+                    } 
+                    value={row.provider === "gemini" ? row.api_key_masked : row.webhook_secret_masked} 
+                  />
                 </div>
 
                 <div className="mt-4 pt-4 border-t border-border/80 text-xs">
-                  {isDirectEmailProvider ? (
+                  {isNoWebhookProvider ? (
                     <div className="flex items-center gap-2 text-muted-foreground bg-primary/5 border border-primary/10 rounded-lg px-3 py-2.5">
-                      <Mail className="h-4 w-4 text-primary shrink-0" />
+                      {row.provider === "gemini" ? <Sparkles className="h-4 w-4 text-purple-500 shrink-0" /> : <Mail className="h-4 w-4 text-primary shrink-0" />}
                       <p className="leading-normal">
-                        {isAr
-                          ? "يستخدم هذا المزود مباشرةً من خدمة البريد الآمنة في Boutق عبر اتصال بروتوكول HTTP الآمن. لا يلزم إعداد رابط Webhook لدى المزود."
-                          : "This provider is used directly by Boutq's secure email service over high-speed HTTPS. No provider webhook URL is required."}
+                        {row.provider === "gemini"
+                          ? (isAr 
+                            ? "يتم استخدام تكامل Gemini هذا مباشرةً لترجمة عناوين المنتجات والوصف تلقائياً وتفصيل مخرجات صياغة المحتوى الثنائي اللغة." 
+                            : "This Gemini integration is used directly for super-high-quality storefront translations and product copywriting.")
+                          : (isAr
+                            ? "يستخدم هذا المزود مباشرةً من خدمة البريد الآمنة في Boutق عبر اتصال بروتوكول HTTP الآمن. لا يلزم إعداد رابط Webhook لدى المزود."
+                            : "This provider is used directly by Boutq's secure email service over high-speed HTTPS. No provider webhook URL is required.")}
                       </p>
                     </div>
                   ) : (
@@ -296,6 +320,7 @@ function IntegrationDialog({ brandId, row, onSaved }: { brandId: string; row: Ro
   const providerValue = useMemo(() => form.provider === "custom" ? form.provider_custom.trim() : form.provider, [form.provider, form.provider_custom]);
   const isResendCustomerEmail = providerValue === "resend_customer_email";
   const isSendPulseAdmin = providerValue === "sendpulse_admin";
+  const isGemini = providerValue === "gemini";
   const fieldLabels = isResendCustomerEmail
     ? {
         base: isAr ? "بريد المُرسل المعتمد" : "Verified sender email",
@@ -320,15 +345,27 @@ function IntegrationDialog({ brandId, row, onSaved }: { brandId: string; row: Ro
             ? "يُستخدم لإرسال تفاصيل الطلب الداخلية إلى مديري هذه العلامة التجارية فقط."
             : "Used only for internal notifications sent to this brand's active administrators.",
         }
-      : {
-          base: t("integrations.baseUrl"),
-          api: t("integrations.apiKey"),
-          secret: t("integrations.webhookSecret"),
-          basePlaceholder: "https://api.provider.com",
-          apiPlaceholder: "sk_live_…",
-          secretPlaceholder: "whsec_…",
-          help: null,
-        };
+      : isGemini
+        ? {
+            base: isAr ? "نموذج الذكاء الاصطناعي (اختياري - الافتراضي: gemini-1.5-flash)" : "AI Model (Optional - Default: gemini-1.5-flash)",
+            api: isAr ? "مفتاح API الخاص بـ Gemini" : "Gemini API Key",
+            secret: isAr ? "غير مستخدم (اختياري)" : "Unused (optional)",
+            basePlaceholder: "gemini-1.5-flash",
+            apiPlaceholder: "AIzaSy...",
+            secretPlaceholder: "Unused / Optional",
+            help: isAr
+              ? "تُستخدم لتمكين الترجمة الفورية والذكية وميزات صياغة المحتوى الثنائي اللغة للمنتجات والوصف."
+              : "Used to enable super-high-quality automated bilingual translations and product copywriting in your catalog.",
+          }
+        : {
+            base: t("integrations.baseUrl"),
+            api: t("integrations.apiKey"),
+            secret: t("integrations.webhookSecret"),
+            basePlaceholder: "https://api.provider.com",
+            apiPlaceholder: "sk_live_…",
+            secretPlaceholder: "whsec_…",
+            help: null,
+          };
 
   const save = async () => {
     if (!providerValue) return toast.error(isAr ? "اسم الخدمة مطلوب" : "Provider is required");

@@ -1,5 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
-import { requireSupabaseAuth, getEnvVariableAsync } from "@/integrations/supabase/auth-middleware";
+import { requireSupabaseAuth, getEnvVariableAsync, getGeminiCredentials } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
 
 const Input = z.object({
@@ -49,8 +49,6 @@ const RESPONSE_JSON_SCHEMA = {
 } as const;
 
 const GEMINI_MODEL = "gemini-3.5-flash";
-const GEMINI_ENDPOINT =
-  `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
 
 export type ScannedLineItem = {
   name: string;
@@ -95,8 +93,12 @@ export const scanReceipt = createServerFn({ method: "POST" })
       p_action: "receipt_scan", p_limit: 20, p_window_minutes: 60,
     });
     if (quotaError || !allowed) throw new Error("RATE_LIMITED");
-    const apiKey = await getEnvVariableAsync("GEMINI_API_KEY");
-    if (!apiKey) throw new Error("Missing GEMINI_API_KEY");
+
+    const creds = await getGeminiCredentials(context.supabase, context.userId);
+    const apiKey = creds.apiKey;
+    const model = creds.model || GEMINI_MODEL;
+
+    if (!apiKey) throw new Error("Missing GEMINI_API_KEY. To fix this instantly, please go to Settings -> Integrations, add a new 'Gemini AI Translation' integration, and paste your Gemini API Key there!");
 
     const outputLanguage = data.targetLang === "ar" ? "Arabic" : "English";
     const today = new Date().toISOString().slice(0, 10);
@@ -111,7 +113,8 @@ export const scanReceipt = createServerFn({ method: "POST" })
       "Return one minified JSON object matching the supplied schema and nothing else.",
     ].join(" ");
 
-    const response = await fetch(GEMINI_ENDPOINT, {
+    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
+    const response = await fetch(endpoint, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

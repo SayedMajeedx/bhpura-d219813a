@@ -241,3 +241,46 @@ export const requireSupabaseAuth = createMiddleware({ type: 'function' }).server
     });
   },
 );
+
+/**
+ * Retrieves Gemini credentials (API key and optional custom model) from
+ * either the system environment variables or the database-backed integration settings.
+ * This completely bypasses hosting-provider environmental issues.
+ */
+export async function getGeminiCredentials(
+  supabase: any,
+  userId: string
+): Promise<{ apiKey: string | undefined; model: string | undefined }> {
+  let apiKey = await getEnvVariableAsync("GEMINI_API_KEY");
+  let model: string | undefined = undefined;
+
+  try {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("brand_id")
+      .eq("id", userId)
+      .single();
+    
+    if (profile?.brand_id) {
+      const { data: integration } = await supabase
+        .from("integration_credentials")
+        .select("api_key, base_url")
+        .eq("brand_id", profile.brand_id)
+        .eq("provider", "gemini")
+        .eq("is_active", true)
+        .maybeSingle();
+      
+      if (integration?.api_key) {
+        apiKey = integration.api_key;
+        if (integration.base_url) {
+          model = integration.base_url.trim();
+        }
+      }
+    }
+  } catch (e) {
+    console.error("[getGeminiCredentials] Error querying database for custom Gemini integration:", e);
+  }
+
+  return { apiKey, model };
+}
+

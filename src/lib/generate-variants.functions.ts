@@ -1,5 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
-import { requireSupabaseAuth, getEnvVariableAsync } from "@/integrations/supabase/auth-middleware";
+import { requireSupabaseAuth, getEnvVariableAsync, getGeminiCredentials } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
 
 const Input = z.object({
@@ -53,8 +53,11 @@ export const parseVariantPrompt = createServerFn({ method: "POST" })
     }
     if (!allowed) throw new Error("RATE_LIMITED");
 
-    const apiKey = await getEnvVariableAsync("GEMINI_API_KEY");
-    if (!apiKey) throw new Error("Missing GEMINI_API_KEY");
+    const creds = await getGeminiCredentials(context.supabase, context.userId);
+    const apiKey = creds.apiKey;
+    const model = creds.model || MODEL;
+
+    if (!apiKey) throw new Error("Missing GEMINI_API_KEY. To fix this instantly, please go to Settings -> Integrations, add a new 'Gemini AI Translation' integration, and paste your Gemini API Key there!");
 
     const instruction = [
       "You parse a merchant's English or Arabic request for product variants.",
@@ -66,7 +69,7 @@ export const parseVariantPrompt = createServerFn({ method: "POST" })
       "Do not generate combinations, SKUs, or barcodes. Return only the structured plan.",
     ].join(" ");
 
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`, {
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
       method: "POST",
       headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
       body: JSON.stringify({
