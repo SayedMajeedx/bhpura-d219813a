@@ -76,7 +76,7 @@ export const translateProductText = createServerFn({ method: "POST" })
       data.text,
     ].join("\n");
 
-    let activeApiVersion = "v1";
+    let activeApiVersion = "v1beta";
     let response = await fetch(`https://generativelanguage.googleapis.com/${activeApiVersion}/models/${finalModel}:generateContent`, {
       method: "POST",
       headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
@@ -89,9 +89,9 @@ export const translateProductText = createServerFn({ method: "POST" })
       }),
     });
 
-    // If stable v1 returns 404, gracefully fall back to v1beta
+    // If v1beta returns 404, gracefully fall back to v1
     if (response.status === 404) {
-      const fallbackApiVersion = "v1beta";
+      const fallbackApiVersion = "v1";
       const fallbackResponse = await fetch(`https://generativelanguage.googleapis.com/${fallbackApiVersion}/models/${finalModel}:generateContent`, {
         method: "POST",
         headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
