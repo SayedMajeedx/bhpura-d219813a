@@ -297,7 +297,7 @@ function CourierOrderView({ order, slug, onUpdated }: { order: any; slug: string
       } else if (message.includes("COD_AMOUNT_MISMATCH")) {
         toast.error(lang === "ar" ? "المبلغ المستلم لا يطابق المبلغ المطلوب" : "The received amount does not match the amount due");
       } else {
-        toast.error(message || "Unable to update delivery");
+        toast.error(message || (lang === "ar" ? "تعذر تحديث حالة التوصيل" : "Unable to update delivery"));
       }
     } finally { setSaving(false); }
   };
@@ -602,7 +602,7 @@ function OrderDetail() {
         toast.success(lang === "ar" ? "تم إرسال سبب الرفض للعميل" : "Rejection update sent to customer");
       }
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Unable to reject receipt");
+      toast.error(error instanceof Error ? error.message : (lang === "ar" ? "تعذر رفض الإيصال" : "Unable to reject receipt"));
     } finally {
       setRejectingBenefit(false);
     }
@@ -1249,7 +1249,7 @@ function OrderDetail() {
 
     if (logs.length > 0) await logActivityBatch(logs);
 
-    toast.success("Saved");
+    toast.success(lang === "ar" ? "تم الحفظ بنجاح" : "Saved successfully");
     setHasSavedDraft(true);
     setEditingUnlocked(false);
     setSaving(false);
@@ -1377,7 +1377,7 @@ function OrderDetail() {
                     await downloadInvoicePdf(el, `invoice-${order.invoice_number ?? order.id}`);
                   } catch (err) {
                     console.error("PDF download failed", err);
-                    toast.error((err as Error)?.message ?? "PDF download failed");
+                    toast.error((err as Error)?.message ?? (lang === "ar" ? "فشل تحميل ملف PDF" : "PDF download failed"));
                   }
                 }}
               >
@@ -3444,7 +3444,7 @@ function ManageTemplatesDialog({
     setEditing({ name: "", channel: "both", subject: "", body: defaultBody(), is_default: false });
 
   const save = async () => {
-    if (!editing?.name || !editing?.body) return toast.error("Name and body are required");
+    if (!editing?.name || !editing?.body) return toast.error(lang === "ar" ? "الاسم والمحتوى مطلوبان" : "Name and body are required");
     const {
       data: { user },
     } = await supabase.auth.getUser();
@@ -3468,7 +3468,7 @@ function ManageTemplatesDialog({
       ({ error } = await (supabase.from("message_templates") as any).insert(payload));
     }
     if (error) return toast.error(error.message);
-    toast.success("Saved");
+    toast.success(lang === "ar" ? "تم الحفظ" : "Saved");
     setEditing(null);
     onChanged();
   };
@@ -3476,7 +3476,7 @@ function ManageTemplatesDialog({
   const remove = async (id: string) => {
     const { error } = await supabase.from("message_templates").delete().eq("id", id);
     if (error) return toast.error(error.message);
-    toast.success("Deleted");
+    toast.success(lang === "ar" ? "تم الحذف" : "Deleted");
     onChanged();
   };
 
