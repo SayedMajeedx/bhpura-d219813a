@@ -21,17 +21,46 @@ async function handleProxy(request: Request, path: string) {
   const urlObj = new URL(request.url);
   const targetUrl = `${realUrl}/${path}${urlObj.search}`;
   
-  // Clone incoming request headers
-  const headers = new Headers(request.headers);
+  // Create sanitized headers to avoid intermediate proxy conflicts
+  const headers = new Headers();
+  const blockedHeaders = [
+    "host",
+    "connection",
+    "keep-alive",
+    "content-length",
+    "transfer-encoding",
+    "accept-encoding",
+    "origin",
+    "referer",
+    "cf-connecting-ip",
+    "cf-worker",
+    "cf-ray",
+    "cf-visitor",
+    "x-real-ip",
+    "x-forwarded-for",
+    "x-forwarded-proto"
+  ];
   
-  // Strip host and authorization/origin headers if they match client to avoid SSL/cors issues
-  headers.delete("host");
-  headers.delete("origin");
+  request.headers.forEach((value, key) => {
+    if (!blockedHeaders.includes(key.toLowerCase())) {
+      headers.set(key, value);
+    }
+  });
   
+  // Ensure the apikey header is present (crucial for Supabase auth and routing)
+  const apikey = request.headers.get("apikey") || request.headers.get("x-client-info");
+  if (apikey) {
+    headers.set("apikey", apikey);
+  }
+
   // Read request body for modifying requests (POST, PUT, PATCH)
   let body: any = null;
   if (["POST", "PUT", "PATCH"].includes(request.method)) {
-    body = await request.clone().arrayBuffer();
+    try {
+      body = await request.clone().arrayBuffer();
+    } catch (e) {
+      console.warn("Could not parse request body for proxy:", e);
+    }
   }
   
   try {
@@ -43,9 +72,15 @@ async function handleProxy(request: Request, path: string) {
     });
     
     // Copy response headers
-    const resHeaders = new Headers(response.headers);
+    const resHeaders = new Headers();
+    response.headers.forEach((value, key) => {
+      // Avoid forwarding block-listed or compression mismatching response headers
+      if (!["content-encoding", "transfer-encoding", "connection"].includes(key.toLowerCase())) {
+        resHeaders.set(key, value);
+      }
+    });
     
-    // Handle CORS headers to allow requests from client
+    // Add CORS headers explicitly to resolve preflight checks in proxy environments
     resHeaders.set("Access-Control-Allow-Origin", urlObj.origin);
     resHeaders.set("Access-Control-Allow-Credentials", "true");
     
@@ -56,6 +91,6 @@ async function handleProxy(request: Request, path: string) {
     });
   } catch (error: any) {
     console.error("Supabase API proxy routing error:", error);
-    return new Response(error.message || "Proxy Connection Error", { status: 500 });
+    return new Response(`Proxy Connection Error: ${error.message || String(error)}`, { status: 502 });
   }
 }
