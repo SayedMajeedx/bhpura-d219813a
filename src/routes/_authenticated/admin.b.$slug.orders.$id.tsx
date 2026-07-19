@@ -999,7 +999,7 @@ function OrderDetail() {
       description: lines.filter(Boolean).join("\n"),
       quantity: 1,
       unit_price: Number(v.selling_price ?? 0),
-      original_price: v.original_price == null ? null : Number(v.original_price),
+      original_price: (v as any).original_price == null ? null : Number((v as any).original_price),
       customizations: [],
       customization_total: 0,
       line_total: Number(v.selling_price ?? 0),
@@ -1045,7 +1045,7 @@ function OrderDetail() {
       variant_id: v.id,
       description: lines.join("\n"),
       unit_price: Number(v.selling_price),
-      original_price: v.original_price == null ? null : Number(v.original_price),
+      original_price: (v as any).original_price == null ? null : Number((v as any).original_price),
     });
   };
 
@@ -3481,6 +3481,7 @@ function ManageTemplatesDialog({
   templates: Tpl[];
   onChanged: () => void;
 }) {
+  const { lang } = useI18n();
   const [editing, setEditing] = useState<Partial<Tpl> | null>(null);
 
   const startNew = () =>

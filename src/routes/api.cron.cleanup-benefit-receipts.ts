@@ -47,9 +47,8 @@ export const Route = createFileRoute("/api/cron/cleanup-benefit-receipts")({
           }
         }
 
-        const { data: abandoned, error: pendingError } = await (
-          supabaseAdmin.from("pending_benefit_receipts") as any
-        )
+        const { data: abandoned, error: pendingError } = await (supabaseAdmin as any)
+          .from("pending_benefit_receipts")
           .select("id, brand_id, object_key")
           .is("consumed_at", null)
           .lt("expires_at", now)
@@ -62,7 +61,8 @@ export const Route = createFileRoute("/api/cron/cleanup-benefit-receipts")({
               throw new Error("invalid private receipt key");
             }
             await deletePrivateObject(pending.object_key);
-            const { error } = await (supabaseAdmin.from("pending_benefit_receipts") as any)
+            const { error } = await (supabaseAdmin as any)
+              .from("pending_benefit_receipts")
               .delete()
               .eq("id", pending.id)
               .is("consumed_at", null);
@@ -76,7 +76,8 @@ export const Route = createFileRoute("/api/cron/cleanup-benefit-receipts")({
         // Consumed upload slots no longer contain useful information once the
         // order owns the object key. Removing them does not remove the receipt.
         const consumedCutoff = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-        await (supabaseAdmin.from("pending_benefit_receipts") as any)
+        await (supabaseAdmin as any)
+          .from("pending_benefit_receipts")
           .delete()
           .not("consumed_at", "is", null)
           .lt("consumed_at", consumedCutoff);

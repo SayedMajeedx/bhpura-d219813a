@@ -10,7 +10,7 @@ export const Route = createFileRoute("/_authenticated/admin/b/$slug")({
     if (!user) throw redirect({ to: "/auth" });
 
     // Load target brand with all subscription metadata fields
-    const { data: brand, error: brandErr } = await supabase
+    const { data: brand, error: brandErr } = await (supabase as any)
       .from("brands")
       .select("id, slug, name_en, name_ar, logo_url, is_active, subscription_tier, subscription_status, subscription_expires_at, payment_receipt_url, payment_receipt_uploaded_at, custom_domain")
       .eq("slug", params.slug)
@@ -65,11 +65,11 @@ export const Route = createFileRoute("/_authenticated/admin/b/$slug")({
   },
   component: BrandLayout,
   errorComponent: BrandError,
-  notFoundComponent: BrandError,
+  notFoundComponent: () => <BrandError />,
 });
 
 function BrandLayout() {
-  const { brand } = Route.useRouteContext();
+  const { brand } = Route.useRouteContext() as any;
   return (
     <BrandProvider brand={brand}>
       <Outlet />

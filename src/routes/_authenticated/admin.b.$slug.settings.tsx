@@ -229,7 +229,7 @@ function Settings() {
                 <p className="text-sm font-medium">{lang === "ar" ? "أسعار المنتجات شاملة ضريبة القيمة المضافة" : "Product prices are inclusive of Tax/VAT"}</p>
                 <p className="text-xs text-muted-foreground mt-0.5">{lang === "ar" ? "إذا تم تفعيله، سيتم حساب ضريبة القيمة المضافة كجزء من السعر الحالي بدلاً من إضافتها فوقه" : "If enabled, VAT is derived as part of the current price instead of appended on top"}</p>
               </div>
-              <Switch checked={f.vat_inclusive ?? false} onCheckedChange={(v) => setF({ ...f, vat_inclusive: v })} />
+              <Switch checked={(f as any).vat_inclusive ?? false} onCheckedChange={(v) => setF({ ...f, vat_inclusive: v } as any)} />
             </div>
             <div><Label>{t("settings.footer")}</Label><Textarea placeholder={t("settings.footerPh")} value={f.footer_note ?? ""} onChange={(e) => setF({ ...f, footer_note: e.target.value })} /></div>
           </Card>
@@ -741,11 +741,20 @@ function BrandHeroCard({ brandId }: { brandId: string }) {
       reader.readAsDataURL(file);
       return;
     }
-    if (!file.type.startsWith("video/")) return toast.error(isAr ? "صيغة الملف غير مدعومة" : "Unsupported file type");
-    if (file.size > 100 * 1024 * 1024) return toast.error(isAr ? "يجب ألا يتجاوز الفيديو 100 ميجابايت" : "Video must be 100 MB or smaller");
+    if (!file.type.startsWith("video/")) {
+      toast.error(isAr ? "صيغة الملف غير مدعومة" : "Unsupported file type");
+      return;
+    }
+    if (file.size > 100 * 1024 * 1024) {
+      toast.error(isAr ? "يجب ألا يتجاوز الفيديو 100 ميجابايت" : "Video must be 100 MB or smaller");
+      return;
+    }
     try {
       const duration = await heroVideoDuration(file);
-      if (!Number.isFinite(duration) || duration > 15.25) return toast.error(isAr ? "يجب ألا تتجاوز مدة الفيديو 15 ثانية" : "Video must be 15 seconds or shorter");
+      if (!Number.isFinite(duration) || duration > 15.25) {
+        toast.error(isAr ? "يجب ألا تتجاوز مدة الفيديو 15 ثانية" : "Video must be 15 seconds or shorter");
+        return;
+      }
       await uploadSlideMedia(file, index, language);
     } catch (error: any) { toast.error(error.message ?? "Unable to validate video"); }
   };
@@ -958,8 +967,9 @@ function ShippingSettingsCard({ brandId }: { brandId: string }) {
       pickup_enabled: state.pickup_enabled,
       digital_delivery_enabled: state.digital_delivery_enabled,
       delivery_fee: state.delivery_fee,
-      shipping_zones: zones,
-    }).eq("brand_id", brandId);
+      shipping_zones: zones as any,
+      benefit_account_number: (state as any).benefit_account_number,
+    } as any).eq("brand_id", brandId);
     setSaving(false);
     if (error) toast.error(error.message);
     else { toast.success(isAr ? "تم الحفظ" : "Saved"); qc.invalidateQueries({ queryKey: ["business-settings-shipping", brandId] }); }
@@ -1437,7 +1447,7 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
           </div>
           <div className="space-y-1 pt-2">
             <Label>{isAr ? "رقم الهاتف أو الحساب أو IBAN" : "Benefit phone, account number, or IBAN"}</Label>
-            <Input value={state.benefit_account_number} onChange={(e) => setState({ ...state, benefit_account_number: e.target.value })} placeholder={isAr ? "يظهر للعميل مع زر النسخ" : "Shown to customers with a copy button"} />
+            <Input value={(state as any).benefit_account_number ?? ""} onChange={(e) => setState({ ...state, benefit_account_number: e.target.value } as any)} placeholder={isAr ? "يظهر للعميل مع زر النسخ" : "Shown to customers with a copy button"} />
           </div>
         </div>
         <div className="pt-3"><BrandHeroCard brandId={brandId} /></div>
@@ -1807,7 +1817,7 @@ function EmailSettingsCard({ brandId }: { brandId: string }) {
   };
 
   const injectPlaceholder = (
-    ref: React.RefObject<HTMLTextAreaElement>,
+    ref: React.RefObject<HTMLTextAreaElement | null>,
     field: "email_intro_ar" | "email_intro_en" | "courier_out_for_delivery_message_ar" | "courier_out_for_delivery_message_en",
     placeholder: string
   ) => {
@@ -1834,7 +1844,7 @@ function EmailSettingsCard({ brandId }: { brandId: string }) {
     { value: "{{brand_name}}", label: isAr ? "اسم العلامة" : "Brand Name" },
   ];
 
-  const renderPills = (ref: React.RefObject<HTMLTextAreaElement>, field: "email_intro_ar" | "email_intro_en" | "courier_out_for_delivery_message_ar" | "courier_out_for_delivery_message_en") => (
+  const renderPills = (ref: React.RefObject<HTMLTextAreaElement | null>, field: "email_intro_ar" | "email_intro_en" | "courier_out_for_delivery_message_ar" | "courier_out_for_delivery_message_en") => (
     <div className="flex flex-wrap gap-1.5 mt-2">
       {variables.map((v) => (
         <button

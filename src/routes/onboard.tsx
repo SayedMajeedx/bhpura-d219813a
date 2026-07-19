@@ -155,7 +155,7 @@ function OnboardPage() {
       if (!authData.user) throw new Error("Authentication failed.");
 
       // Step 2: Provision Brand & Settings in one atomic SQL operation
-      const { data: brandId, error: rpcError } = await supabase.rpc("create_tenant_with_defaults", {
+      const { data: brandId, error: rpcError } = await supabase.rpc("create_tenant_with_defaults" as any, {
         p_slug: storeSlug,
         p_name_en: storeNameEn,
         p_name_ar: storeNameAr || null,

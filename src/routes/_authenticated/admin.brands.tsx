@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
   DialogContent,
@@ -110,7 +111,7 @@ function BrandsPage() {
         .select("*")
         .order("created_at", { ascending: false });
       if (error) throw error;
-      return (data ?? []) as Brand[];
+      return (data ?? []) as unknown as Brand[];
     },
   });
 
@@ -133,7 +134,7 @@ function BrandsPage() {
 
   const handleViewReceipt = async (objectKey: string) => {
     try {
-      const { viewUrl } = await getSubscriptionReceiptViewUrl({ objectKey });
+      const { viewUrl } = await getSubscriptionReceiptViewUrl({ data: { objectKey } });
       window.open(viewUrl, "_blank");
     } catch (err: any) {
       toast.error(err.message || "Failed to generate private view URL.");
@@ -145,9 +146,11 @@ function BrandsPage() {
     setApproving(true);
     try {
       await approveSubscriptionSaaS({
-        brandId: approvingBrand.id,
-        tier: approveTier,
-        months: approveMonths
+        data: {
+          brandId: approvingBrand.id,
+          tier: approveTier,
+          months: approveMonths
+        }
       });
       toast.success(lang === "ar" ? "تم تفعيل الاشتراك وتمديد الصلاحية بنجاح!" : "Subscription approved and extended successfully!");
       setApprovingBrand(null);
@@ -163,7 +166,7 @@ function BrandsPage() {
     if (!confirm(lang === "ar" ? "هل أنت متأكد من رفض هذا الإيصال؟ سيتم حذف الملف وتعليق المتجر." : "Are you sure you want to reject this receipt? The file will be purged and account suspended.")) return;
     setRejecting(brandId);
     try {
-      await rejectSubscriptionSaaS({ brandId });
+      await rejectSubscriptionSaaS({ data: { brandId } });
       toast.success(lang === "ar" ? "تم رفض وإزالة الإيصال بنجاح." : "Receipt rejected and storage cleaned.");
       refresh();
     } catch (err: any) {
@@ -570,7 +573,7 @@ function NewBrandDialog({ onSaved }: { onSaved: () => void }) {
       } = await supabase.auth.getUser();
       
       // Deploying tenant using RPC for instant, correct seeding!
-      const { error } = await supabase.rpc("create_tenant_with_defaults", {
+      const { error } = await supabase.rpc("create_tenant_with_defaults" as any, {
         p_slug: slug,
         p_name_en: form.name_en.trim(),
         p_name_ar: form.name_ar.trim() || null,

@@ -44,7 +44,7 @@ function IndexRedirector() {
         }
 
         // Custom Domain Mapping: Check if this custom hostname is bound to a boutique brand
-        const { data: brand } = await supabase
+        const { data: brand } = await (supabase as any)
           .from("brands")
           .select("slug")
           .eq("custom_domain", hostname)

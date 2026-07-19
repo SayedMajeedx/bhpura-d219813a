@@ -150,7 +150,7 @@ function OrdersList() {
     refetchInterval: isCourier ? 10_000 : 30_000,
     refetchOnWindowFocus: true,
     queryFn: async () => {
-      let query = supabase
+      let query: any = supabase
         .from("orders")
         .select("*, customers(name, phone, region, road, house, flat, address, city)")
         .eq("brand_id", brandId);
