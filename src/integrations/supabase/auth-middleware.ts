@@ -3,6 +3,23 @@ import { createMiddleware } from '@tanstack/react-start'
 import { getRequest } from '@tanstack/react-start/server'
 import { createClient } from '@supabase/supabase-js'
 import type { Database } from './types'
+import { getEvent } from "vinxi/http"
+
+export function getEnvVariable(name: string): string | undefined {
+  if (typeof process !== "undefined" && process.env?.[name]) {
+    return process.env[name];
+  }
+  try {
+    const event = getEvent();
+    const env = event?.context?.cloudflare?.env || (event?.context as any)?.env;
+    if (env?.[name]) return env[name];
+  } catch {}
+  try {
+    const metaEnv = (import.meta as any).env;
+    if (metaEnv?.[name]) return metaEnv[name];
+  } catch {}
+  return undefined;
+}
 
 
 
@@ -33,11 +50,11 @@ function createSupabaseFetch(supabaseKey: string): typeof fetch {
 export const requireSupabaseAuth = createMiddleware({ type: 'function' }).server(
   async ({ next }) => {
     
-    let SUPABASE_URL = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
+    let SUPABASE_URL = getEnvVariable('SUPABASE_URL') || getEnvVariable('VITE_SUPABASE_URL');
     if (SUPABASE_URL && !SUPABASE_URL.startsWith('http://') && !SUPABASE_URL.startsWith('https://')) {
       SUPABASE_URL = `https://${SUPABASE_URL}`;
     }
-    const SUPABASE_PUBLISHABLE_KEY = process.env.SUPABASE_PUBLISHABLE_KEY || process.env.VITE_SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+    const SUPABASE_PUBLISHABLE_KEY = getEnvVariable('SUPABASE_PUBLISHABLE_KEY') || getEnvVariable('VITE_SUPABASE_ANON_KEY') || getEnvVariable('VITE_SUPABASE_PUBLISHABLE_KEY');
 
     if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
       const missing = [

@@ -1,5 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireSupabaseAuth, getEnvVariable } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
 
 const Input = z.object({
@@ -95,7 +95,7 @@ export const scanReceipt = createServerFn({ method: "POST" })
       p_action: "receipt_scan", p_limit: 20, p_window_minutes: 60,
     });
     if (quotaError || !allowed) throw new Error("RATE_LIMITED");
-    const apiKey = process.env.GEMINI_API_KEY;
+    const apiKey = getEnvVariable("GEMINI_API_KEY");
     if (!apiKey) throw new Error("Missing GEMINI_API_KEY");
 
     const outputLanguage = data.targetLang === "ar" ? "Arabic" : "English";
