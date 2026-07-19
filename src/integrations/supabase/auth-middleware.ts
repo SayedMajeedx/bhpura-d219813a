@@ -7,10 +7,10 @@ export function getEnvVariable(name: string): string | undefined {
   const viteName = name.startsWith("VITE_") ? name : `VITE_${name}`;
   const unprefixed = name.startsWith("VITE_") ? name.slice(5) : name;
 
-  // 1. Try real live runtime process.env (bypassing Vite's compile-time static rewriting)
+  // 1. Try real live runtime process.env or globalThis.__CLOUDFLARE_ENV__ (bypassing Vite's compile-time static rewriting)
   try {
     const g = globalThis as any;
-    const liveEnv = g["process"]?.["env"];
+    const liveEnv = g["__CLOUDFLARE_ENV__"] || g["process"]?.["env"];
     if (liveEnv) {
       if (liveEnv[name]) return liveEnv[name];
       if (liveEnv[viteName]) return liveEnv[viteName];
