@@ -33,7 +33,7 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 async function checkBrands() {
   const { data, error } = await supabase
     .from('brands')
-    .select('id, slug, name_en, name_ar, is_active');
+    .select('id, slug, name_en, name_ar, is_active, custom_domain');
 
   if (error) {
     console.log('Querying brands: FAILED');

@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { publicSupabase as supabase } from "@/integrations/supabase/client";
 import { Loader2 } from "lucide-react";
 
 export const Route = createFileRoute("/")({
@@ -46,10 +46,33 @@ function IndexRedirector() {
         // 1. Boutq Wildcard Subdomain Mapping (e.g., pura.boutq.store -> slug "pura")
         if (hostname.endsWith(".boutq.store") && hostname !== "boutq.store") {
           const subdomain = hostname.slice(0, -12); // Extract "pura" from "pura.boutq.store"
+          try {
+            // Safe query: only filter and select by public columns allowed for anonymous selection
+            const { data: brand } = await (supabase as any)
+              .from("brands")
+              .select("slug")
+              .eq("slug", subdomain)
+              .eq("is_active", true)
+              .maybeSingle();
+
+            if (brand?.slug) {
+              void navigate({ 
+                to: "/$slug", 
+                params: { slug: brand.slug } 
+              });
+              return;
+            }
+          } catch (subdomainErr) {
+            console.error("Subdomain lookup failed:", subdomainErr);
+          }
+        }
+
+        // 2. Custom Domain Mapping: Check if this custom hostname is bound to a boutique brand
+        try {
           const { data: brand } = await (supabase as any)
             .from("brands")
             .select("slug")
-            .or(`slug.eq.${subdomain},custom_domain.eq.${hostname}`)
+            .eq("custom_domain", hostname)
             .eq("is_active", true)
             .maybeSingle();
 
@@ -60,26 +83,14 @@ function IndexRedirector() {
             });
             return;
           }
+        } catch (customDomainErr) {
+          console.log("Custom domain query bypassed due to column-level select permissions:", customDomainErr);
         }
 
-        // 2. Custom Domain Mapping: Check if this custom hostname is bound to a boutique brand
-        const { data: brand } = await (supabase as any)
-          .from("brands")
-          .select("slug")
-          .eq("custom_domain", hostname)
-          .eq("is_active", true)
-          .maybeSingle();
-
-        if (brand?.slug) {
-          void navigate({ 
-            to: "/$slug", 
-            params: { slug: brand.slug } 
-          });
-        } else {
-          void navigate({ to: "/admin" });
-        }
+        // Fallback: If no matching storefront resolved, route to admin
+        void navigate({ to: "/admin" });
       } catch (err) {
-        console.error("Custom domain resolution failed:", err);
+        console.error("Overall routing resolution failed:", err);
         void navigate({ to: "/admin" });
       }
     };
