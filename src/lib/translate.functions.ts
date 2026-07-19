@@ -27,11 +27,40 @@ export const translateProductText = createServerFn({ method: "POST" })
 
     const creds = await getGeminiCredentials(context.supabase, context.userId);
     const apiKey = creds.apiKey;
-    const model = creds.model || MODEL;
+    const modelInput = creds.model || MODEL;
 
     if (!apiKey) {
       const diag = await getEnvDiagnostics();
       throw new Error(`Missing GEMINI_API_KEY. Trace: [${creds.diagnostics || "no-trace"}]. Available env keys: [${diag.keys.join(", ")}]. (Cloudflare: ${diag.hasCloudflare}, Node: ${diag.hasProcess})`);
+    }
+
+    // Resolve model name elegantly and robustly
+    let finalModel = modelInput.trim();
+    
+    // If they saved a full URL in the model/base_url field, extract the model identifier or use the URL
+    if (finalModel.startsWith("http://") || finalModel.startsWith("https://")) {
+      try {
+        const urlObj = new URL(finalModel);
+        // e.g. if URL is https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash
+        const pathParts = urlObj.pathname.split("/");
+        const modelsIndex = pathParts.indexOf("models");
+        if (modelsIndex !== -1 && pathParts[modelsIndex + 1]) {
+          finalModel = pathParts[modelsIndex + 1].split(":")[0]; // Extract gemini-1.5-flash
+        } else {
+          // Fallback if we can't parse it
+          finalModel = MODEL;
+        }
+      } catch {
+        finalModel = MODEL;
+      }
+    }
+
+    // Strip any trailing colons, spaces, or query parameters
+    finalModel = finalModel.replace(/:generateContent$/, "").trim();
+
+    // If finalModel is still empty or doesn't look like a standard model name (e.g. it is a URL or empty), use fallback
+    if (!finalModel || finalModel.includes("/") || finalModel.includes("http")) {
+      finalModel = MODEL;
     }
 
     const systemInstruction = [
@@ -45,7 +74,7 @@ export const translateProductText = createServerFn({ method: "POST" })
       "- Return ONLY the final translated text. Do not add any introduction, explanations, notes, quote marks, or extra comments.",
     ].join("\n");
 
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${finalModel}:generateContent`, {
       method: "POST",
       headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
       body: JSON.stringify({
@@ -63,8 +92,10 @@ export const translateProductText = createServerFn({ method: "POST" })
     if (!response.ok) {
       const details = await response.text().catch(() => "");
       console.error(`[translateProductText] Gemini error ${response.status}: ${details.slice(0, 300)}`);
-      if (response.status === 404) throw new Error("GEMINI_MODEL_UNAVAILABLE");
-      throw new Error("GEMINI_PROVIDER_ERROR");
+      if (response.status === 404) {
+        throw new Error(`GEMINI_MODEL_UNAVAILABLE (Tried model: "${finalModel}". Response: ${details.slice(0, 150)})`);
+      }
+      throw new Error(`GEMINI_PROVIDER_ERROR (Status: ${response.status}. Response: ${details.slice(0, 150)})`);
     }
 
     const payload = await response.json() as { candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }> };
