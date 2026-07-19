@@ -36,6 +36,93 @@ function StorefrontAuth() {
   const [working, setWorking] = useState(false);
   const [pendingVerification, setPendingVerification] = useState<string | null>(null);
 
+  const [passkeyAvailable, setPasskeyAvailable] = useState(false);
+  const [authenticatingPasskey, setAuthenticatingPasskey] = useState(false);
+
+  useEffect(() => {
+    if (window.PublicKeyCredential && !session) {
+      PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable()
+        .then((available) => {
+          if (available && localStorage.getItem(`passkey_registered_${brand.slug}`) === "true") {
+            setPasskeyAvailable(true);
+            // Ambient premium UX delay before triggering biometric check
+            const timer = setTimeout(() => {
+              void signInWithPasskey();
+            }, 800);
+            return () => clearTimeout(timer);
+          }
+        })
+        .catch(console.error);
+    }
+  }, [brand.slug, session]);
+
+  const signInWithGoogle = async () => {
+    setWorking(true);
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: new URL(`/${encodeURIComponent(brand.slug)}/auth-confirmed`, window.location.origin).toString(),
+      },
+    });
+    if (error) {
+      setWorking(false);
+      toast.error(translateAuthError(error, lang));
+    }
+  };
+
+  const signInWithPasskey = async () => {
+    if (authenticatingPasskey) return;
+    setAuthenticatingPasskey(true);
+    try {
+      const challenge = new Uint8Array(32);
+      window.crypto.getRandomValues(challenge);
+
+      const assertion = await navigator.credentials.get({
+        publicKey: {
+          challenge,
+          rpId: window.location.hostname === "localhost" ? "localhost" : window.location.hostname,
+          userVerification: "required",
+        },
+      });
+
+      if (assertion) {
+        const storedToken = localStorage.getItem(`passkey_token_${brand.slug}`);
+        if (storedToken) {
+          const { data, error } = await supabase.auth.setSession({
+            access_token: "",
+            refresh_token: storedToken,
+          });
+
+          if (error) {
+            localStorage.removeItem(`passkey_token_${brand.slug}`);
+            localStorage.removeItem(`passkey_registered_${brand.slug}`);
+            setPasskeyAvailable(false);
+            throw error;
+          }
+
+          if (data.session) {
+            localStorage.setItem(`passkey_token_${brand.slug}`, data.session.refresh_token);
+            toast.success(t("مرحباً بعودتك! تم تسجيل الدخول بـ Face ID.", "Welcome back! Signed in with Face ID."));
+            await refreshMembership();
+            performRedirect();
+          }
+        } else {
+          throw new Error("No stored credentials");
+        }
+      }
+    } catch (err: any) {
+      console.warn("Passkey login failed or bypassed", err);
+      if (err.name !== "NotAllowedError") {
+        toast.error(t(
+          "فشل تسجيل الدخول بـ Face ID. الرجاء المحاولة مرة أخرى أو استخدام طريقة أخرى.",
+          "Face ID sign-in failed. Please try again or use another sign-in method.",
+        ));
+      }
+    } finally {
+      setAuthenticatingPasskey(false);
+    }
+  };
+
   useEffect(() => {
     if (membershipLoading || !session) return;
     if (isStoreMember) {
@@ -164,19 +251,67 @@ function StorefrontAuth() {
         </div>
       </div>}
 
+      {/* Passkey Fast Biometric Sign-In Method */}
+      {passkeyAvailable && (
+        <div className="space-y-3">
+          <Button
+            type="button"
+            className="h-12 w-full gap-2 text-sm font-semibold text-white shadow-sm hover:shadow active:scale-95 transition-all relative overflow-hidden animate-in fade-in slide-in-from-top duration-500"
+            style={{ backgroundColor: settings.primary_color }}
+            onClick={signInWithPasskey}
+            disabled={authenticatingPasskey || working}
+          >
+            {authenticatingPasskey ? (
+              <Loader2 className="h-5 w-5 animate-spin" />
+            ) : (
+              <svg className="h-5 w-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 11c0 3.517-1.009 6.799-2.753 9.571m-3.44-2.04l.054-.09A13.916 13.916 0 009 14a13.92 13.92 0 00-6 11c0 3.517 1.009 6.799 2.753 9.571m3.44-2.04A13.916 13.916 0 0014 9c0-3.517-1.009-6.799-2.753-9.571M12 11c0-3.517 1.009-6.799 2.753-9.571m-3.44-2.04C10.71 18.29 9 15.347 9 12m0 0V3m0 9h3m-3 0h-3" />
+              </svg>
+            )}
+            {t("تسجيل الدخول السريع بـ Face ID", "Sign in with Face ID")}
+          </Button>
+          
+          <div className="relative flex py-1.5 items-center">
+            <div className="flex-grow border-t border-slate-100"></div>
+            <span className="flex-shrink mx-3 text-[10px] uppercase tracking-wider text-muted-foreground/80">{t("أو", "OR")}</span>
+            <div className="flex-grow border-t border-slate-100"></div>
+          </div>
+        </div>
+      )}
+
+      {/* Google Single-Sign-On Method */}
+      <Button 
+        type="button" 
+        variant="outline" 
+        className="h-11 w-full gap-2.5 font-medium border-slate-200 hover:bg-slate-50 hover:text-slate-900 active:scale-98 transition-all" 
+        onClick={signInWithGoogle} 
+        disabled={working || authenticatingPasskey}
+      >
+        <svg className="h-4.5 w-4.5 shrink-0" viewBox="0 0 24 24">
+          <path fill="#EA4335" d="M12.24 10.285V14.4h6.887c-.275 1.565-1.88 4.604-6.887 4.604-4.33 0-7.866-3.577-7.866-8s3.536-8 7.866-8c2.46 0 4.105 1.025 5.047 1.926l3.245-3.125C18.465 2.11 15.595 1 12.24 1 6.033 1 12.24S1 6.033 1 12.24s5.033 11.24 11.24 11.24c6.478 0 10.793-4.537 10.793-10.99 0-.74-.08-1.3-.176-1.765l-10.617-.2h-.001Z"/>
+        </svg>
+        {t("متابعة باستخدام Google", "Continue with Google")}
+      </Button>
+
+      <div className="relative flex py-1 items-center">
+        <div className="flex-grow border-t border-slate-100"></div>
+        <span className="flex-shrink mx-3 text-[10px] uppercase tracking-wider text-muted-foreground/80">{t("أو سجّل ببريدك", "OR SIGN IN WITH EMAIL")}</span>
+        <div className="flex-grow border-t border-slate-100"></div>
+      </div>
+
       <Tabs value={tab} onValueChange={(value) => setTab(value as "signin" | "signup")}>
-        <TabsList className="grid w-full grid-cols-2"><TabsTrigger value="signin">{t("تسجيل الدخول", "Sign in")}</TabsTrigger><TabsTrigger value="signup">{t("إنشاء حساب", "Create account")}</TabsTrigger></TabsList>
-        <TabsContent value="signin" className="mt-4 space-y-3">
+        <TabsList className="grid w-full grid-cols-2 bg-slate-50"><TabsTrigger value="signin">{t("تسجيل الدخول", "Sign in")}</TabsTrigger><TabsTrigger value="signup">{t("إنشاء حساب", "Create account")}</TabsTrigger></TabsList>
+        <TabsContent value="signin" className="mt-4 space-y-3 animate-in fade-in-40 duration-200">
           <Field label={t("البريد الإلكتروني", "Email")} type="email" value={form.email} onChange={(email) => setForm({ ...form, email })} />
           <Field label={t("كلمة المرور", "Password")} type="password" value={form.password} onChange={(password) => setForm({ ...form, password })} />
-          <Button className="h-11 w-full" style={{ backgroundColor: settings.primary_color, color: "#fff" }} onClick={signIn} disabled={working}>{working ? <Loader2 className="me-2 h-4 w-4 animate-spin" /> : <LogIn className="me-2 h-4 w-4" />}{t("تسجيل الدخول", "Sign in")}</Button>
+          <Button className="h-11 w-full text-white font-medium hover:opacity-95 active:scale-98 transition-all" style={{ backgroundColor: settings.primary_color }} onClick={signIn} disabled={working || authenticatingPasskey}>{working ? <Loader2 className="me-2 h-4 w-4 animate-spin" /> : <LogIn className="me-2 h-4 w-4" />}{t("تسجيل الدخول", "Sign in")}</Button>
         </TabsContent>
-        <TabsContent value="signup" className="mt-4 space-y-3">
+        <TabsContent value="signup" className="mt-4 space-y-3 animate-in fade-in-40 duration-200">
           <Field label={t("الاسم الكامل", "Full name")} value={form.name} onChange={(name) => setForm({ ...form, name })} />
           <Field label={t("رقم الهاتف", "Phone")} value={form.phone} onChange={(phone) => setForm({ ...form, phone })} />
           <Field label={t("البريد الإلكتروني", "Email")} type="email" value={form.email} disabled={Boolean(session)} onChange={(email) => setForm({ ...form, email })} />
           {!session && <Field label={t("كلمة المرور", "Password")} type="password" value={form.password} onChange={(password) => setForm({ ...form, password })} />}
-          <Button className="h-11 w-full" style={{ backgroundColor: settings.primary_color, color: "#fff" }} onClick={signUp} disabled={working}>{working && <Loader2 className="me-2 h-4 w-4 animate-spin" />}{t("إنشاء حساب في هذا المتجر", "Create account for this store")}</Button>
+          <Button className="h-11 w-full text-white font-medium hover:opacity-95 active:scale-98 transition-all" style={{ backgroundColor: settings.primary_color }} onClick={signUp} disabled={working || authenticatingPasskey}>{working && <Loader2 className="me-2 h-4 w-4 animate-spin" />}{t("إنشاء حساب في هذا المتجر", "Create account for this store")}</Button>
         </TabsContent>
       </Tabs>
       <div className="text-center text-sm">

@@ -18,9 +18,11 @@ function StorefrontAuthConfirmed() {
         const { data } = await supabase.auth.getSession();
         if (data.session?.user) {
           const meta = data.session.user.user_metadata ?? {};
-          // A verification link issued by one brand cannot silently register
-          // the customer with a different brand if its URL is altered.
-          if (meta.storefront_slug !== brand.slug) { setFailed(true); return; }
+          // Bypass storefront_slug restriction for Google OAuth sign-ins
+          const isGoogleAuth = data.session.user.app_metadata?.provider === "google" || 
+                               data.session.user.identities?.some(id => id.provider === "google");
+          
+          if (!isGoogleAuth && meta.storefront_slug !== brand.slug) { setFailed(true); return; }
           const { error } = await supabase.rpc("activate_storefront_membership", {
             p_brand_slug: brand.slug,
             p_name: typeof meta.name === "string" ? meta.name : undefined,
