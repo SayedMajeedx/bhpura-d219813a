@@ -63,15 +63,17 @@ export const translateProductText = createServerFn({ method: "POST" })
       finalModel = MODEL;
     }
 
-    const systemInstruction = [
+    const prompt = [
       "You are a premium, luxury bilingual copywriter and translator specializing in high-end fashion, beauty, and retail boutique brands.",
-      `Your task is to translate product details from ${data.from === "ar" ? "Arabic" : "English"} to ${data.to === "ar" ? "Arabic" : "English"}.`,
+      `Your task is to translate the following product text from ${data.from === "ar" ? "Arabic" : "English"} to ${data.to === "ar" ? "Arabic" : "English"}.`,
       "Guidelines:",
       "- Provide a beautifully localized, elegant, and natural translation that fits a premium luxury brand.",
       "- Avoid literal, mechanical, or robotic machine-translation phrasing.",
       "- Keep formatting, bullet points, line breaks, measurements (e.g. 50ml, cm, L), and brand names intact.",
       "- If translating to Arabic, use modern standard Arabic of high literary/retail quality suitable for boutique commerce (avoid casual slang, and avoid overly rigid Google-Translate-style literalisms).",
       "- Return ONLY the final translated text. Do not add any introduction, explanations, notes, quote marks, or extra comments.",
+      "\nText to translate:",
+      data.text,
     ].join("\n");
 
     let activeApiVersion = "v1";
@@ -79,8 +81,7 @@ export const translateProductText = createServerFn({ method: "POST" })
       method: "POST",
       headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
       body: JSON.stringify({
-        system_instruction: { parts: [{ text: systemInstruction }] },
-        contents: [{ role: "user", parts: [{ text: data.text }] }],
+        contents: [{ role: "user", parts: [{ text: prompt }] }],
         generationConfig: { 
           temperature: 0.2, 
           maxOutputTokens: 2048,
@@ -95,8 +96,7 @@ export const translateProductText = createServerFn({ method: "POST" })
         method: "POST",
         headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
         body: JSON.stringify({
-          system_instruction: { parts: [{ text: systemInstruction }] },
-          contents: [{ role: "user", parts: [{ text: data.text }] }],
+          contents: [{ role: "user", parts: [{ text: prompt }] }],
           generationConfig: { 
             temperature: 0.2, 
             maxOutputTokens: 2048,
