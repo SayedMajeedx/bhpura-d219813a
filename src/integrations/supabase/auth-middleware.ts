@@ -8,15 +8,16 @@ export function getEnvVariable(name: string): string | undefined {
   const viteName = name.startsWith("VITE_") ? name : `VITE_${name}`;
   const unprefixed = name.startsWith("VITE_") ? name.slice(5) : name;
 
-  // 1. Try process.env
-  if (typeof process !== "undefined") {
-    if (name === "GEMINI_API_KEY") {
-      console.log(`[Env Debug] process.env keys:`, Object.keys(process.env || {}));
+  // 1. Try real live runtime process.env (bypassing Vite's compile-time static rewriting)
+  try {
+    const g = globalThis as any;
+    const liveEnv = g["process"]?.["env"];
+    if (liveEnv) {
+      if (liveEnv[name]) return liveEnv[name];
+      if (liveEnv[viteName]) return liveEnv[viteName];
+      if (liveEnv[unprefixed]) return liveEnv[unprefixed];
     }
-    if (process.env?.[name]) return process.env[name];
-    if (process.env?.[viteName]) return process.env[viteName];
-    if (process.env?.[unprefixed]) return process.env[unprefixed];
-  }
+  } catch {}
 
   // 2. Try import.meta.env (Vite build-time injection)
   try {
@@ -26,16 +27,19 @@ export function getEnvVariable(name: string): string | undefined {
     if (metaEnv?.[unprefixed]) return metaEnv[unprefixed];
   } catch {}
 
-  // 3. Try globalThis fallbacks
+  // 3. Fallback to standard process.env (which Vite rewrites statically at build time)
+  try {
+    if (process.env?.[name]) return process.env[name];
+    if (process.env?.[viteName]) return process.env[viteName];
+    if (process.env?.[unprefixed]) return process.env[unprefixed];
+  } catch {}
+
+  // 4. Try globalThis fallbacks
   try {
     const g = globalThis as any;
     if (g?.[name]) return g[name];
     if (g?.[viteName]) return g[viteName];
     if (g?.[unprefixed]) return g[unprefixed];
-    
-    if (g?.process?.env?.[name]) return g.process.env[name];
-    if (g?.process?.env?.[viteName]) return g.process.env[viteName];
-    if (g?.process?.env?.[unprefixed]) return g.process.env[unprefixed];
   } catch {}
 
   return undefined;
@@ -51,13 +55,15 @@ export async function getEnvVariableAsync(name: string): Promise<string | undefi
       const vinxiHttp = "vinxi/http";
       const { getEvent } = await import(vinxiHttp);
       const event = getEvent();
-      const env = event?.context?.cloudflare?.env || (event?.context as any)?.env;
-      if (name === "GEMINI_API_KEY") {
-        console.log(`[Env Debug] Cloudflare env keys:`, Object.keys(env || {}));
+      const env = event?.context?.cloudflare?.env || 
+                  (event?.context as any)?.env || 
+                  event?.context?.cloudflare || 
+                  (event?.context as any)?.cloudflare?.env;
+      if (env) {
+        if (env[name]) return env[name];
+        if (env[viteName]) return env[viteName];
+        if (env[unprefixed]) return env[unprefixed];
       }
-      if (env?.[name]) return env[name];
-      if (env?.[viteName]) return env[viteName];
-      if (env?.[unprefixed]) return env[unprefixed];
     } catch (e) {
       if (name === "GEMINI_API_KEY") {
         console.error(`[Env Debug] Error reading Cloudflare context:`, e);
@@ -74,17 +80,26 @@ export async function getEnvDiagnostics(): Promise<{ keys: string[]; hasProcess:
   let hasProcess = false;
   let hasCloudflare = false;
 
-  if (typeof process !== "undefined" && process.env) {
-    hasProcess = true;
-    Object.keys(process.env).forEach(k => keys.add(k));
-  }
+  // 1. Live process.env (bracket notation to bypass Vite compilation)
+  try {
+    const g = globalThis as any;
+    const liveEnv = g["process"]?.["env"];
+    if (liveEnv) {
+      hasProcess = true;
+      Object.keys(liveEnv).forEach(k => keys.add(k));
+    }
+  } catch {}
 
+  // 2. Cloudflare request context
   if (typeof window === "undefined") {
     try {
       const vinxiHttp = "vinxi/http";
       const { getEvent } = await import(vinxiHttp);
       const event = getEvent();
-      const env = event?.context?.cloudflare?.env || (event?.context as any)?.env;
+      const env = event?.context?.cloudflare?.env || 
+                  (event?.context as any)?.env || 
+                  event?.context?.cloudflare || 
+                  (event?.context as any)?.cloudflare?.env;
       if (env) {
         hasCloudflare = true;
         Object.keys(env).forEach(k => keys.add(k));
@@ -92,6 +107,14 @@ export async function getEnvDiagnostics(): Promise<{ keys: string[]; hasProcess:
     } catch {}
   }
 
+  // 3. Static process.env (Vite compilation will rewrite)
+  try {
+    if (process.env) {
+      Object.keys(process.env).forEach(k => keys.add(k));
+    }
+  } catch {}
+
+  // 4. import.meta.env
   try {
     const metaEnv = (import.meta as any).env;
     if (metaEnv) {
