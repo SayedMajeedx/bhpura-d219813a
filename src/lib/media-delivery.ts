@@ -61,7 +61,10 @@ function getImageKitEndpoint(): string {
 
   // 3. Try dynamic server-side worker context lookup
   const dynamicVal = (getEnvVariable("VITE_IMAGEKIT_URL_ENDPOINT") || getEnvVariable("IMAGEKIT_URL_ENDPOINT") || "").trim();
-  return dynamicVal.replace(/\/+$/, "");
+  if (dynamicVal) return dynamicVal.replace(/\/+$/, "");
+
+  // 4. Default fallback for Boutq brand storefronts to guarantee out-of-the-box operation
+  return "https://ik.imagekit.io/Boutq";
 }
 
 const IMAGEKIT_DESKTOP_VIDEO_TRANSFORMATION = "w-1280,q-55,f-auto,ac-none";
