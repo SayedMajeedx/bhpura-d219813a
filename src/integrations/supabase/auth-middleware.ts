@@ -3,21 +3,38 @@ import { createMiddleware } from '@tanstack/react-start'
 import { getRequest } from '@tanstack/react-start/server'
 import { createClient } from '@supabase/supabase-js'
 import type { Database } from './types'
-import { getEvent } from "vinxi/http"
 
 export function getEnvVariable(name: string): string | undefined {
-  if (typeof process !== "undefined" && process.env?.[name]) {
-    return process.env[name];
+  const viteName = name.startsWith("VITE_") ? name : `VITE_${name}`;
+  const unprefixed = name.startsWith("VITE_") ? name.slice(5) : name;
+
+  // 1. Try process.env
+  if (typeof process !== "undefined") {
+    if (process.env?.[name]) return process.env[name];
+    if (process.env?.[viteName]) return process.env[viteName];
+    if (process.env?.[unprefixed]) return process.env[unprefixed];
   }
-  try {
-    const event = getEvent();
-    const env = event?.context?.cloudflare?.env || (event?.context as any)?.env;
-    if (env?.[name]) return env[name];
-  } catch {}
+
+  // 2. Try import.meta.env (Vite build-time injection)
   try {
     const metaEnv = (import.meta as any).env;
     if (metaEnv?.[name]) return metaEnv[name];
+    if (metaEnv?.[viteName]) return metaEnv[viteName];
+    if (metaEnv?.[unprefixed]) return metaEnv[unprefixed];
   } catch {}
+
+  // 3. Try globalThis fallbacks
+  try {
+    const g = globalThis as any;
+    if (g?.[name]) return g[name];
+    if (g?.[viteName]) return g[viteName];
+    if (g?.[unprefixed]) return g[unprefixed];
+    
+    if (g?.process?.env?.[name]) return g.process.env[name];
+    if (g?.process?.env?.[viteName]) return g.process.env[viteName];
+    if (g?.process?.env?.[unprefixed]) return g.process.env[unprefixed];
+  } catch {}
+
   return undefined;
 }
 
