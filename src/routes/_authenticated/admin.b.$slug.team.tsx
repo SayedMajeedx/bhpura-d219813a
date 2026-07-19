@@ -114,6 +114,7 @@ function TeamManagement() {
   const [addOpen, setAddOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [editing, setEditing] = useState<StaffMember | null>(null);
+  const [editPassword, setEditPassword] = useState("");
   const [deleteConfirm, setDeleteConfirm] = useState<StaffMember | null>(null);
 
   const staffQ = useQuery({
@@ -192,6 +193,7 @@ function TeamManagement() {
 
   const openEdit = (member: StaffMember) => {
     setEditing(member);
+    setEditPassword("");
     setEditOpen(true);
   };
 
@@ -470,7 +472,7 @@ function TeamManagement() {
       )}
 
       {/* Edit Dialog */}
-      <Dialog open={editOpen} onOpenChange={(v) => { setEditOpen(v); if (!v) setEditing(null); }}>
+      <Dialog open={editOpen} onOpenChange={(v) => { setEditOpen(v); if (!v) { setEditing(null); setEditPassword(""); } }}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>{isAr ? "تعديل المستخدم" : "Edit User"}</DialogTitle>
@@ -558,6 +560,16 @@ function TeamManagement() {
                   </SelectContent>
                 </Select>
               </div>
+              <div>
+                <Label>{isAr ? "تعيين كلمة مرور جديدة (اختياري)" : "Set New Password (optional)"}</Label>
+                <Input
+                  type="password"
+                  className="text-start"
+                  value={editPassword}
+                  onChange={(e) => setEditPassword(e.target.value)}
+                  placeholder={isAr ? "أدخل كلمة مرور جديدة" : "Enter new password"}
+                />
+              </div>
             </div>
           )}
           <DialogFooter>
@@ -571,6 +583,7 @@ function TeamManagement() {
                     name: editing.name || undefined,
                     role: editing.role,
                     status: editing.status,
+                    ...(editPassword.trim() ? { password: editPassword.trim() } : {}),
                   });
                 }
               }}

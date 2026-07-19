@@ -354,7 +354,7 @@ async function handleUpdate(
   body: any,
   ctx: { userId: string; isSuperAdmin: boolean; callerBrandId: string | null },
 ) {
-  const { userId, role, status, name, brand_id } = body;
+  const { userId, role, status, name, brand_id, password } = body;
 
   if (!userId) {
     return new Response(JSON.stringify({ error: "userId is required" }), {
@@ -393,6 +393,19 @@ async function handleUpdate(
     });
   }
 
+  // 1. If password is provided, update the auth password directly
+  if (password !== undefined && String(password).trim().length > 0) {
+    const { error: authUpdateError } = await supabase.auth.admin.updateUserById(userId, {
+      password: String(password).trim(),
+    });
+    if (authUpdateError) {
+      return new Response(JSON.stringify({ error: `Failed to update password in auth: ${authUpdateError.message}` }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+  }
+
   const validRoles = ctx.isSuperAdmin
     ? ["super_admin", "admin", "brand_admin", "staff", "courier"]
     : ["staff", "courier"];
@@ -424,9 +437,10 @@ async function handleUpdate(
     updates.brand_id = brand_id;
   }
 
+  // If we only updated the password, we can return success directly without modifying profiles table
   if (Object.keys(updates).length === 0) {
-    return new Response(JSON.stringify({ error: "No fields to update" }), {
-      status: 400,
+    return new Response(JSON.stringify({ success: true, message: "Password updated successfully" }), {
+      status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
