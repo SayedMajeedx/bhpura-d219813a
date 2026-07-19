@@ -172,6 +172,15 @@ input[type=number] {
   -moz-appearance: textfield;
 }
 
+/* Hide scrollbars on scrollable panels that should have a clean, non-obtrusive, native look */
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-none {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+
 @media print {
   @page { margin: 16mm; }
   body { background: white !important; }

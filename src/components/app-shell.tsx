@@ -166,7 +166,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </div>
       )}
 
-      <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
+      <nav className="flex-1 p-3 space-y-1 overflow-y-auto scrollbar-none">
         {nav.map((item, index) => {
           const active = pathname.startsWith(item.to.replace("$slug", item.params?.slug ?? ""));
           const Icon = item.icon;
