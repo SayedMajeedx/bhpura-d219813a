@@ -1,3 +1,4 @@
+// Dynamic streamer route to proxy and serve brand media assets on-the-fly from R2 storage.
 import { createFileRoute } from "@tanstack/react-router";
 import { GetObjectCommand, S3Client } from "@aws-sdk/client-s3";
 
