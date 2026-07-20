@@ -17,7 +17,7 @@ import {
 } from "@/lib/onboarding.functions";
 import { getSubscriptionReceiptViewUrl } from "@/lib/saas-subscription.functions";
 import { 
-  Clock, 
+  Clock as ClockIcon, 
   Crown, 
   CheckCircle2, 
   XCircle, 
@@ -327,7 +327,7 @@ function SuperRequestsPage() {
               <div className="flex justify-between items-center">
                 <div>
                   <CardTitle className="text-sm font-semibold flex items-center gap-1.5">
-                    <Clock className="h-4.5 w-4.5 text-primary" />
+                    <ClockIcon className="h-4.5 w-4.5 text-primary" />
                     <span>{lang === "ar" ? "قائمة الانتظار النشطة" : "Active Registration Waiting list"}</span>
                   </CardTitle>
                   <CardDescription className="text-xs">
@@ -419,7 +419,7 @@ function SuperRequestsPage() {
                                 <DialogContent className="sm:max-w-md bg-zinc-950 text-white border-zinc-900">
                                   <DialogHeader>
                                     <DialogTitle className="text-sm font-semibold flex items-center gap-1.5">
-                                      <Clock className="h-4.5 w-4.5 text-primary" />
+                                      <ClockIcon className="h-4.5 w-4.5 text-primary" />
                                       <span>{lang === "ar" ? "لقطة تأكيد الدفع - بنفت بي" : "BenefitPay Payment Verification"}</span>
                                     </DialogTitle>
                                   </DialogHeader>

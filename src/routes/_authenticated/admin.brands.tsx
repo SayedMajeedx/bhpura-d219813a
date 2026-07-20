@@ -28,7 +28,7 @@ import {
   AlertTriangle, 
   DollarSign, 
   Users, 
-  Clock, 
+  Clock as ClockIcon, 
   Eye, 
   CheckCircle, 
   XCircle, 
@@ -325,7 +325,7 @@ function BrandsPage() {
                         )}
                         {b.subscription_expires_at && (
                           <span className="text-[9px] text-muted-foreground font-semibold flex items-center gap-0.5">
-                            <Clock className="h-2.5 w-2.5" />
+                            <ClockIcon className="h-2.5 w-2.5" />
                             {new Date(b.subscription_expires_at).toLocaleDateString(lang === "ar" ? "ar-BH" : "en-US", { month: "short", day: "numeric" })}
                           </span>
                         )}
@@ -378,7 +378,7 @@ function BrandsPage() {
                 <Card key={b.id} className="p-5 border-zinc-100 dark:border-zinc-800/80 shadow-sm flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                   <div className="flex items-center gap-3">
                     <div className="h-11 w-11 rounded-full bg-amber-500/5 grid place-items-center text-amber-500">
-                      <Clock className="h-5 w-5 animate-pulse" />
+                      <ClockIcon className="h-5 w-5 animate-pulse" />
                     </div>
                     <div>
                       <h4 className="font-display font-medium text-base text-zinc-900 dark:text-zinc-100">
