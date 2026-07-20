@@ -257,7 +257,7 @@ export const debugR2Env = createServerFn({ method: "GET" })
     try {
       const { client, bucket, publicBaseUrl } = r2Client();
       const { ListObjectsV2Command } = await import("@aws-sdk/client-s3");
-      const res = await client.send(new ListObjectsV2Command({ Bucket: bucket, MaxKeys: 50 }));
+      const res = await client.send(new ListObjectsV2Command({ Bucket: bucket, Prefix: "platform/", MaxKeys: 50 }));
       const keys = res.Contents?.map(o => o.Key) || [];
       return { bucket, publicBaseUrl, keys };
     } catch (e: any) {
