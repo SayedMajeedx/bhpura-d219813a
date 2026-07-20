@@ -40,6 +40,7 @@ function OnboardPage() {
   const [basePrice, setBasePrice] = useState(55);
   const [discountPrice, setDiscountPrice] = useState<number | null>(null);
   const [platformIconUrl, setPlatformIconUrl] = useState<string | null>(null);
+  const [logoError, setLogoError] = useState(false);
   const [benefitPayQrUrl, setBenefitPayQrUrl] = useState<string | null>(null);
   const [merchantAccountName, setMerchantAccountName] = useState("BOUTQ-OFFICIAL");
   const [whatsappNumber, setWhatsappNumber] = useState("97339955508");
@@ -445,8 +446,13 @@ function OnboardPage() {
         <div className="absolute inset-0 bg-[linear-gradient(to_bottom,transparent,rgba(0,0,0,0.8))]" />
 
         <div className="relative z-10 flex items-center gap-2">
-          {platformIconUrl ? (
-            <img src={platformIconUrl} alt="Boutq Logo" className="h-8 object-contain" />
+          {platformIconUrl && !logoError ? (
+            <img 
+              src={platformIconUrl} 
+              alt="Boutq Logo" 
+              className="h-8 object-contain" 
+              onError={() => setLogoError(true)}
+            />
           ) : (
             <>
               <Store className="h-6 w-6 text-[#B76E79]" />
@@ -462,8 +468,8 @@ function OnboardPage() {
           </h2>
           <p className="text-zinc-400 text-sm leading-relaxed">
             {lang === "ar"
-              ? "منصة الإدارة المتكاملة لمصممي الأزياء، العبايات، وصالات العرض النخبوية في البحرين والخليج العربي. واجهات في غاية الفخامة والدقة."
-              : "The premium management stack designed for visual designers, Abaya houses, and high-end couture stores in Bahrain and the GCC. Exquisite storefront interfaces."}
+               ? "منصة الإدارة المتكاملة لمصممي الأزياء، العبايات، وصالات العرض النخبوية في البحرين والخليج العربي. واجهات في غاية الفخامة والدقة."
+               : "The premium management stack designed for visual designers, Abaya houses, and high-end couture stores in Bahrain and the GCC. Exquisite storefront interfaces."}
           </p>
         </div>
 
@@ -478,8 +484,13 @@ function OnboardPage() {
         {/* Top bar with Translation selector */}
         <div className="flex justify-between items-center gap-4 mb-8">
           <div className="flex items-center gap-2 md:hidden">
-            {platformIconUrl ? (
-              <img src={platformIconUrl} alt="Boutq Logo" className="h-6 object-contain" />
+            {platformIconUrl && !logoError ? (
+              <img 
+                src={platformIconUrl} 
+                alt="Boutq Logo" 
+                className="h-6 object-contain" 
+                onError={() => setLogoError(true)}
+              />
             ) : (
               <>
                 <Store className="h-5 w-5 text-primary" />
