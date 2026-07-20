@@ -113,7 +113,7 @@ function SuperPlatformSettingsPage() {
 
     try {
       const { uploadUrl, publicUrl } = await getPlatformLogoUploadUrl({
-        contentType: file.type
+        data: { contentType: file.type }
       });
 
       toast.loading(
@@ -155,11 +155,13 @@ function SuperPlatformSettingsPage() {
 
     try {
       await updatePlatformSettings({
-        basePriceBhd: Number(basePrice),
-        discountPriceBhd: discountPrice ? Number(discountPrice) : null,
-        platformIconUrl,
-        whatsappSupportNumber: whatsappNumber.trim(),
-        superadminImpersonationMutationAllowed: impersonationBypass
+        data: {
+          basePriceBhd: Number(basePrice),
+          discountPriceBhd: discountPrice ? Number(discountPrice) : null,
+          platformIconUrl,
+          whatsappSupportNumber: whatsappNumber.trim(),
+          superadminImpersonationMutationAllowed: impersonationBypass
+        }
       });
 
       await qc.invalidateQueries({ queryKey: ["platform-settings-singleton"] });
