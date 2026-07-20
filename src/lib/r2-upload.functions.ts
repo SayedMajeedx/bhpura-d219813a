@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { DeleteObjectCommand, DeleteObjectsCommand, ListObjectsV2Command, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { getEnvVariable, requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 const mediaKinds = ["logo", "favicon", "font", "product", "category", "hero", "page", "payment-qr", "expense-receipt"] as const;
 const mimeToExtension: Record<string, string> = {
@@ -23,7 +23,7 @@ const Input = z.object({
 });
 
 function requiredEnv(name: string): string {
-  const value = process.env[name]?.trim();
+  const value = getEnvVariable(name)?.trim();
   if (!value) throw new Error(`Missing ${name}`);
   return value;
 }

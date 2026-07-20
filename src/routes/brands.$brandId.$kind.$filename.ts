@@ -1,12 +1,13 @@
 // Dynamic streamer route to proxy and serve brand media assets on-the-fly from R2 storage.
 import { createFileRoute } from "@tanstack/react-router";
 import { GetObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import { getEnvVariable } from "@/integrations/supabase/auth-middleware";
 
 function r2Client() {
-  const accountId = process.env.R2_ACCOUNT_ID?.trim();
-  const accessKeyId = process.env.R2_ACCESS_KEY_ID?.trim();
-  const secretAccessKey = process.env.R2_SECRET_ACCESS_KEY?.trim();
-  const bucket = process.env.R2_BUCKET_NAME?.trim();
+  const accountId = getEnvVariable("R2_ACCOUNT_ID")?.trim();
+  const accessKeyId = getEnvVariable("R2_ACCESS_KEY_ID")?.trim();
+  const secretAccessKey = getEnvVariable("R2_SECRET_ACCESS_KEY")?.trim();
+  const bucket = getEnvVariable("R2_BUCKET_NAME")?.trim();
 
   if (!accountId || !accessKeyId || !secretAccessKey || !bucket) {
     throw new Error("Missing R2 environment variables");
