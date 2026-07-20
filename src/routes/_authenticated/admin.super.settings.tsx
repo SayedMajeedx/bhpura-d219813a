@@ -14,7 +14,8 @@ import {
   getPlatformSettings, 
   updatePlatformSettings, 
   getPlatformLogoUploadUrl,
-  getPlatformQrUploadUrl
+  getPlatformQrUploadUrl,
+  debugR2Env
 } from "@/lib/onboarding.functions";
 import { 
   Sliders, 
@@ -68,6 +69,13 @@ function SuperPlatformSettingsPage() {
   const [submitting, setSubmitting] = useState(false);
   const [uploadingLogo, setUploadingUploadingLogo] = useState(false);
   const [uploadingQr, setUploadingQr] = useState(false);
+
+  // Debug R2 live configuration
+  useEffect(() => {
+    debugR2Env()
+      .then(res => console.log("🔍 Live Server R2 Config:", res))
+      .catch(err => console.error("❌ Failed to query R2 config:", err));
+  }, []);
 
   // Load platform settings
   const settingsQuery = useQuery({
