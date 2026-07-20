@@ -60,7 +60,9 @@ function SuperPlatformSettingsPage() {
   const [discountPrice, setDiscountPrice] = useState<number | null>(null);
   const [whatsappNumber, setWhatsappNumber] = useState("97339955508");
   const [platformIconUrl, setPlatformIconUrl] = useState<string | null>(null);
+  const [logoPreviewUrl, setLogoPreviewUrl] = useState<string | null>(null);
   const [benefitPayQrUrl, setBenefitPayQrUrl] = useState<string | null>(null);
+  const [qrPreviewUrl, setQrPreviewUrl] = useState<string | null>(null);
   const [merchantAccountName, setMerchantAccountName] = useState("BOUTQ-OFFICIAL");
   const [impersonationBypass, setImpersonationBypass] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -84,7 +86,9 @@ function SuperPlatformSettingsPage() {
       setDiscountPrice(s.discount_price_bhd ? Number(s.discount_price_bhd) : null);
       if (s.whatsapp_support_number) setWhatsappNumber(s.whatsapp_support_number);
       setPlatformIconUrl(s.platform_icon_url || null);
+      setLogoPreviewUrl(s.platform_icon_url || null);
       setBenefitPayQrUrl(s.benefit_pay_qr_url || null);
+      setQrPreviewUrl(s.benefit_pay_qr_url || null);
       setMerchantAccountName(s.merchant_account_name || "BOUTQ-OFFICIAL");
       setImpersonationBypass(!!s.superadmin_impersonation_mutation_allowed);
     }
@@ -137,6 +141,7 @@ function SuperPlatformSettingsPage() {
       if (!res.ok) throw new Error("R2 upload failure");
 
       setPlatformIconUrl(publicUrl);
+      setLogoPreviewUrl(URL.createObjectURL(file));
       toast.success(
         lang === "ar" ? "تم رفع وتعيين شعار المنصة بنجاح!" : "Platform master logo uploaded successfully!",
         { id: toastId }
@@ -199,6 +204,7 @@ function SuperPlatformSettingsPage() {
       if (!res.ok) throw new Error("R2 upload failure");
 
       setBenefitPayQrUrl(publicUrl);
+      setQrPreviewUrl(URL.createObjectURL(file));
       toast.success(
         lang === "ar" ? "تم رفع وتعيين رمز بنفت بي بنجاح!" : "BenefitPay QR code uploaded successfully!",
         { id: toastId }
@@ -295,12 +301,15 @@ function SuperPlatformSettingsPage() {
             <div className="flex flex-col md:flex-row items-center gap-6">
               {/* Image Preview Block */}
               <div className="h-24 w-40 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50 flex items-center justify-center overflow-hidden shrink-0 relative group">
-                {platformIconUrl ? (
+                {logoPreviewUrl ? (
                   <>
-                    <img src={platformIconUrl} alt="Logo Preview" className="h-16 object-contain" />
+                    <img src={logoPreviewUrl} alt="Logo Preview" className="h-16 object-contain" />
                     <button
                       type="button"
-                      onClick={() => setPlatformIconUrl(null)}
+                      onClick={() => {
+                        setPlatformIconUrl(null);
+                        setLogoPreviewUrl(null);
+                      }}
                       className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center text-rose-500 transition-opacity rounded-lg"
                     >
                       <Trash2 className="h-5 w-5" />
@@ -452,12 +461,15 @@ function SuperPlatformSettingsPage() {
               <div className="flex flex-col md:flex-row items-center gap-6 pt-1">
                 {/* QR Image Preview Block */}
                 <div className="h-28 w-28 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50 flex flex-col items-center justify-center overflow-hidden shrink-0 relative group p-2">
-                  {benefitPayQrUrl ? (
+                  {qrPreviewUrl ? (
                     <>
-                      <img src={benefitPayQrUrl} alt="QR Code Preview" className="h-full w-full object-contain" />
+                      <img src={qrPreviewUrl} alt="QR Code Preview" className="h-full w-full object-contain" />
                       <button
                         type="button"
-                        onClick={() => setBenefitPayQrUrl(null)}
+                        onClick={() => {
+                          setBenefitPayQrUrl(null);
+                          setQrPreviewUrl(null);
+                        }}
                         className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center text-rose-500 transition-opacity rounded-lg"
                       >
                         <Trash2 className="h-5 w-5" />

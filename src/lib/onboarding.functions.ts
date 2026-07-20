@@ -131,7 +131,8 @@ export const updateRegistrationPrice = createServerFn({ method: "POST" })
 
     const parsedVal = parseFloat(data.newPrice.replace(/[^0-9.]/g, "")) || 55.00;
 
-    const { error } = await context.supabase
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin
       .from("system_settings")
       .upsert({
         id: 1,
@@ -177,7 +178,8 @@ export const updatePlatformSettings = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await requireSuperAdmin(context);
 
-    const { error } = await context.supabase
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin
       .from("system_settings")
       .upsert({
         id: 1,
