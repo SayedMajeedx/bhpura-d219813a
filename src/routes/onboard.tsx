@@ -19,7 +19,8 @@ import {
   UploadCloud,
   ChevronRight,
   Info,
-  PhoneCall
+  PhoneCall,
+  QrCode
 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { 
