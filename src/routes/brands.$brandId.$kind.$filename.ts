@@ -65,7 +65,7 @@ export const Route = createFileRoute("/brands/$brandId/$kind/$filename")({
           if (error.name === "NoSuchKey" || error.$metadata?.httpStatusCode === 404) {
             return new Response("Object Not Found", { status: 404 });
           }
-          return new Response("Internal Server Error", { status: 500 });
+          return new Response(`Internal Server Error: ${error.message} - ${error.stack}`, { status: 500 });
         }
       },
     },
