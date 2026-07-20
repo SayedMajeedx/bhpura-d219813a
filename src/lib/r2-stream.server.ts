@@ -32,7 +32,7 @@ interface R2Config {
 async function getR2Config(isPrivate: boolean = false): Promise<R2Config> {
   let env: any = null;
 
-  // Extract from native Cloudflare execution context via Vinxi/H3 event
+  // 1. Try Cloudflare request context dynamically via Vinxi/H3 event
   try {
     const vinxiHttp = "vinxi/http";
     const { getEvent } = await import(vinxiHttp);
@@ -46,15 +46,23 @@ async function getR2Config(isPrivate: boolean = false): Promise<R2Config> {
     console.error("[R2 Context Error] Failed to retrieve H3 event execution context:", err);
   }
 
+  // 2. Fall back safely to global environment contexts (e.g. globalThis.__env__ injected by Vite)
+  if (!env) {
+    try {
+      const g = globalThis as any;
+      env = g["__CLOUDFLARE_ENV__"] || g["__env__"] || g["process"]?.["env"] || process.env;
+    } catch {}
+  }
+
   if (!env) {
     throw new Error("Unable to access the Cloudflare native execution environment context.");
   }
 
   const accountId = env.R2_ACCOUNT_ID?.trim();
-  const accessKeyId = env.R2_ACCESS_KEY_ID?.trim();
-  const secretAccessKey = env.R2_SECRET_ACCESS_KEY?.trim();
-  // Map exactly to variables specified by dashboard naming guidelines
-  const bucket = (isPrivate ? env.R2_PRIVATE_BUCKET : env.R2_BUCKET_NAME)?.trim();
+  const accessKeyId = env.R2_ACCESS_KEY_ID?.trim() || env.ACCESS_KEY_ID?.trim();
+  const secretAccessKey = env.R2_SECRET_ACCESS_KEY?.trim() || env.SECRET_ACCESS_KEY?.trim();
+  // Map exactly to variables specified by dashboard naming guidelines with standard fallbacks
+  const bucket = (isPrivate ? (env.R2_PRIVATE_BUCKET || env.R2_PRIVATE_BUCKET_NAME) : env.R2_BUCKET_NAME)?.trim();
 
   if (!accountId || !accessKeyId || !secretAccessKey || !bucket) {
     throw new Error(
