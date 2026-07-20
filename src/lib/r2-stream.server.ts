@@ -1,89 +1,83 @@
 import { GetObjectCommand, S3Client } from "@aws-sdk/client-s3";
 
-async function getPlatformEnv(name: string): Promise<string | undefined> {
-  const viteName = name.startsWith("VITE_") ? name : `VITE_${name}`;
-  const unprefixed = name.startsWith("VITE_") ? name.slice(5) : name;
+// Cache of S3Client instances to prevent memory leaks and ensure idempotency
+const s3ClientsCache = new Map<string, S3Client>();
 
-  const searchNames = [name, viteName, unprefixed];
-  if (name === "R2_SECRET_ACCESS_KEY") {
-    searchNames.push("SECRET_ACCESS_KEY");
+function getCachedS3Client(accountId: string, accessKeyId: string, secretAccessKey: string): S3Client {
+  const cacheKey = `${accountId}:${accessKeyId}`;
+  let client = s3ClientsCache.get(cacheKey);
+  
+  if (!client) {
+    client = new S3Client({
+      region: "auto",
+      endpoint: `https://${accountId}.r2.cloudflarestorage.com`,
+      credentials: {
+        accessKeyId,
+        secretAccessKey,
+      },
+    });
+    s3ClientsCache.set(cacheKey, client);
   }
+  
+  return client;
+}
 
-  // 1. Try Cloudflare request context dynamically (foiling Vite static analyzer)
+interface R2Config {
+  accountId: string;
+  accessKeyId: string;
+  secretAccessKey: string;
+  bucket: string;
+}
+
+async function getR2Config(isPrivate: boolean = false): Promise<R2Config> {
+  let env: any = null;
+
+  // Extract from native Cloudflare execution context via Vinxi/H3 event
   try {
     const vinxiHttp = "vinxi/http";
     const { getEvent } = await import(vinxiHttp);
     const event = getEvent();
-    const env = event?.context?.cloudflare?.env || 
-                event?.context?.env || 
-                event?.context?.cloudflare || 
-                event?.context?.cloudflare?.env;
-    if (env) {
-      for (const key of searchNames) {
-        if (env[key]) return env[key];
-      }
-    }
-  } catch {}
-
-  // 2. Try globalThis fallbacks
-  try {
-    const g = globalThis as any;
-    const liveEnv = g["__CLOUDFLARE_ENV__"] || g["process"]?.["env"] || process.env;
-    if (liveEnv) {
-      for (const key of searchNames) {
-        if (liveEnv[key]) return liveEnv[key];
-      }
-    }
-  } catch {}
-
-  return undefined;
-}
-
-export async function r2Client() {
-  const accountId = (await getPlatformEnv("R2_ACCOUNT_ID"))?.trim();
-  const accessKeyId = (await getPlatformEnv("R2_ACCESS_KEY_ID"))?.trim();
-  const secretAccessKey = (await getPlatformEnv("R2_SECRET_ACCESS_KEY"))?.trim();
-  const bucket = (await getPlatformEnv("R2_BUCKET_NAME"))?.trim();
-
-  if (!accountId || !accessKeyId || !secretAccessKey || !bucket) {
-    throw new Error(`Missing R2 environment variables. AccountId: ${!!accountId}, AccessKey: ${!!accessKeyId}, SecretAccessKey: ${!!secretAccessKey}, Bucket: ${!!bucket}`);
+    
+    env = event?.context?.cloudflare?.env || 
+          event?.context?.env || 
+          event?.context?.cloudflare || 
+          (event?.context as any)?.cloudflare?.env;
+  } catch (err) {
+    console.error("[R2 Context Error] Failed to retrieve H3 event execution context:", err);
   }
 
-  return {
-    client: new S3Client({
-      region: "auto",
-      endpoint: `https://${accountId}.r2.cloudflarestorage.com`,
-      credentials: { accessKeyId, secretAccessKey },
-    }),
-    bucket,
-  };
+  if (!env) {
+    throw new Error("Unable to access the Cloudflare native execution environment context.");
+  }
+
+  const accountId = env.R2_ACCOUNT_ID;
+  const accessKeyId = env.R2_ACCESS_KEY_ID;
+  const secretAccessKey = env.R2_SECRET_ACCESS_KEY;
+  // Map exactly to variables specified by dashboard naming guidelines
+  const bucket = isPrivate ? env.R2_PRIVATE_BUCKET : env.R2_BUCKET_NAME;
+
+  if (!accountId || !accessKeyId || !secretAccessKey || !bucket) {
+    throw new Error(
+      `Missing required Cloudflare execution context environment variables. ` +
+      `R2_ACCOUNT_ID: ${!!accountId}, R2_ACCESS_KEY_ID: ${!!accessKeyId}, ` +
+      `R2_SECRET_ACCESS_KEY: ${!!secretAccessKey}, Bucket (${isPrivate ? 'R2_PRIVATE_BUCKET' : 'R2_BUCKET_NAME'}): ${!!bucket}`
+    );
+  }
+
+  return { accountId, accessKeyId, secretAccessKey, bucket };
 }
 
 export async function handleR2Stream(brandId: string, kind: string, filename: string): Promise<Response> {
   const key = `brands/${brandId}/${kind}/${filename}`;
-
-  // Gather debug variables presence safely
-  const accountId = (await getPlatformEnv("R2_ACCOUNT_ID"))?.trim();
-  const accessKeyId = (await getPlatformEnv("R2_ACCESS_KEY_ID"))?.trim();
-  const secretAccessKey = (await getPlatformEnv("R2_SECRET_ACCESS_KEY"))?.trim();
-  const bucket = (await getPlatformEnv("R2_BUCKET_NAME"))?.trim();
-
-  const debugInfo: any = {
-    envResolved: {
-      accountId: !!accountId,
-      accessKeyId: !!accessKeyId,
-      secretAccessKey: !!secretAccessKey,
-      bucket: !!bucket,
-    },
-    globalThisKeys: Object.keys(globalThis).filter(k => k.toLowerCase().includes("env") || k.toLowerCase().includes("cloudflare")),
-    cloudflareEnvKeys: (globalThis as any).__CLOUDFLARE_ENV__ ? Object.keys((globalThis as any).__CLOUDFLARE_ENV__) : null,
-    envKeys: (globalThis as any).__env__ ? Object.keys((globalThis as any).__env__) : null,
-  };
+  // QR codes and receipts are stored in the private bucket, others in public
+  const isPrivate = kind === "payment-qr" || kind === "expense-receipt";
 
   try {
-    const { client, bucket: resolvedBucket } = await r2Client();
+    const config = await getR2Config(isPrivate);
+    const client = getCachedS3Client(config.accountId, config.accessKeyId, config.secretAccessKey);
+
     const command = new GetObjectCommand({
-      Bucket: resolvedBucket,
+      Bucket: config.bucket, // Plain text string bucket name
       Key: key,
     });
 
@@ -114,6 +108,6 @@ export async function handleR2Stream(brandId: string, kind: string, filename: st
     if (error.name === "NoSuchKey" || error.$metadata?.httpStatusCode === 404) {
       return new Response("Object Not Found", { status: 404 });
     }
-    return new Response(`Internal Server Error: ${error.message} - ${error.stack}\nDebug Info: ${JSON.stringify(debugInfo, null, 2)}`, { status: 500 });
+    return new Response(`Streamer Error: ${error.message}`, { status: 500 });
   }
 }
