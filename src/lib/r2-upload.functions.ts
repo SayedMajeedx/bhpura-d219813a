@@ -77,7 +77,7 @@ function sanitizeValue(val: string | undefined): string | undefined {
   return val.trim().replace(/^['"]|['"]$/g, "").trim();
 }
 
-function r2Client(): { client: S3Client; bucket: string; publicBaseUrl: string } {
+export function r2Client(): { client: S3Client; bucket: string; publicBaseUrl: string } {
   let env: any = null;
   try {
     if (getEventFn) {
