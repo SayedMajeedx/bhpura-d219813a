@@ -68,11 +68,10 @@ export const Route = createFileRoute("/brands/$brandId/$kind/$filename")({
 
         const debugInfo: any = {
           hasEvent: !!event,
-          eventKeys: event ? Object.keys(event) : null,
-          contextKeys: event?.context ? Object.keys(event.context) : null,
-          cloudflareKeys: event?.context?.cloudflare ? Object.keys(event.context.cloudflare) : null,
-          cloudflareEnvKeys: event?.context?.cloudflare?.env ? Object.keys(event.context.cloudflare.env) : null,
           globalThisKeys: Object.keys(globalThis).filter(k => k.toLowerCase().includes("env") || k.toLowerCase().includes("cloudflare")),
+          cloudflareEnvKeys: (globalThis as any).__CLOUDFLARE_ENV__ ? Object.keys((globalThis as any).__CLOUDFLARE_ENV__) : null,
+          nitroViteEnvsKeys: (globalThis as any).__nitro_vite_envs__ ? Object.keys((globalThis as any).__nitro_vite_envs__) : null,
+          envKeys: (globalThis as any).__env__ ? Object.keys((globalThis as any).__env__) : null,
         };
 
         try {
