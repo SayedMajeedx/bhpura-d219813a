@@ -39,6 +39,7 @@ import { Route as AuthenticatedAdminBrandsRouteImport } from './routes/_authenti
 import { Route as SlugThankYouOrderIdRouteImport } from './routes/$slug.thank-you.$orderId'
 import { Route as SlugProductIdRouteImport } from './routes/$slug.product.$id'
 import { Route as SlugPageIdxRouteImport } from './routes/$slug.page.$idx'
+import { Route as BrandsBrandIdKindFilenameRouteImport } from './routes/brands.$brandId.$kind.$filename'
 import { Route as AuthenticatedAdminBSlugRouteRouteImport } from './routes/_authenticated/admin.b.$slug.route'
 import { Route as AuthenticatedAdminBSlugTeamRouteImport } from './routes/_authenticated/admin.b.$slug.team'
 import { Route as AuthenticatedAdminBSlugSettingsRouteImport } from './routes/_authenticated/admin.b.$slug.settings'
@@ -213,6 +214,12 @@ const SlugPageIdxRoute = SlugPageIdxRouteImport.update({
   path: '/page/$idx',
   getParentRoute: () => SlugRouteRoute,
 } as any)
+const BrandsBrandIdKindFilenameRoute =
+  BrandsBrandIdKindFilenameRouteImport.update({
+    id: '/brands/$brandId/$kind/$filename',
+    path: '/brands/$brandId/$kind/$filename',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const AuthenticatedAdminBSlugRouteRoute =
   AuthenticatedAdminBSlugRouteRouteImport.update({
     id: '/b/$slug',
@@ -341,6 +348,7 @@ export interface FileRoutesByFullPath {
   '/api/cron/cleanup-benefit-receipts': typeof ApiCronCleanupBenefitReceiptsRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
   '/admin/b/$slug': typeof AuthenticatedAdminBSlugRouteRouteWithChildren
+  '/brands/$brandId/$kind/$filename': typeof BrandsBrandIdKindFilenameRoute
   '/admin/b/$slug/campaigns': typeof AuthenticatedAdminBSlugCampaignsRoute
   '/admin/b/$slug/categories': typeof AuthenticatedAdminBSlugCategoriesRoute
   '/admin/b/$slug/communications': typeof AuthenticatedAdminBSlugCommunicationsRoute
@@ -386,6 +394,7 @@ export interface FileRoutesByTo {
   '/api/cron/cleanup-benefit-receipts': typeof ApiCronCleanupBenefitReceiptsRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
   '/admin/b/$slug': typeof AuthenticatedAdminBSlugRouteRouteWithChildren
+  '/brands/$brandId/$kind/$filename': typeof BrandsBrandIdKindFilenameRoute
   '/admin/b/$slug/campaigns': typeof AuthenticatedAdminBSlugCampaignsRoute
   '/admin/b/$slug/categories': typeof AuthenticatedAdminBSlugCategoriesRoute
   '/admin/b/$slug/communications': typeof AuthenticatedAdminBSlugCommunicationsRoute
@@ -435,6 +444,7 @@ export interface FileRoutesById {
   '/api/cron/cleanup-benefit-receipts': typeof ApiCronCleanupBenefitReceiptsRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
   '/_authenticated/admin/b/$slug': typeof AuthenticatedAdminBSlugRouteRouteWithChildren
+  '/brands/$brandId/$kind/$filename': typeof BrandsBrandIdKindFilenameRoute
   '/_authenticated/admin/b/$slug/campaigns': typeof AuthenticatedAdminBSlugCampaignsRoute
   '/_authenticated/admin/b/$slug/categories': typeof AuthenticatedAdminBSlugCategoriesRoute
   '/_authenticated/admin/b/$slug/communications': typeof AuthenticatedAdminBSlugCommunicationsRoute
@@ -484,6 +494,7 @@ export interface FileRouteTypes {
     | '/api/cron/cleanup-benefit-receipts'
     | '/admin/'
     | '/admin/b/$slug'
+    | '/brands/$brandId/$kind/$filename'
     | '/admin/b/$slug/campaigns'
     | '/admin/b/$slug/categories'
     | '/admin/b/$slug/communications'
@@ -529,6 +540,7 @@ export interface FileRouteTypes {
     | '/api/cron/cleanup-benefit-receipts'
     | '/admin'
     | '/admin/b/$slug'
+    | '/brands/$brandId/$kind/$filename'
     | '/admin/b/$slug/campaigns'
     | '/admin/b/$slug/categories'
     | '/admin/b/$slug/communications'
@@ -577,6 +589,7 @@ export interface FileRouteTypes {
     | '/api/cron/cleanup-benefit-receipts'
     | '/_authenticated/admin/'
     | '/_authenticated/admin/b/$slug'
+    | '/brands/$brandId/$kind/$filename'
     | '/_authenticated/admin/b/$slug/campaigns'
     | '/_authenticated/admin/b/$slug/categories'
     | '/_authenticated/admin/b/$slug/communications'
@@ -604,6 +617,7 @@ export interface RootRouteChildren {
   ResetPasswordRoute: typeof ResetPasswordRoute
   InvoiceIdRoute: typeof InvoiceIdRoute
   ApiCronCleanupBenefitReceiptsRoute: typeof ApiCronCleanupBenefitReceiptsRoute
+  BrandsBrandIdKindFilenameRoute: typeof BrandsBrandIdKindFilenameRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -817,6 +831,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/$slug/page/$idx'
       preLoaderRoute: typeof SlugPageIdxRouteImport
       parentRoute: typeof SlugRouteRoute
+    }
+    '/brands/$brandId/$kind/$filename': {
+      id: '/brands/$brandId/$kind/$filename'
+      path: '/brands/$brandId/$kind/$filename'
+      fullPath: '/brands/$brandId/$kind/$filename'
+      preLoaderRoute: typeof BrandsBrandIdKindFilenameRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/_authenticated/admin/b/$slug': {
       id: '/_authenticated/admin/b/$slug'
@@ -1080,6 +1101,7 @@ const rootRouteChildren: RootRouteChildren = {
   ResetPasswordRoute: ResetPasswordRoute,
   InvoiceIdRoute: InvoiceIdRoute,
   ApiCronCleanupBenefitReceiptsRoute: ApiCronCleanupBenefitReceiptsRoute,
+  BrandsBrandIdKindFilenameRoute: BrandsBrandIdKindFilenameRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

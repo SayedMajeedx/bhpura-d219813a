@@ -22,10 +22,10 @@ export function cloudflareImageUrl(source: string, width: number, quality = 82):
     const url = new URL(source, typeof window === "undefined" ? "https://boutq.store" : window.location.origin);
     const options = `width=${width},fit=scale-down,quality=${quality},format=auto,metadata=none,onerror=redirect`;
     
-    // 1. If the source is on the media.boutq.store custom domain, we run same-host transformations 
-    // directly on media.boutq.store, which natively supports Cloudflare Image Resizing.
+    // 1. If the source is on the media.boutq.store custom domain, return the raw source directly.
+    // This avoids broken /cdn-cgi/image/ endpoints and serves original assets flawlessly from R2.
     if (url.hostname === "media.boutq.store" || url.hostname.endsWith(".boutq.store")) {
-      return `https://media.boutq.store/cdn-cgi/image/${options}${url.pathname}${url.search}`;
+      return source;
     }
 
     // 2. Otherwise, request transformations from the current active storefront origin (or zone)
