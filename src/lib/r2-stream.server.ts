@@ -66,10 +66,14 @@ async function getR2Config(isPrivate: boolean = false): Promise<R2Config> {
   const bucket = rawBucket?.trim();
 
   if (!accountId || !accessKeyId || !secretAccessKey || !bucket) {
+    const envKeys = env ? Object.keys(env) : [];
+    const globalR2Keys = Object.keys(g).filter(k => k.startsWith("R2_") || k.includes("BUCKET"));
+    const availableKeys = Array.from(new Set([...envKeys, ...globalR2Keys]));
     throw new Error(
       `Missing required Cloudflare execution context environment variables. ` +
-      `R2_ACCOUNT_ID: ${!!accountId}, R2_ACCESS_KEY_ID: ${!!accessKeyId}, ` +
-      `R2_SECRET_ACCESS_KEY: ${!!secretAccessKey}, Bucket (${isPrivate ? 'R2_PRIVATE_BUCKET' : 'R2_BUCKET_NAME'}): ${!!bucket}`
+      `R2_ACCOUNT_ID: ${!!accountId}, AccessKey: ${!!accessKeyId}, ` +
+      `SecretAccessKey: ${!!secretAccessKey}, Bucket: ${!!bucket}. ` +
+      `Available keys in scope: [${availableKeys.join(", ")}]`
     );
   }
 
