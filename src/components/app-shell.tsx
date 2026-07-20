@@ -1,5 +1,5 @@
 import { Link, useRouterState, useNavigate, useParams } from "@tanstack/react-router";
-import { LayoutDashboard, Package, Users, ReceiptText, Settings, LogOut, Languages, Menu, Wallet, Megaphone, Shield, Store, Crown, Plug, Tags, FileText, BadgePercent, Mail } from "lucide-react";
+import { LayoutDashboard, Package, Users, ReceiptText, Settings, LogOut, Languages, Menu, Wallet, Megaphone, Shield, Store, Crown, Plug, Tags, FileText, BadgePercent, Mail, Clock as ClockIcon } from "lucide-react";
 import { useState, useEffect, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -158,7 +158,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 : "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
             )}
           >
-            <Clock className="h-3.5 w-3.5" />
+            <ClockIcon className="h-3.5 w-3.5" />
             {lang === "ar" ? "طلبات التسجيل" : "Tenant Requests"}
           </Link>
         </div>
