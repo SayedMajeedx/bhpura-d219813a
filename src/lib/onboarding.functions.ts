@@ -250,6 +250,18 @@ export const getPlatformQrUploadUrl = createServerFn({ method: "POST" })
     return { uploadUrl, publicUrl: `${publicBaseUrl}/${key}`, key };
   });
 
+// 4.4.1. Securely debug R2 Environment Variables (Superadmin only)
+export const debugR2Env = createServerFn({ method: "GET" })
+  .handler(async () => {
+    const { r2Client } = await import("@/lib/r2-upload.functions");
+    try {
+      const { bucket, publicBaseUrl } = r2Client();
+      return { bucket, publicBaseUrl };
+    } catch (e: any) {
+      return { error: e.message };
+    }
+  });
+
 // 5. Approve Tenant Request & Mark Deployed (Superadmin only)
 export const approveTenantRequest = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
