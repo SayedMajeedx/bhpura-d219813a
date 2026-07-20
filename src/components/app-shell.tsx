@@ -244,9 +244,22 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     );
   }
 
+  const isImpersonating = isSuperAdmin && urlSlug !== null;
+
   return (
-    <div className="h-screen flex bg-background overflow-hidden">
-      <aside className="no-print hidden md:flex w-64 border-r border-sidebar-border bg-sidebar text-sidebar-foreground flex-col shrink-0">
+    <div className="h-screen flex flex-col bg-background overflow-hidden">
+      {isImpersonating && (
+        <div className="no-print bg-gradient-to-r from-amber-600 to-amber-500 text-white px-4 py-2.5 text-center text-xs font-semibold flex items-center justify-center gap-2 border-b border-amber-700/40 shrink-0 select-none shadow-md z-50">
+          <Shield className="h-4 w-4 text-white animate-pulse" />
+          <span>
+            {lang === "ar"
+              ? "⚠️ أنت تقوم حالياً باستعراض هذا المتجر عبر وضع محاكاة المسؤول الخارق (Superadmin). يتم تسجيل جميع الإجراءات الإدارية في سجل التدقيق الخاص بنا."
+              : "⚠️ You are currently viewing this store via Superadmin Impersonation mode. All administrative actions are being recorded to our immutable audit log."}
+          </span>
+        </div>
+      )}
+      <div className="flex-1 flex bg-background overflow-hidden">
+        <aside className="no-print hidden md:flex w-64 border-r border-sidebar-border bg-sidebar text-sidebar-foreground flex-col shrink-0">
         {SidebarContent}
       </aside>
 
@@ -317,6 +330,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           {children}
         </div>
       </main>
+      </div>
     </div>
   );
 }

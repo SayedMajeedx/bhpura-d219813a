@@ -1,4 +1,4 @@
-import { createFileRoute, Link, redirect } from "@tanstack/react-router";
+import { createFileRoute, Link, redirect, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -39,6 +39,7 @@ import {
 import { toast } from "sonner";
 import { useI18n, useT } from "@/lib/i18n";
 import { SUPER_ADMIN_EMAIL } from "@/lib/profile-context";
+import { logImpersonationStart } from "@/lib/onboarding.functions";
 import { purgeBrandPublicMedia } from "@/lib/r2-upload";
 import { purgeBrandPrivateReceipts } from "@/lib/benefit-receipt.functions";
 import { META_DESCRIPTION_LIMIT, META_TITLE_LIMIT, sanitizeMetaText } from "@/lib/seo";
@@ -91,7 +92,20 @@ function BrandsPage() {
   const t = useT();
   const { lang } = useI18n();
   const qc = useQueryClient();
+  const navigate = useNavigate();
   const [open, setOpen] = useState(false);
+
+  const handleImpersonate = async (brandId: string, slug: string) => {
+    const toastId = toast.loading(lang === "ar" ? "جاري تفعيل قناة محاكاة المسؤول الخارق..." : "Initializing Superadmin Impersonation session...");
+    try {
+      await logImpersonationStart({ targetTenantId: brandId });
+      toast.success(lang === "ar" ? "تم تسجيل الجلسة في سجل التدقيق الموثق! جاري التحويل..." : "Audit log recorded! Redirecting to merchant dashboard...", { id: toastId });
+      navigate({ to: "/admin/b/$slug/dashboard", params: { slug } });
+    } catch (err: any) {
+      console.error(err);
+      toast.error(lang === "ar" ? "فشل تفعيل جلسة المحاكاة. يرجى مراجعة الصلاحيات." : "Impersonation launch blocked. Verify operator permissions.", { id: toastId });
+    }
+  };
   const [editing, setEditing] = useState<Brand | null>(null);
   const [deleting, setDeleting] = useState<Brand | null>(null);
   const [activeTab, setActiveTab] = useState("all-stores");
@@ -319,10 +333,9 @@ function BrandsPage() {
                   </div>
 
                   <div className="flex flex-wrap gap-1.5 border-t border-zinc-50 dark:border-zinc-900 pt-3">
-                    <Button asChild variant="secondary" size="sm" className="flex-1 h-9">
-                      <Link to="/admin/b/$slug/dashboard" params={{ slug: b.slug }}>
-                        {lang === "ar" ? "اللوحة" : "Dashboard"}
-                      </Link>
+                    <Button variant="secondary" size="sm" className="flex-1 h-9" onClick={() => handleImpersonate(b.id, b.slug)}>
+                      <Shield className="h-3.5 w-3.5 me-1 text-amber-500 animate-pulse" />
+                      {lang === "ar" ? "محاكاة اللوحة" : "Impersonate"}
                     </Button>
                     <Button asChild variant="outline" size="sm" className="flex-1 h-9">
                       <Link to="/$slug" params={{ slug: b.slug }}>

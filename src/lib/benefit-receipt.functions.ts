@@ -174,6 +174,10 @@ export const deleteOrderWithPrivateReceipt = createServerFn({ method: "POST" })
     ]);
     if (!canAccess || !isAdmin) throw new Error("FORBIDDEN");
 
+    // Secure Impersonation Safeguard Block: restrict mutation
+    const { enforceMutationSafeguard } = await import("@/lib/impersonation.server");
+    await enforceMutationSafeguard(context.supabase, context.userId, order.brand_id);
+
     if (order.benefit_receipt_key) {
       const { deletePrivateObject, isPrivateReceiptKey } = await import("@/lib/private-r2.server");
       if (!isPrivateReceiptKey(order.benefit_receipt_key, order.brand_id)) {

@@ -12,7 +12,7 @@ export const Route = createFileRoute("/_authenticated/admin/b/$slug")({
     // Load target brand with all subscription metadata fields
     const { data: brand, error: brandErr } = await (supabase as any)
       .from("brands")
-      .select("id, slug, name_en, name_ar, logo_url, is_active, subscription_tier, subscription_status, subscription_expires_at, payment_receipt_url, payment_receipt_uploaded_at, custom_domain")
+      .select("id, slug, name_en, name_ar, logo_url, is_active, subscription_tier, subscription_status, subscription_expires_at, payment_receipt_url, payment_receipt_uploaded_at, custom_domain, support_access_enabled")
       .eq("slug", params.slug)
       .maybeSingle();
 
@@ -43,6 +43,14 @@ export const Route = createFileRoute("/_authenticated/admin/b/$slug")({
       // Non-super-admin trying to access a brand they don't belong to.
       // Send them to their own workspace, or to the dashboard redirector.
       throw redirect({ to: "/admin" });
+    }
+
+    // Secure Impersonation Check: Ensure troubleshooting access is enabled for this brand
+    if (isSuperAdmin && !belongsToBrand) {
+      const accessEnabled = brand.support_access_enabled !== false;
+      if (!accessEnabled) {
+        throw redirect({ to: "/admin/brands" });
+      }
     }
 
     if (!brand.is_active && !isSuperAdmin) {

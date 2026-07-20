@@ -182,3 +182,31 @@ export const rejectTenantRequest = createServerFn({ method: "POST" })
     if (error) throw error;
     return { success: true };
   });
+
+const LogImpersonationInput = z.object({
+  targetTenantId: z.string().uuid(),
+  reason: z.string().optional()
+});
+
+// 7. Log Impersonation Start (Superadmin only)
+export const logImpersonationStart = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .validator((raw: unknown) => LogImpersonationInput.parse(raw))
+  .handler(async ({ data, context }) => {
+    await requireSuperAdmin(context);
+
+    const { error } = await context.supabase
+      .from("system_audit_logs")
+      .insert({
+        operator_id: context.user.id,
+        target_tenant_id: data.targetTenantId,
+        action_type: "impersonation_start",
+        reason: data.reason || "Superadmin troubleshooting session initialized."
+      });
+
+    if (error) {
+      console.error("Audit logging failed:", error);
+      throw error;
+    }
+    return { success: true };
+  });
