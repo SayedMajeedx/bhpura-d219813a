@@ -1,5 +1,12 @@
 import { GetObjectCommand, S3Client } from "@aws-sdk/client-s3";
 
+let getEventFn: any = null;
+import(/* @vite-ignore */ "vinxi/http")
+  .then((m) => {
+    getEventFn = m.getEvent;
+  })
+  .catch(() => {});
+
 function getPlatformEnv(event: any, name: string): string | undefined {
   const viteName = name.startsWith("VITE_") ? name : `VITE_${name}`;
   const unprefixed = name.startsWith("VITE_") ? name.slice(5) : name;
@@ -61,17 +68,19 @@ export const Route = createFileRoute("/brands/$brandId/$kind/$filename")({
         const key = `brands/${brandId}/${kind}/${filename}`;
 
         let event: any = null;
-        let importError: any = null;
+        let getEventError: any = null;
         try {
-          const { getEvent } = await import(/* @vite-ignore */ "vinxi/http");
-          event = getEvent();
+          if (getEventFn) {
+            event = getEventFn();
+          }
         } catch (err: any) {
-          importError = { message: err.message, stack: err.stack };
+          getEventError = { message: err.message, stack: err.stack };
         }
 
         const debugInfo: any = {
           hasEvent: !!event,
-          importError: importError,
+          hasGetEventFn: !!getEventFn,
+          getEventError: getEventError,
           globalThisKeys: Object.keys(globalThis).filter(k => k.toLowerCase().includes("env") || k.toLowerCase().includes("cloudflare")),
           cloudflareEnvKeys: (globalThis as any).__CLOUDFLARE_ENV__ ? Object.keys((globalThis as any).__CLOUDFLARE_ENV__) : null,
           nitroViteEnvsKeys: (globalThis as any).__nitro_vite_envs__ ? Object.keys((globalThis as any).__nitro_vite_envs__) : null,
