@@ -14,8 +14,7 @@ import {
   getPlatformSettings, 
   updatePlatformSettings, 
   getPlatformLogoUploadUrl,
-  getPlatformQrUploadUrl,
-  debugR2Env
+  getPlatformQrUploadUrl
 } from "@/lib/onboarding.functions";
 import { 
   Sliders, 
@@ -49,10 +48,10 @@ export const Route = createFileRoute("/_authenticated/admin/super/settings")({
     const isSuperAdmin = email === SUPER_ADMIN_EMAIL || profile?.role === "super_admin";
     if (!isSuperAdmin) throw redirect({ to: "/admin" });
   },
-  component: SuperPlatformSettingsPage,
+  component: SuperAdminSettings,
 });
 
-function SuperPlatformSettingsPage() {
+function SuperAdminSettings() {
   const { lang } = useI18n();
   const qc = useQueryClient();
 
@@ -69,13 +68,6 @@ function SuperPlatformSettingsPage() {
   const [submitting, setSubmitting] = useState(false);
   const [uploadingLogo, setUploadingUploadingLogo] = useState(false);
   const [uploadingQr, setUploadingQr] = useState(false);
-
-  // Debug R2 live configuration
-  useEffect(() => {
-    debugR2Env()
-      .then(res => console.log("🔍 Live Server R2 Config:", res))
-      .catch(err => console.error("❌ Failed to query R2 config:", err));
-  }, []);
 
   // Load platform settings
   const settingsQuery = useQuery({

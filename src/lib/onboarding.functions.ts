@@ -222,7 +222,7 @@ export const getPlatformLogoUploadUrl = createServerFn({ method: "POST" })
       ContentType: data.contentType,
     }), { expiresIn: 3600 });
 
-    return { uploadUrl, publicUrl: `${publicBaseUrl}/${key}`, key };
+    return { uploadUrl, publicUrl: `/${key}`, key };
   });
 
 // 4.4. Get platform QR upload pre-signed URL (Superadmin only)
@@ -247,22 +247,7 @@ export const getPlatformQrUploadUrl = createServerFn({ method: "POST" })
       ContentType: data.contentType,
     }), { expiresIn: 3600 });
 
-    return { uploadUrl, publicUrl: `${publicBaseUrl}/${key}`, key };
-  });
-
-// 4.4.1. Securely debug R2 Environment Variables (Superadmin only)
-export const debugR2Env = createServerFn({ method: "GET" })
-  .handler(async () => {
-    const { r2Client } = await import("@/lib/r2-upload.functions");
-    try {
-      const { client, bucket, publicBaseUrl } = r2Client();
-      const { ListObjectsV2Command } = await import("@aws-sdk/client-s3");
-      const res = await client.send(new ListObjectsV2Command({ Bucket: bucket, Prefix: "platform/", MaxKeys: 50 }));
-      const keys = res.Contents?.map(o => o.Key) || [];
-      return { bucket, publicBaseUrl, keys };
-    } catch (e: any) {
-      return { error: e.message };
-    }
+    return { uploadUrl, publicUrl: `/${key}`, key };
   });
 
 // 5. Approve Tenant Request & Mark Deployed (Superadmin only)

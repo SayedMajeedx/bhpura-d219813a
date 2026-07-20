@@ -128,3 +128,46 @@ export async function handleR2Stream(brandId: string, kind: string, filename: st
     return new Response(`Streamer Error: ${error.message}`, { status: 500 });
   }
 }
+
+export async function handlePlatformR2Stream(filename: string): Promise<Response> {
+  const key = `platform/${filename}`;
+
+  try {
+    const config = await getR2Config(false); // platform files are in public bucket
+    const client = getCachedS3Client(config.accountId, config.accessKeyId, config.secretAccessKey);
+
+    const command = new GetObjectCommand({
+      Bucket: config.bucket,
+      Key: key,
+    });
+
+    const response = await client.send(command);
+    if (!response.Body) {
+      return new Response("Not Found", { status: 404 });
+    }
+
+    const headers = new Headers();
+    if (response.ContentType) {
+      headers.set("Content-Type", response.ContentType);
+    }
+    if (response.CacheControl) {
+      headers.set("Cache-Control", response.CacheControl);
+    } else {
+      headers.set("Cache-Control", "public, max-age=31536000, immutable");
+    }
+    if (response.ContentLength) {
+      headers.set("Content-Length", response.ContentLength.toString());
+    }
+
+    return new Response(response.Body as any, {
+      status: 200,
+      headers,
+    });
+  } catch (error: any) {
+    console.error(`Error streaming platform asset for key "${key}":`, error);
+    if (error.name === "NoSuchKey" || error.$metadata?.httpStatusCode === 404) {
+      return new Response("Object Not Found", { status: 404 });
+    }
+    return new Response(`Streamer Error: ${error.message}`, { status: 500 });
+  }
+}

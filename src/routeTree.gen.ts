@@ -17,6 +17,7 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as SlugRouteRouteImport } from './routes/$slug.route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as SlugIndexRouteImport } from './routes/$slug.index'
+import { Route as PlatformFilenameRouteImport } from './routes/platform.$filename'
 import { Route as InvoiceIdRouteImport } from './routes/invoice.$id'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as SlugWishlistRouteImport } from './routes/$slug.wishlist'
@@ -97,6 +98,11 @@ const SlugIndexRoute = SlugIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => SlugRouteRoute,
+} as any)
+const PlatformFilenameRoute = PlatformFilenameRouteImport.update({
+  id: '/platform/$filename',
+  path: '/platform/$filename',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const InvoiceIdRoute = InvoiceIdRouteImport.update({
   id: '/invoice/$id',
@@ -347,6 +353,7 @@ export interface FileRoutesByFullPath {
   '/$slug/wishlist': typeof SlugWishlistRoute
   '/admin': typeof AuthenticatedAdminRouteWithChildren
   '/invoice/$id': typeof InvoiceIdRoute
+  '/platform/$filename': typeof PlatformFilenameRoute
   '/$slug/': typeof SlugIndexRoute
   '/$slug/page/$idx': typeof SlugPageIdxRoute
   '/$slug/product/$id': typeof SlugProductIdRoute
@@ -395,6 +402,7 @@ export interface FileRoutesByTo {
   '/$slug/search': typeof SlugSearchRoute
   '/$slug/wishlist': typeof SlugWishlistRoute
   '/invoice/$id': typeof InvoiceIdRoute
+  '/platform/$filename': typeof PlatformFilenameRoute
   '/$slug': typeof SlugIndexRoute
   '/$slug/page/$idx': typeof SlugPageIdxRoute
   '/$slug/product/$id': typeof SlugProductIdRoute
@@ -447,6 +455,7 @@ export interface FileRoutesById {
   '/$slug/wishlist': typeof SlugWishlistRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRouteWithChildren
   '/invoice/$id': typeof InvoiceIdRoute
+  '/platform/$filename': typeof PlatformFilenameRoute
   '/$slug/': typeof SlugIndexRoute
   '/$slug/page/$idx': typeof SlugPageIdxRoute
   '/$slug/product/$id': typeof SlugProductIdRoute
@@ -499,6 +508,7 @@ export interface FileRouteTypes {
     | '/$slug/wishlist'
     | '/admin'
     | '/invoice/$id'
+    | '/platform/$filename'
     | '/$slug/'
     | '/$slug/page/$idx'
     | '/$slug/product/$id'
@@ -547,6 +557,7 @@ export interface FileRouteTypes {
     | '/$slug/search'
     | '/$slug/wishlist'
     | '/invoice/$id'
+    | '/platform/$filename'
     | '/$slug'
     | '/$slug/page/$idx'
     | '/$slug/product/$id'
@@ -598,6 +609,7 @@ export interface FileRouteTypes {
     | '/$slug/wishlist'
     | '/_authenticated/admin'
     | '/invoice/$id'
+    | '/platform/$filename'
     | '/$slug/'
     | '/$slug/page/$idx'
     | '/$slug/product/$id'
@@ -642,6 +654,7 @@ export interface RootRouteChildren {
   OnboardRoute: typeof OnboardRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   InvoiceIdRoute: typeof InvoiceIdRoute
+  PlatformFilenameRoute: typeof PlatformFilenameRoute
   ApiCronCleanupBenefitReceiptsRoute: typeof ApiCronCleanupBenefitReceiptsRoute
   BrandsBrandIdKindFilenameRoute: typeof BrandsBrandIdKindFilenameRoute
 }
@@ -703,6 +716,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/$slug/'
       preLoaderRoute: typeof SlugIndexRouteImport
       parentRoute: typeof SlugRouteRoute
+    }
+    '/platform/$filename': {
+      id: '/platform/$filename'
+      path: '/platform/$filename'
+      fullPath: '/platform/$filename'
+      preLoaderRoute: typeof PlatformFilenameRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/invoice/$id': {
       id: '/invoice/$id'
@@ -1144,6 +1164,7 @@ const rootRouteChildren: RootRouteChildren = {
   OnboardRoute: OnboardRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   InvoiceIdRoute: InvoiceIdRoute,
+  PlatformFilenameRoute: PlatformFilenameRoute,
   ApiCronCleanupBenefitReceiptsRoute: ApiCronCleanupBenefitReceiptsRoute,
   BrandsBrandIdKindFilenameRoute: BrandsBrandIdKindFilenameRoute,
 }
