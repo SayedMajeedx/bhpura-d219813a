@@ -3,14 +3,26 @@ import { GetObjectCommand, S3Client } from "@aws-sdk/client-s3";
 // Cache of S3Client instances to prevent memory leaks and ensure idempotency
 const s3ClientsCache = new Map<string, S3Client>();
 
+function sanitizeValue(val: string | undefined): string | undefined {
+  if (!val) return undefined;
+  return val.trim().replace(/^['"]|['"]$/g, "").trim();
+}
+
 function getCachedS3Client(accountId: string, accessKeyId: string, secretAccessKey: string): S3Client {
   const cacheKey = `${accountId}:${accessKeyId}`;
   let client = s3ClientsCache.get(cacheKey);
   
   if (!client) {
+    const endpoint = `https://${accountId}.r2.cloudflarestorage.com`;
+    try {
+      new URL(endpoint); // Validates format before passing to S3Client
+    } catch (err: any) {
+      throw new Error(`Generated R2 endpoint URL "${endpoint}" is invalid: ${err.message} (accountId length: ${accountId.length})`);
+    }
+    
     client = new S3Client({
       region: "auto",
-      endpoint: `https://${accountId}.r2.cloudflarestorage.com`,
+      endpoint,
       credentials: {
         accessKeyId,
         secretAccessKey,
@@ -55,15 +67,15 @@ async function getR2Config(isPrivate: boolean = false): Promise<R2Config> {
   }
 
   const g = globalThis as any;
-  const accountId = (env?.R2_ACCOUNT_ID || g.R2_ACCOUNT_ID)?.trim();
-  const accessKeyId = (env?.R2_ACCESS_KEY_ID || env?.ACCESS_KEY_ID || g.R2_ACCESS_KEY_ID || g.ACCESS_KEY_ID)?.trim();
-  const secretAccessKey = (env?.R2_SECRET_ACCESS_KEY || env?.SECRET_ACCESS_KEY || g.R2_SECRET_ACCESS_KEY || g.SECRET_ACCESS_KEY)?.trim();
+  const accountId = sanitizeValue(env?.R2_ACCOUNT_ID || g.R2_ACCOUNT_ID);
+  const accessKeyId = sanitizeValue(env?.R2_ACCESS_KEY_ID || env?.ACCESS_KEY_ID || g.R2_ACCESS_KEY_ID || g.ACCESS_KEY_ID);
+  const secretAccessKey = sanitizeValue(env?.R2_SECRET_ACCESS_KEY || env?.SECRET_ACCESS_KEY || g.R2_SECRET_ACCESS_KEY || g.SECRET_ACCESS_KEY);
   
   // Map exactly to variables specified by dashboard naming guidelines with standard fallbacks
   const rawBucket = isPrivate 
     ? (env?.R2_PRIVATE_BUCKET || env?.R2_PRIVATE_BUCKET_NAME || g.R2_PRIVATE_BUCKET || g.R2_PRIVATE_BUCKET_NAME) 
     : (env?.R2_BUCKET_NAME || g.R2_BUCKET_NAME);
-  const bucket = rawBucket?.trim();
+  const bucket = sanitizeValue(rawBucket);
 
   if (!accountId || !accessKeyId || !secretAccessKey || !bucket) {
     const envKeys = env ? Object.keys(env) : [];
