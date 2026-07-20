@@ -180,6 +180,8 @@ export const Route = createFileRoute("/$slug")({
       meta_pixel_enabled: Boolean((trackingSettings as any)?.meta_pixel_enabled),
       meta_pixel_id: (trackingSettings as any)?.meta_pixel_id ?? null,
       analytics_consent_required: (trackingSettings as any)?.consent_required ?? true,
+      storefront_loader_text_en: s?.storefront_loader_text_en ?? null,
+      storefront_loader_text_ar: s?.storefront_loader_text_ar ?? null,
     };
 
 

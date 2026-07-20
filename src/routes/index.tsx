@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { publicSupabase as supabase } from "@/integrations/supabase/client";
 import { Loader2 } from "lucide-react";
 
@@ -7,13 +7,13 @@ export const Route = createFileRoute("/")({
   component: IndexRedirector,
 });
 
-function IndexComponent() {
+function IndexComponent({ text }: { text: string }) {
   return (
     <div className="flex min-h-screen items-center justify-center bg-zinc-950 text-white">
-      <div className="flex flex-col items-center gap-4">
+      <div className="flex flex-col items-center gap-4 px-6 text-center">
         <Loader2 className="h-8 w-8 animate-spin text-[#800020]" />
-        <p className="text-zinc-400 text-sm font-light tracking-wide animate-pulse">
-          Resolving boutique storefront...
+        <p className="text-zinc-400 text-sm font-light tracking-wide animate-pulse max-w-md">
+          {text}
         </p>
       </div>
     </div>
@@ -22,6 +22,8 @@ function IndexComponent() {
 
 function IndexRedirector() {
   const navigate = useNavigate();
+  const isAr = typeof navigator !== "undefined" && (navigator.language?.startsWith("ar") || navigator.languages?.some(l => l.startsWith("ar")));
+  const [loaderText, setLoaderText] = useState(isAr ? "جاري فتح المتجر الإلكتروني..." : "Resolving boutique storefront...");
 
   useEffect(() => {
     const resolveRouting = async () => {
@@ -43,6 +45,28 @@ function IndexRedirector() {
           return;
         }
 
+        // Helper to load custom loading text for a brand ID
+        const fetchCustomLoaderText = async (brandId: string) => {
+          try {
+            const { data: settings } = await (supabase as any)
+              .from("brand_public_settings")
+              .select("storefront_loader_text_en, storefront_loader_text_ar")
+              .eq("brand_id", brandId)
+              .maybeSingle();
+            
+            if (settings) {
+              const customText = isAr 
+                ? settings.storefront_loader_text_ar 
+                : settings.storefront_loader_text_en;
+              if (customText) {
+                setLoaderText(customText);
+              }
+            }
+          } catch (e) {
+            console.error("Failed to load custom storefront loader text:", e);
+          }
+        };
+
         // 1. Boutq Wildcard Subdomain Mapping (e.g., pura.boutq.store -> slug "pura")
         if (hostname.endsWith(".boutq.store") && hostname !== "boutq.store") {
           const subdomain = hostname.slice(0, -12); // Extract "pura" from "pura.boutq.store"
@@ -50,12 +74,15 @@ function IndexRedirector() {
             // Safe query: only filter and select by public columns allowed for anonymous selection
             const { data: brand } = await (supabase as any)
               .from("brands")
-              .select("slug")
+              .select("id, slug")
               .eq("slug", subdomain)
               .eq("is_active", true)
               .maybeSingle();
 
             if (brand?.slug) {
+              if (brand.id) {
+                await fetchCustomLoaderText(brand.id);
+              }
               void navigate({ 
                 to: "/$slug", 
                 params: { slug: brand.slug } 
@@ -71,12 +98,15 @@ function IndexRedirector() {
         try {
           const { data: brand } = await (supabase as any)
             .from("brands")
-            .select("slug")
+            .select("id, slug")
             .eq("custom_domain", hostname)
             .eq("is_active", true)
             .maybeSingle();
 
           if (brand?.slug) {
+            if (brand.id) {
+              await fetchCustomLoaderText(brand.id);
+            }
             void navigate({ 
               to: "/$slug", 
               params: { slug: brand.slug } 
@@ -98,6 +128,7 @@ function IndexRedirector() {
     void resolveRouting();
   }, [navigate]);
 
-  return <IndexComponent />;
+  return <IndexComponent text={loaderText} />;
 }
+
 export default IndexRedirector;

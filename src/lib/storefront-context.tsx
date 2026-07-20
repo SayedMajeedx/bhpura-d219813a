@@ -140,6 +140,8 @@ export type PublicSettings = {
   meta_pixel_enabled: boolean;
   meta_pixel_id: string | null;
   analytics_consent_required: boolean;
+  storefront_loader_text_en?: string | null;
+  storefront_loader_text_ar?: string | null;
 };
 
 export type CustomFieldValue = {

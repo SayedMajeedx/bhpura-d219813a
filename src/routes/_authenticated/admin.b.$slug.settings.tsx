@@ -1272,13 +1272,15 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
     global_sale_badges_enabled: boolean;
     cart_drawer_checkout_bg: string | null;
     cart_drawer_checkout_fg: string | null;
+    storefront_loader_text_en: string | null;
+    storefront_loader_text_ar: string | null;
   } | null>(null);
 
   const { data } = useQuery({
     queryKey: ["business-settings-theme", brandId],
     queryFn: async () => {
       const { data, error } = await supabase.from("business_settings")
-        .select("logo_size, logo_align, show_header_name, show_hero_title, show_hero_about, show_footer_name, storefront_font_en, storefront_font_ar, storefront_font_en_url, storefront_font_ar_url, hero_title_en, hero_title_ar, hero_title_size, hero_title_color, hero_title_align, storefront_accent_color, storefront_background_color, storefront_text_color, header_bg, header_fg, footer_bg, footer_fg, heading_color, link_color, btn_primary_bg, btn_primary_fg, btn_secondary_bg, btn_secondary_fg, btn_checkout_bg, btn_checkout_fg, cart_drawer_checkout_bg, cart_drawer_checkout_fg, menu_bg, menu_fg, menu_title_en, menu_title_ar, menu_show_home, menu_show_account, menu_show_orders, menu_show_pages, home_promo_cards, show_new_arrivals, show_best_sellers, new_arrivals_title_en, new_arrivals_title_ar, best_sellers_title_en, best_sellers_title_ar, announcement_enabled, announcement_text_en, announcement_text_ar, announcement_bg, announcement_fg, announcement_bold, announcement_italic, announcement_dismissible, announcement_scope, announcement_audience, global_sale_badges_enabled")
+        .select("logo_size, logo_align, show_header_name, show_hero_title, show_hero_about, show_footer_name, storefront_font_en, storefront_font_ar, storefront_font_en_url, storefront_font_ar_url, hero_title_en, hero_title_ar, hero_title_size, hero_title_color, hero_title_align, storefront_accent_color, storefront_background_color, storefront_text_color, header_bg, header_fg, footer_bg, footer_fg, heading_color, link_color, btn_primary_bg, btn_primary_fg, btn_secondary_bg, btn_secondary_fg, btn_checkout_bg, btn_checkout_fg, cart_drawer_checkout_bg, cart_drawer_checkout_fg, menu_bg, menu_fg, menu_title_en, menu_title_ar, menu_show_home, menu_show_account, menu_show_orders, menu_show_pages, home_promo_cards, show_new_arrivals, show_best_sellers, new_arrivals_title_en, new_arrivals_title_ar, best_sellers_title_en, best_sellers_title_ar, announcement_enabled, announcement_text_en, announcement_text_ar, announcement_bg, announcement_fg, announcement_bold, announcement_italic, announcement_dismissible, announcement_scope, announcement_audience, global_sale_badges_enabled, storefront_loader_text_en, storefront_loader_text_ar")
         .eq("brand_id", brandId).maybeSingle();
       if (error) throw error;
       return data as any;
@@ -1345,6 +1347,8 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
       global_sale_badges_enabled: data.global_sale_badges_enabled ?? true,
       cart_drawer_checkout_bg: data.cart_drawer_checkout_bg ?? null,
       cart_drawer_checkout_fg: data.cart_drawer_checkout_fg ?? null,
+      storefront_loader_text_en: data.storefront_loader_text_en ?? null,
+      storefront_loader_text_ar: data.storefront_loader_text_ar ?? null,
     });
   }, [data]);
 
@@ -1569,6 +1573,23 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
           ], [
             "menu_show_pages", isAr ? "إظهار الصفحات المخصصة" : "Show custom pages",
           ]] as const).map(([key, label]) => <div key={key} className="flex items-center justify-between gap-4 rounded-md border border-border p-3"><Label className="cursor-pointer">{label}</Label><Switch checked={state[key]} onCheckedChange={(checked) => setState({ ...state, [key]: checked })} /></div>)}
+        </div>
+      </div>
+
+      <div className={settingsTab === "content" ? "space-y-4 rounded-xl border border-border p-4" : "hidden"}>
+        <div>
+          <h3 className="font-medium text-sm">{isAr ? "شاشة تحميل المتجر" : "Storefront loading screen"}</h3>
+          <p className="mt-1 text-xs text-muted-foreground">{isAr ? "خصص العبارة التي تظهر للمتسوقين أثناء فتح موقعك." : "Customize the loading message shoppers see when they first open your website."}</p>
+        </div>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div dir="rtl">
+            <Label>{isAr ? "عبارة التحميل (العربية)" : "Loading text (Arabic)"}</Label>
+            <Input className="text-right" value={state.storefront_loader_text_ar ?? ""} placeholder="جاري فتح المتجر الإلكتروني..." onChange={(e) => setState({ ...state, storefront_loader_text_ar: e.target.value || null })} />
+          </div>
+          <div dir="ltr">
+            <Label>{isAr ? "عبارة التحميل (الإنجليزية)" : "Loading text (English)"}</Label>
+            <Input className="text-left" value={state.storefront_loader_text_en ?? ""} placeholder="Resolving boutique storefront..." onChange={(e) => setState({ ...state, storefront_loader_text_en: e.target.value || null })} />
+          </div>
         </div>
       </div>
 
