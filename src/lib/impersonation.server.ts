@@ -27,13 +27,13 @@ export async function enforceMutationSafeguard(
   // 2. If they are a superadmin but DO NOT belong to the target brand, they are impersonating!
   if (isSuperAdmin && !belongsToBrand) {
     // 3. Query system settings for the developer overwrite override flag
-    const { data: setting, error: settingsErr } = await supabaseAdmin
+    const { data: setting } = await supabaseAdmin
       .from("system_settings")
-      .select("value")
-      .eq("key", "superadmin_impersonation_mutation_allowed")
+      .select("superadmin_impersonation_mutation_allowed")
+      .eq("id", 1)
       .maybeSingle();
 
-    const overwriteAllowed = setting?.value === "true";
+    const overwriteAllowed = setting?.superadmin_impersonation_mutation_allowed === true;
 
     if (!overwriteAllowed) {
       throw new Error(

@@ -161,6 +161,18 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <ClockIcon className="h-3.5 w-3.5" />
             {lang === "ar" ? "طلبات التسجيل" : "Tenant Requests"}
           </Link>
+          <Link
+            to="/admin/super/settings"
+            className={cn(
+              "flex items-center gap-2 px-2 py-1.5 rounded-md text-xs transition-colors",
+              pathname === "/admin/super/settings"
+                ? "bg-sidebar-primary text-sidebar-primary-foreground"
+                : "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+            )}
+          >
+            <Settings className="h-3.5 w-3.5" />
+            {lang === "ar" ? "إعدادات المنصة" : "Platform Settings"}
+          </Link>
         </div>
       )}
 

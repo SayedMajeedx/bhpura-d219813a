@@ -40,6 +40,7 @@ import { Route as SlugThankYouOrderIdRouteImport } from './routes/$slug.thank-yo
 import { Route as SlugProductIdRouteImport } from './routes/$slug.product.$id'
 import { Route as SlugPageIdxRouteImport } from './routes/$slug.page.$idx'
 import { Route as BrandsBrandIdKindFilenameRouteImport } from './routes/brands.$brandId.$kind.$filename'
+import { Route as AuthenticatedAdminSuperSettingsRouteImport } from './routes/_authenticated/admin.super.settings'
 import { Route as AuthenticatedAdminSuperRequestsRouteImport } from './routes/_authenticated/admin.super.requests'
 import { Route as AuthenticatedAdminBSlugRouteRouteImport } from './routes/_authenticated/admin.b.$slug.route'
 import { Route as AuthenticatedAdminBSlugTeamRouteImport } from './routes/_authenticated/admin.b.$slug.team'
@@ -221,6 +222,12 @@ const BrandsBrandIdKindFilenameRoute =
     path: '/brands/$brandId/$kind/$filename',
     getParentRoute: () => rootRouteImport,
   } as any)
+const AuthenticatedAdminSuperSettingsRoute =
+  AuthenticatedAdminSuperSettingsRouteImport.update({
+    id: '/super/settings',
+    path: '/super/settings',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
 const AuthenticatedAdminSuperRequestsRoute =
   AuthenticatedAdminSuperRequestsRouteImport.update({
     id: '/super/requests',
@@ -356,6 +363,7 @@ export interface FileRoutesByFullPath {
   '/admin/': typeof AuthenticatedAdminIndexRoute
   '/admin/b/$slug': typeof AuthenticatedAdminBSlugRouteRouteWithChildren
   '/admin/super/requests': typeof AuthenticatedAdminSuperRequestsRoute
+  '/admin/super/settings': typeof AuthenticatedAdminSuperSettingsRoute
   '/brands/$brandId/$kind/$filename': typeof BrandsBrandIdKindFilenameRoute
   '/admin/b/$slug/campaigns': typeof AuthenticatedAdminBSlugCampaignsRoute
   '/admin/b/$slug/categories': typeof AuthenticatedAdminBSlugCategoriesRoute
@@ -403,6 +411,7 @@ export interface FileRoutesByTo {
   '/admin': typeof AuthenticatedAdminIndexRoute
   '/admin/b/$slug': typeof AuthenticatedAdminBSlugRouteRouteWithChildren
   '/admin/super/requests': typeof AuthenticatedAdminSuperRequestsRoute
+  '/admin/super/settings': typeof AuthenticatedAdminSuperSettingsRoute
   '/brands/$brandId/$kind/$filename': typeof BrandsBrandIdKindFilenameRoute
   '/admin/b/$slug/campaigns': typeof AuthenticatedAdminBSlugCampaignsRoute
   '/admin/b/$slug/categories': typeof AuthenticatedAdminBSlugCategoriesRoute
@@ -454,6 +463,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
   '/_authenticated/admin/b/$slug': typeof AuthenticatedAdminBSlugRouteRouteWithChildren
   '/_authenticated/admin/super/requests': typeof AuthenticatedAdminSuperRequestsRoute
+  '/_authenticated/admin/super/settings': typeof AuthenticatedAdminSuperSettingsRoute
   '/brands/$brandId/$kind/$filename': typeof BrandsBrandIdKindFilenameRoute
   '/_authenticated/admin/b/$slug/campaigns': typeof AuthenticatedAdminBSlugCampaignsRoute
   '/_authenticated/admin/b/$slug/categories': typeof AuthenticatedAdminBSlugCategoriesRoute
@@ -505,6 +515,7 @@ export interface FileRouteTypes {
     | '/admin/'
     | '/admin/b/$slug'
     | '/admin/super/requests'
+    | '/admin/super/settings'
     | '/brands/$brandId/$kind/$filename'
     | '/admin/b/$slug/campaigns'
     | '/admin/b/$slug/categories'
@@ -552,6 +563,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/admin/b/$slug'
     | '/admin/super/requests'
+    | '/admin/super/settings'
     | '/brands/$brandId/$kind/$filename'
     | '/admin/b/$slug/campaigns'
     | '/admin/b/$slug/categories'
@@ -602,6 +614,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/'
     | '/_authenticated/admin/b/$slug'
     | '/_authenticated/admin/super/requests'
+    | '/_authenticated/admin/super/settings'
     | '/brands/$brandId/$kind/$filename'
     | '/_authenticated/admin/b/$slug/campaigns'
     | '/_authenticated/admin/b/$slug/categories'
@@ -852,6 +865,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BrandsBrandIdKindFilenameRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/admin/super/settings': {
+      id: '/_authenticated/admin/super/settings'
+      path: '/super/settings'
+      fullPath: '/admin/super/settings'
+      preLoaderRoute: typeof AuthenticatedAdminSuperSettingsRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
     '/_authenticated/admin/super/requests': {
       id: '/_authenticated/admin/super/requests'
       path: '/super/requests'
@@ -1082,6 +1102,7 @@ interface AuthenticatedAdminRouteChildren {
   AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
   AuthenticatedAdminBSlugRouteRoute: typeof AuthenticatedAdminBSlugRouteRouteWithChildren
   AuthenticatedAdminSuperRequestsRoute: typeof AuthenticatedAdminSuperRequestsRoute
+  AuthenticatedAdminSuperSettingsRoute: typeof AuthenticatedAdminSuperSettingsRoute
 }
 
 const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
@@ -1097,6 +1118,7 @@ const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
   AuthenticatedAdminBSlugRouteRoute:
     AuthenticatedAdminBSlugRouteRouteWithChildren,
   AuthenticatedAdminSuperRequestsRoute: AuthenticatedAdminSuperRequestsRoute,
+  AuthenticatedAdminSuperSettingsRoute: AuthenticatedAdminSuperSettingsRoute,
 }
 
 const AuthenticatedAdminRouteWithChildren =

@@ -36,22 +36,42 @@ export const Route = createFileRoute("/onboard")({
 function OnboardPage() {
   const { lang, setLang } = useI18n();
   const [loadingPrice, setLoadingPrice] = useState(true);
-  const [registrationPrice, setRegistrationPrice] = useState("55 BHD");
+  const [basePrice, setBasePrice] = useState(55);
+  const [discountPrice, setDiscountPrice] = useState<number | null>(null);
+  const [platformIconUrl, setPlatformIconUrl] = useState<string | null>(null);
+  const [whatsappNumber, setWhatsappNumber] = useState("97339955508");
 
-  // Load Dynamic Price on mount
+  // Load Dynamic Settings on mount
   useEffect(() => {
-    async function loadDynamicPrice() {
+    async function loadDynamicSettings() {
       try {
-        const price = await getOnboardingPrice();
-        setRegistrationPrice(price);
+        const { data, error } = await supabase
+          .from("system_settings")
+          .select("base_price_bhd, discount_price_bhd, platform_icon_url, whatsapp_support_number")
+          .eq("id", 1)
+          .maybeSingle();
+
+        if (data && !error) {
+          if (data.base_price_bhd) setBasePrice(Number(data.base_price_bhd));
+          setDiscountPrice(data.discount_price_bhd ? Number(data.discount_price_bhd) : null);
+          setPlatformIconUrl(data.platform_icon_url || null);
+          if (data.whatsapp_support_number) setWhatsappNumber(data.whatsapp_support_number);
+        } else {
+          // Fallback to getOnboardingPrice server function if direct query fails
+          const price = await getOnboardingPrice();
+          const parsed = parseFloat(price.replace(/[^0-9.]/g, "")) || 55;
+          setBasePrice(parsed);
+        }
       } catch (err) {
-        console.warn("Error loading registration price, falling back.", err);
+        console.warn("Error loading live system settings, falling back.", err);
       } finally {
         setLoadingPrice(false);
       }
     }
-    void loadDynamicPrice();
+    void loadDynamicSettings();
   }, []);
+
+  const displayPrice = discountPrice !== null ? `${discountPrice} BHD` : `${basePrice} BHD`;
 
   // Form Fields - Shareable for both Trials or Official Packages
   const [fullName, setFullName] = useState("");
@@ -201,7 +221,7 @@ function OnboardPage() {
         : `Hello Boutq Support! I just submitted a request for a 3-Day Free Trial workspace. Owner: "${fullName}", Desired subdomain: "${subdomain}.boutq.store", Contact: ${contactNumber}, Email: ${email}.`;
 
       const encodedMessage = encodeURIComponent(waMessage);
-      const whatsappUrl = `https://wa.me/97339955508?text=${encodedMessage}`;
+      const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodedMessage}`;
 
       toast.success(lang === "ar" ? "تم تسجيل طلبك! بانتظار التفعيل اليدوي..." : "Request Received - Waiting for Manual Activation", { id: toastId });
       
@@ -335,7 +355,7 @@ function OnboardPage() {
             </Button>
 
             <a 
-              href={`https://wa.me/97339955508?text=Hello!%20Inquiring%20about%20my%20onboarding%20registration%20for%20subdomain:%20${submittedSubdomain}`}
+              href={`https://wa.me/${whatsappNumber}?text=Hello!%20Inquiring%20about%20my%20onboarding%20registration%20for%20subdomain:%20${submittedSubdomain}`}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex h-10 items-center justify-center rounded-md bg-emerald-600 hover:bg-emerald-500 px-6 text-sm font-semibold text-white shadow transition-colors gap-2"
@@ -357,8 +377,14 @@ function OnboardPage() {
         <div className="absolute inset-0 bg-[linear-gradient(to_bottom,transparent,rgba(0,0,0,0.8))]" />
 
         <div className="relative z-10 flex items-center gap-2">
-          <Store className="h-6 w-6 text-[#B76E79]" />
-          <span className="font-display text-lg tracking-wider font-semibold">Boutq</span>
+          {platformIconUrl ? (
+            <img src={platformIconUrl} alt="Boutq Logo" className="h-8 object-contain" />
+          ) : (
+            <>
+              <Store className="h-6 w-6 text-[#B76E79]" />
+              <span className="font-display text-lg tracking-wider font-semibold">Boutq</span>
+            </>
+          )}
         </div>
 
         <div className="relative z-10 space-y-6 max-w-sm">
@@ -384,8 +410,14 @@ function OnboardPage() {
         {/* Top bar with Translation selector */}
         <div className="flex justify-between items-center gap-4 mb-8">
           <div className="flex items-center gap-2 md:hidden">
-            <Store className="h-5 w-5 text-primary" />
-            <span className="font-display text-base tracking-wider font-semibold">Boutq</span>
+            {platformIconUrl ? (
+              <img src={platformIconUrl} alt="Boutq Logo" className="h-6 object-contain" />
+            ) : (
+              <>
+                <Store className="h-5 w-5 text-primary" />
+                <span className="font-display text-base tracking-wider font-semibold">Boutq</span>
+              </>
+            )}
           </div>
           <div className="flex justify-end items-center gap-4 ml-auto">
             <div className="flex items-center gap-2">
@@ -555,10 +587,23 @@ function OnboardPage() {
                   </CardDescription>
                 </div>
                 <div className="text-right">
-                  <span className="text-lg font-bold font-display text-primary block animate-pulse">
-                    {loadingPrice ? <Loader2 className="h-4 w-4 animate-spin ml-auto" /> : registrationPrice}
-                  </span>
-                  <span className="text-[9px] text-muted-foreground font-semibold uppercase tracking-wider block">
+                  {loadingPrice ? (
+                    <Loader2 className="h-4 w-4 animate-spin ml-auto text-primary" />
+                  ) : discountPrice !== null ? (
+                    <div className="flex flex-col items-end">
+                      <span className="text-xs text-muted-foreground line-through font-mono">
+                        {basePrice} BHD
+                      </span>
+                      <span className="text-lg font-bold font-display text-emerald-500 animate-pulse">
+                        {discountPrice} BHD
+                      </span>
+                    </div>
+                  ) : (
+                    <span className="text-lg font-bold font-display text-primary block">
+                      {basePrice} BHD
+                    </span>
+                  )}
+                  <span className="text-[9px] text-muted-foreground font-semibold uppercase tracking-wider block mt-0.5">
                     {lang === "ar" ? "دفع لمرة واحدة" : "ONE-TIME PAYMENT"}
                   </span>
                 </div>
@@ -672,8 +717,8 @@ function OnboardPage() {
                       <p className="text-xs font-bold text-zinc-800 dark:text-zinc-200">Merchant Account: BOUTQ-OFFICIAL</p>
                       <p className="text-[10px] text-muted-foreground leading-relaxed">
                         {lang === "ar" 
-                          ? `امسح رمز الاستجابة السريع سدد المبلغ الموضح (${registrationPrice})، ثم ارفع لقطة شاشة تأكيد الدفع لتأكيد المعاملة.` 
-                          : `Scan QR with BenefitPay, transfer ${registrationPrice} to merchant, then upload the receipt screenshot below.`}
+                          ? `امسح رمز الاستجابة السريع سدد المبلغ الموضح (${displayPrice})، ثم ارفع لقطة شاشة تأكيد الدفع لتأكيد المعاملة.` 
+                          : `Scan QR with BenefitPay, transfer ${displayPrice} to merchant, then upload the receipt screenshot below.`}
                       </p>
                     </div>
                   </div>

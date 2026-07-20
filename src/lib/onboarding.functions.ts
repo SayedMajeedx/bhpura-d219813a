@@ -104,17 +104,22 @@ export const createTenantRequest = createServerFn({ method: "POST" })
 export const getOnboardingPrice = createServerFn({ method: "GET" })
   .handler(async () => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data, error } = await supabaseAdmin.rpc("get_onboarding_active_price");
-    if (error) {
-      console.warn("RPC get_onboarding_active_price failed, falling back to database query.", error);
-      const { data: row } = await supabaseAdmin
-        .from("system_settings")
-        .select("value")
-        .eq("key", "onboarding_registration_price")
-        .maybeSingle();
-      return row?.value || "55 BHD";
+    const { data, error } = await supabaseAdmin
+      .from("system_settings")
+      .select("base_price_bhd, discount_price_bhd")
+      .eq("id", 1)
+      .maybeSingle();
+
+    if (error || !data) {
+      try {
+        const { data: rpcVal } = await supabaseAdmin.rpc("get_onboarding_active_price");
+        if (rpcVal) return rpcVal;
+      } catch {}
+      return "55 BHD";
     }
-    return data || "55 BHD";
+
+    const active = data.discount_price_bhd !== null ? data.discount_price_bhd : data.base_price_bhd;
+    return `${active} BHD`;
   });
 
 // 4. Update onboarding registration price in system_settings (Superadmin only)
@@ -124,16 +129,94 @@ export const updateRegistrationPrice = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await requireSuperAdmin(context);
 
+    const parsedVal = parseFloat(data.newPrice.replace(/[^0-9.]/g, "")) || 55.00;
+
     const { error } = await context.supabase
       .from("system_settings")
       .upsert({
-        key: "onboarding_registration_price",
-        value: data.newPrice,
+        id: 1,
+        base_price_bhd: parsedVal,
         updated_at: new Date().toISOString()
-      }, { onConflict: "key" });
+      }, { onConflict: "id" });
 
     if (error) throw error;
     return { success: true, updatedPrice: data.newPrice };
+  });
+
+// 4.1. Get full platform settings (Public)
+export const getPlatformSettings = createServerFn({ method: "GET" })
+  .handler(async () => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data, error } = await supabaseAdmin
+      .from("system_settings")
+      .select("*")
+      .eq("id", 1)
+      .maybeSingle();
+
+    if (error) {
+      console.error("Failed to query platform system_settings:", error);
+      return null;
+    }
+    return data;
+  });
+
+// 4.2. Update platform settings (Superadmin only)
+const UpdatePlatformSettingsInput = z.object({
+  basePriceBhd: z.number(),
+  discountPriceBhd: z.number().nullable(),
+  platformIconUrl: z.string().nullable(),
+  whatsappSupportNumber: z.string().min(5),
+  superadminImpersonationMutationAllowed: z.boolean(),
+});
+
+export const updatePlatformSettings = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .validator((raw: unknown) => UpdatePlatformSettingsInput.parse(raw))
+  .handler(async ({ data, context }) => {
+    await requireSuperAdmin(context);
+
+    const { error } = await context.supabase
+      .from("system_settings")
+      .upsert({
+        id: 1,
+        base_price_bhd: data.basePriceBhd,
+        discount_price_bhd: data.discountPriceBhd,
+        platform_icon_url: data.platformIconUrl,
+        whatsapp_support_number: data.whatsappSupportNumber,
+        superadmin_impersonation_mutation_allowed: data.superadminImpersonationMutationAllowed,
+        updated_at: new Date().toISOString()
+      }, { onConflict: "id" });
+
+    if (error) {
+      console.error("Failed to update platform settings:", error);
+      throw error;
+    }
+    return { success: true };
+  });
+
+// 4.3. Get platform logo upload pre-signed URL (Superadmin only)
+export const getPlatformLogoUploadUrl = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .validator((raw: unknown) => z.object({ contentType: z.string() }).parse(raw))
+  .handler(async ({ data, context }) => {
+    await requireSuperAdmin(context);
+
+    const { r2Client, mimeToExtension } = await import("@/lib/r2-upload.functions");
+    const { client, bucket, publicBaseUrl } = r2Client();
+
+    const extension = mimeToExtension[data.contentType.toLowerCase()] || "png";
+    const key = `platform/logo-${crypto.randomUUID()}.${extension}`;
+
+    const { getSignedUrl } = await import("@aws-sdk/s3-request-presigner");
+    const { PutObjectCommand } = await import("@aws-sdk/client-s3");
+
+    const uploadUrl = await getSignedUrl(client, new PutObjectCommand({
+      Bucket: bucket,
+      Key: key,
+      ContentType: data.contentType,
+    }), { expiresIn: 3600 });
+
+    return { uploadUrl, publicUrl: `${publicBaseUrl}/${key}`, key };
   });
 
 // 5. Approve Tenant Request & Mark Deployed (Superadmin only)
