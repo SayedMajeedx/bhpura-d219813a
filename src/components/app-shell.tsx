@@ -149,6 +149,18 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <Store className="h-3.5 w-3.5" />
             {lang === "ar" ? "إدارة العلامات" : "Manage brands"}
           </Link>
+          <Link
+            to="/admin/super/requests"
+            className={cn(
+              "flex items-center gap-2 px-2 py-1.5 rounded-md text-xs transition-colors",
+              pathname === "/admin/super/requests"
+                ? "bg-sidebar-primary text-sidebar-primary-foreground"
+                : "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+            )}
+          >
+            <Clock className="h-3.5 w-3.5" />
+            {lang === "ar" ? "طلبات التسجيل" : "Tenant Requests"}
+          </Link>
         </div>
       )}
 

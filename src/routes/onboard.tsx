@@ -10,27 +10,21 @@ import { useI18n } from "@/lib/i18n";
 import { 
   Building2, 
   User, 
-  Lock, 
-  Palette, 
   Languages, 
-  ArrowRight, 
-  ArrowLeft, 
   Check, 
   Store, 
   Sparkles, 
   CheckCircle2, 
   Loader2,
   UploadCloud,
-  ShieldCheck,
-  QrCode,
-  PhoneCall,
   ChevronRight,
-  Info
+  Info,
+  PhoneCall
 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { 
   getOnboardingReceiptUploadUrl, 
-  createPendingRegistration, 
+  createTenantRequest, 
   getOnboardingPrice 
 } from "@/lib/onboarding.functions";
 
@@ -78,7 +72,7 @@ function OnboardPage() {
   const [submittedSubdomain, setSubmittedSubdomain] = useState("");
   const [isTrialSuccess, setIsTrialSuccess] = useState(false);
 
-  // Clean and check subdomain uniqueness across existing brands AND pending registrations
+  // Clean and check subdomain uniqueness across existing brands AND tenant requests
   useEffect(() => {
     if (!subdomain) {
       setSubdomainAvailable(null);
@@ -107,11 +101,12 @@ function OnboardPage() {
 
         if (brandError) throw brandError;
 
-        // Check pending registrations queue
+        // Check pending requests queue
         const { data: pendingData, error: pendingError } = await supabase
-          .from("pending_registrations" as any)
+          .from("tenant_requests")
           .select("id")
-          .eq("subdomain", cleanedSubdomain)
+          .eq("desired_subdomain", cleanedSubdomain)
+          .eq("status", "pending")
           .maybeSingle();
 
         if (pendingError) throw pendingError;
@@ -150,12 +145,10 @@ function OnboardPage() {
     const toastId = toast.loading(lang === "ar" ? "جاري تفعيل قناة التحميل المشفرة..." : "Preparing secure R2 upload tunnel...");
 
     try {
-      // 1. Get secure private pre-signed R2 URL
       const { objectKey, uploadUrl } = await getOnboardingReceiptUploadUrl({
         contentType: file.type as any
       });
 
-      // 2. Upload file directly to Private Bucket
       toast.loading(lang === "ar" ? "جاري تشفير وحفظ لقطة الشاشة في R2 الخصوصي..." : "Encrypting and storing receipt screenshot in Private R2 Bucket...", { id: toastId });
       const response = await fetch(uploadUrl, {
         method: "PUT",
@@ -191,36 +184,35 @@ function OnboardPage() {
       return;
     }
 
-    const toastId = toast.loading(lang === "ar" ? "جاري تسجيل اهتمامك بالباقة التجريبية..." : "Registering your trial interest...");
+    const toastId = toast.loading(lang === "ar" ? "جاري إرسال طلب تفعيل النسخة التجريبية..." : "Sending trial request...");
 
     try {
-      // Save metadata lead safely to database status queue
-      await createPendingRegistration({
+      // Save metadata lead safely to tenant_requests with status 'pending'
+      await createTenantRequest({
         fullName,
         contactNumber,
         email,
-        subdomain,
-        planType: "trial",
+        desiredSubdomain: subdomain,
+        requestType: "trial",
       });
 
-      // Localize message and trigger redirect to WhatsApp
       const waMessage = lang === "ar"
-        ? `مرحباً دعم بوتيك (Boutq)! أنا مهتم بتجربة باقة الـ 3 أيام المجانية لمتجري باسم: "${fullName}" والرابط المطلوب: "${subdomain}.boutq.store". البريد الإلكتروني: ${email}.`
-        : `Hello Boutq Support! I am interested in registering for a 3-Day Free Trial workspace. Owner: "${fullName}", Desired subdomain: "${subdomain}.boutq.store", Contact: ${contactNumber}, Email: ${email}.`;
+        ? `مرحباً دعم بوتيك (Boutq)! لقد أرسلت للتو طلب تفعيل باقة الـ 3 أيام المجانية لمتجري باسم: "${fullName}" والرابط المطلوب: "${subdomain}.boutq.store". البريد الإلكتروني: ${email}.`
+        : `Hello Boutq Support! I just submitted a request for a 3-Day Free Trial workspace. Owner: "${fullName}", Desired subdomain: "${subdomain}.boutq.store", Contact: ${contactNumber}, Email: ${email}.`;
 
       const encodedMessage = encodeURIComponent(waMessage);
       const whatsappUrl = `https://wa.me/97339955508?text=${encodedMessage}`;
 
-      toast.success(lang === "ar" ? "تم تسجيل طلبك بنجاح! جاري تحويلك لواتساب..." : "Trial registered successfully! Redirecting to WhatsApp concierge...", { id: toastId });
+      toast.success(lang === "ar" ? "تم تسجيل طلبك! بانتظار التفعيل اليدوي..." : "Request Received - Waiting for Manual Activation", { id: toastId });
       
       setSubmittedSubdomain(subdomain);
       setIsTrialSuccess(true);
       setIsDeployedPending(true);
 
-      // Open WhatsApp in a new window/tab safely
+      // Open WhatsApp safely to speed up onboarding activation
       setTimeout(() => {
         window.open(whatsappUrl, "_blank");
-      }, 1000);
+      }, 1200);
 
     } catch (err: any) {
       console.error(err);
@@ -228,7 +220,7 @@ function OnboardPage() {
     }
   };
 
-  // Submission Flow - CARD B: Paid Official Store Deployment
+  // Submission Flow - CARD B: Paid Official Store Activation
   const handleRegisterPaid = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!fullName || !contactNumber || !email || !subdomain) {
@@ -242,27 +234,27 @@ function OnboardPage() {
     }
 
     if (!receiptKey) {
-      toast.error(lang === "ar" ? "يرجى رفع إيصال تأكيد الدفع لإرسال الطلب." : "Please upload your transaction screenshot receipt to activate your official store.");
+      toast.error(lang === "ar" ? "يرجى رفع لقطة شاشة تأكيد الدفع قبل المتابعة." : "Please upload your payment receipt screenshot before submitting.");
       return;
     }
 
-    const toastId = toast.loading(lang === "ar" ? "جاري تدوين وحفظ بيانات طلب التفعيل..." : "Filing your official activation request...");
+    const toastId = toast.loading(lang === "ar" ? "جاري إرسال طلب تفعيل متجرك الرسمي..." : "Sending official store activation request...");
 
     try {
-      // Save metadata lead safely to database status queue as 'pending_manual_deployment'
-      await createPendingRegistration({
+      // Save metadata lead safely to tenant_requests as 'pending'
+      await createTenantRequest({
         fullName,
         contactNumber,
         email,
-        subdomain,
-        planType: "paid",
+        desiredSubdomain: subdomain,
+        requestType: "paid",
         benefitReceiptUrl: receiptKey,
       });
 
       toast.success(
         lang === "ar" 
-          ? "تم إرسال طلب تفعيل متجرك الرسمي بنجاح! سيتم التدقيق اليدوي والتفعيل الفوري خلال ساعتين." 
-          : "Your official store activation request has been submitted successfully! Verification and deployment is underway.",
+          ? "تم إرسال طلب تفعيل متجرك بنجاح! طلبك الآن قيد التدقيق وسيتم تفعيله يدوياً." 
+          : "Request Received - Waiting for Manual Activation",
         { id: toastId, duration: 6000 }
       );
 
@@ -276,7 +268,7 @@ function OnboardPage() {
     }
   };
 
-  // If successfully submitted, display our premium confirmation dashboard landing page
+  // SUCCESS CONFIRMATION OVERLAY (Waiting for Manual Activation freeze state)
   if (isDeployedPending) {
     return (
       <div className="min-h-screen bg-zinc-950 flex flex-col justify-center items-center p-6 relative overflow-hidden text-white">
@@ -292,14 +284,14 @@ function OnboardPage() {
             )}
           </div>
 
-          <h1 className="text-3xl font-display font-medium tracking-tight mb-3">
-            {lang === "ar" ? "تم تسجيل طلبك بنجاح!" : "Workspace Under Deployment!"}
+          <h1 className="text-2xl md:text-3xl font-display font-medium tracking-tight mb-3">
+            {lang === "ar" ? "تم استلام الطلب - بانتظار التفعيل" : "Request Received - Waiting for Manual Activation"}
           </h1>
           
           <p className="text-zinc-400 text-sm leading-relaxed mb-6">
             {lang === "ar"
-              ? `طلب تهيئة متجرك الفاخر على الرابط: "${submittedSubdomain}.boutq.store" قيد المعالجة الآن.`
-              : `Your luxury boutique registration for "${submittedSubdomain}.boutq.store" is currently pending manual deployment.`}
+              ? `لقد تم إرسال طلب تفعيل مساحة متجرك الفاخرة "${submittedSubdomain}.boutq.store" بنجاح إلى فريق الإدارة.`
+              : `Your luxury boutique registration request for "${submittedSubdomain}.boutq.store" has been recorded in our activation queue.`}
           </p>
 
           <div className="bg-zinc-950/60 border border-zinc-900 rounded-lg p-5 mb-8 text-left space-y-4">
@@ -307,19 +299,19 @@ function OnboardPage() {
               <Info className="h-5 w-5 text-primary shrink-0 mt-0.5" />
               <div className="text-xs text-zinc-400 leading-relaxed">
                 <p className="font-semibold text-zinc-200 mb-1">
-                  {lang === "ar" ? "ما الخطوات التالية؟" : "What happens next?"}
+                  {lang === "ar" ? "ما الخطوات التالية لتفعيل متجرك؟" : "What is the deployment procedure?"}
                 </p>
                 {isTrialSuccess ? (
                   <p>
                     {lang === "ar"
-                      ? "لقد تم تحويلك لدعم واتساب المباشر لتهيئة نسختك التجريبية وتأكيد رابطك الخاص فورياً."
-                      : "We recorded your trial workspace handle. Since trial setups require verification, please chat with our WhatsApp support line to trigger your immediate free deployment."}
+                      ? "سنقوم بتهيئة نسختك التجريبية وتفعيل الرابط فورياً. تواصل مع الدعم عبر الواتساب لتسريع العملية."
+                      : "A superadmin is currently reviewing your trial request. Once approved, your temporary 3-day workspace will be spun up. Message support on WhatsApp to fast-track approval."}
                   </p>
                 ) : (
                   <p>
                     {lang === "ar"
-                      ? "سنقوم بمراجعة لقطة شاشة تأكيد عملية الدفع المرسلة وتدقيق الرقم المرجعي. سيتم إنشاء ونشر مساحة متجرك الفاخر والتحقق اليدوي في غضون ساعتين كحد أقصى مع تزويدك بروابط الدخول والتحكم."
-                      : "Our administrators will manually validate your uploaded BenefitPay receipt transaction reference. Your official store workspace along with executive dashboards will be deployed and sent to your email/WhatsApp within 2 hours."}
+                      ? "سنقوم بمراجعة لقطة شاشة تأكيد عملية السداد المرفقة. سيتم تهيئة وتوفير مساحتك الفاخرة يدوياً وتزويدك بروابط الدخول والتحكم الكامل في غضون ساعتين كحد أقصى."
+                      : "An administrator will verify your uploaded BenefitPay transfer reference screenshot. Once approved, your official brand platform and manager dashboards will be manually deployed within 2 hours."}
                   </p>
                 )}
               </div>
@@ -339,7 +331,7 @@ function OnboardPage() {
                 setReceiptKey(null);
               }}
             >
-              {lang === "ar" ? "العودة للتسجيل" : "Register Another Handle"}
+              {lang === "ar" ? "العودة للرئيسية" : "Start Over"}
             </Button>
 
             <a 
@@ -349,7 +341,7 @@ function OnboardPage() {
               className="inline-flex h-10 items-center justify-center rounded-md bg-emerald-600 hover:bg-emerald-500 px-6 text-sm font-semibold text-white shadow transition-colors gap-2"
             >
               <PhoneCall className="h-4 w-4" />
-              {lang === "ar" ? "تواصل معنا بالواتساب" : "Contact Concierge Support"}
+              {lang === "ar" ? "تواصل مع الإدارة بالواتساب" : "Contact Superadmin Support"}
             </a>
           </div>
         </Card>
@@ -539,7 +531,7 @@ function OnboardPage() {
                   className="w-full h-11 text-xs font-semibold uppercase tracking-wider gap-2 bg-[#B76E79] hover:bg-[#a35e69] text-white mt-4"
                   disabled={subdomainChecking || subdomainAvailable === false}
                 >
-                  {lang === "ar" ? "تفعيل تجربة الـ 3 أيام بالواتساب" : "Register & Start 3-Day Trial"}
+                  {lang === "ar" ? "إرسال طلب تجربة الـ 3 أيام" : "Submit Request & Start 3-Day Trial"}
                   <ChevronRight className="h-4 w-4" />
                 </Button>
               </form>
@@ -563,7 +555,7 @@ function OnboardPage() {
                   </CardDescription>
                 </div>
                 <div className="text-right">
-                  <span className="text-lg font-bold font-display text-primary block">
+                  <span className="text-lg font-bold font-display text-primary block animate-pulse">
                     {loadingPrice ? <Loader2 className="h-4 w-4 animate-spin ml-auto" /> : registrationPrice}
                   </span>
                   <span className="text-[9px] text-muted-foreground font-semibold uppercase tracking-wider block">
@@ -680,8 +672,8 @@ function OnboardPage() {
                       <p className="text-xs font-bold text-zinc-800 dark:text-zinc-200">Merchant Account: BOUTQ-OFFICIAL</p>
                       <p className="text-[10px] text-muted-foreground leading-relaxed">
                         {lang === "ar" 
-                          ? "امسح رمز الاستجابة السريع سدد المبلغ 55 د.ب، ثم ارفع لقطة شاشة تأكيد الدفع لتأكيد المعاملة." 
-                          : "Scan QR with BenefitPay, transfer BHD 55 to merchant, then upload the receipt screenshot below."}
+                          ? `امسح رمز الاستجابة السريع سدد المبلغ الموضح (${registrationPrice})، ثم ارفع لقطة شاشة تأكيد الدفع لتأكيد المعاملة.` 
+                          : `Scan QR with BenefitPay, transfer ${registrationPrice} to merchant, then upload the receipt screenshot below.`}
                       </p>
                     </div>
                   </div>

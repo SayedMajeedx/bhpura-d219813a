@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 const imageTypes: Record<string, string> = {
   "image/jpeg": "jpg",
@@ -11,20 +12,38 @@ const CreateUploadInput = z.object({
   contentType: z.enum(["image/jpeg", "image/png", "image/webp"]),
 });
 
-const CreateRegistrationInput = z.object({
+const CreateRequestInput = z.object({
   fullName: z.string().min(2),
   contactNumber: z.string().min(6),
   email: z.string().email(),
-  subdomain: z.string().min(2),
-  planType: z.enum(["trial", "paid"]),
+  desiredSubdomain: z.string().min(2),
+  requestType: z.enum(["trial", "paid"]),
   benefitReceiptUrl: z.string().optional(),
 });
 
-// 1. Get secure pre-signed upload URL for onboarding receipt explicitly bound to R2_PRIVATE_BUCKET scope
+const AdminActionInput = z.object({
+  requestId: z.string().uuid(),
+});
+
+const UpdatePriceInput = z.object({
+  newPrice: z.string().min(2),
+});
+
+// Helper to assert superadmin authorization
+async function requireSuperAdmin(context: any) {
+  const { data: isSuperAdmin } = await context.supabase.rpc("is_admin");
+  const email = (context.user?.email || "").toLowerCase();
+  const isFixedSuperAdmin = email === "majeed@hotmail.it" || email === "majeed@hotmail.com";
+  
+  if (!isSuperAdmin && !isFixedSuperAdmin) {
+    throw new Error("UNAUTHORIZED_SUPER_ADMIN_ONLY");
+  }
+}
+
+// 1. Get secure pre-signed upload URL for onboarding receipt screenshot explicitly bound to R2_PRIVATE_BUCKET scope
 export const getOnboardingReceiptUploadUrl = createServerFn({ method: "POST" })
   .validator((raw: unknown) => CreateUploadInput.parse(raw))
   .handler(async ({ data, context }) => {
-    // Dynamically retrieve cloudflare environment context to verify R2_PRIVATE_BUCKET binding
     let env: any = null;
     try {
       const { getEvent } = await import("vinxi/http");
@@ -42,7 +61,6 @@ export const getOnboardingReceiptUploadUrl = createServerFn({ method: "POST" })
       } catch {}
     }
 
-    // Explicitly check for private bucket binding
     const privateBucket = env?.R2_PRIVATE_BUCKET || env?.R2_PRIVATE_BUCKET_NAME;
     if (!privateBucket) {
       console.warn("R2_PRIVATE_BUCKET environment variable is missing in current execution context.");
@@ -52,42 +70,115 @@ export const getOnboardingReceiptUploadUrl = createServerFn({ method: "POST" })
     const registrationId = crypto.randomUUID();
     const objectKey = `onboarding/receipts/${registrationId}.${imageTypes[data.contentType]}`;
     
-    // Explicitly generate pre-signed upload URL in the private bucket R2_PRIVATE_BUCKET
     const uploadUrl = await createPrivateUploadUrl(objectKey, data.contentType);
     return { objectKey, uploadUrl };
   });
 
-// 2. Save onboarding payload safely to Supabase database status queue as 'pending_manual_deployment'
-export const createPendingRegistration = createServerFn({ method: "POST" })
-  .validator((raw: unknown) => CreateRegistrationInput.parse(raw))
+// 2. Save onboarding payload safely to Supabase database status queue 'tenant_requests' as 'pending'
+export const createTenantRequest = createServerFn({ method: "POST" })
+  .validator((raw: unknown) => CreateRequestInput.parse(raw))
   .handler(async ({ data, context }) => {
     const { error } = await context.supabase
-      .from("pending_registrations")
+      .from("tenant_requests")
       .insert({
         full_name: data.fullName,
-        contact_number: data.contactNumber,
         email: data.email,
-        subdomain: data.subdomain,
-        plan_type: data.planType,
-        status: "pending_manual_deployment",
+        contact_number: data.contactNumber,
+        desired_subdomain: data.desiredSubdomain,
+        request_type: data.requestType,
+        status: "pending",
         benefit_receipt_url: data.benefitReceiptUrl || null,
+        payment_verified: false
       });
 
     if (error) {
-      console.error("Supabase onboarding submission failure:", error);
-      throw new Error(`Failed to record registration: ${error.message}`);
+      console.error("Supabase tenant request insert failure:", error);
+      throw new Error(`Failed to record tenant request: ${error.message}`);
     }
 
     return { success: true };
   });
 
-// 3. Dynamic pricing retrieval server function
+// 3. Dynamic pricing retrieval server function (reading from system_settings)
 export const getOnboardingPrice = createServerFn({ method: "GET" })
   .handler(async ({ context }) => {
-    const { data, error } = await context.supabase.rpc("get_onboarding_registration_price");
+    const { data, error } = await context.supabase.rpc("get_onboarding_active_price");
     if (error) {
-      console.warn("RPC fetch failed, falling back to static 55 BHD.", error);
-      return "55 BHD";
+      console.warn("RPC get_onboarding_active_price failed, falling back to database query.", error);
+      const { data: row } = await context.supabase
+        .from("system_settings")
+        .select("value")
+        .eq("key", "onboarding_registration_price")
+        .maybeSingle();
+      return row?.value || "55 BHD";
     }
     return data || "55 BHD";
+  });
+
+// 4. Update onboarding registration price in system_settings (Superadmin only)
+export const updateRegistrationPrice = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .validator((raw: unknown) => UpdatePriceInput.parse(raw))
+  .handler(async ({ data, context }) => {
+    await requireSuperAdmin(context);
+
+    const { error } = await context.supabase
+      .from("system_settings")
+      .upsert({
+        key: "onboarding_registration_price",
+        value: data.newPrice,
+        updated_at: new Date().toISOString()
+      }, { onConflict: "key" });
+
+    if (error) throw error;
+    return { success: true, updatedPrice: data.newPrice };
+  });
+
+// 5. Approve Tenant Request & Mark Deployed (Superadmin only)
+export const approveTenantRequest = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .validator((raw: unknown) => AdminActionInput.parse(raw))
+  .handler(async ({ data, context }) => {
+    await requireSuperAdmin(context);
+
+    // Get current record first
+    const { data: request, error: fetchError } = await context.supabase
+      .from("tenant_requests")
+      .select("*")
+      .eq("id", data.requestId)
+      .single();
+
+    if (fetchError || !request) throw new Error("REQUEST_NOT_FOUND");
+
+    // Update status to 'approved' and payment_verified to true
+    const { error } = await context.supabase
+      .from("tenant_requests")
+      .update({
+        status: "approved",
+        payment_verified: true,
+        updated_at: new Date().toISOString()
+      })
+      .eq("id", data.requestId);
+
+    if (error) throw error;
+    return { success: true };
+  });
+
+// 6. Reject/Dismiss Tenant Request (Superadmin only)
+export const rejectTenantRequest = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .validator((raw: unknown) => AdminActionInput.parse(raw))
+  .handler(async ({ data, context }) => {
+    await requireSuperAdmin(context);
+
+    const { error } = await context.supabase
+      .from("tenant_requests")
+      .update({
+        status: "rejected",
+        updated_at: new Date().toISOString()
+      })
+      .eq("id", data.requestId);
+
+    if (error) throw error;
+    return { success: true };
   });
