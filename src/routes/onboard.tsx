@@ -226,7 +226,7 @@ function OnboardPage() {
 
     try {
       const { objectKey, uploadUrl } = await getOnboardingReceiptUploadUrl({
-        contentType: file.type as any
+        data: { contentType: file.type as any }
       });
 
       toast.loading(lang === "ar" ? "جاري تشفير وحفظ لقطة الشاشة في R2 الخصوصي..." : "Encrypting and storing receipt screenshot in Private R2 Bucket...", { id: toastId });
@@ -269,11 +269,13 @@ function OnboardPage() {
     try {
       // Save metadata lead safely to tenant_requests with status 'pending'
       await createTenantRequest({
-        fullName: trialFullName,
-        contactNumber: trialContactNumber,
-        email: trialEmail,
-        desiredSubdomain: trialSubdomain,
-        requestType: "trial",
+        data: {
+          fullName: trialFullName,
+          contactNumber: trialContactNumber,
+          email: trialEmail,
+          desiredSubdomain: trialSubdomain,
+          requestType: "trial",
+        }
       });
 
       const waMessage = lang === "ar"
@@ -323,12 +325,14 @@ function OnboardPage() {
     try {
       // Save metadata lead safely to tenant_requests as 'pending'
       await createTenantRequest({
-        fullName: officialFullName,
-        contactNumber: officialContactNumber,
-        email: officialEmail,
-        desiredSubdomain: officialSubdomain,
-        requestType: "paid",
-        benefitReceiptUrl: receiptKey,
+        data: {
+          fullName: officialFullName,
+          contactNumber: officialContactNumber,
+          email: officialEmail,
+          desiredSubdomain: officialSubdomain,
+          requestType: "paid",
+          benefitReceiptUrl: receiptKey,
+        }
       });
 
       toast.success(
@@ -543,7 +547,7 @@ function OnboardPage() {
                     <User className="absolute left-3 top-2.5 h-4.5 w-4.5 text-zinc-400" />
                     <Input 
                       id="trial-name" 
-                      placeholder={lang === "ar" ? "جاسم المحمود" : "Jassim Al-Mahmood"} 
+                      placeholder={lang === "ar" ? "أدخل اسمك الكامل" : "Enter your full name"} 
                       required 
                       className="pl-10 text-sm"
                       value={trialFullName}
@@ -560,7 +564,7 @@ function OnboardPage() {
                     </Label>
                     <Input 
                       id="trial-phone" 
-                      placeholder="39955508" 
+                      placeholder={lang === "ar" ? "أدخل رقم الواتساب (مثال: 39955508)" : "Enter WhatsApp number (e.g. 39955508)"} 
                       required 
                       className="text-sm"
                       value={trialContactNumber}
@@ -576,7 +580,7 @@ function OnboardPage() {
                     <Input 
                       id="trial-email" 
                       type="email" 
-                      placeholder="jassim@boutique.com" 
+                      placeholder={lang === "ar" ? "أدخل البريد الإلكتروني (مثال: name@domain.com)" : "Enter email address (e.g. name@domain.com)"} 
                       required 
                       className="text-sm"
                       value={trialEmail}
@@ -594,7 +598,7 @@ function OnboardPage() {
                     <span className="absolute left-3 text-xs text-zinc-400 font-medium font-mono select-none">https://</span>
                     <Input 
                       id="trial-subdomain" 
-                      placeholder="velvet" 
+                      placeholder={lang === "ar" ? "أدخل اسم المتجر المطلوب (مثال: velvet)" : "Enter boutique name (e.g. velvet)"} 
                       required 
                       className="pl-16 pr-24 font-mono text-xs text-primary"
                       value={trialSubdomain}
@@ -688,7 +692,7 @@ function OnboardPage() {
                     <User className="absolute left-3 top-2.5 h-4.5 w-4.5 text-zinc-400" />
                     <Input 
                       id="paid-name" 
-                      placeholder={lang === "ar" ? "جاسم المحمود" : "Jassim Al-Mahmood"} 
+                      placeholder={lang === "ar" ? "أدخل اسمك الكامل" : "Enter your full name"} 
                       required 
                       className="pl-10 text-sm"
                       value={officialFullName}
@@ -705,7 +709,7 @@ function OnboardPage() {
                     </Label>
                     <Input 
                       id="paid-phone" 
-                      placeholder="39955508" 
+                      placeholder={lang === "ar" ? "أدخل رقم الواتساب (مثال: 39955508)" : "Enter WhatsApp number (e.g. 39955508)"} 
                       required 
                       className="text-sm"
                       value={officialContactNumber}
@@ -721,7 +725,7 @@ function OnboardPage() {
                     <Input 
                       id="paid-email" 
                       type="email" 
-                      placeholder="jassim@boutique.com" 
+                      placeholder={lang === "ar" ? "أدخل البريد الإلكتروني (مثال: name@domain.com)" : "Enter email address (e.g. name@domain.com)"} 
                       required 
                       className="text-sm"
                       value={officialEmail}
@@ -739,7 +743,7 @@ function OnboardPage() {
                     <span className="absolute left-3 text-xs text-zinc-400 font-medium font-mono select-none">https://</span>
                     <Input 
                       id="paid-subdomain" 
-                      placeholder="velvet" 
+                      placeholder={lang === "ar" ? "أدخل اسم المتجر المطلوب (مثال: velvet)" : "Enter boutique name (e.g. velvet)"} 
                       required 
                       className="pl-16 pr-24 font-mono text-xs text-primary"
                       value={officialSubdomain}
