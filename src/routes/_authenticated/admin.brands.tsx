@@ -34,7 +34,8 @@ import {
   XCircle, 
   TrendingUp,
   Loader2,
-  CalendarRange
+  CalendarRange,
+  Shield
 } from "lucide-react";
 import { toast } from "sonner";
 import { useI18n, useT } from "@/lib/i18n";
