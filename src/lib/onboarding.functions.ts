@@ -165,6 +165,8 @@ const UpdatePlatformSettingsInput = z.object({
   basePriceBhd: z.number(),
   discountPriceBhd: z.number().nullable(),
   platformIconUrl: z.string().nullable(),
+  benefitPayQrUrl: z.string().nullable(),
+  merchantAccountName: z.string().min(1),
   whatsappSupportNumber: z.string().min(5),
   superadminImpersonationMutationAllowed: z.boolean(),
 });
@@ -182,6 +184,8 @@ export const updatePlatformSettings = createServerFn({ method: "POST" })
         base_price_bhd: data.basePriceBhd,
         discount_price_bhd: data.discountPriceBhd,
         platform_icon_url: data.platformIconUrl,
+        benefit_pay_qr_url: data.benefitPayQrUrl,
+        merchant_account_name: data.merchantAccountName,
         whatsapp_support_number: data.whatsappSupportNumber,
         superadmin_impersonation_mutation_allowed: data.superadminImpersonationMutationAllowed,
         updated_at: new Date().toISOString()
@@ -206,6 +210,31 @@ export const getPlatformLogoUploadUrl = createServerFn({ method: "POST" })
 
     const extension = mimeToExtension[data.contentType.toLowerCase()] || "png";
     const key = `platform/logo-${crypto.randomUUID()}.${extension}`;
+
+    const { getSignedUrl } = await import("@aws-sdk/s3-request-presigner");
+    const { PutObjectCommand } = await import("@aws-sdk/client-s3");
+
+    const uploadUrl = await getSignedUrl(client, new PutObjectCommand({
+      Bucket: bucket,
+      Key: key,
+      ContentType: data.contentType,
+    }), { expiresIn: 3600 });
+
+    return { uploadUrl, publicUrl: `${publicBaseUrl}/${key}`, key };
+  });
+
+// 4.4. Get platform QR upload pre-signed URL (Superadmin only)
+export const getPlatformQrUploadUrl = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .validator((raw: unknown) => z.object({ contentType: z.string() }).parse(raw))
+  .handler(async ({ data, context }) => {
+    await requireSuperAdmin(context);
+
+    const { r2Client, mimeToExtension } = await import("@/lib/r2-upload.functions");
+    const { client, bucket, publicBaseUrl } = r2Client();
+
+    const extension = mimeToExtension[data.contentType.toLowerCase()] || "png";
+    const key = `platform/qr-${crypto.randomUUID()}.${extension}`;
 
     const { getSignedUrl } = await import("@aws-sdk/s3-request-presigner");
     const { PutObjectCommand } = await import("@aws-sdk/client-s3");

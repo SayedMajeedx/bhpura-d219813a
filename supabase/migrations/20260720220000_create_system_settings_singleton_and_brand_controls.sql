@@ -7,6 +7,8 @@ CREATE TABLE public.system_settings (
   base_price_bhd numeric(10, 2) NOT NULL DEFAULT 55.00,
   discount_price_bhd numeric(10, 2) DEFAULT NULL,
   platform_icon_url text DEFAULT NULL,
+  benefit_pay_qr_url text DEFAULT NULL,
+  merchant_account_name text NOT NULL DEFAULT 'BOUTQ-OFFICIAL',
   whatsapp_support_number text NOT NULL DEFAULT '97339955508',
   superadmin_impersonation_mutation_allowed boolean NOT NULL DEFAULT false,
   updated_at timestamptz NOT NULL DEFAULT now()
@@ -31,8 +33,8 @@ GRANT SELECT ON public.system_settings TO anon, authenticated;
 GRANT ALL ON public.system_settings TO service_role;
 
 -- Seed default singleton row
-INSERT INTO public.system_settings (id, base_price_bhd, discount_price_bhd, platform_icon_url, whatsapp_support_number, superadmin_impersonation_mutation_allowed)
-VALUES (1, 55.00, NULL, NULL, '97339955508', false)
+INSERT INTO public.system_settings (id, base_price_bhd, discount_price_bhd, platform_icon_url, benefit_pay_qr_url, merchant_account_name, whatsapp_support_number, superadmin_impersonation_mutation_allowed)
+VALUES (1, 55.00, NULL, NULL, NULL, 'BOUTQ-OFFICIAL', '97339955508', false)
 ON CONFLICT (id) DO NOTHING;
 
 -- Recreate dynamic pricing function helper for backwards compatibility

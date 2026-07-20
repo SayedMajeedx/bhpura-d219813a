@@ -40,6 +40,8 @@ function OnboardPage() {
   const [basePrice, setBasePrice] = useState(55);
   const [discountPrice, setDiscountPrice] = useState<number | null>(null);
   const [platformIconUrl, setPlatformIconUrl] = useState<string | null>(null);
+  const [benefitPayQrUrl, setBenefitPayQrUrl] = useState<string | null>(null);
+  const [merchantAccountName, setMerchantAccountName] = useState("BOUTQ-OFFICIAL");
   const [whatsappNumber, setWhatsappNumber] = useState("97339955508");
 
   // Load Dynamic Settings on mount
@@ -48,7 +50,7 @@ function OnboardPage() {
       try {
         const { data, error } = await supabase
           .from("system_settings")
-          .select("base_price_bhd, discount_price_bhd, platform_icon_url, whatsapp_support_number")
+          .select("base_price_bhd, discount_price_bhd, platform_icon_url, whatsapp_support_number, benefit_pay_qr_url, merchant_account_name")
           .eq("id", 1)
           .maybeSingle();
 
@@ -56,6 +58,8 @@ function OnboardPage() {
           if (data.base_price_bhd) setBasePrice(Number(data.base_price_bhd));
           setDiscountPrice(data.discount_price_bhd ? Number(data.discount_price_bhd) : null);
           setPlatformIconUrl(data.platform_icon_url || null);
+          setBenefitPayQrUrl(data.benefit_pay_qr_url || null);
+          if (data.merchant_account_name) setMerchantAccountName(data.merchant_account_name);
           if (data.whatsapp_support_number) setWhatsappNumber(data.whatsapp_support_number);
         } else {
           // Fallback to getOnboardingPrice server function if direct query fails
@@ -74,69 +78,72 @@ function OnboardPage() {
 
   const displayPrice = discountPrice !== null ? `${discountPrice} BHD` : `${basePrice} BHD`;
 
-  // Form Fields - Shareable for both Trials or Official Packages
-  const [fullName, setFullName] = useState("");
-  const [contactNumber, setContactNumber] = useState("");
-  const [email, setEmail] = useState("");
-  const [subdomain, setSubdomain] = useState("");
+  // Form Fields - Isolated for Trial or Official Packages
+  const [trialFullName, setTrialFullName] = useState("");
+  const [trialContactNumber, setTrialContactNumber] = useState("");
+  const [trialEmail, setTrialEmail] = useState("");
+  const [trialSubdomain, setTrialSubdomain] = useState("");
+  const [trialSubdomainChecking, setTrialSubdomainChecking] = useState(false);
+  const [trialSubdomainAvailable, setTrialSubdomainAvailable] = useState<boolean | null>(null);
+
+  const [officialFullName, setOfficialFullName] = useState("");
+  const [officialContactNumber, setOfficialContactNumber] = useState("");
+  const [officialEmail, setOfficialEmail] = useState("");
+  const [officialSubdomain, setOfficialSubdomain] = useState("");
+  const [officialSubdomainChecking, setOfficialSubdomainChecking] = useState(false);
+  const [officialSubdomainAvailable, setOfficialSubdomainAvailable] = useState<boolean | null>(null);
   
   // File Uploader state for Card B (Official Paid Activation)
   const [uploading, setUploading] = useState(false);
   const [receiptKey, setReceiptKey] = useState<string | null>(null);
-
-  // Subdomain uniqueness states
-  const [subdomainChecking, setSubdomainChecking] = useState(false);
-  const [subdomainAvailable, setSubdomainAvailable] = useState<boolean | null>(null);
 
   // Success Confirmation overlay trigger
   const [isDeployedPending, setIsDeployedPending] = useState(false);
   const [submittedSubdomain, setSubmittedSubdomain] = useState("");
   const [isTrialSuccess, setIsTrialSuccess] = useState(false);
 
-  // Clean and check subdomain uniqueness across existing brands AND tenant requests
+  // Clean and check Trial subdomain uniqueness
   useEffect(() => {
-    if (!subdomain) {
-      setSubdomainAvailable(null);
+    if (!trialSubdomain) {
+      setTrialSubdomainAvailable(null);
       return;
     }
 
-    const cleanedSubdomain = subdomain
+    const cleaned = trialSubdomain
       .toLowerCase()
       .replace(/[^a-z0-9-]/g, "-")
       .replace(/-+/g, "-")
       .replace(/^-|-$/g, "");
 
-    if (cleanedSubdomain !== subdomain) {
-      setSubdomain(cleanedSubdomain);
+    if (cleaned !== trialSubdomain) {
+      setTrialSubdomain(cleaned);
     }
 
     const checkUniqueness = async () => {
-      setSubdomainChecking(true);
+      setTrialSubdomainChecking(true);
       try {
-        // Check active brand slugs
         const { data: brandData, error: brandError } = await supabase
           .from("brands")
           .select("id")
-          .eq("slug", cleanedSubdomain)
+          .eq("slug", cleaned)
           .maybeSingle();
 
         if (brandError) throw brandError;
 
-        // Check pending requests queue
         const { data: pendingData, error: pendingError } = await supabase
           .from("tenant_requests")
           .select("id")
-          .eq("desired_subdomain", cleanedSubdomain)
+          .eq("desired_subdomain", cleaned)
           .eq("status", "pending")
           .maybeSingle();
 
         if (pendingError) throw pendingError;
 
-        setSubdomainAvailable(!brandData && !pendingData);
+        setTrialSubdomainAvailable(!brandData && !pendingData);
       } catch {
-        setSubdomainAvailable(false);
+        setTrialSubdomainAvailable(false);
       } finally {
-        setSubdomainChecking(false);
+        setTrialSubdomainChecking(false);
       }
     };
 
@@ -145,7 +152,59 @@ function OnboardPage() {
     }, 400);
 
     return () => clearTimeout(delayDebounce);
-  }, [subdomain]);
+  }, [trialSubdomain]);
+
+  // Clean and check Official subdomain uniqueness
+  useEffect(() => {
+    if (!officialSubdomain) {
+      setOfficialSubdomainAvailable(null);
+      return;
+    }
+
+    const cleaned = officialSubdomain
+      .toLowerCase()
+      .replace(/[^a-z0-9-]/g, "-")
+      .replace(/-+/g, "-")
+      .replace(/^-|-$/g, "");
+
+    if (cleaned !== officialSubdomain) {
+      setOfficialSubdomain(cleaned);
+    }
+
+    const checkUniqueness = async () => {
+      setOfficialSubdomainChecking(true);
+      try {
+        const { data: brandData, error: brandError } = await supabase
+          .from("brands")
+          .select("id")
+          .eq("slug", cleaned)
+          .maybeSingle();
+
+        if (brandError) throw brandError;
+
+        const { data: pendingData, error: pendingError } = await supabase
+          .from("tenant_requests")
+          .select("id")
+          .eq("desired_subdomain", cleaned)
+          .eq("status", "pending")
+          .maybeSingle();
+
+        if (pendingError) throw pendingError;
+
+        setOfficialSubdomainAvailable(!brandData && !pendingData);
+      } catch {
+        setOfficialSubdomainAvailable(false);
+      } finally {
+        setOfficialSubdomainChecking(false);
+      }
+    };
+
+    const delayDebounce = setTimeout(() => {
+      void checkUniqueness();
+    }, 400);
+
+    return () => clearTimeout(delayDebounce);
+  }, [officialSubdomain]);
 
   // Upload receipt to Private R2 Bucket
   const handleUploadReceipt = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -195,12 +254,12 @@ function OnboardPage() {
   // Submission Flow - CARD A: 3-Day Free Trial
   const handleRegisterTrial = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!fullName || !contactNumber || !email || !subdomain) {
+    if (!trialFullName || !trialContactNumber || !trialEmail || !trialSubdomain) {
       toast.error(lang === "ar" ? "يرجى ملء جميع الحقول المطلوبة." : "Please fill out all required fields.");
       return;
     }
 
-    if (subdomainAvailable === false) {
+    if (trialSubdomainAvailable === false) {
       toast.error(lang === "ar" ? "رابط المتجر هذا محجوز مسبقاً." : "This store subdomain is already taken.");
       return;
     }
@@ -210,23 +269,23 @@ function OnboardPage() {
     try {
       // Save metadata lead safely to tenant_requests with status 'pending'
       await createTenantRequest({
-        fullName,
-        contactNumber,
-        email,
-        desiredSubdomain: subdomain,
+        fullName: trialFullName,
+        contactNumber: trialContactNumber,
+        email: trialEmail,
+        desiredSubdomain: trialSubdomain,
         requestType: "trial",
       });
 
       const waMessage = lang === "ar"
-        ? `مرحباً دعم بوتيك (Boutq)! لقد أرسلت للتو طلب تفعيل باقة الـ 3 أيام المجانية لمتجري باسم: "${fullName}" والرابط المطلوب: "${subdomain}.boutq.store". البريد الإلكتروني: ${email}.`
-        : `Hello Boutq Support! I just submitted a request for a 3-Day Free Trial workspace. Owner: "${fullName}", Desired subdomain: "${subdomain}.boutq.store", Contact: ${contactNumber}, Email: ${email}.`;
+        ? `مرحباً دعم بوتيك (Boutq)! لقد أرسلت للتو طلب تفعيل باقة الـ 3 أيام المجانية لمتجري باسم: "${trialFullName}" والرابط المطلوب: "${trialSubdomain}.boutq.store". البريد الإلكتروني: ${trialEmail}.`
+        : `Hello Boutq Support! I just submitted a request for a 3-Day Free Trial workspace. Owner: "${trialFullName}", Desired subdomain: "${trialSubdomain}.boutq.store", Contact: ${trialContactNumber}, Email: ${trialEmail}.`;
 
       const encodedMessage = encodeURIComponent(waMessage);
       const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodedMessage}`;
 
       toast.success(lang === "ar" ? "تم تسجيل طلبك! بانتظار التفعيل اليدوي..." : "Request Received - Waiting for Manual Activation", { id: toastId });
       
-      setSubmittedSubdomain(subdomain);
+      setSubmittedSubdomain(trialSubdomain);
       setIsTrialSuccess(true);
       setIsDeployedPending(true);
 
@@ -244,12 +303,12 @@ function OnboardPage() {
   // Submission Flow - CARD B: Paid Official Store Activation
   const handleRegisterPaid = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!fullName || !contactNumber || !email || !subdomain) {
+    if (!officialFullName || !officialContactNumber || !officialEmail || !officialSubdomain) {
       toast.error(lang === "ar" ? "يرجى ملء جميع الحقول المطلوبة." : "Please fill out all required fields.");
       return;
     }
 
-    if (subdomainAvailable === false) {
+    if (officialSubdomainAvailable === false) {
       toast.error(lang === "ar" ? "رابط المتجر هذا محجوز مسبقاً." : "This store subdomain is already taken.");
       return;
     }
@@ -264,10 +323,10 @@ function OnboardPage() {
     try {
       // Save metadata lead safely to tenant_requests as 'pending'
       await createTenantRequest({
-        fullName,
-        contactNumber,
-        email,
-        desiredSubdomain: subdomain,
+        fullName: officialFullName,
+        contactNumber: officialContactNumber,
+        email: officialEmail,
+        desiredSubdomain: officialSubdomain,
         requestType: "paid",
         benefitReceiptUrl: receiptKey,
       });
@@ -279,7 +338,7 @@ function OnboardPage() {
         { id: toastId, duration: 6000 }
       );
 
-      setSubmittedSubdomain(subdomain);
+      setSubmittedSubdomain(officialSubdomain);
       setIsTrialSuccess(false);
       setIsDeployedPending(true);
 
@@ -345,10 +404,14 @@ function OnboardPage() {
               className="border-zinc-800 hover:bg-zinc-800 text-white"
               onClick={() => {
                 setIsDeployedPending(false);
-                setFullName("");
-                setContactNumber("");
-                setEmail("");
-                setSubdomain("");
+                setTrialFullName("");
+                setTrialContactNumber("");
+                setTrialEmail("");
+                setTrialSubdomain("");
+                setOfficialFullName("");
+                setOfficialContactNumber("");
+                setOfficialEmail("");
+                setOfficialSubdomain("");
                 setReceiptKey(null);
               }}
             >
@@ -483,8 +546,9 @@ function OnboardPage() {
                       placeholder={lang === "ar" ? "جاسم المحمود" : "Jassim Al-Mahmood"} 
                       required 
                       className="pl-10 text-sm"
-                      value={fullName}
-                      onChange={(e) => setFullName(e.target.value)}
+                      value={trialFullName}
+                      onChange={(e) => setTrialFullName(e.target.value)}
+                      autoComplete="off"
                     />
                   </div>
                 </div>
@@ -499,8 +563,9 @@ function OnboardPage() {
                       placeholder="39955508" 
                       required 
                       className="text-sm"
-                      value={contactNumber}
-                      onChange={(e) => setContactNumber(e.target.value)}
+                      value={trialContactNumber}
+                      onChange={(e) => setTrialContactNumber(e.target.value)}
+                      autoComplete="off"
                     />
                   </div>
 
@@ -514,8 +579,9 @@ function OnboardPage() {
                       placeholder="jassim@boutique.com" 
                       required 
                       className="text-sm"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
+                      value={trialEmail}
+                      onChange={(e) => setTrialEmail(e.target.value)}
+                      autoComplete="off"
                     />
                   </div>
                 </div>
@@ -531,20 +597,21 @@ function OnboardPage() {
                       placeholder="velvet" 
                       required 
                       className="pl-16 pr-24 font-mono text-xs text-primary"
-                      value={subdomain}
-                      onChange={(e) => setSubdomain(e.target.value)}
+                      value={trialSubdomain}
+                      onChange={(e) => setTrialSubdomain(e.target.value)}
+                      autoComplete="off"
                     />
                     <span className="absolute right-3 text-[10px] text-zinc-400 font-mono font-bold select-none">.boutq.store</span>
                   </div>
                   
-                  {subdomain && (
+                  {trialSubdomain && (
                     <p className="text-[10px] flex items-center gap-1 mt-1">
-                      {subdomainChecking ? (
+                      {trialSubdomainChecking ? (
                         <>
                           <Loader2 className="h-3 w-3 animate-spin text-zinc-400" />
                           <span className="text-muted-foreground">{lang === "ar" ? "جاري التحقق من التوافر..." : "Checking availability..."}</span>
                         </>
-                      ) : subdomainAvailable === true ? (
+                      ) : trialSubdomainAvailable === true ? (
                         <>
                           <Check className="h-3 w-3 text-emerald-500" />
                           <span className="text-emerald-500 font-semibold">{lang === "ar" ? "الرابط متوفر وصالح للاستخدام!" : "Subdomain handle is available!"}</span>
@@ -562,7 +629,7 @@ function OnboardPage() {
                 <Button 
                   type="submit" 
                   className="w-full h-11 text-xs font-semibold uppercase tracking-wider gap-2 bg-[#B76E79] hover:bg-[#a35e69] text-white mt-4"
-                  disabled={subdomainChecking || subdomainAvailable === false}
+                  disabled={trialSubdomainChecking || trialSubdomainAvailable === false}
                 >
                   {lang === "ar" ? "إرسال طلب تجربة الـ 3 أيام" : "Submit Request & Start 3-Day Trial"}
                   <ChevronRight className="h-4 w-4" />
@@ -624,8 +691,9 @@ function OnboardPage() {
                       placeholder={lang === "ar" ? "جاسم المحمود" : "Jassim Al-Mahmood"} 
                       required 
                       className="pl-10 text-sm"
-                      value={fullName}
-                      onChange={(e) => setFullName(e.target.value)}
+                      value={officialFullName}
+                      onChange={(e) => setOfficialFullName(e.target.value)}
+                      autoComplete="off"
                     />
                   </div>
                 </div>
@@ -640,8 +708,9 @@ function OnboardPage() {
                       placeholder="39955508" 
                       required 
                       className="text-sm"
-                      value={contactNumber}
-                      onChange={(e) => setContactNumber(e.target.value)}
+                      value={officialContactNumber}
+                      onChange={(e) => setOfficialContactNumber(e.target.value)}
+                      autoComplete="off"
                     />
                   </div>
 
@@ -655,8 +724,9 @@ function OnboardPage() {
                       placeholder="jassim@boutique.com" 
                       required 
                       className="text-sm"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
+                      value={officialEmail}
+                      onChange={(e) => setOfficialEmail(e.target.value)}
+                      autoComplete="off"
                     />
                   </div>
                 </div>
@@ -672,20 +742,21 @@ function OnboardPage() {
                       placeholder="velvet" 
                       required 
                       className="pl-16 pr-24 font-mono text-xs text-primary"
-                      value={subdomain}
-                      onChange={(e) => setSubdomain(e.target.value)}
+                      value={officialSubdomain}
+                      onChange={(e) => setOfficialSubdomain(e.target.value)}
+                      autoComplete="off"
                     />
                     <span className="absolute right-3 text-[10px] text-zinc-400 font-mono font-bold select-none">.boutq.store</span>
                   </div>
                   
-                  {subdomain && (
+                  {officialSubdomain && (
                     <p className="text-[10px] flex items-center gap-1 mt-1">
-                      {subdomainChecking ? (
+                      {officialSubdomainChecking ? (
                         <>
                           <Loader2 className="h-3 w-3 animate-spin text-zinc-400" />
                           <span className="text-muted-foreground">{lang === "ar" ? "جاري التحقق..." : "Checking availability..."}</span>
                         </>
-                      ) : subdomainAvailable === true ? (
+                      ) : officialSubdomainAvailable === true ? (
                         <>
                           <Check className="h-3 w-3 text-emerald-500" />
                           <span className="text-emerald-500 font-semibold">{lang === "ar" ? "الرابط متوفر وصالح للاستخدام!" : "Subdomain handle is available!"}</span>
@@ -708,14 +779,20 @@ function OnboardPage() {
                   </div>
 
                   <div className="flex flex-col sm:flex-row items-center gap-4 bg-white dark:bg-zinc-950 p-3 rounded border border-zinc-100 dark:border-zinc-900">
-                    {/* Simulated Merchant QR Image */}
-                    <div className="h-24 w-24 bg-zinc-50 rounded p-1.5 border border-zinc-100 flex flex-col items-center justify-center shrink-0">
-                      <QrCode className="h-16 w-16 stroke-[1.25] text-zinc-900" />
-                      <span className="text-[6px] font-bold text-zinc-400 font-mono tracking-wider">BOUTQ-MERCHANT</span>
+                    {/* Simulated or Custom Merchant QR Image */}
+                    <div className="h-24 w-24 bg-zinc-50 dark:bg-zinc-900 rounded p-1.5 border border-zinc-100 dark:border-zinc-800 flex flex-col items-center justify-center shrink-0 overflow-hidden">
+                      {benefitPayQrUrl ? (
+                        <img src={benefitPayQrUrl} alt="BenefitPay QR" className="h-full w-full object-contain animate-fade-in" />
+                      ) : (
+                        <>
+                          <QrCode className="h-16 w-16 stroke-[1.25] text-zinc-900 dark:text-zinc-100" />
+                          <span className="text-[6px] font-bold text-zinc-400 dark:text-zinc-500 font-mono tracking-wider">BOUTQ-MERCHANT</span>
+                        </>
+                      )}
                     </div>
 
                     <div className="text-left space-y-1.5">
-                      <p className="text-xs font-bold text-zinc-800 dark:text-zinc-200">Merchant Account: BOUTQ-OFFICIAL</p>
+                      <p className="text-xs font-bold text-zinc-800 dark:text-zinc-200">Merchant Account: {merchantAccountName}</p>
                       <p className="text-[10px] text-muted-foreground leading-relaxed">
                         {lang === "ar" 
                           ? `امسح رمز الاستجابة السريع سدد المبلغ الموضح (${displayPrice})، ثم ارفع لقطة شاشة تأكيد الدفع لتأكيد المعاملة.` 
@@ -773,7 +850,7 @@ function OnboardPage() {
                 <Button 
                   type="submit" 
                   className="w-full h-11 text-xs font-semibold uppercase tracking-wider gap-2 bg-primary text-white mt-4"
-                  disabled={subdomainChecking || subdomainAvailable === false || uploading || !receiptKey}
+                  disabled={officialSubdomainChecking || officialSubdomainAvailable === false || uploading || !receiptKey}
                 >
                   <Building2 className="h-4 w-4" />
                   {lang === "ar" ? "إرسال طلب التفعيل الرسمي" : "Submit Registration & Pay"}
