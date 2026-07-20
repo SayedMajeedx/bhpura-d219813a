@@ -4,6 +4,11 @@ async function getPlatformEnv(name: string): Promise<string | undefined> {
   const viteName = name.startsWith("VITE_") ? name : `VITE_${name}`;
   const unprefixed = name.startsWith("VITE_") ? name.slice(5) : name;
 
+  const searchNames = [name, viteName, unprefixed];
+  if (name === "R2_SECRET_ACCESS_KEY") {
+    searchNames.push("SECRET_ACCESS_KEY");
+  }
+
   // 1. Try Cloudflare request context dynamically (foiling Vite static analyzer)
   try {
     const vinxiHttp = "vinxi/http";
@@ -14,9 +19,9 @@ async function getPlatformEnv(name: string): Promise<string | undefined> {
                 event?.context?.cloudflare || 
                 event?.context?.cloudflare?.env;
     if (env) {
-      if (env[name]) return env[name];
-      if (env[viteName]) return env[viteName];
-      if (env[unprefixed]) return env[unprefixed];
+      for (const key of searchNames) {
+        if (env[key]) return env[key];
+      }
     }
   } catch {}
 
@@ -25,9 +30,9 @@ async function getPlatformEnv(name: string): Promise<string | undefined> {
     const g = globalThis as any;
     const liveEnv = g["__CLOUDFLARE_ENV__"] || g["process"]?.["env"] || process.env;
     if (liveEnv) {
-      if (liveEnv[name]) return liveEnv[name];
-      if (liveEnv[viteName]) return liveEnv[viteName];
-      if (liveEnv[unprefixed]) return liveEnv[unprefixed];
+      for (const key of searchNames) {
+        if (liveEnv[key]) return liveEnv[key];
+      }
     }
   } catch {}
 
