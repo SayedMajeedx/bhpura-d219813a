@@ -61,13 +61,17 @@ export const Route = createFileRoute("/brands/$brandId/$kind/$filename")({
         const key = `brands/${brandId}/${kind}/${filename}`;
 
         let event: any = null;
+        let importError: any = null;
         try {
-          const { getEvent } = await import("vinxi/http");
+          const { getEvent } = await import(/* @vite-ignore */ "vinxi/http");
           event = getEvent();
-        } catch {}
+        } catch (err: any) {
+          importError = { message: err.message, stack: err.stack };
+        }
 
         const debugInfo: any = {
           hasEvent: !!event,
+          importError: importError,
           globalThisKeys: Object.keys(globalThis).filter(k => k.toLowerCase().includes("env") || k.toLowerCase().includes("cloudflare")),
           cloudflareEnvKeys: (globalThis as any).__CLOUDFLARE_ENV__ ? Object.keys((globalThis as any).__CLOUDFLARE_ENV__) : null,
           nitroViteEnvsKeys: (globalThis as any).__nitro_vite_envs__ ? Object.keys((globalThis as any).__nitro_vite_envs__) : null,
