@@ -32,7 +32,7 @@ const UpdatePriceInput = z.object({
 // Helper to assert superadmin authorization
 async function requireSuperAdmin(context: any) {
   const { data: isSuperAdmin } = await context.supabase.rpc("is_admin");
-  const email = (context.user?.email || "").toLowerCase();
+  const email = (context.claims?.email || "").toLowerCase();
   const isFixedSuperAdmin = email === "majeed@hotmail.it" || email === "majeed@hotmail.com";
   
   if (!isSuperAdmin && !isFixedSuperAdmin) {
@@ -77,8 +77,9 @@ export const getOnboardingReceiptUploadUrl = createServerFn({ method: "POST" })
 // 2. Save onboarding payload safely to Supabase database status queue 'tenant_requests' as 'pending'
 export const createTenantRequest = createServerFn({ method: "POST" })
   .validator((raw: unknown) => CreateRequestInput.parse(raw))
-  .handler(async ({ data, context }) => {
-    const { error } = await context.supabase
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin
       .from("tenant_requests")
       .insert({
         full_name: data.fullName,
@@ -101,11 +102,12 @@ export const createTenantRequest = createServerFn({ method: "POST" })
 
 // 3. Dynamic pricing retrieval server function (reading from system_settings)
 export const getOnboardingPrice = createServerFn({ method: "GET" })
-  .handler(async ({ context }) => {
-    const { data, error } = await context.supabase.rpc("get_onboarding_active_price");
+  .handler(async () => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data, error } = await supabaseAdmin.rpc("get_onboarding_active_price");
     if (error) {
       console.warn("RPC get_onboarding_active_price failed, falling back to database query.", error);
-      const { data: row } = await context.supabase
+      const { data: row } = await supabaseAdmin
         .from("system_settings")
         .select("value")
         .eq("key", "onboarding_registration_price")
@@ -198,7 +200,7 @@ export const logImpersonationStart = createServerFn({ method: "POST" })
     const { error } = await context.supabase
       .from("system_audit_logs")
       .insert({
-        operator_id: context.user.id,
+        operator_id: context.userId,
         target_tenant_id: data.targetTenantId,
         action_type: "impersonation_start",
         reason: data.reason || "Superadmin troubleshooting session initialized."
