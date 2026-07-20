@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import { useI18n } from "@/lib/i18n";
 import { 
@@ -19,79 +19,108 @@ import {
   Store, 
   Sparkles, 
   CheckCircle2, 
-  Loader2 
+  Loader2,
+  UploadCloud,
+  ShieldCheck,
+  QrCode,
+  PhoneCall,
+  ChevronRight,
+  Info
 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { 
+  getOnboardingReceiptUploadUrl, 
+  createPendingRegistration, 
+  getOnboardingPrice 
+} from "@/lib/onboarding.functions";
 
 export const Route = createFileRoute("/onboard")({
   ssr: false,
   component: OnboardPage,
 });
 
-const BRAND_COLORS = [
-  { name: "Royal Maroon", value: "#800020" },
-  { name: "Emerald Green", value: "#004B49" },
-  { name: "Classic Navy", value: "#1B2A47" },
-  { name: "Deep Charcoal", value: "#262626" },
-  { name: "Rose Gold", value: "#B76E79" },
-  { name: "Midnight Violet", value: "#2E1A47" },
-];
-
 function OnboardPage() {
-  const { t, lang, setLang } = useI18n();
-  const navigate = useNavigate();
+  const { lang, setLang } = useI18n();
+  const [loadingPrice, setLoadingPrice] = useState(true);
+  const [registrationPrice, setRegistrationPrice] = useState("55 BHD");
 
-  // Wizard Steps: 1 = Account, 2 = Boutique Brand Details
-  const [step, setStep] = useState(1);
-  const [loading, setLoading] = useState(false);
-
-  // Form State - Account
-  const [fullName, setFullName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-
-  // Form State - Brand
-  const [storeNameEn, setStoreNameEn] = useState("");
-  const [storeNameAr, setStoreNameAr] = useState("");
-  const [storeSlug, setStoreSlug] = useState("");
-  const [primaryColor, setPrimaryColor] = useState("#800020");
-
-  // Slug validation states
-  const [slugChecking, setSlugChecking] = useState(false);
-  const [slugAvailable, setSlugAvailable] = useState<boolean | null>(null);
-
-  // Clean and check slug uniqueness
+  // Load Dynamic Price on mount
   useEffect(() => {
-    if (!storeSlug) {
-      setSlugAvailable(null);
+    async function loadDynamicPrice() {
+      try {
+        const price = await getOnboardingPrice();
+        setRegistrationPrice(price);
+      } catch (err) {
+        console.warn("Error loading registration price, falling back.", err);
+      } finally {
+        setLoadingPrice(false);
+      }
+    }
+    void loadDynamicPrice();
+  }, []);
+
+  // Form Fields - Shareable for both Trials or Official Packages
+  const [fullName, setFullName] = useState("");
+  const [contactNumber, setContactNumber] = useState("");
+  const [email, setEmail] = useState("");
+  const [subdomain, setSubdomain] = useState("");
+  
+  // File Uploader state for Card B (Official Paid Activation)
+  const [uploading, setUploading] = useState(false);
+  const [receiptKey, setReceiptKey] = useState<string | null>(null);
+
+  // Subdomain uniqueness states
+  const [subdomainChecking, setSubdomainChecking] = useState(false);
+  const [subdomainAvailable, setSubdomainAvailable] = useState<boolean | null>(null);
+
+  // Success Confirmation overlay trigger
+  const [isDeployedPending, setIsDeployedPending] = useState(false);
+  const [submittedSubdomain, setSubmittedSubdomain] = useState("");
+  const [isTrialSuccess, setIsTrialSuccess] = useState(false);
+
+  // Clean and check subdomain uniqueness across existing brands AND pending registrations
+  useEffect(() => {
+    if (!subdomain) {
+      setSubdomainAvailable(null);
       return;
     }
 
-    const cleanedSlug = storeSlug
+    const cleanedSubdomain = subdomain
       .toLowerCase()
       .replace(/[^a-z0-9-]/g, "-")
       .replace(/-+/g, "-")
       .replace(/^-|-$/g, "");
 
-    if (cleanedSlug !== storeSlug) {
-      setStoreSlug(cleanedSlug);
+    if (cleanedSubdomain !== subdomain) {
+      setSubdomain(cleanedSubdomain);
     }
 
     const checkUniqueness = async () => {
-      setSlugChecking(true);
+      setSubdomainChecking(true);
       try {
-        const { data, error } = await supabase
+        // Check active brand slugs
+        const { data: brandData, error: brandError } = await supabase
           .from("brands")
           .select("id")
-          .eq("slug", cleanedSlug)
+          .eq("slug", cleanedSubdomain)
           .maybeSingle();
 
-        if (error) throw error;
-        setSlugAvailable(!data);
+        if (brandError) throw brandError;
+
+        // Check pending registrations queue
+        const { data: pendingData, error: pendingError } = await supabase
+          .from("pending_registrations" as any)
+          .select("id")
+          .eq("subdomain", cleanedSubdomain)
+          .maybeSingle();
+
+        if (pendingError) throw pendingError;
+
+        setSubdomainAvailable(!brandData && !pendingData);
       } catch {
-        setSlugAvailable(false);
+        setSubdomainAvailable(false);
       } finally {
-        setSlugChecking(false);
+        setSubdomainChecking(false);
       }
     };
 
@@ -100,375 +129,627 @@ function OnboardPage() {
     }, 400);
 
     return () => clearTimeout(delayDebounce);
-  }, [storeSlug]);
+  }, [subdomain]);
 
-  // Autofill slug from English store name
-  useEffect(() => {
-    if (step === 1 || storeSlug) return;
-    const cleanName = storeNameEn
-      .toLowerCase()
-      .replace(/[^a-z0-9\s-]/g, "")
-      .replace(/\s+/g, "-");
-    setStoreSlug(cleanName);
-  }, [storeNameEn, step]);
+  // Upload receipt to Private R2 Bucket
+  const handleUploadReceipt = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
 
-  const handleNextStep = (e: React.FormEvent) => {
+    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
+      toast.error(lang === "ar" ? "يرجى تحميل صورة صالحة (JPEG, PNG, WEBP)." : "Please upload a valid image file (JPEG, PNG, WEBP).");
+      return;
+    }
+
+    if (file.size > 8 * 1024 * 1024) {
+      toast.error(lang === "ar" ? "الحد الأقصى لحجم الملف هو 8 ميجابايت." : "Maximum file size is 8MB.");
+      return;
+    }
+
+    setUploading(true);
+    const toastId = toast.loading(lang === "ar" ? "جاري تفعيل قناة التحميل المشفرة..." : "Preparing secure R2 upload tunnel...");
+
+    try {
+      // 1. Get secure private pre-signed R2 URL
+      const { objectKey, uploadUrl } = await getOnboardingReceiptUploadUrl({
+        contentType: file.type as any
+      });
+
+      // 2. Upload file directly to Private Bucket
+      toast.loading(lang === "ar" ? "جاري تشفير وحفظ لقطة الشاشة في R2 الخصوصي..." : "Encrypting and storing receipt screenshot in Private R2 Bucket...", { id: toastId });
+      const response = await fetch(uploadUrl, {
+        method: "PUT",
+        headers: { "Content-Type": file.type },
+        body: file,
+      });
+
+      if (!response.ok) {
+        throw new Error("S3 direct PUT upload failed.");
+      }
+
+      setReceiptKey(objectKey);
+      toast.success(lang === "ar" ? "تم رفع إيصال الدفع وتشفيره بنجاح!" : "Payment receipt uploaded and encrypted securely!", { id: toastId });
+
+    } catch (err: any) {
+      console.error(err);
+      toast.error(lang === "ar" ? "فشل تحميل إيصال الدفع. يرجى المحاولة لاحقاً." : "Failed to upload payment receipt. Please retry.", { id: toastId });
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  // Submission Flow - CARD A: 3-Day Free Trial
+  const handleRegisterTrial = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!fullName || !email || !password) {
+    if (!fullName || !contactNumber || !email || !subdomain) {
       toast.error(lang === "ar" ? "يرجى ملء جميع الحقول المطلوبة." : "Please fill out all required fields.");
       return;
     }
-    if (password.length < 8) {
-      toast.error(lang === "ar" ? "يجب أن تكون كلمة المرور 8 رموز على الأقل." : "Password must be at least 8 characters.");
-      return;
-    }
-    setStep(2);
-  };
 
-  const handleOnboard = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!storeNameEn || !storeSlug) {
-      toast.error(lang === "ar" ? "يرجى ملء اسم المتجر والاسم التعريفي." : "Please fill in the store name and web address handle.");
+    if (subdomainAvailable === false) {
+      toast.error(lang === "ar" ? "رابط المتجر هذا محجوز مسبقاً." : "This store subdomain is already taken.");
       return;
     }
 
-    if (slugAvailable === false) {
-      toast.error(lang === "ar" ? "رابط المتجر هذا محجوز مسبقاً." : "This store handle is already taken.");
-      return;
-    }
-
-    setLoading(true);
+    const toastId = toast.loading(lang === "ar" ? "جاري تسجيل اهتمامك بالباقة التجريبية..." : "Registering your trial interest...");
 
     try {
-      // Step 1: Register Account in Supabase Auth
-      const { data: authData, error: authError } = await supabase.auth.signUp({
+      // Save metadata lead safely to database status queue
+      await createPendingRegistration({
+        fullName,
+        contactNumber,
         email,
-        password,
-        options: {
-          data: {
-            name: fullName,
-          },
-        },
+        subdomain,
+        planType: "trial",
       });
 
-      if (authError) throw authError;
-      if (!authData.user) throw new Error("Authentication failed.");
+      // Localize message and trigger redirect to WhatsApp
+      const waMessage = lang === "ar"
+        ? `مرحباً دعم بوتيك (Boutq)! أنا مهتم بتجربة باقة الـ 3 أيام المجانية لمتجري باسم: "${fullName}" والرابط المطلوب: "${subdomain}.boutq.store". البريد الإلكتروني: ${email}.`
+        : `Hello Boutq Support! I am interested in registering for a 3-Day Free Trial workspace. Owner: "${fullName}", Desired subdomain: "${subdomain}.boutq.store", Contact: ${contactNumber}, Email: ${email}.`;
 
-      // Step 2: Provision Brand & Settings in one atomic SQL operation
-      const { data: brandId, error: rpcError } = await supabase.rpc("create_tenant_with_defaults" as any, {
-        p_slug: storeSlug,
-        p_name_en: storeNameEn,
-        p_name_ar: storeNameAr || null,
-        p_primary_color: primaryColor,
-        p_owner_id: authData.user.id,
-        p_owner_email: email,
-        p_owner_name: fullName
+      const encodedMessage = encodeURIComponent(waMessage);
+      const whatsappUrl = `https://wa.me/97339955508?text=${encodedMessage}`;
+
+      toast.success(lang === "ar" ? "تم تسجيل طلبك بنجاح! جاري تحويلك لواتساب..." : "Trial registered successfully! Redirecting to WhatsApp concierge...", { id: toastId });
+      
+      setSubmittedSubdomain(subdomain);
+      setIsTrialSuccess(true);
+      setIsDeployedPending(true);
+
+      // Open WhatsApp in a new window/tab safely
+      setTimeout(() => {
+        window.open(whatsappUrl, "_blank");
+      }, 1000);
+
+    } catch (err: any) {
+      console.error(err);
+      toast.error(err.message || "An unexpected error occurred during submission.", { id: toastId });
+    }
+  };
+
+  // Submission Flow - CARD B: Paid Official Store Deployment
+  const handleRegisterPaid = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!fullName || !contactNumber || !email || !subdomain) {
+      toast.error(lang === "ar" ? "يرجى ملء جميع الحقول المطلوبة." : "Please fill out all required fields.");
+      return;
+    }
+
+    if (subdomainAvailable === false) {
+      toast.error(lang === "ar" ? "رابط المتجر هذا محجوز مسبقاً." : "This store subdomain is already taken.");
+      return;
+    }
+
+    if (!receiptKey) {
+      toast.error(lang === "ar" ? "يرجى رفع إيصال تأكيد الدفع لإرسال الطلب." : "Please upload your transaction screenshot receipt to activate your official store.");
+      return;
+    }
+
+    const toastId = toast.loading(lang === "ar" ? "جاري تدوين وحفظ بيانات طلب التفعيل..." : "Filing your official activation request...");
+
+    try {
+      // Save metadata lead safely to database status queue as 'pending_manual_deployment'
+      await createPendingRegistration({
+        fullName,
+        contactNumber,
+        email,
+        subdomain,
+        planType: "paid",
+        benefitReceiptUrl: receiptKey,
       });
-
-      if (rpcError) {
-        // Safe Cleanup: if the DB setup failed, sign out immediately
-        await supabase.auth.signOut();
-        throw rpcError;
-      }
 
       toast.success(
         lang === "ar" 
-          ? "تهانينا! تم إنشاء متجرك الفاخر بنجاح." 
-          : "Congratulations! Your luxury boutique is now live!"
+          ? "تم إرسال طلب تفعيل متجرك الرسمي بنجاح! سيتم التدقيق اليدوي والتفعيل الفوري خلال ساعتين." 
+          : "Your official store activation request has been submitted successfully! Verification and deployment is underway.",
+        { id: toastId, duration: 6000 }
       );
 
-      // Step 3: Auto-login session and redirect directly to their dashboard
-      await supabase.auth.signInWithPassword({ email, password });
-      await navigate({ 
-        to: "/admin/b/$slug/dashboard", 
-        params: { slug: storeSlug } 
-      });
+      setSubmittedSubdomain(subdomain);
+      setIsTrialSuccess(false);
+      setIsDeployedPending(true);
 
     } catch (err: any) {
-      console.error("Onboarding error:", err);
-      toast.error(err.message || "An unexpected error occurred during setup.");
-    } finally {
-      setLoading(false);
+      console.error(err);
+      toast.error(err.message || "An unexpected error occurred during activation submission.", { id: toastId });
     }
   };
 
+  // If successfully submitted, display our premium confirmation dashboard landing page
+  if (isDeployedPending) {
+    return (
+      <div className="min-h-screen bg-zinc-950 flex flex-col justify-center items-center p-6 relative overflow-hidden text-white">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(128,0,32,0.1),transparent_70%)]" />
+        <div className="absolute inset-0 bg-[linear-gradient(to_bottom,transparent,rgba(0,0,0,0.9))]" />
+
+        <Card className="max-w-xl w-full border-zinc-900 bg-zinc-900/40 backdrop-blur-md shadow-2xl relative z-10 p-8 text-center text-white">
+          <div className="h-16 w-16 bg-primary/10 rounded-full border border-primary/20 flex items-center justify-center mx-auto mb-6 text-primary">
+            {isTrialSuccess ? (
+              <Sparkles className="h-8 w-8 animate-pulse text-[#B76E79]" />
+            ) : (
+              <CheckCircle2 className="h-8 w-8 text-emerald-500 animate-bounce" />
+            )}
+          </div>
+
+          <h1 className="text-3xl font-display font-medium tracking-tight mb-3">
+            {lang === "ar" ? "تم تسجيل طلبك بنجاح!" : "Workspace Under Deployment!"}
+          </h1>
+          
+          <p className="text-zinc-400 text-sm leading-relaxed mb-6">
+            {lang === "ar"
+              ? `طلب تهيئة متجرك الفاخر على الرابط: "${submittedSubdomain}.boutq.store" قيد المعالجة الآن.`
+              : `Your luxury boutique registration for "${submittedSubdomain}.boutq.store" is currently pending manual deployment.`}
+          </p>
+
+          <div className="bg-zinc-950/60 border border-zinc-900 rounded-lg p-5 mb-8 text-left space-y-4">
+            <div className="flex gap-3">
+              <Info className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+              <div className="text-xs text-zinc-400 leading-relaxed">
+                <p className="font-semibold text-zinc-200 mb-1">
+                  {lang === "ar" ? "ما الخطوات التالية؟" : "What happens next?"}
+                </p>
+                {isTrialSuccess ? (
+                  <p>
+                    {lang === "ar"
+                      ? "لقد تم تحويلك لدعم واتساب المباشر لتهيئة نسختك التجريبية وتأكيد رابطك الخاص فورياً."
+                      : "We recorded your trial workspace handle. Since trial setups require verification, please chat with our WhatsApp support line to trigger your immediate free deployment."}
+                  </p>
+                ) : (
+                  <p>
+                    {lang === "ar"
+                      ? "سنقوم بمراجعة لقطة شاشة تأكيد عملية الدفع المرسلة وتدقيق الرقم المرجعي. سيتم إنشاء ونشر مساحة متجرك الفاخر والتحقق اليدوي في غضون ساعتين كحد أقصى مع تزويدك بروابط الدخول والتحكم."
+                      : "Our administrators will manually validate your uploaded BenefitPay receipt transaction reference. Your official store workspace along with executive dashboards will be deployed and sent to your email/WhatsApp within 2 hours."}
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            <Button 
+              variant="outline" 
+              className="border-zinc-800 hover:bg-zinc-800 text-white"
+              onClick={() => {
+                setIsDeployedPending(false);
+                setFullName("");
+                setContactNumber("");
+                setEmail("");
+                setSubdomain("");
+                setReceiptKey(null);
+              }}
+            >
+              {lang === "ar" ? "العودة للتسجيل" : "Register Another Handle"}
+            </Button>
+
+            <a 
+              href={`https://wa.me/97339955508?text=Hello!%20Inquiring%20about%20my%20onboarding%20registration%20for%20subdomain:%20${submittedSubdomain}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex h-10 items-center justify-center rounded-md bg-emerald-600 hover:bg-emerald-500 px-6 text-sm font-semibold text-white shadow transition-colors gap-2"
+            >
+              <PhoneCall className="h-4 w-4" />
+              {lang === "ar" ? "تواصل معنا بالواتساب" : "Contact Concierge Support"}
+            </a>
+          </div>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen flex flex-col md:flex-row bg-background">
-      {/* Visual Brand Panel (Left on Desktop) */}
-      <div className="hidden md:flex md:w-[40%] bg-zinc-950 text-white flex-col justify-between p-12 relative overflow-hidden shrink-0 border-r border-zinc-900">
+      {/* Brand Visual Left Sidebar (Desktop only) */}
+      <div className="hidden md:flex md:w-[35%] bg-zinc-950 text-white flex-col justify-between p-12 relative overflow-hidden shrink-0 border-r border-zinc-900">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(128,0,32,0.15),transparent_50%)]" />
         <div className="absolute inset-0 bg-[linear-gradient(to_bottom,transparent,rgba(0,0,0,0.8))]" />
 
         <div className="relative z-10 flex items-center gap-2">
-          <Store className="h-6 w-6 text-primary" style={{ color: primaryColor }} />
-          <span className="font-display text-lg tracking-wider font-semibold">PURA SaaS</span>
+          <Store className="h-6 w-6 text-[#B76E79]" />
+          <span className="font-display text-lg tracking-wider font-semibold">Boutq</span>
         </div>
 
         <div className="relative z-10 space-y-6 max-w-sm">
-          <Sparkles className="h-10 w-10 text-primary animate-pulse" style={{ color: primaryColor }} />
+          <Sparkles className="h-10 w-10 text-[#B76E79] animate-pulse" />
           <h2 className="text-4xl font-display font-medium leading-tight tracking-tight">
-            {lang === "ar" ? "أطلق متجرك الرقمي الفاخر بدقائق معدودة" : "Launch your luxury boutique in minutes."}
+            {lang === "ar" ? "أطلق مساحتك التجارية الفاخرة اليوم" : "Own your professional luxury boutique store."}
           </h2>
           <p className="text-zinc-400 text-sm leading-relaxed">
             {lang === "ar"
-              ? "انضم لعشرات الماركات التجارية الفاخرة في البحرين والخليج العربي. تجربة متكاملة، دفع آمن، تحليلات متقدمة، وإعداد فوري."
-              : "Join elite independent boutiques in Bahrain and the Gulf. Whitelabel design, seamless localization, custom domains, and zero maintenance."}
+              ? "منصة الإدارة المتكاملة لمصممي الأزياء، العبايات، وصالات العرض النخبوية في البحرين والخليج العربي. واجهات في غاية الفخامة والدقة."
+              : "The premium management stack designed for visual designers, Abaya houses, and high-end couture stores in Bahrain and the GCC. Exquisite storefront interfaces."}
           </p>
         </div>
 
         <div className="relative z-10 text-xs text-zinc-500 flex items-center gap-1.5">
           <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
-          <span>{lang === "ar" ? "نظام سحابي آمن 100٪" : "100% Secure, Zero-Fee Sandbox Stack"}</span>
+          <span>{lang === "ar" ? "بنية سحابية فائقة الأمان" : "RLS-Secured Enterprise Deployment Stack"}</span>
         </div>
       </div>
 
-      {/* Interactive Wizard Form Panel (Right) */}
-      <div className="flex-1 flex flex-col justify-between p-6 md:p-12 lg:p-16 max-w-3xl mx-auto w-full">
-        {/* Header - Translation Selector */}
-        <div className="flex justify-end items-center gap-4 mb-6">
-          <div className="flex items-center gap-2">
-            <Languages className="h-4 w-4 text-muted-foreground" />
-            <Select value={lang} onValueChange={(v) => setLang(v as "en" | "ar")}>
-              <SelectTrigger className="h-8 w-28 text-xs"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="en">English</SelectItem>
-                <SelectItem value="ar">العربية</SelectItem>
-              </SelectContent>
-            </Select>
+      {/* Main Interaction Area */}
+      <div className="flex-1 flex flex-col justify-between p-6 md:p-12 lg:p-16 max-w-7xl mx-auto w-full">
+        {/* Top bar with Translation selector */}
+        <div className="flex justify-between items-center gap-4 mb-8">
+          <div className="flex items-center gap-2 md:hidden">
+            <Store className="h-5 w-5 text-primary" />
+            <span className="font-display text-base tracking-wider font-semibold">Boutq</span>
+          </div>
+          <div className="flex justify-end items-center gap-4 ml-auto">
+            <div className="flex items-center gap-2">
+              <Languages className="h-4 w-4 text-muted-foreground" />
+              <Select value={lang} onValueChange={(v) => setLang(v as "en" | "ar")}>
+                <SelectTrigger className="h-8 w-28 text-xs"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="en">English</SelectItem>
+                  <SelectItem value="ar">العربية</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         </div>
 
-        {/* Dynamic Step Wizard */}
-        <div className="my-auto py-8">
-          <div className="mb-8">
-            <div className="flex items-center gap-3 text-xs font-semibold text-muted-foreground uppercase tracking-widest mb-2">
-              <span>{lang === "ar" ? `الخطوة ${step} من 2` : `Step ${step} of 2`}</span>
-              <span className="h-1 w-24 bg-zinc-200 dark:bg-zinc-800 rounded-full relative overflow-hidden">
-                <span 
-                  className="absolute left-0 top-0 h-full bg-primary rounded-full transition-all duration-300"
-                  style={{ 
-                    width: step === 1 ? "50%" : "100%",
-                    backgroundColor: primaryColor
-                  }}
-                />
-              </span>
-            </div>
-            <h1 className="text-3xl font-display font-medium text-foreground">
-              {step === 1 
-                ? (lang === "ar" ? "إنشاء حساب المدير" : "Create your Owner Account")
-                : (lang === "ar" ? "تفاصيل هويتك التجارية" : "Configure your Boutique Store")}
-            </h1>
-            <p className="text-sm text-muted-foreground mt-1.5">
-              {step === 1
-                ? (lang === "ar" ? "أدخل بياناتك الشخصية لإدارة متجرك والتحكم به." : "Enter your administrator credentials to manage your store portals.")
-                : (lang === "ar" ? "حدد الاسم، الرابط، ولون هويتك البصرية." : "Choose your store identity, web handles, and primary accent styling.")}
-            </p>
-          </div>
+        <div className="text-center md:text-left mb-10 max-w-2xl">
+          <h1 className="text-3xl md:text-4xl font-display font-medium text-foreground tracking-tight mb-3">
+            {lang === "ar" ? "اختر باقة إطلاق متجرك" : "Select Your Boutq Activation"}
+          </h1>
+          <p className="text-sm text-muted-foreground leading-relaxed">
+            {lang === "ar"
+              ? "نحن نوفر خيارين مخصصين لبدء تجارتك. سواء كنت ترغب بتجربة المنصة لـ 3 أيام مجاناً، أو الحصول على رخصة المتجر المتكاملة مع الدعم الفني، بادر بتعبئة بياناتك وبدء مغامرتك فورياً."
+              : "We provide two options to fit your boutique expansion. Start with our 3-day complimentary test drive via our WhatsApp concierge or launch your permanent brand portal immediately."}
+          </p>
+        </div>
 
-          <Card className="p-6 md:p-8 shadow-md border-zinc-100 dark:border-zinc-800/80">
-            {step === 1 ? (
-              /* STEP 1: Account Creation Form */
-              <form onSubmit={handleNextStep} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="fullName" className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
-                    {lang === "ar" ? "الاسم الكامل" : "Full Name"}
+        {/* Dual Card responsive Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
+          
+          {/* CARD A: 3-Day Free Trial */}
+          <Card className="border-zinc-100 dark:border-zinc-800/80 shadow-md flex flex-col justify-between relative overflow-hidden group">
+            <div className="absolute top-0 right-0 p-4 opacity-[0.02] select-none pointer-events-none">
+              <Sparkles className="h-32 w-32" />
+            </div>
+            
+            <CardHeader className="border-b border-zinc-50 dark:border-zinc-900 pb-5">
+              <div className="flex justify-between items-start gap-4">
+                <div>
+                  <CardTitle className="text-lg font-display font-medium text-zinc-900 dark:text-zinc-100">
+                    {lang === "ar" ? "تجربة مجانية لمدة 3 أيام" : "Complimentary 3-Day Trial"}
+                  </CardTitle>
+                  <CardDescription className="text-xs text-muted-foreground mt-1">
+                    {lang === "ar" ? "جرّب ميزات منصة Boutq الفاخرة مجاناً." : "Test-drive Boutq free of charge for 3 days."}
+                  </CardDescription>
+                </div>
+                <span className="text-xs bg-[#B76E79]/10 text-[#B76E79] px-2 py-1 rounded font-semibold tracking-wider">
+                  {lang === "ar" ? "مجانـي" : "FREE"}
+                </span>
+              </div>
+            </CardHeader>
+
+            <CardContent className="pt-6 space-y-4">
+              <form onSubmit={handleRegisterTrial} className="space-y-4">
+                <div className="space-y-1.5">
+                  <Label htmlFor="trial-name" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    {lang === "ar" ? "الاسم الكامل" : "Owner Full Name"}
                   </Label>
                   <div className="relative">
                     <User className="absolute left-3 top-2.5 h-4.5 w-4.5 text-zinc-400" />
                     <Input 
-                      id="fullName" 
+                      id="trial-name" 
                       placeholder={lang === "ar" ? "جاسم المحمود" : "Jassim Al-Mahmood"} 
                       required 
-                      className="pl-10"
+                      className="pl-10 text-sm"
                       value={fullName}
                       onChange={(e) => setFullName(e.target.value)}
                     />
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="email" className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
-                    {lang === "ar" ? "البريد الإلكتروني" : "Email Address"}
-                  </Label>
-                  <div className="relative">
-                    <User className="absolute left-3 top-2.5 h-4.5 w-4.5 text-zinc-400" />
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="trial-phone" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                      {lang === "ar" ? "رقم الهاتف / الواتساب" : "WhatsApp Number"}
+                    </Label>
                     <Input 
-                      id="email" 
-                      type="email" 
-                      placeholder="jassim@boutique.bh" 
+                      id="trial-phone" 
+                      placeholder="39955508" 
                       required 
-                      className="pl-10"
+                      className="text-sm"
+                      value={contactNumber}
+                      onChange={(e) => setContactNumber(e.target.value)}
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label htmlFor="trial-email" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                      {lang === "ar" ? "البريد الإلكتروني" : "Email Address"}
+                    </Label>
+                    <Input 
+                      id="trial-email" 
+                      type="email" 
+                      placeholder="jassim@boutique.com" 
+                      required 
+                      className="text-sm"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                     />
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="password" className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
-                    {lang === "ar" ? "كلمة المرور" : "Password"}
-                  </Label>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-2.5 h-4.5 w-4.5 text-zinc-400" />
-                    <Input 
-                      id="password" 
-                      type="password" 
-                      placeholder="••••••••" 
-                      required 
-                      minLength={8}
-                      className="pl-10"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                    />
-                  </div>
-                </div>
-
-                <Button type="submit" className="w-full mt-6 h-11 text-sm font-medium gap-2">
-                  {lang === "ar" ? "المتابعة للعلامة التجارية" : "Continue to Brand Setup"}
-                  <ArrowRight className="h-4 w-4" />
-                </Button>
-              </form>
-            ) : (
-              /* STEP 2: Brand/Boutique Details Form */
-              <form onSubmit={handleOnboard} className="space-y-5">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="nameEn" className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
-                      {lang === "ar" ? "اسم المتجر (English)" : "Boutique Name (English)"}
-                    </Label>
-                    <div className="relative">
-                      <Store className="absolute left-3 top-2.5 h-4.5 w-4.5 text-zinc-400" />
-                      <Input 
-                        id="nameEn" 
-                        placeholder="Velvet Abayas" 
-                        required 
-                        className="pl-10"
-                        value={storeNameEn}
-                        onChange={(e) => setStoreNameEn(e.target.value)}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="nameAr" className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
-                      {lang === "ar" ? "اسم المتجر (العربية)" : "Boutique Name (Arabic)"}
-                    </Label>
-                    <div className="relative">
-                      <Store className="absolute left-3 top-2.5 h-4.5 w-4.5 text-zinc-400" />
-                      <Input 
-                        id="nameAr" 
-                        placeholder="مخمل للعبايات" 
-                        className="pl-10 text-right"
-                        value={storeNameAr}
-                        onChange={(e) => setStoreNameAr(e.target.value)}
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="slug" className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
-                    {lang === "ar" ? "رابط موقع متجرك الفرعي" : "Boutique Store Handle / URL Slug"}
+                <div className="space-y-1.5">
+                  <Label htmlFor="trial-subdomain" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    {lang === "ar" ? "رابط موقع متجرك المطلوب" : "Desired Boutique Subdomain"}
                   </Label>
                   <div className="relative flex items-center">
-                    <span className="absolute left-3 text-xs text-zinc-400 select-none font-medium">bh.pura/</span>
+                    <span className="absolute left-3 text-xs text-zinc-400 font-medium font-mono select-none">https://</span>
                     <Input 
-                      id="slug" 
-                      placeholder="velvet-abayas" 
+                      id="trial-subdomain" 
+                      placeholder="velvet" 
                       required 
-                      className="pl-18 pr-10 font-mono text-xs text-primary"
-                      value={storeSlug}
-                      onChange={(e) => setStoreSlug(e.target.value)}
+                      className="pl-16 pr-24 font-mono text-xs text-primary"
+                      value={subdomain}
+                      onChange={(e) => setSubdomain(e.target.value)}
                     />
-                    <div className="absolute right-3 flex items-center">
-                      {slugChecking && <Loader2 className="h-4 w-4 text-zinc-400 animate-spin" />}
-                      {!slugChecking && storeSlug && slugAvailable === true && (
-                        <Check className="h-4 w-4 text-emerald-500" />
+                    <span className="absolute right-3 text-[10px] text-zinc-400 font-mono font-bold select-none">.boutq.store</span>
+                  </div>
+                  
+                  {subdomain && (
+                    <p className="text-[10px] flex items-center gap-1 mt-1">
+                      {subdomainChecking ? (
+                        <>
+                          <Loader2 className="h-3 w-3 animate-spin text-zinc-400" />
+                          <span className="text-muted-foreground">{lang === "ar" ? "جاري التحقق من التوافر..." : "Checking availability..."}</span>
+                        </>
+                      ) : subdomainAvailable === true ? (
+                        <>
+                          <Check className="h-3 w-3 text-emerald-500" />
+                          <span className="text-emerald-500 font-semibold">{lang === "ar" ? "الرابط متوفر وصالح للاستخدام!" : "Subdomain handle is available!"}</span>
+                        </>
+                      ) : (
+                        <>
+                          <span className="h-1.5 w-1.5 rounded-full bg-rose-500 inline-block" />
+                          <span className="text-rose-500 font-semibold">{lang === "ar" ? "الرابط محجوز مسبقاً!" : "This subdomain is already taken."}</span>
+                        </>
                       )}
-                      {!slugChecking && storeSlug && slugAvailable === false && (
-                        <span className="text-[10px] font-bold text-red-500">{lang === "ar" ? "محجوز" : "Taken"}</span>
+                    </p>
+                  )}
+                </div>
+
+                <Button 
+                  type="submit" 
+                  className="w-full h-11 text-xs font-semibold uppercase tracking-wider gap-2 bg-[#B76E79] hover:bg-[#a35e69] text-white mt-4"
+                  disabled={subdomainChecking || subdomainAvailable === false}
+                >
+                  {lang === "ar" ? "تفعيل تجربة الـ 3 أيام بالواتساب" : "Register & Start 3-Day Trial"}
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
+
+          {/* CARD B: Official Paid Registration */}
+          <Card className="border-zinc-100 dark:border-zinc-800/80 shadow-md flex flex-col justify-between relative overflow-hidden group ring-1 ring-primary/40 bg-primary/[0.01]">
+            <div className="absolute top-0 right-0 p-4 opacity-[0.02] select-none pointer-events-none">
+              <Building2 className="h-32 w-32" />
+            </div>
+
+            <CardHeader className="border-b border-zinc-50 dark:border-zinc-900 pb-5">
+              <div className="flex justify-between items-start gap-4">
+                <div>
+                  <CardTitle className="text-lg font-display font-medium text-zinc-900 dark:text-zinc-100">
+                    {lang === "ar" ? "تفعيل المتجر الفاخر الرسمي" : "Official Store Activation"}
+                  </CardTitle>
+                  <CardDescription className="text-xs text-muted-foreground mt-1">
+                    {lang === "ar" ? "إصدار مرخص فوري ومدعوم بالكامل." : "Activate your lifetime whitelabel boutique brand platform."}
+                  </CardDescription>
+                </div>
+                <div className="text-right">
+                  <span className="text-lg font-bold font-display text-primary block">
+                    {loadingPrice ? <Loader2 className="h-4 w-4 animate-spin ml-auto" /> : registrationPrice}
+                  </span>
+                  <span className="text-[9px] text-muted-foreground font-semibold uppercase tracking-wider block">
+                    {lang === "ar" ? "دفع لمرة واحدة" : "ONE-TIME PAYMENT"}
+                  </span>
+                </div>
+              </div>
+            </CardHeader>
+
+            <CardContent className="pt-6 space-y-4">
+              <form onSubmit={handleRegisterPaid} className="space-y-4">
+                <div className="space-y-1.5">
+                  <Label htmlFor="paid-name" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    {lang === "ar" ? "الاسم الكامل" : "Owner Full Name"}
+                  </Label>
+                  <div className="relative">
+                    <User className="absolute left-3 top-2.5 h-4.5 w-4.5 text-zinc-400" />
+                    <Input 
+                      id="paid-name" 
+                      placeholder={lang === "ar" ? "جاسم المحمود" : "Jassim Al-Mahmood"} 
+                      required 
+                      className="pl-10 text-sm"
+                      value={fullName}
+                      onChange={(e) => setFullName(e.target.value)}
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="paid-phone" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                      {lang === "ar" ? "رقم الهاتف / الواتساب" : "WhatsApp Number"}
+                    </Label>
+                    <Input 
+                      id="paid-phone" 
+                      placeholder="39955508" 
+                      required 
+                      className="text-sm"
+                      value={contactNumber}
+                      onChange={(e) => setContactNumber(e.target.value)}
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label htmlFor="paid-email" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                      {lang === "ar" ? "البريد الإلكتروني" : "Email Address"}
+                    </Label>
+                    <Input 
+                      id="paid-email" 
+                      type="email" 
+                      placeholder="jassim@boutique.com" 
+                      required 
+                      className="text-sm"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label htmlFor="paid-subdomain" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    {lang === "ar" ? "رابط موقع متجرك المطلوب" : "Desired Boutique Subdomain"}
+                  </Label>
+                  <div className="relative flex items-center">
+                    <span className="absolute left-3 text-xs text-zinc-400 font-medium font-mono select-none">https://</span>
+                    <Input 
+                      id="paid-subdomain" 
+                      placeholder="velvet" 
+                      required 
+                      className="pl-16 pr-24 font-mono text-xs text-primary"
+                      value={subdomain}
+                      onChange={(e) => setSubdomain(e.target.value)}
+                    />
+                    <span className="absolute right-3 text-[10px] text-zinc-400 font-mono font-bold select-none">.boutq.store</span>
+                  </div>
+                  
+                  {subdomain && (
+                    <p className="text-[10px] flex items-center gap-1 mt-1">
+                      {subdomainChecking ? (
+                        <>
+                          <Loader2 className="h-3 w-3 animate-spin text-zinc-400" />
+                          <span className="text-muted-foreground">{lang === "ar" ? "جاري التحقق..." : "Checking availability..."}</span>
+                        </>
+                      ) : subdomainAvailable === true ? (
+                        <>
+                          <Check className="h-3 w-3 text-emerald-500" />
+                          <span className="text-emerald-500 font-semibold">{lang === "ar" ? "الرابط متوفر وصالح للاستخدام!" : "Subdomain handle is available!"}</span>
+                        </>
+                      ) : (
+                        <>
+                          <span className="h-1.5 w-1.5 rounded-full bg-rose-500 inline-block" />
+                          <span className="text-rose-500 font-semibold">{lang === "ar" ? "الرابط محجوز مسبقاً!" : "This subdomain is already taken."}</span>
+                        </>
                       )}
+                    </p>
+                  )}
+                </div>
+
+                {/* Secure BenefitPay QR Mechanism inside Card B */}
+                <div className="border border-zinc-100 dark:border-zinc-900 rounded-lg p-4 bg-zinc-50/50 dark:bg-zinc-950/20 space-y-4">
+                  <div className="flex items-center gap-2 text-xs font-semibold text-zinc-700 dark:text-zinc-300">
+                    <QrCode className="h-4 w-4 text-primary" />
+                    <span>{lang === "ar" ? "مسح السداد عبر بنفت بي (BenefitPay)" : "Scan & Pay via BenefitPay QR"}</span>
+                  </div>
+
+                  <div className="flex flex-col sm:flex-row items-center gap-4 bg-white dark:bg-zinc-950 p-3 rounded border border-zinc-100 dark:border-zinc-900">
+                    {/* Simulated Merchant QR Image */}
+                    <div className="h-24 w-24 bg-zinc-50 rounded p-1.5 border border-zinc-100 flex flex-col items-center justify-center shrink-0">
+                      <QrCode className="h-16 w-16 stroke-[1.25] text-zinc-900" />
+                      <span className="text-[6px] font-bold text-zinc-400 font-mono tracking-wider">BOUTQ-MERCHANT</span>
+                    </div>
+
+                    <div className="text-left space-y-1.5">
+                      <p className="text-xs font-bold text-zinc-800 dark:text-zinc-200">Merchant Account: BOUTQ-OFFICIAL</p>
+                      <p className="text-[10px] text-muted-foreground leading-relaxed">
+                        {lang === "ar" 
+                          ? "امسح رمز الاستجابة السريع سدد المبلغ 55 د.ب، ثم ارفع لقطة شاشة تأكيد الدفع لتأكيد المعاملة." 
+                          : "Scan QR with BenefitPay, transfer BHD 55 to merchant, then upload the receipt screenshot below."}
+                      </p>
                     </div>
                   </div>
-                  <p className="text-[10px] text-muted-foreground">
-                    {lang === "ar" 
-                      ? "يسمح فقط بالأحرف الصغيرة، الأرقام، والواصلات (-). سيعمل كعنوان لموقعك." 
-                      : "Only lowercase letters, numbers, and hyphens (-) allowed. This forms your unique web address."}
+
+                  {/* Receipt screenshot uploader */}
+                  <div className="relative">
+                    <input 
+                      id="onboarding-receipt-uploader"
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp"
+                      onChange={handleUploadReceipt}
+                      className="hidden"
+                      disabled={uploading}
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="w-full h-10 border-dashed border-primary/45 bg-primary/[0.01] hover:bg-primary/[0.04]"
+                      disabled={uploading}
+                      onClick={() => document.getElementById("onboarding-receipt-uploader")?.click()}
+                    >
+                      {uploading ? (
+                        <>
+                          <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                          <span className="text-xs">{lang === "ar" ? "جاري تشفير الرفع..." : "Encrypting R2 upload..."}</span>
+                        </>
+                      ) : receiptKey ? (
+                        <>
+                          <Check className="h-4 w-4 text-emerald-500" />
+                          <span className="text-xs text-emerald-500 font-semibold">{lang === "ar" ? "تم رفع إيصال الدفع بنجاح!" : "Receipt Screenshot Saved!"}</span>
+                        </>
+                      ) : (
+                        <>
+                          <UploadCloud className="h-4 w-4 text-primary" />
+                          <span className="text-xs">{lang === "ar" ? "تحميل لقطة شاشة إيصال الدفع" : "Upload Receipt Screenshot"}</span>
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="bg-zinc-100/60 dark:bg-zinc-900/30 p-3 rounded text-[10px] text-muted-foreground flex gap-2">
+                  <Info className="h-4 w-4 text-zinc-400 shrink-0 mt-0.5" />
+                  <p className="leading-normal">
+                    {lang === "ar"
+                      ? "يشمل 6 أشهر من الدعم الفني المضمون. أي طلبات لميزات مخصصة في المستقبل سيتم تسعيرها عند الطلب."
+                      : "6 months guaranteed technical support included. Future custom feature requests will be quoted on-demand."}
                   </p>
                 </div>
 
-                <div className="space-y-3">
-                  <Label className="text-xs font-semibold tracking-wide text-muted-foreground uppercase flex items-center gap-1.5">
-                    <Palette className="h-4 w-4 text-zinc-400" />
-                    <span>{lang === "ar" ? "اللون الرئيسي لهويتك التجارية" : "Primary Accent Theme Color"}</span>
-                  </Label>
-                  <div className="flex flex-wrap gap-2.5 items-center">
-                    {BRAND_COLORS.map((color) => (
-                      <button
-                        key={color.value}
-                        type="button"
-                        onClick={() => setPrimaryColor(color.value)}
-                        className="h-8 w-8 rounded-full border border-zinc-200 dark:border-zinc-800 relative transition-transform duration-150 active:scale-95 flex items-center justify-center cursor-pointer"
-                        style={{ backgroundColor: color.value }}
-                        title={color.name}
-                      >
-                        {primaryColor === color.value && (
-                          <span className="bg-white/25 rounded-full p-1 border border-white/20">
-                            <Check className="h-3.5 w-3.5 text-white" />
-                          </span>
-                        )}
-                      </button>
-                    ))}
-                    <input 
-                      type="color" 
-                      value={primaryColor}
-                      onChange={(e) => setPrimaryColor(e.target.value)}
-                      className="h-8 w-12 rounded border border-zinc-200 dark:border-zinc-800 p-0.5 cursor-pointer bg-transparent"
-                      title="Custom Color"
-                    />
-                  </div>
-                </div>
-
-                <div className="flex gap-3 pt-4">
-                  <Button 
-                    type="button" 
-                    variant="outline" 
-                    onClick={() => setStep(1)}
-                    className="flex-1 h-11 text-xs font-medium gap-1.5"
-                    disabled={loading}
-                  >
-                    <ArrowLeft className="h-3.5 w-3.5" />
-                    {lang === "ar" ? "رجوع" : "Back"}
-                  </Button>
-                  
-                  <Button 
-                    type="submit" 
-                    className="flex-[2] h-11 text-xs font-medium gap-1.5 text-white"
-                    disabled={loading || slugChecking || slugAvailable === false}
-                    style={{ backgroundColor: primaryColor }}
-                  >
-                    {loading ? (
-                      <>
-                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                        {lang === "ar" ? "جاري تهيئة المتجر..." : "Creating Boutique..."}
-                      </>
-                    ) : (
-                      <>
-                        <Building2 className="h-3.5 w-3.5" />
-                        {lang === "ar" ? "أطلق متجري الآن" : "Launch My Boutique"}
-                      </>
-                    )}
-                  </Button>
-                </div>
+                <Button 
+                  type="submit" 
+                  className="w-full h-11 text-xs font-semibold uppercase tracking-wider gap-2 bg-primary text-white mt-4"
+                  disabled={subdomainChecking || subdomainAvailable === false || uploading || !receiptKey}
+                >
+                  <Building2 className="h-4 w-4" />
+                  {lang === "ar" ? "إرسال طلب التفعيل الرسمي" : "Submit Registration & Pay"}
+                </Button>
               </form>
-            )}
+            </CardContent>
           </Card>
+          
         </div>
 
-        {/* Footer - Sign in Redirect link */}
-        <div className="text-center text-xs text-muted-foreground border-t border-zinc-100 dark:border-zinc-900 pt-6">
-          <span>{lang === "ar" ? "لديك حساب بالفعل؟" : "Already have a boutique on PURA?"} </span>
-          <Link to="/auth" className="text-primary hover:underline font-semibold" style={{ color: primaryColor }}>
+        {/* Footnote and sign-in links */}
+        <div className="text-center text-xs text-muted-foreground border-t border-zinc-100 dark:border-zinc-900 pt-8 mt-10">
+          <span>{lang === "ar" ? "لديك حساب بالفعل؟" : "Already have a boutique on Boutq?"} </span>
+          <Link to="/auth" className="text-primary hover:underline font-semibold">
             {lang === "ar" ? "تسجيل الدخول للوحة التحكم" : "Sign in to Dashboard"}
           </Link>
         </div>
