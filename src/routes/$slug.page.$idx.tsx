@@ -3,6 +3,7 @@ import { useStorefront } from "@/lib/storefront-context";
 import { Card } from "@/components/ui/card";
 import { ChevronLeft } from "lucide-react";
 import { renderRichTextContent, richTextHasContent } from "@/lib/rich-text";
+import { ResponsiveImage } from "@/components/responsive-media";
 
 export const Route = createFileRoute("/$slug/page/$idx")({
   component: PageView,
@@ -39,7 +40,7 @@ export function StorefrontPageContent({ page }: { page: ReturnType<typeof useSto
         {t("العودة إلى المتجر", "Back to store")}
       </Link>
       {page.image_url && page.image_position === "top" && (
-        <img src={page.image_url} alt={title ?? ""} className="mb-8 h-auto max-h-[350px] w-full rounded-xl object-cover" />
+        <ResponsiveImage src={page.image_url} alt={title ?? ""} preset="content" sizes="(min-width: 1024px) 960px, 100vw" className="mb-8 h-auto max-h-[350px] w-full rounded-xl object-cover" />
       )}
       {title && (
         <h1 className="font-display text-3xl sm:text-4xl mb-6" style={{ color: "var(--sf-heading)" }}>
@@ -56,7 +57,7 @@ export function StorefrontPageContent({ page }: { page: ReturnType<typeof useSto
         </div>
       )}
       {page.image_url && page.image_position === "bottom" && (
-        <img src={page.image_url} alt={title ?? ""} className="mt-8 h-auto w-full rounded-xl object-contain" />
+        <ResponsiveImage src={page.image_url} alt={title ?? ""} preset="content" sizes="(min-width: 1024px) 960px, 100vw" className="mt-8 h-auto w-full rounded-xl object-contain" />
       )}
     </article>
   );

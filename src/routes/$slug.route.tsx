@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/sheet";
 import { ShoppingBag, Languages, Minus, Plus, Trash2, X, User, Search, Menu, Home, PackageSearch, FileText, LogIn, Heart, Grid2X2, ChevronDown } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { cloudflareImageUrl } from "@/lib/media-delivery";
 import { faviconType, resolveBrandFavicon, useDynamicFavicon } from "@/lib/favicon";
 import { StorefrontAnalytics } from "@/components/storefront-analytics";
 
@@ -403,7 +404,7 @@ function StoreHeader() {
           >
             {settings.logo_url && (
               <img
-                src={settings.logo_url}
+                src={cloudflareImageUrl(settings.logo_url, 320)}
                 alt={displayName}
                 className="shrink-0 object-contain"
                 style={{
@@ -616,7 +617,7 @@ function MobileStorefrontDropdown() {
                 className="flex min-h-12 items-center gap-3 rounded-xl border px-2.5 py-2 transition-colors hover:bg-black/5"
               >
                 <div className="grid h-9 w-9 shrink-0 place-items-center overflow-hidden rounded-lg bg-muted">
-                  {category.menu_icon_url ? <img src={category.menu_icon_url} width={20} height={20} loading="lazy" decoding="async" alt="" className="h-5 w-5 object-contain" /> : <Grid2X2 className="h-4 w-4 opacity-50" />}
+                  {category.menu_icon_url ? <img src={cloudflareImageUrl(category.menu_icon_url, 80)} width={20} height={20} loading="lazy" decoding="async" alt="" className="h-5 w-5 object-contain" /> : <Grid2X2 className="h-4 w-4 opacity-50" />}
                 </div>
                 <span className="truncate font-medium" style={{ fontSize: "0.95rem", lineHeight: "1.3rem" }}>{label}</span>
               </Link>
@@ -640,7 +641,7 @@ function MobileStorefrontDropdown() {
                   className="flex min-h-11 items-center gap-3 rounded-lg px-2.5 py-2 transition-colors hover:bg-black/5"
                 >
                   <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-black/5">
-                    {page.iconUrl ? <img src={page.iconUrl} alt="" className="h-5 w-5 object-contain" /> : <FileText className="h-4 w-4 opacity-60" />}
+                    {page.iconUrl ? <img src={cloudflareImageUrl(page.iconUrl, 80)} alt="" className="h-5 w-5 object-contain" /> : <FileText className="h-4 w-4 opacity-60" />}
                   </span>
                   <span className="truncate" style={{ fontSize: "0.95rem", lineHeight: "1.3rem" }}>{page.title}</span>
                 </Link>
@@ -692,7 +693,7 @@ export function StorefrontMenu({ navigation = false }: { navigation?: boolean } 
             <div className="relative shrink-0 overflow-hidden border-b px-6 pb-6 pt-7 pe-20" style={{ borderColor: "rgba(127,127,127,.18)" }}>
               <div className="pointer-events-none absolute -end-16 -top-24 h-52 w-52 rounded-full opacity-[0.08]" style={{ backgroundColor: settings.primary_color }} />
               <div className="relative flex min-w-0 items-center gap-4">
-                {settings.logo_url && <div className="grid h-16 w-24 shrink-0 place-items-center overflow-hidden rounded-xl bg-white/5 p-1"><img src={settings.logo_url} alt={displayName} className="block max-h-full max-w-full object-contain" style={{ width: "auto", height: "auto" }} /></div>}
+                {settings.logo_url && <div className="grid h-16 w-24 shrink-0 place-items-center overflow-hidden rounded-xl bg-white/5 p-1"><img src={cloudflareImageUrl(settings.logo_url, 320)} alt={displayName} className="block max-h-full max-w-full object-contain" style={{ width: "auto", height: "auto" }} /></div>}
                 <div className="min-w-0 flex-1 text-start"><SheetTitle className="truncate text-2xl font-display" style={{ color: menuFg }}>{menuTitle}</SheetTitle><p className="mt-1 truncate text-xs opacity-65">{t("اكتشف المتجر", "Explore our store")}</p></div>
               </div>
             </div>
@@ -772,7 +773,7 @@ function CartDrawer({ children }: { children: React.ReactNode }) {
                   return (
                   <div key={item.cart_line_id} className="flex gap-3 border rounded-lg p-2 items-center">
                     {item.image ? (
-                      <img src={item.image} alt={displayName} className="h-16 w-16 rounded object-cover shrink-0" />
+                      <img src={cloudflareImageUrl(item.image, 160)} alt={displayName} className="h-16 w-16 rounded object-cover shrink-0" />
                     ) : (
                       <div className="h-16 w-16 rounded bg-muted shrink-0" />
                     )}
@@ -964,7 +965,7 @@ function SearchBar() {
                     >
                       <div className="h-12 w-12 shrink-0 rounded bg-muted overflow-hidden">
                         {imageUrl && (
-                          <img src={imageUrl} alt={displayName} className="h-full w-full object-cover" />
+                          <img src={cloudflareImageUrl(imageUrl, 120)} alt={displayName} className="h-full w-full object-cover" />
                         )}
                       </div>
                       <div className="flex-1 min-w-0">

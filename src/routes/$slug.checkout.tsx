@@ -14,6 +14,7 @@ import { toast } from "sonner";
 import { Loader2, CreditCard, Banknote, QrCode, Truck, Store, User, Download, Mail, MessageCircle, Copy, UploadCloud, CheckCircle2, X } from "lucide-react";
 import { uploadBenefitReceipt } from "@/lib/benefit-receipt";
 import { trackStorefrontEvent } from "@/lib/storefront-analytics";
+import { ResponsiveImage } from "@/components/responsive-media";
 
 export const Route = createFileRoute("/$slug/checkout")({
   component: Checkout,
@@ -685,7 +686,7 @@ function Checkout() {
               </p>
               {settings.benefit_qr_url ? (
                 <div className="space-y-3">
-                  <img src={settings.benefit_qr_url} alt="Benefit QR" className="mx-auto max-w-[240px] rounded-lg border bg-white p-2" />
+                  <ResponsiveImage src={settings.benefit_qr_url} alt="Benefit QR" preset="thumb" sizes="240px" className="mx-auto max-w-[240px] rounded-lg border bg-white p-2" />
                   <Button type="button" variant="outline" className="w-full sm:w-auto" onClick={async () => {
                     try { const response = await fetch(settings.benefit_qr_url!); const blob = await response.blob(); const href = URL.createObjectURL(blob); const a = document.createElement("a"); a.href = href; a.download = `${brand.slug}-benefit-qr.png`; a.click(); URL.revokeObjectURL(href); }
                     catch { window.open(settings.benefit_qr_url!, "_blank", "noopener,noreferrer"); }
