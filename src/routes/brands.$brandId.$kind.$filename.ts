@@ -1,25 +1,15 @@
-// Dynamic streamer route to proxy and serve brand media assets on-the-fly from R2 storage.
-import { createFileRoute } from "@tanstack/react-router";
 import { GetObjectCommand, S3Client } from "@aws-sdk/client-s3";
 
-let getEventFn: any = null;
-import(/* @vite-ignore */ "vinxi/http")
-  .then((m) => {
-    getEventFn = m.getEvent;
-  })
-  .catch(() => {});
-
-function getPlatformEnv(name: string): string | undefined {
+function getPlatformEnv(event: any, name: string): string | undefined {
   const viteName = name.startsWith("VITE_") ? name : `VITE_${name}`;
   const unprefixed = name.startsWith("VITE_") ? name.slice(5) : name;
 
   try {
-    if (getEventFn) {
-      const event = getEventFn();
-      const env = event?.context?.cloudflare?.env || 
-                  (event?.context as any)?.env || 
-                  event?.context?.cloudflare || 
-                  (event?.context as any)?.cloudflare?.env;
+    if (event) {
+      const env = event.context?.cloudflare?.env || 
+                  event.context?.env || 
+                  event.context?.cloudflare || 
+                  event.context?.cloudflare?.env;
       if (env) {
         if (env[name]) return env[name];
         if (env[viteName]) return env[viteName];
@@ -41,11 +31,11 @@ function getPlatformEnv(name: string): string | undefined {
   return undefined;
 }
 
-function r2Client() {
-  const accountId = getPlatformEnv("R2_ACCOUNT_ID")?.trim();
-  const accessKeyId = getPlatformEnv("R2_ACCESS_KEY_ID")?.trim();
-  const secretAccessKey = getPlatformEnv("R2_SECRET_ACCESS_KEY")?.trim();
-  const bucket = getPlatformEnv("R2_BUCKET_NAME")?.trim();
+function r2Client(event: any) {
+  const accountId = getPlatformEnv(event, "R2_ACCOUNT_ID")?.trim();
+  const accessKeyId = getPlatformEnv(event, "R2_ACCESS_KEY_ID")?.trim();
+  const secretAccessKey = getPlatformEnv(event, "R2_SECRET_ACCESS_KEY")?.trim();
+  const bucket = getPlatformEnv(event, "R2_BUCKET_NAME")?.trim();
 
   if (!accountId || !accessKeyId || !secretAccessKey || !bucket) {
     throw new Error("Missing R2 environment variables");
@@ -61,6 +51,8 @@ function r2Client() {
   };
 }
 
+import { createFileRoute } from "@tanstack/react-router";
+
 export const Route = createFileRoute("/brands/$brandId/$kind/$filename")({
   server: {
     handlers: {
@@ -68,8 +60,14 @@ export const Route = createFileRoute("/brands/$brandId/$kind/$filename")({
         const { brandId, kind, filename } = params;
         const key = `brands/${brandId}/${kind}/${filename}`;
 
+        let event: any = null;
         try {
-          const { client, bucket } = r2Client();
+          const { getEvent } = await import("vinxi/http");
+          event = getEvent();
+        } catch {}
+
+        try {
+          const { client, bucket } = r2Client(event);
           const command = new GetObjectCommand({
             Bucket: bucket,
             Key: key,
