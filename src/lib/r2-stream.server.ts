@@ -54,15 +54,16 @@ async function getR2Config(isPrivate: boolean = false): Promise<R2Config> {
     } catch {}
   }
 
-  if (!env) {
-    throw new Error("Unable to access the Cloudflare native execution environment context.");
-  }
-
-  const accountId = env.R2_ACCOUNT_ID?.trim();
-  const accessKeyId = env.R2_ACCESS_KEY_ID?.trim() || env.ACCESS_KEY_ID?.trim();
-  const secretAccessKey = env.R2_SECRET_ACCESS_KEY?.trim() || env.SECRET_ACCESS_KEY?.trim();
+  const g = globalThis as any;
+  const accountId = (env?.R2_ACCOUNT_ID || g.R2_ACCOUNT_ID)?.trim();
+  const accessKeyId = (env?.R2_ACCESS_KEY_ID || env?.ACCESS_KEY_ID || g.R2_ACCESS_KEY_ID || g.ACCESS_KEY_ID)?.trim();
+  const secretAccessKey = (env?.R2_SECRET_ACCESS_KEY || env?.SECRET_ACCESS_KEY || g.R2_SECRET_ACCESS_KEY || g.SECRET_ACCESS_KEY)?.trim();
+  
   // Map exactly to variables specified by dashboard naming guidelines with standard fallbacks
-  const bucket = (isPrivate ? (env.R2_PRIVATE_BUCKET || env.R2_PRIVATE_BUCKET_NAME) : env.R2_BUCKET_NAME)?.trim();
+  const rawBucket = isPrivate 
+    ? (env?.R2_PRIVATE_BUCKET || env?.R2_PRIVATE_BUCKET_NAME || g.R2_PRIVATE_BUCKET || g.R2_PRIVATE_BUCKET_NAME) 
+    : (env?.R2_BUCKET_NAME || g.R2_BUCKET_NAME);
+  const bucket = rawBucket?.trim();
 
   if (!accountId || !accessKeyId || !secretAccessKey || !bucket) {
     throw new Error(
