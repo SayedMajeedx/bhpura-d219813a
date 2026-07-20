@@ -66,6 +66,15 @@ export const Route = createFileRoute("/brands/$brandId/$kind/$filename")({
           event = getEvent();
         } catch {}
 
+        const debugInfo: any = {
+          hasEvent: !!event,
+          eventKeys: event ? Object.keys(event) : null,
+          contextKeys: event?.context ? Object.keys(event.context) : null,
+          cloudflareKeys: event?.context?.cloudflare ? Object.keys(event.context.cloudflare) : null,
+          cloudflareEnvKeys: event?.context?.cloudflare?.env ? Object.keys(event.context.cloudflare.env) : null,
+          globalThisKeys: Object.keys(globalThis).filter(k => k.toLowerCase().includes("env") || k.toLowerCase().includes("cloudflare")),
+        };
+
         try {
           const { client, bucket } = r2Client(event);
           const command = new GetObjectCommand({
@@ -101,7 +110,7 @@ export const Route = createFileRoute("/brands/$brandId/$kind/$filename")({
           if (error.name === "NoSuchKey" || error.$metadata?.httpStatusCode === 404) {
             return new Response("Object Not Found", { status: 404 });
           }
-          return new Response(`Internal Server Error: ${error.message} - ${error.stack}`, { status: 500 });
+          return new Response(`Internal Server Error: ${error.message} - ${error.stack}\nDebug Info: ${JSON.stringify(debugInfo, null, 2)}`, { status: 500 });
         }
       },
     },
