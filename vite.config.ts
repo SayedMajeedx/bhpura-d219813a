@@ -12,4 +12,15 @@ export default defineConfig({
     // nitro/vite builds from this
     server: { entry: "server" },
   },
+  vite: {
+    resolve: {
+      tsconfigPaths: true,
+    },
+  },
+  nitro: {
+    name: "bhpura-d219813a",
+    cloudflare: {
+      name: "bhpura-d219813a",
+    },
+  },
 });

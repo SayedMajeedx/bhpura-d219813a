@@ -4,7 +4,7 @@ import { z } from "zod";
 const inputSchema = z.object({ url: z.string().url().max(2048) });
 
 export const getInvoiceAssetDataUrl = createServerFn({ method: "POST" })
-  .inputValidator((value: unknown) => inputSchema.parse(value))
+  .validator((value: unknown) => inputSchema.parse(value))
   .handler(async ({ data }) => {
     const url = new URL(data.url);
     const allowed = url.protocol === "https:" && (

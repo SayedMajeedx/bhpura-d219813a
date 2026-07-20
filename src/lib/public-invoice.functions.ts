@@ -4,7 +4,7 @@ import { z } from "zod";
 const inputSchema = z.object({ id: z.string().uuid() });
 
 export const getPublicInvoice = createServerFn({ method: "GET" })
-  .inputValidator((data: unknown) => inputSchema.parse(data))
+  .validator((data: unknown) => inputSchema.parse(data))
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 

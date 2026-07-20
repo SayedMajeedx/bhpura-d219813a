@@ -126,7 +126,7 @@ function r2Client(): { client: S3Client; bucket: string; publicBaseUrl: string }
 
 export const createR2UploadUrl = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((raw: unknown) => Input.parse(raw))
+  .validator((raw: unknown) => Input.parse(raw))
   .handler(async ({ data, context }) => {
     const [{ data: canAccess }, { data: isAdmin }] = await Promise.all([
       context.supabase.rpc("can_access_brand", { _brand_id: data.brandId }),
@@ -159,7 +159,7 @@ const DeleteInput = z.object({
 
 export const deleteR2Object = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((raw: unknown) => DeleteInput.parse(raw))
+  .validator((raw: unknown) => DeleteInput.parse(raw))
   .handler(async ({ data, context }) => {
     const [{ data: canAccess }, { data: isAdmin }] = await Promise.all([
       context.supabase.rpc("can_access_brand", { _brand_id: data.brandId }),
@@ -177,7 +177,7 @@ const PurgeBrandInput = z.object({ brandId: z.string().uuid() });
 /** Permanently removes every R2 object owned by one brand. Super-admin only. */
 export const purgeBrandR2Objects = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((raw: unknown) => PurgeBrandInput.parse(raw))
+  .validator((raw: unknown) => PurgeBrandInput.parse(raw))
   .handler(async ({ data, context }) => {
     const { data: isSuperAdmin, error } = await context.supabase.rpc("is_super_admin");
     if (error || !isSuperAdmin) throw new Error("FORBIDDEN");

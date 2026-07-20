@@ -17,7 +17,7 @@ const MODEL = "gemini-3.1-flash-lite";
  */
 export const translateProductText = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((raw: unknown) => Input.parse(raw))
+  .validator((raw: unknown) => Input.parse(raw))
   .handler(async ({ data, context }) => {
     const { data: allowed, error: quotaError } = await (context.supabase.rpc as any)("consume_api_quota", {
       p_action: "translation", p_limit: 100, p_window_minutes: 60,

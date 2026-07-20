@@ -87,7 +87,7 @@ function extractBase64(dataUrl: string): string {
 
 export const scanReceipt = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((raw: unknown) => Input.parse(raw))
+  .validator((raw: unknown) => Input.parse(raw))
   .handler(async ({ data, context }): Promise<ScannedExpense> => {
     const { data: allowed, error: quotaError } = await (context.supabase.rpc as any)("consume_api_quota", {
       p_action: "receipt_scan", p_limit: 20, p_window_minutes: 60,

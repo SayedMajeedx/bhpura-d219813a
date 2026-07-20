@@ -28,7 +28,7 @@ const RejectInput = z.object({
 });
 
 export const createBenefitReceiptUpload = createServerFn({ method: "POST" })
-  .inputValidator((raw: unknown) => CreateInput.parse(raw))
+  .validator((raw: unknown) => CreateInput.parse(raw))
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: settings } = await (supabaseAdmin.from("business_settings") as any)
@@ -56,7 +56,7 @@ export const createBenefitReceiptUpload = createServerFn({ method: "POST" })
   });
 
 export const finalizeBenefitReceiptUpload = createServerFn({ method: "POST" })
-  .inputValidator((raw: unknown) => FinalizeInput.parse(raw))
+  .validator((raw: unknown) => FinalizeInput.parse(raw))
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: pending } = await (supabaseAdmin.from("pending_benefit_receipts") as any)
@@ -85,7 +85,7 @@ export const finalizeBenefitReceiptUpload = createServerFn({ method: "POST" })
 
 export const getBenefitReceiptViewUrl = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((raw: unknown) => OrderInput.parse(raw))
+  .validator((raw: unknown) => OrderInput.parse(raw))
   .handler(async ({ data, context }) => {
     const { data: order, error } = await context.supabase
       .from("orders")
@@ -134,7 +134,7 @@ export const getBenefitReceiptViewUrl = createServerFn({ method: "POST" })
 
 export const rejectBenefitReceipt = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((raw: unknown) => RejectInput.parse(raw))
+  .validator((raw: unknown) => RejectInput.parse(raw))
   .handler(async ({ data, context }) => {
     const { data: result, error } = await context.supabase.rpc(
       "reject_benefit_payment" as never,
@@ -160,7 +160,7 @@ export const rejectBenefitReceipt = createServerFn({ method: "POST" })
 
 export const deleteOrderWithPrivateReceipt = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((raw: unknown) => OrderInput.parse(raw))
+  .validator((raw: unknown) => OrderInput.parse(raw))
   .handler(async ({ data, context }) => {
     const { data: order, error } = await context.supabase
       .from("orders")
@@ -194,7 +194,7 @@ const BrandInput = z.object({ brandId: z.string().uuid() });
 
 export const purgeBrandPrivateReceipts = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((raw: unknown) => BrandInput.parse(raw))
+  .validator((raw: unknown) => BrandInput.parse(raw))
   .handler(async ({ data, context }) => {
     const { data: isSuperAdmin, error } = await context.supabase.rpc("is_super_admin");
     if (error || !isSuperAdmin) throw new Error("FORBIDDEN");

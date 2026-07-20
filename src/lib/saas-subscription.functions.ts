@@ -31,7 +31,7 @@ const AdminRejectInput = z.object({
 // 1. Get secure pre-signed upload URL for subscription receipt (Private R2 Bucket)
 export const getSubscriptionReceiptUploadUrl = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((raw: unknown) => CreateUploadInput.parse(raw))
+  .validator((raw: unknown) => CreateUploadInput.parse(raw))
   .handler(async ({ data, context }) => {
     // Check access to brand
     const { data: hasAccess } = await context.supabase.rpc("can_access_brand", { _brand_id: data.brandId });
@@ -48,7 +48,7 @@ export const getSubscriptionReceiptUploadUrl = createServerFn({ method: "POST" }
 // 2. Submit receipt and set brand subscription status to 'pending_verification'
 export const submitSubscriptionReceipt = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((raw: unknown) => SubmitReceiptInput.parse(raw))
+  .validator((raw: unknown) => SubmitReceiptInput.parse(raw))
   .handler(async ({ data, context }) => {
     // Check access to brand
     const { data: hasAccess } = await context.supabase.rpc("can_access_brand", { _brand_id: data.brandId });
@@ -76,7 +76,7 @@ export const submitSubscriptionReceipt = createServerFn({ method: "POST" })
 // 3. Generate pre-signed view URL for Super Admin to securely inspect the receipt
 export const getSubscriptionReceiptViewUrl = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((raw: unknown) => z.object({ objectKey: z.string() }).parse(raw))
+  .validator((raw: unknown) => z.object({ objectKey: z.string() }).parse(raw))
   .handler(async ({ data, context }) => {
     // Restrict access ONLY to super admins
     const { data: isSuperAdmin } = await context.supabase.rpc("is_admin");
@@ -95,7 +95,7 @@ export const getSubscriptionReceiptViewUrl = createServerFn({ method: "POST" })
 // 4. Approve Subscription SaaS (Super Admin Only)
 export const approveSubscriptionSaaS = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((raw: unknown) => AdminReviewInput.parse(raw))
+  .validator((raw: unknown) => AdminReviewInput.parse(raw))
   .handler(async ({ data, context }) => {
     const { data: isSuperAdmin } = await context.supabase.rpc("is_admin");
     const email = (context.user?.email || "").toLowerCase();
@@ -141,7 +141,7 @@ export const approveSubscriptionSaaS = createServerFn({ method: "POST" })
 // 5. Reject and Suspend Subscription (Super Admin Only)
 export const rejectSubscriptionSaaS = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((raw: unknown) => AdminRejectInput.parse(raw))
+  .validator((raw: unknown) => AdminRejectInput.parse(raw))
   .handler(async ({ data, context }) => {
     const { data: isSuperAdmin } = await context.supabase.rpc("is_admin");
     const email = (context.user?.email || "").toLowerCase();

@@ -42,7 +42,7 @@ export type VariantGenerationPlan = z.infer<typeof ParsedVariantPlan>;
 
 export const parseVariantPrompt = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((raw: unknown) => Input.parse(raw))
+  .validator((raw: unknown) => Input.parse(raw))
   .handler(async ({ data, context }): Promise<VariantGenerationPlan> => {
     const { data: allowed, error: quotaError } = await (context.supabase.rpc as any)("consume_api_quota", {
       p_action: "variant_generation", p_limit: 30, p_window_minutes: 60,
