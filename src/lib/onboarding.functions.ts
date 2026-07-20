@@ -255,8 +255,11 @@ export const debugR2Env = createServerFn({ method: "GET" })
   .handler(async () => {
     const { r2Client } = await import("@/lib/r2-upload.functions");
     try {
-      const { bucket, publicBaseUrl } = r2Client();
-      return { bucket, publicBaseUrl };
+      const { client, bucket, publicBaseUrl } = r2Client();
+      const { ListObjectsV2Command } = await import("@aws-sdk/client-s3");
+      const res = await client.send(new ListObjectsV2Command({ Bucket: bucket, MaxKeys: 50 }));
+      const keys = res.Contents?.map(o => o.Key) || [];
+      return { bucket, publicBaseUrl, keys };
     } catch (e: any) {
       return { error: e.message };
     }
