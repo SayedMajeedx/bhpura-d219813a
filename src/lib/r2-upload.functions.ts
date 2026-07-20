@@ -2,7 +2,46 @@ import { createServerFn } from "@tanstack/react-start";
 import { DeleteObjectCommand, DeleteObjectsCommand, ListObjectsV2Command, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { z } from "zod";
-import { getEnvVariable, requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+
+let getEventFn: any = null;
+import(/* @vite-ignore */ "vinxi/http")
+  .then((m) => {
+    getEventFn = m.getEvent;
+  })
+  .catch(() => {});
+
+function getPlatformEnv(name: string): string | undefined {
+  const viteName = name.startsWith("VITE_") ? name : `VITE_${name}`;
+  const unprefixed = name.startsWith("VITE_") ? name.slice(5) : name;
+
+  try {
+    if (getEventFn) {
+      const event = getEventFn();
+      const env = event?.context?.cloudflare?.env || 
+                  (event?.context as any)?.env || 
+                  event?.context?.cloudflare || 
+                  (event?.context as any)?.cloudflare?.env;
+      if (env) {
+        if (env[name]) return env[name];
+        if (env[viteName]) return env[viteName];
+        if (env[unprefixed]) return env[unprefixed];
+      }
+    }
+  } catch {}
+
+  try {
+    const g = globalThis as any;
+    const liveEnv = g["__CLOUDFLARE_ENV__"] || g["process"]?.["env"] || process.env;
+    if (liveEnv) {
+      if (liveEnv[name]) return liveEnv[name];
+      if (liveEnv[viteName]) return liveEnv[viteName];
+      if (liveEnv[unprefixed]) return liveEnv[unprefixed];
+    }
+  } catch {}
+
+  return undefined;
+}
 
 const mediaKinds = ["logo", "favicon", "font", "product", "category", "hero", "page", "payment-qr", "expense-receipt"] as const;
 const mimeToExtension: Record<string, string> = {
@@ -23,7 +62,7 @@ const Input = z.object({
 });
 
 function requiredEnv(name: string): string {
-  const value = getEnvVariable(name)?.trim();
+  const value = getPlatformEnv(name)?.trim();
   if (!value) throw new Error(`Missing ${name}`);
   return value;
 }
