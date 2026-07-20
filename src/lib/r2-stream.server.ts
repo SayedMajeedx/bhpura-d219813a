@@ -87,7 +87,7 @@ async function getR2Config(isPrivate: boolean = false): Promise<R2Config> {
 export async function handleR2Stream(brandId: string, kind: string, filename: string): Promise<Response> {
   const key = `brands/${brandId}/${kind}/${filename}`;
   // QR codes and receipts are stored in the private bucket, others in public
-  const isPrivate = kind === "payment-qr" || kind === "expense-receipt";
+  const isPrivate = kind === "payment-qr" || kind === "expense-receipt" || kind === "benefit-receipts" || kind.includes("receipt");
 
   try {
     const config = await getR2Config(isPrivate);

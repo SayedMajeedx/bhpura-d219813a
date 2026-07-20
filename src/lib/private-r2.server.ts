@@ -53,23 +53,64 @@ function getPlatformEnv(name: string): string | undefined {
   return undefined;
 }
 
-function required(name: string): string {
-  const value = getPlatformEnv(name)?.trim();
-  if (!value) throw new Error(`Missing ${name}`);
-  return value;
+function sanitizeValue(val: string | undefined): string | undefined {
+  if (!val) return undefined;
+  return val.trim().replace(/^['"]|['"]$/g, "").trim();
 }
 
 function privateR2() {
-  const accountId = required("R2_ACCOUNT_ID");
-  const accessKeyId = required("R2_PRIVATE_ACCESS_KEY_ID");
-  const secretAccessKey = required("R2_PRIVATE_SECRET_ACCESS_KEY");
+  let env: any = null;
+  try {
+    if (getEventFn) {
+      const event = getEventFn();
+      env = event?.context?.cloudflare?.env || 
+            event?.context?.env || 
+            event?.context?.cloudflare || 
+            (event?.context as any)?.cloudflare?.env;
+    }
+  } catch {}
+
+  // Safe global fallback
+  if (!env) {
+    try {
+      const g = globalThis as any;
+      env = g["__CLOUDFLARE_ENV__"] || g["__env__"] || g["process"]?.["env"] || process.env;
+    } catch {}
+  }
+
+  const g = globalThis as any;
+  const accountId = sanitizeValue(env?.R2_ACCOUNT_ID || g.R2_ACCOUNT_ID);
+  
+  // Fall back to standard S3 keys if private-specific keys are not defined
+  const accessKeyId = sanitizeValue(
+    env?.R2_PRIVATE_ACCESS_KEY_ID || env?.R2_ACCESS_KEY_ID || env?.ACCESS_KEY_ID || 
+    g.R2_PRIVATE_ACCESS_KEY_ID || g.R2_ACCESS_KEY_ID || g.ACCESS_KEY_ID
+  );
+  const secretAccessKey = sanitizeValue(
+    env?.R2_PRIVATE_SECRET_ACCESS_KEY || env?.R2_SECRET_ACCESS_KEY || env?.SECRET_ACCESS_KEY || 
+    g.R2_PRIVATE_SECRET_ACCESS_KEY || g.R2_SECRET_ACCESS_KEY || g.SECRET_ACCESS_KEY
+  );
+  
+  // Map to dashboard R2_PRIVATE_BUCKET or R2_PRIVATE_BUCKET_NAME
+  const bucket = sanitizeValue(
+    env?.R2_PRIVATE_BUCKET || env?.R2_PRIVATE_BUCKET_NAME || 
+    g.R2_PRIVATE_BUCKET || g.R2_PRIVATE_BUCKET_NAME
+  );
+
+  if (!accountId || !accessKeyId || !secretAccessKey || !bucket) {
+    throw new Error(
+      `Missing required Cloudflare execution context environment variables for Private R2 client. ` +
+      `AccountId: ${!!accountId}, AccessKeyId: ${!!accessKeyId}, SecretAccessKey: ${!!secretAccessKey}, Bucket: ${!!bucket}`
+    );
+  }
+
   return {
     client: new S3Client({
       region: "auto",
       endpoint: `https://${accountId}.r2.cloudflarestorage.com`,
       credentials: { accessKeyId, secretAccessKey },
     }),
-    bucket: required("R2_PRIVATE_BUCKET_NAME"),
+    bucket,
   };
 }
 

@@ -72,18 +72,55 @@ function requiredEnv(name: string): string {
   return value;
 }
 
+function sanitizeValue(val: string | undefined): string | undefined {
+  if (!val) return undefined;
+  return val.trim().replace(/^['"]|['"]$/g, "").trim();
+}
+
 function r2Client(): { client: S3Client; bucket: string; publicBaseUrl: string } {
-  const accountId = requiredEnv("R2_ACCOUNT_ID");
-  const accessKeyId = requiredEnv("R2_ACCESS_KEY_ID");
-  const secretAccessKey = requiredEnv("R2_SECRET_ACCESS_KEY");
+  let env: any = null;
+  try {
+    if (getEventFn) {
+      const event = getEventFn();
+      env = event?.context?.cloudflare?.env || 
+            event?.context?.env || 
+            event?.context?.cloudflare || 
+            (event?.context as any)?.cloudflare?.env;
+    }
+  } catch {}
+
+  // Safe global fallback
+  if (!env) {
+    try {
+      const g = globalThis as any;
+      env = g["__CLOUDFLARE_ENV__"] || g["__env__"] || g["process"]?.["env"] || process.env;
+    } catch {}
+  }
+
+  const g = globalThis as any;
+  const accountId = sanitizeValue(env?.R2_ACCOUNT_ID || g.R2_ACCOUNT_ID);
+  const accessKeyId = sanitizeValue(env?.R2_ACCESS_KEY_ID || env?.ACCESS_KEY_ID || g.R2_ACCESS_KEY_ID || g.ACCESS_KEY_ID);
+  const secretAccessKey = sanitizeValue(env?.R2_SECRET_ACCESS_KEY || env?.SECRET_ACCESS_KEY || g.R2_SECRET_ACCESS_KEY || g.SECRET_ACCESS_KEY);
+  const bucket = sanitizeValue(env?.R2_BUCKET_NAME || g.R2_BUCKET_NAME);
+  
+  // Provide robust fallback to production storefront custom media domain
+  const publicBaseUrl = sanitizeValue(env?.R2_PUBLIC_BASE_URL || g.R2_PUBLIC_BASE_URL) || "https://media.boutq.store";
+
+  if (!accountId || !accessKeyId || !secretAccessKey || !bucket) {
+    throw new Error(
+      `Missing required Cloudflare execution context environment variables for Public R2 client. ` +
+      `AccountId: ${!!accountId}, AccessKeyId: ${!!accessKeyId}, SecretAccessKey: ${!!secretAccessKey}, Bucket: ${!!bucket}`
+    );
+  }
+
   return {
     client: new S3Client({
       region: "auto",
       endpoint: `https://${accountId}.r2.cloudflarestorage.com`,
       credentials: { accessKeyId, secretAccessKey },
     }),
-    bucket: requiredEnv("R2_BUCKET_NAME"),
-    publicBaseUrl: requiredEnv("R2_PUBLIC_BASE_URL").replace(/\/+$/, ""),
+    bucket,
+    publicBaseUrl,
   };
 }
 
