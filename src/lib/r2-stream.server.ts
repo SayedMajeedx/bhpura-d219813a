@@ -50,11 +50,11 @@ async function getR2Config(isPrivate: boolean = false): Promise<R2Config> {
     throw new Error("Unable to access the Cloudflare native execution environment context.");
   }
 
-  const accountId = env.R2_ACCOUNT_ID;
-  const accessKeyId = env.R2_ACCESS_KEY_ID;
-  const secretAccessKey = env.R2_SECRET_ACCESS_KEY;
+  const accountId = env.R2_ACCOUNT_ID?.trim();
+  const accessKeyId = env.R2_ACCESS_KEY_ID?.trim();
+  const secretAccessKey = env.R2_SECRET_ACCESS_KEY?.trim();
   // Map exactly to variables specified by dashboard naming guidelines
-  const bucket = isPrivate ? env.R2_PRIVATE_BUCKET : env.R2_BUCKET_NAME;
+  const bucket = (isPrivate ? env.R2_PRIVATE_BUCKET : env.R2_BUCKET_NAME)?.trim();
 
   if (!accountId || !accessKeyId || !secretAccessKey || !bucket) {
     throw new Error(
