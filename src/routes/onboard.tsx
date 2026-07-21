@@ -1087,18 +1087,25 @@ function OnboardPage() {
       {/* Dynamic Features Transparency Modal */}
       {showFeaturesModal && (
         <div className="fixed inset-0 bg-black/70 backdrop-blur-md z-50 flex items-center justify-center p-4 overflow-y-auto animate-in fade-in duration-200">
-          <div className="bg-zinc-950/95 border border-zinc-800/85 rounded-3xl p-6 md:p-8 max-w-4xl w-full shadow-2xl relative animate-in fade-in zoom-in-95 duration-200 text-white select-none">
+          <div 
+            dir={lang === "ar" ? "rtl" : "ltr"}
+            className="bg-zinc-950/95 border border-zinc-800/85 rounded-3xl p-6 md:p-8 max-w-4xl w-full shadow-2xl relative animate-in fade-in zoom-in-95 duration-200 text-white select-none"
+          >
             {/* Close Button */}
             <button 
               onClick={() => setShowFeaturesModal(false)}
-              className="absolute top-4 right-4 md:top-6 md:right-6 text-zinc-400 hover:text-white bg-zinc-900 hover:bg-zinc-800 h-8 w-8 rounded-full flex items-center justify-center transition-all"
+              className={`absolute top-4 md:top-6 text-zinc-400 hover:text-white bg-zinc-900 hover:bg-zinc-800 h-8 w-8 rounded-full flex items-center justify-center transition-all z-10 ${
+                lang === "ar" ? "left-4 md:left-6" : "right-4 md:right-6"
+              }`}
             >
               ✕
             </button>
 
             {/* Header */}
-            <div className="mb-6 flex items-center gap-3 border-b border-zinc-800/50 pb-4">
-              <Store className="h-6 w-6 text-[#B76E79]" />
+            <div className={`mb-6 flex items-center gap-3 border-b border-zinc-800/50 pb-4 ${
+              lang === "ar" ? "pl-10" : "pr-10"
+            }`}>
+              <Store className="h-6 w-6 text-[#B76E79] shrink-0" />
               <div>
                 <h3 className="text-lg md:text-xl font-display font-medium">
                   {lang === "ar" ? "المميزات الفاخرة لمنصة Boutq" : "Premium Features of the Boutq Platform"}
