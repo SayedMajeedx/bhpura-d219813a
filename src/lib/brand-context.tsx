@@ -14,6 +14,9 @@ export type Brand = {
   payment_receipt_url?: string | null;
   payment_receipt_uploaded_at?: string | null;
   custom_domain?: string | null;
+  plan_type?: "lifetime" | "trial" | null;
+  trial_ends_at?: string | null;
+  created_at?: string;
 };
 
 const BrandContext = createContext<Brand | null>(null);

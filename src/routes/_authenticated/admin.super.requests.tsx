@@ -82,6 +82,11 @@ function SuperRequestsPage() {
   const [receiptLoading, setReceiptLoading] = useState(false);
   const [receiptViewUrl, setReceiptViewUrl] = useState<string | null>(null);
 
+  // Approval Dialog States
+  const [approvingRequest, setApprovingRequest] = useState<TenantRequest | null>(null);
+  const [selectedPlan, setSelectedPlan] = useState<"lifetime" | "trial">("lifetime");
+  const [deploying, setDeploying] = useState(false);
+
   // Queries
   const requestsQuery = useQuery({
     queryKey: ["tenant-requests"],
@@ -156,24 +161,32 @@ function SuperRequestsPage() {
     }
   };
 
-  // Action: Approve & Mark Deployed
-  const handleApprove = async (id: string, subdomain: string) => {
-    const confirmApprove = window.confirm(
-      lang === "ar"
-        ? `هل أنت متأكد من الموافقة وتفعيل مساحة المتجر "${subdomain}" يدوياً؟`
-        : `Confirm manual deployment & activation of brand workspace "${subdomain}"?`
-    );
-    if (!confirmApprove) return;
+  // Action: Open Approval Dialog Configuration
+  const handleApprove = (request: TenantRequest) => {
+    setApprovingRequest(request);
+    // Pre-select plan based on initial request type
+    setSelectedPlan(request.request_type === "trial" ? "trial" : "lifetime");
+  };
 
+  // Action: Approve & Mark Deployed on Confirmed dialog
+  const executeApproval = async () => {
+    if (!approvingRequest) return;
+    setDeploying(true);
     const toastId = toast.loading(lang === "ar" ? "جاري تفعيل المساحة ونشر قواعد البيانات..." : "Deploying workspace structures...");
 
     try {
-      await approveTenantRequest({ requestId: id });
+      await approveTenantRequest({ 
+        requestId: approvingRequest.id,
+        planType: selectedPlan
+      });
       toast.success(lang === "ar" ? "تم تفعيل المتجر ونشر المساحة يدوياً بنجاح!" : "Workspace deployed successfully!", { id: toastId });
+      setApprovingRequest(null);
       void qc.invalidateQueries({ queryKey: ["tenant-requests"] });
     } catch (err: any) {
       console.error(err);
       toast.error(err.message || "Approval failed.", { id: toastId });
+    } finally {
+      setDeploying(false);
     }
   };
 
@@ -463,7 +476,7 @@ function SuperRequestsPage() {
                               </Button>
                               <Button 
                                 size="xs" 
-                                onClick={() => handleApprove(request.id, request.desired_subdomain)}
+                                onClick={() => handleApprove(request)}
                                 className="text-xs bg-emerald-600 hover:bg-emerald-500 text-white py-1 h-8 px-2.5 gap-1"
                               >
                                 <CheckCircle2 className="h-3.5 w-3.5" />
@@ -481,6 +494,99 @@ function SuperRequestsPage() {
           </Card>
         </div>
       </div>
+
+      {/* Interactive Deployment Configuration Dialog */}
+      <Dialog open={!!approvingRequest} onOpenChange={(open) => !open && setApprovingRequest(null)}>
+        <DialogContent className="max-w-md bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100 p-6 rounded-lg shadow-lg">
+          <DialogHeader>
+            <DialogTitle className="text-lg font-display font-medium flex items-center gap-2">
+              <Sparkles className="h-5 w-5 text-primary shrink-0" />
+              <span>{lang === "ar" ? "تأكيد تفعيل المتجر ونشر المساحة" : "Approve & Deploy Workspace"}</span>
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <div className="p-3.5 bg-zinc-50 dark:bg-zinc-900/50 rounded-lg border border-zinc-100 dark:border-zinc-900 text-xs space-y-1 font-mono">
+              <p className="flex justify-between">
+                <span className="text-muted-foreground">{lang === "ar" ? "اسم المالك:" : "Owner Name:"}</span>
+                <span className="font-semibold">{approvingRequest?.full_name}</span>
+              </p>
+              <p className="flex justify-between">
+                <span className="text-muted-foreground">{lang === "ar" ? "الرابط المطلوب:" : "Desired Domain:"}</span>
+                <span className="font-semibold text-primary">{approvingRequest?.desired_subdomain}.boutq.store</span>
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground block">
+                {lang === "ar" ? "اختر باقة تفعيل العميل" : "Select Deployment Access Plan"}
+              </Label>
+              
+              <div className="grid grid-cols-1 gap-3">
+                <button
+                  type="button"
+                  onClick={() => setSelectedPlan("lifetime")}
+                  className={`p-4 rounded-lg border cursor-pointer text-left transition-all duration-150 flex flex-col justify-between ${
+                    selectedPlan === "lifetime"
+                      ? "border-primary dark:border-primary bg-primary/[0.02] ring-1 ring-primary"
+                      : "border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 bg-background"
+                  }`}
+                >
+                  <div className="flex items-center justify-between mb-1 w-full">
+                    <span className="font-semibold text-sm text-foreground flex items-center gap-1.5">
+                      <Crown className="h-4 w-4 text-amber-500 shrink-0" />
+                      {lang === "ar" ? "ترخيص مدى الحياة" : "Lifetime Access"}
+                    </span>
+                    <Badge variant="outline" className="bg-emerald-500/10 text-emerald-500 border-none font-semibold text-[10px]">
+                      {lang === "ar" ? "55 د.ب" : "55 BHD model"}
+                    </Badge>
+                  </div>
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    {lang === "ar" 
+                      ? "تفعيل كامل مع 6 أشهر دعم فني مضمون للمتجر." 
+                      : "One-Time Platform License. Includes 6 months of active technical support guaranteed."}
+                  </p>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setSelectedPlan("trial")}
+                  className={`p-4 rounded-lg border cursor-pointer text-left transition-all duration-150 flex flex-col justify-between ${
+                    selectedPlan === "trial"
+                      ? "border-primary dark:border-primary bg-primary/[0.02] ring-1 ring-primary"
+                      : "border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 bg-background"
+                  }`}
+                >
+                  <div className="flex items-center justify-between mb-1 w-full">
+                    <span className="font-semibold text-sm text-foreground flex items-center gap-1.5">
+                      <ClockIcon className="h-4 w-4 text-rose-500 shrink-0" />
+                      {lang === "ar" ? "نسخة تجريبية 3 أيام" : "3-Day Free Trial"}
+                    </span>
+                    <Badge variant="outline" className="bg-rose-500/10 text-rose-500 border-none font-semibold text-[10px]">
+                      {lang === "ar" ? "وصول مؤقت" : "Temporary"}
+                    </Badge>
+                  </div>
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    {lang === "ar" 
+                      ? "تفعيل متجر مجاني تجريبي مؤقت ينتهي تلقائياً بعد 3 أيام." 
+                      : "Temporary access. Sets brand to trial status with trial_ends_at set to 3 days from now."}
+                  </p>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-2 mt-4 sm:flex-row flex-col">
+            <Button variant="outline" onClick={() => setApprovingRequest(null)} disabled={deploying} className="text-xs h-9">
+              {lang === "ar" ? "إلغاء" : "Cancel"}
+            </Button>
+            <Button onClick={executeApproval} disabled={deploying} className="text-xs h-9 bg-emerald-600 hover:bg-emerald-500 text-white gap-1.5">
+              {deploying ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <CheckCircle2 className="h-3.5 w-3.5" />}
+              <span>{lang === "ar" ? "تأكيد ونشر" : "Confirm & Deploy"}</span>
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

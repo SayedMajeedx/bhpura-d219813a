@@ -23,6 +23,7 @@ const CreateRequestInput = z.object({
 
 const AdminActionInput = z.object({
   requestId: z.string().uuid(),
+  planType: z.enum(["lifetime", "trial"]).optional()
 });
 
 const UpdatePriceInput = z.object({
@@ -277,6 +278,34 @@ export const approveTenantRequest = createServerFn({ method: "POST" })
       .eq("id", data.requestId);
 
     if (error) throw error;
+
+    // Fetch the created brand by slug to set its plan details
+    const brandSlug = request.desired_subdomain.toLowerCase().trim();
+    const approvedPlanType = data.planType || (request.request_type === "trial" ? "trial" : "lifetime");
+    const trialEndsAt = approvedPlanType === "trial" ? new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString() : null;
+
+    // Since database triggers create the brand row, let's query it and update it
+    const { data: brandRow } = await context.supabase
+      .from("brands")
+      .select("id")
+      .eq("slug", brandSlug)
+      .maybeSingle();
+
+    if (brandRow) {
+      const { error: brandUpdateErr } = await context.supabase
+        .from("brands")
+        .update({
+          plan_type: approvedPlanType,
+          trial_ends_at: trialEndsAt,
+          updated_at: new Date().toISOString()
+        })
+        .eq("id", brandRow.id);
+
+      if (brandUpdateErr) {
+        console.error("Failed to update brand plan details upon request approval:", brandUpdateErr);
+      }
+    }
+
     return { success: true };
   });
 

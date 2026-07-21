@@ -12,7 +12,7 @@ export const Route = createFileRoute("/_authenticated/admin/b/$slug")({
     // Load target brand with all subscription metadata fields
     const { data: brand, error: brandErr } = await (supabase as any)
       .from("brands")
-      .select("id, slug, name_en, name_ar, logo_url, is_active, subscription_tier, subscription_status, subscription_expires_at, payment_receipt_url, payment_receipt_uploaded_at, custom_domain, support_access_enabled")
+      .select("id, slug, name_en, name_ar, logo_url, is_active, subscription_tier, subscription_status, subscription_expires_at, payment_receipt_url, payment_receipt_uploaded_at, custom_domain, support_access_enabled, plan_type, trial_ends_at, created_at")
       .eq("slug", params.slug)
       .maybeSingle();
 

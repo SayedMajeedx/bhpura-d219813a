@@ -87,6 +87,8 @@ type Brand = {
   payment_receipt_url: string | null;
   payment_receipt_uploaded_at: string | null;
   custom_domain: string | null;
+  plan_type: "lifetime" | "trial" | null;
+  trial_ends_at: string | null;
 };
 
 function BrandsPage() {
@@ -568,6 +570,7 @@ function BrandsPage() {
 function NewBrandDialog({ onSaved }: { onSaved: () => void }) {
   const { lang } = useI18n();
   const [form, setForm] = useState({ slug: "", name_en: "", name_ar: "", logo_url: "" });
+  const [planType, setPlanType] = useState<"lifetime" | "trial">("lifetime");
   const [saving, setSaving] = useState(false);
 
   const submit = async () => {
@@ -598,6 +601,30 @@ function NewBrandDialog({ onSaved }: { onSaved: () => void }) {
       });
 
       if (error) throw error;
+
+      // Update plan_type and trial_ends_at on the newly created brand row
+      const trialEndsAt = planType === "trial" ? new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString() : null;
+      const { data: brandRow } = await supabase
+        .from("brands")
+        .select("id")
+        .eq("slug", slug)
+        .maybeSingle();
+
+      if (brandRow) {
+        const { error: brandUpdateErr } = await supabase
+          .from("brands")
+          .update({
+            plan_type: planType,
+            trial_ends_at: trialEndsAt,
+            updated_at: new Date().toISOString()
+          })
+          .eq("id", brandRow.id);
+
+        if (brandUpdateErr) {
+          console.error("Failed to set custom plan on newly deployed brand:", brandUpdateErr);
+        }
+      }
+
       toast.success(lang === "ar" ? "تم تهيئة المتجر وإطلاقه بنجاح!" : "Tenant database provisioned and live!");
       onSaved();
     } catch (err: any) {
@@ -652,6 +679,33 @@ function NewBrandDialog({ onSaved }: { onSaved: () => void }) {
               ? "يُكتب يدويًا ولا يُشتق من الاسم. سيظهر في /admin/b/{المعرّف} و /{المعرّف}."
               : "Typed manually — never auto-generated from the name. Used in /admin/b/{slug} and /{slug}."}
           </p>
+        </div>
+        <div>
+          <Label>{lang === "ar" ? "باقة تفعيل المتجر" : "Deployment Access Plan"}</Label>
+          <div className="grid grid-cols-2 gap-2 mt-1">
+            <button
+              type="button"
+              onClick={() => setPlanType("lifetime")}
+              className={`p-2.5 text-xs rounded border font-semibold text-center cursor-pointer transition-all ${
+                planType === "lifetime"
+                  ? "border-primary bg-primary/[0.02] ring-1 ring-primary text-primary"
+                  : "border-zinc-200 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-900"
+              }`}
+            >
+              {lang === "ar" ? "ترخيص مدى الحياة" : "Lifetime Access"}
+            </button>
+            <button
+              type="button"
+              onClick={() => setPlanType("trial")}
+              className={`p-2.5 text-xs rounded border font-semibold text-center cursor-pointer transition-all ${
+                planType === "trial"
+                  ? "border-primary bg-primary/[0.02] ring-1 ring-primary text-primary"
+                  : "border-zinc-200 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-900"
+              }`}
+            >
+              {lang === "ar" ? "تجربة 3 أيام" : "3-Day Free Trial"}
+            </button>
+          </div>
         </div>
       </div>
       <DialogFooter>
