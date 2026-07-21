@@ -91,10 +91,7 @@ export const fetchInstagramPosts = createServerFn({ method: "POST" })
         const caption = item.caption || item.text || "";
         const { isSoldOut, keyword } = scanCaptionForSoldOut(caption);
         
-        let imageUrl = item.displayUrl || item.images?.[0] || "";
-        if (!imageUrl && item.childPosts && item.childPosts.length > 0) {
-          imageUrl = item.childPosts[0].displayUrl || item.childPosts[0].images?.[0] || "";
-        }
+        const imageUrl = item.displayUrl || (item.images && item.images[0]) || item.thumbnailUrl || (item.displayResources && item.displayResources[0]?.src) || "";
 
         const dateStr = item.timestamp 
           ? new Date(item.timestamp).toLocaleDateString("en-US", { month: "short", day: "numeric" })

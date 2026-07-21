@@ -884,6 +884,7 @@ function InstagramImporterModal({ brandId, onComplete }: { brandId: string; onCo
                         <img
                           src={post.imageUrl}
                           alt="Instagram Preview"
+                          referrerPolicy="no-referrer"
                           className="w-full h-full object-cover transition-transform group-hover:scale-105 duration-300"
                         />
                         <div className="absolute top-2 start-2 z-10">
