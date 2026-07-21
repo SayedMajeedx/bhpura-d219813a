@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { importProductCatalog } from "@/lib/universal-importer";
-import { fetchInstagramPosts, parseInstagramPostsWithAI, scanCaptionForSoldOut, type InstagramPostPreview } from "@/lib/instagram-ai-importer";
+import { fetchInstagramPosts, checkScraperStatus, fetchScraperDataset, parseInstagramPostsWithAI, scanCaptionForSoldOut, type InstagramPostPreview } from "@/lib/instagram-ai-importer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -615,23 +615,59 @@ function InstagramImporterModal({ brandId, onComplete }: { brandId: string; onCo
   const [progress, setProgress] = useState("");
   const [successCount, setSuccessCount] = useState(0);
   const [loadingPosts, setLoadingPosts] = useState(false);
+  const [fetchStatus, setFetchStatus] = useState("");
   const { lang } = useI18n();
   const isAr = lang === "ar";
 
   const handleFetchPosts = async () => {
     setLoadingPosts(true);
+    setFetchStatus(isAr ? "جاري تهيئة عملية الجلب..." : "Initializing scraper run...");
     try {
       const urlsList = urlsText
         .split("\n")
         .map((u) => u.trim())
         .filter((u) => u.startsWith("http"));
-      const result = await fetchInstagramPosts({
+      
+      // 1. Start scraper run
+      const initResult = await fetchInstagramPosts({
         data: {
           username: username.trim() || undefined,
           urls: urlsList.length > 0 ? urlsList : undefined,
           range,
         },
       });
+
+      const { runId, datasetId } = initResult;
+
+      // 2. Client-side isolated polling to completely bypass Worker subrequest limits
+      let status = "RUNNING";
+      const maxRetries = 60;
+      let attempt = 0;
+
+      while (status === "RUNNING" || status === "READY") {
+        if (attempt >= maxRetries) {
+          throw new Error("Scraping task timed out. Please try again with fewer posts.");
+        }
+
+        attempt++;
+        setFetchStatus(isAr ? `جاري جلب منشورات انستقرام (محاولة ${attempt}/${maxRetries})...` : `Scraping posts (attempt ${attempt}/${maxRetries})...`);
+        
+        // Wait 2.5 seconds between polling checks
+        await new Promise((resolve) => setTimeout(resolve, 2500));
+
+        const checkResult = await checkScraperStatus({
+          data: { runId },
+        });
+        status = checkResult.status;
+      }
+
+      setFetchStatus(isAr ? "جاري تحليل نتائج الكتالوج..." : "Analyzing catalog results...");
+
+      // 3. Fetch final dataset items
+      const result = await fetchScraperDataset({
+        data: { datasetId },
+      });
+
       setPosts(result);
       
       const defaultSelected = new Set<string>();
@@ -648,6 +684,7 @@ function InstagramImporterModal({ brandId, onComplete }: { brandId: string; onCo
       toast.error(isAr ? `فشل جلب منشورات انستقرام: ${errMsg}` : `Failed to fetch Instagram posts: ${errMsg}`);
     } finally {
       setLoadingPosts(false);
+      setFetchStatus("");
     }
   };
 
@@ -826,7 +863,7 @@ function InstagramImporterModal({ brandId, onComplete }: { brandId: string; onCo
                   {loadingPosts ? (
                     <>
                       <Loader2 className="h-4 w-4 me-2 animate-spin" />
-                      {isAr ? "جاري جلب المنشورات..." : "Fetching Instagram posts..."}
+                      {fetchStatus || (isAr ? "جاري جلب المنشورات..." : "Fetching Instagram posts...")}
                     </>
                   ) : (
                     <>
