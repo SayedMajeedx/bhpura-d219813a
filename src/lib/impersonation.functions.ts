@@ -70,7 +70,7 @@ export const startImpersonationSession = createServerFn({ method: "POST" })
       reason: data.reason || "Technical Support Troubleshooting",
     });
 
-    return { success: true, slug: brand.slug };
+    return { success: true, slug: brand.slug, token: tokenStr };
   });
 
 export const stopImpersonationSession = createServerFn({ method: "POST" })

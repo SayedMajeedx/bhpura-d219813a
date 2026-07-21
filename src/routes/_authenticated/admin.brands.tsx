@@ -101,7 +101,10 @@ function BrandsPage() {
   const handleImpersonate = async (brandId: string, slug: string) => {
     const toastId = toast.loading(lang === "ar" ? "جاري تفعيل قناة محاكاة المسؤول الخارق..." : "Initializing Superadmin Impersonation session...");
     try {
-      await startImpersonationSession({ data: { targetTenantId: brandId } });
+      const res = await startImpersonationSession({ data: { targetTenantId: brandId } });
+      if (res && "token" in res && res.token) {
+        document.cookie = `boutq_impersonation_token=${res.token}; path=/; max-age=${60 * 60 * 24}; samesite=lax${window.location.protocol === "https:" ? "; secure" : ""}`;
+      }
       toast.success(lang === "ar" ? "تم تسجيل الجلسة في سجل التدقيق الموثق! جاري التحويل..." : "Audit log recorded! Redirecting to merchant dashboard...", { id: toastId });
       window.location.href = `/admin/b/${slug}/dashboard`;
     } catch (err: any) {

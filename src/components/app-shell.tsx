@@ -36,6 +36,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     try {
       const { stopImpersonationSession } = await import("@/lib/impersonation.functions");
       await stopImpersonationSession();
+      if (typeof document !== "undefined") {
+        document.cookie = "boutq_impersonation_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+      }
       toast.success(
         lang === "ar"
           ? "تم الخروج من وضع المحاكاة بنجاح"
