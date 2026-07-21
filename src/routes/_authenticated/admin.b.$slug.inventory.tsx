@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { importProductCatalog } from "@/lib/universal-importer";
-import { fetchInstagramPosts, checkScraperStatus, fetchScraperDataset, parseInstagramPostsWithAI, scanCaptionForSoldOut, type InstagramPostPreview } from "@/lib/instagram-ai-importer";
+import { fetchInstagramPosts, checkScraperStatus, fetchScraperDataset, batchParseCaptionsWithAI, batchRehostImages, bulkInsertProducts, scanCaptionForSoldOut, type InstagramPostPreview } from "@/lib/instagram-ai-importer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -725,34 +725,63 @@ function InstagramImporterModal({ brandId, onComplete }: { brandId: string; onCo
 
     setStep("importing");
     const checkedPosts = posts.filter((p) => selectedIds.has(p.id));
-    let completed = 0;
-    let totalSuccess = 0;
 
-    for (const post of checkedPosts) {
+    try {
+      // Step 1/3: AI analyzing all captions in parallel
       setProgress(
         isAr
-          ? `جاري معالجة المنشور ${completed + 1} من ${checkedPosts.length}: استخراج التفاصيل بالذكاء الاصطناعي...`
-          : `Processing post ${completed + 1} of ${checkedPosts.length}: Extracting AI metadata...`
+          ? "⚡ الخطوة 1/3: جاري تحليل كافة النصوص بالذكاء الاصطناعي في نفس الوقت..."
+          : "⚡ Step 1/3: AI analyzing all captions in parallel..."
       );
+      const parseResult = await batchParseCaptionsWithAI({
+        data: {
+          brandId,
+          posts: checkedPosts.map((p) => ({
+            id: p.id,
+            url: p.url,
+            imageUrl: p.imageUrl,
+            caption: p.caption,
+            isSoldOut: p.isSoldOut,
+            isVideo: p.isVideo,
+          })),
+        },
+      });
 
-      try {
-        const result = await parseInstagramPostsWithAI({
-          data: {
-            brandId,
-            posts: [post],
-          },
-        });
-        totalSuccess += result.successCount;
-      } catch (err) {
-        console.error("Batch post failed", post.id, err);
-      }
+      // Step 2/3: Re-hosting high-res images to R2
+      setProgress(
+        isAr
+          ? "🖼️ الخطوة 2/3: جاري إعادة استضافة الصور عالية الدقة في سحابة R2..."
+          : "🖼️ Step 2/3: Re-hosting high-res images to R2..."
+      );
+      const rehostResult = await batchRehostImages({
+        data: {
+          brandId,
+          products: parseResult.products,
+        },
+      });
 
-      completed++;
+      // Step 3/3: Bulk saving catalog to database
+      setProgress(
+        isAr
+          ? "💾 الخطوة 3/3: جاري حفظ المنتجات والمقاسات في قاعدة البيانات دفعة واحدة..."
+          : "💾 Step 3/3: Bulk saving catalog to database..."
+      );
+      const insertResult = await bulkInsertProducts({
+        data: {
+          brandId,
+          products: rehostResult.products,
+        },
+      });
+
+      setSuccessCount(insertResult.successCount);
+      setStep("success");
+      onComplete();
+    } catch (err) {
+      console.error("Turbo batch pipeline failed", err);
+      const errMsg = err instanceof Error ? err.message : String(err);
+      toast.error(isAr ? `فشل الاستيراد السريع: ${errMsg}` : `Turbo Batch Import failed: ${errMsg}`);
+      setStep("grid");
     }
-
-    setSuccessCount(totalSuccess);
-    setStep("success");
-    onComplete();
   };
 
   return (
