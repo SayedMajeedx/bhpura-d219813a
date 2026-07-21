@@ -21,7 +21,7 @@ export const Route = createFileRoute("/_authenticated/admin/")({
       .maybeSingle();
 
     const email = (user.email || "").toLowerCase();
-    const isFixedSuperAdmin = email === "majeed@hotmail.it";
+    const isFixedSuperAdmin = email === "majeed@hotmail.it" || email === "majeed@hotmail.com";
     const isSuperAdmin = isFixedSuperAdmin || profile?.role === "super_admin";
 
     if (profile?.brand_id) {

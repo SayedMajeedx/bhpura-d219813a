@@ -60,7 +60,7 @@ export const startImpersonationSession = createServerFn({ method: "POST" })
 
     // Set cookie in response using isolated server-only module
     const { writeImpersonationCookie } = await import("./impersonation-cookies.server");
-    writeImpersonationCookie(tokenStr);
+    await writeImpersonationCookie(tokenStr);
 
     // Write immutable audit log
     await supabaseAdmin.from("system_audit_logs").insert({
@@ -81,14 +81,14 @@ export const stopImpersonationSession = createServerFn({ method: "POST" })
     let targetTenantId: string | null = null;
 
     const { readImpersonationCookie, clearImpersonationCookie } = await import("./impersonation-cookies.server");
-    const cookieVal = readImpersonationCookie();
+    const cookieVal = await readImpersonationCookie();
     if (cookieVal) {
       try {
         const payload = JSON.parse(Buffer.from(cookieVal, "base64").toString("utf-8"));
         targetTenantId = payload.targetTenantId;
       } catch {}
     }
-    clearImpersonationCookie();
+    await clearImpersonationCookie();
 
     // Write audit log if we could resolve the target brand
     if (targetTenantId) {
@@ -210,7 +210,7 @@ export const validateImpersonationSession = createServerFn({ method: "POST" })
   .validator((raw: unknown) => ValidateSessionInput.parse(raw))
   .handler(async ({ data }) => {
     const { readImpersonationCookie } = await import("./impersonation-cookies.server");
-    const cookieVal = readImpersonationCookie();
+    const cookieVal = await readImpersonationCookie();
     if (!cookieVal) return { valid: false };
 
     try {

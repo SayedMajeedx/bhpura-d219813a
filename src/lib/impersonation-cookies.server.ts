@@ -1,48 +1,48 @@
-let getEventFn: any = null;
-let setCookieFn: any = null;
-let deleteCookieFn: any = null;
-let getCookieFn: any = null;
+async function getVinxiHttp() {
+  const importFn = new Function("m", "return import(m)");
+  return importFn("vinxi/http");
+}
 
-import(/* @vite-ignore */ "vinxi/http")
-  .then((m) => {
-    getEventFn = m.getEvent;
-    setCookieFn = m.setCookie;
-    deleteCookieFn = m.deleteCookie;
-    getCookieFn = m.getCookie;
-  })
-  .catch(() => {});
-
-export function writeImpersonationCookie(token: string) {
-  if (getEventFn && setCookieFn) {
-    const event = getEventFn();
+export async function writeImpersonationCookie(token: string) {
+  try {
+    const { getEvent, setCookie } = await getVinxiHttp();
+    const event = getEvent();
     if (event) {
-      setCookieFn(event, "boutq_impersonation_token", token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
+      setCookie(event, "boutq_impersonation_token", token, {
+        httpOnly: false, // Allowed to be read by client to show the warning banner
+        secure: true,
         sameSite: "lax",
         path: "/",
         maxAge: 60 * 60 * 24, // 24 hours
       });
     }
+  } catch (err) {
+    console.error("Failed to write impersonation cookie:", err);
   }
 }
 
-export function clearImpersonationCookie() {
-  if (getEventFn && deleteCookieFn) {
-    const event = getEventFn();
+export async function clearImpersonationCookie() {
+  try {
+    const { getEvent, deleteCookie } = await getVinxiHttp();
+    const event = getEvent();
     if (event) {
-      deleteCookieFn(event, "boutq_impersonation_token", {
+      deleteCookie(event, "boutq_impersonation_token", {
         path: "/",
       });
     }
+  } catch (err) {
+    console.error("Failed to clear impersonation cookie:", err);
   }
 }
 
-export function readImpersonationCookie(): string | undefined {
-  if (getEventFn && getCookieFn) {
-    const event = getEventFn();
+export async function readImpersonationCookie(): Promise<string | undefined> {
+  try {
+    const { getEvent, getCookie } = await getVinxiHttp();
+    const event = getEvent();
     if (!event) return undefined;
-    return getCookieFn(event, "boutq_impersonation_token");
+    return getCookie(event, "boutq_impersonation_token");
+  } catch (err) {
+    console.error("Failed to read impersonation cookie:", err);
+    return undefined;
   }
-  return undefined;
 }
