@@ -356,7 +356,7 @@ function OnboardPage() {
   // SUCCESS CONFIRMATION OVERLAY (Waiting for Manual Activation freeze state)
   if (isDeployedPending) {
     return (
-      <div className="min-h-screen bg-zinc-950 flex flex-col justify-center items-center p-6 relative overflow-hidden text-white">
+      <div className="min-h-screen bg-zinc-950 flex flex-col justify-center items-center p-6 relative overflow-hidden text-white dark">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(128,0,32,0.1),transparent_70%)]" />
         <div className="absolute inset-0 bg-[linear-gradient(to_bottom,transparent,rgba(0,0,0,0.9))]" />
 
@@ -406,7 +406,7 @@ function OnboardPage() {
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <Button 
               variant="outline" 
-              className="border-zinc-800 hover:bg-zinc-800 text-white"
+              className="bg-transparent hover:bg-zinc-900 border-zinc-800 hover:border-zinc-700 text-zinc-300 hover:text-white transition-all"
               onClick={() => {
                 setIsDeployedPending(false);
                 setTrialFullName("");
