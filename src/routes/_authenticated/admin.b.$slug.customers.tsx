@@ -160,7 +160,10 @@ function sanitizeGCCPhone(phoneStr: string | null): string | null {
   if (clean.length === 8) {
     return `+973${clean}`;
   }
-  if (!phoneStr.startsWith("+")) {
+  if (clean.length === 9 && clean.startsWith("5")) {
+    return `+966${clean}`;
+  }
+  if (clean.startsWith("973") || clean.startsWith("966")) {
     return `+${clean}`;
   }
   return `+${clean}`;
@@ -283,12 +286,93 @@ function CustomerImporterModal({ brandId, onComplete }: { brandId: string; onCom
   };
 
   const startImportCSV = (dataRows: string[][], finalMappings: Record<string, number>) => {
+    const findHeaderIdx = (names: string[]) => {
+      return headers.findIndex(h => 
+        names.some(name => h.toLowerCase() === name.toLowerCase())
+      );
+    };
+
+    const findHeaderIdxContains = (names: string[]) => {
+      return headers.findIndex(h => 
+        names.some(name => h.toLowerCase().includes(name.toLowerCase()))
+      );
+    };
+
     const parsedCustomers = dataRows.map((row) => {
-      const nameVal = row[finalMappings.name] || (isAr ? "عميل مستورد" : "Imported Customer");
-      const phoneVal = sanitizeGCCPhone(row[finalMappings.phone] || null);
-      const emailVal = row[finalMappings.email] || null;
-      const ordersVal = parseInt(row[finalMappings.orders]?.replace(/[^\d]/g, "") || "0") || 0;
-      const spendVal = parseFloat(row[finalMappings.spend]?.replace(/[^\d.]/g, "") || "0") || 0;
+      let nameVal = "";
+      let phoneVal: string | null = null;
+      let emailVal: string | null = null;
+      let ordersVal = 0;
+      let spendVal = 0;
+
+      if (preset === "shopify") {
+        const firstNameIdx = findHeaderIdx(["first name"]);
+        const lastNameIdx = findHeaderIdx(["last name"]);
+        const emailIdx = findHeaderIdx(["email"]);
+        const defaultPhoneIdx = findHeaderIdx(["default address phone"]);
+        const phoneIdx = findHeaderIdx(["phone"]);
+        const totalSpentIdx = findHeaderIdx(["total spent", "total spend"]);
+        const totalOrdersIdx = findHeaderIdx(["total orders"]);
+
+        const first = firstNameIdx !== -1 ? row[firstNameIdx] : "";
+        const last = lastNameIdx !== -1 ? row[lastNameIdx] : "";
+        nameVal = `${first} ${last}`.trim();
+
+        if (!nameVal) {
+          const custIdx = findHeaderIdx(["customer", "customer name", "name"]);
+          if (custIdx !== -1) {
+            nameVal = row[custIdx]?.replace(/^\d+\s+/, "").trim() || "";
+          }
+        }
+
+        const rawPhone = (defaultPhoneIdx !== -1 ? row[defaultPhoneIdx] : null) || (phoneIdx !== -1 ? row[phoneIdx] : null);
+        phoneVal = sanitizeGCCPhone(rawPhone);
+
+        emailVal = emailIdx !== -1 ? row[emailIdx] : null;
+        ordersVal = totalOrdersIdx !== -1 ? parseInt(row[totalOrdersIdx]?.replace(/[^\d]/g, "") || "0") || 0 : 0;
+        spendVal = totalSpentIdx !== -1 ? parseFloat(row[totalSpentIdx]?.replace(/[^\d.]/g, "") || "0") || 0 : 0;
+
+      } else if (preset === "woocommerce") {
+        const firstNameIdx = findHeaderIdx(["first name", "billing_first_name", "shipping_first_name"]);
+        const lastNameIdx = findHeaderIdx(["last name", "billing_last_name", "shipping_last_name"]);
+        const emailIdx = findHeaderIdx(["email", "billing_email", "user_email"]);
+        const phoneIdx = findHeaderIdx(["phone", "billing_phone"]);
+        const totalSpentIdx = findHeaderIdx(["total spend", "total_spent", "spent"]);
+        const totalOrdersIdx = findHeaderIdx(["total orders", "orders_count", "orders"]);
+
+        const first = firstNameIdx !== -1 ? row[firstNameIdx] : "";
+        const last = lastNameIdx !== -1 ? row[lastNameIdx] : "";
+        nameVal = `${first} ${last}`.trim();
+
+        phoneVal = sanitizeGCCPhone(phoneIdx !== -1 ? row[phoneIdx] : null);
+        emailVal = emailIdx !== -1 ? row[emailIdx] : null;
+        ordersVal = totalOrdersIdx !== -1 ? parseInt(row[totalOrdersIdx]?.replace(/[^\d]/g, "") || "0") || 0 : 0;
+        spendVal = totalSpentIdx !== -1 ? parseFloat(row[totalSpentIdx]?.replace(/[^\d.]/g, "") || "0") || 0 : 0;
+
+      } else if (preset === "salla" || preset === "zid") {
+        const nameIdx = findHeaderIdx(["اسم العميل", "الاسم الكامل", "الاسم", "client name", "customer name", "name"]);
+        const phoneIdx = findHeaderIdx(["رقم الجوال", "رقم الهاتف", "الجوال", "الهاتف", "mobile", "phone"]);
+        const emailIdx = findHeaderIdx(["البريد الإلكتروني", "البريد", "email", "email address"]);
+        const ordersIdx = findHeaderIdx(["عدد الطلبات", "عدد الطلبات الناجحة", "الطلبات", "orders", "total orders"]);
+        const spendIdx = findHeaderIdx(["إجمالي المشتريات", "إجمالي المبيعات", "المشتريات", "spend", "total spend", "total spent"]);
+
+        nameVal = nameIdx !== -1 ? row[nameIdx] : "";
+        phoneVal = sanitizeGCCPhone(phoneIdx !== -1 ? row[phoneIdx] : null);
+        emailVal = emailIdx !== -1 ? row[emailIdx] : null;
+        ordersVal = ordersIdx !== -1 ? parseInt(row[ordersIdx]?.replace(/[^\d]/g, "") || "0") || 0 : 0;
+        spendVal = spendIdx !== -1 ? parseFloat(row[spendIdx]?.replace(/[^\d.]/g, "") || "0") || 0 : 0;
+
+      } else {
+        nameVal = row[finalMappings.name] || "";
+        phoneVal = sanitizeGCCPhone(row[finalMappings.phone] || null);
+        emailVal = finalMappings.email !== -1 ? row[finalMappings.email] : null;
+        ordersVal = finalMappings.orders !== -1 ? parseInt(row[finalMappings.orders]?.replace(/[^\d]/g, "") || "0") || 0 : 0;
+        spendVal = finalMappings.spend !== -1 ? parseFloat(row[finalMappings.spend]?.replace(/[^\d.]/g, "") || "0") || 0 : 0;
+      }
+
+      if (!nameVal) {
+        nameVal = isAr ? "عميل مستورد" : "Imported Customer";
+      }
 
       const tags = [`migrated_${preset}`];
 
