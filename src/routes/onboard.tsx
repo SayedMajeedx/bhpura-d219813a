@@ -36,6 +36,33 @@ export const Route = createFileRoute("/onboard")({
 
 function OnboardPage() {
   const { lang, setLang } = useI18n();
+  const [liveSales, setLiveSales] = useState(4284.150);
+  const [activeNotifyIdx, setActiveNotifyIdx] = useState(0);
+
+  const notifications = [
+    { name_en: "Sofia Al Khalifa", name_ar: "صوفيا آل خليفة", item: "Organza Silk Abaya", price: "145.000 BHD" },
+    { name_en: "Fatima Al Doseri", name_ar: "فاطمة الدوسري", item: "Velvet Gown", price: "280.000 BHD" },
+    { name_en: "Amina Al Jalahma", name_ar: "أمينة الجلاهمة", item: "Linen Trench Abaya", price: "110.000 BHD" },
+  ];
+
+  useEffect(() => {
+    const salesInterval = setInterval(() => {
+      setLiveSales((prev) => {
+        const next = prev + (Math.random() * 0.15 + 0.05);
+        return next > 4300 ? 4284.15 : Number(next.toFixed(3));
+      });
+    }, 4000);
+
+    const notifyInterval = setInterval(() => {
+      setActiveNotifyIdx((prev) => (prev + 1) % notifications.length);
+    }, 6000);
+
+    return () => {
+      clearInterval(salesInterval);
+      clearInterval(notifyInterval);
+    };
+  }, []);
+
   const [loadingPrice, setLoadingPrice] = useState(true);
   const [basePrice, setBasePrice] = useState(55);
   const [discountPrice, setDiscountPrice] = useState<number | null>(null);
@@ -441,10 +468,126 @@ function OnboardPage() {
   return (
     <div className="min-h-screen flex flex-col md:flex-row bg-background">
       {/* Brand Visual Left Sidebar (Desktop only) */}
-      <div className="hidden md:flex md:w-[35%] bg-zinc-950 text-white flex-col justify-between p-12 relative overflow-hidden shrink-0 border-r border-zinc-900">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(128,0,32,0.15),transparent_50%)]" />
-        <div className="absolute inset-0 bg-[linear-gradient(to_bottom,transparent,rgba(0,0,0,0.8))]" />
+      <div className="hidden md:flex md:w-[35%] bg-zinc-950 text-white flex-col justify-between p-12 relative overflow-hidden shrink-0 border-r border-zinc-900 select-none">
+        <style>{`
+          @keyframes float-slow {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-10px) rotate(0.5deg); }
+          }
+          @keyframes float-slower {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(12px) rotate(-1deg); }
+          }
+          @keyframes pulse-soft {
+            0%, 100% { opacity: 0.15; transform: scale(1); }
+            50% { opacity: 0.35; transform: scale(1.05); }
+          }
+          @keyframes banner-slide {
+            0%, 100% { transform: translateY(-20px); opacity: 0; }
+            8%, 92% { transform: translateY(0); opacity: 1; }
+          }
+          .animate-float-slow {
+            animation: float-slow 8s ease-in-out infinite;
+          }
+          .animate-float-slower {
+            animation: float-slower 10s ease-in-out infinite;
+          }
+          .animate-pulse-soft {
+            animation: pulse-soft 6s ease-in-out infinite;
+          }
+          .animate-banner-slide {
+            animation: banner-slide 6s ease-in-out infinite;
+          }
+        `}</style>
 
+        {/* Dynamic moving luxury gradients */}
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(183,110,121,0.18),transparent_60%)] z-0" />
+        <div className="absolute inset-0 bg-[linear-gradient(to_bottom,transparent,rgba(9,9,11,0.95))] z-0" />
+
+        {/* Showcase Canvas Background (Animated Cards) */}
+        <div className="absolute inset-0 pointer-events-none opacity-30 dark:opacity-50 z-0">
+          {/* Glowing gradient backdrops */}
+          <div className="absolute top-[20%] right-[-10%] w-72 h-72 rounded-full bg-rose-500/10 blur-3xl animate-pulse-soft" />
+          <div className="absolute bottom-[25%] left-[-10%] w-80 h-80 rounded-full bg-[#B76E79]/15 blur-3xl animate-pulse-soft" style={{ animationDelay: "2s" }} />
+
+          {/* New Order Pill Notification */}
+          <div className="absolute top-[22%] left-6 right-6 z-20 animate-banner-slide">
+            <div className="bg-zinc-900/90 border border-emerald-500/30 backdrop-blur-md px-4 py-2.5 rounded-xl shadow-lg shadow-emerald-950/20 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <div className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-ping" />
+                <span className="text-[9px] font-bold tracking-wider text-emerald-400 uppercase">
+                  {lang === "ar" ? "طلب جديد" : "NEW ORDER"}
+                </span>
+              </div>
+              <div className="text-[10px] font-medium text-zinc-200 truncate max-w-[120px]">
+                {lang === "ar" 
+                  ? `${notifications[activeNotifyIdx].name_ar} • ${notifications[activeNotifyIdx].item}`
+                  : `${notifications[activeNotifyIdx].name_en} • ${notifications[activeNotifyIdx].item}`
+                }
+              </div>
+              <div className="text-[10px] font-bold text-emerald-400 whitespace-nowrap">
+                {notifications[activeNotifyIdx].price}
+              </div>
+            </div>
+          </div>
+
+          {/* Live Sales Dashboard Card */}
+          <div className="absolute top-[32%] left-6 right-6 bg-zinc-900/85 border border-zinc-800/80 backdrop-blur-md p-5 rounded-2xl shadow-xl animate-float-slow">
+            <div className="flex justify-between items-center mb-3">
+              <span className="text-[9px] text-zinc-400 font-bold tracking-widest uppercase">
+                {lang === "ar" ? "المبيعات المباشرة" : "LIVE MERCHANT SALES"}
+              </span>
+              <span className="text-[8px] bg-rose-500/10 text-rose-400 font-bold border border-rose-500/20 px-2 py-0.5 rounded-full flex items-center gap-1">
+                <span className="h-1.5 w-1.5 rounded-full bg-rose-400 animate-ping" />
+                LIVE
+              </span>
+            </div>
+            <div className="text-2xl font-bold font-mono text-zinc-100 flex items-baseline gap-1.5">
+              <span>{liveSales.toFixed(3)}</span>
+              <span className="text-xs text-zinc-400 font-sans font-medium">BHD</span>
+            </div>
+            {/* Sparkline visualization */}
+            <div className="h-8 mt-4 flex items-end gap-1.5">
+              {[40, 55, 45, 60, 75, 50, 70, 85, 90, 80, 95].map((h, i) => (
+                <div 
+                  key={i} 
+                  className="flex-1 rounded-t bg-zinc-800/60 transition-all duration-500" 
+                  style={{ 
+                    height: `${h}%`,
+                    backgroundColor: i === 10 ? "#B76E79" : undefined 
+                  }} 
+                />
+              ))}
+            </div>
+          </div>
+
+          {/* Luxury Abaya Product Card */}
+          <div className="absolute bottom-[24%] left-6 w-[75%] bg-zinc-900/85 border border-zinc-800/80 backdrop-blur-md p-4 rounded-xl shadow-lg animate-float-slower" style={{ animationDelay: "1s" }}>
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-lg bg-zinc-800/80 flex items-center justify-center border border-zinc-700/60">
+                <Store className="h-5 w-5 text-[#B76E79]" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-[10px] font-bold text-zinc-200 truncate">
+                  {lang === "ar" ? "عباية الحرير الأورجانزا" : "Silk Organza Abaya"}
+                </p>
+                <p className="text-[8px] text-zinc-400">
+                  {lang === "ar" ? "المخزون: 4 قطع متبقية" : "Stock: 4 remaining"}
+                </p>
+              </div>
+              <span className="text-[10px] font-bold text-[#B76E79] whitespace-nowrap">
+                145 BHD
+              </span>
+            </div>
+          </div>
+
+          {/* Floating VIP customer tag */}
+          <div className="absolute bottom-[36%] right-6 bg-rose-500/10 border border-rose-500/20 text-rose-300 text-[9px] font-bold px-3 py-1.5 rounded-full shadow-md animate-float-slow" style={{ animationDelay: "2.5s" }}>
+            {lang === "ar" ? "عملاء كبار الشخصيات VIP" : "VIP CONCIERGE"}
+          </div>
+        </div>
+
+        {/* Top Header Section */}
         <div className="relative z-10 flex items-center gap-2">
           {platformIconUrl && !logoError ? (
             <img 
@@ -461,7 +604,8 @@ function OnboardPage() {
           )}
         </div>
 
-        <div className="relative z-10 space-y-6 max-w-sm">
+        {/* Central Overlay Text with luxury branding content */}
+        <div className="relative z-10 space-y-6 max-w-sm mt-auto mb-16">
           <Sparkles className="h-10 w-10 text-[#B76E79] animate-pulse" />
           <h2 className="text-4xl font-display font-medium leading-tight tracking-tight">
             {lang === "ar" ? "أطلق مساحتك التجارية الفاخرة اليوم" : "Own your professional luxury boutique store."}
@@ -473,7 +617,8 @@ function OnboardPage() {
           </p>
         </div>
 
-        <div className="relative z-10 text-xs text-zinc-500 flex items-center gap-1.5">
+        {/* Footer info badge */}
+        <div className="relative z-10 text-xs text-zinc-500 flex items-center gap-1.5 mt-auto">
           <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
           <span>{lang === "ar" ? "بنية سحابية فائقة الأمان" : "RLS-Secured Enterprise Deployment Stack"}</span>
         </div>
