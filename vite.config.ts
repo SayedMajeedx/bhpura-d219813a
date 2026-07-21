@@ -20,7 +20,7 @@ const baseConfig = originalDefineConfig({
   nitro: {
     name: "bhpura-d219813a",
     cloudflare: {
-      name: "bhpura-d219813a",
+      nodeCompat: true,
     },
   },
 });

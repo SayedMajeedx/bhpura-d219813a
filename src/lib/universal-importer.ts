@@ -33,22 +33,61 @@ const ProductImportSchema = z.object({
   })),
 });
 
+// Helper to verify standard brand access or superadmin impersonation
+async function verifyBrandAccess(brandId: string, context: any) {
+  const userId = context.userId;
+  if (!userId) {
+    throw new Error("UNAUTHORIZED: Active user session could not be resolved.");
+  }
+
+  // 1. Check direct brand access (standard brand administrators)
+  const { data: hasAccess, error: accessErr } = await context.supabase.rpc("can_access_brand", { _brand_id: brandId });
+  if (accessErr) {
+    console.error("Supabase can_access_brand RPC failed:", accessErr);
+  }
+
+  if (hasAccess === true) {
+    return true; // Direct access granted
+  }
+
+  // 2. Check for technical support impersonation token if standard access check fails
+  try {
+    const { readImpersonationCookie } = await import("@/lib/impersonation-cookies.server");
+    const cookieToken = await readImpersonationCookie();
+    if (cookieToken) {
+      const tokenPayload = JSON.parse(Buffer.from(cookieToken, "base64").toString("utf-8"));
+      if (tokenPayload && tokenPayload.targetTenantId === brandId) {
+        // Confirm the operator is an authorized Superadmin (via RPC or hardcoded emails)
+        const { data: isSuperAdmin } = await context.supabase.rpc("is_admin");
+        const email = (context.claims?.email || "").toLowerCase();
+        const isFixedSuperAdmin = email === "majeed@hotmail.it" || email === "majeed@hotmail.com";
+
+        if (isSuperAdmin || isFixedSuperAdmin) {
+          console.log(`[Impersonation Auth] Superadmin (${email}) authorized to perform product import on brand: ${brandId}`);
+          return true; // Impersonation access granted
+        }
+      }
+    }
+  } catch (err) {
+    console.error("Failed to resolve impersonation cookie credentials:", err);
+  }
+
+  throw new Error("FORBIDDEN: You do not have permission to import products under this brand.");
+}
+
 export const importProductCatalog = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .validator((raw: unknown) => ProductImportSchema.parse(raw))
   .handler(async ({ data, context }) => {
-    const [{ data: canAccess }, { data: isAdmin }] = await Promise.all([
-      context.supabase.rpc("can_access_brand", { _brand_id: data.brandId }),
-      context.supabase.rpc("is_admin"),
-    ]);
-    if (!canAccess || !isAdmin) throw new Error("FORBIDDEN");
+    try {
+      const userId = context.userId;
+      if (!userId) throw new Error("UNAUTHORIZED: Session user not found");
 
-    const session = context.session;
-    const userId = session?.user?.id;
-    if (!userId) throw new Error("UNAUTHORIZED");
+      // Verify permission checks
+      await verifyBrandAccess(data.brandId, context);
 
-    let successCount = 0;
-    const totalCount = data.products.length;
+      let successCount = 0;
+      const totalCount = data.products.length;
 
     for (const prod of data.products) {
       try {
@@ -162,4 +201,8 @@ export const importProductCatalog = createServerFn({ method: "POST" })
     }
 
     return { successCount, totalCount };
+    } catch (err: any) {
+      console.error("[Product Import Pipeline Exception]:", err);
+      throw new Error(err.message || "Product catalog migration pipeline failed");
+    }
   });

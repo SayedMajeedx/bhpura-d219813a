@@ -80,8 +80,7 @@ function OnboardPage() {
   useEffect(() => {
     async function loadDynamicSettings() {
       try {
-        const { data, error } = await supabase
-          .from("system_settings")
+        const { data, error } = await (supabase as any).from("system_settings")
           .select("base_price_bhd, discount_price_bhd, platform_icon_url, whatsapp_support_number, benefit_pay_qr_url, merchant_account_name")
           .eq("id", 1)
           .maybeSingle();
@@ -96,7 +95,8 @@ function OnboardPage() {
         } else {
           // Fallback to getOnboardingPrice server function if direct query fails
           const price = await getOnboardingPrice();
-          const parsed = parseFloat(price.replace(/[^0-9.]/g, "")) || 55;
+          const priceStr = typeof price === "string" ? price : "55";
+          const parsed = parseFloat(priceStr.replace(/[^0-9.]/g, "")) || 55;
           setBasePrice(parsed);
         }
       } catch (err) {
@@ -162,8 +162,7 @@ function OnboardPage() {
 
         if (brandError) throw brandError;
 
-        const { data: pendingData, error: pendingError } = await supabase
-          .from("tenant_requests")
+        const { data: pendingData, error: pendingError } = await (supabase as any).from("tenant_requests")
           .select("id")
           .eq("desired_subdomain", cleaned)
           .eq("status", "pending")
@@ -214,8 +213,7 @@ function OnboardPage() {
 
         if (brandError) throw brandError;
 
-        const { data: pendingData, error: pendingError } = await supabase
-          .from("tenant_requests")
+        const { data: pendingData, error: pendingError } = await (supabase as any).from("tenant_requests")
           .select("id")
           .eq("desired_subdomain", cleaned)
           .eq("status", "pending")
