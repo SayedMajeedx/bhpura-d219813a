@@ -307,9 +307,9 @@ export const batchParseCaptionsWithAI = createServerFn({ method: "POST" })
 
     const creds = await getGeminiCredentials(context.supabase, userId);
     const apiKey = creds.apiKey;
-    let model = creds.model || "gemini-1.5-flash";
-    if (model.includes("gemini-2.5-flash") || model.includes("gemini-2.0-flash")) {
-      model = "gemini-1.5-flash"; // Force 1.5-flash for stable free-tier quota limits
+    let model = creds.model || "gemini-2.5-flash";
+    if (model === "gemini-1.5-flash") {
+      model = "gemini-1.5-flash-latest"; // Map legacy flash to the updated v1beta valid name
     }
 
     if (!apiKey) {
@@ -321,8 +321,11 @@ export const batchParseCaptionsWithAI = createServerFn({ method: "POST" })
       caption: p.caption,
     }));
 
+    let parsedArray: any[] = [];
+
     try {
-      const systemPrompt = [
+      try {
+        const systemPrompt = [
         "You are an expert GCC boutique product migration assistant.",
         "Analyze a JSON array of Instagram post captions and extract structured product catalog metadata for each.",
         "Strict Price Rules:",
@@ -381,10 +384,10 @@ export const batchParseCaptionsWithAI = createServerFn({ method: "POST" })
         }),
       });
 
-      // Automated retry fallback if the primary model failed (e.g. legacy quota or RESOURCE_EXHAUSTED errors)
-      if (!response.ok && model !== "gemini-1.5-flash") {
-        console.warn(`Primary Gemini model (${model}) request failed. Retrying with ultra-stable gemini-1.5-flash...`);
-        const fallbackEndpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent`;
+      // Automated retry fallback if the primary model failed
+      if (!response.ok && model !== "gemini-1.5-flash-latest") {
+        console.warn(`Primary Gemini model (${model}) request failed. Retrying with ultra-stable gemini-1.5-flash-latest...`);
+        const fallbackEndpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent`;
         response = await fetch(fallbackEndpoint, {
           method: "POST",
           headers: {
@@ -437,7 +440,29 @@ export const batchParseCaptionsWithAI = createServerFn({ method: "POST" })
         throw new Error("Gemini returned an empty response candidate.");
       }
 
-      const parsedArray = JSON.parse(rawText.trim()) as any[];
+      parsedArray = JSON.parse(rawText.trim()) as any[];
+    } catch (apiErr) {
+      console.error("Gemini batch request failed completely, invoking robust local regex/heuristic fallback:", apiErr);
+      // Fail-safe pure rule-based fallback mapping
+      parsedArray = data.posts.map((post) => {
+        const lines = post.caption.split("\n").map((l) => l.trim()).filter(Boolean);
+        const title = lines.length > 0 ? lines[0].replace(/[✨🌿🌟🤍🖤]/g, "").slice(0, 60).trim() : "Instagram Product";
+        
+        const price = extractPriceFallback(post.caption) || 25;
+        const description = post.caption;
+        const sizes = ["52", "54", "56", "58"];
+        const category = "Abayas";
+
+        return {
+          id: post.id,
+          title,
+          price,
+          description,
+          sizes,
+          category,
+        };
+      });
+    }
 
       // Perform strict regex safety checks and complete fallback operations
       const products = data.posts.map((originalPost) => {
