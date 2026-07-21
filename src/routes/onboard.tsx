@@ -38,6 +38,7 @@ function OnboardPage() {
   const { lang, setLang } = useI18n();
   const [liveSales, setLiveSales] = useState(4284.150);
   const [activeNotifyIdx, setActiveNotifyIdx] = useState(0);
+  const [showFeaturesModal, setShowFeaturesModal] = useState(false);
 
   const notifications = [
     { name_en: "Sofia Al Khalifa", name_ar: "صوفيا آل خليفة", item: "Organza Silk Abaya", price: "145.000 BHD" },
@@ -644,6 +645,15 @@ function OnboardPage() {
             )}
           </div>
           <div className="flex justify-end items-center gap-4 ml-auto">
+            <a 
+              href="https://pura.boutq.store"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 px-3 py-1 bg-[#B76E79]/10 hover:bg-[#B76E79]/20 border border-[#B76E79]/20 text-xs font-semibold text-[#B76E79] rounded-full transition-all select-none"
+            >
+              <Sparkles className="h-3 w-3" />
+              {lang === "ar" ? "المتجر النموذج" : "Live Demo"}
+            </a>
             <div className="flex items-center gap-2">
               <Languages className="h-4 w-4 text-muted-foreground" />
               <Select value={lang} onValueChange={(v) => setLang(v as "en" | "ar")}>
@@ -657,10 +667,20 @@ function OnboardPage() {
           </div>
         </div>
 
-        <div className="text-center md:text-left mb-10 max-w-2xl">
-          <h1 className="text-3xl md:text-4xl font-display font-medium text-foreground tracking-tight mb-3">
-            {lang === "ar" ? "اختر باقة إطلاق متجرك" : "Select Your Boutq Activation"}
-          </h1>
+        <div className="mb-10 max-w-2xl text-center md:text-left">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-3">
+            <h1 className="text-3xl md:text-4xl font-display font-medium text-foreground tracking-tight">
+              {lang === "ar" ? "اختر باقة إطلاق متجرك" : "Select Your Boutq Activation"}
+            </h1>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowFeaturesModal(true)}
+              className="border-[#B76E79]/30 hover:border-[#B76E79] text-[#B76E79] bg-transparent hover:bg-[#B76E79]/10 rounded-full font-semibold px-4 h-9 self-center md:self-auto shrink-0"
+            >
+              ✨ {lang === "ar" ? "اكتشف جميع مميزات منصة Boutq" : "Discover All Boutq Features"}
+            </Button>
+          </div>
           <p className="text-sm text-muted-foreground leading-relaxed">
             {lang === "ar"
               ? "نحن نوفر خيارين مخصصين لبدء تجارتك. سواء كنت ترغب بتجربة المنصة لـ 3 أيام مجاناً، أو الحصول على رخصة المتجر المتكاملة مع الدعم الفني، بادر بتعبئة بياناتك وبدء مغامرتك فورياً."
@@ -692,6 +712,21 @@ function OnboardPage() {
                 </span>
               </div>
             </CardHeader>
+
+            <div className="px-6 py-4 bg-zinc-50 dark:bg-zinc-900/50 border-b border-zinc-100 dark:border-zinc-800/60 space-y-2.5 text-xs select-none">
+              <div className="flex items-center gap-2.5 text-muted-foreground">
+                <Check className="h-4 w-4 text-[#B76E79] shrink-0" />
+                <span>{lang === "ar" ? "وصول كامل للوحة التحكم والمبيعات" : "Full admin dashboard & revenue reporting"}</span>
+              </div>
+              <div className="flex items-center gap-2.5 text-muted-foreground">
+                <Check className="h-4 w-4 text-[#B76E79] shrink-0" />
+                <span>{lang === "ar" ? "معاينة حية للمتجر التجريبي الخاص بك" : "Live customer-facing storefront preview"}</span>
+              </div>
+              <div className="flex items-center gap-2.5 text-muted-foreground">
+                <Check className="h-4 w-4 text-[#B76E79] shrink-0" />
+                <span>{lang === "ar" ? "تفعيل وإعداد عبر الواتساب فوراً" : "Instant concierge setup via WhatsApp"}</span>
+              </div>
+            </div>
 
             <CardContent className="pt-6 space-y-4">
               <form onSubmit={handleRegisterTrial} className="space-y-4">
@@ -837,6 +872,25 @@ function OnboardPage() {
                 </div>
               </div>
             </CardHeader>
+
+            <div className="px-6 py-4 bg-[#B76E79]/5 border-b border-[#B76E79]/10 space-y-2.5 text-xs select-none">
+              <div className="flex items-center gap-2.5 text-[#B76E79] font-semibold">
+                <Check className="h-4 w-4 shrink-0 text-[#B76E79]" />
+                <span>{lang === "ar" ? "رخصة منصة مدى الحياة (دفع لمرة واحدة)" : "Lifetime platform license (One-time payment)"}</span>
+              </div>
+              <div className="flex items-center gap-2.5 text-muted-foreground">
+                <Check className="h-4 w-4 shrink-0 text-emerald-500" />
+                <span>{lang === "ar" ? "رابط مخصص ونطاق فرعي رسمي" : "Official custom subdomain handle"}</span>
+              </div>
+              <div className="flex items-center gap-2.5 text-muted-foreground">
+                <Check className="h-4 w-4 shrink-0 text-emerald-500" />
+                <span>{lang === "ar" ? "ضمان صيانة ودعم فني متواصل لـ 6 أشهر" : "6 Months guaranteed technical support"}</span>
+              </div>
+              <div className="flex items-center gap-2.5 text-muted-foreground">
+                <Check className="h-4 w-4 shrink-0 text-emerald-500" />
+                <span>{lang === "ar" ? "صفر رسوم صيانة أو استضافة شهرية" : "Zero monthly hosting or cloud storage fees"}</span>
+              </div>
+            </div>
 
             <CardContent className="pt-6 space-y-4">
               <form onSubmit={handleRegisterPaid} className="space-y-4">
@@ -1029,6 +1083,135 @@ function OnboardPage() {
           </Link>
         </div>
       </div>
+
+      {/* Dynamic Features Transparency Modal */}
+      {showFeaturesModal && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-md z-50 flex items-center justify-center p-4 overflow-y-auto animate-in fade-in duration-200">
+          <div className="bg-zinc-950/95 border border-zinc-800/85 rounded-3xl p-6 md:p-8 max-w-4xl w-full shadow-2xl relative animate-in fade-in zoom-in-95 duration-200 text-white select-none">
+            {/* Close Button */}
+            <button 
+              onClick={() => setShowFeaturesModal(false)}
+              className="absolute top-4 right-4 md:top-6 md:right-6 text-zinc-400 hover:text-white bg-zinc-900 hover:bg-zinc-800 h-8 w-8 rounded-full flex items-center justify-center transition-all"
+            >
+              ✕
+            </button>
+
+            {/* Header */}
+            <div className="mb-6 flex items-center gap-3 border-b border-zinc-800/50 pb-4">
+              <Store className="h-6 w-6 text-[#B76E79]" />
+              <div>
+                <h3 className="text-lg md:text-xl font-display font-medium">
+                  {lang === "ar" ? "المميزات الفاخرة لمنصة Boutq" : "Premium Features of the Boutq Platform"}
+                </h3>
+                <p className="text-xs text-zinc-400 mt-0.5">
+                  {lang === "ar" ? "تفاصيل الشفافية الفنية والميزات المتوفرة في الكود البرمجي" : "Full technical transparency of features ready in our codebase"}
+                </p>
+              </div>
+            </div>
+
+            {/* Features Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Category 1: Storefront */}
+              <div className="bg-zinc-900/40 border border-zinc-800/40 rounded-2xl p-5 space-y-3">
+                <h4 className="text-xs font-bold text-[#B76E79] uppercase tracking-wider flex items-center gap-2">
+                  <Sparkles className="h-4 w-4" />
+                  {lang === "ar" ? "واجهة المتجر والتصميم" : "Storefront & UI"}
+                </h4>
+                <ul className="space-y-2 text-xs text-zinc-300">
+                  <li className="flex gap-2">
+                    <span className="text-emerald-500 font-bold">•</span>
+                    <span>{lang === "ar" ? "روابط فرعية مخصصة فاخرة (اسم_متجرك.boutq.store)" : "Sleek custom subdomain handles (yourname.boutq.store)"}</span>
+                  </li>
+                  <li className="flex gap-2">
+                    <span className="text-emerald-500 font-bold">•</span>
+                    <span>{lang === "ar" ? "تصميم محمول فاخر متجاوب ومريح لنظر المشتري" : "Couture mobile-first layout optimized for luxury catalog browsing"}</span>
+                  </li>
+                  <li className="flex gap-2">
+                    <span className="text-emerald-500 font-bold">•</span>
+                    <span>{lang === "ar" ? "دعم كامل للغات المتعددة وعرض عملات متعددة (BHD, SAR, AED)" : "Automatic localized languages (AR/EN) and multi-currency displays"}</span>
+                  </li>
+                </ul>
+              </div>
+
+              {/* Category 2: Payments */}
+              <div className="bg-zinc-900/40 border border-zinc-800/40 rounded-2xl p-5 space-y-3">
+                <h4 className="text-xs font-bold text-[#B76E79] uppercase tracking-wider flex items-center gap-2">
+                  <CheckCircle2 className="h-4 w-4" />
+                  {lang === "ar" ? "المدفوعات والطلبات" : "Payments & Orders"}
+                </h4>
+                <ul className="space-y-2 text-xs text-zinc-300">
+                  <li className="flex gap-2">
+                    <span className="text-emerald-500 font-bold">•</span>
+                    <span>{lang === "ar" ? "ربط فوري لرمز الاستجابة السريع لمحفظة BenefitPay" : "Seamless custom QR image uploads for local BenefitPay transfers"}</span>
+                  </li>
+                  <li className="flex gap-2">
+                    <span className="text-emerald-500 font-bold">•</span>
+                    <span>{lang === "ar" ? "خيارات دفع مرنة تشمل الدفع عند الاستلام (COD)" : "Cash on Delivery checkout parameters integrated out-of-the-box"}</span>
+                  </li>
+                  <li className="flex gap-2">
+                    <span className="text-emerald-500 font-bold">•</span>
+                    <span>{lang === "ar" ? "إرسال تفاصيل فواتير الطلبات فوراً لواتساب المتجر بنقرة واحدة" : "Instant order detail generation dispatched directly to owner's WhatsApp"}</span>
+                  </li>
+                </ul>
+              </div>
+
+              {/* Category 3: Dashboard */}
+              <div className="bg-zinc-900/40 border border-zinc-800/40 rounded-2xl p-5 space-y-3">
+                <h4 className="text-xs font-bold text-[#B76E79] uppercase tracking-wider flex items-center gap-2">
+                  <Store className="h-4 w-4" />
+                  {lang === "ar" ? "لوحة التحكم والإدارة" : "Dashboard & Management"}
+                </h4>
+                <ul className="space-y-2 text-xs text-zinc-300">
+                  <li className="flex gap-2">
+                    <span className="text-emerald-500 font-bold">•</span>
+                    <span>{lang === "ar" ? "كتالوج إدارة المنتجات وتتبع كميات المخزون المتعددة" : "Dynamic product variants, size grids, and inventory stock control"}</span>
+                  </li>
+                  <li className="flex gap-2">
+                    <span className="text-emerald-500 font-bold">•</span>
+                    <span>{lang === "ar" ? "سجل تتبع النفقات والمصروفات اليومية للتشغيل" : "Operational expense tracking and real-time dashboard analytics"}</span>
+                  </li>
+                  <li className="flex gap-2">
+                    <span className="text-emerald-500 font-bold">•</span>
+                    <span>{lang === "ar" ? "نظام أمان متطور وصلاحيات مخصصة لأعضاء الفريق" : "Advanced RLS data isolating, secure passwordless logins & staff keys"}</span>
+                  </li>
+                </ul>
+              </div>
+
+              {/* Category 4: Support */}
+              <div className="bg-zinc-900/40 border border-zinc-800/40 rounded-2xl p-5 space-y-3">
+                <h4 className="text-xs font-bold text-[#B76E79] uppercase tracking-wider flex items-center gap-2">
+                  <Building2 className="h-4 w-4" />
+                  {lang === "ar" ? "الدعم والبنية التحتية" : "Support & Infrastructure"}
+                </h4>
+                <ul className="space-y-2 text-xs text-zinc-300">
+                  <li className="flex gap-2">
+                    <span className="text-emerald-500 font-bold">•</span>
+                    <span>{lang === "ar" ? "ضمان فني متكامل وصيانة خلو الأخطاء لـ 6 أشهر" : "6 Months comprehensive technical bug fixes and support"}</span>
+                  </li>
+                  <li className="flex gap-2">
+                    <span className="text-emerald-500 font-bold">•</span>
+                    <span>{lang === "ar" ? "استضافة صور سريعة مشفرة بالكامل عبر Cloudflare R2" : "Secure localized imagery content cached over Cloudflare R2"}</span>
+                  </li>
+                  <li className="flex gap-2">
+                    <span className="text-emerald-500 font-bold">•</span>
+                    <span>{lang === "ar" ? "صفر رسوم استضافة أو صيانة برمجية شهرية مدى الحياة" : "Pay once, host forever with zero recurring monthly platform fees"}</span>
+                  </li>
+                </ul>
+              </div>
+            </div>
+
+            {/* Footer Action */}
+            <div className="mt-6 flex justify-end gap-3 border-t border-zinc-800/50 pt-4">
+              <Button 
+                onClick={() => setShowFeaturesModal(false)}
+                className="bg-[#B76E79] hover:bg-[#a35e69] text-white text-xs font-semibold rounded-xl px-5 h-10"
+              >
+                {lang === "ar" ? "حسناً، فهمت" : "Got it, thanks"}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
