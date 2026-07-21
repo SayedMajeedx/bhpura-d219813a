@@ -241,7 +241,7 @@ function CustomerImporterModal({ brandId, onComplete }: { brandId: string; onCom
 
       const mandatoryMapped = newMappings.name !== -1 && newMappings.phone !== -1;
       if (mandatoryMapped && preset !== "custom") {
-        startImportCSV(rows.slice(1), newMappings);
+        startImportCSV(rows.slice(1), newMappings, fileHeaders);
       } else {
         setStep("mapper");
       }
@@ -285,16 +285,16 @@ function CustomerImporterModal({ brandId, onComplete }: { brandId: string; onCom
     }
   };
 
-  const startImportCSV = (dataRows: string[][], finalMappings: Record<string, number>) => {
+  const startImportCSV = (dataRows: string[][], finalMappings: Record<string, number>, headersList: string[] = headers) => {
     const findHeaderIdx = (names: string[]) => {
-      return headers.findIndex(h => 
-        names.some(name => h.toLowerCase() === name.toLowerCase())
+      return headersList.findIndex(h => 
+        names.some(name => h.trim().toLowerCase() === name.toLowerCase())
       );
     };
 
     const findHeaderIdxContains = (names: string[]) => {
-      return headers.findIndex(h => 
-        names.some(name => h.toLowerCase().includes(name.toLowerCase()))
+      return headersList.findIndex(h => 
+        names.some(name => h.trim().toLowerCase().includes(name.toLowerCase()))
       );
     };
 
