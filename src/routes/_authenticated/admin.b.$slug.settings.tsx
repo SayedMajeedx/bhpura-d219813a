@@ -162,7 +162,7 @@ function Settings() {
     branches: { en: "Branch Settings", enDescription: "Manage pickup locations and branch information.", ar: "إعدادات الفروع", arDescription: "إدارة مواقع الاستلام وبيانات الفروع." },
     emails: { en: "Notifications & Email Settings", enDescription: "Configure customer notifications and outgoing email.", ar: "إعدادات الإشعارات والبريد", arDescription: "إعداد إشعارات العملاء والبريد الصادر." },
     security: { en: "Security & Passkey Settings", enDescription: "Manage secure biometric sign-in for your account.", ar: "إعدادات الأمان والبصمة", arDescription: "إدارة تسجيل الدخول الآمن والبصمة للحساب." },
-    subscription: { en: "Subscription Settings", enDescription: "Manage your boutique monthly or annual subscription plans and payments.", ar: "إعدادات الاشتراك", arDescription: "إدارة خطط اشتراك البوتيك الشهرية والسنوية والمدفوعات." },
+    subscription: { en: "Subscription Settings", enDescription: "Manage your boutique platform license and technical support options.", ar: "إعدادات الاشتراك", arDescription: "إدارة ترخيص منصة البوتيك وخيارات الدعم الفني." },
   };
   const activeHeader = TAB_HEADERS[activeTab] ?? TAB_HEADERS.business;
 

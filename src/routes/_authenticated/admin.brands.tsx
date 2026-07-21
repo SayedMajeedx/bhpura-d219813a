@@ -202,12 +202,12 @@ function BrandsPage() {
             <Crown className="h-3.5 w-3.5 text-amber-500 animate-pulse" /> {lang === "ar" ? "المدير الأعلى" : "Super Admin Cockpit"}
           </div>
           <h1 className="text-3xl sm:text-4xl font-display font-medium">
-            {lang === "ar" ? "لوحة تحكم SaaS الموحدة" : "PURA SaaS Dashboard"}
+            {lang === "ar" ? "لوحة تحكم بوتك SaaS" : "Boutq SaaS Dashboard"}
           </h1>
           <p className="text-muted-foreground mt-1 text-xs sm:text-sm">
             {lang === "ar"
-              ? "مراقبة الإيرادات، إدارة العلامات والمحلات الفردية، وتوثيق اشتراكات بنفت بي الخصوصية."
-              : "Monitor platform MRR, approve private BenefitPay subscriptions, and manage multi-tenant shops."}
+              ? "مراقبة مستأجري المنصة، الموافقة على الطلبات، وإدارة المحلات متعددة المستأجرين."
+              : "Monitor platform tenants, approve requests, and manage multi-tenant shops."}
           </p>
         </div>
         <Dialog open={open} onOpenChange={setOpen}>
@@ -307,7 +307,7 @@ function BrandsPage() {
                         <div className="font-display font-medium text-lg truncate flex items-center gap-2">
                           <span>{lang === "ar" ? b.name_ar || b.name_en : b.name_en}</span>
                         </div>
-                        <div className="text-xs text-muted-foreground truncate font-mono">bh.pura/{b.slug}</div>
+                        <div className="text-xs text-muted-foreground truncate font-mono">{b.slug}.boutq.store</div>
                       </div>
                       
                       {/* Subscription status badges */}

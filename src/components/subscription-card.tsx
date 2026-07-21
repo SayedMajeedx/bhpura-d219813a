@@ -302,123 +302,43 @@ export function SubscriptionCard({ brand }: SubscriptionCardProps) {
         </CardContent>
       </Card>
 
-      {/* Subscription Plans Selection & Renewal Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Plans list */}
-        <div className="lg:col-span-2 space-y-4">
-          <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground">{lang === "ar" ? "اختر باقة التجديد" : "SaaS Renewal Subscriptions"}</h3>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {PLANS.map((plan) => (
-              <button
-                key={plan.id}
-                type="button"
-                onClick={() => setSelectedPlan(plan.id)}
-                className={`text-left p-5 rounded-lg border cursor-pointer transition-all duration-150 relative overflow-hidden flex flex-col justify-between h-72 ${
-                  selectedPlan === plan.id 
-                    ? "border-primary dark:border-primary/80 bg-primary/[0.02] ring-1 ring-primary"
-                    : "border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 bg-background"
-                }`}
-              >
-                {selectedPlan === plan.id && (
-                  <div className="absolute top-0 right-0 bg-primary text-white p-1 rounded-bl-lg">
-                    <Check className="h-3.5 w-3.5" />
-                  </div>
-                )}
-                <div>
-                  <div className="flex items-center gap-2 mb-1">
-                    <Sparkles className="h-4.5 w-4.5" style={{ color: plan.color }} />
-                    <h4 className="font-display font-semibold text-zinc-900 dark:text-zinc-100">{lang === "ar" ? plan.nameAr : plan.nameEn}</h4>
-                  </div>
-                  <div className="flex items-baseline gap-1 mt-2 mb-4">
-                    <span className="text-2xl font-bold font-display">{plan.price}</span>
-                    <span className="text-xs text-muted-foreground">{lang === "ar" ? plan.periodAr : plan.periodEn}</span>
-                  </div>
-                  
-                  <ul className="space-y-1.5 text-xs text-muted-foreground">
-                    {(lang === "ar" ? plan.featuresAr : plan.featuresEn).map((f, idx) => (
-                      <li key={idx} className="flex items-center gap-1.5">
-                        <Check className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
-                        <span>{f}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              </button>
-            ))}
-          </div>
+      {/* Tech Support & Custom Feature Request Panel */}
+      <Card className="border-zinc-100 dark:border-zinc-800/80 shadow-sm relative overflow-hidden bg-gradient-to-r from-zinc-50 to-zinc-100/50 dark:from-zinc-900/10 dark:to-zinc-900/30">
+        <div className="absolute top-0 right-0 p-8 opacity-[0.02] select-none pointer-events-none">
+          <Sparkles className="h-36 w-36" />
         </div>
-
-        {/* Scan & Upload Form */}
-        <Card className="border-zinc-100 dark:border-zinc-800/80 shadow-sm flex flex-col justify-between">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-semibold flex items-center gap-2">
-              <QrCode className="h-4.5 w-4.5 text-primary" />
-              <span>{lang === "ar" ? "الدفع ببنفت بي (BenefitPay)" : "Scan & Renew via BenefitPay"}</span>
-            </CardTitle>
-            <CardDescription className="text-xs leading-relaxed">
-              {lang === "ar" 
-                ? "امسح رمز الاستجابة السريع (QR) وسدد القيمة، ثم ارفع الإيصال أدناه للتفعيل التلقائي." 
-                : "Scan the payment QR code below, send the chosen amount, then upload the receipt screenshot."}
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {/* Styled BenefitPay QR Scanner Frame */}
-            <div className="bg-zinc-100 dark:bg-zinc-950 rounded-lg p-5 border border-dashed border-zinc-200 dark:border-zinc-900 flex flex-col items-center justify-center relative overflow-hidden group">
-              <div className="absolute top-2 left-2 bg-rose-600 text-white text-[9px] font-bold uppercase px-1.5 py-0.5 rounded tracking-widest font-mono">
-                BenefitPay
-              </div>
-              <div className="h-32 w-32 bg-white rounded-md p-1.5 border border-zinc-200 shadow-sm flex items-center justify-center transition-transform group-hover:scale-105 duration-200 mt-2">
-                {/* Styled elegant QR code simulation vector */}
-                <div className="relative h-full w-full flex flex-col items-center justify-center text-primary opacity-85">
-                  <QrCode className="h-20 w-20 stroke-[1.25]" />
-                  <span className="text-[8px] font-bold uppercase tracking-widest mt-1">BH-PURA-SaaS</span>
-                </div>
-              </div>
-              <div className="text-center mt-3 space-y-1">
-                <span className="text-xs font-mono font-bold text-zinc-700 dark:text-zinc-300">Merchant Account: PURA-BH</span>
-                <span className="text-[10px] text-muted-foreground block">{lang === "ar" ? "رقم المرجعي: 33887754" : "Reference Number: 33887754"}</span>
-              </div>
+        <CardHeader className="pb-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <CardTitle className="text-lg font-display font-medium text-foreground flex items-center gap-2">
+                <Sparkles className="h-5 w-5 text-primary shrink-0 animate-pulse" />
+                <span>{lang === "ar" ? "الدعم الفني وطلب الميزات المخصصة" : "Tech Support & Custom Feature Request"}</span>
+              </CardTitle>
+              <CardDescription className="text-xs max-w-xl">
+                {lang === "ar"
+                  ? "هل تحتاج لمساعدة تقنية، ربط نطاق مخصص، أو إضافة ميزات حصرية لمتجرك؟ تواصل مباشرة مع فريق التطوير والدعم الفني عبر الواتساب."
+                  : "Need technical assistance, custom domain mapping, or exclusive custom development for your shop? Chat directly with our engineering & support team."}
+              </CardDescription>
             </div>
-
-            {/* R2 Secure Upload Input */}
-            <div className="relative">
-              <input
-                id="subscription-receipt-file"
-                type="file"
-                accept="image/jpeg,image/png,image/webp"
-                onChange={handleUploadReceipt}
-                className="hidden"
-                disabled={uploading}
-              />
-              <Button
-                type="button"
-                variant="outline"
-                className="w-full h-11 border-dashed border-primary/35 bg-primary/[0.01] hover:bg-primary/[0.04]"
-                disabled={uploading}
-                onClick={() => document.getElementById("subscription-receipt-file")?.click()}
+            <Button
+              asChild
+              className="bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs h-10 px-5 shrink-0 transition-transform hover:scale-[1.02] cursor-pointer"
+            >
+              <a
+                href={`https://wa.me/97339955508?text=Hi%20Boutq,%20I'd%20like%20to%20request%20support%20for%20store%20${encodeURIComponent(brand.slug)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2"
               >
-                {uploading ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin text-primary" />
-                    <span className="text-xs">{lang === "ar" ? "جاري الرفع لـ R2..." : "Uploading to Private R2..."}</span>
-                  </>
-                ) : (
-                  <>
-                    <UploadCloud className="h-4 w-4 text-primary" />
-                    <span className="text-xs">{lang === "ar" ? "تحميل إيصال تأكيد الدفع" : "Upload Receipt Screenshot"}</span>
-                  </>
-                )}
-              </Button>
-            </div>
-            
-            <p className="text-[10px] text-center text-muted-foreground flex items-center justify-center gap-1.5">
-              <ShieldCheck className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
-              <span>{lang === "ar" ? "يتم تأمين الإيصال بخصم ثنائي وتشفير R2" : "Secured with Cloudflare Private R2 bucket."}</span>
-            </p>
-          </CardContent>
-        </Card>
-      </div>
+                <svg className="h-4.5 w-4.5 fill-current" viewBox="0 0 24 24">
+                  <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946C.06 5.348 5.397.01 12.008.01c3.202.001 6.212 1.246 8.477 3.514 2.266 2.268 3.507 5.28 3.505 8.484-.004 6.657-5.34 11.997-11.953 11.997-2.005-.001-3.973-.502-5.753-1.454L0 24zm6.59-4.846c1.6.95 3.188 1.449 4.825 1.451 5.436 0 9.86-4.37 9.864-9.799.002-2.63-1.023-5.101-2.885-6.963C16.588 2.019 14.12 1 11.492 1 6.059 1 1.633 5.37 1.63 10.8c-.001 1.737.5 3.424 1.448 4.908l-.951 3.473 3.562-.927z" />
+                </svg>
+                <span>{lang === "ar" ? "تواصل مع الدعم الفني" : "Connect on WhatsApp"}</span>
+              </a>
+            </Button>
+          </div>
+        </CardHeader>
+      </Card>
     </div>
   );
 }

@@ -117,6 +117,25 @@ function SuperRequestsPage() {
   }, [priceQuery.data]);
 
   // Handle Save Price Changes
+  const getFriendlyErrorMessage = (err: any): string => {
+    if (!err) return "An unexpected error occurred.";
+    const message = err.message || String(err);
+    try {
+      if (message.startsWith("[") && message.endsWith("]")) {
+        const parsed = JSON.parse(message);
+        if (Array.isArray(parsed) && parsed.length > 0 && parsed[0].message) {
+          return parsed.map((issue: any) => {
+            const pathStr = issue.path?.join(".") ? `(${issue.path.join(".")}) ` : "";
+            return `${pathStr}${issue.message}`;
+          }).join(", ");
+        }
+      }
+    } catch (e) {
+      // ignore
+    }
+    return message;
+  };
+
   const handleSavePrice = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!priceInput.trim()) return;
@@ -125,12 +144,12 @@ function SuperRequestsPage() {
     const toastId = toast.loading(lang === "ar" ? "جاري حفظ وتعميم السعر الجديد..." : "Broadcasting custom price change...");
 
     try {
-      await updateRegistrationPrice({ newPrice: priceInput.trim() });
+      await updateRegistrationPrice({ data: { newPrice: priceInput.trim() } });
       toast.success(lang === "ar" ? "تم تعميم السعر والتخفيض الجديد فورياً!" : "Onboarding discount override published live!", { id: toastId });
       void qc.invalidateQueries({ queryKey: ["onboarding-price"] });
     } catch (err: any) {
       console.error(err);
-      toast.error(err.message || "Failed to update dynamic price.", { id: toastId });
+      toast.error(getFriendlyErrorMessage(err) || "Failed to update dynamic price.", { id: toastId });
     } finally {
       setSavingPrice(false);
     }
@@ -151,7 +170,7 @@ function SuperRequestsPage() {
     setReceiptViewUrl(null);
 
     try {
-      const { viewUrl } = await getSubscriptionReceiptViewUrl({ objectKey });
+      const { viewUrl } = await getSubscriptionReceiptViewUrl({ data: { objectKey } });
       setReceiptViewUrl(viewUrl);
     } catch (err: any) {
       console.error(err);
@@ -176,15 +195,17 @@ function SuperRequestsPage() {
 
     try {
       await approveTenantRequest({ 
-        requestId: approvingRequest.id,
-        planType: selectedPlan
+        data: {
+          requestId: approvingRequest.id,
+          planType: selectedPlan
+        }
       });
       toast.success(lang === "ar" ? "تم تفعيل المتجر ونشر المساحة يدوياً بنجاح!" : "Workspace deployed successfully!", { id: toastId });
       setApprovingRequest(null);
       void qc.invalidateQueries({ queryKey: ["tenant-requests"] });
     } catch (err: any) {
       console.error(err);
-      toast.error(err.message || "Approval failed.", { id: toastId });
+      toast.error(getFriendlyErrorMessage(err) || "Approval failed.", { id: toastId });
     } finally {
       setDeploying(false);
     }
@@ -202,12 +223,12 @@ function SuperRequestsPage() {
     const toastId = toast.loading(lang === "ar" ? "جاري رفض الطلب وأرشفته..." : "Dismissing request...");
 
     try {
-      await rejectTenantRequest({ requestId: id });
+      await rejectTenantRequest({ data: { requestId: id } });
       toast.success(lang === "ar" ? "تم رفض وأرشفة الطلب بنجاح." : "Request dismissed and archived.", { id: toastId });
       void qc.invalidateQueries({ queryKey: ["tenant-requests"] });
     } catch (err: any) {
       console.error(err);
-      toast.error(err.message || "Rejection failed.", { id: toastId });
+      toast.error(getFriendlyErrorMessage(err) || "Rejection failed.", { id: toastId });
     }
   };
 
