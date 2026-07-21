@@ -282,7 +282,7 @@ function ProductImporterModal({ brandId, onComplete }: { brandId: string; onComp
       // If any mapping is missing or preset is custom, ask the user to confirm/adjust
       const allMapped = Object.values(newMappings).every(idx => idx !== -1);
       if (allMapped && preset !== "custom") {
-        startImport(rows.slice(1), newMappings);
+        startImport(rows.slice(1), newMappings, fileHeaders);
       } else {
         setStep("mapper");
       }
@@ -290,17 +290,80 @@ function ProductImporterModal({ brandId, onComplete }: { brandId: string; onComp
     reader.readAsText(file);
   };
 
-  const startImport = async (dataRows: string[][], finalMappings: Record<string, number>) => {
+  const startImport = async (dataRows: string[][], finalMappings: Record<string, number>, headersList: string[] = headers) => {
     setStep("importing");
     setProgress(isAr ? "بدء عملية الاستيراد الفاخرة..." : "Starting premium import pipeline...");
     setTotalCount(dataRows.length);
 
+    const findHeaderIdx = (names: string[]) => {
+      return headersList.findIndex(h => 
+        names.some(name => h.trim().toLowerCase() === name.toLowerCase())
+      );
+    };
+
     try {
       const productsPayload = dataRows.map((row) => {
-        const nameVal = row[finalMappings.name] || (isAr ? "منتج مستورد بدون اسم" : "Unnamed Imported Product");
-        const priceVal = parseFloat(row[finalMappings.price]?.replace(/[^\d.]/g, "") || "0") || 10.0;
-        const imageVal = row[finalMappings.image] || null;
-        const stockVal = parseInt(row[finalMappings.stock]?.replace(/[^\d]/g, "") || "0") || 10;
+        let nameVal = "";
+        let priceVal = 10.0;
+        let imageVal: string | null = null;
+        let stockVal = 10;
+        let skuVal = `SKU-${crypto.randomUUID().slice(0, 8).toUpperCase()}`;
+
+        if (preset === "shopify") {
+          const titleIdx = findHeaderIdx(["title"]);
+          const priceIdx = findHeaderIdx(["variant price", "price"]);
+          const imageIdx = findHeaderIdx(["image src", "image url", "image_src", "image"]);
+          const stockIdx = findHeaderIdx(["variant inventory qty", "inventory qty", "stock"]);
+          const skuIdx = findHeaderIdx(["variant sku", "sku"]);
+
+          nameVal = titleIdx !== -1 ? row[titleIdx] : "";
+          priceVal = priceIdx !== -1 ? parseFloat(row[priceIdx]?.replace(/[^\d.]/g, "") || "10") || 10.0 : 10.0;
+          imageVal = imageIdx !== -1 ? row[imageIdx] : null;
+          stockVal = stockIdx !== -1 ? parseInt(row[stockIdx]?.replace(/[^\d]/g, "") || "0") || 0 : 10;
+          if (skuIdx !== -1 && row[skuIdx]) {
+            skuVal = row[skuIdx];
+          }
+
+        } else if (preset === "woocommerce") {
+          const nameIdx = findHeaderIdx(["name", "title", "post_title"]);
+          const priceIdx = findHeaderIdx(["regular price", "sale price", "price", "_regular_price"]);
+          const imageIdx = findHeaderIdx(["images", "image_url", "image"]);
+          const stockIdx = findHeaderIdx(["stock", "manage_stock", "_stock", "quantity"]);
+          const skuIdx = findHeaderIdx(["sku"]);
+
+          nameVal = nameIdx !== -1 ? row[nameIdx] : "";
+          priceVal = priceIdx !== -1 ? parseFloat(row[priceIdx]?.replace(/[^\d.]/g, "") || "10") || 10.0 : 10.0;
+          imageVal = imageIdx !== -1 ? row[imageIdx]?.split(",")?.[0]?.trim() || null : null;
+          stockVal = stockIdx !== -1 ? parseInt(row[stockIdx]?.replace(/[^\d]/g, "") || "0") || 0 : 10;
+          if (skuIdx !== -1 && row[skuIdx]) {
+            skuVal = row[skuIdx];
+          }
+
+        } else if (preset === "salla" || preset === "zid") {
+          const nameIdx = findHeaderIdx(["اسم المنتج", "الاسم", "عنوان المنتج", "product name", "name"]);
+          const priceIdx = findHeaderIdx(["السعر", "سعر البيع", "selling_price", "price"]);
+          const imageIdx = findHeaderIdx(["صورة المنتج", "روابط الصور", "الصور", "image_url", "image"]);
+          const stockIdx = findHeaderIdx(["الكمية", "المخزون", "كمية المخزون", "quantity", "stock"]);
+          const skuIdx = findHeaderIdx(["رمز المنتج", "sku"]);
+
+          nameVal = nameIdx !== -1 ? row[nameIdx] : "";
+          priceVal = priceIdx !== -1 ? parseFloat(row[priceIdx]?.replace(/[^\d.]/g, "") || "10") || 10.0 : 10.0;
+          imageVal = imageIdx !== -1 ? row[imageIdx]?.split(",")?.[0]?.trim() || null : null;
+          stockVal = stockIdx !== -1 ? parseInt(row[stockIdx]?.replace(/[^\d]/g, "") || "0") || 0 : 10;
+          if (skuIdx !== -1 && row[skuIdx]) {
+            skuVal = row[skuIdx];
+          }
+
+        } else {
+          nameVal = finalMappings.name !== -1 ? row[finalMappings.name] : "";
+          priceVal = finalMappings.price !== -1 ? parseFloat(row[finalMappings.price]?.replace(/[^\d.]/g, "") || "10") || 10.0 : 10.0;
+          imageVal = finalMappings.image !== -1 ? row[finalMappings.image] : null;
+          stockVal = finalMappings.stock !== -1 ? parseInt(row[finalMappings.stock]?.replace(/[^\d]/g, "") || "0") || 10 : 10;
+        }
+
+        if (!nameVal) {
+          nameVal = isAr ? "منتج مستورد بدون اسم" : "Unnamed Imported Product";
+        }
 
         return {
           name: nameVal,
@@ -318,7 +381,7 @@ function ProductImporterModal({ brandId, onComplete }: { brandId: string; onComp
               size_unit: null,
               color: null,
               fabric: null,
-              sku: `SKU-${crypto.randomUUID().slice(0, 8).toUpperCase()}`,
+              sku: skuVal,
               barcode: null,
               cost_price: 0,
               selling_price: priceVal,
