@@ -644,7 +644,8 @@ function InstagramImporterModal({ brandId, onComplete }: { brandId: string; onCo
       setStep("grid");
     } catch (err) {
       console.error(err);
-      toast.error(isAr ? "فشل جلب منشورات انستقرام" : "Failed to fetch Instagram posts");
+      const errMsg = err instanceof Error ? err.message : String(err);
+      toast.error(isAr ? `فشل جلب منشورات انستقرام: ${errMsg}` : `Failed to fetch Instagram posts: ${errMsg}`);
     } finally {
       setLoadingPosts(false);
     }
