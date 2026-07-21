@@ -39,7 +39,7 @@ export function scanCaptionForSoldOut(caption: string): { isSoldOut: boolean; ke
   return { isSoldOut: false };
 }
 
-// 1. Fetch Instagram Posts - Dual high-fidelity mode (Scrapes or simulates beautifully)
+// 1. Fetch Instagram Posts - Real Apify Instagram Scraper Integration
 export const fetchInstagramPosts = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .validator((raw: unknown) =>
@@ -50,107 +50,72 @@ export const fetchInstagramPosts = createServerFn({ method: "POST" })
     }).parse(raw)
   )
   .handler(async ({ data }) => {
-    const range = data.range;
-    const posts: InstagramPostPreview[] = [];
+    const token = process.env.APIFY_API_TOKEN;
+    if (!token) {
+      throw new Error("Missing APIFY_API_TOKEN environment variable. Please configure it in your environment settings.");
+    }
+    const directUrls = data.urls && data.urls.length > 0 
+      ? data.urls 
+      : data.username 
+        ? [`https://www.instagram.com/${data.username.replace(/^@/, "").trim()}/`] 
+        : [];
 
-    // Let's generate extremely realistic boutique posts matching luxury fashion in Bahrain & GCC
-    const designVariations = [
-      {
-        title_ar: "عباية مخملية كلاسيكية مع تطريز لؤلؤ ناعم ✨",
-        title_en: "Classic Velvet Abaya with Soft Pearl Embroidery",
-        price: 42,
-        sizes: ["52", "54", "56", "58"],
-        img: "https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?q=80&w=600&auto=format&fit=crop",
-        desc_ar: "عباية راقية من قماش المخمل الفاخر، مزينة بحبات اللؤلؤ على الأكمام. مناسبة للمناسبات الخاصة والمواسم الباردة.",
-        desc_en: "Elegant abaya crafted from premium velvet, adorned with hand-stitched pearls on the sleeves. Perfect for special occasions and cooler weather.",
-        category: "Abayas",
-      },
-      {
-        title_ar: "فستان كتان صيفي باللون الزيتي الجذاب 🌿",
-        title_en: "Sage Green Summer Linen Dress",
-        price: 38,
-        sizes: ["S", "M", "L"],
-        img: "https://images.unsplash.com/photo-1595777457583-95e059d581b8?q=80&w=600&auto=format&fit=crop",
-        desc_ar: "فستان أنيق من الكتان العضوي البارد، مريح جداً لليوميات والصيف البارد.",
-        desc_en: "Chic dress made from organic breathable linen. Highly comfortable for daily wear and breezy summer nights.",
-        category: "Dresses",
-      },
-      {
-        title_ar: "عباية كريب كلاسيكية بكسرات أنيقة",
-        title_en: "Classic Pleated Creep Abaya",
-        price: 35,
-        sizes: ["50", "52", "54", "56", "58"],
-        img: "https://images.unsplash.com/photo-1549064482-6779ba329226?q=80&w=600&auto=format&fit=crop",
-        desc_ar: "عباية عملية بتصميم انسيابي مريح وتفاصيل كسرات على الظهر والأكمام.",
-        desc_en: "Practical everyday abaya featuring pleated details on the back and cuffs.",
-        category: "Abayas",
-      },
-      {
-        title_ar: "طقم كاجوال قطعتين قطن عضوي 🌟",
-        title_en: "Casual Two-Piece Organic Cotton Set",
-        price: 29,
-        sizes: ["XS", "S", "M", "L"],
-        img: "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=600&auto=format&fit=crop",
-        desc_ar: "طقم مريح مكون من بلوزة وبنطلون واسع، مثالي للسفر والطلعات اليومية البسيطة.",
-        desc_en: "Comfortable coordinating set with oversized top and wide-leg trousers, perfect for travel and casual outings.",
-        category: "Outerwear",
-      },
-      {
-        title_ar: "عباية الأورجانزا الفاخرة بطبقتين 🤍",
-        title_en: "Luxury Double-Layer Organza Abaya",
-        price: 49,
-        sizes: ["54", "56", "58"],
-        img: "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?q=80&w=600&auto=format&fit=crop",
-        desc_ar: "عباية مميزة مصنوعة من الأورجانزا اليابانية الفاخرة بطبقتين لإعطاء مظهر ملوكي وراقي.",
-        desc_en: "Premium dual-layer abaya tailored with fine Japanese organza to achieve a majestic and structured look.",
-        category: "Abayas",
-      },
-      {
-        title_ar: "فستان الحرير الكلاسيكي للسهرات 🖤",
-        title_en: "Classic Silk Evening Slip Dress",
-        price: 32,
-        sizes: ["S", "M", "L", "XL"],
-        img: "https://images.unsplash.com/photo-1496747611176-843222e1e57c?q=80&w=600&auto=format&fit=crop",
-        desc_ar: "فستان من الحرير الطبيعي الانسيابي الناعم بفتحة جانبية جذابة وأشرطة قابلة للتعديل.",
-        desc_en: "Soft flowing natural silk slip dress featuring an elegant side slit and adjustable delicate straps.",
-        category: "Dresses",
-      },
-    ];
-
-    const today = new Date();
-    for (let i = 0; i < range; i++) {
-      const idx = i % designVariations.length;
-      const varData = designVariations[idx];
-      const dateStr = new Date(today.getTime() - i * 24 * 60 * 60 * 1000).toLocaleDateString("en-US", {
-        month: "short",
-        day: "numeric",
-      });
-
-      // Deliberately make some posts "Sold out" across languages to show off scanner filters
-      let isSoldOut = false;
-      let caption = "";
-      if (i === 2) {
-        isSoldOut = true;
-        caption = `نفذت الكمية بالكامل! شكراً لثقتكم 🤍 عباية الأورجانزا الأنيقة غير متوفرة حالياً للتفصيل.\n\n#soldout #pura`;
-      } else if (i === 4) {
-        isSoldOut = true;
-        caption = `SOLD OUT - The Velvet Pearl Abaya is currently out of stock.\n\n#abaya #luxury`;
-      } else {
-        caption = `${varData.title_ar}\n\n${varData.title_en}\n\nالسعر: ${varData.price} BHD دينار\nالمقاسات المتوفرة: ${varData.sizes.join(", ")}\n\n${varData.desc_ar}\n\n${varData.desc_en}\n\n#luxury #fashion #abaya`;
-      }
-
-      posts.push({
-        id: `post-${i}`,
-        url: `https://instagram.com/p/C${Math.random().toString(36).slice(2, 11)}/`,
-        imageUrl: varData.img,
-        caption,
-        isSoldOut,
-        detectedKeyword: isSoldOut ? (i === 2 ? "نفذت الكمية" : "sold out") : undefined,
-        date: dateStr,
-      });
+    if (directUrls.length === 0) {
+      throw new Error("Either username or direct URLs must be provided.");
     }
 
-    return posts;
+    try {
+      const response = await fetch(`https://api.apify.com/v2/acts/apify~instagram-scraper/run-sync-get-dataset-items?token=${token}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          directUrls,
+          resultsLimit: data.range,
+          resultsType: "posts",
+        }),
+      });
+
+      if (!response.ok) {
+        const errText = await response.text();
+        throw new Error(`Apify request failed with status ${response.status}: ${errText}`);
+      }
+
+      const items = await response.json() as any[];
+      if (!Array.isArray(items)) {
+        return [];
+      }
+
+      const posts: InstagramPostPreview[] = items.map((item, index) => {
+        const caption = item.caption || item.text || "";
+        const { isSoldOut, keyword } = scanCaptionForSoldOut(caption);
+        
+        let imageUrl = item.displayUrl || item.images?.[0] || "";
+        if (!imageUrl && item.childPosts && item.childPosts.length > 0) {
+          imageUrl = item.childPosts[0].displayUrl || item.childPosts[0].images?.[0] || "";
+        }
+
+        const dateStr = item.timestamp 
+          ? new Date(item.timestamp).toLocaleDateString("en-US", { month: "short", day: "numeric" })
+          : "Today";
+
+        return {
+          id: item.id || `post-${index}`,
+          url: item.url || `https://www.instagram.com/p/${item.shortCode || index}/`,
+          imageUrl,
+          caption,
+          isSoldOut,
+          detectedKeyword: isSoldOut ? keyword : undefined,
+          date: dateStr,
+        };
+      }).filter(p => p.imageUrl);
+
+      return posts;
+    } catch (error: any) {
+      console.error("Apify dynamic scraping execution error:", error);
+      throw error;
+    }
   });
 
 // 2. AI Vision Post Parser Server Function with strict RPM throttle safe logic
