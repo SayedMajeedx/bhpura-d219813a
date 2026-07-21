@@ -66,7 +66,8 @@ export const fetchInstagramPosts = createServerFn({ method: "POST" })
     }
 
     try {
-      const response = await fetch(`https://api.apify.com/v2/acts/apify~instagram-scraper/run-sync-get-dataset-items?token=${token}`, {
+      // 1. Trigger the scraping actor run asynchronously
+      const runResponse = await fetch(`https://api.apify.com/v2/acts/apify~instagram-scraper/runs?token=${token}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -78,12 +79,55 @@ export const fetchInstagramPosts = createServerFn({ method: "POST" })
         }),
       });
 
-      if (!response.ok) {
-        const errText = await response.text();
-        throw new Error(`Apify request failed with status ${response.status}: ${errText}`);
+      if (!runResponse.ok) {
+        const errText = await runResponse.text();
+        throw new Error(`Failed to start Apify scraper: Status ${runResponse.status} - ${errText}`);
       }
 
-      const items = await response.json() as any[];
+      const runResData = await runResponse.json();
+      const runId = runResData.data?.id;
+      const datasetId = runResData.data?.defaultDatasetId;
+
+      if (!runId || !datasetId) {
+        throw new Error("Failed to initialize Apify scraper run structure.");
+      }
+
+      // 2. Poll the run status until completion (max 150 seconds)
+      let status = "RUNNING";
+      const maxRetries = 60;
+      let attempt = 0;
+
+      while (status === "RUNNING" || status === "READY") {
+        if (attempt >= maxRetries) {
+          throw new Error("Apify scraping task timed out on the server. Please try again with fewer posts.");
+        }
+
+        attempt++;
+        // Wait 2.5 seconds before polling
+        await new Promise((resolve) => setTimeout(resolve, 2500));
+
+        const checkRes = await fetch(`https://api.apify.com/v2/acts/apify~instagram-scraper/runs/${runId}?token=${token}`);
+        if (!checkRes.ok) {
+          const errText = await checkRes.text();
+          throw new Error(`Failed to poll Apify run status: Status ${checkRes.status} - ${errText}`);
+        }
+
+        const checkResData = await checkRes.json();
+        status = checkResData.data?.status || "FAILED";
+
+        if (status === "FAILED" || status === "TIMED-OUT" || status === "ABORTED") {
+          throw new Error(`Apify scraping actor run failed with status: ${status}`);
+        }
+      }
+
+      // 3. Fetch dataset items
+      const itemsResponse = await fetch(`https://api.apify.com/v2/datasets/${datasetId}/items?token=${token}`);
+      if (!itemsResponse.ok) {
+        const errText = await itemsResponse.text();
+        throw new Error(`Failed to retrieve Apify dataset items: Status ${itemsResponse.status} - ${errText}`);
+      }
+
+      const items = await itemsResponse.json() as any[];
       if (!Array.isArray(items)) {
         return [];
       }
