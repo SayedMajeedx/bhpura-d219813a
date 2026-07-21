@@ -307,7 +307,10 @@ export const batchParseCaptionsWithAI = createServerFn({ method: "POST" })
 
     const creds = await getGeminiCredentials(context.supabase, userId);
     const apiKey = creds.apiKey;
-    const model = creds.model || "gemini-2.5-flash";
+    let model = creds.model || "gemini-2.0-flash";
+    if (model.includes("gemini-2.5-flash")) {
+      model = "gemini-2.0-flash";
+    }
 
     if (!apiKey) {
       throw new Error("Missing Gemini API Key. Please configure it in your settings page.");
