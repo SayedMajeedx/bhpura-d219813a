@@ -26,6 +26,7 @@ export type InstagramPostPreview = {
   isSoldOut: boolean;
   detectedKeyword?: string;
   date: string;
+  isVideo?: boolean;
 };
 
 // Client and server sold-out scanning helper
@@ -91,7 +92,19 @@ export const fetchInstagramPosts = createServerFn({ method: "POST" })
         const caption = item.caption || item.text || "";
         const { isSoldOut, keyword } = scanCaptionForSoldOut(caption);
         
-        const imageUrl = item.displayUrl || (item.images && item.images[0]) || item.thumbnailUrl || (item.displayResources && item.displayResources[0]?.src) || "";
+        const isVideo = !!(item.isVideo || item.type === "Video" || item.type === "Reel" || (item.url && (item.url.includes("/reel/") || item.url.includes("/tv/"))));
+        
+        // Prioritized fallback cover image sequence
+        let imageUrl = item.thumbnailUrl || item.displayUrl || (item.images && item.images[0]) || (item.displayResources && item.displayResources[0]?.src) || "";
+
+        // Enforce safety checks to ensure we never capture a raw .mp4 string
+        if (imageUrl.toLowerCase().includes(".mp4")) {
+          // Attempt fallbacks
+          imageUrl = item.thumbnailUrl || item.displayUrl || (item.images && item.images[0]) || "";
+          if (imageUrl.toLowerCase().includes(".mp4")) {
+            imageUrl = "";
+          }
+        }
 
         const dateStr = item.timestamp 
           ? new Date(item.timestamp).toLocaleDateString("en-US", { month: "short", day: "numeric" })
@@ -105,6 +118,7 @@ export const fetchInstagramPosts = createServerFn({ method: "POST" })
           isSoldOut,
           detectedKeyword: isSoldOut ? keyword : undefined,
           date: dateStr,
+          isVideo,
         };
       }).filter(p => p.imageUrl);
 
@@ -128,6 +142,7 @@ export const parseInstagramPostsWithAI = createServerFn({ method: "POST" })
           imageUrl: z.string(),
           caption: z.string(),
           isSoldOut: z.boolean(),
+          isVideo: z.boolean().optional(),
         })
       ),
     }).parse(raw)

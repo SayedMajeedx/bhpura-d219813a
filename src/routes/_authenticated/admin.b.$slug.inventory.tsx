@@ -907,6 +907,12 @@ function InstagramImporterModal({ brandId, onComplete }: { brandId: string; onCo
                           </div>
                         )}
 
+                        {post.isVideo && (
+                          <div className="absolute top-2 end-2 bg-black/60 text-white text-[9px] px-1.5 py-0.5 rounded flex items-center gap-1 z-10">
+                            📹 {isAr ? "فيديو" : "Video Reel"}
+                          </div>
+                        )}
+
                         <div className="absolute bottom-2 end-2 bg-black/60 text-white text-[9px] px-1.5 py-0.5 rounded">
                           {post.date}
                         </div>
