@@ -2,13 +2,14 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { importProductCatalog } from "@/lib/universal-importer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
-import { Plus, Pencil, Trash2, Package, TrendingUp, Wand as Wand2, Printer, Search, AlertTriangle, Boxes, ChevronDown } from "lucide-react";
+import { Plus, Pencil, Trash2, Package, TrendingUp, Wand as Wand2, Printer, Search, AlertTriangle, Boxes, ChevronDown, Sparkles, Upload, Loader2, Check } from "lucide-react";
 import { toast } from "sonner";
 import { formatMoney } from "@/lib/format";
 import { useT, useI18n } from "@/lib/i18n";
@@ -191,6 +192,354 @@ function Inventory() {
   );
 }
 
+function parseCSV(text: string): string[][] {
+  const lines: string[][] = [];
+  let row: string[] = [];
+  let inQuotes = false;
+  let currentVal = "";
+  
+  for (let i = 0; i < text.length; i++) {
+    const char = text[i];
+    const nextChar = text[i + 1];
+    
+    if (char === '"') {
+      if (inQuotes && nextChar === '"') {
+        currentVal += '"';
+        i++;
+      } else {
+        inQuotes = !inQuotes;
+      }
+    } else if (char === ',' && !inQuotes) {
+      row.push(currentVal.trim());
+      currentVal = "";
+    } else if ((char === '\r' || char === '\n') && !inQuotes) {
+      if (char === '\r' && nextChar === '\n') {
+        i++;
+      }
+      row.push(currentVal.trim());
+      lines.push(row);
+      row = [];
+      currentVal = "";
+    } else {
+      currentVal += char;
+    }
+  }
+  if (currentVal || row.length > 0) {
+    row.push(currentVal.trim());
+    lines.push(row);
+  }
+  return lines.filter(r => r.length > 0 && r.some(val => val !== ""));
+}
+
+const PRODUCT_HEADER_MAPS = {
+  name: ["title", "name", "اسم المنتج", "عنوان المنتج", "product name", "product_name"],
+  price: ["price", "price (bhd)", "price (sar)", "السعر", "سعر البيع", "selling_price", "price_bhd"],
+  image: ["image src", "image", "media", "صورة المنتج", "روابط الصور", "image_url", "image url", "image_src"],
+  stock: ["variant inventory qty", "stock", "الكمية", "المخزون", "inventory", "qty", "quantity", "stock_main"],
+};
+
+function ProductImporterModal({ brandId, onComplete }: { brandId: string; onComplete: () => void }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [step, setStep] = useState<"preset" | "mapper" | "importing" | "success">("preset");
+  const [preset, setPreset] = useState<"shopify" | "salla" | "zid" | "woocommerce" | "custom">("custom");
+  const [parsedRows, setParsedRows] = useState<string[][]>([]);
+  const [headers, setHeaders] = useState<string[]>([]);
+  const [mappings, setMappings] = useState<Record<string, number>>({ name: -1, price: -1, image: -1, stock: -1 });
+  const [progress, setProgress] = useState("");
+  const [successCount, setSuccessCount] = useState(0);
+  const [totalCount, setTotalCount] = useState(0);
+  const { lang } = useI18n();
+  const isAr = lang === "ar";
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const text = event.target?.result as string;
+      const rows = parseCSV(text);
+      if (rows.length < 2) {
+        toast.error(isAr ? "ملف الـ CSV فارغ أو يحتوي على صف الرأس فقط." : "CSV file is empty or only contains the header row.");
+        return;
+      }
+      
+      const fileHeaders = rows[0].map(h => h.trim());
+      setParsedRows(rows.slice(1));
+      setHeaders(fileHeaders);
+
+      // Smart Header Mapping Detector
+      const newMappings = { name: -1, price: -1, image: -1, stock: -1 };
+      Object.entries(PRODUCT_HEADER_MAPS).forEach(([field, aliases]) => {
+        const foundIdx = fileHeaders.findIndex(h => 
+          aliases.some(alias => h.toLowerCase() === alias.toLowerCase() || h.toLowerCase().includes(alias.toLowerCase()))
+        );
+        newMappings[field as keyof typeof newMappings] = foundIdx;
+      });
+
+      setMappings(newMappings);
+
+      // If any mapping is missing or preset is custom, ask the user to confirm/adjust
+      const allMapped = Object.values(newMappings).every(idx => idx !== -1);
+      if (allMapped && preset !== "custom") {
+        startImport(rows.slice(1), newMappings);
+      } else {
+        setStep("mapper");
+      }
+    };
+    reader.readAsText(file);
+  };
+
+  const startImport = async (dataRows: string[][], finalMappings: Record<string, number>) => {
+    setStep("importing");
+    setProgress(isAr ? "بدء عملية الاستيراد الفاخرة..." : "Starting premium import pipeline...");
+    setTotalCount(dataRows.length);
+
+    try {
+      const productsPayload = dataRows.map((row) => {
+        const nameVal = row[finalMappings.name] || (isAr ? "منتج مستورد بدون اسم" : "Unnamed Imported Product");
+        const priceVal = parseFloat(row[finalMappings.price]?.replace(/[^\d.]/g, "") || "0") || 10.0;
+        const imageVal = row[finalMappings.image] || null;
+        const stockVal = parseInt(row[finalMappings.stock]?.replace(/[^\d]/g, "") || "0") || 10;
+
+        return {
+          name: nameVal,
+          name_ar: isAr ? nameVal : null,
+          name_en: isAr ? null : nameVal,
+          description: isAr ? "تم الاستيراد بنجاح" : "Imported product details",
+          description_ar: isAr ? "تم الاستيراد بنجاح" : null,
+          description_en: isAr ? null : "Imported product details",
+          category: "General",
+          image_url: imageVal,
+          is_active: true,
+          variants: [
+            {
+              size: null,
+              size_unit: null,
+              color: null,
+              fabric: null,
+              sku: `SKU-${crypto.randomUUID().slice(0, 8).toUpperCase()}`,
+              barcode: null,
+              cost_price: 0,
+              selling_price: priceVal,
+              stock_main: stockVal,
+              stock_incubator: 0,
+            }
+          ]
+        };
+      });
+
+      // Split into batches of 10 to provide elegant live feedback to the merchant!
+      const batchSize = 10;
+      let totalSuccess = 0;
+
+      for (let i = 0; i < productsPayload.length; i += batchSize) {
+        const chunk = productsPayload.slice(i, i + batchSize);
+        setProgress(
+          isAr 
+            ? `جاري نقل ${i} من أصل ${productsPayload.length} منتج وإعادة استضافة الصور على R2...` 
+            : `Migrated ${i} / ${productsPayload.length} products and re-hosted CDN images to public R2...`
+        );
+        
+        const result = await importProductCatalog({
+          data: {
+            brandId,
+            products: chunk,
+          }
+        });
+        totalSuccess += result.successCount;
+        setSuccessCount(totalSuccess);
+      }
+
+      setStep("success");
+      onComplete();
+    } catch (err) {
+      console.error(err);
+      toast.error(isAr ? "فشل الاستيراد الفني" : "Import pipeline failure");
+      setStep("preset");
+    }
+  };
+
+  return (
+    <>
+      <Button 
+        variant="outline" 
+        onClick={() => {
+          setIsOpen(true);
+          setStep("preset");
+        }}
+        className="border-primary/20 hover:border-primary/40 hover:bg-primary/5 transition-all text-primary"
+      >
+        <Sparkles className="h-4 w-4 me-2 animate-pulse text-amber-500" />
+        {isAr ? "استيراد كتالوج المنتجات" : "Import Products"}
+      </Button>
+
+      <Dialog open={isOpen} onOpenChange={setIsOpen}>
+        <DialogContent className="max-w-xl border-zinc-100 dark:border-zinc-800 bg-white/95 dark:bg-zinc-950/95 backdrop-blur-xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 font-display text-xl">
+              <Sparkles className="h-5 w-5 text-amber-500" />
+              {isAr ? "مساعد الهجرة الشامل للمنتجات" : "Universal Product Migration Suite"}
+            </DialogTitle>
+          </DialogHeader>
+
+          {step === "preset" && (
+            <div className="space-y-4 pt-2 select-none">
+              <p className="text-xs text-muted-foreground">
+                {isAr 
+                  ? "قم بتصدير الكتالوج الخاص بك من منصتك السابقة، وسيقوم نظامنا تلقائياً بإعادة استضافة صور CDN الخاصة بك على سيرفراتنا الفائقة السرعة واستيراد الكتالوج فوراً."
+                  : "Export your product catalog from your previous platform. Our system will automatically re-host all CDN images to public R2 and batch import your data."}
+              </p>
+              
+              <div className="grid grid-cols-2 gap-3">
+                {[
+                  { id: "shopify", name: "Shopify CSV", desc: "products_export.csv", color: "hover:border-emerald-500/30" },
+                  { id: "salla", name: "Salla (سلة)", desc: "سلة إكسل / CSV", color: "hover:border-green-500/30" },
+                  { id: "zid", name: "Zid (زد)", desc: "زد إكسل / CSV", color: "hover:border-purple-500/30" },
+                  { id: "woocommerce", name: "WooCommerce", desc: "WooCommerce CSV", color: "hover:border-blue-500/30" },
+                  { id: "custom", name: isAr ? "CSV مخصص" : "Custom CSV / Sheets", desc: "Excel or Google Sheet CSV", color: "hover:border-primary/30" },
+                ].map((item) => (
+                  <button
+                    key={item.id}
+                    onClick={() => setPreset(item.id as any)}
+                    className={`flex flex-col items-start p-3.5 rounded-xl border border-zinc-100 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/30 text-left transition-all ${item.color} ${
+                      preset === item.id 
+                        ? "border-primary ring-2 ring-primary/10 bg-primary/5 dark:bg-primary/5" 
+                        : ""
+                    }`}
+                  >
+                    <span className="text-sm font-semibold font-display text-foreground block">{item.name}</span>
+                    <span className="text-[10px] text-muted-foreground block mt-0.5">{item.desc}</span>
+                  </button>
+                ))}
+              </div>
+
+              <div className="pt-4 border-t border-zinc-100 dark:border-zinc-800 flex justify-end">
+                <label className="relative cursor-pointer">
+                  <span className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary text-primary-foreground font-semibold text-xs rounded-xl shadow-lg shadow-primary/10 hover:shadow-xl hover:bg-primary/95 transition-all">
+                    <Upload className="h-4 w-4" />
+                    {isAr ? "اختر الملف وابدأ الاستيراد" : "Upload & Begin Migration"}
+                  </span>
+                  <input 
+                    type="file" 
+                    accept=".csv" 
+                    onChange={handleFileUpload} 
+                    className="absolute inset-0 opacity-0 cursor-pointer" 
+                  />
+                </label>
+              </div>
+            </div>
+          )}
+
+          {step === "mapper" && (
+            <div className="space-y-4 pt-2">
+              <p className="text-xs text-muted-foreground">
+                {isAr 
+                  ? "لم نتمكن من مطابقة بعض الأعمدة تلقائياً. يرجى مطابقة أعمدة ملفك مع سمات المنتج المطلوبة لدينا:"
+                  : "We couldn't automatically resolve some fields. Please map your CSV headers to our required product fields:"}
+              </p>
+
+              <div className="space-y-3">
+                {[
+                  { key: "name", label: isAr ? "اسم المنتج" : "Product Title", required: true },
+                  { key: "price", label: isAr ? "السعر (د.ب)" : "Price (BHD)", required: true },
+                  { key: "image", label: isAr ? "رابط الصورة" : "Image URL", required: false },
+                  { key: "stock", label: isAr ? "المخزون الحالي" : "Inventory Stock", required: false },
+                ].map((field) => (
+                  <div key={field.key} className="flex items-center justify-between gap-4 p-3 bg-zinc-50 dark:bg-zinc-900/40 rounded-xl border border-zinc-100 dark:border-zinc-800">
+                    <span className="text-xs font-semibold text-foreground">
+                      {field.label} {field.required && <span className="text-rose-500">*</span>}
+                    </span>
+                    <Select
+                      value={mappings[field.key]?.toString() || "-1"}
+                      onValueChange={(val) => setMappings(m => ({ ...m, [field.key]: parseInt(val) }))}
+                    >
+                      <SelectTrigger className="w-[200px] h-9 text-xs">
+                        <SelectValue placeholder={isAr ? "اختر العمود..." : "Select column..."} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="-1">-- {isAr ? "تخطي العمود" : "Skip/Omit Field"} --</SelectItem>
+                        {headers.map((h, idx) => (
+                          <SelectItem key={idx} value={idx.toString()}>{h}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                ))}
+              </div>
+
+              <div className="pt-4 border-t border-zinc-100 dark:border-zinc-800 flex justify-end">
+                <Button
+                  onClick={() => {
+                    if (mappings.name === -1 || mappings.price === -1) {
+                      toast.error(isAr ? "يجب مطابقة اسم المنتج والسعر على الأقل." : "Product Title and Price fields are mandatory.");
+                      return;
+                    }
+                    startImport(parsedRows, mappings);
+                  }}
+                  className="bg-primary text-xs text-primary-foreground font-semibold px-5 py-2.5 rounded-xl shadow-lg shadow-primary/10 hover:shadow-xl transition-all"
+                >
+                  {isAr ? "تأكيد واستيراد الآن" : "Confirm & Import Catalog"}
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {step === "importing" && (
+            <div className="flex flex-col items-center justify-center py-12 space-y-6 text-center">
+              <div className="relative">
+                <div className="absolute inset-0 rounded-full bg-primary/10 animate-ping" />
+                <div className="relative h-14 w-14 rounded-full bg-primary/10 flex items-center justify-center border border-primary/20">
+                  <Loader2 className="h-7 w-7 text-primary animate-spin" />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <h3 className="text-sm font-semibold text-foreground font-display">
+                  {isAr ? "جاري نقل وإعادة توطين كتالوج المنتجات..." : "Processing Universal Catalog Migration..."}
+                </h3>
+                <p className="text-xs text-muted-foreground max-w-sm font-sans mx-auto leading-relaxed">
+                  {progress}
+                </p>
+              </div>
+              <div className="w-full max-w-xs bg-zinc-100 dark:bg-zinc-800 h-1.5 rounded-full overflow-hidden">
+                <div 
+                  className="bg-primary h-full transition-all duration-300" 
+                  style={{ width: `${totalCount > 0 ? (successCount / totalCount) * 100 : 0}%` }}
+                />
+              </div>
+            </div>
+          )}
+
+          {step === "success" && (
+            <div className="flex flex-col items-center justify-center py-10 space-y-5 text-center">
+              <div className="h-14 w-14 rounded-full bg-emerald-100 dark:bg-emerald-950/40 border border-emerald-500/20 text-emerald-500 flex items-center justify-center">
+                <Check className="h-7 w-7 animate-bounce" />
+              </div>
+              <div className="space-y-1">
+                <h3 className="text-lg font-bold font-display text-zinc-900 dark:text-zinc-100">
+                  {isAr ? "اكتمل استيراد الكتالوج بنجاح!" : "Catalog Migration Completed!"}
+                </h3>
+                <p className="text-xs text-muted-foreground leading-relaxed max-w-sm">
+                  {isAr 
+                    ? `تم استيراد ${successCount} منتجاً بالكامل، وإعادة استضافة جميع الصور على خوادم Cloudflare R2 فائقة السرعة بنجاح!`
+                    : `Successfully imported ${successCount} products, and re-hosted all CDN images onto our premium ultra-fast Cloudflare R2 bucket!`
+                  }
+                </p>
+              </div>
+              <Button 
+                onClick={() => setIsOpen(false)}
+                className="bg-emerald-500 hover:bg-emerald-600 text-white font-semibold text-xs px-6 py-2.5 rounded-xl shadow-lg shadow-emerald-500/10 hover:shadow-xl transition-all"
+              >
+                {isAr ? "عرض المنتجات المستوردة" : "View Imported Catalog"}
+              </Button>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
+
 function ProductsSection({ products, variants, businessName, currency, onChanged, salesHistory }: { products: Product[]; variants: Variant[]; businessName: string | null; currency: string; onChanged: () => void; salesHistory: any[] }) {
   const t = useT();
   const brand = useBrand();
@@ -332,6 +681,7 @@ function ProductsSection({ products, variants, businessName, currency, onChanged
       </Card>
 
       <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2">
+        <ProductImporterModal brandId={brandId} onComplete={onChanged} />
         <Button variant="outline" onClick={printAll}>
           <Printer className="h-4 w-4 me-2" /> {isAr ? "طباعة كل الباركودات" : "Print all barcodes"}
         </Button>

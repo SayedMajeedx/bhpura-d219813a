@@ -2,6 +2,7 @@ import { createFileRoute, Outlet, useNavigate, useRouterState } from "@tanstack/
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { importCustomerDatabase } from "@/lib/customer-importer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -9,7 +10,7 @@ import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ChevronLeft, ChevronRight, Pencil, Plus, Search, Trash2, Users, Star, Check } from "lucide-react";
+import { ChevronLeft, ChevronRight, Pencil, Plus, Search, Trash2, Users, Star, Check, Loader2, Upload, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { useT, useI18n } from "@/lib/i18n";
 import { BAHRAIN_REGIONS, regionLabel, formatAddressLine, type StructuredAddress } from "@/lib/bahrain-regions";
@@ -75,6 +76,417 @@ function DeleteAction({ message, onConfirm, mobile = false }: { message: string;
   );
 }
 
+
+function parseCSV(text: string): string[][] {
+  const lines: string[][] = [];
+  let row: string[] = [];
+  let inQuotes = false;
+  let currentVal = "";
+  
+  for (let i = 0; i < text.length; i++) {
+    const char = text[i];
+    const nextChar = text[i + 1];
+    
+    if (char === '"') {
+      if (inQuotes && nextChar === '"') {
+        currentVal += '"';
+        i++;
+      } else {
+        inQuotes = !inQuotes;
+      }
+    } else if (char === ',' && !inQuotes) {
+      row.push(currentVal.trim());
+      currentVal = "";
+    } else if ((char === '\r' || char === '\n') && !inQuotes) {
+      if (char === '\r' && nextChar === '\n') {
+        i++;
+      }
+      row.push(currentVal.trim());
+      lines.push(row);
+      row = [];
+      currentVal = "";
+    } else {
+      currentVal += char;
+    }
+  }
+  if (currentVal || row.length > 0) {
+    row.push(currentVal.trim());
+    lines.push(row);
+  }
+  return lines.filter(r => r.length > 0 && r.some(val => val !== ""));
+}
+
+function parseVCard(vcardText: string): Array<{ name: string; phone: string | null; email: string | null }> {
+  const contacts: Array<{ name: string; phone: string | null; email: string | null }> = [];
+  const blocks = vcardText.split("BEGIN:VCARD");
+  for (const block of blocks) {
+    if (!block.trim()) continue;
+    let name = "";
+    let phone: string | null = null;
+    let email: string | null = null;
+    
+    const lines = block.split(/\r?\n/);
+    for (const line of lines) {
+      const cleanLine = line.trim();
+      if (cleanLine.startsWith("FN:")) {
+        name = cleanLine.slice(3).trim();
+      } else if (cleanLine.startsWith("N:") && !name) {
+        const parts = cleanLine.slice(2).split(";");
+        const first = parts[1] || "";
+        const last = parts[0] || "";
+        name = `${first} ${last}`.trim();
+      } else if (cleanLine.startsWith("TEL")) {
+        const parts = cleanLine.split(":");
+        const phoneNum = parts[1] ? parts[1].replace(/[^\d+]/g, "").trim() : "";
+        if (phoneNum) phone = phoneNum;
+      } else if (cleanLine.startsWith("EMAIL")) {
+        const parts = cleanLine.split(":");
+        const emailAddr = parts[1] ? parts[1].trim() : "";
+        if (emailAddr) email = emailAddr;
+      }
+    }
+    if (name || phone || email) {
+      contacts.push({ name: name || "WhatsApp Contact", phone, email });
+    }
+  }
+  return contacts;
+}
+
+function sanitizeGCCPhone(phoneStr: string | null): string | null {
+  if (!phoneStr) return null;
+  let clean = phoneStr.replace(/[^\d]/g, "");
+  clean = clean.replace(/^0+/, "");
+
+  if (clean.length === 8) {
+    return `+973${clean}`;
+  }
+  if (!phoneStr.startsWith("+")) {
+    return `+${clean}`;
+  }
+  return `+${clean}`;
+}
+
+const CUSTOMER_HEADER_MAPS = {
+  name: ["first name", "last name", "name", "اسم العميل", "الاسم", "client name", "customer name", "customer_name"],
+  phone: ["phone", "phone number", "tel", "mobile", "رقم الجوال", "رقم الهاتف", "الجوال", "phone_number"],
+  email: ["email", "email address", "البريد الإلكتروني", "البريد", "email_address"],
+  orders: ["total orders", "orders", "عدد الطلبات", "الطلبات", "total_orders"],
+  spend: ["total spend", "spend", "إجمالي المشتريات", "المشتريات", "إجمالي المبيعات", "total_spend", "total_spent"],
+};
+
+function CustomerImporterModal({ brandId, onComplete }: { brandId: string; onComplete: () => void }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [step, setStep] = useState<"preset" | "mapper" | "importing" | "success">("preset");
+  const [preset, setPreset] = useState<"shopify" | "salla" | "zid" | "woocommerce" | "whatsapp" | "custom">("custom");
+  const [parsedRows, setParsedRows] = useState<string[][]>([]);
+  const [headers, setHeaders] = useState<string[]>([]);
+  const [mappings, setMappings] = useState<Record<string, number>>({ name: -1, phone: -1, email: -1, orders: -1, spend: -1 });
+  const [progress, setProgress] = useState("");
+  const [successCount, setSuccessCount] = useState(0);
+  const [totalCount, setTotalCount] = useState(0);
+  const { lang } = useI18n();
+  const isAr = lang === "ar";
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const text = event.target?.result as string;
+
+      // Handle vCard / VCF Phone contacts directly!
+      if (file.name.endsWith(".vcf") || text.includes("BEGIN:VCARD")) {
+        setPreset("whatsapp");
+        const contacts = parseVCard(text);
+        if (contacts.length === 0) {
+          toast.error(isAr ? "لم نتمكن من العثور على أي جهات اتصال صالحة في ملف vCard." : "No valid contacts found in this vCard file.");
+          return;
+        }
+        startImportDirect(contacts.map(c => ({
+          name: c.name,
+          phone: sanitizeGCCPhone(c.phone),
+          email: c.email,
+          notes: "Imported from WhatsApp Contacts vCard",
+          totalOrders: 0,
+          totalSpend: 0,
+          tags: ["imported_from_whatsapp"]
+        })));
+        return;
+      }
+
+      const rows = parseCSV(text);
+      if (rows.length < 2) {
+        toast.error(isAr ? "ملف الـ CSV فارغ أو غير صالح." : "CSV file is empty or invalid.");
+        return;
+      }
+
+      const fileHeaders = rows[0].map(h => h.trim());
+      setParsedRows(rows.slice(1));
+      setHeaders(fileHeaders);
+
+      // Smart Header Matcher
+      const newMappings = { name: -1, phone: -1, email: -1, orders: -1, spend: -1 };
+      Object.entries(CUSTOMER_HEADER_MAPS).forEach(([field, aliases]) => {
+        const foundIdx = fileHeaders.findIndex(h => 
+          aliases.some(alias => h.toLowerCase() === alias.toLowerCase() || h.toLowerCase().includes(alias.toLowerCase()))
+        );
+        newMappings[field as keyof typeof newMappings] = foundIdx;
+      });
+
+      setMappings(newMappings);
+
+      const mandatoryMapped = newMappings.name !== -1 && newMappings.phone !== -1;
+      if (mandatoryMapped && preset !== "custom") {
+        startImportCSV(rows.slice(1), newMappings);
+      } else {
+        setStep("mapper");
+      }
+    };
+    reader.readAsText(file);
+  };
+
+  const startImportDirect = async (customersList: any[]) => {
+    setStep("importing");
+    setTotalCount(customersList.length);
+    setProgress(isAr ? "بدء عملية الاستيراد الشاملة..." : "Starting contact ingestion process...");
+
+    try {
+      const batchSize = 25;
+      let totalSuccess = 0;
+
+      for (let i = 0; i < customersList.length; i += batchSize) {
+        const chunk = customersList.slice(i, i + batchSize);
+        setProgress(
+          isAr 
+            ? `جاري استيراد وتطهير جهات الاتصال: ${i} من أصل ${customersList.length} عميل...` 
+            : `Ingested & sanitized ${i} / ${customersList.length} customer contacts...`
+        );
+        
+        const result = await importCustomerDatabase({
+          data: {
+            brandId,
+            customers: chunk
+          }
+        });
+        totalSuccess += result.successCount;
+        setSuccessCount(totalSuccess);
+      }
+
+      setStep("success");
+      onComplete();
+    } catch (err) {
+      console.error(err);
+      toast.error(isAr ? "فشل استيراد قاعدة البيانات" : "Customer database migration pipeline failed");
+      setStep("preset");
+    }
+  };
+
+  const startImportCSV = (dataRows: string[][], finalMappings: Record<string, number>) => {
+    const parsedCustomers = dataRows.map((row) => {
+      const nameVal = row[finalMappings.name] || (isAr ? "عميل مستورد" : "Imported Customer");
+      const phoneVal = sanitizeGCCPhone(row[finalMappings.phone] || null);
+      const emailVal = row[finalMappings.email] || null;
+      const ordersVal = parseInt(row[finalMappings.orders]?.replace(/[^\d]/g, "") || "0") || 0;
+      const spendVal = parseFloat(row[finalMappings.spend]?.replace(/[^\d.]/g, "") || "0") || 0;
+
+      const tags = [`migrated_${preset}`];
+
+      return {
+        name: nameVal,
+        phone: phoneVal,
+        email: emailVal,
+        notes: isAr ? `مستورد من ${preset}` : `Imported from ${preset}`,
+        totalOrders: ordersVal,
+        totalSpend: spendVal,
+        tags
+      };
+    });
+
+    startImportDirect(parsedCustomers);
+  };
+
+  return (
+    <>
+      <Button 
+        variant="outline" 
+        onClick={() => {
+          setIsOpen(true);
+          setStep("preset");
+        }}
+        className="border-primary/20 hover:border-primary/40 hover:bg-primary/5 transition-all text-primary"
+      >
+        <Plus className="h-4 w-4 me-2" />
+        {isAr ? "استيراد العملاء وجهات الاتصال" : "Import Customers"}
+      </Button>
+
+      <Dialog open={isOpen} onOpenChange={setIsOpen}>
+        <DialogContent className="max-w-xl border-zinc-100 dark:border-zinc-800 bg-white/95 dark:bg-zinc-950/95 backdrop-blur-xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 font-display text-xl">
+              <Users className="h-5 w-5 text-primary" />
+              {isAr ? "مساعد هجرة العملاء الفاخر" : "Universal Customer Migration Suite"}
+            </DialogTitle>
+          </DialogHeader>
+
+          {step === "preset" && (
+            <div className="space-y-4 pt-2 select-none">
+              <p className="text-xs text-muted-foreground">
+                {isAr 
+                  ? "اختر المنصة التي تريد الهجرة منها. سنقوم تلقائياً بتطهير وتنسيق أرقام الهواتف وتفادي التكرار ووسم العملاء المميزين VIP."
+                  : "Select your export source. We will automatically sanitize GCC phone numbers, prevent duplicates, and apply automatic VIP tagging."}
+              </p>
+
+              <div className="grid grid-cols-2 gap-3">
+                {[
+                  { id: "shopify", name: "Shopify Customers", desc: "customers_export.csv", color: "hover:border-emerald-500/30" },
+                  { id: "salla", name: "Salla (سلة)", desc: "عملاء سلة إكسل", color: "hover:border-green-500/30" },
+                  { id: "zid", name: "Zid (زد)", desc: "عملاء زد إكسل", color: "hover:border-purple-500/30" },
+                  { id: "woocommerce", name: "WooCommerce", desc: "WooCommerce CSV", color: "hover:border-blue-500/30" },
+                  { id: "whatsapp", name: "WhatsApp / Contacts", desc: ".vcf vCard format", color: "hover:border-amber-500/30" },
+                  { id: "custom", name: isAr ? "CSV مخصص" : "Custom CSV / Sheets", desc: "Any custom sheet", color: "hover:border-primary/30" },
+                ].map((item) => (
+                  <button
+                    key={item.id}
+                    onClick={() => setPreset(item.id as any)}
+                    className={`flex flex-col items-start p-3.5 rounded-xl border border-zinc-100 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/30 text-left transition-all ${item.color} ${
+                      preset === item.id 
+                        ? "border-primary ring-2 ring-primary/10 bg-primary/5 dark:bg-primary/5" 
+                        : ""
+                    }`}
+                  >
+                    <span className="text-sm font-semibold font-display text-foreground block">{item.name}</span>
+                    <span className="text-[10px] text-muted-foreground block mt-0.5">{item.desc}</span>
+                  </button>
+                ))}
+              </div>
+
+              <div className="pt-4 border-t border-zinc-100 dark:border-zinc-800 flex justify-end">
+                <label className="relative cursor-pointer">
+                  <span className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary text-primary-foreground font-semibold text-xs rounded-xl shadow-lg shadow-primary/10 hover:shadow-xl hover:bg-primary/95 transition-all">
+                    <Upload className="h-4 w-4" />
+                    {isAr ? "رفع الملف وبدء الهجرة" : "Upload File & Import"}
+                  </span>
+                  <input 
+                    type="file" 
+                    accept=".csv,.vcf" 
+                    onChange={handleFileUpload} 
+                    className="absolute inset-0 opacity-0 cursor-pointer" 
+                  />
+                </label>
+              </div>
+            </div>
+          )}
+
+          {step === "mapper" && (
+            <div className="space-y-4 pt-2">
+              <p className="text-xs text-muted-foreground">
+                {isAr 
+                  ? "يرجى تعيين ومطابقة أعمدة ملف الـ CSV الخاص بك مع الحقول المطلوبة لقاعدة بيانات العملاء:"
+                  : "Please map your CSV columns to the appropriate fields in our customer database:"}
+              </p>
+
+              <div className="space-y-3">
+                {[
+                  { key: "name", label: isAr ? "الاسم الكامل للعميل" : "Customer Full Name", required: true },
+                  { key: "phone", label: isAr ? "رقم الجوال / الواتساب" : "Phone/WhatsApp Number", required: true },
+                  { key: "email", label: isAr ? "البريد الإلكتروني" : "Email Address", required: false },
+                  { key: "orders", label: isAr ? "إجمالي الطلبات" : "Total Orders", required: false },
+                  { key: "spend", label: isAr ? "إجمالي المشتريات (د.ب)" : "Total Spend (BHD)", required: false },
+                ].map((field) => (
+                  <div key={field.key} className="flex items-center justify-between gap-4 p-3 bg-zinc-50 dark:bg-zinc-900/40 rounded-xl border border-zinc-100 dark:border-zinc-800">
+                    <span className="text-xs font-semibold text-foreground">
+                      {field.label} {field.required && <span className="text-rose-500">*</span>}
+                    </span>
+                    <Select
+                      value={mappings[field.key]?.toString() || "-1"}
+                      onValueChange={(val) => setMappings(m => ({ ...m, [field.key]: parseInt(val) }))}
+                    >
+                      <SelectTrigger className="w-[200px] h-9 text-xs">
+                        <SelectValue placeholder={isAr ? "اختر العمود..." : "Select column..."} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="-1">-- {isAr ? "تخطي العمود" : "Skip Field"} --</SelectItem>
+                        {headers.map((h, idx) => (
+                          <SelectItem key={idx} value={idx.toString()}>{h}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                ))}
+              </div>
+
+              <div className="pt-4 border-t border-zinc-100 dark:border-zinc-800 flex justify-end">
+                <Button
+                  onClick={() => {
+                    if (mappings.name === -1 || mappings.phone === -1) {
+                      toast.error(isAr ? "يجب مطابقة الاسم الكامل ورقم الجوال." : "Full Name and Phone Number are mandatory.");
+                      return;
+                    }
+                    startImportCSV(parsedRows, mappings);
+                  }}
+                  className="bg-primary text-xs text-primary-foreground font-semibold px-5 py-2.5 rounded-xl shadow-lg shadow-primary/10 hover:shadow-xl transition-all"
+                >
+                  {isAr ? "تأكيد واستيراد الآن" : "Confirm & Import Database"}
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {step === "importing" && (
+            <div className="flex flex-col items-center justify-center py-12 space-y-6 text-center">
+              <div className="relative">
+                <div className="absolute inset-0 rounded-full bg-primary/10 animate-ping" />
+                <div className="relative h-14 w-14 rounded-full bg-primary/10 flex items-center justify-center border border-primary/20">
+                  <Loader2 className="h-7 w-7 text-primary animate-spin" />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <h3 className="text-sm font-semibold text-foreground font-display">
+                  {isAr ? "جاري ترحيل وتطهير قاعدة بيانات العملاء..." : "Migrating & Sanitizing Customer Profiles..."}
+                </h3>
+                <p className="text-xs text-muted-foreground max-w-sm font-sans mx-auto leading-relaxed">
+                  {progress}
+                </p>
+              </div>
+              <div className="w-full max-w-xs bg-zinc-100 dark:bg-zinc-800 h-1.5 rounded-full overflow-hidden">
+                <div 
+                  className="bg-primary h-full transition-all duration-300" 
+                  style={{ width: `${totalCount > 0 ? (successCount / totalCount) * 100 : 0}%` }}
+                />
+              </div>
+            </div>
+          )}
+
+          {step === "success" && (
+            <div className="flex flex-col items-center justify-center py-10 space-y-5 text-center">
+              <div className="h-14 w-14 rounded-full bg-emerald-100 dark:bg-emerald-950/40 border border-emerald-500/20 text-emerald-500 flex items-center justify-center">
+                <Check className="h-7 w-7 animate-bounce" />
+              </div>
+              <div className="space-y-1">
+                <h3 className="text-lg font-bold font-display text-zinc-900 dark:text-zinc-100">
+                  {isAr ? "تم استيراد قاعدة بيانات العملاء بنجاح!" : "Customer Database Migrated Successfully!"}
+                </h3>
+                <p className="text-xs text-muted-foreground leading-relaxed max-w-sm">
+                  {isAr 
+                    ? `تم استيراد وتطهير ${successCount} جهة اتصال بنجاح، وتوسيم العملاء المميزين VIP وتفادي جهات الاتصال المكررة بالكامل!`
+                    : `Successfully imported & sanitized ${successCount} customer profiles! Deduplicated existing phone numbers, and auto-applied VIP customer tags!`
+                  }
+                </p>
+              </div>
+              <Button 
+                onClick={() => setIsOpen(false)}
+                className="bg-emerald-500 hover:bg-emerald-600 text-white font-semibold text-xs px-6 py-2.5 rounded-xl shadow-lg shadow-emerald-500/10 hover:shadow-xl transition-all"
+              >
+                {isAr ? "عرض قائمة العملاء" : "View Customer Database"}
+              </Button>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
 
 function CustomersPage() {
   const t = useT();
@@ -189,7 +601,7 @@ function CustomersPage() {
         badge = "Regular";
       }
 
-      map.set(customerId, {
+map.set(customerId, {
         totalOrders,
         lifetimeSpend,
         lastOrderDate,
@@ -199,6 +611,12 @@ function CustomersPage() {
 
     return map;
   }, [ordersQ.data]);
+
+  const del = async (id: string) => {
+    const { error } = await supabase.from("customers").delete().eq("id", id);
+    if (error) toast.error(error.message);
+    else { toast.success(t("common.delete")); qc.invalidateQueries({ queryKey: ["customers"] }); }
+  };
 
   const normalizedSearch = search.trim().toLowerCase();
   const filteredCustomers = (data ?? []).filter((customer) => {
@@ -214,19 +632,15 @@ function CustomersPage() {
 
   useEffect(() => setPage(1), [search, regionFilter, rowsPerPage]);
 
-  const del = async (id: string) => {
-    const { error } = await supabase.from("customers").delete().eq("id", id);
-    if (error) toast.error(error.message);
-    else { toast.success(t("common.delete")); qc.invalidateQueries({ queryKey: ["customers"] }); }
-  };
-
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-6xl mx-auto">
-      <div className="mb-6 flex items-center justify-between">
+      <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-4xl font-display">{t("customers.title")}</h1>
           <p className="text-muted-foreground mt-1">{t("customers.subtitle")}</p>
         </div>
+        <div className="flex items-center gap-2">
+          <CustomerImporterModal brandId={brandId} onComplete={() => qc.invalidateQueries({ queryKey: ["customers"] })} />
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
             <Button><Plus className="h-4 w-4 mr-2" /> {t("customers.new")}</Button>
@@ -237,6 +651,7 @@ function CustomersPage() {
           />
         </Dialog>
       </div>
+    </div>
 
       <Card className="sticky top-0 z-20 mb-5 border bg-background/95 p-3 shadow-sm backdrop-blur supports-[backdrop-filter]:bg-background/85 sm:p-4">
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-[minmax(260px,1fr)_220px]">
