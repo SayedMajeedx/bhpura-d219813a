@@ -20,7 +20,8 @@ import {
   ChevronRight,
   Info,
   PhoneCall,
-  QrCode
+  QrCode,
+  Copy
 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { 
@@ -39,6 +40,8 @@ function OnboardPage() {
   const [liveSales, setLiveSales] = useState(4284.150);
   const [activeNotifyIdx, setActiveNotifyIdx] = useState(0);
   const [showFeaturesModal, setShowFeaturesModal] = useState(false);
+  const [copiedIban, setCopiedIban] = useState(false);
+  const [activeOnboardTab, setActiveOnboardTab] = useState<"trial" | "paid">("trial");
 
   const notifications = [
     { name_en: "Sofia Al Khalifa", name_ar: "صوفيا آل خليفة", item: "Organza Silk Abaya", price: "145.000 BHD" },
@@ -381,6 +384,13 @@ function OnboardPage() {
     }
   };
 
+  const handleCopyIban = (ibanStr: string) => {
+    navigator.clipboard.writeText(ibanStr.replace(/\s+/g, ''));
+    setCopiedIban(true);
+    toast.success(lang === "ar" ? "تم نسخ الـ IBAN بنجاح!" : "IBAN copied to clipboard!");
+    setTimeout(() => setCopiedIban(false), 2000);
+  };
+
   // SUCCESS CONFIRMATION OVERLAY (Waiting for Manual Activation freeze state)
   if (isDeployedPending) {
     return (
@@ -688,11 +698,69 @@ function OnboardPage() {
           </p>
         </div>
 
+        {/* Mobile Live Activity Dashboard Banner (Brings the visual showcase premium feel to small screens) */}
+        <div className="lg:hidden bg-zinc-950 text-white border border-[#B76E79]/30 rounded-2xl p-4 mb-6 shadow-lg shadow-rose-950/5 flex flex-col gap-3.5 relative overflow-hidden select-none">
+          {/* Background glow orb */}
+          <div className="absolute -top-12 -right-12 w-24 h-24 rounded-full bg-[#B76E79]/10 blur-xl animate-pulse-soft" />
+          
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-1.5 text-[9px] text-zinc-400 font-bold uppercase tracking-wider">
+              <span className="h-1.5 w-1.5 rounded-full bg-[#B76E79] animate-ping shrink-0" />
+              {lang === "ar" ? "نشاط منصة BOUTQ المباشر" : "LIVE BOUTQ NETWORK TRACKER"}
+            </div>
+            <span className="text-[11px] font-mono text-emerald-500 font-bold tracking-tight bg-emerald-500/10 px-2.5 py-0.5 rounded-md animate-pulse">
+              {liveSales.toLocaleString(undefined, { minimumFractionDigits: 3, maximumFractionDigits: 3 })} BHD
+            </span>
+          </div>
+
+          {/* Small Rotating Order Notification Pill */}
+          <div className="bg-zinc-900/50 border border-zinc-850/60 rounded-xl px-3 py-2 text-xs flex items-center justify-between gap-2.5">
+            <div className="flex items-center gap-2 overflow-hidden">
+              <div className="h-2 w-2 rounded-full bg-emerald-400 shrink-0" />
+              <span className="text-zinc-300 font-medium text-[11px] truncate">
+                {lang === "ar" ? "طلب جديد من" : "New order from"}{" "}
+                <strong className="text-white">
+                  {lang === "ar" ? notifications[activeNotifyIdx].name_ar : notifications[activeNotifyIdx].name_en}
+                </strong>
+              </span>
+            </div>
+            <span className="text-[10px] font-mono text-emerald-400 font-bold bg-emerald-950/40 px-1.5 py-0.5 rounded border border-emerald-500/20 shrink-0">
+              {notifications[activeNotifyIdx].price}
+            </span>
+          </div>
+        </div>
+
+        {/* Mobile Tabbed Toggle (Hidden on desktop to avoid unnecessary space) */}
+        <div className="flex lg:hidden bg-zinc-100/80 dark:bg-zinc-900/80 border border-zinc-200/50 dark:border-zinc-800 p-1 rounded-xl mb-6 select-none relative z-10">
+          <button
+            onClick={() => setActiveOnboardTab("trial")}
+            className={`flex-1 py-2 text-center text-xs font-semibold rounded-lg transition-all ${
+              activeOnboardTab === "trial" 
+                ? "bg-white dark:bg-zinc-800 text-[#B76E79] shadow-sm font-bold" 
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            {lang === "ar" ? "تجربة مجانية (3 أيام)" : "3-Day Free Trial"}
+          </button>
+          <button
+            onClick={() => setActiveOnboardTab("paid")}
+            className={`flex-1 py-2 text-center text-xs font-semibold rounded-lg transition-all ${
+              activeOnboardTab === "paid" 
+                ? "bg-white dark:bg-zinc-800 text-primary shadow-sm font-bold" 
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            {lang === "ar" ? "تفعيل المتجر الرسمي" : "Official Store Activation"}
+          </button>
+        </div>
+
         {/* Dual Card responsive Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
           
           {/* CARD A: 3-Day Free Trial */}
-          <Card className="border-zinc-100 dark:border-zinc-800/80 shadow-md flex flex-col justify-between relative overflow-hidden group">
+          <Card className={`border-zinc-100 dark:border-zinc-800/80 shadow-md flex-col justify-between relative overflow-hidden group ${
+            activeOnboardTab === "trial" ? "flex" : "hidden lg:flex"
+          }`}>
             <div className="absolute top-0 right-0 p-4 opacity-[0.02] select-none pointer-events-none">
               <Sparkles className="h-32 w-32" />
             </div>
@@ -834,7 +902,9 @@ function OnboardPage() {
           </Card>
 
           {/* CARD B: Official Paid Registration */}
-          <Card className="border-zinc-100 dark:border-zinc-800/80 shadow-md flex flex-col justify-between relative overflow-hidden group ring-1 ring-primary/40 bg-primary/[0.01]">
+          <Card className={`border-zinc-100 dark:border-zinc-800/80 shadow-md flex-col justify-between relative overflow-hidden group ring-1 ring-primary/40 bg-primary/[0.01] ${
+            activeOnboardTab === "paid" ? "flex" : "hidden lg:flex"
+          }`}>
             <div className="absolute top-0 right-0 p-4 opacity-[0.02] select-none pointer-events-none">
               <Building2 className="h-32 w-32" />
             </div>
@@ -1015,6 +1085,27 @@ function OnboardPage() {
                     </div>
                   </div>
 
+                  {/* IBAN Copy Field */}
+                  <div className="bg-zinc-50 dark:bg-zinc-900/40 p-2.5 rounded-xl border border-zinc-100 dark:border-zinc-85/80 flex items-center justify-between gap-3 text-xs select-none">
+                    <div className="space-y-0.5 text-left">
+                      <span className="text-[10px] text-muted-foreground uppercase tracking-wider block font-bold">
+                        {lang === "ar" ? "رقم الحساب الدولي (IBAN)" : "International Bank Account Number (IBAN)"}
+                      </span>
+                      <code className="font-mono text-[11px] text-zinc-800 dark:text-zinc-200 font-bold">
+                        BH12 KHCB 0000 0012 3456 7890
+                      </code>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      onClick={() => handleCopyIban("BH12KHCB0000001234567890")}
+                      className="h-8 w-8 text-primary hover:text-white hover:bg-primary border-primary/20 shrink-0"
+                    >
+                      {copiedIban ? <Check className="h-3.5 w-3.5 text-emerald-500" /> : <Copy className="h-3.5 w-3.5" />}
+                    </Button>
+                  </div>
+
                   {/* Receipt screenshot uploader */}
                   <div className="relative">
                     <input 
@@ -1089,7 +1180,7 @@ function OnboardPage() {
         <div className="fixed inset-0 bg-black/70 backdrop-blur-md z-50 flex items-center justify-center p-4 overflow-y-auto animate-in fade-in duration-200">
           <div 
             dir={lang === "ar" ? "rtl" : "ltr"}
-            className="bg-zinc-950/95 border border-zinc-800/85 rounded-3xl p-6 md:p-8 max-w-4xl w-full shadow-2xl relative animate-in fade-in zoom-in-95 duration-200 text-white select-none"
+            className="bg-zinc-950/95 border border-zinc-800/85 rounded-3xl p-5 md:p-8 max-w-4xl w-full max-h-[90vh] md:max-h-[85vh] lg:max-h-none overflow-y-auto shadow-2xl relative animate-in fade-in zoom-in-95 duration-200 text-white select-none"
           >
             {/* Close Button */}
             <button 
