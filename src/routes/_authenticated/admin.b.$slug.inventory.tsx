@@ -3,13 +3,14 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { importProductCatalog } from "@/lib/universal-importer";
+import { fetchInstagramPosts, parseInstagramPostsWithAI, scanCaptionForSoldOut, type InstagramPostPreview } from "@/lib/instagram-ai-importer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
-import { Plus, Pencil, Trash2, Package, TrendingUp, Wand as Wand2, Printer, Search, AlertTriangle, Boxes, ChevronDown, Sparkles, Upload, Loader2, Check } from "lucide-react";
+import { Plus, Pencil, Trash2, Package, TrendingUp, Wand as Wand2, Printer, Search, AlertTriangle, Boxes, ChevronDown, Sparkles, Upload, Loader2, Check, Instagram, Filter, CheckSquare, Square, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { formatMoney } from "@/lib/format";
 import { useT, useI18n } from "@/lib/i18n";
@@ -603,6 +604,387 @@ function ProductImporterModal({ brandId, onComplete }: { brandId: string; onComp
   );
 }
 
+function InstagramImporterModal({ brandId, onComplete }: { brandId: string; onComplete: () => void }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [step, setStep] = useState<"inputs" | "grid" | "importing" | "success">("inputs");
+  const [username, setUsername] = useState("");
+  const [urlsText, setUrlsUrlsText] = useState("");
+  const [range, setRange] = useState<number>(50);
+  const [posts, setPosts] = useState<InstagramPostPreview[]>([]);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [progress, setProgress] = useState("");
+  const [successCount, setSuccessCount] = useState(0);
+  const [loadingPosts, setLoadingPosts] = useState(false);
+  const { lang } = useI18n();
+  const isAr = lang === "ar";
+
+  const handleFetchPosts = async () => {
+    setLoadingPosts(true);
+    try {
+      const urlsList = urlsText
+        .split("\n")
+        .map((u) => u.trim())
+        .filter((u) => u.startsWith("http"));
+      const result = await fetchInstagramPosts({
+        data: {
+          username: username.trim() || undefined,
+          urls: urlsList.length > 0 ? urlsList : undefined,
+          range,
+        },
+      });
+      setPosts(result);
+      
+      const defaultSelected = new Set<string>();
+      result.forEach((p) => {
+        if (!p.isSoldOut) {
+          defaultSelected.add(p.id);
+        }
+      });
+      setSelectedIds(defaultSelected);
+      setStep("grid");
+    } catch (err) {
+      console.error(err);
+      toast.error(isAr ? "فشل جلب منشورات انستقرام" : "Failed to fetch Instagram posts");
+    } finally {
+      setLoadingPosts(false);
+    }
+  };
+
+  const handleToggleSelectAll = () => {
+    if (selectedIds.size === posts.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(posts.map((p) => p.id)));
+    }
+  };
+
+  const handleDeselectSoldOut = () => {
+    const newSelected = new Set(selectedIds);
+    posts.forEach((p) => {
+      if (p.isSoldOut) {
+        newSelected.delete(p.id);
+      }
+    });
+    setSelectedIds(newSelected);
+    toast.success(isAr ? "تم إلغاء تحديد السلع المنفذة" : "Deselected sold-out items");
+  };
+
+  const handleTogglePost = (id: string) => {
+    const next = new Set(selectedIds);
+    if (next.has(id)) {
+      next.delete(id);
+    } else {
+      next.add(id);
+    }
+    setSelectedIds(next);
+  };
+
+  const handleStartImport = async () => {
+    if (selectedIds.size === 0) {
+      toast.error(isAr ? "الرجاء تحديد منشور واحد على الأقل للاستيراد." : "Please select at least one post to import.");
+      return;
+    }
+
+    setStep("importing");
+    const checkedPosts = posts.filter((p) => selectedIds.has(p.id));
+    let completed = 0;
+    let totalSuccess = 0;
+
+    for (const post of checkedPosts) {
+      setProgress(
+        isAr
+          ? `جاري معالجة المنشور ${completed + 1} من ${checkedPosts.length}: استخراج التفاصيل بالذكاء الاصطناعي...`
+          : `Processing post ${completed + 1} of ${checkedPosts.length}: Extracting AI metadata...`
+      );
+
+      try {
+        const result = await parseInstagramPostsWithAI({
+          data: {
+            brandId,
+            posts: [post],
+          },
+        });
+        totalSuccess += result.successCount;
+      } catch (err) {
+        console.error("Batch post failed", post.id, err);
+      }
+
+      completed++;
+    }
+
+    setSuccessCount(totalSuccess);
+    setStep("success");
+    onComplete();
+  };
+
+  return (
+    <>
+      <Button
+        variant="outline"
+        onClick={() => {
+          setIsOpen(true);
+          setStep("inputs");
+          setUsername("");
+          setUrlsUrlsText("");
+        }}
+        className="border-purple-200 dark:border-purple-900/50 hover:border-purple-400 hover:bg-purple-50/50 dark:hover:bg-purple-950/20 text-purple-600 dark:text-purple-400 transition-all font-semibold"
+      >
+        <Instagram className="h-4 w-4 me-2 text-purple-500 animate-pulse" />
+        {isAr ? "استيراد كتالوج انستقرام (ذكاء اصطناعي)" : "✨ Build Catalog from Instagram (AI)"}
+      </Button>
+
+      <Dialog open={isOpen} onOpenChange={setIsOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto rounded-3xl border border-zinc-100 dark:border-zinc-800 bg-white/95 dark:bg-zinc-950/95 backdrop-blur-xl shadow-2xl p-6 sm:p-8">
+          <DialogHeader className="border-b border-zinc-100 dark:border-zinc-800/80 pb-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 rounded-2xl bg-purple-500/10 text-purple-500">
+                <Instagram className="h-5 w-5" />
+              </div>
+              <div>
+                <DialogTitle className="text-xl font-display font-bold text-zinc-900 dark:text-zinc-50">
+                  {isAr ? "استيراد كتالوج المنتجات من انستقرام" : "Instagram AI Product Catalog Importer"}
+                </DialogTitle>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  {isAr ? "قم بتحويل منشورات انستقرام إلى منتجات جاهزة في متجرك بضغطة زر واحدة." : "Convert public Instagram posts into active store products with zero-effort AI onboarding."}
+                </p>
+              </div>
+            </div>
+          </DialogHeader>
+
+          {step === "inputs" && (
+            <div className="space-y-6 py-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <Label className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">
+                    {isAr ? "اسم مستخدم انستقرام (مثال: @pura.line)" : "Instagram Username (e.g., @pura.line)"}
+                  </Label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 text-sm">@</span>
+                    <Input
+                      placeholder="pura.line"
+                      value={username.replace(/^@/, "")}
+                      onChange={(e) => setUsername(e.target.value)}
+                      className="ps-8 rounded-xl border-zinc-200 dark:border-zinc-800 h-11 focus:ring-purple-500"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">
+                    {isAr ? "عدد المنشورات المطلوبة" : "Fetch Range Selector"}
+                  </Label>
+                  <Select value={String(range)} onValueChange={(val) => setRange(Number(val))}>
+                    <SelectTrigger className="h-11 rounded-xl">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="15">{isAr ? "آخر 15 منشور" : "Latest 15 posts"}</SelectItem>
+                      <SelectItem value="30">{isAr ? "آخر 30 منشور" : "Latest 30 posts"}</SelectItem>
+                      <SelectItem value="50">{isAr ? "آخر 50 منشور (موصى به)" : "Latest 50 posts (Recommended)"}</SelectItem>
+                      <SelectItem value="100">{isAr ? "آخر 100 منشور" : "Latest 100 posts"}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">
+                  {isAr ? "أو روابط منشورات عامة مباشرة (رابط في كل سطر)" : "Or Direct Public Post URLs (one URL per line)"}
+                </Label>
+                <textarea
+                  placeholder="https://www.instagram.com/p/C..."
+                  value={urlsText}
+                  onChange={(e) => setUrlsUrlsText(e.target.value)}
+                  className="w-full h-24 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-transparent p-3 text-sm focus:outline-none focus:ring-1 focus:ring-purple-500 placeholder-zinc-400 font-sans"
+                />
+              </div>
+
+              <div className="p-4 rounded-2xl bg-purple-500/5 border border-purple-500/10 flex items-start gap-3">
+                <Sparkles className="h-5 w-5 text-purple-500 shrink-0 mt-0.5" />
+                <div className="text-xs space-y-1">
+                  <p className="font-semibold text-purple-900 dark:text-purple-300">
+                    {isAr ? "كيف يعمل محرك استيراد انستقرام المدعوم بالذكاء الاصطناعي؟" : "How does the AI Instagram Importer work?"}
+                  </p>
+                  <p className="text-zinc-600 dark:text-zinc-400 leading-relaxed">
+                    {isAr
+                      ? "يقوم المحرك بجلب المنشورات من حسابك، ثم تفحص تقنية Gemini Vision الصور والنصوص لاستخراج الاسم باللغتين العربية والإنجليزية، وتحديد الأسعار بالدينار البحريني، ووصف المنتجات، والمقاسات المتاحة تلقائياً مع إعادة استضافة الصور على سحابة R2 فائقة السرعة."
+                      : "The pipeline crawls public posts from the target profile. Gemini Vision then extracts multilingual product titles, currency-converted prices in BHD, sizes, and care captions, while re-hosting all images to our persistent Cloudflare R2 bucket."}
+                  </p>
+                </div>
+              </div>
+
+              <DialogFooter className="border-t border-zinc-100 dark:border-zinc-800/80 pt-4 flex gap-2">
+                <Button variant="ghost" onClick={() => setIsOpen(false)} className="rounded-xl">
+                  {isAr ? "إلغاء" : "Cancel"}
+                </Button>
+                <Button
+                  onClick={handleFetchPosts}
+                  disabled={loadingPosts || (!username.trim() && !urlsText.trim())}
+                  className="bg-purple-600 hover:bg-purple-700 text-white rounded-xl px-6 font-semibold"
+                >
+                  {loadingPosts ? (
+                    <>
+                      <Loader2 className="h-4 w-4 me-2 animate-spin" />
+                      {isAr ? "جاري جلب المنشورات..." : "Fetching Instagram posts..."}
+                    </>
+                  ) : (
+                    <>
+                      <Instagram className="h-4 w-4 me-2" />
+                      {isAr ? "جلب وتحليل المنشورات" : "Fetch & Analyze Posts"}
+                    </>
+                  )}
+                </Button>
+              </DialogFooter>
+            </div>
+          )}
+
+          {step === "grid" && (
+            <div className="space-y-6 py-4">
+              <div className="flex flex-wrap items-center justify-between gap-3 border-b border-zinc-100 dark:border-zinc-800/60 pb-3">
+                <div className="flex flex-wrap items-center gap-2">
+                  <Button variant="outline" size="sm" onClick={handleToggleSelectAll} className="h-8 text-xs rounded-lg">
+                    {selectedIds.size === posts.length ? (
+                      <>
+                        <Square className="h-3.5 w-3.5 me-1.5" />
+                        {isAr ? "إلغاء تحديد الكل" : "Deselect All"}
+                      </>
+                    ) : (
+                      <>
+                        <CheckSquare className="h-3.5 w-3.5 me-1.5" />
+                        {isAr ? "تحديد الكل" : "Select All"}
+                      </>
+                    )}
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={handleDeselectSoldOut} className="h-8 text-xs rounded-lg text-amber-600 border-amber-200 hover:bg-amber-50/50">
+                    <Filter className="h-3.5 w-3.5 me-1.5" />
+                    {isAr ? "استبعاد المنشورات المباعة" : "Deselect Out of Stock"}
+                  </Button>
+                </div>
+                <p className="text-xs font-semibold text-muted-foreground">
+                  {isAr
+                    ? `تم اختيار ${selectedIds.size} من أصل ${posts.length} منشور`
+                    : `Selected ${selectedIds.size} of ${posts.length} posts`}
+                </p>
+              </div>
+
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 max-h-[50vh] overflow-y-auto p-1">
+                {posts.map((post) => {
+                  const isSelected = selectedIds.has(post.id);
+                  return (
+                    <div
+                      key={post.id}
+                      onClick={() => handleTogglePost(post.id)}
+                      className={`relative group rounded-2xl overflow-hidden border cursor-pointer transition-all duration-200 select-none ${
+                        isSelected
+                          ? "border-purple-500 ring-2 ring-purple-500/20 bg-purple-50/5 dark:bg-purple-950/5"
+                          : "border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 bg-transparent"
+                      }`}
+                    >
+                      <div className="aspect-square w-full relative overflow-hidden bg-zinc-100 dark:bg-zinc-900">
+                        <img
+                          src={post.imageUrl}
+                          alt="Instagram Preview"
+                          className="w-full h-full object-cover transition-transform group-hover:scale-105 duration-300"
+                        />
+                        <div className="absolute top-2 start-2 z-10">
+                          <div
+                            className={`h-5 w-5 rounded-md border flex items-center justify-center transition-all ${
+                              isSelected
+                                ? "bg-purple-600 border-purple-600 text-white"
+                                : "bg-white/80 dark:bg-zinc-900/80 border-zinc-300 dark:border-zinc-700 text-transparent"
+                            }`}
+                          >
+                            <Check className="h-3 w-3 stroke-[3]" />
+                          </div>
+                        </div>
+
+                        {post.isSoldOut && (
+                          <div className="absolute inset-0 bg-black/60 backdrop-blur-[1px] flex items-center justify-center p-2 text-center">
+                            <span className="bg-amber-500/90 text-zinc-950 text-[10px] sm:text-xs font-bold px-2 py-1 rounded-lg shadow-lg">
+                              ⚠️ {isAr ? "نفذت الكمية" : "Detected Sold Out"}
+                            </span>
+                          </div>
+                        )}
+
+                        <div className="absolute bottom-2 end-2 bg-black/60 text-white text-[9px] px-1.5 py-0.5 rounded">
+                          {post.date}
+                        </div>
+                      </div>
+
+                      <div className="p-2.5">
+                        <p className="text-xs text-zinc-600 dark:text-zinc-400 line-clamp-2 h-8 leading-normal font-sans">
+                          {post.caption || "No caption"}
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <DialogFooter className="border-t border-zinc-100 dark:border-zinc-800/80 pt-4 flex gap-2">
+                <Button variant="ghost" onClick={() => setStep("inputs")} className="rounded-xl">
+                  {isAr ? "السابق" : "Back"}
+                </Button>
+                <Button
+                  onClick={handleStartImport}
+                  disabled={selectedIds.size === 0}
+                  className="bg-purple-600 hover:bg-purple-700 text-white rounded-xl px-6 font-semibold shadow-lg shadow-purple-500/10"
+                >
+                  <Sparkles className="h-4 w-4 me-2" />
+                  {isAr ? `بدء استيراد ${selectedIds.size} منتج` : `Import ${selectedIds.size} Products`}
+                </Button>
+              </DialogFooter>
+            </div>
+          )}
+
+          {step === "importing" && (
+            <div className="flex flex-col items-center justify-center py-12 px-4 space-y-6 text-center">
+              <div className="relative">
+                <div className="h-20 w-20 rounded-full border-4 border-purple-500/20 border-t-purple-500 animate-spin" />
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <Instagram className="h-8 w-8 text-purple-500 animate-pulse" />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <h3 className="text-lg font-bold font-display text-zinc-900 dark:text-zinc-50">
+                  {isAr ? "جاري استيراد المنتجات بالذكاء الاصطناعي..." : "AI Instagram-to-Storefront Ingestion"}
+                </h3>
+                <p className="text-sm text-zinc-500 dark:text-zinc-400 max-w-md font-mono bg-zinc-50 dark:bg-zinc-900 p-3 rounded-xl border border-zinc-100 dark:border-zinc-800/50">
+                  {progress}
+                </p>
+              </div>
+            </div>
+          )}
+
+          {step === "success" && (
+            <div className="flex flex-col items-center justify-center py-12 px-4 space-y-6 text-center">
+              <div className="h-16 w-16 rounded-full bg-emerald-500/10 text-emerald-500 flex items-center justify-center">
+                <Check className="h-8 w-8 animate-bounce" />
+              </div>
+              <div className="space-y-1">
+                <h3 className="text-lg font-bold font-display text-zinc-900 dark:text-zinc-50">
+                  {isAr ? "اكتمل استيراد انستقرام بنجاح!" : "Instagram Import Completed!"}
+                </h3>
+                <p className="text-xs text-muted-foreground leading-relaxed max-w-sm">
+                  {isAr
+                    ? `تم تحليل واستيراد ${successCount} منتجاً بنجاح وحفظها كمسودات، وإعادة استضافة جميع صورها على Cloudflare R2.`
+                    : `Successfully analyzed and imported ${successCount} products as drafts, and re-hosted all product photos to Cloudflare R2.`}
+                </p>
+              </div>
+              <Button
+                onClick={() => setIsOpen(false)}
+                className="bg-emerald-500 hover:bg-emerald-600 text-white font-semibold text-xs px-6 py-2.5 rounded-xl shadow-lg shadow-emerald-500/10 hover:shadow-xl transition-all"
+              >
+                {isAr ? "عرض المنتجات المستوردة" : "View Imported Catalog"}
+              </Button>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
+
 function ProductsSection({ products, variants, businessName, currency, onChanged, salesHistory }: { products: Product[]; variants: Variant[]; businessName: string | null; currency: string; onChanged: () => void; salesHistory: any[] }) {
   const t = useT();
   const brand = useBrand();
@@ -744,6 +1126,7 @@ function ProductsSection({ products, variants, businessName, currency, onChanged
       </Card>
 
       <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2">
+        <InstagramImporterModal brandId={brandId} onComplete={onChanged} />
         <ProductImporterModal brandId={brandId} onComplete={onChanged} />
         <Button variant="outline" onClick={printAll}>
           <Printer className="h-4 w-4 me-2" /> {isAr ? "طباعة كل الباركودات" : "Print all barcodes"}
