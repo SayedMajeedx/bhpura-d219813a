@@ -307,9 +307,9 @@ export const batchParseCaptionsWithAI = createServerFn({ method: "POST" })
 
     const creds = await getGeminiCredentials(context.supabase, userId);
     const apiKey = creds.apiKey;
-    let model = creds.model || "gemini-2.0-flash";
-    if (model.includes("gemini-2.5-flash")) {
-      model = "gemini-2.0-flash";
+    let model = creds.model || "gemini-1.5-flash";
+    if (model.includes("gemini-2.5-flash") || model.includes("gemini-2.0-flash")) {
+      model = "gemini-1.5-flash"; // Force 1.5-flash for stable free-tier quota limits
     }
 
     if (!apiKey) {
@@ -341,7 +341,7 @@ export const batchParseCaptionsWithAI = createServerFn({ method: "POST" })
       ].join("\n");
 
       const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
-      const response = await fetch(endpoint, {
+      let response = await fetch(endpoint, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -380,6 +380,51 @@ export const batchParseCaptionsWithAI = createServerFn({ method: "POST" })
           },
         }),
       });
+
+      // Automated retry fallback if the primary model failed (e.g. legacy quota or RESOURCE_EXHAUSTED errors)
+      if (!response.ok && model !== "gemini-1.5-flash") {
+        console.warn(`Primary Gemini model (${model}) request failed. Retrying with ultra-stable gemini-1.5-flash...`);
+        const fallbackEndpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent`;
+        response = await fetch(fallbackEndpoint, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-goog-api-key": apiKey,
+          },
+          body: JSON.stringify({
+            systemInstruction: { parts: [{ text: systemPrompt }] },
+            contents: [
+              {
+                role: "user",
+                parts: [
+                  {
+                    text: `Analyze and extract structured catalog data for these Instagram posts:\n\n${JSON.stringify(postsPayload, null, 2)}`,
+                  },
+                ],
+              },
+            ],
+            generationConfig: {
+              temperature: 0.1,
+              responseMimeType: "application/json",
+              responseJsonSchema: {
+                type: "array",
+                items: {
+                  type: "object",
+                  properties: {
+                    id: { type: "string" },
+                    title: { type: "string" },
+                    price: { type: "number" },
+                    description: { type: "string" },
+                    sizes: { type: "array", items: { type: "string" } },
+                    category: { type: "string" }
+                  },
+                  required: ["id", "title", "price", "description", "sizes", "category"]
+                }
+              },
+            },
+          }),
+        });
+      }
 
       if (!response.ok) {
         const errText = await response.text();
