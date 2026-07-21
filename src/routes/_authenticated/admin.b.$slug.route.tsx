@@ -4,8 +4,28 @@ import { BrandProvider, type Brand } from "@/lib/brand-context";
 import { useT } from "@/lib/i18n";
 import { Card } from "@/components/ui/card";
 
+function getImpersonationToken(request?: Request): string | null {
+  if (typeof document !== "undefined") {
+    const match = document.cookie.match(/(^|;)\s*boutq_impersonation_token\s*=\s*([^;]+)/);
+    return match ? match[2] : null;
+  }
+  if (request) {
+    const cookieHeader = request.headers.get("cookie") || "";
+    const match = cookieHeader.match(/(^|;)\s*boutq_impersonation_token\s*=\s*([^;]+)/);
+    return match ? match[2] : null;
+  }
+  return null;
+}
+
+function decodeBase64(str: string): string {
+  if (typeof Buffer !== "undefined") {
+    return Buffer.from(str, "base64").toString("utf-8");
+  }
+  return atob(str);
+}
+
 export const Route = createFileRoute("/_authenticated/admin/b/$slug")({
-  beforeLoad: async ({ params }) => {
+  beforeLoad: async ({ params, request }) => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw redirect({ to: "/auth" });
 
@@ -52,11 +72,21 @@ export const Route = createFileRoute("/_authenticated/admin/b/$slug")({
         throw redirect({ to: "/admin/brands" });
       }
 
-      // Check cookie session token using client-safe server function call
-      const { validateImpersonationSession } = await import("@/lib/impersonation.functions");
-      const { valid } = await validateImpersonationSession({ data: { brandId: brand.id } });
+      // Check cookie session token directly from standard request headers or client-side document.cookie
+      const token = getImpersonationToken(request);
+      if (!token) {
+        throw redirect({ to: "/admin/brands" });
+      }
 
-      if (!valid) {
+      try {
+        const payload = JSON.parse(decodeBase64(token));
+        const matchesBrand = payload.targetTenantId === brand.id;
+        const isNotExpired = payload.issuedAt > Date.now() - 1000 * 60 * 60 * 24;
+        
+        if (!matchesBrand || !isNotExpired) {
+          throw redirect({ to: "/admin/brands" });
+        }
+      } catch {
         throw redirect({ to: "/admin/brands" });
       }
     }
