@@ -769,10 +769,12 @@ function OnboardPage() {
               <div className="flex justify-between items-start gap-4">
                 <div>
                   <CardTitle className="text-lg font-display font-medium text-zinc-900 dark:text-zinc-100">
-                    {lang === "ar" ? "تجربة مجانية لمدة 3 أيام" : "Complimentary 3-Day Trial"}
+                    {lang === "ar" ? "تجربة مجانية لمدة 3 أيام" : "3-Day Free Trial"}
                   </CardTitle>
-                  <CardDescription className="text-xs text-muted-foreground mt-1">
-                    {lang === "ar" ? "جرّب ميزات منصة Boutq الفاخرة مجاناً." : "Test-drive Boutq free of charge for 3 days."}
+                  <CardDescription className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                    {lang === "ar" 
+                      ? "جرّب ميزات منصة Boutq مجاناً لمدة 3 أيام • ترقية في أي وقت لباقة التأسيس بـ 49 د.ب/سنوياً." 
+                      : "Test all features free for 3 days • Upgrade anytime to the 49 BHD/year Founder Plan."}
                   </CardDescription>
                 </div>
                 <span className="text-xs bg-[#B76E79]/10 text-[#B76E79] px-2 py-1 rounded font-semibold tracking-wider">
@@ -910,13 +912,22 @@ function OnboardPage() {
             </div>
 
             <CardHeader className="border-b border-zinc-50 dark:border-zinc-900 pb-5">
+              {/* Scarcity Founder Offer Badge */}
+              <div className="flex">
+                <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-rose-500/10 text-rose-500 text-[9px] font-bold uppercase tracking-wider mb-2.5 animate-pulse border border-rose-500/20">
+                  {lang === "ar" 
+                    ? "🔥 عرض الإطلاق التأسيسي: ٤٩ د.ب/سنوياً (لأول متجرين فقط)" 
+                    : "🔥 Founder's Launch Offer: 49 BHD/year (First 2 Stores Only)"}
+                </div>
+              </div>
+
               <div className="flex justify-between items-start gap-4">
                 <div>
                   <CardTitle className="text-lg font-display font-medium text-zinc-900 dark:text-zinc-100">
                     {lang === "ar" ? "تفعيل المتجر الفاخر الرسمي" : "Official Store Activation"}
                   </CardTitle>
                   <CardDescription className="text-xs text-muted-foreground mt-1">
-                    {lang === "ar" ? "إصدار مرخص فوري ومدعوم بالكامل." : "Activate your lifetime whitelabel boutique brand platform."}
+                    {lang === "ar" ? "إصدار سنوي مرخص فوري ومدعوم بالكامل." : "Activate your annual whitelabel boutique brand platform."}
                   </CardDescription>
                 </div>
                 <div className="text-right">
@@ -925,19 +936,19 @@ function OnboardPage() {
                   ) : discountPrice !== null ? (
                     <div className="flex flex-col items-end">
                       <span className="text-xs text-muted-foreground line-through font-mono">
-                        {basePrice} BHD
+                        {basePrice} {lang === "ar" ? "د.ب / سنوي" : "BHD / year"}
                       </span>
                       <span className="text-lg font-bold font-display text-emerald-500 animate-pulse">
-                        {discountPrice} BHD
+                        {discountPrice} {lang === "ar" ? "د.ب / سنوي" : "BHD / year"}
                       </span>
                     </div>
                   ) : (
                     <span className="text-lg font-bold font-display text-primary block">
-                      {basePrice} BHD
+                      {basePrice} {lang === "ar" ? "د.ب / سنوي" : "BHD / year"}
                     </span>
                   )}
                   <span className="text-[9px] text-muted-foreground font-semibold uppercase tracking-wider block mt-0.5">
-                    {lang === "ar" ? "دفع لمرة واحدة" : "ONE-TIME PAYMENT"}
+                    {lang === "ar" ? "اشتراك سنوي" : "ANNUAL SUBSCRIPTION"}
                   </span>
                 </div>
               </div>
@@ -946,7 +957,7 @@ function OnboardPage() {
             <div className="px-6 py-4 bg-[#B76E79]/5 border-b border-[#B76E79]/10 space-y-2.5 text-xs select-none">
               <div className="flex items-center gap-2.5 text-[#B76E79] font-semibold">
                 <Check className="h-4 w-4 shrink-0 text-[#B76E79]" />
-                <span>{lang === "ar" ? "رخصة منصة مدى الحياة (دفع لمرة واحدة)" : "Lifetime platform license (One-time payment)"}</span>
+                <span>{lang === "ar" ? "يتم الدفع سنوياً • يشمل نطاق فرعي، واستضافة، وبنفت بي وتحديثات برمجية." : "Billed annually • Includes wildcard domain, hosting, BenefitPay integration & tech updates."}</span>
               </div>
               <div className="flex items-center gap-2.5 text-muted-foreground">
                 <Check className="h-4 w-4 shrink-0 text-emerald-500" />
