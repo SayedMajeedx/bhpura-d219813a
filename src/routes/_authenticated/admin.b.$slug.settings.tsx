@@ -20,6 +20,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { uploadPublicMedia } from "@/lib/r2-upload";
 import { PasskeySettings } from "@/components/passkey-settings";
 import { SubscriptionCard } from "@/components/subscription-card";
+import { SupportAccessCard } from "@/components/support-access-card";
 import { META_DESCRIPTION_LIMIT, META_TITLE_LIMIT, sanitizeMetaText } from "@/lib/seo";
 import { ImageCropperDialog } from "@/components/image-cropper-dialog";
 import { OptimizedVideo, ResponsiveImage } from "@/components/responsive-media";
@@ -150,7 +151,7 @@ function Settings() {
     { value: "payments", ar: "طرق الدفع", en: "Payment Methods" },
     { value: "branches", ar: "الفروع", en: "Branches" },
     { value: "emails", ar: "الإشعارات والبريد", en: "Notifications & Emails" },
-    { value: "security", ar: "الأمان والبصمة", en: "Security & Passkeys" },
+    { value: "security", ar: "الأمان والخصوصية", en: "Security & Privacy" },
     { value: "subscription", ar: "إدارة الاشتراك", en: "Platform Subscription" },
   ];
   const TAB_HEADERS: Record<string, { en: string; enDescription: string; ar: string; arDescription: string }> = {
@@ -161,7 +162,7 @@ function Settings() {
     payments: { en: "Payment Method Settings", enDescription: "Choose the payment methods available to customers.", ar: "إعدادات طرق الدفع", arDescription: "اختيار طرق الدفع المتاحة للعملاء." },
     branches: { en: "Branch Settings", enDescription: "Manage pickup locations and branch information.", ar: "إعدادات الفروع", arDescription: "إدارة مواقع الاستلام وبيانات الفروع." },
     emails: { en: "Notifications & Email Settings", enDescription: "Configure customer notifications and outgoing email.", ar: "إعدادات الإشعارات والبريد", arDescription: "إعداد إشعارات العملاء والبريد الصادر." },
-    security: { en: "Security & Passkey Settings", enDescription: "Manage secure biometric sign-in for your account.", ar: "إعدادات الأمان والبصمة", arDescription: "إدارة تسجيل الدخول الآمن والبصمة للحساب." },
+    security: { en: "Security & Privacy Settings", enDescription: "Manage your biometric passkeys, account security, and Boutq troubleshooting access.", ar: "إعدادات الأمان والخصوصية", arDescription: "إدارة بصمة المرور، وأمان الحساب، وصلاحيات وصول مهندسي الدعم الفني لبوتك." },
     subscription: { en: "Subscription Settings", enDescription: "Manage your boutique platform license and technical support options.", ar: "إعدادات الاشتراك", arDescription: "إدارة ترخيص منصة البوتيك وخيارات الدعم الفني." },
   };
   const activeHeader = TAB_HEADERS[activeTab] ?? TAB_HEADERS.business;
@@ -419,7 +420,8 @@ function Settings() {
           <EmailSettingsCard brandId={brandId} />
         </TabsContent>
 
-        <TabsContent value="security" className="mt-0">
+        <TabsContent value="security" className="space-y-6 mt-0">
+          <SupportAccessCard brand={brand} />
           <PasskeySettings />
         </TabsContent>
 

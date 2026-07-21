@@ -9,6 +9,7 @@ import { useI18n } from "@/lib/i18n";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
 import { useProfile } from "@/lib/profile-context";
+import { toast } from "sonner";
 
 type BrandRow = { id: string; slug: string; name_en: string; is_active: boolean };
 
@@ -22,6 +23,29 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   // Extract slug from current URL when inside /b/:slug/*
   const routeParams = useParams({ strict: false }) as { slug?: string };
   const urlSlug = routeParams?.slug ?? null;
+
+  const [hasImpersonationToken, setHasImpersonationToken] = useState(false);
+
+  useEffect(() => {
+    if (typeof document !== "undefined") {
+      setHasImpersonationToken(document.cookie.includes("boutq_impersonation_token="));
+    }
+  }, [pathname]);
+
+  const handleExitImpersonation = async () => {
+    try {
+      const { stopImpersonationSession } = await import("@/lib/impersonation.functions");
+      await stopImpersonationSession();
+      toast.success(
+        lang === "ar"
+          ? "تم الخروج من وضع المحاكاة بنجاح"
+          : "Successfully exited impersonation mode."
+      );
+      window.location.href = "/admin/brands";
+    } catch (err: any) {
+      toast.error(err.message || "Failed to exit impersonation mode.");
+    }
+  };
 
   // Fallback: use the user's own brand slug when we're outside /b/:slug (e.g. on /brands)
   const activeSlug = urlSlug ?? profile?.brand?.slug ?? null;
@@ -256,18 +280,28 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     );
   }
 
-  const isImpersonating = isSuperAdmin && urlSlug !== null;
+  const isImpersonating = isSuperAdmin && urlSlug !== null && hasImpersonationToken;
 
   return (
     <div className="h-screen flex flex-col bg-background overflow-hidden">
       {isImpersonating && (
-        <div className="no-print bg-gradient-to-r from-amber-600 to-amber-500 text-white px-4 py-2.5 text-center text-xs font-semibold flex items-center justify-center gap-2 border-b border-amber-700/40 shrink-0 select-none shadow-md z-50">
-          <Shield className="h-4 w-4 text-white animate-pulse" />
-          <span>
-            {lang === "ar"
-              ? "⚠️ أنت تقوم حالياً باستعراض هذا المتجر عبر وضع محاكاة المسؤول الخارق (Superadmin). يتم تسجيل جميع الإجراءات الإدارية في سجل التدقيق الخاص بنا."
-              : "⚠️ You are currently viewing this store via Superadmin Impersonation mode. All administrative actions are being recorded to our immutable audit log."}
-          </span>
+        <div className="no-print bg-gradient-to-r from-red-600 via-rose-600 to-amber-600 text-white px-6 py-2.5 text-center text-xs font-semibold flex flex-col sm:flex-row items-center justify-between gap-4 border-b border-red-700/40 shrink-0 select-none shadow-md z-50 animate-in fade-in slide-in-from-top duration-300">
+          <div className="flex items-center gap-2.5">
+            <Shield className="h-4.5 w-4.5 text-white animate-pulse" />
+            <span className="leading-relaxed">
+              {lang === "ar"
+                ? "⚠️ وضع المحاكاة: استعراض المتجر بصفة مسؤول خارق. جميع الإجراءات مسجلة."
+                : "⚠️ IMPERSONATION MODE: Viewing store as Superadmin. All actions are audited."}
+            </span>
+          </div>
+          <Button
+            variant="destructive"
+            size="sm"
+            onClick={handleExitImpersonation}
+            className="bg-white hover:bg-white/90 text-rose-700 hover:text-rose-800 font-bold px-4 py-1.5 h-7.5 rounded text-[11px] shadow-sm uppercase tracking-wider shrink-0 transition-all border-none"
+          >
+            {lang === "ar" ? "الخروج من وضع المحاكاة" : "Exit Impersonation Mode"}
+          </Button>
         </div>
       )}
       <div className="flex-1 flex bg-background overflow-hidden">

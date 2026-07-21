@@ -45,10 +45,18 @@ export const Route = createFileRoute("/_authenticated/admin/b/$slug")({
       throw redirect({ to: "/admin" });
     }
 
-    // Secure Impersonation Check: Ensure troubleshooting access is enabled for this brand
+    // Secure Impersonation Check: Ensure troubleshooting access is enabled for this brand and token is present
     if (isSuperAdmin && !belongsToBrand) {
       const accessEnabled = brand.support_access_enabled !== false;
       if (!accessEnabled) {
+        throw redirect({ to: "/admin/brands" });
+      }
+
+      // Check cookie session token using client-safe server function call
+      const { validateImpersonationSession } = await import("@/lib/impersonation.functions");
+      const { valid } = await validateImpersonationSession({ data: { brandId: brand.id } });
+
+      if (!valid) {
         throw redirect({ to: "/admin/brands" });
       }
     }

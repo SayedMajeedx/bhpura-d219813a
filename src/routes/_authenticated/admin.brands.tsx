@@ -40,7 +40,7 @@ import {
 import { toast } from "sonner";
 import { useI18n, useT } from "@/lib/i18n";
 import { SUPER_ADMIN_EMAIL } from "@/lib/profile-context";
-import { logImpersonationStart } from "@/lib/onboarding.functions";
+import { startImpersonationSession } from "@/lib/impersonation.functions";
 import { purgeBrandPublicMedia } from "@/lib/r2-upload";
 import { purgeBrandPrivateReceipts } from "@/lib/benefit-receipt.functions";
 import { META_DESCRIPTION_LIMIT, META_TITLE_LIMIT, sanitizeMetaText } from "@/lib/seo";
@@ -101,12 +101,12 @@ function BrandsPage() {
   const handleImpersonate = async (brandId: string, slug: string) => {
     const toastId = toast.loading(lang === "ar" ? "جاري تفعيل قناة محاكاة المسؤول الخارق..." : "Initializing Superadmin Impersonation session...");
     try {
-      await logImpersonationStart({ targetTenantId: brandId });
+      await startImpersonationSession({ data: { targetTenantId: brandId } });
       toast.success(lang === "ar" ? "تم تسجيل الجلسة في سجل التدقيق الموثق! جاري التحويل..." : "Audit log recorded! Redirecting to merchant dashboard...", { id: toastId });
-      navigate({ to: "/admin/b/$slug/dashboard", params: { slug } });
+      window.location.href = `/admin/b/${slug}/dashboard`;
     } catch (err: any) {
       console.error(err);
-      toast.error(lang === "ar" ? "فشل تفعيل جلسة المحاكاة. يرجى مراجعة الصلاحيات." : "Impersonation launch blocked. Verify operator permissions.", { id: toastId });
+      toast.error(err.message || (lang === "ar" ? "فشل تفعيل جلسة المحاكاة. يرجى مراجعة الصلاحيات." : "Impersonation launch blocked. Verify operator permissions."), { id: toastId });
     }
   };
   const [editing, setEditing] = useState<Brand | null>(null);
@@ -312,6 +312,11 @@ function BrandsPage() {
                       
                       {/* Subscription status badges */}
                       <div className="flex flex-col items-end gap-1 shrink-0">
+                        {b.support_access_enabled === false && (
+                          <Badge variant="destructive" className="bg-rose-500 hover:bg-rose-600 text-white text-[9px] font-semibold py-0 h-4">
+                            {lang === "ar" ? "الخصوصية مفعلة" : "Privacy Lock"}
+                          </Badge>
+                        )}
                         {b.subscription_status === "active" ? (
                           <Badge className="bg-emerald-500 text-white hover:bg-emerald-600 text-[10px]">
                             {b.subscription_tier === "growth" ? "Growth VIP" : "Basic"}
@@ -336,10 +341,19 @@ function BrandsPage() {
                   </div>
 
                   <div className="flex flex-wrap gap-1.5 border-t border-zinc-50 dark:border-zinc-900 pt-3">
-                    <Button variant="secondary" size="sm" className="flex-1 h-9" onClick={() => handleImpersonate(b.id, b.slug)}>
-                      <Shield className="h-3.5 w-3.5 me-1 text-amber-500 animate-pulse" />
-                      {lang === "ar" ? "محاكاة اللوحة" : "Impersonate"}
-                    </Button>
+                    {b.support_access_enabled === false ? (
+                      <div className="flex-1 flex flex-col gap-1">
+                        <Button variant="secondary" size="sm" className="w-full h-9 opacity-50 cursor-not-allowed" disabled>
+                          <Shield className="h-3.5 w-3.5 me-1 text-zinc-400" />
+                          {lang === "ar" ? "المحاكاة معطلة" : "Impersonation Disabled"}
+                        </Button>
+                      </div>
+                    ) : (
+                      <Button variant="secondary" size="sm" className="flex-1 h-9" onClick={() => handleImpersonate(b.id, b.slug)}>
+                        <Shield className="h-3.5 w-3.5 me-1 text-amber-500 animate-pulse" />
+                        {lang === "ar" ? "محاكاة اللوحة" : "Impersonate"}
+                      </Button>
+                    )}
                     <Button asChild variant="outline" size="sm" className="flex-1 h-9">
                       <Link to="/$slug" params={{ slug: b.slug }}>
                         <ExternalLink className="h-3.5 w-3.5 me-1" />

@@ -232,6 +232,29 @@ export const requireSupabaseAuth = createMiddleware({ type: 'function' }).server
       throw new Error('Unauthorized: No user ID found in token');
     }
 
+    // Centered Impersonation Mutation Safeguard Block
+    const cookieHeader = request.headers.get('cookie');
+    let isImpersonating = false;
+    if (cookieHeader) {
+      const match = cookieHeader.match(/(^|;)\s*boutq_impersonation_token\s*=\s*([^;]+)/);
+      if (match) {
+        isImpersonating = true;
+      }
+    }
+
+    if (isImpersonating && request.method !== 'GET') {
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      const { data: setting } = await supabaseAdmin
+        .from("system_settings")
+        .select("superadmin_impersonation_mutation_allowed")
+        .eq("id", 1)
+        .maybeSingle();
+
+      if (setting?.superadmin_impersonation_mutation_allowed !== true) {
+        throw new Error("Impersonation Mode is currently set to Read-Only by System Policy.");
+      }
+    }
+
     return next({
       context: {
         supabase,
