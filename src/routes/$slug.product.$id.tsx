@@ -896,7 +896,7 @@ function RecommendationRail({ title, products }: { title: string; products: Reco
       <div className="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-2 sm:mx-0 sm:gap-4 sm:px-0 [scrollbar-width:thin]">
         {products.map((item) => {
           const variants = item.product_variants
-            .filter((variant) => Number(variant.selling_price || 0) > 0)
+            .filter((variant) => Number(variant.selling_price || 0) >= 0)
             .sort((a, b) => Number(a.selling_price) - Number(b.selling_price));
           const discounted = variants.find((variant) => Number(variant.original_price || 0) > Number(variant.selling_price || 0));
           const priced = discounted ?? variants[0];

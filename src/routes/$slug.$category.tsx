@@ -127,7 +127,7 @@ function CategoryPage() {
   const sortedProducts = useMemo(() => {
     const rows = [...(productsQuery.data ?? [])];
     if (smartKind === "best" && sort === "new") return rows;
-    const price = (product: ProductRow) => Math.min(...product.product_variants.map((variant) => Number(variant.selling_price)).filter((value) => value > 0), Number.MAX_SAFE_INTEGER);
+    const price = (product: ProductRow) => Math.min(...product.product_variants.map((variant) => Number(variant.selling_price)).filter((value) => value >= 0), Number.MAX_SAFE_INTEGER);
     return rows.sort((a, b) => sort === "old" ? new Date(a.created_at).getTime() - new Date(b.created_at).getTime() : sort === "price-low" ? price(a) - price(b) : sort === "price-high" ? price(b) - price(a) : new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
   }, [productsQuery.data, sort, smartKind]);
   const BackIcon = lang === "ar" ? ChevronRight : ChevronLeft;

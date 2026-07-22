@@ -582,7 +582,7 @@ export function ProductGrid({ products, loading, categoryEmpty, onViewAll }: { p
 export function ProductCard({ product, badge, className }: { product: ProductRow; badge?: "trending" | "best"; className?: string }) {
   const { brand, currency, lang, t, isWishlisted, toggleWishlist, settings } = useStorefront();
   const displayName = pickName(lang, product);
-  const pricedVariants = product.product_variants.filter((variant) => Number(variant.selling_price || 0) > 0).sort((a, b) => a.selling_price - b.selling_price);
+  const pricedVariants = product.product_variants.filter((variant) => Number(variant.selling_price || 0) >= 0).sort((a, b) => a.selling_price - b.selling_price);
   const discountedVariant = pricedVariants.filter((variant) => Number(variant.original_price || 0) > Number(variant.selling_price || 0))[0];
   const displayVariant = discountedVariant ?? pricedVariants[0];
   const minPrice = Number(displayVariant?.selling_price || 0);
