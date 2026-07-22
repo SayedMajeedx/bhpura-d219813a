@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
-import { Plus, Pencil, Trash2, Package, TrendingUp, Wand as Wand2, Printer, Search, AlertTriangle, Boxes, ChevronDown, Sparkles, Upload, Loader2, Check, Instagram, Filter, CheckSquare, Square, RefreshCw, FileText, Image as ImageIcon, Sliders } from "lucide-react";
+import { Plus, Pencil, Trash2, Package, TrendingUp, Wand as Wand2, Printer, Search, AlertTriangle, Boxes, ChevronDown, Sparkles, Upload, Loader2, Check, Instagram, Filter, CheckSquare, Square, RefreshCw, FileText, Image as ImageIcon, Sliders, X } from "lucide-react";
 import { toast } from "sonner";
 import { formatMoney } from "@/lib/format";
 import { useT, useI18n } from "@/lib/i18n";
@@ -58,12 +58,13 @@ type Product = {
   show_sale_badge: boolean;
   media: MediaItem[];
   custom_fields: CustomField[] | null;
+  base_price?: number | null;
 };
 type Variant = {
   id: string; product_id: string; sku: string | null; size: string | null; color: string | null; fabric: string | null;
   cost_price: number; selling_price: number; original_price: number | null; stock: number;
   stock_main: number; stock_incubator: number; barcode: string | null;
-  size_unit: string | null; created_at?: string;
+  size_unit: string | null; created_at?: string; image_url: string | null;
 };
 type Customization = { id: string; name: string; price_delta: number };
 
@@ -1905,7 +1906,7 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
                           <div className="flex items-center gap-0.5">
                             <Button
                               type="button"
-                              size="xs"
+                              size="icon"
                               variant="ghost"
                               className="h-7 w-7 p-0 touch-manipulation"
                               disabled={i === 0}
@@ -1923,7 +1924,7 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
                             </Button>
                             <Button
                               type="button"
-                              size="xs"
+                              size="icon"
                               variant="ghost"
                               className="h-7 w-7 p-0 touch-manipulation"
                               disabled={i === (form.custom_fields ?? []).length - 1}
@@ -2212,6 +2213,62 @@ function VariantImageUploader({ brandId, imageUrl, onChange, isAr }: VariantImag
   );
 }
 
+function StockStepper({ value, onChange }: { value: number; onChange: (val: number) => void }) {
+  return (
+    <div className="inline-flex items-center border border-input bg-background rounded-lg overflow-hidden h-9 shadow-sm shrink-0 select-none max-w-[105px]" onClick={(e) => e.stopPropagation()}>
+      <button
+        type="button"
+        className="w-8 h-full flex items-center justify-center hover:bg-muted active:scale-90 transition-all text-muted-foreground hover:text-foreground font-black text-sm border-r border-input"
+        onClick={(e) => { e.preventDefault(); e.stopPropagation(); onChange(Math.max(0, value - 1)); }}
+      >
+        -
+      </button>
+      <input
+        type="number"
+        className="w-9 text-center bg-transparent border-0 outline-none h-full font-bold text-xs [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none px-0.5"
+        value={value}
+        onChange={(e) => { e.stopPropagation(); onChange(Math.max(0, parseInt(e.target.value) || 0)); }}
+        onClick={(e) => e.stopPropagation()}
+      />
+      <button
+        type="button"
+        className="w-8 h-full flex items-center justify-center hover:bg-muted active:scale-90 transition-all text-muted-foreground hover:text-foreground font-black text-sm border-l border-input"
+        onClick={(e) => { e.preventDefault(); e.stopPropagation(); onChange(value + 1); }}
+      >
+        +
+      </button>
+    </div>
+  );
+}
+
+function PremiumCurrencyInput({
+  value,
+  onChange,
+  onBlur,
+  className = "",
+}: {
+  value: string;
+  onChange: (val: string) => void;
+  onBlur?: (e: React.FocusEvent<HTMLInputElement>) => void;
+  className?: string;
+}) {
+  return (
+    <div className="relative inline-flex items-center w-full max-w-[105px] shrink-0" onClick={(e) => e.stopPropagation()}>
+      <input
+        type="number"
+        step="0.001"
+        className={`w-full h-9 pl-2 pr-7 text-center font-bold bg-background border border-input rounded-lg outline-none focus:ring-1 focus:ring-primary text-xs ${className}`}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        onBlur={onBlur}
+      />
+      <span className="absolute right-2 text-[8px] font-black text-muted-foreground/50 pointer-events-none uppercase">
+        BHD
+      </span>
+    </div>
+  );
+}
+
 function VariantDesktopRow({
   v,
   canViewFinancials,
@@ -2226,6 +2283,11 @@ function VariantDesktopRow({
   businessName,
   genBarcode,
   del,
+  isSelected,
+  onToggleSelect,
+  renderImageCol,
+  renderSkuCol,
+  renderBarcodeCol,
 }: {
   v: Variant;
   canViewFinancials: boolean;
@@ -2240,6 +2302,11 @@ function VariantDesktopRow({
   businessName: string | null;
   genBarcode: () => string;
   del: (id: string) => void;
+  isSelected: boolean;
+  onToggleSelect: () => void;
+  renderImageCol: boolean;
+  renderSkuCol: boolean;
+  renderBarcodeCol: boolean;
 }) {
   const [costVal, setCostVal] = useState(String(v.cost_price));
   const [sellingVal, setSellingVal] = useState(String(v.selling_price));
@@ -2256,153 +2323,280 @@ function VariantDesktopRow({
   const sellingNum = Number(sellingVal) || 0;
   const currentMargin = sellingNum > 0 ? ((sellingNum - costNum) / sellingNum) * 100 : 0;
 
+  // Local state for combined attributes inline editor
+  const [isEditingAttrs, setIsEditingAttrs] = useState(false);
+  const [sizeVal, setSizeVal] = useState(v.size ?? "");
+  const [sizeUnitVal, setSizeUnitVal] = useState(v.size_unit ?? "");
+  const [colorVal, setColorVal] = useState(v.color ?? "");
+  const [fabricVal, setFabricVal] = useState(v.fabric ?? "");
+
+  // Sync back on external changes
+  useEffect(() => {
+    setSizeVal(v.size ?? "");
+    setSizeUnitVal(v.size_unit ?? "");
+    setColorVal(v.color ?? "");
+    setFabricVal(v.fabric ?? "");
+  }, [v.size, v.size_unit, v.color, v.fabric]);
+
+  const saveAttributes = () => {
+    update(v, {
+      size: sizeVal || null,
+      size_unit: sizeUnitVal || null,
+      color: colorVal || null,
+      fabric: fabricVal || null,
+    });
+    setIsEditingAttrs(false);
+  };
+
   return (
-    <tr className="border-t border-border transition hover:bg-secondary/20">
-      <td className="px-2 py-2 text-start">
-        <div className="inline-flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
-          <input
-            className="bg-transparent w-16 outline-none text-start font-medium"
-            defaultValue={v.size ?? ""}
-            onBlur={(e) => update(v, { size: e.target.value || null })}
-          />
-          <select
-            className="h-7 rounded border border-input bg-background px-1 text-xs"
-            defaultValue={v.size_unit ?? ""}
-            onChange={(e) => update(v, { size_unit: e.target.value || null })}
-            title={isAr ? "الوحدة (اختياري)" : "Unit (optional)"}
-          >
-            {SIZE_UNITS.map((u) => (
-              <option key={u} value={u}>
-                {u === "" ? (isAr ? "بدون" : "—") : u}
-              </option>
-            ))}
-          </select>
-        </div>
-      </td>
-      <td className="px-2 py-2 text-start" onClick={(e) => e.stopPropagation()}>
+    <tr className={`border-t border-border transition-all ${isSelected ? "bg-primary/5 hover:bg-primary/10" : "hover:bg-secondary/15"}`}>
+      {/* Checkbox */}
+      <td className="px-2 py-3 text-center" onClick={(e) => e.stopPropagation()}>
         <input
-          className="w-full bg-transparent outline-none text-start font-medium"
-          defaultValue={v.color ?? ""}
-          onBlur={(e) => update(v, { color: e.target.value || null })}
+          type="checkbox"
+          className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer transition-all"
+          checked={isSelected}
+          onChange={onToggleSelect}
         />
       </td>
-      <td className="px-2 py-2 text-start" onClick={(e) => e.stopPropagation()}>
-        <input
-          className="w-full bg-transparent outline-none text-start font-medium"
-          defaultValue={v.fabric ?? ""}
-          onBlur={(e) => update(v, { fabric: e.target.value || null })}
-        />
+
+      {/* Combined Variant Attributes */}
+      <td className="px-2 py-3 text-start align-middle" onClick={(e) => e.stopPropagation()}>
+        {isEditingAttrs ? (
+          <div className="flex flex-col gap-2 p-2 bg-secondary/40 border border-primary/25 rounded-xl max-w-[260px] shadow-sm animate-in fade-in duration-150">
+            <div className="grid grid-cols-2 gap-1.5">
+              <div>
+                <span className="text-[10px] font-bold text-muted-foreground">{isAr ? "المقاس" : "Size"}</span>
+                <input
+                  className="h-8 w-full px-2 rounded-md border border-input bg-background text-xs outline-none"
+                  value={sizeVal}
+                  onChange={(e) => setSizeVal(e.target.value)}
+                />
+              </div>
+              <div>
+                <span className="text-[10px] font-bold text-muted-foreground">{isAr ? "الوحدة" : "Unit"}</span>
+                <select
+                  className="h-8 w-full px-1.5 rounded-md border border-input bg-background text-xs outline-none"
+                  value={sizeUnitVal}
+                  onChange={(e) => setSizeUnitVal(e.target.value)}
+                >
+                  {SIZE_UNITS.map((u) => (
+                    <option key={u} value={u}>
+                      {u || "—"}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-1.5">
+              <div>
+                <span className="text-[10px] font-bold text-muted-foreground">{isAr ? "اللون" : "Color"}</span>
+                <input
+                  className="h-8 w-full px-2 rounded-md border border-input bg-background text-xs outline-none"
+                  value={colorVal}
+                  onChange={(e) => setColorVal(e.target.value)}
+                />
+              </div>
+              <div>
+                <span className="text-[10px] font-bold text-muted-foreground">{isAr ? "الخامة" : "Fabric"}</span>
+                <input
+                  className="h-8 w-full px-2 rounded-md border border-input bg-background text-xs outline-none"
+                  value={fabricVal}
+                  onChange={(e) => setFabricVal(e.target.value)}
+                />
+              </div>
+            </div>
+            <div className="flex justify-end gap-1.5 pt-1.5 border-t border-border/55 mt-1">
+              <button
+                type="button"
+                className="h-7 w-7 rounded-md hover:bg-rose-50 hover:text-rose-600 flex items-center justify-center text-muted-foreground transition-colors"
+                onClick={() => setIsEditingAttrs(false)}
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+              <button
+                type="button"
+                className="h-7 w-7 rounded-md hover:bg-emerald-50 hover:text-emerald-600 flex items-center justify-center text-muted-foreground transition-colors font-bold"
+                onClick={saveAttributes}
+              >
+                <Check className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="flex items-center gap-1.5 flex-wrap group/v">
+            {[v.size, v.color, v.fabric].some(Boolean) ? (
+              <>
+                {v.size && (
+                  <span className="inline-flex items-center bg-primary/5 text-primary text-xs font-semibold px-2 py-0.5 border border-primary/10 rounded-md">
+                    {v.size} {v.size_unit || ""}
+                  </span>
+                )}
+                {v.color && (
+                  <span className="inline-flex items-center bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-200 text-xs font-semibold px-2 py-0.5 border border-slate-200 dark:border-slate-700 rounded-md gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-slate-400 shrink-0" />
+                    {v.color}
+                  </span>
+                )}
+                {v.fabric && (
+                  <span className="inline-flex items-center bg-zinc-100 text-zinc-800 dark:bg-zinc-800 dark:text-zinc-200 text-xs font-semibold px-2 py-0.5 border border-zinc-200 dark:border-zinc-700 rounded-md">
+                    {v.fabric}
+                  </span>
+                )}
+              </>
+            ) : (
+              <span className="text-muted-foreground text-xs italic">
+                {isAr ? "متغير قياسي" : "Standard Variant"}
+              </span>
+            )}
+            <button
+              type="button"
+              className="p-1 rounded hover:bg-muted text-muted-foreground/60 hover:text-foreground opacity-0 group-hover/v:opacity-100 transition-opacity"
+              onClick={() => setIsEditingAttrs(true)}
+              title={isAr ? "تعديل الخصائص" : "Edit attributes"}
+            >
+              <Pencil className="h-3 w-3" />
+            </button>
+          </div>
+        )}
       </td>
-      <td className="px-2 py-2 text-center" onClick={(e) => e.stopPropagation()}>
-        <div className="flex justify-center">
-          <VariantImageUploader
-            brandId={brand.id}
-            imageUrl={v.image_url}
-            onChange={(url) => update(v, { image_url: url })}
-            isAr={isAr}
-          />
-        </div>
-      </td>
-      <td className="px-2 py-2 text-start" onClick={(e) => e.stopPropagation()}>
-        <input
-          className="w-full bg-transparent outline-none text-start font-mono text-xs"
-          defaultValue={v.sku ?? ""}
-          onBlur={(e) => update(v, { sku: e.target.value || null })}
-        />
-      </td>
-      <td className="px-2 py-2 text-start" onClick={(e) => e.stopPropagation()}>
-        <div className="flex min-w-0 items-center gap-1">
-          <input
-            className="min-w-0 flex-1 bg-transparent font-mono text-xs outline-none text-start"
-            placeholder={isAr ? "بدون" : "None"}
-            defaultValue={v.barcode ?? ""}
-            onBlur={(e) => update(v, { barcode: e.target.value.trim() || null })}
-          />
-          <button
-            type="button"
-            title={isAr ? "توليد باركود" : "Generate barcode"}
-            className="text-muted-foreground hover:text-primary p-1 rounded-sm hover:bg-secondary touch-manipulation"
-            onClick={(e) => {
-              e.preventDefault();
-              update(v, { barcode: genBarcode() });
-            }}
-          >
-            <Wand2 className="h-3 w-3" />
-          </button>
-          {v.barcode && (
-            <PrintLabelButton
-              label={isAr ? "طباعة" : "Print"}
-              data={{
-                code: v.barcode,
-                productName,
-                size: v.size,
-                color: v.color,
-                price: v.selling_price,
-                businessName,
-              }}
+
+      {/* Image Column */}
+      {renderImageCol && (
+        <td className="px-2 py-3 text-center" onClick={(e) => e.stopPropagation()}>
+          <div className="flex justify-center">
+            <VariantImageUploader
+              brandId={brand.id}
+              imageUrl={v.image_url}
+              onChange={(url) => update(v, { image_url: url })}
+              isAr={isAr}
             />
-          )}
-        </div>
-      </td>
-      {canViewFinancials && (
-        <td className="px-2 py-2 text-center" onClick={(e) => e.stopPropagation()}>
+          </div>
+        </td>
+      )}
+
+      {/* SKU Column */}
+      {renderSkuCol && (
+        <td className="px-2 py-3 text-start" onClick={(e) => e.stopPropagation()}>
           <input
-            type="number"
-            step="0.001"
-            className="w-full bg-transparent text-center outline-none font-bold"
+            className="w-full bg-transparent hover:bg-muted/30 focus:bg-background border border-transparent hover:border-input focus:border-input px-2 py-1 rounded-md transition outline-none font-mono text-xs"
+            defaultValue={v.sku ?? ""}
+            onBlur={(e) => update(v, { sku: e.target.value || null })}
+            placeholder="—"
+          />
+        </td>
+      )}
+
+      {/* Barcode Column */}
+      {renderBarcodeCol && (
+        <td className="px-2 py-3 text-start" onClick={(e) => e.stopPropagation()}>
+          <div className="flex min-w-0 items-center gap-1.5">
+            <input
+              className="min-w-0 flex-1 bg-transparent hover:bg-muted/30 focus:bg-background border border-transparent hover:border-input focus:border-input px-2 py-1 rounded-md transition font-mono text-xs outline-none"
+              placeholder={isAr ? "بدون" : "None"}
+              defaultValue={v.barcode ?? ""}
+              onBlur={(e) => update(v, { barcode: e.target.value.trim() || null })}
+            />
+            <button
+              type="button"
+              title={isAr ? "توليد باركود" : "Generate barcode"}
+              className="text-muted-foreground hover:text-primary p-1 rounded-md hover:bg-secondary active:scale-95 transition touch-manipulation"
+              onClick={(e) => {
+                e.preventDefault();
+                update(v, { barcode: genBarcode() });
+              }}
+            >
+              <Wand2 className="h-3 w-3" />
+            </button>
+            {v.barcode && (
+              <PrintLabelButton
+                label={isAr ? "طباعة" : "Print"}
+                data={{
+                  code: v.barcode,
+                  productName,
+                  size: v.size,
+                  color: v.color,
+                  price: v.selling_price,
+                  businessName,
+                }}
+              />
+            )}
+          </div>
+        </td>
+      )}
+
+      {/* Cost Column */}
+      {canViewFinancials && (
+        <td className="px-2 py-3 text-center">
+          <PremiumCurrencyInput
             value={costVal}
-            onChange={(e) => setCostVal(e.target.value)}
+            onChange={setCostVal}
             onBlur={(e) => update(v, { cost_price: Number(e.target.value) })}
           />
         </td>
       )}
-      <td className="px-2 py-2 text-center" onClick={(e) => e.stopPropagation()}>
-        <input
-          type="number"
-          step="0.001"
-          className="w-full bg-transparent text-center outline-none font-bold"
+
+      {/* Price Column */}
+      <td className="px-2 py-3 text-center">
+        <PremiumCurrencyInput
           value={sellingVal}
-          onChange={(e) => setSellingVal(e.target.value)}
+          onChange={setSellingVal}
           onBlur={(e) => update(v, { selling_price: Number(e.target.value) })}
         />
       </td>
-      <td className="px-2 py-2 text-center" onClick={(e) => e.stopPropagation()}>
+
+      {/* Original Price Column */}
+      <td className="px-2 py-3 text-center" onClick={(e) => e.stopPropagation()}>
         <input
           type="number"
           step="0.001"
           min="0"
-          className="w-full bg-transparent text-center outline-none"
+          className="w-full h-9 px-2 text-center bg-transparent hover:bg-muted/30 focus:bg-background border border-transparent hover:border-input focus:border-input rounded-lg outline-none font-medium text-xs max-w-[100px]"
           defaultValue={v.original_price ?? ""}
           placeholder="—"
           onBlur={(e) => update(v, { original_price: e.target.value ? Number(e.target.value) : null })}
         />
       </td>
+
+      {/* Margin Column */}
       {canViewFinancials && (
-        <td className="px-2 py-2 text-center text-primary font-bold">
-          <span className="inline-flex items-center justify-center gap-1">
-            <TrendingUp className="h-3 w-3" />
-            {currentMargin.toFixed(0)}%
-          </span>
+        <td className="px-2 py-3 text-center">
+          {(() => {
+            let marginBg = "bg-emerald-50 text-emerald-700 border-emerald-100 dark:bg-emerald-950/20 dark:text-emerald-400 dark:border-emerald-900/30";
+            if (currentMargin < 20) {
+              marginBg = "bg-rose-50 text-rose-700 border-rose-100 dark:bg-rose-950/20 dark:text-rose-400 dark:border-rose-900/30";
+            } else if (currentMargin < 50) {
+              marginBg = "bg-amber-50 text-amber-700 border-amber-100 dark:bg-amber-950/20 dark:text-amber-400 dark:border-amber-900/30";
+            }
+            return (
+              <span className={`inline-flex items-center justify-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold border ${marginBg}`}>
+                <TrendingUp className="h-3 w-3" />
+                {currentMargin.toFixed(0)}%
+              </span>
+            );
+          })()}
         </td>
       )}
-      <td className="px-2 py-2 text-center" onClick={(e) => e.stopPropagation()}>
-        <input
-          type="number"
-          className="w-full bg-transparent text-center outline-none"
-          defaultValue={v.stock_main ?? 0}
-          onBlur={(e) => update(v, { stock_main: Number(e.target.value) })}
+
+      {/* Stock Main */}
+      <td className="px-2 py-3 text-center">
+        <StockStepper
+          value={v.stock_main ?? 0}
+          onChange={(val) => update(v, { stock_main: val })}
         />
       </td>
-      <td className="px-2 py-2 text-center" onClick={(e) => e.stopPropagation()}>
-        <input
-          type="number"
-          className="w-full bg-transparent text-center outline-none"
-          defaultValue={v.stock_incubator ?? 0}
-          onBlur={(e) => update(v, { stock_incubator: Number(e.target.value) })}
+
+      {/* Stock Incubator */}
+      <td className="px-2 py-3 text-center">
+        <StockStepper
+          value={v.stock_incubator ?? 0}
+          onChange={(val) => update(v, { stock_incubator: val })}
         />
       </td>
-      <td className="px-2 py-2 text-center">
-        <div className="font-bold text-sm">{(v.stock_main ?? 0) + (v.stock_incubator ?? 0)}</div>
+
+      {/* Stock Total Run Rate Column */}
+      <td className="px-2 py-3 text-center">
+        <div className="font-extrabold text-sm text-foreground">{(v.stock_main ?? 0) + (v.stock_incubator ?? 0)}</div>
         {(() => {
           const stock = (v.stock_main ?? 0) + (v.stock_incubator ?? 0);
           const qtySold = salesByVariant.get(v.id) || 0;
@@ -2413,24 +2607,26 @@ function VariantDesktopRow({
           const dailyVelocity = qtySold / daysElapsed;
 
           let runRateText = isAr ? "لا مبيعات" : "No sales";
-          let runRateColor = "text-muted-foreground/80";
+          let runRateColor = "text-muted-foreground/60 text-[9px]";
 
           if (stock <= 0) {
             runRateText = isAr ? "نفد" : "Out of stock";
-            runRateColor = "text-rose-600 dark:text-rose-400 font-medium";
+            runRateColor = "text-rose-600 dark:text-rose-400 font-bold text-[9px]";
           } else if (dailyVelocity > 0) {
             const days = Math.ceil(stock / dailyVelocity);
             runRateText = isAr ? `ينفد في ${days} ي` : `${days} d left`;
             runRateColor =
               days <= 7
-                ? "text-amber-600 dark:text-amber-400 font-semibold"
-                : "text-emerald-600 dark:text-emerald-400";
+                ? "text-amber-600 dark:text-amber-400 font-bold text-[9px]"
+                : "text-emerald-600 dark:text-emerald-400 font-medium text-[9px]";
           }
 
-          return <div className={`text-[10px] mt-0.5 whitespace-nowrap leading-none ${runRateColor}`}>{runRateText}</div>;
+          return <div className={`text-[9px] mt-0.5 whitespace-nowrap leading-none ${runRateColor}`}>{runRateText}</div>;
         })()}
       </td>
-      <td className="px-2 text-center" onClick={(e) => e.stopPropagation()}>
+
+      {/* Delete button */}
+      <td className="px-2 py-3 text-center" onClick={(e) => e.stopPropagation()}>
         <InventoryDeleteAction message={t("inventory.deleteVariantConfirm")} onConfirm={() => del(v.id)} />
       </td>
     </tr>
@@ -2450,6 +2646,8 @@ function VariantMobileCard({
   del,
   mainLabel,
   incLabel,
+  isSelected,
+  onToggleSelect,
 }: {
   v: Variant;
   canViewFinancials: boolean;
@@ -2463,6 +2661,8 @@ function VariantMobileCard({
   del: (id: string) => void;
   mainLabel: string;
   incLabel: string;
+  isSelected: boolean;
+  onToggleSelect: () => void;
 }) {
   const [costVal, setCostVal] = useState(String(v.cost_price));
   const [sellingVal, setSellingVal] = useState(String(v.selling_price));
@@ -2480,105 +2680,98 @@ function VariantMobileCard({
   const currentMargin = sellingNum > 0 ? ((sellingNum - costNum) / sellingNum) * 100 : 0;
 
   return (
-    <div className="rounded-xl border border-border bg-background p-4 space-y-4 shadow-sm">
-      <div className="flex items-center justify-between gap-2 border-b border-border/50 pb-2">
-        <div className="font-bold text-foreground">
-          {[v.size, v.color, v.fabric].filter(Boolean).join(" · ") || (isAr ? "خيار المنتج" : "Product variant")}
+    <div className={`rounded-xl border p-4 space-y-3.5 shadow-sm transition-all bg-background ${isSelected ? "border-primary bg-primary/5/10" : "border-border"}`}>
+      {/* Header */}
+      <div className="flex items-center justify-between gap-2 border-b border-border/50 pb-2.5">
+        <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+          <input
+            type="checkbox"
+            className="h-4.5 w-4.5 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer transition-all"
+            checked={isSelected}
+            onChange={onToggleSelect}
+          />
+          <div className="flex items-center gap-1.5 flex-wrap">
+            {[v.size, v.color, v.fabric].some(Boolean) ? (
+              <>
+                {v.size && (
+                  <span className="inline-flex items-center bg-primary/5 text-primary text-[10px] font-bold px-1.5 py-0.5 border border-primary/10 rounded-sm">
+                    {v.size} {v.size_unit || ""}
+                  </span>
+                )}
+                {v.color && (
+                  <span className="inline-flex items-center bg-slate-100 text-slate-800 text-[10px] font-bold px-1.5 py-0.5 border border-slate-200 rounded-sm">
+                    {v.color}
+                  </span>
+                )}
+                {v.fabric && (
+                  <span className="inline-flex items-center bg-zinc-100 text-zinc-800 text-[10px] font-bold px-1.5 py-0.5 border border-zinc-200 rounded-sm">
+                    {v.fabric}
+                  </span>
+                )}
+              </>
+            ) : (
+              <span className="text-muted-foreground text-xs italic font-semibold">
+                {isAr ? "متغير قياسي" : "Standard Variant"}
+              </span>
+            )}
+          </div>
         </div>
         <div onClick={(e) => e.stopPropagation()}>
           <InventoryDeleteAction message={t("inventory.deleteVariantConfirm")} onConfirm={() => del(v.id)} mobile />
         </div>
       </div>
-      <div className="grid grid-cols-2 gap-3.5" onClick={(e) => e.stopPropagation()}>
-        <div>
-          <Label className="text-xs font-bold text-muted-foreground">{t("inventory.size")}</Label>
-          <Input className="mt-1 h-9.5 rounded-lg text-xs" defaultValue={v.size ?? ""} onBlur={(e) => update(v, { size: e.target.value || null })} />
-        </div>
-        <div>
-          <Label className="text-xs font-bold text-muted-foreground">{isAr ? "الوحدة" : "Unit"}</Label>
-          <select
-            className="mt-1 h-9.5 w-full rounded-lg border border-input bg-background px-3 text-xs outline-none focus:ring-1 focus:ring-primary"
-            defaultValue={v.size_unit ?? ""}
-            onChange={(e) => update(v, { size_unit: e.target.value || null })}
-          >
-            {SIZE_UNITS.map((u) => (
-              <option key={u} value={u}>
-                {u || "—"}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div>
-          <Label className="text-xs font-bold text-muted-foreground">{t("inventory.color")}</Label>
-          <Input className="mt-1 h-9.5 rounded-lg text-xs" defaultValue={v.color ?? ""} onBlur={(e) => update(v, { color: e.target.value || null })} />
-        </div>
-        <div>
-          <Label className="text-xs font-bold text-muted-foreground">{t("inventory.fabric")}</Label>
-          <Input className="mt-1 h-9.5 rounded-lg text-xs" defaultValue={v.fabric ?? ""} onBlur={(e) => update(v, { fabric: e.target.value || null })} />
-        </div>
-        <div>
-          <Label className="text-xs font-bold text-muted-foreground">{t("inventory.sku")}</Label>
-          <Input className="mt-1 h-9.5 rounded-lg text-xs" defaultValue={v.sku ?? ""} onBlur={(e) => update(v, { sku: e.target.value || null })} />
-        </div>
-        <div>
-          <Label className="text-xs font-bold text-muted-foreground">{barcodeLabel}</Label>
-          <Input className="mt-1 h-9.5 rounded-lg text-xs" defaultValue={v.barcode ?? ""} onBlur={(e) => update(v, { barcode: e.target.value.trim() || null })} />
-        </div>
+
+      {/* Content */}
+      <div className="grid grid-cols-2 gap-3" onClick={(e) => e.stopPropagation()}>
+        {/* Cost & Price Delta */}
         {canViewFinancials && (
           <div>
-            <Label className="text-xs font-bold text-muted-foreground">{t("inventory.cost")}</Label>
-            <Input
-              type="number"
-              step="0.001"
-              className="mt-1 h-9.5 rounded-lg text-xs font-bold"
-              value={costVal}
-              onChange={(e) => setCostVal(e.target.value)}
-              onBlur={(e) => update(v, { cost_price: Number(e.target.value) })}
-            />
+            <Label className="text-[10px] font-black uppercase text-muted-foreground/85">{t("inventory.cost")}</Label>
+            <div className="mt-1">
+              <PremiumCurrencyInput
+                value={costVal}
+                onChange={setCostVal}
+                onBlur={(e) => update(v, { cost_price: Number(e.target.value) })}
+                className="h-10 rounded-xl text-xs"
+              />
+            </div>
           </div>
         )}
         <div>
-          <Label className="text-xs font-bold text-muted-foreground">{isAr ? "سعر إضافي (+ د.ب)" : "Price Delta (+ BHD)"}</Label>
-          <Input
-            type="number"
-            step="0.001"
-            className="mt-1 h-9.5 rounded-lg text-xs font-bold"
-            value={sellingVal}
-            onChange={(e) => setSellingVal(e.target.value)}
-            onBlur={(e) => update(v, { selling_price: Number(e.target.value) })}
-          />
+          <Label className="text-[10px] font-black uppercase text-muted-foreground/85">{isAr ? "سعر إضافي (+ د.ب)" : "Price Delta (+ BHD)"}</Label>
+          <div className="mt-1">
+            <PremiumCurrencyInput
+              value={sellingVal}
+              onChange={setSellingVal}
+              onBlur={(e) => update(v, { selling_price: Number(e.target.value) })}
+              className="h-10 rounded-xl text-xs"
+            />
+          </div>
+        </div>
+
+        {/* Steppers */}
+        <div>
+          <Label className="text-[10px] font-black uppercase text-muted-foreground/85">{mainLabel}</Label>
+          <div className="mt-1">
+            <StockStepper
+              value={v.stock_main ?? 0}
+              onChange={(val) => update(v, { stock_main: val })}
+            />
+          </div>
         </div>
         <div>
-          <Label className="text-xs font-bold text-muted-foreground">{isAr ? "السعر الأصلي الإضافي" : "Original Price Delta"}</Label>
-          <Input
-            type="number"
-            step="0.001"
-            min="0"
-            className="mt-1 h-9.5 rounded-lg text-xs"
-            defaultValue={v.original_price ?? ""}
-            onBlur={(e) => update(v, { original_price: e.target.value ? Number(e.target.value) : null })}
-          />
+          <Label className="text-[10px] font-black uppercase text-muted-foreground/85">{incLabel}</Label>
+          <div className="mt-1">
+            <StockStepper
+              value={v.stock_incubator ?? 0}
+              onChange={(val) => update(v, { stock_incubator: val })}
+            />
+          </div>
         </div>
+
+        {/* Dynamic Image Picker & Original Delta */}
         <div>
-          <Label className="text-xs font-bold text-muted-foreground">{mainLabel}</Label>
-          <Input
-            type="number"
-            className="mt-1 h-9.5 rounded-lg text-xs"
-            defaultValue={v.stock_main ?? 0}
-            onBlur={(e) => update(v, { stock_main: Number(e.target.value) })}
-          />
-        </div>
-        <div>
-          <Label className="text-xs font-bold text-muted-foreground">{incLabel}</Label>
-          <Input
-            type="number"
-            className="mt-1 h-9.5 rounded-lg text-xs"
-            defaultValue={v.stock_incubator ?? 0}
-            onBlur={(e) => update(v, { stock_incubator: Number(e.target.value) })}
-          />
-        </div>
-        <div>
-          <Label className="text-xs font-bold text-muted-foreground mb-1 block">{isAr ? "صورة المتغير" : "Variant Image"}</Label>
+          <Label className="text-[10px] font-black uppercase text-muted-foreground/85">{isAr ? "صورة المتغير" : "Variant Image"}</Label>
           <div className="mt-1">
             <VariantImageUploader
               brandId={brand.id}
@@ -2588,10 +2781,44 @@ function VariantMobileCard({
             />
           </div>
         </div>
+        <div>
+          <Label className="text-[10px] font-black uppercase text-muted-foreground/85">{isAr ? "السعر الأصلي الإضافي" : "Original Delta"}</Label>
+          <input
+            type="number"
+            step="0.001"
+            min="0"
+            className="mt-1 h-9 w-full rounded-lg border border-input bg-background px-3 text-xs font-semibold outline-none focus:ring-1 focus:ring-primary"
+            defaultValue={v.original_price ?? ""}
+            placeholder="—"
+            onBlur={(e) => update(v, { original_price: e.target.value ? Number(e.target.value) : null })}
+          />
+        </div>
+
+        {/* SKU & Barcode */}
+        <div>
+          <Label className="text-[10px] font-black uppercase text-muted-foreground/85">SKU</Label>
+          <input
+            className="mt-1 h-9 w-full rounded-lg border border-input bg-background px-2.5 text-xs font-mono outline-none focus:ring-1 focus:ring-primary"
+            defaultValue={v.sku ?? ""}
+            onBlur={(e) => update(v, { sku: e.target.value || null })}
+            placeholder="—"
+          />
+        </div>
+        <div>
+          <Label className="text-[10px] font-black uppercase text-muted-foreground/85">{barcodeLabel}</Label>
+          <input
+            className="mt-1 h-9 w-full rounded-lg border border-input bg-background px-2.5 text-xs font-mono outline-none focus:ring-1 focus:ring-primary"
+            defaultValue={v.barcode ?? ""}
+            onBlur={(e) => update(v, { barcode: e.target.value.trim() || null })}
+            placeholder="—"
+          />
+        </div>
       </div>
-      <div className="flex items-center justify-between rounded-lg bg-secondary/30 px-3.5 py-2.5 text-xs border border-border/40 font-medium">
+
+      {/* Summary Footer */}
+      <div className="flex items-center justify-between rounded-xl bg-secondary/25 px-4 py-3 text-xs border border-border/45 font-semibold">
         <span>
-          {t("inventory.stock")}: <b className="text-sm font-bold">{(v.stock_main ?? 0) + (v.stock_incubator ?? 0)}</b>
+          {t("inventory.stock")}: <b className="text-sm font-black">{(v.stock_main ?? 0) + (v.stock_incubator ?? 0)}</b>
         </span>
         {(() => {
           const stock = (v.stock_main ?? 0) + (v.stock_incubator ?? 0);
@@ -2603,24 +2830,24 @@ function VariantMobileCard({
           const dailyVelocity = qtySold / daysElapsed;
 
           let runRateText = isAr ? "لا مبيعات مؤخراً" : "No recent sales";
-          let runRateColor = "text-muted-foreground";
+          let runRateColor = "text-muted-foreground/80";
 
           if (stock <= 0) {
             runRateText = isAr ? "نفد المخزون" : "Out of stock";
-            runRateColor = "text-rose-600 dark:text-rose-500 font-bold";
+            runRateColor = "text-rose-600 dark:text-rose-500 font-extrabold";
           } else if (dailyVelocity > 0) {
             const days = Math.ceil(stock / dailyVelocity);
-            runRateText = isAr ? `ينفد خلال ${days} يوم` : `Out of stock in ${days} days`;
+            runRateText = isAr ? `ينفد خلال ${days} يوم` : `Out of stock in ${days} d`;
             runRateColor =
               days <= 7
-                ? "text-amber-600 dark:text-amber-500 font-bold animate-pulse"
-                : "text-emerald-600 dark:text-emerald-500 font-bold";
+                ? "text-amber-600 dark:text-amber-500 font-extrabold animate-pulse"
+                : "text-emerald-600 dark:text-emerald-500 font-extrabold";
           }
 
           return <span className={runRateColor}>{runRateText}</span>;
         })()}
         {canViewFinancials && (
-          <span className="text-primary font-bold">
+          <span className="text-primary font-black">
             {t("inventory.margin")}: {currentMargin.toFixed(0)}%
           </span>
         )}
@@ -2731,6 +2958,7 @@ function VariantList({
     if (error) toast.error(error.message);
     else onChanged();
   };
+
   const del = async (id: string) => {
     const { error } = await supabase.from("product_variants").delete().eq("id", id);
     if (error) toast.error(error.message);
@@ -2741,9 +2969,108 @@ function VariantList({
   const incLabel = isAr ? "الحاضنة" : "Incubator";
   const barcodeLabel = isAr ? "الباركود" : "Barcode";
 
+  // State for dynamic columns compacting / hiding
+  const [showAllCols, setShowAllCols] = useState(false);
+  const hasAnyImage = useMemo(() => variants.some((v) => v.image_url && v.image_url.trim()), [variants]);
+  const hasAnySku = useMemo(() => variants.some((v) => v.sku && v.sku.trim()), [variants]);
+  const hasAnyBarcode = useMemo(() => variants.some((v) => v.barcode && v.barcode.trim()), [variants]);
+
+  const renderImageCol = showAllCols || hasAnyImage;
+  const renderSkuCol = showAllCols || hasAnySku;
+  const renderBarcodeCol = showAllCols || hasAnyBarcode;
+  const hasHiddenCols = !hasAnyImage || !hasAnySku || !hasAnyBarcode;
+
+  // Selected state for bulk actions
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const isAllSelected = variants.length > 0 && selectedIds.size === variants.length;
+
+  const toggleSelectAll = () => {
+    if (isAllSelected) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(variants.map((v) => v.id)));
+    }
+  };
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds((current) => {
+      const next = new Set(current);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  };
+
+  const bulkSetPrice = async () => {
+    const val = prompt(isAr ? "أدخل سعر البيع الجديد لكافة المتغيرات المحددة:" : "Enter new selling price for all selected variants:");
+    if (val === null) return;
+    const price = Number(val);
+    if (isNaN(price) || price < 0) return toast.error(isAr ? "سعر غير صالح" : "Invalid price");
+    const { error } = await supabase.from("product_variants").update({ selling_price: price }).in("id", Array.from(selectedIds));
+    if (error) toast.error(error.message);
+    else {
+      toast.success(isAr ? "تم تحديث الأسعار بنجاح" : "Prices updated successfully");
+      setSelectedIds(new Set());
+      onChanged();
+    }
+  };
+
+  const bulkAddStock = async (amount: number) => {
+    const selectedVariants = variants.filter(v => selectedIds.has(v.id));
+    const promises = selectedVariants.map(v => 
+      supabase.from("product_variants").update({ stock_main: Math.max(0, (v.stock_main ?? 0) + amount) }).eq("id", v.id)
+    );
+    const results = await Promise.all(promises);
+    const hasError = results.some(r => r.error);
+    if (hasError) toast.error(isAr ? "فشل تحديث المخزون" : "Failed to update some stock entries");
+    else {
+      toast.success(isAr ? `تمت إضافة ${amount}+ مخزون بنجاح` : `Added +${amount} stock successfully`);
+      setSelectedIds(new Set());
+      onChanged();
+    }
+  };
+
+  const bulkApplyMarkup = async () => {
+    const val = prompt(isAr ? "أدخل نسبة الهامش الربحي المئوية (مثال: 50 لـ 50%):" : "Enter markup percentage (e.g. 50 for 55%):");
+    if (val === null) return;
+    const markup = Number(val);
+    if (isNaN(markup) || markup < 0) return toast.error(isAr ? "نسبة مئوية غير صالحة" : "Invalid markup percentage");
+    const selectedVariants = variants.filter(v => selectedIds.has(v.id));
+    const promises = selectedVariants.map(v => {
+      const newPrice = v.cost_price * (1 + markup / 100);
+      return supabase.from("product_variants").update({ selling_price: Number(newPrice.toFixed(3)) }).eq("id", v.id);
+    });
+    const results = await Promise.all(promises);
+    const hasError = results.some(r => r.error);
+    if (hasError) toast.error(isAr ? "فشل تطبيق الهامش الربحي" : "Failed to apply markup on some variants");
+    else {
+      toast.success(isAr ? "تم تطبيق الهامش الربحي بنجاح" : "Markup applied successfully");
+      setSelectedIds(new Set());
+      onChanged();
+    }
+  };
+
+  const bulkDelete = async () => {
+    if (!confirm(isAr ? "هل أنت متأكد من حذف المتغيرات المحددة؟" : "Are you sure you want to delete the selected variants?")) return;
+    const { error } = await supabase.from("product_variants").delete().in("id", Array.from(selectedIds));
+    if (error) toast.error(error.message);
+    else {
+      toast.success(isAr ? "تم حذف المتغيرات بنجاح" : "Variants deleted successfully");
+      setSelectedIds(new Set());
+      onChanged();
+    }
+  };
+
+  // Auto-calculated total table width
+  const totalTableWidth = 44 + 270 + (renderImageCol ? 96 : 0) + (renderSkuCol ? 120 : 0) + (renderBarcodeCol ? 190 : 0) + (canViewFinancials ? 110 : 0) + 110 + 110 + (canViewFinancials ? 96 : 0) + 115 + 115 + 88 + 60;
+
   return (
     <div className="mt-4 border-t border-border pt-4">
-      <div className="space-y-3.5 md:hidden">
+      {/* Mobile Stacked Card View */}
+      <div className="space-y-4 md:hidden">
         {variants.map((v) => (
           <VariantMobileCard
             key={v.id}
@@ -2759,20 +3086,24 @@ function VariantList({
             del={del}
             mainLabel={mainLabel}
             incLabel={incLabel}
+            isSelected={selectedIds.has(v.id)}
+            onToggleSelect={() => toggleSelect(v.id)}
           />
         ))}
+
+        {/* Adding state on Mobile */}
         {adding && (
-          <div className="rounded-xl border border-primary/30 bg-secondary/30 p-4 space-y-4">
-            <div className="font-bold text-sm text-foreground">{t("inventory.addVariant")}</div>
+          <div className="rounded-xl border border-primary/35 bg-secondary/35 p-4 space-y-4 shadow-sm animate-in fade-in duration-200">
+            <div className="font-extrabold text-sm text-foreground">{t("inventory.addVariant")}</div>
             <div className="grid grid-cols-2 gap-3.5">
               <div>
-                <Label className="text-xs font-bold text-muted-foreground">{t("inventory.size")}</Label>
-                <Input className="mt-1 h-9.5 rounded-lg text-xs" value={row.size} onChange={(e) => setRow({ ...row, size: e.target.value })} />
+                <Label className="text-[10px] font-bold text-muted-foreground uppercase">{t("inventory.size")}</Label>
+                <Input className="mt-1 h-9 rounded-md text-xs" value={row.size} onChange={(e) => setRow({ ...row, size: e.target.value })} />
               </div>
               <div>
-                <Label className="text-xs font-bold text-muted-foreground">{isAr ? "الوحدة" : "Unit"}</Label>
+                <Label className="text-[10px] font-bold text-muted-foreground uppercase">{isAr ? "الوحدة" : "Unit"}</Label>
                 <select
-                  className="mt-1 h-9.5 w-full rounded-lg border border-input bg-background px-3 text-xs outline-none focus:ring-1 focus:ring-primary"
+                  className="mt-1 h-9 w-full rounded-md border border-input bg-background px-2.5 text-xs outline-none focus:ring-1 focus:ring-primary"
                   value={row.size_unit}
                   onChange={(e) => setRow({ ...row, size_unit: e.target.value })}
                 >
@@ -2784,75 +3115,75 @@ function VariantList({
                 </select>
               </div>
               <div>
-                <Label className="text-xs font-bold text-muted-foreground">{t("inventory.color")}</Label>
-                <Input className="mt-1 h-9.5 rounded-lg text-xs" value={row.color} onChange={(e) => setRow({ ...row, color: e.target.value })} />
+                <Label className="text-[10px] font-bold text-muted-foreground uppercase">{t("inventory.color")}</Label>
+                <Input className="mt-1 h-9 rounded-md text-xs" value={row.color} onChange={(e) => setRow({ ...row, color: e.target.value })} />
               </div>
               <div>
-                <Label className="text-xs font-bold text-muted-foreground">{t("inventory.fabric")}</Label>
-                <Input className="mt-1 h-9.5 rounded-lg text-xs" value={row.fabric} onChange={(e) => setRow({ ...row, fabric: e.target.value })} />
+                <Label className="text-[10px] font-bold text-muted-foreground uppercase">{t("inventory.fabric")}</Label>
+                <Input className="mt-1 h-9 rounded-md text-xs" value={row.fabric} onChange={(e) => setRow({ ...row, fabric: e.target.value })} />
               </div>
               <div>
-                <Label className="text-xs font-bold text-muted-foreground">{t("inventory.sku")}</Label>
-                <Input className="mt-1 h-9.5 rounded-lg text-xs" value={row.sku} onChange={(e) => setRow({ ...row, sku: e.target.value })} />
+                <Label className="text-[10px] font-bold text-muted-foreground uppercase">{t("inventory.sku")}</Label>
+                <Input className="mt-1 h-9 rounded-md text-xs" value={row.sku} onChange={(e) => setRow({ ...row, sku: e.target.value })} />
               </div>
               <div>
-                <Label className="text-xs font-bold text-muted-foreground">{barcodeLabel}</Label>
-                <Input className="mt-1 h-9.5 rounded-lg text-xs" value={row.barcode} onChange={(e) => setRow({ ...row, barcode: e.target.value })} />
+                <Label className="text-[10px] font-bold text-muted-foreground uppercase">{barcodeLabel}</Label>
+                <Input className="mt-1 h-9 rounded-md text-xs" value={row.barcode} onChange={(e) => setRow({ ...row, barcode: e.target.value })} />
               </div>
               {canViewFinancials && (
                 <div>
-                  <Label className="text-xs font-bold text-muted-foreground">{t("inventory.cost")}</Label>
+                  <Label className="text-[10px] font-bold text-muted-foreground uppercase">{t("inventory.cost")}</Label>
                   <Input
                     type="number"
                     step="0.001"
-                    className="mt-1 h-9.5 rounded-lg text-xs font-bold"
+                    className="mt-1 h-9 rounded-md text-xs font-bold"
                     value={row.cost_price}
                     onChange={(e) => setRow({ ...row, cost_price: e.target.value })}
                   />
                 </div>
               )}
               <div>
-                <Label className="text-xs font-bold text-muted-foreground">{isAr ? "سعر إضافي (+ د.ب)" : "Price Delta (+ BHD)"}</Label>
+                <Label className="text-[10px] font-bold text-muted-foreground uppercase">{isAr ? "سعر إضافي (+ د.ب)" : "Price Delta (+ BHD)"}</Label>
                 <Input
                   type="number"
                   step="0.001"
-                  className="mt-1 h-9.5 rounded-lg text-xs font-bold"
+                  className="mt-1 h-9 rounded-md text-xs font-bold"
                   value={row.selling_price}
                   onChange={(e) => setRow({ ...row, selling_price: e.target.value })}
                 />
               </div>
               <div>
-                <Label className="text-xs font-bold text-muted-foreground">{isAr ? "السعر الأصلي الإضافي" : "Original Price Delta"}</Label>
+                <Label className="text-[10px] font-bold text-muted-foreground uppercase">{isAr ? "السعر الأصلي الإضافي" : "Original Delta"}</Label>
                 <Input
                   type="number"
                   step="0.001"
                   min="0"
-                  className="mt-1 h-9.5 rounded-lg text-xs"
+                  className="mt-1 h-9 rounded-md text-xs"
                   value={row.original_price}
                   placeholder="—"
                   onChange={(e) => setRow({ ...row, original_price: e.target.value })}
                 />
               </div>
               <div>
-                <Label className="text-xs font-bold text-muted-foreground">{mainLabel}</Label>
+                <Label className="text-[10px] font-bold text-muted-foreground uppercase">{mainLabel}</Label>
                 <Input
                   type="number"
-                  className="mt-1 h-9.5 rounded-lg text-xs"
+                  className="mt-1 h-9 rounded-md text-xs"
                   value={row.stock_main}
                   onChange={(e) => setRow({ ...row, stock_main: e.target.value })}
                 />
               </div>
               <div>
-                <Label className="text-xs font-bold text-muted-foreground">{incLabel}</Label>
+                <Label className="text-[10px] font-bold text-muted-foreground uppercase">{incLabel}</Label>
                 <Input
                   type="number"
-                  className="mt-1 h-9.5 rounded-lg text-xs"
+                  className="mt-1 h-9 rounded-md text-xs"
                   value={row.stock_incubator}
                   onChange={(e) => setRow({ ...row, stock_incubator: e.target.value })}
                 />
               </div>
               <div>
-                <Label className="text-xs font-bold text-muted-foreground mb-1 block">{isAr ? "صورة المتغير" : "Variant Image"}</Label>
+                <Label className="text-[10px] font-bold text-muted-foreground block uppercase mb-1">{isAr ? "صورة المتغير" : "Variant Image"}</Label>
                 <div className="mt-1">
                   <VariantImageUploader
                     brandId={brand.id}
@@ -2890,42 +3221,48 @@ function VariantList({
         )}
       </div>
 
-      <div className="hidden w-full overflow-x-auto md:block">
+      {/* Desktop Redesigned Table View */}
+      <div className="hidden w-full overflow-x-auto md:block border border-border/75 rounded-2xl shadow-sm bg-background">
         <table
-          className="table-fixed text-sm"
-          style={{ width: canViewFinancials ? 1602 : 1410, minWidth: canViewFinancials ? 1602 : 1410 }}
+          className="table-fixed text-sm w-full"
+          style={{ width: totalTableWidth, minWidth: "100%" }}
         >
           <colgroup>
-            <col style={{ width: 150 }} />
-            <col style={{ width: 96 }} />
-            <col style={{ width: 96 }} />
-            <col style={{ width: 120 }} />
-            <col style={{ width: 112 }} />
-            <col style={{ width: 190 }} />
+            <col style={{ width: 44 }} />
+            <col style={{ width: 270 }} />
+            {renderImageCol && <col style={{ width: 96 }} />}
+            {renderSkuCol && <col style={{ width: 120 }} />}
+            {renderBarcodeCol && <col style={{ width: 190 }} />}
+            {canViewFinancials && <col style={{ width: 110 }} />}
+            <col style={{ width: 110 }} />
+            <col style={{ width: 110 }} />
             {canViewFinancials && <col style={{ width: 96 }} />}
-            <col style={{ width: 104 }} />
-            <col style={{ width: 112 }} />
-            {canViewFinancials && <col style={{ width: 96 }} />}
+            <col style={{ width: 115 }} />
+            <col style={{ width: 115 }} />
             <col style={{ width: 88 }} />
-            <col style={{ width: 112 }} />
-            <col style={{ width: 88 }} />
-            <col style={{ width: 142 }} />
+            <col style={{ width: 60 }} />
           </colgroup>
           <thead>
-            <tr className="text-start text-xs uppercase tracking-wider text-muted-foreground">
-              <th className="px-2 py-2 text-start">{t("inventory.size")}</th>
-              <th className="px-2 py-2 text-start">{t("inventory.color")}</th>
-              <th className="px-2 py-2 text-start">{t("inventory.fabric")}</th>
-              <th className="px-2 py-2 text-center">{isAr ? "الصورة" : "Image"}</th>
-              <th className="px-2 py-2 text-start">{t("inventory.sku")}</th>
-              <th className="px-2 py-2 text-start">{barcodeLabel}</th>
-              {canViewFinancials && <th className="min-w-24 whitespace-nowrap px-2 py-2 text-center">{t("inventory.cost")}</th>}
-              <th className="min-w-24 whitespace-nowrap px-2 py-2 text-center">{isAr ? "سعر إضافي (+ د.ب)" : "Price Delta (+ BHD)"}</th>
-              <th className="min-w-28 whitespace-nowrap px-2 py-2 text-center">{isAr ? "السعر الأصلي الإضافي" : "Original Delta"}</th>
-              {canViewFinancials && <th className="min-w-24 whitespace-nowrap px-2 py-2 text-center">{t("inventory.margin")}</th>}
-              <th className="min-w-22 whitespace-nowrap px-2 py-2 text-center">{mainLabel}</th>
-              <th className="min-w-28 whitespace-nowrap px-2 py-2 text-center">{incLabel}</th>
-              <th className="min-w-22 whitespace-nowrap px-2 py-2 text-center">{t("inventory.stock")}</th>
+            <tr className="text-start text-xs uppercase tracking-wider text-muted-foreground/80 bg-secondary/20 border-b border-border">
+              <th className="px-2 py-3 text-center align-middle">
+                <input
+                  type="checkbox"
+                  className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer transition-all"
+                  checked={isAllSelected}
+                  onChange={toggleSelectAll}
+                />
+              </th>
+              <th className="px-2 py-3 text-start font-black text-[10px]">{isAr ? "المتغير (المقاس / اللون / الخامة)" : "Variant (Size / Color / Fabric)"}</th>
+              {renderImageCol && <th className="px-2 py-3 text-center font-black text-[10px]">{isAr ? "الصورة" : "Image"}</th>}
+              {renderSkuCol && <th className="px-2 py-3 text-start font-black text-[10px]">{t("inventory.sku")}</th>}
+              {renderBarcodeCol && <th className="px-2 py-3 text-start font-black text-[10px]">{barcodeLabel}</th>}
+              {canViewFinancials && <th className="px-2 py-3 text-center font-black text-[10px]">{t("inventory.cost")}</th>}
+              <th className="px-2 py-3 text-center font-black text-[10px]">{isAr ? "سعر إضافي" : "Price Delta"}</th>
+              <th className="px-2 py-3 text-center font-black text-[10px]">{isAr ? "السعر الأصلي" : "Original Delta"}</th>
+              {canViewFinancials && <th className="px-2 py-3 text-center font-black text-[10px]">{t("inventory.margin")}</th>}
+              <th className="px-2 py-3 text-center font-black text-[10px]">{mainLabel}</th>
+              <th className="px-2 py-3 text-center font-black text-[10px]">{incLabel}</th>
+              <th className="px-2 py-3 text-center font-black text-[10px]">{t("inventory.stock")}</th>
               <th aria-label={isAr ? "الإجراءات" : "Actions"}></th>
             </tr>
           </thead>
@@ -2946,88 +3283,123 @@ function VariantList({
                 businessName={businessName}
                 genBarcode={genBarcode}
                 del={del}
+                isSelected={selectedIds.has(v.id)}
+                onToggleSelect={() => toggleSelect(v.id)}
+                renderImageCol={renderImageCol}
+                renderSkuCol={renderSkuCol}
+                renderBarcodeCol={renderBarcodeCol}
               />
             ))}
+
+            {/* Adding desktop row (perfect matching design) */}
             {adding && (
-              <tr className="border-t border-border bg-secondary/40">
-                <td className="px-2 py-2">
-                  <div className="inline-flex items-center gap-1">
-                    <Input className="h-8 w-16 text-start" value={row.size} onChange={(e) => setRow({ ...row, size: e.target.value })} />
-                    <select
-                      className="h-8 rounded border border-input bg-background px-1 text-xs"
-                      value={row.size_unit}
-                      onChange={(e) => setRow({ ...row, size_unit: e.target.value })}
-                    >
-                      {SIZE_UNITS.map((u) => (
-                        <option key={u} value={u}>
-                          {u === "" ? (isAr ? "بدون" : "—") : u}
-                        </option>
-                      ))}
-                    </select>
+              <tr className="border-t border-border bg-secondary/30 animate-in fade-in duration-150">
+                <td></td>
+                {/* Variant (combined attributes inputs) */}
+                <td className="px-2 py-3">
+                  <div className="grid grid-cols-2 gap-1.5 max-w-[260px]">
+                    <div className="flex gap-1">
+                      <Input className="h-8 w-16 text-start text-xs font-semibold" value={row.size} onChange={(e) => setRow({ ...row, size: e.target.value })} placeholder="Size" />
+                      <select
+                        className="h-8 rounded border border-input bg-background px-1 text-xs outline-none"
+                        value={row.size_unit}
+                        onChange={(e) => setRow({ ...row, size_unit: e.target.value })}
+                      >
+                        {SIZE_UNITS.map((u) => (
+                          <option key={u} value={u}>
+                            {u === "" ? "—" : u}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <Input className="h-8 w-full text-xs font-semibold" value={row.color} onChange={(e) => setRow({ ...row, color: e.target.value })} placeholder="Color" />
+                    <Input className="h-8 w-full text-xs font-semibold col-span-2" value={row.fabric} onChange={(e) => setRow({ ...row, fabric: e.target.value })} placeholder="Fabric (e.g. Silk)" />
                   </div>
                 </td>
-                <td className="px-2 py-2">
-                  <Input className="h-8 w-full text-start" value={row.color} onChange={(e) => setRow({ ...row, color: e.target.value })} />
-                </td>
-                <td className="px-2 py-2">
-                  <Input className="h-8 w-full text-start" value={row.fabric} onChange={(e) => setRow({ ...row, fabric: e.target.value })} />
-                </td>
-                <td className="px-2 py-2 text-center">
-                  <div className="flex justify-center">
-                    <VariantImageUploader
-                      brandId={brand.id}
-                      imageUrl={row.image_url}
-                      onChange={(url) => setRow({ ...row, image_url: url || "" })}
-                      isAr={isAr}
-                    />
-                  </div>
-                </td>
-                <td className="px-2 py-2">
-                  <Input className="h-8 w-full text-start" value={row.sku} onChange={(e) => setRow({ ...row, sku: e.target.value })} />
-                </td>
-                <td className="px-2 py-2">
-                  <div className="inline-flex items-center gap-1">
-                    <Input
-                      className="h-8 min-w-0 flex-1 text-start font-mono text-xs"
-                      value={row.barcode}
-                      onChange={(e) => setRow({ ...row, barcode: e.target.value })}
-                      placeholder={isAr ? "اختياري" : "Optional"}
-                    />
-                    <button
-                      type="button"
-                      className="text-muted-foreground hover:text-primary p-1 rounded-sm hover:bg-secondary touch-manipulation"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        setRow({ ...row, barcode: genBarcode() });
-                      }}
-                    >
-                      <Wand2 className="h-3 w-3" />
-                    </button>
-                  </div>
-                </td>
-                {canViewFinancials && (
-                  <td className="px-2 py-2">
-                    <Input
-                      className="h-8 w-full text-center"
-                      type="number"
-                      step="0.001"
-                      value={row.cost_price}
-                      onChange={(e) => setRow({ ...row, cost_price: e.target.value })}
-                    />
+
+                {/* Optional Image */}
+                {renderImageCol && (
+                  <td className="px-2 py-3 text-center">
+                    <div className="flex justify-center">
+                      <VariantImageUploader
+                        brandId={brand.id}
+                        imageUrl={row.image_url}
+                        onChange={(url) => setRow({ ...row, image_url: url || "" })}
+                        isAr={isAr}
+                      />
+                    </div>
                   </td>
                 )}
-                <td className="px-2 py-2">
-                  <Input
-                    className="h-8 w-full text-center"
-                    type="number"
-                    step="0.001"
-                    value={row.selling_price}
-                    onChange={(e) => setRow({ ...row, selling_price: e.target.value })}
-                  />
+
+                {/* SKU */}
+                {renderSkuCol && (
+                  <td className="px-2 py-3">
+                    <Input className="h-8 w-full text-xs font-mono" value={row.sku} onChange={(e) => setRow({ ...row, sku: e.target.value })} placeholder="SKU" />
+                  </td>
+                )}
+
+                {/* Barcode */}
+                {renderBarcodeCol && (
+                  <td className="px-2 py-3">
+                    <div className="inline-flex items-center gap-1.5">
+                      <Input
+                        className="h-8 min-w-0 flex-1 text-start font-mono text-xs"
+                        value={row.barcode}
+                        onChange={(e) => setRow({ ...row, barcode: e.target.value })}
+                        placeholder={isAr ? "اختياري" : "Optional"}
+                      />
+                      <button
+                        type="button"
+                        className="text-muted-foreground hover:text-primary p-1 rounded-sm hover:bg-secondary touch-manipulation active:scale-95 transition"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          setRow({ ...row, barcode: genBarcode() });
+                        }}
+                      >
+                        <Wand2 className="h-3 w-3" />
+                      </button>
+                    </div>
+                  </td>
+                )}
+
+                {/* Financials (Cost) */}
+                {canViewFinancials && (
+                  <td className="px-2 py-3 text-center">
+                    <div className="relative inline-flex items-center w-full max-w-[100px] shrink-0">
+                      <Input
+                        className="h-8 w-full pl-2 pr-7 text-center text-xs font-bold"
+                        type="number"
+                        step="0.001"
+                        value={row.cost_price}
+                        onChange={(e) => setRow({ ...row, cost_price: e.target.value })}
+                      />
+                      <span className="absolute right-2 text-[8px] font-black text-muted-foreground/50 pointer-events-none uppercase">
+                        BHD
+                      </span>
+                    </div>
+                  </td>
+                )}
+
+                {/* Selling Price */}
+                <td className="px-2 py-3 text-center">
+                  <div className="relative inline-flex items-center w-full max-w-[100px] shrink-0">
+                    <Input
+                      className="h-8 w-full pl-2 pr-7 text-center text-xs font-bold"
+                      type="number"
+                      step="0.001"
+                      value={row.selling_price}
+                      onChange={(e) => setRow({ ...row, selling_price: e.target.value })}
+                    />
+                    <span className="absolute right-2 text-[8px] font-black text-muted-foreground/50 pointer-events-none uppercase">
+                      BHD
+                    </span>
+                  </div>
                 </td>
-                <td className="px-2 py-2">
+
+                {/* Original Price */}
+                <td className="px-2 py-3 text-center">
                   <Input
-                    className="h-8 w-full text-center"
+                    className="h-8 w-full text-center text-xs max-w-[100px]"
                     type="number"
                     step="0.001"
                     min="0"
@@ -3036,30 +3408,38 @@ function VariantList({
                     onChange={(e) => setRow({ ...row, original_price: e.target.value })}
                   />
                 </td>
+
+                {/* Margin column (blank on add) */}
                 {canViewFinancials && <td></td>}
-                <td className="px-2 py-2">
+
+                {/* Main Stock */}
+                <td className="px-2 py-3 text-center">
                   <Input
-                    className="h-8 w-full text-center"
+                    className="h-8 w-full text-center text-xs max-w-[80px] font-bold"
                     type="number"
                     value={row.stock_main}
                     onChange={(e) => setRow({ ...row, stock_main: e.target.value })}
                   />
                 </td>
-                <td className="px-2 py-2">
+
+                {/* Incubator Stock */}
+                <td className="px-2 py-3 text-center">
                   <Input
-                    className="h-8 w-full text-center"
+                    className="h-8 w-full text-center text-xs max-w-[80px] font-bold"
                     type="number"
                     value={row.stock_incubator}
                     onChange={(e) => setRow({ ...row, stock_incubator: e.target.value })}
                   />
                 </td>
+
+                {/* Total stock & Actions */}
                 <td></td>
-                <td className="px-2 py-2">
-                  <div className="flex justify-center gap-1">
+                <td className="px-2 py-3">
+                  <div className="flex justify-center gap-1.5">
                     <Button
                       type="button"
                       size="sm"
-                      className="touch-manipulation"
+                      className="h-8 px-3 rounded-lg text-xs font-bold"
                       onClick={(e) => {
                         e.preventDefault();
                         add();
@@ -3069,15 +3449,15 @@ function VariantList({
                     </Button>
                     <Button
                       type="button"
-                      size="sm"
+                      size="icon"
                       variant="ghost"
-                      className="touch-manipulation"
+                      className="h-8 w-8 hover:bg-rose-50 hover:text-rose-600 rounded-lg text-xs"
                       onClick={(e) => {
                         e.preventDefault();
                         setAdding(false);
                       }}
                     >
-                      ×
+                      <X className="h-4 w-4" />
                     </Button>
                   </div>
                 </td>
@@ -3086,23 +3466,113 @@ function VariantList({
           </tbody>
         </table>
       </div>
-      <div className="mt-3 flex flex-wrap gap-2">
-        {!adding && (
+
+      {/* Control Buttons Footer */}
+      <div className="mt-4.5 flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap gap-2">
+          {!adding && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="h-9 px-3.5 rounded-xl text-xs font-bold hover:bg-secondary/40 touch-manipulation"
+              onClick={(e) => {
+                e.preventDefault();
+                setAdding(true);
+              }}
+            >
+              <Plus className="h-3.5 w-3.5 mr-1" /> {t("inventory.addVariant")}
+            </Button>
+          )}
+          <BulkVariantDialog productId={productId} variants={variants} canViewFinancials={canViewFinancials} onChanged={onChanged} />
+        </div>
+
+        {/* Dynamic Column Toggle Button */}
+        {hasHiddenCols && (
           <Button
             type="button"
             variant="ghost"
             size="sm"
-            className="touch-manipulation"
-            onClick={(e) => {
-              e.preventDefault();
-              setAdding(true);
-            }}
+            className="h-9 px-3.5 rounded-xl text-xs font-semibold text-muted-foreground/85 hover:text-foreground hover:bg-muted"
+            onClick={() => setShowAllCols(!showAllCols)}
           >
-            <Plus className="h-3 w-3 me-1" /> {t("inventory.addVariant")}
+            {showAllCols ? (
+              isAr ? "⚙️ إخفاء الأعمدة الفارغة" : "⚙️ Hide empty columns"
+            ) : (
+              isAr ? "⚙️ إظهار كافة الأعمدة" : "⚙️ Show SKU / Barcode columns"
+            )}
           </Button>
         )}
-        <BulkVariantDialog productId={productId} variants={variants} canViewFinancials={canViewFinancials} onChanged={onChanged} />
       </div>
+
+      {/* FLOATING BULK ACTIONS TOOLBAR */}
+      {selectedIds.size > 0 && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-background/90 backdrop-blur-md border border-border/80 shadow-2xl rounded-2xl py-3 px-5 flex items-center gap-4 z-55 animate-in slide-in-from-bottom-5 duration-200">
+          <div className="flex items-center gap-2 border-r border-border pr-4 shrink-0">
+            <div className="w-5 h-5 rounded-full bg-primary flex items-center justify-center text-[10px] text-primary-foreground font-black">
+              {selectedIds.size}
+            </div>
+            <span className="text-xs font-bold text-muted-foreground">
+              {isAr ? "محدد" : "selected"}
+            </span>
+          </div>
+
+          <div className="flex items-center gap-2 flex-wrap">
+            <Button
+              type="button"
+              size="sm"
+              className="h-8 text-xs font-bold bg-secondary hover:bg-secondary/80 text-foreground rounded-lg px-2.5"
+              onClick={bulkSetPrice}
+            >
+              {isAr ? "تحديد السعر" : "Set Price"}
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              className="h-8 text-xs font-bold bg-secondary hover:bg-secondary/80 text-foreground rounded-lg px-2.5"
+              onClick={() => bulkAddStock(5)}
+            >
+              {isAr ? "مخزون 5+" : "+5 Stock"}
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              className="h-8 text-xs font-bold bg-secondary hover:bg-secondary/80 text-foreground rounded-lg px-2.5"
+              onClick={() => bulkAddStock(10)}
+            >
+              {isAr ? "مخزون 10+" : "+10 Stock"}
+            </Button>
+            {canViewFinancials && (
+              <Button
+                type="button"
+                size="sm"
+                className="h-8 text-xs font-bold bg-secondary hover:bg-secondary/80 text-foreground rounded-lg px-2.5"
+                onClick={bulkApplyMarkup}
+              >
+                {isAr ? "تطبيق الهامش" : "Cost Markup %"}
+              </Button>
+            )}
+            <Button
+              type="button"
+              size="sm"
+              variant="destructive"
+              className="h-8 text-xs font-bold rounded-lg px-2.5"
+              onClick={bulkDelete}
+            >
+              <Trash2 className="h-3 w-3 mr-1" />
+              {isAr ? "حذف" : "Delete"}
+            </Button>
+          </div>
+
+          <button
+            type="button"
+            className="p-1 rounded-md hover:bg-muted text-muted-foreground/60 transition-colors ml-2"
+            onClick={() => setSelectedIds(new Set())}
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+      )}
     </div>
   );
 }
