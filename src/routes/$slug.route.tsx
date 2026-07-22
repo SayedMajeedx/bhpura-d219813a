@@ -534,7 +534,7 @@ function MobileStorefrontDropdown() {
     queryKey: ["storefront", brand.slug, "categories"],
     queryFn: async () => {
       const { data, error } = await (supabase.from("categories") as any)
-        .select("id, name_en, name_ar, slug, image_url, menu_icon_url, sort_order")
+        .select("id, name_en, name_ar, parent_id, slug, image_url, menu_icon_url, sort_order")
         .eq("brand_id", brand.id)
         .eq("is_active", true)
         .order("sort_order", { ascending: true });
@@ -606,23 +606,47 @@ function MobileStorefrontDropdown() {
           <Grid2X2 className="h-4 w-4" />
           {t("الأقسام", "Categories")}
         </div>
-        <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-2">
-          {categories.map((category: any) => {
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          {categories.filter((c: any) => !c.parent_id).map((category: any) => {
             const categorySlug = category.slug || category.name_en;
             const label = lang === "ar" ? category.name_ar || category.name_en : category.name_en || category.name_ar;
+            const subs = categories.filter((sub: any) => sub.parent_id === category.id);
             return (
-              <Link
-                key={category.id}
-                to="/$slug/$category"
-                params={{ slug: brand.slug, category: categorySlug }}
-                onClick={close}
-                className="flex min-h-12 items-center gap-3 rounded-xl border px-2.5 py-2 transition-colors hover:bg-black/5"
-              >
-                <div className="grid h-9 w-9 shrink-0 place-items-center overflow-hidden rounded-lg bg-muted">
-                  {category.menu_icon_url ? <img src={cloudflareImageUrl(category.menu_icon_url, 80)} width={20} height={20} loading="lazy" decoding="async" alt="" className="h-5 w-5 object-contain" /> : <Grid2X2 className="h-4 w-4 opacity-50" />}
-                </div>
-                <span className="truncate font-medium" style={{ fontSize: "0.95rem", lineHeight: "1.3rem" }}>{label}</span>
-              </Link>
+              <div key={category.id} className="space-y-1.5">
+                <Link
+                  to="/$slug/$category"
+                  params={{ slug: brand.slug, category: categorySlug }}
+                  onClick={close}
+                  className="flex min-h-12 items-center gap-3 rounded-xl border px-2.5 py-2 transition-colors hover:bg-black/5"
+                >
+                  <div className="grid h-9 w-9 shrink-0 place-items-center overflow-hidden rounded-lg bg-muted">
+                    {category.menu_icon_url ? <img src={cloudflareImageUrl(category.menu_icon_url, 80)} width={20} height={20} loading="lazy" decoding="async" alt="" className="h-5 w-5 object-contain" /> : <Grid2X2 className="h-4 w-4 opacity-50" />}
+                  </div>
+                  <span className="truncate font-medium" style={{ fontSize: "0.95rem", lineHeight: "1.3rem" }}>{label}</span>
+                </Link>
+                {subs.length > 0 && (
+                  <div className="ms-4 ps-3 border-s border-muted-foreground/20 space-y-1.5">
+                    {subs.map((sub: any) => {
+                      const subSlug = sub.slug || sub.name_en;
+                      const subLabel = lang === "ar" ? sub.name_ar || sub.name_en : sub.name_en || sub.name_ar;
+                      return (
+                        <Link
+                          key={sub.id}
+                          to="/$slug/$category"
+                          params={{ slug: brand.slug, category: subSlug }}
+                          onClick={close}
+                          className="flex min-h-10 items-center gap-2.5 rounded-lg px-2 py-1.5 transition-colors hover:bg-black/5 text-muted-foreground hover:text-foreground"
+                        >
+                          <div className="grid h-7 w-7 shrink-0 place-items-center overflow-hidden rounded-md bg-muted/60">
+                            {sub.menu_icon_url ? <img src={cloudflareImageUrl(sub.menu_icon_url, 80)} width={16} height={16} loading="lazy" decoding="async" alt="" className="h-4 w-4 object-contain" /> : <Grid2X2 className="h-3.5 w-3.5 opacity-40" />}
+                          </div>
+                          <span className="truncate text-xs font-medium">{subLabel}</span>
+                        </Link>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
             );
           })}
         </div>

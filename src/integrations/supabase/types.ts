@@ -497,6 +497,7 @@ export type Database = {
           is_active: boolean
           name_ar: string | null
           name_en: string
+          parent_id: string | null
           slug: string | null
           sort_order: number
           updated_at: string
@@ -509,6 +510,7 @@ export type Database = {
           is_active?: boolean
           name_ar?: string | null
           name_en: string
+          parent_id?: string | null
           slug?: string | null
           sort_order?: number
           updated_at?: string
@@ -521,6 +523,7 @@ export type Database = {
           is_active?: boolean
           name_ar?: string | null
           name_en?: string
+          parent_id?: string | null
           slug?: string | null
           sort_order?: number
           updated_at?: string
