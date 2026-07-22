@@ -528,6 +528,7 @@ function MobileStorefrontDropdown() {
   const { brand, settings, lang, t } = useStorefront();
   const detailsRef = useRef<HTMLDetailsElement>(null);
   const [isOpen, setIsOpen] = useState(false);
+  const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({});
   const menuBackground = settings.menu_bg || settings.background_color || "#ffffff";
   const menuText = settings.menu_fg || settings.text_color || "#111111";
   const { data: categories = [] } = useQuery({
@@ -611,21 +612,56 @@ function MobileStorefrontDropdown() {
             const categorySlug = category.slug || category.name_en;
             const label = lang === "ar" ? category.name_ar || category.name_en : category.name_en || category.name_ar;
             const subs = categories.filter((sub: any) => sub.parent_id === category.id);
+            const isExpanded = !!expandedCategories[category.id];
+
+            const toggleExpand = (e: React.MouseEvent) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setExpandedCategories((prev) => ({ ...prev, [category.id]: !prev[category.id] }));
+            };
+
             return (
               <div key={category.id} className="space-y-1.5">
-                <Link
-                  to="/$slug/$category"
-                  params={{ slug: brand.slug, category: categorySlug }}
-                  onClick={close}
-                  className="flex min-h-12 items-center gap-3 rounded-xl border px-2.5 py-2 transition-colors hover:bg-black/5"
-                >
-                  <div className="grid h-9 w-9 shrink-0 place-items-center overflow-hidden rounded-lg bg-muted">
-                    {category.menu_icon_url ? <img src={cloudflareImageUrl(category.menu_icon_url, 80)} width={20} height={20} loading="lazy" decoding="async" alt="" className="h-5 w-5 object-contain" /> : <Grid2X2 className="h-4 w-4 opacity-50" />}
-                  </div>
-                  <span className="truncate font-medium" style={{ fontSize: "0.95rem", lineHeight: "1.3rem" }}>{label}</span>
-                </Link>
-                {subs.length > 0 && (
-                  <div className="ms-4 ps-3 border-s border-muted-foreground/20 space-y-1.5">
+                <div className="flex items-center gap-2">
+                  <Link
+                    to="/$slug/$category"
+                    params={{ slug: brand.slug, category: categorySlug }}
+                    onClick={close}
+                    className="flex min-h-12 flex-1 items-center gap-3 rounded-xl border px-2.5 py-2 transition-colors hover:bg-black/5"
+                  >
+                    <div className="grid h-9 w-9 shrink-0 place-items-center overflow-hidden rounded-lg bg-muted">
+                      {category.menu_icon_url ? <img src={cloudflareImageUrl(category.menu_icon_url, 80)} width={20} height={20} loading="lazy" decoding="async" alt="" className="h-5 w-5 object-contain" /> : <Grid2X2 className="h-4 w-4 opacity-50" />}
+                    </div>
+                    <span className="truncate font-medium text-start" style={{ fontSize: "0.95rem", lineHeight: "1.3rem" }}>{label}</span>
+                  </Link>
+                  {subs.length > 0 && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      onClick={toggleExpand}
+                      className="h-12 w-12 shrink-0 rounded-xl border bg-background/50 hover:bg-black/5"
+                      aria-expanded={isExpanded}
+                      aria-label={t("توسيع", "Expand")}
+                    >
+                      <ChevronDown className={`h-4 w-4 transition-transform duration-300 ${isExpanded ? "rotate-180" : ""}`} />
+                    </Button>
+                  )}
+                </div>
+
+                {subs.length > 0 && isExpanded && (
+                  <div className="ms-4 ps-3 border-s border-muted-foreground/20 space-y-1.5 animate-in slide-in-from-top-1 duration-200">
+                    <Link
+                      to="/$slug/$category"
+                      params={{ slug: brand.slug, category: categorySlug }}
+                      onClick={close}
+                      className="flex min-h-10 items-center gap-2.5 rounded-lg px-2.5 py-1.5 transition-colors hover:bg-black/5 text-muted-foreground hover:text-foreground font-semibold"
+                    >
+                      <div className="grid h-7 w-7 shrink-0 place-items-center overflow-hidden rounded-md bg-muted/30">
+                        <Grid2X2 className="h-3.5 w-3.5 opacity-30" />
+                      </div>
+                      <span className="truncate text-xs">{lang === "ar" ? "عرض الكل" : "View All"}</span>
+                    </Link>
                     {subs.map((sub: any) => {
                       const subSlug = sub.slug || sub.name_en;
                       const subLabel = lang === "ar" ? sub.name_ar || sub.name_en : sub.name_en || sub.name_ar;
@@ -767,8 +803,8 @@ function DesktopStoreNavigation() {
   const mainCategories = data.filter((c: any) => !c.parent_id);
 
   return (
-    <nav className="hidden border-b bg-[var(--sf-header-bg)] text-[var(--sf-header-fg)] shadow-sm md:block">
-      <div className="mx-auto flex min-h-14 max-w-7xl items-center justify-center gap-2 overflow-x-auto px-6 py-2">
+    <nav className="hidden border-b bg-[var(--sf-header-bg)] text-[var(--sf-header-fg)] shadow-sm md:block overflow-visible">
+      <div className="mx-auto flex min-h-14 max-w-7xl items-center justify-center gap-2 flex-wrap px-6 py-2 overflow-visible">
         <Link
           to="/$slug"
           params={{ slug: brand.slug }}
@@ -783,7 +819,7 @@ function DesktopStoreNavigation() {
 
           if (subs.length > 0) {
             return (
-              <div key={c.id} className="relative group shrink-0">
+              <div key={c.id} className="relative group shrink-0 overflow-visible">
                 <Link
                   to="/$slug/$category"
                   params={{ slug: brand.slug, category: url }}
@@ -801,8 +837,8 @@ function DesktopStoreNavigation() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" />
                   </svg>
                 </Link>
-                {/* Custom dropdown menu card */}
-                <div className="absolute left-1/2 z-50 mt-1 hidden w-48 -translate-x-1/2 rounded-xl border bg-background p-1.5 shadow-xl group-hover:block">
+                {/* Custom premium dropdown menu card */}
+                <div className="absolute top-full left-1/2 z-50 mt-1.5 hidden min-w-[210px] -translate-x-1/2 rounded-xl border border-border/80 bg-background p-1.5 shadow-2xl group-hover:block transition-all duration-200 animate-in fade-in-0 slide-in-from-top-1.5">
                   {subs.map((sub: any) => {
                     const subName = lang === "ar" ? sub.name_ar || sub.name_en : sub.name_en || sub.name_ar;
                     const subUrl = sub.slug || sub.name_en;
@@ -811,7 +847,7 @@ function DesktopStoreNavigation() {
                         key={sub.id}
                         to="/$slug/$category"
                         params={{ slug: brand.slug, category: subUrl }}
-                        className="block rounded-lg px-4 py-2 text-sm font-medium transition hover:bg-muted"
+                        className="block rounded-lg px-4 py-2 text-sm font-medium text-foreground/80 hover:text-foreground transition-all hover:bg-muted"
                       >
                         {subName}
                       </Link>
