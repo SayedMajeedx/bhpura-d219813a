@@ -622,12 +622,12 @@ function MobileStorefrontDropdown() {
 
             return (
               <div key={category.id} className="space-y-1.5">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1 rounded-xl border bg-background transition-colors hover:bg-black/5 pr-1.5 rtl:pr-0 rtl:pl-1.5">
                   <Link
                     to="/$slug/$category"
                     params={{ slug: brand.slug, category: categorySlug }}
                     onClick={close}
-                    className="flex min-h-12 flex-1 items-center gap-3 rounded-xl border px-2.5 py-2 transition-colors hover:bg-black/5"
+                    className="flex min-h-12 flex-1 items-center gap-3 px-2.5 py-2"
                   >
                     <div className="grid h-9 w-9 shrink-0 place-items-center overflow-hidden rounded-lg bg-muted">
                       {category.menu_icon_url ? <img src={cloudflareImageUrl(category.menu_icon_url, 80)} width={20} height={20} loading="lazy" decoding="async" alt="" className="h-5 w-5 object-contain" /> : <Grid2X2 className="h-4 w-4 opacity-50" />}
@@ -640,7 +640,7 @@ function MobileStorefrontDropdown() {
                       variant="ghost"
                       size="icon"
                       onClick={toggleExpand}
-                      className="h-12 w-12 shrink-0 rounded-xl border bg-background/50 hover:bg-black/5"
+                      className="h-9 w-9 shrink-0 rounded-lg hover:bg-black/5"
                       aria-expanded={isExpanded}
                       aria-label={t("توسيع", "Expand")}
                     >
@@ -837,22 +837,24 @@ function DesktopStoreNavigation() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" />
                   </svg>
                 </Link>
-                {/* Custom premium dropdown menu card */}
-                <div className="absolute top-full left-1/2 z-50 mt-1.5 hidden min-w-[210px] -translate-x-1/2 rounded-xl border border-border/80 bg-background p-1.5 shadow-2xl group-hover:block transition-all duration-200 animate-in fade-in-0 slide-in-from-top-1.5">
-                  {subs.map((sub: any) => {
-                    const subName = lang === "ar" ? sub.name_ar || sub.name_en : sub.name_en || sub.name_ar;
-                    const subUrl = sub.slug || sub.name_en;
-                    return (
-                      <Link
-                        key={sub.id}
-                        to="/$slug/$category"
-                        params={{ slug: brand.slug, category: subUrl }}
-                        className="block rounded-lg px-4 py-2 text-sm font-medium text-foreground/80 hover:text-foreground transition-all hover:bg-muted"
-                      >
-                        {subName}
-                      </Link>
-                    );
-                  })}
+                {/* Custom premium dropdown menu card with hover-friendly bridging padding */}
+                <div className="absolute top-full left-1/2 z-50 pt-2 hidden min-w-[210px] -translate-x-1/2 group-hover:block">
+                  <div className="rounded-xl border border-border/80 bg-background p-1.5 shadow-2xl transition-all duration-200 animate-in fade-in-0 slide-in-from-top-1">
+                    {subs.map((sub: any) => {
+                      const subName = lang === "ar" ? sub.name_ar || sub.name_en : sub.name_en || sub.name_ar;
+                      const subUrl = sub.slug || sub.name_en;
+                      return (
+                        <Link
+                          key={sub.id}
+                          to="/$slug/$category"
+                          params={{ slug: brand.slug, category: subUrl }}
+                          className="block rounded-lg px-4 py-2 text-sm font-medium text-foreground/80 hover:text-foreground transition-all hover:bg-muted"
+                        >
+                          {subName}
+                        </Link>
+                      );
+                    })}
+                  </div>
                 </div>
               </div>
             );
