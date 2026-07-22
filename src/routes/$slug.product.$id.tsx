@@ -257,9 +257,9 @@ function ProductDetail() {
     return Array.from(new Set(fabrics));
   }, [variants]);
 
-  // Auto-initialize attributes when first loaded
+  // Auto-initialize attributes only when a single variant is available
   useEffect(() => {
-    if (variants.length > 0 && !variantId) {
+    if (variants.length === 1 && !variantId) {
       const first = variants[0];
       setVariantId(first.id);
       setSelectedColor(first.color ?? null);
@@ -346,12 +346,36 @@ function ProductDetail() {
   }
 
   const basePrice = Number(product.base_price || 0);
-  const variantPriceDelta = variant 
-    ? Number(variant.selling_price || 0) 
-    : (variants.length > 0 ? Math.min(...variants.map((v) => Number(v.selling_price || 0))) : 0);
-  const displayPrice = basePrice + variantPriceDelta + selectedAddOnPrice;
-  const maxStock = variant?.stock_main ?? 0;
   const hasVariants = variants.length > 0;
+
+  // Find all variants that match the currently selected attributes (even if partially selected)
+  const matchingVariants = useMemo(() => {
+    return variants.filter((v) => {
+      const colorMatch = !selectedColor || v.color === selectedColor;
+      const sizeMatch = !selectedSize || v.size === selectedSize;
+      const fabricMatch = !selectedFabric || v.fabric === selectedFabric;
+      return colorMatch && sizeMatch && fabricMatch;
+    });
+  }, [selectedColor, selectedSize, selectedFabric, variants]);
+
+  // Compute prices for matching variants
+  const matchingPrices = useMemo(() => {
+    return matchingVariants.map((v) => basePrice + Number(v.selling_price || 0) + selectedAddOnPrice);
+  }, [matchingVariants, basePrice, selectedAddOnPrice]);
+
+  const minMatchingPrice = matchingPrices.length > 0 ? Math.min(...matchingPrices) : basePrice + selectedAddOnPrice;
+  const maxMatchingPrice = matchingPrices.length > 0 ? Math.max(...matchingPrices) : basePrice + selectedAddOnPrice;
+
+  // Single matched variant (if unique)
+  const isUniqueVariantMatched = matchingVariants.length === 1;
+  const matchedVariant = isUniqueVariantMatched ? matchingVariants[0] : null;
+
+  // Final displayPrice (use the unique matched variant, or fallback to minMatchingPrice)
+  const displayPrice = matchedVariant 
+    ? basePrice + Number(matchedVariant.selling_price || 0) + selectedAddOnPrice 
+    : minMatchingPrice;
+
+  const maxStock = variant?.stock_main ?? 0;
 
   const displayName = pickName(lang, product);
   const displayDescription = pickDescription(lang, product);
@@ -458,14 +482,20 @@ function ProductDetail() {
     }
   };
 
-  const priceLabel = displayPrice > 0 ? formatPrice(displayPrice, currency, lang) : t("السعر عند الطلب", "Price on request");
-  const variantOriginalDelta = variant 
-    ? Number(variant.original_price || 0) 
-    : (variants.length > 0 ? Math.max(...variants.map((v) => Number(v.original_price || 0))) : 0);
+  const isRange = minMatchingPrice !== maxMatchingPrice;
+  const priceLabel = isRange
+    ? `${formatPrice(minMatchingPrice, currency, lang)} – ${formatPrice(maxMatchingPrice, currency, lang)}`
+    : (displayPrice > 0 ? formatPrice(displayPrice, currency, lang) : t("السعر عند الطلب", "Price on request"));
+
+  // Calculate original price only when displaying a single price
+  const variantPriceDelta = variant ? Number(variant.selling_price || 0) : 0;
+  const variantOriginalDelta = variant ? Number(variant.original_price || 0) : 0;
   const productOriginalPrice = Number((product as any).original_price || 0);
-  const originalPrice = variantOriginalDelta > variantPriceDelta 
+
+  const originalPrice = !isRange && variantOriginalDelta > variantPriceDelta 
     ? basePrice + variantOriginalDelta 
-    : (productOriginalPrice > basePrice ? productOriginalPrice + variantPriceDelta : 0);
+    : (!isRange && productOriginalPrice > basePrice ? productOriginalPrice + variantPriceDelta : 0);
+
   const originalPriceWithAddons = originalPrice > 0 ? originalPrice + selectedAddOnPrice : 0;
   const discountPercent = originalPriceWithAddons > displayPrice ? Math.round((1 - displayPrice / originalPriceWithAddons) * 100) : 0;
 

@@ -585,7 +585,9 @@ export function ProductCard({ product, badge, className }: { product: ProductRow
   const pricedVariants = product.product_variants.filter((variant) => Number(variant.selling_price || 0) >= 0).sort((a, b) => a.selling_price - b.selling_price);
   const discountedVariant = pricedVariants.filter((variant) => Number(variant.original_price || 0) > Number(variant.selling_price || 0))[0];
   const displayVariant = discountedVariant ?? pricedVariants[0];
-  const minPrice = Number(displayVariant?.selling_price || 0);
+  const variantPrices = pricedVariants.map((v) => Number(v.selling_price || 0));
+  const minPrice = variantPrices.length > 0 ? Math.min(...variantPrices) : Number(displayVariant?.selling_price || 0);
+  const maxPrice = variantPrices.length > 0 ? Math.max(...variantPrices) : Number(displayVariant?.selling_price || 0);
   const originalPrice = discountedVariant ? Number(discountedVariant.original_price) : 0;
   const discountPercent = discountedVariant ? Math.round((1 - discountedVariant.selling_price / originalPrice) * 100) : 0;
   const totalStock = product.product_variants.reduce((s, v) => s + (v.stock_main || 0), 0);
@@ -674,8 +676,24 @@ export function ProductCard({ product, badge, className }: { product: ProductRow
         <div className="mt-2 text-start">
           <div className="text-sm font-medium truncate" style={{ color: "var(--sf-heading)" }}>{displayName}</div>
           <div className="flex flex-wrap items-baseline gap-2 text-sm font-semibold mt-0.5" style={{ color: "var(--sf-heading)" }}>
-            <span>{minPrice > 0 ? formatPrice(minPrice, currency, lang) : t("السعر عند الطلب", "Price on request")}</span>
-            {originalPrice > minPrice && <span className="text-xs font-normal text-muted-foreground line-through">{formatPrice(originalPrice, currency, lang)}</span>}
+            {minPrice > 0 ? (
+              minPrice === maxPrice ? (
+                <>
+                  <span>{formatPrice(minPrice, currency, lang)}</span>
+                  {originalPrice > minPrice && (
+                    <span className="text-xs font-normal text-muted-foreground line-through">
+                      {formatPrice(originalPrice, currency, lang)}
+                    </span>
+                  )}
+                </>
+              ) : (
+                <span>
+                  {formatPrice(minPrice, currency, lang)} – {formatPrice(maxPrice, currency, lang)}
+                </span>
+              )
+            ) : (
+              <span>{t("السعر عند الطلب", "Price on request")}</span>
+            )}
           </div>
         </div>
       </Link>
