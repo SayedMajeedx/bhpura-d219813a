@@ -336,8 +336,11 @@ function ProductDetail() {
     return total;
   }, [customFields, cfValues]);
 
-  const price = variant?.selling_price ?? Math.min(...variants.map((v) => v.selling_price).filter((p) => p > 0), Infinity);
-  const displayPrice = (isFinite(price) ? price : 0) + selectedAddOnPrice;
+  const basePrice = Number(product.base_price || 0);
+  const variantPriceDelta = variant 
+    ? Number(variant.selling_price || 0) 
+    : (variants.length > 0 ? Math.min(...variants.map((v) => Number(v.selling_price || 0))) : 0);
+  const displayPrice = basePrice + variantPriceDelta + selectedAddOnPrice;
   const maxStock = variant?.stock_main ?? 0;
   const hasVariants = variants.length > 0;
 
@@ -421,9 +424,9 @@ function ProductDetail() {
       name: displayName,
       name_ar: product.name_ar,
       name_en: product.name_en,
-      image: media.find((m) => m.type === "image")?.url ?? product.image_url ?? null,
-      price: variant!.selling_price + selectedAddOnPrice,
-      original_price: variant!.original_price ? variant!.original_price + selectedAddOnPrice : null,
+      image: variant?.image_url || media.find((m) => m.type === "image")?.url || product.image_url || null,
+      price: displayPrice,
+      original_price: originalPriceWithAddons > displayPrice ? originalPriceWithAddons : null,
       size: variant!.size,
       color: variant!.color,
       fabric: variant!.fabric,
@@ -440,7 +443,13 @@ function ProductDetail() {
   };
 
   const priceLabel = displayPrice > 0 ? formatPrice(displayPrice, currency, lang) : t("السعر عند الطلب", "Price on request");
-  const originalPrice = variant && Number(variant.original_price || 0) > Number(variant.selling_price) ? Number(variant.original_price) : 0;
+  const variantOriginalDelta = variant 
+    ? Number(variant.original_price || 0) 
+    : (variants.length > 0 ? Math.max(...variants.map((v) => Number(v.original_price || 0))) : 0);
+  const productOriginalPrice = Number((product as any).original_price || 0);
+  const originalPrice = variantOriginalDelta > variantPriceDelta 
+    ? basePrice + variantOriginalDelta 
+    : (productOriginalPrice > basePrice ? productOriginalPrice + variantPriceDelta : 0);
   const originalPriceWithAddons = originalPrice > 0 ? originalPrice + selectedAddOnPrice : 0;
   const discountPercent = originalPriceWithAddons > displayPrice ? Math.round((1 - displayPrice / originalPriceWithAddons) * 100) : 0;
 
@@ -449,7 +458,9 @@ function ProductDetail() {
       <div className="grid md:grid-cols-2 gap-4 sm:gap-8">
       <div>
         <div className="relative aspect-square bg-muted rounded-2xl overflow-hidden">
-          {media.length > 0 ? (
+          {variant?.image_url ? (
+            <ResponsiveImage src={variant.image_url} preset="product" sizes="(min-width: 1024px) 55vw, 100vw" alt={displayName} className="w-full h-full object-cover" fetchPriority="high" />
+          ) : media.length > 0 ? (
             <>
               {media[mediaIdx].type === "video" ? (
                 <OptimizedVideo
@@ -481,6 +492,8 @@ function ProductDetail() {
                 </>
               )}
             </>
+          ) : product.image_url ? (
+            <ResponsiveImage src={product.image_url} preset="product" sizes="(min-width: 1024px) 55vw, 100vw" alt={displayName} className="w-full h-full object-cover" fetchPriority="high" />
           ) : (
             <div className="w-full h-full grid place-items-center text-muted-foreground">
               {t("لا توجد صورة", "No image")}

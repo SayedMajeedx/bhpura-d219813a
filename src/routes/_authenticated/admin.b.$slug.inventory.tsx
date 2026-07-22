@@ -1286,7 +1286,9 @@ function ProductsSection({ products, variants, businessName, currency, onChanged
                 </div>
 
                 {isExpanded && (
-                  <VariantList productId={p.id} productName={p.name} businessName={businessName} variants={pVariants} onChanged={onChanged} salesByVariant={salesByVariant} />
+                  <div onClick={(e) => e.stopPropagation()}>
+                    <VariantList productId={p.id} productName={p.name} businessName={businessName} variants={pVariants} onChanged={onChanged} salesByVariant={salesByVariant} />
+                  </div>
                 )}
               </Card>
             );
@@ -1347,6 +1349,7 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
     description_ar: product?.description_ar ?? "",
     description_en: product?.description_en ?? product?.description ?? "",
     category: product?.category ?? "",
+    base_price: product?.base_price ? String(product.base_price) : "0",
     image_url: product?.image_url ?? "",
     is_active: product?.is_active ?? true,
     featured_trending: product?.featured_trending ?? false,
@@ -1376,6 +1379,7 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
       description_ar: product?.description_ar ?? "",
       description_en: product?.description_en ?? product?.description ?? "",
       category: product?.category ?? "",
+      base_price: product?.base_price ? String(product.base_price) : "0",
       image_url: product?.image_url ?? "",
       is_active: product?.is_active ?? true,
       featured_trending: product?.featured_trending ?? false,
@@ -1461,6 +1465,7 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
         description_ar: form.description_ar.trim() || null,
         description_en: form.description_en.trim() || null,
         category: form.category,
+        base_price: form.base_price ? Number(form.base_price) : 0,
         image_url: form.image_url,
         is_active: form.is_active,
         featured_trending: form.featured_trending,
@@ -1481,6 +1486,7 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
         description_ar: form.description_ar.trim() || null,
         description_en: form.description_en.trim() || null,
         category: form.category,
+        base_price: form.base_price ? Number(form.base_price) : 0,
         image_url: form.image_url,
         is_active: form.is_active,
         featured_trending: form.featured_trending,
@@ -1535,6 +1541,22 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
               {isAr ? "أنشئ أقسامًا من صفحة الأقسام لتظهر هنا كقائمة منسدلة." : "Create categories in the Categories page to get a dropdown here."}
             </p>
           )}
+        </div>
+        <div>
+          <Label>{isAr ? "السعر الأساسي للمنتج (د.ب)" : "Base Price (BHD)"}</Label>
+          <Input
+            type="number"
+            step="0.001"
+            min="0"
+            placeholder="0.000"
+            value={form.base_price}
+            onChange={(e) => setForm({ ...form, base_price: e.target.value })}
+          />
+          <p className="text-xs text-muted-foreground mt-1">
+            {isAr 
+              ? "السعر الرئيسي للمنتج. عند إضافة خيارات/متغيرات، يمكنك إدخال المبلغ الإضافي (+Amount) وسيتم جمعه تلقائياً." 
+              : "The primary base price of the product. When adding variants, you can set an upcharge (+Amount) which will be added automatically."}
+          </p>
         </div>
         <div><Label>{t("inventory.imageUrl")}</Label><Input value={form.image_url} onChange={(e) => setForm({ ...form, image_url: e.target.value })} /></div>
         <BilingualField
@@ -1952,7 +1974,7 @@ function VariantList({ productId, productName, businessName, variants, onChanged
   const empty = {
     size: "", size_unit: "", color: "", fabric: "", sku: "", barcode: "",
     cost_price: "0", selling_price: "0", original_price: "",
-    stock_main: "0", stock_incubator: "0",
+    stock_main: "0", stock_incubator: "0", image_url: "",
   };
   const [row, setRow] = useState(empty);
 
@@ -1989,6 +2011,7 @@ function VariantList({ productId, productName, businessName, variants, onChanged
       sku: row.sku || null, barcode: row.barcode.trim() || null,
       cost_price: Number(row.cost_price), selling_price: Number(row.selling_price), original_price: row.original_price ? Number(row.original_price) : null,
       stock_main: Number(row.stock_main), stock_incubator: Number(row.stock_incubator),
+      image_url: row.image_url || null,
     });
     if (error) return toast.error(error.message);
     setRow(empty); setAdding(false); onChanged();
@@ -2030,10 +2053,11 @@ function VariantList({ productId, productName, businessName, variants, onChanged
                 <div><Label className="text-xs">{t("inventory.sku")}</Label><Input defaultValue={v.sku ?? ""} onBlur={(e) => update(v, { sku: e.target.value || null })} /></div>
                 <div><Label className="text-xs">{barcodeLabel}</Label><Input defaultValue={v.barcode ?? ""} onBlur={(e) => update(v, { barcode: e.target.value.trim() || null })} /></div>
                 {canViewFinancials && <div><Label className="text-xs">{t("inventory.cost")}</Label><Input type="number" step="0.01" defaultValue={v.cost_price} onBlur={(e) => update(v, { cost_price: Number(e.target.value) })} /></div>}
-                <div><Label className="text-xs">{t("inventory.price")}</Label><Input type="number" step="0.01" defaultValue={v.selling_price} onBlur={(e) => update(v, { selling_price: Number(e.target.value) })} /></div>
-                <div><Label className="text-xs">{isAr ? "السعر قبل الخصم" : "Original price"}</Label><Input type="number" step="0.01" min="0" defaultValue={v.original_price ?? ""} onBlur={(e) => update(v, { original_price: e.target.value ? Number(e.target.value) : null })} /></div>
+                <div><Label className="text-xs">{isAr ? "سعر إضافي (+ د.ب)" : "Price Delta (+ BHD)"}</Label><Input type="number" step="0.01" defaultValue={v.selling_price} onBlur={(e) => update(v, { selling_price: Number(e.target.value) })} /></div>
+                <div><Label className="text-xs">{isAr ? "السعر الأصلي الإضافي" : "Original Price Delta"}</Label><Input type="number" step="0.01" min="0" defaultValue={v.original_price ?? ""} onBlur={(e) => update(v, { original_price: e.target.value ? Number(e.target.value) : null })} /></div>
                 <div><Label className="text-xs">{mainLabel}</Label><Input type="number" defaultValue={v.stock_main ?? 0} onBlur={(e) => update(v, { stock_main: Number(e.target.value) })} /></div>
                 <div><Label className="text-xs">{incLabel}</Label><Input type="number" defaultValue={v.stock_incubator ?? 0} onBlur={(e) => update(v, { stock_incubator: Number(e.target.value) })} /></div>
+                <div><Label className="text-xs">{isAr ? "رابط الصورة للمتغير" : "Variant Image URL"}</Label><Input defaultValue={v.image_url ?? ""} onBlur={(e) => update(v, { image_url: e.target.value || null })} /></div>
               </div>
               <div className="flex items-center justify-between rounded-md bg-secondary/50 px-3 py-2 text-sm">
                 <span>{t("inventory.stock")}: <b>{(v.stock_main ?? 0) + (v.stock_incubator ?? 0)}</b></span>
@@ -2078,10 +2102,11 @@ function VariantList({ productId, productName, businessName, variants, onChanged
               <div><Label className="text-xs">{t("inventory.sku")}</Label><Input value={row.sku} onChange={(e) => setRow({ ...row, sku: e.target.value })} /></div>
               <div><Label className="text-xs">{barcodeLabel}</Label><Input value={row.barcode} onChange={(e) => setRow({ ...row, barcode: e.target.value })} /></div>
               {canViewFinancials && <div><Label className="text-xs">{t("inventory.cost")}</Label><Input type="number" step="0.01" value={row.cost_price} onChange={(e) => setRow({ ...row, cost_price: e.target.value })} /></div>}
-              <div><Label className="text-xs">{t("inventory.price")}</Label><Input type="number" step="0.01" value={row.selling_price} onChange={(e) => setRow({ ...row, selling_price: e.target.value })} /></div>
-              <div><Label className="text-xs">{isAr ? "السعر قبل الخصم" : "Original price"}</Label><Input type="number" step="0.01" min="0" value={row.original_price} onChange={(e) => setRow({ ...row, original_price: e.target.value })} /></div>
+              <div><Label className="text-xs">{isAr ? "سعر إضافي (+ د.ب)" : "Price Delta (+ BHD)"}</Label><Input type="number" step="0.01" value={row.selling_price} onChange={(e) => setRow({ ...row, selling_price: e.target.value })} /></div>
+              <div><Label className="text-xs">{isAr ? "السعر الأصلي الإضافي" : "Original Price Delta"}</Label><Input type="number" step="0.01" min="0" value={row.original_price} placeholder="—" onChange={(e) => setRow({ ...row, original_price: e.target.value })} /></div>
               <div><Label className="text-xs">{mainLabel}</Label><Input type="number" value={row.stock_main} onChange={(e) => setRow({ ...row, stock_main: e.target.value })} /></div>
               <div><Label className="text-xs">{incLabel}</Label><Input type="number" value={row.stock_incubator} onChange={(e) => setRow({ ...row, stock_incubator: e.target.value })} /></div>
+              <div><Label className="text-xs">{isAr ? "رابط الصورة للمتغير" : "Variant Image URL"}</Label><Input value={row.image_url} onChange={(e) => setRow({ ...row, image_url: e.target.value })} /></div>
             </div>
             <div className="flex justify-end gap-2">
               <Button type="button" variant="ghost" onClick={(e) => { e.preventDefault(); setAdding(false); }}>{t("common.cancel")}</Button>
@@ -2094,12 +2119,13 @@ function VariantList({ productId, productName, businessName, variants, onChanged
       <div className="hidden w-full overflow-x-auto md:block">
         <table
           className="table-fixed text-sm"
-          style={{ width: canViewFinancials ? 1482 : 1290, minWidth: canViewFinancials ? 1482 : 1290 }}
+          style={{ width: canViewFinancials ? 1602 : 1410, minWidth: canViewFinancials ? 1602 : 1410 }}
         >
           <colgroup>
             <col style={{ width: 150 }} />
             <col style={{ width: 96 }} />
             <col style={{ width: 96 }} />
+            <col style={{ width: 120 }} />
             <col style={{ width: 112 }} />
             <col style={{ width: 190 }} />
             {canViewFinancials && <col style={{ width: 96 }} />}
@@ -2116,11 +2142,12 @@ function VariantList({ productId, productName, businessName, variants, onChanged
               <th className="px-2 py-2 text-start">{t("inventory.size")}</th>
               <th className="px-2 py-2 text-start">{t("inventory.color")}</th>
               <th className="px-2 py-2 text-start">{t("inventory.fabric")}</th>
+              <th className="px-2 py-2 text-start">{isAr ? "رابط الصورة" : "Image URL"}</th>
               <th className="px-2 py-2 text-start">{t("inventory.sku")}</th>
               <th className="px-2 py-2 text-start">{barcodeLabel}</th>
               {canViewFinancials && <th className="min-w-24 whitespace-nowrap px-2 py-2 text-center">{t("inventory.cost")}</th>}
-              <th className="min-w-24 whitespace-nowrap px-2 py-2 text-center">{t("inventory.price")}</th>
-              <th className="min-w-28 whitespace-nowrap px-2 py-2 text-center">{isAr ? "قبل الخصم" : "Original"}</th>
+              <th className="min-w-24 whitespace-nowrap px-2 py-2 text-center">{isAr ? "سعر إضافي (+ د.ب)" : "Price Delta (+ BHD)"}</th>
+              <th className="min-w-28 whitespace-nowrap px-2 py-2 text-center">{isAr ? "السعر الأصلي الإضافي" : "Original Delta"}</th>
               {canViewFinancials && <th className="min-w-24 whitespace-nowrap px-2 py-2 text-center">{t("inventory.margin")}</th>}
               <th className="min-w-22 whitespace-nowrap px-2 py-2 text-center">{mainLabel}</th>
               <th className="min-w-28 whitespace-nowrap px-2 py-2 text-center">{incLabel}</th>
@@ -2150,6 +2177,7 @@ function VariantList({ productId, productName, businessName, variants, onChanged
                   </td>
                   <td className="px-2 py-2 text-start"><input className="w-full bg-transparent outline-none text-start" defaultValue={v.color ?? ""} onBlur={(e) => update(v, { color: e.target.value || null })} /></td>
                   <td className="px-2 py-2 text-start"><input className="w-full bg-transparent outline-none text-start" defaultValue={v.fabric ?? ""} onBlur={(e) => update(v, { fabric: e.target.value || null })} /></td>
+                  <td className="px-2 py-2 text-start"><input className="w-full bg-transparent outline-none text-start text-xs" placeholder={isAr ? "رابط الصورة" : "URL"} defaultValue={v.image_url ?? ""} onBlur={(e) => update(v, { image_url: e.target.value || null })} /></td>
                   <td className="px-2 py-2 text-start"><input className="w-full bg-transparent outline-none text-start" defaultValue={v.sku ?? ""} onBlur={(e) => update(v, { sku: e.target.value || null })} /></td>
                   <td className="px-2 py-2 text-start">
                     <div className="flex min-w-0 items-center gap-1">
@@ -2238,6 +2266,7 @@ function VariantList({ productId, productName, businessName, variants, onChanged
                 </td>
                 <td className="px-2 py-2"><Input className="h-8 w-full text-start" value={row.color} onChange={(e) => setRow({ ...row, color: e.target.value })} /></td>
                 <td className="px-2 py-2"><Input className="h-8 w-full text-start" value={row.fabric} onChange={(e) => setRow({ ...row, fabric: e.target.value })} /></td>
+                <td className="px-2 py-2"><Input className="h-8 w-full text-xs text-start" placeholder={isAr ? "رابط الصورة" : "URL"} value={row.image_url} onChange={(e) => setRow({ ...row, image_url: e.target.value })} /></td>
                 <td className="px-2 py-2"><Input className="h-8 w-full text-start" value={row.sku} onChange={(e) => setRow({ ...row, sku: e.target.value })} /></td>
                 <td className="px-2 py-2">
                   <div className="inline-flex items-center gap-1">
