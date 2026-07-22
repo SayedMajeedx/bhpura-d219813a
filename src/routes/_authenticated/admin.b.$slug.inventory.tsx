@@ -1302,36 +1302,36 @@ const CUSTOMIZER_PRESETS = {
     label_en: "Print / Stamp Shop Preset",
     label_ar: "نموذج مطبعة / متجر أختام",
     fields: [
-      { key: "stamp_size", label_ar: "مقاس الختم / الطباعة", label_en: "Stamp/Print Size Swatches", type: "select", options: ["Q13 (13*49mm)", "Q20 (20*20mm)", "Q30 (30*30mm)"], required: True },
-      { key: "ink_color", label_ar: "لون الحبر", label_en: "Ink/Color Picker", type: "select", options: ["Black", "Blue", "Red", "Green"], required: True },
-      { key: "logo_upload", label_ar: "تحميل شعار الختم / التصميم", label_en: "Upload Logo File Input", type: "file", options: [], required: False },
-      { key: "custom_note", label_ar: "نص الكتابة المطلوب للختم", label_en: "Custom Note Text Area", type: "text", options: [], required: False },
+      { key: "stamp_size", label_ar: "مقاس الختم / الطباعة", label_en: "Stamp/Print Size Swatches", type: "select", options: ["Q13 (13*49mm)", "Q20 (20*20mm)", "Q30 (30*30mm)"], required: true },
+      { key: "ink_color", label_ar: "لون الحبر", label_en: "Ink/Color Picker", type: "select", options: ["Black", "Blue", "Red", "Green"], required: true },
+      { key: "logo_upload", label_ar: "تحميل شعار الختم / التصميم", label_en: "Upload Logo File Input", type: "file", options: [], required: false },
+      { key: "custom_note", label_ar: "نص الكتابة المطلوب للختم", label_en: "Custom Note Text Area", type: "text", options: [], required: false },
     ]
   },
   fashion: {
     label_en: "Fashion / Abaya Preset",
     label_ar: "نموذج أزياء / عبايات",
     fields: [
-      { key: "length_note", label_ar: "طول العباية المطلوب", label_en: "Custom Length Note", type: "text", options: [], required: True },
-      { key: "fabric_color", label_ar: "لون القماش", label_en: "Fabric Color Swatches", type: "select", options: ["Black / أسود", "Navy / كحلي", "Beige / بيج"], required: True },
-      { key: "monogram_text", label_ar: "كتابة الحروف أو الاسم", label_en: "Monogram Text Input", type: "text", options: [], required: False },
+      { key: "length_note", label_ar: "طول العباية المطلوب", label_en: "Custom Length Note", type: "text", options: [], required: true },
+      { key: "fabric_color", label_ar: "لون القماش", label_en: "Fabric Color Swatches", type: "select", options: ["Black / أسود", "Navy / كحلي", "Beige / بيج"], required: true },
+      { key: "monogram_text", label_ar: "كتابة الحروف أو الاسم", label_en: "Monogram Text Input", type: "text", options: [], required: false },
     ]
   },
   gift: {
     label_en: "Gift / Perfume Preset",
     label_ar: "نموذج هدايا / عطور",
     fields: [
-      { key: "gift_box", label_ar: "إضافة صندوق هدايا فاخر", label_en: "Gift Box Add-On (+X BHD)", type: "select", options: ["No / لا", "Yes (+2.000 BHD) / نعم (+2.000 د.ب)"], required: True },
-      { key: "greeting_card", label_ar: "نص كرت الإهداء", label_en: "Greeting Card Message Text Area", type: "text", options: [], required: False },
+      { key: "gift_box", label_ar: "إضافة صندوق هدايا فاخر", label_en: "Gift Box Add-On (+X BHD)", type: "select", options: ["No / لا", "Yes (+2.000 BHD) / نعم (+2.000 د.ب)"], required: true },
+      { key: "greeting_card", label_ar: "نص كرت الإهداء", label_en: "Greeting Card Message Text Area", type: "text", options: [], required: false },
     ]
   },
   jewelry: {
     label_en: "Jewelry / Engraving Preset",
     label_ar: "نموذج مجوهرات / حفر",
     fields: [
-      { key: "engraving_text", label_ar: "النص المطلوب للحفر", label_en: "Custom Engraving Text", type: "text", options: [], required: False },
-      { key: "font_style", label_ar: "خط الكتابة", label_en: "Font Style Selector", type: "select", options: ["Arabic Calligraphy / ديواني", "Classic Serif", "Modern Sans-Serif"], required: False },
-      { key: "material_swatch", label_ar: "نوع المعدن", label_en: "Material/Metal Swatch", type: "select", options: ["Gold / ذهب", "Silver / فضة", "Rose Gold / روز جولد"], required: True },
+      { key: "engraving_text", label_ar: "النص المطلوب للحفر", label_en: "Custom Engraving Text", type: "text", options: [], required: false },
+      { key: "font_style", label_ar: "خط الكتابة", label_en: "Font Style Selector", type: "select", options: ["Arabic Calligraphy / ديواني", "Classic Serif", "Modern Sans-Serif"], required: false },
+      { key: "material_swatch", label_ar: "نوع المعدن", label_en: "Material/Metal Swatch", type: "select", options: ["Gold / ذهب", "Silver / فضة", "Rose Gold / روز جولد"], required: true },
     ]
   }
 };
