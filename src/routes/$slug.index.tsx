@@ -131,7 +131,7 @@ function StoreHome() {
       .slice(0, 8);
 
     // 4. Trending Now (mapped to RPC trending)
-    const trendingIds = new Map((trendingRows ?? []).map((row: any, index: number) => [row.product_id, index]));
+    const trendingIds = new Map<string, number>((trendingRows ?? []).map((row: any, index: number) => [row.product_id, index]));
     const trendingList = list
       .filter((p) => trendingIds.has(p.id))
       .sort((a, b) => (trendingIds.get(a.id) ?? 99) - (trendingIds.get(b.id) ?? 99))

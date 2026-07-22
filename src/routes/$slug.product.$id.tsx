@@ -26,6 +26,7 @@ type Variant = {
   selling_price: number;
   original_price: number | null;
   stock_main: number;
+  image_url?: string | null;
 };
 
 type CustomField = {
@@ -50,6 +51,8 @@ type Product = {
   media: unknown;
   custom_fields: CustomField[] | null;
   product_variants: Variant[];
+  base_price?: number | null;
+  original_price?: number | null;
 };
 
 type RecommendationProduct = {
@@ -132,7 +135,7 @@ function ProductDetail() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("products")
-        .select("id, category, name, name_ar, name_en, description, description_ar, description_en, image_url, media, custom_fields, product_variants(id, size, size_unit, color, fabric, selling_price, original_price, stock_main)")
+        .select("id, category, name, name_ar, name_en, description, description_ar, description_en, image_url, media, custom_fields, base_price, original_price, product_variants(id, size, size_unit, color, fabric, selling_price, original_price, stock_main, image_url)")
         .eq("id", id)
         .eq("brand_id", brand.id)
         .eq("is_active", true)
