@@ -7,10 +7,11 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useState, useMemo, useRef, useEffect } from "react";
 import { formatSizeWithUnit } from "@/components/bilingual-field";
-import { ChevronLeft, ChevronRight, ShoppingBag, AlertCircle, Heart } from "lucide-react";
+import { ChevronLeft, ChevronRight, ShoppingBag, AlertCircle, Heart, Upload, X, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { trackStorefrontEvent } from "@/lib/storefront-analytics";
 import { OptimizedVideo, ResponsiveImage } from "@/components/responsive-media";
+import { uploadPublicMedia } from "@/lib/r2-upload";
 
 export const Route = createFileRoute("/$slug/product/$id")({
   component: ProductDetail,
@@ -31,7 +32,7 @@ type CustomField = {
   key: string;
   label_ar: string | null;
   label_en: string | null;
-  type: "text" | "number" | "select";
+  type: "text" | "number" | "select" | "file";
   options?: string[];
   required?: boolean;
 };
@@ -75,6 +76,42 @@ function variantSortKey(v: Variant): [number, string] {
   return [num, label.toLowerCase()];
 }
 
+const COLOR_MAP: Record<string, string> = {
+  blue: "#2563eb",
+  red: "#dc2626",
+  black: "#0f172a",
+  white: "#ffffff",
+  green: "#16a34a",
+  yellow: "#eab308",
+  orange: "#ea580c",
+  purple: "#9333ea",
+  pink: "#db2777",
+  brown: "#78350f",
+  grey: "#4b5563",
+  gray: "#4b5563",
+  navy: "#1e3a8a",
+  teal: "#0d9488",
+  gold: "#d97706",
+  silver: "#9ca3af",
+  beige: "#fef3c7",
+
+  "أزرق": "#2563eb",
+  "أحمر": "#dc2626",
+  "أسود": "#0f172a",
+  "أبيض": "#ffffff",
+  "أخضر": "#16a34a",
+  "أصفر": "#eab308",
+  "برتقالي": "#ea580c",
+  "بنفسجي": "#9333ea",
+  "وردي": "#db2777",
+  "بني": "#78350f",
+  "رمادي": "#4b5563",
+  "كحلي": "#1e3a8a",
+  "ذهبي": "#d97706",
+  "فضي": "#9ca3af",
+  "بيج": "#fef3c7",
+};
+
 function ProductDetail() {
   const { id } = Route.useParams();
   const { brand, settings, currency, lang, t, addToCart, isWishlisted, toggleWishlist } = useStorefront();
@@ -84,6 +121,10 @@ function ProductDetail() {
   const [qty, setQty] = useState(1);
   const [cfValues, setCfValues] = useState<Record<string, string>>({});
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [selectedColor, setSelectedColor] = useState<string | null>(null);
+  const [selectedSize, setSelectedSize] = useState<string | null>(null);
+  const [selectedFabric, setSelectedFabric] = useState<string | null>(null);
+  const [uploadingField, setUploadingField] = useState<Record<string, boolean>>({});
   const optionsRef = useRef<HTMLDivElement | null>(null);
 
   const { data: product, isLoading } = useQuery({
@@ -182,6 +223,62 @@ function ProductDetail() {
     });
   }, [product]);
   const variant = variantId ? variants.find((v) => v.id === variantId) : null;
+
+  const uniqueColors = useMemo(() => {
+    const colors = variants.map((v) => v.color).filter(Boolean) as string[];
+    return Array.from(new Set(colors));
+  }, [variants]);
+
+  const uniqueSizes = useMemo(() => {
+    const sizes = variants.map((v) => v.size).filter(Boolean) as string[];
+    return Array.from(new Set(sizes));
+  }, [variants]);
+
+  const uniqueFabrics = useMemo(() => {
+    const fabrics = variants.map((v) => v.fabric).filter(Boolean) as string[];
+    return Array.from(new Set(fabrics));
+  }, [variants]);
+
+  // Auto-initialize attributes when first loaded
+  useEffect(() => {
+    if (variants.length > 0 && !variantId) {
+      const first = variants[0];
+      setVariantId(first.id);
+      setSelectedColor(first.color ?? null);
+      setSelectedSize(first.size ?? null);
+      setSelectedFabric(first.fabric ?? null);
+    }
+  }, [variants, variantId]);
+
+  // Sync selected attributes back to variantId
+  useEffect(() => {
+    const match = variants.find((v) => {
+      const colorMatch = !selectedColor || v.color === selectedColor;
+      const sizeMatch = !selectedSize || v.size === selectedSize;
+      const fabricMatch = !selectedFabric || v.fabric === selectedFabric;
+      return colorMatch && sizeMatch && fabricMatch;
+    });
+    if (match) {
+      setVariantId(match.id);
+    } else {
+      setVariantId(null);
+    }
+  }, [selectedColor, selectedSize, selectedFabric, variants]);
+
+  // Dynamic image swapping based on selected color name matching media filename/URL
+  useEffect(() => {
+    if (!selectedColor) return;
+    const colorLower = selectedColor.toLowerCase();
+    const idx = media.findIndex((m) => {
+      if (m.type !== "image") return false;
+      const urlLower = m.url.toLowerCase();
+      return urlLower.includes(colorLower) || urlLower.includes(encodeURIComponent(colorLower));
+    });
+    if (idx !== -1) {
+      setMediaIdx(idx);
+    }
+  }, [selectedColor, media]);
+
   const customFields = useMemo<CustomField[]>(
     () => (Array.isArray(product?.custom_fields) ? (product!.custom_fields as CustomField[]) : []),
     [product],
@@ -378,63 +475,233 @@ function ProductDetail() {
         )}
 
         {hasVariants && (
-          <div ref={optionsRef} className="mb-4 scroll-mt-24">
-            <div className="text-sm font-medium mb-2">{t("الخيارات", "Options")}</div>
-            <div className="flex flex-wrap gap-2">
-              {variants.map((v) => {
-                const oos = v.stock_main <= 0;
-                const active = v.id === variantId;
-                const label = [formatSizeWithUnit(v.size, v.size_unit, lang), v.color, v.fabric].filter(Boolean).join(" · ") || t("متغيّر", "Variant");
-                const style: React.CSSProperties = active
-                  ? { backgroundColor: primary, color: primaryFg, borderColor: primary }
-                  : {};
-                return (
-                  <button
-                    key={v.id}
-                    disabled={oos}
-                    onClick={() => { setVariantId(v.id); setQty(1); setErrorMsg(null); }}
-                    className={`min-h-11 px-4 py-2 rounded-lg border-2 text-sm font-medium transition-all ${
-                      active ? "shadow-sm" : "border-input bg-background hover:border-foreground/40"
-                    } ${oos ? "opacity-40 line-through cursor-not-allowed" : ""}`}
-                    style={style}
-                    aria-pressed={active}
-                  >
-                    {label}
-                  </button>
-                );
-              })}
-            </div>
+          <div ref={optionsRef} className="mb-6 space-y-4 scroll-mt-24">
+            {/* 🔵 Circular Color Swatches */}
+            {uniqueColors.length > 0 && (
+              <div>
+                <div className="text-sm font-semibold mb-2 flex items-center gap-1.5">
+                  <span>{t("اللون", "Color")}:</span>
+                  <span className="text-muted-foreground font-normal">{selectedColor}</span>
+                </div>
+                <div className="flex flex-wrap gap-2.5">
+                  {uniqueColors.map((color) => {
+                    const active = selectedColor === color;
+                    const hex = COLOR_MAP[color.toLowerCase()] || COLOR_MAP[color] || null;
+                    const ringStyle = active ? { borderColor: primary } : {};
+                    return (
+                      <button
+                        key={color}
+                        type="button"
+                        onClick={() => { setSelectedColor(color); setErrorMsg(null); }}
+                        className={`h-9 w-9 rounded-full border-2 transition-all flex items-center justify-center relative ${
+                          active ? "scale-110 shadow-sm" : "border-transparent hover:scale-105"
+                        }`}
+                        style={ringStyle}
+                        title={color}
+                        aria-label={color}
+                      >
+                        {hex ? (
+                          <span
+                            className="h-7 w-7 rounded-full border shadow-inner block"
+                            style={{ backgroundColor: hex }}
+                          />
+                        ) : (
+                          <span className="h-7 w-7 rounded-full border bg-muted flex items-center justify-center text-[10px] font-bold uppercase truncate shadow-inner">
+                            {color.slice(0, 2)}
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* 📏 Size Selection Pills */}
+            {uniqueSizes.length > 0 && (
+              <div>
+                <div className="text-sm font-semibold mb-2">{t("المقاس / خيار", "Size / Option")}</div>
+                <div className="flex flex-wrap gap-2">
+                  {uniqueSizes.map((sz) => {
+                    const active = selectedSize === sz;
+                    const style = active ? { backgroundColor: primary, color: primaryFg, borderColor: primary } : {};
+                    return (
+                      <button
+                        key={sz}
+                        type="button"
+                        onClick={() => { setSelectedSize(sz); setErrorMsg(null); }}
+                        className={`min-h-10 px-4 py-1.5 rounded-lg border text-sm font-medium transition-all ${
+                          active ? "shadow-sm border-transparent" : "border-input bg-background hover:border-foreground/45"
+                        }`}
+                        style={style}
+                      >
+                        {sz}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* 🧵 Fabric Selection Pills (if any) */}
+            {uniqueFabrics.length > 0 && (
+              <div>
+                <div className="text-sm font-semibold mb-2">{t("الخامة", "Fabric")}</div>
+                <div className="flex flex-wrap gap-2">
+                  {uniqueFabrics.map((fb) => {
+                    const active = selectedFabric === fb;
+                    const style = active ? { backgroundColor: primary, color: primaryFg, borderColor: primary } : {};
+                    return (
+                      <button
+                        key={fb}
+                        type="button"
+                        onClick={() => { setSelectedFabric(fb); setErrorMsg(null); }}
+                        className={`min-h-10 px-4 py-1.5 rounded-lg border text-sm font-medium transition-all ${
+                          active ? "shadow-sm border-transparent" : "border-input bg-background hover:border-foreground/45"
+                        }`}
+                        style={style}
+                      >
+                        {fb}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Fallback general buttons if no properties could be isolated */}
+            {uniqueColors.length === 0 && uniqueSizes.length === 0 && uniqueFabrics.length === 0 && (
+              <div>
+                <div className="text-sm font-medium mb-2">{t("الخيارات", "Options")}</div>
+                <div className="flex flex-wrap gap-2">
+                  {variants.map((v) => {
+                    const oos = v.stock_main <= 0;
+                    const active = v.id === variantId;
+                    const label = [formatSizeWithUnit(v.size, v.size_unit, lang), v.color, v.fabric].filter(Boolean).join(" · ") || t("متغيّر", "Variant");
+                    const style = active ? { backgroundColor: primary, color: primaryFg, borderColor: primary } : {};
+                    return (
+                      <button
+                        key={v.id}
+                        type="button"
+                        disabled={oos}
+                        onClick={() => { setVariantId(v.id); setQty(1); setErrorMsg(null); }}
+                        className={`min-h-11 px-4 py-2 rounded-lg border-2 text-sm font-medium transition-all ${
+                          active ? "shadow-sm" : "border-input bg-background hover:border-foreground/40"
+                        } ${oos ? "opacity-40 line-through cursor-not-allowed" : ""}`}
+                        style={style}
+                        aria-pressed={active}
+                      >
+                        {label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </div>
         )}
 
         {customFields.length > 0 && (
-          <div className="mb-4 space-y-3">
+          <div className="mb-4 space-y-4">
             {customFields.map((f) => {
               const label = cfLabel(f);
               const val = cfValues[f.key] ?? "";
               const set = (v: string) => { setCfValues((s) => ({ ...s, [f.key]: v })); setErrorMsg(null); };
+              const isUploading = uploadingField[f.key];
+
+              const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+                const file = e.target.files?.[0];
+                if (!file) return;
+                try {
+                  setUploadingField((prev) => ({ ...prev, [f.key]: true }));
+                  const url = await uploadPublicMedia(brand.id, file, "product");
+                  set(url);
+                  toast.success(t("تم رفع الملف بنجاح", "File uploaded successfully"));
+                } catch (err: any) {
+                  toast.error(err.message ?? t("فشل في رفع الملف", "File upload failed"));
+                } finally {
+                  setUploadingField((prev) => ({ ...prev, [f.key]: false }));
+                }
+              };
+
               return (
-                <div key={f.key}>
-                  <label className="block text-sm font-medium mb-1">
+                <div key={f.key} className="space-y-1">
+                  <label className="block text-sm font-semibold mb-1">
                     {label}{f.required && <span className="text-destructive ms-1">*</span>}
                   </label>
                   {f.type === "select" ? (
                     <select
                       value={val}
                       onChange={(e) => set(e.target.value)}
-                      className="w-full h-11 rounded-md border border-input bg-background px-3 text-sm"
+                      className="w-full h-11 rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                     >
                       <option value="">{t("اختر...", "Select...")}</option>
                       {(f.options ?? []).map((o) => (
                         <option key={o} value={o}>{o}</option>
                       ))}
                     </select>
+                  ) : f.type === "file" ? (
+                    <div className="space-y-2">
+                      {val ? (
+                        <div className="flex items-center justify-between p-3 border rounded-xl bg-muted/30">
+                          <div className="flex items-center gap-3 min-w-0">
+                            {/\.(jpg|jpeg|png|gif|webp|svg)$/i.test(val) ? (
+                              <img src={val} alt="" className="h-12 w-12 rounded object-cover border" />
+                            ) : (
+                              <div className="h-12 w-12 rounded bg-primary/10 grid place-items-center text-primary text-xs font-bold uppercase">FILE</div>
+                            )}
+                            <div className="min-w-0">
+                              <div className="text-xs text-muted-foreground truncate">{t("الملف المرفوع", "Uploaded file")}</div>
+                              <a href={val} target="_blank" rel="noreferrer" className="text-xs text-primary font-medium hover:underline truncate block">{val}</a>
+                            </div>
+                          </div>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="text-muted-foreground hover:text-destructive shrink-0"
+                            onClick={() => set("")}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      ) : (
+                        <div className="relative">
+                          <input
+                            type="file"
+                            accept="image/*,application/pdf"
+                            onChange={handleFileChange}
+                            className="hidden"
+                            id={`file-input-${f.key}`}
+                            disabled={isUploading}
+                          />
+                          <label
+                            htmlFor={`file-input-${f.key}`}
+                            className={`flex min-h-[56px] w-full cursor-pointer items-center justify-center gap-2.5 rounded-xl border border-dashed border-muted-foreground/30 px-4 py-3 text-sm font-medium transition hover:bg-muted/40 ${
+                              isUploading ? "pointer-events-none opacity-50" : ""
+                            }`}
+                          >
+                            {isUploading ? (
+                              <>
+                                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                                <span className="text-muted-foreground">{t("جاري الرفع...", "Uploading...")}</span>
+                              </>
+                            ) : (
+                              <>
+                                <Upload className="h-4 w-4 text-muted-foreground" />
+                                <span>{t("انقر لرفع الشعار أو الملف الخاص بك", "Click to upload your logo or file")}</span>
+                              </>
+                            )}
+                          </label>
+                        </div>
+                      )}
+                    </div>
                   ) : (
                     <input
                       type={f.type === "number" ? "number" : "text"}
                       value={val}
                       onChange={(e) => set(e.target.value)}
-                      className="w-full h-11 rounded-md border border-input bg-background px-3 text-sm"
+                      className="w-full h-11 rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                     />
                   )}
                 </div>

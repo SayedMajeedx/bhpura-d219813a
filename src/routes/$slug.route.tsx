@@ -748,7 +748,11 @@ function DesktopStoreNavigation() {
   const { data = [] } = useQuery({
     queryKey: ["storefront", brand.slug, "categories"],
     queryFn: async () => {
-      const { data, error } = await (supabase.from("categories") as any).select("id, name_en, name_ar, slug, sort_order").eq("brand_id", brand.id).eq("is_active", true).order("sort_order", { ascending: true });
+      const { data, error } = await (supabase.from("categories") as any)
+        .select("id, name_en, name_ar, parent_id, slug, sort_order")
+        .eq("brand_id", brand.id)
+        .eq("is_active", true)
+        .order("sort_order", { ascending: true });
       if (error) throw error;
       return data ?? [];
     },
@@ -756,13 +760,84 @@ function DesktopStoreNavigation() {
     gcTime: 30 * 60_000,
     refetchOnWindowFocus: false,
   });
+
   const isSale = (c: any) => /sale|offers?|discount|تنزيل|عروض/i.test(`${c.slug ?? ""} ${c.name_en ?? ""} ${c.name_ar ?? ""}`);
-  return <nav className="hidden border-b bg-[var(--sf-header-bg)] text-[var(--sf-header-fg)] shadow-sm md:block">
-    <div className="mx-auto flex min-h-14 max-w-7xl items-center justify-center gap-2 overflow-x-auto px-6 py-2">
-      <Link to="/$slug" params={{ slug: brand.slug }} className="shrink-0 rounded-xl border border-dashed px-5 py-2.5 font-semibold transition hover:-translate-y-0.5 hover:bg-black/5">{t("الصفحة الرئيسية", "Home")}</Link>
-      {data.map((c: any) => <Link key={c.id} to="/$slug/$category" params={{ slug: brand.slug, category: c.slug || c.name_en }} className={`shrink-0 rounded-xl px-5 py-2.5 text-base transition hover:-translate-y-0.5 hover:bg-black/5 ${isSale(c) ? "font-bold text-red-600" : "font-semibold"}`}>{lang === "ar" ? c.name_ar || c.name_en : c.name_en || c.name_ar}</Link>)}
-    </div>
-  </nav>;
+
+  // Only direct top-level (parent) categories should be rendered as main navigation items
+  const mainCategories = data.filter((c: any) => !c.parent_id);
+
+  return (
+    <nav className="hidden border-b bg-[var(--sf-header-bg)] text-[var(--sf-header-fg)] shadow-sm md:block">
+      <div className="mx-auto flex min-h-14 max-w-7xl items-center justify-center gap-2 overflow-x-auto px-6 py-2">
+        <Link
+          to="/$slug"
+          params={{ slug: brand.slug }}
+          className="shrink-0 rounded-xl border border-dashed px-5 py-2.5 font-semibold transition hover:-translate-y-0.5 hover:bg-black/5"
+        >
+          {t("الصفحة الرئيسية", "Home")}
+        </Link>
+        {mainCategories.map((c: any) => {
+          const subs = data.filter((sub: any) => sub.parent_id === c.id);
+          const name = lang === "ar" ? c.name_ar || c.name_en : c.name_en || c.name_ar;
+          const url = c.slug || c.name_en;
+
+          if (subs.length > 0) {
+            return (
+              <div key={c.id} className="relative group shrink-0">
+                <Link
+                  to="/$slug/$category"
+                  params={{ slug: brand.slug, category: url }}
+                  className={`flex items-center gap-1.5 rounded-xl px-5 py-2.5 text-base font-semibold transition hover:-translate-y-0.5 hover:bg-black/5 ${
+                    isSale(c) ? "font-bold text-red-600" : ""
+                  }`}
+                >
+                  <span>{name}</span>
+                  <svg
+                    className="h-3.5 w-3.5 opacity-70 transition-transform group-hover:rotate-180"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </Link>
+                {/* Custom dropdown menu card */}
+                <div className="absolute left-1/2 z-50 mt-1 hidden w-48 -translate-x-1/2 rounded-xl border bg-background p-1.5 shadow-xl group-hover:block">
+                  {subs.map((sub: any) => {
+                    const subName = lang === "ar" ? sub.name_ar || sub.name_en : sub.name_en || sub.name_ar;
+                    const subUrl = sub.slug || sub.name_en;
+                    return (
+                      <Link
+                        key={sub.id}
+                        to="/$slug/$category"
+                        params={{ slug: brand.slug, category: subUrl }}
+                        className="block rounded-lg px-4 py-2 text-sm font-medium transition hover:bg-muted"
+                      >
+                        {subName}
+                      </Link>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          }
+
+          return (
+            <Link
+              key={c.id}
+              to="/$slug/$category"
+              params={{ slug: brand.slug, category: url }}
+              className={`shrink-0 rounded-xl px-5 py-2.5 text-base transition hover:-translate-y-0.5 hover:bg-black/5 ${
+                isSale(c) ? "font-bold text-red-600" : "font-semibold"
+              }`}
+            >
+              {name}
+            </Link>
+          );
+        })}
+      </div>
+    </nav>
+  );
 }
 
 

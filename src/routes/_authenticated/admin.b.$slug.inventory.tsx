@@ -39,7 +39,7 @@ type CustomField = {
   key: string;
   label_ar: string | null;
   label_en: string | null;
-  type: "text" | "number" | "select";
+  type: "text" | "number" | "select" | "file";
   options?: string[];
   required?: boolean;
 };
@@ -1615,6 +1615,7 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
                     <SelectItem value="text">{isAr ? "نص" : "Text"}</SelectItem>
                     <SelectItem value="number">{isAr ? "رقم" : "Number"}</SelectItem>
                     <SelectItem value="select">{isAr ? "قائمة اختيار" : "Dropdown"}</SelectItem>
+                    <SelectItem value="file">{isAr ? "رفع ملف" : "File upload"}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
