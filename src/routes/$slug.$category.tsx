@@ -274,7 +274,7 @@ function CategoryPage() {
             </Link>
           )}
 
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-5">
+          <div className="flex flex-col gap-4">
             <div className="flex items-center gap-5">
               {category?.image_url && (
                 <ResponsiveImage
@@ -295,36 +295,42 @@ function CategoryPage() {
 
             {/* Horizontal Subcategory Filter Chips */}
             {subcategoriesWithProducts.length > 0 && (
-              <div className="flex flex-wrap gap-2 items-center overflow-x-auto no-scrollbar py-1">
-                <button
-                  type="button"
-                  onClick={() => setSelectedSubCategorySlug(null)}
-                  className={`min-h-9 px-4 py-1.5 rounded-full text-xs font-bold border transition-all ${
-                    selectedSubCategorySlug === null
-                      ? "bg-foreground text-background border-foreground shadow-md scale-[1.02]"
-                      : "border-border/80 bg-background text-muted-foreground hover:border-foreground/45 hover:text-foreground"
-                  }`}
-                >
-                  {t("الكل", "All")}
-                </button>
-                {subcategoriesWithProducts.map((sub) => {
-                  const label = lang === "ar" ? sub.name_ar || sub.name_en : sub.name_en || sub.name_ar;
-                  const active = selectedSubCategorySlug === sub.slug;
-                  return (
-                    <button
-                      key={sub.id}
-                      type="button"
-                      onClick={() => setSelectedSubCategorySlug(sub.slug)}
-                      className={`min-h-9 px-4 py-1.5 rounded-full text-xs font-bold border transition-all ${
-                        active
-                          ? "bg-foreground text-background border-foreground shadow-md scale-[1.02]"
-                          : "border-border/80 bg-background text-muted-foreground hover:border-foreground/45 hover:text-foreground"
-                      }`}
-                    >
-                      {label}
-                    </button>
-                  );
-                })}
+              <div className="w-full">
+                <style>{`
+                  .no-scrollbar::-webkit-scrollbar { display: none; }
+                  .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+                `}</style>
+                <div className="flex flex-wrap md:flex-nowrap gap-2 items-center overflow-x-auto no-scrollbar py-1 mt-4">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedSubCategorySlug(null)}
+                    className={`min-h-9 px-4 py-1.5 rounded-full text-sm transition-all shrink-0 ${
+                      selectedSubCategorySlug === null
+                        ? "bg-slate-900 text-white shadow-sm font-medium"
+                        : "bg-slate-100 hover:bg-slate-200 text-slate-700 font-normal"
+                    }`}
+                  >
+                    {t("الكل", "All")}
+                  </button>
+                  {subcategoriesWithProducts.map((sub) => {
+                    const label = lang === "ar" ? sub.name_ar || sub.name_en : sub.name_en || sub.name_ar;
+                    const active = selectedSubCategorySlug === sub.slug;
+                    return (
+                      <button
+                        key={sub.id}
+                        type="button"
+                        onClick={() => setSelectedSubCategorySlug(sub.slug)}
+                        className={`min-h-9 px-4 py-1.5 rounded-full text-sm transition-all shrink-0 ${
+                          active
+                            ? "bg-slate-900 text-white shadow-sm font-medium"
+                            : "bg-slate-100 hover:bg-slate-200 text-slate-700 font-normal"
+                        }`}
+                      >
+                        {label}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
             )}
           </div>
