@@ -59,9 +59,12 @@ type Product = {
   media: MediaItem[];
   custom_fields: CustomField[] | null;
   base_price?: number | null;
-  variant_label_size?: string | null;
-  variant_label_color?: string | null;
-  variant_label_fabric?: string | null;
+  variant_label_size_ar?: string | null;
+  variant_label_size_en?: string | null;
+  variant_label_color_ar?: string | null;
+  variant_label_color_en?: string | null;
+  variant_label_fabric_ar?: string | null;
+  variant_label_fabric_en?: string | null;
 };
 type Variant = {
   id: string; product_id: string; sku: string | null; size: string | null; color: string | null; fabric: string | null;
@@ -1360,9 +1363,12 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
     show_sale_badge: product?.show_sale_badge ?? true,
     media: (product?.media ?? []) as MediaItem[],
     custom_fields: (Array.isArray(product?.custom_fields) ? product!.custom_fields : []) as CustomField[],
-    variant_label_size: product?.variant_label_size ?? "",
-    variant_label_color: product?.variant_label_color ?? "",
-    variant_label_fabric: product?.variant_label_fabric ?? "",
+    variant_label_size_ar: product?.variant_label_size_ar ?? "",
+    variant_label_size_en: product?.variant_label_size_en ?? "",
+    variant_label_color_ar: product?.variant_label_color_ar ?? "",
+    variant_label_color_en: product?.variant_label_color_en ?? "",
+    variant_label_fabric_ar: product?.variant_label_fabric_ar ?? "",
+    variant_label_fabric_en: product?.variant_label_fabric_en ?? "",
   };
   const [form, setForm] = useState(initialForm);
   const [uploading, setUploading] = useState(false);
@@ -1484,9 +1490,12 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
         show_sale_badge: form.show_sale_badge,
         media: form.media as any,
         custom_fields: (form.custom_fields ?? []) as any,
-        variant_label_size: form.variant_label_size.trim() || null,
-        variant_label_color: form.variant_label_color.trim() || null,
-        variant_label_fabric: form.variant_label_fabric.trim() || null,
+        variant_label_size_ar: (form.variant_label_size_ar || "").trim() || null,
+        variant_label_size_en: (form.variant_label_size_en || "").trim() || null,
+        variant_label_color_ar: (form.variant_label_color_ar || "").trim() || null,
+        variant_label_color_en: (form.variant_label_color_en || "").trim() || null,
+        variant_label_fabric_ar: (form.variant_label_fabric_ar || "").trim() || null,
+        variant_label_fabric_en: (form.variant_label_fabric_en || "").trim() || null,
       };
       const { error } = await supabase.from("products").update(patch).eq("id", product.id);
       if (error) return toast.error(error.message);
@@ -1508,9 +1517,12 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
         show_sale_badge: form.show_sale_badge,
         media: form.media as any,
         custom_fields: (form.custom_fields ?? []) as any,
-        variant_label_size: form.variant_label_size.trim() || null,
-        variant_label_color: form.variant_label_color.trim() || null,
-        variant_label_fabric: form.variant_label_fabric.trim() || null,
+        variant_label_size_ar: (form.variant_label_size_ar || "").trim() || null,
+        variant_label_size_en: (form.variant_label_size_en || "").trim() || null,
+        variant_label_color_ar: (form.variant_label_color_ar || "").trim() || null,
+        variant_label_color_en: (form.variant_label_color_en || "").trim() || null,
+        variant_label_fabric_ar: (form.variant_label_fabric_ar || "").trim() || null,
+        variant_label_fabric_en: (form.variant_label_fabric_en || "").trim() || null,
       };
       const { error } = await (supabase.from("products") as any).insert(payload);
       if (error) return toast.error(error.message);
@@ -1525,7 +1537,7 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
   };
 
   return (
-    <DialogContent className="max-h-[92vh] md:max-w-3xl overflow-y-auto p-0 flex flex-col rounded-2xl border border-border/80 shadow-2xl bg-background overflow-hidden">
+    <DialogContent className="max-h-[92vh] md:max-w-3xl p-0 flex flex-col rounded-2xl border border-border/80 shadow-2xl bg-background overflow-hidden">
       {/* Header with gradient bar and stepper indicators */}
       <div className="relative border-b border-border/60 bg-secondary/20 p-5 pb-4">
         <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-primary via-indigo-500 to-purple-600" />
@@ -1684,37 +1696,75 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
                 <p className="text-sm font-bold text-foreground">{isAr ? "🏷️ مسميات المتغيرات المخصصة" : "🏷️ Custom Variant Labels"}</p>
                 <p className="text-xs text-muted-foreground mt-0.5">
                   {isAr 
-                    ? "تخصيص أسماء أعمدة المقاس، اللون، والخامة لتظهر بالاسم المفضل في صفحة عرض المنتج." 
-                    : "Override default column labels (Size, Color, Fabric) to match your custom product's options."}
+                    ? "تخصيص أسماء أعمدة المقاس، اللون، والخامة لتظهر بالاسم المفضل في صفحة عرض المنتج باللغتين العربية والإنجليزية." 
+                    : "Override default column labels (Size, Color, Fabric) to match your custom product's options in both Arabic and English."}
                 </p>
               </div>
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-                <div>
-                  <Label className="text-xs font-bold text-muted-foreground">{isAr ? "مسمى المقاس المخصص (مثال: النوع)" : "Custom Size/Option Label"}</Label>
-                  <Input 
-                    className="mt-1 h-9.5 rounded-lg" 
-                    placeholder={isAr ? "المقاس / خيار" : "Size / Option"} 
-                    value={form.variant_label_size || ""} 
-                    onChange={(e) => setForm({ ...form, variant_label_size: e.target.value })} 
-                  />
+              <div className="space-y-4.5">
+                {/* Size Label */}
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 border-b border-border/40 pb-3">
+                  <div>
+                    <Label className="text-xs font-bold text-muted-foreground">{isAr ? "مسمى المقاس بالعربية (مثال: التصميم)" : "Custom Size Label — Arabic"}</Label>
+                    <Input 
+                      className="mt-1 h-9.5 rounded-lg text-xs" 
+                      placeholder={isAr ? "المقاس / خيار" : "Size / Option"} 
+                      value={form.variant_label_size_ar || ""} 
+                      onChange={(e) => setForm({ ...form, variant_label_size_ar: e.target.value })} 
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-xs font-bold text-muted-foreground">{isAr ? "مسمى المقاس بالإنجليزية (مثال: Stamp Size)" : "Custom Size Label — English"}</Label>
+                    <Input 
+                      className="mt-1 h-9.5 rounded-lg text-xs" 
+                      placeholder="Size / Option" 
+                      value={form.variant_label_size_en || ""} 
+                      onChange={(e) => setForm({ ...form, variant_label_size_en: e.target.value })} 
+                    />
+                  </div>
                 </div>
-                <div>
-                  <Label className="text-xs font-bold text-muted-foreground">{isAr ? "مسمى اللون المخصص" : "Custom Color Label"}</Label>
-                  <Input 
-                    className="mt-1 h-9.5 rounded-lg" 
-                    placeholder={isAr ? "اللون" : "Color"} 
-                    value={form.variant_label_color || ""} 
-                    onChange={(e) => setForm({ ...form, variant_label_color: e.target.value })} 
-                  />
+
+                {/* Color Label */}
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 border-b border-border/40 pb-3">
+                  <div>
+                    <Label className="text-xs font-bold text-muted-foreground">{isAr ? "مسمى اللون بالعربية" : "Custom Color Label — Arabic"}</Label>
+                    <Input 
+                      className="mt-1 h-9.5 rounded-lg text-xs" 
+                      placeholder={isAr ? "اللون" : "Color"} 
+                      value={form.variant_label_color_ar || ""} 
+                      onChange={(e) => setForm({ ...form, variant_label_color_ar: e.target.value })} 
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-xs font-bold text-muted-foreground">{isAr ? "مسمى اللون بالإنجليزية" : "Custom Color Label — English"}</Label>
+                    <Input 
+                      className="mt-1 h-9.5 rounded-lg text-xs" 
+                      placeholder="Color" 
+                      value={form.variant_label_color_en || ""} 
+                      onChange={(e) => setForm({ ...form, variant_label_color_en: e.target.value })} 
+                    />
+                  </div>
                 </div>
-                <div>
-                  <Label className="text-xs font-bold text-muted-foreground">{isAr ? "مسمى الخامة المخصص" : "Custom Fabric Label"}</Label>
-                  <Input 
-                    className="mt-1 h-9.5 rounded-lg" 
-                    placeholder={isAr ? "الخامة" : "Fabric"} 
-                    value={form.variant_label_fabric || ""} 
-                    onChange={(e) => setForm({ ...form, variant_label_fabric: e.target.value })} 
-                  />
+
+                {/* Fabric Label */}
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <div>
+                    <Label className="text-xs font-bold text-muted-foreground">{isAr ? "مسمى الخامة بالعربية" : "Custom Fabric Label — Arabic"}</Label>
+                    <Input 
+                      className="mt-1 h-9.5 rounded-lg text-xs" 
+                      placeholder={isAr ? "الخامة" : "Fabric"} 
+                      value={form.variant_label_fabric_ar || ""} 
+                      onChange={(e) => setForm({ ...form, variant_label_fabric_ar: e.target.value })} 
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-xs font-bold text-muted-foreground">{isAr ? "مسمى الخامة بالإنجليزية" : "Custom Fabric Label — English"}</Label>
+                    <Input 
+                      className="mt-1 h-9.5 rounded-lg text-xs" 
+                      placeholder="Fabric" 
+                      value={form.variant_label_fabric_en || ""} 
+                      onChange={(e) => setForm({ ...form, variant_label_fabric_en: e.target.value })} 
+                    />
+                  </div>
                 </div>
               </div>
             </div>
@@ -2360,6 +2410,7 @@ function VariantDesktopRow({
   renderImageCol: boolean;
   renderSkuCol: boolean;
   renderBarcodeCol: boolean;
+  product?: Product;
 }) {
   const [costVal, setCostVal] = useState(String(v.cost_price));
   const [sellingVal, setSellingVal] = useState(String(v.selling_price));
@@ -2419,7 +2470,9 @@ function VariantDesktopRow({
           <div className="flex flex-col gap-2 p-2 bg-secondary/40 border border-primary/25 rounded-xl max-w-[260px] shadow-sm animate-in fade-in duration-150">
             <div className="grid grid-cols-2 gap-1.5">
               <div>
-                <span className="text-[10px] font-bold text-muted-foreground">{isAr ? "المقاس" : "Size"}</span>
+                <span className="text-[10px] font-bold text-muted-foreground">
+                  {(isAr ? product?.variant_label_size_ar : product?.variant_label_size_en) || product?.variant_label_size_en || product?.variant_label_size_ar || (isAr ? "المقاس" : "Size")}
+                </span>
                 <input
                   className="h-8 w-full px-2 rounded-md border border-input bg-background text-xs outline-none"
                   value={sizeVal}
@@ -2443,7 +2496,9 @@ function VariantDesktopRow({
             </div>
             <div className="grid grid-cols-2 gap-1.5">
               <div>
-                <span className="text-[10px] font-bold text-muted-foreground">{isAr ? "اللون" : "Color"}</span>
+                <span className="text-[10px] font-bold text-muted-foreground">
+                  {(isAr ? product?.variant_label_color_ar : product?.variant_label_color_en) || product?.variant_label_color_en || product?.variant_label_color_ar || (isAr ? "اللون" : "Color")}
+                </span>
                 <input
                   className="h-8 w-full px-2 rounded-md border border-input bg-background text-xs outline-none"
                   value={colorVal}
@@ -2451,7 +2506,9 @@ function VariantDesktopRow({
                 />
               </div>
               <div>
-                <span className="text-[10px] font-bold text-muted-foreground">{isAr ? "الخامة" : "Fabric"}</span>
+                <span className="text-[10px] font-bold text-muted-foreground">
+                  {(isAr ? product?.variant_label_fabric_ar : product?.variant_label_fabric_en) || product?.variant_label_fabric_en || product?.variant_label_fabric_ar || (isAr ? "الخامة" : "Fabric")}
+                </span>
                 <input
                   className="h-8 w-full px-2 rounded-md border border-input bg-background text-xs outline-none"
                   value={fabricVal}
@@ -3152,7 +3209,9 @@ function VariantList({
             <div className="font-extrabold text-sm text-foreground">{t("inventory.addVariant")}</div>
             <div className="grid grid-cols-2 gap-3.5">
               <div>
-                <Label className="text-[10px] font-bold text-muted-foreground uppercase">{t("inventory.size")}</Label>
+                <Label className="text-[10px] font-bold text-muted-foreground uppercase">
+                  {(isAr ? product?.variant_label_size_ar : product?.variant_label_size_en) || product?.variant_label_size_en || product?.variant_label_size_ar || t("inventory.size")}
+                </Label>
                 <Input className="mt-1 h-9 rounded-md text-xs" value={row.size} onChange={(e) => setRow({ ...row, size: e.target.value })} />
               </div>
               <div>
@@ -3170,11 +3229,15 @@ function VariantList({
                 </select>
               </div>
               <div>
-                <Label className="text-[10px] font-bold text-muted-foreground uppercase">{t("inventory.color")}</Label>
+                <Label className="text-[10px] font-bold text-muted-foreground uppercase">
+                  {(isAr ? product?.variant_label_color_ar : product?.variant_label_color_en) || product?.variant_label_color_en || product?.variant_label_color_ar || t("inventory.color")}
+                </Label>
                 <Input className="mt-1 h-9 rounded-md text-xs" value={row.color} onChange={(e) => setRow({ ...row, color: e.target.value })} />
               </div>
               <div>
-                <Label className="text-[10px] font-bold text-muted-foreground uppercase">{t("inventory.fabric")}</Label>
+                <Label className="text-[10px] font-bold text-muted-foreground uppercase">
+                  {(isAr ? product?.variant_label_fabric_ar : product?.variant_label_fabric_en) || product?.variant_label_fabric_en || product?.variant_label_fabric_ar || t("inventory.fabric")}
+                </Label>
                 <Input className="mt-1 h-9 rounded-md text-xs" value={row.fabric} onChange={(e) => setRow({ ...row, fabric: e.target.value })} />
               </div>
               <div>
@@ -3309,9 +3372,9 @@ function VariantList({
               </th>
               <th className="px-2 py-3 text-start font-black text-[10px]">
                 {(() => {
-                  const sizeLbl = product?.variant_label_size || (isAr ? "المقاس" : "Size");
-                  const colorLbl = product?.variant_label_color || (isAr ? "اللون" : "Color");
-                  const fabricLbl = product?.variant_label_fabric || (isAr ? "الخامة" : "Fabric");
+                  const sizeLbl = (isAr ? product?.variant_label_size_ar : product?.variant_label_size_en) || product?.variant_label_size_en || product?.variant_label_size_ar || (isAr ? "المقاس" : "Size");
+                  const colorLbl = (isAr ? product?.variant_label_color_ar : product?.variant_label_color_en) || product?.variant_label_color_en || product?.variant_label_color_ar || (isAr ? "اللون" : "Color");
+                  const fabricLbl = (isAr ? product?.variant_label_fabric_ar : product?.variant_label_fabric_en) || product?.variant_label_fabric_en || product?.variant_label_fabric_ar || (isAr ? "الخامة" : "Fabric");
                   return isAr
                     ? `المتغير (${sizeLbl} / ${colorLbl} / ${fabricLbl})`
                     : `Variant (${sizeLbl} / ${colorLbl} / ${fabricLbl})`;
@@ -3352,6 +3415,7 @@ function VariantList({
                 renderImageCol={renderImageCol}
                 renderSkuCol={renderSkuCol}
                 renderBarcodeCol={renderBarcodeCol}
+                product={product}
               />
             ))}
 
@@ -3363,7 +3427,12 @@ function VariantList({
                 <td className="px-2 py-3">
                   <div className="grid grid-cols-2 gap-1.5 max-w-[260px]">
                     <div className="flex gap-1">
-                      <Input className="h-8 w-16 text-start text-xs font-semibold" value={row.size} onChange={(e) => setRow({ ...row, size: e.target.value })} placeholder={product?.variant_label_size || "Size"} />
+                      <Input
+                        className="h-8 w-16 text-start text-xs font-semibold"
+                        value={row.size}
+                        onChange={(e) => setRow({ ...row, size: e.target.value })}
+                        placeholder={(isAr ? product?.variant_label_size_ar : product?.variant_label_size_en) || product?.variant_label_size_en || product?.variant_label_size_ar || "Size"}
+                      />
                       <select
                         className="h-8 rounded border border-input bg-background px-1 text-xs outline-none"
                         value={row.size_unit}
@@ -3376,8 +3445,18 @@ function VariantList({
                         ))}
                       </select>
                     </div>
-                    <Input className="h-8 w-full text-xs font-semibold" value={row.color} onChange={(e) => setRow({ ...row, color: e.target.value })} placeholder={product?.variant_label_color || "Color"} />
-                    <Input className="h-8 w-full text-xs font-semibold col-span-2" value={row.fabric} onChange={(e) => setRow({ ...row, fabric: e.target.value })} placeholder={product?.variant_label_fabric || "Fabric"} />
+                    <Input
+                      className="h-8 w-full text-xs font-semibold"
+                      value={row.color}
+                      onChange={(e) => setRow({ ...row, color: e.target.value })}
+                      placeholder={(isAr ? product?.variant_label_color_ar : product?.variant_label_color_en) || product?.variant_label_color_en || product?.variant_label_color_ar || "Color"}
+                    />
+                    <Input
+                      className="h-8 w-full text-xs font-semibold col-span-2"
+                      value={row.fabric}
+                      onChange={(e) => setRow({ ...row, fabric: e.target.value })}
+                      placeholder={(isAr ? product?.variant_label_fabric_ar : product?.variant_label_fabric_en) || product?.variant_label_fabric_en || product?.variant_label_fabric_ar || "Fabric"}
+                    />
                   </div>
                 </td>
 
