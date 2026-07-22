@@ -1170,6 +1170,7 @@ export type Database = {
           created_at: string
           fabric: string | null
           id: string
+          image_url: string | null
           product_id: string
           selling_price: number
           size: string | null
@@ -1189,6 +1190,7 @@ export type Database = {
           created_at?: string
           fabric?: string | null
           id?: string
+          image_url?: string | null
           product_id: string
           selling_price?: number
           size?: string | null
@@ -1208,6 +1210,7 @@ export type Database = {
           created_at?: string
           fabric?: string | null
           id?: string
+          image_url?: string | null
           product_id?: string
           selling_price?: number
           size?: string | null

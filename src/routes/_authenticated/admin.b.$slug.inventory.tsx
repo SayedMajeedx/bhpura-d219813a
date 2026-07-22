@@ -1964,6 +1964,87 @@ function BulkVariantDialog({ productId, variants, canViewFinancials, onChanged }
   </Dialog>;
 }
 
+interface VariantImageUploaderProps {
+  brandId: string;
+  imageUrl: string | null;
+  onChange: (url: string | null) => void;
+  isAr: boolean;
+}
+
+function VariantImageUploader({ brandId, imageUrl, onChange, isAr }: VariantImageUploaderProps) {
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      setUploading(true);
+      const url = await uploadPublicMedia(brandId, file, "product");
+      onChange(url);
+      toast.success(isAr ? "تم الرفع بنجاح" : "Uploaded successfully");
+    } catch (err: any) {
+      toast.error(err.message || "Upload failed");
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    }
+  };
+
+  return (
+    <div className="relative group w-11 h-11 rounded-lg border border-dashed border-input flex items-center justify-center bg-muted/40 hover:bg-muted/80 transition-all cursor-pointer overflow-hidden shrink-0">
+      <input
+        type="file"
+        ref={fileInputRef}
+        accept="image/*"
+        onChange={handleUpload}
+        className="hidden"
+      />
+      {uploading ? (
+        <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+      ) : imageUrl ? (
+        <>
+          <img src={imageUrl} alt="variant" className="w-full h-full object-cover" />
+          <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center gap-1 transition-opacity">
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                fileInputRef.current?.click();
+              }}
+              className="p-1 rounded bg-white/20 text-white hover:bg-white/30 transition-colors"
+              title={isAr ? "تغيير" : "Change"}
+            >
+              <Pencil className="h-3 w-3" />
+            </button>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onChange(null);
+              }}
+              className="p-1 rounded bg-rose-600/80 text-white hover:bg-rose-600 transition-colors"
+              title={isAr ? "حذف" : "Remove"}
+            >
+              <Trash2 className="h-3 w-3" />
+            </button>
+          </div>
+        </>
+      ) : (
+        <button
+          type="button"
+          onClick={() => fileInputRef.current?.click()}
+          className="w-full h-full flex flex-col items-center justify-center gap-0.5 text-muted-foreground hover:text-primary transition-colors"
+        >
+          <Upload className="h-3.5 w-3.5" />
+        </button>
+      )}
+    </div>
+  );
+}
+
 function VariantList({ productId, productName, businessName, variants, onChanged, salesByVariant }: { productId: string; productName: string; businessName: string | null; variants: Variant[]; onChanged: () => void; salesByVariant: Map<string, number> }) {
   const t = useT();
   const { lang } = useI18n();
@@ -2057,7 +2138,15 @@ function VariantList({ productId, productName, businessName, variants, onChanged
                 <div><Label className="text-xs">{isAr ? "السعر الأصلي الإضافي" : "Original Price Delta"}</Label><Input type="number" step="0.01" min="0" defaultValue={v.original_price ?? ""} onBlur={(e) => update(v, { original_price: e.target.value ? Number(e.target.value) : null })} /></div>
                 <div><Label className="text-xs">{mainLabel}</Label><Input type="number" defaultValue={v.stock_main ?? 0} onBlur={(e) => update(v, { stock_main: Number(e.target.value) })} /></div>
                 <div><Label className="text-xs">{incLabel}</Label><Input type="number" defaultValue={v.stock_incubator ?? 0} onBlur={(e) => update(v, { stock_incubator: Number(e.target.value) })} /></div>
-                <div><Label className="text-xs">{isAr ? "رابط الصورة للمتغير" : "Variant Image URL"}</Label><Input defaultValue={v.image_url ?? ""} onBlur={(e) => update(v, { image_url: e.target.value || null })} /></div>
+                <div>
+                  <Label className="text-xs mb-1 block">{isAr ? "صورة المتغير" : "Variant Image"}</Label>
+                  <VariantImageUploader
+                    brandId={brand.id}
+                    imageUrl={v.image_url}
+                    onChange={(url) => update(v, { image_url: url })}
+                    isAr={isAr}
+                  />
+                </div>
               </div>
               <div className="flex items-center justify-between rounded-md bg-secondary/50 px-3 py-2 text-sm">
                 <span>{t("inventory.stock")}: <b>{(v.stock_main ?? 0) + (v.stock_incubator ?? 0)}</b></span>
@@ -2106,7 +2195,15 @@ function VariantList({ productId, productName, businessName, variants, onChanged
               <div><Label className="text-xs">{isAr ? "السعر الأصلي الإضافي" : "Original Price Delta"}</Label><Input type="number" step="0.01" min="0" value={row.original_price} placeholder="—" onChange={(e) => setRow({ ...row, original_price: e.target.value })} /></div>
               <div><Label className="text-xs">{mainLabel}</Label><Input type="number" value={row.stock_main} onChange={(e) => setRow({ ...row, stock_main: e.target.value })} /></div>
               <div><Label className="text-xs">{incLabel}</Label><Input type="number" value={row.stock_incubator} onChange={(e) => setRow({ ...row, stock_incubator: e.target.value })} /></div>
-              <div><Label className="text-xs">{isAr ? "رابط الصورة للمتغير" : "Variant Image URL"}</Label><Input value={row.image_url} onChange={(e) => setRow({ ...row, image_url: e.target.value })} /></div>
+              <div>
+                <Label className="text-xs mb-1 block">{isAr ? "صورة المتغير" : "Variant Image"}</Label>
+                <VariantImageUploader
+                  brandId={brand.id}
+                  imageUrl={row.image_url}
+                  onChange={(url) => setRow({ ...row, image_url: url || "" })}
+                  isAr={isAr}
+                />
+              </div>
             </div>
             <div className="flex justify-end gap-2">
               <Button type="button" variant="ghost" onClick={(e) => { e.preventDefault(); setAdding(false); }}>{t("common.cancel")}</Button>
@@ -2142,7 +2239,7 @@ function VariantList({ productId, productName, businessName, variants, onChanged
               <th className="px-2 py-2 text-start">{t("inventory.size")}</th>
               <th className="px-2 py-2 text-start">{t("inventory.color")}</th>
               <th className="px-2 py-2 text-start">{t("inventory.fabric")}</th>
-              <th className="px-2 py-2 text-start">{isAr ? "رابط الصورة" : "Image URL"}</th>
+              <th className="px-2 py-2 text-center">{isAr ? "الصورة" : "Image"}</th>
               <th className="px-2 py-2 text-start">{t("inventory.sku")}</th>
               <th className="px-2 py-2 text-start">{barcodeLabel}</th>
               {canViewFinancials && <th className="min-w-24 whitespace-nowrap px-2 py-2 text-center">{t("inventory.cost")}</th>}
@@ -2177,7 +2274,16 @@ function VariantList({ productId, productName, businessName, variants, onChanged
                   </td>
                   <td className="px-2 py-2 text-start"><input className="w-full bg-transparent outline-none text-start" defaultValue={v.color ?? ""} onBlur={(e) => update(v, { color: e.target.value || null })} /></td>
                   <td className="px-2 py-2 text-start"><input className="w-full bg-transparent outline-none text-start" defaultValue={v.fabric ?? ""} onBlur={(e) => update(v, { fabric: e.target.value || null })} /></td>
-                  <td className="px-2 py-2 text-start"><input className="w-full bg-transparent outline-none text-start text-xs" placeholder={isAr ? "رابط الصورة" : "URL"} defaultValue={v.image_url ?? ""} onBlur={(e) => update(v, { image_url: e.target.value || null })} /></td>
+                  <td className="px-2 py-2 text-center">
+                    <div className="flex justify-center">
+                      <VariantImageUploader
+                        brandId={brand.id}
+                        imageUrl={v.image_url}
+                        onChange={(url) => update(v, { image_url: url })}
+                        isAr={isAr}
+                      />
+                    </div>
+                  </td>
                   <td className="px-2 py-2 text-start"><input className="w-full bg-transparent outline-none text-start" defaultValue={v.sku ?? ""} onBlur={(e) => update(v, { sku: e.target.value || null })} /></td>
                   <td className="px-2 py-2 text-start">
                     <div className="flex min-w-0 items-center gap-1">
@@ -2266,7 +2372,16 @@ function VariantList({ productId, productName, businessName, variants, onChanged
                 </td>
                 <td className="px-2 py-2"><Input className="h-8 w-full text-start" value={row.color} onChange={(e) => setRow({ ...row, color: e.target.value })} /></td>
                 <td className="px-2 py-2"><Input className="h-8 w-full text-start" value={row.fabric} onChange={(e) => setRow({ ...row, fabric: e.target.value })} /></td>
-                <td className="px-2 py-2"><Input className="h-8 w-full text-xs text-start" placeholder={isAr ? "رابط الصورة" : "URL"} value={row.image_url} onChange={(e) => setRow({ ...row, image_url: e.target.value })} /></td>
+                <td className="px-2 py-2 text-center">
+                  <div className="flex justify-center">
+                    <VariantImageUploader
+                      brandId={brand.id}
+                      imageUrl={row.image_url}
+                      onChange={(url) => setRow({ ...row, image_url: url || "" })}
+                      isAr={isAr}
+                    />
+                  </div>
+                </td>
                 <td className="px-2 py-2"><Input className="h-8 w-full text-start" value={row.sku} onChange={(e) => setRow({ ...row, sku: e.target.value })} /></td>
                 <td className="px-2 py-2">
                   <div className="inline-flex items-center gap-1">
