@@ -115,6 +115,15 @@ const COLOR_MAP: Record<string, string> = {
   "بيج": "#fef3c7",
 };
 
+const parsePriceDelta = (valStr: string): number => {
+  if (!valStr) return 0;
+  const match = /\+\s*(\d+(?:\.\d+)?)\s*(?:BHD|BHD\b|د\.ب|BHD|BD\b|BD)?/i.exec(valStr);
+  if (match) {
+    return Number(match[1]);
+  }
+  return 0;
+};
+
 function ProductDetail() {
   const { id } = Route.useParams();
   const { brand, settings, currency, lang, t, addToCart, isWishlisted, toggleWishlist } = useStorefront();
@@ -293,6 +302,17 @@ function ProductDetail() {
     void (supabase.rpc as any)("record_storefront_product_engagement", { p_brand_slug: brand.slug, p_product_id: product.id, p_event: "view" });
   }, [brand.slug, product?.id]);
 
+  const selectedAddOnPrice = useMemo(() => {
+    let total = 0;
+    for (const f of customFields) {
+      const val = cfValues[f.key];
+      if (val) {
+        total += parsePriceDelta(val);
+      }
+    }
+    return total;
+  }, [customFields, cfValues]);
+
   if (isLoading) {
     return (
       <div className="mx-auto max-w-6xl px-4 sm:px-6 py-8 grid md:grid-cols-2 gap-8">
@@ -318,26 +338,6 @@ function ProductDetail() {
       </div>
     );
   }
-
-  const parsePriceDelta = (valStr: string): number => {
-    if (!valStr) return 0;
-    const match = /\+\s*(\d+(?:\.\d+)?)\s*(?:BHD|BHD\b|د\.ب|BHD|BD\b|BD)?/i.exec(valStr);
-    if (match) {
-      return Number(match[1]);
-    }
-    return 0;
-  };
-
-  const selectedAddOnPrice = useMemo(() => {
-    let total = 0;
-    for (const f of customFields) {
-      const val = cfValues[f.key];
-      if (val) {
-        total += parsePriceDelta(val);
-      }
-    }
-    return total;
-  }, [customFields, cfValues]);
 
   const basePrice = Number(product.base_price || 0);
   const variantPriceDelta = variant 
