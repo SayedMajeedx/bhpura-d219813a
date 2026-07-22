@@ -4,7 +4,7 @@ import { publicSupabase as supabase } from "@/integrations/supabase/client";
 import { useStorefront } from "@/lib/storefront-context";
 import { ProductGrid, type ProductRow } from "@/routes/$slug.index";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { StorefrontPageContent } from "@/routes/$slug.page.$idx";
 import { faviconType } from "@/lib/favicon";
 import { ResponsiveImage } from "@/components/responsive-media";
@@ -79,24 +79,64 @@ function CategoryPage() {
   const [sort, setSort] = useState<"new" | "old" | "price-low" | "price-high">("new");
   const navigate = useNavigate();
   const smartKind = ["new-arrivals", "new"].includes(categorySlug) ? "new" : ["most-selling", "best-sellers", "best-selling"].includes(categorySlug) ? "best" : ["offers", "sale", "discounts"].includes(categorySlug) ? "offers" : null;
+
+  // Fetch all active categories to reconstruct full parent-child routing context locally
+  const categoriesQuery = useQuery({
+    queryKey: ["storefront", brand.slug, "all-categories"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("categories")
+        .select("id, slug, name_en, name_ar, parent_id, image_url")
+        .eq("brand_id", brand.id)
+        .eq("is_active", true)
+        .order("sort_order", { ascending: true });
+      if (error) throw error;
+      return (data ?? []) as Array<{ id: string; slug: string; name_en: string; name_ar: string | null; parent_id: string | null; image_url: string | null }>;
+    },
+    staleTime: 5 * 60_000,
+  });
+
+  const activeCategory = useMemo(() => {
+    if (smartKind) return null;
+    return categoriesQuery.data?.find(c => c.slug === categorySlug) || null;
+  }, [categoriesQuery.data, categorySlug, smartKind]);
+
+  // URL Deep-Linking & Client-side filter State
+  const [selectedSubCategorySlug, setSelectedSubCategorySlug] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (activeCategory) {
+      if (activeCategory.parent_id) {
+        setSelectedSubCategorySlug(activeCategory.slug);
+      } else {
+        setSelectedSubCategorySlug(null);
+      }
+    } else {
+      setSelectedSubCategorySlug(null);
+    }
+  }, [activeCategory]);
+
   const categoryQuery = useQuery({
     queryKey: ["storefront", brand.slug, "category", categorySlug],
     queryFn: async () => {
       if (smartKind) return { id: smartKind, slug: categorySlug, name_en: smartKind === "new" ? "New arrivals" : smartKind === "best" ? "Most selling" : "Sale", name_ar: smartKind === "new" ? "وصل حديثاً" : smartKind === "best" ? "الأكثر مبيعاً" : "تنزيلات", image_url: null };
-      const { data, error } = await (supabase.from("categories") as any).select("id, slug, name_en, name_ar, image_url").eq("brand_id", brand.id).eq("is_active", true).eq("slug", categorySlug).maybeSingle();
+      const { data, error } = await (supabase.from("categories") as any).select("id, slug, name_en, name_ar, image_url, parent_id").eq("brand_id", brand.id).eq("is_active", true).eq("slug", categorySlug).maybeSingle();
       if (error) throw error;
       if (!data) throw notFound();
-      return data as { id: string; slug: string; name_en: string; name_ar: string | null; image_url: string | null };
+      return data as { id: string; slug: string; name_en: string; name_ar: string | null; image_url: string | null; parent_id: string | null };
     },
     enabled: !cmsPage,
     staleTime: 5 * 60_000,
     gcTime: 30 * 60_000,
     refetchOnWindowFocus: false,
   });
+
   const category = categoryQuery.data;
+
+  // Parent Category Product Rollup
   const productsQuery = useQuery({
-    queryKey: ["storefront", brand.slug, "category-products", categorySlug, category?.name_en, smartKind],
-    enabled: Boolean(category) && !cmsPage,
+    queryKey: ["storefront", brand.slug, "category-products-rollup", categorySlug, activeCategory?.id, smartKind, categoriesQuery.data?.length],
+    enabled: (Boolean(activeCategory) || Boolean(smartKind)) && !cmsPage && !categoriesQuery.isLoading,
     queryFn: async () => {
       if (smartKind === "best") {
         const { data: ranked, error: rankError } = await (supabase.rpc as any)("get_storefront_best_sellers", { p_brand_slug: brand.slug, p_limit: 24 });
@@ -114,7 +154,15 @@ function CategoryPage() {
         const rows = (data ?? []) as unknown as ProductRow[];
         return smartKind === "offers" ? rows.filter((product) => product.product_variants.some((variant) => Number(variant.original_price || 0) > Number(variant.selling_price || 0))) : rows;
       }
-      const values = [...new Set([category!.slug, category!.name_en].filter(Boolean))];
+
+      const parentCat = activeCategory!.parent_id 
+        ? (categoriesQuery.data?.find(c => c.id === activeCategory!.parent_id) || activeCategory!)
+        : activeCategory!;
+      
+      const subCats = categoriesQuery.data?.filter(c => c.parent_id === parentCat.id) ?? [];
+      const rollupCategories = [parentCat, ...subCats];
+      
+      const values = [...new Set(rollupCategories.flatMap(c => [c.slug, c.name_en]).filter(Boolean))];
       const { data, error } = await supabase.from("products").select("id, name, name_ar, name_en, description, description_ar, description_en, category, image_url, media, brand_id, created_at, product_variants(id, selling_price, original_price, stock_main, size, color)").eq("brand_id", brand.id).eq("is_active", true).in("category", values).order("created_at", { ascending: false });
       if (error) throw error;
       return (data ?? []) as unknown as ProductRow[];
@@ -123,22 +171,191 @@ function CategoryPage() {
     gcTime: 30 * 60_000,
     refetchOnWindowFocus: false,
   });
+
   const title = category ? (lang === "ar" ? category.name_ar || category.name_en : category.name_en) : "";
-  const sortedProducts = useMemo(() => {
-    const rows = [...(productsQuery.data ?? [])];
+
+  // Dynamic filter out empty subcategory chips that do not have active products in rollup
+  const subcategoriesWithProducts = useMemo(() => {
+    if (!activeCategory || categoriesQuery.isLoading) return [];
+    
+    const parentCat = activeCategory.parent_id 
+      ? (categoriesQuery.data?.find(c => c.id === activeCategory.parent_id) || activeCategory)
+      : activeCategory;
+      
+    const subs = categoriesQuery.data?.filter(c => c.parent_id === parentCat.id) ?? [];
+    const products = productsQuery.data ?? [];
+    
+    return subs.filter(sub => {
+      const matchValues = new Set([sub.slug, sub.name_en].filter(Boolean));
+      return products.some(p => matchValues.has(p.category));
+    });
+  }, [activeCategory, categoriesQuery.data, categoriesQuery.isLoading, productsQuery.data]);
+
+  const filteredProducts = useMemo(() => {
+    let list = productsQuery.data ?? [];
+    if (selectedSubCategorySlug) {
+      const selectedSub = categoriesQuery.data?.find(c => c.slug === selectedSubCategorySlug);
+      const targetValues = new Set([
+        selectedSub?.slug,
+        selectedSub?.name_en
+      ].filter(Boolean));
+      list = list.filter(p => targetValues.has(p.category));
+    }
+    const rows = [...list];
     if (smartKind === "best" && sort === "new") return rows;
     const price = (product: ProductRow) => Math.min(...product.product_variants.map((variant) => Number(variant.selling_price)).filter((value) => value >= 0), Number.MAX_SAFE_INTEGER);
     return rows.sort((a, b) => sort === "old" ? new Date(a.created_at).getTime() - new Date(b.created_at).getTime() : sort === "price-low" ? price(a) - price(b) : sort === "price-high" ? price(b) - price(a) : new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-  }, [productsQuery.data, sort, smartKind]);
+  }, [productsQuery.data, selectedSubCategorySlug, sort, smartKind, categoriesQuery.data]);
+
+  const breadcrumbs = useMemo(() => {
+    if (smartKind || !activeCategory || categoriesQuery.isLoading) return null;
+    const list = [
+      {
+        label: t("الرئيسية", "Home"),
+        to: "/$slug",
+        params: { slug: brand.slug }
+      }
+    ];
+
+    if (activeCategory.parent_id) {
+      const parentCat = categoriesQuery.data?.find(c => c.id === activeCategory.parent_id);
+      if (parentCat) {
+        list.push({
+          label: lang === "ar" ? parentCat.name_ar || parentCat.name_en : parentCat.name_en || parentCat.name_ar,
+          to: "/$slug/$category",
+          params: { slug: brand.slug, category: parentCat.slug || parentCat.name_en }
+        });
+      }
+    }
+
+    list.push({
+      label: lang === "ar" ? activeCategory.name_ar || activeCategory.name_en : activeCategory.name_en || activeCategory.name_ar,
+      to: "/$slug/$category",
+      params: { slug: brand.slug, category: activeCategory.slug || activeCategory.name_en }
+    });
+
+    return list;
+  }, [activeCategory, categoriesQuery.data, categoriesQuery.isLoading, brand.slug, lang, t, smartKind]);
+
   const BackIcon = lang === "ar" ? ChevronRight : ChevronLeft;
+
   if (cmsPage) return <StorefrontPageContent page={cmsPage} />;
-  return <main>
-    <section className="border-b" style={{ backgroundColor: "var(--sf-header-bg)", color: "var(--sf-header-fg)" }}><div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-12">
-      <Link to="/$slug" params={{ slug: brand.slug }} className="mb-5 inline-flex items-center gap-1 text-sm opacity-70 hover:opacity-100"><BackIcon className="h-4 w-4" />{t("العودة للمتجر", "Back to store")}</Link>
-      <div className="flex items-center gap-5">{category?.image_url && <ResponsiveImage src={category.image_url} preset="thumb" sizes="112px" alt="" className="h-20 w-20 rounded-2xl object-cover sm:h-28 sm:w-28" />}<div><p className="text-xs uppercase tracking-[0.2em] opacity-60">{t("القسم", "Category")}</p><h1 className="mt-1 font-display text-3xl sm:text-5xl" style={{ color: "var(--sf-heading)" }}>{title}</h1></div></div>
-    </div></section>
-    <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6"><div className="mb-6 flex justify-end"><select value={sort} onChange={(event) => setSort(event.target.value as typeof sort)} className="h-11 rounded-lg border bg-background px-3 text-sm"><option value="new">{t("الأحدث أولاً", "Newest first")}</option><option value="old">{t("الأقدم أولاً", "Oldest first")}</option><option value="price-low">{t("السعر: الأقل أولاً", "Price: low to high")}</option><option value="price-high">{t("السعر: الأعلى أولاً", "Price: high to low")}</option></select></div><ProductGrid products={sortedProducts} loading={categoryQuery.isLoading || productsQuery.isLoading} categoryEmpty onViewAll={() => { void navigate({ to: "/$slug", params: { slug: brand.slug } }); }} /></section>
-  </main>;
+
+  return (
+    <main>
+      <section className="border-b" style={{ backgroundColor: "var(--sf-header-bg)", color: "var(--sf-header-fg)" }}>
+        <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-12">
+          {breadcrumbs ? (
+            <nav className="mb-5 flex flex-wrap items-center gap-1.5 text-xs font-semibold opacity-70">
+              {breadcrumbs.map((crumb, idx) => {
+                const isLast = idx === breadcrumbs.length - 1;
+                return (
+                  <div key={idx} className="flex items-center gap-1.5">
+                    {idx > 0 && <span className="opacity-50">/</span>}
+                    {isLast ? (
+                      <span className="opacity-100">{crumb.label}</span>
+                    ) : (
+                      <Link
+                        to={crumb.to as any}
+                        params={crumb.params}
+                        className="hover:underline opacity-80 hover:opacity-100 transition-opacity"
+                      >
+                        {crumb.label}
+                      </Link>
+                    )}
+                  </div>
+                );
+              })}
+            </nav>
+          ) : (
+            <Link to="/$slug" params={{ slug: brand.slug }} className="mb-5 inline-flex items-center gap-1 text-sm opacity-70 hover:opacity-100">
+              <BackIcon className="h-4 w-4" />
+              {t("العودة للمتجر", "Back to store")}
+            </Link>
+          )}
+
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-5">
+            <div className="flex items-center gap-5">
+              {category?.image_url && (
+                <ResponsiveImage
+                  src={category.image_url}
+                  preset="thumb"
+                  sizes="112px"
+                  alt=""
+                  className="h-20 w-20 rounded-2xl object-cover sm:h-28 sm:w-28"
+                />
+              )}
+              <div>
+                <p className="text-xs uppercase tracking-[0.2em] opacity-60">{t("القسم", "Category")}</p>
+                <h1 className="mt-1 font-display text-3xl sm:text-5xl" style={{ color: "var(--sf-heading)" }}>
+                  {title}
+                </h1>
+              </div>
+            </div>
+
+            {/* Horizontal Subcategory Filter Chips */}
+            {subcategoriesWithProducts.length > 0 && (
+              <div className="flex flex-wrap gap-2 items-center overflow-x-auto no-scrollbar py-1">
+                <button
+                  type="button"
+                  onClick={() => setSelectedSubCategorySlug(null)}
+                  className={`min-h-9 px-4 py-1.5 rounded-full text-xs font-bold border transition-all ${
+                    selectedSubCategorySlug === null
+                      ? "bg-foreground text-background border-foreground shadow-md scale-[1.02]"
+                      : "border-border/80 bg-background text-muted-foreground hover:border-foreground/45 hover:text-foreground"
+                  }`}
+                >
+                  {t("الكل", "All")}
+                </button>
+                {subcategoriesWithProducts.map((sub) => {
+                  const label = lang === "ar" ? sub.name_ar || sub.name_en : sub.name_en || sub.name_ar;
+                  const active = selectedSubCategorySlug === sub.slug;
+                  return (
+                    <button
+                      key={sub.id}
+                      type="button"
+                      onClick={() => setSelectedSubCategorySlug(sub.slug)}
+                      className={`min-h-9 px-4 py-1.5 rounded-full text-xs font-bold border transition-all ${
+                        active
+                          ? "bg-foreground text-background border-foreground shadow-md scale-[1.02]"
+                          : "border-border/80 bg-background text-muted-foreground hover:border-foreground/45 hover:text-foreground"
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </div>
+      </section>
+
+      <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6">
+        <div className="mb-6 flex justify-end">
+          <select
+            value={sort}
+            onChange={(event) => setSort(event.target.value as typeof sort)}
+            className="h-11 rounded-lg border bg-background px-3 text-sm"
+          >
+            <option value="new">{t("الأحدث أولاً", "Newest first")}</option>
+            <option value="old">{t("الأقدم أولاً", "Oldest first")}</option>
+            <option value="price-low">{t("السعر: الأقل أولاً", "Price: low to high")}</option>
+            <option value="price-high">{t("السعر: الأعلى أولاً", "Price: high to low")}</option>
+          </select>
+        </div>
+
+        <ProductGrid
+          products={filteredProducts}
+          loading={categoryQuery.isLoading || productsQuery.isLoading || categoriesQuery.isLoading}
+          categoryEmpty
+          onViewAll={() => {
+            void navigate({ to: "/$slug", params: { slug: brand.slug } });
+          }}
+        />
+      </section>
+    </main>
+  );
 }
 
 function CategoryUnavailable() {

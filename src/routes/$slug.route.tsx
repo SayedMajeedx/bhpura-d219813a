@@ -638,13 +638,13 @@ function MobileStorefrontDropdown() {
                     <Button
                       type="button"
                       variant="ghost"
-                      size="icon"
+                      size="sm"
                       onClick={toggleExpand}
-                      className="h-9 w-9 shrink-0 rounded-lg hover:bg-black/5"
+                      className="h-9 px-2.5 shrink-0 rounded-lg hover:bg-black/5 font-mono text-sm font-bold tracking-tight"
                       aria-expanded={isExpanded}
                       aria-label={t("توسيع", "Expand")}
                     >
-                      <ChevronDown className={`h-4 w-4 transition-transform duration-300 ${isExpanded ? "rotate-180" : ""}`} />
+                      {isExpanded ? "[-]" : "[+]"}
                     </Button>
                   )}
                 </div>
@@ -839,7 +839,7 @@ function DesktopStoreNavigation() {
                 </Link>
                 {/* Custom premium dropdown menu card with hover-friendly bridging padding */}
                 <div className="absolute top-full left-1/2 z-50 pt-2 hidden min-w-[210px] -translate-x-1/2 group-hover:block">
-                  <div className="rounded-xl border border-border/80 bg-background p-1.5 shadow-2xl transition-all duration-200 animate-in fade-in-0 slide-in-from-top-1">
+                  <div className="rounded-xl border border-slate-100 bg-background p-2 shadow-lg transition-all duration-200 animate-in fade-in-0 slide-in-from-top-1">
                     {subs.map((sub: any) => {
                       const subName = lang === "ar" ? sub.name_ar || sub.name_en : sub.name_en || sub.name_ar;
                       const subUrl = sub.slug || sub.name_en;
