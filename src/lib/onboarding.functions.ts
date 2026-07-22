@@ -47,7 +47,7 @@ export const getOnboardingReceiptUploadUrl = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     let env: any = null;
     try {
-      const { getEvent } = await import("vinxi/http");
+      const { getEvent } = await import(/* @vite-ignore */ "vinxi/http");
       const event = getEvent();
       env = event?.context?.cloudflare?.env || 
             event?.context?.env || 

@@ -16,6 +16,9 @@ const baseConfig = originalDefineConfig({
     resolve: {
       tsconfigPaths: true,
     },
+    optimizeDeps: {
+      exclude: ["vinxi/http"],
+    },
   },
   nitro: {
     cloudflare: {

@@ -319,6 +319,23 @@ function ProductDetail() {
     return total;
   }, [customFields, cfValues]);
 
+  const basePrice = Number(product?.base_price || 0);
+
+  // Find all variants that match the currently selected attributes (even if partially selected)
+  const matchingVariants = useMemo(() => {
+    return variants.filter((v) => {
+      const colorMatch = !selectedColor || v.color === selectedColor;
+      const sizeMatch = !selectedSize || v.size === selectedSize;
+      const fabricMatch = !selectedFabric || v.fabric === selectedFabric;
+      return colorMatch && sizeMatch && fabricMatch;
+    });
+  }, [selectedColor, selectedSize, selectedFabric, variants]);
+
+  // Compute prices for matching variants
+  const matchingPrices = useMemo(() => {
+    return matchingVariants.map((v) => basePrice + Number(v.selling_price || 0) + selectedAddOnPrice);
+  }, [matchingVariants, basePrice, selectedAddOnPrice]);
+
   if (isLoading) {
     return (
       <div className="mx-auto max-w-6xl px-4 sm:px-6 py-8 grid md:grid-cols-2 gap-8">
@@ -345,23 +362,7 @@ function ProductDetail() {
     );
   }
 
-  const basePrice = Number(product.base_price || 0);
   const hasVariants = variants.length > 0;
-
-  // Find all variants that match the currently selected attributes (even if partially selected)
-  const matchingVariants = useMemo(() => {
-    return variants.filter((v) => {
-      const colorMatch = !selectedColor || v.color === selectedColor;
-      const sizeMatch = !selectedSize || v.size === selectedSize;
-      const fabricMatch = !selectedFabric || v.fabric === selectedFabric;
-      return colorMatch && sizeMatch && fabricMatch;
-    });
-  }, [selectedColor, selectedSize, selectedFabric, variants]);
-
-  // Compute prices for matching variants
-  const matchingPrices = useMemo(() => {
-    return matchingVariants.map((v) => basePrice + Number(v.selling_price || 0) + selectedAddOnPrice);
-  }, [matchingVariants, basePrice, selectedAddOnPrice]);
 
   const minMatchingPrice = matchingPrices.length > 0 ? Math.min(...matchingPrices) : basePrice + selectedAddOnPrice;
   const maxMatchingPrice = matchingPrices.length > 0 ? Math.max(...matchingPrices) : basePrice + selectedAddOnPrice;
