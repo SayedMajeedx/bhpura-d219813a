@@ -350,7 +350,14 @@ function ProductDetail() {
   const displayName = pickName(lang, product);
   const displayDescription = pickDescription(lang, product);
 
-  const cfLabel = (f: CustomField) => (lang === "ar" ? (f.label_ar || f.label_en || f.key) : (f.label_en || f.label_ar || f.key));
+  const cfLabel = (f: CustomField) => {
+    const label = lang === "ar" ? (f.label_ar || f.label_en) : (f.label_en || f.label_ar);
+    if (label) return label;
+    if (/^f\d+$/.test(f.key)) {
+      return lang === "ar" ? "النص المطلوب / تفاصيل إضافية" : "Required Text / Special Instructions";
+    }
+    return f.key;
+  };
 
   const primary = settings.primary_color || "#111111";
   const primaryFg = readableOn(primary);
@@ -761,6 +768,7 @@ function ProductDetail() {
                       type={f.type === "number" ? "number" : "text"}
                       value={val}
                       onChange={(e) => set(e.target.value)}
+                      placeholder={lang === "ar" ? "اكتب التفاصيل أو النص المطلوب هنا..." : "Type the required text or details here..."}
                       className="w-full h-11 rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                     />
                   )}
