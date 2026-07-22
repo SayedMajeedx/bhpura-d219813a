@@ -2113,7 +2113,23 @@ function OrderDetail() {
                                     : cf.label_en || cf.label_ar || cf.key}
                                   :
                                 </b>{" "}
-                                {cf.value}
+                                {cf.value.startsWith("http") ? (
+                                  <div className="inline-flex flex-col gap-1 mt-1">
+                                    <a
+                                      href={cf.value}
+                                      target="_blank"
+                                      rel="noreferrer"
+                                      className="text-primary hover:underline font-semibold inline-flex items-center gap-1 bg-primary/10 px-2 py-0.5 rounded"
+                                    >
+                                      📎 {isAr ? "تحميل/عرض الملف" : "View Uploaded File"}
+                                    </a>
+                                    {/\.(jpg|jpeg|png|gif|webp|svg)$/i.test(cf.value) && (
+                                      <img src={cf.value} alt="" className="mt-1 max-h-24 rounded border object-contain bg-background" />
+                                    )}
+                                  </div>
+                                ) : (
+                                  cf.value
+                                )}
                               </div>
                             ))}
                           </div>
@@ -3085,7 +3101,19 @@ function InvoicePreview({
                               {isRTL
                                 ? cf.label_ar || cf.label_en || cf.key
                                 : cf.label_en || cf.label_ar || cf.key}
-                              : {cf.value}
+                              :{" "}
+                              {cf.value.startsWith("http") ? (
+                                <a
+                                  href={cf.value}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="text-primary hover:underline font-semibold inline-flex items-center gap-1"
+                                >
+                                  📎 {isRTL ? "تحميل/عرض الملف" : "View File"}
+                                </a>
+                              ) : (
+                                cf.value
+                              )}
                             </li>
                           ))}
                         </ul>

@@ -1297,6 +1297,45 @@ function ProductsSection({ products, variants, businessName, currency, onChanged
   );
 }
 
+const CUSTOMIZER_PRESETS = {
+  print: {
+    label_en: "Print / Stamp Shop Preset",
+    label_ar: "نموذج مطبعة / متجر أختام",
+    fields: [
+      { key: "stamp_size", label_ar: "مقاس الختم / الطباعة", label_en: "Stamp/Print Size Swatches", type: "select", options: ["Q13 (13*49mm)", "Q20 (20*20mm)", "Q30 (30*30mm)"], required: True },
+      { key: "ink_color", label_ar: "لون الحبر", label_en: "Ink/Color Picker", type: "select", options: ["Black", "Blue", "Red", "Green"], required: True },
+      { key: "logo_upload", label_ar: "تحميل شعار الختم / التصميم", label_en: "Upload Logo File Input", type: "file", options: [], required: False },
+      { key: "custom_note", label_ar: "نص الكتابة المطلوب للختم", label_en: "Custom Note Text Area", type: "text", options: [], required: False },
+    ]
+  },
+  fashion: {
+    label_en: "Fashion / Abaya Preset",
+    label_ar: "نموذج أزياء / عبايات",
+    fields: [
+      { key: "length_note", label_ar: "طول العباية المطلوب", label_en: "Custom Length Note", type: "text", options: [], required: True },
+      { key: "fabric_color", label_ar: "لون القماش", label_en: "Fabric Color Swatches", type: "select", options: ["Black / أسود", "Navy / كحلي", "Beige / بيج"], required: True },
+      { key: "monogram_text", label_ar: "كتابة الحروف أو الاسم", label_en: "Monogram Text Input", type: "text", options: [], required: False },
+    ]
+  },
+  gift: {
+    label_en: "Gift / Perfume Preset",
+    label_ar: "نموذج هدايا / عطور",
+    fields: [
+      { key: "gift_box", label_ar: "إضافة صندوق هدايا فاخر", label_en: "Gift Box Add-On (+X BHD)", type: "select", options: ["No / لا", "Yes (+2.000 BHD) / نعم (+2.000 د.ب)"], required: True },
+      { key: "greeting_card", label_ar: "نص كرت الإهداء", label_en: "Greeting Card Message Text Area", type: "text", options: [], required: False },
+    ]
+  },
+  jewelry: {
+    label_en: "Jewelry / Engraving Preset",
+    label_ar: "نموذج مجوهرات / حفر",
+    fields: [
+      { key: "engraving_text", label_ar: "النص المطلوب للحفر", label_en: "Custom Engraving Text", type: "text", options: [], required: False },
+      { key: "font_style", label_ar: "خط الكتابة", label_en: "Font Style Selector", type: "select", options: ["Arabic Calligraphy / ديواني", "Classic Serif", "Modern Sans-Serif"], required: False },
+      { key: "material_swatch", label_ar: "نوع المعدن", label_en: "Material/Metal Swatch", type: "select", options: ["Gold / ذهب", "Silver / فضة", "Rose Gold / روز جولد"], required: True },
+    ]
+  }
+};
+
 function ProductDialog({ product, onSaved }: { product: Product | null; onSaved: () => void }) {
   const t = useT();
   const { lang } = useI18n();
@@ -1574,68 +1613,204 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
       />
       {pendingVideo && null}
 
-      <div className="rounded-lg border border-border p-3 space-y-3">
-        <div className="flex items-center justify-between">
+      <div className="rounded-lg border border-border p-4 bg-secondary/10 space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border/60 pb-3">
           <div>
-            <div className="text-sm font-medium">{isAr ? "حقول مخصّصة للمنتج" : "Custom product fields"}</div>
-            <div className="text-xs text-muted-foreground">
-              {isAr ? "أضف حتى 5 حقول (نص/رقم/قائمة) يظهرون للعميل في صفحة المنتج." : "Add up to 5 fields (text/number/select) that appear to customers on the product page."}
+            <div className="text-sm font-semibold text-foreground flex items-center gap-1.5">
+              <span>{isAr ? "⚙️ محرك تصميم وتخصيص المنتج" : "⚙️ Product Customization Engine"}</span>
+              <span className="rounded bg-primary/15 px-1.5 py-0.5 text-[10px] font-bold text-primary uppercase">Unlimited</span>
+            </div>
+            <div className="text-xs text-muted-foreground mt-0.5">
+              {isAr ? "أضف حقولاً مخصصة غير محدودة (نص، قائمة، رفع ملفات، أرقام) لتمكين العميل من تخصيص طلبه." : "Configure unlimited bespoke text areas, dropdown lists, file uploads, and numeric inputs for customers."}
             </div>
           </div>
-          <Button
-            size="sm"
-            variant="outline"
-            disabled={(form.custom_fields ?? []).length >= 5}
-            onClick={() => setForm({
-              ...form,
-              custom_fields: [
-                ...(form.custom_fields ?? []),
-                { key: `f${Date.now()}`, label_ar: "", label_en: "", type: "text", options: [], required: false },
-              ],
-            })}
-          >
-            {isAr ? "إضافة حقل" : "Add field"}
-          </Button>
+          <div className="flex flex-wrap items-center gap-2">
+            <Select onValueChange={(presetKey) => {
+              const preset = CUSTOMIZER_PRESETS[presetKey as keyof typeof CUSTOMIZER_PRESETS];
+              if (preset) {
+                setForm({
+                  ...form,
+                  custom_fields: [
+                    ...(form.custom_fields ?? []),
+                    ...preset.fields.map((f, index) => ({
+                      ...f,
+                      key: `f${Date.now()}-${index}-${f.key}`
+                    }))
+                  ]
+                });
+                toast.success(isAr ? "تم تطبيق النموذج بنجاح" : "Preset applied successfully");
+              }
+            }}>
+              <SelectTrigger className="h-8 text-xs w-48 rounded-lg bg-background">
+                <SelectValue placeholder={isAr ? "⚡ نموذج مسبق سريع" : "⚡ Quick Preset Customizer"} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="print">{isAr ? "أختام وطباعة" : "Print / Stamp Shop"}</SelectItem>
+                <SelectItem value="fashion">{isAr ? "عبايات وأزياء" : "Fashion / Abaya"}</SelectItem>
+                <SelectItem value="gift">{isAr ? "عطور وهدايا" : "Gift / Perfume"}</SelectItem>
+                <SelectItem value="jewelry">{isAr ? "مجوهرات وحفر" : "Jewelry / Engraving"}</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              className="h-8 rounded-lg"
+              onClick={(e) => {
+                e.preventDefault();
+                setForm({
+                  ...form,
+                  custom_fields: [
+                    ...(form.custom_fields ?? []),
+                    { key: `f${Date.now()}`, label_ar: "", label_en: "", type: "text", options: [], required: false },
+                  ],
+                });
+              }}
+            >
+              {isAr ? "إضافة حقل" : "Add field"}
+            </Button>
+          </div>
         </div>
-        {(form.custom_fields ?? []).map((f, i) => {
-          const upd = (patch: Partial<CustomField>) => {
-            const next = [...form.custom_fields];
-            next[i] = { ...next[i], ...patch };
-            setForm({ ...form, custom_fields: next });
-          };
-          const remove = () => setForm({ ...form, custom_fields: form.custom_fields.filter((_, j) => j !== i) });
-          return (
-            <div key={f.key} className="rounded-md border border-border p-2 space-y-2">
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                <Input placeholder={isAr ? "التسمية بالعربية" : "Arabic label"} value={f.label_ar ?? ""} onChange={(e) => upd({ label_ar: e.target.value })} />
-                <Input placeholder={isAr ? "التسمية بالإنجليزية" : "English label"} value={f.label_en ?? ""} onChange={(e) => upd({ label_en: e.target.value })} />
-                <Select value={f.type} onValueChange={(v) => upd({ type: v as CustomField["type"] })}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="text">{isAr ? "نص" : "Text"}</SelectItem>
-                    <SelectItem value="number">{isAr ? "رقم" : "Number"}</SelectItem>
-                    <SelectItem value="select">{isAr ? "قائمة اختيار" : "Dropdown"}</SelectItem>
-                    <SelectItem value="file">{isAr ? "رفع ملف" : "File upload"}</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              {f.type === "select" && (
-                <Input
-                  placeholder={isAr ? "الخيارات مفصولة بفاصلة (,) أو (،)" : "Options separated by commas"}
-                  defaultValue={(f.options ?? []).join(", ")}
-                  onChange={(e) => upd({ options: e.target.value.split(/[,،]/).map((s) => s.trim()).filter(Boolean) })}
-                />
-              )}
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2 text-xs">
-                  <Switch checked={!!f.required} onCheckedChange={(v) => upd({ required: v })} />
-                  <span>{isAr ? "إلزامي" : "Required"}</span>
+
+        {(form.custom_fields ?? []).length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-6 text-center text-muted-foreground border border-dashed border-border/80 rounded-lg bg-background/50">
+            <svg className="h-8 w-8 opacity-40 mb-1.5 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+            <span className="text-xs font-medium">{isAr ? "لا توجد خيارات مخصصة مفعلة" : "No custom options configured yet"}</span>
+            <span className="text-[10px] opacity-75 mt-0.5">{isAr ? "استخدم النماذج السريعة بالأعلى لتعبئة الحقول بضغطة زر!" : "Use the dropdown template presets above to populate in 1-click!"}</span>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {(form.custom_fields ?? []).map((f, i) => {
+              const upd = (patch: Partial<CustomField>) => {
+                const next = [...form.custom_fields];
+                next[i] = { ...next[i], ...patch };
+                setForm({ ...form, custom_fields: next });
+              };
+              const remove = () => setForm({ ...form, custom_fields: form.custom_fields.filter((_, j) => j !== i) });
+              return (
+                <div key={f.key} className="rounded-lg border border-border p-3 bg-background space-y-3 shadow-sm transition hover:border-primary/40">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                    <Input className="h-8 text-xs" placeholder={isAr ? "التسمية بالعربية" : "Arabic label"} value={f.label_ar ?? ""} onChange={(e) => upd({ label_ar: e.target.value })} />
+                    <Input className="h-8 text-xs" placeholder={isAr ? "التسمية بالإنجليزية" : "English label"} value={f.label_en ?? ""} onChange={(e) => upd({ label_en: e.target.value })} />
+                    <Select value={f.type} onValueChange={(v) => upd({ type: v as CustomField["type"] })}>
+                      <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="text">{isAr ? "نص" : "Text"}</SelectItem>
+                        <SelectItem value="number">{isAr ? "رقم" : "Number"}</SelectItem>
+                        <SelectItem value="select">{isAr ? "قائمة اختيار" : "Dropdown"}</SelectItem>
+                        <SelectItem value="file">{isAr ? "رفع ملف" : "File upload"}</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  {f.type === "select" && (
+                    <Input
+                      className="h-8 text-xs"
+                      placeholder={isAr ? "الخيارات مفصولة بفاصلة (,) أو (،)" : "Options separated by commas"}
+                      defaultValue={(f.options ?? []).join(", ")}
+                      onChange={(e) => upd({ options: e.target.value.split(/[,،]/).map((s) => s.trim()).filter(Boolean) })}
+                    />
+                  )}
+
+                  {/* Real-time storefront preview block */}
+                  <div className="rounded-lg bg-muted/40 p-2.5 border border-dashed border-border/60 text-xs">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-semibold tracking-wider text-muted-foreground uppercase">{isAr ? "👁️ معاينة فورية لصفحة المنتج" : "👁️ Real-time Storefront Preview"}</span>
+                    </div>
+                    <div className="mt-1.5 space-y-1">
+                      <div className="flex items-center gap-1 font-semibold text-foreground/90">
+                        <span>{isAr ? f.label_ar || f.label_en || "اسم الحقل" : f.label_en || f.label_ar || "Field Name"}</span>
+                        {f.required && <span className="text-red-500 font-bold">*</span>}
+                      </div>
+                      {f.type === "text" && (
+                        <Input disabled className="h-8 text-xs bg-background" placeholder={isAr ? "كتابة نص مخصص..." : "Enter custom text..."} />
+                      )}
+                      {f.type === "number" && (
+                        <Input disabled type="number" className="h-8 text-xs bg-background" placeholder="123" />
+                      )}
+                      {f.type === "file" && (
+                        <div className="flex h-11 items-center justify-center gap-2 rounded-lg border border-dashed border-border bg-background text-muted-foreground">
+                          <svg className="h-4 w-4 opacity-60" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
+                          <span className="text-[10px] font-medium">{isAr ? "انقر لرفع ملف مخصص (.pdf, .png, .jpg)" : "Click to upload custom file (.pdf, .png, .jpg)"}</span>
+                        </div>
+                      )}
+                      {f.type === "select" && (
+                        <div className="flex flex-wrap gap-1.5 pt-0.5">
+                          {(f.options ?? []).length === 0 ? (
+                            <span className="text-[11px] text-muted-foreground italic">{isAr ? "لا توجد خيارات بعد" : "No options specified yet"}</span>
+                          ) : (
+                            (f.options ?? []).map((opt) => (
+                              <div key={opt} className="rounded-md border border-border bg-background px-2.5 py-0.5 text-[11px] font-medium text-foreground hover:border-primary">
+                                {opt}
+                              </div>
+                            ))
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between border-t border-border/40 pt-2 text-xs">
+                    <div className="flex items-center gap-2 text-xs">
+                      <Switch checked={!!f.required} onCheckedChange={(v) => upd({ required: v })} />
+                      <span className="text-muted-foreground">{isAr ? "حقل إلزامي" : "Required field"}</span>
+                    </div>
+                    <div className="flex items-center gap-0.5">
+                      <Button
+                        type="button"
+                        size="xs"
+                        variant="ghost"
+                        className="h-6 w-6 p-0"
+                        disabled={i === 0}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          const next = [...form.custom_fields];
+                          const temp = next[i];
+                          next[i] = next[i - 1];
+                          next[i - 1] = temp;
+                          setForm({ ...form, custom_fields: next });
+                        }}
+                        title={isAr ? "نقل للأعلى" : "Move Up"}
+                      >
+                        ▲
+                      </Button>
+                      <Button
+                        type="button"
+                        size="xs"
+                        variant="ghost"
+                        className="h-6 w-6 p-0"
+                        disabled={i === (form.custom_fields ?? []).length - 1}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          const next = [...form.custom_fields];
+                          const temp = next[i];
+                          next[i] = next[i + 1];
+                          next[i + 1] = temp;
+                          setForm({ ...form, custom_fields: next });
+                        }}
+                        title={isAr ? "نقل للأسفل" : "Move Down"}
+                      >
+                        ▼
+                      </Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="ghost"
+                        className="text-rose-600 hover:text-rose-700 hover:bg-rose-50 h-7 text-[11px] rounded"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          remove();
+                        }}
+                      >
+                        {isAr ? "حذف" : "Remove"}
+                      </Button>
+                    </div>
+                  </div>
                 </div>
-                <Button size="sm" variant="ghost" onClick={remove}>{isAr ? "حذف" : "Remove"}</Button>
-              </div>
-            </div>
-          );
-        })}
+              );
+            })}
+          </div>
+        )}
       </div>
 
       <DialogFooter><Button onClick={save}>{t("common.save")}</Button></DialogFooter>
@@ -1908,7 +2083,10 @@ function VariantList({ productId, productName, businessName, variants, onChanged
               <div><Label className="text-xs">{mainLabel}</Label><Input type="number" value={row.stock_main} onChange={(e) => setRow({ ...row, stock_main: e.target.value })} /></div>
               <div><Label className="text-xs">{incLabel}</Label><Input type="number" value={row.stock_incubator} onChange={(e) => setRow({ ...row, stock_incubator: e.target.value })} /></div>
             </div>
-            <div className="flex justify-end gap-2"><Button variant="ghost" onClick={() => setAdding(false)}>{t("common.cancel")}</Button><Button onClick={add}>{t("common.save")}</Button></div>
+            <div className="flex justify-end gap-2">
+              <Button type="button" variant="ghost" onClick={(e) => { e.preventDefault(); setAdding(false); }}>{t("common.cancel")}</Button>
+              <Button type="button" onClick={(e) => { e.preventDefault(); add(); }}>{t("common.save")}</Button>
+            </div>
           </div>
         )}
       </div>
@@ -1974,35 +2152,35 @@ function VariantList({ productId, productName, businessName, variants, onChanged
                   <td className="px-2 py-2 text-start"><input className="w-full bg-transparent outline-none text-start" defaultValue={v.fabric ?? ""} onBlur={(e) => update(v, { fabric: e.target.value || null })} /></td>
                   <td className="px-2 py-2 text-start"><input className="w-full bg-transparent outline-none text-start" defaultValue={v.sku ?? ""} onBlur={(e) => update(v, { sku: e.target.value || null })} /></td>
                   <td className="px-2 py-2 text-start">
-                      <div className="flex min-w-0 items-center gap-1">
-                        <input
-                          className="min-w-0 flex-1 bg-transparent font-mono text-xs outline-none text-start"
-                          placeholder={isAr ? "بدون" : "None"}
-                          defaultValue={v.barcode ?? ""}
-                          onBlur={(e) => update(v, { barcode: e.target.value.trim() || null })}
+                    <div className="flex min-w-0 items-center gap-1">
+                      <input
+                        className="min-w-0 flex-1 bg-transparent font-mono text-xs outline-none text-start"
+                        placeholder={isAr ? "بدون" : "None"}
+                        defaultValue={v.barcode ?? ""}
+                        onBlur={(e) => update(v, { barcode: e.target.value.trim() || null })}
+                      />
+                      <button
+                        type="button"
+                        title={isAr ? "توليد باركود" : "Generate barcode"}
+                        className="text-muted-foreground hover:text-primary"
+                        onClick={() => update(v, { barcode: genBarcode() })}
+                      >
+                        <Wand2 className="h-3 w-3" />
+                      </button>
+                      {v.barcode && (
+                        <PrintLabelButton
+                          label={isAr ? "طباعة" : "Print"}
+                          data={{
+                            code: v.barcode,
+                            productName,
+                            size: v.size,
+                            color: v.color,
+                            price: v.selling_price,
+                            businessName,
+                          }}
                         />
-                        <button
-                          type="button"
-                          title={isAr ? "توليد باركود" : "Generate barcode"}
-                          className="text-muted-foreground hover:text-primary"
-                          onClick={() => update(v, { barcode: genBarcode() })}
-                        >
-                          <Wand2 className="h-3 w-3" />
-                        </button>
-                        {v.barcode && (
-                          <PrintLabelButton
-                            label={isAr ? "طباعة" : "Print"}
-                            data={{
-                              code: v.barcode,
-                              productName,
-                              size: v.size,
-                              color: v.color,
-                              price: v.selling_price,
-                              businessName,
-                            }}
-                          />
-                        )}
-                      </div>
+                      )}
+                    </div>
                   </td>
                   {canViewFinancials && <td className="px-2 py-2 text-center"><input type="number" step="0.01" className="w-full bg-transparent text-center outline-none" defaultValue={v.cost_price} onBlur={(e) => update(v, { cost_price: Number(e.target.value) })} /></td>}
                   <td className="px-2 py-2 text-center"><input type="number" step="0.01" className="w-full bg-transparent text-center outline-none" defaultValue={v.selling_price} onBlur={(e) => update(v, { selling_price: Number(e.target.value) })} /></td>
@@ -2076,7 +2254,7 @@ function VariantList({ productId, productName, businessName, variants, onChanged
                 <td className="px-2 py-2"><Input className="h-8 w-full text-center" type="number" value={row.stock_main} onChange={(e) => setRow({ ...row, stock_main: e.target.value })} /></td>
                 <td className="px-2 py-2"><Input className="h-8 w-full text-center" type="number" value={row.stock_incubator} onChange={(e) => setRow({ ...row, stock_incubator: e.target.value })} /></td>
                 <td></td>
-                <td className="px-2 py-2"><div className="flex justify-center gap-1"><Button size="sm" onClick={add}>{t("common.save")}</Button><Button size="sm" variant="ghost" onClick={() => setAdding(false)}>×</Button></div></td>
+                <td className="px-2 py-2"><div className="flex justify-center gap-1"><Button type="button" size="sm" onClick={(e) => { e.preventDefault(); add(); }}>{t("common.save")}</Button><Button type="button" size="sm" variant="ghost" onClick={(e) => { e.preventDefault(); setAdding(false); }}>×</Button></div></td>
               </tr>
             )}
           </tbody>
@@ -2084,7 +2262,7 @@ function VariantList({ productId, productName, businessName, variants, onChanged
       </div>
       <div className="mt-3 flex flex-wrap gap-2">
         {!adding && (
-          <Button variant="ghost" size="sm" onClick={() => setAdding(true)}>
+          <Button type="button" variant="ghost" size="sm" onClick={(e) => { e.preventDefault(); setAdding(true); }}>
             <Plus className="h-3 w-3 me-1" /> {t("inventory.addVariant")}
           </Button>
         )}

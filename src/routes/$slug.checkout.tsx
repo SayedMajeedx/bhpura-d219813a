@@ -734,8 +734,20 @@ function Checkout() {
                     <div className="truncate text-xs text-muted-foreground">{[c.size, c.color, c.fabric].filter(Boolean).join(" · ")}</div>
                   )}
                   {(c.custom_fields ?? []).map((field) => (
-                    <div key={field.key} className="text-xs text-muted-foreground break-words">
-                      {lang === "ar" ? (field.label_ar || field.label_en || field.key) : (field.label_en || field.label_ar || field.key)}: {field.value}
+                    <div key={field.key} className="text-xs text-muted-foreground break-words flex flex-wrap items-center gap-1">
+                      <span>{lang === "ar" ? (field.label_ar || field.label_en || field.key) : (field.label_en || field.label_ar || field.key)}:</span>
+                      {field.value.startsWith("http") ? (
+                        <a
+                          href={field.value}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-primary hover:underline font-semibold inline-flex items-center gap-0.5"
+                        >
+                          📎 {lang === "ar" ? "عرض الملف" : "View File"}
+                        </a>
+                      ) : (
+                        <span>{field.value}</span>
+                      )}
                     </div>
                   ))}
                 </div>

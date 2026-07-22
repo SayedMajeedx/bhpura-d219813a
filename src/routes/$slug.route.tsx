@@ -927,7 +927,14 @@ function CartDrawer({ children }: { children: React.ReactNode }) {
                             <div key={field.key} className="break-words">
                               <span className="font-medium text-foreground/80">
                                 {lang === "ar" ? (field.label_ar || field.label_en || field.key) : (field.label_en || field.label_ar || field.key)}:
-                              </span>{" "}{field.value}
+                              </span>{" "}
+                              {field.value.startsWith("http") ? (
+                                <a href={field.value} target="_blank" rel="noreferrer" className="text-primary hover:underline font-medium inline-flex items-center gap-0.5 mt-0.5">
+                                  <span>📎 {lang === "ar" ? "تحميل/عرض الملف" : "View File"}</span>
+                                </a>
+                              ) : (
+                                field.value
+                              )}
                             </div>
                           ))}
                         </div>

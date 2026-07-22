@@ -316,8 +316,28 @@ function ProductDetail() {
     );
   }
 
+  const parsePriceDelta = (valStr: string): number => {
+    if (!valStr) return 0;
+    const match = /\+\s*(\d+(?:\.\d+)?)\s*(?:BHD|BHD\b|د\.ب|BHD|BD\b|BD)?/i.exec(valStr);
+    if (match) {
+      return Number(match[1]);
+    }
+    return 0;
+  };
+
+  const selectedAddOnPrice = useMemo(() => {
+    let total = 0;
+    for (const f of customFields) {
+      const val = cfValues[f.key];
+      if (val) {
+        total += parsePriceDelta(val);
+      }
+    }
+    return total;
+  }, [customFields, cfValues]);
+
   const price = variant?.selling_price ?? Math.min(...variants.map((v) => v.selling_price).filter((p) => p > 0), Infinity);
-  const displayPrice = isFinite(price) ? price : 0;
+  const displayPrice = (isFinite(price) ? price : 0) + selectedAddOnPrice;
   const maxStock = variant?.stock_main ?? 0;
   const hasVariants = variants.length > 0;
 
@@ -365,13 +385,35 @@ function ProductDetail() {
     }
     setErrorMsg(null);
     const custom = customFields
-      .map((f) => ({
-        key: f.key,
-        label_ar: f.label_ar,
-        label_en: f.label_en,
-        value: (cfValues[f.key] ?? "").trim(),
-      }))
+      .map((f) => {
+        const val = (cfValues[f.key] ?? "").trim();
+        const price_delta = parsePriceDelta(val);
+        return {
+          key: f.key,
+          label_ar: f.label_ar,
+          label_en: f.label_en,
+          value: val,
+          type: f.type,
+          price_delta,
+        };
+      })
       .filter((v) => v.value.length > 0);
+
+    const fileField = customFields.find((f) => f.type === "file");
+    const file_url = fileField ? (cfValues[fileField.key] ?? "").trim() : "";
+    const textField = customFields.find((f) => f.type === "text");
+    const custom_text = textField ? (cfValues[textField.key] ?? "").trim() : "";
+
+    const selected_customizations = {
+      options: custom.map((c) => ({
+        name: lang === "ar" ? c.label_ar || c.label_en : c.label_en || c.label_ar,
+        value: c.value,
+        price_delta: c.price_delta,
+      })),
+      custom_text,
+      file_url,
+    };
+
     addToCart({
       cart_line_id: "",
       variant_id: variant!.id,
@@ -380,15 +422,16 @@ function ProductDetail() {
       name_ar: product.name_ar,
       name_en: product.name_en,
       image: media.find((m) => m.type === "image")?.url ?? product.image_url ?? null,
-      price: variant!.selling_price,
-      original_price: variant!.original_price,
+      price: variant!.selling_price + selectedAddOnPrice,
+      original_price: variant!.original_price ? variant!.original_price + selectedAddOnPrice : null,
       size: variant!.size,
       color: variant!.color,
       fabric: variant!.fabric,
       qty,
       max_stock: variant!.stock_main,
       custom_fields: custom,
-    });
+      selected_customizations,
+    } as any);
     if (thenBuy) {
       navigate({ to: "/$slug/checkout", params: { slug: brand.slug } });
     } else {
@@ -398,7 +441,8 @@ function ProductDetail() {
 
   const priceLabel = displayPrice > 0 ? formatPrice(displayPrice, currency, lang) : t("السعر عند الطلب", "Price on request");
   const originalPrice = variant && Number(variant.original_price || 0) > Number(variant.selling_price) ? Number(variant.original_price) : 0;
-  const discountPercent = originalPrice > displayPrice ? Math.round((1 - displayPrice / originalPrice) * 100) : 0;
+  const originalPriceWithAddons = originalPrice > 0 ? originalPrice + selectedAddOnPrice : 0;
+  const discountPercent = originalPriceWithAddons > displayPrice ? Math.round((1 - displayPrice / originalPriceWithAddons) * 100) : 0;
 
   return (
     <div className="mx-auto max-w-6xl px-4 sm:px-6 py-3 sm:py-10 pb-28 md:pb-10">
