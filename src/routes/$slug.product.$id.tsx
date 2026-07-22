@@ -135,7 +135,7 @@ function ProductDetail() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("products")
-        .select("id, category, name, name_ar, name_en, description, description_ar, description_en, image_url, media, custom_fields, base_price, original_price, product_variants(id, size, size_unit, color, fabric, selling_price, original_price, stock_main, image_url)")
+        .select("id, category, name, name_ar, name_en, description, description_ar, description_en, image_url, media, custom_fields, base_price, product_variants(id, size, size_unit, color, fabric, selling_price, original_price, stock_main, image_url)")
         .eq("id", id)
         .eq("brand_id", brand.id)
         .eq("is_active", true)
