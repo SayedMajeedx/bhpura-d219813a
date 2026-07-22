@@ -53,6 +53,9 @@ type Product = {
   product_variants: Variant[];
   base_price?: number | null;
   original_price?: number | null;
+  variant_label_size?: string | null;
+  variant_label_color?: string | null;
+  variant_label_fabric?: string | null;
 };
 
 type RecommendationProduct = {
@@ -144,7 +147,7 @@ function ProductDetail() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("products")
-        .select("id, category, name, name_ar, name_en, description, description_ar, description_en, image_url, media, custom_fields, base_price, product_variants(id, size, size_unit, color, fabric, selling_price, original_price, stock_main, image_url)")
+        .select("id, category, name, name_ar, name_en, description, description_ar, description_en, image_url, media, custom_fields, base_price, variant_label_size, variant_label_color, variant_label_fabric, product_variants(id, size, size_unit, color, fabric, selling_price, original_price, stock_main, image_url)")
         .eq("id", id)
         .eq("brand_id", brand.id)
         .eq("is_active", true)
@@ -547,7 +550,7 @@ function ProductDetail() {
             {uniqueColors.length > 0 && (
               <div>
                 <div className="text-sm font-semibold mb-2 flex items-center gap-1.5">
-                  <span>{t("اللون", "Color")}:</span>
+                  <span>{product.variant_label_color || t("اللون", "Color")}:</span>
                   <span className="text-muted-foreground font-normal">{selectedColor}</span>
                 </div>
                 <div className="flex flex-wrap gap-2.5">
@@ -587,7 +590,7 @@ function ProductDetail() {
             {/* 📏 Size Selection Pills */}
             {uniqueSizes.length > 0 && (
               <div>
-                <div className="text-sm font-semibold mb-2">{t("المقاس / خيار", "Size / Option")}</div>
+                <div className="text-sm font-semibold mb-2">{product.variant_label_size || t("المقاس / خيار", "Size / Option")}</div>
                 <div className="flex flex-wrap gap-2">
                   {uniqueSizes.map((sz) => {
                     const active = selectedSize === sz;
@@ -613,7 +616,7 @@ function ProductDetail() {
             {/* 🧵 Fabric Selection Pills (if any) */}
             {uniqueFabrics.length > 0 && (
               <div>
-                <div className="text-sm font-semibold mb-2">{t("الخامة", "Fabric")}</div>
+                <div className="text-sm font-semibold mb-2">{product.variant_label_fabric || t("الخامة", "Fabric")}</div>
                 <div className="flex flex-wrap gap-2">
                   {uniqueFabrics.map((fb) => {
                     const active = selectedFabric === fb;

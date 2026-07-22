@@ -59,6 +59,9 @@ type Product = {
   media: MediaItem[];
   custom_fields: CustomField[] | null;
   base_price?: number | null;
+  variant_label_size?: string | null;
+  variant_label_color?: string | null;
+  variant_label_fabric?: string | null;
 };
 type Variant = {
   id: string; product_id: string; sku: string | null; size: string | null; color: string | null; fabric: string | null;
@@ -1288,7 +1291,7 @@ function ProductsSection({ products, variants, businessName, currency, onChanged
 
                 {isExpanded && (
                   <div onClick={(e) => e.stopPropagation()}>
-                    <VariantList productId={p.id} productName={p.name} businessName={businessName} variants={pVariants} onChanged={onChanged} salesByVariant={salesByVariant} />
+                    <VariantList productId={p.id} productName={p.name} businessName={businessName} variants={pVariants} onChanged={onChanged} salesByVariant={salesByVariant} product={p} />
                   </div>
                 )}
               </Card>
@@ -1357,6 +1360,9 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
     show_sale_badge: product?.show_sale_badge ?? true,
     media: (product?.media ?? []) as MediaItem[],
     custom_fields: (Array.isArray(product?.custom_fields) ? product!.custom_fields : []) as CustomField[],
+    variant_label_size: product?.variant_label_size ?? "",
+    variant_label_color: product?.variant_label_color ?? "",
+    variant_label_fabric: product?.variant_label_fabric ?? "",
   };
   const [form, setForm] = useState(initialForm);
   const [uploading, setUploading] = useState(false);
@@ -1478,6 +1484,9 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
         show_sale_badge: form.show_sale_badge,
         media: form.media as any,
         custom_fields: (form.custom_fields ?? []) as any,
+        variant_label_size: form.variant_label_size.trim() || null,
+        variant_label_color: form.variant_label_color.trim() || null,
+        variant_label_fabric: form.variant_label_fabric.trim() || null,
       };
       const { error } = await supabase.from("products").update(patch).eq("id", product.id);
       if (error) return toast.error(error.message);
@@ -1499,6 +1508,9 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
         show_sale_badge: form.show_sale_badge,
         media: form.media as any,
         custom_fields: (form.custom_fields ?? []) as any,
+        variant_label_size: form.variant_label_size.trim() || null,
+        variant_label_color: form.variant_label_color.trim() || null,
+        variant_label_fabric: form.variant_label_fabric.trim() || null,
       };
       const { error } = await (supabase.from("products") as any).insert(payload);
       if (error) return toast.error(error.message);
@@ -1663,6 +1675,47 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
                   <p className="text-xs text-muted-foreground mt-0.5">{isAr ? "تظهر عند وجود سعر أصلي أعلى." : "Shown when an original price is higher."}</p>
                 </div>
                 <Switch checked={form.show_sale_badge} onCheckedChange={(v) => setForm({ ...form, show_sale_badge: v })} />
+              </div>
+            </div>
+
+            {/* 🏷️ Custom Variant Labels Section */}
+            <div className="rounded-xl border border-border/80 p-5 bg-secondary/10 space-y-4">
+              <div>
+                <p className="text-sm font-bold text-foreground">{isAr ? "🏷️ مسميات المتغيرات المخصصة" : "🏷️ Custom Variant Labels"}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  {isAr 
+                    ? "تخصيص أسماء أعمدة المقاس، اللون، والخامة لتظهر بالاسم المفضل في صفحة عرض المنتج." 
+                    : "Override default column labels (Size, Color, Fabric) to match your custom product's options."}
+                </p>
+              </div>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                <div>
+                  <Label className="text-xs font-bold text-muted-foreground">{isAr ? "مسمى المقاس المخصص (مثال: النوع)" : "Custom Size/Option Label"}</Label>
+                  <Input 
+                    className="mt-1 h-9.5 rounded-lg" 
+                    placeholder={isAr ? "المقاس / خيار" : "Size / Option"} 
+                    value={form.variant_label_size || ""} 
+                    onChange={(e) => setForm({ ...form, variant_label_size: e.target.value })} 
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs font-bold text-muted-foreground">{isAr ? "مسمى اللون المخصص" : "Custom Color Label"}</Label>
+                  <Input 
+                    className="mt-1 h-9.5 rounded-lg" 
+                    placeholder={isAr ? "اللون" : "Color"} 
+                    value={form.variant_label_color || ""} 
+                    onChange={(e) => setForm({ ...form, variant_label_color: e.target.value })} 
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs font-bold text-muted-foreground">{isAr ? "مسمى الخامة المخصص" : "Custom Fabric Label"}</Label>
+                  <Input 
+                    className="mt-1 h-9.5 rounded-lg" 
+                    placeholder={isAr ? "الخامة" : "Fabric"} 
+                    value={form.variant_label_fabric || ""} 
+                    onChange={(e) => setForm({ ...form, variant_label_fabric: e.target.value })} 
+                  />
+                </div>
               </div>
             </div>
           </div>
@@ -2863,6 +2916,7 @@ function VariantList({
   variants,
   onChanged,
   salesByVariant,
+  product,
 }: {
   productId: string;
   productName: string;
@@ -2870,6 +2924,7 @@ function VariantList({
   variants: Variant[];
   onChanged: () => void;
   salesByVariant: Map<string, number>;
+  product?: Product;
 }) {
   const t = useT();
   const { lang } = useI18n();
@@ -3252,7 +3307,16 @@ function VariantList({
                   onChange={toggleSelectAll}
                 />
               </th>
-              <th className="px-2 py-3 text-start font-black text-[10px]">{isAr ? "المتغير (المقاس / اللون / الخامة)" : "Variant (Size / Color / Fabric)"}</th>
+              <th className="px-2 py-3 text-start font-black text-[10px]">
+                {(() => {
+                  const sizeLbl = product?.variant_label_size || (isAr ? "المقاس" : "Size");
+                  const colorLbl = product?.variant_label_color || (isAr ? "اللون" : "Color");
+                  const fabricLbl = product?.variant_label_fabric || (isAr ? "الخامة" : "Fabric");
+                  return isAr
+                    ? `المتغير (${sizeLbl} / ${colorLbl} / ${fabricLbl})`
+                    : `Variant (${sizeLbl} / ${colorLbl} / ${fabricLbl})`;
+                })()}
+              </th>
               {renderImageCol && <th className="px-2 py-3 text-center font-black text-[10px]">{isAr ? "الصورة" : "Image"}</th>}
               {renderSkuCol && <th className="px-2 py-3 text-start font-black text-[10px]">{t("inventory.sku")}</th>}
               {renderBarcodeCol && <th className="px-2 py-3 text-start font-black text-[10px]">{barcodeLabel}</th>}
@@ -3299,7 +3363,7 @@ function VariantList({
                 <td className="px-2 py-3">
                   <div className="grid grid-cols-2 gap-1.5 max-w-[260px]">
                     <div className="flex gap-1">
-                      <Input className="h-8 w-16 text-start text-xs font-semibold" value={row.size} onChange={(e) => setRow({ ...row, size: e.target.value })} placeholder="Size" />
+                      <Input className="h-8 w-16 text-start text-xs font-semibold" value={row.size} onChange={(e) => setRow({ ...row, size: e.target.value })} placeholder={product?.variant_label_size || "Size"} />
                       <select
                         className="h-8 rounded border border-input bg-background px-1 text-xs outline-none"
                         value={row.size_unit}
@@ -3312,8 +3376,8 @@ function VariantList({
                         ))}
                       </select>
                     </div>
-                    <Input className="h-8 w-full text-xs font-semibold" value={row.color} onChange={(e) => setRow({ ...row, color: e.target.value })} placeholder="Color" />
-                    <Input className="h-8 w-full text-xs font-semibold col-span-2" value={row.fabric} onChange={(e) => setRow({ ...row, fabric: e.target.value })} placeholder="Fabric (e.g. Silk)" />
+                    <Input className="h-8 w-full text-xs font-semibold" value={row.color} onChange={(e) => setRow({ ...row, color: e.target.value })} placeholder={product?.variant_label_color || "Color"} />
+                    <Input className="h-8 w-full text-xs font-semibold col-span-2" value={row.fabric} onChange={(e) => setRow({ ...row, fabric: e.target.value })} placeholder={product?.variant_label_fabric || "Fabric"} />
                   </div>
                 </td>
 
