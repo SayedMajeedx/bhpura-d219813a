@@ -862,20 +862,27 @@ function DesktopSubMenu({
         const isExpanded = activeId === sub.id;
 
         return (
-          <div
-            key={sub.id}
-            className="w-full group/item"
-            onMouseEnter={() => {
-              if (hasChildren) {
-                setActiveId(sub.id);
-              }
-            }}
-          >
+          <div key={sub.id} className="w-full">
             <div className="flex items-center justify-between rounded-lg transition-all hover:bg-slate-50 dark:hover:bg-slate-800/40">
               <Link
                 to="/$slug/$category"
                 params={{ slug: brand.slug, category: url }}
-                onClick={close}
+                onClick={(e) => {
+                  if (hasChildren) {
+                    if (!isExpanded) {
+                      // First click: expand dropdown, prevent direct navigation
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setActiveId(sub.id);
+                    } else {
+                      // Second click: navigate to URL and close entire menu
+                      close();
+                    }
+                  } else {
+                    // No children: navigate immediately and close
+                    close();
+                  }
+                }}
                 className="flex-1 px-3 py-1.5 text-xs font-semibold text-foreground/80 hover:text-foreground transition-colors truncate text-start"
               >
                 {name}
