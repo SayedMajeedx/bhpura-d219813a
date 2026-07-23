@@ -599,11 +599,11 @@ function NavCategoryItem({
             variant="ghost"
             size="sm"
             onClick={toggleExpand}
-            className="h-9 px-2.5 shrink-0 rounded-lg hover:bg-black/5 text-xs font-bold"
+            className="h-9 w-9 p-0 shrink-0 rounded-lg hover:bg-black/5 text-muted-foreground hover:text-foreground transition-all duration-200"
             aria-expanded={isExpanded}
             aria-label={lang === "ar" ? "توسيع" : "Expand"}
           >
-            {isExpanded ? "[-]" : "[+]"}
+            <ChevronDown className={`h-4 w-4 transition-transform duration-200 ${isExpanded ? "rotate-180" : ""}`} />
           </Button>
         )}
       </div>
@@ -832,6 +832,84 @@ export function StorefrontMenu({ navigation = false }: { navigation?: boolean } 
   );
 }
 
+function DesktopSubMenu({
+  parentCategoryId,
+  categories,
+  brand,
+  lang,
+  close,
+  depth = 0,
+}: {
+  parentCategoryId: string;
+  categories: any[];
+  brand: any;
+  lang: string;
+  close: () => void;
+  depth?: number;
+}) {
+  const subs = categories.filter((sub) => sub.parent_id === parentCategoryId);
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+
+  if (subs.length === 0) return null;
+
+  return (
+    <div className={`space-y-1 ${depth > 0 ? "mt-1 ms-2.5 ps-2.5 border-s border-slate-100 dark:border-slate-800" : ""}`}>
+      {subs.map((sub) => {
+        const name = lang === "ar" ? sub.name_ar || sub.name_en : sub.name_en || sub.name_ar;
+        const url = sub.slug || sub.name_en;
+        const children = categories.filter((c) => c.parent_id === sub.id);
+        const hasChildren = children.length > 0;
+        const isExpanded = !!expanded[sub.id];
+
+        return (
+          <div key={sub.id} className="space-y-0.5">
+            <div className="flex items-center justify-between rounded-lg transition-all hover:bg-slate-50 dark:hover:bg-slate-800/40 group/item">
+              <Link
+                to="/$slug/$category"
+                params={{ slug: brand.slug, category: url }}
+                onClick={close}
+                className="flex-1 px-3 py-1.5 text-xs font-semibold text-foreground/80 hover:text-foreground transition-colors truncate text-start"
+              >
+                {name}
+              </Link>
+              {hasChildren && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setExpanded((prev) => ({ ...prev, [sub.id]: !prev[sub.id] }));
+                  }}
+                  className="p-1 me-1 rounded text-muted-foreground/60 hover:text-foreground hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors shrink-0"
+                  aria-label="Toggle Subcategories"
+                >
+                  <ChevronDown
+                    className={`h-3 w-3 transition-transform duration-250 ${
+                      isExpanded ? "rotate-180" : "rtl:rotate-90 -rotate-90"
+                    }`}
+                  />
+                </button>
+              )}
+            </div>
+            {hasChildren && isExpanded && (
+              <div className="animate-in fade-in slide-in-from-top-1 duration-150">
+                <DesktopSubMenu
+                  parentCategoryId={sub.id}
+                  categories={categories}
+                  brand={brand}
+                  lang={lang}
+                  close={close}
+                  depth={depth + 1}
+                />
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 function DesktopStoreNavigation() {
   const { brand, lang, t } = useStorefront();
   const { data = [] } = useQuery({
@@ -891,22 +969,15 @@ function DesktopStoreNavigation() {
                   </svg>
                 </Link>
                 {/* Custom premium dropdown menu card with hover-friendly bridging padding */}
-                <div className="absolute top-full left-1/2 z-50 pt-2 hidden min-w-[210px] -translate-x-1/2 group-hover:block">
-                  <div className="rounded-xl border border-slate-100 bg-background p-2 shadow-lg transition-all duration-200 animate-in fade-in-0 slide-in-from-top-1">
-                    {subs.map((sub: any) => {
-                      const subName = lang === "ar" ? sub.name_ar || sub.name_en : sub.name_en || sub.name_ar;
-                      const subUrl = sub.slug || sub.name_en;
-                      return (
-                        <Link
-                          key={sub.id}
-                          to="/$slug/$category"
-                          params={{ slug: brand.slug, category: subUrl }}
-                          className="block rounded-lg px-4 py-2 text-sm font-medium text-foreground/80 hover:text-foreground transition-all hover:bg-muted"
-                        >
-                          {subName}
-                        </Link>
-                      );
-                    })}
+                <div className="absolute top-full left-1/2 z-50 pt-2 hidden min-w-[230px] -translate-x-1/2 group-hover:block">
+                  <div className="rounded-2xl border border-slate-100/60 dark:border-slate-800/80 bg-background p-3 shadow-xl transition-all duration-200 animate-in fade-in-0 slide-in-from-top-1 text-foreground">
+                    <DesktopSubMenu
+                      parentCategoryId={c.id}
+                      categories={data}
+                      brand={brand}
+                      lang={lang}
+                      close={() => {}}
+                    />
                   </div>
                 </div>
               </div>

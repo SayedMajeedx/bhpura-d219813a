@@ -115,28 +115,13 @@ function CategoryPage() {
   }, [categoriesQuery.data, categorySlug, smartKind]);
 
   // URL Deep-Linking & Client-side filter State
-  const [selectedSubCategorySlug, setSelectedSubCategorySlug] = useState<string | null>(null);
-  const [selectedSubSubCategorySlug, setSelectedSubSubCategorySlug] = useState<string | null>(null);
-
-  const handleSelectSubCategory = (slug: string | null) => {
-    setSelectedSubCategorySlug(slug);
-    setSelectedSubSubCategorySlug(null);
-  };
+  const [selectedSubCategorySlugs, setSelectedSubCategorySlugs] = useState<string[]>([]);
+  const selectedSubCategorySlug = selectedSubCategorySlugs[0] || null;
+  const selectedSubSubCategorySlug = selectedSubCategorySlugs[1] || null;
 
   useEffect(() => {
-    if (activeCategory) {
-      if (activeCategory.parent_id) {
-        setSelectedSubCategorySlug(activeCategory.slug);
-        setSelectedSubSubCategorySlug(null);
-      } else {
-        setSelectedSubCategorySlug(null);
-        setSelectedSubSubCategorySlug(null);
-      }
-    } else {
-      setSelectedSubCategorySlug(null);
-      setSelectedSubSubCategorySlug(null);
-    }
-  }, [activeCategory]);
+    setSelectedSubCategorySlugs([]);
+  }, [categorySlug]);
 
   const categoryQuery = useQuery({
     queryKey: ["storefront", brand.slug, "category", categorySlug],
@@ -199,90 +184,92 @@ function CategoryPage() {
 
   const title = category ? (lang === "ar" ? category.name_ar || category.name_en : category.name_en) : "";
 
-  // Dynamic filter out empty subcategory chips that do not have active products in rollup
-  const subcategoriesWithProducts = useMemo(() => {
+  // Construct dynamic rows of pills recursively for each selected subcategory level
+  const rows = useMemo(() => {
     if (!activeCategory || categoriesQuery.isLoading) return [];
+
+    const rowsList = [];
+    const products = productsQuery.data ?? [];
+    const categories = categoriesQuery.data ?? [];
     
-    const hasChildren = categoriesQuery.data?.some(c => c.parent_id === activeCategory.id);
-    const parentCat = hasChildren
-      ? activeCategory
-      : (activeCategory.parent_id 
-         ? (categoriesQuery.data?.find(c => c.id === activeCategory.parent_id) || activeCategory)
-         : activeCategory);
+    // Determine the starting parent ID for subcategories
+    let currentParentId = activeCategory.id;
+    let levelIndex = 0;
+    
+    while (true) {
+      // Fetch subcategories under currentParentId
+      const levelCategories = categories.filter((c) => c.parent_id === currentParentId);
       
-    const subs = categoriesQuery.data?.filter(c => c.parent_id === parentCat.id) ?? [];
-    const products = productsQuery.data ?? [];
+      if (levelCategories.length > 0) {
+        // Filter out empty subcategory chips that do not have active products in their subtree
+        const activeLevelCategories = levelCategories.filter((cat) => {
+          const descendants = getDescendantCategories(cat.id, categories);
+          const matchValues = new Set([
+            cat.slug,
+            cat.name_en,
+            ...descendants.map(d => d.slug).filter(Boolean),
+            ...descendants.map(d => d.name_en).filter(Boolean)
+          ].filter(Boolean));
+          return products.some((p) => p.category && matchValues.has(p.category));
+        });
+
+        if (activeLevelCategories.length > 0) {
+          rowsList.push({
+            levelIndex,
+            categories: activeLevelCategories,
+            activeSlug: selectedSubCategorySlugs[levelIndex] || null,
+          });
+        } else {
+          break;
+        }
+      } else {
+        break;
+      }
+      
+      // Move to the next level down the selected path
+      const selectedSlugForLevel = selectedSubCategorySlugs[levelIndex];
+      if (selectedSlugForLevel) {
+        const selectedCategoryItem = levelCategories.find(
+          (c) => c.slug === selectedSlugForLevel || c.name_en === selectedSlugForLevel
+        );
+        if (selectedCategoryItem) {
+          currentParentId = selectedCategoryItem.id;
+          levelIndex++;
+        } else {
+          break;
+        }
+      } else {
+        break;
+      }
+    }
     
-    return subs.filter(sub => {
-      const descendants = getDescendantCategories(sub.id, categoriesQuery.data ?? []);
-      const matchValues = new Set([
-        sub.slug,
-        sub.name_en,
-        ...descendants.map(d => d.slug).filter(Boolean),
-        ...descendants.map(d => d.name_en).filter(Boolean)
-      ].filter(Boolean));
-      return products.some(p => p.category && matchValues.has(p.category));
-    });
-  }, [activeCategory, categoriesQuery.data, categoriesQuery.isLoading, productsQuery.data]);
-
-  // Generate dynamic, active sub-subcategories (grandchildren) that have product representations in active catalog list
-  const subSubcategoriesWithProducts = useMemo(() => {
-    if (!selectedSubCategorySlug || categoriesQuery.isLoading) return [];
-    const selectedSub = categoriesQuery.data?.find(c => c.slug === selectedSubCategorySlug);
-    if (!selectedSub) return [];
-
-    const subs = categoriesQuery.data?.filter((sub) => sub.parent_id === selectedSub.id) ?? [];
-    const products = productsQuery.data ?? [];
-    return subs.filter((sub) => {
-      const descendants = getDescendantCategories(sub.id, categoriesQuery.data ?? []);
-      const matchValues = new Set([
-        sub.slug,
-        sub.name_en,
-        ...descendants.map(d => d.slug).filter(Boolean),
-        ...descendants.map(d => d.name_en).filter(Boolean)
-      ].filter(Boolean));
-      return products.some((p) => p.category && matchValues.has(p.category));
-    });
-  }, [selectedSubCategorySlug, categoriesQuery.data, categoriesQuery.isLoading, productsQuery.data]);
+    return rowsList;
+  }, [categoriesQuery.data, categoriesQuery.isLoading, productsQuery.data, selectedSubCategorySlugs, activeCategory]);
 
   const filteredProducts = useMemo(() => {
     let list = productsQuery.data ?? [];
-    if (selectedSubSubCategorySlug) {
-      const selectedSubSub = categoriesQuery.data?.find(c => c.slug === selectedSubSubCategorySlug);
-      if (selectedSubSub) {
-        const descendants = getDescendantCategories(selectedSubSub.id, categoriesQuery.data ?? []);
+    const leafSlug = selectedSubCategorySlugs[selectedSubCategorySlugs.length - 1] || null;
+    if (leafSlug) {
+      const selectedCat = categoriesQuery.data?.find(c => c.slug === leafSlug || c.name_en === leafSlug);
+      if (selectedCat) {
+        const descendants = getDescendantCategories(selectedCat.id, categoriesQuery.data ?? []);
         const targetValues = new Set([
-          selectedSubSub.slug,
-          selectedSubSub.name_en,
+          selectedCat.slug,
+          selectedCat.name_en,
           ...descendants.map(d => d.slug).filter(Boolean),
           ...descendants.map(d => d.name_en).filter(Boolean)
         ].filter(Boolean));
         list = list.filter(p => p.category && targetValues.has(p.category));
       } else {
-        const targetValues = new Set([selectedSubSubCategorySlug]);
-        list = list.filter(p => p.category && targetValues.has(p.category));
-      }
-    } else if (selectedSubCategorySlug) {
-      const selectedSub = categoriesQuery.data?.find(c => c.slug === selectedSubCategorySlug);
-      if (selectedSub) {
-        const descendants = getDescendantCategories(selectedSub.id, categoriesQuery.data ?? []);
-        const targetValues = new Set([
-          selectedSub.slug,
-          selectedSub.name_en,
-          ...descendants.map(d => d.slug).filter(Boolean),
-          ...descendants.map(d => d.name_en).filter(Boolean)
-        ].filter(Boolean));
-        list = list.filter(p => p.category && targetValues.has(p.category));
-      } else {
-        const targetValues = new Set([selectedSubCategorySlug]);
-        list = list.filter(p => p.category && targetValues.has(p.category));
+        const targetValues = new Set([leafSlug.toLowerCase().replace(/\s+/g, "-")]);
+        list = list.filter(p => p.category && targetValues.has(p.category.toLowerCase()));
       }
     }
     const rows = [...list];
     if (smartKind === "best" && sort === "new") return rows;
     const price = (product: ProductRow) => Math.min(...product.product_variants.map((variant) => Number(variant.selling_price)).filter((value) => value >= 0), Number.MAX_SAFE_INTEGER);
     return rows.sort((a, b) => sort === "old" ? new Date(a.created_at).getTime() - new Date(b.created_at).getTime() : sort === "price-low" ? price(a) - price(b) : sort === "price-high" ? price(b) - price(a) : new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-  }, [productsQuery.data, selectedSubCategorySlug, selectedSubSubCategorySlug, sort, smartKind, categoriesQuery.data]);
+  }, [productsQuery.data, selectedSubCategorySlugs, sort, smartKind, categoriesQuery.data]);
 
   const breadcrumbs = useMemo(() => {
     if (smartKind || !activeCategory || categoriesQuery.isLoading) return null;
@@ -371,84 +358,62 @@ function CategoryPage() {
             </div>
 
             {/* Horizontal Subcategory Filter Chips */}
-            {subcategoriesWithProducts.length > 0 && (
-              <div className="w-full">
+            {rows.length > 0 && (
+              <div className="w-full space-y-3">
                 <style>{`
                   .no-scrollbar::-webkit-scrollbar { display: none; }
                   .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
                 `}</style>
-                <div className="flex flex-wrap md:flex-nowrap gap-2 items-center overflow-x-auto no-scrollbar py-1 mt-4">
-                  <button
-                    type="button"
-                    onClick={() => handleSelectSubCategory(null)}
-                    className={`min-h-9 px-4 py-1.5 rounded-full text-sm transition-all shrink-0 ${
-                      selectedSubCategorySlug === null
-                        ? "bg-slate-900 text-white shadow-sm font-medium"
-                        : "bg-slate-100 hover:bg-slate-200 text-slate-700 font-normal"
-                    }`}
+                {rows.map((row) => (
+                  <div
+                    key={`row-level-${row.levelIndex}`}
+                    className={`w-full ${row.levelIndex > 0 ? "border-t border-slate-100/50 pt-2 animate-in fade-in slide-in-from-top-1 duration-200" : "mt-4"}`}
                   >
-                    {t("الكل", "All")}
-                  </button>
-                  {subcategoriesWithProducts.map((sub) => {
-                    const label = lang === "ar" ? sub.name_ar || sub.name_en : sub.name_en || sub.name_ar;
-                    const active = selectedSubCategorySlug === sub.slug;
-                    const hasSubSubs = categoriesQuery.data?.some((c) => c.parent_id === sub.id);
-                    return (
+                    <div className="flex flex-wrap gap-2 items-center overflow-x-auto no-scrollbar py-1">
                       <button
-                        key={sub.id}
                         type="button"
-                        onClick={() => handleSelectSubCategory(active ? null : sub.slug)}
-                        className={`min-h-9 px-4 py-1.5 rounded-full text-sm transition-all shrink-0 flex items-center gap-1.5 ${
-                          active
+                        onClick={() => {
+                          setSelectedSubCategorySlugs(selectedSubCategorySlugs.slice(0, row.levelIndex));
+                        }}
+                        className={`min-h-9 px-4 py-1.5 rounded-full text-sm transition-all shrink-0 ${
+                          row.activeSlug === null
                             ? "bg-slate-900 text-white shadow-sm font-medium"
                             : "bg-slate-100 hover:bg-slate-200 text-slate-700 font-normal"
                         }`}
                       >
-                        {label}
-                        {hasSubSubs && (
-                          <ChevronDown className={`h-3 w-3 transition-transform duration-200 ${active ? "rotate-180" : ""}`} />
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
-
-                {/* Second tier row for sub-subcategories */}
-                {subSubcategoriesWithProducts.length > 0 && (
-                  <div className="w-full mt-2 animate-in fade-in slide-in-from-top-1 duration-200">
-                    <div className="flex flex-wrap gap-1.5 py-1">
-                      <button
-                        type="button"
-                        onClick={() => setSelectedSubSubCategorySlug(null)}
-                        className={`min-h-[30px] px-3.5 py-1 rounded-full text-xs transition-all shrink-0 border ${
-                          selectedSubSubCategorySlug === null
-                            ? "bg-slate-900 text-white border-slate-900 shadow-xs font-medium"
-                            : "bg-slate-50 hover:bg-slate-100 text-slate-500 border-slate-200/60 font-normal"
-                        }`}
-                      >
                         {t("الكل", "All")}
                       </button>
-                      {subSubcategoriesWithProducts.map((sub) => {
+                      {row.categories.map((sub) => {
                         const label = lang === "ar" ? sub.name_ar || sub.name_en : sub.name_en || sub.name_ar;
-                        const active = selectedSubSubCategorySlug === sub.slug;
+                        const active = row.activeSlug === sub.slug;
+                        const hasSubSubs = categoriesQuery.data?.some((c) => c.parent_id === sub.id);
                         return (
                           <button
                             key={sub.id}
                             type="button"
-                            onClick={() => setSelectedSubSubCategorySlug(active ? null : sub.slug)}
-                            className={`min-h-[30px] px-3.5 py-1 rounded-full text-xs transition-all shrink-0 border ${
+                            onClick={() => {
+                              if (active) {
+                                setSelectedSubCategorySlugs(selectedSubCategorySlugs.slice(0, row.levelIndex));
+                              } else {
+                                setSelectedSubCategorySlugs([...selectedSubCategorySlugs.slice(0, row.levelIndex), sub.slug]);
+                              }
+                            }}
+                            className={`min-h-9 px-4 py-1.5 rounded-full text-sm transition-all shrink-0 flex items-center gap-1.5 ${
                               active
-                                ? "bg-slate-900 text-white border-slate-900 shadow-xs font-medium"
-                                : "bg-slate-50 hover:bg-slate-100 text-slate-500 border-slate-200/60 font-normal"
+                                ? "bg-slate-900 text-white shadow-sm font-medium"
+                                : "bg-slate-100 hover:bg-slate-200 text-slate-700 font-normal"
                             }`}
                           >
-                            {label}
+                            <span>{label}</span>
+                            {hasSubSubs && (
+                              <ChevronDown className={`h-3 w-3 transition-transform duration-200 ${active ? "rotate-180" : ""}`} />
+                            )}
                           </button>
                         );
                       })}
                     </div>
                   </div>
-                )}
+                ))}
               </div>
             )}
           </div>

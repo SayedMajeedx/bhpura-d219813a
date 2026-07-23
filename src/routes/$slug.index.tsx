@@ -63,19 +63,29 @@ type CategoryRow = {
 
 function StoreHome() {
   const { brand } = useStorefront();
-  const [activeCat, setActiveCat] = useState<string | null>(null);
-  const [activeSubCat, setActiveSubCat] = useState<string | null>(null);
-  const [activeSubSubCat, setActiveSubSubCat] = useState<string | null>(null);
+  const [activeCategorySlugs, setActiveCategorySlugs] = useState<string[]>([]);
+  const activeCat = activeCategorySlugs[0] || null;
+  const activeSubCat = activeCategorySlugs[1] || null;
+  const activeSubSubCat = activeCategorySlugs[2] || null;
 
   const handleSelectCat = (cat: string | null) => {
-    setActiveCat(cat);
-    setActiveSubCat(null);
-    setActiveSubSubCat(null);
+    setActiveCategorySlugs(cat ? [cat] : []);
   };
 
   const handleSelectSubCat = (sub: string | null) => {
-    setActiveSubCat(sub);
-    setActiveSubSubCat(null);
+    if (!sub) {
+      setActiveCategorySlugs(activeCategorySlugs.slice(0, 1));
+    } else {
+      setActiveCategorySlugs([activeCategorySlugs[0], sub]);
+    }
+  };
+
+  const handleSelectSubSubCat = (subsub: string | null) => {
+    if (!subsub) {
+      setActiveCategorySlugs(activeCategorySlugs.slice(0, 2));
+    } else {
+      setActiveCategorySlugs([activeCategorySlugs[0], activeCategorySlugs[1], subsub]);
+    }
   };
 
   const { data: products, isLoading } = useQuery({
@@ -173,11 +183,11 @@ function StoreHome() {
     };
   }, [products, bestSellerRows, trendingRows]);
 
-  // All Products Grid (bottom section) - Filters smart tabs dynamically to avoid empty states
   const filtered = useMemo(() => {
     const list = products ?? [];
-    if (activeCat) {
-      const catSlug = activeCat.toLowerCase().replace(/\s+/g, "-");
+    if (activeCategorySlugs.length > 0) {
+      const activeCatSlug = activeCategorySlugs[0];
+      const catSlug = activeCatSlug.toLowerCase().replace(/\s+/g, "-");
       const isNew = ["new-arrivals", "new"].includes(catSlug);
       const isBest = ["most-selling", "best-sellers", "best-selling"].includes(catSlug);
       const isSale = ["offers", "sale", "discounts"].includes(catSlug);
@@ -197,65 +207,28 @@ function StoreHome() {
         );
       }
 
-      // If activeSubSubCat is selected, filter strictly by it (including any deeper subcategories recursively)
-      if (activeSubSubCat) {
-        const subSubCat = categories?.find(c => c.slug === activeSubSubCat || c.name_en === activeSubSubCat);
-        if (subSubCat) {
-          const descendants = getDescendantCategories(subSubCat.id, categories ?? []);
-          const matchSlugs = new Set([
-            activeSubSubCat.toLowerCase().replace(/\s+/g, "-"),
-            ...descendants.map(c => c.slug?.toLowerCase()).filter(Boolean),
-            ...descendants.map(c => c.name_en?.toLowerCase()).filter(Boolean)
-          ]);
-          return list.filter((p) => {
-            const pCat = p.category?.toLowerCase();
-            return pCat && matchSlugs.has(pCat);
-          });
-        }
-        const subSubCatSlug = activeSubSubCat.toLowerCase().replace(/\s+/g, "-");
-        return list.filter((p) => p.category === activeSubSubCat || p.category?.toLowerCase() === subSubCatSlug);
-      }
-
-      // If activeSubCat is selected, filter strictly by it (including its own sub-subcategories recursively!)
-      if (activeSubCat) {
-        const subCat = categories?.find(c => c.slug === activeSubCat || c.name_en === activeSubCat);
-        if (subCat) {
-          const descendants = getDescendantCategories(subCat.id, categories ?? []);
-          const matchSlugs = new Set([
-            activeSubCat.toLowerCase().replace(/\s+/g, "-"),
-            ...descendants.map(c => c.slug?.toLowerCase()).filter(Boolean),
-            ...descendants.map(c => c.name_en?.toLowerCase()).filter(Boolean)
-          ]);
-          return list.filter((p) => {
-            const pCat = p.category?.toLowerCase();
-            return pCat && matchSlugs.has(pCat);
-          });
-        }
-        const subCatSlug = activeSubCat.toLowerCase().replace(/\s+/g, "-");
-        return list.filter((p) => p.category === activeSubCat || p.category?.toLowerCase() === subCatSlug);
-      }
-
-      // Find the database ID of the active parent category
-      const parentCat = categories?.find(c => !c.parent_id && (c.slug === activeCat || c.name_en === activeCat));
-      if (parentCat) {
-        // Find all child subcategory slugs/names recursively!
-        const childCats = getDescendantCategories(parentCat.id, categories ?? []);
+      // Filter recursively by the leaf selection (deepest active level)
+      const leafSlug = activeCategorySlugs[activeCategorySlugs.length - 1];
+      const activeCategoryItem = categories?.find(c => c.slug === leafSlug || c.name_en === leafSlug);
+      
+      if (activeCategoryItem) {
+        const descendants = getDescendantCategories(activeCategoryItem.id, categories ?? []);
         const matchSlugs = new Set([
-          activeCat.toLowerCase().replace(/\s+/g, "-"),
-          ...childCats.map(c => c.slug?.toLowerCase()).filter(Boolean),
-          ...childCats.map(c => c.name_en?.toLowerCase()).filter(Boolean)
+          leafSlug.toLowerCase().replace(/\s+/g, "-"),
+          ...descendants.map(c => c.slug?.toLowerCase()).filter(Boolean),
+          ...descendants.map(c => c.name_en?.toLowerCase()).filter(Boolean)
         ]);
-        
         return list.filter((p) => {
           const pCat = p.category?.toLowerCase();
           return pCat && matchSlugs.has(pCat);
         });
       }
-
-      return list.filter((p) => p.category === activeCat || p.category?.toLowerCase() === catSlug);
+      
+      const leafSlugNormalised = leafSlug.toLowerCase().replace(/\s+/g, "-");
+      return list.filter((p) => p.category === leafSlug || p.category?.toLowerCase() === leafSlugNormalised);
     }
     return list;
-  }, [products, activeCat, activeSubCat, activeSubSubCat, categories, bestSellerRows]);
+  }, [products, activeCategorySlugs, categories, bestSellerRows]);
 
   const bestIdsKeys = useMemo(() => {
     return new Set((bestSellerRows ?? []).map(row => row.product_id));
@@ -308,18 +281,14 @@ function StoreHome() {
           <Categories
             products={products ?? []}
             categories={categories ?? []}
-            activeCat={activeCat}
-            activeSubCat={activeSubCat}
-            activeSubSubCat={activeSubSubCat}
-            onSelect={handleSelectCat}
-            onSelectSub={handleSelectSubCat}
-            onSelectSubSub={setActiveSubSubCat}
+            activeCategorySlugs={activeCategorySlugs}
+            setActiveCategorySlugs={setActiveCategorySlugs}
           />
           <ProductGrid
             products={filtered}
             loading={isLoading}
             categoryEmpty={activeCat !== null}
-            onViewAll={() => setActiveCat(null)}
+            onViewAll={() => setActiveCategorySlugs([])}
           />
         </div>
       </section>
@@ -565,22 +534,14 @@ function StorefrontLink({ href, ...props }: { href: string } & Omit<AnchorHTMLAt
 function Categories({
   products,
   categories,
-  activeCat,
-  activeSubCat,
-  activeSubSubCat,
-  onSelect,
-  onSelectSub,
-  onSelectSubSub,
+  activeCategorySlugs,
+  setActiveCategorySlugs,
   navigation = false,
 }: {
   products: ProductRow[];
   categories: CategoryRow[];
-  activeCat: string | null;
-  activeSubCat: string | null;
-  activeSubSubCat: string | null;
-  onSelect: (c: string | null) => void;
-  onSelectSub: (c: string | null) => void;
-  onSelectSubSub: (c: string | null) => void;
+  activeCategorySlugs: string[];
+  setActiveCategorySlugs: (path: string[]) => void;
   navigation?: boolean;
 }) {
   const { t, lang, brand, settings } = useStorefront();
@@ -608,70 +569,113 @@ function Categories({
     return Array.from(known.values());
   }, [categories, products, lang]);
 
-  // Generate dynamic, active subcategories that have product representations in active catalog list
-  const subcategoriesWithProducts = useMemo(() => {
-    if (!activeCat) return [];
-    const parentCatItem = categories.find(
-      (c) => !c.parent_id && (c.slug === activeCat || c.name_en === activeCat)
-    );
-    if (!parentCatItem) return [];
+  // Construct dynamic rows of pills recursively for each active level
+  const rows = useMemo(() => {
+    if (navigation) return []; // The side category navigation dropdown is static list of parent links
 
-    const subs = categories.filter((sub) => sub.parent_id === parentCatItem.id);
-    return subs.filter((sub) => {
-      const descendants = getDescendantCategories(sub.id, categories);
-      const matchValues = new Set([
-        sub.slug,
-        sub.name_en,
-        ...descendants.map(d => d.slug).filter(Boolean),
-        ...descendants.map(d => d.name_en).filter(Boolean)
-      ].filter(Boolean));
-      return products.some((p) => p.category && matchValues.has(p.category));
-    });
-  }, [activeCat, categories, products]);
+    const rowsList = [];
+    let currentParentId: string | null = null;
+    let levelIndex = 0;
+    
+    // Loop to build subcategory rows
+    while (true) {
+      let levelCategories: CategoryRow[] = [];
+      
+      if (levelIndex === 0) {
+        // Level 0 is special because we use merged. We don't need a row for level 0 here as we render it explicitly.
+      } else {
+        // Fetch subcategories under currentParentId
+        if (currentParentId) {
+          levelCategories = categories.filter((c) => c.parent_id === currentParentId);
+        }
+      }
+      
+      if (levelIndex > 0 && levelCategories.length > 0) {
+        // Filter out empty subcategory chips that do not have active products in their subtree
+        const activeLevelCategories = levelCategories.filter((cat) => {
+          const descendants = getDescendantCategories(cat.id, categories);
+          const matchValues = new Set([
+            cat.slug,
+            cat.name_en,
+            ...descendants.map(d => d.slug).filter(Boolean),
+            ...descendants.map(d => d.name_en).filter(Boolean)
+          ].filter(Boolean));
+          return products.some((p) => p.category && matchValues.has(p.category));
+        });
 
-  // Generate dynamic, active sub-subcategories that have product representations in active catalog list
-  const subSubcategoriesWithProducts = useMemo(() => {
-    if (!activeSubCat) return [];
-    const subCatItem = categories.find(
-      (c) => c.parent_id && (c.slug === activeSubCat || c.name_en === activeSubCat)
-    );
-    if (!subCatItem) return [];
-
-    const subs = categories.filter((sub) => sub.parent_id === subCatItem.id);
-    return subs.filter((sub) => {
-      const descendants = getDescendantCategories(sub.id, categories);
-      const matchValues = new Set([
-        sub.slug,
-        sub.name_en,
-        ...descendants.map(d => d.slug).filter(Boolean),
-        ...descendants.map(d => d.name_en).filter(Boolean)
-      ].filter(Boolean));
-      return products.some((p) => p.category && matchValues.has(p.category));
-    });
-  }, [activeSubCat, categories, products]);
+        if (activeLevelCategories.length > 0) {
+          rowsList.push({
+            levelIndex,
+            categories: activeLevelCategories,
+            activeSlug: activeCategorySlugs[levelIndex] || null,
+          });
+        } else {
+          break;
+        }
+      }
+      
+      // Move to the next level down the active path
+      const selectedSlugForLevel = activeCategorySlugs[levelIndex];
+      if (selectedSlugForLevel) {
+        let selectedCategoryItem;
+        if (levelIndex === 0) {
+          const mergedItem = merged.find(m => m.key === selectedSlugForLevel);
+          if (mergedItem && mergedItem.id) {
+            selectedCategoryItem = categories.find(c => c.id === mergedItem.id);
+          }
+        } else {
+          selectedCategoryItem = levelCategories.find(c => c.slug === selectedSlugForLevel || c.name_en === selectedSlugForLevel);
+        }
+        
+        if (selectedCategoryItem) {
+          currentParentId = selectedCategoryItem.id;
+          levelIndex++;
+        } else {
+          break;
+        }
+      } else {
+        break;
+      }
+    }
+    
+    return rowsList;
+  }, [categories, products, activeCategorySlugs, merged, navigation]);
 
   if (merged.length === 0) return null;
 
   return (
     <div className="w-full space-y-4">
+      {/* Level 0 Row */}
       <div dir={lang === "ar" ? "rtl" : "ltr"} className={`${navigation ? "my-2 min-h-16 w-full items-center justify-start border-b py-2 sm:justify-center" : "justify-center"} flex flex-wrap gap-3`}>
-        {navigation && <details className="group relative shrink-0">
-          <summary className="flex h-11 cursor-pointer list-none items-center gap-2 rounded-xl border border-dashed px-5 font-semibold shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md [&::-webkit-details-marker]:hidden"><Grid2X2 className="h-5 w-5" /><span>{t("القائمة", "Menu")}</span><ChevronDown className="h-4 w-4 transition-transform group-open:rotate-180" /></summary>
-          <div className="absolute start-0 top-full z-50 mt-2 w-[min(92vw,620px)] rounded-2xl border p-5 shadow-2xl" style={{ backgroundColor: menuBackground, color: menuText }}>
-            <div className="mb-3 flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-muted-foreground"><Grid2X2 className="h-4 w-4" />{t("الأقسام", "Categories")}</div>
-            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">{merged.map((item) => <Link key={`menu-${item.key}`} to="/$slug/$category" params={{ slug: brand.slug, category: item.key }} className="flex min-h-14 items-center gap-3 rounded-xl border p-3 transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:bg-secondary"><div className="grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-lg bg-muted">{item.image ? <ResponsiveImage src={item.image} preset="thumb" sizes="40px" alt="" className="h-full w-full object-cover" /> : <Grid2X2 className="h-4 w-4 opacity-50" />}</div><span className="font-medium">{item.label}</span></Link>)}</div>
-            {settings.menu_show_pages && settings.pages.some((page) => page.title_ar || page.title_en) && <><div className="my-5 border-t" /><div className="mb-3 flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-muted-foreground"><FileText className="h-4 w-4" />{t("الصفحات", "Pages")}</div><div className="grid grid-cols-1 gap-2 sm:grid-cols-2">{settings.pages.map((page, index) => { const title = lang === "ar" ? page.title_ar || page.title_en : page.title_en || page.title_ar; return title ? <Link key={`page-${index}`} to="/$slug/$category" params={{ slug: brand.slug, category: page.slug }} className="flex min-h-11 items-center gap-3 rounded-xl px-3 py-2 transition-colors hover:bg-secondary"><FileText className="h-4 w-4 shrink-0 opacity-60" /><span className="truncate">{title}</span></Link> : null; })}</div></>}
-          </div>
-        </details>}
+        {navigation && (
+          <details className="group relative shrink-0">
+            <summary className="flex h-11 cursor-pointer list-none items-center gap-2 rounded-xl border border-dashed px-5 font-semibold shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md [&::-webkit-details-marker]:hidden">
+              <Grid2X2 className="h-5 w-5" />
+              <span>{t("القائمة", "Menu")}</span>
+              <ChevronDown className="h-4 w-4 transition-transform group-open:rotate-180" />
+            </summary>
+            <div className="absolute start-0 top-full z-50 mt-2 w-[min(92vw,620px)] rounded-2xl border p-5 shadow-2xl" style={{ backgroundColor: menuBackground, color: menuText }}>
+              <div className="mb-3 flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-muted-foreground"><Grid2X2 className="h-4 w-4" />{t("الأقسام", "Categories")}</div>
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">{merged.map((item) => <Link key={`menu-${item.key}`} to="/$slug/$category" params={{ slug: brand.slug, category: item.key }} className="flex min-h-14 items-center gap-3 rounded-xl border p-3 transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:bg-secondary"><div className="grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-lg bg-muted">{item.image ? <ResponsiveImage src={item.image} preset="thumb" sizes="40px" alt="" className="h-full w-full object-cover" /> : <Grid2X2 className="h-4 w-4 opacity-50" />}</div><span className="font-medium">{item.label}</span></Link>)}</div>
+              {settings.menu_show_pages && settings.pages.some((page) => page.title_ar || page.title_en) && <><div className="my-5 border-t" /><div className="mb-3 flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-muted-foreground"><FileText className="h-4 w-4" />{t("الصفحات", "Pages")}</div><div className="grid grid-cols-1 gap-2 sm:grid-cols-2">{settings.pages.map((page, index) => { const title = lang === "ar" ? page.title_ar || page.title_en : page.title_en || page.title_ar; return title ? <Link key={`page-${index}`} to="/$slug/$category" params={{ slug: brand.slug, category: page.slug }} className="flex min-h-11 items-center gap-3 rounded-xl px-3 py-2 transition-colors hover:bg-secondary"><FileText className="h-4 w-4 shrink-0 opacity-60" /><span className="truncate">{title}</span></Link> : null; })}</div></>}
+            </div>
+          </details>
+        )}
         {merged.map((c) => {
-          const active = activeCat === c.key;
+          const active = activeCategorySlugs[0] === c.key;
           return (
             <button
               key={c.key}
               type="button"
-              onClick={() => onSelect(active ? null : c.key)}
+              onClick={() => {
+                if (active) {
+                  setActiveCategorySlugs([]);
+                } else {
+                  setActiveCategorySlugs([c.key]);
+                }
+              }}
               className={`shrink-0 px-4 py-2.5 ${navigation ? "hidden rounded-xl border-transparent text-base font-semibold hover:-translate-y-0.5 hover:scale-[1.03] hover:shadow-sm sm:inline-flex" : "inline-flex rounded-full border text-sm"} items-center gap-2 transition-all duration-200 active:scale-95 ${
-                active ? "bg-neutral-900 text-white border-neutral-900" : "bg-white/80 text-neutral-800 border-neutral-200 hover:bg-neutral-100"
+                active ? "bg-neutral-900 text-white border-neutral-900 font-semibold" : "bg-white/80 text-neutral-800 border-neutral-200 hover:bg-neutral-100"
               }`}
             >
               {c.image && (
@@ -683,38 +687,50 @@ function Categories({
         })}
       </div>
 
-      {/* Dynamic Subcategory Second-Tier Pills Row (reveals if selected parent has active products subcategories) */}
-      {!navigation && subcategoriesWithProducts.length > 0 && (
-        <div className="w-full flex justify-center border-t border-neutral-100/30 pt-3 animate-in fade-in slide-in-from-top-1 duration-200">
+      {/* Dynamic Subcategory Rows (rendered recursively for each active sub-level) */}
+      {rows.map((row) => (
+        <div
+          key={`row-level-${row.levelIndex}`}
+          className="w-full flex justify-center border-t border-neutral-100/30 pt-3 animate-in fade-in slide-in-from-top-1 duration-200"
+        >
           <div className="flex flex-wrap gap-2 justify-center">
             <button
               type="button"
-              onClick={() => onSelectSub(null)}
+              onClick={() => {
+                setActiveCategorySlugs(activeCategorySlugs.slice(0, row.levelIndex));
+              }}
               className={`min-h-[34px] px-3.5 py-1.5 rounded-full text-xs transition-all shrink-0 border ${
-                activeSubCat === null
+                row.activeSlug === null
                   ? "bg-neutral-900 text-white border-neutral-900 shadow-sm font-medium"
                   : "bg-neutral-50 hover:bg-neutral-100 text-neutral-600 border-neutral-200 font-normal"
               }`}
             >
               {t("الكل", "All")}
             </button>
-            {subcategoriesWithProducts.map((sub) => {
+            {row.categories.map((sub) => {
               const subSlug = sub.slug || sub.name_en;
               const subLabel = lang === "ar" ? sub.name_ar || sub.name_en : sub.name_en || sub.name_ar;
-              const active = activeSubCat === subSlug;
+              const active = row.activeSlug === subSlug;
               const hasSubSubs = categories.some((c) => c.parent_id === sub.id);
+              
               return (
                 <button
                   key={sub.id}
                   type="button"
-                  onClick={() => onSelectSub(active ? null : subSlug)}
+                  onClick={() => {
+                    if (active) {
+                      setActiveCategorySlugs(activeCategorySlugs.slice(0, row.levelIndex));
+                    } else {
+                      setActiveCategorySlugs([...activeCategorySlugs.slice(0, row.levelIndex), subSlug]);
+                    }
+                  }}
                   className={`min-h-[34px] px-3.5 py-1.5 rounded-full text-xs transition-all shrink-0 border flex items-center gap-1.5 ${
                     active
                       ? "bg-neutral-900 text-white border-neutral-900 shadow-sm font-medium"
                       : "bg-neutral-50 hover:bg-neutral-100 text-neutral-600 border-neutral-200 font-normal"
                   }`}
                 >
-                  {subLabel}
+                  <span>{subLabel}</span>
                   {hasSubSubs && (
                     <ChevronDown className={`h-3 w-3 transition-transform duration-200 ${active ? "rotate-180" : ""}`} />
                   )}
@@ -723,45 +739,7 @@ function Categories({
             })}
           </div>
         </div>
-      )}
-
-      {/* Dynamic Sub-Subcategory Third-Tier Pills Row (reveals if selected child subcategory has active products subcategories) */}
-      {!navigation && subSubcategoriesWithProducts.length > 0 && (
-        <div className="w-full flex justify-center border-t border-neutral-100/10 pt-2.5 animate-in fade-in slide-in-from-top-1 duration-200">
-          <div className="flex flex-wrap gap-1.5 justify-center">
-            <button
-              type="button"
-              onClick={() => onSelectSubSub(null)}
-              className={`min-h-[30px] px-3 py-1 rounded-full text-[11px] transition-all shrink-0 border ${
-                activeSubSubCat === null
-                  ? "bg-neutral-900 text-white border-neutral-900 shadow-xs font-medium"
-                  : "bg-neutral-50/50 hover:bg-neutral-100 text-neutral-500 border-neutral-200/60 font-normal"
-              }`}
-            >
-              {t("الكل", "All")}
-            </button>
-            {subSubcategoriesWithProducts.map((sub) => {
-              const subSlug = sub.slug || sub.name_en;
-              const subLabel = lang === "ar" ? sub.name_ar || sub.name_en : sub.name_en || sub.name_ar;
-              const active = activeSubSubCat === subSlug;
-              return (
-                <button
-                  key={sub.id}
-                  type="button"
-                  onClick={() => onSelectSubSub(active ? null : subSlug)}
-                  className={`min-h-[30px] px-3 py-1 rounded-full text-[11px] transition-all shrink-0 border ${
-                    active
-                      ? "bg-neutral-900 text-white border-neutral-900 shadow-xs font-medium"
-                      : "bg-neutral-50/50 hover:bg-neutral-100 text-neutral-500 border-neutral-200/60 font-normal"
-                  }`}
-                >
-                  {subLabel}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      )}
+      ))}
     </div>
   );
 }
