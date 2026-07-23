@@ -531,11 +531,11 @@ function AnnouncementBar() {
 
 function MobileStorefrontDropdown() {
   const { brand, settings, lang, t } = useStorefront();
-  const detailsRef = useRef<HTMLDetailsElement>(null);
   const [isOpen, setIsOpen] = useState(false);
   const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({});
   const menuBackground = settings.menu_bg || settings.background_color || "#ffffff";
   const menuText = settings.menu_fg || settings.text_color || "#111111";
+
   const { data: categories = [] } = useQuery({
     queryKey: ["storefront", brand.slug, "categories"],
     queryFn: async () => {
@@ -552,31 +552,11 @@ function MobileStorefrontDropdown() {
     gcTime: 30 * 60_000,
     refetchOnWindowFocus: false,
   });
+
   const close = () => {
-    if (detailsRef.current) detailsRef.current.open = false;
+    setIsOpen(false);
   };
-  useEffect(() => {
-    const onPointerDown = (event: PointerEvent) => {
-      if (detailsRef.current?.open && !detailsRef.current.contains(event.target as Node)) close();
-    };
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") close();
-    };
-    document.addEventListener("pointerdown", onPointerDown);
-    document.addEventListener("keydown", onKeyDown);
-    return () => {
-      document.removeEventListener("pointerdown", onPointerDown);
-      document.removeEventListener("keydown", onKeyDown);
-    };
-  }, []);
-  useEffect(() => {
-    if (!isOpen) return;
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = previousOverflow;
-    };
-  }, [isOpen]);
+
   const pages = settings.pages
     .map((page, index) => ({
       key: `${page.slug}-${index}`,
@@ -587,139 +567,188 @@ function MobileStorefrontDropdown() {
     .filter((page) => settings.menu_show_pages && Boolean(page.title));
 
   return (
-    <details
-      ref={detailsRef}
-      dir={lang === "ar" ? "rtl" : "ltr"}
-      className="group relative"
-      onToggle={(event) => setIsOpen(event.currentTarget.open)}
-    >
-      <summary className="flex h-11 cursor-pointer list-none items-center gap-2 rounded-lg border px-3 font-medium shadow-sm transition-colors hover:bg-black/5 [&::-webkit-details-marker]:hidden">
-        <Grid2X2 className="h-4 w-4" />
-        <span>{t("القائمة", "Menu")}</span>
-        <ChevronDown className="h-4 w-4 transition-transform group-open:rotate-180" />
-      </summary>
-      <div
-        className={`absolute top-full z-50 mt-2 max-h-[min(58dvh,26rem)] w-[min(88vw,23rem)] touch-pan-y overflow-y-auto overscroll-contain rounded-2xl border p-3 shadow-2xl ${lang === "ar" ? "right-0" : "left-0"}`}
+    <Sheet open={isOpen} onOpenChange={setIsOpen}>
+      <SheetTrigger asChild>
+        <Button
+          variant="outline"
+          className="flex h-11 items-center gap-2 px-3 font-medium shadow-sm hover:bg-black/5"
+          style={{ color: "var(--sf-header-fg)" }}
+        >
+          <Grid2X2 className="h-4 w-4" />
+          <span>{t("القائمة", "Menu")}</span>
+          <ChevronDown className="h-4 w-4" />
+        </Button>
+      </SheetTrigger>
+      <SheetContent
+        side={lang === "ar" ? "right" : "left"}
+        className="w-[min(88vw,23rem)] border-r border-l p-0 flex flex-col h-full"
         style={{
           backgroundColor: menuBackground,
           color: menuText,
-          WebkitOverflowScrolling: "touch",
-          fontSize: "16px",
-          lineHeight: "1.35",
         }}
       >
-        <div className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider opacity-65">
-          <Grid2X2 className="h-4 w-4" />
-          {t("الأقسام", "Categories")}
-        </div>
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          {categories.filter((c: any) => !c.parent_id).map((category: any) => {
-            const categorySlug = category.slug || category.name_en;
-            const label = lang === "ar" ? category.name_ar || category.name_en : category.name_en || category.name_ar;
-            const subs = categories.filter((sub: any) => sub.parent_id === category.id);
-            const isExpanded = !!expandedCategories[category.id];
+        <SheetHeader className="px-4 pt-5 pb-3 border-b border-border/10 shrink-0">
+          <SheetTitle className="text-start text-base font-semibold flex items-center gap-2" style={{ color: menuText }}>
+            <Grid2X2 className="h-5 w-5" />
+            {t("القائمة", "Menu")}
+          </SheetTitle>
+        </SheetHeader>
 
-            const toggleExpand = (e: React.MouseEvent) => {
-              e.preventDefault();
-              e.stopPropagation();
-              setExpandedCategories((prev) => ({ ...prev, [category.id]: !prev[category.id] }));
-            };
+        <div className="flex-1 overflow-y-auto p-4 space-y-6 overscroll-contain">
+          {/* Categories Block */}
+          <div className="space-y-3">
+            <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider opacity-65">
+              <Grid2X2 className="h-4 w-4" />
+              {t("الأقسام", "Categories")}
+            </div>
+            <div className="grid grid-cols-1 gap-3">
+              {categories.filter((c: any) => !c.parent_id).map((category: any) => {
+                const categorySlug = category.slug || category.name_en;
+                const label = lang === "ar" ? category.name_ar || category.name_en : category.name_en || category.name_ar;
+                const subs = categories.filter((sub: any) => sub.parent_id === category.id);
+                const isExpanded = !!expandedCategories[category.id];
 
-            return (
-              <div key={category.id} className="space-y-1.5">
-                <div className="flex items-center gap-1 rounded-xl border bg-background transition-colors hover:bg-black/5 pr-1.5 rtl:pr-0 rtl:pl-1.5">
-                  <Link
-                    to="/$slug/$category"
-                    params={{ slug: brand.slug, category: categorySlug }}
-                    onClick={close}
-                    className="flex min-h-12 flex-1 items-center gap-3 px-2.5 py-2"
-                  >
-                    <div className="grid h-9 w-9 shrink-0 place-items-center overflow-hidden rounded-lg bg-muted">
-                      {category.menu_icon_url ? <img src={cloudflareImageUrl(category.menu_icon_url, 80)} width={20} height={20} loading="lazy" decoding="async" alt="" className="h-5 w-5 object-contain" /> : <Grid2X2 className="h-4 w-4 opacity-50" />}
-                    </div>
-                    <span className="truncate font-medium text-start" style={{ fontSize: "0.95rem", lineHeight: "1.3rem" }}>{label}</span>
-                  </Link>
-                  {subs.length > 0 && (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={toggleExpand}
-                      className="h-9 px-2.5 shrink-0 rounded-lg hover:bg-black/5 font-mono text-sm font-bold tracking-tight"
-                      aria-expanded={isExpanded}
-                      aria-label={t("توسيع", "Expand")}
-                    >
-                      {isExpanded ? "[-]" : "[+]"}
-                    </Button>
-                  )}
-                </div>
+                const toggleExpand = (e: React.MouseEvent) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setExpandedCategories((prev) => ({ ...prev, [category.id]: !prev[category.id] }));
+                };
 
-                {subs.length > 0 && isExpanded && (
-                  <div className="ms-4 ps-3 border-s border-muted-foreground/20 space-y-1.5 animate-in slide-in-from-top-1 duration-200">
-                    <Link
-                      to="/$slug/$category"
-                      params={{ slug: brand.slug, category: categorySlug }}
-                      onClick={close}
-                      className="flex min-h-10 items-center gap-2.5 rounded-lg px-2.5 py-1.5 transition-colors hover:bg-black/5 text-muted-foreground hover:text-foreground font-semibold"
-                    >
-                      <div className="grid h-7 w-7 shrink-0 place-items-center overflow-hidden rounded-md bg-muted/30">
-                        <Grid2X2 className="h-3.5 w-3.5 opacity-30" />
-                      </div>
-                      <span className="truncate text-xs">{lang === "ar" ? "عرض الكل" : "View All"}</span>
-                    </Link>
-                    {subs.map((sub: any) => {
-                      const subSlug = sub.slug || sub.name_en;
-                      const subLabel = lang === "ar" ? sub.name_ar || sub.name_en : sub.name_en || sub.name_ar;
-                      return (
-                        <Link
-                          key={sub.id}
-                          to="/$slug/$category"
-                          params={{ slug: brand.slug, category: subSlug }}
-                          onClick={close}
-                          className="flex min-h-10 items-center gap-2.5 rounded-lg px-2 py-1.5 transition-colors hover:bg-black/5 text-muted-foreground hover:text-foreground"
+                return (
+                  <div key={category.id} className="space-y-1.5">
+                    <div className="flex items-center gap-1 rounded-xl border bg-background/50 transition-colors hover:bg-black/5 pr-1.5 rtl:pr-0 rtl:pl-1.5">
+                      <Link
+                        to="/$slug/$category"
+                        params={{ slug: brand.slug, category: categorySlug }}
+                        onClick={close}
+                        className="flex min-h-12 flex-1 items-center gap-3 px-2.5 py-2"
+                      >
+                        <div className="grid h-9 w-9 shrink-0 place-items-center overflow-hidden rounded-lg bg-muted">
+                          {category.menu_icon_url ? (
+                            <img
+                              src={cloudflareImageUrl(category.menu_icon_url, 80)}
+                              width={20}
+                              height={20}
+                              loading="lazy"
+                              decoding="async"
+                              // [TECH ADVISOR #1]: Decorative icons sitting next to visible text labels must use alt=""
+                              // to avoid screen readers announcing the category label twice.
+                              alt=""
+                              className="h-5 w-5 object-contain"
+                            />
+                          ) : (
+                            <Grid2X2 className="h-4 w-4 opacity-50" />
+                          )}
+                        </div>
+                        <span className="truncate font-medium text-start text-sm">{label}</span>
+                      </Link>
+                      {subs.length > 0 && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={toggleExpand}
+                          className="h-9 px-2.5 shrink-0 rounded-lg hover:bg-black/5 text-xs font-bold"
+                          aria-expanded={isExpanded}
+                          aria-label={t("توسيع", "Expand")}
                         >
-                          <div className="grid h-7 w-7 shrink-0 place-items-center overflow-hidden rounded-md bg-muted/60">
-                            {sub.menu_icon_url ? <img src={cloudflareImageUrl(sub.menu_icon_url, 80)} width={16} height={16} loading="lazy" decoding="async" alt="" className="h-4 w-4 object-contain" /> : <Grid2X2 className="h-3.5 w-3.5 opacity-40" />}
+                          {isExpanded ? "[-]" : "[+]"}
+                        </Button>
+                      )}
+                    </div>
+
+                    {subs.length > 0 && isExpanded && (
+                      <div className="ms-4 ps-3 border-s border-muted-foreground/20 space-y-1.5 animate-in slide-in-from-top-1 duration-200">
+                        <Link
+                          to="/$slug/$category"
+                          params={{ slug: brand.slug, category: categorySlug }}
+                          onClick={close}
+                          className="flex min-h-10 items-center gap-2.5 rounded-lg px-2.5 py-1.5 transition-colors hover:bg-black/5 text-muted-foreground hover:text-foreground font-semibold"
+                        >
+                          <div className="grid h-7 w-7 shrink-0 place-items-center overflow-hidden rounded-md bg-muted/30">
+                            <Grid2X2 className="h-3.5 w-3.5 opacity-30" />
                           </div>
-                          <span className="truncate text-xs font-medium">{subLabel}</span>
+                          <span className="truncate text-xs">{lang === "ar" ? "عرض الكل" : "View All"}</span>
                         </Link>
-                      );
-                    })}
+                        {subs.map((sub: any) => {
+                          const subSlug = sub.slug || sub.name_en;
+                          const subLabel = lang === "ar" ? sub.name_ar || sub.name_en : sub.name_en || sub.name_ar;
+                          return (
+                            <Link
+                              key={sub.id}
+                              to="/$slug/$category"
+                              params={{ slug: brand.slug, category: subSlug }}
+                              onClick={close}
+                              className="flex min-h-10 items-center gap-2.5 rounded-lg px-2 py-1.5 transition-colors hover:bg-black/5 text-muted-foreground hover:text-foreground"
+                            >
+                              <div className="grid h-7 w-7 shrink-0 place-items-center overflow-hidden rounded-md bg-muted/60">
+                                {sub.menu_icon_url ? (
+                                  <img
+                                    src={cloudflareImageUrl(sub.menu_icon_url, 80)}
+                                    width={16}
+                                    height={16}
+                                    loading="lazy"
+                                    decoding="async"
+                                    // Decorative icon
+                                    alt=""
+                                    className="h-4 w-4 object-contain"
+                                  />
+                                ) : (
+                                  <Grid2X2 className="h-3.5 w-3.5 opacity-40" />
+                                )}
+                              </div>
+                              <span className="truncate text-xs font-medium">{subLabel}</span>
+                            </Link>
+                          );
+                        })}
+                      </div>
+                    )}
                   </div>
-                )}
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Pages Block */}
+          {pages.length > 0 && (
+            <div className="space-y-3 pt-4 border-t border-border/10">
+              <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider opacity-65">
+                <FileText className="h-4 w-4" />
+                {t("الصفحات", "Pages")}
               </div>
-            );
-          })}
+              <div className="space-y-1">
+                {pages.map((page) => (
+                  <Link
+                    key={page.key}
+                    to="/$slug/$category"
+                    params={{ slug: brand.slug, category: page.slug }}
+                    onClick={close}
+                    className="flex min-h-11 items-center gap-3 rounded-lg px-2.5 py-2 transition-colors hover:bg-black/5"
+                  >
+                    <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-black/5">
+                      {page.iconUrl ? (
+                        <img
+                          src={cloudflareImageUrl(page.iconUrl, 80)}
+                          // Decorative icon next to visible title label
+                          alt=""
+                          className="h-5 w-5 object-contain"
+                        />
+                      ) : (
+                        <FileText className="h-4 w-4 opacity-60" />
+                      )}
+                    </span>
+                    <span className="truncate text-sm font-medium">{page.title}</span>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
-        {pages.length > 0 && (
-          <>
-            <div className="my-3 border-t" />
-            <div className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider opacity-65">
-              <FileText className="h-4 w-4" />
-              {t("الصفحات", "Pages")}
-            </div>
-            <div className="space-y-1">
-              {pages.map((page) => (
-                <Link
-                  key={page.key}
-                  to="/$slug/$category"
-                  params={{ slug: brand.slug, category: page.slug }}
-                  onClick={close}
-                  className="flex min-h-11 items-center gap-3 rounded-lg px-2.5 py-2 transition-colors hover:bg-black/5"
-                >
-                  <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-black/5">
-                    {page.iconUrl ? <img src={cloudflareImageUrl(page.iconUrl, 80)} alt="" className="h-5 w-5 object-contain" /> : <FileText className="h-4 w-4 opacity-60" />}
-                  </span>
-                  <span className="truncate" style={{ fontSize: "0.95rem", lineHeight: "1.3rem" }}>{page.title}</span>
-                </Link>
-              ))}
-            </div>
-          </>
-        )}
-      </div>
-    </details>
+      </SheetContent>
+    </Sheet>
   );
 }
+
 
 export function StorefrontMenu({ navigation = false }: { navigation?: boolean } = {}) {
   const { brand, settings, lang, t, session, isStoreMember } = useStorefront();
