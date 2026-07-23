@@ -881,7 +881,18 @@ function DesktopSubMenu({
                 {name}
               </Link>
               {hasChildren && (
-                <div className="p-1 me-1 text-muted-foreground/60 transition-colors shrink-0">
+                <div
+                  className="p-1 me-1 text-muted-foreground/60 transition-all duration-200 shrink-0 cursor-pointer hover:text-foreground hover:bg-slate-100 dark:hover:bg-slate-800/60 rounded-md"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    if (isExpanded) {
+                      setActiveId(null);
+                    } else {
+                      setActiveId(sub.id);
+                    }
+                  }}
+                >
                   <ChevronDown
                     className={`h-3 w-3 transition-transform duration-200 ${
                       isExpanded ? "rotate-180" : ""
