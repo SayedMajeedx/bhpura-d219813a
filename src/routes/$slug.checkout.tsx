@@ -763,10 +763,10 @@ function Checkout() {
           )}
 
           {method === "card" && (
-            <div className="mt-3 p-4 border rounded-lg bg-muted/40 text-sm">
+            <div className="mt-3 p-4 border rounded-lg text-sm text-center font-medium text-amber-800 border-amber-200/50 bg-amber-500/10 dark:text-amber-400 dark:border-amber-900/50 dark:bg-amber-950/10">
               {t(
-                "سيتم التواصل معك من قِبل المتجر لإتمام الدفع بالبطاقة.",
-                "The store will contact you to complete the card payment.",
+                "سيتم تحويلك بشكل آمن إلى بوابة الدفع لإتمام عملية الدفع بالبطاقة فور تأكيد الطلب.",
+                "You will be securely redirected to the payment gateway to complete your card payment upon placing the order.",
               )}
             </div>
           )}
