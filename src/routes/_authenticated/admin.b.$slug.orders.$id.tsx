@@ -1126,6 +1126,7 @@ function OrderDetail() {
           fulfillmentMethod === "digital" ? order.digital_delivery_contact : null,
         payment_method: order.payment_method ?? null,
         payment_status: order.payment_status ?? "unpaid",
+        fulfillment_status: order.fulfillment_status ?? "ON_HOLD",
         discount: totals.discount,
         tax_rate: order.tax_rate,
         tax_amount: totals.taxAmount,
@@ -1180,27 +1181,50 @@ function OrderDetail() {
       });
     }
 
-    await supabase.from("order_items").delete().eq("order_id", order.id);
-    if (items.length > 0) {
-      const { error: ie } = await (supabase.from("order_items") as any).insert(
-        items.map((i) => ({
-          user_id: user.id,
-          order_id: order.id,
-          product_id: i.product_id ?? null,
-          variant_id: i.variant_id ?? null,
-          description: i.description,
-          quantity: i.quantity,
-          unit_price: i.unit_price,
-          original_price: i.original_price ?? null,
-          customizations: i.customizations,
-          customization_total: i.customization_total,
-          line_total: i.line_total,
-          location: i.location ?? "main",
-        })),
-      );
-      if (ie) {
-        setSaving(false);
-        return toast.error(ie.message);
+    // Only update order_items if they actually changed
+    const originalItems = (orderQ.data?.order_items ?? []) as any[];
+    let itemsModified = originalItems.length !== items.length;
+    if (!itemsModified) {
+      for (const item of items) {
+        const orig = originalItems.find(o => o.id === item.id);
+        if (!orig ||
+            orig.product_id !== item.product_id ||
+            orig.variant_id !== item.variant_id ||
+            Number(orig.quantity) !== Number(item.quantity) ||
+            Number(orig.unit_price) !== Number(item.unit_price) ||
+            orig.description !== item.description ||
+            (orig.location === "incubator" ? "incubator" : "main") !== item.location ||
+            JSON.stringify(orig.customizations ?? []) !== JSON.stringify(item.customizations ?? [])
+        ) {
+          itemsModified = true;
+          break;
+        }
+      }
+    }
+
+    if (itemsModified) {
+      await supabase.from("order_items").delete().eq("order_id", order.id);
+      if (items.length > 0) {
+        const { error: ie } = await (supabase.from("order_items") as any).insert(
+          items.map((i) => ({
+            user_id: user.id,
+            order_id: order.id,
+            product_id: i.product_id ?? null,
+            variant_id: i.variant_id ?? null,
+            description: i.description,
+            quantity: i.quantity,
+            unit_price: i.unit_price,
+            original_price: i.original_price ?? null,
+            customizations: i.customizations,
+            customization_total: i.customization_total,
+            line_total: i.line_total,
+            location: i.location ?? "main",
+          })),
+        );
+        if (ie) {
+          setSaving(false);
+          return toast.error(ie.message);
+        }
       }
     }
 
@@ -1551,7 +1575,14 @@ function OrderDetail() {
                 <Label>{t("orderDetail.status")}</Label>
                 <Select
                   value={order.status}
-                  onValueChange={(v) => setOrder({ ...order, status: v })}
+                  onValueChange={(v) => {
+                    const updatedFulfillment = v === "completed"
+                      ? "COMPLETED"
+                      : v === "cancelled"
+                        ? "CANCELLED"
+                        : order.fulfillment_status;
+                    setOrder({ ...order, status: v, fulfillment_status: updatedFulfillment });
+                  }}
                 >
                   <SelectTrigger>
                     <SelectValue />
@@ -2205,7 +2236,17 @@ function OrderDetail() {
                 </div>
                 <div>
                   <Label>{t("orderDetail.status")}</Label>
-                  <Select value={order.status} onValueChange={(status) => setOrder({ ...order, status })}>
+                  <Select
+                    value={order.status}
+                    onValueChange={(status) => {
+                      const updatedFulfillment = status === "completed"
+                        ? "COMPLETED"
+                        : status === "cancelled"
+                          ? "CANCELLED"
+                          : order.fulfillment_status;
+                      setOrder({ ...order, status, fulfillment_status: updatedFulfillment });
+                    }}
+                  >
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="draft">{t("status.draft")}</SelectItem>
@@ -2477,7 +2518,12 @@ function OrderDetail() {
                   <Label>{t("orderDetail.paymentStatus")}</Label>
                   <Select
                     value={order.payment_status ?? "unpaid"}
-                    onValueChange={(v) => setOrder({ ...order, payment_status: v })}
+                    onValueChange={(v) => {
+                      const updatedFulfillment = (v === "paid" && (!order.fulfillment_status || ["ON_HOLD", "on_hold", "unassigned"].includes(order.fulfillment_status)))
+                        ? "NEEDS_PACKING"
+                        : order.fulfillment_status;
+                      setOrder({ ...order, payment_status: v, fulfillment_status: updatedFulfillment });
+                    }}
                   >
                     <SelectTrigger>
                       <SelectValue />
