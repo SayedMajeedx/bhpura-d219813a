@@ -862,7 +862,7 @@ function DesktopSubMenu({
         const hasChildren = children.length > 0;
 
         return (
-          <div key={sub.id} className="relative group/sub">
+          <div key={sub.id} className="relative [&:hover>.submenu]:block">
             <div className="flex items-center justify-between rounded-lg transition-all hover:bg-slate-50 dark:hover:bg-slate-800/40 group/item">
               <Link
                 to="/$slug/$category"
@@ -885,7 +885,7 @@ function DesktopSubMenu({
             
             {hasChildren && (
               <div
-                className={`absolute top-0 hidden min-w-[200px] z-50 transition-all duration-200 animate-in fade-in-0 slide-in-from-top-1 group-hover/sub:block ${
+                className={`absolute top-[-12px] hidden min-w-[200px] z-50 transition-all duration-200 animate-in fade-in-0 slide-in-from-top-1 submenu ${
                   isRtl ? "right-full pe-2" : "left-full ps-2"
                 }`}
               >
