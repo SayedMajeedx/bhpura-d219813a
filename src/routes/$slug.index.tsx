@@ -45,12 +45,19 @@ type CategoryRow = {
   name_ar: string | null;
   slug: string | null;
   image_url: string | null;
+  parent_id: string | null;
   sort_order: number;
 };
 
 function StoreHome() {
   const { brand } = useStorefront();
   const [activeCat, setActiveCat] = useState<string | null>(null);
+  const [activeSubCat, setActiveSubCat] = useState<string | null>(null);
+
+  const handleSelectCat = (cat: string | null) => {
+    setActiveCat(cat);
+    setActiveSubCat(null);
+  };
 
   const { data: products, isLoading } = useQuery({
     queryKey: ["storefront", brand.slug, "products"],
@@ -75,7 +82,7 @@ function StoreHome() {
     queryKey: ["storefront", brand.slug, "categories"],
     queryFn: async () => {
       const { data, error } = await (supabase.from("categories") as any)
-        .select("id, name_en, name_ar, slug, image_url, sort_order")
+        .select("id, name_en, name_ar, slug, image_url, parent_id, sort_order")
         .eq("brand_id", brand.id)
         .eq("is_active", true)
         .order("sort_order", { ascending: true });
@@ -170,10 +177,34 @@ function StoreHome() {
           p.product_variants.some((v) => Number(v.original_price || 0) > Number(v.selling_price || 0))
         );
       }
+
+      // If activeSubCat is selected, filter strictly by it
+      if (activeSubCat) {
+        const subCatSlug = activeSubCat.toLowerCase().replace(/\s+/g, "-");
+        return list.filter((p) => p.category === activeSubCat || p.category?.toLowerCase() === subCatSlug);
+      }
+
+      // Find the database ID of the active parent category
+      const parentCat = categories?.find(c => !c.parent_id && (c.slug === activeCat || c.name_en === activeCat));
+      if (parentCat) {
+        // Find all child subcategory slugs/names
+        const childCats = categories?.filter(c => c.parent_id === parentCat.id) ?? [];
+        const matchSlugs = new Set([
+          activeCat.toLowerCase().replace(/\s+/g, "-"),
+          ...childCats.map(c => c.slug?.toLowerCase()).filter(Boolean),
+          ...childCats.map(c => c.name_en?.toLowerCase()).filter(Boolean)
+        ]);
+        
+        return list.filter((p) => {
+          const pCat = p.category?.toLowerCase();
+          return pCat && matchSlugs.has(pCat);
+        });
+      }
+
       return list.filter((p) => p.category === activeCat || p.category?.toLowerCase() === catSlug);
     }
     return list;
-  }, [products, activeCat, bestSellerRows]);
+  }, [products, activeCat, activeSubCat, categories, bestSellerRows]);
 
   const bestIdsKeys = useMemo(() => {
     return new Set((bestSellerRows ?? []).map(row => row.product_id));
@@ -227,7 +258,9 @@ function StoreHome() {
             products={products ?? []}
             categories={categories ?? []}
             activeCat={activeCat}
-            onSelect={setActiveCat}
+            activeSubCat={activeSubCat}
+            onSelect={handleSelectCat}
+            onSelectSub={setActiveSubCat}
           />
           <ProductGrid
             products={filtered}
@@ -480,13 +513,17 @@ function Categories({
   products,
   categories,
   activeCat,
+  activeSubCat,
   onSelect,
+  onSelectSub,
   navigation = false,
 }: {
   products: ProductRow[];
   categories: CategoryRow[];
   activeCat: string | null;
+  activeSubCat: string | null;
   onSelect: (c: string | null) => void;
+  onSelectSub: (c: string | null) => void;
   navigation?: boolean;
 }) {
   const { t, lang, brand, settings } = useStorefront();
@@ -494,50 +531,111 @@ function Categories({
   const menuText = settings.menu_fg || settings.text_color || "#111111";
 
   const merged = useMemo(() => {
-    const known = new Map<string, { key: string; label: string; image: string | null }>();
-    for (const c of categories) {
+    const known = new Map<string, { id: string; key: string; label: string; image: string | null }>();
+    // Pre-filter to only parent categories (no parent_id)
+    const parents = categories.filter((c) => !c.parent_id);
+    for (const c of parents) {
       const key = c.slug || c.name_en;
       const label = (lang === "ar" ? c.name_ar : c.name_en) || c.name_en;
-      known.set(key, { key, label, image: c.image_url });
+      known.set(key, { id: c.id, key, label, image: c.image_url });
     }
     for (const p of products) {
       if (p.category && !known.has(p.category)) {
-        known.set(p.category, { key: p.category, label: p.category, image: null });
+        // Subcategories with no parent_id match get treated as parents (unchanged behavior for flat catalogs)
+        const isSub = categories.some((c) => c.parent_id && (c.slug === p.category || c.name_en === p.category));
+        if (!isSub) {
+          known.set(p.category, { id: "", key: p.category, label: p.category, image: null });
+        }
       }
     }
     return Array.from(known.values());
   }, [categories, products, lang]);
 
+  // Generate dynamic, active subcategories that have product representations in active catalog list
+  const subcategoriesWithProducts = useMemo(() => {
+    if (!activeCat) return [];
+    const parentCatItem = categories.find(
+      (c) => !c.parent_id && (c.slug === activeCat || c.name_en === activeCat)
+    );
+    if (!parentCatItem) return [];
+
+    const subs = categories.filter((sub) => sub.parent_id === parentCatItem.id);
+    return subs.filter((sub) => {
+      const matchValues = new Set([sub.slug, sub.name_en].filter(Boolean));
+      return products.some((p) => matchValues.has(p.category));
+    });
+  }, [activeCat, categories, products]);
+
   if (merged.length === 0) return null;
 
   return (
-    <div dir={lang === "ar" ? "rtl" : "ltr"} className={`${navigation ? "my-2 min-h-16 w-full items-center justify-start border-b py-2 sm:justify-center" : "mb-12 justify-center"} flex flex-wrap gap-3`}>
-      {navigation && <details className="group relative shrink-0">
-        <summary className="flex h-11 cursor-pointer list-none items-center gap-2 rounded-xl border border-dashed px-5 font-semibold shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md [&::-webkit-details-marker]:hidden"><Grid2X2 className="h-5 w-5" /><span>{t("القائمة", "Menu")}</span><ChevronDown className="h-4 w-4 transition-transform group-open:rotate-180" /></summary>
-        <div className="absolute start-0 top-full z-50 mt-2 w-[min(92vw,620px)] rounded-2xl border p-5 shadow-2xl" style={{ backgroundColor: menuBackground, color: menuText }}>
-          <div className="mb-3 flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-muted-foreground"><Grid2X2 className="h-4 w-4" />{t("الأقسام", "Categories")}</div>
-          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">{merged.map((item) => <Link key={`menu-${item.key}`} to="/$slug/$category" params={{ slug: brand.slug, category: item.key }} className="flex min-h-14 items-center gap-3 rounded-xl border p-3 transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:bg-secondary"><div className="grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-lg bg-muted">{item.image ? <ResponsiveImage src={item.image} preset="thumb" sizes="40px" alt="" className="h-full w-full object-cover" /> : <Grid2X2 className="h-4 w-4 opacity-50" />}</div><span className="font-medium">{item.label}</span></Link>)}</div>
-          {settings.menu_show_pages && settings.pages.some((page) => page.title_ar || page.title_en) && <><div className="my-5 border-t" /><div className="mb-3 flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-muted-foreground"><FileText className="h-4 w-4" />{t("الصفحات", "Pages")}</div><div className="grid grid-cols-1 gap-2 sm:grid-cols-2">{settings.pages.map((page, index) => { const title = lang === "ar" ? page.title_ar || page.title_en : page.title_en || page.title_ar; return title ? <Link key={`page-${index}`} to="/$slug/$category" params={{ slug: brand.slug, category: page.slug }} className="flex min-h-11 items-center gap-3 rounded-xl px-3 py-2 transition-colors hover:bg-secondary"><FileText className="h-4 w-4 shrink-0 opacity-60" /><span className="truncate">{title}</span></Link> : null; })}</div></>}
+    <div className="w-full space-y-4">
+      <div dir={lang === "ar" ? "rtl" : "ltr"} className={`${navigation ? "my-2 min-h-16 w-full items-center justify-start border-b py-2 sm:justify-center" : "justify-center"} flex flex-wrap gap-3`}>
+        {navigation && <details className="group relative shrink-0">
+          <summary className="flex h-11 cursor-pointer list-none items-center gap-2 rounded-xl border border-dashed px-5 font-semibold shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md [&::-webkit-details-marker]:hidden"><Grid2X2 className="h-5 w-5" /><span>{t("القائمة", "Menu")}</span><ChevronDown className="h-4 w-4 transition-transform group-open:rotate-180" /></summary>
+          <div className="absolute start-0 top-full z-50 mt-2 w-[min(92vw,620px)] rounded-2xl border p-5 shadow-2xl" style={{ backgroundColor: menuBackground, color: menuText }}>
+            <div className="mb-3 flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-muted-foreground"><Grid2X2 className="h-4 w-4" />{t("الأقسام", "Categories")}</div>
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">{merged.map((item) => <Link key={`menu-${item.key}`} to="/$slug/$category" params={{ slug: brand.slug, category: item.key }} className="flex min-h-14 items-center gap-3 rounded-xl border p-3 transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:bg-secondary"><div className="grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-lg bg-muted">{item.image ? <ResponsiveImage src={item.image} preset="thumb" sizes="40px" alt="" className="h-full w-full object-cover" /> : <Grid2X2 className="h-4 w-4 opacity-50" />}</div><span className="font-medium">{item.label}</span></Link>)}</div>
+            {settings.menu_show_pages && settings.pages.some((page) => page.title_ar || page.title_en) && <><div className="my-5 border-t" /><div className="mb-3 flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-muted-foreground"><FileText className="h-4 w-4" />{t("الصفحات", "Pages")}</div><div className="grid grid-cols-1 gap-2 sm:grid-cols-2">{settings.pages.map((page, index) => { const title = lang === "ar" ? page.title_ar || page.title_en : page.title_en || page.title_ar; return title ? <Link key={`page-${index}`} to="/$slug/$category" params={{ slug: brand.slug, category: page.slug }} className="flex min-h-11 items-center gap-3 rounded-xl px-3 py-2 transition-colors hover:bg-secondary"><FileText className="h-4 w-4 shrink-0 opacity-60" /><span className="truncate">{title}</span></Link> : null; })}</div></>}
+          </div>
+        </details>}
+        {merged.map((c) => {
+          const active = activeCat === c.key;
+          return (
+            <button
+              key={c.key}
+              type="button"
+              onClick={() => onSelect(active ? null : c.key)}
+              className={`shrink-0 px-4 py-2.5 ${navigation ? "hidden rounded-xl border-transparent text-base font-semibold hover:-translate-y-0.5 hover:scale-[1.03] hover:shadow-sm sm:inline-flex" : "inline-flex rounded-full border text-sm"} items-center gap-2 transition-all duration-200 active:scale-95 ${
+                active ? "bg-neutral-900 text-white border-neutral-900" : "bg-white/80 text-neutral-800 border-neutral-200 hover:bg-neutral-100"
+              }`}
+            >
+              {c.image && (
+                <ResponsiveImage src={c.image} preset="thumb" sizes="20px" alt="" className="h-5 w-5 rounded-full object-cover" />
+              )}
+              {c.label}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Dynamic Subcategory Second-Tier Pills Row (reveals if selected parent has active products subcategories) */}
+      {!navigation && subcategoriesWithProducts.length > 0 && (
+        <div className="w-full flex justify-center border-t border-neutral-100/30 pt-3 animate-in fade-in slide-in-from-top-1 duration-200">
+          <div className="flex flex-wrap gap-2 justify-center">
+            <button
+              type="button"
+              onClick={() => onSelectSub(null)}
+              className={`min-h-[34px] px-3.5 py-1.5 rounded-full text-xs transition-all shrink-0 border ${
+                activeSubCat === null
+                  ? "bg-neutral-900 text-white border-neutral-900 shadow-sm font-medium"
+                  : "bg-neutral-50 hover:bg-neutral-100 text-neutral-600 border-neutral-200 font-normal"
+              }`}
+            >
+              {t("الكل", "All")}
+            </button>
+            {subcategoriesWithProducts.map((sub) => {
+              const subSlug = sub.slug || sub.name_en;
+              const subLabel = lang === "ar" ? sub.name_ar || sub.name_en : sub.name_en || sub.name_ar;
+              const active = activeSubCat === subSlug;
+              return (
+                <button
+                  key={sub.id}
+                  type="button"
+                  onClick={() => onSelectSub(active ? null : subSlug)}
+                  className={`min-h-[34px] px-3.5 py-1.5 rounded-full text-xs transition-all shrink-0 border ${
+                    active
+                      ? "bg-neutral-900 text-white border-neutral-900 shadow-sm font-medium"
+                      : "bg-neutral-50 hover:bg-neutral-100 text-neutral-600 border-neutral-200 font-normal"
+                  }`}
+                >
+                  {subLabel}
+                </button>
+              );
+            })}
+          </div>
         </div>
-      </details>}
-      {merged.map((c) => {
-        const active = activeCat === c.key;
-        return (
-          <button
-            key={c.key}
-            type="button"
-            onClick={() => onSelect(active ? null : c.key)}
-            className={`shrink-0 px-4 py-2.5 ${navigation ? "hidden rounded-xl border-transparent text-base font-semibold hover:-translate-y-0.5 hover:scale-[1.03] hover:shadow-sm sm:inline-flex" : "inline-flex rounded-full border text-sm"} items-center gap-2 transition-all duration-200 active:scale-95 ${
-              active ? "bg-neutral-900 text-white border-neutral-900" : "bg-white/80 text-neutral-800 border-neutral-200 hover:bg-neutral-100"
-            }`}
-          >
-            {c.image && (
-              <ResponsiveImage src={c.image} preset="thumb" sizes="20px" alt="" className="h-5 w-5 rounded-full object-cover" />
-            )}
-            {c.label}
-          </button>
-        );
-      })}
+      )}
     </div>
   );
 }
