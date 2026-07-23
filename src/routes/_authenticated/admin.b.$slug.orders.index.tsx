@@ -132,29 +132,72 @@ const getFulfillmentBadgeDetails = (status: string | null | undefined, lang: "en
       classes: "bg-[#FFF3CD] text-[#856404] border-none font-semibold animate-pulse shadow-sm",
     };
   }
+  if (s === "READY_FOR_PICKUP") {
+    return {
+      label: lang === "ar" ? "جاهز للاستلام" : "Ready for Pickup",
+      classes: "bg-[#E0E7FF] text-[#3730A3] border-none font-semibold shadow-sm",
+    };
+  }
   if (s === "SHIPPED") {
     return {
       label: lang === "ar" ? "تم الشحن" : "Shipped",
-      classes: "bg-[#CCE5FF] text-[#004085] border-none",
+      classes: "bg-[#CCE5FF] text-[#004085] border-none font-semibold shadow-sm",
     };
   }
   if (s === "COMPLETED") {
     return {
       label: lang === "ar" ? "مكتمل" : "Completed",
-      classes: "bg-[#E8F5E9] text-[#2E7D32] border-none",
+      classes: "bg-[#E8F5E9] text-[#2E7D32] border-none font-semibold shadow-sm",
     };
   }
   if (s === "CANCELLED") {
     return {
       label: lang === "ar" ? "ملغي" : "Cancelled",
-      classes: "bg-[#F8D7DA] text-[#721C24] border-none",
+      classes: "bg-[#F8D7DA] text-[#721C24] border-none shadow-sm",
     };
   }
-  // ON_HOLD
+  // ON_HOLD / default
   return {
     label: lang === "ar" ? "قيد الانتظار" : "On Hold",
     classes: "bg-[#E2E3E5] text-[#383D41] border-none",
   };
+};
+
+const renderPaymentMethodBadge = (paymentMethod: string | null | undefined, lang: "en" | "ar") => {
+  const method = String(paymentMethod ?? "").toLowerCase();
+  const isCard = ["card", "apple_pay", "google_pay"].includes(method);
+  const isBenefit = ["benefit", "benefitpay", "benefit_pay", "bank_transfer"].includes(method);
+  const isCod = ["cash", "cod"].includes(method);
+
+  if (isCard) {
+    return (
+      <div className="mt-1">
+        <span className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-semibold bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-950/30 dark:text-blue-300 dark:border-blue-900 shadow-xs">
+          💳 {lang === "ar" ? "بطاقة (أونلاين)" : "Card (Online)"}
+        </span>
+      </div>
+    );
+  }
+  if (isBenefit) {
+    return (
+      <div className="mt-1">
+        <span className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-semibold bg-violet-50 text-violet-700 border border-violet-200 dark:bg-violet-950/30 dark:text-violet-300 dark:border-violet-900 shadow-xs">
+          📲 {lang === "ar" ? "بنفت بي (يدوي)" : "BenefitPay (Manual)"}
+        </span>
+      </div>
+    );
+  }
+  if (isCod) {
+    return (
+      <div className="mt-1">
+        <span className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-300 dark:border-emerald-900 shadow-xs">
+          💵 {lang === "ar" ? "الدفع عند الاستلام" : "COD"}
+        </span>
+      </div>
+    );
+  }
+  
+  return null;
 };
 
 function OrdersList() {
@@ -461,62 +504,203 @@ function OrdersList() {
       Number(o.total),
       Number(o.advance_paid ?? 0),
     );
+    const isPaid = paymentBadge === "paid";
+    const isUnpaid = !isPaid;
     const ff = String(o.fulfillment_status || "ON_HOLD").toUpperCase();
     const isUpdating = updatingOrderId === o.id;
 
-    // 1. PAID + NEEDS_PACKING -> [ Fulfill / Pack ]
-    if (paymentBadge === "paid" && ["NEEDS_PACKING", "needs_packing"].includes(ff)) {
-      return (
-        <Button
-          size="sm"
-          className="h-8 font-semibold bg-primary hover:bg-primary/90 text-primary-foreground text-xs px-3 shadow"
-          disabled={updatingOrderId !== null}
-          onClick={() => {
-            setSelectedFulfillOrder(o);
-            setSelectedCourierId(o.assigned_to ?? "unassigned");
-            setFulfillNotes(o.delivery_notes ?? "");
-            setIsFulfillModalOpen(true);
-          }}
-        >
-          {lang === "ar" ? "تعبئة وشحن" : "Fulfill / Pack"}
-        </Button>
-      );
+    const method = String(o.payment_method || "").toLowerCase();
+    const isCard = ["card", "apple_pay", "google_pay"].includes(method);
+    const isBenefit = ["benefit", "benefitpay", "benefit_pay", "bank_transfer"].includes(method);
+    const isCod = ["cash", "cod"].includes(method);
+
+    const isPickup = String(o.fulfillment_method || "").toLowerCase() === "pickup";
+
+    const handleStatusUpdate = async (payload: Record<string, any>, successMsg: string) => {
+      setUpdatingOrderId(o.id);
+      try {
+        const res = await fetch("/api/orders/status", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id: o.id, ...payload }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error_ar && lang === "ar" ? data.error_ar : data.error);
+        toast.success(successMsg);
+        qc.invalidateQueries({ queryKey: ["orders", brandId] });
+      } catch (err: any) {
+        toast.error(err.message || "Failed to update order status");
+      } finally {
+        setUpdatingOrderId(null);
+      }
+    };
+
+    if (isPickup) {
+      // B. STORE PICKUP WORKFLOW
+      
+      // 1. BenefitPay Manual Validation (Pickup)
+      if (isBenefit && isUnpaid) {
+        return (
+          <Button
+            size="sm"
+            variant="outline"
+            className="h-8 text-xs px-3 border-violet-300 text-violet-800 bg-violet-50 hover:bg-violet-100 dark:border-violet-800 dark:text-violet-200 dark:bg-violet-950/20 font-semibold"
+            disabled={updatingOrderId !== null}
+            onClick={() => handleStatusUpdate(
+              { payment_status: "paid", fulfillment_status: "READY_FOR_PICKUP" },
+              lang === "ar" ? "تم تأكيد الدفع وتجهيز الطلب للاستلام!" : "Payment validated and pickup prepared!"
+            )}
+          >
+            {isUpdating ? <Loader2 className="animate-spin h-3.5 w-3.5" /> : (lang === "ar" ? "تأكيد وتجهيز" : "Validate & Prepare")}
+          </Button>
+        );
+      }
+
+      // 2. Card Pickup Preparation
+      if (isPaid && ff === "ON_HOLD") {
+        return (
+          <Button
+            size="sm"
+            className="h-8 text-xs px-3 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold dark:bg-indigo-800 dark:hover:bg-indigo-900"
+            disabled={updatingOrderId !== null}
+            onClick={() => handleStatusUpdate(
+              { fulfillment_status: "READY_FOR_PICKUP" },
+              lang === "ar" ? "تم تحديد الطلب كجاهز للاستلام!" : "Order marked ready for pickup!"
+            )}
+          >
+            {isUpdating ? <Loader2 className="animate-spin h-3.5 w-3.5" /> : (lang === "ar" ? "جاهز للاستلام" : "Mark Ready")}
+          </Button>
+        );
+      }
+
+      // 3. Pay at Store Preparation
+      if (isCod && ff === "ON_HOLD") {
+        return (
+          <Button
+            size="sm"
+            className="h-8 text-xs px-3 bg-amber-600 hover:bg-amber-700 text-white font-semibold dark:bg-amber-800 dark:hover:bg-amber-900"
+            disabled={updatingOrderId !== null}
+            onClick={() => handleStatusUpdate(
+              { fulfillment_status: "READY_FOR_PICKUP" },
+              lang === "ar" ? "تم تجهيز الطلب للاستلام!" : "Order prepared!"
+            )}
+          >
+            {isUpdating ? <Loader2 className="animate-spin h-3.5 w-3.5" /> : (lang === "ar" ? "تجهيز الطلب" : "Prepare Order")}
+          </Button>
+        );
+      }
+
+      // 4. Pickup Handover
+      if (ff === "READY_FOR_PICKUP") {
+        if (isUnpaid) {
+          return (
+            <Button
+              size="sm"
+              className="h-8 text-xs px-3 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold dark:bg-emerald-800 dark:hover:bg-emerald-900"
+              disabled={updatingOrderId !== null}
+              onClick={() => handleStatusUpdate(
+                { payment_status: "paid", fulfillment_status: "COMPLETED" },
+                lang === "ar" ? "تم تحصيل المبلغ وتسليم الطلب!" : "Payment collected and order handed over!"
+              )}
+            >
+              {isUpdating ? <Loader2 className="animate-spin h-3.5 w-3.5" /> : (lang === "ar" ? "تحصيل وتسليم" : "Collect & Hand Over")}
+            </Button>
+          );
+        } else {
+          return (
+            <Button
+              size="sm"
+              className="h-8 text-xs px-3 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold dark:bg-emerald-800 dark:hover:bg-emerald-900"
+              disabled={updatingOrderId !== null}
+              onClick={() => handleStatusUpdate(
+                { fulfillment_status: "COMPLETED" },
+                lang === "ar" ? "تم تسليم الطلب بالكامل!" : "Handover completed!"
+              )}
+            >
+              {isUpdating ? <Loader2 className="animate-spin h-3.5 w-3.5" /> : (lang === "ar" ? "إتمام التسليم" : "Complete Handover")}
+            </Button>
+          );
+        }
+      }
+    } else {
+      // A. DELIVERY WORKFLOW
+      
+      // 1. BenefitPay Manual Validation
+      if (isBenefit && isUnpaid) {
+        return (
+          <Button
+            size="sm"
+            variant="outline"
+            className="h-8 text-xs px-3 border-emerald-300 text-emerald-800 bg-emerald-50 hover:bg-emerald-100 dark:border-emerald-800 dark:text-emerald-200 dark:bg-emerald-950/20 font-semibold"
+            disabled={updatingOrderId !== null}
+            onClick={() => handleStatusUpdate(
+              { payment_status: "paid" },
+              lang === "ar" ? "تم تسجيل الدفع بنجاح!" : "Order payment marked as Paid!"
+            )}
+          >
+            {isUpdating ? <Loader2 className="animate-spin h-3.5 w-3.5" /> : (lang === "ar" ? "تأكيد الدفع" : "Validate Payment")}
+          </Button>
+        );
+      }
+
+      // 2. Packing & Shipping (Card or Validated BenefitPay)
+      if (isPaid && ff === "NEEDS_PACKING") {
+        return (
+          <Button
+            size="sm"
+            className="h-8 font-semibold bg-primary hover:bg-primary/90 text-primary-foreground text-xs px-3 shadow"
+            disabled={updatingOrderId !== null}
+            onClick={() => {
+              setSelectedFulfillOrder(o);
+              setSelectedCourierId(o.assigned_to ?? "unassigned");
+              setFulfillNotes(o.delivery_notes ?? "");
+              setIsFulfillModalOpen(true);
+            }}
+          >
+            {lang === "ar" ? "تعبئة وشحن" : "Fulfill / Pack"}
+          </Button>
+        );
+      }
+
+      // 3. COD Dispatch
+      if (isCod && ff === "ON_HOLD") {
+        return (
+          <Button
+            size="sm"
+            className="h-8 font-semibold bg-amber-500 hover:bg-amber-600 text-black text-xs px-3 shadow"
+            disabled={updatingOrderId !== null}
+            onClick={() => {
+              setSelectedFulfillOrder(o);
+              setSelectedCourierId(o.assigned_to ?? "unassigned");
+              setFulfillNotes(o.delivery_notes ?? "");
+              setIsFulfillModalOpen(true);
+            }}
+          >
+            {lang === "ar" ? "تجهيز وشحن COD" : "Pack & Ship COD"}
+          </Button>
+        );
+      }
+
+      // 4. COD Cash Collection
+      if (isCod && ff === "SHIPPED" && isUnpaid) {
+        return (
+          <Button
+            size="sm"
+            className="h-8 font-semibold bg-emerald-600 hover:bg-emerald-700 text-white text-xs px-3 shadow dark:bg-emerald-800 dark:hover:bg-emerald-900"
+            disabled={updatingOrderId !== null}
+            onClick={() => handleStatusUpdate(
+              { payment_status: "paid", fulfillment_status: "COMPLETED" },
+              lang === "ar" ? "تم تحصيل المبلغ وتسليم الطلب!" : "Payment collected and order completed!"
+            )}
+          >
+            {isUpdating ? <Loader2 className="animate-spin h-3.5 w-3.5" /> : (lang === "ar" ? "تحصيل المبلغ" : "Collect Cash")}
+          </Button>
+        );
+      }
     }
 
-    // 2. UNPAID / PARTIAL -> [ Mark Paid ]
-    if (paymentBadge !== "paid") {
-      return (
-        <Button
-          size="sm"
-          variant="outline"
-          className="h-8 text-xs px-3 border-emerald-300 text-emerald-800 bg-emerald-50/50 hover:bg-emerald-100/50 dark:border-emerald-800 dark:text-emerald-200 dark:bg-emerald-950/20"
-          disabled={updatingOrderId !== null}
-          onClick={async () => {
-            setUpdatingOrderId(o.id);
-            try {
-              const res = await fetch("/api/orders/status", {
-                method: "PATCH",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ id: o.id, payment_status: "paid" }),
-              });
-              const data = await res.json();
-              if (!res.ok) throw new Error(data.error_ar && lang === "ar" ? data.error_ar : data.error);
-              toast.success(lang === "ar" ? "تم تسجيل الدفع بنجاح!" : "Order payment marked as Paid!");
-              qc.invalidateQueries({ queryKey: ["orders", brandId] });
-            } catch (err: any) {
-              toast.error(err.message || "Failed to update payment status");
-            } finally {
-              setUpdatingOrderId(null);
-            }
-          }}
-        >
-          {isUpdating ? <Loader2 className="animate-spin h-3.5 w-3.5" /> : (lang === "ar" ? "تسجيل الدفع" : "Mark Paid")}
-        </Button>
-      );
-    }
-
-    // 3. SHIPPED -> [ Track ]
-    if (["SHIPPED", "shipped"].includes(ff)) {
+    // Shipped Track button fallback
+    if (ff === "SHIPPED") {
       return (
         <Button
           size="sm"
@@ -531,7 +715,7 @@ function OrdersList() {
       );
     }
 
-    // Fallback -> Link to details
+    // General fallback -> details
     return (
       <Button
         size="sm"
@@ -761,6 +945,7 @@ function OrdersList() {
                             {t("orders.noCustomer")}
                           </span>
                         )}
+                        {renderPaymentMethodBadge(o.payment_method, lang)}
                       </div>
                       
                       <div className="mt-3 flex flex-wrap items-center gap-1.5">
@@ -890,11 +1075,14 @@ function OrdersList() {
                           {formatDate(o.created_at ?? o.order_date, locale)}
                         </td>
                         <td className="p-4 font-medium truncate">
-                          {o.customers?.name ?? (
-                            <span className="text-muted-foreground italic">
-                              {t("orders.noCustomer")}
-                            </span>
-                          )}
+                          <div>
+                            {o.customers?.name ?? (
+                              <span className="text-muted-foreground italic">
+                                {t("orders.noCustomer")}
+                              </span>
+                            )}
+                          </div>
+                          {renderPaymentMethodBadge(o.payment_method, lang)}
                         </td>
                         <td className="p-4">
                           <span
@@ -1092,6 +1280,7 @@ function OrdersList() {
                         fulfillment_status: "SHIPPED",
                         assigned_to: selectedCourierId === "unassigned" ? null : selectedCourierId,
                         delivery_notes: fulfillNotes,
+                        admin_override: ["cash", "cod"].includes(String(selectedFulfillOrder.payment_method || "").toLowerCase()),
                       }),
                     });
                     const data = await res.json();
