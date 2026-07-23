@@ -100,31 +100,135 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   // Build brand-prefixed nav items. If no active slug, links go to /dashboard (redirector).
   const nav = useMemo(() => {
-    const items: { to: string; params?: any; label: string; icon: typeof LayoutDashboard; permission?: string; adminOnly?: boolean; section: string }[] = [];
+    const items: { to: string; params?: any; label: string; icon: typeof LayoutDashboard; permission?: string; adminOnly?: boolean; section: "overview" | "operations" | "growth_finance" | "storefront_settings" }[] = [];
     if (activeSlug) {
       if (isCourier) {
-        items.push({ to: "/admin/b/$slug/orders", params: { slug: activeSlug }, label: t("nav.orders"), icon: ReceiptText, section: lang === "ar" ? "التوصيل" : "Delivery" });
+        items.push({ to: "/admin/b/$slug/orders", params: { slug: activeSlug }, label: t("nav.orders"), icon: ReceiptText, section: "operations" });
         return items;
       }
-      items.push(
-        { to: "/admin/b/$slug/dashboard", params: { slug: activeSlug }, label: t("nav.dashboard"), icon: LayoutDashboard, section: lang === "ar" ? "نظرة عامة" : "Overview" },
-        { to: "/admin/b/$slug/orders", params: { slug: activeSlug }, label: t("nav.orders"), icon: ReceiptText, permission: "manage_orders", section: lang === "ar" ? "المبيعات" : "Sales" },
-        { to: "/admin/b/$slug/customers", params: { slug: activeSlug }, label: t("nav.customers"), icon: Users, permission: "manage_customers", section: lang === "ar" ? "المبيعات" : "Sales" },
-        { to: "/admin/b/$slug/campaigns", params: { slug: activeSlug }, label: lang === "ar" ? "حملات الواتساب" : "WhatsApp Campaigns", icon: Megaphone, permission: "manage_orders", section: lang === "ar" ? "المبيعات" : "Sales" },
-        { to: "/admin/b/$slug/discounts", params: { slug: activeSlug }, label: lang === "ar" ? "رموز الخصم" : "Discount Codes", icon: BadgePercent, permission: "manage_settings", section: lang === "ar" ? "التسويق" : "Marketing" },
-      );
-      items.push({ to: "/admin/b/$slug/inventory", params: { slug: activeSlug }, label: t("nav.inventory"), icon: Package, permission: "manage_inventory", section: lang === "ar" ? "الكتالوج" : "Catalog" });
-      items.push({ to: "/admin/b/$slug/categories", params: { slug: activeSlug }, label: lang === "ar" ? "الأقسام" : "Categories", icon: Tags, permission: "manage_inventory", section: lang === "ar" ? "الكتالوج" : "Catalog" });
-      items.push({ to: "/admin/b/$slug/expenses", params: { slug: activeSlug }, label: t("nav.expenses"), icon: Wallet, permission: "view_financials", section: lang === "ar" ? "المالية" : "Finance" });
-      if (isAdmin) {
-        items.push({ to: "/admin/b/$slug/team", params: { slug: activeSlug }, label: lang === "ar" ? "إدارة الموظفين" : "Team Management", icon: Shield, adminOnly: true, section: lang === "ar" ? "الوصول" : "Access" });
-        items.push({ to: "/admin/b/$slug/integrations", params: { slug: activeSlug }, label: t("nav.integrations"), icon: Plug, adminOnly: true, section: lang === "ar" ? "واجهة المتجر" : "Storefront" });
-      }
-      items.push({ to: "/admin/b/$slug/communications", params: { slug: activeSlug }, label: lang === "ar" ? "الاتصالات" : "Communications", icon: Mail, permission: "manage_settings", section: lang === "ar" ? "واجهة المتجر" : "Storefront" });
-      items.push({ to: "/admin/b/$slug/pages", params: { slug: activeSlug }, label: lang === "ar" ? "الصفحات والسياسات" : "Pages & Policies", icon: FileText, permission: "manage_settings", section: lang === "ar" ? "واجهة المتجر" : "Storefront" });
-      items.push({ to: "/admin/b/$slug/settings", params: { slug: activeSlug }, label: t("nav.settings"), icon: Settings, permission: "manage_settings", section: lang === "ar" ? "واجهة المتجر" : "Storefront" });
 
+      // Group 1: OVERVIEW
+      items.push({
+        to: "/admin/b/$slug/dashboard",
+        params: { slug: activeSlug },
+        label: t("nav.dashboard"),
+        icon: LayoutDashboard,
+        section: "overview",
+      });
+
+      // Group 2: OPERATIONS
+      items.push(
+        {
+          to: "/admin/b/$slug/orders",
+          params: { slug: activeSlug },
+          label: lang === "ar" ? "الطلبات والفواتير" : "Orders & Invoices",
+          icon: ReceiptText,
+          permission: "manage_orders",
+          section: "operations",
+        },
+        {
+          to: "/admin/b/$slug/customers",
+          params: { slug: activeSlug },
+          label: t("nav.customers"),
+          icon: Users,
+          permission: "manage_customers",
+          section: "operations",
+        },
+        {
+          to: "/admin/b/$slug/inventory",
+          params: { slug: activeSlug },
+          label: t("nav.inventory"),
+          icon: Package,
+          permission: "manage_inventory",
+          section: "operations",
+        },
+        {
+          to: "/admin/b/$slug/categories",
+          params: { slug: activeSlug },
+          label: lang === "ar" ? "الأقسام" : "Categories",
+          icon: Tags,
+          permission: "manage_inventory",
+          section: "operations",
+        }
+      );
+
+      // Group 3: GROWTH & FINANCE
+      items.push(
+        {
+          to: "/admin/b/$slug/campaigns",
+          params: { slug: activeSlug },
+          label: lang === "ar" ? "حملات الواتساب" : "WhatsApp Campaigns",
+          icon: Megaphone,
+          permission: "manage_orders",
+          section: "growth_finance",
+        },
+        {
+          to: "/admin/b/$slug/discounts",
+          params: { slug: activeSlug },
+          label: lang === "ar" ? "رموز الخصم" : "Discount Codes",
+          icon: BadgePercent,
+          permission: "manage_settings",
+          section: "growth_finance",
+        },
+        {
+          to: "/admin/b/$slug/expenses",
+          params: { slug: activeSlug },
+          label: t("nav.expenses"),
+          icon: Wallet,
+          permission: "view_financials",
+          section: "growth_finance",
+        }
+      );
+
+      // Group 4: STOREFRONT & SETTINGS
+      if (isAdmin) {
+        items.push({
+          to: "/admin/b/$slug/integrations",
+          params: { slug: activeSlug },
+          label: t("nav.integrations"),
+          icon: Plug,
+          adminOnly: true,
+          section: "storefront_settings",
+        });
+      }
+      items.push(
+        {
+          to: "/admin/b/$slug/communications",
+          params: { slug: activeSlug },
+          label: lang === "ar" ? "الاتصالات" : "Communications",
+          icon: Mail,
+          permission: "manage_settings",
+          section: "storefront_settings",
+        },
+        {
+          to: "/admin/b/$slug/pages",
+          params: { slug: activeSlug },
+          label: lang === "ar" ? "الصفحات والسياسات" : "Pages & Policies",
+          icon: FileText,
+          permission: "manage_settings",
+          section: "storefront_settings",
+        }
+      );
+      if (isAdmin) {
+        items.push({
+          to: "/admin/b/$slug/team",
+          params: { slug: activeSlug },
+          label: lang === "ar" ? "إدارة الموظفين" : "Team Management",
+          icon: Shield,
+          adminOnly: true,
+          section: "storefront_settings",
+        });
+      }
+      items.push({
+        to: "/admin/b/$slug/settings",
+        params: { slug: activeSlug },
+        label: t("nav.settings"),
+        icon: Settings,
+        permission: "manage_settings",
+        section: "storefront_settings",
+      });
     }
+
     return items.filter((item) => {
       if (item.adminOnly) return isAdmin;
       if (item.permission) return hasPermission(item.permission);
@@ -219,7 +323,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             }
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center justify-center gap-2 rounded-md bg-sidebar-primary px-3 py-2 text-sm font-medium text-sidebar-primary-foreground shadow-sm hover:opacity-90 transition-opacity"
+            className="w-full flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-white/90 bg-white/5 border border-white/20 rounded-lg hover:bg-white/10 transition-all mb-4"
           >
             <Store className="h-4 w-4" />
             {lang === "ar" ? "عرض المتجر" : "View Storefront"}
@@ -227,31 +331,47 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </div>
       )}
 
-      <nav className="flex-1 p-3 space-y-1 overflow-y-auto scrollbar-none">
-        {nav.map((item, index) => {
-          const active = pathname.startsWith(item.to.replace("$slug", item.params?.slug ?? ""));
-          const Icon = item.icon;
-          const showSection = index === 0 || nav[index - 1]?.section !== item.section;
+      <nav className="flex-1 p-3 space-y-4 overflow-y-auto scrollbar-none">
+        {[
+          { id: "overview", header: lang === "ar" ? "نظرة عامة" : "OVERVIEW" },
+          { id: "operations", header: lang === "ar" ? "العمليات" : "OPERATIONS" },
+          { id: "growth_finance", header: lang === "ar" ? "النمو والمالية" : "GROWTH & FINANCE" },
+          { id: "storefront_settings", header: lang === "ar" ? "المتجر والإعدادات" : "STOREFRONT & SETTINGS" },
+        ].map((sec) => {
+          const items = nav.filter((item) => item.section === sec.id);
+          if (items.length === 0) return null;
           return (
-            <div key={item.to}>
-              {showSection && (
-                <div className="px-3 pb-1 pt-3 text-[10px] font-semibold uppercase tracking-[0.16em] text-sidebar-foreground/65">
-                  {item.section}
-                </div>
-              )}
-              <Link
-              to={item.to as any}
-              params={item.params}
-              className={cn(
-                "flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors",
-                active
-                  ? "bg-sidebar-primary text-sidebar-primary-foreground"
-                  : "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-              )}
-              >
-                <Icon className="h-4 w-4" />
-                {item.label}
-              </Link>
+            <div key={sec.id} className="space-y-1">
+              <div className="text-[10px] font-bold tracking-wider text-white/40 uppercase px-3 mt-5 mb-1.5">
+                {sec.header}
+              </div>
+              <div className="flex flex-col gap-1">
+                {items.map((item) => {
+                  const active = pathname.startsWith(item.to.replace("$slug", item.params?.slug ?? ""));
+                  const Icon = item.icon;
+                  return (
+                    <Link
+                      key={item.to}
+                      to={item.to as any}
+                      params={item.params}
+                      className={cn(
+                        "flex items-center gap-3 py-2 text-sm transition-all",
+                        active
+                          ? cn(
+                              "bg-white/15 text-white font-semibold transition-all",
+                              lang === "ar"
+                                ? "border-r-4 border-amber-400 pr-3 rounded-l-lg"
+                                : "border-l-4 border-amber-400 pl-3 rounded-r-lg"
+                            )
+                          : "text-white/70 hover:text-white hover:bg-white/10 rounded-lg transition-colors px-3"
+                      )}
+                    >
+                      <Icon className="h-4 w-4" />
+                      <span>{item.label}</span>
+                    </Link>
+                  );
+                })}
+              </div>
             </div>
           );
         })}
