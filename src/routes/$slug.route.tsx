@@ -354,20 +354,28 @@ function StoreShell() {
 
 function WhatsAppFab() {
   const { settings, lang, brand } = useStorefront();
+  const { pathname } = useLocation();
   if (!settings.whatsapp_enabled) return null;
   const digits = (settings.whatsapp_number ?? "").replace(/\D/g, "");
   if (!digits) return null;
+
+  // Detect pages that render a sticky mobile bottom action bar
+  const hasStickyBottom = pathname.includes("/product/") || pathname.endsWith("/checkout");
+
   const text = lang === "ar"
     ? `مرحباً! لدي استفسار عن متجر ${brand.name_ar || brand.name_en}`
     : `Hi! I have a question about ${brand.name_en}`;
   const href = `https://wa.me/${digits}?text=${encodeURIComponent(text)}`;
+
   return (
     <a
       href={href}
       target="_blank"
       rel="noopener noreferrer"
       aria-label="WhatsApp"
-      className={`fixed z-50 bottom-6 md:bottom-6 ${lang === "ar" ? "left-5" : "right-5"} h-14 w-14 rounded-full grid place-items-center shadow-lg hover:scale-110 active:scale-95`}
+      className={`fixed z-50 ${
+        hasStickyBottom ? "bottom-[84px] md:bottom-6" : "bottom-6 md:bottom-6"
+      } ${lang === "ar" ? "left-5" : "right-5"} h-14 w-14 rounded-full grid place-items-center shadow-lg hover:scale-110 active:scale-95`}
       style={{
         backgroundColor: "#25D366",
         color: "#fff",
