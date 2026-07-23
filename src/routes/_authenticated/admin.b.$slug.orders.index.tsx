@@ -17,6 +17,10 @@ import {
   ArrowDown,
   ChevronLeft,
   ChevronRight,
+  Package,
+  MoreHorizontal,
+  ExternalLink,
+  Copy,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import {
@@ -48,6 +52,7 @@ import { deleteOrderWithPrivateReceipt } from "@/lib/benefit-receipt.functions";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
 import { Sparkles, Upload, Loader2, Check } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/admin/b/$slug/orders/")({
   component: OrdersList,
@@ -113,6 +118,39 @@ function deliveryStatusPresentation(status: string | null | undefined, lang: "en
   return item ? { label: item[lang], className: item.className } : null;
 }
 
+const getFulfillmentBadgeDetails = (status: string | null | undefined, lang: "en" | "ar") => {
+  const s = String(status || "ON_HOLD").toUpperCase();
+  if (s === "NEEDS_PACKING") {
+    return {
+      label: lang === "ar" ? "بحاجة للتعبئة" : "Needs Packing",
+      classes: "bg-[#FFF3CD] text-[#856404] border-none font-semibold animate-pulse shadow-sm",
+    };
+  }
+  if (s === "SHIPPED") {
+    return {
+      label: lang === "ar" ? "تم الشحن" : "Shipped",
+      classes: "bg-[#CCE5FF] text-[#004085] border-none",
+    };
+  }
+  if (s === "COMPLETED") {
+    return {
+      label: lang === "ar" ? "مكتمل" : "Completed",
+      classes: "bg-[#E8F5E9] text-[#2E7D32] border-none",
+    };
+  }
+  if (s === "CANCELLED") {
+    return {
+      label: lang === "ar" ? "ملغي" : "Cancelled",
+      classes: "bg-[#F8D7DA] text-[#721C24] border-none",
+    };
+  }
+  // ON_HOLD
+  return {
+    label: lang === "ar" ? "قيد الانتظار" : "On Hold",
+    classes: "bg-[#E2E3E5] text-[#383D41] border-none",
+  };
+};
+
 function OrdersList() {
   const t = useT();
   const { lang } = useI18n();
@@ -121,13 +159,42 @@ function OrdersList() {
   const navigate = useNavigate();
   const { slug } = Route.useParams();
   const brand = useBrand();
-  const { isCourier } = useProfile();
+  const { isCourier, isAdmin } = useProfile();
   const brandId = brand.id;
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [fulfillmentFilter, setFulfillmentFilter] = useState("all");
   const [includeHistorical, setIncludeHistorical] = useState(false);
+
+  // New Quick Tab filter
+  const [tabFilter, setTabFilter] = useState<"all" | "unpaid" | "action_required" | "shipped" | "completed">("all");
+
+  // New Fulfill states
+  const [isFulfillModalOpen, setIsFulfillModalOpen] = useState(false);
+  const [selectedFulfillOrder, setSelectedFulfillOrder] = useState<any | null>(null);
+  const [selectedCourierId, setSelectedCourierId] = useState<string>("unassigned");
+  const [fulfillNotes, setFulfillNotes] = useState<string>("");
+  const [isFulfilling, setIsFulfilling] = useState(false);
+  const [updatingOrderId, setUpdatingOrderId] = useState<string | null>(null);
+
+  // Fetch Couriers Query
+  const couriersQ = useQuery({
+    queryKey: ["couriers", brandId],
+    enabled: Boolean(brandId),
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("id, name, email")
+        .eq("brand_id", brandId)
+        .eq("role", "courier")
+        .eq("status", "active")
+        .order("name");
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+
 
   const [sortField, setSortField] = useState<"invoice_number" | "created_at" | "customer" | "status" | "total">("created_at");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
@@ -211,31 +278,97 @@ function OrdersList() {
 
   const orders = data ?? [];
   const normalizedSearch = search.trim().toLowerCase();
-  const filteredOrders = orders.filter((order) => {
-    // Hide archived historical orders by default unless includeHistorical is toggled on
-    if (order.status === "archived_historical" && !includeHistorical) {
-      return false;
+
+  // Premium Quick Tabs counts in real time
+  const tabCounts = useMemo(() => {
+    let all = 0;
+    let unpaid = 0;
+    let action_required = 0;
+    let shipped = 0;
+    let completed = 0;
+
+    for (const order of orders) {
+      if (order.status === "archived_historical" && !includeHistorical) {
+        continue;
+      }
+      
+      const paymentBadge = resolvePaymentStatus(
+        order.payment_status,
+        order.status,
+        Number(order.total),
+        Number(order.advance_paid ?? 0),
+      );
+      const ff = String(order.fulfillment_status || "").toUpperCase();
+
+      all++;
+      if (paymentBadge !== "paid") {
+        unpaid++;
+      }
+      if (paymentBadge === "paid" && ["NEEDS_PACKING", "ON_HOLD", "needs_packing", "on_hold", "unassigned"].includes(ff)) {
+        action_required++;
+      }
+      if (["SHIPPED", "shipped"].includes(ff)) {
+        shipped++;
+      }
+      if (["COMPLETED", "completed"].includes(ff) || order.status === "completed") {
+        completed++;
+      }
     }
 
-    const matchesSearch =
-      !normalizedSearch ||
-      [
-        order.invoice_number,
-        order.customers?.name,
+    return { all, unpaid, action_required, shipped, completed };
+  }, [orders, includeHistorical]);
+
+  // Combined search, standard drop-down filters, and our premium quick tab filter
+  const filteredOrders = useMemo(() => {
+    return orders.filter((order) => {
+      // Hide archived historical orders by default unless includeHistorical is toggled on
+      if (order.status === "archived_historical" && !includeHistorical) {
+        return false;
+      }
+
+      const matchesSearch =
+        !normalizedSearch ||
+        [
+          order.invoice_number,
+          order.customers?.name,
+          order.status,
+          order.payment_method,
+          order.digital_delivery_contact,
+        ].some((value) =>
+          String(value ?? "")
+            .toLowerCase()
+            .includes(normalizedSearch),
+        );
+
+      if (!matchesSearch) return false;
+      if (statusFilter !== "all" && order.status !== statusFilter) return false;
+      if (fulfillmentFilter !== "all" && order.fulfillment_method !== fulfillmentFilter) return false;
+
+      const paymentBadge = resolvePaymentStatus(
+        order.payment_status,
         order.status,
-        order.payment_method,
-        order.digital_delivery_contact,
-      ].some((value) =>
-        String(value ?? "")
-          .toLowerCase()
-          .includes(normalizedSearch),
+        Number(order.total),
+        Number(order.advance_paid ?? 0),
       );
-    return (
-      matchesSearch &&
-      (statusFilter === "all" || order.status === statusFilter) &&
-      (fulfillmentFilter === "all" || order.fulfillment_method === fulfillmentFilter)
-    );
-  });
+      const ff = String(order.fulfillment_status || "").toUpperCase();
+
+      // Quick tab routing
+      if (tabFilter === "unpaid") {
+        return paymentBadge !== "paid";
+      }
+      if (tabFilter === "action_required") {
+        return paymentBadge === "paid" && ["NEEDS_PACKING", "ON_HOLD", "needs_packing", "on_hold", "unassigned"].includes(ff);
+      }
+      if (tabFilter === "shipped") {
+        return ["SHIPPED", "shipped"].includes(ff);
+      }
+      if (tabFilter === "completed") {
+        return ["COMPLETED", "completed"].includes(ff) || order.status === "completed";
+      }
+
+      return true; // tabFilter === "all"
+    });
+  }, [orders, normalizedSearch, statusFilter, fulfillmentFilter, tabFilter, includeHistorical]);
 
   const sortedOrders = useMemo(() => {
     const list = [...filteredOrders];
@@ -295,32 +428,116 @@ function OrdersList() {
       ? <ArrowUp className="ms-1.5 h-3.5 w-3.5 text-primary shrink-0 inline" /> 
       : <ArrowDown className="ms-1.5 h-3.5 w-3.5 text-primary shrink-0 inline" />;
   };
+
   const pendingCount = orders.filter((order) =>
     ["pending", "pending_verification", "draft"].includes(order.status),
   ).length;
-  const unpaidCount = orders.filter(
-    (order) =>
-      resolvePaymentStatus(
-        order.payment_status,
-        order.status,
-        Number(order.total),
-        Number(order.advance_paid ?? 0),
-      ) !== "paid",
-  ).length;
+
+  const unpaidCount = tabCounts.unpaid;
+
   const openValue = orders
     .filter((order) => !["cancelled", "completed"].includes(order.status))
     .reduce((sum, order) => sum + Number(order.total || 0), 0);
   const currency = orders[0]?.currency ?? "BHD";
 
-  const del = async (id: string) => {
-    try {
-      await deleteOrderWithPrivateReceipt({ data: { orderId: id } });
-      toast.success(t("common.delete"));
-      setDeleteTarget(null);
-      qc.invalidateQueries({ queryKey: ["orders"] });
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Unable to delete order");
+  const tabsList = [
+    { id: "all", label_en: "All", label_ar: "الكل", count: tabCounts.all, activeColor: "bg-primary text-primary-foreground" },
+    { id: "unpaid", label_en: "Unpaid", label_ar: "غير مدفوع", count: tabCounts.unpaid, activeColor: "bg-red-600 text-white dark:bg-red-950 dark:text-red-200" },
+    { id: "action_required", label_en: "Action Required", label_ar: "مطلوب إجراء", count: tabCounts.action_required, activeColor: "bg-amber-500 text-black dark:bg-amber-950 dark:text-amber-200" },
+    { id: "shipped", label_en: "Shipped", label_ar: "تم الشحن", count: tabCounts.shipped, activeColor: "bg-blue-600 text-white dark:bg-blue-950 dark:text-blue-200" },
+    { id: "completed", label_en: "Completed", label_ar: "مكتمل", count: tabCounts.completed, activeColor: "bg-emerald-600 text-white dark:bg-emerald-950 dark:text-emerald-200" },
+  ] as const;
+
+  const renderContextualButton = (o: any) => {
+    const paymentBadge = resolvePaymentStatus(
+      o.payment_status,
+      o.status,
+      Number(o.total),
+      Number(o.advance_paid ?? 0),
+    );
+    const ff = String(o.fulfillment_status || "ON_HOLD").toUpperCase();
+    const isUpdating = updatingOrderId === o.id;
+
+    // 1. PAID + NEEDS_PACKING -> [ Fulfill / Pack ]
+    if (paymentBadge === "paid" && ["NEEDS_PACKING", "needs_packing"].includes(ff)) {
+      return (
+        <Button
+          size="sm"
+          className="h-8 font-semibold bg-primary hover:bg-primary/90 text-primary-foreground text-xs px-3 shadow"
+          disabled={updatingOrderId !== null}
+          onClick={() => {
+            setSelectedFulfillOrder(o);
+            setSelectedCourierId(o.assigned_to ?? "unassigned");
+            setFulfillNotes(o.delivery_notes ?? "");
+            setIsFulfillModalOpen(true);
+          }}
+        >
+          {lang === "ar" ? "تعبئة وشحن" : "Fulfill / Pack"}
+        </Button>
+      );
     }
+
+    // 2. UNPAID / PARTIAL -> [ Mark Paid ]
+    if (paymentBadge !== "paid") {
+      return (
+        <Button
+          size="sm"
+          variant="outline"
+          className="h-8 text-xs px-3 border-emerald-300 text-emerald-800 bg-emerald-50/50 hover:bg-emerald-100/50 dark:border-emerald-800 dark:text-emerald-200 dark:bg-emerald-950/20"
+          disabled={updatingOrderId !== null}
+          onClick={async () => {
+            setUpdatingOrderId(o.id);
+            try {
+              const res = await fetch("/api/orders/status", {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ id: o.id, payment_status: "paid" }),
+              });
+              const data = await res.json();
+              if (!res.ok) throw new Error(data.error_ar && lang === "ar" ? data.error_ar : data.error);
+              toast.success(lang === "ar" ? "تم تسجيل الدفع بنجاح!" : "Order payment marked as Paid!");
+              qc.invalidateQueries({ queryKey: ["orders", brandId] });
+            } catch (err: any) {
+              toast.error(err.message || "Failed to update payment status");
+            } finally {
+              setUpdatingOrderId(null);
+            }
+          }}
+        >
+          {isUpdating ? <Loader2 className="animate-spin h-3.5 w-3.5" /> : (lang === "ar" ? "تسجيل الدفع" : "Mark Paid")}
+        </Button>
+      );
+    }
+
+    // 3. SHIPPED -> [ Track ]
+    if (["SHIPPED", "shipped"].includes(ff)) {
+      return (
+        <Button
+          size="sm"
+          variant="outline"
+          className="h-8 text-xs px-3"
+          asChild
+        >
+          <Link to="/admin/b/$slug/orders/$id" params={{ slug, id: o.id }}>
+            {lang === "ar" ? "تتبع" : "Track"}
+          </Link>
+        </Button>
+      );
+    }
+
+    // Fallback -> Link to details
+    return (
+      <Button
+        size="sm"
+        variant="ghost"
+        className="h-8 text-xs px-3"
+        asChild
+      >
+        <Link to="/admin/b/$slug/orders/$id" params={{ slug, id: o.id }}>
+          {lang === "ar" ? "تفاصيل" : "View"}
+        </Link>
+      </Button>
+    );
   };
 
   return (
@@ -363,6 +580,41 @@ function OrdersList() {
           );
         })}
       </div>}
+
+      {/* Premium Quick Filter Tabs */}
+      <div className="mb-4 flex flex-wrap gap-1.5 border-b pb-3 select-none overflow-x-auto no-scrollbar">
+        {tabsList.map((tab) => {
+          const isActive = tabFilter === tab.id;
+          const label = lang === "ar" ? tab.label_ar : tab.label_en;
+          return (
+            <button
+              key={tab.id}
+              onClick={() => {
+                setTabFilter(tab.id);
+                setPage(1); // reset pagination when tab changes
+              }}
+              className={cn(
+                "relative flex items-center gap-2 rounded-lg px-4 py-2 text-xs font-semibold transition-all duration-200 outline-none shrink-0 border border-transparent shadow-sm",
+                isActive
+                  ? tab.activeColor
+                  : "bg-card text-card-foreground border-border hover:bg-secondary/80"
+              )}
+            >
+              <span>{label}</span>
+              <span
+                className={cn(
+                  "rounded-full px-1.5 py-0.5 text-[10px] font-bold leading-none",
+                  isActive
+                    ? "bg-black/15 text-white dark:bg-white/15 dark:text-white"
+                    : "bg-secondary text-secondary-foreground"
+                )}
+              >
+                {tab.count}
+              </span>
+            </button>
+          );
+        })}
+      </div>
 
       <Card className="mb-5 p-3 sm:p-4">
         <div className="grid grid-cols-1 sm:grid-cols-[minmax(220px,1fr)_150px_160px_auto] gap-3 items-center">
@@ -456,6 +708,7 @@ function OrdersList() {
               setSearch("");
               setStatusFilter("all");
               setFulfillmentFilter("all");
+              setTabFilter("all");
             }}
           >
             {lang === "ar" ? "مسح عوامل التصفية" : "Clear filters"}
@@ -465,204 +718,237 @@ function OrdersList() {
         <>
           <div className="space-y-3 sm:hidden">
             {paginatedOrders.map((o) => {
-              const badge = resolvePaymentStatus(
+              const paymentBadge = resolvePaymentStatus(
                 (o as any).payment_status,
                 o.status,
                 Number(o.total),
                 Number((o as any).advance_paid ?? 0),
               );
-              const deliveryBadge =
-                o.fulfillment_method === "delivery"
-                  ? deliveryStatusPresentation((o as any).fulfillment_status, lang)
-                  : null;
+              const fulfillmentDetails = getFulfillmentBadgeDetails((o as any).fulfillment_status, lang);
+              const isCompleted = ["COMPLETED", "completed"].includes((o as any).fulfillment_status || "") || o.status === "completed";
+
               return (
-                <Card key={o.id} className="p-4">
+                <Card
+                  key={o.id}
+                  className={cn(
+                    "p-4 transition-all duration-200 relative border border-border bg-card",
+                    isCompleted && "opacity-70 dark:opacity-60"
+                  )}
+                >
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0 flex-1">
-                      <Link
-                        to="/admin/b/$slug/orders/$id"
-                        params={{ slug, id: o.id }}
-                        className="text-lg font-semibold text-primary"
-                      >
-                        #{o.invoice_number}
-                      </Link>
-                      <div className="mt-1 text-xs text-muted-foreground">
-                        {formatDate(o.created_at ?? o.order_date, locale)} ·{" "}
-                        {o.customers?.name ?? t("orders.noCustomer")}
-                      </div>
-                      <div className="mt-3 flex flex-wrap items-center gap-2">
-                        <span
-                          className={`rounded px-2 py-1 text-[10px] uppercase tracking-wider ${
-                            o.status === "pending_verification" 
-                              ? "bg-amber-100 text-amber-900 ring-1 ring-amber-300" 
-                              : o.status === "archived_historical"
-                                ? "bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 ring-1 ring-zinc-300"
-                                : "bg-secondary"
-                          }`}
-                        >
-                          {o.status === "archived_historical"
-                            ? (lang === "ar" ? "أرشيف تاريخي" : "Archived Historical")
-                            : formatOrderStatus(o.status, o.fulfillment_method, lang)}
-                        </span>
-                        <span
-                          className={`rounded-full border px-2 py-0.5 text-[10px] uppercase tracking-wider ${PAYMENT_BADGE_CLASSES[badge]}`}
-                        >
-                          {t(`payStatus.${badge}`)}
-                        </span>
-                        {deliveryBadge && (
-                          <span
-                            className={`rounded-full px-2 py-0.5 text-[10px] font-medium ring-1 ${deliveryBadge.className}`}
-                          >
-                            {deliveryBadge.label}
-                          </span>
-                        )}
-                      </div>
-                      <div className="mt-3 font-semibold">
-                        {formatMoney(Number(o.total), o.currency)}
-                      </div>
-                    </div>
-                    {!isCourier && <div className="flex shrink-0 flex-col gap-1">
-                      <Button
-                        className="h-11 w-11 touch-manipulation"
-                        variant="ghost"
-                        size="icon"
-                        aria-label={t("orders.copyLink")}
-                        onClick={() => copyInvoiceLink(o.public_invoice_token, t)}
-                      >
-                        <LinkIcon className="h-5 w-5" />
-                      </Button>
-                      <Button
-                        className="h-11 w-11 touch-manipulation text-destructive"
-                        variant="ghost"
-                        size="icon"
-                        aria-label={t("common.delete")}
-                        onClick={() => setDeleteTarget(o.id)}
-                      >
-                        <Trash2 className="h-5 w-5" />
-                      </Button>
-                    </div>}
-                  </div>
-                </Card>
-              );
-            })}
-          </div>
-          <Card className="hidden overflow-hidden sm:block">
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[720px] table-fixed text-sm">
-                <colgroup>
-                  <col className="w-[13%]" />
-                  <col className="w-[16%]" />
-                  <col className="w-[23%]" />
-                  <col className="w-[17%]" />
-                  <col className="w-[19%]" />
-                  <col className="w-[12%]" />
-                </colgroup>
-                <thead className="bg-secondary/50 select-none text-xs uppercase tracking-wide">
-                  <tr>
-                    <th className="p-4 text-start font-medium cursor-pointer hover:bg-secondary/75 transition-colors" onClick={() => toggleSort("invoice_number")}>
-                      <span className="flex items-center">{t("orders.invoice")} {renderSortIcon("invoice_number")}</span>
-                    </th>
-                    <th className="p-4 text-start font-medium cursor-pointer hover:bg-secondary/75 transition-colors" onClick={() => toggleSort("created_at")}>
-                      <span className="flex items-center">{t("orders.date")} {renderSortIcon("created_at")}</span>
-                    </th>
-                    <th className="p-4 text-start font-medium cursor-pointer hover:bg-secondary/75 transition-colors" onClick={() => toggleSort("customer")}>
-                      <span className="flex items-center">{t("orders.customer")} {renderSortIcon("customer")}</span>
-                    </th>
-                    <th className="p-4 text-start font-medium cursor-pointer hover:bg-secondary/75 transition-colors" onClick={() => toggleSort("status")}>
-                      <span className="flex items-center">{t("orders.status")} {renderSortIcon("status")}</span>
-                    </th>
-                    <th className="p-4 text-end font-medium cursor-pointer hover:bg-secondary/75 transition-colors" onClick={() => toggleSort("total")}>
-                      <span className="flex items-center justify-end">{t("orders.total")} {renderSortIcon("total")}</span>
-                    </th>
-                    <th className="p-4 text-end font-medium">{t("orders.actions")}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {paginatedOrders.map((o) => {
-                    const deliveryBadge =
-                      o.fulfillment_method === "delivery"
-                        ? deliveryStatusPresentation((o as any).fulfillment_status, lang)
-                        : null;
-                    return (
-                    <tr key={o.id} className="border-t border-border hover:bg-secondary/30">
-                      <td className="p-4">
+                      <div className="flex items-center gap-2">
                         <Link
                           to="/admin/b/$slug/orders/$id"
                           params={{ slug, id: o.id }}
-                          className="text-primary font-medium"
+                          className="text-lg font-semibold text-primary hover:underline"
                         >
                           #{o.invoice_number}
                         </Link>
-                      </td>
-                      <td className="p-4 text-muted-foreground">
-                        {formatDate(o.created_at ?? o.order_date, locale)}
-                      </td>
-                      <td className="p-4">
+                        <span className="text-xs text-muted-foreground">
+                          {formatDate(o.created_at ?? o.order_date, locale)}
+                        </span>
+                      </div>
+                      <div className="mt-1 text-xs font-medium text-muted-foreground truncate">
                         {o.customers?.name ?? (
                           <span className="text-muted-foreground italic">
                             {t("orders.noCustomer")}
                           </span>
                         )}
-                      </td>
-                      <td className="p-4">
-                        <div className="flex flex-wrap gap-1.5">
-                          <span
-                            className={`text-xs uppercase tracking-wider px-2 py-1 rounded ${
-                              o.status === "pending_verification" 
-                                ? "bg-amber-100 text-amber-900 ring-1 ring-amber-300" 
-                                : o.status === "archived_historical"
-                                  ? "bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 ring-1 ring-zinc-300"
-                                  : "bg-secondary"
-                            }`}
+                      </div>
+                      
+                      <div className="mt-3 flex flex-wrap items-center gap-1.5">
+                        <span
+                          className={cn(
+                            "rounded-full px-2 py-0.5 text-[10px] uppercase tracking-wider font-bold border",
+                            PAYMENT_BADGE_CLASSES[paymentBadge]
+                          )}
+                        >
+                          {t(`payStatus.${paymentBadge}`)}
+                        </span>
+                        <span
+                          className={cn(
+                            "rounded-full px-2 py-0.5 text-[10px] uppercase tracking-wider font-bold border",
+                            fulfillmentDetails.classes
+                          )}
+                        >
+                          {fulfillmentDetails.label}
+                        </span>
+                      </div>
+
+                      <div className="mt-4 flex items-center justify-between gap-2 pt-2 border-t border-border/50">
+                        <div className="font-semibold text-sm">
+                          {formatMoney(Number(o.total), o.currency)}
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          {renderContextualButton(o)}
+                          
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0">
+                                <MoreHorizontal className="h-4 w-4" />
+                                <span className="sr-only">Open menu</span>
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem onClick={() => copyInvoiceLink(o.public_invoice_token, t)}>
+                                <Copy className="me-2 h-4 w-4" />
+                                {lang === "ar" ? "نسخ رابط الفاتورة" : "Copy invoice link"}
+                              </DropdownMenuItem>
+                              <DropdownMenuItem asChild>
+                                <Link to="/admin/b/$slug/orders/$id" params={{ slug, id: o.id }}>
+                                  <ExternalLink className="me-2 h-4 w-4" />
+                                  {lang === "ar" ? "تفاصيل الطلب" : "Order details"}
+                                </Link>
+                              </DropdownMenuItem>
+                              {!isCourier && (
+                                <DropdownMenuItem
+                                  className="text-destructive focus:text-destructive focus:bg-destructive/10"
+                                  onClick={() => setDeleteTarget(o.id)}
+                                >
+                                  <Trash2 className="me-2 h-4 w-4" />
+                                  {t("common.delete")}
+                                </DropdownMenuItem>
+                              )}
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </Card>
+              );
+            })}
+          </div>
+
+          <Card className="hidden overflow-hidden sm:block border border-border">
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[780px] table-fixed text-sm">
+                <colgroup>
+                  <col className="w-[12%]" />
+                  <col className="w-[14%]" />
+                  <col className="w-[18%]" />
+                  <col className="w-[16%]" />
+                  <col className="w-[16%]" />
+                  <col className="w-[12%]" />
+                  <col className="w-[12%]" />
+                </colgroup>
+                <thead className="bg-secondary/50 select-none text-xs uppercase tracking-wide">
+                  <tr>
+                    <th className="p-4 text-start font-semibold cursor-pointer hover:bg-secondary/75 transition-colors" onClick={() => toggleSort("invoice_number")}>
+                      <span className="flex items-center">{t("orders.invoice")} {renderSortIcon("invoice_number")}</span>
+                    </th>
+                    <th className="p-4 text-start font-semibold cursor-pointer hover:bg-secondary/75 transition-colors" onClick={() => toggleSort("created_at")}>
+                      <span className="flex items-center">{t("orders.date")} {renderSortIcon("created_at")}</span>
+                    </th>
+                    <th className="p-4 text-start font-semibold cursor-pointer hover:bg-secondary/75 transition-colors" onClick={() => toggleSort("customer")}>
+                      <span className="flex items-center">{t("orders.customer")} {renderSortIcon("customer")}</span>
+                    </th>
+                    <th className="p-4 text-start font-semibold">{lang === "ar" ? "حالة الدفع" : "Payment Status"}</th>
+                    <th className="p-4 text-start font-semibold">{lang === "ar" ? "حالة التوصيل" : "Fulfillment Status"}</th>
+                    <th className="p-4 text-end font-semibold cursor-pointer hover:bg-secondary/75 transition-colors" onClick={() => toggleSort("total")}>
+                      <span className="flex items-center justify-end">{t("orders.total")} {renderSortIcon("total")}</span>
+                    </th>
+                    <th className="p-4 text-end font-semibold">{t("orders.actions")}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {paginatedOrders.map((o) => {
+                    const paymentBadge = resolvePaymentStatus(
+                      (o as any).payment_status,
+                      o.status,
+                      Number(o.total),
+                      Number((o as any).advance_paid ?? 0),
+                    );
+                    const fulfillmentDetails = getFulfillmentBadgeDetails((o as any).fulfillment_status, lang);
+                    const isCompleted = ["COMPLETED", "completed"].includes((o as any).fulfillment_status || "") || o.status === "completed";
+
+                    return (
+                      <tr
+                        key={o.id}
+                        className={cn(
+                          "border-t border-border hover:bg-secondary/30 transition-all duration-200",
+                          isCompleted && "opacity-70 dark:opacity-60"
+                        )}
+                      >
+                        <td className="p-4 font-semibold">
+                          <Link
+                            to="/admin/b/$slug/orders/$id"
+                            params={{ slug, id: o.id }}
+                            className="text-primary hover:underline"
                           >
-                            {formatOrderStatus(o.status, o.fulfillment_method, lang)}
-                          </span>
-                          {deliveryBadge && (
-                            <span
-                              className={`rounded-full px-2 py-1 text-[10px] font-medium ring-1 ${deliveryBadge.className}`}
-                            >
-                              {deliveryBadge.label}
+                            #{o.invoice_number}
+                          </Link>
+                        </td>
+                        <td className="p-4 text-muted-foreground whitespace-nowrap">
+                          {formatDate(o.created_at ?? o.order_date, locale)}
+                        </td>
+                        <td className="p-4 font-medium truncate">
+                          {o.customers?.name ?? (
+                            <span className="text-muted-foreground italic">
+                              {t("orders.noCustomer")}
                             </span>
                           )}
-                        </div>
-                      </td>
-                      <td className="p-4 text-end font-medium whitespace-nowrap">
-                        <div className="inline-flex items-center gap-2">
-                          <span>{formatMoney(Number(o.total), o.currency)}</span>
-                          {(() => {
-                            const badge = resolvePaymentStatus(
-                              (o as any).payment_status,
-                              o.status,
-                              Number(o.total),
-                              Number((o as any).advance_paid ?? 0),
-                            );
-                            return (
-                              <span
-                                className={`text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full border ${PAYMENT_BADGE_CLASSES[badge]}`}
-                              >
-                                {t(`payStatus.${badge}`)}
-                              </span>
-                            );
-                          })()}
-                        </div>
-                      </td>
-                      <td className="p-4 text-end whitespace-nowrap">
-                        {!isCourier && <>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          title={t("orders.copyLink")}
-                          aria-label={t("orders.copyLink")}
-                          onClick={() => copyInvoiceLink(o.public_invoice_token, t)}
-                        >
-                          <LinkIcon className="h-4 w-4" />
-                        </Button>
-                        <Button variant="ghost" size="icon" onClick={() => setDeleteTarget(o.id)}>
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                        </>}
-                      </td>
-                    </tr>
+                        </td>
+                        <td className="p-4">
+                          <span
+                            className={cn(
+                              "text-[10px] uppercase tracking-wider px-2.5 py-1 rounded-full font-bold border",
+                              PAYMENT_BADGE_CLASSES[paymentBadge]
+                            )}
+                          >
+                            {t(`payStatus.${paymentBadge}`)}
+                          </span>
+                        </td>
+                        <td className="p-4">
+                          <span
+                            className={cn(
+                              "text-[10px] uppercase tracking-wider px-2.5 py-1 rounded-full font-bold border",
+                              fulfillmentDetails.classes
+                            )}
+                          >
+                            {fulfillmentDetails.label}
+                          </span>
+                        </td>
+                        <td className="p-4 text-end font-bold whitespace-nowrap">
+                          {formatMoney(Number(o.total), o.currency)}
+                        </td>
+                        <td className="p-4 text-end whitespace-nowrap">
+                          <div className="inline-flex items-center gap-2">
+                            {renderContextualButton(o)}
+                            
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-8 w-8">
+                                  <MoreHorizontal className="h-4 w-4" />
+                                  <span className="sr-only">Open menu</span>
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align={lang === "ar" ? "start" : "end"}>
+                                <DropdownMenuItem onClick={() => copyInvoiceLink(o.public_invoice_token, t)}>
+                                  <Copy className="me-2 h-4 w-4" />
+                                  {lang === "ar" ? "نسخ رابط الفاتورة" : "Copy invoice link"}
+                                </DropdownMenuItem>
+                                <DropdownMenuItem asChild>
+                                  <Link to="/admin/b/$slug/orders/$id" params={{ slug, id: o.id }}>
+                                    <ExternalLink className="me-2 h-4 w-4" />
+                                    {lang === "ar" ? "تفاصيل الطلب" : "Order details"}
+                                  </Link>
+                                </DropdownMenuItem>
+                                {!isCourier && (
+                                  <DropdownMenuItem
+                                    className="text-destructive focus:text-destructive focus:bg-destructive/10"
+                                    onClick={() => setDeleteTarget(o.id)}
+                                  >
+                                    <Trash2 className="me-2 h-4 w-4" />
+                                    {t("common.delete")}
+                                  </DropdownMenuItem>
+                                )}
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </div>
+                        </td>
+                      </tr>
                     );
                   })}
                 </tbody>
@@ -733,6 +1019,94 @@ function OrdersList() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>}
+
+      {/* Interactive Fulfillment Assignment Dialog */}
+      <Dialog open={isFulfillModalOpen} onOpenChange={setIsFulfillModalOpen}>
+        <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-md bg-background border rounded-lg shadow-lg">
+          <DialogHeader>
+            <DialogTitle className="text-lg font-bold flex items-center gap-2">
+              <Package className="h-5 w-5 text-primary animate-bounce" />
+              {lang === "ar" ? `إكمال وتعبئة طلب #${selectedFulfillOrder?.invoice_number}` : `Fulfill & Pack Order #${selectedFulfillOrder?.invoice_number}`}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-3 text-sm">
+            <div className="space-y-2">
+              <label className="text-xs font-semibold text-muted-foreground block">
+                {lang === "ar" ? "مندوب التوصيل المسند" : "Assign Courier"}
+              </label>
+              <Select value={selectedCourierId} onValueChange={setSelectedCourierId}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder={lang === "ar" ? "اختر مندوب التوصيل" : "Select a courier"} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="unassigned">
+                    {lang === "ar" ? "غير مسند (تعبئة بدون تعيين)" : "Unassigned (Pack without assigning)"}
+                  </SelectItem>
+                  {(couriersQ.data ?? []).map((courier: any) => (
+                    <SelectItem key={courier.id} value={courier.id}>
+                      {courier.name || courier.email}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-xs font-semibold text-muted-foreground block">
+                {lang === "ar" ? "رقم التتبع / ملاحظات التوصيل" : "Tracking Number / Delivery Notes"}
+              </label>
+              <Input
+                value={fulfillNotes}
+                onChange={(e) => setFulfillNotes(e.target.value)}
+                placeholder={lang === "ar" ? "أدخل رقم تتبع الشحنة أو أي ملاحظات للتوصيل..." : "Enter courier tracking number or special delivery instructions..."}
+              />
+            </div>
+
+            <div className="pt-2 flex justify-end gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={isFulfilling}
+                onClick={() => setIsFulfillModalOpen(false)}
+              >
+                {lang === "ar" ? "إلغاء" : "Cancel"}
+              </Button>
+              <Button
+                size="sm"
+                disabled={isFulfilling}
+                onClick={async () => {
+                  if (!selectedFulfillOrder) return;
+                  setIsFulfilling(true);
+                  try {
+                    const res = await fetch("/api/orders/status", {
+                      method: "PATCH",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({
+                        id: selectedFulfillOrder.id,
+                        fulfillment_status: "SHIPPED",
+                        assigned_to: selectedCourierId === "unassigned" ? null : selectedCourierId,
+                        delivery_notes: fulfillNotes,
+                      }),
+                    });
+                    const data = await res.json();
+                    if (!res.ok) throw new Error(data.error_ar && lang === "ar" ? data.error_ar : data.error);
+                    toast.success(lang === "ar" ? "تم إكمال الطلب وشحنه بنجاح!" : "Order fulfilled and shipped!");
+                    qc.invalidateQueries({ queryKey: ["orders", brandId] });
+                    setIsFulfillModalOpen(false);
+                  } catch (err: any) {
+                    toast.error(err.message || "Failed to fulfill order");
+                  } finally {
+                    setIsFulfilling(false);
+                  }
+                }}
+              >
+                {isFulfilling ? <Loader2 className="animate-spin h-4 w-4 mr-1.5 inline" /> : null}
+                {lang === "ar" ? "تأكيد الشحن" : "Confirm & Ship"}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -16,10 +16,14 @@ export const Route = createFileRoute("/$slug/thank-you/$orderId")({
 });
 
 function ThankYou() {
-  const { brand, settings, t, session } = useStorefront();
+  const { brand, settings, t, session, clearCart } = useStorefront();
   const { fulfillment, channel } = Route.useSearch();
   const isPickup = fulfillment === "pickup";
   const isDigital = fulfillment === "digital";
+
+  useEffect(() => {
+    clearCart();
+  }, []);
 
   const [passkeySupported, setPasskeySupported] = useState(false);
   const [passkeyRegistered, setPasskeyRegistered] = useState(false);

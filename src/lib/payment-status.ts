@@ -8,8 +8,12 @@ export function resolvePaymentStatus(
   total: number,
   advance: number,
 ): PaymentBadge {
-  if (manual === "paid" || manual === "partial" || manual === "unpaid" || manual === "refunded") {
-    return manual;
+  if (manual) {
+    const norm = manual.toLowerCase();
+    if (norm === "paid") return "paid";
+    if (norm === "partial" || norm === "partially_paid") return "partial";
+    if (norm === "unpaid") return "unpaid";
+    if (norm === "refunded") return "refunded";
   }
   return derivePaymentStatus(orderStatus, total, advance);
 }
@@ -31,10 +35,10 @@ export function derivePaymentStatus(
 }
 
 export const PAYMENT_BADGE_CLASSES: Record<PaymentBadge, string> = {
-  paid: "bg-emerald-100 text-emerald-800 border-emerald-300 dark:bg-emerald-950 dark:text-emerald-200 dark:border-emerald-800",
-  partial: "bg-blue-100 text-blue-800 border-blue-300 dark:bg-blue-950 dark:text-blue-200 dark:border-blue-800",
-  unpaid: "bg-red-100 text-red-800 border-red-300 dark:bg-red-950 dark:text-red-200 dark:border-red-800",
-  refunded: "bg-neutral-200 text-neutral-800 border-neutral-400 dark:bg-neutral-800 dark:text-neutral-200 dark:border-neutral-600",
+  paid: "bg-[#D4EDDA] text-[#155724] border-none dark:bg-emerald-950 dark:text-emerald-200",
+  partial: "bg-[#D1ECF1] text-[#0C5460] border-none dark:bg-blue-950 dark:text-blue-200",
+  unpaid: "bg-[#F8D7DA] text-[#721C24] border-none dark:bg-red-950 dark:text-red-200",
+  refunded: "bg-[#E2E3E5] text-[#383D41] border-none dark:bg-neutral-800 dark:text-neutral-200",
 };
 
 export const PAYMENT_BADGE_KEY: Record<PaymentBadge, string> = {

@@ -86,6 +86,19 @@ export const Route = createFileRoute("/api/public/payments/tap-redirect")({
           } else {
             console.warn(`[Tap Payment Failed]: Order ${orderId}, Status: ${chargeStatus}`);
             
+            // Clean up the failed/cancelled storefront order to prevent database clutter
+            const { error: deleteError } = await supabaseAdmin
+              .from("orders")
+              .delete()
+              .eq("id", orderId)
+              .eq("brand_id", brandId);
+
+            if (deleteError) {
+              console.error("[Tap Redirect Delete Error]: Failed to clean up failed order:", deleteError);
+            } else {
+              console.log(`[Tap Redirect Cleanup]: Successfully deleted failed Order ${orderId}`);
+            }
+            
             // Redirect back to checkout with error parameter
             return new Response(null, {
               status: 302,

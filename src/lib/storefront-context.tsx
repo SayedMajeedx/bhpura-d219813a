@@ -241,29 +241,47 @@ export function StorefrontProvider({
   const langKey = `storefront-lang:${brand.slug}`;
   const wishlistKey = `storefront-wishlist:${brand.slug}`;
 
-  const [lang, setLangState] = useState<StoreLang>("ar");
-  const [cart, setCart] = useState<CartItem[]>([]);
-  const [wishlist, setWishlist] = useState<string[]>([]);
+  const [lang, setLangState] = useState<StoreLang>(() => {
+    try {
+      if (typeof window !== "undefined" && typeof localStorage !== "undefined") {
+        const l = localStorage.getItem(`storefront-lang:${brand.slug}`);
+        if (l === "en" || l === "ar") return l;
+      }
+    } catch {}
+    return "ar";
+  });
+
+  const [cart, setCart] = useState<CartItem[]>(() => {
+    try {
+      if (typeof window !== "undefined" && typeof localStorage !== "undefined") {
+        const c = localStorage.getItem(`storefront-cart:${brand.slug}`);
+        if (c) {
+          const stored = JSON.parse(c) as Array<Partial<CartItem> & { variant_id: string }>;
+          return stored.map((item) => ({
+            ...item,
+            cart_line_id: item.cart_line_id || cartLineId(item as CartItem),
+          })) as CartItem[];
+        }
+      }
+    } catch {}
+    return [];
+  });
+
+  const [wishlist, setWishlist] = useState<string[]>(() => {
+    try {
+      if (typeof window !== "undefined" && typeof localStorage !== "undefined") {
+        const savedWishlist = localStorage.getItem(`storefront-wishlist:${brand.slug}`);
+        if (savedWishlist) {
+          return Array.from(new Set(JSON.parse(savedWishlist) as string[]));
+        }
+      }
+    } catch {}
+    return [];
+  });
+
   const [session, setSession] = useState<Session | null>(null);
   const [isStoreMember, setIsStoreMember] = useState(false);
   const [membershipLoading, setMembershipLoading] = useState(true);
-
-  useEffect(() => {
-    try {
-      const l = localStorage.getItem(langKey);
-      if (l === "en" || l === "ar") setLangState(l);
-      const c = localStorage.getItem(cartKey);
-      if (c) {
-        const stored = JSON.parse(c) as Array<Partial<CartItem> & { variant_id: string }>;
-        setCart(stored.map((item) => ({
-          ...item,
-          cart_line_id: item.cart_line_id || cartLineId(item as CartItem),
-        })) as CartItem[]);
-      }
-      const savedWishlist = localStorage.getItem(wishlistKey);
-      if (savedWishlist) setWishlist(Array.from(new Set(JSON.parse(savedWishlist) as string[])));
-    } catch {}
-  }, [cartKey, langKey, wishlistKey]);
 
   useEffect(() => {
     try {

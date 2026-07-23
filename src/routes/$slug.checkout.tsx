@@ -408,7 +408,6 @@ function Checkout() {
           
           const { redirectUrl } = await chargeRes.json();
           toast.dismiss(toastId);
-          clearCart();
           window.location.href = redirectUrl;
           return;
         } catch (paymentErr: any) {
