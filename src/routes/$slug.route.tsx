@@ -848,21 +848,29 @@ function DesktopSubMenu({
   depth?: number;
 }) {
   const subs = categories.filter((sub) => sub.parent_id === parentCategoryId);
+  const [activeId, setActiveId] = useState<string | null>(null);
 
   if (subs.length === 0) return null;
 
-  const isRtl = lang === "ar";
-
   return (
-    <div className="space-y-1">
+    <div className="space-y-1" onMouseLeave={() => setActiveId(null)}>
       {subs.map((sub) => {
         const name = lang === "ar" ? sub.name_ar || sub.name_en : sub.name_en || sub.name_ar;
         const url = sub.slug || sub.name_en;
         const children = categories.filter((c) => c.parent_id === sub.id);
         const hasChildren = children.length > 0;
+        const isExpanded = activeId === sub.id;
 
         return (
-          <div key={sub.id} className="w-full [&:hover>.vertical-submenu]:block group/item">
+          <div
+            key={sub.id}
+            className="w-full group/item"
+            onMouseEnter={() => {
+              if (hasChildren) {
+                setActiveId(sub.id);
+              }
+            }}
+          >
             <div className="flex items-center justify-between rounded-lg transition-all hover:bg-slate-50 dark:hover:bg-slate-800/40">
               <Link
                 to="/$slug/$category"
@@ -875,14 +883,16 @@ function DesktopSubMenu({
               {hasChildren && (
                 <div className="p-1 me-1 text-muted-foreground/60 transition-colors shrink-0">
                   <ChevronDown
-                    className="h-3 w-3 transition-transform duration-200 group-hover/item:rotate-180"
+                    className={`h-3 w-3 transition-transform duration-200 ${
+                      isExpanded ? "rotate-180" : ""
+                    }`}
                   />
                 </div>
               )}
             </div>
             
-            {hasChildren && (
-              <div className="vertical-submenu hidden mt-0.5 ms-3 ps-3 border-s border-slate-100 dark:border-slate-800 animate-in fade-in duration-150">
+            {hasChildren && isExpanded && (
+              <div className="vertical-submenu mt-0.5 ms-3 ps-3 border-s border-slate-100 dark:border-slate-800 animate-in fade-in duration-150">
                 <DesktopSubMenu
                   parentCategoryId={sub.id}
                   categories={categories}
