@@ -848,21 +848,21 @@ function DesktopSubMenu({
   depth?: number;
 }) {
   const subs = categories.filter((sub) => sub.parent_id === parentCategoryId);
-  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
 
   if (subs.length === 0) return null;
 
+  const isRtl = lang === "ar";
+
   return (
-    <div className={`space-y-1 ${depth > 0 ? "mt-1 ms-2.5 ps-2.5 border-s border-slate-100 dark:border-slate-800" : ""}`}>
+    <div className="space-y-1">
       {subs.map((sub) => {
         const name = lang === "ar" ? sub.name_ar || sub.name_en : sub.name_en || sub.name_ar;
         const url = sub.slug || sub.name_en;
         const children = categories.filter((c) => c.parent_id === sub.id);
         const hasChildren = children.length > 0;
-        const isExpanded = !!expanded[sub.id];
 
         return (
-          <div key={sub.id} className="space-y-0.5">
+          <div key={sub.id} className="relative group/sub">
             <div className="flex items-center justify-between rounded-lg transition-all hover:bg-slate-50 dark:hover:bg-slate-800/40 group/item">
               <Link
                 to="/$slug/$category"
@@ -873,34 +873,32 @@ function DesktopSubMenu({
                 {name}
               </Link>
               {hasChildren && (
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    setExpanded((prev) => ({ ...prev, [sub.id]: !prev[sub.id] }));
-                  }}
-                  className="p-1 me-1 rounded text-muted-foreground/60 hover:text-foreground hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors shrink-0"
-                  aria-label="Toggle Subcategories"
-                >
+                <div className="p-1 me-1 text-muted-foreground/60 transition-colors shrink-0">
                   <ChevronDown
-                    className={`h-3 w-3 transition-transform duration-250 ${
-                      isExpanded ? "rotate-180" : "rtl:rotate-90 -rotate-90"
+                    className={`h-3 w-3 transition-transform duration-200 ${
+                      isRtl ? "rotate-90" : "-rotate-90"
                     }`}
                   />
-                </button>
+                </div>
               )}
             </div>
-            {hasChildren && isExpanded && (
-              <div className="animate-in fade-in slide-in-from-top-1 duration-150">
-                <DesktopSubMenu
-                  parentCategoryId={sub.id}
-                  categories={categories}
-                  brand={brand}
-                  lang={lang}
-                  close={close}
-                  depth={depth + 1}
-                />
+            
+            {hasChildren && (
+              <div
+                className={`absolute top-0 hidden min-w-[200px] z-50 transition-all duration-200 animate-in fade-in-0 slide-in-from-top-1 group-hover/sub:block ${
+                  isRtl ? "right-full pe-2" : "left-full ps-2"
+                }`}
+              >
+                <div className="rounded-2xl border border-slate-100/60 dark:border-slate-800/80 bg-background p-3 shadow-xl text-foreground">
+                  <DesktopSubMenu
+                    parentCategoryId={sub.id}
+                    categories={categories}
+                    brand={brand}
+                    lang={lang}
+                    close={close}
+                    depth={depth + 1}
+                  />
+                </div>
               </div>
             )}
           </div>
