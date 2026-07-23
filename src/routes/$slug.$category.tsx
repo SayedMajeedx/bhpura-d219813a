@@ -2,7 +2,8 @@ import { createFileRoute, Link, notFound, useNavigate } from "@tanstack/react-ro
 import { useQuery } from "@tanstack/react-query";
 import { publicSupabase as supabase } from "@/integrations/supabase/client";
 import { useStorefront } from "@/lib/storefront-context";
-import { ProductGrid, type ProductRow } from "@/routes/$slug.index";
+import { type ProductRow } from "@/routes/$slug.index";
+import { ProductGrid } from "@/components/storefront/product-grid";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useMemo, useState, useEffect } from "react";
 import { StorefrontPageContent } from "@/routes/$slug.page.$idx";

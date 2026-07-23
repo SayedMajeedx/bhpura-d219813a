@@ -3,7 +3,8 @@ import { useQuery } from "@tanstack/react-query";
 import { Heart } from "lucide-react";
 import { publicSupabase as supabase } from "@/integrations/supabase/client";
 import { useStorefront } from "@/lib/storefront-context";
-import { ProductGrid, type ProductRow } from "./$slug.index";
+import { type ProductRow } from "./$slug.index";
+import { ProductGrid } from "@/components/storefront/product-grid";
 
 export const Route = createFileRoute("/$slug/wishlist")({ component: WishlistPage });
 
