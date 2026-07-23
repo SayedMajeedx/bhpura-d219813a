@@ -862,8 +862,8 @@ function DesktopSubMenu({
         const hasChildren = children.length > 0;
 
         return (
-          <div key={sub.id} className="relative [&:hover>.submenu]:block">
-            <div className="flex items-center justify-between rounded-lg transition-all hover:bg-slate-50 dark:hover:bg-slate-800/40 group/item">
+          <div key={sub.id} className="w-full [&:hover>.vertical-submenu]:block group/item">
+            <div className="flex items-center justify-between rounded-lg transition-all hover:bg-slate-50 dark:hover:bg-slate-800/40">
               <Link
                 to="/$slug/$category"
                 params={{ slug: brand.slug, category: url }}
@@ -875,30 +875,22 @@ function DesktopSubMenu({
               {hasChildren && (
                 <div className="p-1 me-1 text-muted-foreground/60 transition-colors shrink-0">
                   <ChevronDown
-                    className={`h-3 w-3 transition-transform duration-200 ${
-                      isRtl ? "rotate-90" : "-rotate-90"
-                    }`}
+                    className="h-3 w-3 transition-transform duration-200 group-hover/item:rotate-180"
                   />
                 </div>
               )}
             </div>
             
             {hasChildren && (
-              <div
-                className={`absolute top-[-12px] hidden min-w-[200px] z-50 transition-all duration-200 animate-in fade-in-0 slide-in-from-top-1 submenu ${
-                  isRtl ? "right-full pe-2" : "left-full ps-2"
-                }`}
-              >
-                <div className="rounded-2xl border border-slate-100/60 dark:border-slate-800/80 bg-background p-3 shadow-xl text-foreground">
-                  <DesktopSubMenu
-                    parentCategoryId={sub.id}
-                    categories={categories}
-                    brand={brand}
-                    lang={lang}
-                    close={close}
-                    depth={depth + 1}
-                  />
-                </div>
+              <div className="vertical-submenu hidden mt-0.5 ms-3 ps-3 border-s border-slate-100 dark:border-slate-800 animate-in fade-in duration-150">
+                <DesktopSubMenu
+                  parentCategoryId={sub.id}
+                  categories={categories}
+                  brand={brand}
+                  lang={lang}
+                  close={close}
+                  depth={depth + 1}
+                />
               </div>
             )}
           </div>
