@@ -537,6 +537,109 @@ function AnnouncementBar() {
   </div>;
 }
 
+function NavCategoryItem({
+  category,
+  categories,
+  expandedCategories,
+  onToggleExpand,
+  brand,
+  lang,
+  close,
+  depth = 0,
+}: {
+  category: any;
+  categories: any[];
+  expandedCategories: Record<string, boolean>;
+  onToggleExpand: (id: string) => void;
+  brand: any;
+  lang: string;
+  close: () => void;
+  depth?: number;
+}) {
+  const categorySlug = category.slug || category.name_en;
+  const label = lang === "ar" ? category.name_ar || category.name_en : category.name_en || category.name_ar;
+  const childCategories = categories.filter((sub: any) => sub.parent_id === category.id);
+  const isExpanded = !!expandedCategories[category.id];
+
+  const toggleExpand = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    onToggleExpand(category.id);
+  };
+
+  return (
+    <div className="space-y-1.5 w-full">
+      <div className="flex items-center gap-1 rounded-xl border bg-background/50 transition-colors hover:bg-black/5 pr-1.5 rtl:pr-0 rtl:pl-1.5">
+        <Link
+          to="/$slug/$category"
+          params={{ slug: brand.slug, category: categorySlug }}
+          onClick={close}
+          className="flex min-h-12 flex-1 items-center gap-3 px-2.5 py-2 min-w-0"
+        >
+          <div className="grid h-9 w-9 shrink-0 place-items-center overflow-hidden rounded-lg bg-muted">
+            {category.menu_icon_url ? (
+              <img
+                src={cloudflareImageUrl(category.menu_icon_url, 80)}
+                width={20}
+                height={20}
+                loading="lazy"
+                decoding="async"
+                alt=""
+                className="h-5 w-5 object-contain"
+              />
+            ) : (
+              <Grid2X2 className="h-4 w-4 opacity-50" />
+            )}
+          </div>
+          <span className="truncate font-medium text-start text-sm">{label}</span>
+        </Link>
+        {childCategories.length > 0 && (
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={toggleExpand}
+            className="h-9 px-2.5 shrink-0 rounded-lg hover:bg-black/5 text-xs font-bold"
+            aria-expanded={isExpanded}
+            aria-label={lang === "ar" ? "توسيع" : "Expand"}
+          >
+            {isExpanded ? "[-]" : "[+]"}
+          </Button>
+        )}
+      </div>
+
+      {childCategories.length > 0 && isExpanded && (
+        <div className="ms-4 ps-3 border-s border-muted-foreground/15 space-y-1.5 animate-in slide-in-from-top-1 duration-200">
+          <Link
+            to="/$slug/$category"
+            params={{ slug: brand.slug, category: categorySlug }}
+            onClick={close}
+            className="flex min-h-10 items-center gap-2.5 rounded-lg px-2.5 py-1.5 transition-colors hover:bg-black/5 text-muted-foreground hover:text-foreground font-semibold"
+          >
+            <div className="grid h-7 w-7 shrink-0 place-items-center overflow-hidden rounded-md bg-muted/30">
+              <Grid2X2 className="h-3.5 w-3.5 opacity-30" />
+            </div>
+            <span className="truncate text-xs">{lang === "ar" ? "عرض الكل" : "View All"}</span>
+          </Link>
+          {childCategories.map((sub: any) => (
+            <NavCategoryItem
+              key={sub.id}
+              category={sub}
+              categories={categories}
+              expandedCategories={expandedCategories}
+              onToggleExpand={onToggleExpand}
+              brand={brand}
+              lang={lang}
+              close={close}
+              depth={depth + 1}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function MobileStorefrontDropdown() {
   const { brand, settings, lang, t } = useStorefront();
   const [isOpen, setIsOpen] = useState(false);
@@ -610,110 +713,18 @@ function MobileStorefrontDropdown() {
               {t("الأقسام", "Categories")}
             </div>
             <div className="grid grid-cols-1 gap-3">
-              {categories.filter((c: any) => !c.parent_id).map((category: any) => {
-                const categorySlug = category.slug || category.name_en;
-                const label = lang === "ar" ? category.name_ar || category.name_en : category.name_en || category.name_ar;
-                const subs = categories.filter((sub: any) => sub.parent_id === category.id);
-                const isExpanded = !!expandedCategories[category.id];
-
-                const toggleExpand = (e: React.MouseEvent) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  setExpandedCategories((prev) => ({ ...prev, [category.id]: !prev[category.id] }));
-                };
-
-                return (
-                  <div key={category.id} className="space-y-1.5">
-                    <div className="flex items-center gap-1 rounded-xl border bg-background/50 transition-colors hover:bg-black/5 pr-1.5 rtl:pr-0 rtl:pl-1.5">
-                      <Link
-                        to="/$slug/$category"
-                        params={{ slug: brand.slug, category: categorySlug }}
-                        onClick={close}
-                        className="flex min-h-12 flex-1 items-center gap-3 px-2.5 py-2"
-                      >
-                        <div className="grid h-9 w-9 shrink-0 place-items-center overflow-hidden rounded-lg bg-muted">
-                          {category.menu_icon_url ? (
-                            <img
-                              src={cloudflareImageUrl(category.menu_icon_url, 80)}
-                              width={20}
-                              height={20}
-                              loading="lazy"
-                              decoding="async"
-                              // [TECH ADVISOR #1]: Decorative icons sitting next to visible text labels must use alt=""
-                              // to avoid screen readers announcing the category label twice.
-                              alt=""
-                              className="h-5 w-5 object-contain"
-                            />
-                          ) : (
-                            <Grid2X2 className="h-4 w-4 opacity-50" />
-                          )}
-                        </div>
-                        <span className="truncate font-medium text-start text-sm">{label}</span>
-                      </Link>
-                      {subs.length > 0 && (
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          onClick={toggleExpand}
-                          className="h-9 px-2.5 shrink-0 rounded-lg hover:bg-black/5 text-xs font-bold"
-                          aria-expanded={isExpanded}
-                          aria-label={t("توسيع", "Expand")}
-                        >
-                          {isExpanded ? "[-]" : "[+]"}
-                        </Button>
-                      )}
-                    </div>
-
-                    {subs.length > 0 && isExpanded && (
-                      <div className="ms-4 ps-3 border-s border-muted-foreground/20 space-y-1.5 animate-in slide-in-from-top-1 duration-200">
-                        <Link
-                          to="/$slug/$category"
-                          params={{ slug: brand.slug, category: categorySlug }}
-                          onClick={close}
-                          className="flex min-h-10 items-center gap-2.5 rounded-lg px-2.5 py-1.5 transition-colors hover:bg-black/5 text-muted-foreground hover:text-foreground font-semibold"
-                        >
-                          <div className="grid h-7 w-7 shrink-0 place-items-center overflow-hidden rounded-md bg-muted/30">
-                            <Grid2X2 className="h-3.5 w-3.5 opacity-30" />
-                          </div>
-                          <span className="truncate text-xs">{lang === "ar" ? "عرض الكل" : "View All"}</span>
-                        </Link>
-                        {subs.map((sub: any) => {
-                          const subSlug = sub.slug || sub.name_en;
-                          const subLabel = lang === "ar" ? sub.name_ar || sub.name_en : sub.name_en || sub.name_ar;
-                          return (
-                            <Link
-                              key={sub.id}
-                              to="/$slug/$category"
-                              params={{ slug: brand.slug, category: subSlug }}
-                              onClick={close}
-                              className="flex min-h-10 items-center gap-2.5 rounded-lg px-2 py-1.5 transition-colors hover:bg-black/5 text-muted-foreground hover:text-foreground"
-                            >
-                              <div className="grid h-7 w-7 shrink-0 place-items-center overflow-hidden rounded-md bg-muted/60">
-                                {sub.menu_icon_url ? (
-                                  <img
-                                    src={cloudflareImageUrl(sub.menu_icon_url, 80)}
-                                    width={16}
-                                    height={16}
-                                    loading="lazy"
-                                    decoding="async"
-                                    // Decorative icon
-                                    alt=""
-                                    className="h-4 w-4 object-contain"
-                                  />
-                                ) : (
-                                  <Grid2X2 className="h-3.5 w-3.5 opacity-40" />
-                                )}
-                              </div>
-                              <span className="truncate text-xs font-medium">{subLabel}</span>
-                            </Link>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
+              {categories.filter((c: any) => !c.parent_id).map((category: any) => (
+                <NavCategoryItem
+                  key={category.id}
+                  category={category}
+                  categories={categories}
+                  expandedCategories={expandedCategories}
+                  onToggleExpand={(id) => setExpandedCategories((prev) => ({ ...prev, [id]: !prev[id] }))}
+                  brand={brand}
+                  lang={lang}
+                  close={close}
+                />
+              ))}
             </div>
           </div>
 

@@ -4,7 +4,7 @@ import { publicSupabase as supabase } from "@/integrations/supabase/client";
 import { useStorefront } from "@/lib/storefront-context";
 import { type ProductRow } from "@/routes/$slug.index";
 import { ProductGrid } from "@/components/storefront/product-grid";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
 import { useMemo, useState, useEffect } from "react";
 import { StorefrontPageContent } from "@/routes/$slug.page.$idx";
 import { faviconType } from "@/lib/favicon";
@@ -116,16 +116,25 @@ function CategoryPage() {
 
   // URL Deep-Linking & Client-side filter State
   const [selectedSubCategorySlug, setSelectedSubCategorySlug] = useState<string | null>(null);
+  const [selectedSubSubCategorySlug, setSelectedSubSubCategorySlug] = useState<string | null>(null);
+
+  const handleSelectSubCategory = (slug: string | null) => {
+    setSelectedSubCategorySlug(slug);
+    setSelectedSubSubCategorySlug(null);
+  };
 
   useEffect(() => {
     if (activeCategory) {
       if (activeCategory.parent_id) {
         setSelectedSubCategorySlug(activeCategory.slug);
+        setSelectedSubSubCategorySlug(null);
       } else {
         setSelectedSubCategorySlug(null);
+        setSelectedSubSubCategorySlug(null);
       }
     } else {
       setSelectedSubCategorySlug(null);
+      setSelectedSubSubCategorySlug(null);
     }
   }, [activeCategory]);
 
@@ -216,9 +225,44 @@ function CategoryPage() {
     });
   }, [activeCategory, categoriesQuery.data, categoriesQuery.isLoading, productsQuery.data]);
 
+  // Generate dynamic, active sub-subcategories (grandchildren) that have product representations in active catalog list
+  const subSubcategoriesWithProducts = useMemo(() => {
+    if (!selectedSubCategorySlug || categoriesQuery.isLoading) return [];
+    const selectedSub = categoriesQuery.data?.find(c => c.slug === selectedSubCategorySlug);
+    if (!selectedSub) return [];
+
+    const subs = categoriesQuery.data?.filter((sub) => sub.parent_id === selectedSub.id) ?? [];
+    const products = productsQuery.data ?? [];
+    return subs.filter((sub) => {
+      const descendants = getDescendantCategories(sub.id, categoriesQuery.data ?? []);
+      const matchValues = new Set([
+        sub.slug,
+        sub.name_en,
+        ...descendants.map(d => d.slug).filter(Boolean),
+        ...descendants.map(d => d.name_en).filter(Boolean)
+      ].filter(Boolean));
+      return products.some((p) => p.category && matchValues.has(p.category));
+    });
+  }, [selectedSubCategorySlug, categoriesQuery.data, categoriesQuery.isLoading, productsQuery.data]);
+
   const filteredProducts = useMemo(() => {
     let list = productsQuery.data ?? [];
-    if (selectedSubCategorySlug) {
+    if (selectedSubSubCategorySlug) {
+      const selectedSubSub = categoriesQuery.data?.find(c => c.slug === selectedSubSubCategorySlug);
+      if (selectedSubSub) {
+        const descendants = getDescendantCategories(selectedSubSub.id, categoriesQuery.data ?? []);
+        const targetValues = new Set([
+          selectedSubSub.slug,
+          selectedSubSub.name_en,
+          ...descendants.map(d => d.slug).filter(Boolean),
+          ...descendants.map(d => d.name_en).filter(Boolean)
+        ].filter(Boolean));
+        list = list.filter(p => p.category && targetValues.has(p.category));
+      } else {
+        const targetValues = new Set([selectedSubSubCategorySlug]);
+        list = list.filter(p => p.category && targetValues.has(p.category));
+      }
+    } else if (selectedSubCategorySlug) {
       const selectedSub = categoriesQuery.data?.find(c => c.slug === selectedSubCategorySlug);
       if (selectedSub) {
         const descendants = getDescendantCategories(selectedSub.id, categoriesQuery.data ?? []);
@@ -238,7 +282,7 @@ function CategoryPage() {
     if (smartKind === "best" && sort === "new") return rows;
     const price = (product: ProductRow) => Math.min(...product.product_variants.map((variant) => Number(variant.selling_price)).filter((value) => value >= 0), Number.MAX_SAFE_INTEGER);
     return rows.sort((a, b) => sort === "old" ? new Date(a.created_at).getTime() - new Date(b.created_at).getTime() : sort === "price-low" ? price(a) - price(b) : sort === "price-high" ? price(b) - price(a) : new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-  }, [productsQuery.data, selectedSubCategorySlug, sort, smartKind, categoriesQuery.data]);
+  }, [productsQuery.data, selectedSubCategorySlug, selectedSubSubCategorySlug, sort, smartKind, categoriesQuery.data]);
 
   const breadcrumbs = useMemo(() => {
     if (smartKind || !activeCategory || categoriesQuery.isLoading) return null;
@@ -336,7 +380,7 @@ function CategoryPage() {
                 <div className="flex flex-wrap md:flex-nowrap gap-2 items-center overflow-x-auto no-scrollbar py-1 mt-4">
                   <button
                     type="button"
-                    onClick={() => setSelectedSubCategorySlug(null)}
+                    onClick={() => handleSelectSubCategory(null)}
                     className={`min-h-9 px-4 py-1.5 rounded-full text-sm transition-all shrink-0 ${
                       selectedSubCategorySlug === null
                         ? "bg-slate-900 text-white shadow-sm font-medium"
@@ -348,22 +392,63 @@ function CategoryPage() {
                   {subcategoriesWithProducts.map((sub) => {
                     const label = lang === "ar" ? sub.name_ar || sub.name_en : sub.name_en || sub.name_ar;
                     const active = selectedSubCategorySlug === sub.slug;
+                    const hasSubSubs = categoriesQuery.data?.some((c) => c.parent_id === sub.id);
                     return (
                       <button
                         key={sub.id}
                         type="button"
-                        onClick={() => setSelectedSubCategorySlug(sub.slug)}
-                        className={`min-h-9 px-4 py-1.5 rounded-full text-sm transition-all shrink-0 ${
+                        onClick={() => handleSelectSubCategory(active ? null : sub.slug)}
+                        className={`min-h-9 px-4 py-1.5 rounded-full text-sm transition-all shrink-0 flex items-center gap-1.5 ${
                           active
                             ? "bg-slate-900 text-white shadow-sm font-medium"
                             : "bg-slate-100 hover:bg-slate-200 text-slate-700 font-normal"
                         }`}
                       >
                         {label}
+                        {hasSubSubs && (
+                          <ChevronDown className={`h-3 w-3 transition-transform duration-200 ${active ? "rotate-180" : ""}`} />
+                        )}
                       </button>
                     );
                   })}
                 </div>
+
+                {/* Second tier row for sub-subcategories */}
+                {subSubcategoriesWithProducts.length > 0 && (
+                  <div className="w-full mt-2 animate-in fade-in slide-in-from-top-1 duration-200">
+                    <div className="flex flex-wrap gap-1.5 py-1">
+                      <button
+                        type="button"
+                        onClick={() => setSelectedSubSubCategorySlug(null)}
+                        className={`min-h-[30px] px-3.5 py-1 rounded-full text-xs transition-all shrink-0 border ${
+                          selectedSubSubCategorySlug === null
+                            ? "bg-slate-900 text-white border-slate-900 shadow-xs font-medium"
+                            : "bg-slate-50 hover:bg-slate-100 text-slate-500 border-slate-200/60 font-normal"
+                        }`}
+                      >
+                        {t("الكل", "All")}
+                      </button>
+                      {subSubcategoriesWithProducts.map((sub) => {
+                        const label = lang === "ar" ? sub.name_ar || sub.name_en : sub.name_en || sub.name_ar;
+                        const active = selectedSubSubCategorySlug === sub.slug;
+                        return (
+                          <button
+                            key={sub.id}
+                            type="button"
+                            onClick={() => setSelectedSubSubCategorySlug(active ? null : sub.slug)}
+                            className={`min-h-[30px] px-3.5 py-1 rounded-full text-xs transition-all shrink-0 border ${
+                              active
+                                ? "bg-slate-900 text-white border-slate-900 shadow-xs font-medium"
+                                : "bg-slate-50 hover:bg-slate-100 text-slate-500 border-slate-200/60 font-normal"
+                            }`}
+                          >
+                            {label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>

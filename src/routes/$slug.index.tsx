@@ -65,10 +65,17 @@ function StoreHome() {
   const { brand } = useStorefront();
   const [activeCat, setActiveCat] = useState<string | null>(null);
   const [activeSubCat, setActiveSubCat] = useState<string | null>(null);
+  const [activeSubSubCat, setActiveSubSubCat] = useState<string | null>(null);
 
   const handleSelectCat = (cat: string | null) => {
     setActiveCat(cat);
     setActiveSubCat(null);
+    setActiveSubSubCat(null);
+  };
+
+  const handleSelectSubCat = (sub: string | null) => {
+    setActiveSubCat(sub);
+    setActiveSubSubCat(null);
   };
 
   const { data: products, isLoading } = useQuery({
@@ -190,6 +197,25 @@ function StoreHome() {
         );
       }
 
+      // If activeSubSubCat is selected, filter strictly by it (including any deeper subcategories recursively)
+      if (activeSubSubCat) {
+        const subSubCat = categories?.find(c => c.slug === activeSubSubCat || c.name_en === activeSubSubCat);
+        if (subSubCat) {
+          const descendants = getDescendantCategories(subSubCat.id, categories ?? []);
+          const matchSlugs = new Set([
+            activeSubSubCat.toLowerCase().replace(/\s+/g, "-"),
+            ...descendants.map(c => c.slug?.toLowerCase()).filter(Boolean),
+            ...descendants.map(c => c.name_en?.toLowerCase()).filter(Boolean)
+          ]);
+          return list.filter((p) => {
+            const pCat = p.category?.toLowerCase();
+            return pCat && matchSlugs.has(pCat);
+          });
+        }
+        const subSubCatSlug = activeSubSubCat.toLowerCase().replace(/\s+/g, "-");
+        return list.filter((p) => p.category === activeSubSubCat || p.category?.toLowerCase() === subSubCatSlug);
+      }
+
       // If activeSubCat is selected, filter strictly by it (including its own sub-subcategories recursively!)
       if (activeSubCat) {
         const subCat = categories?.find(c => c.slug === activeSubCat || c.name_en === activeSubCat);
@@ -229,7 +255,7 @@ function StoreHome() {
       return list.filter((p) => p.category === activeCat || p.category?.toLowerCase() === catSlug);
     }
     return list;
-  }, [products, activeCat, activeSubCat, categories, bestSellerRows]);
+  }, [products, activeCat, activeSubCat, activeSubSubCat, categories, bestSellerRows]);
 
   const bestIdsKeys = useMemo(() => {
     return new Set((bestSellerRows ?? []).map(row => row.product_id));
@@ -284,8 +310,10 @@ function StoreHome() {
             categories={categories ?? []}
             activeCat={activeCat}
             activeSubCat={activeSubCat}
+            activeSubSubCat={activeSubSubCat}
             onSelect={handleSelectCat}
-            onSelectSub={setActiveSubCat}
+            onSelectSub={handleSelectSubCat}
+            onSelectSubSub={setActiveSubSubCat}
           />
           <ProductGrid
             products={filtered}
@@ -539,16 +567,20 @@ function Categories({
   categories,
   activeCat,
   activeSubCat,
+  activeSubSubCat,
   onSelect,
   onSelectSub,
+  onSelectSubSub,
   navigation = false,
 }: {
   products: ProductRow[];
   categories: CategoryRow[];
   activeCat: string | null;
   activeSubCat: string | null;
+  activeSubSubCat: string | null;
   onSelect: (c: string | null) => void;
   onSelectSub: (c: string | null) => void;
+  onSelectSubSub: (c: string | null) => void;
   navigation?: boolean;
 }) {
   const { t, lang, brand, settings } = useStorefront();
@@ -596,6 +628,27 @@ function Categories({
       return products.some((p) => p.category && matchValues.has(p.category));
     });
   }, [activeCat, categories, products]);
+
+  // Generate dynamic, active sub-subcategories that have product representations in active catalog list
+  const subSubcategoriesWithProducts = useMemo(() => {
+    if (!activeSubCat) return [];
+    const subCatItem = categories.find(
+      (c) => c.parent_id && (c.slug === activeSubCat || c.name_en === activeSubCat)
+    );
+    if (!subCatItem) return [];
+
+    const subs = categories.filter((sub) => sub.parent_id === subCatItem.id);
+    return subs.filter((sub) => {
+      const descendants = getDescendantCategories(sub.id, categories);
+      const matchValues = new Set([
+        sub.slug,
+        sub.name_en,
+        ...descendants.map(d => d.slug).filter(Boolean),
+        ...descendants.map(d => d.name_en).filter(Boolean)
+      ].filter(Boolean));
+      return products.some((p) => p.category && matchValues.has(p.category));
+    });
+  }, [activeSubCat, categories, products]);
 
   if (merged.length === 0) return null;
 
@@ -649,15 +702,57 @@ function Categories({
               const subSlug = sub.slug || sub.name_en;
               const subLabel = lang === "ar" ? sub.name_ar || sub.name_en : sub.name_en || sub.name_ar;
               const active = activeSubCat === subSlug;
+              const hasSubSubs = categories.some((c) => c.parent_id === sub.id);
               return (
                 <button
                   key={sub.id}
                   type="button"
                   onClick={() => onSelectSub(active ? null : subSlug)}
-                  className={`min-h-[34px] px-3.5 py-1.5 rounded-full text-xs transition-all shrink-0 border ${
+                  className={`min-h-[34px] px-3.5 py-1.5 rounded-full text-xs transition-all shrink-0 border flex items-center gap-1.5 ${
                     active
                       ? "bg-neutral-900 text-white border-neutral-900 shadow-sm font-medium"
                       : "bg-neutral-50 hover:bg-neutral-100 text-neutral-600 border-neutral-200 font-normal"
+                  }`}
+                >
+                  {subLabel}
+                  {hasSubSubs && (
+                    <ChevronDown className={`h-3 w-3 transition-transform duration-200 ${active ? "rotate-180" : ""}`} />
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Dynamic Sub-Subcategory Third-Tier Pills Row (reveals if selected child subcategory has active products subcategories) */}
+      {!navigation && subSubcategoriesWithProducts.length > 0 && (
+        <div className="w-full flex justify-center border-t border-neutral-100/10 pt-2.5 animate-in fade-in slide-in-from-top-1 duration-200">
+          <div className="flex flex-wrap gap-1.5 justify-center">
+            <button
+              type="button"
+              onClick={() => onSelectSubSub(null)}
+              className={`min-h-[30px] px-3 py-1 rounded-full text-[11px] transition-all shrink-0 border ${
+                activeSubSubCat === null
+                  ? "bg-neutral-900 text-white border-neutral-900 shadow-xs font-medium"
+                  : "bg-neutral-50/50 hover:bg-neutral-100 text-neutral-500 border-neutral-200/60 font-normal"
+              }`}
+            >
+              {t("الكل", "All")}
+            </button>
+            {subSubcategoriesWithProducts.map((sub) => {
+              const subSlug = sub.slug || sub.name_en;
+              const subLabel = lang === "ar" ? sub.name_ar || sub.name_en : sub.name_en || sub.name_ar;
+              const active = activeSubSubCat === subSlug;
+              return (
+                <button
+                  key={sub.id}
+                  type="button"
+                  onClick={() => onSelectSubSub(active ? null : subSlug)}
+                  className={`min-h-[30px] px-3 py-1 rounded-full text-[11px] transition-all shrink-0 border ${
+                    active
+                      ? "bg-neutral-900 text-white border-neutral-900 shadow-xs font-medium"
+                      : "bg-neutral-50/50 hover:bg-neutral-100 text-neutral-500 border-neutral-200/60 font-normal"
                   }`}
                 >
                   {subLabel}
