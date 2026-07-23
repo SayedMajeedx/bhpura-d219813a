@@ -10,6 +10,18 @@ import { StorefrontPageContent } from "@/routes/$slug.page.$idx";
 import { faviconType } from "@/lib/favicon";
 import { ResponsiveImage } from "@/components/responsive-media";
 
+function getDescendantCategories(catId: string, categories: any[]): any[] {
+  const descendants: any[] = [];
+  const queue = categories.filter(c => c.parent_id === catId);
+  while (queue.length > 0) {
+    const current = queue.shift()!;
+    descendants.push(current);
+    const children = categories.filter(c => c.parent_id === current.id);
+    queue.push(...children);
+  }
+  return descendants;
+}
+
 export const Route = createFileRoute("/$slug/$category")({
   headers: () => ({
     "Cache-Control": "public, max-age=10, stale-while-revalidate=60",
@@ -156,12 +168,15 @@ function CategoryPage() {
         return smartKind === "offers" ? rows.filter((product) => product.product_variants.some((variant) => Number(variant.original_price || 0) > Number(variant.selling_price || 0))) : rows;
       }
 
-      const parentCat = activeCategory!.parent_id 
-        ? (categoriesQuery.data?.find(c => c.id === activeCategory!.parent_id) || activeCategory!)
-        : activeCategory!;
+      const hasChildren = categoriesQuery.data?.some(c => c.parent_id === activeCategory!.id);
+      const parentCat = hasChildren
+        ? activeCategory!
+        : (activeCategory!.parent_id 
+           ? (categoriesQuery.data?.find(c => c.id === activeCategory!.parent_id) || activeCategory!)
+           : activeCategory!);
       
-      const subCats = categoriesQuery.data?.filter(c => c.parent_id === parentCat.id) ?? [];
-      const rollupCategories = [parentCat, ...subCats];
+      const descendants = getDescendantCategories(parentCat.id, categoriesQuery.data ?? []);
+      const rollupCategories = [parentCat, ...descendants];
       
       const values = [...new Set(rollupCategories.flatMap(c => [c.slug, c.name_en]).filter(Boolean))];
       const { data, error } = await supabase.from("products").select("id, name, name_ar, name_en, description, description_ar, description_en, category, image_url, media, brand_id, created_at, product_variants(id, selling_price, original_price, stock_main, size, color)").eq("brand_id", brand.id).eq("is_active", true).in("category", values).order("created_at", { ascending: false });
@@ -179,16 +194,25 @@ function CategoryPage() {
   const subcategoriesWithProducts = useMemo(() => {
     if (!activeCategory || categoriesQuery.isLoading) return [];
     
-    const parentCat = activeCategory.parent_id 
-      ? (categoriesQuery.data?.find(c => c.id === activeCategory.parent_id) || activeCategory)
-      : activeCategory;
+    const hasChildren = categoriesQuery.data?.some(c => c.parent_id === activeCategory.id);
+    const parentCat = hasChildren
+      ? activeCategory
+      : (activeCategory.parent_id 
+         ? (categoriesQuery.data?.find(c => c.id === activeCategory.parent_id) || activeCategory)
+         : activeCategory);
       
     const subs = categoriesQuery.data?.filter(c => c.parent_id === parentCat.id) ?? [];
     const products = productsQuery.data ?? [];
     
     return subs.filter(sub => {
-      const matchValues = new Set([sub.slug, sub.name_en].filter(Boolean));
-      return products.some(p => matchValues.has(p.category));
+      const descendants = getDescendantCategories(sub.id, categoriesQuery.data ?? []);
+      const matchValues = new Set([
+        sub.slug,
+        sub.name_en,
+        ...descendants.map(d => d.slug).filter(Boolean),
+        ...descendants.map(d => d.name_en).filter(Boolean)
+      ].filter(Boolean));
+      return products.some(p => p.category && matchValues.has(p.category));
     });
   }, [activeCategory, categoriesQuery.data, categoriesQuery.isLoading, productsQuery.data]);
 
@@ -196,11 +220,19 @@ function CategoryPage() {
     let list = productsQuery.data ?? [];
     if (selectedSubCategorySlug) {
       const selectedSub = categoriesQuery.data?.find(c => c.slug === selectedSubCategorySlug);
-      const targetValues = new Set([
-        selectedSub?.slug,
-        selectedSub?.name_en
-      ].filter(Boolean));
-      list = list.filter(p => targetValues.has(p.category));
+      if (selectedSub) {
+        const descendants = getDescendantCategories(selectedSub.id, categoriesQuery.data ?? []);
+        const targetValues = new Set([
+          selectedSub.slug,
+          selectedSub.name_en,
+          ...descendants.map(d => d.slug).filter(Boolean),
+          ...descendants.map(d => d.name_en).filter(Boolean)
+        ].filter(Boolean));
+        list = list.filter(p => p.category && targetValues.has(p.category));
+      } else {
+        const targetValues = new Set([selectedSubCategorySlug]);
+        list = list.filter(p => p.category && targetValues.has(p.category));
+      }
     }
     const rows = [...list];
     if (smartKind === "best" && sort === "new") return rows;

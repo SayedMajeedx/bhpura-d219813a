@@ -10,6 +10,18 @@ import { OptimizedVideo, ResponsiveImage } from "@/components/responsive-media";
 import { ProductCard } from "@/components/storefront/product-card";
 import { ProductGrid } from "@/components/storefront/product-grid";
 
+function getDescendantCategories(catId: string, categories: any[]): any[] {
+  const descendants: any[] = [];
+  const queue = categories.filter(c => c.parent_id === catId);
+  while (queue.length > 0) {
+    const current = queue.shift()!;
+    descendants.push(current);
+    const children = categories.filter(c => c.parent_id === current.id);
+    queue.push(...children);
+  }
+  return descendants;
+}
+
 export const Route = createFileRoute("/$slug/")({
   component: StoreHome,
 });
@@ -178,8 +190,21 @@ function StoreHome() {
         );
       }
 
-      // If activeSubCat is selected, filter strictly by it
+      // If activeSubCat is selected, filter strictly by it (including its own sub-subcategories recursively!)
       if (activeSubCat) {
+        const subCat = categories?.find(c => c.slug === activeSubCat || c.name_en === activeSubCat);
+        if (subCat) {
+          const descendants = getDescendantCategories(subCat.id, categories ?? []);
+          const matchSlugs = new Set([
+            activeSubCat.toLowerCase().replace(/\s+/g, "-"),
+            ...descendants.map(c => c.slug?.toLowerCase()).filter(Boolean),
+            ...descendants.map(c => c.name_en?.toLowerCase()).filter(Boolean)
+          ]);
+          return list.filter((p) => {
+            const pCat = p.category?.toLowerCase();
+            return pCat && matchSlugs.has(pCat);
+          });
+        }
         const subCatSlug = activeSubCat.toLowerCase().replace(/\s+/g, "-");
         return list.filter((p) => p.category === activeSubCat || p.category?.toLowerCase() === subCatSlug);
       }
@@ -187,8 +212,8 @@ function StoreHome() {
       // Find the database ID of the active parent category
       const parentCat = categories?.find(c => !c.parent_id && (c.slug === activeCat || c.name_en === activeCat));
       if (parentCat) {
-        // Find all child subcategory slugs/names
-        const childCats = categories?.filter(c => c.parent_id === parentCat.id) ?? [];
+        // Find all child subcategory slugs/names recursively!
+        const childCats = getDescendantCategories(parentCat.id, categories ?? []);
         const matchSlugs = new Set([
           activeCat.toLowerCase().replace(/\s+/g, "-"),
           ...childCats.map(c => c.slug?.toLowerCase()).filter(Boolean),
@@ -561,8 +586,14 @@ function Categories({
 
     const subs = categories.filter((sub) => sub.parent_id === parentCatItem.id);
     return subs.filter((sub) => {
-      const matchValues = new Set([sub.slug, sub.name_en].filter(Boolean));
-      return products.some((p) => matchValues.has(p.category));
+      const descendants = getDescendantCategories(sub.id, categories);
+      const matchValues = new Set([
+        sub.slug,
+        sub.name_en,
+        ...descendants.map(d => d.slug).filter(Boolean),
+        ...descendants.map(d => d.name_en).filter(Boolean)
+      ].filter(Boolean));
+      return products.some((p) => p.category && matchValues.has(p.category));
     });
   }, [activeCat, categories, products]);
 
