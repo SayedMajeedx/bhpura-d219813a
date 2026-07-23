@@ -31,6 +31,25 @@ function Checkout() {
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const searchParams = new URLSearchParams(window.location.search);
+      const paymentError = searchParams.get("payment_error");
+      if (paymentError) {
+        toast.error(
+          t(
+            "فشلت عملية الدفع بالبطاقة. يرجى التحقق من بيانات البطاقة والمحاولة مرة أخرى.",
+            "Card payment failed. Please check your card details and try again."
+          ),
+          { duration: 6000 }
+        );
+        // Clear the query parameter so it doesn't fire again on refresh
+        const cleanUrl = window.location.pathname;
+        window.history.replaceState({}, document.title, cleanUrl);
+      }
+    }
+  }, [mounted]);
   const [form, setForm] = useState({
     name: "",
     phone: "",
@@ -368,6 +387,36 @@ function Checkout() {
         shipping: Number(shipping.toFixed(3)), coupon: appliedPromo?.code ?? undefined,
         items: cart.map((item) => ({ item_id: item.product_id, item_name: item.name, price: item.price, quantity: item.qty })),
       }, String(orderId ?? ""));
+      // If they chose to pay via Card, redirect to payment gateway
+      if (method === "card") {
+        const toastId = toast.loading(t("جاري تحويلك لبوابة الدفع...", "Redirecting you to the payment gateway..."));
+        try {
+          const chargeRes = await fetch("/api/public/payments/create-tap-charge", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              orderId: String(orderId),
+              brandId: brand.id,
+              redirectUrl: `${window.location.origin}/api/public/payments/tap-redirect?order_id=${orderId}&brand_id=${brand.id}`,
+            }),
+          });
+          
+          if (!chargeRes.ok) {
+            const errData = await chargeRes.json();
+            throw new Error(errData.error || "Failed to initiate card payment.");
+          }
+          
+          const { redirectUrl } = await chargeRes.json();
+          toast.dismiss(toastId);
+          clearCart();
+          window.location.href = redirectUrl;
+          return;
+        } catch (paymentErr: any) {
+          toast.dismiss(toastId);
+          throw new Error(paymentErr.message || "Failed to initiate payment gateway.");
+        }
+      }
+
       clearCart();
       toast.success(t("تم استلام طلبك!", "Order placed!"));
       // Notify after every successful storefront order, including guest

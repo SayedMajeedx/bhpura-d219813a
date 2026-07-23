@@ -41,6 +41,9 @@ import { Route as SlugThankYouOrderIdRouteImport } from './routes/$slug.thank-yo
 import { Route as SlugProductIdRouteImport } from './routes/$slug.product.$id'
 import { Route as SlugPageIdxRouteImport } from './routes/$slug.page.$idx'
 import { Route as BrandsBrandIdKindFilenameRouteImport } from './routes/brands.$brandId.$kind.$filename'
+import { Route as ApiPublicWebhooksTapRouteImport } from './routes/api.public.webhooks.tap'
+import { Route as ApiPublicPaymentsTapRedirectRouteImport } from './routes/api.public.payments.tap-redirect'
+import { Route as ApiPublicPaymentsCreateTapChargeRouteImport } from './routes/api.public.payments.create-tap-charge'
 import { Route as AuthenticatedAdminSuperSettingsRouteImport } from './routes/_authenticated/admin.super.settings'
 import { Route as AuthenticatedAdminSuperRequestsRouteImport } from './routes/_authenticated/admin.super.requests'
 import { Route as AuthenticatedAdminBSlugRouteRouteImport } from './routes/_authenticated/admin.b.$slug.route'
@@ -228,6 +231,23 @@ const BrandsBrandIdKindFilenameRoute =
     path: '/brands/$brandId/$kind/$filename',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicWebhooksTapRoute = ApiPublicWebhooksTapRouteImport.update({
+  id: '/api/public/webhooks/tap',
+  path: '/api/public/webhooks/tap',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicPaymentsTapRedirectRoute =
+  ApiPublicPaymentsTapRedirectRouteImport.update({
+    id: '/api/public/payments/tap-redirect',
+    path: '/api/public/payments/tap-redirect',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicPaymentsCreateTapChargeRoute =
+  ApiPublicPaymentsCreateTapChargeRouteImport.update({
+    id: '/api/public/payments/create-tap-charge',
+    path: '/api/public/payments/create-tap-charge',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const AuthenticatedAdminSuperSettingsRoute =
   AuthenticatedAdminSuperSettingsRouteImport.update({
     id: '/super/settings',
@@ -371,6 +391,9 @@ export interface FileRoutesByFullPath {
   '/admin/b/$slug': typeof AuthenticatedAdminBSlugRouteRouteWithChildren
   '/admin/super/requests': typeof AuthenticatedAdminSuperRequestsRoute
   '/admin/super/settings': typeof AuthenticatedAdminSuperSettingsRoute
+  '/api/public/payments/create-tap-charge': typeof ApiPublicPaymentsCreateTapChargeRoute
+  '/api/public/payments/tap-redirect': typeof ApiPublicPaymentsTapRedirectRoute
+  '/api/public/webhooks/tap': typeof ApiPublicWebhooksTapRoute
   '/brands/$brandId/$kind/$filename': typeof BrandsBrandIdKindFilenameRoute
   '/admin/b/$slug/campaigns': typeof AuthenticatedAdminBSlugCampaignsRoute
   '/admin/b/$slug/categories': typeof AuthenticatedAdminBSlugCategoriesRoute
@@ -420,6 +443,9 @@ export interface FileRoutesByTo {
   '/admin/b/$slug': typeof AuthenticatedAdminBSlugRouteRouteWithChildren
   '/admin/super/requests': typeof AuthenticatedAdminSuperRequestsRoute
   '/admin/super/settings': typeof AuthenticatedAdminSuperSettingsRoute
+  '/api/public/payments/create-tap-charge': typeof ApiPublicPaymentsCreateTapChargeRoute
+  '/api/public/payments/tap-redirect': typeof ApiPublicPaymentsTapRedirectRoute
+  '/api/public/webhooks/tap': typeof ApiPublicWebhooksTapRoute
   '/brands/$brandId/$kind/$filename': typeof BrandsBrandIdKindFilenameRoute
   '/admin/b/$slug/campaigns': typeof AuthenticatedAdminBSlugCampaignsRoute
   '/admin/b/$slug/categories': typeof AuthenticatedAdminBSlugCategoriesRoute
@@ -473,6 +499,9 @@ export interface FileRoutesById {
   '/_authenticated/admin/b/$slug': typeof AuthenticatedAdminBSlugRouteRouteWithChildren
   '/_authenticated/admin/super/requests': typeof AuthenticatedAdminSuperRequestsRoute
   '/_authenticated/admin/super/settings': typeof AuthenticatedAdminSuperSettingsRoute
+  '/api/public/payments/create-tap-charge': typeof ApiPublicPaymentsCreateTapChargeRoute
+  '/api/public/payments/tap-redirect': typeof ApiPublicPaymentsTapRedirectRoute
+  '/api/public/webhooks/tap': typeof ApiPublicWebhooksTapRoute
   '/brands/$brandId/$kind/$filename': typeof BrandsBrandIdKindFilenameRoute
   '/_authenticated/admin/b/$slug/campaigns': typeof AuthenticatedAdminBSlugCampaignsRoute
   '/_authenticated/admin/b/$slug/categories': typeof AuthenticatedAdminBSlugCategoriesRoute
@@ -526,6 +555,9 @@ export interface FileRouteTypes {
     | '/admin/b/$slug'
     | '/admin/super/requests'
     | '/admin/super/settings'
+    | '/api/public/payments/create-tap-charge'
+    | '/api/public/payments/tap-redirect'
+    | '/api/public/webhooks/tap'
     | '/brands/$brandId/$kind/$filename'
     | '/admin/b/$slug/campaigns'
     | '/admin/b/$slug/categories'
@@ -575,6 +607,9 @@ export interface FileRouteTypes {
     | '/admin/b/$slug'
     | '/admin/super/requests'
     | '/admin/super/settings'
+    | '/api/public/payments/create-tap-charge'
+    | '/api/public/payments/tap-redirect'
+    | '/api/public/webhooks/tap'
     | '/brands/$brandId/$kind/$filename'
     | '/admin/b/$slug/campaigns'
     | '/admin/b/$slug/categories'
@@ -627,6 +662,9 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/b/$slug'
     | '/_authenticated/admin/super/requests'
     | '/_authenticated/admin/super/settings'
+    | '/api/public/payments/create-tap-charge'
+    | '/api/public/payments/tap-redirect'
+    | '/api/public/webhooks/tap'
     | '/brands/$brandId/$kind/$filename'
     | '/_authenticated/admin/b/$slug/campaigns'
     | '/_authenticated/admin/b/$slug/categories'
@@ -656,6 +694,9 @@ export interface RootRouteChildren {
   InvoiceIdRoute: typeof InvoiceIdRoute
   PlatformFilenameRoute: typeof PlatformFilenameRoute
   ApiCronCleanupBenefitReceiptsRoute: typeof ApiCronCleanupBenefitReceiptsRoute
+  ApiPublicPaymentsCreateTapChargeRoute: typeof ApiPublicPaymentsCreateTapChargeRoute
+  ApiPublicPaymentsTapRedirectRoute: typeof ApiPublicPaymentsTapRedirectRoute
+  ApiPublicWebhooksTapRoute: typeof ApiPublicWebhooksTapRoute
   BrandsBrandIdKindFilenameRoute: typeof BrandsBrandIdKindFilenameRoute
 }
 
@@ -883,6 +924,27 @@ declare module '@tanstack/react-router' {
       path: '/brands/$brandId/$kind/$filename'
       fullPath: '/brands/$brandId/$kind/$filename'
       preLoaderRoute: typeof BrandsBrandIdKindFilenameRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/webhooks/tap': {
+      id: '/api/public/webhooks/tap'
+      path: '/api/public/webhooks/tap'
+      fullPath: '/api/public/webhooks/tap'
+      preLoaderRoute: typeof ApiPublicWebhooksTapRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/payments/tap-redirect': {
+      id: '/api/public/payments/tap-redirect'
+      path: '/api/public/payments/tap-redirect'
+      fullPath: '/api/public/payments/tap-redirect'
+      preLoaderRoute: typeof ApiPublicPaymentsTapRedirectRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/payments/create-tap-charge': {
+      id: '/api/public/payments/create-tap-charge'
+      path: '/api/public/payments/create-tap-charge'
+      fullPath: '/api/public/payments/create-tap-charge'
+      preLoaderRoute: typeof ApiPublicPaymentsCreateTapChargeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/admin/super/settings': {
@@ -1166,6 +1228,9 @@ const rootRouteChildren: RootRouteChildren = {
   InvoiceIdRoute: InvoiceIdRoute,
   PlatformFilenameRoute: PlatformFilenameRoute,
   ApiCronCleanupBenefitReceiptsRoute: ApiCronCleanupBenefitReceiptsRoute,
+  ApiPublicPaymentsCreateTapChargeRoute: ApiPublicPaymentsCreateTapChargeRoute,
+  ApiPublicPaymentsTapRedirectRoute: ApiPublicPaymentsTapRedirectRoute,
+  ApiPublicWebhooksTapRoute: ApiPublicWebhooksTapRoute,
   BrandsBrandIdKindFilenameRoute: BrandsBrandIdKindFilenameRoute,
 }
 export const routeTree = rootRouteImport
