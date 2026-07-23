@@ -853,7 +853,7 @@ function DesktopSubMenu({
   if (subs.length === 0) return null;
 
   return (
-    <div className="space-y-1" onMouseLeave={() => setActiveId(null)}>
+    <div className="space-y-1">
       {subs.map((sub) => {
         const name = lang === "ar" ? sub.name_ar || sub.name_en : sub.name_en || sub.name_ar;
         const url = sub.slug || sub.name_en;
@@ -928,7 +928,35 @@ function DesktopStoreNavigation() {
     refetchOnWindowFocus: false,
   });
 
+  const [activeDropdownId, setActiveDropdownId] = useState<string | null>(null);
+  const timeoutRef = useRef<any>(null);
+
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+  }, []);
+
   const isSale = (c: any) => /sale|offers?|discount|تنزيل|عروض/i.test(`${c.slug ?? ""} ${c.name_en ?? ""} ${c.name_ar ?? ""}`);
+
+  const handleMouseEnter = (id: string) => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
+    setActiveDropdownId(id);
+  };
+
+  const handleMouseLeave = () => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
+    timeoutRef.current = setTimeout(() => {
+      setActiveDropdownId(null);
+    }, 300); // 300ms hover-intent delay before unmounting dropdown completely on leave
+  };
 
   // Only direct top-level (parent) categories should be rendered as main navigation items
   const mainCategories = data.filter((c: any) => !c.parent_id);
@@ -947,10 +975,17 @@ function DesktopStoreNavigation() {
           const subs = data.filter((sub: any) => sub.parent_id === c.id);
           const name = lang === "ar" ? c.name_ar || c.name_en : c.name_en || c.name_ar;
           const url = c.slug || c.name_en;
+          const hasDropdown = subs.length > 0;
+          const isOpen = activeDropdownId === c.id;
 
-          if (subs.length > 0) {
+          if (hasDropdown) {
             return (
-              <div key={c.id} className="relative group shrink-0 overflow-visible">
+              <div
+                key={c.id}
+                className="relative group shrink-0 overflow-visible"
+                onMouseEnter={() => handleMouseEnter(c.id)}
+                onMouseLeave={handleMouseLeave}
+              >
                 <Link
                   to="/$slug/$category"
                   params={{ slug: brand.slug, category: url }}
@@ -960,7 +995,9 @@ function DesktopStoreNavigation() {
                 >
                   <span>{name}</span>
                   <svg
-                    className="h-3.5 w-3.5 opacity-70 transition-transform group-hover:rotate-180"
+                    className={`h-3.5 w-3.5 opacity-70 transition-transform duration-200 ${
+                      isOpen ? "rotate-180" : ""
+                    }`}
                     fill="none"
                     viewBox="0 0 24 24"
                     stroke="currentColor"
@@ -968,18 +1005,20 @@ function DesktopStoreNavigation() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" />
                   </svg>
                 </Link>
-                {/* Custom premium dropdown menu card with hover-friendly bridging padding */}
-                <div className="absolute top-full left-1/2 z-50 pt-2 hidden min-w-[230px] -translate-x-1/2 group-hover:block">
-                  <div className="rounded-2xl border border-slate-100/60 dark:border-slate-800/80 bg-background p-3 shadow-xl transition-all duration-200 animate-in fade-in-0 slide-in-from-top-1 text-foreground">
-                    <DesktopSubMenu
-                      parentCategoryId={c.id}
-                      categories={data}
-                      brand={brand}
-                      lang={lang}
-                      close={() => {}}
-                    />
+                {/* State-controlled dropdown menu card with unmount-on-exit */}
+                {isOpen && (
+                  <div className="absolute top-full left-1/2 z-50 pt-2 min-w-[230px] -translate-x-1/2">
+                    <div className="rounded-2xl border border-slate-100/60 dark:border-slate-800/80 bg-background p-3 shadow-xl transition-all duration-200 animate-in fade-in-0 slide-in-from-top-1 text-foreground">
+                      <DesktopSubMenu
+                        parentCategoryId={c.id}
+                        categories={data}
+                        brand={brand}
+                        lang={lang}
+                        close={() => setActiveDropdownId(null)}
+                      />
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
             );
           }
@@ -992,6 +1031,12 @@ function DesktopStoreNavigation() {
               className={`shrink-0 rounded-xl px-5 py-2.5 text-base transition hover:-translate-y-0.5 hover:bg-black/5 ${
                 isSale(c) ? "font-bold text-red-600" : "font-semibold"
               }`}
+              onMouseEnter={() => {
+                if (timeoutRef.current) {
+                  clearTimeout(timeoutRef.current);
+                }
+                setActiveDropdownId(null);
+              }}
             >
               {name}
             </Link>
