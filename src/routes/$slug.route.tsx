@@ -1151,7 +1151,7 @@ function StoreFooter() {
 
   return (
     <footer
-      className="border-t mt-16 pt-6 pb-[100px] md:py-8"
+      className="border-t mt-16 pt-6 pb-24 md:pb-8"
       style={{
         borderColor: "rgba(0,0,0,0.08)",
         backgroundColor: "var(--sf-footer-bg)",
@@ -1159,78 +1159,67 @@ function StoreFooter() {
       }}
     >
       <div 
-        className="mx-auto max-w-7xl px-4 sm:px-6 flex flex-col gap-6 text-sm" 
+        className="mx-auto max-w-7xl px-4 sm:px-6 flex flex-col items-center gap-4 text-center text-sm" 
         style={{ color: "var(--sf-footer-fg)" }}
       >
-        {/* Row 1: Structural stacking where Navigation/Socials sit on top of Brand/Notes on mobile */}
-        <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-6">
-          
-          {/* Brand & Footer Note (Bottom of Row 1 on mobile, Left/Start on desktop) */}
-          <div className="flex flex-col items-center md:items-start gap-2 order-2 md:order-1 text-center md:text-start">
-            {settings.show_footer_name && (
-              <div className="font-semibold text-base" style={{ color: "var(--sf-footer-fg)" }}>
-                {lang === "ar" ? brand.name_ar || brand.name_en : brand.name_en}
-              </div>
-            )}
-            {settings.footer_note && (
-              <div className="text-xs opacity-80 max-w-md text-center md:text-start leading-relaxed">{settings.footer_note}</div>
-            )}
-          </div>
+        {/* Block 1: Page Links (First) */}
+        {pageLinks.length > 0 && (
+          <nav className="flex flex-wrap justify-center gap-x-5 gap-y-1 text-xs font-medium uppercase tracking-wider">
+            {pageLinks.map((p) => (
+              <Link
+                key={p.idx}
+                to="/$slug/$category"
+                params={{ slug: brand.slug, category: p.slug }}
+                className="inline-flex min-h-[44px] py-1 items-center hover:underline underline-offset-4 transition-colors"
+                style={{ color: "var(--sf-footer-fg)" }}
+              >
+                {p.title}
+              </Link>
+            ))}
+          </nav>
+        )}
 
-          {/* Navigation Menus and Social Links Section (Top of Row 1 on mobile, Right/End on desktop) */}
-          {(socials.length > 0 || pageLinks.length > 0) && (
-            <div className="flex flex-col items-center md:items-end gap-6 order-1 md:order-2 w-full md:w-auto">
-              {pageLinks.length > 0 && (
-                <nav className="grid grid-cols-2 md:flex md:flex-row gap-x-4 gap-y-3.5 md:gap-y-1 md:gap-x-5 text-sm font-medium tracking-wider w-full md:w-auto text-start rtl:text-right">
-                  {pageLinks.map((p) => (
-                    <Link
-                      key={p.idx}
-                      to="/$slug/$category"
-                      params={{ slug: brand.slug, category: p.slug }}
-                      className="inline-flex min-h-[44px] py-1 items-center justify-start md:justify-center hover:underline underline-offset-4 transition-colors w-full md:w-auto text-start rtl:text-right"
-                      style={{ color: "var(--sf-footer-fg)" }}
-                    >
-                      {p.title}
-                    </Link>
-                  ))}
-                </nav>
-              )}
-              {socials.length > 0 && (
-                <nav className="grid grid-cols-2 md:flex md:flex-row gap-x-4 gap-y-3.5 md:gap-y-1 md:gap-x-5 text-xs opacity-80 uppercase tracking-widest w-full md:w-auto text-start rtl:text-right">
-                  {socials.map((s, i) => (
-                    <a
-                      key={`${s.name}-${i}`}
-                      href={s.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex min-h-[44px] py-1 items-center justify-start md:justify-center hover:underline underline-offset-4 transition-colors w-full md:w-auto text-start rtl:text-right"
-                      style={{ color: "var(--sf-footer-fg)" }}
-                    >
-                      {s.name}
-                    </a>
-                  ))}
-                </nav>
-              )}
+        {/* Block 2: Social Media Links (Second) */}
+        {socials.length > 0 && (
+          <nav className="flex flex-wrap justify-center gap-x-5 gap-y-1 text-xs opacity-80 uppercase tracking-widest">
+            {socials.map((s, i) => (
+              <a
+                key={`${s.name}-${i}`}
+                href={s.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex min-h-[44px] py-1 items-center hover:underline underline-offset-4 transition-colors"
+                style={{ color: "var(--sf-footer-fg)" }}
+              >
+                {s.name}
+              </a>
+            ))}
+          </nav>
+        )}
+
+        {/* Block 3: The Rest (Brand Name, Note, Copyright, Privacy) */}
+        <div className="flex flex-col items-center gap-2 mt-2">
+          {settings.show_footer_name && (
+            <div className="font-semibold text-sm" style={{ color: "var(--sf-footer-fg)" }}>
+              {lang === "ar" ? brand.name_ar || brand.name_en : brand.name_en}
             </div>
           )}
-        </div>
-
-        {/* Separator Divider */}
-        <hr className="opacity-10 border-current" />
-
-        {/* Row 2: Bottom Copyright and Privacy Policy Links (Always sits at the absolute bottom of the footer container) */}
-        <div className="flex flex-col md:flex-row items-center justify-between gap-4 text-xs opacity-75 text-center md:text-start">
-          <span>© {new Date().getFullYear()} — {t("جميع الحقوق محفوظة", "All rights reserved")}</span>
-          {settings.analytics_consent_required && (
-            <button 
-              type="button" 
-              className="underline underline-offset-4 hover:opacity-100 min-h-[44px] py-2 inline-flex items-center justify-center" 
-              style={{ color: "var(--sf-footer-fg)" }} 
-              onClick={() => window.dispatchEvent(new Event("boutq:privacy-preferences"))}
-            >
-              {t("خيارات الخصوصية", "Privacy choices")}
-            </button>
+          {settings.footer_note && (
+            <div className="text-xs opacity-75 max-w-md leading-relaxed">{settings.footer_note}</div>
           )}
+          <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-[11px] opacity-70">
+            <span>© {new Date().getFullYear()} — {t("جميع الحقوق محفوظة", "All rights reserved")}</span>
+            {settings.analytics_consent_required && (
+              <button 
+                type="button" 
+                className="underline underline-offset-4 hover:opacity-100 min-h-[44px] py-1 inline-flex items-center" 
+                style={{ color: "var(--sf-footer-fg)" }} 
+                onClick={() => window.dispatchEvent(new Event("boutq:privacy-preferences"))}
+              >
+                {t("خيارات الخصوصية", "Privacy choices")}
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </footer>
