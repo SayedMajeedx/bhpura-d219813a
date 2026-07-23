@@ -1014,15 +1014,15 @@ function OrdersList() {
 
           <Card className="hidden overflow-hidden sm:block border border-border">
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[780px] table-fixed text-sm">
+              <table className="w-full table-auto text-sm">
                 <colgroup>
+                  <col className="w-[8%]" />
                   <col className="w-[12%]" />
-                  <col className="w-[14%]" />
-                  <col className="w-[18%]" />
-                  <col className="w-[16%]" />
-                  <col className="w-[16%]" />
-                  <col className="w-[12%]" />
-                  <col className="w-[12%]" />
+                  <col className="w-[24%]" />
+                  <col className="w-[15%]" />
+                  <col className="w-[15%]" />
+                  <col className="w-[11%]" />
+                  <col className="w-[15%]" />
                 </colgroup>
                 <thead className="bg-secondary/50 select-none text-xs uppercase tracking-wide">
                   <tr>
@@ -1074,7 +1074,7 @@ function OrdersList() {
                         <td className="p-4 text-muted-foreground whitespace-nowrap">
                           {formatDate(o.created_at ?? o.order_date, locale)}
                         </td>
-                        <td className="p-4 font-medium truncate">
+                        <td className="p-4 font-medium">
                           <div>
                             {o.customers?.name ?? (
                               <span className="text-muted-foreground italic">
