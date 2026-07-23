@@ -26,7 +26,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { formatDate, formatMoney } from "@/lib/format";
+import { formatDate, formatMoney, formatOrderStatus } from "@/lib/format";
 import { toast } from "sonner";
 import { useT, useI18n } from "@/lib/i18n";
 import { resolvePaymentStatus, PAYMENT_BADGE_CLASSES } from "@/lib/payment-status";
@@ -500,15 +500,9 @@ function OrdersList() {
                                 : "bg-secondary"
                           }`}
                         >
-                          {o.status === "pending_verification"
-                            ? lang === "ar"
-                              ? "بانتظار التحقق"
-                              : "Pending verification"
-                            : o.status === "archived_historical"
-                              ? lang === "ar"
-                                ? "أرشيف تاريخي"
-                                : "Archived Historical"
-                              : t(`status.${o.status}`)}
+                          {o.status === "archived_historical"
+                            ? (lang === "ar" ? "أرشيف تاريخي" : "Archived Historical")
+                            : formatOrderStatus(o.status, o.fulfillment_method, lang)}
                         </span>
                         <span
                           className={`rounded-full border px-2 py-0.5 text-[10px] uppercase tracking-wider ${PAYMENT_BADGE_CLASSES[badge]}`}
@@ -621,15 +615,7 @@ function OrdersList() {
                                   : "bg-secondary"
                             }`}
                           >
-                            {o.status === "pending_verification"
-                              ? lang === "ar"
-                                ? "بانتظار التحقق"
-                                : "Pending verification"
-                              : o.status === "archived_historical"
-                                ? lang === "ar"
-                                  ? "أرشيف تاريخي"
-                                  : "Archived Historical"
-                                : t(`status.${o.status}`)}
+                            {formatOrderStatus(o.status, o.fulfillment_method, lang)}
                           </span>
                           {deliveryBadge && (
                             <span

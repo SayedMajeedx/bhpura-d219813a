@@ -103,6 +103,14 @@ async function callUserManagement(action: string, body?: any) {
   return result;
 }
 
+const AVAILABLE_PERMISSIONS = [
+  { id: "manage_inventory", labelEn: "Manage Inventory", labelAr: "إدارة المخزون" },
+  { id: "manage_orders", labelEn: "Manage Orders", labelAr: "إدارة الطلبات" },
+  { id: "manage_customers", labelEn: "Manage Customers", labelAr: "إدارة العملاء" },
+  { id: "view_financials", labelEn: "View Financials", labelAr: "عرض البيانات المالية" },
+  { id: "manage_settings", labelEn: "Manage Settings", labelAr: "إدارة الإعدادات" },
+];
+
 function TeamManagement() {
   const t = useT();
   const { lang } = useI18n();
@@ -136,10 +144,11 @@ function TeamManagement() {
     name: "",
     password: "",
     role: "staff" as UserRole,
+    permissions: [] as string[],
   });
 
   const resetForm = () => {
-    setForm({ email: "", name: "", password: "", role: "staff" });
+    setForm({ email: "", name: "", password: "", role: "staff", permissions: [] });
   };
 
   const handleAdd = async () => {
@@ -156,6 +165,7 @@ function TeamManagement() {
         role: form.role,
         // Attach the new user to the brand this team page is scoped to
         brand_id: form.role === "super_admin" ? null : brand.id,
+        permissions: form.role === "staff" ? form.permissions : [],
       });
       toast.success(result.linked_existing_identity
         ? (isAr ? "تم منح حساب العميل الحالي صلاحية الفريق مع الاحتفاظ بكلمة مروره وبياناته" : "Team access added to the existing customer account. Its password and customer data were preserved.")
@@ -168,7 +178,7 @@ function TeamManagement() {
     }
   };
 
-  const handleUpdate = async (userId: string, updates: { role?: UserRole; status?: UserStatus; name?: string }) => {
+  const handleUpdate = async (userId: string, updates: { role?: UserRole; status?: UserStatus; name?: string; permissions?: string[] }) => {
     try {
       await callUserManagement("update", { userId, ...updates });
       toast.success(isAr ? "تم التحديث بنجاح" : "Updated successfully");
@@ -303,6 +313,33 @@ function TeamManagement() {
                   </SelectContent>
                 </Select>
               </div>
+
+              {form.role === "staff" && (
+                <div className="space-y-2">
+                  <Label>{isAr ? "الصلاحيات" : "Permissions"}</Label>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 rounded-lg border border-border bg-secondary/5">
+                    {AVAILABLE_PERMISSIONS.map((p) => {
+                      const checked = form.permissions.includes(p.id);
+                      return (
+                        <label key={p.id} className="flex items-center gap-2 text-sm cursor-pointer hover:opacity-80 transition-opacity">
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            className="rounded border-gray-300 text-primary focus:ring-primary h-4 w-4"
+                            onChange={() => {
+                              const newPerms = checked
+                                ? form.permissions.filter((x) => x !== p.id)
+                                : [...form.permissions, p.id];
+                              setForm({ ...form, permissions: newPerms });
+                            }}
+                          />
+                          <span>{isAr ? p.labelAr : p.labelEn}</span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
 
               <p className="text-xs text-muted-foreground">
                 {isAr
@@ -560,6 +597,33 @@ function TeamManagement() {
                   </SelectContent>
                 </Select>
               </div>
+              {editing.role === "staff" && (
+                <div className="space-y-2">
+                  <Label>{isAr ? "الصلاحيات" : "Permissions"}</Label>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 rounded-lg border border-border bg-secondary/5">
+                    {AVAILABLE_PERMISSIONS.map((p) => {
+                      const memberPerms = (editing as any).permissions || [];
+                      const checked = memberPerms.includes(p.id);
+                      return (
+                        <label key={p.id} className="flex items-center gap-2 text-sm cursor-pointer hover:opacity-80 transition-opacity">
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            className="rounded border-gray-300 text-primary focus:ring-primary h-4 w-4"
+                            onChange={() => {
+                              const newPerms = checked
+                                ? memberPerms.filter((x: string) => x !== p.id)
+                                : [...memberPerms, p.id];
+                              setEditing({ ...editing, permissions: newPerms } as any);
+                            }}
+                          />
+                          <span>{isAr ? p.labelAr : p.labelEn}</span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
               <div>
                 <Label>{isAr ? "تعيين كلمة مرور جديدة (اختياري)" : "Set New Password (optional)"}</Label>
                 <Input
@@ -583,6 +647,7 @@ function TeamManagement() {
                     name: editing.name || undefined,
                     role: editing.role,
                     status: editing.status,
+                    permissions: editing.role === "staff" ? (editing as any).permissions : [],
                     ...(editPassword.trim() ? { password: editPassword.trim() } : {}),
                   });
                 }

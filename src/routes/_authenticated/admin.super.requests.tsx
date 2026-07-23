@@ -66,6 +66,7 @@ type TenantRequest = {
   status: "pending" | "approved" | "rejected";
   payment_verified: boolean;
   benefit_receipt_url: string | null;
+  business_type?: string;
   created_at: string;
 };
 
@@ -394,6 +395,7 @@ function SuperRequestsPage() {
                         <th className="p-4 text-left font-semibold">{lang === "ar" ? "صاحب المتجر" : "Owner Details"}</th>
                         <th className="p-4 text-left font-semibold">{lang === "ar" ? "الرابط المطلوب" : "Desired subdomain"}</th>
                         <th className="p-4 text-left font-semibold">{lang === "ar" ? "نوع الباقة" : "Plan Package"}</th>
+                        <th className="p-4 text-left font-semibold">{lang === "ar" ? "نوع النشاط" : "Business Type"}</th>
                         <th className="p-4 text-center font-semibold">{lang === "ar" ? "إثبات الدفع" : "Benefit Receipt"}</th>
                         <th className="p-4 text-right font-semibold">{lang === "ar" ? "الإجراءات" : "Deployment Actions"}</th>
                       </tr>
@@ -434,6 +436,13 @@ function SuperRequestsPage() {
                             >
                               {request.request_type === "trial" ? (lang === "ar" ? "تجربة 3 أيام" : "3-Day Trial") : (lang === "ar" ? "متجر مدفوع" : "Official Paid")}
                             </Badge>
+                          </td>
+
+                          {/* Business Type column cell */}
+                          <td className="p-4">
+                            <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-zinc-100 dark:bg-zinc-800/80 text-zinc-600 dark:text-zinc-300 border border-zinc-200/50 dark:border-zinc-700/50">
+                              {request.business_type || (lang === "ar" ? "أزياء" : "Fashion")}
+                            </span>
                           </td>
 
                           {/* BenefitPay screenshot handler view */}

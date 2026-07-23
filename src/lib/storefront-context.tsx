@@ -431,15 +431,19 @@ export function useStorefront() {
 }
 
 export function formatPrice(amount: number, currency: string, lang: StoreLang) {
+  const normalizedCurrency = (currency || "").toUpperCase();
+  const isThreeDecimals = ["BHD", "KWD", "OMR", "IQD", "LYD"].includes(normalizedCurrency);
+  const fractionDigits = isThreeDecimals ? 3 : 2;
   const n = new Intl.NumberFormat(lang === "ar" ? "ar-BH" : "en-BH", {
     style: "currency",
-    currency,
-    maximumFractionDigits: 3,
+    currency: normalizedCurrency,
+    minimumFractionDigits: fractionDigits,
+    maximumFractionDigits: fractionDigits,
   });
   try {
     return n.format(amount);
   } catch {
-    return `${amount.toFixed(3)} ${currency}`;
+    return `${amount.toFixed(fractionDigits)} ${normalizedCurrency}`;
   }
 }
 

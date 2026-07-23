@@ -1,4 +1,4 @@
-import { createFileRoute, useRouter } from "@tanstack/react-router";
+import { createFileRoute, redirect, useRouter } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -18,6 +18,7 @@ import { Switch } from "@/components/ui/switch";
 import { Trash2 } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { uploadPublicMedia } from "@/lib/r2-upload";
+import { formatMoney } from "@/lib/format";
 import { PasskeySettings } from "@/components/passkey-settings";
 import { SubscriptionCard } from "@/components/subscription-card";
 import { SupportAccessCard } from "@/components/support-access-card";
@@ -26,6 +27,30 @@ import { ImageCropperDialog } from "@/components/image-cropper-dialog";
 import { OptimizedVideo, ResponsiveImage } from "@/components/responsive-media";
 
 export const Route = createFileRoute("/_authenticated/admin/b/$slug/settings")({
+  beforeLoad: async ({ params }) => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw redirect({ to: "/auth" });
+
+    const { data: profile } = await (supabase as any)
+      .from("profiles")
+      .select("role, status, email, permissions")
+      .eq("id", user.id)
+      .maybeSingle();
+
+    const email = (user.email || "").toLowerCase();
+    const isFixedSuperAdmin = email === "majeed@hotmail.it";
+    const role = profile?.role;
+    const status = profile?.status ?? "active";
+    const permissions = (profile?.permissions as string[]) || [];
+    const hasSettings = permissions.includes("manage_settings");
+    const allowed =
+      isFixedSuperAdmin ||
+      ((role === "admin" || role === "super_admin" || role === "brand_admin" || (role === "staff" && hasSettings)) && status === "active");
+
+    if (!allowed) {
+      throw redirect({ to: "/admin/b/$slug/dashboard", params: { slug: params.slug } });
+    }
+  },
   component: Settings,
 });
 
@@ -932,12 +957,13 @@ function ShippingSettingsCard({ brandId }: { brandId: string }) {
     queryKey: ["business-settings-shipping", brandId],
     queryFn: async () => {
       const { data, error } = await supabase.from("business_settings")
-        .select("delivery_enabled, pickup_enabled, digital_delivery_enabled, delivery_fee, shipping_zones")
+        .select("delivery_enabled, pickup_enabled, digital_delivery_enabled, delivery_fee, shipping_zones, currency")
         .eq("brand_id", brandId).maybeSingle();
       if (error) throw error;
       return data;
     },
   });
+  const currency = (data as any)?.currency ?? "BHD";
   useEffect(() => {
     if (data) {
       setState({
@@ -1047,7 +1073,7 @@ function ShippingSettingsCard({ brandId }: { brandId: string }) {
                     <tr key={z.id} className="hover:bg-secondary/5 transition-colors">
                       <td className="p-3 font-medium">{z.name_en}</td>
                       <td className="p-3 font-medium">{z.name_ar}</td>
-                      <td className="p-3 font-mono font-semibold">{z.fee.toFixed(3)}</td>
+                      <td className="p-3 font-mono font-semibold">{formatMoney(z.fee, currency, lang)}</td>
                       <td className="p-3 text-center">
                         <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10" onClick={() => removeZone(z.id)}>
                           <Trash2 className="h-4 w-4" />

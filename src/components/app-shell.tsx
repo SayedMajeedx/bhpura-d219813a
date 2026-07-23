@@ -18,7 +18,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
   const { t, lang, setLang } = useI18n();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const { profile, isAdmin, isSuperAdmin, isCourier, isLoading, profileError, signOutAndRedirect } = useProfile();
+  const { profile, isAdmin, isSuperAdmin, isCourier, isLoading, profileError, signOutAndRedirect, hasPermission } = useProfile();
 
   // Extract slug from current URL when inside /b/:slug/*
   const routeParams = useParams({ strict: false }) as { slug?: string };
@@ -100,7 +100,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   // Build brand-prefixed nav items. If no active slug, links go to /dashboard (redirector).
   const nav = useMemo(() => {
-    const items: { to: string; params?: any; label: string; icon: typeof LayoutDashboard; adminOnly?: boolean; section: string }[] = [];
+    const items: { to: string; params?: any; label: string; icon: typeof LayoutDashboard; permission?: string; adminOnly?: boolean; section: string }[] = [];
     if (activeSlug) {
       if (isCourier) {
         items.push({ to: "/admin/b/$slug/orders", params: { slug: activeSlug }, label: t("nav.orders"), icon: ReceiptText, section: lang === "ar" ? "التوصيل" : "Delivery" });
@@ -108,25 +108,29 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       }
       items.push(
         { to: "/admin/b/$slug/dashboard", params: { slug: activeSlug }, label: t("nav.dashboard"), icon: LayoutDashboard, section: lang === "ar" ? "نظرة عامة" : "Overview" },
-        { to: "/admin/b/$slug/orders", params: { slug: activeSlug }, label: t("nav.orders"), icon: ReceiptText, section: lang === "ar" ? "المبيعات" : "Sales" },
-        { to: "/admin/b/$slug/customers", params: { slug: activeSlug }, label: t("nav.customers"), icon: Users, section: lang === "ar" ? "المبيعات" : "Sales" },
-        { to: "/admin/b/$slug/campaigns", params: { slug: activeSlug }, label: lang === "ar" ? "حملات الواتساب" : "WhatsApp Campaigns", icon: Megaphone, section: lang === "ar" ? "المبيعات" : "Sales" },
-        { to: "/admin/b/$slug/discounts", params: { slug: activeSlug }, label: lang === "ar" ? "رموز الخصم" : "Discount Codes", icon: BadgePercent, adminOnly: true, section: lang === "ar" ? "التسويق" : "Marketing" },
+        { to: "/admin/b/$slug/orders", params: { slug: activeSlug }, label: t("nav.orders"), icon: ReceiptText, permission: "manage_orders", section: lang === "ar" ? "المبيعات" : "Sales" },
+        { to: "/admin/b/$slug/customers", params: { slug: activeSlug }, label: t("nav.customers"), icon: Users, permission: "manage_customers", section: lang === "ar" ? "المبيعات" : "Sales" },
+        { to: "/admin/b/$slug/campaigns", params: { slug: activeSlug }, label: lang === "ar" ? "حملات الواتساب" : "WhatsApp Campaigns", icon: Megaphone, permission: "manage_orders", section: lang === "ar" ? "المبيعات" : "Sales" },
+        { to: "/admin/b/$slug/discounts", params: { slug: activeSlug }, label: lang === "ar" ? "رموز الخصم" : "Discount Codes", icon: BadgePercent, permission: "manage_settings", section: lang === "ar" ? "التسويق" : "Marketing" },
       );
-      items.push({ to: "/admin/b/$slug/inventory", params: { slug: activeSlug }, label: t("nav.inventory"), icon: Package, section: lang === "ar" ? "الكتالوج" : "Catalog" });
-      items.push({ to: "/admin/b/$slug/categories", params: { slug: activeSlug }, label: lang === "ar" ? "الأقسام" : "Categories", icon: Tags, section: lang === "ar" ? "الكتالوج" : "Catalog" });
-      items.push({ to: "/admin/b/$slug/expenses", params: { slug: activeSlug }, label: t("nav.expenses"), icon: Wallet, adminOnly: true, section: lang === "ar" ? "المالية" : "Finance" });
+      items.push({ to: "/admin/b/$slug/inventory", params: { slug: activeSlug }, label: t("nav.inventory"), icon: Package, permission: "manage_inventory", section: lang === "ar" ? "الكتالوج" : "Catalog" });
+      items.push({ to: "/admin/b/$slug/categories", params: { slug: activeSlug }, label: lang === "ar" ? "الأقسام" : "Categories", icon: Tags, permission: "manage_inventory", section: lang === "ar" ? "الكتالوج" : "Catalog" });
+      items.push({ to: "/admin/b/$slug/expenses", params: { slug: activeSlug }, label: t("nav.expenses"), icon: Wallet, permission: "view_financials", section: lang === "ar" ? "المالية" : "Finance" });
       if (isAdmin) {
-        items.push({ to: "/admin/b/$slug/team", params: { slug: activeSlug }, label: lang === "ar" ? "إدارة الموظفين" : "Team Management", icon: Shield, section: lang === "ar" ? "الوصول" : "Access" });
-        items.push({ to: "/admin/b/$slug/integrations", params: { slug: activeSlug }, label: t("nav.integrations"), icon: Plug, section: lang === "ar" ? "واجهة المتجر" : "Storefront" });
+        items.push({ to: "/admin/b/$slug/team", params: { slug: activeSlug }, label: lang === "ar" ? "إدارة الموظفين" : "Team Management", icon: Shield, adminOnly: true, section: lang === "ar" ? "الوصول" : "Access" });
+        items.push({ to: "/admin/b/$slug/integrations", params: { slug: activeSlug }, label: t("nav.integrations"), icon: Plug, adminOnly: true, section: lang === "ar" ? "واجهة المتجر" : "Storefront" });
       }
-      items.push({ to: "/admin/b/$slug/communications", params: { slug: activeSlug }, label: lang === "ar" ? "الاتصالات" : "Communications", icon: Mail, section: lang === "ar" ? "واجهة المتجر" : "Storefront" });
-      items.push({ to: "/admin/b/$slug/pages", params: { slug: activeSlug }, label: lang === "ar" ? "الصفحات والسياسات" : "Pages & Policies", icon: FileText, section: lang === "ar" ? "واجهة المتجر" : "Storefront" });
-      items.push({ to: "/admin/b/$slug/settings", params: { slug: activeSlug }, label: t("nav.settings"), icon: Settings, section: lang === "ar" ? "واجهة المتجر" : "Storefront" });
+      items.push({ to: "/admin/b/$slug/communications", params: { slug: activeSlug }, label: lang === "ar" ? "الاتصالات" : "Communications", icon: Mail, permission: "manage_settings", section: lang === "ar" ? "واجهة المتجر" : "Storefront" });
+      items.push({ to: "/admin/b/$slug/pages", params: { slug: activeSlug }, label: lang === "ar" ? "الصفحات والسياسات" : "Pages & Policies", icon: FileText, permission: "manage_settings", section: lang === "ar" ? "واجهة المتجر" : "Storefront" });
+      items.push({ to: "/admin/b/$slug/settings", params: { slug: activeSlug }, label: t("nav.settings"), icon: Settings, permission: "manage_settings", section: lang === "ar" ? "واجهة المتجر" : "Storefront" });
 
     }
-    return items.filter((item) => !item.adminOnly || isAdmin);
-  }, [t, lang, isAdmin, isCourier, activeSlug]);
+    return items.filter((item) => {
+      if (item.adminOnly) return isAdmin;
+      if (item.permission) return hasPermission(item.permission);
+      return true;
+    });
+  }, [t, lang, isAdmin, isCourier, activeSlug, hasPermission]);
 
   const signOut = async () => {
     await supabase.auth.signOut();

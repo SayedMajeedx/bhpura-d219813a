@@ -1,25 +1,22 @@
 {
-  "timestamp": "2026-07-20T18:10:09.924Z",
-  "storefront": {
-    "status": "SUCCESS",
-    "details": [
-      "✔ Storefront Catalog: Verified. Retrieved 3 products for active tenant 'pura'.",
-      "    - Product: Abaya Code PR1 | Active: undefined",
-      "    - Product: Abaya Code PR2 | Active: undefined",
-      "    - Product: Dress - PR3 | Active: undefined"
-    ]
+  "timestamp": "2026-07-23T12:33:46.686Z",
+  "results": {
+    "multi_business_saas_core": {
+      "tracks_inventory_on_products": "Applied",
+      "business_type_on_brands": "Applied",
+      "permissions_on_profiles": "Applied"
+    },
+    "checkout_idempotency": {
+      "idempotency_claims_table": "Applied",
+      "idempotency_key_on_orders": "Applied",
+      "request_hash_on_orders": "Applied"
+    },
+    "five_axis_variants": {
+      "variant_label_four_on_products": "Applied",
+      "variant_label_five_on_products": "Applied",
+      "option_four_on_variants": "Applied",
+      "option_five_on_variants": "Applied"
+    }
   },
-  "workspace": {
-    "status": "SUCCESS",
-    "details": [
-      "⚠️ GEMINI_API_KEY is missing in local .env - skipping translation runtime test."
-    ]
-  },
-  "controlTower": {
-    "status": "SUCCESS",
-    "details": [
-      "✔ KPI Platform MRR: Verified. Total SaaS platform MRR calculated at **0 BHD**.",
-      "    - Active SaaS Brands: 0"
-    ]
-  }
+  "all_applied": true
 }

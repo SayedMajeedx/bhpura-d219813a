@@ -1,19 +1,18 @@
 export function formatMoney(amount: number, currency = "BHD", locale = "en-BH") {
   const n = Number(amount || 0);
   const normalizedCurrency = currency.toUpperCase();
-  const fractionDigits = normalizedCurrency === "BHD" ? 3 : undefined;
+  const isThreeDecimals = ["BHD", "KWD", "OMR", "IQD", "LYD"].includes(normalizedCurrency);
+  const fractionDigits = isThreeDecimals ? 3 : 2;
   try {
     return new Intl.NumberFormat(locale, {
       style: "currency",
       currency: normalizedCurrency,
       currencyDisplay: "symbol",
-      ...(fractionDigits == null ? {} : {
-        minimumFractionDigits: fractionDigits,
-        maximumFractionDigits: fractionDigits,
-      }),
+      minimumFractionDigits: fractionDigits,
+      maximumFractionDigits: fractionDigits,
     }).format(n);
   } catch {
-    return `${normalizedCurrency} ${n.toFixed(fractionDigits ?? 2)}`;
+    return `${normalizedCurrency} ${n.toFixed(fractionDigits)}`;
   }
 }
 
@@ -35,4 +34,39 @@ export function formatDate(value: string | Date | null | undefined, locale = "en
     month: "2-digit",
     year: "numeric",
   }).format(date);
+}
+
+/** Formats order status strings contextually based on fulfillment methods. */
+export function formatOrderStatus(status: string, fulfillmentMethod: string | null | undefined, lang: "ar" | "en"): string {
+  const s = (status || "").toLowerCase();
+  const f = (fulfillmentMethod || "").toLowerCase();
+  
+  if (s === "shipped") {
+    if (f === "pickup") {
+      return lang === "ar" ? "جاهز للاستلام" : "Ready for Pickup";
+    } else if (f === "digital") {
+      return lang === "ar" ? "تم الإرسال / التسليم" : "Sent / Delivered";
+    } else {
+      return lang === "ar" ? "تم الشحن / التوصيل" : "Shipped / Out for Delivery";
+    }
+  }
+
+  switch (s) {
+    case "draft":
+      return lang === "ar" ? "مسودة" : "Draft";
+    case "confirmed":
+      return lang === "ar" ? "مؤكد" : "Confirmed";
+    case "paid":
+      return lang === "ar" ? "مدفوع" : "Paid";
+    case "completed":
+      return lang === "ar" ? "مكتمل" : "Completed";
+    case "cancelled":
+      return lang === "ar" ? "ملغى" : "Cancelled";
+    case "pending_verification":
+      return lang === "ar" ? "في انتظار التحقق" : "Pending Verification";
+    case "archived_historical":
+      return lang === "ar" ? "أرشيف تاريخي" : "Archived Historical";
+    default:
+      return status;
+  }
 }

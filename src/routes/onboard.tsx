@@ -115,6 +115,7 @@ function OnboardPage() {
   const [trialContactNumber, setTrialContactNumber] = useState("");
   const [trialEmail, setTrialEmail] = useState("");
   const [trialSubdomain, setTrialSubdomain] = useState("");
+  const [trialBusinessType, setTrialBusinessType] = useState("Fashion");
   const [trialSubdomainChecking, setTrialSubdomainChecking] = useState(false);
   const [trialSubdomainAvailable, setTrialSubdomainAvailable] = useState<boolean | null>(null);
 
@@ -122,6 +123,7 @@ function OnboardPage() {
   const [officialContactNumber, setOfficialContactNumber] = useState("");
   const [officialEmail, setOfficialEmail] = useState("");
   const [officialSubdomain, setOfficialSubdomain] = useState("");
+  const [officialBusinessType, setOfficialBusinessType] = useState("Fashion");
   const [officialSubdomainChecking, setOfficialSubdomainChecking] = useState(false);
   const [officialSubdomainAvailable, setOfficialSubdomainAvailable] = useState<boolean | null>(null);
   
@@ -305,6 +307,7 @@ function OnboardPage() {
           email: trialEmail,
           desiredSubdomain: trialSubdomain,
           requestType: "trial",
+          businessType: trialBusinessType,
         }
       });
 
@@ -362,6 +365,7 @@ function OnboardPage() {
           desiredSubdomain: officialSubdomain,
           requestType: "paid",
           benefitReceiptUrl: receiptKey,
+          businessType: officialBusinessType,
         }
       });
 
@@ -889,6 +893,31 @@ function OnboardPage() {
                   )}
                 </div>
 
+                <div className="space-y-1.5">
+                  <Label htmlFor="trial-business-type" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    {lang === "ar" ? "نوع النشاط التجاري" : "Business / Store Type"}
+                  </Label>
+                  <Select value={trialBusinessType} onValueChange={setTrialBusinessType}>
+                    <SelectTrigger id="trial-business-type" className="h-10 text-xs text-primary bg-background border-zinc-200">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Fashion">
+                        {lang === "ar" ? "أزياء وملابس (Fashion)" : "Fashion & Apparel"}
+                      </SelectItem>
+                      <SelectItem value="Cafe / Restaurant">
+                        {lang === "ar" ? "مقهى / مطعم (Cafe)" : "Cafe & Restaurant"}
+                      </SelectItem>
+                      <SelectItem value="Consulting / Services">
+                        {lang === "ar" ? "خدمات / استشارات (Services)" : "Consulting & Services"}
+                      </SelectItem>
+                      <SelectItem value="Digital store">
+                        {lang === "ar" ? "متجر رقمي (Digital)" : "Digital Store"}
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
                 <Button 
                   type="submit" 
                   className="w-full h-11 text-xs font-semibold uppercase tracking-wider gap-2 bg-[#B76E79] hover:bg-[#a35e69] text-white mt-4"
@@ -1062,6 +1091,31 @@ function OnboardPage() {
                       )}
                     </p>
                   )}
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label htmlFor="paid-business-type" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    {lang === "ar" ? "نوع النشاط التجاري" : "Business / Store Type"}
+                  </Label>
+                  <Select value={officialBusinessType} onValueChange={setOfficialBusinessType}>
+                    <SelectTrigger id="paid-business-type" className="h-10 text-xs text-primary bg-background border-zinc-200">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Fashion">
+                        {lang === "ar" ? "أزياء وملابس (Fashion)" : "Fashion & Apparel"}
+                      </SelectItem>
+                      <SelectItem value="Cafe / Restaurant">
+                        {lang === "ar" ? "مقهى / مطعم (Cafe)" : "Cafe & Restaurant"}
+                      </SelectItem>
+                      <SelectItem value="Consulting / Services">
+                        {lang === "ar" ? "خدمات / استشارات (Services)" : "Consulting & Services"}
+                      </SelectItem>
+                      <SelectItem value="Digital store">
+                        {lang === "ar" ? "متجر رقمي (Digital)" : "Digital Store"}
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 {/* Secure BenefitPay QR Mechanism inside Card B */}

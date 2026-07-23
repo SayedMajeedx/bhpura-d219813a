@@ -13,6 +13,7 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
+import { formatMoney } from "@/lib/format";
 
 export const Route = createFileRoute("/_authenticated/admin/b/$slug/discounts")({ component: DiscountCodes });
 
@@ -42,6 +43,27 @@ function DiscountCodes() {
   const [form, setForm] = useState<PromoForm>(EMPTY);
   const [saving, setSaving] = useState(false);
   const [showMarginWarning, setShowMarginWarning] = useState(false);
+
+  const settingsQ = useQuery({
+    queryKey: ["business-settings-currency", brand.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("business_settings")
+        .select("currency")
+        .eq("brand_id", brand.id)
+        .maybeSingle();
+      if (error) throw error;
+      return data ?? { currency: "BHD" };
+    },
+  });
+  const currency = settingsQ.data?.currency ?? "BHD";
+
+  const getCurrencyPrecision = (curr: string) => {
+    const c = (curr || "").toUpperCase();
+    if (["BHD", "KWD", "OMR", "JOD"].includes(c)) return 3;
+    if (["JPY"].includes(c)) return 0;
+    return 2;
+  };
 
   const promos = useQuery({
     queryKey: ["promo-codes", brand.id],
@@ -153,25 +175,25 @@ function DiscountCodes() {
     <Card className="overflow-hidden">
       {promos.isLoading ? <div className="p-8 text-center text-muted-foreground">{ar ? "جارٍ التحميل…" : "Loading…"}</div> : !promos.data?.length ?
         <div className="grid place-items-center gap-3 p-12 text-center"><Tags className="h-10 w-10 text-muted-foreground"/><div><div className="font-medium">{ar ? "لا توجد رموز خصم" : "No promo codes yet"}</div><div className="text-sm text-muted-foreground">{ar ? "أنشئ أول عرض للمتجر." : "Create your first storefront offer."}</div></div><Button variant="outline" onClick={beginCreate}>{ar ? "+ إضافة رمز" : "+ Add code"}</Button></div> :
-        <div className="overflow-x-auto"><table className="w-full min-w-[760px] text-sm"><thead className="border-b bg-muted/50"><tr>{[ar?"الرمز":"Code",ar?"النوع":"Type",ar?"القيمة":"Value",ar?"الحد الأدنى":"Minimum",ar?"الحالة":"Status",ar?"الإجراءات":"Actions"].map(x=><th key={x} className="px-4 py-3 text-start font-medium">{x}</th>)}</tr></thead><tbody>{promos.data.map(p=><tr key={p.id} className="border-b last:border-0"><td className="px-4 py-4 font-mono font-semibold">{p.code}</td><td className="px-4 py-4">{p.discount_type === "percentage" ? (ar?"نسبة مئوية":"Percentage") : (ar?"مبلغ ثابت":"Fixed BHD")}</td><td className="px-4 py-4 tabular-nums">{p.discount_type === "percentage" ? `${p.discount_value}%` : `BHD ${Number(p.discount_value).toFixed(3)}`}</td><td className="px-4 py-4 tabular-nums">{p.minimum_order_amount == null ? "—" : `BHD ${Number(p.minimum_order_amount).toFixed(3)}`}</td><td className="px-4 py-4"><span className={`rounded-full px-2.5 py-1 text-xs ${p.is_active?"bg-emerald-100 text-emerald-800":"bg-muted text-muted-foreground"}`}>{p.is_active?(ar?"نشط":"Active"):(ar?"متوقف":"Inactive")}</span></td><td className="px-4 py-4"><div className="flex gap-1"><Button size="icon" variant="ghost" onClick={()=>beginEdit(p)} aria-label="Edit"><Pencil className="h-4 w-4"/></Button><Button size="icon" variant="ghost" className="text-destructive" onClick={()=>remove(p)} aria-label="Delete"><Trash2 className="h-4 w-4"/></Button></div></td></tr>)}</tbody></table></div>}
+        <div className="overflow-x-auto"><table className="w-full min-w-[760px] text-sm"><thead className="border-b bg-muted/50"><tr>{[ar?"الرمز":"Code",ar?"النوع":"Type",ar?"القيمة":"Value",ar?"الحد الأدنى":"Minimum",ar?"الحالة":"Status",ar?"الإجراءات":"Actions"].map(x=><th key={x} className="px-4 py-3 text-start font-medium">{x}</th>)}</tr></thead><tbody>{promos.data.map(p=><tr key={p.id} className="border-b last:border-0"><td className="px-4 py-4 font-mono font-semibold">{p.code}</td><td className="px-4 py-4">{p.discount_type === "percentage" ? (ar?"نسبة مئوية":"Percentage") : (ar?`مبلغ ثابت (${currency})`:`Fixed ${currency}`)}</td><td className="px-4 py-4 tabular-nums">{p.discount_type === "percentage" ? `${p.discount_value}%` : formatMoney(Number(p.discount_value), currency, lang)}</td><td className="px-4 py-4 tabular-nums">{p.minimum_order_amount == null ? "—" : formatMoney(Number(p.minimum_order_amount), currency, lang)}</td><td className="px-4 py-4"><span className={`rounded-full px-2.5 py-1 text-xs ${p.is_active?"bg-emerald-100 text-emerald-800":"bg-muted text-muted-foreground"}`}>{p.is_active?(ar?"نشط":"Active"):(ar?"متوقف":"Inactive")}</span></td><td className="px-4 py-4"><div className="flex gap-1"><Button size="icon" variant="ghost" onClick={()=>beginEdit(p)} aria-label="Edit"><Pencil className="h-4 w-4"/></Button><Button size="icon" variant="ghost" className="text-destructive" onClick={()=>remove(p)} aria-label="Delete"><Trash2 className="h-4 w-4"/></Button></div></td></tr>)}</tbody></table></div>}
     </Card>
     <Dialog open={open} onOpenChange={setOpen}><DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-xl" dir={ar?"rtl":"ltr"}><DialogHeader><DialogTitle>{editing?(ar?"تعديل رمز الخصم":"Edit Promo Code"):(ar?"إنشاء رمز خصم":"Create Promo Code")}</DialogTitle></DialogHeader><div className="space-y-4">
       <div><Label>{ar?"اسم الرمز":"Code Name"}</Label><Input value={form.code} onChange={e=>setForm({...form,code:e.target.value.toUpperCase()})} placeholder="EID20" className="uppercase" maxLength={32}/></div>
-      <div><Label>{ar?"نوع الخصم":"Discount Type"}</Label><Select value={form.discount_type} onValueChange={(v:"percentage"|"fixed")=>setForm({...form,discount_type:v,maximum_discount_amount:v==="percentage"?form.maximum_discount_amount:null})}><SelectTrigger><SelectValue/></SelectTrigger><SelectContent><SelectItem value="percentage">{ar?"نسبة مئوية %":"Percentage %"}</SelectItem><SelectItem value="fixed">{ar?"مبلغ ثابت د.ب":"Fixed Amount BHD"}</SelectItem></SelectContent></Select></div>
+      <div><Label>{ar?"نوع الخصم":"Discount Type"}</Label><Select value={form.discount_type} onValueChange={(v:"percentage"|"fixed")=>setForm({...form,discount_type:v,maximum_discount_amount:v==="percentage"?form.maximum_discount_amount:null})}><SelectTrigger><SelectValue/></SelectTrigger><SelectContent><SelectItem value="percentage">{ar?"نسبة مئوية %":"Percentage %"}</SelectItem><SelectItem value="fixed">{ar?`مبلغ ثابت (${currency})`:`Fixed Amount ${currency}`}</SelectItem></SelectContent></Select></div>
       <div>
         <Label>{ar?"قيمة الخصم":"Discount Value"}</Label>
-        <Input type="number" min="0" max={form.discount_type==="percentage"?100:undefined} step={form.discount_type==="fixed"?"0.001":"0.01"} value={form.discount_value||""} onChange={e=>setForm({...form,discount_value:Number(e.target.value)})}/>
+        <Input type="number" min="0" max={form.discount_type==="percentage"?100:undefined} step={form.discount_type==="fixed"?(getCurrencyPrecision(currency)===3?"0.001":"0.01"):"0.01"} value={form.discount_value||""} onChange={e=>setForm({...form,discount_value:Number(e.target.value)})}/>
         {showMarginWarning && (
           <div className="mt-2 rounded-lg border border-amber-200/80 bg-amber-50 p-2.5 text-xs font-medium text-amber-800 dark:border-amber-900/40 dark:bg-amber-950/20 dark:text-amber-400 flex items-center gap-1.5 animate-pulse">
             <span>⚠️ {ar ? "هذه القيمة تقلل هامش الربح لبعض المنتجات عن 15%." : "This value cuts into profit margins for certain collections."}</span>
           </div>
         )}
-        <p className="mt-1 text-xs text-muted-foreground">{form.discount_type==="fixed"?(ar?"يُحفظ بثلاث خانات عشرية.":"Saved with three decimal places."):(ar?"من 1 إلى 100%":"From 1 to 100%")}</p>
+        <p className="mt-1 text-xs text-muted-foreground">{form.discount_type==="fixed"?(ar?`يُحفظ بـ ${getCurrencyPrecision(currency)} خانات عشرية.`:`Saved with ${getCurrencyPrecision(currency)} decimal places.`):(ar?"من 1 إلى 100%":"From 1 to 100%")}</p>
       </div>
-      <div><Label>{ar?"الحد الأدنى للطلب (اختياري)":"Minimum Order Amount (Optional)"}</Label><Input type="number" min="0" step="0.001" value={form.minimum_order_amount??""} onChange={e=>setForm({...form,minimum_order_amount:e.target.value===""?null:Number(e.target.value)})} placeholder="0.000"/></div>
+      <div><Label>{ar?`الحد الأدنى للطلب (${currency}) (اختياري)`:`Minimum Order Amount (${currency}) (Optional)`}</Label><Input type="number" min="0" step={getCurrencyPrecision(currency)===3?"0.001":"0.01"} value={form.minimum_order_amount??""} onChange={e=>setForm({...form,minimum_order_amount:e.target.value===""?null:Number(e.target.value)})} placeholder={getCurrencyPrecision(currency)===3?"0.000":"0.00"}/></div>
       {form.discount_type === "percentage" && <div className="space-y-3 rounded-lg border p-4">
-        <div className="flex items-center justify-between gap-4"><div><div className="font-medium">{ar?"تحديد حد أقصى للخصم":"Set maximum discount limit"}</div><div className="text-xs text-muted-foreground">{ar?"يمنع الخصم النسبي من تجاوز مبلغ محدد.":"Prevent a percentage discount from exceeding a fixed amount."}</div></div><Switch checked={form.maximum_discount_amount!=null} onCheckedChange={v=>setForm({...form,maximum_discount_amount:v?0.001:null})}/></div>
-        {form.maximum_discount_amount != null && <div><Label>{ar?"الحد الأقصى للخصم (د.ب)":"Maximum Discount Amount (BHD)"}</Label><Input type="number" min="0.001" step="0.001" value={form.maximum_discount_amount} onChange={e=>setForm({...form,maximum_discount_amount:Number(e.target.value)})} placeholder="0.000"/></div>}
+        <div className="flex items-center justify-between gap-4"><div><div className="font-medium">{ar?"تحديد حد أقصى للخصم":"Set maximum discount limit"}</div><div className="text-xs text-muted-foreground">{ar?"يمنع الخصم النسبي من تجاوز مبلغ محدد.":"Prevent a percentage discount from exceeding a fixed amount."}</div></div><Switch checked={form.maximum_discount_amount!=null} onCheckedChange={v=>setForm({...form,maximum_discount_amount:v?0.01:null})}/></div>
+        {form.maximum_discount_amount != null && <div><Label>{ar?`الحد الأقصى للخصم (${currency})`:`Maximum Discount Amount (${currency})`}</Label><Input type="number" min="0.01" step={getCurrencyPrecision(currency)===3?"0.001":"0.01"} value={form.maximum_discount_amount} onChange={e=>setForm({...form,maximum_discount_amount:Number(e.target.value)})} placeholder={getCurrencyPrecision(currency)===3?"0.000":"0.00"}/></div>}
       </div>}
       <div className="space-y-3 rounded-lg border p-4">
         <div><div className="font-medium">{ar?"شروط الأهلية":"Eligibility Constraints"}</div><div className="text-xs text-muted-foreground">{ar?"حدد العملاء والمنتجات المؤهلة لهذا الرمز.":"Control which customers and products qualify."}</div></div>

@@ -92,9 +92,9 @@ export const Route = createFileRoute("/_authenticated/admin/b/$slug/expenses")({
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw redirect({ to: "/auth" });
 
-    const { data: profile } = await supabase
+    const { data: profile } = await (supabase as any)
       .from("profiles")
-      .select("role, status, email")
+      .select("role, status, email, permissions")
       .eq("id", user.id)
       .maybeSingle();
 
@@ -102,9 +102,11 @@ export const Route = createFileRoute("/_authenticated/admin/b/$slug/expenses")({
     const isFixedSuperAdmin = email === "majeed@hotmail.it";
     const role = profile?.role;
     const status = profile?.status ?? "active";
+    const permissions = (profile?.permissions as string[]) || [];
+    const hasFinancials = permissions.includes("view_financials");
     const allowed =
       isFixedSuperAdmin ||
-      ((role === "admin" || role === "super_admin" || role === "brand_admin") && status === "active");
+      ((role === "admin" || role === "super_admin" || role === "brand_admin" || (role === "staff" && hasFinancials)) && status === "active");
 
     if (!allowed) {
       throw redirect({ to: "/admin/b/$slug/dashboard", params: { slug: params.slug } });

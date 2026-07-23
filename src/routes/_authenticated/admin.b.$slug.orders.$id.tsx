@@ -44,7 +44,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { formatDate, formatMoney } from "@/lib/format";
+import { formatDate, formatMoney, formatOrderStatus } from "@/lib/format";
 import { useT, useI18n } from "@/lib/i18n";
 import {
   regionLabel,
@@ -1330,7 +1330,7 @@ function OrderDetail() {
     const brand = !rawBrand || LEGACY.has(rawBrand) ? (lang === "ar" ? "بوتك" : "Boutq") : rawBrand;
 
     const paymentLabel = order.payment_method ? t(`payment.${order.payment_method}`) : "";
-    const statusLabel = t(`status.${order.status}`);
+    const statusLabel = formatOrderStatus(order.status, order.fulfillment_method, lang);
 
     const ok = printThermalReceipt({
       brand,

@@ -26,6 +26,7 @@ function Checkout() {
   const { brand, settings, cart, cartTotal, currency, lang, t, clearCart, session } = useStorefront();
   const navigate = useNavigate();
   const [submitting, setSubmitting] = useState(false);
+  const [idempotencyKey] = useState(() => crypto.randomUUID());
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
     setMounted(true);
@@ -357,6 +358,7 @@ function Checkout() {
         p_benefit_receipt_id: benefitReceiptId,
         p_shipping_fee: fulfillment === "delivery" ? (zones.length > 0 ? (selectedZone?.fee ?? 0) : Number(settings.delivery_fee || 0)) : 0,
         p_shipping_zone: fulfillment === "delivery" ? (zones.length > 0 ? (selectedZone ? (lang === "ar" ? selectedZone.name_ar : selectedZone.name_en) : null) : (lang === "ar" ? "توصيل" : "Delivery")) : null,
+        p_idempotency_key: idempotencyKey,
       } as any);
       if (error) throw error;
       const orderId = (data as any)?.order_id;

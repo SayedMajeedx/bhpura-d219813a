@@ -19,6 +19,7 @@ const CreateRequestInput = z.object({
   desiredSubdomain: z.string().min(2),
   requestType: z.enum(["trial", "paid"]),
   benefitReceiptUrl: z.string().optional(),
+  businessType: z.string().optional(),
 });
 
 const AdminActionInput = z.object({
@@ -90,7 +91,8 @@ export const createTenantRequest = createServerFn({ method: "POST" })
         request_type: data.requestType,
         status: "pending",
         benefit_receipt_url: data.benefitReceiptUrl || null,
-        payment_verified: false
+        payment_verified: false,
+        business_type: data.businessType || null
       });
 
     if (error) {
@@ -297,6 +299,7 @@ export const approveTenantRequest = createServerFn({ method: "POST" })
         .update({
           plan_type: approvedPlanType,
           trial_ends_at: trialEndsAt,
+          business_type: (request as any).business_type || null,
           updated_at: new Date().toISOString()
         })
         .eq("id", brandRow.id);

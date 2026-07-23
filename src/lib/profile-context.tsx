@@ -24,6 +24,7 @@ export type Profile = {
   status: UserStatus;
   brand_id: string | null;
   brand?: BrandSummary | null;
+  permissions?: string[] | null;
   created_at: string;
   updated_at: string;
 };
@@ -38,6 +39,7 @@ type ProfileContextType = {
   isActive: boolean;
   profileError: boolean;
   canViewFinancials: boolean;
+  hasPermission: (permission: string) => boolean;
   refreshProfile: () => Promise<void>;
   signOutAndRedirect: () => Promise<void>;
 };
@@ -162,8 +164,21 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
   const isBrandAdmin = isActive && profile?.role === "brand_admin";
   const isCourier = isActive && profile?.role === "courier";
   const isAdmin = isActive && (profile?.role === "admin" || isBrandAdmin || isSuperAdmin);
-  // Only admins (incl. super admin, brand admin) can view financial data
-  const canViewFinancials = isAdmin && isActive;
+
+  const hasPermission = useCallback(
+    (permission: string): boolean => {
+      if (!isActive) return false;
+      if (profile?.role === "admin" || profile?.role === "brand_admin" || profile?.role === "super_admin" || emailIsSuperAdmin) {
+        return true; // Admins automatically possess all permissions.
+      }
+      const permissions = (profile?.permissions as string[]) || [];
+      return permissions.includes(permission);
+    },
+    [isActive, profile, emailIsSuperAdmin]
+  );
+
+  // Only authorized roles or users with explicit financials permission can view financial data
+  const canViewFinancials = isActive && (isAdmin || hasPermission("view_financials"));
 
   return (
     <ProfileContext.Provider
@@ -177,6 +192,7 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
         isActive,
         profileError,
         canViewFinancials,
+        hasPermission,
         refreshProfile,
         signOutAndRedirect,
       }}
