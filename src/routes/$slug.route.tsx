@@ -367,7 +367,7 @@ function WhatsAppFab() {
       target="_blank"
       rel="noopener noreferrer"
       aria-label="WhatsApp"
-      className={`fixed z-50 bottom-24 md:bottom-5 ${lang === "ar" ? "left-5" : "right-5"} h-14 w-14 rounded-full grid place-items-center shadow-lg hover:scale-110 active:scale-95`}
+      className={`fixed z-50 bottom-6 md:bottom-6 ${lang === "ar" ? "left-5" : "right-5"} h-14 w-14 rounded-full grid place-items-center shadow-lg hover:scale-110 active:scale-95`}
       style={{
         backgroundColor: "#25D366",
         color: "#fff",
@@ -1151,7 +1151,7 @@ function StoreFooter() {
 
   return (
     <footer
-      className="border-t mt-16 pt-6 pb-24 md:pb-8"
+      className="border-t mt-16 py-6 md:py-8"
       style={{
         borderColor: "rgba(0,0,0,0.08)",
         backgroundColor: "var(--sf-footer-bg)",
