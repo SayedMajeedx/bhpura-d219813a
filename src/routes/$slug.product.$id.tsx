@@ -257,6 +257,46 @@ function ProductDetail() {
     return Array.from(new Set(fabrics));
   }, [variants]);
 
+  // Dynamic out of stock maps for each option dimension, checking current other active options
+  const isColorOutOfStock = useMemo(() => {
+    return uniqueColors.reduce((acc, col) => {
+      const matching = variants.filter((v) => {
+        const colorMatch = v.color === col;
+        const sizeMatch = !selectedSize || v.size === selectedSize;
+        const fabricMatch = !selectedFabric || v.fabric === selectedFabric;
+        return colorMatch && sizeMatch && fabricMatch;
+      });
+      acc[col] = matching.length === 0 || matching.every((v) => (v.stock_main ?? 0) <= 0);
+      return acc;
+    }, {} as Record<string, boolean>);
+  }, [uniqueColors, selectedSize, selectedFabric, variants]);
+
+  const isSizeOutOfStock = useMemo(() => {
+    return uniqueSizes.reduce((acc, sz) => {
+      const matching = variants.filter((v) => {
+        const sizeMatch = v.size === sz;
+        const colorMatch = !selectedColor || v.color === selectedColor;
+        const fabricMatch = !selectedFabric || v.fabric === selectedFabric;
+        return colorMatch && sizeMatch && fabricMatch;
+      });
+      acc[sz] = matching.length === 0 || matching.every((v) => (v.stock_main ?? 0) <= 0);
+      return acc;
+    }, {} as Record<string, boolean>);
+  }, [uniqueSizes, selectedColor, selectedFabric, variants]);
+
+  const isFabricOutOfStock = useMemo(() => {
+    return uniqueFabrics.reduce((acc, fb) => {
+      const matching = variants.filter((v) => {
+        const fabricMatch = v.fabric === fb;
+        const colorMatch = !selectedColor || v.color === selectedColor;
+        const sizeMatch = !selectedSize || v.size === selectedSize;
+        return colorMatch && sizeMatch && fabricMatch;
+      });
+      acc[fb] = matching.length === 0 || matching.every((v) => (v.stock_main ?? 0) <= 0);
+      return acc;
+    }, {} as Record<string, boolean>);
+  }, [uniqueFabrics, selectedColor, selectedSize, variants]);
+
   // Auto-initialize attributes only when a single variant is available
   useEffect(() => {
     if (variants.length === 1 && !variantId) {
@@ -590,6 +630,7 @@ function ProductDetail() {
                 <div className="flex flex-wrap gap-2.5">
                   {uniqueColors.map((color) => {
                     const active = selectedColor === color;
+                    const oos = isColorOutOfStock[color];
                     const hex = COLOR_MAP[color.toLowerCase()] || COLOR_MAP[color] || null;
                     const ringStyle = active ? { borderColor: primary } : {};
                     return (
@@ -599,19 +640,26 @@ function ProductDetail() {
                         onClick={() => { setSelectedColor(color); setErrorMsg(null); }}
                         className={`h-9 w-9 rounded-full border-2 transition-all flex items-center justify-center relative ${
                           active ? "scale-110 shadow-sm" : "border-transparent hover:scale-105"
-                        }`}
+                        } ${oos ? "opacity-45 cursor-not-allowed" : ""}`}
                         style={ringStyle}
-                        title={color}
+                        title={color + (oos ? ` (${t("غير متوفر", "out of stock")})` : "")}
                         aria-label={color}
                       >
                         {hex ? (
                           <span
-                            className="h-7 w-7 rounded-full border shadow-inner block"
+                            className="h-7 w-7 rounded-full border shadow-inner block relative overflow-hidden"
                             style={{ backgroundColor: hex }}
-                          />
+                          >
+                            {oos && (
+                              <span className="absolute inset-0 w-full h-[2px] bg-red-600/80 rotate-45 origin-center top-1/2 -translate-y-1/2" />
+                            )}
+                          </span>
                         ) : (
-                          <span className="h-7 w-7 rounded-full border bg-muted flex items-center justify-center text-[10px] font-bold uppercase truncate shadow-inner">
+                          <span className="h-7 w-7 rounded-full border bg-muted flex items-center justify-center text-[10px] font-bold uppercase truncate shadow-inner relative overflow-hidden">
                             {color.slice(0, 2)}
+                            {oos && (
+                              <span className="absolute inset-0 w-full h-[2px] bg-red-600/80 rotate-45 origin-center top-1/2 -translate-y-1/2" />
+                            )}
                           </span>
                         )}
                       </button>
@@ -628,6 +676,7 @@ function ProductDetail() {
                 <div className="flex flex-wrap gap-2">
                   {uniqueSizes.map((sz) => {
                     const active = selectedSize === sz;
+                    const oos = isSizeOutOfStock[sz];
                     const style = active ? { backgroundColor: primary, color: primaryFg, borderColor: primary } : {};
                     return (
                       <button
@@ -635,8 +684,8 @@ function ProductDetail() {
                         type="button"
                         onClick={() => { setSelectedSize(sz); setErrorMsg(null); }}
                         className={`min-h-10 px-4 py-1.5 rounded-lg border text-sm font-medium transition-all ${
-                          active ? "shadow-sm border-transparent" : "border-input bg-background hover:border-foreground/45"
-                        }`}
+                          active ? "shadow-sm border-transparent" : "border-input bg-background"
+                        } ${oos ? "line-through opacity-45 cursor-not-allowed bg-neutral-100 dark:bg-neutral-800 text-muted-foreground border-dashed" : "hover:border-foreground/45"}`}
                         style={style}
                       >
                         {sz}
@@ -654,6 +703,7 @@ function ProductDetail() {
                 <div className="flex flex-wrap gap-2">
                   {uniqueFabrics.map((fb) => {
                     const active = selectedFabric === fb;
+                    const oos = isFabricOutOfStock[fb];
                     const style = active ? { backgroundColor: primary, color: primaryFg, borderColor: primary } : {};
                     return (
                       <button
@@ -661,8 +711,8 @@ function ProductDetail() {
                         type="button"
                         onClick={() => { setSelectedFabric(fb); setErrorMsg(null); }}
                         className={`min-h-10 px-4 py-1.5 rounded-lg border text-sm font-medium transition-all ${
-                          active ? "shadow-sm border-transparent" : "border-input bg-background hover:border-foreground/45"
-                        }`}
+                          active ? "shadow-sm border-transparent" : "border-input bg-background"
+                        } ${oos ? "line-through opacity-45 cursor-not-allowed bg-neutral-100 dark:bg-neutral-800 text-muted-foreground border-dashed" : "hover:border-foreground/45"}`}
                         style={style}
                       >
                         {fb}

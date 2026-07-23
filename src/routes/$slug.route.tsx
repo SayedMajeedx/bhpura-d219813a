@@ -1,5 +1,5 @@
 import { createFileRoute, Outlet, Link, notFound, useNavigate, useLocation, useRouter } from "@tanstack/react-router";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { publicSupabase as supabase } from "@/integrations/supabase/client";
 import {
@@ -21,7 +21,13 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import { ShoppingBag, Languages, Minus, Plus, Trash2, X, User, Search, Menu, Home, PackageSearch, FileText, LogIn, Heart, Grid2X2, ChevronDown } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { ShoppingBag, Languages, Minus, Plus, Trash2, X, User, Search, Menu, Home, PackageSearch, FileText, LogIn, Heart, Grid2X2, ChevronDown, Sparkles } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { cloudflareImageUrl } from "@/lib/media-delivery";
 import { faviconType, resolveBrandFavicon, useDynamicFavicon } from "@/lib/favicon";
@@ -1196,26 +1202,16 @@ function SearchBar() {
   const navigate = useNavigate();
   const [q, setQ] = useState("");
   const [debounced, setDebounced] = useState("");
-  const [open, setOpen] = useState(false);
-  const [focused, setFocused] = useState(false);
-  const containerRef = React.useRef<HTMLDivElement>(null);
+  const [modalOpen, setModalOpen] = useState(false);
 
   React.useEffect(() => {
     const id = setTimeout(() => setDebounced(q.trim()), 200);
     return () => clearTimeout(id);
   }, [q]);
 
-  React.useEffect(() => {
-    const onDoc = (e: MouseEvent) => {
-      if (!containerRef.current?.contains(e.target as Node)) setOpen(false);
-    };
-    document.addEventListener("mousedown", onDoc);
-    return () => document.removeEventListener("mousedown", onDoc);
-  }, []);
-
   const { data, isFetching } = useQuery({
     queryKey: ["storefront", brand.slug, "live-search", debounced],
-    enabled: debounced.length >= 2,
+    enabled: modalOpen && debounced.length >= 2,
     queryFn: async () => {
       const pattern = `%${debounced.replace(/[%_]/g, (m: string) => `\\${m}`)}%`;
       const { data, error } = await supabase
@@ -1235,87 +1231,173 @@ function SearchBar() {
     staleTime: 15_000,
   });
 
+  const { data: categories = [] } = useQuery<any[]>({
+    queryKey: ["storefront", brand.slug, "categories"],
+    enabled: modalOpen,
+  });
+
+  const topCategories = useMemo(() => {
+    return categories.filter((c: any) => !c.parent_id).slice(0, 6);
+  }, [categories]);
+
   const results = data ?? [];
-  const showDropdown = focused && open && debounced.length >= 2;
 
   return (
-    <div ref={containerRef} className="relative w-full">
-      <form
-        role="search"
-        onSubmit={(e) => {
-          e.preventDefault();
-          const query = q.trim();
-          if (!query) return;
-          setOpen(false);
-          navigate({ to: "/$slug/search", params: { slug: brand.slug }, search: { q: query } });
-        }}
-        className="relative w-full"
-      >
+    <>
+      {/* Search Input Trigger inside the page headers */}
+      <div className="relative w-full cursor-pointer" onClick={() => setModalOpen(true)}>
         <Search className={`absolute top-1/2 -translate-y-1/2 h-4 w-4 opacity-60 ${lang === "ar" ? "right-3" : "left-3"}`} />
         <Input
-          value={q}
-          onChange={(e) => { setQ(e.target.value); setOpen(true); }}
-          onFocus={() => { setFocused(true); setOpen(true); }}
-          onBlur={() => setFocused(false)}
+          readOnly
           placeholder={t("ابحث عن منتج...", "Search for products...")}
-          className={`h-11 bg-white/70 dark:bg-black/20 border-black/10 ${lang === "ar" ? "pr-9" : "pl-9"}`}
-          inputMode="search"
-          enterKeyHint="search"
-          aria-label={t("ابحث عن منتج", "Search products")}
+          className={`h-11 cursor-pointer bg-white/70 dark:bg-black/20 border-black/10 select-none ${lang === "ar" ? "pr-9" : "pl-9"}`}
         />
-      </form>
+      </div>
 
-      {showDropdown && (
-        <div
-          className="absolute left-0 right-0 top-full mt-2 z-50 rounded-lg border shadow-xl bg-white dark:bg-neutral-900 max-h-[70vh] overflow-auto"
-          style={{ borderColor: "rgba(0,0,0,0.08)" }}
-          onMouseDown={(e) => e.preventDefault()}
+      {/* Premium backdrop-blurred modal dialog */}
+      <Dialog open={modalOpen} onOpenChange={setModalOpen}>
+        <DialogContent
+          className="sm:max-w-2xl gap-0 p-0 overflow-hidden bg-white/95 dark:bg-neutral-950/95 backdrop-blur-md border border-neutral-200/50 dark:border-neutral-800/50 shadow-2xl rounded-2xl [&>button]:text-neutral-500 [&>button]:hover:text-neutral-800 [&>button]:dark:text-neutral-400 [&>button]:dark:hover:text-neutral-100 [&>button]:top-5"
+          dir={lang === "ar" ? "rtl" : "ltr"}
         >
-          {isFetching && (
-            <div className="p-4 text-center text-sm text-muted-foreground">
-              {t("جارٍ البحث...", "Searching...")}
-            </div>
-          )}
-          {!isFetching && results.length === 0 && (
-            <div className="p-4 text-center text-sm text-muted-foreground">
-              {t("لا توجد نتائج مطابقة", "No products found")}
-            </div>
-          )}
-          {!isFetching && results.length > 0 && (
-            <ul className="divide-y" style={{ borderColor: "rgba(0,0,0,0.06)" }}>
-              {results.map((p) => {
-                const displayName = pickName(lang, p);
-                const price = p.product_variants?.[0]?.selling_price ?? 0;
-                const oldPrice = Number(p.product_variants?.[0]?.original_price ?? 0);
-                const imageUrl = p.image_url || p.media?.find((item) => item.type === "image")?.url || null;
-                return (
-                  <li key={p.id}>
-                    <Link
-                      to="/$slug/product/$id"
-                      params={{ slug: brand.slug, id: p.id }}
-                      onClick={() => { setOpen(false); setQ(""); }}
-                      className="flex items-center gap-3 px-3 py-2 hover:bg-black/5 dark:hover:bg-white/5"
-                    >
-                      <div className="h-12 w-12 shrink-0 rounded bg-muted overflow-hidden">
-                        {imageUrl && (
-                          <img src={cloudflareImageUrl(imageUrl, 120)} alt={displayName} className="h-full w-full object-cover" />
-                        )}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="text-sm font-medium truncate">{displayName}</div>
-                        <div className="flex items-baseline gap-2 text-xs" style={{ color: "var(--sf-heading)" }}>
-                          <span>{formatPrice(Number(price), currency, lang)}</span>{oldPrice > Number(price) && <span className="text-[10px] text-muted-foreground line-through">{formatPrice(oldPrice, currency, lang)}</span>}
+          <DialogHeader className="p-4 border-b border-neutral-200/50 dark:border-neutral-800/40 flex flex-row items-center gap-2">
+            <Search className="h-5 w-5 opacity-60 shrink-0" />
+            <DialogTitle className="sr-only">{t("البحث", "Search")}</DialogTitle>
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                const query = q.trim();
+                if (!query) return;
+                setModalOpen(false);
+                navigate({ to: "/$slug/search", params: { slug: brand.slug }, search: { q: query } });
+              }}
+              className="flex-1"
+            >
+              <input
+                autoFocus
+                value={q}
+                onChange={(e) => setQ(e.target.value)}
+                placeholder={t("اكتب اسم المنتج للبحث السريع...", "Type to search products...")}
+                className="w-full bg-transparent border-0 focus:outline-none focus:ring-0 text-base py-1 px-1 font-medium"
+              />
+            </form>
+            {q && (
+              <button
+                type="button"
+                onClick={() => setQ("")}
+                className="p-1 rounded-full hover:bg-neutral-200/60 dark:hover:bg-neutral-800/60 shrink-0 me-6"
+              >
+                <X className="h-4 w-4 opacity-70" />
+              </button>
+            )}
+          </DialogHeader>
+
+          <div className="max-h-[60vh] overflow-y-auto p-4 space-y-4">
+            {/* suggestions if query is too short */}
+            {debounced.length < 2 && (
+              <div className="space-y-3">
+                <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                  <Sparkles className="h-3.5 w-3.5 text-amber-500 animate-pulse" />
+                  <span>{t("اكتشف الأقسام المميزة", "Explore Featured Categories")}</span>
+                </div>
+                {topCategories.length > 0 ? (
+                  <div className="flex flex-wrap gap-2">
+                    {topCategories.map((cat: any) => {
+                      const catName = lang === "ar" ? cat.name_ar || cat.name_en : cat.name_en || cat.name_ar;
+                      return (
+                        <Link
+                          key={cat.id}
+                          to="/$slug/$category"
+                          params={{ slug: brand.slug, category: cat.slug }}
+                          onClick={() => setModalOpen(false)}
+                          className="px-3.5 py-1.5 rounded-full border text-xs font-medium bg-neutral-100 hover:bg-neutral-200/60 dark:bg-neutral-900 dark:hover:bg-neutral-800 transition-all cursor-pointer border-neutral-200/60 dark:border-neutral-800/40"
+                        >
+                          {catName}
+                        </Link>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="text-xs text-muted-foreground">
+                    {t("ابدأ بكتابة حرفين أو أكثر لبدء البحث الفوري.", "Type 2 or more characters to start instant searching.")}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* active search results or loader */}
+            {debounced.length >= 2 && (
+              <div className="space-y-2">
+                {isFetching && (
+                  <div className="space-y-3 py-2">
+                    {[1, 2, 3].map((i) => (
+                      <div key={i} className="flex items-center gap-3 animate-pulse">
+                        <div className="h-12 w-12 rounded bg-neutral-200 dark:bg-neutral-850 shrink-0" />
+                        <div className="flex-1 space-y-2 min-w-0">
+                          <div className="h-4 bg-neutral-200 dark:bg-neutral-850 rounded w-2/3" />
+                          <div className="h-3 bg-neutral-200 dark:bg-neutral-850 rounded w-1/4" />
                         </div>
                       </div>
-                    </Link>
-                  </li>
-                );
-              })}
-            </ul>
-          )}
-        </div>
-      )}
-    </div>
+                    ))}
+                  </div>
+                )}
+
+                {!isFetching && results.length === 0 && (
+                  <div className="py-8 text-center text-sm text-muted-foreground">
+                    {t("لا توجد نتائج مطابقة", "No products found matching your query")}
+                  </div>
+                )}
+
+                {!isFetching && results.length > 0 && (
+                  <ul className="divide-y divide-neutral-200/40 dark:divide-neutral-800/40">
+                    {results.map((p) => {
+                      const displayName = pickName(lang, p);
+                      const price = p.product_variants?.[0]?.selling_price ?? 0;
+                      const oldPrice = Number(p.product_variants?.[0]?.original_price ?? 0);
+                      const imageUrl = p.image_url || p.media?.find((item) => item.type === "image")?.url || null;
+                      const discount = oldPrice > price ? Math.round((1 - price / oldPrice) * 100) : 0;
+
+                      return (
+                        <li key={p.id} className="first:pt-0 last:pb-0 py-2.5">
+                          <Link
+                            to="/$slug/product/$id"
+                            params={{ slug: brand.slug, id: p.id }}
+                            onClick={() => { setModalOpen(false); setQ(""); }}
+                            className="flex items-center gap-3 group"
+                          >
+                            <div className="h-12 w-12 shrink-0 rounded-lg bg-neutral-100 dark:bg-neutral-900 border border-neutral-200/50 dark:border-neutral-800/40 overflow-hidden relative">
+                              {imageUrl && (
+                                <img src={cloudflareImageUrl(imageUrl, 120)} alt={displayName} className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                              )}
+                            </div>
+                            <div className="flex-1 min-w-0 text-start">
+                              <div className="text-sm font-semibold truncate group-hover:text-amber-500 transition-colors" style={{ color: "var(--sf-heading)" }}>{displayName}</div>
+                              <div className="flex items-center gap-2 mt-0.5 text-xs text-muted-foreground">
+                                <span className="font-semibold text-neutral-900 dark:text-neutral-100">{formatPrice(Number(price), currency, lang)}</span>
+                                {oldPrice > Number(price) && (
+                                  <>
+                                    <span className="line-through text-[10px]">{formatPrice(oldPrice, currency, lang)}</span>
+                                    {discount > 0 && (
+                                      <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-red-100 text-red-700 dark:bg-red-950/45 dark:text-red-400 font-medium">
+                                        {discount}% {t("خصم", "OFF")}
+                                      </span>
+                                    )}
+                                  </>
+                                )}
+                              </div>
+                            </div>
+                          </Link>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                )}
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
 
