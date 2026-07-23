@@ -665,6 +665,7 @@ function OrderDetail() {
   const [invoicePreviewOpen, setInvoicePreviewOpen] = useState(false);
   const [hasSavedDraft, setHasSavedDraft] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [adminOverrideChecked, setAdminOverrideChecked] = useState(false);
   const [promoInput, setPromoInput] = useState("");
   const [appliedPromo, setAppliedPromo] = useState<{
     code: string;
@@ -1405,6 +1406,11 @@ function OrderDetail() {
     if (!ok) toast.error(t("orders.popupBlocked"));
   };
 
+  const method = String(order?.payment_method || "").toLowerCase();
+  const isCod = ["cash", "cod"].includes(method);
+  const isUnpaid = (order?.payment_status ?? "unpaid") === "unpaid";
+  const isPickup = String(order?.fulfillment_method || "").toLowerCase() === "pickup";
+
   return (
     <div className="mx-auto max-w-[1500px] p-3 sm:p-5 lg:p-6">
       <div className="no-print mb-4 flex flex-wrap items-center justify-between gap-3">
@@ -1590,8 +1596,6 @@ function OrderDetail() {
                   <SelectContent>
                     <SelectItem value="draft">{t("status.draft")}</SelectItem>
                     <SelectItem value="confirmed">{t("status.confirmed")}</SelectItem>
-                    <SelectItem value="paid">{t("status.paid")}</SelectItem>
-                    <SelectItem value="shipped">{t("status.shipped")}</SelectItem>
                     <SelectItem value="completed">{t("status.completed")}</SelectItem>
                     <SelectItem value="cancelled">{t("status.cancelled")}</SelectItem>
                   </SelectContent>
@@ -1619,6 +1623,115 @@ function OrderDetail() {
                     <SelectItem value="cod">{t("payment.cod")}</SelectItem>
                   </SelectContent>
                 </Select>
+              </div>
+
+              <div className="lg:hidden col-span-1 sm:col-span-2 border-t border-dashed border-border pt-3 mt-1 space-y-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {/* Payment block */}
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                      {t("orderDetail.paymentStatus")}
+                    </Label>
+                    <Select
+                      value={order.payment_status ?? "unpaid"}
+                      onValueChange={(v) => {
+                        const updatedFulfillment = (v === "paid" && (!order.fulfillment_status || ["ON_HOLD", "on_hold", "unassigned"].includes(order.fulfillment_status)))
+                          ? "NEEDS_PACKING"
+                          : order.fulfillment_status;
+                        setOrder({ ...order, payment_status: v, fulfillment_status: updatedFulfillment });
+                      }}
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {PAYMENT_BADGE_VALUES.map((v) => (
+                          <SelectItem key={v} value={v}>
+                            {t(`payStatus.${v}`)}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Fulfillment block */}
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between gap-2">
+                      <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                        {lang === "ar" ? "حالة التجهيز والشحن" : "Fulfillment Status"}
+                      </Label>
+                      {isPickup ? (
+                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200 dark:bg-indigo-950/30 dark:text-indigo-300 dark:border-indigo-800">
+                          🏪 {lang === "ar" ? "استلام" : "Pickup"}
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-sky-50 text-sky-700 border border-sky-200 dark:bg-sky-950/30 dark:text-sky-300 dark:border-sky-800">
+                          🚚 {lang === "ar" ? "توصيل" : "Delivery"}
+                        </span>
+                      )}
+                    </div>
+                    <Select
+                      value={order.fulfillment_status ?? "ON_HOLD"}
+                      onValueChange={(v) => {
+                        const blocksFulfillment = ["SHIPPED", "NEEDS_PACKING"].includes(v);
+                        if (blocksFulfillment && isUnpaid && !isCod && !adminOverrideChecked) {
+                          toast.error(
+                            lang === "ar"
+                              ? "خطأ: لا يمكن شحن أو تجهيز طلب غير مدفوع! يرجى تأكيد الدفع أو تفعيل خيار تجاوز التحقق."
+                              : "Error: Cannot ship or pack an unpaid order! Please approve payment or toggle the admin override."
+                          );
+                          return;
+                        }
+                        setOrder({ ...order, fulfillment_status: v });
+                      }}
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="ON_HOLD">{lang === "ar" ? "قيد الانتظار" : "On Hold"}</SelectItem>
+                        <SelectItem value="NEEDS_PACKING">{lang === "ar" ? "بحاجة للتعبئة" : "Needs Packing"}</SelectItem>
+                        <SelectItem value="READY_FOR_PICKUP">{lang === "ar" ? "جاهز للاستلام" : "Ready for Pickup"}</SelectItem>
+                        <SelectItem value="SHIPPED">{lang === "ar" ? "تم الشحن" : "Shipped"}</SelectItem>
+                        <SelectItem value="COMPLETED">{lang === "ar" ? "مكتمل" : "Completed"}</SelectItem>
+                        <SelectItem value="CANCELLED">{lang === "ar" ? "ملغي" : "Cancelled"}</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                {isUnpaid && !isCod && (
+                  <div className="flex flex-wrap items-center justify-between gap-3 bg-muted/20 p-2.5 rounded-lg border">
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        id="admin-override-checkbox-mobile"
+                        checked={adminOverrideChecked}
+                        onChange={(e) => setAdminOverrideChecked(e.target.checked)}
+                        className="rounded border-gray-300 text-primary focus:ring-primary h-3.5 w-3.5 cursor-pointer"
+                      />
+                      <label htmlFor="admin-override-checkbox-mobile" className="text-xs text-muted-foreground select-none cursor-pointer">
+                        {lang === "ar" ? "تجاوز التحقق من الدفع يدوياً" : "Override unpaid check"}
+                      </label>
+                    </div>
+
+                    <Button
+                      type="button"
+                      size="sm"
+                      className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold flex items-center justify-center gap-1 h-7 px-2.5"
+                      onClick={() => {
+                        const updatedFulfillment = (!order.fulfillment_status || ["ON_HOLD", "on_hold", "unassigned"].includes(order.fulfillment_status))
+                          ? "NEEDS_PACKING"
+                          : order.fulfillment_status;
+                        setOrder({ ...order, payment_status: "paid", fulfillment_status: updatedFulfillment });
+                        toast.success(lang === "ar" ? "تم تسجيل الدفع بنجاح!" : "Order payment marked as Paid!");
+                      }}
+                    >
+                      <CheckCircle2 className="h-3 w-3" />
+                      {lang === "ar" ? "تسجيل كمدفوع" : "Mark as Paid"}
+                    </Button>
+                  </div>
+                )}
               </div>
             </div>
             {order.customer_id &&
@@ -2251,8 +2364,6 @@ function OrderDetail() {
                     <SelectContent>
                       <SelectItem value="draft">{t("status.draft")}</SelectItem>
                       <SelectItem value="confirmed">{t("status.confirmed")}</SelectItem>
-                      <SelectItem value="paid">{t("status.paid")}</SelectItem>
-                      <SelectItem value="shipped">{t("status.shipped")}</SelectItem>
                       <SelectItem value="completed">{t("status.completed")}</SelectItem>
                       <SelectItem value="cancelled">{t("status.cancelled")}</SelectItem>
                     </SelectContent>
@@ -2514,8 +2625,11 @@ function OrderDetail() {
                     onChange={(e) => setOrder({ ...order, advance_paid: Number(e.target.value) })}
                   />
                 </div>
-                <div>
-                  <Label>{t("orderDetail.paymentStatus")}</Label>
+                {/* 1. Payment Control Block */}
+                <div className="space-y-1.5 border-t border-border pt-4">
+                  <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    {t("orderDetail.paymentStatus")}
+                  </Label>
                   <Select
                     value={order.payment_status ?? "unpaid"}
                     onValueChange={(v) => {
@@ -2525,7 +2639,7 @@ function OrderDetail() {
                       setOrder({ ...order, payment_status: v, fulfillment_status: updatedFulfillment });
                     }}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className="w-full">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -2536,6 +2650,85 @@ function OrderDetail() {
                       ))}
                     </SelectContent>
                   </Select>
+
+                  {isUnpaid && !isCod && (
+                    <Button
+                      type="button"
+                      size="sm"
+                      className="mt-1 w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold flex items-center justify-center gap-1.5 shadow-sm"
+                      onClick={() => {
+                        const updatedFulfillment = (!order.fulfillment_status || ["ON_HOLD", "on_hold", "unassigned"].includes(order.fulfillment_status))
+                          ? "NEEDS_PACKING"
+                          : order.fulfillment_status;
+                        setOrder({ ...order, payment_status: "paid", fulfillment_status: updatedFulfillment });
+                        toast.success(lang === "ar" ? "تم تسجيل الدفع بنجاح!" : "Order payment marked as Paid!");
+                      }}
+                    >
+                      <CheckCircle2 className="h-3.5 w-3.5" />
+                      {lang === "ar" ? "تسجيل كمدفوع" : "Mark as Paid"}
+                    </Button>
+                  )}
+                </div>
+
+                {/* 2. Fulfillment Control Block */}
+                <div className="space-y-2 border-t border-border pt-4">
+                  <div className="flex items-center justify-between gap-2">
+                    <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                      {lang === "ar" ? "حالة التجهيز والشحن" : "Fulfillment Status"}
+                    </Label>
+                    {isPickup ? (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200 dark:bg-indigo-950/30 dark:text-indigo-300 dark:border-indigo-800">
+                        🏪 {lang === "ar" ? "استلام" : "Pickup"}
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-sky-50 text-sky-700 border border-sky-200 dark:bg-sky-950/30 dark:text-sky-300 dark:border-sky-800">
+                        🚚 {lang === "ar" ? "توصيل" : "Delivery"}
+                      </span>
+                    )}
+                  </div>
+
+                  <Select
+                    value={order.fulfillment_status ?? "ON_HOLD"}
+                    onValueChange={(v) => {
+                      const blocksFulfillment = ["SHIPPED", "NEEDS_PACKING"].includes(v);
+                      if (blocksFulfillment && isUnpaid && !isCod && !adminOverrideChecked) {
+                        toast.error(
+                          lang === "ar"
+                            ? "خطأ: لا يمكن شحن أو تجهيز طلب غير مدفوع! يرجى تأكيد الدفع أو تفعيل خيار تجاوز التحقق."
+                            : "Error: Cannot ship or pack an unpaid order! Please approve payment or toggle the admin override."
+                        );
+                        return;
+                      }
+                      setOrder({ ...order, fulfillment_status: v });
+                    }}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="ON_HOLD">{lang === "ar" ? "قيد الانتظار" : "On Hold"}</SelectItem>
+                      <SelectItem value="NEEDS_PACKING">{lang === "ar" ? "بحاجة للتعبئة" : "Needs Packing"}</SelectItem>
+                      <SelectItem value="READY_FOR_PICKUP">{lang === "ar" ? "جاهز للاستلام" : "Ready for Pickup"}</SelectItem>
+                      <SelectItem value="SHIPPED">{lang === "ar" ? "تم الشحن" : "Shipped"}</SelectItem>
+                      <SelectItem value="COMPLETED">{lang === "ar" ? "مكتمل" : "Completed"}</SelectItem>
+                      <SelectItem value="CANCELLED">{lang === "ar" ? "ملغي" : "Cancelled"}</SelectItem>
+                    </SelectContent>
+                  </Select>
+
+                  {isUnpaid && !isCod && (
+                    <div className="mt-2 flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        id="admin-override-checkbox"
+                        checked={adminOverrideChecked}
+                        onChange={(e) => setAdminOverrideChecked(e.target.checked)}
+                        className="rounded border-gray-300 text-primary focus:ring-primary h-3.5 w-3.5 cursor-pointer"
+                      />
+                      <label htmlFor="admin-override-checkbox" className="text-xs text-muted-foreground select-none cursor-pointer">
+                        {lang === "ar" ? "تجاوز التحقق من الدفع يدوياً" : "Override unpaid payment check"}
+                      </label>
+                    </div>
+                  )}
                 </div>
                 <div className="space-y-1 border-t border-border pt-3 text-sm">
                   <Row
@@ -2862,8 +3055,9 @@ function InvoicePreview({
         {/* Browser print overrides removed — PDF is generated via html2pdf directly from the live DOM,
             preserving the exact colors and typography configured by the user. */}
         <div
-          className="pdf-invoice-body p-4 sm:p-8 md:p-10 print:p-10"
+          className="pdf-invoice-body p-4 sm:p-8 md:p-10 print:p-10 relative"
           style={{
+            position: "relative",
             borderTop:
               template === "minimal"
                 ? "0"
@@ -2872,6 +3066,28 @@ function InvoicePreview({
                   : `8px solid ${color}`,
           }}
         >
+          {/* Payment Status Ink Stamp Watermark */}
+          {order.payment_status === "paid" ? (
+            <div className="absolute top-[10%] right-[10%] md:right-[15%] rotate-[-12deg] select-none pointer-events-none opacity-20 print:opacity-30 z-10">
+              <div className="border-[6px] border-double border-emerald-600 text-emerald-600 font-extrabold text-2xl md:text-3xl tracking-widest uppercase py-2 px-6 rounded-xl font-sans flex flex-col items-center justify-center leading-none">
+                <span>{invoiceLang === "ar" ? "مدفوع" : "PAID"}</span>
+                {order.updated_at && (
+                  <span className="text-[10px] md:text-xs font-semibold tracking-normal mt-1 opacity-90 font-mono">
+                    {new Date(order.updated_at).toLocaleDateString(invoiceLang === "ar" ? "ar-BH" : "en-BH")}
+                  </span>
+                )}
+              </div>
+            </div>
+          ) : (
+            <div className="absolute top-[10%] right-[10%] md:right-[15%] rotate-[-12deg] select-none pointer-events-none opacity-20 print:opacity-30 z-10">
+              <div className="border-[6px] border-double border-rose-600 text-rose-600 font-extrabold text-2xl md:text-3xl tracking-widest uppercase py-2 px-6 rounded-xl font-sans flex flex-col items-center justify-center leading-none">
+                <span>{invoiceLang === "ar" ? "غير مدفوع" : "UNPAID"}</span>
+                <span className="text-[9px] md:text-[10px] font-semibold tracking-normal mt-1 uppercase font-mono text-center">
+                  {invoiceLang === "ar" ? "الرجاء التحويل البنكي" : "Bank Transfer Req."}
+                </span>
+              </div>
+            </div>
+          )}
           {/*
             Layout rule:
             - EN (LTR): brand block on the LEFT, invoice meta on the RIGHT

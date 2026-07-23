@@ -49,6 +49,8 @@ type OrderRow = {
   invoice_number: number;
   order_date: string;
   status: string;
+  payment_status: string | null;
+  fulfillment_status: string | null;
   total: number;
   currency: string;
   order_items: Array<{ id: string; description: string; quantity: number; unit_price: number }>;
@@ -74,14 +76,58 @@ type Address = {
   is_default: boolean;
 };
 
-function statusMeta(status: string, isAr: boolean) {
+function statusMeta(status: string, paymentStatus: string | null, fulfillmentStatus: string | null, isAr: boolean) {
   const s = status.toLowerCase();
+  const pay = String(paymentStatus || "unpaid").toLowerCase();
+  const ful = String(fulfillmentStatus || "ON_HOLD").toUpperCase();
+
+  // If order is cancelled, return Cancelled directly
+  if (s === "cancelled") {
+    return {
+      label: isAr ? "ملغى" : "Cancelled",
+      tone: "bg-red-50 text-red-800 dark:bg-rose-950/30 dark:text-rose-400 border border-rose-200/50"
+    };
+  }
+
+  // Decoupled status mappings:
+  if (ful === "READY_FOR_PICKUP") {
+    return {
+      label: isAr ? "جاهز للاستلام" : "Ready for Pickup",
+      tone: "bg-indigo-50 text-indigo-800 dark:bg-indigo-950/30 dark:text-indigo-400 border border-indigo-200/50"
+    };
+  }
+  if (ful === "SHIPPED") {
+    return {
+      label: isAr ? "خرج للتوصيل" : "Out for Delivery",
+      tone: "bg-sky-50 text-sky-800 dark:bg-sky-950/30 dark:text-sky-400 border border-sky-200/50"
+    };
+  }
+  if (ful === "COMPLETED" || s === "completed") {
+    return {
+      label: isAr ? "مكتمل" : "Completed",
+      tone: "bg-emerald-50 text-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-400 border border-emerald-200/50"
+    };
+  }
+  if (pay === "paid" && ful === "NEEDS_PACKING") {
+    return {
+      label: isAr ? "جاري تجهيز الطلب" : "Preparing Order",
+      tone: "bg-blue-50 text-blue-800 dark:bg-blue-950/30 dark:text-blue-400 border border-blue-200/50"
+    };
+  }
+  if (pay === "unpaid" && (ful === "ON_HOLD" || ful === "NEEDS_PACKING")) {
+    return {
+      label: isAr ? "جاري معالجة الدفع" : "Processing Payment",
+      tone: "bg-amber-50 text-amber-800 dark:bg-amber-950/30 dark:text-amber-400 border border-amber-200/50"
+    };
+  }
+
+  // Fallback map
   const map: Record<string, { ar: string; en: string; tone: string }> = {
-    pending:   { ar: "قيد المعالجة", en: "Pending",   tone: "bg-amber-50 text-amber-800 dark:bg-amber-950/30 dark:text-amber-400 border border-amber-200/50" },
+    pending:   { ar: "جاري معالجة الدفع", en: "Processing Payment", tone: "bg-amber-50 text-amber-800 dark:bg-amber-950/30 dark:text-amber-400 border border-amber-200/50" },
     confirmed: { ar: "مؤكد",         en: "Confirmed", tone: "bg-blue-50 text-blue-800 dark:bg-blue-950/30 dark:text-blue-400 border border-blue-200/50" },
     paid:      { ar: "مدفوع",        en: "Paid",      tone: "bg-emerald-50 text-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-400 border border-emerald-200/50" },
-    shipped:   { ar: "تم الشحن",     en: "Shipped",   tone: "bg-indigo-50 text-indigo-800 dark:bg-indigo-950/30 dark:text-indigo-400 border border-indigo-200/50" },
-    completed: { ar: "تم التوصيل",   en: "Delivered", tone: "bg-emerald-50 text-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-400 border border-emerald-200/50" },
+    shipped:   { ar: "خرج للتوصيل",  en: "Out for Delivery", tone: "bg-sky-50 text-sky-800 dark:bg-sky-950/30 dark:text-sky-400 border border-sky-200/50" },
+    completed: { ar: "مكتمل",        en: "Completed", tone: "bg-emerald-50 text-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-400 border border-emerald-200/50" },
     cancelled: { ar: "ملغى",         en: "Cancelled", tone: "bg-red-50 text-red-800 dark:bg-red-950/30 dark:text-red-400 border border-red-200/50" },
     refunded:  { ar: "مرتجع",        en: "Refunded",  tone: "bg-neutral-100 text-neutral-800 dark:bg-neutral-850 dark:text-neutral-300 border border-neutral-200/50" },
   };
@@ -97,9 +143,23 @@ function getInitials(name: string) {
   return name.slice(0, 2).toUpperCase();
 }
 
-function OrderTimelineTracker({ status, isAr, t }: { status: string; isAr: boolean; t: any }) {
+function OrderTimelineTracker({
+  status,
+  paymentStatus,
+  fulfillmentStatus,
+  isAr,
+  t,
+}: {
+  status: string;
+  paymentStatus: string | null;
+  fulfillmentStatus: string | null;
+  isAr: boolean;
+  t: any;
+}) {
   const currentStatus = status.toLowerCase();
-  
+  const pay = String(paymentStatus || "unpaid").toLowerCase();
+  const ful = String(fulfillmentStatus || "ON_HOLD").toUpperCase();
+
   const steps = [
     { key: "pending", labelAr: "تم الاستلام", labelEn: "Placed" },
     { key: "confirmed", labelAr: "تأكيد الطلب", labelEn: "Confirmed" },
@@ -108,14 +168,14 @@ function OrderTimelineTracker({ status, isAr, t }: { status: string; isAr: boole
   ];
 
   let activeIndex = 0;
-  if (currentStatus === "confirmed" || currentStatus === "paid") {
-    activeIndex = 1;
-  } else if (currentStatus === "shipped") {
-    activeIndex = 2;
-  } else if (currentStatus === "completed") {
-    activeIndex = 3;
-  } else if (currentStatus === "cancelled" || currentStatus === "refunded") {
+  if (currentStatus === "cancelled" || currentStatus === "refunded") {
     activeIndex = -1;
+  } else if (ful === "COMPLETED" || currentStatus === "completed") {
+    activeIndex = 3;
+  } else if (ful === "SHIPPED") {
+    activeIndex = 2;
+  } else if (ful === "NEEDS_PACKING" || ful === "READY_FOR_PICKUP" || currentStatus === "confirmed" || pay === "paid") {
+    activeIndex = 1;
   }
 
   if (activeIndex === -1) {
@@ -473,7 +533,7 @@ function OrdersSection({
   return (
     <div className="space-y-4">
       {orders.map((o) => {
-        const st = statusMeta(o.status, isAr);
+        const st = statusMeta(o.status, o.payment_status, o.fulfillment_status, isAr);
         const isExpanded = !!expandedOrder[o.id];
         const date = new Date(o.order_date).toLocaleDateString(isAr ? "ar-BH" : "en-BH", {
           year: "numeric", month: "short", day: "numeric",
@@ -503,7 +563,7 @@ function OrdersSection({
             </div>
 
             {/* Stepper tracking progress timeline */}
-            <OrderTimelineTracker status={o.status} isAr={isAr} t={t} />
+            <OrderTimelineTracker status={o.status} paymentStatus={o.payment_status} fulfillmentStatus={o.fulfillment_status} isAr={isAr} t={t} />
 
             {/* Expander list control */}
             <div className="mt-5 pt-3 border-t border-border/40">
