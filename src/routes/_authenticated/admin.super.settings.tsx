@@ -267,13 +267,13 @@ function SuperAdminSettings() {
   }
 
   return (
-    <div className="space-y-8 p-6 md:p-10 max-w-4xl mx-auto" dir={lang === "ar" ? "rtl" : "ltr"}>
+    <div className="mx-auto max-w-4xl space-y-6 p-4 sm:p-6 lg:p-8 animate-fade-in" dir={lang === "ar" ? "rtl" : "ltr"}>
       {/* Premium Header bar */}
-      <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between border-b border-zinc-100 dark:border-zinc-900 pb-5">
+      <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between border-b border-border/60 pb-5">
         <div>
-          <h1 className="text-2xl font-display font-semibold text-zinc-900 dark:text-zinc-100 flex items-center gap-2">
-            <Sliders className="h-6 w-6 text-primary" />
-            {lang === "ar" ? "إعدادات المنصة العامة" : "Platform Master Settings"}
+          <h1 className="font-display text-4xl font-extrabold tracking-tight bg-clip-text bg-gradient-to-r from-slate-900 via-slate-800 to-slate-950 dark:from-slate-50 dark:to-slate-300 flex items-center gap-2">
+            <Sliders className="h-8 w-8 text-primary" />
+            <span>{lang === "ar" ? "إعدادات المنصة العامة" : "Platform Master Settings"}</span>
           </h1>
           <p className="text-xs text-muted-foreground mt-1">
             {lang === "ar" 
@@ -285,8 +285,8 @@ function SuperAdminSettings() {
 
       <form onSubmit={handleSaveSettings} className="space-y-6">
         {/* Row 1: Logo Asset Customization */}
-        <Card className="border-zinc-100 dark:border-zinc-800 shadow-sm overflow-hidden bg-white/40 dark:bg-zinc-950/20 backdrop-blur-md">
-          <CardHeader>
+        <Card className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm">
+          <CardHeader className="pb-3 border-b border-border/60">
             <CardTitle className="text-sm font-medium text-zinc-800 dark:text-zinc-200 flex items-center gap-2">
               <Globe className="h-4 w-4 text-primary" />
               {lang === "ar" ? "شعار المنصة الرئيسي (Whitelabel Assets)" : "Platform Master Logo Asset"}
@@ -360,8 +360,8 @@ function SuperAdminSettings() {
         </Card>
 
         {/* Row 2: Standard and Promotional Pricing Configuration */}
-        <Card className="border-zinc-100 dark:border-zinc-800 shadow-sm bg-white/40 dark:bg-zinc-950/20 backdrop-blur-md">
-          <CardHeader>
+        <Card className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm">
+          <CardHeader className="pb-3 border-b border-border/60">
             <CardTitle className="text-sm font-medium text-zinc-800 dark:text-zinc-200 flex items-center gap-2">
               <DollarSign className="h-4 w-4 text-primary" />
               {lang === "ar" ? "تكوين أسعار التفعيل (BHD)" : "Onboarding Package Pricing"}
@@ -420,8 +420,8 @@ function SuperAdminSettings() {
         </Card>
 
         {/* Row 2.5: BenefitPay Merchant Settings */}
-        <Card className="border-zinc-100 dark:border-zinc-800 shadow-sm overflow-hidden bg-white/40 dark:bg-zinc-950/20 backdrop-blur-md">
-          <CardHeader>
+        <Card className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm">
+          <CardHeader className="pb-3 border-b border-border/60">
             <CardTitle className="text-sm font-medium text-zinc-800 dark:text-zinc-200 flex items-center gap-2">
               <QrCode className="h-4 w-4 text-primary" />
               {lang === "ar" ? "إعدادات حساب بنفت بي (BenefitPay)" : "BenefitPay Merchant Settings"}
@@ -521,8 +521,8 @@ function SuperAdminSettings() {
         </Card>
 
         {/* Row 3: Support Contact Attribution */}
-        <Card className="border-zinc-100 dark:border-zinc-800 shadow-sm bg-white/40 dark:bg-zinc-950/20 backdrop-blur-md">
-          <CardHeader>
+        <Card className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm">
+          <CardHeader className="pb-3 border-b border-border/60">
             <CardTitle className="text-sm font-medium text-zinc-800 dark:text-zinc-200 flex items-center gap-2">
               <Phone className="h-4 w-4 text-primary" />
               {lang === "ar" ? "قنوات التواصل والدعم" : "Attribution & Support Settings"}
@@ -580,7 +580,7 @@ function SuperAdminSettings() {
           <Button
             type="submit"
             disabled={submitting}
-            className="h-11 px-8 gap-2 bg-[#B76E79] hover:bg-[#a35e69] text-white font-medium text-xs uppercase tracking-wider transition-colors shadow-md shrink-0"
+            className="h-11 px-8 gap-2 bg-primary hover:bg-primary/90 text-white font-semibold text-xs uppercase tracking-wider shadow-sm transition-all duration-200 hover:shadow hover:scale-[1.01] active:scale-95 shrink-0"
           >
             {submitting ? (
               <Loader2 className="h-4 w-4 animate-spin" />

@@ -127,7 +127,7 @@ function OrderErrorBoundary({ error }: { error?: Error }) {
   const { slug } = Route.useParams();
   return (
     <div className="p-8 max-w-lg mx-auto">
-      <Card className="p-8 text-center space-y-3">
+      <Card className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm p-8 text-center space-y-3">
         <h2 className="text-xl font-display">Order</h2>
         <p className="text-muted-foreground">
           {error?.message || "This order could not be loaded. It may have been deleted."}
@@ -331,7 +331,7 @@ function CourierOrderView({ order, slug, onUpdated }: { order: any; slug: string
   return (
     <div className="p-4 sm:p-6 max-w-3xl mx-auto space-y-4">
       <Link to="/admin/b/$slug/orders" params={{ slug }} className="text-sm text-muted-foreground">← {lang === "ar" ? "الطلبات المسندة" : "Assigned orders"}</Link>
-      <Card className="p-5 space-y-4">
+      <Card className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm p-5 sm:p-6 space-y-4">
         <div className="flex items-start justify-between gap-3">
           <div><p className="text-xs text-muted-foreground">{lang === "ar" ? "طلب التوصيل" : "Delivery order"}</p><h1 className="text-2xl font-display">#{order.invoice_number}</h1></div>
           <div className="flex flex-col items-end gap-2">
@@ -885,7 +885,7 @@ function OrderDetail() {
   if (orderQ.isError) {
     return (
       <div className="mx-auto max-w-2xl p-6 sm:p-8">
-        <Card className="space-y-4 p-6">
+        <Card className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm p-6 space-y-4">
           <h1 className="text-xl font-semibold">
             {lang === "ar" ? "تعذر فتح الطلب" : "Unable to open this order"}
           </h1>
@@ -1435,14 +1435,15 @@ function OrderDetail() {
                 lang={lang}
                 onDone={() => qc.invalidateQueries({ queryKey: ["order", id] })}
               />
-              <Button variant="outline" onClick={copyLink}>
+              <Button variant="outline" onClick={copyLink} className="shadow-sm transition-all duration-200 hover:shadow hover:scale-[1.01] active:scale-95">
                 <LinkIcon className="h-4 w-4 mr-2" /> {t("orders.copyLink")}
               </Button>
-              <Button variant="outline" onClick={printReceipt}>
+              <Button variant="outline" onClick={printReceipt} className="shadow-sm transition-all duration-200 hover:shadow hover:scale-[1.01] active:scale-95">
                 <Receipt className="h-4 w-4 mr-2" /> {t("orders.printReceipt")}
               </Button>
               <Button
                 variant="outline"
+                className="shadow-sm transition-all duration-200 hover:shadow hover:scale-[1.01] active:scale-95"
                 onClick={async () => {
                   try {
                     const el = document.querySelector<HTMLElement>(".printable-invoice");
@@ -1460,7 +1461,7 @@ function OrderDetail() {
           )}
           {isReadOnly ? (
             isAdmin && (
-              <Button variant="outline" onClick={() => setEditingUnlocked(true)}>
+              <Button variant="outline" onClick={() => setEditingUnlocked(true)} className="shadow-sm transition-all duration-200 hover:shadow hover:scale-[1.01] active:scale-95">
                 <Unlock className="h-4 w-4 mr-2" />
                 {lang === "ar" ? "فتح للتعديل" : "Unlock for editing"}
               </Button>
@@ -1469,7 +1470,7 @@ function OrderDetail() {
             <Button
               onClick={save}
               disabled={saving}
-              className={`${isCreationMode ? "min-w-48" : ""} lg:hidden`}
+              className={`${isCreationMode ? "min-w-48" : ""} lg:hidden shadow-sm transition-all duration-200 hover:shadow hover:scale-[1.01] active:scale-95`}
             >
               {saving ? (
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />

@@ -85,29 +85,48 @@ function CustomerProfilePage() {
     },
   });
 
-  if (customerQ.isLoading) return <div className="p-8">{lang === "ar" ? "جاري تحميل ملف العميل…" : "Loading customer profile…"}</div>;
+  if (customerQ.isLoading) return <div className="p-8 text-center text-muted-foreground">{lang === "ar" ? "جاري تحميل ملف العميل…" : "Loading customer profile…"}</div>;
   if (!customerQ.data) {
-    return <div className="mx-auto max-w-xl p-8"><Card className="p-8 text-center"><UserRound className="mx-auto mb-3 h-10 w-10 text-muted-foreground" /><h1 className="font-display text-2xl">{lang === "ar" ? "ملف العميل غير موجود" : "Customer profile not found"}</h1><Button asChild className="mt-5"><Link to="/admin/b/$slug/customers" params={{ slug }}>{lang === "ar" ? "العودة إلى العملاء" : "Back to customers"}</Link></Button></Card></div>;
+    return (
+      <div className="mx-auto max-w-xl p-8 animate-fade-in">
+        <Card className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm p-8 text-center">
+          <UserRound className="mx-auto mb-3 h-10 w-10 text-muted-foreground animate-pulse" />
+          <h1 className="font-display text-2xl font-bold">{lang === "ar" ? "ملف العميل غير موجود" : "Customer profile not found"}</h1>
+          <Button asChild className="mt-5 shadow-sm transition-all duration-200 hover:shadow hover:scale-[1.01] active:scale-95">
+            <Link to="/admin/b/$slug/customers" params={{ slug }}>{lang === "ar" ? "العودة إلى العملاء" : "Back to customers"}</Link>
+          </Button>
+        </Card>
+      </div>
+    );
   }
 
   const customer = customerQ.data;
   const orders = ordersQ.data ?? [];
 
   return (
-    <div className="mx-auto max-w-7xl space-y-6 p-4 sm:p-6 lg:p-8" dir={lang === "ar" ? "rtl" : "ltr"}>
+    <div className="mx-auto max-w-7xl space-y-6 p-4 sm:p-6 lg:p-8 animate-fade-in" dir={lang === "ar" ? "rtl" : "ltr"}>
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
         <div>
-          <Link to="/admin/b/$slug/customers" params={{ slug }} className="mb-3 inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"><ArrowLeft className="h-4 w-4 rtl:rotate-180" />{lang === "ar" ? "العودة إلى العملاء" : "Back to customers"}</Link>
-          <h1 className="font-display text-3xl sm:text-4xl">{customer.name}</h1>
-          <p className="mt-1 text-sm text-muted-foreground">{lang === "ar" ? `${orders.length} طلب مرتبط بهذا العميل` : `${orders.length} order${orders.length === 1 ? "" : "s"} linked to this customer`}</p>
+          <Link to="/admin/b/$slug/customers" params={{ slug }} className="mb-3 inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
+            <ArrowLeft className="h-4 w-4 rtl:rotate-180" />{lang === "ar" ? "العودة إلى العملاء" : "Back to customers"}
+          </Link>
+          <h1 className="font-display text-4xl font-extrabold tracking-tight bg-clip-text bg-gradient-to-r from-slate-900 via-slate-800 to-slate-950 dark:from-slate-50 dark:to-slate-300">{customer.name}</h1>
+          <p className="mt-1.5 text-sm text-muted-foreground">{lang === "ar" ? `${orders.length} طلب مرتبط بهذا العميل` : `${orders.length} order${orders.length === 1 ? "" : "s"} linked to this customer`}</p>
         </div>
-        <Button onClick={() => setEditing(true)}><Pencil className="h-4 w-4" />{lang === "ar" ? "تعديل الملف" : "Edit Profile"}</Button>
+        <Button onClick={() => setEditing(true)} className="shadow-sm transition-all duration-200 hover:shadow hover:scale-[1.01] active:scale-95">
+          <Pencil className="h-4 w-4 me-2" />{lang === "ar" ? "تعديل الملف" : "Edit Profile"}
+        </Button>
       </div>
 
       <div className="grid items-start gap-6 lg:grid-cols-[340px_minmax(0,1fr)]">
         <div className="space-y-5">
-          <Card className="overflow-hidden">
-            <div className="bg-primary/5 p-5"><div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary"><UserRound className="h-6 w-6" /></div><h2 className="font-display text-xl">{lang === "ar" ? "بيانات العميل" : "Customer Details"}</h2></div>
+          <Card className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm">
+            <div className="bg-primary/5 p-5 border-b border-border/50">
+              <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
+                <UserRound className="h-6 w-6" />
+              </div>
+              <h2 className="font-display text-xl font-bold">{lang === "ar" ? "بيانات العميل" : "Customer Details"}</h2>
+            </div>
             <div className="space-y-4 p-5 text-sm">
               <Detail icon={Phone} label={lang === "ar" ? "الهاتف" : "Phone"} value={customer.phone} ltr />
               <Detail icon={Mail} label={lang === "ar" ? "البريد الإلكتروني" : "Email"} value={customer.email} ltr />
@@ -115,7 +134,7 @@ function CustomerProfilePage() {
             </div>
           </Card>
 
-          <Card className="p-5">
+          <Card className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm p-5">
             <CustomerAddressManager
               addresses={addressesQ.data ?? []}
               loading={addressesQ.isLoading}
@@ -125,16 +144,58 @@ function CustomerProfilePage() {
               onChanged={() => qc.invalidateQueries({ queryKey: ["customer-profile-addresses", brand.id, customerId] })}
             />
           </Card>
-
-          <Card className="hidden">
-            <div className="mb-4 flex items-center gap-2"><MapPin className="h-5 w-5 text-primary" /><h2 className="font-display text-lg">{lang === "ar" ? "عناوين التوصيل" : "Delivery Addresses"}</h2></div>
-            {addressesQ.isLoading ? <p className="text-sm text-muted-foreground">{lang === "ar" ? "جاري التحميل…" : "Loading…"}</p> : (addressesQ.data ?? []).length === 0 ? <p className="text-sm text-muted-foreground">{lang === "ar" ? "لا توجد عناوين محفوظة." : "No saved delivery addresses."}</p> : <div className="space-y-3">{(addressesQ.data ?? []).map((address) => <div key={address.id} className="rounded-xl border p-3"><div className="mb-1 flex items-center justify-between gap-2"><span className="font-medium">{address.label || (lang === "ar" ? "عنوان التوصيل" : "Delivery address")}</span>{address.is_default && <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary">{lang === "ar" ? "افتراضي" : "Default"}</span>}</div><p className="text-sm leading-6 text-muted-foreground">{formatAddressLine(address, lang) || regionLabel(address.region, lang) || "—"}</p></div>)}</div>}
-          </Card>
         </div>
 
-        <Card className="overflow-hidden">
-          <div className="flex items-center justify-between gap-3 border-b p-5"><div><h2 className="font-display text-xl">{lang === "ar" ? "سجل الطلبات" : "Order History"}</h2><p className="text-xs text-muted-foreground">{lang === "ar" ? "اضغط على أي طلب لفتح تفاصيله." : "Select any order to open its full details."}</p></div><ReceiptText className="h-6 w-6 text-primary" /></div>
-          {ordersQ.isLoading ? <div className="p-8 text-center text-muted-foreground">{lang === "ar" ? "جاري تحميل الطلبات…" : "Loading orders…"}</div> : orders.length === 0 ? <div className="p-12 text-center"><ReceiptText className="mx-auto mb-3 h-9 w-9 text-muted-foreground" /><p className="text-muted-foreground">{lang === "ar" ? "لا توجد طلبات لهذا العميل بعد." : "This customer has no orders yet."}</p></div> : <div className="overflow-x-auto"><table className="w-full min-w-[720px] text-sm"><thead className="bg-muted/50"><tr><th className="p-4 text-start">{lang === "ar" ? "رقم الطلب" : "Order ID #"}</th><th className="p-4 text-start">{lang === "ar" ? "التاريخ" : "Date"}</th><th className="p-4 text-start">{lang === "ar" ? "الحالة" : "Status"}</th><th className="p-4 text-start">{lang === "ar" ? "طريقة الدفع" : "Payment Method"}</th><th className="p-4 text-end">{lang === "ar" ? "الإجمالي" : "Total Amount"}</th></tr></thead><tbody>{orders.map((order) => <tr key={order.id} tabIndex={0} className="cursor-pointer border-t transition-colors hover:bg-muted/40 focus-visible:bg-muted/40 focus-visible:outline-none" onClick={() => navigate({ to: "/admin/b/$slug/orders/$id", params: { slug, id: order.id } })} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") navigate({ to: "/admin/b/$slug/orders/$id", params: { slug, id: order.id } }); }}><td className="p-4"><Link to="/admin/b/$slug/orders/$id" params={{ slug, id: order.id }} className="font-semibold text-primary hover:underline">#{order.invoice_number}</Link></td><td className="p-4 text-muted-foreground"><span className="inline-flex items-center gap-2"><CalendarDays className="h-4 w-4" />{new Date(order.order_date).toLocaleDateString(lang === "ar" ? "ar-BH" : "en-BH")}</span></td><td className="p-4"><span className="rounded-full bg-secondary px-2.5 py-1 text-xs font-medium">{t(`status.${order.status}`)}</span></td><td className="p-4 text-muted-foreground">{paymentLabel(order.payment_method, lang)}</td><td className="p-4 text-end font-semibold">{formatMoney(Number(order.total), order.currency || "BHD")}</td></tr>)}</tbody></table></div>}
+        <Card className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm">
+          <div className="flex items-center justify-between gap-3 border-b border-border/50 p-5 bg-primary/5">
+            <div>
+              <h2 className="font-display text-xl font-bold">{lang === "ar" ? "سجل الطلبات" : "Order History"}</h2>
+              <p className="text-xs text-muted-foreground">{lang === "ar" ? "اضغط على أي طلب لفتح تفاصيله." : "Select any order to open its full details."}</p>
+            </div>
+            <ReceiptText className="h-6 w-6 text-primary" />
+          </div>
+          {ordersQ.isLoading ? (
+            <div className="p-8 text-center text-muted-foreground">{lang === "ar" ? "جاري تحميل الطلبات…" : "Loading orders…"}</div>
+          ) : orders.length === 0 ? (
+            <div className="p-12 text-center">
+              <ReceiptText className="mx-auto mb-3 h-9 w-9 text-muted-foreground" />
+              <p className="text-muted-foreground">{lang === "ar" ? "لا توجد طلبات لهذا العميل بعد." : "This customer has no orders yet."}</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[720px] text-sm">
+                <thead className="border-b bg-muted/40 font-semibold text-muted-foreground">
+                  <tr>
+                    <th className="p-4 text-start font-semibold text-xs uppercase tracking-wider">{lang === "ar" ? "رقم الطلب" : "Order ID #"}</th>
+                    <th className="p-4 text-start font-semibold text-xs uppercase tracking-wider">{lang === "ar" ? "التاريخ" : "Date"}</th>
+                    <th className="p-4 text-start font-semibold text-xs uppercase tracking-wider">{lang === "ar" ? "الحالة" : "Status"}</th>
+                    <th className="p-4 text-start font-semibold text-xs uppercase tracking-wider">{lang === "ar" ? "طريقة الدفع" : "Payment Method"}</th>
+                    <th className="p-4 text-end font-semibold text-xs uppercase tracking-wider">{lang === "ar" ? "الإجمالي" : "Total Amount"}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {orders.map((order) => (
+                    <tr key={order.id} tabIndex={0} className="cursor-pointer border-t border-border transition-colors hover:bg-muted/40 focus-visible:bg-muted/40 focus-visible:outline-none" onClick={() => navigate({ to: "/admin/b/$slug/orders/$id", params: { slug, id: order.id } })} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") navigate({ to: "/admin/b/$slug/orders/$id", params: { slug, id: order.id } }); }}>
+                      <td className="p-4">
+                        <Link to="/admin/b/$slug/orders/$id" params={{ slug, id: order.id }} className="font-semibold text-primary hover:underline">#{order.invoice_number}</Link>
+                      </td>
+                      <td className="p-4 text-muted-foreground">
+                        <span className="inline-flex items-center gap-2">
+                          <CalendarDays className="h-4 w-4" />
+                          {new Date(order.order_date).toLocaleDateString(lang === "ar" ? "ar-BH" : "en-BH")}
+                        </span>
+                      </td>
+                      <td className="p-4">
+                        <span className="rounded-full bg-secondary px-2.5 py-1 text-xs font-medium text-foreground">{t(`status.${order.status}`)}</span>
+                      </td>
+                      <td className="p-4 text-muted-foreground">{paymentLabel(order.payment_method, lang)}</td>
+                      <td className="p-4 text-end font-semibold text-foreground">{formatMoney(Number(order.total), order.currency || "BHD")}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </Card>
       </div>
 

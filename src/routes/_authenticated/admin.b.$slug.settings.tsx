@@ -193,25 +193,31 @@ function Settings() {
   const activeHeader = TAB_HEADERS[activeTab] ?? TAB_HEADERS.business;
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 max-w-5xl mx-auto">
+    <div className="mx-auto max-w-5xl space-y-6 p-4 sm:p-6 lg:p-8 animate-fade-in">
       {f.font_url && (
         <style>{`@font-face { font-family: 'CustomFont'; src: url('${f.font_url}'); font-display: swap; }`}</style>
       )}
-      <h1 className="text-4xl font-display mb-2">{lang === "ar" ? activeHeader.ar : activeHeader.en}</h1>
-      <p className="text-muted-foreground mb-6">{lang === "ar" ? activeHeader.arDescription : activeHeader.enDescription}</p>
+      <div>
+        <h1 className="font-display text-4xl font-extrabold tracking-tight bg-clip-text bg-gradient-to-r from-slate-900 via-slate-800 to-slate-950 dark:from-slate-50 dark:to-slate-300 mb-2">
+          {lang === "ar" ? activeHeader.ar : activeHeader.en}
+        </h1>
+        <p className="text-muted-foreground text-sm max-w-2xl leading-relaxed">
+          {lang === "ar" ? activeHeader.arDescription : activeHeader.enDescription}
+        </p>
+      </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="mb-6 flex h-auto w-full flex-wrap justify-start gap-1 bg-muted/60 p-1">
+        <TabsList className="mb-6 flex h-auto w-full flex-wrap justify-start gap-1.5 bg-muted/40 p-1.5 rounded-xl border border-border/40 backdrop-blur-sm">
           {TABS.map((tab) => (
-            <TabsTrigger key={tab.value} value={tab.value} className="data-[state=active]:bg-background data-[state=active]:shadow-sm">
+            <TabsTrigger key={tab.value} value={tab.value} className="rounded-lg py-2 px-3 text-xs sm:text-sm font-medium transition-all duration-200 data-[state=active]:bg-background data-[state=active]:shadow-md data-[state=active]:text-foreground hover:bg-background/20">
               {lang === "ar" ? tab.ar : tab.en}
             </TabsTrigger>
           ))}
         </TabsList>
 
         <TabsContent value="business" className="space-y-6 mt-0">
-          <Card className="p-6 space-y-4">
-            <h2 className="font-display text-xl">{t("settings.business")}</h2>
+          <Card className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm p-6 space-y-4">
+            <h2 className="font-display text-xl font-bold">{t("settings.business")}</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div><Label>{t("settings.businessName")}</Label><Input value={f.business_name} onChange={(e) => setF({ ...f, business_name: e.target.value })} /></div>
               <div>
@@ -263,7 +269,7 @@ function Settings() {
         </TabsContent>
 
         <TabsContent value="invoice" className="space-y-6 mt-0">
-          <Card className="p-6 space-y-4">
+          <Card className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm p-6 space-y-4">
             <h2 className="font-display text-xl">{t("settings.appearance")}</h2>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -363,7 +369,7 @@ function Settings() {
           </Card>
 
           {f.logo_url && (
-            <Card className="p-6 space-y-4">
+            <Card className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm p-6 space-y-4">
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <h2 className="font-display text-xl">Invoice logo position &amp; size</h2>
@@ -543,35 +549,35 @@ function PaymentSettingsCard({ brandId }: { brandId: string }) {
   if (!state) return null;
 
   return (
-    <Card className="p-6 space-y-6">
+    <Card className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm p-6 space-y-6">
       <div>
-        <h2 className="font-display text-xl">{isAr ? "إعدادات الدفع" : "Payment Settings"}</h2>
-        <p className="text-sm text-muted-foreground">{isAr ? "التحكم بوسائل الدفع المتاحة للعملاء في المتجر مع رسوم العمليات والمفاتيح" : "Control payment options, processing fees, and credentials"}</p>
+        <h2 className="font-display text-xl font-bold">{isAr ? "إعدادات الدفع" : "Payment Settings"}</h2>
+        <p className="text-sm text-muted-foreground mt-1">{isAr ? "التحكم بوسائل الدفع المتاحة للعملاء في المتجر مع رسوم العمليات والمفاتيح" : "Control payment options, processing fees, and credentials"}</p>
       </div>
 
       <div className="space-y-4">
         {/* COD Block */}
-        <div className="rounded-lg border border-border p-4 space-y-3 bg-secondary/5 transition-all">
+        <div className="overflow-hidden rounded-xl border border-border/40 p-5 space-y-4 bg-background/40 backdrop-blur-sm shadow-sm transition-all duration-300 hover:scale-[1.005] hover:border-primary/20">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-semibold">{isAr ? "الدفع عند الاستلام" : "Cash on Delivery"}</p>
-              <p className="text-xs text-muted-foreground">{isAr ? "تمكين العملاء من الدفع نقداً عند استلام الطلب" : "Allow customers to pay in cash upon receiving their order"}</p>
+              <p className="text-xs text-muted-foreground mt-0.5">{isAr ? "تمكين العملاء من الدفع نقداً عند استلام الطلب" : "Allow customers to pay in cash upon receiving their order"}</p>
             </div>
             <Switch checked={state.cod_enabled} onCheckedChange={(v) => setState({ ...state, cod_enabled: v })} />
           </div>
         </div>
 
         {/* Card Payment Block */}
-        <div className="rounded-lg border border-border p-4 space-y-4 bg-secondary/5 transition-all">
+        <div className="overflow-hidden rounded-xl border border-border/40 p-5 space-y-4 bg-background/40 backdrop-blur-sm shadow-sm transition-all duration-300 hover:scale-[1.005] hover:border-primary/20">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-semibold">{isAr ? "بوابة دفع بالبطاقة" : "Card Payment Gateways"}</p>
-              <p className="text-xs text-muted-foreground">{isAr ? "تفعيل الدفع بالبطاقة الائتمانية عبر بوابة الدفع الآمنة" : "Enable online credit/debit card processing"}</p>
+              <p className="text-xs text-muted-foreground mt-0.5">{isAr ? "تفعيل الدفع بالبطاقة الائتمانية عبر بوابة الدفع الآمنة" : "Enable online credit/debit card processing"}</p>
             </div>
             <Switch checked={state.card_enabled} onCheckedChange={(v) => setState({ ...state, card_enabled: v })} />
           </div>
           {state.card_enabled && (
-            <div className="pt-3 border-t border-border space-y-4 animate-in fade-in-50 duration-200">
+            <div className="pt-4 border-t border-border/50 space-y-4 animate-in fade-in-50 duration-200">
               <div>
                 <Label className="text-xs font-semibold">{isAr ? "نسبة رسوم معالجة البطاقة المقدرة (%)" : "Estimated Card Processing Fee (%)"}</Label>
                 <Input
@@ -582,9 +588,9 @@ function PaymentSettingsCard({ brandId }: { brandId: string }) {
                   value={state.card_processing_fee}
                   onChange={(e) => setState({ ...state, card_processing_fee: Math.max(0, Number(e.target.value)) })}
                   placeholder="2.50"
-                  className="mt-1"
+                  className="mt-1.5 bg-background/50 focus:bg-background transition-colors"
                 />
-                <p className="text-[11px] text-muted-foreground mt-1">
+                <p className="text-[11px] text-muted-foreground mt-1.5">
                   {isAr ? "تستخدم هذه النسبة تلقائياً في حسابات الأرباح والخسائر والمصاريف التشغيلية لكل طلب" : "Calculated automatically in your P&L expenses for card transactions"}
                 </p>
               </div>
@@ -597,18 +603,18 @@ function PaymentSettingsCard({ brandId }: { brandId: string }) {
                     value={state.card_public_key}
                     onChange={(e) => setState({ ...state, card_public_key: e.target.value })}
                     placeholder="pk_live_..."
-                    className="mt-1 font-mono text-xs"
+                    className="mt-1.5 font-mono text-xs bg-background/50 focus:bg-background transition-colors"
                   />
                 </div>
                 <div>
                   <Label className="text-xs font-semibold">{isAr ? "المفتاح السري (Secret Key / Merchant ID)" : "Secret API Key / Merchant ID"}</Label>
-                  <div className="relative mt-1">
+                  <div className="relative mt-1.5">
                     <Input
                       type={showSecretKey ? "text" : "password"}
                       value={state.card_secret_key}
                       onChange={(e) => setState({ ...state, card_secret_key: e.target.value })}
                       placeholder="sk_live_..."
-                      className="font-mono text-xs pe-10"
+                      className="font-mono text-xs pe-10 bg-background/50 focus:bg-background transition-colors"
                     />
                     <button
                       type="button"
@@ -625,16 +631,16 @@ function PaymentSettingsCard({ brandId }: { brandId: string }) {
         </div>
 
         {/* Benefit Pay Block */}
-        <div className="rounded-lg border border-border p-4 space-y-4 bg-secondary/5 transition-all">
+        <div className="overflow-hidden rounded-xl border border-border/40 p-5 space-y-4 bg-background/40 backdrop-blur-sm shadow-sm transition-all duration-300 hover:scale-[1.005] hover:border-primary/20">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-semibold">{isAr ? "بنفت باي (BenefitPay)" : "BenefitPay"}</p>
-              <p className="text-xs text-muted-foreground">{isAr ? "تفعيل تحويلات بنفت باي المباشرة مع إرفاق الإيصال" : "Enable direct BenefitPay transfers with receipt uploads"}</p>
+              <p className="text-xs text-muted-foreground mt-0.5">{isAr ? "تفعيل تحويلات بنفت باي المباشرة مع إرفاق الإيصال" : "Enable direct BenefitPay transfers with receipt uploads"}</p>
             </div>
             <Switch checked={state.benefit_enabled} onCheckedChange={(v) => setState({ ...state, benefit_enabled: v })} />
           </div>
           {state.benefit_enabled && (
-            <div className="pt-3 border-t border-border space-y-4 animate-in fade-in-50 duration-200">
+            <div className="pt-4 border-t border-border/50 space-y-4 animate-in fade-in-50 duration-200">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <Label className="text-xs font-semibold">{isAr ? "نسبة رسوم معالجة بنفت باي (%)" : "Estimated BenefitPay Processing Fee (%)"}</Label>
@@ -646,9 +652,9 @@ function PaymentSettingsCard({ brandId }: { brandId: string }) {
                     value={state.benefit_processing_fee}
                     onChange={(e) => setState({ ...state, benefit_processing_fee: Math.max(0, Number(e.target.value)) })}
                     placeholder="1.00"
-                    className="mt-1"
+                    className="mt-1.5 bg-background/50 focus:bg-background transition-colors"
                   />
-                  <p className="text-[11px] text-muted-foreground mt-1">
+                  <p className="text-[11px] text-muted-foreground mt-1.5">
                     {isAr ? "تستخدم لحساب تكاليف المعالجة تلقائياً" : "Used to compute processing costs automatically"}
                   </p>
                 </div>
@@ -658,25 +664,25 @@ function PaymentSettingsCard({ brandId }: { brandId: string }) {
                     value={state.benefit_account_number}
                     onChange={(e) => setState({ ...state, benefit_account_number: e.target.value })}
                     placeholder={isAr ? "يظهر للعميل لنسخه مباشرة" : "Shown to customer with copy button"}
-                    className="mt-1 text-sm font-semibold"
+                    className="mt-1.5 text-sm font-semibold bg-background/50 focus:bg-background transition-colors"
                   />
                 </div>
               </div>
 
-              <div className="space-y-1">
+              <div className="space-y-1.5">
                 <Label className="text-xs font-semibold">{isAr ? "رمز QR لبنفت باي" : "Benefit Pay QR image"}</Label>
-                <div className="flex items-center gap-4 mt-1">
+                <div className="flex items-center gap-4 mt-1.5">
                   {state.benefit_qr_url && (
-                    <img src={state.benefit_qr_url} alt="QR" className="w-20 h-24 object-contain border border-border rounded bg-white p-1 shadow-sm" />
+                    <img src={state.benefit_qr_url} alt="QR" className="w-20 h-24 object-contain border border-border rounded-xl bg-white p-1 shadow-sm" />
                   )}
                   <div className="flex gap-2">
                     <input ref={qrInput} type="file" accept="image/*" className="hidden"
                       onChange={(e) => e.target.files?.[0] && uploadQr(e.target.files[0])} />
-                    <Button type="button" variant="outline" size="sm" onClick={() => qrInput.current?.click()} disabled={uploading}>
-                      <Upload className="h-4 w-4 me-1" /> {uploading ? "…" : isAr ? "رفع" : "Upload"}
+                    <Button type="button" variant="outline" size="sm" onClick={() => qrInput.current?.click()} disabled={uploading} className="shadow-sm transition-all duration-200 hover:shadow hover:scale-[1.01] active:scale-95">
+                      <Upload className="h-4 w-4 me-1.5" /> {uploading ? "…" : isAr ? "رفع" : "Upload"}
                     </Button>
                     {state.benefit_qr_url && (
-                      <Button type="button" variant="ghost" size="sm" onClick={() => setState({ ...state, benefit_qr_url: null })} className="text-destructive hover:text-destructive">
+                      <Button type="button" variant="ghost" size="sm" onClick={() => setState({ ...state, benefit_qr_url: null })} className="text-destructive hover:text-destructive hover:scale-105 active:scale-95 transition-all">
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     )}
@@ -689,7 +695,9 @@ function PaymentSettingsCard({ brandId }: { brandId: string }) {
       </div>
 
       <div className="flex justify-end pt-2">
-        <Button size="sm" onClick={save} disabled={saving}>{isAr ? "حفظ إعدادات الدفع" : "Save payment settings"}</Button>
+        <Button size="sm" onClick={save} disabled={saving} className="shadow-sm transition-all duration-200 hover:shadow hover:scale-[1.01] active:scale-95">
+          {saving ? "…" : isAr ? "حفظ إعدادات الدفع" : "Save payment settings"}
+        </Button>
       </div>
     </Card>
   );
@@ -810,7 +818,7 @@ function BrandHeroCard({ brandId }: { brandId: string }) {
   if (!state) return null;
 
   return (
-    <Card className="p-6 space-y-4">
+    <Card className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm p-6 space-y-4">
       <div>
         <h2 className="font-display text-xl">{isAr ? "واجهة المتجر" : "Storefront Hero"}</h2>
         <p className="text-sm text-muted-foreground">{isAr ? "الصور/الفيديو والنبذة التي يراها العملاء في الصفحة الرئيسية" : "Hero media, brand color, and About text shown on the public storefront home"}</p>
@@ -1025,7 +1033,7 @@ function ShippingSettingsCard({ brandId }: { brandId: string }) {
   if (!state) return null;
 
   return (
-    <Card className="p-6 space-y-4">
+    <Card className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm p-6 space-y-4">
       <div>
         <h2 className="font-display text-xl">{t("settings.shippingTitle")}</h2>
         <p className="text-sm text-muted-foreground">{t("settings.shippingSubtitle")}</p>
@@ -1222,7 +1230,7 @@ function StorefrontSeoCard({ brandId }: { brandId: string }) {
     toast.success(isAr ? "تم حفظ إعدادات محركات البحث" : "Storefront SEO saved");
   };
 
-  return <Card className="space-y-4 p-5">
+  return <Card className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm p-6 space-y-4">
     <div><h2 className="font-display text-xl">{isAr ? "ظهور المتجر في محركات البحث" : "Storefront SEO"}</h2><p className="text-sm text-muted-foreground">{isAr ? "عنوان ووصف الصفحة الرئيسية عند ظهورها في Google أو مشاركتها." : "Control the homepage title and description shown in search and social sharing."}</p></div>
     <div><div className="flex justify-between gap-3"><Label>{isAr ? "عنوان الصفحة الرئيسية" : "Homepage Meta Title"}</Label><span className="text-xs text-muted-foreground">{metaTitle.length}/{META_TITLE_LIMIT}</span></div><Input value={metaTitle} maxLength={META_TITLE_LIMIT} onChange={(event) => setMetaTitle(event.target.value)} dir={isAr ? "rtl" : "ltr"} placeholder={isAr ? "اسم المتجر ووصفه المختصر" : "Store name and concise value proposition"} /></div>
     <div><div className="flex justify-between gap-3"><Label>{isAr ? "وصف الصفحة الرئيسية" : "Homepage Meta Description"}</Label><span className="text-xs text-muted-foreground">{metaDescription.length}/{META_DESCRIPTION_LIMIT}</span></div><Textarea value={metaDescription} maxLength={META_DESCRIPTION_LIMIT} rows={3} onChange={(event) => setMetaDescription(event.target.value)} dir={isAr ? "rtl" : "ltr"} placeholder={isAr ? "وصف جذاب ومختصر للمتجر" : "A concise and compelling storefront description"} /></div>
@@ -1440,7 +1448,7 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
   if (!state) return null;
 
   return (
-    <Card className="p-5 space-y-6 sm:p-6" dir={isAr ? "rtl" : "ltr"}>
+    <Card className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm p-6 space-y-6" dir={isAr ? "rtl" : "ltr"}>
       <div>
         <h2 className="font-display text-2xl">{isAr ? "إعدادات واجهة المتجر" : "Storefront Settings"}</h2>
         <p className="text-sm text-muted-foreground">
@@ -1759,7 +1767,7 @@ function BranchesCard({ brandId }: { brandId: string }) {
     qc.invalidateQueries({ queryKey: ["branches", brandId] });
   };
   return (
-    <Card className="p-6 space-y-4">
+    <Card className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm p-6 space-y-4">
       <div>
         <h3 className="text-lg font-semibold">{isAr ? "الفروع (للاستلام)" : "Branches (for Pickup)"}</h3>
         <p className="text-sm text-muted-foreground">
@@ -1933,7 +1941,7 @@ function EmailSettingsCard({ brandId }: { brandId: string }) {
   if (!state) return null;
 
   return (
-    <Card className="p-6 space-y-4">
+    <Card className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm p-6 space-y-4">
       <div>
         <h3 className="text-lg font-semibold">{isAr ? "إعدادات بريد الطلبات" : "Order email settings"}</h3>
         <p className="text-sm text-muted-foreground">

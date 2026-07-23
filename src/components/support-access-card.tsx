@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
-import { Button } from "@/components/ui/button";
 import { Loader2, ShieldAlert, CheckCircle2, History, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 import { useI18n } from "@/lib/i18n";
@@ -62,7 +61,7 @@ export function SupportAccessCard({ brand }: SupportAccessCardProps) {
   return (
     <div className="space-y-6">
       {/* Support Access Control Toggle Card */}
-      <Card className="border-zinc-100 dark:border-zinc-800/80 shadow-sm relative overflow-hidden bg-gradient-to-br from-background to-zinc-50/20 dark:to-zinc-900/10">
+      <Card className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm relative">
         <CardHeader className="pb-4">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div className="space-y-1">
@@ -74,7 +73,7 @@ export function SupportAccessCard({ brand }: SupportAccessCardProps) {
               </CardTitle>
               <CardDescription className="text-xs max-w-xl leading-relaxed">
                 {lang === "ar"
-                  ? "قم بتمكين هذا الخيار للسماح لمسؤولي منصة بوتك بالدخول مؤقتاً إلى لوحة تحكم متجرك لحل المشاكل التقنية أو تنفيذ ميزات مخصصة."
+                  ? "قم بتمكين هذا الخيار للسماح لمسؤولو منصة بوتك بالدخول مؤقتاً إلى لوحة تحكم متجرك لحل المشاكل التقنية أو تنفيذ ميزات مخصصة."
                   : "Enable this toggle to allow Boutq platform administrators to temporarily access your store dashboard for remote troubleshooting and custom feature implementation."}
               </CardDescription>
             </div>
@@ -115,7 +114,7 @@ export function SupportAccessCard({ brand }: SupportAccessCardProps) {
       </Card>
 
       {/* Security & Auditing Logs Card */}
-      <Card className="border-zinc-100 dark:border-zinc-800/80 shadow-sm">
+      <Card className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm">
         <CardHeader className="pb-3 border-b border-zinc-100 dark:border-zinc-900/60">
           <CardTitle className="text-base font-display font-medium flex items-center gap-2">
             <History className="h-4.5 w-4.5 text-muted-foreground" />

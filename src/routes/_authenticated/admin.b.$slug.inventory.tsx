@@ -169,15 +169,15 @@ function Inventory() {
         </div>
       </div>
 
-      <div className="flex gap-2 mb-6 border-b border-border">
+      <div className="flex p-1.5 gap-1.5 bg-muted/40 rounded-xl border border-border/40 backdrop-blur-sm max-w-md mb-6">
         <button
-          className={`px-4 py-2 text-sm font-medium transition-all duration-200 border-b-2 -mb-px hover:text-foreground ${tab === "products" ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:border-muted"}`}
+          className={`flex-1 rounded-lg py-2 px-3 text-sm font-semibold transition-all duration-200 ${tab === "products" ? "bg-background shadow-md text-foreground" : "text-muted-foreground hover:bg-background/20"}`}
           onClick={() => setTab("products")}
         >
           {t("inventory.products")}
         </button>
         <button
-          className={`px-4 py-2 text-sm font-medium transition-all duration-200 border-b-2 -mb-px hover:text-foreground ${tab === "customizations" ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:border-muted"}`}
+          className={`flex-1 rounded-lg py-2 px-3 text-sm font-semibold transition-all duration-200 ${tab === "customizations" ? "bg-background shadow-md text-foreground" : "text-muted-foreground hover:bg-background/20"}`}
           onClick={() => setTab("customizations")}
         >
           {t("inventory.customizations")}
@@ -3793,7 +3793,7 @@ function CustomizationsSection({ brandId, items, onChanged }: { brandId: string;
   };
 
   return (
-    <Card className="p-6">
+    <Card className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm p-6">
       <p className="text-sm text-muted-foreground mb-4">{t("inventory.addonsIntro")}</p>
       <div className="flex gap-2 mb-4">
         <Input placeholder={t("inventory.addonName")} value={name} onChange={(e) => setName(e.target.value)} />

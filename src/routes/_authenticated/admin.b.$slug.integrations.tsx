@@ -83,18 +83,18 @@ function IntegrationsPage() {
   const webhookBase = typeof window !== "undefined" ? `${window.location.origin}/api/public/webhooks` : "https://…/api/public/webhooks";
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 max-w-4xl mx-auto">
+    <div className="mx-auto max-w-5xl space-y-6 p-4 sm:p-6 lg:p-8 animate-fade-in">
       <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
         <div>
-          <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-primary mb-1">
+          <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-primary mb-1.5 font-semibold">
             <Plug className="h-3.5 w-3.5" /> {t("nav.integrations")}
           </div>
-          <h1 className="text-3xl sm:text-4xl font-display">{t("integrations.title")}</h1>
-          <p className="text-muted-foreground mt-1">{t("integrations.subtitle")}</p>
+          <h1 className="font-display text-4xl font-extrabold tracking-tight bg-clip-text bg-gradient-to-r from-slate-900 via-slate-800 to-slate-950 dark:from-slate-50 dark:to-slate-300">{t("integrations.title")}</h1>
+          <p className="mt-1.5 text-muted-foreground text-sm max-w-md">{t("integrations.subtitle")}</p>
         </div>
         <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) setEditing(null); }}>
           <DialogTrigger asChild>
-            <Button onClick={() => setEditing(null)}>
+            <Button onClick={() => setEditing(null)} className="shadow-sm transition-all duration-200 hover:shadow hover:scale-[1.01] active:scale-95">
               <Plus className="h-4 w-4 me-2" /> {t("integrations.new")}
             </Button>
           </DialogTrigger>
@@ -106,18 +106,18 @@ function IntegrationsPage() {
         </Dialog>
       </div>
 
-      <Card className="p-3 mb-4 border-amber-500/40 bg-amber-500/5">
-        <div className="flex items-start gap-2 text-sm">
-          <ShieldAlert className="h-4 w-4 mt-0.5 text-amber-600" />
-          <p>{t("integrations.warning")}</p>
+      <Card className="overflow-hidden border border-amber-500/40 shadow-md rounded-2xl bg-amber-500/5 p-4 mb-4">
+        <div className="flex items-start gap-2 text-sm text-amber-800 dark:text-amber-300">
+          <ShieldAlert className="h-4 w-4 mt-0.5 text-amber-600 shrink-0" />
+          <p className="leading-relaxed">{t("integrations.warning")}</p>
         </div>
       </Card>
 
       <AnalyticsTrackingCard brandId={brandId} isAr={isAr} />
 
       {q.data && q.data.length === 0 ? (
-        <Card className="p-12 text-center">
-          <Plug className="h-10 w-10 mx-auto text-muted-foreground mb-3" />
+        <Card className="overflow-hidden border border-dashed border-border/80 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm p-12 text-center">
+          <Plug className="h-10 w-10 mx-auto text-muted-foreground mb-3 animate-pulse" />
           <p className="text-muted-foreground">{t("integrations.none")}</p>
         </Card>
       ) : (
@@ -127,27 +127,27 @@ function IntegrationsPage() {
             const preset = PROVIDER_PRESETS.find((p) => p.value === row.provider);
             const isNoWebhookProvider = row.provider === "resend_customer_email" || row.provider === "sendpulse_admin" || row.provider === "gemini";
             return (
-              <Card key={row.id} className="p-6 border border-border bg-card/60 backdrop-blur-sm shadow-sm hover:shadow-md transition-all duration-200">
+              <Card key={row.id} className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm p-6 transition-all duration-300 hover:scale-[1.01] hover:border-primary/40 hover:shadow-xl">
                 <div className="flex items-start justify-between gap-4 mb-4">
                   <div className="flex items-center gap-3 min-w-0">
                     <div className="p-2.5 rounded-lg bg-secondary/50 border border-secondary shrink-0">
                       {getProviderIcon(row.provider)}
                     </div>
                     <div className="min-w-0">
-                      <div className="font-display text-xl tracking-tight text-foreground truncate">{preset?.label ?? row.provider}</div>
+                      <div className="font-display text-xl font-bold tracking-tight text-foreground truncate">{preset?.label ?? row.provider}</div>
                       <div className="text-xs text-muted-foreground truncate font-mono mt-0.5">{row.base_url || (row.provider === "gemini" ? "gemini-1.5-flash" : "—")}</div>
                     </div>
                   </div>
                   <div className="flex items-center gap-1 shrink-0">
-                    <span className={`text-xs px-2.5 py-0.5 rounded-full font-medium border ${
+                    <span className={`text-xs px-2.5 py-0.5 rounded-full font-semibold border ${
                       row.is_active 
                         ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20" 
                         : "bg-slate-500/10 text-slate-500 border-slate-500/20"
                     }`}>
                       {row.is_active ? t("integrations.active") : isAr ? "معطّل" : "Off"}
                     </span>
-                    <Button variant="ghost" size="icon" onClick={() => { setEditing(row); setOpen(true); }} className="h-8 w-8 text-muted-foreground hover:text-foreground"><Pencil className="h-4 w-4" /></Button>
-                    <Button variant="ghost" size="icon" onClick={() => del(row.id)} className="h-8 w-8 text-muted-foreground hover:text-destructive"><Trash2 className="h-4 w-4" /></Button>
+                    <Button variant="ghost" size="icon" onClick={() => { setEditing(row); setOpen(true); }} className="h-8 w-8 text-muted-foreground hover:text-foreground hover:scale-105 active:scale-95 transition-all"><Pencil className="h-4 w-4" /></Button>
+                    <Button variant="ghost" size="icon" onClick={() => del(row.id)} className="h-8 w-8 text-muted-foreground hover:text-destructive hover:scale-105 active:scale-95 transition-all"><Trash2 className="h-4 w-4" /></Button>
                   </div>
                 </div>
 

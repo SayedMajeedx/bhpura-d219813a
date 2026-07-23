@@ -522,16 +522,16 @@ function CampaignsPage() {
   ];
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 max-w-6xl mx-auto">
+    <div className="mx-auto max-w-7xl space-y-6 p-4 sm:p-6 lg:p-8 animate-fade-in">
       <div className="mb-6 flex items-center gap-3">
         <div className="h-11 w-11 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
           <Megaphone className="h-5 w-5" />
         </div>
         <div>
-          <h1 className="text-4xl font-display">
+          <h1 className="font-display text-4xl font-extrabold tracking-tight bg-clip-text bg-gradient-to-r from-slate-900 via-slate-800 to-slate-950 dark:from-slate-50 dark:to-slate-300">
             {isAr ? "حملات الواتساب" : "WhatsApp Campaigns"}
           </h1>
-          <p className="text-muted-foreground mt-1">
+          <p className="mt-1.5 text-muted-foreground text-sm max-w-md">
             {isAr
               ? "أرسل رسائل تسويقية مخصصة إلى عملائك عبر الواتساب."
               : "Broadcast personalized marketing messages to your customers via WhatsApp."}
@@ -540,7 +540,7 @@ function CampaignsPage() {
       </div>
 
       {/* Target Audience Segment Filter Toolbar */}
-      <Card className="p-4 sm:p-5 mb-6 space-y-4 bg-gradient-to-r from-primary/5 via-secondary/10 to-background border-primary/10">
+      <Card className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm p-4 sm:p-5 mb-6 space-y-4">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <Label className="text-sm font-semibold text-foreground flex items-center gap-1.5">
@@ -584,10 +584,10 @@ function CampaignsPage() {
                 key={seg}
                 type="button"
                 onClick={() => setSelectedSegment(seg)}
-                className={`px-2.5 py-1 rounded-full text-xs font-semibold transition-all flex items-center gap-1.5 ${
+                className={`px-2.5 py-1 rounded-full text-xs font-semibold transition-all duration-200 flex items-center gap-1.5 ${
                   isActive
-                    ? "bg-primary text-primary-foreground shadow-sm scale-102"
-                    : "bg-background border border-input text-muted-foreground hover:bg-secondary/40"
+                    ? "bg-primary text-primary-foreground shadow-md scale-102"
+                    : "bg-background border border-input text-muted-foreground hover:bg-secondary/40 hover:scale-[1.02]"
                 }`}
               >
                 {seg === "All" && (isAr ? "الكل" : "All")}
@@ -605,7 +605,7 @@ function CampaignsPage() {
         </div>
       </Card>
 
-      <Card className="p-4 sm:p-6 mb-6 space-y-4">
+      <Card className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm p-4 sm:p-6 mb-6 space-y-4">
         {/* Template picker + actions */}
         <div className="flex flex-col sm:flex-row gap-3 sm:items-end">
           <div className="flex-1 min-w-0">
@@ -616,7 +616,7 @@ function CampaignsPage() {
               <SelectTrigger className="mt-1 text-start">
                 <SelectValue
                   placeholder={
-                    templates.length === 0
+                     templates.length === 0
                       ? isAr
                         ? "لا توجد قوالب محفوظة بعد"
                         : "No saved templates yet"
@@ -636,15 +636,15 @@ function CampaignsPage() {
             </Select>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" onClick={() => openSave("new")}>
+            <Button variant="outline" onClick={() => openSave("new")} className="shadow-sm transition-all duration-200 hover:shadow hover:scale-[1.01] active:scale-95">
               <Plus className="h-4 w-4 me-2" />
               {isAr ? "قالب جديد" : "New"}
             </Button>
-            <Button variant="outline" onClick={() => openSave("update")} disabled={!selectedId}>
+            <Button variant="outline" onClick={() => openSave("update")} disabled={!selectedId} className="shadow-sm transition-all duration-200 hover:shadow hover:scale-[1.01] active:scale-95">
               <Save className="h-4 w-4 me-2" />
               {isAr ? "حفظ القالب" : "Save Template"}
             </Button>
-            <Button variant="ghost" onClick={deleteTemplate} disabled={!selectedId}>
+            <Button variant="ghost" onClick={deleteTemplate} disabled={!selectedId} className="shadow-sm transition-all duration-200 hover:shadow hover:scale-[1.01] active:scale-95">
               <Trash2 className="h-4 w-4 me-2 text-destructive" />
               {isAr ? "حذف" : "Delete"}
             </Button>
@@ -661,7 +661,7 @@ function CampaignsPage() {
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             rows={5}
-            className="text-start mt-1"
+            className="text-start mt-1 bg-background/50 focus:bg-background transition-all duration-200"
             dir={isAr ? "rtl" : "ltr"}
           />
           <div className="mt-2 flex flex-wrap items-center gap-2">
@@ -673,31 +673,31 @@ function CampaignsPage() {
                 key={p.token}
                 type="button"
                 onClick={() => insertPlaceholder(p.token)}
-                className="text-xs px-2 py-1 rounded-full bg-secondary text-foreground hover:bg-primary hover:text-primary-foreground transition-colors"
+                className="text-xs px-2.5 py-1 rounded-full bg-secondary/80 text-foreground hover:bg-primary hover:text-primary-foreground hover:scale-105 active:scale-95 transition-all duration-200"
               >
-                {p.label} <code className="opacity-70">{p.token}</code>
+                {p.label} <code className="opacity-70 font-mono text-[10px]">{p.token}</code>
               </button>
             ))}
           </div>
         </div>
 
-        <div className="text-xs text-muted-foreground border-t border-border pt-3">
+        <div className="text-xs text-muted-foreground border-t border-border/50 pt-3">
           <span className="font-medium">{isAr ? "معاينة:" : "Preview:"}</span>{" "}
-          <span className="text-foreground">
+          <span className="text-foreground italic bg-secondary/20 px-2 py-1 rounded">
             {buildMessage(filtered[0]?.name ?? (isAr ? "العميل" : "Customer"))}
           </span>
         </div>
       </Card>
 
-      <Card className="overflow-hidden">
-        <div className="p-4 border-b border-border flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
+      <Card className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm">
+        <div className="p-4 border-b border-border/50 bg-primary/5 flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
           <div className="relative flex-1 max-w-sm">
             <Search className="h-4 w-4 absolute start-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
             <Input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder={isAr ? "ابحث عن عميل..." : "Search customer..."}
-              className="ps-9 text-start"
+              className="ps-9 text-start bg-background/50 focus:bg-background transition-colors duration-200"
             />
           </div>
           <div className="flex items-center gap-4 flex-wrap justify-between sm:justify-end">
@@ -707,7 +707,7 @@ function CampaignsPage() {
                 {isAr ? "مرسلة" : "sent"}
               </span>
               {Object.keys(sent).length > 0 && (
-                <Button variant="ghost" size="sm" onClick={() => setSent({})}>
+                <Button variant="ghost" size="sm" onClick={() => setSent({})} className="shadow-sm transition-all duration-200 hover:shadow hover:scale-[1.01] active:scale-95">
                   {isAr ? "إعادة تعيين" : "Reset"}
                 </Button>
               )}
@@ -715,7 +715,7 @@ function CampaignsPage() {
             <Button
               size="sm"
               variant="outline"
-              className="border-dashed hover:bg-secondary font-medium"
+              className="border-dashed hover:bg-secondary font-medium shadow-sm transition-all duration-200 hover:shadow hover:scale-[1.01] active:scale-95"
               onClick={exportBulkCampaignCsv}
               disabled={selectedCustomerIds.length === 0}
             >
@@ -724,7 +724,7 @@ function CampaignsPage() {
             </Button>
             <Button
               size="sm"
-              className="bg-primary text-primary-foreground hover:bg-primary/90 font-medium"
+              className="bg-primary text-primary-foreground hover:bg-primary/90 font-medium shadow-sm transition-all duration-200 hover:shadow hover:scale-[1.01] active:scale-95"
               onClick={launchBulkCampaign}
               disabled={selectedCustomerIds.length === 0}
             >
@@ -803,7 +803,7 @@ function CampaignsPage() {
           {/* Desktop table view */}
           <div className="hidden overflow-x-auto sm:block">
             <table className="w-full min-w-[560px] text-sm">
-              <thead className="bg-secondary/50">
+              <thead className="border-b bg-muted/40 font-semibold text-muted-foreground">
                 <tr>
                   <th className="p-4 w-12 text-center">
                     <input
@@ -813,12 +813,12 @@ function CampaignsPage() {
                       onChange={toggleSelectAll}
                     />
                   </th>
-                  <th className="p-4 font-medium text-start">{isAr ? "الاسم" : "Name"}</th>
-                  <th className="p-4 font-medium text-start">{isAr ? "الهاتف" : "Phone"}</th>
-                  <th className="p-4 font-medium text-start">
+                  <th className="p-4 font-semibold text-xs uppercase tracking-wider text-start">{isAr ? "الاسم" : "Name"}</th>
+                  <th className="p-4 font-semibold text-xs uppercase tracking-wider text-start">{isAr ? "الهاتف" : "Phone"}</th>
+                  <th className="p-4 font-semibold text-xs uppercase tracking-wider text-start">
                     {isAr ? "الشريحة (RFM)" : "CRM Segment"}
                   </th>
-                  <th className="p-4 font-medium text-start">
+                  <th className="p-4 font-semibold text-xs uppercase tracking-wider text-start">
                     {isAr ? "إجمالي الطلبات" : "Total Orders"}
                   </th>
                   <th className="p-4"></th>

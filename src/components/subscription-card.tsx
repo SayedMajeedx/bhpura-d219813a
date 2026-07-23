@@ -189,7 +189,7 @@ export function SubscriptionCard({ brand }: SubscriptionCardProps) {
   return (
     <div className="space-y-6">
       {/* Current Subscription Header Overview */}
-      <Card className="border-zinc-100 dark:border-zinc-800/80 shadow-sm relative overflow-hidden">
+      <Card className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm relative">
         <div className="absolute top-0 right-0 p-8 opacity-[0.03] select-none pointer-events-none">
           <CreditCard className="h-36 w-36" />
         </div>
@@ -210,7 +210,7 @@ export function SubscriptionCard({ brand }: SubscriptionCardProps) {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 bg-zinc-50/50 dark:bg-zinc-900/30 p-5 rounded-lg border border-zinc-100 dark:border-zinc-900">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 bg-background/50 dark:bg-background/20 p-5 rounded-xl border border-border/40 backdrop-blur-sm">
             <div>
               <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest block mb-1">{lang === "ar" ? "نوع الترخيص" : "Access License"}</span>
               <p className="text-sm font-semibold text-foreground flex items-center gap-1.5 capitalize">
@@ -303,7 +303,7 @@ export function SubscriptionCard({ brand }: SubscriptionCardProps) {
       </Card>
 
       {/* Tech Support & Custom Feature Request Panel */}
-      <Card className="border-zinc-100 dark:border-zinc-800/80 shadow-sm relative overflow-hidden bg-gradient-to-r from-zinc-50 to-zinc-100/50 dark:from-zinc-900/10 dark:to-zinc-900/30">
+      <Card className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm relative bg-gradient-to-r from-zinc-50/10 to-zinc-100/10 dark:from-zinc-900/10 dark:to-zinc-900/10">
         <div className="absolute top-0 right-0 p-8 opacity-[0.02] select-none pointer-events-none">
           <Sparkles className="h-36 w-36" />
         </div>
@@ -322,7 +322,7 @@ export function SubscriptionCard({ brand }: SubscriptionCardProps) {
             </div>
             <Button
               asChild
-              className="bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs h-10 px-5 shrink-0 transition-transform hover:scale-[1.02] cursor-pointer"
+              className="bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs h-10 px-5 shrink-0 shadow-sm transition-all duration-200 hover:shadow hover:scale-[1.01] active:scale-95 cursor-pointer"
             >
               <a
                 href={`https://wa.me/97339955508?text=Hi%20Boutq,%20I'd%20like%20to%20request%20support%20for%20store%20${encodeURIComponent(brand.slug)}`}

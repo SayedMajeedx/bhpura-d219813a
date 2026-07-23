@@ -234,11 +234,11 @@ function SuperRequestsPage() {
   };
 
   return (
-    <div className="p-6 md:p-10 max-w-7xl mx-auto space-y-10">
+    <div className="mx-auto max-w-7xl space-y-6 p-4 sm:p-6 lg:p-8 animate-fade-in" dir={lang === "ar" ? "rtl" : "ltr"}>
       {/* Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-zinc-100 dark:border-zinc-800 pb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-border/60 pb-6">
         <div>
-          <h1 className="text-3xl font-display font-medium text-foreground tracking-tight flex items-center gap-2">
+          <h1 className="font-display text-4xl font-extrabold tracking-tight bg-clip-text bg-gradient-to-r from-slate-900 via-slate-800 to-slate-950 dark:from-slate-50 dark:to-slate-300 flex items-center gap-2">
             <Building2 className="h-8 w-8 text-primary" />
             <span>{lang === "ar" ? "طلبات التسجيل الجديدة" : "New Tenant Requests"}</span>
           </h1>
@@ -252,7 +252,7 @@ function SuperRequestsPage() {
           variant="outline" 
           size="sm" 
           onClick={() => { void qc.invalidateQueries(); }}
-          className="self-start sm:self-center gap-1.5"
+          className="self-start sm:self-center gap-1.5 shadow-sm transition-all duration-200 hover:shadow hover:scale-[1.01] active:scale-95"
         >
           <RefreshCw className="h-3.5 w-3.5" />
           <span>{lang === "ar" ? "تحديث الصفوف" : "Sync Queue"}</span>
@@ -262,11 +262,11 @@ function SuperRequestsPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Left Column: Admin Live Pricing Control Panel */}
         <div className="space-y-6">
-          <Card className="shadow-md border-zinc-100 dark:border-zinc-800 relative overflow-hidden">
+          <Card className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm relative">
             <div className="absolute top-0 right-0 p-4 opacity-5 select-none pointer-events-none text-primary">
               <Percent className="h-24 w-24" />
             </div>
-            <CardHeader className="pb-3 border-b border-zinc-50 dark:border-zinc-900">
+            <CardHeader className="pb-3 border-b border-border/60">
               <CardTitle className="text-sm font-semibold flex items-center gap-1.5">
                 <Settings className="h-4.5 w-4.5 text-primary" />
                 <span>{lang === "ar" ? "متحكم أسعار التسجيل" : "Live Onboarding Price overrides"}</span>
@@ -307,7 +307,7 @@ function SuperRequestsPage() {
                       variant="outline" 
                       size="xs" 
                       onClick={() => applyPresetDiscount(10)} 
-                      className="text-xs gap-1 py-1 h-8"
+                      className="text-xs gap-1 py-1 h-8 shadow-sm transition-all duration-200 hover:shadow hover:scale-[1.01] active:scale-95"
                     >
                       <Tag className="h-3 w-3" />
                       <span>{lang === "ar" ? "خصم 10٪ (49 د.ب)" : "-10% Off (49 BHD)"}</span>
@@ -317,7 +317,7 @@ function SuperRequestsPage() {
                       variant="outline" 
                       size="xs" 
                       onClick={() => applyPresetDiscount(20)} 
-                      className="text-xs gap-1 py-1 h-8"
+                      className="text-xs gap-1 py-1 h-8 shadow-sm transition-all duration-200 hover:shadow hover:scale-[1.01] active:scale-95"
                     >
                       <Tag className="h-3 w-3" />
                       <span>{lang === "ar" ? "خصم 20٪ (44 د.ب)" : "-20% Off (44 BHD)"}</span>
@@ -327,7 +327,7 @@ function SuperRequestsPage() {
                       variant="outline" 
                       size="xs" 
                       onClick={() => setPriceInput("45 BHD")} 
-                      className="text-xs py-1 h-8"
+                      className="text-xs py-1 h-8 shadow-sm transition-all duration-200 hover:shadow hover:scale-[1.01] active:scale-95"
                     >
                       {lang === "ar" ? "تعديل لـ 45 د.ب" : "Set 45 BHD"}
                     </Button>
@@ -336,7 +336,7 @@ function SuperRequestsPage() {
                       variant="outline" 
                       size="xs" 
                       onClick={() => setPriceInput("55 BHD")} 
-                      className="text-xs py-1 h-8"
+                      className="text-xs py-1 h-8 shadow-sm transition-all duration-200 hover:shadow hover:scale-[1.01] active:scale-95"
                     >
                       {lang === "ar" ? "السعر الأصلي (55 د.ب)" : "Reset 55 BHD"}
                     </Button>
@@ -346,7 +346,7 @@ function SuperRequestsPage() {
                 <Button 
                   type="submit" 
                   disabled={savingPrice || !priceInput}
-                  className="w-full h-9 text-xs font-semibold gap-1.5"
+                  className="w-full h-9 text-xs font-semibold gap-1.5 shadow-sm transition-all duration-200 hover:shadow hover:scale-[1.01] active:scale-95"
                 >
                   {savingPrice ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <CheckCircle2 className="h-3.5 w-3.5" />}
                   <span>{lang === "ar" ? "حفظ وتعميم السعر" : "Save dynamic fee override"}</span>
@@ -358,8 +358,8 @@ function SuperRequestsPage() {
 
         {/* Right Columns: Main Tenant Requests Queue Table */}
         <div className="lg:col-span-2 space-y-4">
-          <Card className="shadow-md border-zinc-100 dark:border-zinc-800">
-            <CardHeader className="pb-3 border-b border-zinc-50 dark:border-zinc-900">
+          <Card className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm">
+            <CardHeader className="pb-3 border-b border-border/60">
               <div className="flex justify-between items-center">
                 <div>
                   <CardTitle className="text-sm font-semibold flex items-center gap-1.5">
@@ -391,7 +391,7 @@ function SuperRequestsPage() {
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead>
-                      <tr className="bg-zinc-50 dark:bg-zinc-950/40 text-muted-foreground text-xs uppercase border-b border-zinc-100 dark:border-zinc-900">
+                      <tr className="bg-muted/40 text-muted-foreground text-xs uppercase border-b border-border/60">
                         <th className="p-4 text-left font-semibold">{lang === "ar" ? "صاحب المتجر" : "Owner Details"}</th>
                         <th className="p-4 text-left font-semibold">{lang === "ar" ? "الرابط المطلوب" : "Desired subdomain"}</th>
                         <th className="p-4 text-left font-semibold">{lang === "ar" ? "نوع الباقة" : "Plan Package"}</th>
@@ -403,8 +403,8 @@ function SuperRequestsPage() {
                     <tbody>
                       {requestsQuery.data.map((request) => (
                         <tr 
-                          key={request.id} 
-                          className="border-b border-zinc-100 dark:border-zinc-900/60 hover:bg-zinc-50/50 dark:hover:bg-zinc-900/10 transition-colors"
+                           key={request.id} 
+                           className="border-b border-border/40 hover:bg-muted/20 transition-colors"
                         >
                           {/* Owner Metadata details */}
                           <td className="p-4 space-y-1">
@@ -527,7 +527,7 @@ function SuperRequestsPage() {
 
       {/* Interactive Deployment Configuration Dialog */}
       <Dialog open={!!approvingRequest} onOpenChange={(open) => !open && setApprovingRequest(null)}>
-        <DialogContent className="max-w-md bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 text-zinc-900 dark:text-zinc-100 p-6 rounded-lg shadow-lg">
+        <DialogContent className="max-w-md bg-background/95 backdrop-blur-md border border-border/60 text-foreground p-6 rounded-2xl shadow-xl">
           <DialogHeader>
             <DialogTitle className="text-lg font-display font-medium flex items-center gap-2">
               <Sparkles className="h-5 w-5 text-primary shrink-0" />
@@ -607,10 +607,10 @@ function SuperRequestsPage() {
           </div>
 
           <div className="flex justify-end gap-2 mt-4 sm:flex-row flex-col">
-            <Button variant="outline" onClick={() => setApprovingRequest(null)} disabled={deploying} className="text-xs h-9">
+            <Button variant="outline" onClick={() => setApprovingRequest(null)} disabled={deploying} className="text-xs h-9 shadow-sm transition-all duration-200 hover:shadow hover:scale-[1.01] active:scale-95">
               {lang === "ar" ? "إلغاء" : "Cancel"}
             </Button>
-            <Button onClick={executeApproval} disabled={deploying} className="text-xs h-9 bg-emerald-600 hover:bg-emerald-500 text-white gap-1.5">
+            <Button onClick={executeApproval} disabled={deploying} className="text-xs h-9 bg-emerald-600 hover:bg-emerald-500 text-white gap-1.5 shadow-sm transition-all duration-200 hover:shadow hover:scale-[1.01] active:scale-95">
               {deploying ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <CheckCircle2 className="h-3.5 w-3.5" />}
               <span>{lang === "ar" ? "تأكيد ونشر" : "Confirm & Deploy"}</span>
             </Button>

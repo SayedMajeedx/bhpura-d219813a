@@ -384,15 +384,15 @@ function ExpensesPage() {
   const marginPercentage = totalRevenue > 0 ? (netProfit / totalRevenue) * 100 : 0;
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 max-w-6xl mx-auto space-y-6">
+    <div className="p-4 sm:p-6 lg:p-8 max-w-6xl mx-auto space-y-6 animate-fade-in">
       {/* Page Header */}
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-3xl sm:text-4xl font-display font-bold tracking-tight text-foreground">{t("expenses.title")}</h1>
-          <p className="text-muted-foreground mt-1">{t("expenses.subtitle")}</p>
+          <h1 className="text-4xl font-display font-extrabold tracking-tight bg-clip-text bg-gradient-to-r from-slate-900 via-slate-800 to-slate-950 dark:from-slate-50 dark:to-slate-300">{t("expenses.title")}</h1>
+          <p className="text-muted-foreground mt-1.5 text-sm max-w-md">{t("expenses.subtitle")}</p>
         </div>
         {/* Date Filter preset cards */}
-        <Card className="p-2 flex flex-wrap gap-1.5 bg-secondary/20 border-border">
+        <Card className="overflow-hidden border border-border/60 shadow-md rounded-2xl bg-card/40 backdrop-blur-sm p-1.5 flex flex-wrap gap-1.5">
           {(["today", "week", "month", "custom"] as DatePreset[]).map((preset) => (
             <Button
               key={preset}
@@ -400,7 +400,7 @@ function ExpensesPage() {
               size="sm"
               variant={datePreset === preset ? "default" : "ghost"}
               onClick={() => setDatePreset(preset)}
-              className="text-xs h-8"
+              className="text-xs h-8 shadow-sm transition-all duration-200 hover:shadow hover:scale-[1.01] active:scale-95"
             >
               {lang === "ar"
                 ? ({ today: "اليوم", week: "الأسبوع", month: "الشهر", custom: "مخصص" } as const)[preset]
@@ -412,15 +412,15 @@ function ExpensesPage() {
 
       {/* Custom Date Range Picker */}
       {datePreset === "custom" && (
-        <Card className="p-4 border-dashed border-primary/20">
+        <Card className="overflow-hidden border border-dashed border-primary/35 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm p-4">
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
               <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{lang === "ar" ? "من تاريخ" : "From Date"}</Label>
-              <Input type="date" value={customRange.from} max={customRange.to || undefined} onChange={(e) => setCustomRange((range) => ({ ...range, from: e.target.value }))} className="mt-1 h-9 text-sm" />
+              <Input type="date" value={customRange.from} max={customRange.to || undefined} onChange={(e) => setCustomRange((range) => ({ ...range, from: e.target.value }))} className="mt-1 h-9 text-sm bg-background/50" />
             </div>
             <div>
               <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{lang === "ar" ? "إلى تاريخ" : "To Date"}</Label>
-              <Input type="date" value={customRange.to} min={customRange.from || undefined} onChange={(e) => setCustomRange((range) => ({ ...range, to: e.target.value }))} className="mt-1 h-9 text-sm" />
+              <Input type="date" value={customRange.to} min={customRange.from || undefined} onChange={(e) => setCustomRange((range) => ({ ...range, to: e.target.value }))} className="mt-1 h-9 text-sm bg-background/50" />
             </div>
           </div>
         </Card>
@@ -471,7 +471,7 @@ function ExpensesPage() {
       {/* Top 3-Column KPI Metric Cards Layout */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {/* Card 1: COGS */}
-        <Card className="p-5 flex flex-col justify-between hover:shadow-md transition-all duration-200">
+        <Card className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm p-5 flex flex-col justify-between transition-all duration-300 hover:scale-[1.02] hover:border-primary/40 hover:shadow-xl">
           <div>
             <div className="flex items-center gap-2 text-muted-foreground mb-1.5">
               <Package className="h-4 w-4 shrink-0 text-muted-foreground/80" />
@@ -493,7 +493,7 @@ function ExpensesPage() {
         </Card>
 
         {/* Card 2: OPEX */}
-        <Card className="p-5 flex flex-col justify-between hover:shadow-md transition-all duration-200">
+        <Card className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm p-5 flex flex-col justify-between transition-all duration-300 hover:scale-[1.02] hover:border-primary/40 hover:shadow-xl">
           <div>
             <div className="flex items-center gap-2 text-muted-foreground mb-1.5">
               <Receipt className="h-4 w-4 shrink-0 text-muted-foreground/80" />
@@ -511,7 +511,7 @@ function ExpensesPage() {
         </Card>
 
         {/* Card 3: Total Expenses (Primary Focus Metric) */}
-        <Card className="p-5 flex flex-col justify-between border-2 border-primary bg-primary/5 shadow-sm hover:shadow-md transition-all duration-200">
+        <Card className="overflow-hidden border-2 border-primary shadow-xl rounded-2xl bg-primary/5 p-5 flex flex-col justify-between transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl">
           <div>
             <div className="flex items-center gap-2 text-primary mb-1.5">
               <Wallet className="h-4 w-4 shrink-0 text-primary" />
@@ -534,7 +534,7 @@ function ExpensesPage() {
       </div>
 
       {/* Net Profit Summary Widget Block */}
-      <Card className="overflow-hidden border border-border bg-card shadow-sm">
+      <Card className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm">
         <div className="p-5 sm:p-6 bg-gradient-to-r from-secondary/30 via-background to-secondary/15">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
@@ -601,7 +601,7 @@ function ExpensesPage() {
         {/* Right Column (40%): Operating Expenses (OPEX) */}
         <div className="lg:col-span-2 space-y-4">
           {/* Header and Anchored Actions Directly Above the OPEX List */}
-          <div className="flex flex-wrap items-center justify-between gap-2 bg-secondary/10 p-3 rounded-lg border">
+          <div className="flex flex-wrap items-center justify-between gap-2 border border-border/60 shadow-md rounded-2xl bg-card/40 backdrop-blur-sm p-3">
             <div>
               <h2 className="text-sm font-bold text-foreground">
                 {lang === "ar" ? "المصاريف التشغيلية" : "Operating Expenses"}
@@ -616,13 +616,13 @@ function ExpensesPage() {
                 size="sm"
                 onClick={() => fileRef.current?.click()}
                 disabled={scanning}
-                className="border-primary/30 text-primary hover:bg-primary/5 text-xs h-8 px-2.5 shrink-0"
+                className="border-primary/30 text-primary hover:bg-primary/5 text-xs h-8 px-2.5 shrink-0 shadow-sm transition-all duration-200 hover:shadow hover:scale-[1.01] active:scale-95"
               >
                 {scanning ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
               </Button>
               <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) setEditing(null); }}>
                 <DialogTrigger asChild>
-                  <Button size="sm" className="text-xs h-8 px-2.5 shrink-0" onClick={() => setEditing(null)}>
+                  <Button size="sm" className="text-xs h-8 px-2.5 shrink-0 shadow-sm transition-all duration-200 hover:shadow hover:scale-[1.01] active:scale-95" onClick={() => setEditing(null)}>
                     <Plus className="h-3.5 w-3.5 me-1" />
                     {lang === "ar" ? "إضافة" : "Add"}
                   </Button>
@@ -639,13 +639,13 @@ function ExpensesPage() {
           {/* OPEX List of items using highly polished cards (perfectly fits 40% column size) */}
           <div className="space-y-3">
             {filteredList.length === 0 ? (
-              <Card className="p-8 text-center border-dashed">
+              <Card className="overflow-hidden border border-dashed border-border/80 shadow-md rounded-2xl bg-card/40 backdrop-blur-sm p-8 text-center">
                 <Wallet className="h-8 w-8 mx-auto text-muted-foreground/60 mb-2" />
                 <p className="text-xs text-muted-foreground">{t("expenses.none")}</p>
               </Card>
             ) : (
               filteredList.map((e) => (
-                <Card key={e.id} className="p-4 hover:border-primary/30 transition-all duration-150 shadow-xs relative overflow-hidden group">
+                <Card key={e.id} className="overflow-hidden border border-border/60 shadow-md rounded-2xl bg-card/40 backdrop-blur-sm p-4 transition-all duration-300 hover:scale-[1.005] hover:border-primary/40 hover:shadow-lg relative group">
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-x-2 gap-y-1">

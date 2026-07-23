@@ -197,17 +197,17 @@ function BrandsPage() {
   };
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 max-w-5xl mx-auto space-y-8">
+    <div className="mx-auto max-w-6xl space-y-6 p-4 sm:p-6 lg:p-8 animate-fade-in" dir={lang === "ar" ? "rtl" : "ltr"}>
       {/* Header Panel */}
-      <div className="flex flex-wrap items-start justify-between gap-3">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-border/60 pb-6">
         <div>
           <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-primary mb-1">
             <Crown className="h-3.5 w-3.5 text-amber-500 animate-pulse" /> {lang === "ar" ? "المدير الأعلى" : "Super Admin Cockpit"}
           </div>
-          <h1 className="text-3xl sm:text-4xl font-display font-medium">
+          <h1 className="font-display text-4xl font-extrabold tracking-tight bg-clip-text bg-gradient-to-r from-slate-900 via-slate-800 to-slate-950 dark:from-slate-50 dark:to-slate-300">
             {lang === "ar" ? "لوحة تحكم بوتك SaaS" : "Boutq SaaS Dashboard"}
           </h1>
-          <p className="text-muted-foreground mt-1 text-xs sm:text-sm">
+          <p className="text-sm text-muted-foreground mt-1">
             {lang === "ar"
               ? "مراقبة مستأجري المنصة، الموافقة على الطلبات، وإدارة المحلات متعددة المستأجرين."
               : "Monitor platform tenants, approve requests, and manage multi-tenant shops."}
@@ -215,7 +215,7 @@ function BrandsPage() {
         </div>
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
-            <Button className="h-11">
+            <Button className="h-11 shadow-sm transition-all duration-200 hover:shadow hover:scale-[1.01] active:scale-95">
               <Plus className="h-4 w-4 me-2" /> {lang === "ar" ? "إطلاق بوتيك جديد" : "Deploy New Boutique"}
             </Button>
           </DialogTrigger>
@@ -231,7 +231,7 @@ function BrandsPage() {
       {/* Modern SaaS KPI Stats Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {/* KPI: Total Brands */}
-        <Card className="p-5 border-zinc-100 dark:border-zinc-800/80 shadow-sm flex items-center gap-4 relative overflow-hidden">
+        <Card className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm p-6 flex items-center gap-4 relative">
           <div className="p-3 rounded-full bg-primary/5 text-primary">
             <Users className="h-6 w-6" />
           </div>
@@ -242,7 +242,7 @@ function BrandsPage() {
         </Card>
 
         {/* KPI: Active SaaS Subscriptions */}
-        <Card className="p-5 border-zinc-100 dark:border-zinc-800/80 shadow-sm flex items-center gap-4 relative overflow-hidden">
+        <Card className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm p-6 flex items-center gap-4 relative">
           <div className="p-3 rounded-full bg-emerald-500/5 text-emerald-500">
             <TrendingUp className="h-6 w-6" />
           </div>
@@ -253,7 +253,7 @@ function BrandsPage() {
         </Card>
 
         {/* KPI: SaaS Platform MRR */}
-        <Card className="p-5 border-zinc-100 dark:border-zinc-800/80 shadow-sm flex items-center gap-4 relative overflow-hidden">
+        <Card className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm p-6 flex items-center gap-4 relative">
           <div className="p-3 rounded-full bg-blue-500/5 text-blue-500">
             <DollarSign className="h-6 w-6" />
           </div>
@@ -292,17 +292,17 @@ function BrandsPage() {
           ) : (
             <div className="grid gap-4 sm:grid-cols-2">
               {brands.map((b) => (
-                <Card key={b.id} className="p-5 border-zinc-100 dark:border-zinc-800/80 shadow-sm relative overflow-hidden flex flex-col justify-between h-56">
+                <Card key={b.id} className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm p-6 relative flex flex-col justify-between h-56 transition-all duration-200 hover:shadow-xl hover:scale-[1.01]">
                   <div>
                     <div className="flex items-center gap-3 mb-3">
                       {b.logo_url ? (
                         <img
                           src={b.logo_url}
                           alt={b.name_en}
-                          className="h-10 w-10 rounded object-contain bg-secondary border border-zinc-100 dark:border-zinc-800"
+                          className="h-10 w-10 rounded object-contain bg-secondary border border-border/60"
                         />
                       ) : (
-                        <div className="h-10 w-10 rounded bg-secondary grid place-items-center border border-zinc-100 dark:border-zinc-800">
+                        <div className="h-10 w-10 rounded bg-secondary grid place-items-center border border-border/60">
                           <Store className="h-5 w-5 text-muted-foreground" />
                         </div>
                       )}
@@ -343,7 +343,7 @@ function BrandsPage() {
                     </div>
                   </div>
 
-                  <div className="flex flex-wrap gap-1.5 border-t border-zinc-50 dark:border-zinc-900 pt-3">
+                  <div className="flex flex-wrap gap-1.5 border-t border-border/60 pt-3">
                     {b.support_access_enabled === false ? (
                       <div className="flex-1 flex flex-col gap-1">
                         <Button variant="secondary" size="sm" className="w-full h-9 opacity-50 cursor-not-allowed" disabled>
@@ -352,24 +352,24 @@ function BrandsPage() {
                         </Button>
                       </div>
                     ) : (
-                      <Button variant="secondary" size="sm" className="flex-1 h-9" onClick={() => handleImpersonate(b.id, b.slug)}>
+                      <Button variant="secondary" size="sm" className="flex-1 h-9 shadow-sm transition-all duration-200 hover:shadow hover:scale-[1.01] active:scale-95" onClick={() => handleImpersonate(b.id, b.slug)}>
                         <Shield className="h-3.5 w-3.5 me-1 text-amber-500 animate-pulse" />
                         {lang === "ar" ? "محاكاة اللوحة" : "Impersonate"}
                       </Button>
                     )}
-                    <Button asChild variant="outline" size="sm" className="flex-1 h-9">
+                    <Button asChild variant="outline" size="sm" className="flex-1 h-9 shadow-sm transition-all duration-200 hover:shadow hover:scale-[1.01] active:scale-95">
                       <Link to="/$slug" params={{ slug: b.slug }}>
                         <ExternalLink className="h-3.5 w-3.5 me-1" />
                         {lang === "ar" ? "المتجر" : "Storefront"}
                       </Link>
                     </Button>
-                    <Button variant="outline" size="sm" className="h-9" onClick={() => setEditing(b)}>
+                    <Button variant="outline" size="sm" className="h-9 shadow-sm transition-all duration-200 hover:shadow hover:scale-[1.01] active:scale-95" onClick={() => setEditing(b)}>
                       <Pencil className="h-3.5 w-3.5" />
                     </Button>
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="text-destructive hover:bg-destructive/10 h-9"
+                      className="text-destructive hover:bg-destructive/10 h-9 shadow-sm transition-all duration-200 hover:scale-[1.01] active:scale-95"
                       onClick={() => setDeleting(b)}
                     >
                       <Trash2 className="h-3.5 w-3.5" />
@@ -394,7 +394,7 @@ function BrandsPage() {
           ) : (
             <div className="space-y-3">
               {pendingApprovals.map((b) => (
-                <Card key={b.id} className="p-5 border-zinc-100 dark:border-zinc-800/80 shadow-sm flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <Card key={b.id} className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm p-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                   <div className="flex items-center gap-3">
                     <div className="h-11 w-11 rounded-full bg-amber-500/5 grid place-items-center text-amber-500">
                       <ClockIcon className="h-5 w-5 animate-pulse" />
@@ -417,7 +417,7 @@ function BrandsPage() {
                     <Button 
                       variant="outline" 
                       size="sm" 
-                      className="gap-1 text-xs font-medium"
+                      className="gap-1 text-xs font-medium shadow-sm transition-all duration-200 hover:shadow hover:scale-[1.01] active:scale-95"
                       onClick={() => b.payment_receipt_url && handleViewReceipt(b.payment_receipt_url)}
                     >
                       <Eye className="h-4 w-4 text-primary" />
@@ -427,7 +427,7 @@ function BrandsPage() {
                     {/* Open Approve Dialog */}
                     <Button 
                       size="sm" 
-                      className="bg-emerald-600 hover:bg-emerald-700 text-white gap-1 text-xs font-medium"
+                      className="bg-emerald-600 hover:bg-emerald-700 text-white gap-1 text-xs font-medium shadow-sm transition-all duration-200 hover:shadow hover:scale-[1.01] active:scale-95"
                       onClick={() => {
                         setApprovingBrand(b);
                         setApproveTier("basic");
@@ -443,7 +443,7 @@ function BrandsPage() {
                       variant="ghost" 
                       size="sm" 
                       disabled={rejecting === b.id}
-                      className="text-rose-500 hover:text-rose-600 hover:bg-rose-500/5 gap-1 text-xs font-medium"
+                      className="text-rose-500 hover:text-rose-600 hover:bg-rose-500/5 gap-1 text-xs font-medium transition-all duration-200 hover:scale-[1.01] active:scale-95"
                       onClick={() => handleReject(b.id)}
                     >
                       {rejecting === b.id ? (
@@ -464,7 +464,7 @@ function BrandsPage() {
       {/* DIALOG: Approve Subscription & Assign Tier/Expires Date */}
       {approvingBrand && (
         <Dialog open={!!approvingBrand} onOpenChange={(v) => !v && setApprovingBrand(null)}>
-          <DialogContent className="max-w-md">
+          <DialogContent className="max-w-md bg-background/95 backdrop-blur-md border border-border/60 text-foreground p-6 rounded-2xl shadow-xl">
             <DialogHeader>
               <DialogTitle className="font-display font-medium flex items-center gap-2">
                 <CheckCircle className="h-5 w-5 text-emerald-500" />
@@ -472,9 +472,9 @@ function BrandsPage() {
               </DialogTitle>
             </DialogHeader>
             <div className="space-y-4 py-3">
-              <div className="p-3 bg-zinc-50 dark:bg-zinc-950 border border-zinc-100 dark:border-zinc-900 rounded-md">
+              <div className="p-3 bg-muted/40 border border-border/40 rounded-xl font-mono text-xs">
                 <p className="text-xs text-muted-foreground uppercase font-bold tracking-widest">{lang === "ar" ? "المحل المختار" : "Boutique Brand"}</p>
-                <p className="font-display font-semibold mt-0.5 text-foreground">{approvingBrand.name_en}</p>
+                <p className="font-display font-semibold mt-0.5 text-foreground text-sm">{approvingBrand.name_en}</p>
               </div>
 
               {/* Tier Selection */}
@@ -484,10 +484,10 @@ function BrandsPage() {
                   <button
                     type="button"
                     onClick={() => setApproveTier("basic")}
-                    className={`p-3 rounded border text-left flex flex-col justify-between h-20 transition-all ${
+                    className={`p-3 rounded-lg border text-left flex flex-col justify-between h-20 transition-all ${
                       approveTier === "basic"
                         ? "border-primary bg-primary/[0.02] ring-1 ring-primary"
-                        : "border-zinc-200 dark:border-zinc-800 bg-background hover:border-zinc-300"
+                        : "border-border/60 bg-background hover:border-zinc-300"
                     }`}
                   >
                     <span className="font-semibold text-xs text-foreground">{lang === "ar" ? "الباقة الأساسية" : "Basic Boutique"}</span>
@@ -496,10 +496,10 @@ function BrandsPage() {
                   <button
                     type="button"
                     onClick={() => setApproveTier("growth")}
-                    className={`p-3 rounded border text-left flex flex-col justify-between h-20 transition-all ${
+                    className={`p-3 rounded-lg border text-left flex flex-col justify-between h-20 transition-all ${
                       approveTier === "growth"
                         ? "border-primary bg-primary/[0.02] ring-1 ring-primary"
-                        : "border-zinc-200 dark:border-zinc-800 bg-background hover:border-zinc-300"
+                        : "border-border/60 bg-background hover:border-zinc-300"
                     }`}
                   >
                     <span className="font-semibold text-xs text-foreground">{lang === "ar" ? "الباقة المتقدمة" : "Growth VIP"}</span>
@@ -519,10 +519,10 @@ function BrandsPage() {
                       key={m}
                       type="button"
                       onClick={() => setApproveMonths(m)}
-                      className={`h-10 rounded border font-medium text-xs transition-all ${
+                      className={`h-10 rounded-lg border font-medium text-xs transition-all ${
                         approveMonths === m
                           ? "border-primary bg-primary/5 text-primary"
-                          : "border-zinc-200 dark:border-zinc-800 bg-background hover:border-zinc-300"
+                          : "border-border/60 bg-background hover:border-zinc-300"
                       }`}
                     >
                       {m} {lang === "ar" ? "شهر" : "M"}
@@ -532,13 +532,13 @@ function BrandsPage() {
               </div>
             </div>
             <DialogFooter className="gap-2">
-              <Button variant="outline" onClick={() => setApprovingBrand(null)} disabled={approving}>
+              <Button variant="outline" onClick={() => setApprovingBrand(null)} disabled={approving} className="shadow-sm transition-all duration-200 hover:scale-[1.01] active:scale-95">
                 {lang === "ar" ? "إلغاء" : "Cancel"}
               </Button>
               <Button 
                 onClick={handleApprove} 
                 disabled={approving} 
-                className="bg-emerald-600 hover:bg-emerald-700 text-white gap-1.5"
+                className="bg-emerald-600 hover:bg-emerald-700 text-white gap-1.5 shadow-sm transition-all duration-200 hover:scale-[1.01] active:scale-95"
               >
                 {approving ? (
                   <>
@@ -652,9 +652,9 @@ function NewBrandDialog({ onSaved }: { onSaved: () => void }) {
   };
 
   return (
-    <DialogContent>
+    <DialogContent className="max-w-md bg-background/95 backdrop-blur-md border border-border/60 text-foreground p-6 rounded-2xl shadow-xl">
       <DialogHeader>
-        <DialogTitle>{lang === "ar" ? "علامة تجارية جديدة" : "New Brand"}</DialogTitle>
+        <DialogTitle className="font-display font-bold text-lg">{lang === "ar" ? "علامة تجارية جديدة" : "New Brand"}</DialogTitle>
       </DialogHeader>
       <div className="space-y-3">
         <div>
@@ -726,7 +726,7 @@ function NewBrandDialog({ onSaved }: { onSaved: () => void }) {
         </div>
       </div>
       <DialogFooter>
-        <Button onClick={submit} disabled={saving}>
+        <Button onClick={submit} disabled={saving} className="shadow-sm transition-all duration-200 hover:scale-[1.01] active:scale-95">
           {lang === "ar" ? "إنشاء" : "Create"}
         </Button>
       </DialogFooter>
@@ -791,9 +791,9 @@ function EditBrandDialog({ brand, onSaved }: { brand: Brand; onSaved: () => void
   };
 
   return (
-    <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+    <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto bg-background/95 backdrop-blur-md border border-border/60 text-foreground p-6 rounded-2xl shadow-xl">
       <DialogHeader>
-        <DialogTitle>
+        <DialogTitle className="font-display font-bold text-lg">
           {t("brands.editTitle")} — {brand.name_en}
         </DialogTitle>
       </DialogHeader>
@@ -864,7 +864,7 @@ function EditBrandDialog({ brand, onSaved }: { brand: Brand; onSaved: () => void
             />
           </div>
         </div>
-        <Card className="space-y-4 p-4">
+        <Card className="space-y-4 p-4 border border-border/60 shadow rounded-xl bg-card/40">
           <div>
             <div className="flex items-center justify-between gap-3">
               <Label>{isAr ? "عنوان محركات البحث" : "Meta Title"}</Label>
@@ -893,7 +893,7 @@ function EditBrandDialog({ brand, onSaved }: { brand: Brand; onSaved: () => void
             />
           </div>
         </Card>
-        <div className="flex items-center justify-between border border-border rounded-md p-3">
+        <div className="flex items-center justify-between border border-border/60 rounded-xl p-3 bg-muted/20">
           <div>
             <p className="text-sm font-medium">{isAr ? "نشط" : "Active"}</p>
             <p className="text-xs text-muted-foreground">
@@ -909,7 +909,7 @@ function EditBrandDialog({ brand, onSaved }: { brand: Brand; onSaved: () => void
         </div>
       </div>
       <DialogFooter>
-        <Button onClick={save} disabled={saving}>
+        <Button onClick={save} disabled={saving} className="shadow-sm transition-all duration-200 hover:scale-[1.01] active:scale-95">
           {t("common.save")}
         </Button>
       </DialogFooter>
@@ -984,9 +984,9 @@ function DeleteBrandDialog({ brand, onDone }: { brand: Brand; onDone: () => void
   };
 
   return (
-    <DialogContent>
+    <DialogContent className="max-w-md bg-background/95 backdrop-blur-md border border-border/60 text-foreground p-6 rounded-2xl shadow-xl">
       <DialogHeader>
-        <DialogTitle className="text-destructive flex items-center gap-2">
+        <DialogTitle className="text-destructive flex items-center gap-2 font-display font-bold text-lg">
           <AlertTriangle className="h-5 w-5" /> {t("brands.delete")} — {brand.name_en}
         </DialogTitle>
       </DialogHeader>
@@ -1036,6 +1036,7 @@ function DeleteBrandDialog({ brand, onDone }: { brand: Brand; onDone: () => void
         <Button
           variant="destructive"
           onClick={run}
+          className="shadow-sm transition-all duration-200 hover:scale-[1.01] active:scale-95"
           disabled={working || confirm.trim().toLowerCase() !== brand.slug.toLowerCase()}
         >
           {working
