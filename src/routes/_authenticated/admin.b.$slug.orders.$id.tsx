@@ -1412,7 +1412,7 @@ function OrderDetail() {
   const isPickup = String(order?.fulfillment_method || "").toLowerCase() === "pickup";
 
   return (
-    <div className="mx-auto max-w-[1500px] p-3 sm:p-5 lg:p-6">
+    <div className="mx-auto max-w-[1500px] p-4 sm:p-6 lg:p-8 animate-fade-in" dir={lang === "ar" ? "rtl" : "ltr"}>
       <div className="no-print mb-4 flex flex-wrap items-center justify-between gap-3">
         <Link
           to="/admin/b/$slug/orders"
@@ -1501,7 +1501,7 @@ function OrderDetail() {
         className="no-print m-0 min-w-0 border-0 p-0 disabled:opacity-80"
       >
         <div className="mb-6 grid items-start gap-4 lg:grid-cols-[minmax(0,1.9fr)_minmax(320px,1fr)]">
-          <Card className="p-4 sm:p-5 lg:col-start-1 lg:row-start-1">
+          <Card className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm p-5 sm:p-6 lg:col-start-1 lg:row-start-1">
             <div className="mb-4">
               <Label className="flex items-center gap-2">
                 <Search className="h-3 w-3" /> {t("customers.searchByPhone")}
@@ -2083,7 +2083,7 @@ function OrderDetail() {
             </div>
           </Card>
 
-          <Card className="p-4 sm:p-5 lg:col-start-1 lg:row-start-2">
+          <Card className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm p-5 sm:p-6 lg:col-start-1 lg:row-start-2 mt-6">
             <div className="flex items-center justify-between mb-4 gap-2 flex-wrap">
               <h3 className="font-display text-lg">{t("orderDetail.lineItems")}</h3>
               <div className="flex items-center gap-2">
@@ -2336,7 +2336,7 @@ function OrderDetail() {
             />
           </Card>
 
-          <Card className="p-4 sm:p-5 lg:sticky lg:top-4 lg:col-start-2 lg:row-start-1 lg:row-span-2 lg:max-h-[calc(100vh-2rem)] lg:overflow-y-auto">
+          <Card className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm p-5 sm:p-6 lg:sticky lg:top-4 lg:col-start-2 lg:row-start-1 lg:row-span-2 lg:max-h-[calc(100vh-2rem)] lg:overflow-y-auto">
             <div className="space-y-4">
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-1">
                 <div>

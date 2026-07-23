@@ -28,6 +28,7 @@ import { Route as SlugAuthRouteImport } from './routes/$slug.auth'
 import { Route as SlugAccountRouteImport } from './routes/$slug.account'
 import { Route as SlugCategoryRouteImport } from './routes/$slug.$category'
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin.index'
+import { Route as ApiOrdersStatusRouteImport } from './routes/api.orders.status'
 import { Route as ApiCronCleanupBenefitReceiptsRouteImport } from './routes/api.cron.cleanup-benefit-receipts'
 import { Route as AuthenticatedAdminTeamRouteImport } from './routes/_authenticated/admin.team'
 import { Route as AuthenticatedAdminSettingsRouteImport } from './routes/_authenticated/admin.settings'
@@ -156,6 +157,11 @@ const AuthenticatedAdminIndexRoute = AuthenticatedAdminIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AuthenticatedAdminRoute,
+} as any)
+const ApiOrdersStatusRoute = ApiOrdersStatusRouteImport.update({
+  id: '/api/orders/status',
+  path: '/api/orders/status',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const ApiCronCleanupBenefitReceiptsRoute =
   ApiCronCleanupBenefitReceiptsRouteImport.update({
@@ -387,6 +393,7 @@ export interface FileRoutesByFullPath {
   '/admin/settings': typeof AuthenticatedAdminSettingsRoute
   '/admin/team': typeof AuthenticatedAdminTeamRoute
   '/api/cron/cleanup-benefit-receipts': typeof ApiCronCleanupBenefitReceiptsRoute
+  '/api/orders/status': typeof ApiOrdersStatusRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
   '/admin/b/$slug': typeof AuthenticatedAdminBSlugRouteRouteWithChildren
   '/admin/super/requests': typeof AuthenticatedAdminSuperRequestsRoute
@@ -439,6 +446,7 @@ export interface FileRoutesByTo {
   '/admin/settings': typeof AuthenticatedAdminSettingsRoute
   '/admin/team': typeof AuthenticatedAdminTeamRoute
   '/api/cron/cleanup-benefit-receipts': typeof ApiCronCleanupBenefitReceiptsRoute
+  '/api/orders/status': typeof ApiOrdersStatusRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
   '/admin/b/$slug': typeof AuthenticatedAdminBSlugRouteRouteWithChildren
   '/admin/super/requests': typeof AuthenticatedAdminSuperRequestsRoute
@@ -495,6 +503,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/settings': typeof AuthenticatedAdminSettingsRoute
   '/_authenticated/admin/team': typeof AuthenticatedAdminTeamRoute
   '/api/cron/cleanup-benefit-receipts': typeof ApiCronCleanupBenefitReceiptsRoute
+  '/api/orders/status': typeof ApiOrdersStatusRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
   '/_authenticated/admin/b/$slug': typeof AuthenticatedAdminBSlugRouteRouteWithChildren
   '/_authenticated/admin/super/requests': typeof AuthenticatedAdminSuperRequestsRoute
@@ -551,6 +560,7 @@ export interface FileRouteTypes {
     | '/admin/settings'
     | '/admin/team'
     | '/api/cron/cleanup-benefit-receipts'
+    | '/api/orders/status'
     | '/admin/'
     | '/admin/b/$slug'
     | '/admin/super/requests'
@@ -603,6 +613,7 @@ export interface FileRouteTypes {
     | '/admin/settings'
     | '/admin/team'
     | '/api/cron/cleanup-benefit-receipts'
+    | '/api/orders/status'
     | '/admin'
     | '/admin/b/$slug'
     | '/admin/super/requests'
@@ -658,6 +669,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/settings'
     | '/_authenticated/admin/team'
     | '/api/cron/cleanup-benefit-receipts'
+    | '/api/orders/status'
     | '/_authenticated/admin/'
     | '/_authenticated/admin/b/$slug'
     | '/_authenticated/admin/super/requests'
@@ -694,6 +706,7 @@ export interface RootRouteChildren {
   InvoiceIdRoute: typeof InvoiceIdRoute
   PlatformFilenameRoute: typeof PlatformFilenameRoute
   ApiCronCleanupBenefitReceiptsRoute: typeof ApiCronCleanupBenefitReceiptsRoute
+  ApiOrdersStatusRoute: typeof ApiOrdersStatusRoute
   ApiPublicPaymentsCreateTapChargeRoute: typeof ApiPublicPaymentsCreateTapChargeRoute
   ApiPublicPaymentsTapRedirectRoute: typeof ApiPublicPaymentsTapRedirectRoute
   ApiPublicWebhooksTapRoute: typeof ApiPublicWebhooksTapRoute
@@ -834,6 +847,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin/'
       preLoaderRoute: typeof AuthenticatedAdminIndexRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/api/orders/status': {
+      id: '/api/orders/status'
+      path: '/api/orders/status'
+      fullPath: '/api/orders/status'
+      preLoaderRoute: typeof ApiOrdersStatusRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/api/cron/cleanup-benefit-receipts': {
       id: '/api/cron/cleanup-benefit-receipts'
@@ -1228,6 +1248,7 @@ const rootRouteChildren: RootRouteChildren = {
   InvoiceIdRoute: InvoiceIdRoute,
   PlatformFilenameRoute: PlatformFilenameRoute,
   ApiCronCleanupBenefitReceiptsRoute: ApiCronCleanupBenefitReceiptsRoute,
+  ApiOrdersStatusRoute: ApiOrdersStatusRoute,
   ApiPublicPaymentsCreateTapChargeRoute: ApiPublicPaymentsCreateTapChargeRoute,
   ApiPublicPaymentsTapRedirectRoute: ApiPublicPaymentsTapRedirectRoute,
   ApiPublicWebhooksTapRoute: ApiPublicWebhooksTapRoute,

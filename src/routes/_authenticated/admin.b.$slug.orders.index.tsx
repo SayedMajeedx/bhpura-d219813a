@@ -731,48 +731,54 @@ function OrdersList() {
   };
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 max-w-6xl mx-auto">
-      <div className="mb-6 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
-        <div className="min-w-0">
-          <h1 className="truncate text-3xl sm:text-4xl font-display">{t("orders.title")}</h1>
-          <p className="text-sm text-muted-foreground mt-1 truncate">{t("orders.subtitle")}</p>
+    <div className="mx-auto max-w-7xl space-y-6 p-4 sm:p-6 lg:p-8 animate-fade-in" dir={lang === "ar" ? "rtl" : "ltr"}>
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h1 className="font-display text-4xl font-extrabold tracking-tight bg-clip-text bg-gradient-to-r from-slate-900 via-slate-800 to-slate-950 dark:from-slate-50 dark:to-slate-300">
+            {t("orders.title")}
+          </h1>
+          <p className="mt-1.5 text-muted-foreground text-sm max-w-md">
+            {t("orders.subtitle")}
+          </p>
         </div>
         {!isCourier && (
-          <div className="flex gap-2 shrink-0">
+          <div className="flex items-center gap-2 shrink-0">
             <OrderImporterModal brandId={brandId} onComplete={() => qc.invalidateQueries({ queryKey: ["orders", brandId] })} />
-            <Button onClick={create}>
-              <Plus className="h-4 w-4 mr-2" /> {t("orders.new")}
+            <Button onClick={create} className="shadow-sm transition-all duration-200 hover:shadow hover:scale-[1.01] active:scale-95 gap-2">
+              <Plus className="h-4 w-4" /> {t("orders.new")}
             </Button>
           </div>
         )}
       </div>
 
-      {!isCourier && <div className="mb-5 grid grid-cols-2 lg:grid-cols-4 gap-3">
-        {[
-          [ReceiptText, t("orders.title"), String(orders.length)],
-          [Clock3, t("status.pending"), String(pendingCount)],
-          [CircleDollarSign, t("payStatus.unpaid"), String(unpaidCount)],
-          [Truck, t("orders.total"), formatMoney(openValue, currency)],
-        ].map(([Icon, label, value], index) => {
-          const StatIcon = Icon as typeof ReceiptText;
-          return (
-            <Card key={index} className="p-3 sm:p-4">
-              <div className="flex items-center gap-3">
-                <div className="rounded-lg bg-primary/10 p-2 text-primary">
-                  <StatIcon className="h-4 w-4" />
+      {!isCourier && (
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          {[
+            [ReceiptText, t("orders.title"), String(orders.length)],
+            [Clock3, t("status.pending"), String(pendingCount)],
+            [CircleDollarSign, t("payStatus.unpaid"), String(unpaidCount)],
+            [Truck, t("orders.total"), formatMoney(openValue, currency)],
+          ].map(([Icon, label, value], index) => {
+            const StatIcon = Icon as typeof ReceiptText;
+            return (
+              <Card key={index} className="overflow-hidden border-border/60 shadow-md hover:shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm p-4 transition-all duration-300 hover:-translate-y-0.5">
+                <div className="flex items-center gap-3">
+                  <div className="rounded-xl bg-primary/10 p-2.5 text-primary shadow-inner">
+                    <StatIcon className="h-4 w-4" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground">{String(label)}</p>
+                    <p className="font-semibold text-lg truncate mt-0.5">{String(value)}</p>
+                  </div>
                 </div>
-                <div className="min-w-0">
-                  <p className="text-xs text-muted-foreground truncate">{String(label)}</p>
-                  <p className="font-semibold truncate">{String(value)}</p>
-                </div>
-              </div>
-            </Card>
-          );
-        })}
-      </div>}
+              </Card>
+            );
+          })}
+        </div>
+      )}
 
       {/* Premium Quick Filter Tabs */}
-      <div className="mb-4 flex flex-wrap gap-1.5 border-b pb-3 select-none overflow-x-auto no-scrollbar">
+      <div className="flex flex-wrap gap-1.5 border-b pb-3 select-none overflow-x-auto no-scrollbar">
         {tabsList.map((tab) => {
           const isActive = tabFilter === tab.id;
           const label = lang === "ar" ? tab.label_ar : tab.label_en;
@@ -784,7 +790,7 @@ function OrdersList() {
                 setPage(1); // reset pagination when tab changes
               }}
               className={cn(
-                "relative flex items-center gap-2 rounded-lg px-4 py-2 text-xs font-semibold transition-all duration-200 outline-none shrink-0 border border-transparent shadow-sm",
+                "relative flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold transition-all duration-200 outline-none shrink-0 border border-transparent shadow-sm",
                 isActive
                   ? tab.activeColor
                   : "bg-card text-card-foreground border-border hover:bg-secondary/80"
@@ -806,7 +812,7 @@ function OrdersList() {
         })}
       </div>
 
-      <Card className="mb-5 p-3 sm:p-4">
+      <Card className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm p-4 sm:p-5">
         <div className="grid grid-cols-1 sm:grid-cols-[minmax(220px,1fr)_150px_160px_auto] gap-3 items-center">
           <div className="relative">
             <Search className="absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -1012,7 +1018,7 @@ function OrdersList() {
             })}
           </div>
 
-          <Card className="hidden overflow-hidden sm:block border border-border">
+          <Card className="hidden overflow-hidden sm:block border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm">
             <div className="overflow-x-auto">
               <table className="w-full table-auto text-sm">
                 <colgroup>
@@ -1024,20 +1030,20 @@ function OrdersList() {
                   <col className="w-[11%]" />
                   <col className="w-[15%]" />
                 </colgroup>
-                <thead className="bg-secondary/50 select-none text-xs uppercase tracking-wide">
+                <thead className="bg-muted/40 border-b select-none text-xs uppercase tracking-wider text-muted-foreground font-semibold">
                   <tr>
-                    <th className="p-4 text-start font-semibold cursor-pointer hover:bg-secondary/75 transition-colors" onClick={() => toggleSort("invoice_number")}>
+                    <th className="p-4 text-start font-semibold cursor-pointer hover:bg-muted/60 transition-colors" onClick={() => toggleSort("invoice_number")}>
                       <span className="flex items-center">{t("orders.invoice")} {renderSortIcon("invoice_number")}</span>
                     </th>
-                    <th className="p-4 text-start font-semibold cursor-pointer hover:bg-secondary/75 transition-colors" onClick={() => toggleSort("created_at")}>
+                    <th className="p-4 text-start font-semibold cursor-pointer hover:bg-muted/60 transition-colors" onClick={() => toggleSort("created_at")}>
                       <span className="flex items-center">{t("orders.date")} {renderSortIcon("created_at")}</span>
                     </th>
-                    <th className="p-4 text-start font-semibold cursor-pointer hover:bg-secondary/75 transition-colors" onClick={() => toggleSort("customer")}>
+                    <th className="p-4 text-start font-semibold cursor-pointer hover:bg-muted/60 transition-colors" onClick={() => toggleSort("customer")}>
                       <span className="flex items-center">{t("orders.customer")} {renderSortIcon("customer")}</span>
                     </th>
                     <th className="p-4 text-start font-semibold">{lang === "ar" ? "حالة الدفع" : "Payment Status"}</th>
                     <th className="p-4 text-start font-semibold">{lang === "ar" ? "حالة التوصيل" : "Fulfillment Status"}</th>
-                    <th className="p-4 text-end font-semibold cursor-pointer hover:bg-secondary/75 transition-colors" onClick={() => toggleSort("total")}>
+                    <th className="p-4 text-end font-semibold cursor-pointer hover:bg-muted/60 transition-colors" onClick={() => toggleSort("total")}>
                       <span className="flex items-center justify-end">{t("orders.total")} {renderSortIcon("total")}</span>
                     </th>
                     <th className="p-4 text-end font-semibold">{t("orders.actions")}</th>

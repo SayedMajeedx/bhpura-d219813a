@@ -209,33 +209,35 @@ function PagesAndPolicies() {
   if (isLoading) return <div className="p-8">{isAr ? "جاري التحميل…" : "Loading…"}</div>;
 
   return (
-    <div className="mx-auto max-w-5xl space-y-6 p-4 sm:p-8" dir={isAr ? "rtl" : "ltr"}>
-      <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
+    <div className="mx-auto max-w-6xl space-y-6 p-4 sm:p-6 lg:p-8 animate-fade-in" dir={isAr ? "rtl" : "ltr"}>
+      <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="font-display text-2xl sm:text-3xl">{isAr ? "الصفحات والسياسات" : "Pages & Policies"}</h1>
-          <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
+          <h1 className="font-display text-4xl font-extrabold tracking-tight bg-clip-text bg-gradient-to-r from-slate-900 via-slate-800 to-slate-950 dark:from-slate-50 dark:to-slate-300">
+            {isAr ? "الصفحات والسياسات" : "Pages & Policies"}
+          </h1>
+          <p className="mt-1.5 text-muted-foreground text-sm max-w-md">
             {isAr
-              ? "أنشئ صفحات المتجر، رتّب ظهورها في التذييل، وحرّر محتواها باللغتين من مساحة عمل واضحة."
-              : "Create storefront pages, arrange their footer order, and edit both languages in a focused workspace."}
+              ? "أنشئ صفحات المتجر، رتّب ظهورها في تذييل المتجر، وحرّر محتواها باللغتين بسهولة."
+              : "Create storefront pages, arrange footer layout, and edit multilingual content in a clean workspace."}
           </p>
         </div>
-        <Tabs value={editorLanguage} onValueChange={(value) => setEditorLanguage(value as EditorLanguage)} dir="ltr">
-          <TabsList className="grid w-full grid-cols-2 sm:w-64">
-            <TabsTrigger value="en">English (EN)</TabsTrigger>
-            <TabsTrigger value="ar">العربية (AR)</TabsTrigger>
+        <Tabs value={editorLanguage} onValueChange={(value) => setEditorLanguage(value as EditorLanguage)} dir="ltr" className="shrink-0">
+          <TabsList className="grid w-64 grid-cols-2 bg-slate-100 dark:bg-slate-900/60 border rounded-xl p-1 h-11">
+            <TabsTrigger value="en" className="rounded-lg text-xs font-semibold data-[state=active]:bg-white dark:data-[state=active]:bg-slate-850 data-[state=active]:shadow-sm">English (EN)</TabsTrigger>
+            <TabsTrigger value="ar" className="rounded-lg text-xs font-semibold data-[state=active]:bg-white dark:data-[state=active]:bg-slate-850 data-[state=active]:shadow-sm">العربية (AR)</TabsTrigger>
           </TabsList>
         </Tabs>
       </div>
 
-      <Card className="space-y-4 p-5">
+      <Card className="overflow-hidden border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm p-6 space-y-4">
         <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
           <div>
-            <h2 className="font-display text-lg">{isAr ? "روابط التواصل الاجتماعي" : "Social media links"}</h2>
-            <p className="text-xs text-muted-foreground">
+            <h2 className="font-display text-xl font-bold">{isAr ? "روابط التواصل الاجتماعي" : "Social media links"}</h2>
+            <p className="text-xs text-muted-foreground mt-0.5">
               {isAr ? "اختر المنصة من القائمة وأضف رابط الحساب الكامل." : "Choose a platform and add its complete profile URL."}
             </p>
           </div>
-          <Button type="button" size="sm" variant="outline" onClick={() => setSocials((current) => [...current, { name: "Instagram", url: "" }])}>
+          <Button type="button" size="sm" variant="outline" onClick={() => setSocials((current) => [...current, { name: "Instagram", url: "" }])} className="shadow-sm transition-all duration-200 hover:shadow hover:scale-[1.01] active:scale-95 gap-2">
             <Plus className="h-4 w-4" />
             {isAr ? "إضافة رابط" : "Add social link"}
           </Button>
@@ -253,28 +255,28 @@ function PagesAndPolicies() {
                 </SelectContent>
               </Select>
               <Input value={social.url} onChange={(event) => updateSocial(index, { url: event.target.value })} placeholder="https://instagram.com/yourbrand" dir="ltr" inputMode="url" />
-              <Button type="button" variant="ghost" size="icon" onClick={() => setSocials((current) => current.filter((_, i) => i !== index))} aria-label={isAr ? "حذف الرابط" : "Remove link"}>
-                <Trash2 className="h-4 w-4 text-red-600" />
+              <Button type="button" variant="ghost" size="icon" onClick={() => setSocials((current) => current.filter((_, i) => i !== index))} aria-label={isAr ? "حذف الرابط" : "Remove link"} className="hover:bg-rose-50 dark:hover:bg-rose-950/30 text-rose-500 rounded-lg">
+                <Trash2 className="h-4 w-4" />
               </Button>
             </div>
           ))}
         </div>
       </Card>
 
-      <Card className="space-y-4 p-5">
+      <Card className="overflow-hidden border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm p-6 space-y-4">
         <div className="flex items-center gap-2">
           <MessageCircle className="h-5 w-5 text-[#25D366]" />
-          <h2 className="font-display text-lg">{isAr ? "زر واتساب العائم" : "WhatsApp floating button"}</h2>
+          <h2 className="font-display text-xl font-bold">{isAr ? "زر واتساب العائم" : "WhatsApp floating button"}</h2>
         </div>
-        <div className="flex items-center justify-between gap-4 rounded-xl border p-4">
+        <div className="flex items-center justify-between gap-4 rounded-xl border p-4 bg-muted/10">
           <div>
-            <p className="text-sm font-medium">{isAr ? "إظهار الزر في المتجر" : "Show button on storefront"}</p>
-            <p className="text-xs text-muted-foreground">{isAr ? "يفتح محادثة واتساب مباشرة من جميع صفحات المتجر." : "Opens a WhatsApp chat from every storefront page."}</p>
+            <p className="text-sm font-semibold">{isAr ? "إظهار الزر في المتجر" : "Show button on storefront"}</p>
+            <p className="text-xs text-muted-foreground mt-0.5">{isAr ? "يفتح محادثة واتساب مباشرة من جميع صفحات المتجر." : "Opens a WhatsApp chat from every storefront page."}</p>
           </div>
           <Switch checked={waEnabled} onCheckedChange={setWaEnabled} />
         </div>
         <div>
-          <Label>{isAr ? "رقم واتساب مع رمز الدولة" : "WhatsApp number with country code"}</Label>
+          <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1.5 block">{isAr ? "رقم واتساب مع رمز الدولة" : "WhatsApp number with country code"}</Label>
           <Input value={waNumber} onChange={(event) => setWaNumber(event.target.value)} placeholder="+97312345678" inputMode="tel" dir="ltr" />
         </div>
       </Card>
@@ -282,16 +284,20 @@ function PagesAndPolicies() {
       <section className="space-y-4">
         <div className="flex items-center justify-between gap-3">
           <div>
-            <h2 className="font-display text-xl">{isAr ? "صفحات المتجر" : "Storefront pages"}</h2>
-            <p className="text-xs text-muted-foreground">{isAr ? "اسحب المقبض لتغيير ترتيب الروابط في تذييل المتجر." : "Drag the handle to change link order in the storefront footer."}</p>
+            <h2 className="font-display text-xl font-bold">{isAr ? "صفحات المتجر" : "Storefront pages"}</h2>
+            <p className="text-xs text-muted-foreground mt-0.5">{isAr ? "اسحب المقبض لتغيير ترتيب الروابط في تذييل المتجر." : "Drag the handle to change link order in the storefront footer."}</p>
           </div>
-          <Button type="button" onClick={addPage} size="sm">
+          <Button type="button" onClick={addPage} size="sm" className="shadow-sm transition-all duration-200 hover:shadow hover:scale-[1.01] active:scale-95 gap-2">
             <Plus className="h-4 w-4" />
             {isAr ? "صفحة جديدة" : "New page"}
           </Button>
         </div>
 
-        {pages.length === 0 && <Card className="p-8 text-center text-sm text-muted-foreground">{isAr ? "لا توجد صفحات بعد." : "No pages yet."}</Card>}
+        {pages.length === 0 && (
+          <Card className="p-16 text-center border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm">
+            <p className="text-muted-foreground text-sm">{isAr ? "لا توجد صفحات بعد." : "No pages yet."}</p>
+          </Card>
+        )}
 
         <Accordion type="multiple" value={openPages} onValueChange={setOpenPages} className="space-y-3">
           {pages.map((page, index) => {
@@ -302,7 +308,7 @@ function PagesAndPolicies() {
                 value={`page-${index}`}
                 onDragOver={(event) => { event.preventDefault(); event.dataTransfer.dropEffect = "move"; }}
                 onDrop={(event) => { event.preventDefault(); if (draggedIndex !== null) movePage(draggedIndex, index); setDraggedIndex(null); }}
-                className="overflow-hidden rounded-xl border bg-card px-4 shadow-sm data-[state=open]:shadow-md"
+                className="overflow-hidden border-border/60 shadow-md hover:shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm px-4 transition-all duration-200"
               >
                 <div className="flex items-center gap-2">
                   <button
@@ -316,11 +322,11 @@ function PagesAndPolicies() {
                   >
                     <GripVertical className="h-5 w-5" />
                   </button>
-                  <AccordionTrigger className="min-w-0 flex-1 hover:no-underline">
+                  <AccordionTrigger className="min-w-0 flex-1 hover:no-underline py-4">
                     <span className="truncate text-base font-semibold">{visibleTitle || (isAr ? `صفحة بدون عنوان ${index + 1}` : `Untitled page ${index + 1}`)}</span>
                   </AccordionTrigger>
-                  <Button type="button" variant="ghost" size="icon" onClick={() => removePage(index)} aria-label={isAr ? "حذف الصفحة" : "Delete page"}>
-                    <Trash2 className="h-4 w-4 text-red-600" />
+                  <Button type="button" variant="ghost" size="icon" onClick={() => removePage(index)} aria-label={isAr ? "حذف الصفحة" : "Delete page"} className="hover:bg-rose-50 dark:hover:bg-rose-950/30 text-rose-500 rounded-lg">
+                    <Trash2 className="h-4 w-4" />
                   </Button>
                 </div>
 
@@ -448,8 +454,10 @@ function PagesAndPolicies() {
         </Accordion>
       </section>
 
-      <div className="sticky bottom-4 z-10 flex justify-end rounded-xl border bg-background/95 p-3 shadow-lg backdrop-blur">
-        <Button onClick={save} disabled={saving} size="lg">{saving ? (isAr ? "جاري الحفظ…" : "Saving…") : (isAr ? "حفظ جميع التغييرات" : "Save all changes")}</Button>
+      <div className="sticky bottom-4 z-10 flex justify-end rounded-2xl border border-border/60 bg-background/80 p-4 shadow-lg backdrop-blur-md">
+        <Button onClick={save} disabled={saving} size="lg" className="shadow-sm transition-all duration-200 hover:shadow hover:scale-[1.01] active:scale-95 px-6 font-semibold">
+          {saving ? (isAr ? "جاري الحفظ…" : "Saving…") : (isAr ? "حفظ جميع التغييرات" : "Save all changes")}
+        </Button>
       </div>
     </div>
   );

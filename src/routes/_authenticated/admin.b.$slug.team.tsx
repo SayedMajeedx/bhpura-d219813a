@@ -211,13 +211,13 @@ function TeamManagement() {
   const locale = isAr ? "ar-BH" : "en-US";
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 max-w-5xl mx-auto">
-      <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
+    <div className="mx-auto max-w-6xl space-y-6 p-4 sm:p-6 lg:p-8 animate-fade-in" dir={isAr ? "rtl" : "ltr"}>
+      <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="text-3xl sm:text-4xl font-display">
+          <h1 className="font-display text-4xl font-extrabold tracking-tight bg-clip-text bg-gradient-to-r from-slate-900 via-slate-800 to-slate-950 dark:from-slate-50 dark:to-slate-300">
             {isAr ? "إدارة الموظفين" : "Team Management"}
           </h1>
-          <p className="text-muted-foreground mt-1">
+          <p className="mt-1.5 text-muted-foreground text-sm max-w-md">
             {isAr
               ? "أضف وأدِر حسابات الموظفين. فقط المدراء يمكنهم رؤية هذه الصفحة."
               : "Add and manage staff accounts. Only admins can view this page."}
@@ -225,8 +225,8 @@ function TeamManagement() {
         </div>
         <Dialog open={addOpen} onOpenChange={(v) => { setAddOpen(v); if (!v) resetForm(); }}>
           <DialogTrigger asChild>
-            <Button>
-              <Plus className="h-4 w-4 me-2" />
+            <Button className="shadow-sm transition-all duration-200 hover:shadow hover:scale-[1.01] active:scale-95 gap-2">
+              <Plus className="h-4 w-4" />
               {isAr ? "إضافة موظف" : "Add Staff"}
             </Button>
           </DialogTrigger>
@@ -238,20 +238,19 @@ function TeamManagement() {
               <div>
                 <Label>{t("customers.name")}</Label>
                 <Input
-                  className="text-start"
                   value={form.name}
                   onChange={(e) => setForm({ ...form, name: e.target.value })}
-                  placeholder={isAr ? "الاسم (اختياري)" : "Name (optional)"}
+                  placeholder="e.g. Sayeed Majeed"
                 />
               </div>
               <div>
-                <Label>{t("auth.email")} <span className="text-destructive">*</span></Label>
+                <Label>{t("customers.email")}</Label>
                 <Input
                   type="email"
-                  className="text-start"
                   value={form.email}
                   onChange={(e) => setForm({ ...form, email: e.target.value })}
-                  placeholder={isAr ? "example@email.com" : "example@email.com"}
+                  placeholder="e.g. name@example.com"
+                  dir="ltr"
                 />
               </div>
               <div>
@@ -323,15 +322,15 @@ function TeamManagement() {
                       return (
                         <label key={p.id} className="flex items-center gap-2 text-sm cursor-pointer hover:opacity-80 transition-opacity">
                           <input
-                            type="checkbox"
-                            checked={checked}
-                            className="rounded border-gray-300 text-primary focus:ring-primary h-4 w-4"
-                            onChange={() => {
-                              const newPerms = checked
-                                ? form.permissions.filter((x) => x !== p.id)
-                                : [...form.permissions, p.id];
-                              setForm({ ...form, permissions: newPerms });
-                            }}
+                             type="checkbox"
+                             checked={checked}
+                             className="rounded border-gray-300 text-primary focus:ring-primary h-4 w-4"
+                             onChange={() => {
+                               const newPerms = checked
+                                 ? form.permissions.filter((x) => x !== p.id)
+                                 : [...form.permissions, p.id];
+                               setForm({ ...form, permissions: newPerms });
+                             }}
                           />
                           <span>{isAr ? p.labelAr : p.labelEn}</span>
                         </label>
@@ -358,17 +357,17 @@ function TeamManagement() {
       </div>
 
       {staff.length === 0 ? (
-        <Card className="p-12 text-center">
+        <Card className="p-16 text-center border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm">
           <Users className="h-10 w-10 mx-auto text-muted-foreground mb-3" />
           <p className="text-muted-foreground">
             {isAr ? "لا يوجد موظفين بعد." : "No staff members yet."}
           </p>
         </Card>
       ) : (
-        <Card className="overflow-hidden">
+        <Card className="overflow-hidden border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm">
           <div className="overflow-x-auto">
             <table className="w-full text-sm lg:min-w-[640px]">
-              <thead className="bg-secondary/50 text-xs uppercase tracking-wider text-muted-foreground">
+              <thead className="border-b bg-muted/40 font-semibold text-muted-foreground">
                 <tr>
                   <th className="p-4 text-start">{isAr ? "الاسم" : "Name"}</th>
                   <th className="hidden p-4 text-start md:table-cell">{isAr ? "البريد الإلكتروني" : "Email"}</th>

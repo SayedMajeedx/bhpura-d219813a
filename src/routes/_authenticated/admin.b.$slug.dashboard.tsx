@@ -502,32 +502,32 @@ function Dashboard() {
   ];
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-6 sm:space-y-8">
+    <div className="mx-auto max-w-7xl space-y-6 p-4 sm:p-6 lg:p-8 animate-fade-in" dir={isAr ? "rtl" : "ltr"}>
       {/* Upper header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl sm:text-4xl font-display font-bold tracking-tight text-foreground flex items-center gap-2">
-            <Zap className="h-8 w-8 text-primary animate-pulse" />
+          <h1 className="font-display text-4xl font-extrabold tracking-tight bg-clip-text bg-gradient-to-r from-slate-900 via-slate-800 to-slate-950 dark:from-slate-50 dark:to-slate-300 flex items-center gap-3">
+            <Zap className="h-8 w-8 text-primary animate-pulse shrink-0" />
             {t("dashboard.title")}
           </h1>
-          <p className="text-sm text-muted-foreground mt-1">
+          <p className="mt-1.5 text-muted-foreground text-sm max-w-md">
             {isAr ? "نظرة عامة على أداء النشاط ومقاييس التجزئة الذكية" : "Real-time retail finance and customer CRM analytics insights."}
           </p>
         </div>
         {/* Navigation Quicklinks */}
-        <div className="flex flex-wrap gap-2">
-          <Link to="/admin/b/$slug/orders" params={{ slug }} className="inline-flex h-9 shrink-0 items-center rounded-lg bg-primary px-4 text-xs font-semibold text-primary-foreground hover:bg-primary/90 transition-all shadow-sm">
-            <ReceiptText className="me-1.5 h-3.5 w-3.5" />{isAr ? "الطلبات" : "Orders"}
+        <div className="flex flex-wrap gap-2 shrink-0">
+          <Link to="/admin/b/$slug/orders" params={{ slug }} className="inline-flex h-10 items-center rounded-xl bg-primary px-4 text-xs font-bold text-primary-foreground shadow-sm transition-all duration-200 hover:shadow hover:scale-[1.01] active:scale-95 gap-2">
+            <ReceiptText className="h-4 w-4" />{isAr ? "الطلبات" : "Orders"}
           </Link>
-          <Link to="/admin/b/$slug/inventory" params={{ slug }} className="inline-flex h-9 shrink-0 items-center rounded-lg border border-input bg-background px-4 text-xs font-semibold text-foreground hover:bg-secondary/40 transition-all">
-            <Package className="me-1.5 h-3.5 w-3.5" />{isAr ? "المنتجات" : "Products"}
+          <Link to="/admin/b/$slug/inventory" params={{ slug }} className="inline-flex h-10 items-center rounded-xl border border-border/60 bg-card/50 px-4 text-xs font-bold text-foreground shadow-sm transition-all duration-200 hover:shadow hover:scale-[1.01] active:scale-95 gap-2">
+            <Package className="h-4 w-4" />{isAr ? "المنتجات" : "Products"}
           </Link>
-          <Link to="/admin/b/$slug/customers" params={{ slug }} className="inline-flex h-9 shrink-0 items-center rounded-lg border border-input bg-background px-4 text-xs font-semibold text-foreground hover:bg-secondary/40 transition-all">
-            <Users className="me-1.5 h-3.5 w-3.5" />{isAr ? "العملاء" : "Customers"}
+          <Link to="/admin/b/$slug/customers" params={{ slug }} className="inline-flex h-10 items-center rounded-xl border border-border/60 bg-card/50 px-4 text-xs font-bold text-foreground shadow-sm transition-all duration-200 hover:shadow hover:scale-[1.01] active:scale-95 gap-2">
+            <Users className="h-4 w-4" />{isAr ? "العملاء" : "Customers"}
           </Link>
           {canViewFinancials && (
-            <Link to="/admin/b/$slug/expenses" params={{ slug }} className="inline-flex h-9 shrink-0 items-center rounded-lg border border-input bg-background px-4 text-xs font-semibold text-foreground hover:bg-secondary/40 transition-all">
-              <Wallet className="me-1.5 h-3.5 w-3.5" />{isAr ? "المصروفات" : "Expenses"}
+            <Link to="/admin/b/$slug/expenses" params={{ slug }} className="inline-flex h-10 items-center rounded-xl border border-border/60 bg-card/50 px-4 text-xs font-bold text-foreground shadow-sm transition-all duration-200 hover:shadow hover:scale-[1.01] active:scale-95 gap-2">
+              <Wallet className="h-4 w-4" />{isAr ? "المصروفات" : "Expenses"}
             </Link>
           )}
         </div>
@@ -538,14 +538,14 @@ function Dashboard() {
         {kpis.map((k) => {
           const Icon = k.icon;
           return (
-            <Card key={k.label} className={`relative overflow-hidden p-5 transition-all duration-300 bg-gradient-to-br ${k.bg} hover:shadow-md hover:-translate-y-0.5 border border-border ${k.border}`}>
+            <Card key={k.label} className={`relative overflow-hidden p-6 transition-all duration-300 bg-gradient-to-br ${k.bg} hover:shadow-xl hover:-translate-y-1 border border-border/60 shadow-md rounded-2xl bg-card/40 backdrop-blur-sm ${k.border}`}>
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
                   <p className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground/80">{k.label}</p>
                   <p className="text-2xl sm:text-3xl font-display font-extrabold text-foreground mt-2.5 truncate">{k.value}</p>
                   <p className="text-xs text-muted-foreground/90 font-medium mt-1 truncate">{k.subValue}</p>
                 </div>
-                <div className={`h-10 w-10 shrink-0 rounded-xl bg-secondary/80 flex items-center justify-center ${k.color}`}>
+                <div className={`h-10 w-10 shrink-0 rounded-xl bg-slate-100/80 dark:bg-slate-800/80 flex items-center justify-center shadow-sm ${k.color}`}>
                   <Icon className="h-5 w-5" />
                 </div>
               </div>
@@ -558,7 +558,7 @@ function Dashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
         {/* Left Column (65%) - Top Moving Items */}
         <div className="lg:col-span-2 space-y-6">
-          <Card className="p-5 sm:p-6 border border-border hover:shadow-sm transition-shadow">
+          <Card className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm p-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
               <div>
                 <div className="flex items-center gap-2">
@@ -567,7 +567,7 @@ function Dashboard() {
                 </div>
                 <p className="text-xs text-muted-foreground mt-0.5">{isAr ? "أعلى مبيعات المنتجات في الـ 45 يومًا الماضية ومعدل نفادها" : "Top item sales in the past 45 days matched with velocity runway."}</p>
               </div>
-              <span className="inline-flex shrink-0 items-center gap-1 text-[11px] px-2.5 py-1 rounded-full bg-secondary text-muted-foreground font-semibold">
+              <span className="inline-flex shrink-0 items-center gap-1 text-[11px] px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-muted-foreground font-semibold border">
                 {isAr ? "مفلترة: آخر 45 يومًا" : "Past 45 days window"}
               </span>
             </div>
@@ -577,14 +577,14 @@ function Dashboard() {
                 {isAr ? "لا توجد بيانات كافية لعرض المنتجات الأكثر حركة." : "Insufficient sales volume to map item movement."}
               </div>
             ) : (
-              <div className="overflow-x-auto">
+              <div className="overflow-x-auto -mx-6">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="text-xs font-bold text-muted-foreground uppercase border-b border-border bg-secondary/10">
-                      <th className="p-3 text-start">{isAr ? "المنتج" : "Product"}</th>
+                    <tr className="text-xs font-bold text-muted-foreground uppercase border-b bg-muted/40">
+                      <th className="p-3 px-6 text-start">{isAr ? "المنتج" : "Product"}</th>
                       <th className="p-3 text-center w-28">{isAr ? "الوحدات المباعة" : "Units Sold"}</th>
                       <th className="p-3 text-center w-28">{isAr ? "المخزون المتبقي" : "Remaining Stock"}</th>
-                      <th className="p-3 text-end w-36">{isAr ? "النفاد المتوقع" : "Days Left"}</th>
+                      <th className="p-3 px-6 text-end w-36">{isAr ? "النفاد المتوقع" : "Days Left"}</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border/60">
@@ -601,10 +601,10 @@ function Dashboard() {
 
                       return (
                         <tr key={item.id} className="hover:bg-secondary/10 transition-colors">
-                          <td className="p-3 font-semibold text-foreground truncate max-w-[200px] sm:max-w-xs">{item.title}</td>
+                          <td className="p-3 px-6 font-semibold text-foreground truncate max-w-[200px] sm:max-w-xs">{item.title}</td>
                           <td className="p-3 text-center font-mono font-bold text-foreground">{item.unitsSold}</td>
                           <td className="p-3 text-center font-mono font-medium text-muted-foreground">{item.stock}</td>
-                          <td className="p-3 text-end">
+                          <td className="p-3 px-6 text-end">
                             <span className={`inline-flex items-center justify-center text-xs font-bold px-2 py-0.5 rounded-full ${runwayColor}`}>
                               {velocityText}
                             </span>
@@ -619,7 +619,7 @@ function Dashboard() {
           </Card>
 
           {/* Recent Orders Card */}
-          <Card className="p-5 sm:p-6 border border-border hover:shadow-sm transition-shadow">
+          <Card className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm p-6">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
                 <ReceiptText className="h-5 w-5 text-primary" />
@@ -653,8 +653,8 @@ function Dashboard() {
 
         {/* Right Column (35% Sticky Sidebar) - Operational Alert Center */}
         <div className="lg:col-span-1 lg:sticky lg:top-6 space-y-6">
-          <Card className="p-5 border border-border bg-card/60 backdrop-blur-sm space-y-4 shadow-sm">
-            <div className="flex items-center gap-2 pb-3 border-b border-border/80">
+          <Card className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm p-6 space-y-4">
+            <div className="flex items-center gap-2 pb-3 border-b border-border/60">
               <AlertCircle className="h-5 w-5 text-rose-500 animate-bounce" />
               <h3 className="font-display font-bold text-lg text-foreground">{isAr ? "مركز الإنذار والعمليات" : "Operational Alerts"}</h3>
             </div>

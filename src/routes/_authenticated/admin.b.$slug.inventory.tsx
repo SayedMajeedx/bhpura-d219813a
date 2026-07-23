@@ -157,23 +157,31 @@ function Inventory() {
   });
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto">
-      <div className="mb-6 flex items-center justify-between">
+    <div className="mx-auto max-w-7xl p-4 sm:p-6 lg:p-8 space-y-6 animate-fade-in">
+      <div className="mb-6 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-4xl font-display">{t("inventory.title")}</h1>
-          <p className="text-muted-foreground mt-1">{t("inventory.subtitle")}</p>
+          <h1 className="font-display text-4xl font-extrabold tracking-tight bg-clip-text bg-gradient-to-r from-slate-900 via-slate-800 to-slate-950 dark:from-slate-50 dark:to-slate-300">
+            {t("inventory.title")}
+          </h1>
+          <p className="mt-1.5 text-muted-foreground text-sm max-w-md">
+            {t("inventory.subtitle")}
+          </p>
         </div>
       </div>
 
       <div className="flex gap-2 mb-6 border-b border-border">
         <button
-          className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px ${tab === "products" ? "border-primary text-primary" : "border-transparent text-muted-foreground"}`}
+          className={`px-4 py-2 text-sm font-medium transition-all duration-200 border-b-2 -mb-px hover:text-foreground ${tab === "products" ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:border-muted"}`}
           onClick={() => setTab("products")}
-        >{t("inventory.products")}</button>
+        >
+          {t("inventory.products")}
+        </button>
         <button
-          className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px ${tab === "customizations" ? "border-primary text-primary" : "border-transparent text-muted-foreground"}`}
+          className={`px-4 py-2 text-sm font-medium transition-all duration-200 border-b-2 -mb-px hover:text-foreground ${tab === "customizations" ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:border-muted"}`}
           onClick={() => setTab("customizations")}
-        >{t("inventory.customizations")}</button>
+        >
+          {t("inventory.customizations")}
+        </button>
       </div>
 
       {tab === "products" ? (
@@ -1187,46 +1195,87 @@ function ProductsSection({ products, variants, businessName, currency, onChanged
   };
 
   return (
-    <div className="space-y-4">
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+    <div className="space-y-6">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
           [Package, isAr ? "المنتجات" : "Products", products.length],
           [Boxes, isAr ? "إجمالي الوحدات" : "Total units", totalUnits],
           [AlertTriangle, isAr ? "مخزون منخفض" : "Low stock", lowStock],
           [TrendingUp, isAr ? "بضائع راكدة" : "Dead Stock Items", deadStock],
-        ].map(([Icon, label, value], index) => { const StatIcon = Icon as typeof Package; return <Card key={index} className="p-3 sm:p-4"><div className="flex items-center gap-3"><div className={`rounded-lg p-2 ${index >= 2 && Number(value) > 0 ? "bg-amber-100 text-amber-700" : "bg-primary/10 text-primary"}`}><StatIcon className="h-4 w-4" /></div><div className="min-w-0"><p className="text-xs text-muted-foreground truncate">{String(label)}</p><p className="font-semibold">{String(value)}</p></div></div></Card>; })}
+        ].map(([Icon, label, value], index) => {
+          const StatIcon = Icon as typeof Package;
+          return (
+            <Card
+              key={index}
+              className="overflow-hidden border border-border/60 shadow-md rounded-2xl bg-card/40 backdrop-blur-sm p-4 hover:shadow-lg transition-all duration-300 hover:scale-[1.02]"
+            >
+              <div className="flex items-center gap-4">
+                <div className={`rounded-xl p-3 ${index >= 2 && Number(value) > 0 ? "bg-amber-500/10 text-amber-600 dark:text-amber-400" : "bg-primary/10 text-primary"}`}>
+                  <StatIcon className="h-5 w-5" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-xs text-muted-foreground truncate">{String(label)}</p>
+                  <p className="text-2xl font-bold font-display mt-0.5">{String(value)}</p>
+                </div>
+              </div>
+            </Card>
+          );
+        })}
       </div>
 
-      <Card className="p-3 sm:p-4">
-        <div className="grid grid-cols-1 sm:grid-cols-[minmax(220px,1fr)_160px_170px] gap-3">
-          <div className="relative"><Search className="absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" /><Input className="ps-9" value={search} onChange={(e) => setSearch(e.target.value)} placeholder={isAr ? "ابحث بالمنتج أو SKU أو الباركود" : "Search product, SKU, or barcode"} /></div>
-          <Select value={stockFilter} onValueChange={(value: "all" | "low" | "out") => setStockFilter(value)}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">{isAr ? "كل المخزون" : "All stock"}</SelectItem><SelectItem value="low">{isAr ? "مخزون منخفض" : "Low stock"}</SelectItem><SelectItem value="out">{isAr ? "نفد المخزون" : "Out of stock"}</SelectItem></SelectContent></Select>
-          <Select value={visibilityFilter} onValueChange={(value: "all" | "active" | "hidden") => setVisibilityFilter(value)}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">{isAr ? "كل المنتجات" : "All visibility"}</SelectItem><SelectItem value="active">{isAr ? "ظاهر في المتجر" : "Storefront active"}</SelectItem><SelectItem value="hidden">{isAr ? "مخفي" : "Hidden"}</SelectItem></SelectContent></Select>
+      <Card className="overflow-hidden border border-border/60 shadow-md rounded-2xl bg-card/40 backdrop-blur-sm p-5">
+        <div className="grid grid-cols-1 sm:grid-cols-[minmax(220px,1fr)_160px_170px] gap-4">
+          <div className="relative">
+            <Search className="absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input className="ps-9" value={search} onChange={(e) => setSearch(e.target.value)} placeholder={isAr ? "ابحث بالمنتج أو SKU أو الباركود" : "Search product, SKU, or barcode"} />
+          </div>
+          <Select value={stockFilter} onValueChange={(value: "all" | "low" | "out") => setStockFilter(value)}>
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">{isAr ? "كل المخزون" : "All stock"}</SelectItem>
+              <SelectItem value="low">{isAr ? "مخزون منخفض" : "Low stock"}</SelectItem>
+              <SelectItem value="out">{isAr ? "نفد المخزون" : "Out of stock"}</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={visibilityFilter} onValueChange={(value: "all" | "active" | "hidden") => setVisibilityFilter(value)}>
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">{isAr ? "كل المنتجات" : "All visibility"}</SelectItem>
+              <SelectItem value="active">{isAr ? "ظاهر في المتجر" : "Storefront active"}</SelectItem>
+              <SelectItem value="hidden">{isAr ? "مخفي" : "Hidden"}</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
-        <p className="mt-2 text-xs text-muted-foreground">{filteredProducts.length} / {products.length}</p>
+        <p className="mt-3 text-xs text-muted-foreground">{filteredProducts.length} / {products.length} {isAr ? "منتجات مطابقة" : "matching products"}</p>
       </Card>
 
-      <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2">
+      <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-3">
         <InstagramImporterModal brandId={brandId} onComplete={onChanged} />
         <ProductImporterModal brandId={brandId} onComplete={onChanged} />
-        <Button variant="outline" onClick={printAll}>
+        <Button variant="outline" onClick={printAll} className="shadow-sm transition-all duration-200 hover:shadow hover:scale-[1.01] active:scale-95">
           <Printer className="h-4 w-4 me-2" /> {isAr ? "طباعة كل الباركودات" : "Print all barcodes"}
         </Button>
         <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) setEditing(null); }}>
           <DialogTrigger asChild>
-            <Button onClick={() => { setEditing(null); setDialogSession((value) => value + 1); }}><Plus className="h-4 w-4 me-2" /> {t("inventory.newProduct")}</Button>
+            <Button onClick={() => { setEditing(null); setDialogSession((value) => value + 1); }} className="shadow-sm transition-all duration-200 hover:shadow hover:scale-[1.01] active:scale-95"><Plus className="h-4 w-4 me-2" /> {t("inventory.newProduct")}</Button>
           </DialogTrigger>
           <ProductDialog key={`${editing?.id ?? "new"}-${dialogSession}`} product={editing} onSaved={() => { setOpen(false); setEditing(null); onChanged(); }} />
         </Dialog>
       </div>
 
       {products.length === 0 ? (
-        <Card className="p-12 text-center">
-          <Package className="h-10 w-10 mx-auto text-muted-foreground mb-3" />
+        <Card className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm p-12 text-center">
+          <Package className="h-10 w-10 mx-auto text-muted-foreground mb-3 animate-pulse" />
           <p className="text-muted-foreground">{t("inventory.none")}</p>
         </Card>
       ) : filteredProducts.length === 0 ? (
-        <Card className="p-10 text-center"><Search className="mx-auto mb-3 h-8 w-8 text-muted-foreground" /><p className="font-medium">{isAr ? "لا توجد منتجات مطابقة" : "No matching products"}</p><Button variant="ghost" className="mt-2" onClick={() => { setSearch(""); setStockFilter("all"); setVisibilityFilter("all"); }}>{isAr ? "مسح عوامل التصفية" : "Clear filters"}</Button></Card>
+        <Card className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm p-10 text-center">
+          <Search className="mx-auto mb-3 h-8 w-8 text-muted-foreground animate-pulse" />
+          <p className="font-medium text-lg">{isAr ? "لا توجد منتجات مطابقة" : "No matching products"}</p>
+          <Button variant="ghost" className="mt-4 shadow-sm transition-all duration-200 hover:shadow hover:scale-[1.01] active:scale-95" onClick={() => { setSearch(""); setStockFilter("all"); setVisibilityFilter("all"); }}>
+            {isAr ? "مسح عوامل التصفية" : "Clear filters"}
+          </Button>
+        </Card>
       ) : (
         <div className="space-y-4">
           {filteredProducts.map((p) => {
@@ -1238,7 +1287,7 @@ function ProductsSection({ products, variants, businessName, currency, onChanged
             return (
               <Card 
                 key={p.id} 
-                className="p-4 sm:p-6 transition-all duration-150 hover:border-primary/20 hover:shadow-xs cursor-pointer"
+                className="overflow-hidden border border-border/60 shadow-md rounded-2xl bg-card/40 backdrop-blur-sm p-4 sm:p-6 transition-all duration-300 hover:border-primary/40 hover:shadow-lg hover:scale-[1.005] cursor-pointer"
                 onClick={() => toggleProduct(p.id)}
               >
                 <div className="flex items-center justify-between gap-4">
@@ -3361,7 +3410,7 @@ function VariantList({
             <col style={{ width: 60 }} />
           </colgroup>
           <thead>
-            <tr className="text-start text-xs uppercase tracking-wider text-muted-foreground/80 bg-secondary/20 border-b border-border">
+            <tr className="text-start text-xs uppercase tracking-wider border-b bg-muted/40 font-semibold text-muted-foreground">
               <th className="px-2 py-3 text-center align-middle">
                 <input
                   type="checkbox"

@@ -25,13 +25,15 @@ function CommunicationsPage() {
   const brandId = brand.id;
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 max-w-4xl mx-auto space-y-6">
+    <div className="mx-auto max-w-6xl space-y-6 p-4 sm:p-6 lg:p-8 animate-fade-in" dir={isAr ? "rtl" : "ltr"}>
       <div>
-        <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-primary mb-1">
+        <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-primary mb-1.5 font-semibold">
           <Mail className="h-3.5 w-3.5" /> {isAr ? "الاتصالات والمراسلات" : "Communications"}
         </div>
-        <h1 className="text-3xl sm:text-4xl font-display">{isAr ? "سجل المراسلات" : "Communications & Alerts"}</h1>
-        <p className="text-muted-foreground mt-1">
+        <h1 className="font-display text-4xl font-extrabold tracking-tight bg-clip-text bg-gradient-to-r from-slate-900 via-slate-800 to-slate-950 dark:from-slate-50 dark:to-slate-300">
+          {isAr ? "سجل المراسلات" : "Communications & Alerts"}
+        </h1>
+        <p className="mt-1.5 text-muted-foreground text-sm max-w-md">
           {isAr
             ? "أدر مستلمي التنبيهات الإدارية وتتبع سجل رسائل البريد المرسلة للعملاء."
             : "Manage admin alert recipients and review outbound notification logs in one unified hub."}
@@ -124,7 +126,7 @@ function AdminNotificationRecipientsCard({ brandId, isAr }: { brandId: string; i
     refresh();
   };
 
-  return <Card className="p-5" dir={isAr ? "rtl" : "ltr"}>
+  return <Card className="overflow-hidden border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm p-6" dir={isAr ? "rtl" : "ltr"}>
     <div className="flex flex-wrap items-start justify-between gap-3">
       <div>
         <h2 className="font-display text-xl">{isAr ? "مستلمو تنبيهات الإدارة" : "Admin notification recipients"}</h2>
@@ -300,7 +302,7 @@ function EmailActivityCard({ brandId, isAr }: { brandId: string; isAr: boolean }
   };
 
   return (
-    <Card className="p-5" dir={isAr ? "rtl" : "ltr"}>
+    <Card className="overflow-hidden border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm p-6" dir={isAr ? "rtl" : "ltr"}>
       <div className="flex flex-wrap items-start justify-between gap-3 mb-4">
         <div className="flex gap-3">
           <Mail className="h-5 w-5 mt-0.5 text-primary" />
