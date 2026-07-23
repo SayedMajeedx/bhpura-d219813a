@@ -162,15 +162,8 @@ function CategoryPage() {
         return smartKind === "offers" ? rows.filter((product) => product.product_variants.some((variant) => Number(variant.original_price || 0) > Number(variant.selling_price || 0))) : rows;
       }
 
-      const hasChildren = categoriesQuery.data?.some(c => c.parent_id === activeCategory!.id);
-      const parentCat = hasChildren
-        ? activeCategory!
-        : (activeCategory!.parent_id 
-           ? (categoriesQuery.data?.find(c => c.id === activeCategory!.parent_id) || activeCategory!)
-           : activeCategory!);
-      
-      const descendants = getDescendantCategories(parentCat.id, categoriesQuery.data ?? []);
-      const rollupCategories = [parentCat, ...descendants];
+      const descendants = getDescendantCategories(activeCategory!.id, categoriesQuery.data ?? []);
+      const rollupCategories = [activeCategory!, ...descendants];
       
       const values = [...new Set(rollupCategories.flatMap(c => [c.slug, c.name_en]).filter(Boolean))];
       const { data, error } = await supabase.from("products").select("id, name, name_ar, name_en, description, description_ar, description_en, category, image_url, media, brand_id, created_at, product_variants(id, selling_price, original_price, stock_main, size, color)").eq("brand_id", brand.id).eq("is_active", true).in("category", values).order("created_at", { ascending: false });
