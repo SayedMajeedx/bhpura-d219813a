@@ -149,18 +149,40 @@ export function ProductDetail({ splatId }: { splatId?: string } = {}) {
   const { data: product, isLoading } = useQuery({
     queryKey: ["storefront", brand.slug, "product", id, typeof window !== "undefined" ? window.location.pathname : ""],
     queryFn: async () => {
-      const selectFields = "id, category, name, name_ar, name_en, description, description_ar, description_en, image_url, media, custom_fields, base_price, variant_label_size_ar, variant_label_size_en, variant_label_color_ar, variant_label_color_en, variant_label_fabric_ar, variant_label_fabric_en, product_variants(id, size, size_unit, color, fabric, selling_price, original_price, stock_main, image_url)";
+      const primaryFields = "id, category, name, name_ar, name_en, description, description_ar, description_en, image_url, media, custom_fields, base_price, product_variants(id, size, size_unit, color, fabric, selling_price, original_price, stock_main, image_url)";
+      const fullFields = `${primaryFields}, variant_label_size_ar, variant_label_size_en, variant_label_color_ar, variant_label_color_en, variant_label_fabric_ar, variant_label_fabric_en`;
+
+      const fetchByTargetId = async (targetId: string) => {
+        // Try full fields with custom variant labels
+        const { data: fullData, error: fullError } = await supabase
+          .from("products")
+          .select(fullFields)
+          .eq("id", targetId)
+          .eq("brand_id", brand.id)
+          .eq("is_active", true)
+          .maybeSingle();
+
+        if (fullData) return fullData as unknown as Product;
+
+        // Resilient fallback if full fields query fails due to missing column permissions
+        if (fullError) {
+          const { data: fallbackData } = await supabase
+            .from("products")
+            .select(primaryFields)
+            .eq("id", targetId)
+            .eq("brand_id", brand.id)
+            .eq("is_active", true)
+            .maybeSingle();
+
+          if (fallbackData) return fallbackData as unknown as Product;
+        }
+
+        return null;
+      };
 
       // 1. Try direct exact match with id
-      const { data: directData } = await supabase
-        .from("products")
-        .select(selectFields)
-        .eq("id", id)
-        .eq("brand_id", brand.id)
-        .eq("is_active", true)
-        .maybeSingle();
-
-      if (directData) return directData as unknown as Product;
+      const directData = await fetchByTargetId(id);
+      if (directData) return directData;
 
       // 2. Extract full path after /product/ to catch corrupted URLs with slashes (e.g. 6d8a9ec5-ed96-461b-b5/a-33d84/9e04b8)
       let fullPathSuffix = id;
@@ -174,21 +196,14 @@ export function ProductDetail({ splatId }: { splatId?: string } = {}) {
       // Repair corrupted URL where '7' was replaced by '/' or encoded
       const repairedId = fullPathSuffix.replace(/\//g, "7").trim();
       if (repairedId && repairedId !== id) {
-        const { data: repairedData } = await supabase
-          .from("products")
-          .select(selectFields)
-          .eq("id", repairedId)
-          .eq("brand_id", brand.id)
-          .eq("is_active", true)
-          .maybeSingle();
-
+        const repairedData = await fetchByTargetId(repairedId);
         if (repairedData) {
           // Silently clean up browser URL to canonical format
           if (typeof window !== "undefined" && window.history?.replaceState) {
             const canonicalUrl = `/${brand.slug}/product/${repairedData.id}`;
             window.history.replaceState(null, "", canonicalUrl);
           }
-          return repairedData as unknown as Product;
+          return repairedData;
         }
       }
 
