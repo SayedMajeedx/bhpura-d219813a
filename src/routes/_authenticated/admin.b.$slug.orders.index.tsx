@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Link as LinkIcon,
   Plus,
@@ -18,6 +19,11 @@ import {
   ChevronLeft,
   ChevronRight,
   Package,
+  PackageCheck,
+  CheckSquare,
+  Square,
+  Check,
+  CheckCircle2,
   MoreHorizontal,
   ExternalLink,
   Copy,
@@ -54,7 +60,7 @@ import {
 import { deleteOrderWithPrivateReceipt } from "@/lib/benefit-receipt.functions";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
-import { Sparkles, Upload, Loader2, Check } from "lucide-react";
+import { Sparkles, Upload, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   DropdownMenu,
@@ -253,6 +259,29 @@ function DeliveryAddressSnapshot({ customer, lang }: { customer: any; lang: "en"
   );
 }
 
+function OrderItemsSummary({ items, lang }: { items: any[] | undefined | null; lang: "en" | "ar" }) {
+  if (!items || items.length === 0) return null;
+
+  const totalQty = items.reduce((sum: number, it: any) => sum + (Number(it.quantity) || 1), 0);
+  const descriptions = items
+    .map((it: any) => {
+      const name = it.description || it.products?.title || (lang === "ar" ? "منتج" : "Item");
+      const qty = Number(it.quantity) > 1 ? `${it.quantity}x ` : "";
+      return `${qty}${name}`;
+    })
+    .join(", ");
+
+  const truncated = descriptions.length > 35 ? descriptions.slice(0, 35) + "..." : descriptions;
+
+  return (
+    <div className="mt-1.5 text-[11px] font-medium text-muted-foreground flex items-center gap-1.5 bg-secondary/50 px-2 py-0.5 rounded-md w-fit max-w-full">
+      <Package className="h-3 w-3 shrink-0 text-amber-600 dark:text-amber-400" />
+      <span className="font-bold text-foreground">{totalQty} {lang === "ar" ? "منتج" : totalQty === 1 ? "item" : "items"}</span>
+      <span className="truncate text-muted-foreground">({truncated})</span>
+    </div>
+  );
+}
+
 function OrdersList() {
   const t = useT();
   const { lang } = useI18n();
@@ -279,6 +308,20 @@ function OrdersList() {
   const [fulfillNotes, setFulfillNotes] = useState<string>("");
   const [isFulfilling, setIsFulfilling] = useState(false);
   const [updatingOrderId, setUpdatingOrderId] = useState<string | null>(null);
+  const [checkedItems, setCheckedItems] = useState<Record<string, boolean>>({});
+
+  useEffect(() => {
+    if (selectedFulfillOrder) {
+      const items = selectedFulfillOrder.order_items ?? [];
+      const initial: Record<string, boolean> = {};
+      items.forEach((it: any) => {
+        initial[it.id] = false;
+      });
+      setCheckedItems(initial);
+      setSelectedCourierId(selectedFulfillOrder.assigned_to || "unassigned");
+      setFulfillNotes("");
+    }
+  }, [selectedFulfillOrder]);
 
   // Cash Collection Modal State for Couriers
   const [cashModalOrder, setCashModalOrder] = useState<any | null>(null);
@@ -362,7 +405,7 @@ function OrdersList() {
     queryFn: async () => {
       let query: any = supabase
         .from("orders")
-        .select("*, customers(name, phone, region, road, house, flat, address, city)")
+        .select("*, customers(name, phone, region, road, house, flat, address, city), order_items(*, product_variants(sku, products(title, main_image, image_url)), products(title, main_image, image_url))")
         .eq("brand_id", brandId);
       if (isCourier) {
         const { data: { user } } = await supabase.auth.getUser();
@@ -1099,6 +1142,7 @@ function OrdersList() {
                         {renderPaymentMethodBadge(o.payment_method, lang)}
                         <CustomerContactActions customer={o.customers} lang={lang} />
                         <DeliveryAddressSnapshot customer={o.customers} lang={lang} />
+                        <OrderItemsSummary items={o.order_items} lang={lang} />
                       </div>
                       
                       <div className="mt-3 flex flex-wrap items-center gap-1.5">
@@ -1238,6 +1282,7 @@ function OrdersList() {
                           {renderPaymentMethodBadge(o.payment_method, lang)}
                           <CustomerContactActions customer={o.customers} lang={lang} />
                           <DeliveryAddressSnapshot customer={o.customers} lang={lang} />
+                          <OrderItemsSummary items={o.order_items} lang={lang} />
                         </td>
                         <td className="p-4">
                           <span
@@ -1369,92 +1414,224 @@ function OrdersList() {
         </AlertDialogContent>
       </AlertDialog>}
 
-      {/* Interactive Fulfillment Assignment Dialog */}
+      {/* Interactive Packing Verification & Fulfillment Modal */}
       <Dialog open={isFulfillModalOpen} onOpenChange={setIsFulfillModalOpen}>
-        <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-md bg-background border rounded-lg shadow-lg">
-          <DialogHeader>
-            <DialogTitle className="text-lg font-bold flex items-center gap-2">
-              <Package className="h-5 w-5 text-primary animate-bounce" />
-              {lang === "ar" ? `إكمال وتعبئة طلب #${selectedFulfillOrder?.invoice_number}` : `Fulfill & Pack Order #${selectedFulfillOrder?.invoice_number}`}
-            </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 py-3 text-sm">
-            <div className="space-y-2">
-              <label className="text-xs font-semibold text-muted-foreground block">
-                {lang === "ar" ? "مندوب التوصيل المسند" : "Assign Courier"}
-              </label>
-              <Select value={selectedCourierId} onValueChange={setSelectedCourierId}>
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder={lang === "ar" ? "اختر مندوب التوصيل" : "Select a courier"} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="unassigned">
-                    {lang === "ar" ? "غير مسند (تعبئة بدون تعيين)" : "Unassigned (Pack without assigning)"}
-                  </SelectItem>
-                  {(couriersQ.data ?? []).map((courier: any) => (
-                    <SelectItem key={courier.id} value={courier.id}>
-                      {courier.name || courier.email}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+        <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-lg bg-background border rounded-2xl shadow-2xl p-6 overflow-hidden max-h-[90vh] flex flex-col" dir={lang === "ar" ? "rtl" : "ltr"}>
+          {selectedFulfillOrder && (
+            <>
+              {/* Header: Order Number, Customer Name & Address Snapshot */}
+              <DialogHeader className="pb-3 border-b shrink-0">
+                <div className="flex items-center justify-between gap-2">
+                  <DialogTitle className="text-lg font-bold flex items-center gap-2">
+                    <PackageCheck className="h-5 w-5 text-amber-600 dark:text-amber-400 shrink-0" />
+                    <span>{lang === "ar" ? `قائمة التعبئة والتجهيز #${selectedFulfillOrder.invoice_number}` : `Packing Slip Verification #${selectedFulfillOrder.invoice_number}`}</span>
+                  </DialogTitle>
+                </div>
+                <div className="mt-1 text-xs text-muted-foreground flex flex-col gap-0.5">
+                  <div className="font-semibold text-foreground text-sm flex items-center gap-1.5">
+                    <span>{selectedFulfillOrder.customers?.name || (lang === "ar" ? "عميل زائر" : "Customer")}</span>
+                    {selectedFulfillOrder.customers?.phone && (
+                      <span className="text-xs font-normal text-muted-foreground">({selectedFulfillOrder.customers.phone})</span>
+                    )}
+                  </div>
+                  <DeliveryAddressSnapshot customer={selectedFulfillOrder.customers} lang={lang} />
+                </div>
+              </DialogHeader>
 
-            <div className="space-y-2">
-              <label className="text-xs font-semibold text-muted-foreground block">
-                {lang === "ar" ? "رقم التتبع / ملاحظات التوصيل" : "Tracking Number / Delivery Notes"}
-              </label>
-              <Input
-                value={fulfillNotes}
-                onChange={(e) => setFulfillNotes(e.target.value)}
-                placeholder={lang === "ar" ? "أدخل رقم تتبع الشحنة أو أي ملاحظات للتوصيل..." : "Enter courier tracking number or special delivery instructions..."}
-              />
-            </div>
+              <div className="space-y-4 py-3 overflow-y-auto flex-1 pr-1 text-sm">
+                {/* Pick Checklist Header */}
+                {(() => {
+                  const modalItems = selectedFulfillOrder.order_items ?? [];
+                  const checkedCount = modalItems.filter((it: any) => checkedItems[it.id]).length;
+                  const allChecked = modalItems.length > 0 && checkedCount === modalItems.length;
 
-            <div className="pt-2 flex justify-end gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={isFulfilling}
-                onClick={() => setIsFulfillModalOpen(false)}
-              >
-                {lang === "ar" ? "إلغاء" : "Cancel"}
-              </Button>
-              <Button
-                size="sm"
-                disabled={isFulfilling}
-                onClick={async () => {
-                  if (!selectedFulfillOrder) return;
-                  setIsFulfilling(true);
-                  try {
-                    const res = await fetch("/api/orders/status", {
-                      method: "PATCH",
-                      headers: { "Content-Type": "application/json" },
-                      body: JSON.stringify({
-                        id: selectedFulfillOrder.id,
-                        fulfillment_status: "SHIPPED",
-                        assigned_to: selectedCourierId === "unassigned" ? null : selectedCourierId,
-                        delivery_notes: fulfillNotes,
-                        admin_override: ["cash", "cod"].includes(String(selectedFulfillOrder.payment_method || "").toLowerCase()),
-                      }),
+                  const toggleAll = () => {
+                    const nextState = !allChecked;
+                    const next: Record<string, boolean> = {};
+                    modalItems.forEach((it: any) => {
+                      next[it.id] = nextState;
                     });
-                    const data = await res.json();
-                    if (!res.ok) throw new Error(data.error_ar && lang === "ar" ? data.error_ar : data.error);
-                    toast.success(lang === "ar" ? "تم إكمال الطلب وشحنه بنجاح!" : "Order fulfilled and shipped!");
-                    qc.invalidateQueries({ queryKey: ["orders", brandId] });
-                    setIsFulfillModalOpen(false);
-                  } catch (err: any) {
-                    toast.error(err.message || "Failed to fulfill order");
-                  } finally {
-                    setIsFulfilling(false);
-                  }
-                }}
-              >
-                {isFulfilling ? <Loader2 className="animate-spin h-4 w-4 mr-1.5 inline" /> : null}
-                {lang === "ar" ? "تأكيد الشحن" : "Confirm & Ship"}
-              </Button>
-            </div>
-          </div>
+                    setCheckedItems(next);
+                  };
+
+                  return (
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between gap-2 bg-muted/40 p-2.5 rounded-xl border">
+                        <div className="flex items-center gap-2">
+                          <CheckSquare className="h-4 w-4 text-primary shrink-0" />
+                          <span className="font-semibold text-xs text-foreground">
+                            {lang === "ar" ? "قائمة فحص المنتجات" : "Pick & Pack Checklist"}
+                          </span>
+                          <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-primary/10 text-primary">
+                            {checkedCount} / {modalItems.length} {lang === "ar" ? "جاهز" : "packed"}
+                          </span>
+                        </div>
+                        {modalItems.length > 0 && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            type="button"
+                            onClick={toggleAll}
+                            className="h-7 text-xs font-semibold px-2 text-primary hover:text-primary/90"
+                          >
+                            {allChecked
+                              ? (lang === "ar" ? "إلغاء تحديد الكل" : "Uncheck All")
+                              : (lang === "ar" ? "تحديد الكل" : "Check All")}
+                          </Button>
+                        )}
+                      </div>
+
+                      {/* Items List */}
+                      {modalItems.length === 0 ? (
+                        <div className="p-4 text-center text-xs text-muted-foreground border rounded-xl bg-muted/20">
+                          {lang === "ar" ? "لا توجد تفاصيل منتجات مسجلة لهذا الطلب." : "No item line details recorded for this order."}
+                        </div>
+                      ) : (
+                        <div className="space-y-2 max-h-[220px] overflow-y-auto pr-1">
+                          {modalItems.map((item: any, idx: number) => {
+                            const isChecked = Boolean(checkedItems[item.id]);
+                            const imgUrl = item.products?.main_image || item.products?.image_url || item.product_variants?.products?.main_image || item.selected_variant?.image_url;
+                            const sku = item.product_variants?.sku || item.sku || null;
+                            const title = item.description || item.products?.title || (lang === "ar" ? "منتج" : "Product");
+
+                            return (
+                              <div
+                                key={item.id || idx}
+                                onClick={() => setCheckedItems((prev) => ({ ...prev, [item.id]: !prev[item.id] }))}
+                                className={cn(
+                                  "flex items-center gap-3 p-2.5 rounded-xl border transition-all cursor-pointer select-none",
+                                  isChecked
+                                    ? "bg-emerald-50/80 border-emerald-300 dark:bg-emerald-950/30 dark:border-emerald-800"
+                                    : "bg-card border-border hover:border-primary/50"
+                                )}
+                              >
+                                <Checkbox
+                                  checked={isChecked}
+                                  onCheckedChange={(checked) => setCheckedItems((prev) => ({ ...prev, [item.id]: Boolean(checked) }))}
+                                  onClick={(e) => e.stopPropagation()}
+                                  className="h-5 w-5 rounded-md border-primary/50"
+                                />
+
+                                {imgUrl ? (
+                                  <img src={imgUrl} alt={title} className="h-10 w-10 object-cover rounded-lg border shrink-0 bg-background" />
+                                ) : (
+                                  <div className="h-10 w-10 rounded-lg border bg-muted/60 flex items-center justify-center shrink-0">
+                                    <Package className="h-5 w-5 text-muted-foreground" />
+                                  </div>
+                                )}
+
+                                <div className="min-w-0 flex-1">
+                                  <div className="flex items-center justify-between gap-2">
+                                    <span className={cn("font-semibold text-xs sm:text-sm truncate", isChecked && "line-through text-muted-foreground")}>
+                                      <span className="font-bold text-primary mr-1">{item.quantity}x</span> {title}
+                                    </span>
+                                    <span className="text-xs font-mono font-bold shrink-0 text-muted-foreground">
+                                      {formatMoney(Number(item.line_total || item.unit_price * item.quantity), selectedFulfillOrder.currency || "BHD", locale)}
+                                    </span>
+                                  </div>
+                                  {sku && (
+                                    <div className="text-[10px] text-muted-foreground font-mono mt-0.5">
+                                      SKU: {sku}
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
+
+                {/* Courier & Shipping Details */}
+                <div className="space-y-3 pt-2 border-t">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-semibold text-muted-foreground block">
+                      {lang === "ar" ? "تعيين مندوب التوصيل" : "Driver / Courier"}
+                    </label>
+                    <Select value={selectedCourierId} onValueChange={setSelectedCourierId}>
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder={lang === "ar" ? "اختر مندوب التوصيل" : "Select a courier"} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="unassigned">
+                          {lang === "ar" ? "غير مسند (تعبئة بدون تعيين)" : "Unassigned (Pack without assigning)"}
+                        </SelectItem>
+                        {(couriersQ.data ?? []).map((courier: any) => (
+                          <SelectItem key={courier.id} value={courier.id}>
+                            {courier.name || courier.email}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-semibold text-muted-foreground block">
+                      {lang === "ar" ? "ملاحظات الشحن أو رقم التتبع" : "Delivery Notes or Tracking"}
+                    </label>
+                    <Input
+                      value={fulfillNotes}
+                      onChange={(e) => setFulfillNotes(e.target.value)}
+                      placeholder={lang === "ar" ? "أدخل رقم التتبع أو أي تعليمات خاصة للتوصيل..." : "Enter tracking number or special packing notes..."}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Primary Action Button Footer */}
+              <div className="pt-3 border-t shrink-0 flex items-center justify-end gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={isFulfilling}
+                  onClick={() => setIsFulfillModalOpen(false)}
+                >
+                  {lang === "ar" ? "إلغاء" : "Cancel"}
+                </Button>
+                <Button
+                  size="sm"
+                  className={cn(
+                    "font-bold shadow-md transition-all px-4",
+                    (selectedFulfillOrder.order_items ?? []).every((it: any) => checkedItems[it.id])
+                      ? "bg-emerald-600 hover:bg-emerald-700 text-white"
+                      : "bg-amber-600 hover:bg-amber-700 text-white"
+                  )}
+                  disabled={isFulfilling}
+                  onClick={async () => {
+                    if (!selectedFulfillOrder) return;
+                    setIsFulfilling(true);
+                    try {
+                      const res = await fetch("/api/orders/status", {
+                        method: "PATCH",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                          id: selectedFulfillOrder.id,
+                          fulfillment_status: "SHIPPED",
+                          assigned_to: selectedCourierId === "unassigned" ? null : selectedCourierId,
+                          delivery_notes: fulfillNotes,
+                          admin_override: ["cash", "cod"].includes(String(selectedFulfillOrder.payment_method || "").toLowerCase()),
+                        }),
+                      });
+                      const data = await res.json();
+                      if (!res.ok) throw new Error(data.error_ar && lang === "ar" ? data.error_ar : data.error);
+                      toast.success(lang === "ar" ? "تم تأكيد تعبئة الطلب وتجهيزه للشحن!" : "Order packed and dispatched successfully!");
+                      qc.invalidateQueries({ queryKey: ["orders", brandId] });
+                      setIsFulfillModalOpen(false);
+                    } catch (err: any) {
+                      toast.error(err.message || "Failed to fulfill order");
+                    } finally {
+                      setIsFulfilling(false);
+                    }
+                  }}
+                >
+                  {isFulfilling ? <Loader2 className="animate-spin h-4 w-4 mr-1.5 inline" /> : <PackageCheck className="h-4 w-4 mr-1.5 inline" />}
+                  {lang === "ar" ? "تأكيد التعبئة والتجهيز للشحن" : "Confirm Packed & Dispatch"}
+                </Button>
+              </div>
+            </>
+          )}
         </DialogContent>
       </Dialog>
 
