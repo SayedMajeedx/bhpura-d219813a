@@ -2073,14 +2073,29 @@ function OrderDetail() {
                 </div>
               );
             })()}
-            <div className="mt-4 hidden lg:block">
-              <Label>{t("orderDetail.notes")}</Label>
-              <Textarea
-                value={order.notes ?? ""}
-                onChange={(e) => setOrder({ ...order, notes: e.target.value })}
-                rows={3}
-                placeholder={lang === "ar" ? "ملاحظات داخلية للطلب" : "Internal order notes"}
-              />
+            <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <Label>{t("orderDetail.notes")}</Label>
+                <Textarea
+                  value={order.notes ?? ""}
+                  onChange={(e) => setOrder({ ...order, notes: e.target.value })}
+                  rows={3}
+                  placeholder={lang === "ar" ? "ملاحظات داخلية للطلب" : "Internal order notes"}
+                />
+              </div>
+              <div>
+                <Label className="flex items-center gap-1.5 text-blue-700 dark:text-blue-400 font-bold mb-1.5">
+                  <Truck className="h-4 w-4" />
+                  {lang === "ar" ? "ملاحظات التوصيل وسجل السائق" : "Courier Delivery Notes & Trace"}
+                </Label>
+                <Textarea
+                  value={order.delivery_notes ?? ""}
+                  onChange={(e) => setOrder({ ...order, delivery_notes: e.target.value })}
+                  rows={3}
+                  placeholder={lang === "ar" ? "ملاحظات السائق وسجل التوصيل" : "Driver notes and courier logs"}
+                  className="bg-blue-50/50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800 font-mono text-xs"
+                />
+              </div>
             </div>
           </Card>
 

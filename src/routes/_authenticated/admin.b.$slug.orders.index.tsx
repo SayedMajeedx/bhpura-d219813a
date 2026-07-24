@@ -21,6 +21,9 @@ import {
   MoreHorizontal,
   ExternalLink,
   Copy,
+  Phone,
+  MessageCircle,
+  MapPin,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import {
@@ -200,6 +203,56 @@ const renderPaymentMethodBadge = (paymentMethod: string | null | undefined, lang
   return null;
 };
 
+function CustomerContactActions({ customer, lang }: { customer: any; lang: "en" | "ar" }) {
+  if (!customer?.phone) return null;
+  const rawPhone = String(customer.phone);
+  const cleanPhone = rawPhone.replace(/[^0-9+]/g, "");
+  const waPhone = cleanPhone.startsWith("+") ? cleanPhone.replace("+", "") : cleanPhone.length === 8 ? `973${cleanPhone}` : cleanPhone;
+
+  return (
+    <div className="flex items-center gap-1.5 mt-1.5">
+      <a
+        href={`tel:${cleanPhone}`}
+        onClick={(e) => e.stopPropagation()}
+        className="inline-flex items-center gap-1 px-2 py-1 text-xs font-semibold rounded-md bg-slate-100 text-slate-800 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-200 transition-colors shadow-xs"
+      >
+        <Phone className="h-3 w-3 text-blue-600 dark:text-blue-400 shrink-0" />
+        {lang === "ar" ? "اتصال" : "Call"}
+      </a>
+      <a
+        href={`https://wa.me/${waPhone}`}
+        target="_blank"
+        rel="noopener noreferrer"
+        onClick={(e) => e.stopPropagation()}
+        className="inline-flex items-center gap-1 px-2 py-1 text-xs font-semibold rounded-md bg-emerald-50 text-emerald-800 border border-emerald-200/60 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800 transition-colors shadow-xs"
+      >
+        <MessageCircle className="h-3 w-3 text-emerald-600 dark:text-emerald-400 shrink-0" />
+        {lang === "ar" ? "واتساب" : "WhatsApp"}
+      </a>
+    </div>
+  );
+}
+
+function DeliveryAddressSnapshot({ customer, lang }: { customer: any; lang: "en" | "ar" }) {
+  if (!customer) return null;
+  const parts = [];
+  if (customer.house) parts.push(`${lang === "ar" ? "م" : "Bldg/House"} ${customer.house}`);
+  if (customer.road) parts.push(`${lang === "ar" ? "ط" : "Rd"} ${customer.road}`);
+  if (customer.block || customer.region) parts.push(`${lang === "ar" ? "مجمع" : "Blk"} ${customer.block || customer.region}`);
+  if (customer.city) parts.push(customer.city);
+  if (customer.flat) parts.push(`${lang === "ar" ? "شقة" : "Flat"} ${customer.flat}`);
+
+  const text = parts.length > 0 ? parts.join(", ") : customer.address || null;
+  if (!text) return null;
+
+  return (
+    <div className="text-xs text-muted-foreground mt-1 flex items-start gap-1">
+      <MapPin className="h-3.5 w-3.5 shrink-0 mt-0.5 text-rose-500" />
+      <span className="line-clamp-2">{text}</span>
+    </div>
+  );
+}
+
 function OrdersList() {
   const t = useT();
   const { lang } = useI18n();
@@ -226,6 +279,43 @@ function OrdersList() {
   const [fulfillNotes, setFulfillNotes] = useState<string>("");
   const [isFulfilling, setIsFulfilling] = useState(false);
   const [updatingOrderId, setUpdatingOrderId] = useState<string | null>(null);
+
+  // Cash Collection Modal State for Couriers
+  const [cashModalOrder, setCashModalOrder] = useState<any | null>(null);
+  const [cashCollectedInput, setCashCollectedAmount] = useState<string>("");
+  const [cashModalNotes, setCashModalNotes] = useState<string>("");
+  const [isSubmittingCash, setIsSubmittingCash] = useState<boolean>(false);
+
+  const handleCompleteDelivery = async (order: any, amountToCollect: number, notes?: string) => {
+    if (amountToCollect < 0) {
+      toast.error(lang === "ar" ? "لا يمكن أن يكون المبلغ المحصل بالسالب" : "Collected amount cannot be negative");
+      return;
+    }
+    setIsSubmittingCash(true);
+    try {
+      const { data: res, error } = await supabase.rpc("courier_complete_delivery", {
+        p_order_id: order.id,
+        p_collected_amount: amountToCollect,
+        p_notes: notes || null,
+      });
+
+      if (error) throw error;
+
+      toast.success(
+        lang === "ar"
+          ? "تم تسجيل تسليم الطلب وتأكيد التحصيل بنجاح!"
+          : "Delivery completed and payment confirmed!"
+      );
+      setCashModalOrder(null);
+      setCashCollectedAmount("");
+      setCashModalNotes("");
+      qc.invalidateQueries({ queryKey: ["orders", brandId] });
+    } catch (err: any) {
+      toast.error(err.message || "Failed to complete delivery");
+    } finally {
+      setIsSubmittingCash(false);
+    }
+  };
 
   // Fetch Couriers Query
   const couriersQ = useQuery({
@@ -681,19 +771,72 @@ function OrdersList() {
         );
       }
 
-      // 4. COD Cash Collection
-      if (isCod && ff === "SHIPPED" && isUnpaid) {
+      // 4. Delivery Handover & Cash Collection Actions (Courier / Driver)
+      if (ff === "SHIPPED" || isCourier) {
+        const totalAmt = Number(o.total || 0);
+        const paidAmt = Number(o.paid_amount ?? o.advance_paid ?? 0);
+        const remainingBal = Math.max(0, totalAmt - paidAmt);
+
+        if (isPaid || remainingBal <= 0) {
+          return (
+            <Button
+              size="sm"
+              className="h-8 font-semibold bg-emerald-600 hover:bg-emerald-700 text-white text-xs px-3 shadow dark:bg-emerald-800 dark:hover:bg-emerald-900"
+              disabled={updatingOrderId !== null || isSubmittingCash}
+              onClick={() => handleCompleteDelivery(o, 0)}
+            >
+              {isSubmittingCash && updatingOrderId === o.id ? (
+                <Loader2 className="animate-spin h-3.5 w-3.5" />
+              ) : (
+                <span className="flex items-center gap-1">
+                  <Check className="h-3.5 w-3.5" />
+                  {lang === "ar" ? "تأكيد التسليم" : "Mark as Delivered"}
+                </span>
+              )}
+            </Button>
+          );
+        }
+
+        if (isPartiallyPaid || (paidAmt > 0 && remainingBal > 0)) {
+          return (
+            <Button
+              size="sm"
+              className="h-8 font-semibold bg-amber-500 hover:bg-amber-600 text-black text-xs px-3 shadow"
+              disabled={updatingOrderId !== null || isSubmittingCash}
+              onClick={() => {
+                setCashModalOrder(o);
+                setCashCollectedAmount(remainingBal.toFixed(3));
+                setCashModalNotes("");
+              }}
+            >
+              <span className="flex items-center gap-1">
+                <CircleDollarSign className="h-3.5 w-3.5" />
+                {lang === "ar"
+                  ? `تحصيل المتبقي ${formatMoney(remainingBal, o.currency ?? "BHD", locale)} والتسليم`
+                  : `Collect BHD ${remainingBal.toFixed(3)} & Complete`}
+              </span>
+            </Button>
+          );
+        }
+
+        // Unpaid COD Order
         return (
           <Button
             size="sm"
             className="h-8 font-semibold bg-emerald-600 hover:bg-emerald-700 text-white text-xs px-3 shadow dark:bg-emerald-800 dark:hover:bg-emerald-900"
-            disabled={updatingOrderId !== null}
-            onClick={() => handleStatusUpdate(
-              { payment_status: "paid", fulfillment_status: "COMPLETED" },
-              lang === "ar" ? "تم تحصيل المبلغ وتسليم الطلب!" : "Payment collected and order completed!"
-            )}
+            disabled={updatingOrderId !== null || isSubmittingCash}
+            onClick={() => {
+              setCashModalOrder(o);
+              setCashCollectedAmount(totalAmt.toFixed(3));
+              setCashModalNotes("");
+            }}
           >
-            {isUpdating ? <Loader2 className="animate-spin h-3.5 w-3.5" /> : (lang === "ar" ? "تحصيل المبلغ" : "Collect Cash")}
+            <span className="flex items-center gap-1">
+              <CircleDollarSign className="h-3.5 w-3.5" />
+              {lang === "ar"
+                ? `تحصيل ${formatMoney(totalAmt, o.currency ?? "BHD", locale)} نقد والتسليم`
+                : `Collect BHD ${totalAmt.toFixed(3)} Cash & Complete`}
+            </span>
           </Button>
         );
       }
@@ -945,13 +1088,17 @@ function OrdersList() {
                           {formatDate(o.created_at ?? o.order_date, locale)}
                         </span>
                       </div>
-                      <div className="mt-1 text-xs font-medium text-muted-foreground truncate">
-                        {o.customers?.name ?? (
-                          <span className="text-muted-foreground italic">
-                            {t("orders.noCustomer")}
-                          </span>
-                        )}
+                      <div className="mt-1 text-xs font-medium text-muted-foreground">
+                        <div>
+                          {o.customers?.name ?? (
+                            <span className="text-muted-foreground italic">
+                              {t("orders.noCustomer")}
+                            </span>
+                          )}
+                        </div>
                         {renderPaymentMethodBadge(o.payment_method, lang)}
+                        <CustomerContactActions customer={o.customers} lang={lang} />
+                        <DeliveryAddressSnapshot customer={o.customers} lang={lang} />
                       </div>
                       
                       <div className="mt-3 flex flex-wrap items-center gap-1.5">
@@ -1089,6 +1236,8 @@ function OrdersList() {
                             )}
                           </div>
                           {renderPaymentMethodBadge(o.payment_method, lang)}
+                          <CustomerContactActions customer={o.customers} lang={lang} />
+                          <DeliveryAddressSnapshot customer={o.customers} lang={lang} />
                         </td>
                         <td className="p-4">
                           <span
@@ -1306,6 +1455,94 @@ function OrdersList() {
               </Button>
             </div>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* 💵 Cash Collection & Courier Delivery Completion Modal */}
+      <Dialog open={Boolean(cashModalOrder)} onOpenChange={(open) => { if (!open) setCashModalOrder(null); }}>
+        <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-md bg-background border rounded-2xl shadow-xl" dir={lang === "ar" ? "rtl" : "ltr"}>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-lg font-bold">
+              <CircleDollarSign className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+              {lang === "ar" ? "تأكيد تحصيل المبلغ والتسليم" : "Confirm Cash & Delivery"}
+            </DialogTitle>
+          </DialogHeader>
+
+          {cashModalOrder && (
+            <div className="space-y-4 py-2">
+              <div className="rounded-xl bg-muted/60 border p-3.5 space-y-1.5 text-sm">
+                <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground">{lang === "ar" ? "رقم الفاتورة / الطلب:" : "Invoice / Order #"}</span>
+                  <span className="font-mono font-bold text-primary">#{cashModalOrder.invoice_number || cashModalOrder.id.slice(0, 8)}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground">{lang === "ar" ? "العميل:" : "Customer:"}</span>
+                  <span className="font-semibold">{cashModalOrder.customers?.name || (lang === "ar" ? "عميل" : "Customer")}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground">{lang === "ar" ? "إجمالي الطلب:" : "Total Amount:"}</span>
+                  <span className="font-semibold">{formatMoney(Number(cashModalOrder.total), cashModalOrder.currency ?? "BHD", locale)}</span>
+                </div>
+                <div className="flex justify-between items-center text-emerald-700 dark:text-emerald-400 font-bold border-t pt-2 mt-1">
+                  <span>{lang === "ar" ? "المبلغ المتبقي للتحصيل:" : "Remaining Balance:"}</span>
+                  <span className="text-base font-extrabold">{formatMoney(Math.max(0, Number(cashModalOrder.total) - Number(cashModalOrder.paid_amount ?? cashModalOrder.advance_paid ?? 0)), cashModalOrder.currency ?? "BHD", locale)}</span>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-foreground block">
+                  {lang === "ar" ? "المبلغ المستلم نقداً (د.ب)" : "Cash Amount Received (BHD)"}
+                </label>
+                <Input
+                  type="number"
+                  step="0.001"
+                  min="0"
+                  value={cashCollectedInput}
+                  onChange={(e) => setCashCollectedAmount(e.target.value)}
+                  placeholder="0.000"
+                  className="font-mono text-lg font-extrabold h-11 border-emerald-300 focus:border-emerald-500 dark:border-emerald-800"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-xs font-semibold text-muted-foreground block">
+                  {lang === "ar" ? "ملاحظات التوصيل (اختياري)" : "Delivery Notes (Optional)"}
+                </label>
+                <Input
+                  value={cashModalNotes}
+                  onChange={(e) => setCashModalNotes(e.target.value)}
+                  placeholder={lang === "ar" ? "مثال: تم الاستلام من البواب / تحصيل عبر بنفت باج" : "e.g. Received at gate / BenefitPay transfer"}
+                />
+              </div>
+
+              <div className="flex justify-end gap-2 pt-3">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCashModalOrder(null)}
+                  disabled={isSubmittingCash}
+                >
+                  {lang === "ar" ? "إلغاء" : "Cancel"}
+                </Button>
+                <Button
+                  size="sm"
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold shadow-md"
+                  disabled={isSubmittingCash}
+                  onClick={() => {
+                    const amt = Number(cashCollectedInput);
+                    if (isNaN(amt) || amt < 0) {
+                      toast.error(lang === "ar" ? "يرجى إدخال مبلغ صحيح (غير سالب)" : "Please enter a valid non-negative amount");
+                      return;
+                    }
+                    handleCompleteDelivery(cashModalOrder, amt, cashModalNotes);
+                  }}
+                >
+                  {isSubmittingCash ? <Loader2 className="animate-spin h-4 w-4 mr-1.5 inline" /> : null}
+                  {lang === "ar" ? "تأكيد التحصيل والتسليم" : "Confirm Cash & Complete"}
+                </Button>
+              </div>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>
