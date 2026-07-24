@@ -146,17 +146,52 @@ function ProductDetail() {
   const optionsRef = useRef<HTMLDivElement | null>(null);
 
   const { data: product, isLoading } = useQuery({
-    queryKey: ["storefront", brand.slug, "product", id],
+    queryKey: ["storefront", brand.slug, "product", id, typeof window !== "undefined" ? window.location.pathname : ""],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const selectFields = "id, category, name, name_ar, name_en, description, description_ar, description_en, image_url, media, custom_fields, base_price, variant_label_size_ar, variant_label_size_en, variant_label_color_ar, variant_label_color_en, variant_label_fabric_ar, variant_label_fabric_en, product_variants(id, size, size_unit, color, fabric, selling_price, original_price, stock_main, image_url)";
+
+      // 1. Try direct exact match with id
+      const { data: directData } = await supabase
         .from("products")
-        .select("id, category, name, name_ar, name_en, description, description_ar, description_en, image_url, media, custom_fields, base_price, variant_label_size_ar, variant_label_size_en, variant_label_color_ar, variant_label_color_en, variant_label_fabric_ar, variant_label_fabric_en, product_variants(id, size, size_unit, color, fabric, selling_price, original_price, stock_main, image_url)")
+        .select(selectFields)
         .eq("id", id)
         .eq("brand_id", brand.id)
         .eq("is_active", true)
         .maybeSingle();
-      if (error) throw error;
-      return data as unknown as Product | null;
+
+      if (directData) return directData as unknown as Product;
+
+      // 2. Extract full path after /product/ to catch corrupted URLs with slashes (e.g. 6d8a9ec5-ed96-461b-b5/a-33d84/9e04b8)
+      let fullPathSuffix = id;
+      if (typeof window !== "undefined") {
+        const match = window.location.pathname.match(/\/product\/(.+)$/i);
+        if (match?.[1]) {
+          fullPathSuffix = decodeURIComponent(match[1]);
+        }
+      }
+
+      // Repair corrupted URL where '7' was replaced by '/' or encoded
+      const repairedId = fullPathSuffix.replace(/\//g, "7").trim();
+      if (repairedId && repairedId !== id) {
+        const { data: repairedData } = await supabase
+          .from("products")
+          .select(selectFields)
+          .eq("id", repairedId)
+          .eq("brand_id", brand.id)
+          .eq("is_active", true)
+          .maybeSingle();
+
+        if (repairedData) {
+          // Silently clean up browser URL to canonical format
+          if (typeof window !== "undefined" && window.history?.replaceState) {
+            const canonicalUrl = `/${brand.slug}/product/${repairedData.id}`;
+            window.history.replaceState(null, "", canonicalUrl);
+          }
+          return repairedData as unknown as Product;
+        }
+      }
+
+      return null;
     },
     staleTime: 5 * 60_000,
     gcTime: 30 * 60_000,
