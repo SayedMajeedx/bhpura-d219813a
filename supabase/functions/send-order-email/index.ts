@@ -279,6 +279,12 @@ ${showPaymentSummary ? `<tr><td style="padding:8px 8px 4px">${L.paymentStatus}</
 ${advancePaid > 0 ? `<tr><td style="padding:4px 8px">${L.advance}</td><td style="padding:4px 8px;text-align:${align}">- ${fmt(advancePaid, cur, isAr)}</td></tr>` : ""}
 ${advancePaid > 0 ? `<tr><td style="padding:8px;font-weight:700">${L.remaining}</td><td style="padding:8px;font-weight:700;text-align:${align}">${fmt(remaining, cur, isAr)}</td></tr>` : ""}
 </table>
+${(o.public_invoice_token || o.id) ? `
+<div style="margin:24px 0 16px;text-align:center;">
+  <a href="https://boutq.store/invoice/${escapeHtml(o.public_invoice_token || o.id)}" style="display:inline-block;padding:12px 28px;background:${primary};color:#ffffff;text-decoration:none;border-radius:8px;font-weight:600;font-size:14px;box-shadow:0 2px 4px rgba(0,0,0,0.1);">
+    ${isAr ? "عرض وتنزيل الفاتورة الإلكترونية" : "View & Download Invoice"}
+  </a>
+</div>` : ""}
 <p style="margin:24px 0 0">${L.regards},<br/><strong>${escapeHtml(brandName)}</strong></p>
 </div>
 <div style="padding:14px 28px;background:#fafafa;color:#888;font-size:12px;text-align:center">${L.footer}</div>
@@ -521,7 +527,7 @@ async function sendAndLog(
       .select(`
         id, brand_id, invoice_number, order_date, status, subtotal, discount, promo_code, tax_amount, tax_rate,
         shipping, total, currency, customer_id, advance_paid, payment_status, payment_method, fulfillment_method,
-        benefit_receipt_rejection_reason,
+        benefit_receipt_rejection_reason, public_invoice_token,
         brand:brands ( slug ),
         order_items ( description, quantity, unit_price, line_total ),
         customer:customers ( email, name )

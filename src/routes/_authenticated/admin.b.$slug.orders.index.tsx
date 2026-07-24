@@ -392,6 +392,20 @@ function OrdersList() {
       setCashCollectedAmount("");
       setCashModalNotes("");
       qc.invalidateQueries({ queryKey: ["orders", brandId] });
+
+      // Trigger order completed / delivered email notification to customer (Resend) and admin (SendPulse)
+      void (async () => {
+        try {
+          const { data: { session } } = await supabase.auth.getSession();
+          const accessToken = session?.access_token;
+          await supabase.functions.invoke("send-order-email", {
+            body: { order_id: order.id, event: "order_delivered", lang },
+            headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : undefined,
+          });
+        } catch (e) {
+          console.warn("[handleCompleteDelivery email trigger error]", e);
+        }
+      })();
     } catch (err: any) {
       toast.error(err.message || "Failed to complete delivery");
     } finally {
@@ -701,6 +715,21 @@ function OrdersList() {
         if (!res.ok) throw new Error(data.error_ar && lang === "ar" ? data.error_ar : data.error);
         toast.success(successMsg);
         qc.invalidateQueries({ queryKey: ["orders", brandId] });
+
+        if (payload.fulfillment_status === "COMPLETED" || payload.status === "completed" || payload.fulfillment_status === "delivered") {
+          void (async () => {
+            try {
+              const { data: { session } } = await supabase.auth.getSession();
+              const accessToken = session?.access_token;
+              await supabase.functions.invoke("send-order-email", {
+                body: { order_id: o.id, event: "order_delivered", lang },
+                headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : undefined,
+              });
+            } catch (e) {
+              console.warn("[handleStatusUpdate email trigger error]", e);
+            }
+          })();
+        }
       } catch (err: any) {
         toast.error(err.message || "Failed to update order status");
       } finally {
