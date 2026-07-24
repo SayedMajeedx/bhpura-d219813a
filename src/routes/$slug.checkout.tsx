@@ -422,14 +422,20 @@ function Checkout() {
       // checkouts that intentionally have no customer email. The edge
       // function records a skipped customer-email channel where needed while
       // still attempting the tenant's independent admin notification route.
-      if (orderId && confirmationEmailToken) {
+      if (orderId) {
         const emailLang = (typeof document !== "undefined" && document.documentElement.dir === "rtl") ? "ar" : "en";
-        // Fire-and-forget; server returns 202 immediately and sends in background.
-        void supabase.functions.invoke("send-order-email", {
-          body: { order_id: orderId, email_token: confirmationEmailToken, lang: emailLang, event: "order_placed" },
-        }).then(({ error }) => {
-          if (error) console.warn("[send-order-email]", error);
-        });
+        try {
+          await supabase.functions.invoke("send-order-email", {
+            body: {
+              order_id: orderId,
+              ...(confirmationEmailToken ? { email_token: confirmationEmailToken } : {}),
+              lang: emailLang,
+              event: "order_placed",
+            },
+          });
+        } catch (emailErr) {
+          console.warn("[send-order-email]", emailErr);
+        }
       }
       navigate({
         to: "/$slug/thank-you/$orderId",

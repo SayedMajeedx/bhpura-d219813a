@@ -76,6 +76,15 @@ export const Route = createFileRoute("/api/public/payments/tap-redirect")({
               console.error("[Tap Redirect Update Error]:", updateError);
             }
 
+            // Trigger order placement email notification
+            try {
+              await supabaseAdmin.functions.invoke("send-order-email", {
+                body: { order_id: orderId, event: "order_placed" },
+              });
+            } catch (emailErr) {
+              console.error("[Tap Redirect Email Invoke Error]:", emailErr);
+            }
+
             // Redirect to thank-you page
             return new Response(null, {
               status: 302,

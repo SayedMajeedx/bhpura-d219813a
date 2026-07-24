@@ -40,6 +40,7 @@ import { Route as AuthenticatedAdminCampaignsRouteImport } from './routes/_authe
 import { Route as AuthenticatedAdminBrandsRouteImport } from './routes/_authenticated/admin.brands'
 import { Route as SlugThankYouOrderIdRouteImport } from './routes/$slug.thank-you.$orderId'
 import { Route as SlugProductIdRouteImport } from './routes/$slug.product.$id'
+import { Route as SlugProductSplatRouteImport } from './routes/$slug.product.$'
 import { Route as SlugPageIdxRouteImport } from './routes/$slug.page.$idx'
 import { Route as BrandsBrandIdKindFilenameRouteImport } from './routes/brands.$brandId.$kind.$filename'
 import { Route as ApiPublicWebhooksTapRouteImport } from './routes/api.public.webhooks.tap'
@@ -226,6 +227,11 @@ const SlugProductIdRoute = SlugProductIdRouteImport.update({
   path: '/product/$id',
   getParentRoute: () => SlugRouteRoute,
 } as any)
+const SlugProductSplatRoute = SlugProductSplatRouteImport.update({
+  id: '/product/$',
+  path: '/product/$',
+  getParentRoute: () => SlugRouteRoute,
+} as any)
 const SlugPageIdxRoute = SlugPageIdxRouteImport.update({
   id: '/page/$idx',
   path: '/page/$idx',
@@ -382,6 +388,7 @@ export interface FileRoutesByFullPath {
   '/platform/$filename': typeof PlatformFilenameRoute
   '/$slug/': typeof SlugIndexRoute
   '/$slug/page/$idx': typeof SlugPageIdxRoute
+  '/$slug/product/$': typeof SlugProductSplatRoute
   '/$slug/product/$id': typeof SlugProductIdRoute
   '/$slug/thank-you/$orderId': typeof SlugThankYouOrderIdRoute
   '/admin/brands': typeof AuthenticatedAdminBrandsRoute
@@ -435,6 +442,7 @@ export interface FileRoutesByTo {
   '/platform/$filename': typeof PlatformFilenameRoute
   '/$slug': typeof SlugIndexRoute
   '/$slug/page/$idx': typeof SlugPageIdxRoute
+  '/$slug/product/$': typeof SlugProductSplatRoute
   '/$slug/product/$id': typeof SlugProductIdRoute
   '/$slug/thank-you/$orderId': typeof SlugThankYouOrderIdRoute
   '/admin/brands': typeof AuthenticatedAdminBrandsRoute
@@ -492,6 +500,7 @@ export interface FileRoutesById {
   '/platform/$filename': typeof PlatformFilenameRoute
   '/$slug/': typeof SlugIndexRoute
   '/$slug/page/$idx': typeof SlugPageIdxRoute
+  '/$slug/product/$': typeof SlugProductSplatRoute
   '/$slug/product/$id': typeof SlugProductIdRoute
   '/$slug/thank-you/$orderId': typeof SlugThankYouOrderIdRoute
   '/_authenticated/admin/brands': typeof AuthenticatedAdminBrandsRoute
@@ -549,6 +558,7 @@ export interface FileRouteTypes {
     | '/platform/$filename'
     | '/$slug/'
     | '/$slug/page/$idx'
+    | '/$slug/product/$'
     | '/$slug/product/$id'
     | '/$slug/thank-you/$orderId'
     | '/admin/brands'
@@ -602,6 +612,7 @@ export interface FileRouteTypes {
     | '/platform/$filename'
     | '/$slug'
     | '/$slug/page/$idx'
+    | '/$slug/product/$'
     | '/$slug/product/$id'
     | '/$slug/thank-you/$orderId'
     | '/admin/brands'
@@ -658,6 +669,7 @@ export interface FileRouteTypes {
     | '/platform/$filename'
     | '/$slug/'
     | '/$slug/page/$idx'
+    | '/$slug/product/$'
     | '/$slug/product/$id'
     | '/$slug/thank-you/$orderId'
     | '/_authenticated/admin/brands'
@@ -932,6 +944,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SlugProductIdRouteImport
       parentRoute: typeof SlugRouteRoute
     }
+    '/$slug/product/$': {
+      id: '/$slug/product/$'
+      path: '/product/$'
+      fullPath: '/$slug/product/$'
+      preLoaderRoute: typeof SlugProductSplatRouteImport
+      parentRoute: typeof SlugRouteRoute
+    }
     '/$slug/page/$idx': {
       id: '/$slug/page/$idx'
       path: '/page/$idx'
@@ -1106,6 +1125,7 @@ interface SlugRouteRouteChildren {
   SlugWishlistRoute: typeof SlugWishlistRoute
   SlugIndexRoute: typeof SlugIndexRoute
   SlugPageIdxRoute: typeof SlugPageIdxRoute
+  SlugProductSplatRoute: typeof SlugProductSplatRoute
   SlugProductIdRoute: typeof SlugProductIdRoute
   SlugThankYouOrderIdRoute: typeof SlugThankYouOrderIdRoute
 }
@@ -1120,6 +1140,7 @@ const SlugRouteRouteChildren: SlugRouteRouteChildren = {
   SlugWishlistRoute: SlugWishlistRoute,
   SlugIndexRoute: SlugIndexRoute,
   SlugPageIdxRoute: SlugPageIdxRoute,
+  SlugProductSplatRoute: SlugProductSplatRoute,
   SlugProductIdRoute: SlugProductIdRoute,
   SlugThankYouOrderIdRoute: SlugThankYouOrderIdRoute,
 }

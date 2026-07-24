@@ -642,7 +642,10 @@ Deno.serve(async (req, info) => {
   // authentication (the public anon key is also normally sent as Bearer).
   const providedSecret = req.headers.get("x-webhook-secret") ?? "";
   const authz = req.headers.get("authorization") ?? "";
-  const secretOk = !!WEBHOOK_SECRET && providedSecret === WEBHOOK_SECRET;
+  const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+  const token = authz.toLowerCase().startsWith("bearer ") ? authz.slice(7).trim() : "";
+  const isServiceRole = !!serviceRoleKey && token === serviceRoleKey;
+  const secretOk = (!!WEBHOOK_SECRET && providedSecret === WEBHOOK_SECRET) || isServiceRole;
 
   let body: Body = {};
   try { body = await req.json(); } catch { /* noop */ }
@@ -656,7 +659,6 @@ Deno.serve(async (req, info) => {
 
   let authorized = secretOk;
   let privileged = secretOk;
-  const token = authz.toLowerCase().startsWith("bearer ") ? authz.slice(7).trim() : "";
   if (!authorized && token) {
     const { data: userData } = await admin.auth.getUser(token);
     const user = userData?.user;

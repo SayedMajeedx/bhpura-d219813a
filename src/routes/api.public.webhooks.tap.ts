@@ -100,6 +100,15 @@ export const Route = createFileRoute("/api/public/webhooks/tap")({
             }
 
             console.log(`[Tap Webhook Success]: Securely verified and confirmed payment for Order ${orderId}`);
+
+            // Trigger order email notification
+            try {
+              await supabaseAdmin.functions.invoke("send-order-email", {
+                body: { order_id: orderId, event: "order_placed" },
+              });
+            } catch (emailErr) {
+              console.error("[Tap Webhook Email Invoke Error]:", emailErr);
+            }
           } else {
             console.warn(`[Tap Webhook Non-success Status]: Charge status ${verifiedStatus} for Order ${orderId}`);
           }
