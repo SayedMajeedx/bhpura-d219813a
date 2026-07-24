@@ -158,7 +158,7 @@ async function handleList(
   let query = supabase
     .from("profiles")
     .select(
-      "id, email, name, role, status, brand_id, created_at, updated_at, brand:brands(id, slug, name_en, name_ar, logo_url, is_active)",
+      "id, email, name, phone, role, status, brand_id, created_at, updated_at, brand:brands(id, slug, name_en, name_ar, logo_url, is_active)",
     )
     .order("created_at", { ascending: false });
 
@@ -194,7 +194,7 @@ async function handleCreate(
   body: any,
   ctx: { userId: string; isSuperAdmin: boolean; callerBrandId: string | null },
 ) {
-  const { email, name, role, password } = body;
+  const { email, name, phone, role, password } = body;
   let { brand_id } = body;
 
   const normalizedEmail = String(email ?? "").trim().toLowerCase();
@@ -305,6 +305,7 @@ async function handleCreate(
     id: userId,
     email: normalizedEmail,
     name: name || normalizedEmail.split("@")[0],
+    phone: phone ? String(phone).trim() : null,
     role: userRole,
     status: "active",
   };
@@ -354,7 +355,7 @@ async function handleUpdate(
   body: any,
   ctx: { userId: string; isSuperAdmin: boolean; callerBrandId: string | null },
 ) {
-  const { userId, role, status, name, brand_id, password } = body;
+  const { userId, role, status, name, phone, brand_id, password } = body;
 
   if (!userId) {
     return new Response(JSON.stringify({ error: "userId is required" }), {
@@ -431,6 +432,9 @@ async function handleUpdate(
   }
   if (name !== undefined) {
     updates.name = name;
+  }
+  if (phone !== undefined) {
+    updates.phone = phone ? String(phone).trim() : null;
   }
   // Only super admin can reassign brand_id
   if (brand_id !== undefined && ctx.isSuperAdmin) {

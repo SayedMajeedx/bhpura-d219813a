@@ -46,6 +46,7 @@ import {
   formatNotifiedTimeAgo,
   recordCourierNotified,
 } from "@/lib/courier-whatsapp";
+import { CourierWhatsAppModal } from "@/components/courier/CourierWhatsAppModal";
 import { useT, useI18n } from "@/lib/i18n";
 import { resolvePaymentStatus, PAYMENT_BADGE_CLASSES } from "@/lib/payment-status";
 import { useBrand } from "@/lib/brand-context";
@@ -318,6 +319,15 @@ function OrdersList() {
 
   // New Fulfill states
   const [isFulfillModalOpen, setIsFulfillModalOpen] = useState(false);
+  const [waModalState, setWaModalState] = useState<{
+    isOpen: boolean;
+    order: any;
+    courier: any;
+  }>({
+    isOpen: false,
+    order: null,
+    courier: null,
+  });
   const [selectedFulfillOrder, setSelectedFulfillOrder] = useState<any | null>(null);
   const [selectedCourierId, setSelectedCourierId] = useState<string>("unassigned");
   const [fulfillNotes, setFulfillNotes] = useState<string>("");
@@ -1412,22 +1422,14 @@ function OrdersList() {
                                     <button
                                       type="button"
                                       className="text-[10px] font-bold text-white bg-emerald-600 hover:bg-emerald-700 px-2 py-0.5 rounded flex items-center gap-1 shadow-xs transition-colors w-fit"
-                                      onClick={async (e) => {
+                                      onClick={(e) => {
                                         e.stopPropagation();
-                                        const waUrl = generateCourierWhatsAppUrl({
+                                        const courierObj = (couriersQ.data ?? []).find((c: any) => c.id === o.assigned_to) || (o.assigned_profile as any);
+                                        setWaModalState({
+                                          isOpen: true,
                                           order: o,
-                                          courierPhone,
-                                          courierName,
-                                          brandSlug: slug,
-                                          lang,
+                                          courier: courierObj || { id: o.assigned_to, name: courierName, phone: courierPhone },
                                         });
-                                        if (!waUrl) {
-                                          toast.error(lang === "ar" ? "رقم هاتف المندوب غير متوفر" : "Courier phone missing");
-                                          return;
-                                        }
-                                        await recordCourierNotified(o.id);
-                                        qc.invalidateQueries({ queryKey: ["orders", brandId] });
-                                        window.open(waUrl, "_blank", "noopener,noreferrer");
                                       }}
                                     >
                                       📱 {lang === "ar" ? "إشعار واتساب" : "Notify WA"}

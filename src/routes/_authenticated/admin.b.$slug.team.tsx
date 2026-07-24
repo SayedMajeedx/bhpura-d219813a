@@ -142,13 +142,14 @@ function TeamManagement() {
   const [form, setForm] = useState({
     email: "",
     name: "",
+    phone: "",
     password: "",
     role: "staff" as UserRole,
     permissions: [] as string[],
   });
 
   const resetForm = () => {
-    setForm({ email: "", name: "", password: "", role: "staff", permissions: [] });
+    setForm({ email: "", name: "", phone: "", password: "", role: "staff", permissions: [] });
   };
 
   const handleAdd = async () => {
@@ -161,6 +162,7 @@ function TeamManagement() {
       const result = await callUserManagement("create", {
         email: form.email.trim(),
         name: form.name.trim() || undefined,
+        phone: form.phone.trim() || undefined,
         password: form.password,
         role: form.role,
         // Attach the new user to the brand this team page is scoped to
@@ -178,7 +180,7 @@ function TeamManagement() {
     }
   };
 
-  const handleUpdate = async (userId: string, updates: { role?: UserRole; status?: UserStatus; name?: string; permissions?: string[] }) => {
+  const handleUpdate = async (userId: string, updates: { role?: UserRole; status?: UserStatus; name?: string; phone?: string | null; permissions?: string[] }) => {
     try {
       await callUserManagement("update", { userId, ...updates });
       toast.success(isAr ? "تم التحديث بنجاح" : "Updated successfully");
@@ -250,6 +252,16 @@ function TeamManagement() {
                   value={form.email}
                   onChange={(e) => setForm({ ...form, email: e.target.value })}
                   placeholder="e.g. name@example.com"
+                  dir="ltr"
+                />
+              </div>
+              <div>
+                <Label>{isAr ? "رقم الهاتف / الواتساب (مطلوب للمناديب)" : "Phone / WhatsApp (required for couriers)"}</Label>
+                <Input
+                  type="tel"
+                  value={form.phone}
+                  onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                  placeholder="e.g. +973 33000000"
                   dir="ltr"
                 />
               </div>
@@ -371,6 +383,7 @@ function TeamManagement() {
                 <tr>
                   <th className="p-4 text-start">{isAr ? "الاسم" : "Name"}</th>
                   <th className="hidden p-4 text-start md:table-cell">{isAr ? "البريد الإلكتروني" : "Email"}</th>
+                  <th className="hidden p-4 text-start sm:table-cell">{isAr ? "الهاتف / الواتساب" : "Phone / WhatsApp"}</th>
                   <th className="p-4 text-start">{isAr ? "الدور" : "Role"}</th>
                   <th className="hidden p-4 text-start sm:table-cell">{isAr ? "الحالة" : "Status"}</th>
                   <th className="hidden p-4 text-start lg:table-cell">{isAr ? "تاريخ الإنشاء" : "Created"}</th>
@@ -382,6 +395,15 @@ function TeamManagement() {
                   <tr key={member.id} className="border-t border-border">
                     <td className="p-4 font-medium">{member.name || member.email.split("@")[0]}</td>
                     <td className="hidden p-4 text-muted-foreground md:table-cell" dir="ltr">{member.email}</td>
+                    <td className="hidden p-4 text-muted-foreground sm:table-cell" dir="ltr">
+                      {member.phone ? (
+                        <span className="inline-flex items-center gap-1 text-xs font-mono bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 px-2 py-0.5 rounded-md">
+                          📱 {member.phone}
+                        </span>
+                      ) : (
+                        <span className="text-xs text-muted-foreground/60 italic">{isAr ? "غير محدد" : "None"}</span>
+                      )}
+                    </td>
                     <td className="p-4">
                       <span
                         className={`inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full ${
@@ -524,6 +546,17 @@ function TeamManagement() {
                 />
               </div>
               <div>
+                <Label>{isAr ? "رقم الهاتف / الواتساب" : "Phone / WhatsApp"}</Label>
+                <Input
+                  type="tel"
+                  className="text-start"
+                  value={editing.phone || ""}
+                  onChange={(e) => setEditing({ ...editing, phone: e.target.value })}
+                  placeholder="e.g. +973 33000000"
+                  dir="ltr"
+                />
+              </div>
+              <div>
                 <Label>{isAr ? "الدور" : "Role"}</Label>
                 <Select
                   value={editing.role}
@@ -644,6 +677,7 @@ function TeamManagement() {
                 if (editing) {
                   handleUpdate(editing.id, {
                     name: editing.name || undefined,
+                    phone: editing.phone || null,
                     role: editing.role,
                     status: editing.status,
                     permissions: editing.role === "staff" ? (editing as any).permissions : [],

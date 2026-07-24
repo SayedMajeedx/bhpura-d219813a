@@ -50,6 +50,7 @@ import {
   formatNotifiedTimeAgo,
   recordCourierNotified,
 } from "@/lib/courier-whatsapp";
+import { CourierWhatsAppModal } from "@/components/courier/CourierWhatsAppModal";
 import { formatDate, formatMoney, formatOrderStatus } from "@/lib/format";
 import { useT, useI18n } from "@/lib/i18n";
 import {
@@ -566,6 +567,8 @@ function OrderDetail() {
       return (data as any[]) ?? [];
     },
   });
+  const [waModalOpen, setWaModalOpen] = useState(false);
+
   const assignCourier = async (courierId: string) => {
     const { error } = await (supabase.rpc as any)("assign_order_courier", { p_order_id: id, p_courier_id: courierId === "unassigned" ? null : courierId });
     if (error) return toast.error(error.message);
@@ -573,32 +576,7 @@ function OrderDetail() {
     await orderQ.refetch();
 
     if (courierId !== "unassigned") {
-      const courierObj = (couriersQ.data ?? []).find((c: any) => c.id === courierId);
-      if (courierObj && courierObj.phone) {
-        const waUrl = generateCourierWhatsAppUrl({
-          order: orderQ.data || order,
-          courierPhone: courierObj.phone,
-          courierName: courierObj.name || courierObj.email,
-          brandSlug: slug,
-          lang,
-        });
-        toast(
-          lang === "ar"
-            ? `تم تعيين الطلب لـ "${courierObj.name || "المندوب"}"`
-            : `Assigned to ${courierObj.name || "Courier"}`,
-          {
-            action: {
-              label: lang === "ar" ? "📱 إشعار عبر واتساب" : "📱 Notify on WhatsApp",
-              onClick: async () => {
-                await recordCourierNotified(id);
-                await orderQ.refetch();
-                window.open(waUrl, "_blank", "noopener,noreferrer");
-              },
-            },
-            duration: 10000,
-          }
-        );
-      }
+      setWaModalOpen(true);
     }
   };
   const addressesQ = useQuery({
@@ -1997,24 +1975,7 @@ function OrderDetail() {
                                   type="button"
                                   size="sm"
                                   className="h-8 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs px-3 shadow-sm flex items-center gap-1.5"
-                                  onClick={async () => {
-                                    const courierPhone = assignedCourierObj?.phone || (order.assigned_profile as any)?.phone;
-                                    const courierName = assignedCourierObj?.name || (order.assigned_profile as any)?.name || "Courier";
-                                    const waUrl = generateCourierWhatsAppUrl({
-                                      order: orderQ.data || order,
-                                      courierPhone,
-                                      courierName,
-                                      brandSlug: slug,
-                                      lang,
-                                    });
-                                    if (!waUrl) {
-                                      toast.error(lang === "ar" ? "رقم هاتف المندوب غير متوفر" : "Courier phone number missing");
-                                      return;
-                                    }
-                                    await recordCourierNotified(id);
-                                    await orderQ.refetch();
-                                    window.open(waUrl, "_blank", "noopener,noreferrer");
-                                  }}
+                                  onClick={() => setWaModalOpen(true)}
                                 >
                                   📱 {lang === "ar" ? `إشعار ${assignedCourierObj?.name ? assignedCourierObj.name.split(" ")[0] : "المندوب"} عبر واتساب` : `Notify ${assignedCourierObj?.name ? assignedCourierObj.name.split(" ")[0] : "Courier"} on WhatsApp`}
                                 </Button>
@@ -2963,6 +2924,20 @@ function OrderDetail() {
       <div className="max-w-6xl mx-auto p-4 sm:p-6 lg:p-8 no-print">
         <ActivityLogList orderId={order.id} scope="order" brandId={brand.id} />
       </div>
+
+      <CourierWhatsAppModal
+        isOpen={waModalOpen}
+        onClose={() => setWaModalOpen(false)}
+        order={orderQ.data || order}
+        courier={
+          (couriersQ.data ?? []).find((c: any) => c.id === order.assigned_to) ||
+          (order.assigned_profile as any) ||
+          null
+        }
+        brandSlug={slug}
+        lang={lang}
+        onNotified={() => orderQ.refetch()}
+      />
     </div>
   );
 }
