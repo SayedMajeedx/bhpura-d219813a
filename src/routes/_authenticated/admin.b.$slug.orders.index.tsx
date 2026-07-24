@@ -405,7 +405,7 @@ function OrdersList() {
     queryFn: async () => {
       let query: any = supabase
         .from("orders")
-        .select("*, customers(name, phone, region, road, house, flat, address, city), order_items(*, product_variants(sku, products(title, main_image, image_url)), products(title, main_image, image_url))")
+        .select("*, customers(name, phone, region, road, house, flat, address, city), order_items(*)")
         .eq("brand_id", brandId);
       if (isCourier) {
         const { data: { user } } = await supabase.auth.getUser();
