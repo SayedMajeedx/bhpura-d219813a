@@ -648,6 +648,7 @@ function OrdersList() {
       Number(o.advance_paid ?? 0),
     );
     const isPaid = paymentBadge === "paid";
+    const isPartiallyPaid = paymentBadge === "partially_paid";
     const isUnpaid = !isPaid;
     const ff = String(o.fulfillment_status || "ON_HOLD").toUpperCase();
     const isUpdating = updatingOrderId === o.id;
