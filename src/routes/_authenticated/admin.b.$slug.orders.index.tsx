@@ -242,13 +242,23 @@ function CustomerContactActions({ customer, lang }: { customer: any; lang: "en" 
 function DeliveryAddressSnapshot({ customer, lang }: { customer: any; lang: "en" | "ar" }) {
   if (!customer) return null;
   const parts = [];
-  if (customer.house) parts.push(`${lang === "ar" ? "م" : "Bldg/House"} ${customer.house}`);
-  if (customer.road) parts.push(`${lang === "ar" ? "ط" : "Rd"} ${customer.road}`);
-  if (customer.block || customer.region) parts.push(`${lang === "ar" ? "مجمع" : "Blk"} ${customer.block || customer.region}`);
-  if (customer.city) parts.push(customer.city);
-  if (customer.flat) parts.push(`${lang === "ar" ? "شقة" : "Flat"} ${customer.flat}`);
+  if (customer.house || customer.building) {
+    parts.push(`${lang === "ar" ? "م" : "Bldg/House"} ${customer.house || customer.building}`);
+  }
+  if (customer.road) {
+    parts.push(`${lang === "ar" ? "ط" : "Rd"} ${customer.road}`);
+  }
+  if (customer.block) {
+    parts.push(`${lang === "ar" ? "مجمع" : "Blk"} ${customer.block}`);
+  }
+  if (customer.region || customer.city) {
+    parts.push(customer.region || customer.city);
+  }
+  if (customer.flat) {
+    parts.push(`${lang === "ar" ? "شقة" : "Flat"} ${customer.flat}`);
+  }
 
-  const text = parts.length > 0 ? parts.join(", ") : customer.address || null;
+  const text = parts.length > 0 ? parts.join(", ") : customer.address || customer.formatted_address || null;
   if (!text) return null;
 
   return (
@@ -405,7 +415,7 @@ function OrdersList() {
     queryFn: async () => {
       let query: any = supabase
         .from("orders")
-        .select("*, customers(name, phone, region, road, house, flat, address, city), order_items(*)")
+        .select("*, customers(*), order_items(*)")
         .eq("brand_id", brandId);
       if (isCourier) {
         const { data: { user } } = await supabase.auth.getUser();
