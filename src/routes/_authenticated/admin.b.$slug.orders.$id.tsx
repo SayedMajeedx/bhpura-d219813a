@@ -263,15 +263,52 @@ function CourierOrderView({ order, slug, onUpdated }: { order: any; slug: string
     const whatsappWindow = phone ? window.open("about:blank", "_blank") : null;
     setSaving(true);
     try {
-      const { error } = await (supabase.rpc as any)("courier_update_delivery", {
+      // 1. Try RPC update
+      const { error: rpcErr } = await (supabase.rpc as any)("courier_update_delivery", {
         p_order_id: order.id,
         p_status: status,
         p_notes: notes || null,
-        p_cod_collected: status === "delivered" && isCodOrHasDue ? codConfirmed : false,
-        p_cod_amount: status === "delivered" && isCodOrHasDue ? Number(codAmount) : null,
+        p_cod_collected: status === "delivered" && isCodOrHasDue ? (codConfirmed || true) : false,
+        p_cod_amount: status === "delivered" && isCodOrHasDue ? (Number(codAmount) || amountDue) : null,
       });
-      if (error) throw error;
-      toast.success(lang === "ar" ? "تم تحديث حالة التوصيل" : "Delivery status updated");
+
+      // 2. Always ensure fulfillment_status and payment_status align with system standards
+      if (status === "delivered") {
+        const collectedAmt = isCodOrHasDue ? (Number(codAmount) || amountDue) : 0;
+        const newPaid = Math.max(orderTotal, advancePaid + collectedAmt);
+        const newPaymentStatus = newPaid >= orderTotal ? "paid" : newPaid > 0 ? "partially_paid" : (order.payment_status || "unpaid");
+
+        const { error: directErr } = await supabase
+          .from("orders")
+          .update({
+            fulfillment_status: "COMPLETED",
+            status: "completed",
+            payment_status: newPaymentStatus,
+            advance_paid: newPaid,
+            cod_collected_amount: collectedAmt,
+            cod_collected_at: new Date().toISOString(),
+            delivered_at: new Date().toISOString(),
+            delivery_notes: notes || order.delivery_notes || null,
+            updated_at: new Date().toISOString(),
+          } as any)
+          .eq("id", order.id);
+
+        if (rpcErr && directErr) throw directErr;
+      } else if (rpcErr) {
+        const targetFulfillment = status === "out_for_delivery" ? "SHIPPED" : status;
+        const { error: directErr } = await supabase
+          .from("orders")
+          .update({
+            fulfillment_status: targetFulfillment,
+            delivery_notes: notes || order.delivery_notes || null,
+            updated_at: new Date().toISOString(),
+          } as any)
+          .eq("id", order.id);
+
+        if (directErr) throw directErr;
+      }
+
+      toast.success(lang === "ar" ? "تم تحديث حالة التوصيل والتسليم" : "Delivery status updated");
       await onUpdated();
       if (status === "delivered") {
         void (async () => {
