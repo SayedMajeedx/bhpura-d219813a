@@ -20,6 +20,7 @@ export type Profile = {
   id: string;
   email: string;
   name: string | null;
+  phone?: string | null;
   role: UserRole;
   status: UserStatus;
   brand_id: string | null;

@@ -341,6 +341,7 @@ async function handleCreate(
         id: userId,
         email: normalizedEmail,
         name: name || normalizedEmail.split("@")[0],
+        phone: updatePayload.phone,
         role: userRole,
         brand_id: updatePayload.brand_id,
         status: "active",

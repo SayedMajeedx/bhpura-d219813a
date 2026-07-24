@@ -11,7 +11,8 @@ ALTER TABLE public.business_settings
 GRANT SELECT (menu_bg, menu_fg, menu_title_en, menu_title_ar, menu_show_home, menu_show_account, menu_show_orders, menu_show_pages)
 ON public.business_settings TO anon, authenticated;
 
-CREATE OR REPLACE VIEW public.brand_public_settings
+DROP VIEW IF EXISTS public.brand_public_settings CASCADE;
+CREATE VIEW public.brand_public_settings
 WITH (security_invoker = true) AS
 SELECT bs.brand_id, bs.business_name, bs.logo_url, bs.currency,
        bs.primary_color, bs.text_color, bs.background_color,

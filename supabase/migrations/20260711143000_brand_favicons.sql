@@ -2,7 +2,8 @@
 ALTER TABLE public.business_settings
   ADD COLUMN IF NOT EXISTS favicon_url text;
 
-CREATE OR REPLACE VIEW public.brand_public_settings
+DROP VIEW IF EXISTS public.brand_public_settings CASCADE;
+CREATE VIEW public.brand_public_settings
 WITH (security_invoker = true) AS
 SELECT bs.brand_id, bs.business_name, bs.logo_url, bs.currency,
        bs.primary_color, bs.text_color, bs.background_color,

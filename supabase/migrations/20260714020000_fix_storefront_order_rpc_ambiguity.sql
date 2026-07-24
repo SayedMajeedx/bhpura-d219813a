@@ -2,9 +2,16 @@
 -- defaults. Keep the proven checkout implementation, but give the private
 -- 10-argument implementation a distinct name so the public API is unique.
 
-ALTER FUNCTION public.place_storefront_order(
-  text, jsonb, jsonb, text, text, text, uuid, text, text, text
-) RENAME TO place_storefront_order_core;
+DO $$
+BEGIN
+  ALTER FUNCTION public.place_storefront_order(
+    text, jsonb, jsonb, text, text, text, uuid, text, text, text
+  ) RENAME TO place_storefront_order_core;
+EXCEPTION
+  WHEN duplicate_function THEN NULL;
+  WHEN duplicate_object THEN NULL;
+  WHEN undefined_function THEN NULL;
+END $$;
 
 REVOKE ALL ON FUNCTION public.place_storefront_order_core(
   text, jsonb, jsonb, text, text, text, uuid, text, text, text

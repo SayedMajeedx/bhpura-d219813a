@@ -11,7 +11,8 @@ GRANT SELECT (home_promo_cards, show_new_arrivals, show_best_sellers,
   new_arrivals_title_en, new_arrivals_title_ar, best_sellers_title_en, best_sellers_title_ar)
 ON public.business_settings TO anon, authenticated;
 
-CREATE OR REPLACE VIEW public.brand_public_settings
+DROP VIEW IF EXISTS public.brand_public_settings CASCADE;
+CREATE VIEW public.brand_public_settings
 WITH (security_invoker = true) AS
 SELECT bs.brand_id, bs.business_name, bs.logo_url, bs.currency,
        bs.primary_color, bs.text_color, bs.background_color, bs.font_family, bs.font_url,
