@@ -1,4 +1,4 @@
-import { supabase } from "@/lib/supabase";
+import { supabase } from "@/integrations/supabase/client";
 
 export function normalizePhoneForWhatsApp(phoneStr: string | null | undefined): string {
   if (!phoneStr) return "";
