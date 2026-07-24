@@ -64,7 +64,7 @@ export const Route = createFileRoute("/api/public/webhooks/tap")({
           const { data: existingOrder, error: replayError } = await supabaseAdmin
             .from("orders")
             .select("id, payment_status")
-            .eq("payment_gateway_reference", chargeId)
+            .eq("payment_gateway_reference" as any, chargeId)
             .maybeSingle();
 
           if (replayError) {

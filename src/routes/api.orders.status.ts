@@ -1,6 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-// @ts-expect-error tanstack router auto-generated route path check bypass
 export const Route = createFileRoute("/api/orders/status")({
   server: {
     handlers: {

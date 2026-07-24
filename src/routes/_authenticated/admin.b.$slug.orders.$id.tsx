@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, useMemo, useEffect, useRef } from "react";
+import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -44,7 +45,11 @@ import {
   DialogTrigger,
   DialogDescription,
 } from "@/components/ui/dialog";
-import { toast } from "sonner";
+import {
+  generateCourierWhatsAppUrl,
+  formatNotifiedTimeAgo,
+  recordCourierNotified,
+} from "@/lib/courier-whatsapp";
 import { formatDate, formatMoney, formatOrderStatus } from "@/lib/format";
 import { useT, useI18n } from "@/lib/i18n";
 import {
@@ -501,7 +506,7 @@ function OrderDetail() {
       if (isCourier) {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) throw new Error("Not authenticated");
-        query = query.eq("assigned_to", user.id).eq("fulfillment_method", "delivery");
+        query = (query as any).eq("assigned_to", user.id).eq("fulfillment_method", "delivery");
       }
       const { data, error } = await query.maybeSingle();
       if (error) throw error;
@@ -556,9 +561,9 @@ function OrderDetail() {
     queryKey: ["couriers", brandId],
     enabled: isAdmin,
     queryFn: async () => {
-      const { data, error } = await supabase.from("profiles").select("id, name, email").eq("brand_id", brandId).eq("role", "courier").eq("status", "active").order("name");
+      const { data, error } = await (supabase.from("profiles") as any).select("id, name, email, phone").eq("brand_id", brandId).eq("role", "courier").eq("status", "active").order("name");
       if (error) throw error;
-      return data ?? [];
+      return (data as any[]) ?? [];
     },
   });
   const assignCourier = async (courierId: string) => {
@@ -566,6 +571,35 @@ function OrderDetail() {
     if (error) return toast.error(error.message);
     toast.success(lang === "ar" ? "تم تحديث مندوب التوصيل" : "Courier assignment updated");
     await orderQ.refetch();
+
+    if (courierId !== "unassigned") {
+      const courierObj = (couriersQ.data ?? []).find((c: any) => c.id === courierId);
+      if (courierObj && courierObj.phone) {
+        const waUrl = generateCourierWhatsAppUrl({
+          order: orderQ.data || order,
+          courierPhone: courierObj.phone,
+          courierName: courierObj.name || courierObj.email,
+          brandSlug: slug,
+          lang,
+        });
+        toast(
+          lang === "ar"
+            ? `تم تعيين الطلب لـ "${courierObj.name || "المندوب"}"`
+            : `Assigned to ${courierObj.name || "Courier"}`,
+          {
+            action: {
+              label: lang === "ar" ? "📱 إشعار عبر واتساب" : "📱 Notify on WhatsApp",
+              onClick: async () => {
+                await recordCourierNotified(id);
+                await orderQ.refetch();
+                window.open(waUrl, "_blank", "noopener,noreferrer");
+              },
+            },
+            duration: 10000,
+          }
+        );
+      }
+    }
   };
   const addressesQ = useQuery({
     queryKey: ["customer_addresses", brandId],
@@ -1941,6 +1975,54 @@ function OrderDetail() {
                             {(couriersQ.data ?? []).map((courier: any) => <SelectItem key={courier.id} value={courier.id}>{courier.name || courier.email}</SelectItem>)}
                           </SelectContent>
                         </Select>
+
+                        {(() => {
+                          if (!order.assigned_to) return null;
+                          const assignedCourierObj = (couriersQ.data ?? []).find((c: any) => c.id === order.assigned_to);
+                          const notifiedAgo = formatNotifiedTimeAgo((order as any).courier_notified_at, lang);
+                          return (
+                            <div className="space-y-2 pt-2 border-t">
+                              <div className="flex flex-wrap items-center justify-between gap-2">
+                                {notifiedAgo ? (
+                                  <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-300 dark:border-emerald-800 text-[11px] font-bold px-2.5 py-1">
+                                    🔔 {lang === "ar" ? `تم الإشعار (${notifiedAgo})` : `Notified ${notifiedAgo}`}
+                                  </span>
+                                ) : (
+                                  <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-950/30 dark:text-amber-300 dark:border-amber-800 text-[11px] font-bold px-2.5 py-1">
+                                    ⏳ {lang === "ar" ? "لم يتم الإشعار عبر واتساب بعد" : "WhatsApp notification pending"}
+                                  </span>
+                                )}
+
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  className="h-8 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs px-3 shadow-sm flex items-center gap-1.5"
+                                  onClick={async () => {
+                                    const courierPhone = assignedCourierObj?.phone || (order.assigned_profile as any)?.phone;
+                                    const courierName = assignedCourierObj?.name || (order.assigned_profile as any)?.name || "Courier";
+                                    const waUrl = generateCourierWhatsAppUrl({
+                                      order: orderQ.data || order,
+                                      courierPhone,
+                                      courierName,
+                                      brandSlug: slug,
+                                      lang,
+                                    });
+                                    if (!waUrl) {
+                                      toast.error(lang === "ar" ? "رقم هاتف المندوب غير متوفر" : "Courier phone number missing");
+                                      return;
+                                    }
+                                    await recordCourierNotified(id);
+                                    await orderQ.refetch();
+                                    window.open(waUrl, "_blank", "noopener,noreferrer");
+                                  }}
+                                >
+                                  📱 {lang === "ar" ? `إشعار ${assignedCourierObj?.name ? assignedCourierObj.name.split(" ")[0] : "المندوب"} عبر واتساب` : `Notify ${assignedCourierObj?.name ? assignedCourierObj.name.split(" ")[0] : "Courier"} on WhatsApp`}
+                                </Button>
+                              </div>
+                            </div>
+                          );
+                        })()}
+
                         <div className="flex flex-wrap items-center gap-2 border-t pt-3 text-sm">
                           <span className="text-muted-foreground">
                             {lang === "ar" ? "حالة التوصيل:" : "Delivery status:"}

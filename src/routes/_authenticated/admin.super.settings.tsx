@@ -81,7 +81,7 @@ function SuperAdminSettings() {
   // Sync state once query data resolves
   useEffect(() => {
     if (settingsQuery.data) {
-      const s = settingsQuery.data;
+      const s = settingsQuery.data as any;
       if (s.base_price_bhd !== undefined) setBasePrice(Number(s.base_price_bhd));
       setDiscountPrice(s.discount_price_bhd ? Number(s.discount_price_bhd) : null);
       if (s.whatsapp_support_number) setWhatsappNumber(s.whatsapp_support_number);

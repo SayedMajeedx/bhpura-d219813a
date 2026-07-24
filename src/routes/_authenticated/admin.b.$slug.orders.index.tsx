@@ -41,6 +41,11 @@ import {
 } from "@/components/ui/select";
 import { formatDate, formatMoney, formatOrderStatus } from "@/lib/format";
 import { toast } from "sonner";
+import {
+  generateCourierWhatsAppUrl,
+  formatNotifiedTimeAgo,
+  recordCourierNotified,
+} from "@/lib/courier-whatsapp";
 import { useT, useI18n } from "@/lib/i18n";
 import { resolvePaymentStatus, PAYMENT_BADGE_CLASSES } from "@/lib/payment-status";
 import { useBrand } from "@/lib/brand-context";
@@ -347,7 +352,7 @@ function OrdersList() {
     setIsSubmittingCash(true);
     try {
       // 1. Try atomic RPC first
-      const { error: rpcErr } = await supabase.rpc("courier_complete_delivery", {
+      const { error: rpcErr } = await (supabase.rpc as any)("courier_complete_delivery", {
         p_order_id: order.id,
         p_collected_amount: amountToCollect,
         p_notes: notes || null,
@@ -413,20 +418,32 @@ function OrdersList() {
     }
   };
 
+  const del = async (id: string) => {
+    try {
+      const { error } = await supabase.from("orders").delete().eq("id", id);
+      if (error) throw error;
+      toast.success(lang === "ar" ? "تم حذف الطلب بنجاح" : "Order deleted successfully");
+      qc.invalidateQueries({ queryKey: ["orders", brandId] });
+    } catch (err: any) {
+      toast.error(err.message || "Failed to delete order");
+    } finally {
+      setDeleteTarget(null);
+    }
+  };
+
   // Fetch Couriers Query
   const couriersQ = useQuery({
     queryKey: ["couriers", brandId],
     enabled: Boolean(brandId),
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("id, name, email")
+      const { data, error } = await (supabase.from("profiles") as any)
+        .select("id, name, email, phone")
         .eq("brand_id", brandId)
         .eq("role", "courier")
         .eq("status", "active")
         .order("name");
       if (error) throw error;
-      return data ?? [];
+      return (data as any[]) ?? [];
     },
   });
 
@@ -691,7 +708,7 @@ function OrdersList() {
       Number(o.advance_paid ?? 0),
     );
     const isPaid = paymentBadge === "paid";
-    const isPartiallyPaid = paymentBadge === "partially_paid";
+    const isPartiallyPaid = paymentBadge === "partial";
     const isUnpaid = !isPaid;
     const ff = String(o.fulfillment_status || "ON_HOLD").toUpperCase();
     const isUpdating = updatingOrderId === o.id;
@@ -1364,14 +1381,62 @@ function OrdersList() {
                           </span>
                         </td>
                         <td className="p-4">
-                          <span
-                            className={cn(
-                              "text-[10px] uppercase tracking-wider px-2.5 py-1 rounded-full font-bold border",
-                              fulfillmentDetails.classes
-                            )}
-                          >
-                            {fulfillmentDetails.label}
-                          </span>
+                          <div className="flex flex-col gap-1.5 items-start">
+                            <span
+                              className={cn(
+                                "text-[10px] uppercase tracking-wider px-2.5 py-1 rounded-full font-bold border",
+                                fulfillmentDetails.classes
+                              )}
+                            >
+                              {fulfillmentDetails.label}
+                            </span>
+
+                            {o.assigned_to && (() => {
+                              const assignedCourier = (couriersQ.data ?? []).find((c: any) => c.id === o.assigned_to);
+                              const courierName = assignedCourier?.name || (o.assigned_profile as any)?.name || (lang === "ar" ? "مندوب" : "Courier");
+                              const courierPhone = assignedCourier?.phone || (o.assigned_profile as any)?.phone;
+                              const notifiedAgo = formatNotifiedTimeAgo((o as any).courier_notified_at, lang);
+
+                              return (
+                                <div className="mt-1 flex flex-col gap-1 text-xs">
+                                  <div className="text-[11px] font-medium text-muted-foreground flex items-center gap-1">
+                                    <Truck className="h-3 w-3 text-sky-600 dark:text-sky-400 shrink-0" />
+                                    <span className="font-semibold text-foreground truncate max-w-[120px]">{courierName}</span>
+                                  </div>
+
+                                  {notifiedAgo ? (
+                                    <span className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/30 px-1.5 py-0.5 rounded border border-emerald-200 dark:border-emerald-800 w-fit">
+                                      🔔 {lang === "ar" ? `تم الإشعار (${notifiedAgo})` : `Notified ${notifiedAgo}`}
+                                    </span>
+                                  ) : (
+                                    <button
+                                      type="button"
+                                      className="text-[10px] font-bold text-white bg-emerald-600 hover:bg-emerald-700 px-2 py-0.5 rounded flex items-center gap-1 shadow-xs transition-colors w-fit"
+                                      onClick={async (e) => {
+                                        e.stopPropagation();
+                                        const waUrl = generateCourierWhatsAppUrl({
+                                          order: o,
+                                          courierPhone,
+                                          courierName,
+                                          brandSlug: slug,
+                                          lang,
+                                        });
+                                        if (!waUrl) {
+                                          toast.error(lang === "ar" ? "رقم هاتف المندوب غير متوفر" : "Courier phone missing");
+                                          return;
+                                        }
+                                        await recordCourierNotified(o.id);
+                                        qc.invalidateQueries({ queryKey: ["orders", brandId] });
+                                        window.open(waUrl, "_blank", "noopener,noreferrer");
+                                      }}
+                                    >
+                                      📱 {lang === "ar" ? "إشعار واتساب" : "Notify WA"}
+                                    </button>
+                                  )}
+                                </div>
+                              );
+                            })()}
+                          </div>
                         </td>
                         <td className="p-4 text-end font-bold whitespace-nowrap">
                           {formatMoney(Number(o.total), o.currency)}
@@ -1686,6 +1751,36 @@ function OrdersList() {
                       const data = await res.json();
                       if (!res.ok) throw new Error(data.error_ar && lang === "ar" ? data.error_ar : data.error);
                       toast.success(lang === "ar" ? "تم تأكيد تعبئة الطلب وتجهيزه للشحن!" : "Order packed and dispatched successfully!");
+
+                      if (selectedCourierId !== "unassigned") {
+                        const courierObj = (couriersQ.data ?? []).find((c: any) => c.id === selectedCourierId);
+                        if (courierObj && courierObj.phone) {
+                          const waUrl = generateCourierWhatsAppUrl({
+                            order: selectedFulfillOrder,
+                            courierPhone: courierObj.phone,
+                            courierName: courierObj.name || courierObj.email,
+                            brandSlug: slug,
+                            lang,
+                          });
+                          toast(
+                            lang === "ar"
+                              ? `تم إسناد الطلب إلى "${courierObj.name || "المندوب"}"`
+                              : `Assigned to ${courierObj.name || "Courier"}`,
+                            {
+                              action: {
+                                label: lang === "ar" ? "📱 إشعار عبر واتساب" : "📱 Notify on WhatsApp",
+                                onClick: async () => {
+                                  await recordCourierNotified(selectedFulfillOrder.id);
+                                  qc.invalidateQueries({ queryKey: ["orders", brandId] });
+                                  window.open(waUrl, "_blank", "noopener,noreferrer");
+                                },
+                              },
+                              duration: 10000,
+                            }
+                          );
+                        }
+                      }
+
                       qc.invalidateQueries({ queryKey: ["orders", brandId] });
                       setIsFulfillModalOpen(false);
                     } catch (err: any) {
