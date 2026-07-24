@@ -346,13 +346,42 @@ function OrdersList() {
     }
     setIsSubmittingCash(true);
     try {
-      const { data: res, error } = await supabase.rpc("courier_complete_delivery", {
+      // 1. Try atomic RPC first
+      const { error: rpcErr } = await supabase.rpc("courier_complete_delivery", {
         p_order_id: order.id,
         p_collected_amount: amountToCollect,
         p_notes: notes || null,
       });
 
-      if (error) throw error;
+      if (rpcErr) {
+        // 2. Direct table update fallback if RPC function missing or column schema mismatch
+        const currentPaid = Number(order.advance_paid ?? order.paid_amount ?? 0);
+        const newPaid = currentPaid + amountToCollect;
+        const total = Number(order.total || 0);
+        const newStatus = newPaid >= total ? "paid" : newPaid > 0 ? "partially_paid" : (order.payment_status || "unpaid");
+
+        let updatedNotes = order.delivery_notes || "";
+        if (notes && notes.trim()) {
+          const timestamp = new Date().toISOString().slice(0, 16).replace("T", " ");
+          updatedNotes = updatedNotes ? `${updatedNotes}\n[${timestamp}]: ${notes.trim()}` : notes.trim();
+        }
+
+        const { error: updateErr } = await supabase
+          .from("orders")
+          .update({
+            advance_paid: newPaid,
+            cod_collected_amount: amountToCollect,
+            cod_collected_at: new Date().toISOString(),
+            payment_status: newStatus,
+            fulfillment_status: "COMPLETED",
+            delivery_notes: updatedNotes || null,
+            delivered_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          } as any)
+          .eq("id", order.id);
+
+        if (updateErr) throw updateErr;
+      }
 
       toast.success(
         lang === "ar"

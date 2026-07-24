@@ -29,7 +29,7 @@ BEGIN
   END IF;
 
   -- Get order record with row lock
-  SELECT id, brand_id, total_amount, paid_amount, payment_status, fulfillment_status, assigned_to, delivery_notes
+  SELECT id, brand_id, total, COALESCE(advance_paid, 0) AS current_paid, payment_status, fulfillment_status, assigned_to, delivery_notes
   INTO v_order
   FROM public.orders
   WHERE id = p_order_id
@@ -46,9 +46,9 @@ BEGIN
   END IF;
 
   -- 2. Calculate new paid amount and payment status
-  v_new_paid_amount := COALESCE(v_order.paid_amount, 0) + COALESCE(p_collected_amount, 0);
+  v_new_paid_amount := COALESCE(v_order.current_paid, 0) + COALESCE(p_collected_amount, 0);
 
-  IF v_new_paid_amount >= v_order.total_amount THEN
+  IF v_new_paid_amount >= v_order.total THEN
     v_new_payment_status := 'paid';
   ELSIF v_new_paid_amount > 0 THEN
     v_new_payment_status := 'partially_paid';
@@ -72,7 +72,10 @@ BEGIN
   -- 4. Execute atomic order update
   UPDATE public.orders
   SET 
-    paid_amount = v_new_paid_amount,
+    advance_paid = v_new_paid_amount,
+    cod_collected_amount = COALESCE(p_collected_amount, 0),
+    cod_collected_at = NOW(),
+    cod_collected_by = v_user_id,
     payment_status = v_new_payment_status,
     fulfillment_status = 'COMPLETED',
     delivery_notes = v_updated_notes,
