@@ -33,6 +33,7 @@ import {
   Tag,
   CheckCircle2,
   ImageIcon,
+  Truck,
 } from "lucide-react";
 import {
   Dialog,
