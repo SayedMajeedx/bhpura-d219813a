@@ -130,8 +130,9 @@ const parsePriceDelta = (valStr: string): number => {
   return 0;
 };
 
-function ProductDetail() {
-  const { id } = Route.useParams();
+export function ProductDetail({ splatId }: { splatId?: string } = {}) {
+  const params = Route.useParams() as any;
+  const id = splatId || params?.id || params?._splat || params?.["_"] || params?.["$"] || "";
   const { brand, settings, currency, lang, t, addToCart, isWishlisted, toggleWishlist } = useStorefront();
   const navigate = useNavigate();
   const [mediaIdx, setMediaIdx] = useState(0);
