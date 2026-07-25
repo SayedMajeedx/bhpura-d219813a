@@ -1,9 +1,21 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { publicSupabase as supabase } from "@/integrations/supabase/client";
 import { Loader2 } from "lucide-react";
+import { createServerFn } from "@tanstack/react-start";
+
+const resolveDomainRoute = createServerFn({ method: "GET" }).handler(async () => {
+  const { resolveDomainRouteImpl } = await import("@/lib/domain-routing.server");
+  return resolveDomainRouteImpl();
+});
 
 export const Route = createFileRoute("/")({
+  loader: async () => {
+    const res = await resolveDomainRoute();
+    if (res?.redirect) {
+      throw redirect({ to: res.redirect as any });
+    }
+  },
   component: IndexRedirector,
 });
 

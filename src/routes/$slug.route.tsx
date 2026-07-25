@@ -29,7 +29,7 @@ import {
 } from "@/components/ui/dialog";
 import { ShoppingBag, Languages, Minus, Plus, Trash2, X, User, Search, Menu, Home, PackageSearch, FileText, LogIn, Heart, Grid2X2, ChevronDown, Sparkles } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { cloudflareImageUrl } from "@/lib/media-delivery";
+import { cloudflareImageUrl, imageKitVideoPosterUrl } from "@/lib/media-delivery";
 import { faviconType, resolveBrandFavicon, useDynamicFavicon } from "@/lib/favicon";
 import { StorefrontAnalytics } from "@/components/storefront-analytics";
 
@@ -215,6 +215,54 @@ export const Route = createFileRoute("/$slug")({
     const desc = b.meta_description || `Shop ${b.name_en}${b.name_ar ? " / " + b.name_ar : ""} online.`;
     const img = settings?.logo_url || b.logo_url || "https://boutq.store/og-placeholder.png";
     const favicon = resolveBrandFavicon(settings?.favicon_url, settings?.logo_url ?? b.logo_url);
+    const heroBg = b.hero_media?.background;
+    const firstSlide = b.hero_media?.slides?.[0];
+    let heroPosterUrl: string | null = null;
+    let heroVideoUrl: string | null = null;
+
+    if (heroBg?.url) {
+      if (heroBg.type === "video") {
+        heroPosterUrl = imageKitVideoPosterUrl(heroBg.url, 640) || heroBg.url;
+        heroVideoUrl = imageKitVideoUrl(heroBg.url, "mobile") || heroBg.url;
+      } else {
+        heroPosterUrl = cloudflareImageUrl(heroBg.url, 1920, 82) || heroBg.url;
+      }
+    } else if (firstSlide) {
+      const slideMediaUrl = (firstSlide.media_url || firstSlide.media_url_ar || firstSlide.media_url_en) ?? "";
+      if (firstSlide.type === "video" && slideMediaUrl) {
+        const slidePoster = firstSlide.media_poster_url || firstSlide.media_poster_url_ar || firstSlide.media_poster_url_en;
+        heroPosterUrl = (slidePoster && isLikelyImageUrl(slidePoster)) ? slidePoster : (imageKitVideoPosterUrl(slideMediaUrl, 640) || slideMediaUrl);
+        heroVideoUrl = imageKitVideoUrl(slideMediaUrl, "mobile") || slideMediaUrl;
+      } else if (firstSlide.type === "image" && slideMediaUrl) {
+        heroPosterUrl = cloudflareImageUrl(slideMediaUrl, 1920, 82) || slideMediaUrl;
+      }
+    }
+
+    const links: Array<Record<string, any>> = [
+      { rel: "icon", href: favicon, ...(faviconType(favicon) ? { type: faviconType(favicon) } : {}) },
+    ];
+
+    if (heroPosterUrl) {
+      links.push({
+        rel: "preload",
+        as: "image",
+        href: heroPosterUrl,
+        fetchpriority: "high",
+        fetchPriority: "high",
+      });
+    }
+
+    if (heroVideoUrl) {
+      links.push({
+        rel: "preload",
+        as: "video",
+        href: heroVideoUrl,
+        type: "video/mp4",
+        fetchpriority: "high",
+        fetchPriority: "high",
+      });
+    }
+
     return {
       meta: [
         { title },
@@ -228,7 +276,7 @@ export const Route = createFileRoute("/$slug")({
         { name: "twitter:description", content: desc },
         { name: "twitter:image", content: img },
       ],
-      links: [{ rel: "icon", href: favicon, ...(faviconType(favicon) ? { type: faviconType(favicon) } : {}) }],
+      links,
     };
   },
   component: StorefrontLayout,
@@ -251,37 +299,6 @@ function StoreShell() {
   const { brand, settings, lang } = useStorefront();
   const qc = useQueryClient();
   const router = useRouter();
-
-  // Realtime: refresh product / variant queries when inventory changes for this brand
-  useEffect(() => {
-    const channel = supabase
-      .channel(`storefront:${brand.id}`)
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "products", filter: `brand_id=eq.${brand.id}` },
-        () => {
-          qc.invalidateQueries({ queryKey: ["storefront", brand.slug] });
-        },
-      )
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "product_variants", filter: `brand_id=eq.${brand.id}` },
-        () => {
-          qc.invalidateQueries({ queryKey: ["storefront", brand.slug] });
-        },
-      )
-      .on(
-        "postgres_changes",
-        { event: "UPDATE", schema: "public", table: "business_settings", filter: `brand_id=eq.${brand.id}` },
-        () => {
-          void router.invalidate();
-        },
-      )
-      .subscribe();
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [brand.id, brand.slug, qc, router]);
 
   const primary = settings.primary_color;
   const headerBg = settings.header_bg ?? settings.background_color ?? "#ffffff";

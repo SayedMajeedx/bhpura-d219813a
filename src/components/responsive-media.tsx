@@ -92,7 +92,7 @@ export function OptimizedVideo({ src, poster, streamIframeUrl, active = true, pr
         preset="hero"
         sizes="100vw"
         alt=""
-        fetchPriority={active ? "high" : "auto"}
+        {...({ fetchpriority: active ? "high" : "auto", fetchPriority: active ? "high" : "auto" } as any)}
         loading={active ? "eager" : "lazy"}
         className={`absolute inset-0 h-full w-full object-cover ${className ?? ""}`}
       />
@@ -101,12 +101,13 @@ export function OptimizedVideo({ src, poster, streamIframeUrl, active = true, pr
       ref={videoRef}
       key={sourceKey}
       poster={resolvedPoster ?? undefined}
+      {...({ fetchpriority: active ? "high" : undefined, fetchPriority: active ? "high" : undefined } as any)}
       muted
       loop
       playsInline
       aria-hidden="true"
       tabIndex={-1}
-      preload={preload ?? (active ? "metadata" : "none")}
+      preload={preload ?? (active ? "auto" : "none")}
       disablePictureInPicture
       className={`relative z-10 ${className ?? "h-full w-full object-cover"}`}
       {...props}
@@ -115,9 +116,9 @@ export function OptimizedVideo({ src, poster, streamIframeUrl, active = true, pr
       }}
     >
       {optimizedDesktopSrc ? <>
-        {optimizedMobileSrc ? <source src={optimizedMobileSrc} media="(max-width: 767px)" /> : null}
-        <source src={optimizedDesktopSrc} />
-      </> : src ? <source src={src} /> : null}
+        {optimizedMobileSrc ? <source src={optimizedMobileSrc} media="(max-width: 767px)" {...({ fetchpriority: active ? "high" : undefined } as any)} /> : null}
+        <source src={optimizedDesktopSrc} {...({ fetchpriority: active ? "high" : undefined } as any)} />
+      </> : src ? <source src={src} {...({ fetchpriority: active ? "high" : undefined } as any)} /> : null}
       <track kind="captions" />
     </video>
   </div>;

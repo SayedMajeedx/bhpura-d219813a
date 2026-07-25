@@ -31,7 +31,11 @@ export function useRealtimeInvalidate(subs: Sub[], channelName: string) {
         },
       );
     }
-    channel.subscribe();
+    channel.subscribe((status, err) => {
+      if (status === "CHANNEL_ERROR") {
+        console.warn(`[Realtime] Subscription error on channel ${channelName}:`, err);
+      }
+    });
     return () => {
       supabase.removeChannel(channel);
     };

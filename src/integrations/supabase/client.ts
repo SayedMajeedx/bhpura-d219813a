@@ -70,7 +70,12 @@ function createSupabaseClient() {
       persistSession: true,
       autoRefreshToken: true,
       experimental: { passkey: true },
-    }
+    },
+    realtime: {
+      params: {
+        apikey: SUPABASE_PUBLISHABLE_KEY,
+      },
+    },
   });
 }
 

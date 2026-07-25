@@ -86,6 +86,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { rel: "preload", href: "/fonts/azerextralight.woff2", as: "font", type: "font/woff2", crossOrigin: "anonymous" },
       { rel: "preconnect", href: "https://media.boutq.store" },
       { rel: "dns-prefetch", href: "https://media.boutq.store" },
+      { rel: "preconnect", href: "https://ik.imagekit.io", crossOrigin: "anonymous" },
+      { rel: "dns-prefetch", href: "https://ik.imagekit.io" },
       { rel: "stylesheet", href: appCss },
       { rel: "icon", href: "/favicon.svg", type: "image/svg+xml" },
     ],
