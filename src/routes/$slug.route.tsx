@@ -37,7 +37,7 @@ export const Route = createFileRoute("/$slug")({
   staleTime: 5 * 60_000,
   preloadStaleTime: 5 * 60_000,
   headers: () => ({
-    "Cache-Control": "public, max-age=10, stale-while-revalidate=60",
+    "Cache-Control": "public, max-age=60, s-maxage=300, stale-while-revalidate=86400",
   }),
   loader: async ({ params }) => {
     const { data: baseBrand, error: brandErr } = await supabase

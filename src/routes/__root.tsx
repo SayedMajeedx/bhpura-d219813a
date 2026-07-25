@@ -82,10 +82,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "twitter:image", content: "https://boutq.store/og-placeholder.png" },
     ],
     links: [
+      { rel: "preconnect", href: "https://media.boutq.store" },
+      { rel: "dns-prefetch", href: "https://media.boutq.store" },
       { rel: "stylesheet", href: appCss },
       { rel: "icon", href: "/favicon.svg", type: "image/svg+xml" },
-      { rel: "preload", href: "/fonts/bukramed.woff2", as: "font", type: "font/woff2", crossOrigin: "anonymous" },
-      { rel: "preload", href: "/fonts/zariddisplay.woff2", as: "font", type: "font/woff2", crossOrigin: "anonymous" },
     ],
   }),
   shellComponent: RootShell,

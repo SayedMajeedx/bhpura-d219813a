@@ -3,11 +3,11 @@ import { getEnvVariable } from "@/integrations/supabase/auth-middleware";
 export type ResponsiveImagePreset = "thumb" | "card" | "product" | "hero" | "content";
 
 const PRESET_WIDTHS: Record<ResponsiveImagePreset, number[]> = {
-  thumb: [96, 160, 240, 320],
-  card: [320, 480, 640, 960],
-  product: [480, 640, 960, 1200],
-  hero: [640, 768, 1280, 1600, 1920],
-  content: [480, 768, 960, 1280, 1600],
+  thumb: [96, 160, 240],
+  card: [320, 480, 640],
+  product: [480, 640, 800],
+  hero: [640, 960, 1280],
+  content: [480, 768, 1080],
 };
 
 const CLOUDFLARE_IMAGE_TRANSFORM_ORIGIN = "https://media.boutq.store";
@@ -16,17 +16,14 @@ export function imageWidths(preset: ResponsiveImagePreset): number[] {
   return PRESET_WIDTHS[preset];
 }
 
-export function cloudflareImageUrl(source: string, width: number, quality = 82): string {
+export function cloudflareImageUrl(source: string, width: number, quality = 80): string {
   if (!source || source.startsWith("data:") || source.toLowerCase().includes(".svg")) return source;
   try {
     const url = new URL(source, typeof window === "undefined" ? "https://boutq.store" : window.location.origin);
     const options = `width=${width},fit=scale-down,quality=${quality},format=auto,metadata=none,onerror=redirect`;
     
-    const transformOrigin = typeof window !== "undefined" && window.location.origin.startsWith("http")
-      ? window.location.origin
-      : "https://boutq.store";
-
-    return `${transformOrigin}/cdn-cgi/image/${options}/${encodeURI(url.toString())}`;
+    // Use relative same-origin path so requests share HTTP/2-3 connections without cross-origin TLS overhead
+    return `/cdn-cgi/image/${options}/${encodeURI(url.toString())}`;
   } catch {
     return source;
   }
