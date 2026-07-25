@@ -114,8 +114,8 @@ export function ProductCard({
         </div>
 
         <div className="mt-2 text-start">
-          <div className="text-sm font-medium truncate" style={{ color: "var(--sf-heading)" }}>{displayName}</div>
-          <div className="flex flex-wrap items-baseline gap-2 text-sm font-semibold mt-0.5" style={{ color: "var(--sf-heading)" }}>
+          <div className="product-title text-sm font-medium truncate" style={{ color: "var(--sf-heading)" }}>{displayName}</div>
+          <div className="price-tag flex flex-wrap items-baseline gap-2 text-sm font-semibold mt-0.5" style={{ color: "var(--sf-heading)" }}>
             {minPrice > 0 ? (
               minPrice === maxPrice ? (
                 <>

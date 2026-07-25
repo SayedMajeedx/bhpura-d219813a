@@ -426,7 +426,7 @@ function HeroBanner() {
     <section className="relative w-full overflow-hidden min-h-[280px] py-6 sm:min-h-[55vh] sm:max-h-[640px] sm:py-0">
       {background ? (
         <div className="absolute inset-0">
-          {background.type === "video" ? <OptimizedVideo src={background.url} active className="h-full w-full object-cover" /> : <ResponsiveImage src={background.url} preset="hero" sizes="100vw" alt="" className="h-full w-full object-cover" decoding="async" fetchPriority="high" />}
+          {background.type === "video" ? <OptimizedVideo src={background.url} active className="h-full w-full object-cover" /> : <ResponsiveImage src={background.url} preset="hero" sizes="100vw" alt="" className="h-full w-full object-cover" decoding="async" fetchPriority="high" loading="eager" />}
           <div className="absolute inset-0 bg-black/20" />
         </div>
       ) : (

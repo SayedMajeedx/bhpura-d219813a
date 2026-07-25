@@ -44,6 +44,11 @@
 /* Majestic Maroon palette
    maroon #330a0a used sparingly as accent, white surfaces */
 :root {
+  --font-hero: '29LT Bukra', sans-serif;
+  --font-heading: '29LT Zarid Display', serif;
+  --font-product: '29LT Kaff', sans-serif;
+  --font-ui: '29LT Azer', sans-serif;
+
   --radius: 0.5rem;
   --background: oklch(1 0 0);
   --foreground: oklch(0.22 0.02 25);
@@ -109,10 +114,16 @@
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
-    font-family: var(--font-sans);
+    font-family: var(--font-ui);
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   }
-  h1, h2, h3, .font-display { font-family: var(--font-display); letter-spacing: -0.01em; }
+
+  /* Section & Category Headings: '29LT Zarid Display' (font-weight: 400) */
+  h1, h2, h3, .font-heading, .section-title {
+    font-family: var(--font-heading) !important;
+    font-weight: 400;
+    letter-spacing: -0.01em;
+  }
 
   /* Guarantee AA-legible form controls regardless of surrounding brand color styles. */
   input,
@@ -120,6 +131,7 @@
   select {
     color: var(--color-foreground);
     background-color: var(--color-background);
+    font-family: var(--font-ui);
   }
   input::placeholder,
   textarea::placeholder {
@@ -134,6 +146,26 @@
   }
   /* Table cells inherit foreground so custom bg containers don't hide text */
   th, td { color: inherit; }
+}
+
+/* Storefront Typography Hierarchy Classes */
+
+/* Hero Banners & Major Promos: '29LT Bukra' (font-weight: 500) */
+.font-hero, .hero-title, .hero-banner, .marketing-callout {
+  font-family: var(--font-hero) !important;
+  font-weight: 500 !important;
+}
+
+/* Product Card Titles: '29LT Kaff' (font-weight: 300) */
+.font-product, .product-title, .product-name, .product-card-title {
+  font-family: var(--font-product) !important;
+  font-weight: 300 !important;
+}
+
+/* Prices, Sizes, Currency & Micro UI: '29LT Azer' (font-weight: 200 or 400) */
+.font-ui, .price-tag, .sku-code, .size-picker, .nav-item, .filter-tag, .checkout-btn {
+  font-family: var(--font-ui) !important;
+  font-weight: 200;
 }
 
 /* Keep keyboard focus visible even when branded controls reset native styles. */

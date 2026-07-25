@@ -597,7 +597,7 @@ export function ProductDetail({ splatId }: { splatId?: string } = {}) {
       <div>
         <div className="relative aspect-square bg-muted rounded-2xl overflow-hidden">
           {variant?.image_url ? (
-            <ResponsiveImage src={variant.image_url} preset="product" sizes="(min-width: 1024px) 55vw, 100vw" alt={displayName} className="w-full h-full object-cover" fetchPriority="high" />
+            <ResponsiveImage src={variant.image_url} preset="product" sizes="(min-width: 1024px) 55vw, 100vw" alt={displayName} className="w-full h-full object-cover" fetchPriority="high" loading="eager" />
           ) : media.length > 0 ? (
             <>
               {media[mediaIdx].type === "video" ? (
@@ -609,7 +609,7 @@ export function ProductDetail({ splatId }: { splatId?: string } = {}) {
                   wrapperClassName="h-full w-full overflow-hidden bg-black"
                 />
               ) : (
-                <ResponsiveImage src={media[mediaIdx].url} preset="product" sizes="(min-width: 1024px) 55vw, 100vw" alt={displayName} className="w-full h-full object-cover" fetchPriority="high" />
+                <ResponsiveImage src={media[mediaIdx].url} preset="product" sizes="(min-width: 1024px) 55vw, 100vw" alt={displayName} className="w-full h-full object-cover" fetchPriority="high" loading="eager" />
               )}
               {media.length > 1 && (
                 <>
@@ -631,7 +631,7 @@ export function ProductDetail({ splatId }: { splatId?: string } = {}) {
               )}
             </>
           ) : product.image_url ? (
-            <ResponsiveImage src={product.image_url} preset="product" sizes="(min-width: 1024px) 55vw, 100vw" alt={displayName} className="w-full h-full object-cover" fetchPriority="high" />
+            <ResponsiveImage src={product.image_url} preset="product" sizes="(min-width: 1024px) 55vw, 100vw" alt={displayName} className="w-full h-full object-cover" fetchPriority="high" loading="eager" />
           ) : (
             <div className="w-full h-full grid place-items-center text-muted-foreground">
               {t("لا توجد صورة", "No image")}

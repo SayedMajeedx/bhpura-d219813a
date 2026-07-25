@@ -304,7 +304,7 @@ function StoreShell() {
 
   useEffect(() => {
     if (storefrontFontUrl || !storefrontFont) return;
-    const globallyLoaded = new Set(["Inter", "Cormorant Garamond", "Tajawal"]);
+    const globallyLoaded = new Set(["Inter", "Cormorant Garamond", "Tajawal", "Cairo", "29LT Bukra", "29LT Zarid Display", "29LT Kaff", "29LT Azer"]);
     if (globallyLoaded.has(storefrontFont)) return;
     const id = `storefront-font-${storefrontFont.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`;
     if (document.getElementById(id)) return;
