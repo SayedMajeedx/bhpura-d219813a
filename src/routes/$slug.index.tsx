@@ -1,6 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { publicSupabase as supabase } from "@/integrations/supabase/client";
 import { useStorefront, formatPrice, pickName } from "@/lib/storefront-context";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -9,6 +8,13 @@ import { ChevronDown, ChevronLeft, ChevronRight, FileText, Grid2X2, Heart } from
 import { OptimizedVideo, ResponsiveImage } from "@/components/responsive-media";
 import { ProductCard } from "@/components/storefront/product-card";
 import { ProductGrid } from "@/components/storefront/product-grid";
+import {
+  fetchActiveBrandIdentity,
+  fetchBestSellerRows,
+  fetchStorefrontCategories,
+  fetchStorefrontProducts,
+  fetchTrendingRows,
+} from "@/lib/storefront-queries";
 
 function getDescendantCategories(catId: string, categories: any[]): any[] {
   const descendants: any[] = [];
@@ -23,6 +29,17 @@ function getDescendantCategories(catId: string, categories: any[]): any[] {
 }
 
 export const Route = createFileRoute("/$slug/")({
+  loader: async ({ params }) => {
+    const brand = await fetchActiveBrandIdentity(params.slug);
+    if (!brand) return { products: [], categories: [], bestSellerRows: [], trendingRows: [] };
+    const [products, categories, bestSellerRows, trendingRows] = await Promise.all([
+      fetchStorefrontProducts(brand.id),
+      fetchStorefrontCategories(brand.id),
+      fetchBestSellerRows(brand.slug),
+      fetchTrendingRows(brand.slug),
+    ]);
+    return { products, categories, bestSellerRows, trendingRows };
+  },
   component: StoreHome,
 });
 
@@ -63,6 +80,7 @@ type CategoryRow = {
 
 function StoreHome() {
   const { brand } = useStorefront();
+  const loaderData = Route.useLoaderData();
   const [activeCategorySlugs, setActiveCategorySlugs] = useState<string[]>([]);
   const activeCat = activeCategorySlugs[0] || null;
   const activeSubCat = activeCategorySlugs[1] || null;
@@ -90,18 +108,8 @@ function StoreHome() {
 
   const { data: products, isLoading } = useQuery({
     queryKey: ["storefront", brand.slug, "products"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("products")
-        .select(
-          "id, name, name_ar, name_en, description, description_ar, description_en, category, image_url, media, brand_id, created_at, featured_trending, show_sale_badge, product_variants(id, selling_price, original_price, stock_main, size, color)",
-        )
-        .eq("brand_id", brand.id)
-        .eq("is_active", true)
-        .order("created_at", { ascending: false });
-      if (error) throw error;
-      return (data ?? []) as unknown as ProductRow[];
-    },
+    queryFn: () => fetchStorefrontProducts(brand.id) as Promise<ProductRow[]>,
+    initialData: loaderData.products as ProductRow[],
     staleTime: 5 * 60_000,
     gcTime: 30 * 60_000,
     refetchOnWindowFocus: false,
@@ -109,15 +117,8 @@ function StoreHome() {
 
   const { data: categories } = useQuery({
     queryKey: ["storefront", brand.slug, "categories"],
-    queryFn: async () => {
-      const { data, error } = await (supabase.from("categories") as any)
-        .select("id, name_en, name_ar, slug, image_url, parent_id, sort_order")
-        .eq("brand_id", brand.id)
-        .eq("is_active", true)
-        .order("sort_order", { ascending: true });
-      if (error) throw error;
-      return (data ?? []) as CategoryRow[];
-    },
+    queryFn: () => fetchStorefrontCategories(brand.id) as Promise<CategoryRow[]>,
+    initialData: loaderData.categories as CategoryRow[],
     staleTime: 5 * 60_000,
     gcTime: 30 * 60_000,
     refetchOnWindowFocus: false,
@@ -125,11 +126,8 @@ function StoreHome() {
 
   const { data: bestSellerRows } = useQuery({
     queryKey: ["storefront", brand.slug, "best-sellers"],
-    queryFn: async () => {
-      const { data, error } = await (supabase.rpc as any)("get_storefront_best_sellers", { p_brand_slug: brand.slug, p_limit: 8 });
-      if (error) throw error;
-      return (data ?? []) as Array<{ product_id: string; units_sold: number }>;
-    },
+    queryFn: () => fetchBestSellerRows(brand.slug),
+    initialData: loaderData.bestSellerRows,
     staleTime: 5 * 60_000,
     gcTime: 30 * 60_000,
     refetchOnWindowFocus: false,
@@ -137,11 +135,8 @@ function StoreHome() {
 
   const { data: trendingRows } = useQuery({
     queryKey: ["storefront", brand.slug, "trending"],
-    queryFn: async () => { 
-      const { data, error } = await (supabase.rpc as any)("get_storefront_trending", { p_brand_slug: brand.slug, p_limit: 8 }); 
-      if (error) throw error; 
-      return data ?? []; 
-    },
+    queryFn: () => fetchTrendingRows(brand.slug),
+    initialData: loaderData.trendingRows,
     staleTime: 5 * 60_000,
     gcTime: 30 * 60_000,
     refetchOnWindowFocus: false,
@@ -524,7 +519,7 @@ function HeroContentCarousel({ slides }: { slides: import("@/lib/storefront-cont
 
 function StorefrontLink({ href, ...props }: { href: string } & Omit<AnchorHTMLAttributes<HTMLAnchorElement>, "href">) {
   const value = String(href || "#products").trim();
-  const internalAbsolute = /^https?:\/\/(?:www\.)?(?:[a-zA-Z0-9-]+\.)?(?:boutq\.store|vercel\.app)(?:\/|$)/i.test(value);
+  const internalAbsolute = /^https?:\/\/(?:www\.)?(?:[a-zA-Z0-9-]+\.)?(?:boutq\.store|workers\.dev)(?:\/|$)/i.test(value);
   const destination = internalAbsolute ? value.replace(/^https?:\/\/[^/]+/i, "") || "/" : value;
   const external = /^(?:https?:)?\/\//i.test(destination) || /^(?:mailto|tel):/i.test(destination);
   if (external || destination.startsWith("#")) return <a href={destination} {...props} />;
@@ -743,5 +738,3 @@ function Categories({
     </div>
   );
 }
-
-

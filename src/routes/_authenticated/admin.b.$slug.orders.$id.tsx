@@ -316,20 +316,6 @@ function CourierOrderView({ order, slug, onUpdated }: { order: any; slug: string
 
       toast.success(lang === "ar" ? "تم تحديث حالة التوصيل والتسليم" : "Delivery status updated");
       await onUpdated();
-      if (status === "delivered") {
-        void (async () => {
-          try {
-            const { data: { session } } = await supabase.auth.getSession();
-            const accessToken = session?.access_token;
-            await supabase.functions.invoke("send-order-email", {
-              body: { order_id: order.id, event: "order_delivered", lang },
-              headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : undefined,
-            });
-          } catch (e) {
-            console.warn("[courier delivered email trigger error]", e);
-          }
-        })();
-      }
       if (status === "out_for_delivery") {
         if (phone) {
           const settings = messageQ.data;
@@ -611,24 +597,6 @@ function OrderDetail() {
       qc.invalidateQueries({ queryKey: ["orders"] });
       toast.success(lang === "ar" ? "تم التحقق من الدفع واعتماده" : "Payment verified and approved");
 
-      // A delivered email cannot be edited in-place. Send a fresh confirmation
-      // after approval so the customer receives the now-authoritative Paid
-      // status and the complete updated financial summary.
-      const { data: sessionData } = await supabase.auth.getSession();
-      const accessToken = sessionData.session?.access_token;
-      const { data: emailData, error: emailError } = await supabase.functions.invoke("send-order-email", {
-        body: { order_id: id, lang, event: "benefit_payment_approved" },
-        headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : undefined,
-      });
-      if (emailError || (emailData as any)?.error) {
-        toast.warning(
-          lang === "ar"
-            ? "تم اعتماد الدفع، لكن تعذر إرسال رسالة حالة الدفع المحدثة"
-            : "Payment approved, but the updated payment email could not be sent",
-        );
-      } else {
-        toast.success(lang === "ar" ? "تم إرسال تأكيد الدفع للعميل" : "Paid confirmation sent to customer");
-      }
     } catch (error: any) {
       toast.error(error?.message ?? (lang === "ar" ? "تعذر اعتماد الدفع" : "Could not approve payment"));
     } finally {
@@ -654,17 +622,6 @@ function OrderDetail() {
       setRejectReasonOpen(false);
       setRejectReason("");
 
-      const { data: sessionData } = await supabase.auth.getSession();
-      const accessToken = sessionData.session?.access_token;
-      const { data: emailData, error: emailError } = await supabase.functions.invoke("send-order-email", {
-        body: { order_id: id, lang, event: "benefit_payment_rejected" },
-        headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : undefined,
-      });
-      if (emailError || (emailData as any)?.error) {
-        toast.warning(lang === "ar" ? "تم رفض الإيصال، لكن تعذر إرسال رسالة التحديث للعميل" : "Receipt rejected, but the customer update email could not be sent");
-      } else {
-        toast.success(lang === "ar" ? "تم إرسال سبب الرفض للعميل" : "Rejection update sent to customer");
-      }
     } catch (error) {
       toast.error(error instanceof Error ? error.message : (lang === "ar" ? "تعذر رفض الإيصال" : "Unable to reject receipt"));
     } finally {
@@ -1351,30 +1308,6 @@ function OrderDetail() {
     qc.invalidateQueries({ queryKey: ["variants"] });
     qc.invalidateQueries({ queryKey: ["activity_logs"] });
 
-    // Trigger emails on status transitions
-    if (statusChanged) {
-      let emailEvent: string | null = null;
-      if (newStatus === "completed" || newStatus === "delivered") {
-        emailEvent = "order_delivered";
-      } else if (newStatus === "cancelled") {
-        emailEvent = "order_cancelled";
-      }
-
-      if (emailEvent) {
-        void (async () => {
-          try {
-            const { data: { session } } = await supabase.auth.getSession();
-            const accessToken = session?.access_token;
-            await supabase.functions.invoke("send-order-email", {
-              body: { order_id: order.id, event: emailEvent, lang },
-              headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : undefined,
-            });
-          } catch (e) {
-            console.warn("[save statusChange email trigger error]", e);
-          }
-        })();
-      }
-    }
   };
 
   const copyLink = async () => {
@@ -3109,7 +3042,7 @@ function InvoicePreview({
   const [invoiceLang, setInvoiceLang] = useState<"en" | "ar">("en");
   const L = INVOICE_LABELS[invoiceLang];
   const isRTL = invoiceLang === "ar";
-  const locale = isRTL ? "ar-BH" : "en-US";
+  const locale = isRTL ? "ar-BH-u-nu-latn" : "en-US";
   const money = (n: number) => {
     const s = formatMoney(n, currency, locale);
     return isRTL ? toArabicDigits(s) : s;
@@ -3184,7 +3117,7 @@ function InvoicePreview({
                 <span>{invoiceLang === "ar" ? "مدفوع" : "PAID"}</span>
                 {order.updated_at && (
                   <span className="text-[10px] md:text-xs font-semibold tracking-normal mt-1 opacity-90 font-mono">
-                    {new Date(order.updated_at).toLocaleDateString(invoiceLang === "ar" ? "ar-BH" : "en-BH")}
+                    {new Date(order.updated_at).toLocaleDateString(invoiceLang === "ar" ? "ar-BH-u-nu-latn" : "en-BH")}
                   </span>
                 )}
               </div>
@@ -3272,7 +3205,7 @@ function InvoicePreview({
               </p>
               <p className="text-xs mt-2" style={{ opacity: 0.7 }}>
                 {L.date}:{" "}
-                {formatDate(order.created_at ?? order.order_date, isRTL ? "ar-BH" : "en-BH")}
+                {formatDate(order.created_at ?? order.order_date, isRTL ? "ar-BH-u-nu-latn" : "en-BH")}
               </p>
               <p className="text-xs" style={{ opacity: 0.7 }}>
                 {L.status}: {PAYMENT_BADGE_LABEL[paymentBadge ?? "unpaid"][invoiceLang]}

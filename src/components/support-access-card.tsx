@@ -155,7 +155,7 @@ export function SupportAccessCard({ brand }: SupportAccessCardProps) {
                 <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800/80 font-mono text-[11px]">
                   {auditLogs.map((log: any) => {
                     const formattedDate = new Date(log.created_at).toLocaleString(
-                      lang === "ar" ? "ar-BH" : "en-US",
+                      lang === "ar" ? "ar-BH-u-nu-latn" : "en-US",
                       { dateStyle: "medium", timeStyle: "short" }
                     );
 

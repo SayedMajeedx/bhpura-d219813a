@@ -57,7 +57,7 @@ function escapeHtml(s: string) {
 
 export function printThermalReceipt(a: ThermalArgs) {
   const isRTL = a.lang === "ar";
-  const locale = isRTL ? "ar-BH" : "en-US";
+  const locale = isRTL ? "ar-BH-u-nu-latn" : "en-US";
   const money = (n: number) => escapeHtml(formatMoney(n, a.currency, locale));
 
   const itemsHtml = a.items

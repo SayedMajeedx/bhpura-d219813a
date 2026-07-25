@@ -5,8 +5,16 @@ export const Route = createFileRoute("/api/orders/status")({
     handlers: {
       PATCH: async ({ request }) => {
         try {
-          const body = await request.json();
-          const { id, payment_status, fulfillment_status, assigned_to, delivery_notes, admin_override } = body;
+          const body = await request.json<{
+            id?: string;
+            payment_status?: string;
+            fulfillment_status?: string;
+            status?: string;
+            assigned_to?: string | null;
+            delivery_notes?: string | null;
+            admin_override?: boolean;
+          }>();
+          const { id, payment_status, fulfillment_status, status, assigned_to, delivery_notes, admin_override } = body;
 
           if (!id) {
             return new Response(JSON.stringify({ error: "Missing order id" }), {
@@ -20,7 +28,7 @@ export const Route = createFileRoute("/api/orders/status")({
           // 1. Fetch current order status details
           const { data: order, error: fetchErr } = await (supabaseAdmin
             .from("orders") as any)
-            .select("id, payment_status, fulfillment_status, delivery_notes, assigned_to")
+            .select("id, status, payment_status, fulfillment_status, delivery_notes, assigned_to")
             .eq("id", id)
             .maybeSingle();
 
@@ -61,6 +69,14 @@ export const Route = createFileRoute("/api/orders/status")({
           }
           if (fulfillment_status !== undefined) {
             updates.fulfillment_status = fulfillment_status;
+          }
+          if (status !== undefined) {
+            updates.status = status;
+          } else if (
+            payment_status?.toLowerCase() === "paid" &&
+            String(order.status ?? "").toLowerCase() === "pending_verification"
+          ) {
+            updates.status = "confirmed";
           }
           if (assigned_to !== undefined) {
             updates.assigned_to = assigned_to;

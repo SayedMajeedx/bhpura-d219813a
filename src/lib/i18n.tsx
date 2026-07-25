@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import { DirectionProvider } from "@radix-ui/react-direction";
 
 export type Lang = "en" | "ar";
 
@@ -735,7 +736,11 @@ export function I18nProvider({ children }: { children: ReactNode }) {
 
   const t = (key: string) => dicts[lang][key] ?? dicts.en[key] ?? key;
   const dir = lang === "ar" ? "rtl" : "ltr";
-  return <I18nContext.Provider value={{ lang, setLang, t, dir }}>{children}</I18nContext.Provider>;
+  return (
+    <I18nContext.Provider value={{ lang, setLang, t, dir }}>
+      <DirectionProvider dir={dir}>{children}</DirectionProvider>
+    </I18nContext.Provider>
+  );
 }
 
 export function useI18n() {

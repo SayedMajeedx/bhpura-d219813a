@@ -367,7 +367,7 @@ function EmailActivityCard({ brandId, isAr }: { brandId: string; isAr: boolean }
                     <td className="px-3 py-3"><span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${statusClass(row.status)}`}>{statusLabel(row.status)}</span></td>
                     <td className="px-3 py-3">{row.invoice_number ? `#${row.invoice_number}` : "—"}</td>
                     <td className="px-3 py-3 max-w-[280px] break-words text-muted-foreground">{detailLabel(row)}</td>
-                    <td className="px-3 py-3 whitespace-nowrap text-muted-foreground">{new Date(row.created_at).toLocaleString(isAr ? "ar-BH" : "en-GB")}</td>
+                    <td className="px-3 py-3 whitespace-nowrap text-muted-foreground">{new Date(row.created_at).toLocaleString(isAr ? "ar-BH-u-nu-latn" : "en-GB")}</td>
                   </tr>
                 ))}
               </tbody>

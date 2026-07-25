@@ -56,7 +56,7 @@ export const Route = createFileRoute("/api/public/payments/tap-redirect")({
             throw new Error(`Failed to fetch charge status from Tap: ${await tapRes.text()}`);
           }
 
-          const chargeData = await tapRes.json();
+          const chargeData = await tapRes.json<{ status?: string }>();
           const chargeStatus = chargeData.status?.toUpperCase();
 
           // 4. Handle success vs failure
@@ -74,15 +74,6 @@ export const Route = createFileRoute("/api/public/payments/tap-redirect")({
 
             if (updateError) {
               console.error("[Tap Redirect Update Error]:", updateError);
-            }
-
-            // Trigger order placement email notification
-            try {
-              await supabaseAdmin.functions.invoke("send-order-email", {
-                body: { order_id: orderId, event: "order_placed" },
-              });
-            } catch (emailErr) {
-              console.error("[Tap Redirect Email Invoke Error]:", emailErr);
             }
 
             // Redirect to thank-you page

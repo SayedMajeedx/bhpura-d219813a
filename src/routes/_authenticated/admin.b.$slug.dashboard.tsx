@@ -36,7 +36,7 @@ function Dashboard() {
   const { slug } = Route.useParams();
   const brand = useBrand();
   const brandId = brand.id;
-  const locale = lang === "ar" ? "ar-BH" : "en-US";
+  const locale = lang === "ar" ? "ar-BH-u-nu-latn" : "en-US";
 
   // 1. Fetch Business settings (business name, currency, etc.)
   const businessSettings = useQuery({
@@ -184,7 +184,7 @@ function Dashboard() {
 
     let cogs = 0;
     orders.forEach((order) => {
-      (order.order_items ?? []).forEach((item) => {
+      (order.order_items ?? []).forEach((item: any) => {
         const cost = variantCostMap.get(item.variant_id) ?? 0;
         cogs += cost * Number(item.quantity || 0);
       });
@@ -290,7 +290,7 @@ function Dashboard() {
     orders.forEach((order) => {
       const orderTime = new Date(order.created_at).getTime();
       if (orderTime >= past45DaysMs) {
-        (order.order_items ?? []).forEach((item) => {
+        (order.order_items ?? []).forEach((item: any) => {
           if (item.variant_id) {
             salesByVariant.set(
               item.variant_id,
@@ -349,7 +349,7 @@ function Dashboard() {
     orders.forEach((order) => {
       const orderTime = new Date(order.created_at).getTime();
       if (orderTime >= past45DaysMs) {
-        (order.order_items ?? []).forEach((item) => {
+        (order.order_items ?? []).forEach((item: any) => {
           if (item.variant_id) {
             const variant = variants.find((v) => v.id === item.variant_id);
             if (variant) {

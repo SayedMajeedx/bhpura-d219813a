@@ -84,7 +84,9 @@ export const fetchInstagramPosts = createServerFn({ method: "POST" })
         throw new Error(`Failed to start Apify scraper: Status ${runResponse.status} - ${errText}`);
       }
 
-      const runResData = await runResponse.json();
+      const runResData = await runResponse.json<{
+        data?: { id?: string; defaultDatasetId?: string };
+      }>();
       const runId = runResData.data?.id;
       const datasetId = runResData.data?.defaultDatasetId;
 
@@ -120,7 +122,7 @@ export const checkScraperStatus = createServerFn({ method: "POST" })
         throw new Error(`Failed to poll status: Status ${response.status} - ${errText}`);
       }
 
-      const resData = await response.json();
+      const resData = await response.json<{ data?: { status?: string } }>();
       const status = resData.data?.status || "FAILED";
 
       if (status === "FAILED" || status === "TIMED-OUT" || status === "ABORTED") {
@@ -434,7 +436,9 @@ export const batchParseCaptionsWithAI = createServerFn({ method: "POST" })
         throw new Error(`Gemini batch request failed: ${response.status} - ${errText}`);
       }
 
-      const resJson = await response.json();
+      const resJson = await response.json<{
+        candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>;
+      }>();
       const rawText = resJson.candidates?.[0]?.content?.parts?.[0]?.text;
       if (!rawText) {
         throw new Error("Gemini returned an empty response candidate.");

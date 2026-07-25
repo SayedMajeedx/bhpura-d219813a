@@ -43,6 +43,6 @@ policies so only a super admin can ever modify/delete a `super_admin` row.
 
 ## To apply
 1. Run the new migration against your Supabase project (see chat message for
-   how, if you're moving off Lovable Cloud).
+   how, if you're moving between hosting environments).
 2. Redeploy the `user-management` edge function.
 3. Rebuild/redeploy the frontend.

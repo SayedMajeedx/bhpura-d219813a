@@ -593,7 +593,7 @@ function DiscountCodes() {
                                   {ar ? "بدء" : "From"}
                                 </span>
                                 <span className="font-mono">
-                                  {new Date(p.start_date).toLocaleDateString(lang === "ar" ? "ar-BH" : "en-US", {
+                                  {new Date(p.start_date).toLocaleDateString(lang === "ar" ? "ar-BH-u-nu-latn" : "en-US", {
                                     month: "short",
                                     day: "numeric",
                                     hour: "2-digit",
@@ -608,7 +608,7 @@ function DiscountCodes() {
                                   {ar ? "انتهاء" : "Ends"}
                                 </span>
                                 <span className="font-mono">
-                                  {new Date(p.end_date).toLocaleDateString(lang === "ar" ? "ar-BH" : "en-US", {
+                                  {new Date(p.end_date).toLocaleDateString(lang === "ar" ? "ar-BH-u-nu-latn" : "en-US", {
                                     month: "short",
                                     day: "numeric",
                                     hour: "2-digit",

@@ -1,10 +1,24 @@
+export function westernNumeralLocale(locale = "en-BH"): string {
+  try {
+    return new Intl.Locale(locale, { numberingSystem: "latn" }).toString();
+  } catch {
+    return "en-BH-u-nu-latn";
+  }
+}
+
+export function toWesternDigits(value: string): string {
+  return value
+    .replace(/[٠-٩]/g, (digit) => String("٠١٢٣٤٥٦٧٨٩".indexOf(digit)))
+    .replace(/[۰-۹]/g, (digit) => String("۰۱۲۳۴۵۶۷۸۹".indexOf(digit)));
+}
+
 export function formatMoney(amount: number, currency = "BHD", locale = "en-BH") {
   const n = Number(amount || 0);
   const normalizedCurrency = currency.toUpperCase();
   const isThreeDecimals = ["BHD", "KWD", "OMR", "IQD", "LYD"].includes(normalizedCurrency);
   const fractionDigits = isThreeDecimals ? 3 : 2;
   try {
-    return new Intl.NumberFormat(locale, {
+    return new Intl.NumberFormat(westernNumeralLocale(locale), {
       style: "currency",
       currency: normalizedCurrency,
       currencyDisplay: "symbol",
@@ -29,7 +43,7 @@ export function formatDate(value: string | Date | null | undefined, locale = "en
     date = new Date(value);
   }
   if (Number.isNaN(date.getTime())) return "—";
-  return new Intl.DateTimeFormat(locale, {
+  return new Intl.DateTimeFormat(westernNumeralLocale(locale), {
     day: "2-digit",
     month: "2-digit",
     year: "numeric",

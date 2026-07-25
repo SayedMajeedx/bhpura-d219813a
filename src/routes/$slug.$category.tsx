@@ -266,7 +266,7 @@ function CategoryPage() {
 
   const breadcrumbs = useMemo(() => {
     if (smartKind || !activeCategory || categoriesQuery.isLoading) return null;
-    const list = [
+    const list: Array<{ label: string; to: string; params: Record<string, string> }> = [
       {
         label: t("الرئيسية", "Home"),
         to: "/$slug",
@@ -278,7 +278,7 @@ function CategoryPage() {
       const parentCat = categoriesQuery.data?.find(c => c.id === activeCategory.parent_id);
       if (parentCat) {
         list.push({
-          label: lang === "ar" ? parentCat.name_ar || parentCat.name_en : parentCat.name_en || parentCat.name_ar,
+          label: (lang === "ar" ? parentCat.name_ar || parentCat.name_en : parentCat.name_en || parentCat.name_ar) ?? "",
           to: "/$slug/$category",
           params: { slug: brand.slug, category: parentCat.slug || parentCat.name_en }
         });
@@ -286,7 +286,7 @@ function CategoryPage() {
     }
 
     list.push({
-      label: lang === "ar" ? activeCategory.name_ar || activeCategory.name_en : activeCategory.name_en || activeCategory.name_ar,
+      label: (lang === "ar" ? activeCategory.name_ar || activeCategory.name_en : activeCategory.name_en || activeCategory.name_ar) ?? "",
       to: "/$slug/$category",
       params: { slug: brand.slug, category: activeCategory.slug || activeCategory.name_en }
     });
@@ -314,7 +314,7 @@ function CategoryPage() {
                     ) : (
                       <Link
                         to={crumb.to as any}
-                        params={crumb.params}
+                        params={crumb.params as any}
                         className="hover:underline opacity-80 hover:opacity-100 transition-opacity"
                       >
                         {crumb.label}

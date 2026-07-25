@@ -1,6 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { publicSupabase as supabase } from "@/integrations/supabase/client";
 import { useStorefront, formatPrice, pickName } from "@/lib/storefront-context";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -8,6 +7,7 @@ import { useEffect, useMemo, useState } from "react";
 import { trackStorefrontEvent } from "@/lib/storefront-analytics";
 import { ResponsiveImage } from "@/components/responsive-media";
 import { ProductGrid } from "@/components/storefront/product-grid";
+import { fetchActiveBrandIdentity, fetchStorefrontSearch } from "@/lib/storefront-queries";
 
 type SearchParams = { q: string };
 
@@ -27,31 +27,29 @@ type ProductRow = {
 
 export const Route = createFileRoute("/$slug/search")({
   validateSearch: (s): SearchParams => ({ q: typeof s.q === "string" ? s.q : "" }),
+  loaderDeps: ({ search }) => ({ q: search.q }),
+  loader: async ({ params, deps }) => {
+    const term = String(deps.q || "").trim();
+    const brand = await fetchActiveBrandIdentity(params.slug);
+    return {
+      term,
+      results: brand ? await fetchStorefrontSearch(brand.id, term) : [],
+    };
+  },
   component: SearchPage,
 });
 
 export function SearchPage() {
   const { brand, currency, lang, t } = useStorefront();
   const search = Route.useSearch();
+  const loaderData = Route.useLoaderData();
   const term = String(search.q || "").trim();
   const [sort, setSort] = useState<"new" | "price-low" | "price-high">("new");
 
   const { data, isLoading } = useQuery({
     queryKey: ["storefront", brand.slug, "search", term],
-    queryFn: async () => {
-      if (!term) return [];
-      const { data: rows, error } = await supabase
-        .from("products")
-        .select(`
-          id, name, name_ar, name_en, description, description_ar, description_en, category, image_url, media, brand_id, created_at,
-          product_variants ( id, selling_price, original_price, stock_main )
-        `)
-        .eq("brand_id", brand.id)
-        .eq("is_active", true)
-        .or(`name.ilike.%${term}%,name_ar.ilike.%${term}%,name_en.ilike.%${term}%,description.ilike.%${term}%,description_ar.ilike.%${term}%,description_en.ilike.%${term}%,category.ilike.%${term}%`);
-      if (error) throw error;
-      return (rows ?? []) as unknown as ProductRow[];
-    },
+    queryFn: () => fetchStorefrontSearch(brand.id, term) as Promise<ProductRow[]>,
+    initialData: loaderData.term === term ? loaderData.results as ProductRow[] : undefined,
     enabled: Boolean(term),
   });
 

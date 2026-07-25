@@ -182,7 +182,7 @@ function CustomerProfilePage() {
                       <td className="p-4 text-muted-foreground">
                         <span className="inline-flex items-center gap-2">
                           <CalendarDays className="h-4 w-4" />
-                          {new Date(order.order_date).toLocaleDateString(lang === "ar" ? "ar-BH" : "en-BH")}
+                          {new Date(order.order_date).toLocaleDateString(lang === "ar" ? "ar-BH-u-nu-latn" : "en-BH")}
                         </span>
                       </td>
                       <td className="p-4">

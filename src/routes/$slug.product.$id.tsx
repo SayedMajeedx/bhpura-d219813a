@@ -427,7 +427,7 @@ export function ProductDetail({ splatId }: { splatId?: string } = {}) {
     return matchingVariants.map((v) => basePrice + Number(v.selling_price || 0) + selectedAddOnPrice);
   }, [matchingVariants, basePrice, selectedAddOnPrice]);
 
-  if (isLoading) {
+  if (isLoading && !product) {
     return (
       <div className="mx-auto max-w-6xl px-4 sm:px-6 py-8 grid md:grid-cols-2 gap-8">
         <Skeleton className="aspect-square rounded-xl" />

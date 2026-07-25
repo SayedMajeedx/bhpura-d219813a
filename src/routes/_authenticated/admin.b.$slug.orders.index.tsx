@@ -139,7 +139,11 @@ function deliveryStatusPresentation(status: string | null | undefined, lang: "en
   return item ? { label: item[lang], className: item.className } : null;
 }
 
-const getFulfillmentBadgeDetails = (status: string | null | undefined, lang: "en" | "ar") => {
+const getFulfillmentBadgeDetails = (
+  status: string | null | undefined,
+  lang: "en" | "ar",
+  fulfillmentMethod?: string | null,
+) => {
   const s = String(status || "ON_HOLD").toUpperCase();
   if (s === "NEEDS_PACKING") {
     return {
@@ -155,13 +159,20 @@ const getFulfillmentBadgeDetails = (status: string | null | undefined, lang: "en
   }
   if (s === "SHIPPED") {
     return {
-      label: lang === "ar" ? "تم الشحن" : "Shipped",
+      label: lang === "ar" ? "خرج للتوصيل" : "Out for Delivery",
       classes: "bg-[#CCE5FF] text-[#004085] border-none font-semibold shadow-sm",
     };
   }
-  if (s === "COMPLETED") {
+  if (s === "COMPLETED" || s === "DELIVERED") {
+    const isPickup = String(fulfillmentMethod ?? "").toLowerCase() === "pickup";
     return {
-      label: lang === "ar" ? "مكتمل" : "Completed",
+      label: isPickup
+        ? lang === "ar"
+          ? "تم الاستلام"
+          : "Picked Up"
+        : lang === "ar"
+          ? "تم التوصيل"
+          : "Delivered",
       classes: "bg-[#E8F5E9] text-[#2E7D32] border-none font-semibold shadow-sm",
     };
   }
@@ -177,6 +188,19 @@ const getFulfillmentBadgeDetails = (status: string | null | undefined, lang: "en
     classes: "bg-[#E2E3E5] text-[#383D41] border-none",
   };
 };
+
+function normalizedFulfillmentStage(order: any): string {
+  const fulfillment = String(order.fulfillment_status ?? "ON_HOLD").toUpperCase();
+  const orderStatus = String(order.status ?? "").toUpperCase();
+  if (["COMPLETED", "DELIVERED"].includes(fulfillment) || orderStatus === "COMPLETED") {
+    return "completed";
+  }
+  if (fulfillment === "SHIPPED") return "out_for_delivery";
+  if (fulfillment === "READY_FOR_PICKUP") return "ready_for_pickup";
+  if (fulfillment === "NEEDS_PACKING") return "needs_packing";
+  if (fulfillment === "CANCELLED" || orderStatus === "CANCELLED") return "cancelled";
+  return "on_hold";
+}
 
 const renderPaymentMethodBadge = (paymentMethod: string | null | undefined, lang: "en" | "ar") => {
   const method = String(paymentMethod ?? "").toLowerCase();
@@ -301,7 +325,7 @@ function OrderItemsSummary({ items, lang }: { items: any[] | undefined | null; l
 function OrdersList() {
   const t = useT();
   const { lang } = useI18n();
-  const locale = lang === "ar" ? "ar-BH" : "en-BH";
+  const locale = lang === "ar" ? "ar-BH-u-nu-latn" : "en-BH";
   const qc = useQueryClient();
   const navigate = useNavigate();
   const { slug } = Route.useParams();
@@ -310,8 +334,9 @@ function OrdersList() {
   const brandId = brand.id;
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
-  const [fulfillmentFilter, setFulfillmentFilter] = useState("all");
+  const [paymentFilter, setPaymentFilter] = useState("all");
+  const [fulfillmentStatusFilter, setFulfillmentStatusFilter] = useState("all");
+  const [fulfillmentMethodFilter, setFulfillmentMethodFilter] = useState("all");
   const [includeHistorical, setIncludeHistorical] = useState(false);
 
   // New Quick Tab filter
@@ -359,7 +384,22 @@ function OrdersList() {
       toast.error(lang === "ar" ? "لا يمكن أن يكون المبلغ المحصل بالسالب" : "Collected amount cannot be negative");
       return;
     }
+    const ordersQueryKey = ["orders", brandId, isCourier ? "assigned-courier" : "office"];
+    const previousOrders = qc.getQueryData<any[]>(ordersQueryKey);
+    setUpdatingOrderId(order.id);
     setIsSubmittingCash(true);
+    qc.setQueryData<any[]>(ordersQueryKey, (current) =>
+      current?.map((item) =>
+        item.id === order.id
+          ? {
+              ...item,
+              status: "completed",
+              fulfillment_status: "COMPLETED",
+              delivered_at: new Date().toISOString(),
+            }
+          : item,
+      ),
+    );
     try {
       // 1. Try atomic RPC first
       const { error: rpcErr } = await (supabase.rpc as any)("courier_complete_delivery", {
@@ -408,22 +448,11 @@ function OrdersList() {
       setCashModalNotes("");
       qc.invalidateQueries({ queryKey: ["orders", brandId] });
 
-      // Trigger order completed / delivered email notification to customer (Resend) and admin (SendPulse)
-      void (async () => {
-        try {
-          const { data: { session } } = await supabase.auth.getSession();
-          const accessToken = session?.access_token;
-          await supabase.functions.invoke("send-order-email", {
-            body: { order_id: order.id, event: "order_delivered", lang },
-            headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : undefined,
-          });
-        } catch (e) {
-          console.warn("[handleCompleteDelivery email trigger error]", e);
-        }
-      })();
     } catch (err: any) {
+      qc.setQueryData(ordersQueryKey, previousOrders);
       toast.error(err.message || "Failed to complete delivery");
     } finally {
+      setUpdatingOrderId(null);
       setIsSubmittingCash(false);
     }
   };
@@ -466,7 +495,15 @@ function OrdersList() {
   // Reset page when sorting, search, filters or page size change
   useEffect(() => {
     setPage(1);
-  }, [search, statusFilter, fulfillmentFilter, sortField, sortDirection, pageSize]);
+  }, [
+    search,
+    paymentFilter,
+    fulfillmentStatusFilter,
+    fulfillmentMethodFilter,
+    sortField,
+    sortDirection,
+    pageSize,
+  ]);
 
   useRealtimeInvalidate(
     [
@@ -603,9 +640,6 @@ function OrdersList() {
         );
 
       if (!matchesSearch) return false;
-      if (statusFilter !== "all" && order.status !== statusFilter) return false;
-      if (fulfillmentFilter !== "all" && order.fulfillment_method !== fulfillmentFilter) return false;
-
       const paymentBadge = resolvePaymentStatus(
         order.payment_status,
         order.status,
@@ -613,6 +647,30 @@ function OrdersList() {
         Number(order.advance_paid ?? 0),
       );
       const ff = String(order.fulfillment_status || "").toUpperCase();
+      const isPendingVerification =
+        String(order.status ?? "").toLowerCase() === "pending_verification" &&
+        paymentBadge === "unpaid" &&
+        !["COMPLETED", "DELIVERED", "CANCELLED"].includes(ff);
+      if (
+        paymentFilter !== "all" &&
+        (paymentFilter === "pending_verification"
+          ? !isPendingVerification
+          : paymentBadge !== paymentFilter || isPendingVerification)
+      ) {
+        return false;
+      }
+      if (
+        fulfillmentStatusFilter !== "all" &&
+        normalizedFulfillmentStage(order) !== fulfillmentStatusFilter
+      ) {
+        return false;
+      }
+      if (
+        fulfillmentMethodFilter !== "all" &&
+        order.fulfillment_method !== fulfillmentMethodFilter
+      ) {
+        return false;
+      }
 
       // Quick tab routing
       if (tabFilter === "unpaid") {
@@ -630,7 +688,15 @@ function OrdersList() {
 
       return true; // tabFilter === "all"
     });
-  }, [orders, normalizedSearch, statusFilter, fulfillmentFilter, tabFilter, includeHistorical]);
+  }, [
+    orders,
+    normalizedSearch,
+    paymentFilter,
+    fulfillmentStatusFilter,
+    fulfillmentMethodFilter,
+    tabFilter,
+    includeHistorical,
+  ]);
 
   const sortedOrders = useMemo(() => {
     const list = [...filteredOrders];
@@ -691,10 +757,6 @@ function OrdersList() {
       : <ArrowDown className="ms-1.5 h-3.5 w-3.5 text-primary shrink-0 inline" />;
   };
 
-  const pendingCount = orders.filter((order) =>
-    ["pending", "pending_verification", "draft"].includes(order.status),
-  ).length;
-
   const unpaidCount = tabCounts.unpaid;
 
   const openValue = orders
@@ -706,8 +768,8 @@ function OrdersList() {
     { id: "all", label_en: "All", label_ar: "الكل", count: tabCounts.all, activeColor: "bg-primary text-primary-foreground" },
     { id: "unpaid", label_en: "Unpaid", label_ar: "غير مدفوع", count: tabCounts.unpaid, activeColor: "bg-red-600 text-white dark:bg-red-950 dark:text-red-200" },
     { id: "action_required", label_en: "Action Required", label_ar: "مطلوب إجراء", count: tabCounts.action_required, activeColor: "bg-amber-500 text-black dark:bg-amber-950 dark:text-amber-200" },
-    { id: "shipped", label_en: "Shipped", label_ar: "تم الشحن", count: tabCounts.shipped, activeColor: "bg-blue-600 text-white dark:bg-blue-950 dark:text-blue-200" },
-    { id: "completed", label_en: "Completed", label_ar: "مكتمل", count: tabCounts.completed, activeColor: "bg-emerald-600 text-white dark:bg-emerald-950 dark:text-emerald-200" },
+    { id: "shipped", label_en: "Out for Delivery", label_ar: "خرج للتوصيل", count: tabCounts.shipped, activeColor: "bg-blue-600 text-white dark:bg-blue-950 dark:text-blue-200" },
+    { id: "completed", label_en: "Delivered / Picked Up", label_ar: "تم التوصيل / الاستلام", count: tabCounts.completed, activeColor: "bg-emerald-600 text-white dark:bg-emerald-950 dark:text-emerald-200" },
   ] as const;
 
   const renderContextualButton = (o: any) => {
@@ -722,6 +784,9 @@ function OrdersList() {
     const isUnpaid = !isPaid;
     const ff = String(o.fulfillment_status || "ON_HOLD").toUpperCase();
     const isUpdating = updatingOrderId === o.id;
+    const isDelivered =
+      ["COMPLETED", "DELIVERED"].includes(ff) ||
+      ["COMPLETED", "DELIVERED"].includes(String(o.status || "").toUpperCase());
 
     const method = String(o.payment_method || "").toLowerCase();
     const isCard = ["card", "apple_pay", "google_pay"].includes(method);
@@ -729,6 +794,21 @@ function OrdersList() {
     const isCod = ["cash", "cod"].includes(method);
 
     const isPickup = String(o.fulfillment_method || "").toLowerCase() === "pickup";
+
+    if (isDelivered) {
+      return (
+        <span className="inline-flex items-center gap-1.5 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700 shadow-sm dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-400">
+          <Check className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+          {isPickup
+            ? lang === "ar"
+              ? "تم الاستلام"
+              : "Picked Up"
+            : lang === "ar"
+              ? "تم التوصيل"
+              : "Delivered"}
+        </span>
+      );
+    }
 
     const handleStatusUpdate = async (payload: Record<string, any>, successMsg: string) => {
       setUpdatingOrderId(o.id);
@@ -738,25 +818,11 @@ function OrdersList() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ id: o.id, ...payload }),
         });
-        const data = await res.json();
+        const data = await res.json<{ error?: string; error_ar?: string }>();
         if (!res.ok) throw new Error(data.error_ar && lang === "ar" ? data.error_ar : data.error);
         toast.success(successMsg);
         qc.invalidateQueries({ queryKey: ["orders", brandId] });
 
-        if (payload.fulfillment_status === "COMPLETED" || payload.status === "completed" || payload.fulfillment_status === "delivered") {
-          void (async () => {
-            try {
-              const { data: { session } } = await supabase.auth.getSession();
-              const accessToken = session?.access_token;
-              await supabase.functions.invoke("send-order-email", {
-                body: { order_id: o.id, event: "order_delivered", lang },
-                headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : undefined,
-              });
-            } catch (e) {
-              console.warn("[handleStatusUpdate email trigger error]", e);
-            }
-          })();
-        }
       } catch (err: any) {
         toast.error(err.message || "Failed to update order status");
       } finally {
@@ -1037,7 +1103,7 @@ function OrdersList() {
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {[
             [ReceiptText, t("orders.title"), String(orders.length)],
-            [Clock3, t("status.pending"), String(pendingCount)],
+            [Clock3, lang === "ar" ? "مطلوب إجراء" : "Action Required", String(tabCounts.action_required)],
             [CircleDollarSign, t("payStatus.unpaid"), String(unpaidCount)],
             [Truck, t("orders.total"), formatMoney(openValue, currency)],
           ].map(([Icon, label, value], index) => {
@@ -1095,7 +1161,7 @@ function OrdersList() {
       </div>
 
       <Card className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm p-4 sm:p-5">
-        <div className="grid grid-cols-1 sm:grid-cols-[minmax(220px,1fr)_150px_160px_auto] gap-3 items-center">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-[minmax(220px,1fr)_170px_180px_170px_auto] lg:items-center">
           <div className="relative">
             <Search className="absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
@@ -1109,41 +1175,44 @@ function OrdersList() {
               }
             />
           </div>
-          <Select value={statusFilter} onValueChange={setStatusFilter}>
+          <Select value={paymentFilter} onValueChange={setPaymentFilter}>
             <SelectTrigger>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">
-                {t("orders.status")}: {lang === "ar" ? "الكل" : "All"}
+                {lang === "ar" ? "حالة الدفع: الكل" : "Payment: All"}
               </SelectItem>
-              {[
-                "pending",
-                "pending_verification",
-                "draft",
-                "confirmed",
-                "paid",
-                "shipped",
-                "completed",
-                "cancelled",
-              ].map((status) => (
-                <SelectItem key={status} value={status}>
-                  {status === "pending_verification"
-                    ? lang === "ar"
-                      ? "بانتظار التحقق"
-                      : "Pending verification"
-                    : t(`status.${status}`)}
-                </SelectItem>
-              ))}
+              <SelectItem value="unpaid">{lang === "ar" ? "غير مدفوع" : "Unpaid"}</SelectItem>
+              <SelectItem value="pending_verification">{lang === "ar" ? "بانتظار التحقق" : "Pending Verification"}</SelectItem>
+              <SelectItem value="partial">{lang === "ar" ? "مدفوع جزئيًا" : "Partially Paid"}</SelectItem>
+              <SelectItem value="paid">{lang === "ar" ? "مدفوع" : "Paid"}</SelectItem>
+              <SelectItem value="refunded">{lang === "ar" ? "مسترجع" : "Refunded"}</SelectItem>
             </SelectContent>
           </Select>
-          <Select value={fulfillmentFilter} onValueChange={setFulfillmentFilter}>
+          <Select value={fulfillmentStatusFilter} onValueChange={setFulfillmentStatusFilter}>
             <SelectTrigger>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">
-                {t("fulfillment.title")}: {lang === "ar" ? "الكل" : "All"}
+                {lang === "ar" ? "حالة التنفيذ: الكل" : "Fulfillment: All"}
+              </SelectItem>
+              <SelectItem value="on_hold">{lang === "ar" ? "قيد الانتظار" : "On Hold"}</SelectItem>
+              <SelectItem value="needs_packing">{lang === "ar" ? "بحاجة للتعبئة" : "Needs Packing"}</SelectItem>
+              <SelectItem value="ready_for_pickup">{lang === "ar" ? "جاهز للاستلام" : "Ready for Pickup"}</SelectItem>
+              <SelectItem value="out_for_delivery">{lang === "ar" ? "خرج للتوصيل" : "Out for Delivery"}</SelectItem>
+              <SelectItem value="completed">{lang === "ar" ? "تم التوصيل / الاستلام" : "Delivered / Picked Up"}</SelectItem>
+              <SelectItem value="cancelled">{lang === "ar" ? "ملغي" : "Cancelled"}</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={fulfillmentMethodFilter} onValueChange={setFulfillmentMethodFilter}>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">
+                {lang === "ar" ? "طريقة التنفيذ: الكل" : "Method: All"}
               </SelectItem>
               <SelectItem value="delivery">{t("fulfillment.delivery")}</SelectItem>
               <SelectItem value="pickup">{t("fulfillment.pickup")}</SelectItem>
@@ -1184,8 +1253,9 @@ function OrdersList() {
             className="mt-2"
             onClick={() => {
               setSearch("");
-              setStatusFilter("all");
-              setFulfillmentFilter("all");
+              setPaymentFilter("all");
+              setFulfillmentStatusFilter("all");
+              setFulfillmentMethodFilter("all");
               setTabFilter("all");
             }}
           >
@@ -1202,7 +1272,11 @@ function OrdersList() {
                 Number(o.total),
                 Number((o as any).advance_paid ?? 0),
               );
-              const fulfillmentDetails = getFulfillmentBadgeDetails((o as any).fulfillment_status, lang);
+              const fulfillmentDetails = getFulfillmentBadgeDetails(
+                (o as any).fulfillment_status,
+                lang,
+                (o as any).fulfillment_method,
+              );
               const isCompleted = ["COMPLETED", "completed"].includes((o as any).fulfillment_status || "") || o.status === "completed";
 
               return (
@@ -1344,7 +1418,11 @@ function OrdersList() {
                       Number(o.total),
                       Number((o as any).advance_paid ?? 0),
                     );
-                    const fulfillmentDetails = getFulfillmentBadgeDetails((o as any).fulfillment_status, lang);
+                    const fulfillmentDetails = getFulfillmentBadgeDetails(
+                      (o as any).fulfillment_status,
+                      lang,
+                      (o as any).fulfillment_method,
+                    );
                     const isCompleted = ["COMPLETED", "completed"].includes((o as any).fulfillment_status || "") || o.status === "completed";
 
                     return (
@@ -1750,7 +1828,7 @@ function OrdersList() {
                           admin_override: ["cash", "cod"].includes(String(selectedFulfillOrder.payment_method || "").toLowerCase()),
                         }),
                       });
-                      const data = await res.json();
+                      const data = await res.json<{ error?: string; error_ar?: string }>();
                       if (!res.ok) throw new Error(data.error_ar && lang === "ar" ? data.error_ar : data.error);
                       toast.success(lang === "ar" ? "تم تأكيد تعبئة الطلب وتجهيزه للشحن!" : "Order packed and dispatched successfully!");
 

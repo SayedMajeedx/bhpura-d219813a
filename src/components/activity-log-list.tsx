@@ -17,7 +17,7 @@ type Props = {
 export function ActivityLogList({ orderId, productId, variantIds, scope = "order", limit = 50, brandId }: Props) {
   const t = useT();
   const { lang } = useI18n();
-  const locale = lang === "ar" ? "ar-BH" : "en-US";
+  const locale = lang === "ar" ? "ar-BH-u-nu-latn" : "en-US";
 
   const q = useQuery({
     queryKey: ["activity_logs", { orderId, productId, variantIds, scope, limit, brandId }],

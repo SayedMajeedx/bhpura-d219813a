@@ -77,8 +77,8 @@ function Checkout() {
     try {
       const { data: exists, error } = await supabase.rpc("check_registered_customer_exists", {
         p_brand_id: brand.id,
-        p_email: field === "email" ? value.trim() : null,
-        p_phone: field === "phone" ? value.trim() : null,
+        p_email: field === "email" ? value.trim() : "",
+        p_phone: field === "phone" ? value.trim() : "",
       });
 
       if (error) {
@@ -381,7 +381,6 @@ function Checkout() {
       } as any);
       if (error) throw error;
       const orderId = (data as any)?.order_id;
-      const confirmationEmailToken = (data as any)?.confirmation_email_token;
       trackStorefrontEvent("purchase", {
         transaction_id: String(orderId ?? ""), currency, value: Number(grandTotal.toFixed(3)),
         shipping: Number(shipping.toFixed(3)), coupon: appliedPromo?.code ?? undefined,
@@ -402,11 +401,11 @@ function Checkout() {
           });
           
           if (!chargeRes.ok) {
-            const errData = await chargeRes.json();
+            const errData = await chargeRes.json<{ error?: string }>();
             throw new Error(errData.error || "Failed to initiate card payment.");
           }
           
-          const { redirectUrl } = await chargeRes.json();
+          const { redirectUrl } = await chargeRes.json<{ redirectUrl: string }>();
           toast.dismiss(toastId);
           window.location.href = redirectUrl;
           return;
@@ -418,25 +417,6 @@ function Checkout() {
 
       clearCart();
       toast.success(t("تم استلام طلبك!", "Order placed!"));
-      // Notify after every successful storefront order, including guest
-      // checkouts that intentionally have no customer email. The edge
-      // function records a skipped customer-email channel where needed while
-      // still attempting the tenant's independent admin notification route.
-      if (orderId) {
-        const emailLang = (typeof document !== "undefined" && document.documentElement.dir === "rtl") ? "ar" : "en";
-        try {
-          await supabase.functions.invoke("send-order-email", {
-            body: {
-              order_id: orderId,
-              ...(confirmationEmailToken ? { email_token: confirmationEmailToken } : {}),
-              lang: emailLang,
-              event: "order_placed",
-            },
-          });
-        } catch (emailErr) {
-          console.warn("[send-order-email]", emailErr);
-        }
-      }
       navigate({
         to: "/$slug/thank-you/$orderId",
         params: { slug: brand.slug, orderId: String(orderId ?? "") },

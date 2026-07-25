@@ -5,7 +5,11 @@ export const Route = createFileRoute("/api/public/webhooks/tap")({
     handlers: {
       POST: async ({ request }) => {
         try {
-          const payload = await request.json();
+          const payload = await request.json<{
+            id?: string;
+            status?: string;
+            metadata?: { order_id?: string; brand_id?: string };
+          }>();
           const { id: chargeId, status, metadata } = payload;
 
           if (!chargeId || !status || !metadata) {
@@ -50,7 +54,10 @@ export const Route = createFileRoute("/api/public/webhooks/tap")({
             return new Response("Failed to authenticate charge reference with gateway API.", { status: 400 });
           }
 
-          const tapCharge = await tapRes.json();
+          const tapCharge = await tapRes.json<{
+            status?: string;
+            metadata?: { order_id?: string; brand_id?: string };
+          }>();
           const verifiedStatus = tapCharge.status?.toUpperCase();
           const verifiedOrderId = tapCharge.metadata?.order_id;
           const verifiedBrandId = tapCharge.metadata?.brand_id;
@@ -101,14 +108,6 @@ export const Route = createFileRoute("/api/public/webhooks/tap")({
 
             console.log(`[Tap Webhook Success]: Securely verified and confirmed payment for Order ${orderId}`);
 
-            // Trigger order email notification
-            try {
-              await supabaseAdmin.functions.invoke("send-order-email", {
-                body: { order_id: orderId, event: "order_placed" },
-              });
-            } catch (emailErr) {
-              console.error("[Tap Webhook Email Invoke Error]:", emailErr);
-            }
           } else {
             console.warn(`[Tap Webhook Non-success Status]: Charge status ${verifiedStatus} for Order ${orderId}`);
           }
@@ -122,4 +121,3 @@ export const Route = createFileRoute("/api/public/webhooks/tap")({
     },
   },
 });
-

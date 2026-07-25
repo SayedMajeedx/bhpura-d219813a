@@ -13,7 +13,6 @@ const allowedOrigins = Array.from(new Set([
   ...(Deno.env.get("ALLOWED_ORIGINS") ?? "").split(","),
   "https://boutq.store",
   "https://www.boutq.store",
-  "https://bhpura.vercel.app",
 ].map((origin) => origin.trim()).filter(Boolean)));
 
 function corsHeadersFor(req: Request) {
@@ -21,7 +20,6 @@ function corsHeadersFor(req: Request) {
   const isAllowed = allowedOrigins.includes(origin) || 
     origin.endsWith(".pages.dev") || 
     origin.endsWith(".workers.dev") || 
-    origin.endsWith(".vercel.app") || 
     origin.startsWith("http://localhost:") || 
     origin.startsWith("https://localhost:") ||
     origin === "null";
@@ -51,6 +49,7 @@ const NOTIFICATION_RECIPIENT_EVENT_FIELD: Record<NotificationEvent, string> = {
 
 type Body = {
   order_id?: string;
+  outbox_id?: string;
   email_token?: string;
   lang?: "ar" | "en";
   event?: NotificationEvent;
@@ -633,6 +632,22 @@ function json(data: unknown, status: number, corsHeaders: Record<string, string>
   });
 }
 
+async function secretsEqual(left: string, right: string): Promise<boolean> {
+  if (!left || !right) return false;
+  const encoder = new TextEncoder();
+  const [leftHash, rightHash] = await Promise.all([
+    crypto.subtle.digest("SHA-256", encoder.encode(left)),
+    crypto.subtle.digest("SHA-256", encoder.encode(right)),
+  ]);
+  const leftBytes = new Uint8Array(leftHash);
+  const rightBytes = new Uint8Array(rightHash);
+  let mismatch = 0;
+  for (let index = 0; index < leftBytes.length; index += 1) {
+    mismatch |= leftBytes[index] ^ rightBytes[index];
+  }
+  return mismatch === 0;
+}
+
 Deno.serve(async (req, info) => {
   const corsHeaders = corsHeadersFor(req);
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
@@ -644,21 +659,43 @@ Deno.serve(async (req, info) => {
   const authz = req.headers.get("authorization") ?? "";
   const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
   const token = authz.toLowerCase().startsWith("bearer ") ? authz.slice(7).trim() : "";
-  const isServiceRole = !!serviceRoleKey && token === serviceRoleKey;
-  const secretOk = (!!WEBHOOK_SECRET && providedSecret === WEBHOOK_SECRET) || isServiceRole;
+  const [isServiceRole, hasWebhookSecret] = await Promise.all([
+    secretsEqual(token, serviceRoleKey),
+    secretsEqual(providedSecret, WEBHOOK_SECRET),
+  ]);
+  const secretOk = hasWebhookSecret || isServiceRole;
 
   let body: Body = {};
   try { body = await req.json(); } catch { /* noop */ }
-  const orderId = body.order_id;
-  if (!orderId) return json({ error: "order_id required" }, 400, corsHeaders);
-  const lang: "ar" | "en" = body.lang === "ar" ? "ar" : "en";
+  let orderId = body.order_id;
+  let outboxId: string | undefined;
+  let outboxClaimed = false;
+  let lang: "ar" | "en" = body.lang === "ar" ? "ar" : "en";
   const waitForDelivery = body.wait_for_delivery === true;
-  const event: NotificationEvent = ["order_placed", "benefit_payment_approved", "benefit_payment_rejected", "order_cancelled", "order_delivered"].includes(body.event ?? "")
+  let event: NotificationEvent = ["order_placed", "benefit_payment_approved", "benefit_payment_rejected", "order_cancelled", "order_delivered"].includes(body.event ?? "")
     ? body.event as NotificationEvent
     : "order_placed";
 
   let authorized = secretOk;
   let privileged = secretOk;
+  if (body.outbox_id) {
+    if (!secretOk) return json({ error: "Forbidden" }, 403, corsHeaders);
+    outboxId = body.outbox_id;
+    const { data: claimedEvents, error: claimError } = await admin
+      .rpc("claim_order_email_event", { p_event_id: outboxId });
+    const claimedEvent = claimedEvents?.[0] ?? null;
+
+    if (claimError) return json({ error: "Could not claim email event" }, 500, corsHeaders);
+    if (!claimedEvent) return json({ ok: true, duplicate: true }, 200, corsHeaders);
+    orderId = claimedEvent.order_id;
+    event = claimedEvent.event_type as NotificationEvent;
+    lang = claimedEvent.language === "ar" ? "ar" : "en";
+    authorized = true;
+    privileged = true;
+    outboxClaimed = true;
+  }
+
+  if (!orderId) return json({ error: "order_id required" }, 400, corsHeaders);
   if (!authorized && token) {
     const { data: userData } = await admin.auth.getUser(token);
     const user = userData?.user;
@@ -711,6 +748,21 @@ Deno.serve(async (req, info) => {
   // are caught, completed, and logged successfully in the database, without
   // ever having the serverless worker container suspend/terminate our process.
   const result = await sendAndLog(orderId, lang, event);
+
+  if (outboxClaimed && outboxId) {
+    const failedChannels = [result.customer, result.admin]
+      .filter((channel) => channel.status === "failed")
+      .map((channel) => channel.error)
+      .filter(Boolean);
+    await admin
+      .from("order_email_events")
+      .update({
+        status: failedChannels.length > 0 ? "failed" : "processed",
+        processed_at: new Date().toISOString(),
+        last_error: failedChannels.length > 0 ? failedChannels.join("; ").slice(0, 1000) : null,
+      })
+      .eq("id", outboxId);
+  }
 
   // If the dashboard explicitly requested wait_for_delivery (Send/Resend) and it failed,
   // report a 422 error on the admin panel.

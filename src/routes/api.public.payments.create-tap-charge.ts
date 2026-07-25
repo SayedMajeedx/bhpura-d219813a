@@ -5,7 +5,11 @@ export const Route = createFileRoute("/api/public/payments/create-tap-charge")({
     handlers: {
       POST: async ({ request }) => {
         try {
-          const body = await request.json();
+          const body = await request.json<{
+            orderId?: string;
+            brandId?: string;
+            redirectUrl?: string;
+          }>();
           const { orderId, brandId, redirectUrl } = body;
 
           if (!orderId || !brandId) {
@@ -146,7 +150,10 @@ export const Route = createFileRoute("/api/public/payments/create-tap-charge")({
             );
           }
 
-          const chargeData = await tapRes.json();
+          const chargeData = await tapRes.json<{
+            id?: string;
+            transaction?: { url?: string };
+          }>();
           const checkoutUrl = chargeData.transaction?.url;
           const chargeId = chargeData.id;
 

@@ -57,7 +57,7 @@ async function prepareReceiptForScanning(file: File): Promise<{ dataUrl: string;
     let output: Blob | null = null;
 
     // Camera photos can be 10–30 MB. Resize and progressively compress until
-    // the base64 request remains safely below Vercel's function body limit.
+    // the base64 request remains safely below the Worker request body limit.
     for (let attempt = 0; attempt < 5; attempt += 1) {
       const scale = Math.min(1, maxDimension / Math.max(bitmap.width, bitmap.height));
       const width = Math.max(1, Math.round(bitmap.width * scale));
@@ -163,7 +163,7 @@ function presetRange(preset: Exclude<DatePreset, "custom">) {
 function ExpensesPage() {
   const t = useT();
   const { lang } = useI18n();
-  const locale = lang === "ar" ? "ar-BH" : "en-US";
+  const locale = lang === "ar" ? "ar-BH-u-nu-latn" : "en-US";
   const qc = useQueryClient();
   const brand = useBrand();
   const brandId = brand.id;
@@ -903,7 +903,7 @@ function ReceiptReviewDialog({
 }) {
   const t = useT();
   const { lang } = useI18n();
-  const locale = lang === "ar" ? "ar-BH" : "en-US";
+  const locale = lang === "ar" ? "ar-BH-u-nu-latn" : "en-US";
   const brand = useBrand();
 
   const [form, setForm] = useState<ScannedExpense | null>(scanned);
@@ -1149,6 +1149,7 @@ type CogOrder = {
   created_at: string;
   currency: string;
   total: number;
+  payment_method: string | null;
   order_items: CogItem[];
 };
 

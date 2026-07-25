@@ -25,7 +25,7 @@ function decodeBase64(str: string): string {
 }
 
 export const Route = createFileRoute("/_authenticated/admin/b/$slug")({
-  beforeLoad: async ({ params, request }) => {
+  beforeLoad: async ({ params }) => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw redirect({ to: "/auth" });
 
@@ -73,7 +73,7 @@ export const Route = createFileRoute("/_authenticated/admin/b/$slug")({
       }
 
       // Check cookie session token directly from standard request headers or client-side document.cookie
-      const token = getImpersonationToken(request);
+      const token = getImpersonationToken();
       if (!token) {
         throw redirect({ to: "/admin/brands" });
       }

@@ -207,8 +207,9 @@ export const Route = createFileRoute("/$slug")({
     };
   },
   head: ({ loaderData }) => {
-    const b = loaderData?.brand;
-    const settings = loaderData?.settings;
+    const typedLoaderData = loaderData as { brand?: Brand; settings?: PublicSettings } | undefined;
+    const b = typedLoaderData?.brand;
+    const settings = typedLoaderData?.settings;
     if (!b) return { meta: [{ title: "Storefront" }] };
     const title = b.meta_title || settings?.business_name || `${b.name_en} — Online Store`;
     const desc = b.meta_description || `Shop ${b.name_en}${b.name_ar ? " / " + b.name_ar : ""} online.`;
@@ -232,11 +233,11 @@ export const Route = createFileRoute("/$slug")({
   },
   component: StorefrontLayout,
   errorComponent: StorefrontError,
-  notFoundComponent: StorefrontError,
+  notFoundComponent: () => <StorefrontError />,
 });
 
 function StorefrontLayout() {
-  const { brand, settings } = Route.useLoaderData();
+  const { brand, settings } = Route.useLoaderData() as unknown as { brand: Brand; settings: PublicSettings };
   useDynamicFavicon(settings.favicon_url, settings.logo_url ?? brand.logo_url);
   return (
     <StorefrontProvider brand={brand} settings={settings}>
@@ -316,6 +317,7 @@ function StoreShell() {
 
   return (
     <div
+      dir={lang === "ar" ? "rtl" : "ltr"}
       className="storefront-shell min-h-screen flex flex-col"
       style={
         {

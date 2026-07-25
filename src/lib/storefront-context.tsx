@@ -1,7 +1,9 @@
 import { createContext, useContext, useEffect, useState, useCallback, useMemo, type ReactNode } from "react";
+import { DirectionProvider } from "@radix-ui/react-direction";
 import type { Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { trackStorefrontEvent } from "@/lib/storefront-analytics";
+import { westernNumeralLocale } from "@/lib/format";
 
 export type StoreLang = "ar" | "en";
 export type HomePromoCard = { title_en: string; title_ar: string; subtitle_en: string; subtitle_ar: string; image_url: string; href: string; background_color: string; text_color: string };
@@ -439,7 +441,11 @@ export function StorefrontProvider({
     signOut,
   };
 
-  return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
+  return (
+    <Ctx.Provider value={value}>
+      <DirectionProvider dir={dir}>{children}</DirectionProvider>
+    </Ctx.Provider>
+  );
 }
 
 export function useStorefront() {
@@ -452,12 +458,15 @@ export function formatPrice(amount: number, currency: string, lang: StoreLang) {
   const normalizedCurrency = (currency || "").toUpperCase();
   const isThreeDecimals = ["BHD", "KWD", "OMR", "IQD", "LYD"].includes(normalizedCurrency);
   const fractionDigits = isThreeDecimals ? 3 : 2;
-  const n = new Intl.NumberFormat(lang === "ar" ? "ar-BH" : "en-BH", {
+  const n = new Intl.NumberFormat(
+    westernNumeralLocale(lang === "ar" ? "ar-BH-u-nu-latn" : "en-BH"),
+    {
     style: "currency",
     currency: normalizedCurrency,
     minimumFractionDigits: fractionDigits,
     maximumFractionDigits: fractionDigits,
-  });
+    },
+  );
   try {
     return n.format(amount);
   } catch {

@@ -41,7 +41,7 @@ function AuthPage() {
       const { data: { user } } = await supabase.auth.getUser();
       const { data: profile } = await supabase.from("profiles").select("role, status").eq("id", user!.id).maybeSingle();
       const dashboardRoles = new Set(["super_admin", "admin", "brand_admin", "staff", "courier"]);
-      if (!profile || profile.status !== "active" || !dashboardRoles.has(profile.role)) {
+      if (!profile || profile.status !== "active" || !dashboardRoles.has(profile.role ?? "")) {
         await supabase.auth.signOut();
         throw new Error(lang === "ar" ? "هذا حساب عميل متجر وليس حساب لوحة تحكم." : "This is a storefront customer account, not a dashboard account.");
       }
@@ -67,7 +67,7 @@ function AuthPage() {
         .eq("id", data.user.id)
         .maybeSingle();
       const dashboardRoles = new Set(["super_admin", "admin", "brand_admin", "staff", "courier"]);
-      if (profileError || !profile || profile.status !== "active" || !dashboardRoles.has(profile.role)) {
+      if (profileError || !profile || profile.status !== "active" || !dashboardRoles.has(profile.role ?? "")) {
         await supabase.auth.signOut();
         throw new Error(lang === "ar" ? "هذا الحساب غير مخوّل لدخول لوحة التحكم." : "This account is not authorized for dashboard access.");
       }

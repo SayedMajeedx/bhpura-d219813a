@@ -484,7 +484,7 @@ function OrdersSection({
     if (!settings.whatsapp_number) return;
     const digits = settings.whatsapp_number.replace(/\D/g, "");
     const totalText = formatPrice(Number(order.total), order.currency || currency, lang);
-    const dateText = new Date(order.order_date).toLocaleDateString(isAr ? "ar-BH" : "en-BH");
+    const dateText = new Date(order.order_date).toLocaleDateString(isAr ? "ar-BH-u-nu-latn" : "en-BH");
     
     const text = isAr 
       ? `مرحباً! لدي استفسار بخصوص الطلب رقم #${order.invoice_number} (القيمة إجمالاً: ${totalText}، تاريخ الطلب: ${dateText}). هل يمكنكم مساعدتي؟`
@@ -535,7 +535,7 @@ function OrdersSection({
       {orders.map((o) => {
         const st = statusMeta(o.status, o.payment_status, o.fulfillment_status, isAr);
         const isExpanded = !!expandedOrder[o.id];
-        const date = new Date(o.order_date).toLocaleDateString(isAr ? "ar-BH" : "en-BH", {
+        const date = new Date(o.order_date).toLocaleDateString(isAr ? "ar-BH-u-nu-latn" : "en-BH", {
           year: "numeric", month: "short", day: "numeric",
         });
 

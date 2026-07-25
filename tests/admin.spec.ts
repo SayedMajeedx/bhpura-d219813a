@@ -70,7 +70,7 @@ test.beforeEach(async ({ page }) => {
       },
       expires_at: Math.floor(Date.now() / 1000) + 3600,
     };
-    window.localStorage.setItem("sb-uoxgrghdjrmgociwzwnx-auth-token", JSON.stringify(session));
+    window.localStorage.setItem("sb-ikciahnuqhemvnyfvbyp-auth-token", JSON.stringify(session));
   });
 
   // 1. Mock Supabase AuthgetUser call

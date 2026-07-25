@@ -80,7 +80,8 @@ export const getSubscriptionReceiptViewUrl = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     // Restrict access ONLY to super admins
     const { data: isSuperAdmin } = await context.supabase.rpc("is_admin");
-    const email = (context.user?.email || "").toLowerCase();
+    const { data: { user } } = await context.supabase.auth.getUser();
+    const email = (user?.email || "").toLowerCase();
     const isFixedSuperAdmin = email === "majeed@hotmail.it";
     
     if (!isSuperAdmin && !isFixedSuperAdmin) {
@@ -98,7 +99,8 @@ export const approveSubscriptionSaaS = createServerFn({ method: "POST" })
   .validator((raw: unknown) => AdminReviewInput.parse(raw))
   .handler(async ({ data, context }) => {
     const { data: isSuperAdmin } = await context.supabase.rpc("is_admin");
-    const email = (context.user?.email || "").toLowerCase();
+    const { data: { user } } = await context.supabase.auth.getUser();
+    const email = (user?.email || "").toLowerCase();
     const isFixedSuperAdmin = email === "majeed@hotmail.it";
     
     if (!isSuperAdmin && !isFixedSuperAdmin) {
@@ -144,7 +146,8 @@ export const rejectSubscriptionSaaS = createServerFn({ method: "POST" })
   .validator((raw: unknown) => AdminRejectInput.parse(raw))
   .handler(async ({ data, context }) => {
     const { data: isSuperAdmin } = await context.supabase.rpc("is_admin");
-    const email = (context.user?.email || "").toLowerCase();
+    const { data: { user } } = await context.supabase.auth.getUser();
+    const email = (user?.email || "").toLowerCase();
     const isFixedSuperAdmin = email === "majeed@hotmail.it";
     
     if (!isSuperAdmin && !isFixedSuperAdmin) {

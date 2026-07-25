@@ -44,6 +44,6 @@ function StorefrontAuthConfirmed() {
   return <main className="mx-auto grid min-h-[55vh] max-w-lg place-items-center px-4 text-center"><div className="space-y-4">
     {failed ? <AlertCircle className="mx-auto h-12 w-12 text-amber-600" /> : <Loader2 className="mx-auto h-10 w-10 animate-spin" />}
     <h1 className="font-display text-2xl">{failed ? t("تعذر ربط الحساب بهذا المتجر", "Could not register this account with the store") : t("جارٍ تأكيد حسابك", "Confirming your account")}</h1>
-    {failed && <button className="underline underline-offset-4" onClick={() => navigate({ to: "/$slug/auth", params: { slug: brand.slug }, replace: true })}>{t("العودة إلى تسجيل الدخول", "Return to sign in")}</button>}
+    {failed && <button className="underline underline-offset-4" onClick={() => navigate({ to: "/$slug/auth", params: { slug: brand.slug }, search: { redirect: undefined }, replace: true })}>{t("العودة إلى تسجيل الدخول", "Return to sign in")}</button>}
   </div></main>;
 }

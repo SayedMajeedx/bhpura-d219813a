@@ -82,7 +82,7 @@ export function formatNotifiedTimeAgo(notifiedAt: string | null | undefined, lan
   if (diffMinutes < 60) return lang === "ar" ? `منذ ${diffMinutes} د` : `${diffMinutes}m ago`;
   const diffHours = Math.floor(diffMinutes / 60);
   if (diffHours < 24) return lang === "ar" ? `منذ ${diffHours} س` : `${diffHours}h ago`;
-  return date.toLocaleDateString(lang === "ar" ? "ar-BH" : "en-US");
+  return date.toLocaleDateString(lang === "ar" ? "ar-BH-u-nu-latn" : "en-US");
 }
 
 export async function recordCourierNotified(orderId: string): Promise<string> {

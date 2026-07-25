@@ -55,7 +55,7 @@ function getEnvSync(name: string): string | undefined {
   // 2. Try process.env
   try {
     const g = globalThis as any;
-    const liveEnv = g["process"]?.["env"] || process.env;
+    const liveEnv = g["__CLOUDFLARE_ENV__"] || g["process"]?.["env"] || process.env;
     if (liveEnv) {
       if (liveEnv[name]) return liveEnv[name];
       if (liveEnv[viteName]) return liveEnv[viteName];

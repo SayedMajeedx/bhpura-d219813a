@@ -89,6 +89,7 @@ type Brand = {
   custom_domain: string | null;
   plan_type: "lifetime" | "trial" | null;
   trial_ends_at: string | null;
+  support_access_enabled: boolean;
 };
 
 function BrandsPage() {
@@ -336,7 +337,7 @@ function BrandsPage() {
                         {b.subscription_expires_at && (
                           <span className="text-[9px] text-muted-foreground font-semibold flex items-center gap-0.5">
                             <ClockIcon className="h-2.5 w-2.5" />
-                            {new Date(b.subscription_expires_at).toLocaleDateString(lang === "ar" ? "ar-BH" : "en-US", { month: "short", day: "numeric" })}
+                            {new Date(b.subscription_expires_at).toLocaleDateString(lang === "ar" ? "ar-BH-u-nu-latn" : "en-US", { month: "short", day: "numeric" })}
                           </span>
                         )}
                       </div>
@@ -406,7 +407,7 @@ function BrandsPage() {
                       <p className="text-xs text-muted-foreground font-mono">/{b.slug} • ID: {b.id.substring(0, 8)}...</p>
                       {b.payment_receipt_uploaded_at && (
                         <p className="text-[10px] text-zinc-400 mt-1">
-                          {lang === "ar" ? "تم الرفع:" : "Uploaded:"} {new Date(b.payment_receipt_uploaded_at).toLocaleString(lang === "ar" ? "ar-BH" : "en-US")}
+                          {lang === "ar" ? "تم الرفع:" : "Uploaded:"} {new Date(b.payment_receipt_uploaded_at).toLocaleString(lang === "ar" ? "ar-BH-u-nu-latn" : "en-US")}
                         </p>
                       )}
                     </div>

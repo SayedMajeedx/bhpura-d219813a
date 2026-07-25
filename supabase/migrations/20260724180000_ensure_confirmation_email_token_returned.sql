@@ -161,8 +161,20 @@ BEGIN
     WHERE brand_id = v_brand_id AND idempotency_key = p_idempotency_key;
   END IF;
 
-  -- Reload values to include recalculated totals in trigger or return payload
-  v_result := v_result || jsonb_build_object('total', v_total, 'shipping', v_shipping_fee, 'tax_amount', v_tax_amount);
+  -- Reload the capability from the authoritative order row. Do not depend on
+  -- place_storefront_order_core retaining this field in its JSON response:
+  -- guest checkout needs it to authorize the email edge function.
+  SELECT confirmation_email_token
+  INTO v_email_token
+  FROM public.orders
+  WHERE id = v_order_id AND brand_id = v_brand_id;
+
+  v_result := v_result || jsonb_build_object(
+    'total', v_total,
+    'shipping', v_shipping_fee,
+    'tax_amount', v_tax_amount,
+    'confirmation_email_token', v_email_token
+  );
 
   RETURN v_result;
 END;

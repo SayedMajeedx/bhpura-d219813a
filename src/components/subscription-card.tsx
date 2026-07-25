@@ -141,8 +141,10 @@ export function SubscriptionCard({ brand }: SubscriptionCardProps) {
     try {
       // 1. Request secure pre-signed R2 upload link
       const { objectKey, uploadUrl } = await getSubscriptionReceiptUploadUrl({
-        brandId: brand.id,
-        contentType: file.type as any
+        data: {
+          brandId: brand.id,
+          contentType: file.type as any,
+        },
       });
 
       // 2. Upload the receipt file directly to the Private R2 bucket
@@ -162,8 +164,10 @@ export function SubscriptionCard({ brand }: SubscriptionCardProps) {
       // 3. Finalize and submit the transaction receipt inside Supabase DB
       toast.loading(lang === "ar" ? "جاري توثيق إيصال الدفع في قاعدة البيانات..." : "Registering payment receipt inside system...", { id: toastId });
       await submitSubscriptionReceipt({
-        brandId: brand.id,
-        objectKey
+        data: {
+          brandId: brand.id,
+          objectKey,
+        },
       });
 
       toast.success(

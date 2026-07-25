@@ -37,8 +37,7 @@ function IndexRedirector() {
           hostname.endsWith(".pura.bh") || 
           hostname === "pura.bh" || 
           hostname.endsWith(".pages.dev") || 
-          hostname.endsWith(".workers.dev") || 
-          hostname.endsWith(".vercel.app");
+          hostname.endsWith(".workers.dev");
 
         if (isPlatformDomain) {
           void navigate({ to: "/admin" });

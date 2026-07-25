@@ -1451,6 +1451,12 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
       show_sale_badge: product?.show_sale_badge ?? true,
       media: (product?.media ?? []) as MediaItem[],
       custom_fields: (Array.isArray(product?.custom_fields) ? product!.custom_fields : []) as CustomField[],
+      variant_label_size_ar: product?.variant_label_size_ar ?? "",
+      variant_label_size_en: product?.variant_label_size_en ?? "",
+      variant_label_color_ar: product?.variant_label_color_ar ?? "",
+      variant_label_color_en: product?.variant_label_color_en ?? "",
+      variant_label_fabric_ar: product?.variant_label_fabric_ar ?? "",
+      variant_label_fabric_en: product?.variant_label_fabric_en ?? "",
     });
     setActiveDialogTab("basic");
   }, [product?.id]);
@@ -1907,7 +1913,7 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
                             ...preset.fields.map((f, index) => ({
                               ...f,
                               key: `f${Date.now()}-${index}-${f.key}`,
-                            })),
+                            }) as CustomField),
                           ],
                         });
                         toast.success(isAr ? "تم تطبيق النموذج بنجاح" : "Preset applied successfully");
@@ -2440,6 +2446,7 @@ function VariantDesktopRow({
   renderImageCol,
   renderSkuCol,
   renderBarcodeCol,
+  product,
 }: {
   v: Variant;
   canViewFinancials: boolean;
