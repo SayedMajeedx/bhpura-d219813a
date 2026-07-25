@@ -31,11 +31,26 @@ function sanitizeHeader(val?: string | null): string | undefined {
   return val.trim().replace(/^['"]|['"]$/g, "").trim();
 }
 
+const s3ClientsCache = new Map<string, S3Client>();
+
+function getCachedS3Client(accountId: string, accessKeyId: string, secretAccessKey: string): S3Client {
+  const cacheKey = `${accountId}:${accessKeyId}`;
+  let client = s3ClientsCache.get(cacheKey);
+  if (!client) {
+    client = new S3Client({
+      region: "auto",
+      endpoint: `https://${accountId}.r2.cloudflarestorage.com`,
+      credentials: { accessKeyId, secretAccessKey },
+    });
+    s3ClientsCache.set(cacheKey, client);
+  }
+  return client;
+}
+
 export async function handleR2MediaRequest(
   request: Request,
   env: Cloudflare.Env
 ): Promise<Response> {
-  // Only accept GET and HEAD requests for media assets
   if (request.method !== "GET" && request.method !== "HEAD") {
     return new Response("Method Not Allowed", { status: 405 });
   }
@@ -77,23 +92,19 @@ export async function handleR2MediaRequest(
       }
     }
   } catch (err) {
-    console.warn("R2 Bucket binding lookup failed, attempting S3 client fallback:", err);
+    console.warn("[R2 Media] Bucket binding lookup failed:", err);
   }
 
   // 2. Fallback to S3 Client using R2 API Credentials from env
   try {
-    const accountId = sanitizeHeader((env as any).R2_ACCOUNT_ID);
-    const accessKeyId = sanitizeHeader((env as any).R2_ACCESS_KEY_ID || (env as any).ACCESS_KEY_ID);
-    const secretAccessKey = sanitizeHeader((env as any).R2_SECRET_ACCESS_KEY || (env as any).SECRET_ACCESS_KEY);
-    const bucket = sanitizeHeader((env as any).R2_BUCKET_NAME);
+    const g = globalThis as any;
+    const accountId = sanitizeHeader((env as any).R2_ACCOUNT_ID || g.R2_ACCOUNT_ID);
+    const accessKeyId = sanitizeHeader((env as any).R2_ACCESS_KEY_ID || (env as any).ACCESS_KEY_ID || g.R2_ACCESS_KEY_ID || g.ACCESS_KEY_ID);
+    const secretAccessKey = sanitizeHeader((env as any).R2_SECRET_ACCESS_KEY || (env as any).SECRET_ACCESS_KEY || g.R2_SECRET_ACCESS_KEY || g.SECRET_ACCESS_KEY);
+    const bucket = sanitizeHeader((env as any).R2_BUCKET_NAME || g.R2_BUCKET_NAME || (env as any).R2_BUCKET || g.R2_BUCKET);
 
     if (accountId && accessKeyId && secretAccessKey && bucket) {
-      const client = new S3Client({
-        region: "auto",
-        endpoint: `https://${accountId}.r2.cloudflarestorage.com`,
-        credentials: { accessKeyId, secretAccessKey },
-      });
-
+      const client = getCachedS3Client(accountId, accessKeyId, secretAccessKey);
       const res = await client.send(new GetObjectCommand({ Bucket: bucket, Key: key }));
       if (res.Body) {
         const headers = new Headers(corsHeaders);
@@ -106,15 +117,22 @@ export async function handleR2MediaRequest(
           return new Response(null, { status: 200, headers });
         }
 
-        const bodyBytes = await res.Body.transformToByteArray();
-        return new Response(bodyBytes, { status: 200, headers });
+        return new Response(res.Body as any, { status: 200, headers });
       }
+    } else {
+      console.error("[R2 Media] Missing credentials for S3 client:", {
+        hasAccountId: !!accountId,
+        hasAccessKeyId: !!accessKeyId,
+        hasSecretAccessKey: !!secretAccessKey,
+        hasBucket: !!bucket,
+      });
     }
   } catch (err: any) {
+    console.error("[R2 Media] Error fetching asset for key:", key, err);
     if (err?.name === "NoSuchKey" || err?.$metadata?.httpStatusCode === 404) {
       return new Response("Object Not Found", { status: 404, headers: corsHeaders });
     }
-    console.error("R2 S3 Client media fetch error:", err);
+    return new Response(`R2 Fetch Error: ${err.message}`, { status: 500, headers: corsHeaders });
   }
 
   return new Response("Media Asset Not Found", { status: 404, headers: corsHeaders });
