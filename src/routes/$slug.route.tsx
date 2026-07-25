@@ -29,7 +29,7 @@ import {
 } from "@/components/ui/dialog";
 import { ShoppingBag, Languages, Minus, Plus, Trash2, X, User, Search, Menu, Home, PackageSearch, FileText, LogIn, Heart, Grid2X2, ChevronDown, Sparkles } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { cloudflareImageUrl, imageKitVideoPosterUrl } from "@/lib/media-delivery";
+import { cloudflareImageUrl, imageKitVideoPosterUrl, imageKitVideoUrl, isLikelyImageUrl } from "@/lib/media-delivery";
 import { faviconType, resolveBrandFavicon, useDynamicFavicon } from "@/lib/favicon";
 import { StorefrontAnalytics } from "@/components/storefront-analytics";
 
