@@ -11,9 +11,26 @@ import { ChevronLeft, ChevronRight, ShoppingBag, AlertCircle, Heart, Upload, X, 
 import { toast } from "sonner";
 import { trackStorefrontEvent } from "@/lib/storefront-analytics";
 import { OptimizedVideo, ResponsiveImage } from "@/components/responsive-media";
-import { uploadPublicMedia } from "@/lib/r2-upload";
+import {
+  fetchActiveBrandIdentity,
+  fetchBestSellerRows,
+  fetchProductDetail,
+  fetchRecommendationCatalog,
+} from "@/lib/storefront-queries";
 
 export const Route = createFileRoute("/$slug/product/$id")({
+  loader: async ({ params }) => {
+    const brand = await fetchActiveBrandIdentity(params.slug);
+    if (!brand) return { product: null, recommendationCatalog: [], bestSellerRows: [] };
+
+    const [product, recommendationCatalog, bestSellerRows] = await Promise.all([
+      fetchProductDetail(brand.id, params.id),
+      fetchRecommendationCatalog(brand.id),
+      fetchBestSellerRows(brand.slug, 10),
+    ]);
+
+    return { product: product as any, recommendationCatalog, bestSellerRows };
+  },
   component: ProductDetail,
 });
 
@@ -131,6 +148,11 @@ const parsePriceDelta = (valStr: string): number => {
 };
 
 export function ProductDetail({ splatId }: { splatId?: string } = {}) {
+  const loaderData = Route.useLoaderData() as {
+    product: Product | null;
+    recommendationCatalog: RecommendationProduct[];
+    bestSellerRows: Array<{ product_id: string; units_sold: number }>;
+  } | undefined;
   const params = Route.useParams() as any;
   const id = splatId || params?.id || params?._splat || params?.["_"] || params?.["$"] || "";
   const { brand, settings, currency, lang, t, addToCart, isWishlisted, toggleWishlist } = useStorefront();
@@ -147,7 +169,8 @@ export function ProductDetail({ splatId }: { splatId?: string } = {}) {
   const optionsRef = useRef<HTMLDivElement | null>(null);
 
   const { data: product, isLoading } = useQuery({
-    queryKey: ["storefront", brand.slug, "product", id, typeof window !== "undefined" ? window.location.pathname : ""],
+    queryKey: ["storefront", brand.slug, "product", id],
+    initialData: loaderData?.product ?? undefined,
     queryFn: async () => {
       const primaryFields = "id, category, name, name_ar, name_en, description, description_ar, description_en, image_url, media, custom_fields, base_price, product_variants(id, size, size_unit, color, fabric, selling_price, original_price, stock_main, image_url)";
       const fullFields = `${primaryFields}, variant_label_size_ar, variant_label_size_en, variant_label_color_ar, variant_label_color_en, variant_label_fabric_ar, variant_label_fabric_en`;
@@ -225,6 +248,7 @@ export function ProductDetail({ splatId }: { splatId?: string } = {}) {
 
   const { data: recommendationCatalog = [] } = useQuery({
     queryKey: ["storefront", brand.slug, "product-recommendations"],
+    initialData: loaderData?.recommendationCatalog ?? undefined,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("products")
@@ -242,6 +266,7 @@ export function ProductDetail({ splatId }: { splatId?: string } = {}) {
 
   const { data: bestSellerRows = [] } = useQuery({
     queryKey: ["storefront", brand.slug, "best-sellers"],
+    initialData: loaderData?.bestSellerRows ?? undefined,
     queryFn: async () => {
       const { data, error } = await (supabase.rpc as any)("get_storefront_best_sellers", {
         p_brand_slug: brand.slug,

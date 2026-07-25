@@ -69,3 +69,40 @@ export async function fetchStorefrontSearch(brandId: string, term: string) {
   if (error) throw error;
   return data ?? [];
 }
+
+export async function fetchProductDetail(brandId: string, targetId: string) {
+  const fullFields = "id, category, name, name_ar, name_en, description, description_ar, description_en, image_url, media, custom_fields, base_price, original_price, variant_label_size_ar, variant_label_size_en, variant_label_color_ar, variant_label_color_en, variant_label_fabric_ar, variant_label_fabric_en, product_variants(id, size, size_unit, color, fabric, selling_price, original_price, stock_main, image_url)";
+
+  const { data } = await supabase
+    .from("products")
+    .select(fullFields)
+    .eq("id", targetId)
+    .eq("brand_id", brandId)
+    .eq("is_active", true)
+    .maybeSingle();
+
+  if (data) return data;
+
+  const { data: slugData } = await supabase
+    .from("products")
+    .select(fullFields)
+    .eq("brand_id", brandId)
+    .eq("is_active", true)
+    .or(`name_en.ilike.${targetId.replace(/-/g, " ")},name.ilike.${targetId.replace(/-/g, " ")}`)
+    .maybeSingle();
+
+  return slugData ?? null;
+}
+
+export async function fetchRecommendationCatalog(brandId: string) {
+  const { data, error } = await supabase
+    .from("products")
+    .select("id, name, name_ar, name_en, category, image_url, media, product_variants(id, selling_price, original_price, stock_main)")
+    .eq("brand_id", brandId)
+    .eq("is_active", true)
+    .order("created_at", { ascending: false });
+
+  if (error) throw error;
+  return data ?? [];
+}
+
