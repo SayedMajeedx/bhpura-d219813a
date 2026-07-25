@@ -69,15 +69,13 @@ export function OptimizedVideo({ src, poster, streamIframeUrl, active = true, pr
     </div>;
   }
 
-  // Inactive carousel slides should not mount a video element. Even with
-  // preload="none", browsers may fetch source metadata and posters for every
-  // mounted video, delaying the active slide and the rest of the first screen.
+  // Inactive carousel slides should not mount a video element.
   if (!active && !prepare && resolvedPoster) {
     return <div className={wrapperClassName ?? className}>
       <ResponsiveImage
         src={resolvedPoster}
         preset="hero"
-        sizes="(min-width: 640px) 576px, 88vw"
+        sizes="100vw"
         alt=""
         className={className ?? "h-full w-full object-cover"}
         loading="lazy"
@@ -86,33 +84,41 @@ export function OptimizedVideo({ src, poster, streamIframeUrl, active = true, pr
     </div>;
   }
 
-  // When ImageKit can represent this asset, keep the browser on ImageKit. A
-  // media element may emit a transient error while responsive sources are
-  // being selected or a carousel slide is paused. Falling back to the R2 URL
-  // in that situation downloads the original MP4 in addition to the optimized
-  // rendition and defeats the delivery optimization.
   const sourceKey = optimizedDesktopSrc ? `${optimizedMobileSrc}|${optimizedDesktopSrc}` : src ?? "";
-  return <video
-    ref={videoRef}
-    key={sourceKey}
-    poster={resolvedPoster ?? undefined}
-    muted
-    loop
-    playsInline
-    aria-hidden="true"
-    tabIndex={-1}
-    preload={preload ?? (active || prepare ? "auto" : "none")}
-    disablePictureInPicture
-    className={className}
-    {...props}
-    onError={(event) => {
-      props.onError?.(event);
-    }}
-  >
-    {optimizedDesktopSrc ? <>
-      {optimizedMobileSrc ? <source src={optimizedMobileSrc} media="(max-width: 767px)" /> : null}
-      <source src={optimizedDesktopSrc} />
-    </> : src ? <source src={src} /> : null}
-    <track kind="captions" />
-  </video>;
+  return <div className={`relative ${wrapperClassName ?? ""}`}>
+    {resolvedPoster && (
+      <ResponsiveImage
+        src={resolvedPoster}
+        preset="hero"
+        sizes="100vw"
+        alt=""
+        fetchPriority={active ? "high" : "auto"}
+        loading={active ? "eager" : "lazy"}
+        className={`absolute inset-0 h-full w-full object-cover ${className ?? ""}`}
+      />
+    )}
+    <video
+      ref={videoRef}
+      key={sourceKey}
+      poster={resolvedPoster ?? undefined}
+      muted
+      loop
+      playsInline
+      aria-hidden="true"
+      tabIndex={-1}
+      preload={preload ?? (active ? "metadata" : "none")}
+      disablePictureInPicture
+      className={`relative z-10 ${className ?? "h-full w-full object-cover"}`}
+      {...props}
+      onError={(event) => {
+        props.onError?.(event);
+      }}
+    >
+      {optimizedDesktopSrc ? <>
+        {optimizedMobileSrc ? <source src={optimizedMobileSrc} media="(max-width: 767px)" /> : null}
+        <source src={optimizedDesktopSrc} />
+      </> : src ? <source src={src} /> : null}
+      <track kind="captions" />
+    </video>
+  </div>;
 }

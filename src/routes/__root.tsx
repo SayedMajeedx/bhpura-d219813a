@@ -100,7 +100,7 @@ function RootShell({ children }: { children: ReactNode }) {
   const imageKitEndpoint = getEnvVariable("VITE_IMAGEKIT_URL_ENDPOINT") || "";
 
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="ar" dir="rtl" className="lang-ar" suppressHydrationWarning>
       <head>
         <HeadContent />
         {imageKitEndpoint && (

@@ -13,6 +13,7 @@ const SECURITY_HEADERS = {
   "Strict-Transport-Security": "max-age=63072000; includeSubDomains; preload",
   "X-Content-Type-Options": "nosniff",
   "X-Frame-Options": "DENY",
+  "Cross-Origin-Opener-Policy": "same-origin-allow-popups",
 } as const;
 
 // h3 swallows in-handler throws into a normal 500 Response with body
@@ -93,7 +94,7 @@ export default {
       }
 
       const response = await handler.fetch(request);
-      return withSecurityHeaders(await normalizeCatastrophicSsrResponse(response));
+      return withSecurityHeaders(await normalizeCatastrophicSsrResponse(response), request.url, request.method);
     } catch (error) {
       console.error(error);
       return withSecurityHeaders(
@@ -101,6 +102,8 @@ export default {
           status: 500,
           headers: { "content-type": "text/html; charset=utf-8" },
         }),
+        request.url,
+        request.method,
       );
     }
   },
