@@ -54,31 +54,48 @@ export function StorefrontAnalytics() {
     const gaId = settings.google_analytics_enabled && /^G-[A-Z0-9]+$/.test(settings.google_analytics_id || "") ? settings.google_analytics_id : null;
     const metaId = settings.meta_pixel_enabled && /^\d{5,30}$/.test(settings.meta_pixel_id || "") ? settings.meta_pixel_id : null;
     const w = window as any;
-    // Load GA whenever it is configured so Google can verify the installation.
-    // Consent remains denied until the visitor explicitly enables analytics.
-    if (gaId) {
-      if (!document.getElementById("boutq-ga4")) {
-        const script = document.createElement("script"); script.id = "boutq-ga4"; script.async = true;
-        script.src = `https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(gaId)}`; document.head.appendChild(script);
+
+    const loadScripts = () => {
+      if (gaId) {
+        if (!document.getElementById("boutq-ga4")) {
+          const script = document.createElement("script"); script.id = "boutq-ga4"; script.async = true;
+          script.src = `https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(gaId)}`; document.head.appendChild(script);
+        }
+        w.gtag("js", new Date()); w.gtag("config", gaId, { send_page_view: false });
+        w.gtag("consent", "update", { analytics_storage: effective.analytics ? "granted" : "denied" });
+      } else {
+        w.gtag("consent", "update", { analytics_storage: "denied" });
       }
-      w.gtag("js", new Date()); w.gtag("config", gaId, { send_page_view: false });
-      w.gtag("consent", "update", { analytics_storage: effective.analytics ? "granted" : "denied" });
+      if (effective.marketing && metaId) {
+        if (!w.fbq) {
+          const fbq: any = function () { fbq.callMethod ? fbq.callMethod.apply(fbq, arguments) : fbq.queue.push(arguments); };
+          fbq.queue = []; fbq.loaded = true; fbq.version = "2.0"; w.fbq = fbq;
+        }
+        if (!document.getElementById("boutq-meta-pixel")) {
+          const script = document.createElement("script"); script.id = "boutq-meta-pixel"; script.async = true;
+          script.src = "https://connect.facebook.net/en_US/fbevents.js"; document.head.appendChild(script);
+        }
+        w.fbq("init", metaId);
+      }
+      setStorefrontAnalyticsConfig({ brandId: brand.id, gaId, metaId, analyticsAllowed: Boolean(effective.analytics), marketingAllowed: Boolean(effective.marketing) });
+    };
+
+    // Defer 3rd-party analytics to idle time after critical rendering path
+    let handle: any;
+    if ("requestIdleCallback" in window) {
+      handle = (window as any).requestIdleCallback(loadScripts, { timeout: 3000 });
     } else {
-      w.gtag("consent", "update", { analytics_storage: "denied" });
+      handle = setTimeout(loadScripts, 2500);
     }
-    if (effective.marketing && metaId) {
-      if (!w.fbq) {
-        const fbq: any = function () { fbq.callMethod ? fbq.callMethod.apply(fbq, arguments) : fbq.queue.push(arguments); };
-        fbq.queue = []; fbq.loaded = true; fbq.version = "2.0"; w.fbq = fbq;
+
+    return () => {
+      if ("cancelIdleCallback" in window && typeof handle === "number") {
+        (window as any).cancelIdleCallback(handle);
+      } else {
+        clearTimeout(handle);
       }
-      if (!document.getElementById("boutq-meta-pixel")) {
-        const script = document.createElement("script"); script.id = "boutq-meta-pixel"; script.async = true;
-        script.src = "https://connect.facebook.net/en_US/fbevents.js"; document.head.appendChild(script);
-      }
-      w.fbq("init", metaId);
-    }
-    setStorefrontAnalyticsConfig({ brandId: brand.id, gaId, metaId, analyticsAllowed: Boolean(effective.analytics), marketingAllowed: Boolean(effective.marketing) });
-    return () => setStorefrontAnalyticsConfig(null);
+      setStorefrontAnalyticsConfig(null);
+    };
   }, [brand.id, effective.analytics, effective.marketing, settings.google_analytics_enabled, settings.google_analytics_id, settings.meta_pixel_enabled, settings.meta_pixel_id]);
 
   useEffect(() => {

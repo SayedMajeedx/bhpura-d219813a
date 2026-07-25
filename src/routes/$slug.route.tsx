@@ -424,11 +424,16 @@ function StoreHeader() {
             params={{ slug: brand.slug }}
             className={`flex min-h-11 items-center gap-3 min-w-0 ${align === "center" ? "sm:mx-auto" : ""}`}
             style={{ color: "var(--sf-header-fg)" }}
+            aria-label={displayName}
           >
             {settings.logo_url && (
               <img
                 src={cloudflareImageUrl(settings.logo_url, 320)}
                 alt={displayName}
+                width={165}
+                height={55}
+                fetchPriority="high"
+                decoding="async"
                 className="shrink-0 object-contain"
                 style={{
                   height: logoSize,
@@ -440,7 +445,7 @@ function StoreHeader() {
             )}
 
             <Button asChild variant="ghost" size="sm" className="relative min-h-11 min-w-11 gap-1 hover:bg-black/5" style={{ color: "var(--sf-header-fg)" }}>
-              <Link to="/$slug/wishlist" params={{ slug: brand.slug }}>
+              <Link to="/$slug/wishlist" params={{ slug: brand.slug }} aria-label={t("المفضلة", "Wishlist")}>
                 <Heart className="h-5 w-5" />
                 <span className="hidden sm:inline">{t("المفضلة", "Wishlist")}</span>
                 {wishlistCount > 0 && <span className="absolute -top-1 -right-1 grid h-[18px] min-w-[18px] place-items-center rounded-full px-1 text-[10px] font-semibold" style={{ backgroundColor: "var(--sf-btn-primary-bg)", color: "var(--sf-btn-primary-fg)" }}>{wishlistCount}</span>}
@@ -469,7 +474,7 @@ function StoreHeader() {
               className="min-h-11 min-w-11 gap-1 hover:bg-black/5"
               style={{ color: "var(--sf-header-fg)" }}
               onClick={() => setLang(lang === "ar" ? "en" : "ar")}
-              aria-label="Language switch"
+              aria-label={lang === "ar" ? "تغيير اللغة إلى الإنجليزية" : "Switch language to Arabic"}
             >
               <Languages className="h-4 w-4" />
               <span className="hidden sm:inline">{lang === "ar" ? "English" : "العربية"}</span>
@@ -477,14 +482,14 @@ function StoreHeader() {
 
             {session && isStoreMember ? (
               <Button asChild variant="ghost" size="sm" className="min-h-11 min-w-11 gap-1 hover:bg-black/5" style={{ color: "var(--sf-header-fg)" }}>
-                <Link to="/$slug/account" params={{ slug: brand.slug }} title={session.user?.email ?? ""}>
+                <Link to="/$slug/account" params={{ slug: brand.slug }} title={session.user?.email ?? ""} aria-label={t("لوحة التحكم", "Dashboard")}>
                   <User className="h-4 w-4" />
                   <span className="hidden sm:inline max-w-[120px] truncate">{t("لوحة التحكم", "Dashboard")}</span>
                 </Link>
               </Button>
             ) : (
               <Button asChild variant="ghost" size="sm" className="min-h-11 min-w-11 gap-1 hover:bg-black/5" style={{ color: "var(--sf-header-fg)" }}>
-                <Link to="/$slug/auth" params={{ slug: brand.slug }} search={{ redirect: mounted ? window.location.pathname + window.location.search : "" }}>
+                <Link to="/$slug/auth" params={{ slug: brand.slug }} search={{ redirect: mounted ? window.location.pathname + window.location.search : "" }} aria-label={t("دخول", "Sign in")}>
                   <User className="h-4 w-4" />
                   <span className="hidden sm:inline">{t("دخول", "Sign in")}</span>
                 </Link>
@@ -492,7 +497,7 @@ function StoreHeader() {
             )}
 
             <CartDrawer>
-              <Button variant="ghost" size="sm" className="relative min-h-11 min-w-11 gap-1 hover:bg-black/5" style={{ color: "var(--sf-header-fg)" }}>
+              <Button variant="ghost" size="sm" className="relative min-h-11 min-w-11 gap-1 hover:bg-black/5" style={{ color: "var(--sf-header-fg)" }} aria-label={t("سلة التسوق", "Shopping cart")}>
                 <ShoppingBag className="h-5 w-5" />
                 <span className="hidden sm:inline">{t("السلة", "Cart")}</span>
                 {cartCount > 0 && (
@@ -1247,14 +1252,15 @@ function SearchBar() {
   return (
     <>
       {/* Search Input Trigger inside the page headers */}
-      <div className="relative w-full cursor-pointer" onClick={() => setModalOpen(true)}>
+      <button type="button" aria-label={t("البحث في المتجر", "Search store")} className="relative w-full text-start cursor-pointer block" onClick={() => setModalOpen(true)}>
         <Search className={`absolute top-1/2 -translate-y-1/2 h-4 w-4 opacity-60 ${lang === "ar" ? "right-3" : "left-3"}`} />
         <Input
           readOnly
+          aria-label={t("ابحث عن منتج...", "Search for products...")}
           placeholder={t("ابحث عن منتج...", "Search for products...")}
           className={`h-11 cursor-pointer bg-white/70 dark:bg-black/20 border-black/10 select-none ${lang === "ar" ? "pr-9" : "pl-9"}`}
         />
-      </div>
+      </button>
 
       {/* Premium backdrop-blurred modal dialog */}
       <Dialog open={modalOpen} onOpenChange={setModalOpen}>

@@ -99,6 +99,8 @@ export function OptimizedVideo({ src, poster, streamIframeUrl, active = true, pr
     muted
     loop
     playsInline
+    aria-hidden="true"
+    tabIndex={-1}
     preload={preload ?? (active || prepare ? "auto" : "none")}
     disablePictureInPicture
     className={className}
@@ -111,5 +113,6 @@ export function OptimizedVideo({ src, poster, streamIframeUrl, active = true, pr
       {optimizedMobileSrc ? <source src={optimizedMobileSrc} media="(max-width: 767px)" /> : null}
       <source src={optimizedDesktopSrc} />
     </> : src ? <source src={src} /> : null}
+    <track kind="captions" />
   </video>;
 }
