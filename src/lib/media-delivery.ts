@@ -39,8 +39,14 @@ export function cloudflareImageUrl(source: string, width: number, quality = 82):
   }
 }
 
-export function cloudflareImageSrcSet(source: string, preset: ResponsiveImagePreset, quality = 82): string {
-  return imageWidths(preset).map((width) => `${cloudflareImageUrl(source, width, quality)} ${width}w`).join(", ");
+export function cloudflareImageSrcSet(source: string, preset: ResponsiveImagePreset, quality = 82): string | undefined {
+  if (!source) return undefined;
+  const widths = imageWidths(preset);
+  const urls = widths.map((width) => cloudflareImageUrl(source, width, quality));
+  if (urls.every((u) => u === urls[0])) {
+    return undefined;
+  }
+  return widths.map((w, i) => `${urls[i]} ${w}w`).join(", ");
 }
 
 /**

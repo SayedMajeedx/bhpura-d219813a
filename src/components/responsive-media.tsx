@@ -16,13 +16,14 @@ export function ResponsiveImage({ src, preset = "card", quality = 82, sizes = "1
     : preset === "card" || preset === "product"
       ? { width: largest, height: Math.round(largest * 4 / 3) }
       : { width: largest, height: Math.round(largest * 9 / 16) };
+  const computedSrcSet = fallback ? undefined : cloudflareImageSrcSet(src, preset, quality);
   return <img
     {...props}
     width={props.width ?? intrinsicSize.width}
     height={props.height ?? intrinsicSize.height}
     src={fallback ? src : cloudflareImageUrl(src, largest, quality)}
-    srcSet={fallback ? undefined : cloudflareImageSrcSet(src, preset, quality)}
-    sizes={sizes}
+    srcSet={computedSrcSet || undefined}
+    sizes={computedSrcSet ? sizes : undefined}
     onError={(event) => {
       if (!fallback) setFallback(true);
       onError?.(event);
