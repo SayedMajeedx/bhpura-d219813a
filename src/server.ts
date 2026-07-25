@@ -3,6 +3,7 @@ import "./lib/error-capture";
 import handler from "@tanstack/react-start/server-entry";
 import { consumeLastCapturedError } from "./lib/error-capture";
 import { renderErrorPage } from "./lib/error-page";
+import { handleR2MediaRequest } from "./lib/r2-media-server";
 
 const SECURITY_HEADERS = {
   "Content-Security-Policy":
@@ -81,6 +82,16 @@ export default {
         __CLOUDFLARE_ENV__?: Cloudflare.Env;
       };
       g.__CLOUDFLARE_ENV__ = env;
+
+      const url = new URL(request.url);
+      if (
+        url.hostname === "media.boutq.store" ||
+        url.hostname.endsWith(".media.boutq.store") ||
+        url.pathname.startsWith("/brands/")
+      ) {
+        return await handleR2MediaRequest(request, env);
+      }
+
       const response = await handler.fetch(request);
       return withSecurityHeaders(await normalizeCatastrophicSsrResponse(response));
     } catch (error) {
