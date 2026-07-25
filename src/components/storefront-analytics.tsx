@@ -80,20 +80,33 @@ export function StorefrontAnalytics() {
       setStorefrontAnalyticsConfig({ brandId: brand.id, gaId, metaId, analyticsAllowed: Boolean(effective.analytics), marketingAllowed: Boolean(effective.marketing) });
     };
 
-    // Defer 3rd-party analytics to idle time after critical rendering path
-    let handle: any;
-    if ("requestIdleCallback" in window) {
-      handle = (window as any).requestIdleCallback(loadScripts, { timeout: 3000 });
-    } else {
-      handle = setTimeout(loadScripts, 2500);
-    }
+    // Defer 3rd-party analytics until user interaction or 5s fallback to protect LCP & TBT
+    let loaded = false;
+    let timer: ReturnType<typeof setTimeout>;
+
+    const trigger = () => {
+      if (loaded) return;
+      loaded = true;
+      cleanup();
+      loadScripts();
+    };
+
+    const cleanup = () => {
+      window.removeEventListener("scroll", trigger);
+      window.removeEventListener("pointermove", trigger);
+      window.removeEventListener("touchstart", trigger);
+      window.removeEventListener("click", trigger);
+      clearTimeout(timer);
+    };
+
+    window.addEventListener("scroll", trigger, { passive: true, once: true });
+    window.addEventListener("pointermove", trigger, { passive: true, once: true });
+    window.addEventListener("touchstart", trigger, { passive: true, once: true });
+    window.addEventListener("click", trigger, { passive: true, once: true });
+    timer = setTimeout(trigger, 5000);
 
     return () => {
-      if ("cancelIdleCallback" in window && typeof handle === "number") {
-        (window as any).cancelIdleCallback(handle);
-      } else {
-        clearTimeout(handle);
-      }
+      cleanup();
       setStorefrontAnalyticsConfig(null);
     };
   }, [brand.id, effective.analytics, effective.marketing, settings.google_analytics_enabled, settings.google_analytics_id, settings.meta_pixel_enabled, settings.meta_pixel_id]);

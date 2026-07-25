@@ -304,23 +304,24 @@ function PromoCards() {
           <StorefrontLink
             key={index}
             href={card.href || "#products"}
+            aria-label={title || (lang === "ar" ? "عرض خاص" : "Special offer")}
             className="group relative aspect-[16/9] overflow-hidden rounded-2xl border shadow-sm sm:aspect-[2/1]"
-            style={{ backgroundColor: card.background_color || "#f4f4f4", color: card.text_color || "#111111" }}
+            style={{ backgroundColor: card.background_color || "#f4f4f4", color: card.text_color || "#ffffff" }}
           >
             {card.image_url && (
               <ResponsiveImage
                 src={card.image_url}
                 preset="content"
                 sizes="(min-width: 640px) 50vw, 100vw"
-                alt={title || ""}
+                alt={title || (lang === "ar" ? "بطاقة ترويجية" : "Promo card")}
                 className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                 loading="lazy"
                 decoding="async"
               />
             )}
-            <div className="absolute inset-0 bg-gradient-to-r from-black/55 via-black/20 to-transparent" />
-            <div className="relative flex h-full flex-col justify-end p-6">
-              <h2 className="text-2xl font-semibold sm:text-3xl">{title}</h2>
+            <div className="absolute inset-0 bg-gradient-to-r from-black/65 via-black/30 to-transparent" />
+            <div className="relative flex h-full flex-col justify-end p-6 text-white">
+              {title && <h2 className="text-2xl font-semibold sm:text-3xl">{title}</h2>}
               {subtitle && <p className="mt-1 max-w-md text-sm opacity-90">{subtitle}</p>}
             </div>
           </StorefrontLink>

@@ -711,13 +711,13 @@ type Ctx = { lang: Lang; setLang: (l: Lang) => void; t: (key: string) => string;
 const I18nContext = createContext<Ctx | null>(null);
 
 function readInitial(): Lang {
-  if (typeof window === "undefined") return "en";
+  if (typeof window === "undefined") return "ar";
   const stored = window.localStorage.getItem("lang");
-  return stored === "ar" ? "ar" : "en";
+  return stored === "en" ? "en" : "ar";
 }
 
 export function I18nProvider({ children }: { children: ReactNode }) {
-  const [lang, setLangState] = useState<Lang>("en");
+  const [lang, setLangState] = useState<Lang>("ar");
 
   useEffect(() => { setLangState(readInitial()); }, []);
 

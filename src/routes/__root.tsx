@@ -82,6 +82,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "twitter:image", content: "https://boutq.store/og-placeholder.png" },
     ],
     links: [
+      { rel: "preload", href: "/fonts/zariddisplay.woff2", as: "font", type: "font/woff2", crossOrigin: "anonymous" },
+      { rel: "preload", href: "/fonts/azerextralight.woff2", as: "font", type: "font/woff2", crossOrigin: "anonymous" },
       { rel: "preconnect", href: "https://media.boutq.store" },
       { rel: "dns-prefetch", href: "https://media.boutq.store" },
       { rel: "stylesheet", href: appCss },

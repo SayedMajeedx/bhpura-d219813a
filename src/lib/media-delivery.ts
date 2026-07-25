@@ -104,11 +104,11 @@ export function imageKitVideoUrl(source: string, viewport: "mobile" | "desktop" 
   return `${endpoint}/tr:${transformation}/${assetPath}`;
 }
 
-export function imageKitVideoPosterUrl(source: string): string | null {
+export function imageKitVideoPosterUrl(source: string, width = 640): string | null {
   const assetPath = imageKitAssetPath(source);
   if (!assetPath) return null;
   const endpoint = getImageKitEndpoint();
-  return `${endpoint}/${assetPath}/ik-thumbnail.jpg?tr=w-1280,q-72,f-webp`;
+  return `${endpoint}/${assetPath}/ik-thumbnail.jpg?tr=w-${width},q-65,f-webp`;
 }
 
 export function isLikelyImageUrl(source?: string | null): boolean {

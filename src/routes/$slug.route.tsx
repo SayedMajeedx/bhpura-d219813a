@@ -544,7 +544,7 @@ function AnnouncementBar() {
   const relative = pathname.replace(`/${brand.slug}`, "") || "/";
   const scopeOk = settings.announcement_scope === "all" || (settings.announcement_scope === "home" && relative === "/") || (settings.announcement_scope === "checkout" && relative.startsWith("/checkout")) || (settings.announcement_scope === "catalog" && !relative.startsWith("/checkout") && !relative.startsWith("/account") && !relative.startsWith("/auth"));
   if (!settings.announcement_enabled || !text || dismissed || !audienceOk || !scopeOk) return null;
-  return <div className="relative px-12 py-2 text-center text-sm" style={{ backgroundColor: settings.announcement_bg, color: settings.announcement_fg, fontWeight: settings.announcement_bold ? 700 : 400, fontStyle: settings.announcement_italic ? "italic" : "normal" }}>
+  return <div className="relative px-12 py-2 text-center text-sm font-medium" style={{ backgroundColor: settings.announcement_bg || "#111111", color: settings.announcement_fg || "#ffffff", fontWeight: settings.announcement_bold ? 700 : 500, fontStyle: settings.announcement_italic ? "italic" : "normal" }}>
     <span>{text}</span>
     {settings.announcement_dismissible && <button type="button" className="absolute end-1 top-1/2 grid h-11 w-11 -translate-y-1/2 place-items-center rounded-full hover:bg-white/15" aria-label="Dismiss announcement" onClick={() => { try { sessionStorage.setItem(key, "1"); } catch {} setDismissed(true); }}><X className="h-4 w-4" /></button>}
   </div>;
