@@ -1,4 +1,4 @@
-import { GetObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import { AwsClient } from "aws4fetch";
 
 const MIME_TYPES: Record<string, string> = {
   jpg: "image/jpeg",
@@ -19,7 +19,7 @@ const MIME_TYPES: Record<string, string> = {
 };
 
 function getMimeType(key: string, contentTypeFromR2?: string | null): string {
-  if (contentTypeFromR2 && contentTypeFromR2 !== "application/octet-stream") {
+  if (contentTypeFromR2 && contentTypeFromR2 !== "application/octet-stream" && contentTypeFromR2 !== "text/plain") {
     return contentTypeFromR2;
   }
   const ext = key.split(".").pop()?.toLowerCase() ?? "";
@@ -31,18 +31,19 @@ function sanitizeHeader(val?: string | null): string | undefined {
   return val.trim().replace(/^['"]|['"]$/g, "").trim();
 }
 
-const s3ClientsCache = new Map<string, S3Client>();
+const awsClientsCache = new Map<string, AwsClient>();
 
-function getCachedS3Client(accountId: string, accessKeyId: string, secretAccessKey: string): S3Client {
-  const cacheKey = `${accountId}:${accessKeyId}`;
-  let client = s3ClientsCache.get(cacheKey);
+function getCachedAwsClient(accessKeyId: string, secretAccessKey: string): AwsClient {
+  const cacheKey = `${accessKeyId}:${secretAccessKey}`;
+  let client = awsClientsCache.get(cacheKey);
   if (!client) {
-    client = new S3Client({
+    client = new AwsClient({
+      accessKeyId,
+      secretAccessKey,
       region: "auto",
-      endpoint: `https://${accountId}.r2.cloudflarestorage.com`,
-      credentials: { accessKeyId, secretAccessKey },
+      service: "s3",
     });
-    s3ClientsCache.set(cacheKey, client);
+    awsClientsCache.set(cacheKey, client);
   }
   return client;
 }
@@ -62,7 +63,7 @@ export async function handleR2MediaRequest(
     return new Response("Not Found", { status: 404 });
   }
 
-  const corsHeaders = {
+  const corsHeaders: Record<string, string> = {
     "Access-Control-Allow-Origin": "*",
     "Access-Control-Allow-Methods": "GET, HEAD, OPTIONS",
     "Access-Control-Allow-Headers": "*",
@@ -95,7 +96,7 @@ export async function handleR2MediaRequest(
     console.warn("[R2 Media] Bucket binding lookup failed:", err);
   }
 
-  // 2. Fallback to S3 Client using R2 API Credentials from env
+  // 2. Fallback to lightweight aws4fetch client using R2 API Credentials from env
   try {
     const g = globalThis as any;
     const accountId = sanitizeHeader((env as any).R2_ACCOUNT_ID || g.R2_ACCOUNT_ID);
@@ -104,23 +105,46 @@ export async function handleR2MediaRequest(
     const bucket = sanitizeHeader((env as any).R2_BUCKET_NAME || g.R2_BUCKET_NAME || (env as any).R2_BUCKET || g.R2_BUCKET);
 
     if (accountId && accessKeyId && secretAccessKey && bucket) {
-      const client = getCachedS3Client(accountId, accessKeyId, secretAccessKey);
-      const res = await client.send(new GetObjectCommand({ Bucket: bucket, Key: key }));
-      if (res.Body) {
-        const headers = new Headers(corsHeaders);
-        const mime = getMimeType(key, res.ContentType);
-        headers.set("Content-Type", mime);
-        if (res.ContentLength) headers.set("Content-Length", String(res.ContentLength));
-        if (res.ETag) headers.set("ETag", res.ETag);
+      const client = getCachedAwsClient(accessKeyId, secretAccessKey);
+      const encodedKeyPath = key.split("/").map(encodeURIComponent).join("/");
+      const endpoint = `https://${accountId}.r2.cloudflarestorage.com/${bucket}/${encodedKeyPath}`;
 
-        if (request.method === "HEAD") {
-          return new Response(null, { status: 200, headers });
-        }
+      const r2Res = await client.fetch(endpoint, {
+        method: request.method,
+      });
 
-        return new Response(res.Body as any, { status: 200, headers });
+      if (r2Res.status === 404) {
+        return new Response("Object Not Found", { status: 404, headers: corsHeaders });
       }
+
+      if (!r2Res.ok) {
+        const errText = await r2Res.text().catch(() => "");
+        return new Response(`R2 Fetch Error: ${r2Res.status} ${errText}`, {
+          status: r2Res.status,
+          headers: corsHeaders,
+        });
+      }
+
+      const responseHeaders = new Headers(corsHeaders);
+      const mime = getMimeType(key, r2Res.headers.get("content-type"));
+      responseHeaders.set("Content-Type", mime);
+
+      const len = r2Res.headers.get("content-length");
+      if (len) responseHeaders.set("Content-Length", len);
+
+      const etag = r2Res.headers.get("etag");
+      if (etag) responseHeaders.set("ETag", etag);
+
+      if (request.method === "HEAD") {
+        return new Response(null, { status: 200, headers: responseHeaders });
+      }
+
+      return new Response(r2Res.body, {
+        status: 200,
+        headers: responseHeaders,
+      });
     } else {
-      console.error("[R2 Media] Missing credentials for S3 client:", {
+      console.error("[R2 Media] Missing credentials for aws4fetch client:", {
         hasAccountId: !!accountId,
         hasAccessKeyId: !!accessKeyId,
         hasSecretAccessKey: !!secretAccessKey,
@@ -129,9 +153,6 @@ export async function handleR2MediaRequest(
     }
   } catch (err: any) {
     console.error("[R2 Media] Error fetching asset for key:", key, err);
-    if (err?.name === "NoSuchKey" || err?.$metadata?.httpStatusCode === 404) {
-      return new Response("Object Not Found", { status: 404, headers: corsHeaders });
-    }
     return new Response(`R2 Fetch Error: ${err.message}`, { status: 500, headers: corsHeaders });
   }
 
