@@ -1,5 +1,5 @@
 import { Link, useRouterState, useNavigate, useParams } from "@tanstack/react-router";
-import { LayoutDashboard, Package, Users, ReceiptText, Settings, LogOut, Languages, Menu, Wallet, Megaphone, Shield, Store, Crown, Plug, Tags, FileText, BadgePercent, Mail, Clock as ClockIcon } from "lucide-react";
+import { LayoutDashboard, Package, Users, ReceiptText, Settings, LogOut, Languages, Menu, Wallet, Megaphone, Shield, Store, Crown, Plug, Tags, FileText, BadgePercent, Mail, Clock as ClockIcon, BarChart } from "lucide-react";
 import { useState, useEffect, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -108,13 +108,23 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       }
 
       // Group 1: OVERVIEW
-      items.push({
-        to: "/admin/b/$slug/dashboard",
-        params: { slug: activeSlug },
-        label: t("nav.dashboard"),
-        icon: LayoutDashboard,
-        section: "overview",
-      });
+      items.push(
+        {
+          to: "/admin/b/$slug/dashboard",
+          params: { slug: activeSlug },
+          label: t("nav.dashboard"),
+          icon: LayoutDashboard,
+          section: "overview",
+        },
+        {
+          to: "/admin/b/$slug/reports",
+          params: { slug: activeSlug },
+          label: lang === "ar" ? "التقارير" : "Reports",
+          icon: BarChart,
+          permission: "view_financials",
+          section: "overview",
+        }
+      );
 
       // Group 2: OPERATIONS
       items.push(
