@@ -121,7 +121,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           params: { slug: activeSlug },
           label: lang === "ar" ? "التقارير" : "Reports",
           icon: BarChart,
-          permission: "view_financials",
+          permission: "manage_orders",
           section: "overview",
         }
       );
