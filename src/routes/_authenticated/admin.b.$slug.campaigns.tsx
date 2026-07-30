@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -35,6 +35,14 @@ export const Route = createFileRoute("/_authenticated/admin/b/$slug/campaigns")(
 
 type Customer = { id: string; name: string; phone: string | null };
 type Template = { id: string; name: string; body: string };
+type BulkStatus = "queued" | "sending" | "sent" | "skipped";
+
+function isMobileBrowser() {
+  return (
+    /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) ||
+    window.matchMedia?.("(pointer: coarse)").matches === true
+  );
+}
 
 const CHANNEL = "whatsapp";
 const DEFAULT_EN = "Hi {{customer_name}}, this is {{business_name}}. We have exciting news for you!";
@@ -73,7 +81,7 @@ function CampaignsPage() {
   const [bulkIndex, setBulkIndex] = useState(0);
   const [bulkDelay, setBulkDelay] = useState(2500); // milliseconds
   const [bulkQueue, setBulkQueue] = useState<Customer[]>([]);
-  const [bulkSent, setBulkSent] = useState<Record<string, "queued" | "sending" | "sent" | "skipped">>({});
+  const [bulkSent, setBulkSent] = useState<Record<string, BulkStatus>>({});
   const bulkWindowRef = useRef<Window | null>(null);
 
   const templatesQ = useQuery({
@@ -305,10 +313,19 @@ function CampaignsPage() {
     );
   };
 
-  const buildMessage = (customerName: string) =>
-    message
-      .replace(/\{\{customer_name\}\}/g, customerName || "")
-      .replace(/\{\{business_name\}\}/g, businessName || "");
+  const buildMessage = useCallback(
+    (customerName: string) =>
+      message
+        .replace(/\{\{customer_name\}\}/g, customerName || "")
+        .replace(/\{\{business_name\}\}/g, businessName || ""),
+    [businessName, message],
+  );
+
+  const buildWhatsAppUrl = useCallback((customer: Customer) => {
+    const phone = customer.phone?.replace(/[^\d]/g, "") || "";
+    if (!phone) return null;
+    return `https://wa.me/${phone}?text=${encodeURIComponent(buildMessage(customer.name))}`;
+  }, [buildMessage]);
 
   const send = (c: Customer) => {
     if (!c.phone || !c.phone.trim()) {
@@ -334,7 +351,7 @@ function CampaignsPage() {
       return;
     }
     setBulkQueue(list);
-    const initialSent: Record<string, "queued" | "sending" | "sent" | "skipped"> = {};
+    const initialSent: Record<string, BulkStatus> = {};
     list.forEach((c) => {
       initialSent[c.id] = "queued";
     });
@@ -344,14 +361,48 @@ function CampaignsPage() {
     setBulkOpen(true);
   };
 
-  // Pre-open campaign workspace window under direct user click event (avoids popup blockers)
+  const markBulkRecipientOpened = (customer: Customer, index: number) => {
+    setBulkSent((prev) => ({ ...prev, [customer.id]: "sent" }));
+    setSent((prev) => ({ ...prev, [customer.id]: true }));
+    setBulkIndex(index + 1);
+  };
+
+  // The first WhatsApp URL must be opened synchronously from the user's tap.
+  // Opening about:blank first leaves mobile browsers hidden before the delayed
+  // redirect runs, which prevents the WhatsApp app handoff.
   const handleStartAutomated = () => {
-    try {
-      const win = window.open("about:blank", "whatsapp_campaign_window");
-      bulkWindowRef.current = win;
-    } catch (e) {
-      console.error("Failed to pre-initialize campaign tab", e);
+    const idx = bulkIndex;
+    const customer = bulkQueue[idx];
+    if (!customer) return;
+
+    const url = buildWhatsAppUrl(customer);
+    if (!url) {
+      setBulkSent((prev) => ({ ...prev, [customer.id]: "skipped" }));
+      setBulkIndex(idx + 1);
+      setBulkActive(true);
+      return;
     }
+
+    setBulkSent((prev) => ({ ...prev, [customer.id]: "sending" }));
+
+    if (isMobileBrowser()) {
+      // A direct URL from the tap (rather than a delayed about:blank redirect)
+      // allows iOS and Android to hand off to the native WhatsApp app.
+      markBulkRecipientOpened(customer, idx);
+      setBulkActive(true);
+      window.open(url, "_blank", "noopener,noreferrer");
+      return;
+    }
+
+    const win = window.open(url, "whatsapp_campaign_window");
+    if (!win) {
+      setBulkSent((prev) => ({ ...prev, [customer.id]: "queued" }));
+      toast.error(isAr ? "Ø§Ø³Ù…Ø­ Ø¨Ø§Ù„Ù†ÙˆØ§ÙØ° Ø§Ù„Ù…Ù†Ø¨Ø«Ù‚Ø© Ù„Ø¨Ø¯Ø¡ Ø§Ù„Ø­Ù…Ù„Ø©" : "Allow popups to start the campaign");
+      return;
+    }
+
+    bulkWindowRef.current = win;
+    markBulkRecipientOpened(customer, idx);
     setBulkActive(true);
   };
 
@@ -424,22 +475,26 @@ function CampaignsPage() {
       const customer = q[idx];
       setBulkSent((prev) => ({ ...prev, [customer.id]: "sending" }));
 
-      const phone = customer.phone?.replace(/[^\d]/g, "") || "";
-      if (phone) {
-        const textPayload = buildMessage(customer.name);
-        const url = `https://wa.me/${phone}?text=${encodeURIComponent(textPayload)}`;
+      const url = buildWhatsAppUrl(customer);
+      if (url) {
         
         try {
           // Re-use dedicated workspace tab to bypass standard browser popup blocker policies
           if (bulkWindowRef.current && !bulkWindowRef.current.closed) {
             bulkWindowRef.current.location.href = url;
+          } else if (!isMobileBrowser()) {
+            bulkWindowRef.current = window.open(url, "whatsapp_campaign_window");
           } else {
-            const win = window.open(url, "whatsapp_campaign_window");
-            bulkWindowRef.current = win;
+            setBulkActive(false);
+            setBulkSent((prev) => ({ ...prev, [customer.id]: "queued" }));
+            toast.info(isAr ? "Ø§Ø¶ØºØ· Ø§Ø³ØªØ¦Ù†Ø§Ù Ù„ÙØªØ­ Ø§Ù„Ù…Ø­Ø§Ø¯Ø«Ø© Ø§Ù„ØªØ§Ù„ÙŠØ©" : "Tap Resume to open the next chat");
+            return;
           }
         } catch (err) {
-          const win = window.open(url, "whatsapp_campaign_window");
-          bulkWindowRef.current = win;
+          setBulkActive(false);
+          setBulkSent((prev) => ({ ...prev, [customer.id]: "queued" }));
+          toast.error(isAr ? "ØªØ¹Ø°Ø± ÙØªØ­ ÙˆØ§ØªØ³Ø§Ø¨" : "Could not open WhatsApp");
+          return;
         }
         
         setBulkSent((prev) => ({ ...prev, [customer.id]: "sent" }));
@@ -459,12 +514,12 @@ function CampaignsPage() {
       }
     };
 
-    timeoutId = setTimeout(runNext, 500);
+    timeoutId = setTimeout(runNext, delayRef.current);
 
     return () => {
       if (timeoutId) clearTimeout(timeoutId);
     };
-  }, [bulkActive, bulkMode]);
+  }, [bulkActive, bulkMode, buildWhatsAppUrl, isAr]);
 
   // Handle visibility change tab resumes
   useEffect(() => {
@@ -488,10 +543,13 @@ function CampaignsPage() {
     const customer = q[idx];
     setBulkSent((prev) => ({ ...prev, [customer.id]: "sending" }));
 
-    const phone = customer.phone?.replace(/[^\d]/g, "") || "";
-    if (phone) {
-      const textPayload = buildMessage(customer.name);
-      const url = `https://wa.me/${phone}?text=${encodeURIComponent(textPayload)}`;
+    const url = buildWhatsAppUrl(customer);
+    if (url) {
+      if (isMobileBrowser()) {
+        markBulkRecipientOpened(customer, idx);
+        window.open(url, "_blank", "noopener,noreferrer");
+        return;
+      }
       
       try {
         if (bulkWindowRef.current && !bulkWindowRef.current.closed) {
@@ -499,11 +557,17 @@ function CampaignsPage() {
           try { bulkWindowRef.current.focus(); } catch {}
         } else {
           const win = window.open(url, "whatsapp_campaign_window");
+          if (!win) {
+            setBulkSent((prev) => ({ ...prev, [customer.id]: "queued" }));
+            toast.error(isAr ? "Ø§Ø³Ù…Ø­ Ø¨Ø§Ù„Ù†ÙˆØ§ÙØ° Ø§Ù„Ù…Ù†Ø¨Ø«Ù‚Ø© Ø£Ùˆ Ø­Ø§ÙˆÙ„ Ù…Ø¬Ø¯Ø¯Ù‹Ø§" : "Allow popups or try again");
+            return;
+          }
           bulkWindowRef.current = win;
         }
       } catch (err) {
-        const win = window.open(url, "whatsapp_campaign_window");
-        bulkWindowRef.current = win;
+        setBulkSent((prev) => ({ ...prev, [customer.id]: "queued" }));
+        toast.error(isAr ? "ØªØ¹Ø°Ø± ÙØªØ­ ÙˆØ§ØªØ³Ø§Ø¨" : "Could not open WhatsApp");
+        return;
       }
       
       setBulkSent((prev) => ({ ...prev, [customer.id]: "sent" }));
@@ -1079,7 +1143,7 @@ function CampaignsPage() {
                       onClick={() => {
                         setBulkActive(false);
                         setBulkIndex(0);
-                        const initialSent: Record<string, "queued" | "sending" | "sent" | "skipped"> = {};
+                        const initialSent: Record<string, BulkStatus> = {};
                         bulkQueue.forEach((c) => {
                           initialSent[c.id] = "queued";
                         });
