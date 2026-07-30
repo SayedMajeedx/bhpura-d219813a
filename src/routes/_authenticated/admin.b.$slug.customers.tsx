@@ -19,6 +19,8 @@ import { useBrand } from "@/lib/brand-context";
 import { useRealtimeInvalidate } from "@/hooks/use-realtime-invalidate";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { formatMoney } from "@/lib/format";
+import { buildCustomerCrmStats, type CustomerMetricOrder } from "@/lib/commerce-metrics";
+import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/admin/b/$slug/customers")({
   component: CustomersRoute,
@@ -630,71 +632,17 @@ function CustomersPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("orders")
-        .select("id, customer_id, total, created_at, status")
-        .eq("brand_id", brandId)
-        .in("status", ["confirmed", "paid", "shipped", "completed"]);
+        .select("id, customer_id, total, created_at, status, payment_status, fulfillment_status")
+        .eq("brand_id", brandId);
       if (error) throw error;
-      return data as Array<{ id: string; customer_id: string; total: number; created_at: string; status: string }>;
+      return data as Array<CustomerMetricOrder & { id: string }>;
     },
   });
 
-  const customerCrmStats = useMemo(() => {
-    const map = new Map<string, {
-      totalOrders: number;
-      lifetimeSpend: number;
-      lastOrderDate: string | null;
-      badge: "VIP" | "Churn Risk" | "New Buyer" | "Regular" | null;
-    }>();
-
-    const orders = ordersQ.data ?? [];
-    const nowMs = new Date().getTime();
-    const sixtyDaysMs = 60 * 24 * 60 * 60 * 1000;
-
-    const ordersByCustomer = new Map<string, typeof orders>();
-    orders.forEach((o) => {
-      if (o.customer_id) {
-        if (!ordersByCustomer.has(o.customer_id)) {
-          ordersByCustomer.set(o.customer_id, []);
-        }
-        ordersByCustomer.get(o.customer_id)!.push(o);
-      }
-    });
-
-    ordersByCustomer.forEach((custOrders, customerId) => {
-      const totalOrders = custOrders.length;
-      const lifetimeSpend = custOrders.reduce((sum, o) => sum + Number(o.total || 0), 0);
-      
-      let lastOrderDate: string | null = null;
-      let lastOrderMs = 0;
-      custOrders.forEach((o) => {
-        const ms = new Date(o.created_at).getTime();
-        if (ms > lastOrderMs) {
-          lastOrderMs = ms;
-          lastOrderDate = o.created_at;
-        }
-      });
-
-      let badge: "VIP" | "Churn Risk" | "New Buyer" | "Regular" | null = null;
-      if (lifetimeSpend > 250) {
-        badge = "VIP";
-      } else if (lastOrderMs > 0 && (nowMs - lastOrderMs) > sixtyDaysMs) {
-        badge = "Churn Risk";
-      } else if (totalOrders === 1) {
-        badge = "New Buyer";
-      } else if (totalOrders > 1) {
-        badge = "Regular";
-      }
-
-map.set(customerId, {
-        totalOrders,
-        lifetimeSpend,
-        lastOrderDate,
-        badge,
-      });
-    });
-
-    return map;
-  }, [ordersQ.data]);
+  const customerCrmStats = useMemo(
+    () => buildCustomerCrmStats(ordersQ.data ?? []),
+    [ordersQ.data],
+  );
 
   const del = async (id: string) => {
     const { error } = await supabase.from("customers").delete().eq("id", id);
@@ -717,17 +665,17 @@ map.set(customerId, {
   useEffect(() => setPage(1), [search, regionFilter, rowsPerPage]);
 
   return (
-    <div className="mx-auto max-w-6xl space-y-6 p-4 sm:p-6 lg:p-8 animate-fade-in">
+    <div className="mx-auto max-w-6xl space-y-6 px-4 pb-4 pt-7 sm:p-6 lg:p-8 animate-fade-in">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="font-display text-4xl font-extrabold tracking-tight bg-clip-text bg-gradient-to-r from-slate-900 via-slate-800 to-slate-950 dark:from-slate-50 dark:to-slate-300">{t("customers.title")}</h1>
+          <h1 className="font-display text-3xl font-extrabold tracking-tight bg-clip-text bg-gradient-to-r from-slate-900 via-slate-800 to-slate-950 dark:from-slate-50 dark:to-slate-300 sm:text-4xl">{t("customers.title")}</h1>
           <p className="mt-1.5 text-muted-foreground text-sm max-w-md">{t("customers.subtitle")}</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="grid w-full grid-cols-1 gap-2 sm:flex sm:w-auto sm:items-center">
           <CustomerImporterModal brandId={brandId} onComplete={() => qc.invalidateQueries({ queryKey: ["customers"] })} />
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-              <Button className="shadow-sm transition-all duration-200 hover:shadow hover:scale-[1.01] active:scale-95"><Plus className="h-4 w-4 me-2" /> {t("customers.new")}</Button>
+              <Button className="w-full shadow-sm transition-all duration-200 hover:shadow hover:scale-[1.01] active:scale-95 sm:w-auto"><Plus className="h-4 w-4 me-2" /> {t("customers.new")}</Button>
             </DialogTrigger>
             <CustomerDialog
               customer={null}
@@ -809,10 +757,14 @@ map.set(customerId, {
                           return null;
                         })()}
                       </div>
-                      {c.phone && <div className="mt-1 text-sm text-muted-foreground" dir="ltr">{c.phone}</div>}
-                      {c.email && <div className="break-all text-sm text-muted-foreground">{c.email}</div>}
+                      <div className={`mt-1 flex flex-col ${lang === "ar" ? "items-end" : "items-start"}`}>
+                        {c.phone && <div className="text-sm text-muted-foreground" dir="ltr">{c.phone}</div>}
+                        {c.email && <div className="max-w-full break-all text-sm text-muted-foreground" dir="ltr">{c.email}</div>}
+                      </div>
                       {address && <div className="mt-2 text-xs text-muted-foreground">{address}</div>}
-                      {c.notes && <div className="mt-2 text-xs text-muted-foreground">{c.notes}</div>}
+                       {c.notes && !/(migrated_shopify|(?:^|\|)\s*(?:tags|notes):)/i.test(c.notes) && (
+                         <div className="mt-2 line-clamp-2 text-xs text-muted-foreground">{c.notes}</div>
+                       )}
                       
                       <div className="mt-2 flex items-center gap-3 text-xs border-t border-border/50 pt-2 text-muted-foreground">
                         <span>{lang === "ar" ? "الطلبات:" : "Orders:"} <b className="text-foreground">{stats.totalOrders}</b></span>
@@ -820,9 +772,7 @@ map.set(customerId, {
                         <span>{lang === "ar" ? "الإنفاق:" : "Spend:"} <b className="text-foreground">{formatMoney(stats.lifetimeSpend, currency)}</b></span>
                       </div>
                     </div>
-                    <div className="flex shrink-0 flex-col gap-1" onClick={(event) => event.stopPropagation()}>
-                      <DeleteAction message={t("customers.deleteConfirm")} onConfirm={() => del(c.id)} mobile />
-                    </div>
+                    <ChevronRight className={cn("mt-1 h-5 w-5 shrink-0 text-muted-foreground", lang === "ar" && "rotate-180")} />
                   </div>
                 </Card>
               );
@@ -846,7 +796,9 @@ map.set(customerId, {
                 <th className="p-4 text-center font-semibold text-xs uppercase tracking-wider">{lang === "ar" ? "الطلبات" : "Total Orders"}</th>
                 <th className="p-4 text-center font-semibold text-xs uppercase tracking-wider">{lang === "ar" ? "إجمالي الإنفاق" : "Lifetime Spend"}</th>
                 <th className="p-4 text-center font-semibold text-xs uppercase tracking-wider">{lang === "ar" ? "التصنيف" : "Segment"}</th>
-                <th className="p-4 text-end font-semibold text-xs uppercase tracking-wider"><span className="sr-only">{t("common.actions")}</span></th>
+                <th className="p-4 text-end font-semibold text-xs uppercase tracking-wider">
+                  <span className="sr-only">{lang === "ar" ? "الإجراءات" : "Actions"}</span>
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -856,11 +808,15 @@ map.set(customerId, {
                   <tr key={c.id} tabIndex={0} className="cursor-pointer border-t border-border transition-colors hover:bg-muted/40 focus-visible:bg-muted/40 focus-visible:outline-none" onClick={() => navigate({ to: "/admin/b/$slug/customers/$customerId", params: { slug, customerId: c.id } })} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") navigate({ to: "/admin/b/$slug/customers/$customerId", params: { slug, customerId: c.id } }); }}>
                     <td className="p-4 text-start">
                       <p className="font-medium text-foreground">{c.name}</p>
-                      {c.notes && <p className="text-xs text-muted-foreground mt-1 line-clamp-1 max-w-[200px]">{c.notes}</p>}
+                       {c.notes && !/(migrated_shopify|(?:^|\|)\s*(?:tags|notes):)/i.test(c.notes) && (
+                         <p className="mt-1 max-w-[200px] truncate text-xs text-muted-foreground">{c.notes}</p>
+                       )}
                     </td>
-                    <td className="p-4 text-start text-muted-foreground">
-                      {c.phone && <div className="text-start text-xs font-mono" dir="ltr">{c.phone}</div>}
-                      {c.email && <div className="text-xs truncate max-w-[180px]">{c.email}</div>}
+                    <td className="p-4 text-muted-foreground">
+                      <div className={`flex flex-col ${lang === "ar" ? "items-end" : "items-start"}`}>
+                        {c.phone && <div className="text-xs font-mono" dir="ltr">{c.phone}</div>}
+                        {c.email && <div className="max-w-[180px] truncate text-xs" dir="ltr" title={c.email}>{c.email}</div>}
+                      </div>
                     </td>
                     <td className="p-4 text-center font-medium text-foreground">
                       {stats.totalOrders}

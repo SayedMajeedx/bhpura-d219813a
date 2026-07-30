@@ -26,13 +26,11 @@ export const Route = createFileRoute("/api/public/webhooks/tap")({
           const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
           // 1. Fetch Tap credentials for this brand to make authorized calls
-          const { data: credential, error: credError } = await supabaseAdmin
-            .from("integration_credentials")
-            .select("api_key")
-            .eq("brand_id", brandId)
-            .eq("provider", "tap")
-            .eq("is_active", true)
-            .maybeSingle();
+          const { data: credentialRows, error: credError } = await (supabaseAdmin.rpc as any)(
+            "get_integration_credential_secret",
+            { p_brand_id: brandId, p_provider: "tap" },
+          );
+          const credential = credentialRows?.[0];
 
           if (credError || !credential || !credential.api_key) {
             console.error("[Tap Webhook Auth Error]: Missing/inactive credential for brand", brandId, credError);

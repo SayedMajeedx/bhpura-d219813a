@@ -30,6 +30,8 @@ import {
   Phone,
   MessageCircle,
   MapPin,
+  SlidersHorizontal,
+  X,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import {
@@ -69,11 +71,17 @@ import { Switch } from "@/components/ui/switch";
 import { Sparkles, Upload, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
+  getOrderCustomerContact,
+  getOrderCustomerName,
+  getOrderCustomerPhone,
+} from "@/lib/order-customer-snapshot";
+import {
   DropdownMenu,
   DropdownMenuTrigger,
   DropdownMenuContent,
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
+import { getFulfillmentStage, getOrderWorkflow } from "@/lib/order-workflow";
 
 export const Route = createFileRoute("/_authenticated/admin/b/$slug/orders/")({
   component: OrdersList,
@@ -107,32 +115,32 @@ function deliveryStatusPresentation(status: string | null | undefined, lang: "en
     assigned: {
       en: "Assigned",
       ar: "تم التعيين",
-      className: "bg-slate-100 text-slate-700 ring-slate-200",
+      className: "bg-slate-100 text-slate-800 border border-slate-300 font-semibold",
     },
     out_for_delivery: {
       en: "Out for delivery",
       ar: "خرج للتوصيل",
-      className: "bg-blue-50 text-blue-800 ring-blue-200",
+      className: "bg-blue-100 text-blue-900 border border-blue-300 font-semibold",
     },
     delivered: {
       en: "Delivered",
       ar: "تم التوصيل",
-      className: "bg-emerald-50 text-emerald-800 ring-emerald-200",
+      className: "bg-emerald-100 text-emerald-900 border border-emerald-300 font-semibold",
     },
     failed: {
       en: "Delivery failed",
       ar: "فشل التوصيل",
-      className: "bg-red-50 text-red-800 ring-red-200",
+      className: "bg-rose-100 text-rose-900 border border-rose-300 font-semibold",
     },
     delivery_failed: {
       en: "Delivery failed",
       ar: "فشل التوصيل",
-      className: "bg-red-50 text-red-800 ring-red-200",
+      className: "bg-rose-100 text-rose-900 border border-rose-300 font-semibold",
     },
     returned: {
       en: "Returned",
       ar: "مرتجع",
-      className: "bg-amber-50 text-amber-800 ring-amber-200",
+      className: "bg-amber-100 text-amber-900 border border-amber-300 font-semibold",
     },
   };
   const item = labels[normalized];
@@ -148,19 +156,26 @@ const getFulfillmentBadgeDetails = (
   if (s === "NEEDS_PACKING") {
     return {
       label: lang === "ar" ? "بحاجة للتعبئة" : "Needs Packing",
-      classes: "bg-[#FFF3CD] text-[#856404] border-none font-semibold animate-pulse shadow-sm",
+      classes: "bg-amber-100 text-amber-900 border border-amber-300/80 font-semibold shadow-xs",
     };
   }
   if (s === "READY_FOR_PICKUP") {
     return {
       label: lang === "ar" ? "جاهز للاستلام" : "Ready for Pickup",
-      classes: "bg-[#E0E7FF] text-[#3730A3] border-none font-semibold shadow-sm",
+      classes: "bg-indigo-100 text-indigo-900 border border-indigo-300/80 font-semibold shadow-xs",
     };
   }
-  if (s === "SHIPPED") {
+  if (["SHIPPED", "ASSIGNED", "OUT_FOR_DELIVERY", "READY_FOR_DELIVERY"].includes(s)) {
     return {
-      label: lang === "ar" ? "خرج للتوصيل" : "Out for Delivery",
-      classes: "bg-[#CCE5FF] text-[#004085] border-none font-semibold shadow-sm",
+      label:
+        s === "ASSIGNED"
+          ? lang === "ar"
+            ? "تم التعيين"
+            : "Assigned to Courier"
+          : lang === "ar"
+            ? "خرج للتوصيل"
+            : "Out for Delivery",
+      classes: "bg-sky-100 text-sky-900 border border-sky-300/80 font-semibold shadow-xs",
     };
   }
   if (s === "COMPLETED" || s === "DELIVERED") {
@@ -173,33 +188,39 @@ const getFulfillmentBadgeDetails = (
         : lang === "ar"
           ? "تم التوصيل"
           : "Delivered",
-      classes: "bg-[#E8F5E9] text-[#2E7D32] border-none font-semibold shadow-sm",
+      classes: "bg-emerald-100 text-emerald-900 border border-emerald-300/80 font-semibold shadow-xs",
     };
   }
-  if (s === "CANCELLED") {
+  if (["CANCELLED", "DELIVERY_FAILED", "FAILED", "RETURNED"].includes(s)) {
     return {
-      label: lang === "ar" ? "ملغي" : "Cancelled",
-      classes: "bg-[#F8D7DA] text-[#721C24] border-none shadow-sm",
+      label:
+        s === "RETURNED"
+          ? lang === "ar"
+            ? "مرتجع"
+            : "Returned"
+          : ["DELIVERY_FAILED", "FAILED"].includes(s)
+            ? lang === "ar"
+              ? "فشل التوصيل"
+              : "Delivery Failed"
+            : lang === "ar"
+              ? "ملغي"
+              : "Cancelled",
+      classes: "bg-rose-100 text-rose-900 border border-rose-300/80 font-semibold shadow-xs",
     };
   }
   // ON_HOLD / default
   return {
     label: lang === "ar" ? "قيد الانتظار" : "On Hold",
-    classes: "bg-[#E2E3E5] text-[#383D41] border-none",
+    classes: "bg-slate-200 text-slate-800 border border-slate-300/80 font-semibold shadow-xs",
   };
 };
 
 function normalizedFulfillmentStage(order: any): string {
-  const fulfillment = String(order.fulfillment_status ?? "ON_HOLD").toUpperCase();
-  const orderStatus = String(order.status ?? "").toUpperCase();
-  if (["COMPLETED", "DELIVERED"].includes(fulfillment) || orderStatus === "COMPLETED") {
-    return "completed";
-  }
-  if (fulfillment === "SHIPPED") return "out_for_delivery";
-  if (fulfillment === "READY_FOR_PICKUP") return "ready_for_pickup";
-  if (fulfillment === "NEEDS_PACKING") return "needs_packing";
-  if (fulfillment === "CANCELLED" || orderStatus === "CANCELLED") return "cancelled";
-  return "on_hold";
+  return getFulfillmentStage(order);
+}
+
+function orderNeedsOperatorAction(order: any): boolean {
+  return getOrderWorkflow(order).needsAttention;
 }
 
 const renderPaymentMethodBadge = (paymentMethod: string | null | undefined, lang: "en" | "ar") => {
@@ -211,7 +232,7 @@ const renderPaymentMethodBadge = (paymentMethod: string | null | undefined, lang
   if (isCard) {
     return (
       <div className="mt-1">
-        <span className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-semibold bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-950/30 dark:text-blue-300 dark:border-blue-900 shadow-xs">
+        <span className="inline-flex items-center gap-1 whitespace-nowrap rounded-md px-1.5 py-0.5 text-[10px] font-semibold bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-950/30 dark:text-blue-300 dark:border-blue-900 shadow-xs">
           💳 {lang === "ar" ? "بطاقة (أونلاين)" : "Card (Online)"}
         </span>
       </div>
@@ -220,7 +241,7 @@ const renderPaymentMethodBadge = (paymentMethod: string | null | undefined, lang
   if (isBenefit) {
     return (
       <div className="mt-1">
-        <span className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-semibold bg-violet-50 text-violet-700 border border-violet-200 dark:bg-violet-950/30 dark:text-violet-300 dark:border-violet-900 shadow-xs">
+        <span className="inline-flex items-center gap-1 whitespace-nowrap rounded-md px-1.5 py-0.5 text-[10px] font-semibold bg-violet-50 text-violet-700 border border-violet-200 dark:bg-violet-950/30 dark:text-violet-300 dark:border-violet-900 shadow-xs">
           📲 {lang === "ar" ? "بنفت بي (يدوي)" : "BenefitPay (Manual)"}
         </span>
       </div>
@@ -229,7 +250,7 @@ const renderPaymentMethodBadge = (paymentMethod: string | null | undefined, lang
   if (isCod) {
     return (
       <div className="mt-1">
-        <span className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-300 dark:border-emerald-900 shadow-xs">
+        <span className="inline-flex items-center gap-1 whitespace-nowrap rounded-md px-1.5 py-0.5 text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-300 dark:border-emerald-900 shadow-xs">
           💵 {lang === "ar" ? "الدفع عند الاستلام" : "COD"}
         </span>
       </div>
@@ -338,6 +359,7 @@ function OrdersList() {
   const [fulfillmentStatusFilter, setFulfillmentStatusFilter] = useState("all");
   const [fulfillmentMethodFilter, setFulfillmentMethodFilter] = useState("all");
   const [includeHistorical, setIncludeHistorical] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
 
   // New Quick Tab filter
   const [tabFilter, setTabFilter] = useState<"all" | "unpaid" | "action_required" | "shipped" | "completed">("all");
@@ -490,7 +512,7 @@ function OrdersList() {
   const [sortField, setSortField] = useState<"invoice_number" | "created_at" | "customer" | "status" | "total">("created_at");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
   const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(7);
+  const [pageSize, setPageSize] = useState(20);
 
   // Reset page when sorting, search, filters or page size change
   useEffect(() => {
@@ -591,27 +613,13 @@ function OrdersList() {
         continue;
       }
       
-      const paymentBadge = resolvePaymentStatus(
-        order.payment_status,
-        order.status,
-        Number(order.total),
-        Number(order.advance_paid ?? 0),
-      );
-      const ff = String(order.fulfillment_status || "").toUpperCase();
+      const workflow = getOrderWorkflow(order);
 
       all++;
-      if (paymentBadge !== "paid") {
-        unpaid++;
-      }
-      if (paymentBadge === "paid" && ["NEEDS_PACKING", "ON_HOLD", "needs_packing", "on_hold", "unassigned"].includes(ff)) {
-        action_required++;
-      }
-      if (["SHIPPED", "shipped"].includes(ff)) {
-        shipped++;
-      }
-      if (["COMPLETED", "completed"].includes(ff) || order.status === "completed") {
-        completed++;
-      }
+      if (workflow.awaitingPayment) unpaid++;
+      if (workflow.needsAttention) action_required++;
+      if (workflow.withCourier) shipped++;
+      if (workflow.fulfillment === "completed") completed++;
     }
 
     return { all, unpaid, action_required, shipped, completed };
@@ -629,7 +637,7 @@ function OrdersList() {
         !normalizedSearch ||
         [
           order.invoice_number,
-          order.customers?.name,
+          getOrderCustomerName(order),
           order.status,
           order.payment_method,
           order.digital_delivery_contact,
@@ -674,16 +682,16 @@ function OrdersList() {
 
       // Quick tab routing
       if (tabFilter === "unpaid") {
-        return paymentBadge !== "paid";
+        return getOrderWorkflow(order).awaitingPayment;
       }
       if (tabFilter === "action_required") {
-        return paymentBadge === "paid" && ["NEEDS_PACKING", "ON_HOLD", "needs_packing", "on_hold", "unassigned"].includes(ff);
+        return orderNeedsOperatorAction(order);
       }
       if (tabFilter === "shipped") {
-        return ["SHIPPED", "shipped"].includes(ff);
+        return normalizedFulfillmentStage(order) === "out_for_delivery";
       }
       if (tabFilter === "completed") {
-        return ["COMPLETED", "completed"].includes(ff) || order.status === "completed";
+        return normalizedFulfillmentStage(order) === "completed";
       }
 
       return true; // tabFilter === "all"
@@ -713,8 +721,8 @@ function OrdersList() {
         valB = new Date(b.created_at ?? b.order_date).getTime();
         return sortDirection === "asc" ? valA - valB : valB - valA;
       } else if (sortField === "customer") {
-        valA = a.customers?.name ?? "";
-        valB = b.customers?.name ?? "";
+        valA = getOrderCustomerName(a);
+        valB = getOrderCustomerName(b);
       } else if (sortField === "status") {
         valA = a.status ?? "";
         valB = b.status ?? "";
@@ -757,22 +765,33 @@ function OrdersList() {
       : <ArrowDown className="ms-1.5 h-3.5 w-3.5 text-primary shrink-0 inline" />;
   };
 
-  const unpaidCount = tabCounts.unpaid;
-
-  const openValue = orders
-    .filter((order) => !["cancelled", "completed"].includes(order.status))
-    .reduce((sum, order) => sum + Number(order.total || 0), 0);
-  const currency = orders[0]?.currency ?? "BHD";
-
   const tabsList = [
-    { id: "all", label_en: "All", label_ar: "الكل", count: tabCounts.all, activeColor: "bg-primary text-primary-foreground" },
-    { id: "unpaid", label_en: "Unpaid", label_ar: "غير مدفوع", count: tabCounts.unpaid, activeColor: "bg-red-600 text-white dark:bg-red-950 dark:text-red-200" },
-    { id: "action_required", label_en: "Action Required", label_ar: "مطلوب إجراء", count: tabCounts.action_required, activeColor: "bg-amber-500 text-black dark:bg-amber-950 dark:text-amber-200" },
-    { id: "shipped", label_en: "Out for Delivery", label_ar: "خرج للتوصيل", count: tabCounts.shipped, activeColor: "bg-blue-600 text-white dark:bg-blue-950 dark:text-blue-200" },
-    { id: "completed", label_en: "Delivered / Picked Up", label_ar: "تم التوصيل / الاستلام", count: tabCounts.completed, activeColor: "bg-emerald-600 text-white dark:bg-emerald-950 dark:text-emerald-200" },
+    { id: "action_required", label_en: "Needs attention", label_ar: "مطلوب إجراء", count: tabCounts.action_required, icon: Clock3 },
+    { id: "unpaid", label_en: "Awaiting payment", label_ar: "بانتظار الدفع", count: tabCounts.unpaid, icon: CircleDollarSign },
+    { id: "shipped", label_en: "With courier", label_ar: "مع المندوب", count: tabCounts.shipped, icon: Truck },
+    { id: "completed", label_en: "Completed", label_ar: "مكتملة", count: tabCounts.completed, icon: CheckCircle2 },
+    { id: "all", label_en: "All orders", label_ar: "كل الطلبات", count: tabCounts.all, icon: ReceiptText },
   ] as const;
 
+  const activeFilterCount = [
+    paymentFilter !== "all",
+    fulfillmentStatusFilter !== "all",
+    fulfillmentMethodFilter !== "all",
+    includeHistorical,
+  ].filter(Boolean).length;
+
+  const clearFilters = () => {
+    setSearch("");
+    setPaymentFilter("all");
+    setFulfillmentStatusFilter("all");
+    setFulfillmentMethodFilter("all");
+    setIncludeHistorical(false);
+    setTabFilter("all");
+    setPage(1);
+  };
+
   const renderContextualButton = (o: any) => {
+    const workflow = getOrderWorkflow(o);
     const paymentBadge = resolvePaymentStatus(
       o.payment_status,
       o.status,
@@ -781,19 +800,22 @@ function OrdersList() {
     );
     const isPaid = paymentBadge === "paid";
     const isPartiallyPaid = paymentBadge === "partial";
-    const isUnpaid = !isPaid;
+    const isRefunded = paymentBadge === "refunded";
     const ff = String(o.fulfillment_status || "ON_HOLD").toUpperCase();
+    const orderStatus = String(o.status || "").toUpperCase();
     const isUpdating = updatingOrderId === o.id;
     const isDelivered =
       ["COMPLETED", "DELIVERED"].includes(ff) ||
-      ["COMPLETED", "DELIVERED"].includes(String(o.status || "").toUpperCase());
+      ["COMPLETED", "DELIVERED"].includes(orderStatus);
+    const isCancelled = ff === "CANCELLED" || orderStatus === "CANCELLED";
+    const isOutForDelivery = ["SHIPPED", "ASSIGNED", "OUT_FOR_DELIVERY", "READY_FOR_DELIVERY"].includes(ff);
 
     const method = String(o.payment_method || "").toLowerCase();
-    const isCard = ["card", "apple_pay", "google_pay"].includes(method);
     const isBenefit = ["benefit", "benefitpay", "benefit_pay", "bank_transfer"].includes(method);
     const isCod = ["cash", "cod"].includes(method);
 
     const isPickup = String(o.fulfillment_method || "").toLowerCase() === "pickup";
+    const isDigital = String(o.fulfillment_method || "").toLowerCase() === "digital";
 
     if (isDelivered) {
       return (
@@ -806,6 +828,20 @@ function OrdersList() {
             : lang === "ar"
               ? "تم التوصيل"
               : "Delivered"}
+        </span>
+      );
+    }
+
+    if (isCancelled || isRefunded) {
+      return (
+        <span className="inline-flex items-center rounded-md border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-600 dark:border-slate-800 dark:bg-slate-950/40 dark:text-slate-400">
+          {isRefunded
+            ? lang === "ar"
+              ? "تم الاسترجاع"
+              : "Refunded"
+            : lang === "ar"
+              ? "ملغي"
+              : "Cancelled"}
         </span>
       );
     }
@@ -830,11 +866,21 @@ function OrdersList() {
       }
     };
 
+    if (workflow.nextAction === "resolve_delivery_failure" || workflow.nextAction === "review_order") {
+      return (
+        <Button size="sm" variant="destructive" className="h-8 px-3 text-xs font-semibold" asChild>
+          <Link to="/admin/b/$slug/orders/$id" params={{ slug, id: o.id }}>
+            {lang === "ar" ? "مراجعة الطلب" : "Resolve issue"}
+          </Link>
+        </Button>
+      );
+    }
+
     if (isPickup) {
       // B. STORE PICKUP WORKFLOW
       
       // 1. BenefitPay Manual Validation (Pickup)
-      if (isBenefit && isUnpaid) {
+      if (workflow.nextAction === "validate_payment") {
         return (
           <Button
             size="sm"
@@ -852,7 +898,7 @@ function OrdersList() {
       }
 
       // 2. Card Pickup Preparation
-      if (isPaid && ff === "ON_HOLD") {
+      if (workflow.nextAction === "prepare_pickup" && isPaid) {
         return (
           <Button
             size="sm"
@@ -869,7 +915,7 @@ function OrdersList() {
       }
 
       // 3. Pay at Store Preparation
-      if (isCod && ff === "ON_HOLD") {
+      if (workflow.nextAction === "prepare_pickup" && isCod) {
         return (
           <Button
             size="sm"
@@ -886,19 +932,32 @@ function OrdersList() {
       }
 
       // 4. Pickup Handover
-      if (ff === "READY_FOR_PICKUP") {
-        if (isUnpaid) {
+      if (
+        workflow.nextAction === "hand_over_pickup" ||
+        workflow.nextAction === "collect_and_hand_over"
+      ) {
+        if (workflow.nextAction === "collect_and_hand_over") {
+          const totalAmt = Number(o.total || 0);
+          const paidAmt = Number(o.paid_amount ?? o.advance_paid ?? 0);
+          const remainingBal = Math.max(0, totalAmt - paidAmt);
           return (
             <Button
               size="sm"
-              className="h-8 text-xs px-3 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold dark:bg-emerald-800 dark:hover:bg-emerald-900"
-              disabled={updatingOrderId !== null}
-              onClick={() => handleStatusUpdate(
-                { payment_status: "paid", fulfillment_status: "COMPLETED" },
-                lang === "ar" ? "تم تحصيل المبلغ وتسليم الطلب!" : "Payment collected and order handed over!"
-              )}
+              className="h-8 bg-amber-500 px-3 text-xs font-semibold text-black hover:bg-amber-600"
+              disabled={updatingOrderId !== null || isSubmittingCash}
+              onClick={() => {
+                setCashModalOrder(o);
+                setCashCollectedAmount(remainingBal.toFixed(3));
+                setCashModalNotes("");
+              }}
             >
-              {isUpdating ? <Loader2 className="animate-spin h-3.5 w-3.5" /> : (lang === "ar" ? "تحصيل وتسليم" : "Collect & Hand Over")}
+              {isUpdating ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : lang === "ar" ? (
+                `تحصيل ${formatMoney(remainingBal, o.currency ?? "BHD", locale)} وتسليم`
+              ) : (
+                `Collect BHD ${remainingBal.toFixed(3)} & Hand Over`
+              )}
             </Button>
           );
         } else {
@@ -917,11 +976,11 @@ function OrdersList() {
           );
         }
       }
-    } else {
+    } else if (!isDigital) {
       // A. DELIVERY WORKFLOW
       
       // 1. BenefitPay Manual Validation
-      if (isBenefit && isUnpaid) {
+      if (workflow.nextAction === "validate_payment") {
         return (
           <Button
             size="sm"
@@ -939,7 +998,7 @@ function OrdersList() {
       }
 
       // 2. Packing & Shipping (Card or Validated BenefitPay)
-      if (isPaid && ff === "NEEDS_PACKING") {
+      if (workflow.nextAction === "pack_and_ship" && isPaid) {
         return (
           <Button
             size="sm"
@@ -958,7 +1017,7 @@ function OrdersList() {
       }
 
       // 3. COD Dispatch
-      if (isCod && ff === "ON_HOLD") {
+      if (workflow.nextAction === "pack_and_ship" && isCod) {
         return (
           <Button
             size="sm"
@@ -977,12 +1036,15 @@ function OrdersList() {
       }
 
       // 4. Delivery Handover & Cash Collection Actions (Courier / Driver)
-      if (ff === "SHIPPED" || isCourier) {
+      if (
+        workflow.nextAction === "mark_delivered" ||
+        workflow.nextAction === "collect_and_deliver"
+      ) {
         const totalAmt = Number(o.total || 0);
         const paidAmt = Number(o.paid_amount ?? o.advance_paid ?? 0);
         const remainingBal = Math.max(0, totalAmt - paidAmt);
 
-        if (isPaid || remainingBal <= 0) {
+        if (workflow.nextAction === "mark_delivered") {
           return (
             <Button
               size="sm"
@@ -1045,10 +1107,18 @@ function OrdersList() {
           </Button>
         );
       }
+    } else if (workflow.nextAction === "deliver_digital") {
+      return (
+        <Button size="sm" className="h-8 px-3 text-xs font-semibold" asChild>
+          <Link to="/admin/b/$slug/orders/$id" params={{ slug, id: o.id }}>
+            {lang === "ar" ? "إرسال الطلب الرقمي" : "Deliver digital order"}
+          </Link>
+        </Button>
+      );
     }
 
     // Shipped Track button fallback
-    if (ff === "SHIPPED") {
+    if (isOutForDelivery) {
       return (
         <Button
           size="sm"
@@ -1079,57 +1149,32 @@ function OrdersList() {
   };
 
   return (
-    <div className="mx-auto max-w-7xl space-y-6 p-4 sm:p-6 lg:p-8 animate-fade-in" dir={lang === "ar" ? "rtl" : "ltr"}>
+    <div className="mx-auto max-w-[1500px] space-y-5 px-3 pb-3 pt-6 sm:p-6 lg:p-8 animate-fade-in" dir={lang === "ar" ? "rtl" : "ltr"}>
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="font-display text-4xl font-extrabold tracking-tight bg-clip-text bg-gradient-to-r from-slate-900 via-slate-800 to-slate-950 dark:from-slate-50 dark:to-slate-300">
+          <h1 className="font-display text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
             {t("orders.title")}
           </h1>
-          <p className="mt-1.5 text-muted-foreground text-sm max-w-md">
-            {t("orders.subtitle")}
+          <p className="mt-1 text-sm text-muted-foreground">
+            {lang === "ar" ? "ركّز على الطلب التالي الذي يحتاج إلى إجراء" : "Focus on the next order that needs action"}
           </p>
         </div>
         {!isCourier && (
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex w-full items-center gap-2 shrink-0 sm:w-auto">
             <OrderImporterModal brandId={brandId} onComplete={() => qc.invalidateQueries({ queryKey: ["orders", brandId] })} />
-            <Button onClick={create} className="shadow-sm transition-all duration-200 hover:shadow hover:scale-[1.01] active:scale-95 gap-2">
+            <Button onClick={create} className="h-11 flex-1 gap-2 shadow-sm sm:flex-none">
               <Plus className="h-4 w-4" /> {t("orders.new")}
             </Button>
           </div>
         )}
       </div>
 
-      {!isCourier && (
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          {[
-            [ReceiptText, t("orders.title"), String(orders.length)],
-            [Clock3, lang === "ar" ? "مطلوب إجراء" : "Action Required", String(tabCounts.action_required)],
-            [CircleDollarSign, t("payStatus.unpaid"), String(unpaidCount)],
-            [Truck, t("orders.total"), formatMoney(openValue, currency)],
-          ].map(([Icon, label, value], index) => {
-            const StatIcon = Icon as typeof ReceiptText;
-            return (
-              <Card key={index} className="overflow-hidden border-border/60 shadow-md hover:shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm p-4 transition-all duration-300 hover:-translate-y-0.5">
-                <div className="flex items-center gap-3">
-                  <div className="rounded-xl bg-primary/10 p-2.5 text-primary shadow-inner">
-                    <StatIcon className="h-4 w-4" />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground">{String(label)}</p>
-                    <p className="font-semibold text-lg truncate mt-0.5">{String(value)}</p>
-                  </div>
-                </div>
-              </Card>
-            );
-          })}
-        </div>
-      )}
-
-      {/* Premium Quick Filter Tabs */}
-      <div className="flex flex-wrap gap-1.5 border-b pb-3 select-none overflow-x-auto no-scrollbar">
+      {/* Operational queue: ordered by what a single operator should handle next. */}
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
         {tabsList.map((tab) => {
           const isActive = tabFilter === tab.id;
           const label = lang === "ar" ? tab.label_ar : tab.label_en;
+          const TabIcon = tab.icon;
           return (
             <button
               key={tab.id}
@@ -1138,36 +1183,34 @@ function OrdersList() {
                 setPage(1); // reset pagination when tab changes
               }}
               className={cn(
-                "relative flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold transition-all duration-200 outline-none shrink-0 border border-transparent shadow-sm",
+                "group min-w-0 rounded-xl border px-3 py-2.5 text-start transition-all sm:rounded-2xl sm:py-3",
+                tab.id === "all" && "col-span-2 sm:col-span-1",
                 isActive
-                  ? tab.activeColor
-                  : "bg-card text-card-foreground border-border hover:bg-secondary/80"
+                  ? "border-primary bg-primary text-primary-foreground shadow-md"
+                  : "border-border/70 bg-card hover:border-primary/30 hover:bg-muted/40"
               )}
             >
-              <span>{label}</span>
-              <span
-                className={cn(
-                  "rounded-full px-1.5 py-0.5 text-[10px] font-bold leading-none",
-                  isActive
-                    ? "bg-black/15 text-white dark:bg-white/15 dark:text-white"
-                    : "bg-secondary text-secondary-foreground"
-                )}
-              >
-                {tab.count}
+              <span className="flex items-center justify-between gap-4">
+                <TabIcon className={cn("h-4 w-4", isActive ? "text-primary-foreground" : "text-muted-foreground")} />
+                <span className="text-lg font-semibold tabular-nums sm:text-xl">{tab.count}</span>
               </span>
+              <span className={cn("mt-2 block text-xs font-semibold", !isActive && "text-muted-foreground")}>{label}</span>
             </button>
           );
         })}
       </div>
 
-      <Card className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm p-4 sm:p-5">
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-[minmax(220px,1fr)_170px_180px_170px_auto] lg:items-center">
-          <div className="relative">
+      <Card className="sticky top-2 z-20 border-border/70 bg-background/95 p-3 shadow-lg backdrop-blur supports-[backdrop-filter]:bg-background/85 sm:static sm:rounded-2xl sm:p-4">
+        <div className="flex gap-2">
+          <div className="relative flex-1">
             <Search className="absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
-              className="ps-9"
+              className="h-11 ps-9 sm:min-w-[320px]"
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setPage(1);
+              }}
               placeholder={
                 lang === "ar"
                   ? "ابحث بالرقم أو العميل أو جهة الاتصال"
@@ -1175,6 +1218,30 @@ function OrdersList() {
               }
             />
           </div>
+          <Button
+            type="button"
+            variant={activeFilterCount > 0 ? "default" : "outline"}
+            className="relative h-11 shrink-0 gap-2 lg:hidden"
+            onClick={() => setShowFilters((value) => !value)}
+            aria-expanded={showFilters}
+          >
+            <SlidersHorizontal className="h-4 w-4" />
+            <span className="hidden xs:inline">{lang === "ar" ? "تصفية" : "Filters"}</span>
+            {activeFilterCount > 0 && (
+              <span className="rounded-full bg-background/20 px-1.5 text-[10px] font-bold">{activeFilterCount}</span>
+            )}
+          </Button>
+          {(search || activeFilterCount > 0 || tabFilter !== "all") && (
+            <Button type="button" variant="ghost" size="icon" className="h-11 w-11 shrink-0 lg:hidden" onClick={clearFilters}>
+              <X className="h-4 w-4" />
+              <span className="sr-only">{lang === "ar" ? "مسح عوامل التصفية" : "Clear filters"}</span>
+            </Button>
+          )}
+        </div>
+        <div className={cn(
+          "mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid lg:grid-cols-[170px_180px_170px_auto_auto] lg:items-center",
+          !showFilters && "hidden lg:grid"
+        )}>
           <Select value={paymentFilter} onValueChange={setPaymentFilter}>
             <SelectTrigger>
               <SelectValue />
@@ -1231,9 +1298,15 @@ function OrdersList() {
               {lang === "ar" ? "شمل الأرشيف التاريخي" : "Include Historical"}
             </label>
           </div>
+          <Button type="button" variant="ghost" size="sm" className="hidden justify-self-end text-muted-foreground lg:inline-flex" onClick={clearFilters}>
+            <X className="me-1 h-3.5 w-3.5" />
+            {lang === "ar" ? "مسح" : "Clear"}
+          </Button>
         </div>
-        <p className="mt-2 text-xs text-muted-foreground">
-          {filteredOrders.length} / {orders.length}
+        <p className="mt-2 text-[11px] font-medium text-muted-foreground">
+          {lang === "ar"
+            ? `${filteredOrders.length} طلب مطابق`
+            : `${filteredOrders.length} matching ${filteredOrders.length === 1 ? "order" : "orders"}`}
         </p>
       </Card>
 
@@ -1251,13 +1324,7 @@ function OrdersList() {
           <Button
             variant="ghost"
             className="mt-2"
-            onClick={() => {
-              setSearch("");
-              setPaymentFilter("all");
-              setFulfillmentStatusFilter("all");
-              setFulfillmentMethodFilter("all");
-              setTabFilter("all");
-            }}
+            onClick={clearFilters}
           >
             {lang === "ar" ? "مسح عوامل التصفية" : "Clear filters"}
           </Button>
@@ -1273,7 +1340,7 @@ function OrdersList() {
                 Number((o as any).advance_paid ?? 0),
               );
               const fulfillmentDetails = getFulfillmentBadgeDetails(
-                (o as any).fulfillment_status,
+                getOrderWorkflow(o).fulfillment,
                 lang,
                 (o as any).fulfillment_method,
               );
@@ -1283,35 +1350,38 @@ function OrdersList() {
                 <Card
                   key={o.id}
                   className={cn(
-                    "p-4 transition-all duration-200 relative border border-border bg-card",
-                    isCompleted && "opacity-70 dark:opacity-60"
+                    "relative overflow-hidden rounded-2xl border border-border/70 bg-card p-4 shadow-sm transition-all duration-200",
+                    !isCompleted && tabFilter === "action_required" && "border-s-4 border-s-amber-500"
                   )}
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2">
-                        <Link
-                          to="/admin/b/$slug/orders/$id"
-                          params={{ slug, id: o.id }}
-                          className="text-lg font-semibold text-primary hover:underline"
-                        >
-                          #{o.invoice_number}
-                        </Link>
-                        <span className="text-xs text-muted-foreground">
-                          {formatDate(o.created_at ?? o.order_date, locale)}
-                        </span>
-                      </div>
-                      <div className="mt-1 text-xs font-medium text-muted-foreground">
+                      <div className="flex items-start justify-between gap-3">
                         <div>
-                          {o.customers?.name ?? (
+                          <Link
+                            to="/admin/b/$slug/orders/$id"
+                            params={{ slug, id: o.id }}
+                            className="text-lg font-semibold text-primary hover:underline"
+                          >
+                            #{o.invoice_number}
+                          </Link>
+                          <p className="mt-0.5 text-[11px] text-muted-foreground">
+                            {formatDate(o.created_at ?? o.order_date, locale)}
+                          </p>
+                        </div>
+                        <div className="text-end text-base font-bold tabular-nums">
+                          {formatMoney(Number(o.total), o.currency)}
+                        </div>
+                      </div>
+                      <div className="mt-3 border-t border-border/60 pt-3 text-xs text-muted-foreground">
+                        <div className="text-sm font-semibold text-foreground">
+                          {getOrderCustomerName(o) || (
                             <span className="text-muted-foreground italic">
                               {t("orders.noCustomer")}
                             </span>
                           )}
                         </div>
-                        {renderPaymentMethodBadge(o.payment_method, lang)}
-                        <CustomerContactActions customer={o.customers} lang={lang} />
-                        <DeliveryAddressSnapshot customer={o.customers} lang={lang} />
+                        <CustomerContactActions customer={getOrderCustomerContact(o)} lang={lang} />
                         <OrderItemsSummary items={o.order_items} lang={lang} />
                       </div>
                       
@@ -1332,20 +1402,19 @@ function OrdersList() {
                         >
                           {fulfillmentDetails.label}
                         </span>
+                        {renderPaymentMethodBadge(o.payment_method, lang)}
                       </div>
 
-                      <div className="mt-4 flex items-center justify-between gap-2 pt-2 border-t border-border/50">
-                        <div className="font-semibold text-sm">
-                          {formatMoney(Number(o.total), o.currency)}
-                        </div>
-                        <div className="flex items-center gap-1.5">
+                      <div className="mt-4 flex items-center gap-2 border-t border-border/50 pt-3">
+                        <div className="min-w-0 flex-1 [&>*]:w-full [&>*]:justify-center">
                           {renderContextualButton(o)}
+                        </div>
                           
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                               <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0">
                                 <MoreHorizontal className="h-4 w-4" />
-                                <span className="sr-only">Open menu</span>
+                                <span className="sr-only">{lang === "ar" ? "فتح قائمة إجراءات الطلب" : "Open order actions"}</span>
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
@@ -1370,7 +1439,6 @@ function OrdersList() {
                               )}
                             </DropdownMenuContent>
                           </DropdownMenu>
-                        </div>
                       </div>
                     </div>
                   </div>
@@ -1379,19 +1447,19 @@ function OrdersList() {
             })}
           </div>
 
-          <Card className="hidden overflow-hidden sm:block border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm">
-            <div className="overflow-x-auto">
-              <table className="w-full table-auto text-sm">
+          <Card className="hidden overflow-hidden rounded-2xl border border-border/70 bg-card shadow-sm sm:block">
+            <div className="max-h-[calc(100vh-220px)] overflow-auto">
+              <table className="w-full min-w-[1120px] table-fixed text-sm">
                 <colgroup>
                   <col className="w-[8%]" />
-                  <col className="w-[12%]" />
-                  <col className="w-[24%]" />
-                  <col className="w-[15%]" />
-                  <col className="w-[15%]" />
                   <col className="w-[11%]" />
+                  <col className="w-[25%]" />
+                  <col className="w-[17%]" />
+                  <col className="w-[14%]" />
+                  <col className="w-[10%]" />
                   <col className="w-[15%]" />
                 </colgroup>
-                <thead className="bg-muted/40 border-b select-none text-xs uppercase tracking-wider text-muted-foreground font-semibold">
+                <thead className="sticky top-0 z-10 border-b bg-background/95 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground backdrop-blur select-none">
                   <tr>
                     <th className="p-4 text-start font-semibold cursor-pointer hover:bg-muted/60 transition-colors" onClick={() => toggleSort("invoice_number")}>
                       <span className="flex items-center">{t("orders.invoice")} {renderSortIcon("invoice_number")}</span>
@@ -1419,7 +1487,7 @@ function OrdersList() {
                       Number((o as any).advance_paid ?? 0),
                     );
                     const fulfillmentDetails = getFulfillmentBadgeDetails(
-                      (o as any).fulfillment_status,
+                      getOrderWorkflow(o).fulfillment,
                       lang,
                       (o as any).fulfillment_method,
                     );
@@ -1429,8 +1497,8 @@ function OrdersList() {
                       <tr
                         key={o.id}
                         className={cn(
-                          "border-t border-border hover:bg-secondary/30 transition-all duration-200",
-                          isCompleted && "opacity-70 dark:opacity-60"
+                          "group border-t border-border/70 transition-colors hover:bg-muted/40",
+                          isCompleted && "bg-emerald-50/20 dark:bg-emerald-950/10"
                         )}
                       >
                         <td className="p-4 font-semibold">
@@ -1447,32 +1515,31 @@ function OrdersList() {
                         </td>
                         <td className="p-4 font-medium">
                           <div>
-                            {o.customers?.name ?? (
+                            {getOrderCustomerName(o) || (
                               <span className="text-muted-foreground italic">
                                 {t("orders.noCustomer")}
                               </span>
                             )}
                           </div>
-                          {renderPaymentMethodBadge(o.payment_method, lang)}
-                          <CustomerContactActions customer={o.customers} lang={lang} />
-                          <DeliveryAddressSnapshot customer={o.customers} lang={lang} />
+                          <CustomerContactActions customer={getOrderCustomerContact(o)} lang={lang} />
                           <OrderItemsSummary items={o.order_items} lang={lang} />
                         </td>
                         <td className="p-4">
                           <span
                             className={cn(
-                              "text-[10px] uppercase tracking-wider px-2.5 py-1 rounded-full font-bold border",
+                              "inline-flex whitespace-nowrap text-[10px] uppercase tracking-wider px-2.5 py-1 rounded-full font-bold border",
                               PAYMENT_BADGE_CLASSES[paymentBadge]
                             )}
                           >
                             {t(`payStatus.${paymentBadge}`)}
                           </span>
+                          <div className="mt-1.5">{renderPaymentMethodBadge(o.payment_method, lang)}</div>
                         </td>
                         <td className="p-4">
                           <div className="flex flex-col gap-1.5 items-start">
                             <span
                               className={cn(
-                                "text-[10px] uppercase tracking-wider px-2.5 py-1 rounded-full font-bold border",
+                                "inline-flex whitespace-nowrap text-[10px] uppercase tracking-wider px-2.5 py-1 rounded-full font-bold border",
                                 fulfillmentDetails.classes
                               )}
                             >
@@ -1529,7 +1596,7 @@ function OrdersList() {
                               <DropdownMenuTrigger asChild>
                                 <Button variant="ghost" size="icon" className="h-8 w-8">
                                   <MoreHorizontal className="h-4 w-4" />
-                                  <span className="sr-only">Open menu</span>
+                                  <span className="sr-only">{lang === "ar" ? "فتح قائمة إجراءات الطلب" : "Open order actions"}</span>
                                 </Button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align={lang === "ar" ? "start" : "end"}>
@@ -1565,7 +1632,7 @@ function OrdersList() {
           </Card>
 
           {/* Pagination Controls */}
-          <div className="flex flex-wrap items-center justify-between gap-4 p-4 mt-4 bg-card rounded-lg border border-border text-sm select-none">
+          <div className="mt-4 flex flex-col items-center justify-between gap-3 rounded-2xl border border-border/70 bg-card p-3 text-sm shadow-sm select-none sm:flex-row sm:p-4">
             <div className="flex items-center gap-2">
               <span className="text-muted-foreground text-xs sm:text-sm">
                 {lang === "ar" ? "الطلبات لكل صفحة:" : "Orders per page:"}
@@ -1573,11 +1640,9 @@ function OrdersList() {
               <Select value={String(pageSize)} onValueChange={(v) => setPageSize(Number(v))}>
                 <SelectTrigger className="h-8 w-20 text-xs"><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="7">7</SelectItem>
                   <SelectItem value="10">10</SelectItem>
-                  <SelectItem value="25">25</SelectItem>
+                  <SelectItem value="20">20</SelectItem>
                   <SelectItem value="50">50</SelectItem>
-                  <SelectItem value="100">100</SelectItem>
                 </SelectContent>
               </Select>
               <span className="text-muted-foreground text-xs ms-2">
@@ -1590,14 +1655,14 @@ function OrdersList() {
             <div className="flex items-center gap-1">
               <Button variant="outline" size="sm" className="h-8 w-8 p-0" onClick={() => setPage((p) => Math.max(p - 1, 1))} disabled={page === 1}>
                 {lang === "ar" ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
-                <span className="sr-only">Previous page</span>
+                <span className="sr-only">{lang === "ar" ? "الصفحة السابقة" : "Previous page"}</span>
               </Button>
               <div className="text-xs px-2 text-muted-foreground">
                 {lang === "ar" ? `صفحة ${page} من ${totalPages}` : `Page ${page} of ${totalPages}`}
               </div>
               <Button variant="outline" size="sm" className="h-8 w-8 p-0" onClick={() => setPage((p) => Math.min(p + 1, totalPages))} disabled={page === totalPages}>
                 {lang === "ar" ? <ChevronLeft className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-                <span className="sr-only">Next page</span>
+                <span className="sr-only">{lang === "ar" ? "الصفحة التالية" : "Next page"}</span>
               </Button>
             </div>
           </div>
@@ -1643,9 +1708,9 @@ function OrdersList() {
                 </div>
                 <div className="mt-1 text-xs text-muted-foreground flex flex-col gap-0.5">
                   <div className="font-semibold text-foreground text-sm flex items-center gap-1.5">
-                    <span>{selectedFulfillOrder.customers?.name || (lang === "ar" ? "عميل زائر" : "Customer")}</span>
-                    {selectedFulfillOrder.customers?.phone && (
-                      <span className="text-xs font-normal text-muted-foreground">({selectedFulfillOrder.customers.phone})</span>
+                    <span>{getOrderCustomerName(selectedFulfillOrder) || (lang === "ar" ? "عميل زائر" : "Customer")}</span>
+                    {getOrderCustomerPhone(selectedFulfillOrder) && (
+                      <span className="text-xs font-normal text-muted-foreground">({getOrderCustomerPhone(selectedFulfillOrder)})</span>
                     )}
                   </div>
                   <DeliveryAddressSnapshot customer={selectedFulfillOrder.customers} lang={lang} />
@@ -1898,7 +1963,7 @@ function OrdersList() {
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-muted-foreground">{lang === "ar" ? "العميل:" : "Customer:"}</span>
-                  <span className="font-semibold">{cashModalOrder.customers?.name || (lang === "ar" ? "عميل" : "Customer")}</span>
+                  <span className="font-semibold">{getOrderCustomerName(cashModalOrder) || (lang === "ar" ? "عميل" : "Customer")}</span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-muted-foreground">{lang === "ar" ? "إجمالي الطلب:" : "Total Amount:"}</span>
@@ -2300,7 +2365,10 @@ function OrderImporterModal({ brandId, onComplete }: { brandId: string; onComple
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" className="border border-primary/20 hover:border-primary/50 text-xs font-semibold px-4 py-2.5 rounded-xl transition-all shadow-sm flex items-center gap-2">
+        <Button
+          variant="outline"
+          className="hidden h-11 items-center gap-2 whitespace-nowrap rounded-xl border-primary/20 px-4 text-xs font-semibold shadow-sm transition-all hover:border-primary/50 sm:inline-flex"
+        >
           <Sparkles className="h-3.5 w-3.5 text-primary animate-pulse" />
           {isAr ? "استيراد طلبات سابقة" : "Import Past Orders"}
         </Button>

@@ -31,13 +31,11 @@ export const Route = createFileRoute("/api/public/payments/tap-redirect")({
           const brandSlug = brand.slug;
 
           // 2. Fetch Tap credentials to verify the payment status
-          const { data: credential, error: credError } = await supabaseAdmin
-            .from("integration_credentials")
-            .select("api_key")
-            .eq("brand_id", brandId)
-            .eq("provider", "tap")
-            .eq("is_active", true)
-            .maybeSingle();
+          const { data: credentialRows, error: credError } = await (supabaseAdmin.rpc as any)(
+            "get_integration_credential_secret",
+            { p_brand_id: brandId, p_provider: "tap" },
+          );
+          const credential = credentialRows?.[0];
 
           if (credError || !credential || !credential.api_key) {
             throw new Error("Tap Payments integration is not active or configured.");

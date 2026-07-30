@@ -23,6 +23,7 @@ import { useProfile } from "@/lib/profile-context";
 import { useBrand } from "@/lib/brand-context";
 import { useRealtimeInvalidate } from "@/hooks/use-realtime-invalidate";
 import { useMemo } from "react";
+import { getOrderCustomerName } from "@/lib/order-customer-snapshot";
 
 export const Route = createFileRoute("/_authenticated/admin/b/$slug/dashboard")({
   component: Dashboard,
@@ -104,7 +105,7 @@ function Dashboard() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("orders")
-        .select("id, invoice_number, created_at, currency, total, status, customer_id, customers(name), payment_method, order_items(id, variant_id, quantity, unit_price, line_total)")
+        .select("id, invoice_number, created_at, currency, total, status, customer_id, customer_name_snapshot, customer_email_snapshot, customer_phone_snapshot, customers(name), payment_method, order_items(id, variant_id, quantity, unit_price, line_total)")
         .eq("brand_id", brandId)
         .in("status", ["confirmed", "paid", "shipped", "completed"])
         .order("created_at", { ascending: false });
@@ -120,7 +121,7 @@ function Dashboard() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("orders")
-        .select("id, invoice_number, created_at, currency, total, status, payment_status, customers(name)")
+        .select("id, invoice_number, created_at, currency, total, status, payment_status, customer_name_snapshot, customer_email_snapshot, customer_phone_snapshot, customers(name)")
         .eq("brand_id", brandId)
         .order("created_at", { ascending: false })
         .order("invoice_number", { ascending: false })
@@ -539,15 +540,17 @@ function Dashboard() {
           const Icon = k.icon;
           return (
             <Card key={k.label} className={`relative overflow-hidden p-6 transition-all duration-300 bg-gradient-to-br ${k.bg} hover:shadow-xl hover:-translate-y-1 border border-border/60 shadow-md rounded-2xl bg-card/40 backdrop-blur-sm ${k.border}`}>
-              <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <p className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground/80">{k.label}</p>
-                  <p className="text-2xl sm:text-3xl font-display font-extrabold text-foreground mt-2.5 truncate">{k.value}</p>
-                  <p className="text-xs text-muted-foreground/90 font-medium mt-1 truncate">{k.subValue}</p>
+              <div className="min-w-0">
+                <div className="flex min-h-10 items-start justify-between gap-3">
+                  <p className="pt-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground/80">{k.label}</p>
+                  <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-100/80 shadow-sm dark:bg-slate-800/80 ${k.color}`}>
+                    <Icon className="h-5 w-5" />
+                  </div>
                 </div>
-                <div className={`h-10 w-10 shrink-0 rounded-xl bg-slate-100/80 dark:bg-slate-800/80 flex items-center justify-center shadow-sm ${k.color}`}>
-                  <Icon className="h-5 w-5" />
-                </div>
+                <p className="mt-2.5 whitespace-nowrap font-display text-[clamp(1.65rem,2.15vw,2.25rem)] font-extrabold leading-none tracking-tight text-foreground tabular-nums">
+                  {k.value}
+                </p>
+                <p className="mt-2 text-xs font-medium leading-snug text-muted-foreground/90">{k.subValue}</p>
               </div>
             </Card>
           );
@@ -639,8 +642,8 @@ function Dashboard() {
                     <Link to="/admin/b/$slug/orders/$id" params={{ slug, id: o.id }} className="min-w-0 truncate">
                       <span className="text-primary font-bold hover:underline">#{o.invoice_number}</span>
                       <span className="text-muted-foreground"> · {formatDate(o.created_at, locale)}</span>
-                      {o.customers?.name && (
-                        <span className="text-foreground/90 font-medium block sm:inline sm:ms-2">· {o.customers.name}</span>
+                      {getOrderCustomerName(o) && (
+                        <span className="text-foreground/90 font-medium block sm:inline sm:ms-2">· {getOrderCustomerName(o)}</span>
                       )}
                     </Link>
                     <span className="shrink-0 font-bold text-foreground font-mono">{formatMoney(Number(o.total), o.currency, locale)}</span>

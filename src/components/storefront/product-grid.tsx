@@ -99,7 +99,7 @@ export function ProductGrid({
             type="button"
             onClick={() => toggleMobileCols("2")}
             aria-label={t("عرض شبكة ثنائية", "Dense 2-Column Grid")}
-            className={`p-2 rounded-lg border transition-all duration-200 ${
+            className={`grid h-11 w-11 place-items-center rounded-lg border transition-all duration-200 ${
               mobileCols === "2"
                 ? "bg-neutral-900 text-white border-neutral-900 shadow-sm"
                 : "bg-white text-neutral-600 border-neutral-200 hover:bg-neutral-50"
@@ -111,7 +111,7 @@ export function ProductGrid({
             type="button"
             onClick={() => toggleMobileCols("1")}
             aria-label={t("عرض قائمة عمودية", "Immersive 1-Column List")}
-            className={`p-2 rounded-lg border transition-all duration-200 ${
+            className={`grid h-11 w-11 place-items-center rounded-lg border transition-all duration-200 ${
               mobileCols === "1"
                 ? "bg-neutral-900 text-white border-neutral-900 shadow-sm"
                 : "bg-white text-neutral-600 border-neutral-200 hover:bg-neutral-50"

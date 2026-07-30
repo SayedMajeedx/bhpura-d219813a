@@ -88,7 +88,12 @@ function createPublicSupabaseClient() {
   if (!url || !key) throw new Error("Missing Supabase public configuration");
   return createClient<Database>(url, key, {
     global: { fetch: createSupabaseFetch(key) },
-    auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
+    auth: {
+      storageKey: 'boutq-public-anonymous-auth',
+      persistSession: false,
+      autoRefreshToken: false,
+      detectSessionInUrl: false,
+    },
   });
 }
 

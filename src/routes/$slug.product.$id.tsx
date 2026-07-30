@@ -17,6 +17,7 @@ import {
   fetchProductDetail,
   fetchRecommendationCatalog,
 } from "@/lib/storefront-queries";
+import { uploadPublicMedia } from "@/lib/r2-upload";
 
 export const Route = createFileRoute("/$slug/product/$id")({
   loader: async ({ params }) => {
@@ -714,7 +715,7 @@ export function ProductDetail({ splatId }: { splatId?: string } = {}) {
                         key={color}
                         type="button"
                         onClick={() => { setSelectedColor(color); setErrorMsg(null); }}
-                        className={`h-9 w-9 rounded-full border-2 transition-all flex items-center justify-center relative ${
+                        className={`h-11 w-11 rounded-full border-2 transition-all flex items-center justify-center relative ${
                           active ? "scale-110 shadow-sm" : "border-transparent hover:scale-105"
                         } ${oos ? "opacity-45 cursor-not-allowed" : ""}`}
                         style={ringStyle}
@@ -759,7 +760,7 @@ export function ProductDetail({ splatId }: { splatId?: string } = {}) {
                         key={sz}
                         type="button"
                         onClick={() => { setSelectedSize(sz); setErrorMsg(null); }}
-                        className={`min-h-10 px-4 py-1.5 rounded-lg border text-sm font-medium transition-all ${
+                        className={`min-h-11 px-4 py-2 rounded-lg border text-sm font-medium transition-all ${
                           active ? "shadow-sm border-transparent" : "border-input bg-background"
                         } ${oos ? "line-through opacity-45 cursor-not-allowed bg-neutral-100 dark:bg-neutral-800 text-muted-foreground border-dashed" : "hover:border-foreground/45"}`}
                         style={style}
@@ -786,7 +787,7 @@ export function ProductDetail({ splatId }: { splatId?: string } = {}) {
                         key={fb}
                         type="button"
                         onClick={() => { setSelectedFabric(fb); setErrorMsg(null); }}
-                        className={`min-h-10 px-4 py-1.5 rounded-lg border text-sm font-medium transition-all ${
+                        className={`min-h-11 px-4 py-2 rounded-lg border text-sm font-medium transition-all ${
                           active ? "shadow-sm border-transparent" : "border-input bg-background"
                         } ${oos ? "line-through opacity-45 cursor-not-allowed bg-neutral-100 dark:bg-neutral-800 text-muted-foreground border-dashed" : "hover:border-foreground/45"}`}
                         style={style}
@@ -945,10 +946,12 @@ export function ProductDetail({ splatId }: { splatId?: string } = {}) {
           <div className="mb-4">
             <div className="text-sm font-medium mb-2">{t("الكمية", "Quantity")}</div>
             <div className="inline-flex items-center border rounded-lg">
-              <button className="px-3 py-2" onClick={() => setQty((q) => Math.max(1, q - 1))}>−</button>
+              <button type="button" aria-label={t("تقليل الكمية", "Decrease quantity")} className="grid h-11 w-11 place-items-center" onClick={() => setQty((q) => Math.max(1, q - 1))}>−</button>
               <span className="px-4">{qty}</span>
               <button
-                className="px-3 py-2 disabled:opacity-40"
+                type="button"
+                aria-label={t("زيادة الكمية", "Increase quantity")}
+                className="grid h-11 w-11 place-items-center disabled:opacity-40"
                 disabled={qty >= maxStock}
                 onClick={() => setQty((q) => Math.min(maxStock, q + 1))}
               >

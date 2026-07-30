@@ -52,17 +52,6 @@ export async function handleR2MediaRequest(
   request: Request,
   env: Cloudflare.Env
 ): Promise<Response> {
-  if (request.method !== "GET" && request.method !== "HEAD") {
-    return new Response("Method Not Allowed", { status: 405 });
-  }
-
-  const url = new URL(request.url);
-  const key = url.pathname.replace(/^\/+/, "");
-
-  if (!key || !key.startsWith("brands/")) {
-    return new Response("Not Found", { status: 404 });
-  }
-
   const corsHeaders: Record<string, string> = {
     "Access-Control-Allow-Origin": "*",
     "Access-Control-Allow-Methods": "GET, HEAD, OPTIONS",
@@ -72,6 +61,16 @@ export async function handleR2MediaRequest(
 
   if (request.method === "OPTIONS") {
     return new Response(null, { status: 204, headers: corsHeaders });
+  }
+  if (request.method !== "GET" && request.method !== "HEAD") {
+    return new Response("Method Not Allowed", { status: 405 });
+  }
+
+  const url = new URL(request.url);
+  const key = url.pathname.replace(/^\/+/, "");
+
+  if (!key || !key.startsWith("brands/")) {
+    return new Response("Not Found", { status: 404 });
   }
 
   // 1. Try native Cloudflare Worker R2 Bucket Binding if bound

@@ -1,6 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
-import { DeleteObjectCommand, DeleteObjectsCommand, ListObjectsV2Command, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
-import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import { AwsClient } from "aws4fetch";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
@@ -77,7 +76,41 @@ function sanitizeValue(val: string | undefined): string | undefined {
   return val.trim().replace(/^['"]|['"]$/g, "").trim();
 }
 
-export function r2Client(): { client: S3Client; bucket: string; publicBaseUrl: string } {
+type R2PutInput = {
+  Bucket?: string;
+  Key?: string;
+  Body?: unknown;
+  ContentType?: string;
+  CacheControl?: string;
+};
+
+class R2CompatClient {
+  constructor(
+    readonly signer: AwsClient,
+    readonly endpoint: string,
+  ) {}
+
+  async send(command: { input?: R2PutInput }): Promise<void> {
+    const input = command?.input;
+    if (!input?.Bucket || !input.Key) throw new Error("INVALID_R2_PUT_COMMAND");
+    const response = await this.signer.fetch(r2ObjectUrl(this.endpoint, input.Bucket, input.Key), {
+      method: "PUT",
+      headers: {
+        ...(input.ContentType ? { "Content-Type": input.ContentType } : {}),
+        ...(input.CacheControl ? { "Cache-Control": input.CacheControl } : {}),
+      },
+      body: input.Body as BodyInit | null | undefined,
+    });
+    if (!response.ok) throw new Error(`R2 upload failed (${response.status})`);
+  }
+}
+
+function r2ObjectUrl(endpoint: string, bucket: string, key: string): string {
+  const encodedKey = key.split("/").map(encodeURIComponent).join("/");
+  return `${endpoint}/${encodeURIComponent(bucket)}/${encodedKey}`;
+}
+
+export function r2Client(): { client: R2CompatClient; bucket: string; publicBaseUrl: string } {
   let env: any = null;
   try {
     if (getEventFn) {
@@ -113,15 +146,39 @@ export function r2Client(): { client: S3Client; bucket: string; publicBaseUrl: s
     );
   }
 
+  const endpoint = `https://${accountId}.r2.cloudflarestorage.com`;
+  const signer = new AwsClient({ accessKeyId, secretAccessKey, region: "auto", service: "s3" });
   return {
-    client: new S3Client({
-      region: "auto",
-      endpoint: `https://${accountId}.r2.cloudflarestorage.com`,
-      credentials: { accessKeyId, secretAccessKey },
-    }),
+    client: new R2CompatClient(signer, endpoint),
     bucket,
     publicBaseUrl,
   };
+}
+
+function r2Connection(): { signer: AwsClient; endpoint: string; bucket: string; publicBaseUrl: string } {
+  const config = r2Client();
+  return {
+    signer: config.client.signer,
+    endpoint: config.client.endpoint,
+    bucket: config.bucket,
+    publicBaseUrl: config.publicBaseUrl,
+  };
+}
+
+export async function createR2PresignedPutUrl(
+  key: string,
+  contentType: string,
+  expiresIn = 300,
+): Promise<{ uploadUrl: string; publicUrl: string }> {
+  const { signer, endpoint, bucket, publicBaseUrl } = r2Connection();
+  const unsignedUrl = new URL(r2ObjectUrl(endpoint, bucket, key));
+  unsignedUrl.searchParams.set("X-Amz-Expires", String(expiresIn));
+  const signedRequest = await signer.sign(unsignedUrl, {
+    method: "PUT",
+    headers: { "Content-Type": contentType },
+    aws: { signQuery: true },
+  });
+  return { uploadUrl: signedRequest.url, publicUrl: `${publicBaseUrl}/${key}` };
 }
 
 export const createR2UploadUrl = createServerFn({ method: "POST" })
@@ -141,15 +198,19 @@ export const createR2UploadUrl = createServerFn({ method: "POST" })
     if (data.size > maxSize) throw new Error("FILE_TOO_LARGE");
     if (isVideo && !["hero", "product"].includes(data.kind)) throw new Error("UNSUPPORTED_FILE_TYPE");
 
-    const { client, bucket, publicBaseUrl } = r2Client();
+    const { signer, endpoint, bucket, publicBaseUrl } = r2Connection();
     const key = `brands/${data.brandId}/${data.kind}/${crypto.randomUUID()}.${extension}`;
-    const uploadUrl = await getSignedUrl(client, new PutObjectCommand({
-      Bucket: bucket,
-      Key: key,
-      ContentType: data.contentType,
-      CacheControl: "public, max-age=31536000, immutable",
-    }), { expiresIn: 300 });
-    return { uploadUrl, publicUrl: `${publicBaseUrl}/${key}`, key };
+    const unsignedUrl = new URL(r2ObjectUrl(endpoint, bucket, key));
+    unsignedUrl.searchParams.set("X-Amz-Expires", "300");
+    const signedRequest = await signer.sign(unsignedUrl, {
+      method: "PUT",
+      headers: {
+        "Content-Type": data.contentType,
+        "Cache-Control": "public, max-age=31536000, immutable",
+      },
+      aws: { signQuery: true },
+    });
+    return { uploadUrl: signedRequest.url, publicUrl: `${publicBaseUrl}/${key}`, key };
   });
 
 const DeleteInput = z.object({
@@ -167,8 +228,9 @@ export const deleteR2Object = createServerFn({ method: "POST" })
     ]);
     if (!canAccess || !isAdmin) throw new Error("FORBIDDEN");
     if (!data.key.startsWith(`brands/${data.brandId}/`)) throw new Error("INVALID_OBJECT_KEY");
-    const { client, bucket } = r2Client();
-    await client.send(new DeleteObjectCommand({ Bucket: bucket, Key: data.key }));
+    const { signer, endpoint, bucket } = r2Connection();
+    const response = await signer.fetch(r2ObjectUrl(endpoint, bucket, data.key), { method: "DELETE" });
+    if (!response.ok && response.status !== 404) throw new Error(`R2 delete failed (${response.status})`);
     return { deleted: true };
   });
 
@@ -182,23 +244,34 @@ export const purgeBrandR2Objects = createServerFn({ method: "POST" })
     const { data: isSuperAdmin, error } = await context.supabase.rpc("is_super_admin");
     if (error || !isSuperAdmin) throw new Error("FORBIDDEN");
 
-    const { client, bucket } = r2Client();
+    const { signer, endpoint, bucket } = r2Connection();
     const prefix = `brands/${data.brandId}/`;
     let continuationToken: string | undefined;
     let deleted = 0;
     do {
-      const listed = await client.send(new ListObjectsV2Command({
-        Bucket: bucket,
-        Prefix: prefix,
-        ContinuationToken: continuationToken,
-        MaxKeys: 1000,
-      }));
-      const objects = (listed.Contents ?? []).flatMap((object) => object.Key ? [{ Key: object.Key }] : []);
-      if (objects.length) {
-        await client.send(new DeleteObjectsCommand({ Bucket: bucket, Delete: { Objects: objects, Quiet: true } }));
-        deleted += objects.length;
+      const listUrl = new URL(`${endpoint}/${encodeURIComponent(bucket)}`);
+      listUrl.searchParams.set("list-type", "2");
+      listUrl.searchParams.set("prefix", prefix);
+      listUrl.searchParams.set("max-keys", "1000");
+      if (continuationToken) listUrl.searchParams.set("continuation-token", continuationToken);
+      const listed = await signer.fetch(listUrl);
+      if (!listed.ok) throw new Error(`R2 list failed (${listed.status})`);
+      const xml = await listed.text();
+      const keys = [...xml.matchAll(/<Key>([\s\S]*?)<\/Key>/g)].map((match) =>
+        match[1].replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">"),
+      );
+      for (let index = 0; index < keys.length; index += 20) {
+        const batch = keys.slice(index, index + 20);
+        await Promise.all(batch.map(async (key) => {
+          const response = await signer.fetch(r2ObjectUrl(endpoint, bucket, key), { method: "DELETE" });
+          if (!response.ok && response.status !== 404) throw new Error(`R2 delete failed (${response.status})`);
+        }));
+        deleted += batch.length;
       }
-      continuationToken = listed.IsTruncated ? listed.NextContinuationToken : undefined;
+      const truncated = /<IsTruncated>true<\/IsTruncated>/.test(xml);
+      continuationToken = truncated
+        ? xml.match(/<NextContinuationToken>([\s\S]*?)<\/NextContinuationToken>/)?.[1]
+        : undefined;
     } while (continuationToken);
     return { deleted, prefix };
   });

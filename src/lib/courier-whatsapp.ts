@@ -25,6 +25,8 @@ export function generateCourierWhatsAppUrl(input: {
 
   // Customer delivery address
   const cust = input.order.customers || input.order.customer || {};
+  const customerName = input.order.customer_name_snapshot || cust.name;
+  const customerPhone = input.order.customer_phone_snapshot || cust.phone;
   const addrParts = [
     cust.address_line,
     cust.area || cust.city,
@@ -52,8 +54,8 @@ export function generateCourierWhatsAppUrl(input: {
     msg = `مرحباً ${input.courierName} 👋\n` +
           `تم إسناد طلب جديد لك:\n\n` +
           `📌 *رقم الطلب:* #${invNum}\n` +
-          `👤 *العميل:* ${cust.name || "عميل"}\n` +
-          `📞 *هاتف العميل:* ${cust.phone || "غير محدد"}\n` +
+          `👤 *العميل:* ${customerName || "عميل"}\n` +
+          `📞 *هاتف العميل:* ${customerPhone || "غير محدد"}\n` +
           `📍 *العنوان:* ${addr}\n` +
           `📦 *عدد المنتجات:* ${itemCount} صنف\n` +
           `💰 *المبلغ المطلوب تحصيله:* ${amountDue > 0 ? `${amountDue.toFixed(3)} ${cur}` : "مدفوع بالكامل ✅"}\n\n` +
@@ -62,8 +64,8 @@ export function generateCourierWhatsAppUrl(input: {
     msg = `Hi ${input.courierName} 👋\n` +
           `A new order has been assigned to you:\n\n` +
           `📌 *Order #:* #${invNum}\n` +
-          `👤 *Customer:* ${cust.name || "Customer"}\n` +
-          `📞 *Phone:* ${cust.phone || "N/A"}\n` +
+          `👤 *Customer:* ${customerName || "Customer"}\n` +
+          `📞 *Phone:* ${customerPhone || "N/A"}\n` +
           `📍 *Address:* ${addr}\n` +
           `📦 *Items Count:* ${itemCount}\n` +
           `💰 *Amount to Collect:* ${amountDue > 0 ? `${amountDue.toFixed(3)} ${cur}` : "Fully Paid ✅"}\n\n` +

@@ -54,12 +54,18 @@ import { CourierWhatsAppModal } from "@/components/courier/CourierWhatsAppModal"
 import { formatDate, formatMoney, formatOrderStatus } from "@/lib/format";
 import { useT, useI18n } from "@/lib/i18n";
 import {
+  getOrderCustomerEmail,
+  getOrderCustomerName,
+  getOrderCustomerPhone,
+} from "@/lib/order-customer-snapshot";
+import {
   regionLabel,
   formatAddressLine,
   formatAddressDetailed,
   type StructuredAddress,
 } from "@/lib/bahrain-regions";
 import { printThermalReceipt } from "@/lib/thermal-print";
+import { cn } from "@/lib/utils";
 import {
   resolvePaymentStatus,
   PAYMENT_BADGE_CLASSES,
@@ -223,11 +229,11 @@ function normalizeWhatsAppNumber(value: string | null | undefined) {
 
 function fillCourierMessage(template: string, order: any, brandName: string) {
   return template
-    .replaceAll("{{customer_name}}", order.customers?.name || "Customer")
+    .replaceAll("{{customer_name}}", getOrderCustomerName(order) || "Customer")
     .replaceAll("{{invoice_number}}", String(order.invoice_number ?? ""))
     .replaceAll("{{brand_name}}", brandName)
     .replaceAll("{{total}}", formatMoney(Number(order.total ?? 0), order.currency || "BHD"))
-    .replaceAll("{{customer_phone}}", String(order.customers?.phone ?? ""));
+    .replaceAll("{{customer_phone}}", getOrderCustomerPhone(order));
 }
 
 function CourierOrderView({ order, slug, onUpdated }: { order: any; slug: string; onUpdated: () => void | Promise<void> }) {
@@ -262,7 +268,7 @@ function CourierOrderView({ order, slug, onUpdated }: { order: any; slug: string
   });
   const updateStatus = async (status: string) => {
     const phone = status === "out_for_delivery"
-      ? normalizeWhatsAppNumber(order.customers?.phone)
+      ? normalizeWhatsAppNumber(getOrderCustomerPhone(order))
       : "";
     // Open synchronously from the click gesture so Safari/iOS and other mobile
     // browsers do not treat the WhatsApp handoff as a blocked popup.
@@ -373,8 +379,8 @@ function CourierOrderView({ order, slug, onUpdated }: { order: any; slug: string
           </div>
         </div>
         <div className="grid sm:grid-cols-2 gap-4 rounded-xl border p-4 [&>div:nth-child(3)]:hidden">
-          <div><p className="text-xs text-muted-foreground">{lang === "ar" ? "العميل" : "Customer"}</p><p className="font-semibold">{order.customers?.name || "—"}</p></div>
-          <div><p className="text-xs text-muted-foreground">{lang === "ar" ? "الهاتف" : "Phone"}</p><a dir="ltr" className="font-semibold underline" href={`tel:${order.customers?.phone || ""}`}>{order.customers?.phone || "—"}</a></div>
+          <div><p className="text-xs text-muted-foreground">{lang === "ar" ? "العميل" : "Customer"}</p><p className="font-semibold">{getOrderCustomerName(order) || "—"}</p></div>
+          <div><p className="text-xs text-muted-foreground">{lang === "ar" ? "الهاتف" : "Phone"}</p><a dir="ltr" className="font-semibold underline" href={`tel:${getOrderCustomerPhone(order)}`}>{getOrderCustomerPhone(order) || "—"}</a></div>
           <div className="sm:col-span-2"><p className="text-xs text-muted-foreground">{lang === "ar" ? "عنوان التوصيل" : "Delivery address"}</p><p className="font-medium">{address || selectedAddress?.address || order.customers?.address || "—"}</p></div>
           {isCodOrHasDue && <div className={`sm:col-span-2 rounded-lg p-3 ${order.cod_collected_at ? "bg-emerald-50 text-emerald-900" : "bg-amber-50 text-amber-900"}`}><strong>{order.cod_collected_at ? (lang === "ar" ? "تم استلام المبلغ" : "Cash received") : (lang === "ar" ? "تحصيل عند التسليم" : "Collect on delivery")}</strong>: {formatMoney(order.cod_collected_at ? Number(order.cod_collected_amount || 0) : amountDue, currency)}</div>}
         </div>
@@ -1345,8 +1351,8 @@ function OrderDetail() {
       invoiceNumber: order.invoice_number,
       orderDate: order.order_date,
       status: statusLabel,
-      customerName: order.customers?.name ?? null,
-      customerPhone: order.customers?.phone ?? null,
+      customerName: getOrderCustomerName(order) || null,
+      customerPhone: getOrderCustomerPhone(order) || null,
       paymentMethod: paymentLabel || null,
       items: items.map((i) => ({
         description: i.description,
@@ -1395,7 +1401,7 @@ function OrderDetail() {
   const isPickup = String(order?.fulfillment_method || "").toLowerCase() === "pickup";
 
   return (
-    <div className="mx-auto max-w-[1500px] p-4 sm:p-6 lg:p-8 animate-fade-in" dir={lang === "ar" ? "rtl" : "ltr"}>
+    <div className="mx-auto max-w-[1500px] p-4 pb-24 sm:p-6 lg:p-8 animate-fade-in" dir={lang === "ar" ? "rtl" : "ltr"}>
       <div className="no-print mb-4 flex flex-wrap items-center justify-between gap-3">
         <Link
           to="/admin/b/$slug/orders"
@@ -1404,7 +1410,7 @@ function OrderDetail() {
         >
           <ArrowLeft className="h-4 w-4" /> {t("orderDetail.back")}
         </Link>
-        <div className="flex flex-wrap gap-2">
+        <div className={cn("flex flex-wrap gap-2", !isReadOnly && "hidden sm:flex")}>
           {!isCreationMode && (
             <>
               <SendInvoiceDialog
@@ -1553,7 +1559,18 @@ function OrderDetail() {
                   </SelectContent>
                 </Select>
               </div>
-              <div className="lg:hidden">
+              <details className="group col-span-1 rounded-xl border border-border/70 bg-muted/20 sm:col-span-2 lg:hidden">
+                <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 px-3 py-2.5 text-sm font-semibold [&::-webkit-details-marker]:hidden">
+                  <span>{lang === "ar" ? "تعديل الدفع وحالة الطلب" : "Edit payment & order workflow"}</span>
+                  <span className="text-xs font-normal text-muted-foreground group-open:hidden">
+                    {t(`payStatus.${order.payment_status ?? "unpaid"}`)}
+                  </span>
+                  <span className="hidden text-xs text-muted-foreground group-open:inline">
+                    {lang === "ar" ? "إغلاق" : "Close"}
+                  </span>
+                </summary>
+                <div className="grid grid-cols-1 gap-3 border-t border-border/60 p-3 sm:grid-cols-2">
+              <div>
                 <Label>{t("orderDetail.orderDate")}</Label>
                 <Input
                   type="date"
@@ -1561,7 +1578,7 @@ function OrderDetail() {
                   onChange={(e) => setOrder({ ...order, order_date: e.target.value })}
                 />
               </div>
-              <div className="lg:hidden">
+              <div>
                 <Label>{t("orderDetail.status")}</Label>
                 <Select
                   value={order.status}
@@ -1585,7 +1602,7 @@ function OrderDetail() {
                   </SelectContent>
                 </Select>
               </div>
-              <div className="lg:hidden">
+              <div>
                 <Label>{t("orderDetail.paymentMethod")}</Label>
                 <Select
                   value={order.payment_method ?? "none"}
@@ -1609,7 +1626,7 @@ function OrderDetail() {
                 </Select>
               </div>
 
-              <div className="lg:hidden col-span-1 sm:col-span-2 border-t border-dashed border-border pt-3 mt-1 space-y-3">
+              <div className="col-span-1 space-y-3 border-t border-dashed border-border pt-3 sm:col-span-2">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {/* Payment block */}
                   <div className="space-y-1.5">
@@ -1717,6 +1734,8 @@ function OrderDetail() {
                   </div>
                 )}
               </div>
+                </div>
+              </details>
             </div>
             {order.customer_id &&
               (() => {
@@ -2817,6 +2836,29 @@ function OrderDetail() {
         </div>
       </fieldset>
 
+      {!isReadOnly && (
+        <div className="no-print fixed inset-x-0 bottom-0 z-40 border-t bg-background/95 p-3 shadow-[0_-12px_35px_-22px_rgba(0,0,0,.45)] backdrop-blur sm:hidden">
+          <div className="mx-auto flex max-w-[1500px] gap-2">
+            {!isCreationMode && (
+              <div className="min-w-0 flex-1 [&>button]:w-full">
+                <SendInvoiceDialog
+                  order={order}
+                  totals={totals}
+                  settings={settingsQ.data}
+                  currency={currency}
+                />
+              </div>
+            )}
+            <Button onClick={save} disabled={saving} className="min-w-0 flex-[1.25]">
+              {saving ? <Loader2 className="me-2 h-4 w-4 animate-spin" /> : <Save className="me-2 h-4 w-4" />}
+              {isCreationMode
+                ? lang === "ar" ? "إنشاء وحفظ" : "Create & Save"
+                : t("common.save")}
+            </Button>
+          </div>
+        </div>
+      )}
+
       <div className="no-print mb-4 rounded-xl border bg-card">
         <button
           type="button"
@@ -3226,8 +3268,8 @@ function InvoicePreview({
               >
                 {L.billTo}
               </p>
-              <p className="font-medium">{order.customers.name}</p>
-              {settings.invoice_show_customer_contact !== false && order.customers.phone && (
+              <p className="font-medium">{getOrderCustomerName(order)}</p>
+              {settings.invoice_show_customer_contact !== false && getOrderCustomerPhone(order) && (
                 <p
                   dir="ltr"
                   className="text-sm"
@@ -3237,16 +3279,16 @@ function InvoicePreview({
                     textAlign: isRTL ? "right" : "left",
                   }}
                 >
-                  {num(order.customers.phone)}
+                  {num(getOrderCustomerPhone(order))}
                 </p>
               )}
-              {settings.invoice_show_customer_contact !== false && order.customers.email && (
+              {settings.invoice_show_customer_contact !== false && getOrderCustomerEmail(order) && (
                 <p
                   dir="ltr"
                   className="text-sm"
                   style={{ opacity: 0.75, textAlign: isRTL ? "right" : "left" }}
                 >
-                  {order.customers.email}
+                  {getOrderCustomerEmail(order)}
                 </p>
               )}
               {(() => {
@@ -3671,9 +3713,9 @@ function SendInvoiceDialog({
 
   const vars = useMemo(
     () => ({
-      customer_name: order?.customers?.name ?? "there",
-      customer_email: order?.customers?.email ?? "",
-      customer_phone: order?.customers?.phone ?? "",
+      customer_name: getOrderCustomerName(order) || "there",
+      customer_email: getOrderCustomerEmail(order),
+      customer_phone: getOrderCustomerPhone(order),
       business_name: brandFor("en", settings?.business_name),
       invoice_number: String(order?.invoice_number ?? ""),
       date: formatDate(order?.created_at ?? order?.order_date, "en-BH"),
@@ -3705,11 +3747,11 @@ function SendInvoiceDialog({
   // Refresh fields from customer + selected template whenever dialog opens or selection/order changes
   useEffect(() => {
     if (!open) return;
-    setPhone(order?.customers?.phone ?? "");
+    setPhone(getOrderCustomerPhone(order));
     const tpl = templatesQ.data?.find((t) => t.id === selectedId);
     const rawBody = tpl?.body ?? defaultBody();
     setMessage(renderTemplate(rawBody, vars));
-  }, [open, selectedId, templatesQ.data, vars, order?.customers?.phone]);
+  }, [open, selectedId, templatesQ.data, vars, order]);
 
   // Auto-pick default template once loaded
   useEffect(() => {

@@ -268,8 +268,16 @@ function EmailActivityCard({ brandId, isAr }: { brandId: string; isAr: boolean }
   };
 
   const eventLabel = (event: string) => {
+    const arabicEvents: Record<string, string> = {
+      order_placed: "تم استلام الطلب",
+      benefit_payment_approved: "تم اعتماد دفعة بنفت",
+      benefit_payment_rejected: "تم رفض دفعة بنفت",
+      order_cancelled: "تم إلغاء الطلب",
+      order_delivered: "تم توصيل الطلب",
+    };
+    if (isAr && arabicEvents[event]) return arabicEvents[event];
     const key = event.replaceAll("_", " ");
-    return isAr ? key : key.replace(/\b\w/g, (letter) => letter.toUpperCase());
+    return key.replace(/\b\w/g, (letter) => letter.toUpperCase());
   };
   const providerLabel = (provider: string | null) => {
     if (provider === "resend_customer_email" || provider === "resend") return "Resend";
@@ -399,14 +407,14 @@ function EmailActivityCard({ brandId, isAr }: { brandId: string; isAr: boolean }
             <div className="flex items-center gap-1">
               <Button variant="outline" size="sm" className="h-8 w-8 p-0" onClick={() => setPage((p) => Math.max(p - 1, 1))} disabled={page === 1}>
                 {isAr ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
-                <span className="sr-only">Previous page</span>
+                <span className="sr-only">{isAr ? "الصفحة السابقة" : "Previous page"}</span>
               </Button>
               <div className="text-xs px-2 text-muted-foreground">
                 {isAr ? `صفحة ${page} من ${totalPages}` : `Page ${page} of ${totalPages}`}
               </div>
               <Button variant="outline" size="sm" className="h-8 w-8 p-0" onClick={() => setPage((p) => Math.min(p + 1, totalPages))} disabled={page === totalPages}>
                 {isAr ? <ChevronLeft className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-                <span className="sr-only">Next page</span>
+                <span className="sr-only">{isAr ? "الصفحة التالية" : "Next page"}</span>
               </Button>
             </div>
           </div>

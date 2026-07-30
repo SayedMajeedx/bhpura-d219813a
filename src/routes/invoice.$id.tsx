@@ -4,6 +4,11 @@ import { useState } from "react";
 import { formatDate, formatMoney } from "@/lib/format";
 import { formatAddressDetailed, regionLabel, type StructuredAddress } from "@/lib/bahrain-regions";
 import { resolvePaymentStatus, PAYMENT_BADGE_CLASSES, PAYMENT_BADGE_LABEL } from "@/lib/payment-status";
+import {
+  getOrderCustomerEmail,
+  getOrderCustomerName,
+  getOrderCustomerPhone,
+} from "@/lib/order-customer-snapshot";
 
 export const Route = createFileRoute("/invoice/$id")({
   ssr: false,
@@ -207,9 +212,9 @@ function PublicInvoice() {
             {order.customers && (
               <div className="mb-8" style={{ textAlign: "start" }}>
                 <p className={`text-xs mb-1 ${isRTL ? "" : "uppercase tracking-wider"}`} style={{ opacity: 0.6, letterSpacing: isRTL ? "normal" : undefined }}>{L.billTo}</p>
-                <p className="font-medium">{order.customers.name}</p>
-                {showContact && order.customers.phone && <p dir="ltr" className="text-sm" style={{ opacity: 0.75, unicodeBidi: "isolate", textAlign: isRTL ? "right" : "left" }}>{order.customers.phone}</p>}
-                {showContact && order.customers.email && <p dir="ltr" className="text-sm" style={{ opacity: 0.75, textAlign: isRTL ? "right" : "left" }}>{order.customers.email}</p>}
+                <p className="font-medium">{getOrderCustomerName(order)}</p>
+                {showContact && getOrderCustomerPhone(order) && <p dir="ltr" className="text-sm" style={{ opacity: 0.75, unicodeBidi: "isolate", textAlign: isRTL ? "right" : "left" }}>{getOrderCustomerPhone(order)}</p>}
+                {showContact && getOrderCustomerEmail(order) && <p dir="ltr" className="text-sm" style={{ opacity: 0.75, textAlign: isRTL ? "right" : "left" }}>{getOrderCustomerEmail(order)}</p>}
                 {!showFulfillment && (addrLine || legacyRegion) && (
                   <div className="mt-3 pt-3 border-t border-neutral-200">
                     <p className={`text-xs mb-1 ${isRTL ? "" : "uppercase tracking-wider"}`} style={{ opacity: 0.6, letterSpacing: isRTL ? "normal" : undefined }}>{L.delivery}</p>

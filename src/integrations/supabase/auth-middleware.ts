@@ -379,79 +379,24 @@ export async function getGeminiCredentials(
   }
 
   if (resolvedBrandId) {
-    // Try secure Postgres RPC with resolved brand_id using user's client
-    try {
-      const { data, error: rpcErr } = await supabase.rpc("get_gemini_credential", {
-        p_brand_id: resolvedBrandId
-      });
-      
-      if (rpcErr) {
-        traces.push(`[RPC] rpc err: ${rpcErr.message} (code: ${rpcErr.code})`);
-      } else {
-        traces.push(`[RPC] rpc returned ${data?.length ?? 0} rows`);
-        if (data && data.length > 0) {
-          const integration = data[0];
-          traces.push(`[RPC] integration: has_key=${!!integration?.api_key}, base_url=${integration?.base_url}`);
-          if (integration?.api_key) {
-            apiKey = integration.api_key;
-            if (integration.base_url) {
-              model = integration.base_url.trim();
-            }
-            traces.push(`[RPC] Key loaded successfully via RPC!`);
-            return { apiKey, model, diagnostics: traces.join(" | ") };
-          }
-        }
-      }
-    } catch (rpcEx: any) {
-      traces.push(`[RPC] exception: ${rpcEx.message}`);
-    }
-
-    // Double fallback: try direct table query using user-authenticated client (respecting RLS)
-    try {
-      const { data: integration, error: directErr } = await supabase
-        .from("integration_credentials")
-        .select("api_key, base_url")
-        .eq("brand_id", resolvedBrandId)
-        .eq("provider", "gemini")
-        .eq("is_active", true)
-        .maybeSingle();
-      
-      if (!directErr && integration?.api_key) {
-        apiKey = integration.api_key;
-        if (integration.base_url) {
-          model = integration.base_url.trim();
-        }
-        traces.push(`[Direct User Client] Key loaded successfully!`);
-        return { apiKey, model, diagnostics: traces.join(" | ") };
-      } else if (directErr) {
-        traces.push(`[Direct User Client] query err: ${directErr.message}`);
-      }
-    } catch (directEx: any) {
-      traces.push(`[Direct User Client] exception: ${directEx.message}`);
-    }
-
-    // Triple fallback: admin client (only if service role key is present)
+    // Secrets are decrypted only for the server-side service role. They are
+    // never exposed through an authenticated browser RPC or a direct table read.
     try {
       const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-      const { data: integration, error: adminIntErr } = await supabaseAdmin
-        .from("integration_credentials")
-        .select("api_key, base_url")
-        .eq("brand_id", resolvedBrandId)
-        .eq("provider", "gemini")
-        .eq("is_active", true)
-        .maybeSingle();
-      
+      const { data, error: adminIntErr } = await (supabaseAdmin.rpc as any)(
+        "get_integration_credential_secret",
+        { p_brand_id: resolvedBrandId, p_provider: "gemini" },
+      );
+      const integration = data?.[0];
       if (!adminIntErr && integration?.api_key) {
         apiKey = integration.api_key;
-        if (integration.base_url) {
-          model = integration.base_url.trim();
-        }
-        traces.push(`[Admin] Key loaded successfully via direct table fallback!`);
+        model = integration.base_url?.trim() || undefined;
+        traces.push(`[Vault] Gemini credential loaded server-side`);
       } else if (adminIntErr) {
-        traces.push(`[Admin] direct table fallback query err: ${adminIntErr.message}`);
+        traces.push(`[Vault] credential lookup error: ${adminIntErr.message}`);
       }
     } catch (adminEx: any) {
-      traces.push(`[Admin] direct table fallback exception: ${adminEx.message}`);
+      traces.push(`[Vault] credential lookup exception: ${adminEx.message}`);
     }
   } else {
     traces.push(`[Error] Could not resolve brand_id from profile or referer`);

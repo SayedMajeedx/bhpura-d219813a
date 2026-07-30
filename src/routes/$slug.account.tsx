@@ -689,38 +689,46 @@ function ProfileSection({
 
       <div className="space-y-4">
         <div className="space-y-1.5">
-          <Label className={`text-xs font-bold ${isAr ? "block text-right" : "block text-left"}`}>{t("الاسم الكامل", "Full name")}</Label>
+          <Label htmlFor="account-name" className={`text-xs font-bold ${isAr ? "block text-right" : "block text-left"}`}>{t("الاسم الكامل", "Full name")}</Label>
           <Input
+            id="account-name"
+            name="name"
+            autoComplete="name"
             value={form.name}
             onChange={(e) => setForm({ ...form, name: e.target.value })}
             dir={isAr ? "rtl" : "ltr"}
-            className={`h-10 text-sm ${isAr ? "text-right" : "text-left"}`}
+            className={`h-11 text-sm ${isAr ? "text-right" : "text-left"}`}
             placeholder={t("اكتب اسمك الكامل", "Your full name")}
           />
         </div>
         <div className="space-y-1.5">
-          <Label className={`text-xs font-bold ${isAr ? "block text-right" : "block text-left"}`}>{t("رقم الهاتف", "Phone number")}</Label>
+          <Label htmlFor="account-phone" className={`text-xs font-bold ${isAr ? "block text-right" : "block text-left"}`}>{t("رقم الهاتف", "Phone number")}</Label>
           <PhoneInput
+            id="account-phone"
+            name="phone"
             value={form.phone}
             onChange={(phone) => setForm({ ...form, phone })}
             placeholder="12345678"
           />
         </div>
         <div className="space-y-1.5">
-          <Label className={`text-xs font-bold ${isAr ? "block text-right" : "block text-left"}`}>{t("البريد الإلكتروني", "Email")}</Label>
+          <Label htmlFor="account-email" className={`text-xs font-bold ${isAr ? "block text-right" : "block text-left"}`}>{t("البريد الإلكتروني", "Email")}</Label>
           <Input
+            id="account-email"
+            name="email"
+            autoComplete="email"
             value={form.email}
             onChange={(e) => setForm({ ...form, email: e.target.value })}
             type="email"
             dir="ltr"
-            className="text-left h-10 text-sm"
+            className="text-left h-11 text-sm"
             placeholder="you@example.com"
           />
         </div>
       </div>
 
       <div className="pt-2 flex justify-start">
-        <Button onClick={save} disabled={saving} className="h-9 text-xs font-semibold px-5 shadow-xs">
+        <Button onClick={save} disabled={saving} className="h-11 text-xs font-semibold px-5 shadow-xs">
           {saving && <Loader2 className="h-4 w-4 mr-1 animate-spin" />}
           {t("حفظ التغييرات", "Save changes")}
         </Button>
@@ -874,13 +882,13 @@ function AddressesSection({
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <Label className="text-xs font-semibold">{t("الاسم (مثال: المنزل، المكتب)", "Label (e.g. Home, Work)")}</Label>
-              <Input value={form.label} onChange={(e) => setForm({ ...form, label: e.target.value })} placeholder="Home" className="h-9 text-xs mt-1.5" />
+              <Label htmlFor="address-label" className="text-xs font-semibold">{t("الاسم (مثال: المنزل، المكتب)", "Label (e.g. Home, Work)")}</Label>
+              <Input id="address-label" name="address-label" value={form.label} onChange={(e) => setForm({ ...form, label: e.target.value })} placeholder="Home" className="h-11 text-xs mt-1.5" />
             </div>
             <div>
-              <Label className="text-xs font-semibold">{t("المنطقة", "Region")}</Label>
-              <Select value={form.region} onValueChange={(v) => setForm({ ...form, region: v })}>
-                <SelectTrigger className="h-9 text-xs mt-1.5"><SelectValue placeholder={t("اختر المنطقة", "Choose region")} /></SelectTrigger>
+              <Label htmlFor="address-region" className="text-xs font-semibold">{t("المنطقة", "Region")}</Label>
+              <Select name="address-region" value={form.region} onValueChange={(v) => setForm({ ...form, region: v })}>
+                <SelectTrigger id="address-region" className="h-11 text-xs mt-1.5"><SelectValue placeholder={t("اختر المنطقة", "Choose region")} /></SelectTrigger>
                 <SelectContent>
                   {BAHRAIN_REGIONS.map((r) => (
                     <SelectItem key={r.value} value={r.value}>{isAr ? r.ar : r.en}</SelectItem>
@@ -889,32 +897,32 @@ function AddressesSection({
               </Select>
             </div>
             <div>
-              <Label className="text-xs font-semibold">{t("المجمع", "Block")}</Label>
-              <Input value={form.block} onChange={(e) => setForm({ ...form, block: e.target.value })} inputMode="numeric" className="h-9 text-xs mt-1.5" />
+              <Label htmlFor="address-block" className="text-xs font-semibold">{t("المجمع", "Block")}</Label>
+              <Input id="address-block" name="address-block" value={form.block} onChange={(e) => setForm({ ...form, block: e.target.value })} inputMode="numeric" className="h-11 text-xs mt-1.5" />
             </div>
             <div>
-              <Label className="text-xs font-semibold">{t("الطريق", "Road")}</Label>
-              <Input value={form.road} onChange={(e) => setForm({ ...form, road: e.target.value })} inputMode="numeric" className="h-9 text-xs mt-1.5" />
+              <Label htmlFor="address-road" className="text-xs font-semibold">{t("الطريق", "Road")}</Label>
+              <Input id="address-road" name="address-road" value={form.road} onChange={(e) => setForm({ ...form, road: e.target.value })} inputMode="numeric" className="h-11 text-xs mt-1.5" />
             </div>
             <div>
-              <Label className="text-xs font-semibold">{t("رقم المبنى", "Building")}</Label>
-              <Input value={form.house} onChange={(e) => setForm({ ...form, house: e.target.value })} className="h-9 text-xs mt-1.5" />
+              <Label htmlFor="address-house" className="text-xs font-semibold">{t("رقم المبنى", "Building")}</Label>
+              <Input id="address-house" name="address-house" value={form.house} onChange={(e) => setForm({ ...form, house: e.target.value })} className="h-11 text-xs mt-1.5" />
             </div>
             <div>
-              <Label className="text-xs font-semibold">{t("رقم الشقة (اختياري)", "Flat (optional)")}</Label>
-              <Input value={form.flat} onChange={(e) => setForm({ ...form, flat: e.target.value })} className="h-9 text-xs mt-1.5" />
+              <Label htmlFor="address-flat" className="text-xs font-semibold">{t("رقم الشقة (اختياري)", "Flat (optional)")}</Label>
+              <Input id="address-flat" name="address-flat" value={form.flat} onChange={(e) => setForm({ ...form, flat: e.target.value })} className="h-11 text-xs mt-1.5" />
             </div>
             <div>
-              <Label className="text-xs font-semibold">{t("الطابق (اختياري)", "Floor (optional)")}</Label>
-              <Input value={form.floor} onChange={(e) => setForm({ ...form, floor: e.target.value })} className="h-9 text-xs mt-1.5" />
+              <Label htmlFor="address-floor" className="text-xs font-semibold">{t("الطابق (اختياري)", "Floor (optional)")}</Label>
+              <Input id="address-floor" name="address-floor" value={form.floor} onChange={(e) => setForm({ ...form, floor: e.target.value })} className="h-11 text-xs mt-1.5" />
             </div>
             <div>
-              <Label className="text-xs font-semibold">{t("علامة مميزة (اختياري)", "Landmark (optional)")}</Label>
-              <Input value={form.landmark} onChange={(e) => setForm({ ...form, landmark: e.target.value })} className="h-9 text-xs mt-1.5" />
+              <Label htmlFor="address-landmark" className="text-xs font-semibold">{t("علامة مميزة (اختياري)", "Landmark (optional)")}</Label>
+              <Input id="address-landmark" name="address-landmark" value={form.landmark} onChange={(e) => setForm({ ...form, landmark: e.target.value })} className="h-11 text-xs mt-1.5" />
             </div>
             <div className="sm:col-span-2">
-              <Label className="text-xs font-semibold">{t("ملاحظات التوصيل (اختياري)", "Delivery notes (optional)")}</Label>
-              <Input value={form.delivery_notes} onChange={(e) => setForm({ ...form, delivery_notes: e.target.value })} className="h-9 text-xs mt-1.5" />
+              <Label htmlFor="address-notes" className="text-xs font-semibold">{t("ملاحظات التوصيل (اختياري)", "Delivery notes (optional)")}</Label>
+              <Input id="address-notes" name="address-notes" value={form.delivery_notes} onChange={(e) => setForm({ ...form, delivery_notes: e.target.value })} className="h-11 text-xs mt-1.5" />
             </div>
           </div>
           
@@ -929,17 +937,17 @@ function AddressesSection({
           </label>
 
           <div className="flex gap-2 pt-3 border-t">
-            <Button onClick={addAddress} disabled={saving} className="h-9 text-xs font-semibold px-4 shadow-xs">
+            <Button onClick={addAddress} disabled={saving} className="h-11 text-xs font-semibold px-4 shadow-xs">
               {saving && <Loader2 className="h-4 w-4 mr-1 animate-spin" />}
               {t("حفظ العنوان", "Save address")}
             </Button>
-            <Button variant="ghost" className="h-9 text-xs font-semibold px-4" onClick={() => { setAdding(false); setForm(emptyAddress()); }}>
+            <Button variant="ghost" className="h-11 text-xs font-semibold px-4" onClick={() => { setAdding(false); setForm(emptyAddress()); }}>
               {t("إلغاء", "Cancel")}
             </Button>
           </div>
         </Card>
       ) : (
-        <Button variant="outline" className="text-xs h-9 px-4 font-semibold gap-1" onClick={() => setAdding(true)}>
+        <Button variant="outline" className="text-xs h-11 px-4 font-semibold gap-1" onClick={() => setAdding(true)}>
           <Plus className="h-4 w-4" />
           {t("إضافة عنوان شحن جديد", "Add new destination")}
         </Button>

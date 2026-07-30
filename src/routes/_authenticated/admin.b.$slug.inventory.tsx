@@ -157,10 +157,10 @@ function Inventory() {
   });
 
   return (
-    <div className="mx-auto max-w-7xl p-4 sm:p-6 lg:p-8 space-y-6 animate-fade-in">
+    <div className="mx-auto max-w-7xl space-y-6 px-4 pb-4 pt-7 sm:p-6 lg:p-8 animate-fade-in">
       <div className="mb-6 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="font-display text-4xl font-extrabold tracking-tight bg-clip-text bg-gradient-to-r from-slate-900 via-slate-800 to-slate-950 dark:from-slate-50 dark:to-slate-300">
+          <h1 className="font-display text-3xl font-extrabold tracking-tight bg-clip-text bg-gradient-to-r from-slate-900 via-slate-800 to-slate-950 dark:from-slate-50 dark:to-slate-300 sm:text-4xl">
             {t("inventory.title")}
           </h1>
           <p className="mt-1.5 text-muted-foreground text-sm max-w-md">
@@ -1196,7 +1196,7 @@ function ProductsSection({ products, variants, businessName, currency, onChanged
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 gap-2 lg:grid-cols-4 lg:gap-4">
         {[
           [Package, isAr ? "المنتجات" : "Products", products.length],
           [Boxes, isAr ? "إجمالي الوحدات" : "Total units", totalUnits],
@@ -1207,15 +1207,15 @@ function ProductsSection({ products, variants, businessName, currency, onChanged
           return (
             <Card
               key={index}
-              className="overflow-hidden border border-border/60 shadow-md rounded-2xl bg-card/40 backdrop-blur-sm p-4 hover:shadow-lg transition-all duration-300 hover:scale-[1.02]"
+              className="min-w-0 overflow-hidden rounded-xl border border-border/60 bg-card/40 p-3 shadow-sm backdrop-blur-sm transition-all duration-300 hover:border-primary/30 hover:shadow-md lg:rounded-2xl lg:p-4"
             >
-              <div className="flex items-center gap-4">
-                <div className={`rounded-xl p-3 ${index >= 2 && Number(value) > 0 ? "bg-amber-500/10 text-amber-600 dark:text-amber-400" : "bg-primary/10 text-primary"}`}>
+              <div className="flex min-w-0 items-center gap-2 sm:gap-4">
+                <div className={`shrink-0 rounded-lg p-2 lg:rounded-xl lg:p-3 ${index >= 2 && Number(value) > 0 ? "bg-amber-500/10 text-amber-600 dark:text-amber-400" : "bg-primary/10 text-primary"}`}>
                   <StatIcon className="h-5 w-5" />
                 </div>
                 <div className="min-w-0">
-                  <p className="text-xs text-muted-foreground truncate">{String(label)}</p>
-                  <p className="text-2xl font-bold font-display mt-0.5">{String(value)}</p>
+                  <p className="line-clamp-2 text-xs leading-tight text-muted-foreground">{String(label)}</p>
+                  <p className="mt-0.5 font-display text-xl font-bold lg:text-2xl">{String(value)}</p>
                 </div>
               </div>
             </Card>
@@ -1223,9 +1223,9 @@ function ProductsSection({ products, variants, businessName, currency, onChanged
         })}
       </div>
 
-      <Card className="overflow-hidden border border-border/60 shadow-md rounded-2xl bg-card/40 backdrop-blur-sm p-5">
-        <div className="grid grid-cols-1 sm:grid-cols-[minmax(220px,1fr)_160px_170px] gap-4">
-          <div className="relative">
+      <Card className="overflow-hidden rounded-2xl border border-border/60 bg-card/40 p-3 shadow-md backdrop-blur-sm sm:p-5">
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-[minmax(220px,1fr)_160px_170px] sm:gap-4">
+          <div className="relative col-span-2 sm:col-span-1">
             <Search className="absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input className="ps-9" value={search} onChange={(e) => setSearch(e.target.value)} placeholder={isAr ? "ابحث بالمنتج أو SKU أو الباركود" : "Search product, SKU, or barcode"} />
           </div>
@@ -1249,7 +1249,7 @@ function ProductsSection({ products, variants, businessName, currency, onChanged
         <p className="mt-3 text-xs text-muted-foreground">{filteredProducts.length} / {products.length} {isAr ? "منتجات مطابقة" : "matching products"}</p>
       </Card>
 
-      <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-3">
+      <div className="grid min-w-0 grid-cols-2 gap-2 sm:flex sm:flex-row sm:justify-end sm:gap-3 [&_button]:h-auto [&_button]:min-h-11 [&_button]:min-w-0 [&_button]:w-full [&_button]:whitespace-normal [&_button]:break-words [&_button]:px-2 [&_button]:text-center [&_button]:text-xs [&_button]:leading-tight sm:[&_button]:h-10 sm:[&_button]:min-h-0 sm:[&_button]:w-auto sm:[&_button]:whitespace-nowrap sm:[&_button]:px-4 sm:[&_button]:text-sm">
         <InstagramImporterModal brandId={brandId} onComplete={onChanged} />
         <ProductImporterModal brandId={brandId} onComplete={onChanged} />
         <Button variant="outline" onClick={printAll} className="shadow-sm transition-all duration-200 hover:shadow hover:scale-[1.01] active:scale-95">
@@ -2887,8 +2887,29 @@ function VariantMobileCard({
         </div>
       </div>
 
-      {/* Content */}
-      <div className="grid grid-cols-2 gap-3" onClick={(e) => e.stopPropagation()}>
+      {/* Quick stock is the default mobile workflow. */}
+      <div className="grid grid-cols-2 gap-3 rounded-xl border border-primary/15 bg-primary/5 p-3" onClick={(e) => e.stopPropagation()}>
+        <div>
+          <Label className="text-[10px] font-black uppercase text-muted-foreground/85">{mainLabel}</Label>
+          <div className="mt-1">
+            <StockStepper value={v.stock_main ?? 0} onChange={(val) => update(v, { stock_main: val })} />
+          </div>
+        </div>
+        <div>
+          <Label className="text-[10px] font-black uppercase text-muted-foreground/85">{incLabel}</Label>
+          <div className="mt-1">
+            <StockStepper value={v.stock_incubator ?? 0} onChange={(val) => update(v, { stock_incubator: val })} />
+          </div>
+        </div>
+      </div>
+
+      <details className="group rounded-xl border border-border/60 bg-muted/15" onClick={(e) => e.stopPropagation()}>
+        <summary className="flex min-h-10 cursor-pointer list-none items-center justify-between px-3 py-2 text-xs font-bold [&::-webkit-details-marker]:hidden">
+          <span>{isAr ? "تفاصيل السعر والباركود والصورة" : "Price, barcode & image details"}</span>
+          <span className="text-muted-foreground group-open:hidden">{isAr ? "فتح" : "Open"}</span>
+          <span className="hidden text-muted-foreground group-open:inline">{isAr ? "إغلاق" : "Close"}</span>
+        </summary>
+      <div className="grid grid-cols-2 gap-3 border-t border-border/50 p-3">
         {/* Cost & Price Delta */}
         {canViewFinancials && (
           <div>
@@ -2911,26 +2932,6 @@ function VariantMobileCard({
               onChange={setSellingVal}
               onBlur={(e) => update(v, { selling_price: Number(e.target.value) })}
               className="h-10 rounded-xl text-xs"
-            />
-          </div>
-        </div>
-
-        {/* Steppers */}
-        <div>
-          <Label className="text-[10px] font-black uppercase text-muted-foreground/85">{mainLabel}</Label>
-          <div className="mt-1">
-            <StockStepper
-              value={v.stock_main ?? 0}
-              onChange={(val) => update(v, { stock_main: val })}
-            />
-          </div>
-        </div>
-        <div>
-          <Label className="text-[10px] font-black uppercase text-muted-foreground/85">{incLabel}</Label>
-          <div className="mt-1">
-            <StockStepper
-              value={v.stock_incubator ?? 0}
-              onChange={(val) => update(v, { stock_incubator: val })}
             />
           </div>
         </div>
@@ -2980,6 +2981,7 @@ function VariantMobileCard({
           />
         </div>
       </div>
+      </details>
 
       {/* Summary Footer */}
       <div className="flex items-center justify-between rounded-xl bg-secondary/25 px-4 py-3 text-xs border border-border/45 font-semibold">

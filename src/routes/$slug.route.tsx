@@ -29,7 +29,7 @@ import {
 } from "@/components/ui/dialog";
 import { ShoppingBag, Languages, Minus, Plus, Trash2, X, User, Search, Menu, Home, PackageSearch, FileText, LogIn, Heart, Grid2X2, ChevronDown, Sparkles } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { cloudflareImageUrl, imageKitVideoPosterUrl, imageKitVideoUrl, isLikelyImageUrl } from "@/lib/media-delivery";
+import { cloudflareImageUrl, imageKitVideoUrl } from "@/lib/media-delivery";
 import { faviconType, resolveBrandFavicon, useDynamicFavicon } from "@/lib/favicon";
 import { StorefrontAnalytics } from "@/components/storefront-analytics";
 
@@ -217,40 +217,22 @@ export const Route = createFileRoute("/$slug")({
     const favicon = resolveBrandFavicon(settings?.favicon_url, settings?.logo_url ?? b.logo_url);
     const heroBg = b.hero_media?.background;
     const firstSlide = b.hero_media?.slides?.[0];
-    let heroPosterUrl: string | null = null;
     let heroVideoUrl: string | null = null;
 
     if (heroBg?.url) {
       if (heroBg.type === "video") {
-        heroPosterUrl = imageKitVideoPosterUrl(heroBg.url, 640) || heroBg.url;
         heroVideoUrl = imageKitVideoUrl(heroBg.url, "mobile") || heroBg.url;
-      } else {
-        heroPosterUrl = cloudflareImageUrl(heroBg.url, 1920, 82) || heroBg.url;
       }
     } else if (firstSlide) {
       const slideMediaUrl = (firstSlide.media_url || firstSlide.media_url_ar || firstSlide.media_url_en) ?? "";
       if (firstSlide.type === "video" && slideMediaUrl) {
-        const slidePoster = firstSlide.media_poster_url || firstSlide.media_poster_url_ar || firstSlide.media_poster_url_en;
-        heroPosterUrl = (slidePoster && isLikelyImageUrl(slidePoster)) ? slidePoster : (imageKitVideoPosterUrl(slideMediaUrl, 640) || slideMediaUrl);
         heroVideoUrl = imageKitVideoUrl(slideMediaUrl, "mobile") || slideMediaUrl;
-      } else if (firstSlide.type === "image" && slideMediaUrl) {
-        heroPosterUrl = cloudflareImageUrl(slideMediaUrl, 1920, 82) || slideMediaUrl;
       }
     }
 
     const links: Array<Record<string, any>> = [
       { rel: "icon", href: favicon, ...(faviconType(favicon) ? { type: faviconType(favicon) } : {}) },
     ];
-
-    if (heroPosterUrl) {
-      links.push({
-        rel: "preload",
-        as: "image",
-        href: heroPosterUrl,
-        fetchpriority: "high",
-        fetchPriority: "high",
-      });
-    }
 
     if (heroVideoUrl) {
       links.push({
@@ -299,6 +281,12 @@ function StoreShell() {
   const { brand, settings, lang } = useStorefront();
   const qc = useQueryClient();
   const router = useRouter();
+
+  useEffect(() => {
+    // Clean up refresh tokens stored by the retired client-only pseudo-passkey flow.
+    localStorage.removeItem(`passkey_token_${brand.slug}`);
+    localStorage.removeItem(`passkey_registered_${brand.slug}`);
+  }, [brand.slug]);
 
   const primary = settings.primary_color;
   const headerBg = settings.header_bg ?? settings.background_color ?? "#ffffff";
@@ -461,13 +449,6 @@ function StoreHeader() {
               />
             )}
 
-            <Button asChild variant="ghost" size="sm" className="relative min-h-11 min-w-11 gap-1 hover:bg-black/5" style={{ color: "var(--sf-header-fg)" }}>
-              <Link to="/$slug/wishlist" params={{ slug: brand.slug }} aria-label={t("المفضلة", "Wishlist")}>
-                <Heart className="h-5 w-5" />
-                <span className="hidden sm:inline">{t("المفضلة", "Wishlist")}</span>
-                {wishlistCount > 0 && <span className="absolute -top-1 -right-1 grid h-[18px] min-w-[18px] place-items-center rounded-full px-1 text-[10px] font-semibold" style={{ backgroundColor: "var(--sf-btn-primary-bg)", color: "var(--sf-btn-primary-fg)" }}>{wishlistCount}</span>}
-              </Link>
-            </Button>
             {settings.show_header_name && <span
               className="font-display text-lg sm:text-xl truncate"
               style={{ color: "var(--sf-heading)" }}
@@ -475,7 +456,6 @@ function StoreHeader() {
               {displayName}
             </span>}
           </Link>
-
           {/* Desktop search */}
           <div className="hidden md:flex flex-1 max-w-md mx-4">
             <SearchBar />
@@ -512,6 +492,14 @@ function StoreHeader() {
                 </Link>
               </Button>
             )}
+
+            <Button asChild variant="ghost" size="sm" className="relative min-h-11 min-w-11 gap-1 hover:bg-black/5" style={{ color: "var(--sf-header-fg)" }}>
+              <Link to="/$slug/wishlist" params={{ slug: brand.slug }} aria-label={t("المفضلة", "Wishlist")}>
+                <Heart className="h-5 w-5" />
+                <span className="hidden sm:inline">{t("المفضلة", "Wishlist")}</span>
+                {wishlistCount > 0 && <span className="absolute -top-1 -right-1 grid h-[18px] min-w-[18px] place-items-center rounded-full px-1 text-[10px] font-semibold" style={{ backgroundColor: "var(--sf-btn-primary-bg)", color: "var(--sf-btn-primary-fg)" }}>{wishlistCount}</span>}
+              </Link>
+            </Button>
 
             <CartDrawer>
               <Button variant="ghost" size="sm" className="relative min-h-11 min-w-11 gap-1 hover:bg-black/5" style={{ color: "var(--sf-header-fg)" }} aria-label={t("سلة التسوق", "Shopping cart")}>
@@ -1265,18 +1253,21 @@ function SearchBar() {
   }, [categories]);
 
   const results = data ?? [];
+  const searchLabel = t("البحث في المتجر", "Search store");
+  const searchPlaceholder = t("ابحث عن منتج...", "Search for products...");
 
   return (
     <>
       {/* Search Input Trigger inside the page headers */}
-      <button type="button" aria-label={t("البحث في المتجر", "Search store")} className="relative w-full text-start cursor-pointer block" onClick={() => setModalOpen(true)}>
-        <Search className={`absolute top-1/2 -translate-y-1/2 h-4 w-4 opacity-60 ${lang === "ar" ? "right-3" : "left-3"}`} />
-        <Input
-          readOnly
-          aria-label={t("ابحث عن منتج...", "Search for products...")}
-          placeholder={t("ابحث عن منتج...", "Search for products...")}
-          className={`h-11 cursor-pointer bg-white/70 dark:bg-black/20 border-black/10 select-none ${lang === "ar" ? "pr-9" : "pl-9"}`}
-        />
+      <button
+        type="button"
+        aria-label={searchLabel}
+        aria-haspopup="dialog"
+        className={`relative flex h-11 w-full cursor-pointer items-center rounded-md border border-black/10 bg-white/70 text-start text-sm text-muted-foreground shadow-sm transition-colors hover:bg-white/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring dark:bg-black/20 dark:hover:bg-black/30 ${lang === "ar" ? "pr-9 pl-3" : "pl-9 pr-3"}`}
+        onClick={() => setModalOpen(true)}
+      >
+        <Search className={`pointer-events-none absolute top-1/2 -translate-y-1/2 h-4 w-4 opacity-60 ${lang === "ar" ? "right-3" : "left-3"}`} />
+        <span className="truncate">{searchPlaceholder}</span>
       </button>
 
       {/* Premium backdrop-blurred modal dialog */}
@@ -1299,6 +1290,9 @@ function SearchBar() {
               className="flex-1"
             >
               <input
+                id="storefront-search"
+                name="storefront-search"
+                type="search"
                 autoFocus
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
@@ -1440,26 +1434,26 @@ function StoreFooter() {
 
   return (
     <footer
-      className="border-t mt-16 py-6 md:py-8"
+      className="border-t mt-8 sm:mt-10 py-4 sm:py-5"
       style={{
-        borderColor: "rgba(0,0,0,0.08)",
+        borderColor: "rgba(255,255,255,0.12)",
         backgroundColor: "var(--sf-footer-bg)",
         color: "var(--sf-footer-fg)",
       }}
     >
       <div 
-        className="mx-auto max-w-7xl px-4 sm:px-6 flex flex-col items-center gap-4 text-center text-sm" 
+        className="mx-auto max-w-7xl px-4 sm:px-6 flex flex-col items-center gap-2.5 text-center text-xs"
         style={{ color: "var(--sf-footer-fg)" }}
       >
-        {/* Block 1: Page Links (First) */}
+        {/* Sleek inline page links */}
         {pageLinks.length > 0 && (
-          <nav className="flex flex-wrap justify-center gap-x-5 gap-y-1 text-xs font-medium uppercase tracking-wider">
+          <nav className="flex flex-wrap justify-center items-center gap-x-4 gap-y-1 text-xs font-medium tracking-wide">
             {pageLinks.map((p) => (
               <Link
                 key={p.idx}
                 to="/$slug/$category"
                 params={{ slug: brand.slug, category: p.slug }}
-                className="inline-flex min-h-[44px] py-1 items-center hover:underline underline-offset-4 transition-colors"
+                className="inline-flex min-h-11 items-center py-0.5 hover:opacity-100 opacity-85 transition-opacity sm:min-h-0"
                 style={{ color: "var(--sf-footer-fg)" }}
               >
                 {p.title}
@@ -1468,16 +1462,16 @@ function StoreFooter() {
           </nav>
         )}
 
-        {/* Block 2: Social Media Links (Second) */}
+        {/* Sleek social links */}
         {socials.length > 0 && (
-          <nav className="flex flex-wrap justify-center gap-x-5 gap-y-1 text-xs opacity-80 uppercase tracking-widest">
+          <nav className="flex flex-wrap justify-center items-center gap-x-4 gap-y-1 text-[11px] opacity-75 uppercase tracking-widest">
             {socials.map((s, i) => (
               <a
                 key={`${s.name}-${i}`}
                 href={s.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex min-h-[44px] py-1 items-center hover:underline underline-offset-4 transition-colors"
+                className="inline-flex min-h-11 items-center py-0.5 hover:opacity-100 transition-opacity sm:min-h-0"
                 style={{ color: "var(--sf-footer-fg)" }}
               >
                 {s.name}
@@ -1486,29 +1480,24 @@ function StoreFooter() {
           </nav>
         )}
 
-        {/* Block 3: The Rest (Brand Name, Note, Copyright, Privacy) */}
-        <div className="flex flex-col items-center gap-2 mt-2">
+        {/* Minimalist footer bottom line */}
+        <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-[11px] opacity-70 border-t border-white/10 pt-2 w-full max-w-2xl">
           {settings.show_footer_name && (
-            <div className="font-semibold text-sm" style={{ color: "var(--sf-footer-fg)" }}>
+            <span className="font-semibold" style={{ color: "var(--sf-footer-fg)" }}>
               {lang === "ar" ? brand.name_ar || brand.name_en : brand.name_en}
-            </div>
+            </span>
           )}
-          {settings.footer_note && (
-            <div className="text-xs opacity-75 max-w-md leading-relaxed">{settings.footer_note}</div>
+          <span>© {new Date().getFullYear()} — {t("جميع الحقوق محفوظة", "All rights reserved")}</span>
+          {settings.analytics_consent_required && (
+            <button
+              type="button"
+              className="inline-flex min-h-11 items-center underline underline-offset-2 hover:opacity-100 py-0.5 sm:min-h-0"
+              style={{ color: "var(--sf-footer-fg)" }}
+              onClick={() => window.dispatchEvent(new Event("boutq:privacy-preferences"))}
+            >
+              {t("خيارات الخصوصية", "Privacy choices")}
+            </button>
           )}
-          <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-[11px] opacity-70">
-            <span>© {new Date().getFullYear()} — {t("جميع الحقوق محفوظة", "All rights reserved")}</span>
-            {settings.analytics_consent_required && (
-              <button 
-                type="button" 
-                className="underline underline-offset-4 hover:opacity-100 min-h-[44px] py-1 inline-flex items-center" 
-                style={{ color: "var(--sf-footer-fg)" }} 
-                onClick={() => window.dispatchEvent(new Event("boutq:privacy-preferences"))}
-              >
-                {t("خيارات الخصوصية", "Privacy choices")}
-              </button>
-            )}
-          </div>
         </div>
       </div>
     </footer>

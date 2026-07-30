@@ -23,6 +23,7 @@ export const Route = createFileRoute("/_authenticated/admin/b/$slug/reports/prod
 function ReportsProducts() {
   const { lang } = useI18n();
   const t = useT();
+  const { slug } = Route.useParams();
 
   const [date, setDate] = useState<DateRange | undefined>({
     from: subDays(startOfDay(new Date()), 30),
@@ -37,18 +38,18 @@ function ReportsProducts() {
     queryKey: ["reports-products", date?.from?.toISOString(), date?.to?.toISOString(), timezone, includeHistorical, sortBy],
     queryFn: async () => {
       if (!date?.from || !date?.to) return null;
-      return await fetchReportingProducts({ from: date.from, to: date.to }, timezone, includeHistorical, 50, 0, sortBy);
+      return await fetchReportingProducts({ from: date.from, to: date.to }, timezone, includeHistorical, 50, 0, sortBy, slug);
     },
     enabled: !!date?.from && !!date?.to,
   });
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-background p-4 rounded-lg border">
+      <div className="flex flex-col justify-between gap-4 rounded-2xl border bg-white p-4 shadow-sm sm:flex-row sm:items-center">
         <div className="flex flex-col sm:flex-row gap-4">
           <DatePickerWithRange date={date} setDate={setDate} />
           <Select value={sortBy} onValueChange={setSortBy}>
-            <SelectTrigger className="w-[200px]">
+            <SelectTrigger className="h-11 w-full rounded-xl sm:w-[220px]">
               <SelectValue placeholder={lang === "ar" ? "ترتيب حسب" : "Sort by"} />
             </SelectTrigger>
             <SelectContent>
@@ -75,7 +76,7 @@ function ReportsProducts() {
           <AlertDescription>Failed to load products data.</AlertDescription>
         </Alert>
       ) : productsData ? (
-        <Card>
+        <Card className="rounded-2xl border-black/[.07] shadow-[0_16px_45px_-34px_rgba(43,23,25,.5)]">
           <CardHeader>
             <CardTitle>{lang === "ar" ? "أداء المنتجات والمخزون" : "Product Performance & Inventory"}</CardTitle>
             <CardDescription>
@@ -90,6 +91,7 @@ function ReportsProducts() {
                     <TableRow>
                       <TableHead>{lang === "ar" ? "المنتج" : "Product"}</TableHead>
                       <TableHead>{lang === "ar" ? "SKU" : "SKU"}</TableHead>
+                      <TableHead>{lang === "ar" ? "المتغير" : "Variant"}</TableHead>
                       <TableHead className="text-right">{lang === "ar" ? "الوحدات المباعة" : "Units Sold"}</TableHead>
                       <TableHead className="text-right">{lang === "ar" ? "صافي المبيعات" : "Net Sales"}</TableHead>
                       <TableHead className="text-right">{lang === "ar" ? "تكلفة البضاعة" : "COGS"}</TableHead>
@@ -108,6 +110,14 @@ function ReportsProducts() {
                           )}
                         </TableCell>
                         <TableCell>{p.sku || "—"}</TableCell>
+                        <TableCell>
+                          <div className="flex max-w-[220px] flex-wrap gap-1">
+                            {[p.color, p.size, p.fabric].filter(Boolean).map((value: string) => (
+                              <Badge key={value} variant="outline" className="font-normal">{value}</Badge>
+                            ))}
+                            {![p.color, p.size, p.fabric].some(Boolean) && <span className="text-muted-foreground">—</span>}
+                          </div>
+                        </TableCell>
                         <TableCell className="text-right font-bold">{p.units_sold}</TableCell>
                         <TableCell className="text-right">{formatMoney(p.net_merch_sales, p.currency, lang)}</TableCell>
                         <TableCell className="text-right">{p.is_missing_cost ? "—" : formatMoney(p.known_cogs, p.currency, lang)}</TableCell>

@@ -1409,7 +1409,10 @@ export type Database = {
           courier_notified_at: string | null
           created_at: string
           currency: string
+          customer_email_snapshot: string | null
           customer_id: string | null
+          customer_name_snapshot: string | null
+          customer_phone_snapshot: string | null
           delivered_at: string | null
           delivery_address_snapshot: Json | null
           delivery_notes: string | null
@@ -1472,7 +1475,10 @@ export type Database = {
           courier_notified_at?: string | null
           created_at?: string
           currency?: string
+          customer_email_snapshot?: string | null
           customer_id?: string | null
+          customer_name_snapshot?: string | null
+          customer_phone_snapshot?: string | null
           delivered_at?: string | null
           delivery_address_snapshot?: Json | null
           delivery_notes?: string | null
@@ -1535,7 +1541,10 @@ export type Database = {
           courier_notified_at?: string | null
           created_at?: string
           currency?: string
+          customer_email_snapshot?: string | null
           customer_id?: string | null
+          customer_name_snapshot?: string | null
+          customer_phone_snapshot?: string | null
           delivered_at?: string | null
           delivery_address_snapshot?: Json | null
           delivery_notes?: string | null

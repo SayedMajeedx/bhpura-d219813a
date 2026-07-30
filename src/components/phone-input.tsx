@@ -30,11 +30,15 @@ export function PhoneInput({
   onChange,
   placeholder,
   className,
+  id,
+  name,
 }: {
   value: string | null | undefined;
   onChange: (fullE164: string) => void;
   placeholder?: string;
   className?: string;
+  id?: string;
+  name?: string;
 }) {
   const { code, local } = parse(value);
 
@@ -45,8 +49,8 @@ export function PhoneInput({
 
   return (
     <div className={`flex gap-2 ${className ?? ""}`}>
-      <Select value={code} onValueChange={(v) => emit(v, local)}>
-        <SelectTrigger className="w-[110px] shrink-0"><SelectValue /></SelectTrigger>
+      <Select name={name ? `${name}-country-code` : undefined} value={code} onValueChange={(v) => emit(v, local)}>
+        <SelectTrigger aria-label="Country code" className="h-11 w-[110px] shrink-0"><SelectValue /></SelectTrigger>
         <SelectContent>
           {COUNTRIES.map((c) => (
             <SelectItem key={c.code} value={c.code}>{c.label}</SelectItem>
@@ -54,9 +58,13 @@ export function PhoneInput({
         </SelectContent>
       </Select>
       <Input
-        className="flex-1 text-left"
+        id={id}
+        name={name}
+        className="h-11 flex-1 text-left"
         dir="ltr"
+        type="tel"
         inputMode="tel"
+        autoComplete="tel"
         placeholder={placeholder ?? "12345678"}
         value={local}
         onChange={(e) => emit(code, e.target.value)}

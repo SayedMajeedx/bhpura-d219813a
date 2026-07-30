@@ -14,6 +14,7 @@ export const getPublicInvoice = createServerFn({ method: "GET" })
         id, invoice_number, order_date, created_at, status, payment_method, payment_status,
         currency, notes, fulfillment_method, subtotal, discount, promo_code, tax_amount,
         tax_rate, shipping, total, advance_paid, shipping_address_id, delivery_address_snapshot, user_id, brand_id,
+        customer_name_snapshot, customer_email_snapshot, customer_phone_snapshot,
         branch_id, digital_delivery_channel, digital_delivery_contact,
         customers(name, phone, email, region),
         order_items(description, quantity, unit_price, original_price, line_total, customization_total,

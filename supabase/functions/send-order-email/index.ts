@@ -318,14 +318,13 @@ async function auditNotification(input: {
 }
 
 async function getIntegration(brandId: string, provider: string) {
-  const { data, error } = await admin
-    .from("integration_credentials")
-    .select("base_url, api_key, webhook_secret, is_active")
-    .eq("brand_id", brandId)
-    .eq("provider", provider)
-    .maybeSingle();
+  const { data, error } = await admin.rpc("get_integration_credential_secret", {
+    p_brand_id: brandId,
+    p_provider: provider,
+  });
   if (error) console.warn(`[send-order-email] ${provider} lookup failed`, error.message);
-  return data?.is_active ? data : null;
+  const integration = data?.[0];
+  return integration?.is_active ? integration : null;
 }
 
 async function customerEmailConfigurationError(brandId: string) {
@@ -527,6 +526,7 @@ async function sendAndLog(
         id, brand_id, invoice_number, order_date, status, subtotal, discount, promo_code, tax_amount, tax_rate,
         shipping, total, currency, customer_id, advance_paid, payment_status, payment_method, fulfillment_method,
         benefit_receipt_rejection_reason, public_invoice_token,
+        customer_name_snapshot, customer_email_snapshot, customer_phone_snapshot,
         brand:brands ( slug ),
         order_items ( description, quantity, unit_price, line_total ),
         customer:customers ( email, name )
@@ -544,6 +544,11 @@ async function sendAndLog(
 
     if (se) console.warn("[send-order-email] settings lookup failed", se.message);
 
+    order.customer = {
+      ...(order.customer ?? {}),
+      name: order.customer_name_snapshot || order.customer?.name || "",
+      email: order.customer_email_snapshot || order.customer?.email || "",
+    };
     const to = (order.customer?.email ?? "").trim();
     let customerResult: CustomerEmailDeliveryResult;
     let adminResult: AdminEmailDeliveryResult;

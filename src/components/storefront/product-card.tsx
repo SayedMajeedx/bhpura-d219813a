@@ -61,7 +61,7 @@ export function ProductCard({
         type="button"
         onClick={() => toggleWishlist(product.id)}
         aria-label={wished ? t("إزالة من المفضلة", "Remove from wishlist") : t("إضافة إلى المفضلة", "Add to wishlist")}
-        className="absolute end-2.5 top-2.5 z-20 grid h-9 w-9 place-items-center rounded-full bg-white/80 backdrop-blur-[4px] text-neutral-800 shadow-sm border border-neutral-200/50 transition-all duration-300 hover:scale-110 active:scale-95 hover:bg-white hover:text-red-500"
+        className="absolute end-2.5 top-2.5 z-20 grid h-11 w-11 place-items-center rounded-full bg-white/85 backdrop-blur-[4px] text-neutral-800 shadow-sm border border-neutral-200/50 transition-all duration-300 hover:scale-105 active:scale-95 hover:bg-white hover:text-red-500"
       >
         <Heart className={`h-4 w-4 transition-colors duration-300 ${wished ? "fill-red-600 text-red-600" : ""}`} />
       </button>

@@ -15,6 +15,7 @@ import { Loader2, CreditCard, Banknote, QrCode, Truck, Store, User, Download, Ma
 import { uploadBenefitReceipt } from "@/lib/benefit-receipt";
 import { trackStorefrontEvent } from "@/lib/storefront-analytics";
 import { ResponsiveImage } from "@/components/responsive-media";
+import { Checkbox } from "@/components/ui/checkbox";
 
 export const Route = createFileRoute("/$slug/checkout")({
   component: Checkout,
@@ -64,6 +65,8 @@ function Checkout() {
   });
   const [savedAddresses, setSavedAddresses] = useState<any[]>([]);
   const [selectedAddressId, setSelectedAddressId] = useState<string>("");
+  const [saveToProfile, setSaveToProfile] = useState(false);
+  const [whatsappOrderUpdates, setWhatsappOrderUpdates] = useState(false);
 
   const [showAccountPopup, setShowAccountPopup] = useState<{ show: boolean; field: "email" | "phone" | null; value: string }>({
     show: false,
@@ -353,6 +356,7 @@ function Checkout() {
           road: form.road,
           house: form.house,
           flat: form.flat,
+          save_to_profile: Boolean(session?.user && saveToProfile),
         },
         p_items: cart.map((c) => ({
           variant_id: c.variant_id,
@@ -381,6 +385,19 @@ function Checkout() {
       } as any);
       if (error) throw error;
       const orderId = (data as any)?.order_id;
+      const confirmationToken = (data as any)?.confirmation_email_token;
+      if (brand.slug === "pura" && whatsappOrderUpdates && orderId && confirmationToken) {
+        const { error: whatsappOptInError } = await supabase.rpc(
+          "record_order_whatsapp_opt_in" as any,
+          {
+            p_order_id: orderId,
+            p_confirmation_token: confirmationToken,
+          },
+        );
+        if (whatsappOptInError) {
+          console.warn("[checkout] WhatsApp order-update consent could not be recorded");
+        }
+      }
       trackStorefrontEvent("purchase", {
         transaction_id: String(orderId ?? ""), currency, value: Number(grandTotal.toFixed(3)),
         shipping: Number(shipping.toFixed(3)), coupon: appliedPromo?.code ?? undefined,
@@ -465,6 +482,7 @@ function Checkout() {
 
   return (
     <div className="mx-auto max-w-4xl px-4 sm:px-6 pt-8 pb-28 md:py-8 grid md:grid-cols-[1fr_360px] gap-6">
+      <h1 className="sr-only">{t("إتمام الطلب", "Checkout")}</h1>
       <div className="space-y-4">
         {!session && (
           <Card className="p-4 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 border-primary/30 bg-primary/5">
@@ -482,22 +500,65 @@ function Checkout() {
           <h2 className="font-display text-xl">{t("بيانات العميل", "Customer details")}</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <Label>{t("الاسم الكامل", "Full name")} *</Label>
-              <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+              <Label htmlFor="checkout-name">{t("الاسم الكامل", "Full name")} *</Label>
+              <Input id="checkout-name" name="name" autoComplete="name" className="h-11" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
             </div>
             <div>
-              <Label>{t("رقم الهاتف", "Phone")} *</Label>
-              <Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} onBlur={(e) => checkRegisteredAccount("phone", e.target.value)} />
+              <Label htmlFor="checkout-phone">{t("رقم الهاتف", "Phone")} *</Label>
+              <Input id="checkout-phone" name="phone" type="tel" inputMode="tel" autoComplete="tel" className="h-11" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} onBlur={(e) => checkRegisteredAccount("phone", e.target.value)} />
             </div>
             <div className="sm:col-span-2">
-              <Label>{t("البريد الإلكتروني", "Email")}</Label>
-              <Input required type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} onBlur={(e) => checkRegisteredAccount("email", e.target.value)} />
+              <Label htmlFor="checkout-email">{t("البريد الإلكتروني", "Email")}</Label>
+              <Input id="checkout-email" name="email" required type="email" autoComplete="email" className="h-11" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} onBlur={(e) => checkRegisteredAccount("email", e.target.value)} />
             </div>
           </div>
           <div>
-            <Label>{t("ملاحظات", "Notes")}</Label>
-            <Textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
+            <Label htmlFor="checkout-notes">{t("ملاحظات", "Notes")}</Label>
+            <Textarea id="checkout-notes" name="notes" value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
           </div>
+          {session?.user && (
+            <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-border/70 bg-muted/20 p-3">
+              <Checkbox
+                className="mt-0.5"
+                checked={saveToProfile}
+                onCheckedChange={(checked) => setSaveToProfile(checked === true)}
+              />
+              <span className="min-w-0">
+                <span className="block text-sm font-medium">
+                  {t("حفظ الاسم ورقم الهاتف في ملفي", "Save name and phone to my profile")}
+                </span>
+                <span className="mt-0.5 block text-xs leading-relaxed text-muted-foreground">
+                  {t(
+                    "لن تتغير بيانات ملفك ما لم تحدد هذا الخيار. تغيير البريد الإلكتروني يتطلب التحقق من الحساب.",
+                    "Your profile stays unchanged unless selected. Email changes require account verification.",
+                  )}
+                </span>
+              </span>
+            </label>
+          )}
+          {brand.slug === "pura" && (
+            <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-emerald-200/80 bg-emerald-50/50 p-3 dark:border-emerald-900 dark:bg-emerald-950/20">
+              <Checkbox
+                className="mt-0.5"
+                checked={whatsappOrderUpdates}
+                onCheckedChange={(checked) => setWhatsappOrderUpdates(checked === true)}
+              />
+              <span className="min-w-0">
+                <span className="block text-sm font-medium">
+                  {t(
+                    "أرسل لي تحديثات هذا الطلب عبر واتساب",
+                    "Send me updates for this order on WhatsApp",
+                  )}
+                </span>
+                <span className="mt-0.5 block text-xs leading-relaxed text-muted-foreground">
+                  {t(
+                    "سنستخدم رقم الهاتف أعلاه لإرسال تحديثات الطلب فقط. يمكنك إيقاف الرسائل في أي وقت.",
+                    "We will use the phone number above for order updates only. You can opt out at any time.",
+                  )}
+                </span>
+              </span>
+            </label>
+          )}
         </Card>
 
         {fulfillmentOptions.length > 0 && (
@@ -594,8 +655,8 @@ function Checkout() {
               ))}
             </div>
             <div>
-              <Label>{digitalChannel === "email" ? t("البريد الإلكتروني", "Email address") : t("رقم أو معرّف واتساب", "WhatsApp number or user ID")} *</Label>
-              <Input type={digitalChannel === "email" ? "email" : "text"} inputMode={digitalChannel === "email" ? "email" : "text"} value={digitalContact} onChange={(e) => setDigitalContact(e.target.value)} placeholder={digitalChannel === "email" ? "name@example.com" : t("مثال: +973… أو معرّف المستخدم", "e.g. +973… or user ID")} />
+              <Label htmlFor="digital-delivery-contact">{digitalChannel === "email" ? t("البريد الإلكتروني", "Email address") : t("رقم أو معرّف واتساب", "WhatsApp number or user ID")} *</Label>
+              <Input id="digital-delivery-contact" name="digital-delivery-contact" className="h-11" type={digitalChannel === "email" ? "email" : "text"} inputMode={digitalChannel === "email" ? "email" : "text"} autoComplete={digitalChannel === "email" ? "email" : "tel"} value={digitalContact} onChange={(e) => setDigitalContact(e.target.value)} placeholder={digitalChannel === "email" ? "name@example.com" : t("مثال: +973… أو معرّف المستخدم", "e.g. +973… or user ID")} />
             </div>
           </Card>
         )}
@@ -607,9 +668,9 @@ function Checkout() {
             
             {savedAddresses.length > 0 && (
               <div className="mb-4">
-                <Label>{t("اختر من العناوين المحفوظة", "Choose from saved addresses")}</Label>
-                <Select value={selectedAddressId} onValueChange={(v) => handleAddressChange(v)}>
-                  <SelectTrigger className="w-full mt-1.5">
+                <Label htmlFor="saved-address">{t("اختر من العناوين المحفوظة", "Choose from saved addresses")}</Label>
+                <Select name="saved-address" value={selectedAddressId} onValueChange={(v) => handleAddressChange(v)}>
+                  <SelectTrigger id="saved-address" className="mt-1.5 h-11 w-full">
                     <SelectValue placeholder={t("اختر عنواناً", "Select an address")} />
                   </SelectTrigger>
                   <SelectContent>
@@ -653,13 +714,13 @@ function Checkout() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <Label>{t("لقب العنوان", "Address label")}</Label>
-                <Input placeholder={t("مثل: المنزل، المكتب", "e.g. Home, Work")} value={form.label} onChange={(e) => { setSelectedAddressId("manual"); setForm({ ...form, label: e.target.value }); }} />
+                <Label htmlFor="checkout-address-label">{t("لقب العنوان", "Address label")}</Label>
+                <Input id="checkout-address-label" name="address-label" autoComplete="address-level3" className="h-11" placeholder={t("مثل: المنزل، المكتب", "e.g. Home, Work")} value={form.label} onChange={(e) => { setSelectedAddressId("manual"); setForm({ ...form, label: e.target.value }); }} />
               </div>
               <div>
-                <Label>{t("المنطقة", "Region")} *</Label>
-                <Select value={form.region} onValueChange={(v) => { setSelectedAddressId("manual"); setForm({ ...form, region: v }); }}>
-                  <SelectTrigger><SelectValue placeholder={t("اختر المنطقة", "Select region")} /></SelectTrigger>
+                <Label htmlFor="checkout-region">{t("المنطقة", "Region")} *</Label>
+                <Select name="region" value={form.region} onValueChange={(v) => { setSelectedAddressId("manual"); setForm({ ...form, region: v }); }}>
+                  <SelectTrigger id="checkout-region" className="h-11"><SelectValue placeholder={t("اختر المنطقة", "Select region")} /></SelectTrigger>
                   <SelectContent>
                     {BAHRAIN_REGIONS.map((r) => (
                       <SelectItem key={r.value} value={r.value}>{lang === "ar" ? r.ar : r.en}</SelectItem>
@@ -668,20 +729,20 @@ function Checkout() {
                 </Select>
               </div>
               <div>
-                <Label>{t("المجمع", "Block")} *</Label>
-                <Input placeholder={t("مثال: 428", "e.g. 428")} value={form.block} onChange={(e) => { setSelectedAddressId("manual"); setForm({ ...form, block: e.target.value }); }} />
+                <Label htmlFor="checkout-block">{t("المجمع", "Block")} *</Label>
+                <Input id="checkout-block" name="block" inputMode="numeric" autoComplete="address-level2" className="h-11" placeholder={t("مثال: 428", "e.g. 428")} value={form.block} onChange={(e) => { setSelectedAddressId("manual"); setForm({ ...form, block: e.target.value }); }} />
               </div>
               <div>
-                <Label>{t("الطريق / الشارع", "Road / Avenue")} *</Label>
-                <Input placeholder={t("مثال: 2825", "e.g. 2825")} value={form.road} onChange={(e) => { setSelectedAddressId("manual"); setForm({ ...form, road: e.target.value }); }} />
+                <Label htmlFor="checkout-road">{t("الطريق / الشارع", "Road / Avenue")} *</Label>
+                <Input id="checkout-road" name="road" inputMode="numeric" autoComplete="street-address" className="h-11" placeholder={t("مثال: 2825", "e.g. 2825")} value={form.road} onChange={(e) => { setSelectedAddressId("manual"); setForm({ ...form, road: e.target.value }); }} />
               </div>
               <div>
-                <Label>{t("منزل / بناية", "House / Building")} *</Label>
-                <Input placeholder={t("مثال: 12", "e.g. 12")} value={form.house} onChange={(e) => { setSelectedAddressId("manual"); setForm({ ...form, house: e.target.value }); }} />
+                <Label htmlFor="checkout-house">{t("منزل / بناية", "House / Building")} *</Label>
+                <Input id="checkout-house" name="house" inputMode="numeric" autoComplete="address-line1" className="h-11" placeholder={t("مثال: 12", "e.g. 12")} value={form.house} onChange={(e) => { setSelectedAddressId("manual"); setForm({ ...form, house: e.target.value }); }} />
               </div>
               <div>
-                <Label>{t("شقة (اختياري)", "Flat (optional)")}</Label>
-                <Input placeholder={t("مثال: 4", "e.g. 4")} value={form.flat} onChange={(e) => { setSelectedAddressId("manual"); setForm({ ...form, flat: e.target.value }); }} />
+                <Label htmlFor="checkout-flat">{t("شقة (اختياري)", "Flat (optional)")}</Label>
+                <Input id="checkout-flat" name="flat" inputMode="numeric" autoComplete="address-line2" className="h-11" placeholder={t("مثال: 4", "e.g. 4")} value={form.flat} onChange={(e) => { setSelectedAddressId("manual"); setForm({ ...form, flat: e.target.value }); }} />
               </div>
             </div>
           </Card>
@@ -701,6 +762,7 @@ function Checkout() {
               return (
                 <button
                   key={m.id}
+                  type="button"
                   onClick={() => setMethod(m.id)}
                   className={`text-start flex items-center gap-3 p-3 rounded-lg border ${active ? "border-current" : "border-input"}`}
                   style={active ? { borderColor: settings.primary_color, backgroundColor: `${settings.primary_color}11` } : undefined}
@@ -738,9 +800,9 @@ function Checkout() {
                 <Button type="button" size="sm" variant="secondary" onClick={async () => { await navigator.clipboard.writeText(settings.benefit_account_number!); toast.success(t("تم نسخ رقم الحساب", "Account number copied")); }}><Copy className="me-2 h-4 w-4" />{t("نسخ رقم الحساب", "Copy Account Number")}</Button>
               </div>}
               <div className="mt-4 text-start">
-                <Label className="mb-2 block font-semibold">{t("يرجى إرفاق صورة إيصال التحويل لتأكيد الطلب", "Please attach a screenshot of the payment receipt")}</Label>
+                <Label htmlFor="benefit-receipt" className="mb-2 block font-semibold">{t("يرجى إرفاق صورة إيصال التحويل لتأكيد الطلب", "Please attach a screenshot of the payment receipt")}</Label>
                 <label className="flex min-h-32 cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed bg-background p-4 text-center hover:bg-muted/40" onDragOver={(e) => e.preventDefault()} onDrop={(e) => { e.preventDefault(); const file = e.dataTransfer.files?.[0]; if (file) setBenefitReceipt(file); }}>
-                  <input type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={(e) => setBenefitReceipt(e.target.files?.[0] ?? null)} />
+                  <input id="benefit-receipt" name="benefit-receipt" type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={(e) => setBenefitReceipt(e.target.files?.[0] ?? null)} />
                   {benefitReceipt ? <><CheckCircle2 className="mb-2 h-7 w-7 text-emerald-600" /><span className="max-w-full truncate font-medium">{benefitReceipt.name}</span><button type="button" className="mt-2 inline-flex items-center text-xs text-destructive" onClick={(e) => { e.preventDefault(); setBenefitReceipt(null); }}><X className="me-1 h-3 w-3" />{t("إزالة", "Remove")}</button></> : <><UploadCloud className="mb-2 h-8 w-8 text-muted-foreground" /><span>{t("اسحب الصورة هنا أو اضغط للاختيار", "Drop the image here or tap to choose")}</span><span className="mt-1 text-xs text-muted-foreground">JPG, PNG, WebP · 8 MB</span></>}
                 </label>
               </div>
@@ -811,7 +873,7 @@ function Checkout() {
           <div className="space-y-2 rounded-lg border bg-muted/20 p-3">
             <Label htmlFor="promo-code">{t("هل لديك رمز خصم؟", "Have a promo code?")}</Label>
             <div className="flex gap-2">
-              <Input id="promo-code" value={promoInput} onChange={(e) => { const value = e.target.value.toUpperCase(); setPromoInput(value); if (appliedPromo && value !== appliedPromo.code) setAppliedPromo(null); }} onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); applyPromo(); } }} placeholder="EID20" className="uppercase" />
+              <Input id="promo-code" name="promo-code" autoComplete="off" className="h-11 uppercase" value={promoInput} onChange={(e) => { const value = e.target.value.toUpperCase(); setPromoInput(value); if (appliedPromo && value !== appliedPromo.code) setAppliedPromo(null); }} onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); applyPromo(); } }} placeholder="EID20" />
               <Button type="button" variant="outline" onClick={applyPromo} disabled={checkingPromo}>{checkingPromo && <Loader2 className="me-2 h-4 w-4 animate-spin" />}{t("تطبيق", "Apply")}</Button>
             </div>
           </div>

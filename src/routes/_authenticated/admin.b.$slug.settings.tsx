@@ -210,7 +210,24 @@ function Settings() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="mb-6 flex h-auto w-full flex-wrap justify-start gap-1.5 bg-muted/40 p-1.5 rounded-xl border border-border/40 backdrop-blur-sm">
+        <div className="sticky top-16 z-20 mb-4 rounded-xl border border-border/60 bg-background/95 p-2 shadow-sm backdrop-blur sm:hidden">
+          <Label className="mb-1.5 block px-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+            {lang === "ar" ? "قسم الإعدادات" : "Settings section"}
+          </Label>
+          <Select value={activeTab} onValueChange={setActiveTab}>
+            <SelectTrigger className="h-11 w-full bg-background">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {TABS.map((tab) => (
+                <SelectItem key={tab.value} value={tab.value}>
+                  {lang === "ar" ? tab.ar : tab.en}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <TabsList className="mb-6 hidden h-auto w-full flex-wrap justify-start gap-1.5 rounded-xl border border-border/40 bg-muted/40 p-1.5 backdrop-blur-sm sm:flex">
           {TABS.map((tab) => (
             <TabsTrigger key={tab.value} value={tab.value} className="rounded-lg py-2 px-3 text-xs sm:text-sm font-medium transition-all duration-200 data-[state=active]:bg-background data-[state=active]:shadow-md data-[state=active]:text-foreground hover:bg-background/20">
               {lang === "ar" ? tab.ar : tab.en}
@@ -715,6 +732,7 @@ function BrandHeroCard({ brandId }: { brandId: string }) {
   const [cropSrc, setCropSrc] = useState<string | null>(null);
   const [cropSlideIndex, setCropSlideIndex] = useState<number | null>(null);
   const [cropSlideLanguage, setCropSlideLanguage] = useState<"en" | "ar">("en");
+  const [backgroundCropSrc, setBackgroundCropSrc] = useState<string | null>(null);
   const [state, setState] = useState<HeroState | null>(null);
 
   const { data } = useQuery({
@@ -745,7 +763,7 @@ function BrandHeroCard({ brandId }: { brandId: string }) {
     });
   }, [data]);
 
-  const uploadBackground = async (file: File) => {
+  const uploadBackground = async (file: Blob) => {
     try {
       setUploading(true);
       const url = await uploadPublicMedia(brandId, file, "hero");
@@ -755,6 +773,34 @@ function BrandHeroCard({ brandId }: { brandId: string }) {
     } catch (e: any) {
       toast.error(e.message ?? "Upload failed");
     } finally { setUploading(false); }
+  };
+
+  const chooseBackgroundMedia = async (file: File) => {
+    if (file.type.startsWith("image/")) {
+      if (file.size > 12 * 1024 * 1024) {
+        toast.error(isAr ? "يجب ألا يتجاوز حجم الصورة 12 ميجابايت" : "Image must be 12 MB or smaller");
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = () => setBackgroundCropSrc(String(reader.result));
+      reader.onerror = () => toast.error(isAr ? "تعذرت قراءة الصورة" : "Unable to read the image");
+      reader.readAsDataURL(file);
+      return;
+    }
+    if (!file.type.startsWith("video/")) {
+      toast.error(isAr ? "صيغة الملف غير مدعومة" : "Unsupported file type");
+      return;
+    }
+    if (file.size > 100 * 1024 * 1024) {
+      toast.error(isAr ? "يجب ألا يتجاوز الفيديو 100 ميجابايت" : "Video must be 100 MB or smaller");
+      return;
+    }
+    await uploadBackground(file);
+  };
+
+  const confirmBackgroundCrop = async (blob: Blob) => {
+    await uploadBackground(blob);
+    setBackgroundCropSrc(null);
   };
 
   const uploadSlideMedia = async (file: Blob, index: number, language: "en" | "ar" = "en") => {
@@ -827,18 +873,62 @@ function BrandHeroCard({ brandId }: { brandId: string }) {
         <p className="text-sm text-muted-foreground">{isAr ? "الصور/الفيديو والنبذة التي يراها العملاء في الصفحة الرئيسية" : "Hero media, brand color, and About text shown on the public storefront home"}</p>
       </div>
 
-      <div className="space-y-2">
-        <Label>{isAr ? "خلفية الواجهة الثابتة" : "Fixed hero background"}</Label>
-        <p className="text-xs text-muted-foreground">{isAr ? "تبقى ثابتة أثناء التنقل بين الشرائح." : "Stays fixed while customers swipe between slides."}</p>
-        <div className="flex flex-wrap gap-2">
-          {state.background && <div className="relative h-24 w-40 overflow-hidden rounded-md border bg-secondary">{state.background.type === "video" ? <video src={state.background.url} className="h-full w-full object-cover" muted /> : <img src={state.background.url} alt="" className="h-full w-full object-cover" />}<button type="button" className="absolute end-1 top-1 rounded-full bg-background/90 p-1" onClick={() => setState({ ...state, background: null })}><Trash2 className="h-3 w-3" /></button></div>}
-          <label className="flex h-24 w-40 cursor-pointer items-center justify-center rounded-md border border-dashed text-xs text-muted-foreground hover:bg-secondary">{uploading ? "…" : (isAr ? "رفع الخلفية" : "Upload background")}<input type="file" accept="image/*,video/*" className="hidden" onChange={(e) => e.target.files?.[0] && uploadBackground(e.target.files[0])} /></label>
+      <div className="space-y-3">
+        <div>
+          <Label className="text-base">{isAr ? "خلفية الواجهة الثابتة" : "Fixed hero background"}</Label>
+          <p className="mt-1 text-xs text-muted-foreground">{isAr ? "تظهر خلف الشرائح. يمكن تحريك الصورة وتكبيرها قبل الرفع للحصول على إطار مثالي." : "Shown behind the slides. Images can be repositioned and zoomed before upload for a precise storefront crop."}</p>
+        </div>
+        <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_240px]">
+          {state.background ? (
+            <div className="group relative aspect-video min-h-44 overflow-hidden rounded-2xl border bg-neutral-950 shadow-sm">
+              {state.background.type === "video"
+                ? <video src={state.background.url} className="h-full w-full object-cover" muted playsInline />
+                : <img src={state.background.url} alt={isAr ? "معاينة خلفية الواجهة" : "Hero background preview"} className="h-full w-full object-cover" />}
+              <div className="pointer-events-none absolute inset-x-0 top-0 flex items-center justify-between bg-gradient-to-b from-black/55 to-transparent p-3 text-white">
+                <span className="rounded-full bg-black/35 px-2.5 py-1 text-[11px] font-medium backdrop-blur">
+                  {state.background.type === "video" ? (isAr ? "فيديو" : "Video") : (isAr ? "صورة مقصوصة 16:9" : "Cropped image · 16:9")}
+                </span>
+              </div>
+              <button type="button" className="absolute end-3 top-3 grid h-11 w-11 place-items-center rounded-full bg-background/95 text-foreground shadow transition-transform hover:scale-105" onClick={() => setState({ ...state, background: null })} aria-label={isAr ? "إزالة خلفية الواجهة" : "Remove hero background"}>
+                <Trash2 className="h-4 w-4" />
+              </button>
+            </div>
+          ) : (
+            <div className="grid aspect-video min-h-44 place-items-center rounded-2xl border bg-muted/20 text-center text-sm text-muted-foreground">
+              <div>
+                <Upload className="mx-auto mb-2 h-6 w-6 opacity-50" />
+                {isAr ? "لا توجد خلفية مرفوعة" : "No background uploaded"}
+              </div>
+            </div>
+          )}
+          <label className="group flex min-h-44 cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed bg-muted/15 px-5 py-6 text-center transition-all hover:border-primary/50 hover:bg-primary/5 focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20">
+            <span className="grid h-12 w-12 place-items-center rounded-2xl bg-background text-primary shadow-sm transition-transform group-hover:-translate-y-0.5">
+              <Upload className="h-5 w-5" />
+            </span>
+            <span className="mt-3 text-sm font-semibold">{uploading ? (isAr ? "جاري الرفع…" : "Uploading…") : (state.background ? (isAr ? "تغيير الخلفية" : "Replace background") : (isAr ? "اختيار صورة أو فيديو" : "Choose image or video"))}</span>
+            <span className="mt-1 text-xs text-muted-foreground">{isAr ? "الصور تفتح في محرر القص" : "Images open in the crop editor"}</span>
+            <span className="mt-2 rounded-full bg-background px-2.5 py-1 font-mono text-[10px] text-muted-foreground" dir="ltr">1920 × 1080 · 16:9</span>
+            <input type="file" accept="image/jpeg,image/png,image/webp,video/mp4,video/webm,video/quicktime" className="sr-only" disabled={uploading} onChange={(event) => { const file = event.target.files?.[0]; if (file) void chooseBackgroundMedia(file); event.target.value = ""; }} />
+          </label>
         </div>
       </div>
 
       <HeroSlidesEditor state={state} setState={setState} isAr={isAr} uploading={uploading} uploadSlideMedia={chooseSlideMedia} />
 
       <ImageCropperDialog open={Boolean(cropSrc)} imageSrc={cropSrc} aspect={16 / 9} outputWidth={1920} outputHeight={1080} heroPreview busy={uploading} onCancel={() => { setCropSrc(null); setCropSlideIndex(null); }} onConfirm={confirmHeroCrop} />
+      <ImageCropperDialog
+        open={Boolean(backgroundCropSrc)}
+        imageSrc={backgroundCropSrc}
+        aspect={16 / 9}
+        outputWidth={1920}
+        outputHeight={1080}
+        heroPreview
+        busy={uploading}
+        title={isAr ? "تجهيز خلفية الواجهة" : "Frame your hero background"}
+        description={isAr ? "حرّك الصورة وكبّرها حتى تظهر أهم التفاصيل داخل الإطار على الهاتف والكمبيوتر." : "Position and zoom the image so the important details stay visible across desktop and mobile."}
+        onCancel={() => setBackgroundCropSrc(null)}
+        onConfirm={confirmBackgroundCrop}
+      />
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>

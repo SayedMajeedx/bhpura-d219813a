@@ -25,6 +25,7 @@ import { Check, MessageCircle, Search, Megaphone, Save, Trash2, Plus, Play, Paus
 import { useI18n } from "@/lib/i18n";
 import { toast } from "sonner";
 import { useBrand } from "@/lib/brand-context";
+import { buildCustomerCrmStats, type CustomerMetricOrder } from "@/lib/commerce-metrics";
 
 export const Route = createFileRoute("/_authenticated/admin/b/$slug/campaigns")({
   validateSearch: (search: Record<string, unknown>) => ({
@@ -116,71 +117,17 @@ function CampaignsPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("orders")
-        .select("id, customer_id, total, created_at, status")
-        .eq("brand_id", brandId)
-        .in("status", ["confirmed", "paid", "shipped", "completed"]);
+        .select("id, customer_id, total, created_at, status, payment_status, fulfillment_status")
+        .eq("brand_id", brandId);
       if (error) throw error;
-      return data as Array<{ id: string; customer_id: string | null; total: number; created_at: string; status: string }>;
+      return data as Array<CustomerMetricOrder & { id: string }>;
     },
   });
 
-  const customerCrmStats = useMemo(() => {
-    const map = new Map<string, {
-      totalOrders: number;
-      lifetimeSpend: number;
-      lastOrderDate: string | null;
-      badge: "VIP" | "Churn Risk" | "New Buyer" | "Regular" | null;
-    }>();
-
-    const orders = ordersQ.data ?? [];
-    const nowMs = new Date().getTime();
-    const sixtyDaysMs = 60 * 24 * 60 * 60 * 1000;
-
-    const ordersByCustomer = new Map<string, typeof orders>();
-    orders.forEach((o) => {
-      if (o.customer_id) {
-        if (!ordersByCustomer.has(o.customer_id)) {
-          ordersByCustomer.set(o.customer_id, []);
-        }
-        ordersByCustomer.get(o.customer_id)!.push(o);
-      }
-    });
-
-    ordersByCustomer.forEach((custOrders, customerId) => {
-      const totalOrders = custOrders.length;
-      const lifetimeSpend = custOrders.reduce((sum, o) => sum + Number(o.total || 0), 0);
-      
-      let lastOrderDate: string | null = null;
-      let lastOrderMs = 0;
-      custOrders.forEach((o) => {
-        const ms = new Date(o.created_at).getTime();
-        if (ms > lastOrderMs) {
-          lastOrderMs = ms;
-          lastOrderDate = o.created_at;
-        }
-      });
-
-      let badge: "VIP" | "Churn Risk" | "New Buyer" | "Regular" | null = null;
-      if (lifetimeSpend > 250) {
-        badge = "VIP";
-      } else if (lastOrderMs > 0 && (nowMs - lastOrderMs) > sixtyDaysMs) {
-        badge = "Churn Risk";
-      } else if (totalOrders === 1) {
-        badge = "New Buyer";
-      } else if (totalOrders > 1) {
-        badge = "Regular";
-      }
-
-      map.set(customerId, {
-        totalOrders,
-        lifetimeSpend,
-        lastOrderDate,
-        badge,
-      });
-    });
-
-    return map;
-  }, [ordersQ.data]);
+  const customerCrmStats = useMemo(
+    () => buildCustomerCrmStats(ordersQ.data ?? []),
+    [ordersQ.data],
+  );
 
   const businessQ = useQuery({
     queryKey: ["campaigns-business", brandId],

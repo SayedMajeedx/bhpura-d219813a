@@ -23,13 +23,11 @@ export const Route = createFileRoute("/api/public/payments/create-tap-charge")({
           const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
           // 1. Fetch Tap credentials
-          const { data: credential, error: credError } = await supabaseAdmin
-            .from("integration_credentials")
-            .select("api_key")
-            .eq("brand_id", brandId)
-            .eq("provider", "tap")
-            .eq("is_active", true)
-            .maybeSingle();
+          const { data: credentialRows, error: credError } = await (supabaseAdmin.rpc as any)(
+            "get_integration_credential_secret",
+            { p_brand_id: brandId, p_provider: "tap" },
+          );
+          const credential = credentialRows?.[0];
 
           if (credError || !credential || !credential.api_key) {
             return new Response(

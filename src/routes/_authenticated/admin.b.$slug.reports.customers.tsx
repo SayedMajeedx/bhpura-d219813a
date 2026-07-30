@@ -23,6 +23,7 @@ export const Route = createFileRoute("/_authenticated/admin/b/$slug/reports/cust
 function ReportsCustomers() {
   const { lang } = useI18n();
   const t = useT();
+  const { slug } = Route.useParams();
 
   const [date, setDate] = useState<DateRange | undefined>({
     from: subDays(startOfDay(new Date()), 30),
@@ -36,14 +37,14 @@ function ReportsCustomers() {
     queryKey: ["reports-customers", date?.from?.toISOString(), date?.to?.toISOString(), timezone, includeHistorical],
     queryFn: async () => {
       if (!date?.from || !date?.to) return null;
-      return await fetchReportingCustomers({ from: date.from, to: date.to }, timezone, includeHistorical, 50, 0);
+      return await fetchReportingCustomers({ from: date.from, to: date.to }, timezone, includeHistorical, 50, 0, slug);
     },
     enabled: !!date?.from && !!date?.to,
   });
 
   const pieData = customersData ? [
-    { name: lang === "ar" ? "عملاء جدد" : "New Customers", value: customersData.new_customers_count, color: "hsl(var(--primary))" },
-    { name: lang === "ar" ? "عملاء متكررون" : "Returning Customers", value: customersData.returning_customers_count, color: "hsl(var(--secondary))" },
+    { name: lang === "ar" ? "عملاء جدد" : "New Customers", value: customersData.new_customers_count, color: "#6b1d24" },
+    { name: lang === "ar" ? "عملاء متكررون" : "Returning Customers", value: customersData.returning_customers_count, color: "#c59a66" },
   ] : [];
 
   const totalCustomers = customersData ? customersData.new_customers_count + customersData.returning_customers_count : 0;

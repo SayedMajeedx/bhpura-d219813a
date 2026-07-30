@@ -76,9 +76,12 @@ export function SearchPage() {
       </p>
       <div className="mb-6 flex justify-end">
         <select
+          id="search-sort"
+          name="search-sort"
+          aria-label={t("ترتيب نتائج البحث", "Sort search results")}
           value={sort}
           onChange={(event) => setSort(event.target.value as typeof sort)}
-          className="h-10 rounded-lg border bg-background px-3 text-sm"
+          className="h-11 rounded-lg border bg-background px-3 text-sm"
         >
           <option value="new">{t("الأحدث", "Newest")}</option>
           <option value="price-low">{t("السعر: الأقل أولاً", "Price: low to high")}</option>

@@ -1,3 +1,4 @@
+@import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&family=Inter:wght@400;500;600;700&display=swap');
 /* Self-Hosted Storefront Typography Architecture */
 
 @font-face {
@@ -32,18 +33,12 @@
   font-display: swap;
 }
 
-/* Legacy Font Fallback Maps */
+/* Local Arabic Font Fallback */
 @font-face {
-  font-family: 'Tajawal';
-  src: url('/fonts/azerextralight.woff2') format('woff2');
-  font-weight: 200 700;
+  font-family: 'ArabicLocal';
+  src: url('/fonts/arabic-font.woff2') format('woff2');
+  font-weight: 400 700;
   font-display: swap;
 }
 
-@font-face {
-  font-family: 'Inter';
-  src: url('/fonts/azerextralight.woff2') format('woff2');
-  font-weight: 200 700;
-  font-display: swap;
-}
 

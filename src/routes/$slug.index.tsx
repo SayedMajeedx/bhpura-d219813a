@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useStorefront, formatPrice, pickName } from "@/lib/storefront-context";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useMemo, useState, useRef, type AnchorHTMLAttributes } from "react";
+import { useMemo, useState, useRef, useEffect, type AnchorHTMLAttributes } from "react";
 import { ChevronDown, ChevronLeft, ChevronRight, FileText, Grid2X2, Heart } from "lucide-react";
 import { OptimizedVideo, ResponsiveImage } from "@/components/responsive-media";
 import { ProductCard } from "@/components/storefront/product-card";
@@ -85,6 +85,18 @@ function StoreHome() {
   const activeCat = activeCategorySlugs[0] || null;
   const activeSubCat = activeCategorySlugs[1] || null;
   const activeSubSubCat = activeCategorySlugs[2] || null;
+
+  const productsSectionRef = useRef<HTMLDivElement>(null);
+  const prevCatRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (activeCat && prevCatRef.current !== activeCat) {
+      setTimeout(() => {
+        productsSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 40);
+    }
+    prevCatRef.current = activeCat;
+  }, [activeCat]);
 
   const handleSelectCat = (cat: string | null) => {
     setActiveCategorySlugs(cat ? [cat] : []);
@@ -234,13 +246,13 @@ function StoreHome() {
     return (
       <div>
         <HeroBanner />
-        <section className="mx-auto max-w-7xl px-4 sm:px-6 py-12 md:py-16">
+        <section className="mx-auto max-w-7xl px-4 sm:px-6 py-6 sm:py-8">
           <PromoCards />
-          <div className="space-y-16">
+          <div className="space-y-8 sm:space-y-12">
             <SkeletonMerchandisingSection label={["وصل حديثاً", "New arrivals"]} />
             <SkeletonMerchandisingSection label={["الأكثر مبيعاً", "Best sellers"]} />
           </div>
-          <div className="mt-16 pt-12 border-t border-neutral-100/50">
+          <div className="mt-8 pt-6 sm:pt-8 border-t border-neutral-100/50">
             <SectionHeading fallbackAr="كل المنتجات" fallbackEn="All products" />
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
               {Array.from({ length: 4 }).map((_, i) => (
@@ -260,10 +272,10 @@ function StoreHome() {
   return (
     <div>
       <HeroBanner />
-      <section className="mx-auto max-w-7xl px-4 sm:px-6 py-12 md:py-16">
+      <section className="mx-auto max-w-7xl px-4 sm:px-6 py-6 sm:py-8">
         <PromoCards />
         {!activeCat && (
-          <div className="space-y-16">
+          <div className="space-y-8 sm:space-y-12">
             <MerchandisingSection kind="new" products={newest} />
             <MerchandisingSection kind="best" products={bestSellers} />
             <MerchandisingSection kind="sale" products={saleProducts} />
@@ -271,7 +283,11 @@ function StoreHome() {
           </div>
         )}
 
-        <div className={`pt-12 ${!activeCat ? "border-t border-neutral-100/50" : ""}`}>
+        <div
+          ref={productsSectionRef}
+          id="products-section"
+          className={`scroll-mt-20 pt-6 sm:pt-8 ${!activeCat ? "border-t border-neutral-100/50" : ""}`}
+        >
           <SectionHeading title={activeCat ? undefined : null} fallbackAr="كل المنتجات" fallbackEn="All products" />
           <Categories
             products={products ?? []}
@@ -296,7 +312,7 @@ function PromoCards() {
   const cards = settings.home_promo_cards.filter((card) => card && (card.image_url || card.title_en || card.title_ar));
   if (!cards.length) return null;
   return (
-    <div className="mb-16 grid grid-cols-1 gap-4 sm:grid-cols-2">
+    <div className="mb-6 sm:mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2">
       {cards.map((card, index) => {
         const title = lang === "ar" ? card.title_ar || card.title_en : card.title_en || card.title_ar;
         const subtitle = lang === "ar" ? card.subtitle_ar || card.subtitle_en : card.subtitle_en || card.subtitle_ar;
@@ -334,11 +350,11 @@ function PromoCards() {
 function SectionHeading({ title, fallbackAr, fallbackEn }: { title?: string | null; fallbackAr: string; fallbackEn: string }) {
   const { lang } = useStorefront();
   return (
-    <div className="mb-8 flex items-end justify-between">
-      <h2 className="font-display text-2xl sm:text-3xl" style={{ color: "var(--sf-heading)" }}>
+    <div className="mb-4 sm:mb-6 flex items-end justify-between">
+      <h2 className="font-display text-xl sm:text-2xl font-semibold" style={{ color: "var(--sf-heading)" }}>
         {title || (lang === "ar" ? fallbackAr : fallbackEn)}
       </h2>
-      <div className="h-px flex-1 bg-neutral-100 ms-5" />
+      <div className="h-px flex-1 bg-neutral-100 ms-4" />
     </div>
   );
 }
@@ -346,7 +362,7 @@ function SectionHeading({ title, fallbackAr, fallbackEn }: { title?: string | nu
 function SkeletonMerchandisingSection({ label }: { label: [string, string] }) {
   const { lang } = useStorefront();
   return (
-    <section className="py-12 border-t border-neutral-100/50">
+    <section className="py-4 sm:py-6 border-t border-neutral-100/50">
       <SectionHeading fallbackAr={label[0]} fallbackEn={label[1]} />
       <div 
         dir={lang === "ar" ? "rtl" : "ltr"}
@@ -384,7 +400,7 @@ function MerchandisingSection({
   const label = kind === "new" ? ["وصل حديثاً", "New arrivals"] : kind === "best" ? ["الأكثر مبيعاً", "Best sellers"] : kind === "sale" ? ["تنزيلات", "Sale"] : ["الرائج الآن", "Trending now"];
 
   return (
-    <section className="py-12 border-t border-neutral-100/50">
+    <section className="py-4 sm:py-6 border-t border-neutral-100/50">
       <SectionHeading title={title} fallbackAr={label[0]} fallbackEn={label[1]} />
       <div 
         dir={lang === "ar" ? "rtl" : "ltr"}
@@ -510,9 +526,9 @@ function HeroContentCarousel({ slides }: { slides: import("@/lib/storefront-cont
         })}
       </div>
       {slides.length > 1 && <div dir="ltr" className="pointer-events-none absolute inset-x-3 bottom-1 flex items-center justify-between text-white mix-blend-difference sm:inset-x-5 sm:bottom-6">
-        <button type="button" onClick={() => goTo(idx - 1)} aria-label={lang === "ar" ? "الشريحة السابقة" : "Previous hero slide"} className="pointer-events-auto grid h-10 w-10 place-items-center bg-transparent transition duration-300 hover:scale-110 hover:opacity-70 active:scale-95"><ChevronLeft strokeWidth={1} className="h-7 w-7" /></button>
-        <div className="pointer-events-auto flex items-center justify-center gap-2 pb-1">{slides.map((slide, dot) => <button key={slide.id} type="button" onClick={() => goTo(dot)} aria-label={`${lang === "ar" ? "الشريحة" : "Hero slide"} ${dot + 1}`} aria-current={dot === idx ? "true" : undefined} className={`h-px transition-all duration-500 ${dot === idx ? "w-8 bg-current" : "w-3 bg-current opacity-50"}`} />)}</div>
-        <button type="button" onClick={() => goTo(idx + 1)} aria-label={lang === "ar" ? "الشريحة التالية" : "Next hero slide"} className="pointer-events-auto grid h-10 w-10 place-items-center bg-transparent transition duration-300 hover:scale-110 hover:opacity-70 active:scale-95"><ChevronRight strokeWidth={1} className="h-7 w-7" /></button>
+        <button type="button" onClick={() => goTo(idx - 1)} aria-label={lang === "ar" ? "الشريحة السابقة" : "Previous hero slide"} className="pointer-events-auto grid h-11 w-11 place-items-center bg-transparent transition duration-300 hover:scale-110 hover:opacity-70 active:scale-95"><ChevronLeft strokeWidth={1} className="h-7 w-7" /></button>
+        <div className="pointer-events-auto flex items-center justify-center gap-1">{slides.map((slide, dot) => <button key={slide.id} type="button" onClick={() => goTo(dot)} aria-label={`${lang === "ar" ? "الشريحة" : "Hero slide"} ${dot + 1}`} aria-current={dot === idx ? "true" : undefined} className={`grid h-11 place-items-center transition-all duration-500 ${dot === idx ? "w-10" : "w-6 opacity-50"}`}><span className={`block h-px bg-current transition-all duration-500 ${dot === idx ? "w-8" : "w-3"}`} /></button>)}</div>
+        <button type="button" onClick={() => goTo(idx + 1)} aria-label={lang === "ar" ? "الشريحة التالية" : "Next hero slide"} className="pointer-events-auto grid h-11 w-11 place-items-center bg-transparent transition duration-300 hover:scale-110 hover:opacity-70 active:scale-95"><ChevronRight strokeWidth={1} className="h-7 w-7" /></button>
       </div>}
     </div>
   );

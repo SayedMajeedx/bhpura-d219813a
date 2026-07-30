@@ -416,6 +416,9 @@ function CategoryPage() {
       <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6">
         <div className="mb-6 flex justify-end">
           <select
+            id="category-sort"
+            name="category-sort"
+            aria-label={t("ترتيب المنتجات", "Sort products")}
             value={sort}
             onChange={(event) => setSort(event.target.value as typeof sort)}
             className="h-11 rounded-lg border bg-background px-3 text-sm"

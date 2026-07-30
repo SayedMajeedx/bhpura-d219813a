@@ -66,6 +66,10 @@ async function runScheduledTasks(cron: string, env: Cloudflare.Env): Promise<voi
   const emailResult = await retryOrderEmailOutbox(env);
   console.log(JSON.stringify({ event: "order_email_retry_complete", cron, ...emailResult }));
 
+  const { retryWhatsAppOutbox } = await import("./lib/meta-whatsapp.server");
+  const whatsappResult = await retryWhatsAppOutbox(env);
+  console.log(JSON.stringify({ event: "whatsapp_retry_complete", cron, ...whatsappResult }));
+
   if (cron === "17 2 * * *") {
     const { cleanupBenefitReceipts } = await import(
       "./lib/benefit-receipt-cleanup.server"
@@ -85,6 +89,11 @@ export default {
       g.__CLOUDFLARE_ENV__ = env;
 
       const url = new URL(request.url);
+      if (url.pathname === "/api/public/webhooks/meta-whatsapp") {
+        const { handleMetaWhatsAppWebhook } = await import("./lib/meta-whatsapp.server");
+        return withSecurityHeaders(await handleMetaWhatsAppWebhook(request, env, ctx));
+      }
+
       if (
         url.hostname === "media.boutq.store" ||
         url.hostname.endsWith(".media.boutq.store") ||
@@ -94,7 +103,7 @@ export default {
       }
 
       const response = await handler.fetch(request);
-      return withSecurityHeaders(await normalizeCatastrophicSsrResponse(response), request.url, request.method);
+      return withSecurityHeaders(await normalizeCatastrophicSsrResponse(response));
     } catch (error) {
       console.error(error);
       return withSecurityHeaders(
@@ -102,8 +111,6 @@ export default {
           status: 500,
           headers: { "content-type": "text/html; charset=utf-8" },
         }),
-        request.url,
-        request.method,
       );
     }
   },

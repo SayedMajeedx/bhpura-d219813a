@@ -20,6 +20,9 @@ export function cloudflareImageUrl(source: string, width: number, quality = 80):
   if (!source || source.startsWith("data:") || source.toLowerCase().includes(".svg")) return source;
   try {
     const url = new URL(source, typeof window === "undefined" ? "https://boutq.store" : window.location.origin);
+    // ImageKit URLs are already transformed at their origin; proxying them
+    // through Cloudflare Image Resizing can produce a transient 403.
+    if (url.hostname.endsWith("imagekit.io")) return source;
     const options = `width=${width},fit=scale-down,quality=${quality},format=auto,metadata=none,onerror=redirect`;
     
     // Use relative same-origin path so requests share HTTP/2-3 connections without cross-origin TLS overhead

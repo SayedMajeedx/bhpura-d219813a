@@ -210,21 +210,12 @@ export const getPlatformLogoUploadUrl = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await requireSuperAdmin(context);
 
-    const { r2Client, mimeToExtension } = await import("@/lib/r2-upload.functions");
-    const { client, bucket, publicBaseUrl } = r2Client();
+    const { createR2PresignedPutUrl, mimeToExtension } = await import("@/lib/r2-upload.functions");
 
     const extension = mimeToExtension[data.contentType.toLowerCase()] || "png";
     const key = `platform/logo-${crypto.randomUUID()}.${extension}`;
 
-    const { getSignedUrl } = await import("@aws-sdk/s3-request-presigner");
-    const { PutObjectCommand } = await import("@aws-sdk/client-s3");
-
-    const uploadUrl = await getSignedUrl(client, new PutObjectCommand({
-      Bucket: bucket,
-      Key: key,
-      ContentType: data.contentType,
-    }), { expiresIn: 3600 });
-
+    const { uploadUrl } = await createR2PresignedPutUrl(key, data.contentType, 3600);
     return { uploadUrl, publicUrl: `/${key}`, key };
   });
 
@@ -235,21 +226,12 @@ export const getPlatformQrUploadUrl = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await requireSuperAdmin(context);
 
-    const { r2Client, mimeToExtension } = await import("@/lib/r2-upload.functions");
-    const { client, bucket, publicBaseUrl } = r2Client();
+    const { createR2PresignedPutUrl, mimeToExtension } = await import("@/lib/r2-upload.functions");
 
     const extension = mimeToExtension[data.contentType.toLowerCase()] || "png";
     const key = `platform/qr-${crypto.randomUUID()}.${extension}`;
 
-    const { getSignedUrl } = await import("@aws-sdk/s3-request-presigner");
-    const { PutObjectCommand } = await import("@aws-sdk/client-s3");
-
-    const uploadUrl = await getSignedUrl(client, new PutObjectCommand({
-      Bucket: bucket,
-      Key: key,
-      ContentType: data.contentType,
-    }), { expiresIn: 3600 });
-
+    const { uploadUrl } = await createR2PresignedPutUrl(key, data.contentType, 3600);
     return { uploadUrl, publicUrl: `/${key}`, key };
   });
 
