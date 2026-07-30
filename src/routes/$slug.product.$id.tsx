@@ -17,6 +17,7 @@ import {
   fetchProductDetail,
   fetchRecommendationCatalog,
 } from "@/lib/storefront-queries";
+import { uploadPublicMedia } from "@/lib/r2-upload";
 
 export const Route = createFileRoute("/$slug/product/$id")({
   loader: async ({ params }) => {

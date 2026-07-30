@@ -230,7 +230,7 @@ export const Route = createFileRoute("/$slug")({
     } else if (firstSlide) {
       const slideMediaUrl = (firstSlide.media_url || firstSlide.media_url_ar || firstSlide.media_url_en) ?? "";
       if (firstSlide.type === "video" && slideMediaUrl) {
-        const slidePoster = firstSlide.media_poster_url || firstSlide.media_poster_url_ar || firstSlide.media_poster_url_en;
+        const slidePoster = firstSlide.media_poster_url_ar || firstSlide.media_poster_url_en;
         heroPosterUrl = (slidePoster && isLikelyImageUrl(slidePoster)) ? slidePoster : (imageKitVideoPosterUrl(slideMediaUrl, 640) || slideMediaUrl);
         heroVideoUrl = imageKitVideoUrl(slideMediaUrl, "mobile") || slideMediaUrl;
       } else if (firstSlide.type === "image" && slideMediaUrl) {
