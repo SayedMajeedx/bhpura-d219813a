@@ -1448,15 +1448,15 @@ function OrdersList() {
           </div>
 
           <Card className="hidden overflow-hidden rounded-2xl border border-border/70 bg-card shadow-sm sm:block">
-            <div className="max-h-[calc(100vh-220px)] overflow-auto">
-              <table className="w-full min-w-[1120px] table-fixed text-sm">
+            <div className="max-h-[calc(100vh-220px)] overflow-y-auto overflow-x-hidden">
+              <table className="w-full table-fixed text-sm">
                 <colgroup>
                   <col className="w-[8%]" />
+                  <col className="w-[12%]" />
+                  <col className="w-[24%]" />
+                  <col className="w-[15%]" />
+                  <col className="w-[15%]" />
                   <col className="w-[11%]" />
-                  <col className="w-[25%]" />
-                  <col className="w-[17%]" />
-                  <col className="w-[14%]" />
-                  <col className="w-[10%]" />
                   <col className="w-[15%]" />
                 </colgroup>
                 <thead className="sticky top-0 z-10 border-b bg-background/95 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground backdrop-blur select-none">
@@ -1588,8 +1588,8 @@ function OrdersList() {
                         <td className="p-4 text-end font-bold whitespace-nowrap">
                           {formatMoney(Number(o.total), o.currency)}
                         </td>
-                        <td className="p-4 text-end whitespace-nowrap">
-                          <div className="inline-flex items-center gap-2">
+                        <td className="p-3 text-end">
+                          <div className="flex min-w-0 items-center justify-end gap-1">
                             {renderContextualButton(o)}
                             
                             <DropdownMenu>
