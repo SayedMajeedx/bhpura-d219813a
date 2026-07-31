@@ -955,7 +955,11 @@ function OrdersList() {
     ) {
       return (
         <Button size="sm" variant="destructive" className="h-8 px-3 text-xs font-semibold" asChild>
-          <Link to="/admin/b/$slug/orders/$id" params={{ slug, id: o.id }}>
+          <Link
+            to="/admin/b/$slug/orders/$id"
+            params={{ slug, id: o.id }}
+            onClick={(e) => e.stopPropagation()}
+          >
             {lang === "ar" ? "مراجعة الطلب" : "Resolve issue"}
           </Link>
         </Button>
@@ -973,14 +977,15 @@ function OrdersList() {
             variant="outline"
             className="h-8 text-xs px-3 border-violet-300 text-violet-800 bg-violet-50 hover:bg-violet-100 dark:border-violet-800 dark:text-violet-200 dark:bg-violet-950/20 font-semibold"
             disabled={updatingOrderId !== null}
-            onClick={() =>
+            onClick={(e) => {
+              e.stopPropagation();
               handleStatusUpdate(
                 { payment_status: "paid", fulfillment_status: "READY_FOR_PICKUP" },
                 lang === "ar"
                   ? "تم تأكيد الدفع وتجهيز الطلب للاستلام!"
                   : "Payment validated and pickup prepared!",
-              )
-            }
+              );
+            }}
           >
             {isUpdating ? (
               <Loader2 className="animate-spin h-3.5 w-3.5" />
@@ -1000,12 +1005,13 @@ function OrdersList() {
             size="sm"
             className="h-8 text-xs px-3 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold dark:bg-indigo-800 dark:hover:bg-indigo-900"
             disabled={updatingOrderId !== null}
-            onClick={() =>
+            onClick={(e) => {
+              e.stopPropagation();
               handleStatusUpdate(
                 { fulfillment_status: "READY_FOR_PICKUP" },
                 lang === "ar" ? "تم تحديد الطلب كجاهز للاستلام!" : "Order marked ready for pickup!",
-              )
-            }
+              );
+            }}
           >
             {isUpdating ? (
               <Loader2 className="animate-spin h-3.5 w-3.5" />
@@ -1025,12 +1031,13 @@ function OrdersList() {
             size="sm"
             className="h-8 text-xs px-3 bg-amber-600 hover:bg-amber-700 text-white font-semibold dark:bg-amber-800 dark:hover:bg-amber-900"
             disabled={updatingOrderId !== null}
-            onClick={() =>
+            onClick={(e) => {
+              e.stopPropagation();
               handleStatusUpdate(
                 { fulfillment_status: "READY_FOR_PICKUP" },
                 lang === "ar" ? "تم تجهيز الطلب للاستلام!" : "Order prepared!",
-              )
-            }
+              );
+            }}
           >
             {isUpdating ? (
               <Loader2 className="animate-spin h-3.5 w-3.5" />
@@ -1057,7 +1064,8 @@ function OrdersList() {
               size="sm"
               className="h-8 bg-amber-500 px-3 text-xs font-semibold text-black hover:bg-amber-600"
               disabled={updatingOrderId !== null || isSubmittingCash}
-              onClick={() => {
+              onClick={(e) => {
+                e.stopPropagation();
                 setCashModalOrder(o);
                 setCashCollectedAmount(remainingBal.toFixed(3));
                 setCashModalNotes("");
@@ -1078,12 +1086,13 @@ function OrdersList() {
               size="sm"
               className="h-8 text-xs px-3 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold dark:bg-emerald-800 dark:hover:bg-emerald-900"
               disabled={updatingOrderId !== null}
-              onClick={() =>
+              onClick={(e) => {
+                e.stopPropagation();
                 handleStatusUpdate(
                   { fulfillment_status: "COMPLETED" },
                   lang === "ar" ? "تم تسليم الطلب بالكامل!" : "Handover completed!",
-                )
-              }
+                );
+              }}
             >
               {isUpdating ? (
                 <Loader2 className="animate-spin h-3.5 w-3.5" />
@@ -1107,12 +1116,13 @@ function OrdersList() {
             variant="outline"
             className="h-8 text-xs px-3 border-emerald-300 text-emerald-800 bg-emerald-50 hover:bg-emerald-100 dark:border-emerald-800 dark:text-emerald-200 dark:bg-emerald-950/20 font-semibold"
             disabled={updatingOrderId !== null}
-            onClick={() =>
+            onClick={(e) => {
+              e.stopPropagation();
               handleStatusUpdate(
                 { payment_status: "paid" },
                 lang === "ar" ? "تم تسجيل الدفع بنجاح!" : "Order payment marked as Paid!",
-              )
-            }
+              );
+            }}
           >
             {isUpdating ? (
               <Loader2 className="animate-spin h-3.5 w-3.5" />
@@ -1132,7 +1142,8 @@ function OrdersList() {
             size="sm"
             className="h-8 font-semibold bg-primary hover:bg-primary/90 text-primary-foreground text-xs px-3 shadow"
             disabled={updatingOrderId !== null}
-            onClick={() => {
+            onClick={(e) => {
+              e.stopPropagation();
               setSelectedFulfillOrder(o);
               setSelectedCourierId(o.assigned_to ?? "unassigned");
               setFulfillNotes(o.delivery_notes ?? "");
@@ -1151,7 +1162,8 @@ function OrdersList() {
             size="sm"
             className="h-8 font-semibold bg-amber-500 hover:bg-amber-600 text-black text-xs px-3 shadow"
             disabled={updatingOrderId !== null}
-            onClick={() => {
+            onClick={(e) => {
+              e.stopPropagation();
               setSelectedFulfillOrder(o);
               setSelectedCourierId(o.assigned_to ?? "unassigned");
               setFulfillNotes(o.delivery_notes ?? "");
@@ -1178,7 +1190,10 @@ function OrdersList() {
               size="sm"
               className="h-8 font-semibold bg-emerald-600 hover:bg-emerald-700 text-white text-xs px-3 shadow dark:bg-emerald-800 dark:hover:bg-emerald-900"
               disabled={updatingOrderId !== null || isSubmittingCash}
-              onClick={() => handleCompleteDelivery(o, 0)}
+              onClick={(e) => {
+                e.stopPropagation();
+                handleCompleteDelivery(o, 0);
+              }}
             >
               {isSubmittingCash && updatingOrderId === o.id ? (
                 <Loader2 className="animate-spin h-3.5 w-3.5" />
@@ -1198,7 +1213,8 @@ function OrdersList() {
               size="sm"
               className="h-8 font-semibold bg-amber-500 hover:bg-amber-600 text-black text-xs px-3 shadow"
               disabled={updatingOrderId !== null || isSubmittingCash}
-              onClick={() => {
+              onClick={(e) => {
+                e.stopPropagation();
                 setCashModalOrder(o);
                 setCashCollectedAmount(remainingBal.toFixed(3));
                 setCashModalNotes("");
@@ -1220,7 +1236,8 @@ function OrdersList() {
             size="sm"
             className="h-8 font-semibold bg-emerald-600 hover:bg-emerald-700 text-white text-xs px-3 shadow dark:bg-emerald-800 dark:hover:bg-emerald-900"
             disabled={updatingOrderId !== null || isSubmittingCash}
-            onClick={() => {
+            onClick={(e) => {
+              e.stopPropagation();
               setCashModalOrder(o);
               setCashCollectedAmount(totalAmt.toFixed(3));
               setCashModalNotes("");
@@ -1238,7 +1255,11 @@ function OrdersList() {
     } else if (workflow.nextAction === "deliver_digital") {
       return (
         <Button size="sm" className="h-8 px-3 text-xs font-semibold" asChild>
-          <Link to="/admin/b/$slug/orders/$id" params={{ slug, id: o.id }}>
+          <Link
+            to="/admin/b/$slug/orders/$id"
+            params={{ slug, id: o.id }}
+            onClick={(e) => e.stopPropagation()}
+          >
             {lang === "ar" ? "إرسال الطلب الرقمي" : "Deliver digital order"}
           </Link>
         </Button>
@@ -1249,7 +1270,11 @@ function OrdersList() {
     if (isOutForDelivery) {
       return (
         <Button size="sm" variant="outline" className="h-8 text-xs px-3" asChild>
-          <Link to="/admin/b/$slug/orders/$id" params={{ slug, id: o.id }}>
+          <Link
+            to="/admin/b/$slug/orders/$id"
+            params={{ slug, id: o.id }}
+            onClick={(e) => e.stopPropagation()}
+          >
             {lang === "ar" ? "تتبع" : "Track"}
           </Link>
         </Button>
@@ -1259,7 +1284,11 @@ function OrdersList() {
     // General fallback -> details
     return (
       <Button size="sm" variant="ghost" className="h-8 text-xs px-3" asChild>
-        <Link to="/admin/b/$slug/orders/$id" params={{ slug, id: o.id }}>
+        <Link
+          to="/admin/b/$slug/orders/$id"
+          params={{ slug, id: o.id }}
+          onClick={(e) => e.stopPropagation()}
+        >
           {lang === "ar" ? "تفاصيل" : "View"}
         </Link>
       </Button>
@@ -1730,6 +1759,7 @@ function OrdersList() {
                             to="/admin/b/$slug/orders/$id"
                             params={{ slug, id: o.id }}
                             className="text-primary hover:underline"
+                            onClick={(e) => e.stopPropagation()}
                           >
                             #{o.invoice_number}
                           </Link>
@@ -1845,7 +1875,12 @@ function OrdersList() {
 
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="icon" className="h-10 w-10 min-h-[44px] min-w-[44px] flex items-center justify-center">
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-10 w-10 min-h-[44px] min-w-[44px] flex items-center justify-center"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
                                   <MoreHorizontal className="h-4 w-4" />
                                   <span className="sr-only">
                                     {lang === "ar"
