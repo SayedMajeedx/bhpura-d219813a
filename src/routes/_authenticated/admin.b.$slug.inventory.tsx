@@ -279,7 +279,7 @@ function Inventory() {
   });
 
   return (
-    <div className="mx-auto max-w-7xl space-y-6 px-4 pb-4 pt-7 sm:p-6 lg:p-8 animate-fade-in">
+    <div className="mx-auto max-w-7xl space-y-4 p-1 sm:p-2 animate-fade-in">
       <div className="mb-6 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="font-display text-3xl font-extrabold tracking-tight bg-clip-text bg-gradient-to-r from-slate-900 via-slate-800 to-slate-950 dark:from-slate-50 dark:to-slate-300 sm:text-4xl">
