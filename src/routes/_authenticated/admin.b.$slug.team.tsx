@@ -38,6 +38,9 @@ import { useProfile, SUPER_ADMIN_EMAIL } from "@/lib/profile-context";
 import { useBrand } from "@/lib/brand-context";
 import type { Profile, UserRole, UserStatus } from "@/lib/profile-context";
 
+import { TeamCommandHeader } from "@/components/team/TeamCommandHeader";
+import { TeamScopeSwitcher, type TeamStatusScope } from "@/components/team/TeamScopeSwitcher";
+
 export const Route = createFileRoute("/_authenticated/admin/b/$slug/team")({
   beforeLoad: async ({ params }) => {
     const {
@@ -231,25 +234,40 @@ function TeamManagement() {
     setEditOpen(true);
   };
 
+  const [statusScope, setStatusScope] = useState<TeamStatusScope>("all");
+
   const staff = staffQ.data ?? [];
+  const filteredStaff = staff.filter((m) => {
+    if (statusScope === "active") return m.status === "active";
+    if (statusScope === "inactive") return m.status === "inactive";
+    return true;
+  });
+
+  const scopeCounts = {
+    all: staff.length,
+    active: staff.filter((m) => m.status === "active").length,
+    inactive: staff.filter((m) => m.status === "inactive").length,
+  };
+
   const locale = isAr ? "ar-BH-u-nu-latn" : "en-US";
 
   return (
-    <div
-      className="mx-auto max-w-6xl space-y-4 p-1 sm:p-2 animate-fade-in"
-      dir={isAr ? "rtl" : "ltr"}
-    >
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <h1 className="font-display text-4xl font-extrabold tracking-tight bg-clip-text bg-gradient-to-r from-slate-900 via-slate-800 to-slate-950 dark:from-slate-50 dark:to-slate-300">
-            {isAr ? "إدارة الموظفين" : "Team Management"}
-          </h1>
-          <p className="mt-1.5 text-muted-foreground text-sm max-w-md">
-            {isAr
-              ? "أضف وأدِر حسابات الموظفين. فقط المدراء يمكنهم رؤية هذه الصفحة."
-              : "Add and manage staff accounts. Only admins can view this page."}
-          </p>
-        </div>
+    <div className="space-y-3.5">
+      {/* 1. Command Header */}
+      <TeamCommandHeader
+        lang={isAr ? "ar" : "en"}
+        brandName={(isAr ? brand.name_ar : brand.name_en) || brand.name_en || brand.slug}
+        memberCount={staff.length}
+        onAddMember={() => setAddOpen(true)}
+      />
+
+      {/* 2. Scope Switcher */}
+      <TeamScopeSwitcher
+        lang={isAr ? "ar" : "en"}
+        activeScope={statusScope}
+        onScopeChange={(scope) => setStatusScope(scope)}
+        counts={scopeCounts}
+      />
         <Dialog
           open={addOpen}
           onOpenChange={(v) => {
@@ -417,7 +435,6 @@ function TeamManagement() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
-      </div>
 
       {staff.length === 0 ? (
         <Card className="p-16 text-center border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm">
@@ -450,7 +467,7 @@ function TeamManagement() {
                 </tr>
               </thead>
               <tbody>
-                {staff.map((member) => (
+                {filteredStaff.map((member) => (
                   <tr key={member.id} className="border-t border-border">
                     <td className="p-4 font-medium">{member.name || member.email.split("@")[0]}</td>
                     <td className="hidden p-4 text-muted-foreground md:table-cell" dir="ltr">
