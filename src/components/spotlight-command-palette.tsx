@@ -3,7 +3,7 @@ import { useNavigate, useParams } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useI18n } from "@/lib/i18n";
-import { useBrand } from "@/lib/brand-context";
+import { useBrandOptional } from "@/lib/brand-context";
 import {
   CommandDialog,
   CommandInput,
@@ -37,12 +37,13 @@ export function SpotlightCommandPalette({
   onOpenChange: (open: boolean) => void;
 }) {
   const navigate = useNavigate();
+  const routeParams = useParams({ strict: false }) as { slug?: string };
   const { lang, setLang, t } = useI18n();
-  const brand = useBrand();
+  const brand = useBrandOptional();
   const isAr = lang === "ar";
   const [searchQuery, setSearchQuery] = useState("");
 
-  const activeSlug = brand?.slug || "";
+  const activeSlug = brand?.slug || routeParams?.slug || "";
 
   // Query live matching orders & products when user types in command input
   const liveSearchResults = useQuery({
