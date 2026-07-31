@@ -717,11 +717,25 @@ function OrdersList() {
       ) {
         return false;
       }
-      if (
-        gatewayFilter !== "all" &&
-        String(order.payment_method || "").toLowerCase() !== gatewayFilter.toLowerCase()
-      ) {
-        return false;
+      if (gatewayFilter !== "all") {
+        const pm = String(order.payment_method || "").toLowerCase();
+        const gf = gatewayFilter.toLowerCase();
+        let matchesGateway = false;
+
+        if (gf === "benefit") {
+          matchesGateway = pm.includes("benefit") || pm.includes("ben");
+        } else if (gf === "card") {
+          matchesGateway =
+            pm.includes("card") || pm.includes("tap") || pm.includes("creimax") || pm.includes("credit");
+        } else if (gf === "cod") {
+          matchesGateway = pm.includes("cod") || pm.includes("cash") || pm.includes("delivery");
+        } else if (gf === "bank_transfer") {
+          matchesGateway = pm.includes("bank") || pm.includes("transfer");
+        } else {
+          matchesGateway = pm === gf;
+        }
+
+        if (!matchesGateway) return false;
       }
 
       // Quick tab routing
@@ -1458,19 +1472,19 @@ function OrdersList() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">
-                {lang === "ar" ? "بوابة الدفع: الكل" : "Gateway: All"}
+                {lang === "ar" ? "طريقة الدفع: الكل" : "Payment Method: All"}
               </SelectItem>
-              <SelectItem value="benefitpay">
-                {lang === "ar" ? "تطبيق بنفت باج" : "BenefitPay"}
+              <SelectItem value="benefit">
+                {lang === "ar" ? "بنفت بي (BenefitPay)" : "BenefitPay"}
               </SelectItem>
               <SelectItem value="card">
-                {lang === "ar" ? "بطاقة ائتمان / مدى" : "Credit/Debit Card"}
+                {lang === "ar" ? "بطاقة ائتمان / مدى (Card)" : "Credit/Debit Card"}
               </SelectItem>
-              <SelectItem value="tap">
-                {lang === "ar" ? "بوابة Tap" : "Tap Payments"}
+              <SelectItem value="cod">
+                {lang === "ar" ? "الدفع عند الاستلام (COD)" : "Cash / COD"}
               </SelectItem>
-              <SelectItem value="cash">
-                {lang === "ar" ? "الدفع عند الاستلام (كاش)" : "Cash / COD"}
+              <SelectItem value="bank_transfer">
+                {lang === "ar" ? "تحويل بنكي (Bank Transfer)" : "Bank Transfer"}
               </SelectItem>
             </SelectContent>
           </Select>
@@ -3066,22 +3080,22 @@ function OrderQuickInspectSheet({
         side={isAr ? "left" : "right"}
         className="w-full sm:max-w-lg p-0 flex flex-col bg-background shadow-2xl"
       >
-        <div className="p-6 border-b space-y-1">
-          <div className="flex items-center justify-between">
+        <div className="p-6 pe-16 ps-12 border-b space-y-2">
+          <div className="flex items-center justify-between gap-3">
+            <SheetTitle className="text-2xl font-extrabold font-display">
+              #{order.invoice_number}
+            </SheetTitle>
             <span className="text-xs font-mono font-bold text-muted-foreground">
               {formatDate(order.created_at ?? order.order_date, locale)}
             </span>
-            <Link
-              to="/admin/b/$slug/orders/$id"
-              params={{ slug, id: order.id }}
-              className="text-xs font-semibold text-primary hover:underline flex items-center gap-1"
-            >
-              {isAr ? "تفاصيل إضافية" : "Full Details"} <ExternalLink className="h-3 w-3" />
-            </Link>
           </div>
-          <SheetTitle className="text-xl font-bold font-display">
-            #{order.invoice_number}
-          </SheetTitle>
+          <Link
+            to="/admin/b/$slug/orders/$id"
+            params={{ slug, id: order.id }}
+            className="text-xs font-semibold text-primary hover:underline inline-flex items-center gap-1.5 pt-1"
+          >
+            {isAr ? "تفاصيل الطلب الكاملة" : "Full Order Page"} <ExternalLink className="h-3 w-3" />
+          </Link>
         </div>
 
         <div className="flex-1 overflow-y-auto p-6 space-y-6">

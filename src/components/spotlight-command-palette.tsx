@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useI18n } from "@/lib/i18n";
+import { formatMoney } from "@/lib/format";
 import { useBrandOptional } from "@/lib/brand-context";
 import {
   CommandDialog,
@@ -202,7 +203,7 @@ export function SpotlightCommandPalette({
                   </span>
                 </div>
                 <span className="text-xs font-mono font-bold">
-                  {o.total} {o.currency || "BHD"}
+                  {formatMoney(Number(o.total || 0), o.currency || "BHD", isAr ? "ar-BH-u-nu-latn" : "en-US")}
                 </span>
               </CommandItem>
             ))}
@@ -239,7 +240,9 @@ export function SpotlightCommandPalette({
                     {isAr ? p.name_ar || p.name_en : p.name_en || p.name_ar}
                   </span>
                 </div>
-                <span className="text-xs font-mono font-bold">{p.base_price} BHD</span>
+                <span className="text-xs font-mono font-bold text-emerald-600 dark:text-emerald-400">
+                  {formatMoney(Number(p.base_price || 0), "BHD", isAr ? "ar-BH-u-nu-latn" : "en-US")}
+                </span>
               </CommandItem>
             ))}
           </CommandGroup>
