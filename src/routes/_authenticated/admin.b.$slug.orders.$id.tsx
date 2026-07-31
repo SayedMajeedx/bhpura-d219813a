@@ -19,6 +19,7 @@ import {
   ArrowLeft,
   Plus,
   Trash2,
+  Copy,
   Printer,
   Save,
   Send,
@@ -1147,8 +1148,19 @@ function OrderDetail() {
     setProductSearchQuery("");
   };
 
+  const serverOrder = orderQ.data as any;
+  const isBlankDraft =
+    id === "new" ||
+    (serverOrder?.status === "draft" &&
+      !serverOrder?.customer_id &&
+      !serverOrder?.payment_method &&
+      (serverOrder?.order_items?.length ?? 0) === 0);
+
   useEffect(() => {
     if (orderQ.data) {
+      // Prevent background query revalidations from overwriting unsaved local edits
+      if (initialSnapshotRef.current && isDirty) return;
+
       setOrder(orderQ.data);
       const loadedItems = (orderQ.data.order_items ?? []).map((i: any) => ({
         id: i.id,
@@ -1165,6 +1177,28 @@ function OrderDetail() {
         selected_variant: i.selected_variant ?? null,
         custom_field_values: normalizeCustomFieldValues(i.custom_field_values),
       }));
+
+      // Check localStorage for uncommitted draft backup
+      const cacheKey = `boutq_draft_${brandId}_${id}`;
+      try {
+        const cachedStr = localStorage.getItem(cacheKey);
+        if (cachedStr && (id === "new" || isBlankDraft)) {
+          const cached = JSON.parse(cachedStr);
+          if (cached && Array.isArray(cached.items) && cached.items.length > 0) {
+            setItems(cached.items);
+            if (cached.order) setOrder((prev: any) => ({ ...prev, ...cached.order }));
+            toast.info(
+              lang === "ar"
+                ? "تم استعادة مسودتك الأخيرة تلقائياً!"
+                : "Restored your unsaved draft!",
+            );
+            return;
+          }
+        }
+      } catch (e) {
+        // ignore cache read errors
+      }
+
       setItems(loadedItems);
 
       initialSnapshotRef.current = {
@@ -1212,6 +1246,16 @@ function OrderDetail() {
   useEffect(() => {
     setHasSavedDraft(false);
   }, [id]);
+
+  // Auto-save unsaved draft state to localStorage
+  useEffect(() => {
+    if (id === "new" || isBlankDraft) {
+      const cacheKey = `boutq_draft_${brandId}_${id}`;
+      if (items.length > 0 || order.customer_id) {
+        localStorage.setItem(cacheKey, JSON.stringify({ order, items, updatedAt: Date.now() }));
+      }
+    }
+  }, [items, order, brandId, id, isBlankDraft]);
 
   // Backfill the tenant's flat delivery fee for untouched draft orders that
   // were created before the list-page initializer loaded the setting.
@@ -1433,14 +1477,8 @@ function OrderDetail() {
   if (settingsQ.isPending || !settingsQ.data) return <div className="p-8">Loading…</div>;
 
   const currency = order.currency ?? "BHD";
-  const serverOrder = orderQ.data as any;
   const isClosedOrder = serverOrder?.status === "completed" || serverOrder?.status === "paid";
   const isReadOnly = isClosedOrder && !editingUnlocked;
-  const isBlankDraft =
-    serverOrder?.status === "draft" &&
-    !serverOrder?.customer_id &&
-    !serverOrder?.payment_method &&
-    (serverOrder?.order_items?.length ?? 0) === 0;
   const isCreationMode = isBlankDraft && !hasSavedDraft;
 
   const addItem = () => {
@@ -1797,6 +1835,10 @@ function OrderDetail() {
     if (logs.length > 0) await logActivityBatch(logs);
 
     toast.success(lang === "ar" ? "تم الحفظ بنجاح" : "Saved successfully");
+    try {
+      localStorage.removeItem(`boutq_draft_${brandId}_${id}`);
+      localStorage.removeItem(`boutq_draft_${brandId}_new`);
+    } catch (e) {}
     setHasSavedDraft(true);
     setEditingUnlocked(false);
     setSaving(false);
@@ -4159,18 +4201,51 @@ function OrderDetail() {
             >
               {lang === "ar" ? "إلغاء" : "Cancel"}
             </Button>
-            <Button
-              type="button"
-              className="bg-primary text-primary-foreground font-bold"
-              disabled={creatingCustomer || !newCustName.trim()}
-              onClick={handleCreateInlineCustomer}
-            >
-              {creatingCustomer && <Loader2 className="me-2 h-4 w-4 animate-spin" />}
-              {lang === "ar" ? "حفظ وتعيين للطلب" : "Save & Assign to Order"}
-            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Mobile Sticky Action Footer Bar */}
+      <div className="fixed bottom-0 left-0 right-0 z-40 p-3 bg-background/95 backdrop-blur border-t border-border shadow-[0_-4px_12px_rgba(0,0,0,0.08)] sm:hidden flex items-center justify-between gap-3 no-print">
+        <div className="flex flex-col min-w-0">
+          <span className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">
+            {lang === "ar" ? "المبلغ الإجمالي" : "Total Due"}
+          </span>
+          <span className="font-black text-base text-foreground tabular-nums truncate">
+            {formatMoney(totals.total, currency)}
+          </span>
+        </div>
+        <div className="flex items-center gap-2">
+          {order.public_invoice_token && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="h-9 px-3 text-xs font-semibold"
+              onClick={copyLink}
+            >
+              <Copy className="h-3.5 w-3.5 me-1" />
+              {lang === "ar" ? "الرابط" : "Link"}
+            </Button>
+          )}
+          <Button
+            type="button"
+            size="sm"
+            disabled={saving}
+            onClick={save}
+            className="h-9 px-4 bg-primary text-primary-foreground font-bold shadow-md text-xs"
+          >
+            {saving && <Loader2 className="me-1.5 h-3.5 w-3.5 animate-spin" />}
+            {isBlankDraft
+              ? lang === "ar"
+                ? "حفظ كمسودة"
+                : "Save Draft"
+              : lang === "ar"
+                ? "حفظ التغييرات"
+                : "Save Changes"}
+          </Button>
+        </div>
+      </div>
     </div>
   );
 }
