@@ -76,7 +76,10 @@ const AR_ADDRESS_TERMS: Array<[RegExp, string]> = [
   [/مبني/g, "Building"],
 ];
 
-export function translateArabicAddressTerms(s: string | null | undefined, lang: "en" | "ar"): string {
+export function translateArabicAddressTerms(
+  s: string | null | undefined,
+  lang: "en" | "ar",
+): string {
   if (!s) return "";
   if (lang !== "en") return s;
   let out = s;
@@ -85,16 +88,18 @@ export function translateArabicAddressTerms(s: string | null | undefined, lang: 
 }
 
 /** Compact one-line address for pickers and lists. */
-export function formatAddressLine(a: StructuredAddress | null | undefined, lang: "en" | "ar"): string {
+export function formatAddressLine(
+  a: StructuredAddress | null | undefined,
+  lang: "en" | "ar",
+): string {
   if (!a) return "";
   const region = regionLabel(a.region, lang);
   const block = translateArabicAddressTerms(a.block?.trim() || "", lang);
   const road = translateArabicAddressTerms(a.road?.trim() || "", lang);
   const house = translateArabicAddressTerms(a.house?.trim() || "", lang);
   const flat = translateArabicAddressTerms(a.flat?.trim() || "", lang);
-  const parts = lang === "ar"
-    ? [region, block, road, house, flat]
-    : [flat, house, road, block, region];
+  const parts =
+    lang === "ar" ? [region, block, road, house, flat] : [flat, house, road, block, region];
   const sep = lang === "ar" ? "، " : ", ";
   return parts.filter((p) => p && p.length > 0).join(sep);
 }
@@ -105,7 +110,10 @@ export function formatAddressLine(a: StructuredAddress | null | undefined, lang:
  * AR: "المنطقة: المنامة، المجمع: 428، طريق: 2825، منزل: 12، شقة: 4"
  * Flat is optional; empty fields are skipped.
  */
-export function formatAddressDetailed(a: StructuredAddress | null | undefined, lang: "en" | "ar"): string {
+export function formatAddressDetailed(
+  a: StructuredAddress | null | undefined,
+  lang: "en" | "ar",
+): string {
   if (!a) return "";
   const region = regionLabel(a.region, lang);
   const block = translateArabicAddressTerms(a.block?.trim() || "", lang);

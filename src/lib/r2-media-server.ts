@@ -19,7 +19,11 @@ const MIME_TYPES: Record<string, string> = {
 };
 
 function getMimeType(key: string, contentTypeFromR2?: string | null): string {
-  if (contentTypeFromR2 && contentTypeFromR2 !== "application/octet-stream" && contentTypeFromR2 !== "text/plain") {
+  if (
+    contentTypeFromR2 &&
+    contentTypeFromR2 !== "application/octet-stream" &&
+    contentTypeFromR2 !== "text/plain"
+  ) {
     return contentTypeFromR2;
   }
   const ext = key.split(".").pop()?.toLowerCase() ?? "";
@@ -28,7 +32,10 @@ function getMimeType(key: string, contentTypeFromR2?: string | null): string {
 
 function sanitizeHeader(val?: string | null): string | undefined {
   if (!val) return undefined;
-  return val.trim().replace(/^['"]|['"]$/g, "").trim();
+  return val
+    .trim()
+    .replace(/^['"]|['"]$/g, "")
+    .trim();
 }
 
 const awsClientsCache = new Map<string, AwsClient>();
@@ -50,7 +57,7 @@ function getCachedAwsClient(accessKeyId: string, secretAccessKey: string): AwsCl
 
 export async function handleR2MediaRequest(
   request: Request,
-  env: Cloudflare.Env
+  env: Cloudflare.Env,
 ): Promise<Response> {
   const corsHeaders: Record<string, string> = {
     "Access-Control-Allow-Origin": "*",
@@ -99,9 +106,21 @@ export async function handleR2MediaRequest(
   try {
     const g = globalThis as any;
     const accountId = sanitizeHeader((env as any).R2_ACCOUNT_ID || g.R2_ACCOUNT_ID);
-    const accessKeyId = sanitizeHeader((env as any).R2_ACCESS_KEY_ID || (env as any).ACCESS_KEY_ID || g.R2_ACCESS_KEY_ID || g.ACCESS_KEY_ID);
-    const secretAccessKey = sanitizeHeader((env as any).R2_SECRET_ACCESS_KEY || (env as any).SECRET_ACCESS_KEY || g.R2_SECRET_ACCESS_KEY || g.SECRET_ACCESS_KEY);
-    const bucket = sanitizeHeader((env as any).R2_BUCKET_NAME || g.R2_BUCKET_NAME || (env as any).R2_BUCKET || g.R2_BUCKET);
+    const accessKeyId = sanitizeHeader(
+      (env as any).R2_ACCESS_KEY_ID ||
+        (env as any).ACCESS_KEY_ID ||
+        g.R2_ACCESS_KEY_ID ||
+        g.ACCESS_KEY_ID,
+    );
+    const secretAccessKey = sanitizeHeader(
+      (env as any).R2_SECRET_ACCESS_KEY ||
+        (env as any).SECRET_ACCESS_KEY ||
+        g.R2_SECRET_ACCESS_KEY ||
+        g.SECRET_ACCESS_KEY,
+    );
+    const bucket = sanitizeHeader(
+      (env as any).R2_BUCKET_NAME || g.R2_BUCKET_NAME || (env as any).R2_BUCKET || g.R2_BUCKET,
+    );
 
     if (accountId && accessKeyId && secretAccessKey && bucket) {
       const client = getCachedAwsClient(accessKeyId, secretAccessKey);

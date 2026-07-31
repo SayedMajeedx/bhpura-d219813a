@@ -6,7 +6,9 @@ import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/admin/b/$slug/reports")({
   beforeLoad: async ({ params }) => {
-    const { data: { user } } = await supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
     if (!user) throw redirect({ to: "/auth" });
 
     const { data: profile } = await (supabase as any)
@@ -31,22 +33,53 @@ export const Route = createFileRoute("/_authenticated/admin/b/$slug/reports")({
 });
 
 const navItems = [
-  { id: "overview", path: "/admin/b/$slug/reports", icon: BarChart3, en: "Overview", ar: "نظرة عامة" },
-  { id: "sales", path: "/admin/b/$slug/reports/sales", icon: TrendingUp, en: "Sales", ar: "المبيعات" },
-  { id: "products", path: "/admin/b/$slug/reports/products", icon: Package, en: "Products", ar: "المنتجات" },
-  { id: "customers", path: "/admin/b/$slug/reports/customers", icon: Users, en: "Customers", ar: "العملاء" },
-  { id: "export", path: "/admin/b/$slug/reports/export", icon: Download, en: "Export", ar: "التصدير" },
+  {
+    id: "overview",
+    path: "/admin/b/$slug/reports",
+    icon: BarChart3,
+    en: "Overview",
+    ar: "نظرة عامة",
+  },
+  {
+    id: "sales",
+    path: "/admin/b/$slug/reports/sales",
+    icon: TrendingUp,
+    en: "Sales",
+    ar: "المبيعات",
+  },
+  {
+    id: "products",
+    path: "/admin/b/$slug/reports/products",
+    icon: Package,
+    en: "Products",
+    ar: "المنتجات",
+  },
+  {
+    id: "customers",
+    path: "/admin/b/$slug/reports/customers",
+    icon: Users,
+    en: "Customers",
+    ar: "العملاء",
+  },
+  {
+    id: "export",
+    path: "/admin/b/$slug/reports/export",
+    icon: Download,
+    en: "Export",
+    ar: "التصدير",
+  },
 ] as const;
 
 function ReportsLayout() {
   const { lang } = useI18n();
   const location = useLocation();
   const { slug } = Route.useParams();
-  const current = navItems.find((item) =>
-    item.id === "overview"
-      ? location.pathname.endsWith("/reports")
-      : location.pathname.includes(`/reports/${item.id}`),
-  )?.id ?? "overview";
+  const current =
+    navItems.find((item) =>
+      item.id === "overview"
+        ? location.pathname.endsWith("/reports")
+        : location.pathname.includes(`/reports/${item.id}`),
+    )?.id ?? "overview";
 
   return (
     <div className="min-h-full bg-[linear-gradient(180deg,#faf8f7_0%,#ffffff_24rem)]">

@@ -4,7 +4,8 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 let getEventFn: any = null;
-import(/* @vite-ignore */ "vinxi/http")
+const vinxiHttp = "vinxi/http";
+import(/* @vite-ignore */ vinxiHttp)
   .then((m) => {
     getEventFn = m.getEvent;
   })
@@ -22,10 +23,11 @@ function getPlatformEnv(name: string): string | undefined {
   try {
     if (getEventFn) {
       const event = getEventFn();
-      const env = event?.context?.cloudflare?.env || 
-                  (event?.context as any)?.env || 
-                  event?.context?.cloudflare || 
-                  (event?.context as any)?.cloudflare?.env;
+      const env =
+        event?.context?.cloudflare?.env ||
+        (event?.context as any)?.env ||
+        event?.context?.cloudflare ||
+        (event?.context as any)?.cloudflare?.env;
       if (env) {
         for (const key of searchNames) {
           if (env[key]) return env[key];
@@ -47,14 +49,36 @@ function getPlatformEnv(name: string): string | undefined {
   return undefined;
 }
 
-const mediaKinds = ["logo", "favicon", "font", "product", "category", "hero", "page", "payment-qr", "expense-receipt"] as const;
+const mediaKinds = [
+  "logo",
+  "favicon",
+  "font",
+  "product",
+  "category",
+  "hero",
+  "page",
+  "payment-qr",
+  "expense-receipt",
+] as const;
 export const mimeToExtension: Record<string, string> = {
-  "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp", "image/gif": "gif",
-  "image/svg+xml": "svg", "image/x-icon": "ico", "image/vnd.microsoft.icon": "ico",
-  "video/mp4": "mp4", "video/webm": "webm", "video/quicktime": "mov",
-  "font/woff": "woff", "font/woff2": "woff2", "font/ttf": "ttf", "font/otf": "otf",
-  "application/font-woff": "woff", "application/x-font-ttf": "ttf",
-  "application/x-font-opentype": "otf", "application/octet-stream": "bin",
+  "image/jpeg": "jpg",
+  "image/png": "png",
+  "image/webp": "webp",
+  "image/gif": "gif",
+  "image/svg+xml": "svg",
+  "image/x-icon": "ico",
+  "image/vnd.microsoft.icon": "ico",
+  "video/mp4": "mp4",
+  "video/webm": "webm",
+  "video/quicktime": "mov",
+  "font/woff": "woff",
+  "font/woff2": "woff2",
+  "font/ttf": "ttf",
+  "font/otf": "otf",
+  "application/font-woff": "woff",
+  "application/x-font-ttf": "ttf",
+  "application/x-font-opentype": "otf",
+  "application/octet-stream": "bin",
   "application/pdf": "pdf",
 };
 
@@ -62,7 +86,11 @@ const Input = z.object({
   brandId: z.string().uuid(),
   kind: z.enum(mediaKinds),
   contentType: z.string().min(3).max(100),
-  size: z.number().int().positive().max(100 * 1024 * 1024),
+  size: z
+    .number()
+    .int()
+    .positive()
+    .max(100 * 1024 * 1024),
 });
 
 function requiredEnv(name: string): string {
@@ -73,7 +101,10 @@ function requiredEnv(name: string): string {
 
 function sanitizeValue(val: string | undefined): string | undefined {
   if (!val) return undefined;
-  return val.trim().replace(/^['"]|['"]$/g, "").trim();
+  return val
+    .trim()
+    .replace(/^['"]|['"]$/g, "")
+    .trim();
 }
 
 type R2PutInput = {
@@ -115,10 +146,11 @@ export function r2Client(): { client: R2CompatClient; bucket: string; publicBase
   try {
     if (getEventFn) {
       const event = getEventFn();
-      env = event?.context?.cloudflare?.env || 
-            event?.context?.env || 
-            event?.context?.cloudflare || 
-            (event?.context as any)?.cloudflare?.env;
+      env =
+        event?.context?.cloudflare?.env ||
+        event?.context?.env ||
+        event?.context?.cloudflare ||
+        (event?.context as any)?.cloudflare?.env;
     }
   } catch {}
 
@@ -132,17 +164,25 @@ export function r2Client(): { client: R2CompatClient; bucket: string; publicBase
 
   const g = globalThis as any;
   const accountId = sanitizeValue(env?.R2_ACCOUNT_ID || g.R2_ACCOUNT_ID);
-  const accessKeyId = sanitizeValue(env?.R2_ACCESS_KEY_ID || env?.ACCESS_KEY_ID || g.R2_ACCESS_KEY_ID || g.ACCESS_KEY_ID);
-  const secretAccessKey = sanitizeValue(env?.R2_SECRET_ACCESS_KEY || env?.SECRET_ACCESS_KEY || g.R2_SECRET_ACCESS_KEY || g.SECRET_ACCESS_KEY);
+  const accessKeyId = sanitizeValue(
+    env?.R2_ACCESS_KEY_ID || env?.ACCESS_KEY_ID || g.R2_ACCESS_KEY_ID || g.ACCESS_KEY_ID,
+  );
+  const secretAccessKey = sanitizeValue(
+    env?.R2_SECRET_ACCESS_KEY ||
+      env?.SECRET_ACCESS_KEY ||
+      g.R2_SECRET_ACCESS_KEY ||
+      g.SECRET_ACCESS_KEY,
+  );
   const bucket = sanitizeValue(env?.R2_BUCKET_NAME || g.R2_BUCKET_NAME);
-  
+
   // Provide robust fallback to production storefront custom media domain
-  const publicBaseUrl = sanitizeValue(env?.R2_PUBLIC_BASE_URL || g.R2_PUBLIC_BASE_URL) || "https://media.boutq.store";
+  const publicBaseUrl =
+    sanitizeValue(env?.R2_PUBLIC_BASE_URL || g.R2_PUBLIC_BASE_URL) || "https://media.boutq.store";
 
   if (!accountId || !accessKeyId || !secretAccessKey || !bucket) {
     throw new Error(
       `Missing required Cloudflare execution context environment variables for Public R2 client. ` +
-      `AccountId: ${!!accountId}, AccessKeyId: ${!!accessKeyId}, SecretAccessKey: ${!!secretAccessKey}, Bucket: ${!!bucket}`
+        `AccountId: ${!!accountId}, AccessKeyId: ${!!accessKeyId}, SecretAccessKey: ${!!secretAccessKey}, Bucket: ${!!bucket}`,
     );
   }
 
@@ -155,7 +195,12 @@ export function r2Client(): { client: R2CompatClient; bucket: string; publicBase
   };
 }
 
-function r2Connection(): { signer: AwsClient; endpoint: string; bucket: string; publicBaseUrl: string } {
+function r2Connection(): {
+  signer: AwsClient;
+  endpoint: string;
+  bucket: string;
+  publicBaseUrl: string;
+} {
   const config = r2Client();
   return {
     signer: config.client.signer,
@@ -194,9 +239,14 @@ export const createR2UploadUrl = createServerFn({ method: "POST" })
     const extension = mimeToExtension[data.contentType.toLowerCase()];
     if (!extension) throw new Error("UNSUPPORTED_FILE_TYPE");
     const isVideo = data.contentType.startsWith("video/");
-    const maxSize = isVideo ? 100 * 1024 * 1024 : data.kind === "font" ? 10 * 1024 * 1024 : 12 * 1024 * 1024;
+    const maxSize = isVideo
+      ? 100 * 1024 * 1024
+      : data.kind === "font"
+        ? 10 * 1024 * 1024
+        : 12 * 1024 * 1024;
     if (data.size > maxSize) throw new Error("FILE_TOO_LARGE");
-    if (isVideo && !["hero", "product"].includes(data.kind)) throw new Error("UNSUPPORTED_FILE_TYPE");
+    if (isVideo && !["hero", "product"].includes(data.kind))
+      throw new Error("UNSUPPORTED_FILE_TYPE");
 
     const { signer, endpoint, bucket, publicBaseUrl } = r2Connection();
     const key = `brands/${data.brandId}/${data.kind}/${crypto.randomUUID()}.${extension}`;
@@ -229,8 +279,11 @@ export const deleteR2Object = createServerFn({ method: "POST" })
     if (!canAccess || !isAdmin) throw new Error("FORBIDDEN");
     if (!data.key.startsWith(`brands/${data.brandId}/`)) throw new Error("INVALID_OBJECT_KEY");
     const { signer, endpoint, bucket } = r2Connection();
-    const response = await signer.fetch(r2ObjectUrl(endpoint, bucket, data.key), { method: "DELETE" });
-    if (!response.ok && response.status !== 404) throw new Error(`R2 delete failed (${response.status})`);
+    const response = await signer.fetch(r2ObjectUrl(endpoint, bucket, data.key), {
+      method: "DELETE",
+    });
+    if (!response.ok && response.status !== 404)
+      throw new Error(`R2 delete failed (${response.status})`);
     return { deleted: true };
   });
 
@@ -262,10 +315,15 @@ export const purgeBrandR2Objects = createServerFn({ method: "POST" })
       );
       for (let index = 0; index < keys.length; index += 20) {
         const batch = keys.slice(index, index + 20);
-        await Promise.all(batch.map(async (key) => {
-          const response = await signer.fetch(r2ObjectUrl(endpoint, bucket, key), { method: "DELETE" });
-          if (!response.ok && response.status !== 404) throw new Error(`R2 delete failed (${response.status})`);
-        }));
+        await Promise.all(
+          batch.map(async (key) => {
+            const response = await signer.fetch(r2ObjectUrl(endpoint, bucket, key), {
+              method: "DELETE",
+            });
+            if (!response.ok && response.status !== 404)
+              throw new Error(`R2 delete failed (${response.status})`);
+          }),
+        );
         deleted += batch.length;
       }
       const truncated = /<IsTruncated>true<\/IsTruncated>/.test(xml);

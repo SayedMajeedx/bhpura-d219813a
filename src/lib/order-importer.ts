@@ -20,9 +20,9 @@ const OrderImportSchema = z.object({
           name: z.string(),
           quantity: z.number().default(1),
           price: z.number(),
-        })
+        }),
       ),
-    })
+    }),
   ),
 });
 
@@ -34,7 +34,9 @@ async function verifyBrandAccess(brandId: string, context: any) {
   }
 
   // 1. Check direct brand access (standard brand administrators)
-  const { data: hasAccess, error: accessErr } = await context.supabase.rpc("can_access_brand", { _brand_id: brandId });
+  const { data: hasAccess, error: accessErr } = await context.supabase.rpc("can_access_brand", {
+    _brand_id: brandId,
+  });
   if (accessErr) {
     console.error("Supabase can_access_brand RPC failed:", accessErr);
   }
@@ -56,7 +58,9 @@ async function verifyBrandAccess(brandId: string, context: any) {
         const isFixedSuperAdmin = email === "majeed@hotmail.it" || email === "majeed@hotmail.com";
 
         if (isSuperAdmin || isFixedSuperAdmin) {
-          console.log(`[Impersonation Auth] Superadmin (${email}) authorized to perform order import on brand: ${brandId}`);
+          console.log(
+            `[Impersonation Auth] Superadmin (${email}) authorized to perform order import on brand: ${brandId}`,
+          );
           return true; // Impersonation access granted
         }
       }
@@ -65,7 +69,9 @@ async function verifyBrandAccess(brandId: string, context: any) {
     console.error("Failed to resolve impersonation cookie credentials:", err);
   }
 
-  throw new Error("FORBIDDEN: You do not have permission to import historical orders under this brand.");
+  throw new Error(
+    "FORBIDDEN: You do not have permission to import historical orders under this brand.",
+  );
 }
 
 export const importHistoricalOrders = createServerFn({ method: "POST" })
@@ -150,7 +156,9 @@ export const importHistoricalOrders = createServerFn({ method: "POST" })
                 .insert({
                   user_id: userId,
                   brand_id: data.brandId,
-                  name: order.customerName || `Customer ${order.customerPhone || order.customerEmail || "Imported"}`,
+                  name:
+                    order.customerName ||
+                    `Customer ${order.customerPhone || order.customerEmail || "Imported"}`,
                   phone: order.customerPhone,
                   email: order.customerEmail,
                   notes: `Migrated via ${order.source} historical orders.`,
@@ -159,7 +167,10 @@ export const importHistoricalOrders = createServerFn({ method: "POST" })
                 .single();
 
               if (createErr) {
-                console.error("Failed to create profile during historical order migration:", createErr);
+                console.error(
+                  "Failed to create profile during historical order migration:",
+                  createErr,
+                );
                 // Fallback to standalone order without customer_id if required
               } else {
                 customerId = newCust.id;

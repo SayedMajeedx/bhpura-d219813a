@@ -1,14 +1,5 @@
 import { useEffect, useRef } from "react";
-import {
-  Bold,
-  Heading2,
-  Heading3,
-  Italic,
-  Link2,
-  List,
-  ListOrdered,
-  Table2,
-} from "lucide-react";
+import { Bold, Heading2, Heading3, Italic, Link2, List, ListOrdered, Table2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { sanitizeRichTextHtml } from "@/lib/rich-text";
@@ -43,7 +34,10 @@ export function RichTextEditor({
   };
 
   const addLink = () => {
-    const url = window.prompt(direction === "rtl" ? "أدخل رابطًا آمنًا" : "Enter a secure link URL", "https://");
+    const url = window.prompt(
+      direction === "rtl" ? "أدخل رابطًا آمنًا" : "Enter a secure link URL",
+      "https://",
+    );
     if (!url) return;
     run("createLink", url);
   };
@@ -51,7 +45,10 @@ export function RichTextEditor({
   const addTable = () => {
     const rowsInput = window.prompt(direction === "rtl" ? "عدد الصفوف" : "Number of rows", "3");
     if (rowsInput === null) return;
-    const columnsInput = window.prompt(direction === "rtl" ? "عدد الأعمدة" : "Number of columns", "3");
+    const columnsInput = window.prompt(
+      direction === "rtl" ? "عدد الأعمدة" : "Number of columns",
+      "3",
+    );
     if (columnsInput === null) return;
     const rows = Math.min(20, Math.max(1, Number.parseInt(rowsInput, 10) || 0));
     const columns = Math.min(10, Math.max(1, Number.parseInt(columnsInput, 10) || 0));
@@ -64,10 +61,26 @@ export function RichTextEditor({
   const tools = [
     { label: direction === "rtl" ? "عريض" : "Bold", icon: Bold, action: () => run("bold") },
     { label: direction === "rtl" ? "مائل" : "Italic", icon: Italic, action: () => run("italic") },
-    { label: direction === "rtl" ? "عنوان رئيسي" : "Heading 2", icon: Heading2, action: () => run("formatBlock", "h2") },
-    { label: direction === "rtl" ? "عنوان فرعي" : "Heading 3", icon: Heading3, action: () => run("formatBlock", "h3") },
-    { label: direction === "rtl" ? "قائمة نقطية" : "Bullet list", icon: List, action: () => run("insertUnorderedList") },
-    { label: direction === "rtl" ? "قائمة مرقمة" : "Numbered list", icon: ListOrdered, action: () => run("insertOrderedList") },
+    {
+      label: direction === "rtl" ? "عنوان رئيسي" : "Heading 2",
+      icon: Heading2,
+      action: () => run("formatBlock", "h2"),
+    },
+    {
+      label: direction === "rtl" ? "عنوان فرعي" : "Heading 3",
+      icon: Heading3,
+      action: () => run("formatBlock", "h3"),
+    },
+    {
+      label: direction === "rtl" ? "قائمة نقطية" : "Bullet list",
+      icon: List,
+      action: () => run("insertUnorderedList"),
+    },
+    {
+      label: direction === "rtl" ? "قائمة مرقمة" : "Numbered list",
+      icon: ListOrdered,
+      action: () => run("insertOrderedList"),
+    },
     { label: direction === "rtl" ? "إضافة رابط" : "Add link", icon: Link2, action: addLink },
     { label: direction === "rtl" ? "إضافة جدول" : "Insert table", icon: Table2, action: addTable },
   ];

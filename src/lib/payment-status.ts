@@ -36,9 +36,12 @@ export function derivePaymentStatus(
 
 export const PAYMENT_BADGE_CLASSES: Record<PaymentBadge, string> = {
   paid: "bg-emerald-100 text-emerald-900 border border-emerald-300/80 font-semibold dark:bg-emerald-950 dark:text-emerald-200",
-  partial: "bg-blue-100 text-blue-900 border border-blue-300/80 font-semibold dark:bg-blue-950 dark:text-blue-200",
-  unpaid: "bg-rose-100 text-rose-900 border border-rose-300/80 font-semibold dark:bg-rose-950 dark:text-rose-200",
-  refunded: "bg-slate-200 text-slate-800 border border-slate-300/80 font-semibold dark:bg-neutral-800 dark:text-neutral-200",
+  partial:
+    "bg-blue-100 text-blue-900 border border-blue-300/80 font-semibold dark:bg-blue-950 dark:text-blue-200",
+  unpaid:
+    "bg-rose-100 text-rose-900 border border-rose-300/80 font-semibold dark:bg-rose-950 dark:text-rose-200",
+  refunded:
+    "bg-slate-200 text-slate-800 border border-slate-300/80 font-semibold dark:bg-neutral-800 dark:text-neutral-200",
 };
 
 export const PAYMENT_BADGE_KEY: Record<PaymentBadge, string> = {

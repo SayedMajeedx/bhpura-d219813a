@@ -21,7 +21,7 @@ async function requireSuperAdmin(context: any) {
   const { data: isSuperAdmin } = await context.supabase.rpc("is_admin");
   const email = (context.claims?.email || "").toLowerCase();
   const isFixedSuperAdmin = email === "majeed@hotmail.it" || email === "majeed@hotmail.com";
-  
+
   if (!isSuperAdmin && !isFixedSuperAdmin) {
     throw new Error("UNAUTHORIZED_SUPER_ADMIN_ONLY");
   }
@@ -80,7 +80,8 @@ export const stopImpersonationSession = createServerFn({ method: "POST" })
 
     let targetTenantId: string | null = null;
 
-    const { readImpersonationCookie, clearImpersonationCookie } = await import("./impersonation-cookies.server");
+    const { readImpersonationCookie, clearImpersonationCookie } =
+      await import("./impersonation-cookies.server");
     const cookieVal = await readImpersonationCookie();
     if (cookieVal) {
       try {
@@ -125,19 +126,23 @@ export const getTenantAuditLogs = createServerFn({ method: "POST" })
     const belongsToBrand = profile.brand_id === data.brandId;
 
     if (!isSuperAdmin && !belongsToBrand) {
-      throw new Error("Access Denied: You do not have permission to view audit logs for this store.");
+      throw new Error(
+        "Access Denied: You do not have permission to view audit logs for this store.",
+      );
     }
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: logs, error } = await supabaseAdmin
       .from("system_audit_logs")
-      .select(`
+      .select(
+        `
         id,
         action_type,
         reason,
         created_at,
         operator_id
-      `)
+      `,
+      )
       .eq("target_tenant_id", data.brandId)
       .order("created_at", { ascending: false });
 
@@ -146,24 +151,24 @@ export const getTenantAuditLogs = createServerFn({ method: "POST" })
     // Fetch operator profile names in a secure way
     const operatorIds = Array.from(new Set(logs?.map((l: any) => l.operator_id) || []));
     const operators: Record<string, { name: string; email: string }> = {};
-    
+
     if (operatorIds.length > 0) {
       const { data: profiles } = await supabaseAdmin
         .from("profiles")
         .select("id, name, email")
         .in("id", operatorIds);
-        
+
       profiles?.forEach((p: any) => {
         operators[p.id] = {
           name: p.name || "Boutq Engineer",
-          email: p.email || ""
+          email: p.email || "",
         };
       });
     }
 
     return (logs || []).map((l: any) => ({
       ...l,
-      operator: operators[l.operator_id] || { name: "Boutq Engineer", email: "" }
+      operator: operators[l.operator_id] || { name: "Boutq Engineer", email: "" },
     }));
   });
 
@@ -188,7 +193,9 @@ export const toggleSupportAccess = createServerFn({ method: "POST" })
     const belongsToBrand = profile.brand_id === data.brandId;
 
     if (!isSuperAdmin && !belongsToBrand) {
-      throw new Error("Access Denied: You do not have permission to modify support access settings.");
+      throw new Error(
+        "Access Denied: You do not have permission to modify support access settings.",
+      );
     }
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -215,7 +222,10 @@ export const validateImpersonationSession = createServerFn({ method: "POST" })
 
     try {
       const payload = JSON.parse(Buffer.from(cookieVal, "base64").toString("utf-8"));
-      if (payload.targetTenantId === data.brandId && payload.issuedAt > Date.now() - 1000 * 60 * 60 * 24) {
+      if (
+        payload.targetTenantId === data.brandId &&
+        payload.issuedAt > Date.now() - 1000 * 60 * 60 * 24
+      ) {
         return { valid: true };
       }
     } catch {}

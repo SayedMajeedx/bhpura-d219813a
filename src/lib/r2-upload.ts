@@ -1,6 +1,15 @@
 import { createR2UploadUrl, deleteR2Object, purgeBrandR2Objects } from "@/lib/r2-upload.functions";
 
-export type PublicMediaKind = "logo" | "favicon" | "font" | "product" | "category" | "hero" | "page" | "payment-qr" | "expense-receipt";
+export type PublicMediaKind =
+  | "logo"
+  | "favicon"
+  | "font"
+  | "product"
+  | "category"
+  | "hero"
+  | "page"
+  | "payment-qr"
+  | "expense-receipt";
 
 function normalizedContentType(file: Blob, kind: PublicMediaKind): string {
   if (file.type) return file.type.toLowerCase();
@@ -8,7 +17,11 @@ function normalizedContentType(file: Blob, kind: PublicMediaKind): string {
   throw new Error("The selected file has no recognized media type");
 }
 
-export async function uploadPublicMedia(brandId: string, file: Blob, kind: PublicMediaKind): Promise<string> {
+export async function uploadPublicMedia(
+  brandId: string,
+  file: Blob,
+  kind: PublicMediaKind,
+): Promise<string> {
   const contentType = normalizedContentType(file, kind);
   const signed = await createR2UploadUrl({ data: { brandId, kind, contentType, size: file.size } });
   const response = await fetch(signed.uploadUrl, {

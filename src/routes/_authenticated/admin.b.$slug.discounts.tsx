@@ -1,7 +1,17 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
-import { Pencil, Plus, Trash2, Tags, Calendar, BarChart3, Clock, CheckCircle2, AlertCircle } from "lucide-react";
+import {
+  Pencil,
+  Plus,
+  Trash2,
+  Tags,
+  Calendar,
+  BarChart3,
+  Clock,
+  CheckCircle2,
+  AlertCircle,
+} from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useBrand } from "@/lib/brand-context";
 import { useI18n } from "@/lib/i18n";
@@ -10,13 +20,21 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { formatMoney } from "@/lib/format";
 
-export const Route = createFileRoute("/_authenticated/admin/b/$slug/discounts")({ component: DiscountCodes });
+export const Route = createFileRoute("/_authenticated/admin/b/$slug/discounts")({
+  component: DiscountCodes,
+});
 
 type Promo = {
   id: string;
@@ -120,7 +138,7 @@ function DiscountCodes() {
       const { data, error } = await supabase
         .from("promo_codes")
         .select(
-          "id,brand_id,code,discount_type,discount_value,minimum_order_amount,maximum_discount_amount,first_time_customers_only,exclude_sale_items,usage_limit_per_customer,is_active,created_at,exclude_low_margin,margin_threshold,start_date,end_date,max_redemptions"
+          "id,brand_id,code,discount_type,discount_value,minimum_order_amount,maximum_discount_amount,first_time_customers_only,exclude_sale_items,usage_limit_per_customer,is_active,created_at,exclude_low_margin,margin_threshold,start_date,end_date,max_redemptions",
         )
         .eq("brand_id", brand.id)
         .order("created_at", { ascending: false });
@@ -235,7 +253,7 @@ function DiscountCodes() {
     toast.success(
       ar
         ? `تم ${nextActive ? "تفعيل" : "إيقاف مؤقت"} الرمز ${p.code} بنجاح`
-        : `Promo code ${p.code} ${nextActive ? "activated" : "paused"} successfully!`
+        : `Promo code ${p.code} ${nextActive ? "activated" : "paused"} successfully!`,
     );
 
     try {
@@ -253,9 +271,7 @@ function DiscountCodes() {
         return old.map((item) => (item.id === p.id ? { ...item, is_active: !nextActive } : item));
       });
       toast.error(
-        ar
-          ? `فشل في تحديث حالة الرمز: ${err.message}`
-          : `Failed to update status: ${err.message}`
+        ar ? `فشل في تحديث حالة الرمز: ${err.message}` : `Failed to update status: ${err.message}`,
       );
     } finally {
       qc.invalidateQueries({ queryKey: ["promo-codes", brand.id] });
@@ -266,35 +282,49 @@ function DiscountCodes() {
     const code = form.code.trim().toUpperCase();
     if (!/^[A-Z0-9_-]{2,32}$/.test(code)) {
       return toast.error(
-        ar ? "استخدم حروفاً وأرقاماً فقط (2–32)" : "Use 2–32 letters, numbers, hyphens, or underscores"
+        ar
+          ? "استخدم حروفاً وأرقاماً فقط (2–32)"
+          : "Use 2–32 letters, numbers, hyphens, or underscores",
       );
     }
-    if (!(form.discount_value > 0) || (form.discount_type === "percentage" && form.discount_value > 100)) {
+    if (
+      !(form.discount_value > 0) ||
+      (form.discount_type === "percentage" && form.discount_value > 100)
+    ) {
       return toast.error(ar ? "قيمة الخصم غير صحيحة" : "Enter a valid discount value");
     }
     if (form.maximum_discount_amount != null && form.maximum_discount_amount <= 0) {
       return toast.error(
-        ar ? "يجب أن يكون الحد الأقصى للخصم أكبر من صفر" : "Maximum discount must be greater than zero"
+        ar
+          ? "يجب أن يكون الحد الأقصى للخصم أكبر من صفر"
+          : "Maximum discount must be greater than zero",
       );
     }
     if (
       form.usage_limit_per_customer != null &&
       (!Number.isInteger(form.usage_limit_per_customer) || form.usage_limit_per_customer < 1)
     ) {
-      return toast.error(ar ? "حد الاستخدام يجب أن يكون رقماً صحيحاً موجباً" : "Usage limit must be a positive whole number");
+      return toast.error(
+        ar
+          ? "حد الاستخدام يجب أن يكون رقماً صحيحاً موجباً"
+          : "Usage limit must be a positive whole number",
+      );
     }
-    if (form.max_redemptions != null && (!Number.isInteger(form.max_redemptions) || form.max_redemptions < 1)) {
+    if (
+      form.max_redemptions != null &&
+      (!Number.isInteger(form.max_redemptions) || form.max_redemptions < 1)
+    ) {
       return toast.error(
         ar
           ? "الحد الأقصى لمرات الاستخدام الإجمالي يجب أن يكون رقماً صحيحاً موجباً"
-          : "Total redemption limit must be a positive whole number"
+          : "Total redemption limit must be a positive whole number",
       );
     }
     if (form.start_date && form.end_date && new Date(form.end_date) <= new Date(form.start_date)) {
       return toast.error(
         ar
           ? "يجب أن يكون تاريخ الانتهاء بعد تاريخ البدء"
-          : "End date must be scheduled after the start date"
+          : "End date must be scheduled after the start date",
       );
     }
 
@@ -304,7 +334,8 @@ function DiscountCodes() {
       code,
       brand_id: brand.id,
       discount_value: Number(form.discount_value.toFixed(3)),
-      minimum_order_amount: form.minimum_order_amount == null ? null : Number(form.minimum_order_amount.toFixed(3)),
+      minimum_order_amount:
+        form.minimum_order_amount == null ? null : Number(form.minimum_order_amount.toFixed(3)),
       maximum_discount_amount:
         form.discount_type === "percentage" && form.maximum_discount_amount != null
           ? Number(form.maximum_discount_amount.toFixed(3))
@@ -325,7 +356,7 @@ function DiscountCodes() {
           ? ar
             ? "هذا الرمز موجود بالفعل"
             : "This code already exists"
-          : error.message
+          : error.message,
       );
     }
     toast.success(ar ? "تم حفظ رمز الخصم" : "Promo code saved");
@@ -335,7 +366,11 @@ function DiscountCodes() {
 
   const remove = async (p: Promo) => {
     if (!confirm(ar ? `حذف الرمز ${p.code}؟` : `Delete ${p.code}?`)) return;
-    const { error } = await supabase.from("promo_codes").delete().eq("id", p.id).eq("brand_id", brand.id);
+    const { error } = await supabase
+      .from("promo_codes")
+      .delete()
+      .eq("id", p.id)
+      .eq("brand_id", brand.id);
     if (error) toast.error(error.message);
     else qc.invalidateQueries({ queryKey: ["promo-codes", brand.id] });
   };
@@ -384,7 +419,10 @@ function DiscountCodes() {
   });
 
   return (
-    <div className="mx-auto max-w-6xl space-y-6 p-4 sm:p-6 lg:p-8 animate-fade-in" dir={ar ? "rtl" : "ltr"}>
+    <div
+      className="mx-auto max-w-6xl space-y-6 p-4 sm:p-6 lg:p-8 animate-fade-in"
+      dir={ar ? "rtl" : "ltr"}
+    >
       {/* Header */}
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
@@ -392,7 +430,9 @@ function DiscountCodes() {
             {ar ? "رموز الخصم" : "Discount Codes"}
           </h1>
           <p className="mt-1.5 text-muted-foreground text-sm max-w-md">
-            {ar ? "أنشئ عروضاً خاصة وحدد شروط الأهلية والجدولة." : "Create and manage promotions, schedules, and limits for this brand."}
+            {ar
+              ? "أنشئ عروضاً خاصة وحدد شروط الأهلية والجدولة."
+              : "Create and manage promotions, schedules, and limits for this brand."}
           </p>
         </div>
         <Button
@@ -405,33 +445,41 @@ function DiscountCodes() {
       </div>
 
       {/* Tabs */}
-      <Tabs
-        value={activeTab}
-        onValueChange={(v: any) => setActiveTab(v)}
-        className="w-full"
-      >
+      <Tabs value={activeTab} onValueChange={(v: any) => setActiveTab(v)} className="w-full">
         <TabsList className="bg-muted/60 p-1 rounded-xl">
-          <TabsTrigger value="all" className="rounded-lg text-xs sm:text-sm font-medium gap-1.5 py-1.5">
+          <TabsTrigger
+            value="all"
+            className="rounded-lg text-xs sm:text-sm font-medium gap-1.5 py-1.5"
+          >
             {ar ? "الكل" : "All"}
             <span className="bg-slate-200/80 dark:bg-slate-800/80 px-2 py-0.5 rounded-full text-xs font-semibold">
               {allList.length}
             </span>
           </TabsTrigger>
-          <TabsTrigger value="active" className="rounded-lg text-xs sm:text-sm font-medium gap-1.5 py-1.5 data-[state=active]:text-emerald-700 dark:data-[state=active]:text-emerald-400">
+          <TabsTrigger
+            value="active"
+            className="rounded-lg text-xs sm:text-sm font-medium gap-1.5 py-1.5 data-[state=active]:text-emerald-700 dark:data-[state=active]:text-emerald-400"
+          >
             <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
             {ar ? "النشطة" : "Active"}
             <span className="bg-emerald-100 dark:bg-emerald-950/50 text-emerald-800 dark:text-emerald-300 px-2 py-0.5 rounded-full text-xs font-semibold">
               {activeCount}
             </span>
           </TabsTrigger>
-          <TabsTrigger value="scheduled" className="rounded-lg text-xs sm:text-sm font-medium gap-1.5 py-1.5 data-[state=active]:text-amber-700 dark:data-[state=active]:text-amber-400">
+          <TabsTrigger
+            value="scheduled"
+            className="rounded-lg text-xs sm:text-sm font-medium gap-1.5 py-1.5 data-[state=active]:text-amber-700 dark:data-[state=active]:text-amber-400"
+          >
             <Clock className="h-3.5 w-3.5 text-amber-500" />
             {ar ? "المجدولة" : "Scheduled"}
             <span className="bg-amber-100 dark:bg-amber-950/50 text-amber-800 dark:text-amber-300 px-2 py-0.5 rounded-full text-xs font-semibold">
               {scheduledCount}
             </span>
           </TabsTrigger>
-          <TabsTrigger value="expired" className="rounded-lg text-xs sm:text-sm font-medium gap-1.5 py-1.5 data-[state=active]:text-rose-700 dark:data-[state=active]:text-rose-400">
+          <TabsTrigger
+            value="expired"
+            className="rounded-lg text-xs sm:text-sm font-medium gap-1.5 py-1.5 data-[state=active]:text-rose-700 dark:data-[state=active]:text-rose-400"
+          >
             <AlertCircle className="h-3.5 w-3.5 text-rose-500" />
             {ar ? "المنتهية" : "Expired"}
             <span className="bg-rose-100 dark:bg-rose-950/50 text-rose-800 dark:text-rose-300 px-2 py-0.5 rounded-full text-xs font-semibold">
@@ -446,7 +494,9 @@ function DiscountCodes() {
         {promos.isLoading || analyticsQ.isLoading ? (
           <div className="p-16 text-center text-muted-foreground flex flex-col items-center justify-center gap-2">
             <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-            <span className="text-sm font-medium">{ar ? "جاري تحميل البيانات..." : "Loading promotions..."}</span>
+            <span className="text-sm font-medium">
+              {ar ? "جاري تحميل البيانات..." : "Loading promotions..."}
+            </span>
           </div>
         ) : !allList.length ? (
           <div className="grid place-items-center gap-4 p-16 text-center">
@@ -454,9 +504,13 @@ function DiscountCodes() {
               <Tags className="h-10 w-10 text-muted-foreground" />
             </div>
             <div>
-              <div className="font-semibold text-lg">{ar ? "لا توجد رموز خصم حتى الآن" : "No promo codes yet"}</div>
+              <div className="font-semibold text-lg">
+                {ar ? "لا توجد رموز خصم حتى الآن" : "No promo codes yet"}
+              </div>
               <div className="text-sm text-muted-foreground mt-1 max-w-xs mx-auto">
-                {ar ? "أنشئ أول عرض ترويجي لجذب المتسوقين وزيادة مبيعاتك." : "Create your first storefront offer to attract buyers and boost sales."}
+                {ar
+                  ? "أنشئ أول عرض ترويجي لجذب المتسوقين وزيادة مبيعاتك."
+                  : "Create your first storefront offer to attract buyers and boost sales."}
               </div>
             </div>
             <Button variant="outline" onClick={beginCreate} className="mt-2 rounded-xl">
@@ -466,7 +520,9 @@ function DiscountCodes() {
         ) : !displayedPromos.length ? (
           <div className="grid place-items-center gap-2 p-16 text-center text-muted-foreground">
             <Tags className="h-8 w-8 opacity-40 mb-2" />
-            <span className="text-sm font-medium">{ar ? "لا توجد نتائج تطابق التبويب المختار." : "No promo codes in this status."}</span>
+            <span className="text-sm font-medium">
+              {ar ? "لا توجد نتائج تطابق التبويب المختار." : "No promo codes in this status."}
+            </span>
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -517,16 +573,19 @@ function DiscountCodes() {
                     statusBadge = (
                       <span className="inline-flex items-center gap-1 bg-rose-50 text-rose-700 dark:bg-rose-950/30 dark:text-rose-400 px-2 py-0.5 rounded-full text-[11px] font-semibold">
                         <AlertCircle className="h-3 w-3" />
-                        {isCapReached ? (ar ? "نفذ بالكامل" : "Exhausted") : (ar ? "منتهي الصلاحية" : "Expired")}
+                        {isCapReached
+                          ? ar
+                            ? "نفذ بالكامل"
+                            : "Exhausted"
+                          : ar
+                            ? "منتهي الصلاحية"
+                            : "Expired"}
                       </span>
                     );
                   }
 
                   return (
-                    <tr
-                      key={p.id}
-                      className="transition-colors hover:bg-muted/20 align-middle"
-                    >
+                    <tr key={p.id} className="transition-colors hover:bg-muted/20 align-middle">
                       {/* Code */}
                       <td className="px-6 py-4.5">
                         <div className="font-mono font-extrabold text-sm text-foreground tracking-wider bg-slate-100 dark:bg-slate-800/80 px-2.5 py-1 rounded-lg inline-block shadow-xs">
@@ -537,11 +596,9 @@ function DiscountCodes() {
                       {/* Type/Value */}
                       <td className="px-6 py-4.5">
                         <div className="font-medium text-foreground">
-                          {p.discount_type === "percentage" ? (
-                            `${p.discount_value}%`
-                          ) : (
-                            formatMoney(Number(p.discount_value), currency, lang)
-                          )}
+                          {p.discount_type === "percentage"
+                            ? `${p.discount_value}%`
+                            : formatMoney(Number(p.discount_value), currency, lang)}
                         </div>
                         <div className="text-[11px] text-muted-foreground mt-0.5">
                           {p.discount_type === "percentage"
@@ -549,8 +606,8 @@ function DiscountCodes() {
                               ? "نسبة مئوية"
                               : "Percentage value"
                             : ar
-                            ? `خصم ثابت من السلة`
-                            : `Fixed cart discount`}
+                              ? `خصم ثابت من السلة`
+                              : `Fixed cart discount`}
                         </div>
                       </td>
 
@@ -563,7 +620,9 @@ function DiscountCodes() {
                       <td className="px-6 py-4.5">
                         <div className="space-y-1.5 min-w-[140px] max-w-[200px]">
                           <div className="flex justify-between items-center text-[11px] font-semibold">
-                            <span className="text-muted-foreground">{ar ? "الاستهلاك" : "Usage"}</span>
+                            <span className="text-muted-foreground">
+                              {ar ? "الاستهلاك" : "Usage"}
+                            </span>
                             <span className="font-mono tabular-nums text-foreground">
                               {usage} {limit ? `/ ${limit}` : ` / ∞`}
                             </span>
@@ -574,10 +633,13 @@ function DiscountCodes() {
                                 isCapReached
                                   ? "bg-rose-500"
                                   : percent >= 85
-                                  ? "bg-amber-500"
-                                  : "bg-emerald-500"
+                                    ? "bg-amber-500"
+                                    : "bg-emerald-500"
                               }`}
-                              style={{ width: `${limit ? percent : 100}%`, opacity: limit ? 1 : 0.3 }}
+                              style={{
+                                width: `${limit ? percent : 100}%`,
+                                opacity: limit ? 1 : 0.3,
+                              }}
                             />
                           </div>
                         </div>
@@ -593,12 +655,15 @@ function DiscountCodes() {
                                   {ar ? "بدء" : "From"}
                                 </span>
                                 <span className="font-mono">
-                                  {new Date(p.start_date).toLocaleDateString(lang === "ar" ? "ar-BH-u-nu-latn" : "en-US", {
-                                    month: "short",
-                                    day: "numeric",
-                                    hour: "2-digit",
-                                    minute: "2-digit",
-                                  })}
+                                  {new Date(p.start_date).toLocaleDateString(
+                                    lang === "ar" ? "ar-BH-u-nu-latn" : "en-US",
+                                    {
+                                      month: "short",
+                                      day: "numeric",
+                                      hour: "2-digit",
+                                      minute: "2-digit",
+                                    },
+                                  )}
                                 </span>
                               </div>
                             )}
@@ -608,12 +673,15 @@ function DiscountCodes() {
                                   {ar ? "انتهاء" : "Ends"}
                                 </span>
                                 <span className="font-mono">
-                                  {new Date(p.end_date).toLocaleDateString(lang === "ar" ? "ar-BH-u-nu-latn" : "en-US", {
-                                    month: "short",
-                                    day: "numeric",
-                                    hour: "2-digit",
-                                    minute: "2-digit",
-                                  })}
+                                  {new Date(p.end_date).toLocaleDateString(
+                                    lang === "ar" ? "ar-BH-u-nu-latn" : "en-US",
+                                    {
+                                      month: "short",
+                                      day: "numeric",
+                                      hour: "2-digit",
+                                      minute: "2-digit",
+                                    },
+                                  )}
                                 </span>
                               </div>
                             )}
@@ -678,14 +746,22 @@ function DiscountCodes() {
           <DialogHeader>
             <DialogTitle className="text-xl font-bold tracking-tight border-b pb-3 flex items-center gap-2">
               <Tags className="h-5 w-5 text-primary" />
-              {editing ? (ar ? "تعديل رمز الخصم" : "Edit Promo Code") : (ar ? "إنشاء رمز خصم جديد" : "Create Promo Code")}
+              {editing
+                ? ar
+                  ? "تعديل رمز الخصم"
+                  : "Edit Promo Code"
+                : ar
+                  ? "إنشاء رمز خصم جديد"
+                  : "Create Promo Code"}
             </DialogTitle>
           </DialogHeader>
 
           <div className="space-y-5 pt-2">
             {/* Promo Code Name */}
             <div className="space-y-1.5">
-              <Label className="font-semibold text-sm">{ar ? "اسم الرمز (الكود)" : "Promo Code"}</Label>
+              <Label className="font-semibold text-sm">
+                {ar ? "اسم الرمز (الكود)" : "Promo Code"}
+              </Label>
               <Input
                 value={form.code}
                 onChange={(e) => setForm({ ...form, code: e.target.value.toUpperCase() })}
@@ -704,7 +780,8 @@ function DiscountCodes() {
                   setForm({
                     ...form,
                     discount_type: v,
-                    maximum_discount_amount: v === "percentage" ? form.maximum_discount_amount : null,
+                    maximum_discount_amount:
+                      v === "percentage" ? form.maximum_discount_amount : null,
                   })
                 }
               >
@@ -722,19 +799,32 @@ function DiscountCodes() {
 
             {/* Discount Value */}
             <div className="space-y-1.5">
-              <Label className="font-semibold text-sm">{ar ? "قيمة الخصم" : "Discount Value"}</Label>
+              <Label className="font-semibold text-sm">
+                {ar ? "قيمة الخصم" : "Discount Value"}
+              </Label>
               <Input
                 type="number"
                 min="0"
                 max={form.discount_type === "percentage" ? 100 : undefined}
-                step={form.discount_type === "fixed" ? (getCurrencyPrecision(currency) === 3 ? "0.001" : "0.01") : "0.01"}
+                step={
+                  form.discount_type === "fixed"
+                    ? getCurrencyPrecision(currency) === 3
+                      ? "0.001"
+                      : "0.01"
+                    : "0.01"
+                }
                 value={form.discount_value || ""}
                 onChange={(e) => setForm({ ...form, discount_value: Number(e.target.value) })}
                 className="h-11 font-mono font-semibold"
               />
               {showMarginWarning && (
                 <div className="mt-2 rounded-lg border border-amber-200/80 bg-amber-50 p-2.5 text-xs font-medium text-amber-800 dark:border-amber-900/40 dark:bg-amber-950/20 dark:text-amber-400 flex items-center gap-1.5 animate-pulse">
-                  <span>⚠️ {ar ? "هذه القيمة تقلل هامش الربح لبعض المنتجات عن 15%." : "This value cuts into profit margins for certain collections."}</span>
+                  <span>
+                    ⚠️{" "}
+                    {ar
+                      ? "هذه القيمة تقلل هامش الربح لبعض المنتجات عن 15%."
+                      : "This value cuts into profit margins for certain collections."}
+                  </span>
                 </div>
               )}
               <p className="text-xs text-muted-foreground mt-1 px-1">
@@ -743,15 +833,17 @@ function DiscountCodes() {
                     ? `يُحفظ بـ ${getCurrencyPrecision(currency)} خانات عشرية.`
                     : `Saved with ${getCurrencyPrecision(currency)} decimal places.`
                   : ar
-                  ? "من 1 إلى 100%"
-                  : "Enter a percentage value from 1 to 100%"}
+                    ? "من 1 إلى 100%"
+                    : "Enter a percentage value from 1 to 100%"}
               </p>
             </div>
 
             {/* Minimum Order Limit */}
             <div className="space-y-1.5">
               <Label className="font-semibold text-sm">
-                {ar ? `الحد الأدنى للطلب (${currency}) (اختياري)` : `Minimum Order Subtotal (${currency}) (Optional)`}
+                {ar
+                  ? `الحد الأدنى للطلب (${currency}) (اختياري)`
+                  : `Minimum Order Subtotal (${currency}) (Optional)`}
               </Label>
               <Input
                 type="number"
@@ -759,7 +851,10 @@ function DiscountCodes() {
                 step={getCurrencyPrecision(currency) === 3 ? "0.001" : "0.01"}
                 value={form.minimum_order_amount ?? ""}
                 onChange={(e) =>
-                  setForm({ ...form, minimum_order_amount: e.target.value === "" ? null : Number(e.target.value) })
+                  setForm({
+                    ...form,
+                    minimum_order_amount: e.target.value === "" ? null : Number(e.target.value),
+                  })
                 }
                 placeholder={getCurrencyPrecision(currency) === 3 ? "0.000" : "0.00"}
                 className="h-11 font-mono"
@@ -771,25 +866,37 @@ function DiscountCodes() {
               <div className="space-y-3 rounded-xl border p-4 bg-muted/20">
                 <div className="flex items-center justify-between gap-4">
                   <div>
-                    <div className="font-semibold text-sm text-foreground">{ar ? "تحديد حد أقصى للخصم" : "Set maximum discount limit"}</div>
+                    <div className="font-semibold text-sm text-foreground">
+                      {ar ? "تحديد حد أقصى للخصم" : "Set maximum discount limit"}
+                    </div>
                     <div className="text-xs text-muted-foreground mt-0.5">
-                      {ar ? "يمنع الخصم النسبي من تجاوز مبلغ محدد." : "Prevent a percentage discount from exceeding a fixed amount."}
+                      {ar
+                        ? "يمنع الخصم النسبي من تجاوز مبلغ محدد."
+                        : "Prevent a percentage discount from exceeding a fixed amount."}
                     </div>
                   </div>
                   <Switch
                     checked={form.maximum_discount_amount != null}
-                    onCheckedChange={(v) => setForm({ ...form, maximum_discount_amount: v ? 1.0 : null })}
+                    onCheckedChange={(v) =>
+                      setForm({ ...form, maximum_discount_amount: v ? 1.0 : null })
+                    }
                   />
                 </div>
                 {form.maximum_discount_amount != null && (
                   <div className="space-y-1.5 animate-slide-down">
-                    <Label className="text-xs font-semibold">{ar ? `الحد الأقصى للخصم (${currency})` : `Max Allowed Discount (${currency})`}</Label>
+                    <Label className="text-xs font-semibold">
+                      {ar
+                        ? `الحد الأقصى للخصم (${currency})`
+                        : `Max Allowed Discount (${currency})`}
+                    </Label>
                     <Input
                       type="number"
                       min="0.01"
                       step={getCurrencyPrecision(currency) === 3 ? "0.001" : "0.01"}
                       value={form.maximum_discount_amount}
-                      onChange={(e) => setForm({ ...form, maximum_discount_amount: Number(e.target.value) })}
+                      onChange={(e) =>
+                        setForm({ ...form, maximum_discount_amount: Number(e.target.value) })
+                      }
                       placeholder={getCurrencyPrecision(currency) === 3 ? "0.000" : "0.00"}
                       className="h-10 font-mono"
                     />
@@ -802,11 +909,15 @@ function DiscountCodes() {
             <div className="space-y-4 rounded-xl border p-4 bg-muted/20">
               <div className="flex items-center gap-2 border-b pb-2">
                 <Calendar className="h-4 w-4 text-primary" />
-                <span className="font-bold text-sm text-foreground">{ar ? "الجدولة والمدة الزمنية" : "Scheduling & Expiration"}</span>
+                <span className="font-bold text-sm text-foreground">
+                  {ar ? "الجدولة والمدة الزمنية" : "Scheduling & Expiration"}
+                </span>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1.5">
-                  <Label className="text-xs font-semibold">{ar ? "تاريخ البدء (اختياري)" : "Start Date (Optional)"}</Label>
+                  <Label className="text-xs font-semibold">
+                    {ar ? "تاريخ البدء (اختياري)" : "Start Date (Optional)"}
+                  </Label>
                   <Input
                     type="datetime-local"
                     value={toLocalInputString(form.start_date)}
@@ -815,7 +926,9 @@ function DiscountCodes() {
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <Label className="text-xs font-semibold">{ar ? "تاريخ الانتهاء (اختياري)" : "End Date (Optional)"}</Label>
+                  <Label className="text-xs font-semibold">
+                    {ar ? "تاريخ الانتهاء (اختياري)" : "End Date (Optional)"}
+                  </Label>
                   <Input
                     type="datetime-local"
                     value={toLocalInputString(form.end_date)}
@@ -829,7 +942,9 @@ function DiscountCodes() {
             {/* Global Redemption limits section */}
             <div className="space-y-1.5">
               <Label className="font-semibold text-sm">
-                {ar ? "الحد الأقصى للإستخدام الإجمالي للرمز (اختياري)" : "Global Redemption Limit (Optional)"}
+                {ar
+                  ? "الحد الأقصى للإستخدام الإجمالي للرمز (اختياري)"
+                  : "Global Redemption Limit (Optional)"}
               </Label>
               <Input
                 type="number"
@@ -837,35 +952,48 @@ function DiscountCodes() {
                 step="1"
                 value={form.max_redemptions ?? ""}
                 onChange={(e) =>
-                  setForm({ ...form, max_redemptions: e.target.value === "" ? null : Number(e.target.value) })
+                  setForm({
+                    ...form,
+                    max_redemptions: e.target.value === "" ? null : Number(e.target.value),
+                  })
                 }
                 placeholder={ar ? "مثال: 500 مرة" : "e.g. 100 redemptions"}
                 className="h-11 font-mono"
               />
               <p className="text-[11px] text-muted-foreground px-1">
-                {ar ? "يعطل الرمز تلقائياً بعد استخدامه بالكامل في الطلبيات." : "Automatically pauses the code globally once the redemptions cap is met."}
+                {ar
+                  ? "يعطل الرمز تلقائياً بعد استخدامه بالكامل في الطلبيات."
+                  : "Automatically pauses the code globally once the redemptions cap is met."}
               </p>
             </div>
 
             {/* Eligibility Constraints Section */}
             <div className="space-y-3.5 rounded-xl border p-4 bg-muted/10">
               <div>
-                <div className="font-bold text-sm text-foreground">{ar ? "شروط الأهلية والحماية" : "Eligibility & Safeguards"}</div>
+                <div className="font-bold text-sm text-foreground">
+                  {ar ? "شروط الأهلية والحماية" : "Eligibility & Safeguards"}
+                </div>
                 <div className="text-xs text-muted-foreground mt-0.5">
-                  {ar ? "حدد شروط الحماية وهوامش الربح للرمز." : "Configure target audience exclusions and margin protection rules."}
+                  {ar
+                    ? "حدد شروط الحماية وهوامش الربح للرمز."
+                    : "Configure target audience exclusions and margin protection rules."}
                 </div>
               </div>
 
               <div className="space-y-2.5">
                 <div className="flex items-center justify-between gap-4">
-                  <Label className="font-normal text-xs text-muted-foreground">{ar ? "للعملاء الجدد فقط" : "First-time customers only"}</Label>
+                  <Label className="font-normal text-xs text-muted-foreground">
+                    {ar ? "للعملاء الجدد فقط" : "First-time customers only"}
+                  </Label>
                   <Switch
                     checked={form.first_time_customers_only}
                     onCheckedChange={(v) => setForm({ ...form, first_time_customers_only: v })}
                   />
                 </div>
                 <div className="flex items-center justify-between gap-4">
-                  <Label className="font-normal text-xs text-muted-foreground">{ar ? "استبعاد المنتجات المخفضة مسبقاً" : "Exclude items already on sale"}</Label>
+                  <Label className="font-normal text-xs text-muted-foreground">
+                    {ar ? "استبعاد المنتجات المخفضة مسبقاً" : "Exclude items already on sale"}
+                  </Label>
                   <Switch
                     checked={form.exclude_sale_items}
                     onCheckedChange={(v) => setForm({ ...form, exclude_sale_items: v })}
@@ -875,7 +1003,9 @@ function DiscountCodes() {
                 {/* Margin Threshold Safeguard */}
                 <div className="flex items-center justify-between gap-4 pt-1.5 border-t border-border/40">
                   <Label className="font-normal text-xs text-muted-foreground">
-                    {ar ? "استبعاد المنتجات تلقائياً إذا انخفض هامش الربح" : "Exclude products if margin falls below floor threshold"}
+                    {ar
+                      ? "استبعاد المنتجات تلقائياً إذا انخفض هامش الربح"
+                      : "Exclude products if margin falls below floor threshold"}
                   </Label>
                   <Switch
                     checked={form.exclude_low_margin}
@@ -884,14 +1014,18 @@ function DiscountCodes() {
                 </div>
                 {form.exclude_low_margin && (
                   <div className="mt-2 flex items-center gap-3 rounded-lg bg-secondary/30 p-2.5 border border-border/40 animate-slide-down justify-between">
-                    <Label className="text-xs font-semibold">{ar ? "الحد الأدنى لهامش الربح (%)" : "Margin floor threshold (%)"}</Label>
+                    <Label className="text-xs font-semibold">
+                      {ar ? "الحد الأدنى لهامش الربح (%)" : "Margin floor threshold (%)"}
+                    </Label>
                     <Input
                       type="number"
                       min="0"
                       max="100"
                       className="h-8 w-24 text-center text-xs font-mono font-bold bg-background"
                       value={form.margin_threshold}
-                      onChange={(e) => setForm({ ...form, margin_threshold: Number(e.target.value) })}
+                      onChange={(e) =>
+                        setForm({ ...form, margin_threshold: Number(e.target.value) })
+                      }
                     />
                   </div>
                 )}
@@ -901,7 +1035,9 @@ function DiscountCodes() {
             {/* Usage limit per customer */}
             <div className="space-y-1.5">
               <Label className="font-semibold text-sm">
-                {ar ? "حد الاستخدام لكل عميل فردي (اختياري)" : "Usage limit per individual customer (Optional)"}
+                {ar
+                  ? "حد الاستخدام لكل عميل فردي (اختياري)"
+                  : "Usage limit per individual customer (Optional)"}
               </Label>
               <Input
                 type="number"
@@ -909,7 +1045,10 @@ function DiscountCodes() {
                 step="1"
                 value={form.usage_limit_per_customer ?? ""}
                 onChange={(e) =>
-                  setForm({ ...form, usage_limit_per_customer: e.target.value === "" ? null : Number(e.target.value) })
+                  setForm({
+                    ...form,
+                    usage_limit_per_customer: e.target.value === "" ? null : Number(e.target.value),
+                  })
                 }
                 placeholder={ar ? "مثال: 1" : "e.g. 1 use per client"}
                 className="h-11 font-mono"
@@ -919,9 +1058,13 @@ function DiscountCodes() {
             {/* Active Status switch */}
             <div className="flex items-center justify-between rounded-xl border p-4 bg-muted/20">
               <div>
-                <div className="font-bold text-sm text-foreground">{ar ? "نشط ومتاح للاستخدام" : "Set Active"}</div>
+                <div className="font-bold text-sm text-foreground">
+                  {ar ? "نشط ومتاح للاستخدام" : "Set Active"}
+                </div>
                 <div className="text-xs text-muted-foreground mt-0.5">
-                  {ar ? "يمكن للمتسوقين تطبيق هذا الرمز فور تفعيله." : "Allow users to instantly apply and redeem this offer at checkout."}
+                  {ar
+                    ? "يمكن للمتسوقين تطبيق هذا الرمز فور تفعيله."
+                    : "Allow users to instantly apply and redeem this offer at checkout."}
                 </div>
               </div>
               <Switch
@@ -933,11 +1076,21 @@ function DiscountCodes() {
 
             {/* Footer Buttons */}
             <div className="flex justify-end gap-2.5 pt-3 border-t">
-              <Button variant="outline" onClick={() => setOpen(false)} className="rounded-xl h-11 px-5">
+              <Button
+                variant="outline"
+                onClick={() => setOpen(false)}
+                className="rounded-xl h-11 px-5"
+              >
                 {ar ? "إلغاء" : "Cancel"}
               </Button>
               <Button onClick={save} disabled={saving} className="rounded-xl h-11 px-6 shadow">
-                {saving ? (ar ? "جاري الحفظ..." : "Saving...") : ar ? "حفظ رمز الخصم" : "Save Promo Code"}
+                {saving
+                  ? ar
+                    ? "جاري الحفظ..."
+                    : "Saving..."
+                  : ar
+                    ? "حفظ رمز الخصم"
+                    : "Save Promo Code"}
               </Button>
             </div>
           </div>

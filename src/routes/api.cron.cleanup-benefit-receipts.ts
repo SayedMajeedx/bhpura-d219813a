@@ -9,9 +9,7 @@ export const Route = createFileRoute("/api/cron/cleanup-benefit-receipts")({
           return new Response("Unauthorized", { status: 401 });
         }
 
-        const { cleanupBenefitReceipts } = await import(
-          "@/lib/benefit-receipt-cleanup.server"
-        );
+        const { cleanupBenefitReceipts } = await import("@/lib/benefit-receipt-cleanup.server");
         const result = await cleanupBenefitReceipts();
         return Response.json(result, { status: result.ok ? 200 : 207 });
       },

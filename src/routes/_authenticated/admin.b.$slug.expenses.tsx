@@ -8,11 +8,25 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -23,7 +37,27 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Plus, Pencil, Trash2, Wallet, Sparkles, Loader2, Store as StoreIcon, Calendar, Clock, Receipt, Check, ChevronsUpDown, UploadCloud, FileText, X, Download, ChevronDown, ChevronRight, Package } from "lucide-react";
+import {
+  Plus,
+  Pencil,
+  Trash2,
+  Wallet,
+  Sparkles,
+  Loader2,
+  Store as StoreIcon,
+  Calendar,
+  Clock,
+  Receipt,
+  Check,
+  ChevronsUpDown,
+  UploadCloud,
+  FileText,
+  X,
+  Download,
+  ChevronDown,
+  ChevronRight,
+  Package,
+} from "lucide-react";
 import { toast } from "sonner";
 import { formatMoney } from "@/lib/format";
 import { useI18n, useT } from "@/lib/i18n";
@@ -42,7 +76,9 @@ function fileToDataUrl(file: Blob): Promise<string> {
   });
 }
 
-async function prepareReceiptForScanning(file: File): Promise<{ dataUrl: string; mimeType: string }> {
+async function prepareReceiptForScanning(
+  file: File,
+): Promise<{ dataUrl: string; mimeType: string }> {
   if (file.type === "application/pdf") {
     if (file.size > MAX_SCANNER_REQUEST_BYTES) throw new Error("PDF_TOO_LARGE");
     return { dataUrl: await fileToDataUrl(file), mimeType: file.type };
@@ -85,11 +121,17 @@ async function prepareReceiptForScanning(file: File): Promise<{ dataUrl: string;
     bitmap.close();
   }
 }
-import { scanReceipt, type ScannedExpense, type ScannedLineItem } from "@/lib/scan-receipt.functions";
+import {
+  scanReceipt,
+  type ScannedExpense,
+  type ScannedLineItem,
+} from "@/lib/scan-receipt.functions";
 
 export const Route = createFileRoute("/_authenticated/admin/b/$slug/expenses")({
   beforeLoad: async ({ params }) => {
-    const { data: { user } } = await supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
     if (!user) throw redirect({ to: "/auth" });
 
     const { data: profile } = await (supabase as any)
@@ -106,7 +148,11 @@ export const Route = createFileRoute("/_authenticated/admin/b/$slug/expenses")({
     const hasFinancials = permissions.includes("view_financials");
     const allowed =
       isFixedSuperAdmin ||
-      ((role === "admin" || role === "super_admin" || role === "brand_admin" || (role === "staff" && hasFinancials)) && status === "active");
+      ((role === "admin" ||
+        role === "super_admin" ||
+        role === "brand_admin" ||
+        (role === "staff" && hasFinancials)) &&
+        status === "active");
 
     if (!allowed) {
       throw redirect({ to: "/admin/b/$slug/dashboard", params: { slug: params.slug } });
@@ -176,7 +222,10 @@ function ExpensesPage() {
           .select("*")
           .eq("brand_id", brandId)
           .order("expense_date", { ascending: false });
-        if (error) { console.error("[expenses]", error); return [] as Expense[]; }
+        if (error) {
+          console.error("[expenses]", error);
+          return [] as Expense[];
+        }
         return (data ?? []) as Expense[];
       } catch (err) {
         console.error("[expenses]", err);
@@ -204,17 +253,28 @@ function ExpensesPage() {
     const canonical = new Map<string, string>();
     list.forEach((expense) => {
       const value = expense.category.trim();
-      if (value && !canonical.has(value.toLocaleLowerCase())) canonical.set(value.toLocaleLowerCase(), value);
+      if (value && !canonical.has(value.toLocaleLowerCase()))
+        canonical.set(value.toLocaleLowerCase(), value);
     });
     return [...canonical.values()].sort((a, b) => a.localeCompare(b, locale));
   }, [list, locale]);
   const activeRange = datePreset === "custom" ? customRange : presetRange(datePreset);
-  const filteredList = useMemo(() => list.filter((expense) => {
-    const key = expense.expense_date.slice(0, 10);
-    return (!activeRange.from || key >= activeRange.from) && (!activeRange.to || key <= activeRange.to);
-  }), [list, activeRange.from, activeRange.to]);
+  const filteredList = useMemo(
+    () =>
+      list.filter((expense) => {
+        const key = expense.expense_date.slice(0, 10);
+        return (
+          (!activeRange.from || key >= activeRange.from) &&
+          (!activeRange.to || key <= activeRange.to)
+        );
+      }),
+    [list, activeRange.from, activeRange.to],
+  );
   const currency = list[0]?.currency ?? "BHD";
-  const total = useMemo(() => filteredList.reduce((s, e) => s + Number(e.amount || 0), 0), [filteredList]);
+  const total = useMemo(
+    () => filteredList.reduce((s, e) => s + Number(e.amount || 0), 0),
+    [filteredList],
+  );
 
   const settingsQ = useQuery({
     queryKey: ["expenses-business-settings", brandId],
@@ -249,7 +309,10 @@ function ExpensesPage() {
         q2 = q2.lt("created_at", endDay.toISOString().slice(0, 10));
       }
       const { data, error } = await q2;
-      if (error) { console.error("[cogs]", error); return []; }
+      if (error) {
+        console.error("[cogs]", error);
+        return [];
+      }
       return (data ?? []) as CogOrder[];
     },
   });
@@ -263,7 +326,7 @@ function ExpensesPage() {
     ];
     let grandTotal = 0;
     for (const order of rows) {
-      for (const item of (order.order_items ?? [])) {
+      for (const item of order.order_items ?? []) {
         const cost = Number((item as any).product_variants?.cost_price ?? 0);
         const itemTotal = cost * Number(item.quantity);
         grandTotal += itemTotal;
@@ -280,7 +343,11 @@ function ExpensesPage() {
       }
     }
     lines.push("");
-    lines.push(lang === "ar" ? `,,,,الإجمالي,${grandTotal.toFixed(3)}` : `,,,,Total,${grandTotal.toFixed(3)}`);
+    lines.push(
+      lang === "ar"
+        ? `,,,,الإجمالي,${grandTotal.toFixed(3)}`
+        : `,,,,Total,${grandTotal.toFixed(3)}`,
+    );
     const blob = new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -301,7 +368,8 @@ function ExpensesPage() {
       else {
         toast.success(t("common.delete"));
         setDeleteTargetId(null);
-        if (target?.receipt_url) void deletePublicMediaUrl(brandId, target.receipt_url).catch(() => undefined);
+        if (target?.receipt_url)
+          void deletePublicMediaUrl(brandId, target.receipt_url).catch(() => undefined);
         await qc.invalidateQueries({ queryKey: ["expenses"] });
       }
     } finally {
@@ -312,7 +380,9 @@ function ExpensesPage() {
   const onFilePicked = async (file: File | null) => {
     if (!file) return;
     if (file.size > 40 * 1024 * 1024) {
-      toast.error(lang === "ar" ? "الملف كبير جداً (الحد 40 ميغابايت)" : "File too large (max 40MB)");
+      toast.error(
+        lang === "ar" ? "الملف كبير جداً (الحد 40 ميغابايت)" : "File too large (max 40MB)",
+      );
       return;
     }
     setScanning(true);
@@ -330,15 +400,24 @@ function ExpensesPage() {
       setReviewOpen(true);
       toast.success(lang === "ar" ? "تم استخراج بيانات الفاتورة" : "Receipt data extracted");
     } catch (e: any) {
-      const msg = e?.message === "RATE_LIMITED"
-        ? (lang === "ar" ? "تجاوزت الحد. حاول لاحقاً" : "Rate limited, try again")
-        : e?.message === "GEMINI_MODEL_UNAVAILABLE"
-          ? (lang === "ar" ? "نموذج الذكاء الاصطناعي غير متاح حالياً" : "The AI scanner model is currently unavailable")
-        : e?.message === "PDF_TOO_LARGE"
-          ? (lang === "ar" ? "ملف PDF كبير جداً. الحد 2.5 ميغابايت" : "PDF is too large (max 2.5MB)")
-        : e?.message === "IMAGE_TOO_LARGE" || e?.message === "IMAGE_PROCESSING_FAILED"
-          ? (lang === "ar" ? "تعذر ضغط الصورة. يرجى التقاط صورة أوضح وأقرب" : "Could not prepare the image. Try a closer, clearer photo")
-          : (e?.message ?? (lang === "ar" ? "فشل مسح الفاتورة" : "Failed to scan receipt"));
+      const msg =
+        e?.message === "RATE_LIMITED"
+          ? lang === "ar"
+            ? "تجاوزت الحد. حاول لاحقاً"
+            : "Rate limited, try again"
+          : e?.message === "GEMINI_MODEL_UNAVAILABLE"
+            ? lang === "ar"
+              ? "نموذج الذكاء الاصطناعي غير متاح حالياً"
+              : "The AI scanner model is currently unavailable"
+            : e?.message === "PDF_TOO_LARGE"
+              ? lang === "ar"
+                ? "ملف PDF كبير جداً. الحد 2.5 ميغابايت"
+                : "PDF is too large (max 2.5MB)"
+              : e?.message === "IMAGE_TOO_LARGE" || e?.message === "IMAGE_PROCESSING_FAILED"
+                ? lang === "ar"
+                  ? "تعذر ضغط الصورة. يرجى التقاط صورة أوضح وأقرب"
+                  : "Could not prepare the image. Try a closer, clearer photo"
+                : (e?.message ?? (lang === "ar" ? "فشل مسح الفاتورة" : "Failed to scan receipt"));
       toast.error(msg);
     } finally {
       setScanning(false);
@@ -388,7 +467,9 @@ function ExpensesPage() {
       {/* Page Header */}
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-4xl font-display font-extrabold tracking-tight bg-clip-text bg-gradient-to-r from-slate-900 via-slate-800 to-slate-950 dark:from-slate-50 dark:to-slate-300">{t("expenses.title")}</h1>
+          <h1 className="text-4xl font-display font-extrabold tracking-tight bg-clip-text bg-gradient-to-r from-slate-900 via-slate-800 to-slate-950 dark:from-slate-50 dark:to-slate-300">
+            {t("expenses.title")}
+          </h1>
           <p className="text-muted-foreground mt-1.5 text-sm max-w-md">{t("expenses.subtitle")}</p>
         </div>
         {/* Date Filter preset cards */}
@@ -403,8 +484,17 @@ function ExpensesPage() {
               className="text-xs h-8 shadow-sm transition-all duration-200 hover:shadow hover:scale-[1.01] active:scale-95"
             >
               {lang === "ar"
-                ? ({ today: "اليوم", week: "الأسبوع", month: "الشهر", custom: "مخصص" } as const)[preset]
-                : ({ today: "Today", week: "This week", month: "This month", custom: "Custom" } as const)[preset]}
+                ? ({ today: "اليوم", week: "الأسبوع", month: "الشهر", custom: "مخصص" } as const)[
+                    preset
+                  ]
+                : (
+                    {
+                      today: "Today",
+                      week: "This week",
+                      month: "This month",
+                      custom: "Custom",
+                    } as const
+                  )[preset]}
             </Button>
           ))}
         </Card>
@@ -415,12 +505,28 @@ function ExpensesPage() {
         <Card className="overflow-hidden border border-dashed border-primary/35 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm p-4">
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
-              <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{lang === "ar" ? "من تاريخ" : "From Date"}</Label>
-              <Input type="date" value={customRange.from} max={customRange.to || undefined} onChange={(e) => setCustomRange((range) => ({ ...range, from: e.target.value }))} className="mt-1 h-9 text-sm bg-background/50" />
+              <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                {lang === "ar" ? "من تاريخ" : "From Date"}
+              </Label>
+              <Input
+                type="date"
+                value={customRange.from}
+                max={customRange.to || undefined}
+                onChange={(e) => setCustomRange((range) => ({ ...range, from: e.target.value }))}
+                className="mt-1 h-9 text-sm bg-background/50"
+              />
             </div>
             <div>
-              <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{lang === "ar" ? "إلى تاريخ" : "To Date"}</Label>
-              <Input type="date" value={customRange.to} min={customRange.from || undefined} onChange={(e) => setCustomRange((range) => ({ ...range, to: e.target.value }))} className="mt-1 h-9 text-sm bg-background/50" />
+              <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                {lang === "ar" ? "إلى تاريخ" : "To Date"}
+              </Label>
+              <Input
+                type="date"
+                value={customRange.to}
+                min={customRange.from || undefined}
+                onChange={(e) => setCustomRange((range) => ({ ...range, to: e.target.value }))}
+                className="mt-1 h-9 text-sm bg-background/50"
+              />
             </div>
           </div>
         </Card>
@@ -438,14 +544,24 @@ function ExpensesPage() {
 
       <ReceiptReviewDialog
         open={reviewOpen}
-        onOpenChange={(v) => { setReviewOpen(v); if (!v) setScanned(null); }}
+        onOpenChange={(v) => {
+          setReviewOpen(v);
+          if (!v) setScanned(null);
+        }}
         scanned={scanned}
-        onSaved={() => { setReviewOpen(false); setScanned(null); qc.invalidateQueries({ queryKey: ["expenses"] }); }}
+        onSaved={() => {
+          setReviewOpen(false);
+          setScanned(null);
+          qc.invalidateQueries({ queryKey: ["expenses"] });
+        }}
       />
 
-      <AlertDialog open={deleteTargetId !== null} onOpenChange={(open) => {
-        if (!open && !deleting) setDeleteTargetId(null);
-      }}>
+      <AlertDialog
+        open={deleteTargetId !== null}
+        onOpenChange={(open) => {
+          if (!open && !deleting) setDeleteTargetId(null);
+        }}
+      >
         <AlertDialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-lg">
           <AlertDialogHeader>
             <AlertDialogTitle>{t("common.delete")}</AlertDialogTitle>
@@ -480,7 +596,9 @@ function ExpensesPage() {
               </span>
             </div>
             <p className="text-xs text-muted-foreground mb-3">
-              {lang === "ar" ? "تحديث تلقائي من مبيعات المتغيرات" : "Auto-calculated from product variant costs"}
+              {lang === "ar"
+                ? "تحديث تلقائي من مبيعات المتغيرات"
+                : "Auto-calculated from product variant costs"}
             </p>
           </div>
           <span className="text-2xl font-display font-semibold text-foreground tabular-nums">
@@ -502,7 +620,9 @@ function ExpensesPage() {
               </span>
             </div>
             <p className="text-xs text-muted-foreground mb-3">
-              {lang === "ar" ? "إجمالي الفواتير والمصاريف المدخلة" : "Sum of manually logged business expenses"}
+              {lang === "ar"
+                ? "إجمالي الفواتير والمصاريف المدخلة"
+                : "Sum of manually logged business expenses"}
             </p>
           </div>
           <span className="text-2xl font-display font-semibold text-foreground tabular-nums">
@@ -520,7 +640,9 @@ function ExpensesPage() {
               </span>
             </div>
             <p className="text-xs text-primary/80 mb-3">
-              {lang === "ar" ? "تكلفة البضاعة + المصاريف التشغيلية" : "COGS + OPEX aggregated total"}
+              {lang === "ar"
+                ? "تكلفة البضاعة + المصاريف التشغيلية"
+                : "COGS + OPEX aggregated total"}
             </p>
           </div>
           <span className="text-3xl font-display font-bold text-primary tabular-nums">
@@ -543,7 +665,9 @@ function ExpensesPage() {
                 {lang === "ar" ? "ملخص صافي الأرباح" : "Net Profit Summary"}
               </h3>
               <p className="text-xs text-muted-foreground mt-0.5">
-                {lang === "ar" ? "المعادلة الرياضية: الإيرادات من الطلبات المكتملة مطروحاً منها التكلفة الإجمالية للمشروع" : "Standard: Revenue from completed orders minus all business costs"}
+                {lang === "ar"
+                  ? "المعادلة الرياضية: الإيرادات من الطلبات المكتملة مطروحاً منها التكلفة الإجمالية للمشروع"
+                  : "Standard: Revenue from completed orders minus all business costs"}
               </p>
             </div>
             <div className="flex items-center gap-3">
@@ -551,32 +675,53 @@ function ExpensesPage() {
                 <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-bold">
                   {lang === "ar" ? "صافي الأرباح" : "Net Profit"}
                 </p>
-                <p className={`text-2xl font-display font-bold ${netProfit >= 0 ? "text-emerald-600 dark:text-emerald-500" : "text-rose-600 dark:text-rose-500"}`}>
+                <p
+                  className={`text-2xl font-display font-bold ${netProfit >= 0 ? "text-emerald-600 dark:text-emerald-500" : "text-rose-600 dark:text-rose-500"}`}
+                >
                   {cogsQ.isLoading ? "..." : formatMoney(netProfit, currency, locale)}
                 </p>
               </div>
-              <div className={`px-2.5 py-1.5 rounded-lg text-xs font-bold shrink-0 ${netProfit >= 0 ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-400" : "bg-rose-100 text-rose-800 dark:bg-rose-950/40 dark:text-rose-400"}`}>
-                {cogsQ.isLoading ? "..." : `${marginPercentage.toFixed(1)}%`} {lang === "ar" ? "هامش" : "Margin"}
+              <div
+                className={`px-2.5 py-1.5 rounded-lg text-xs font-bold shrink-0 ${netProfit >= 0 ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-400" : "bg-rose-100 text-rose-800 dark:bg-rose-950/40 dark:text-rose-400"}`}
+              >
+                {cogsQ.isLoading ? "..." : `${marginPercentage.toFixed(1)}%`}{" "}
+                {lang === "ar" ? "هامش" : "Margin"}
               </div>
             </div>
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-6 pt-5 border-t border-border/60">
             <div>
-              <span className="text-xs text-muted-foreground block">{lang === "ar" ? "إجمالي الإيرادات (المبيعات)" : "Total Revenue (Sales)"}</span>
-              <span className="text-sm font-semibold tabular-nums text-foreground">{cogsQ.isLoading ? "..." : formatMoney(totalRevenue, currency, locale)}</span>
+              <span className="text-xs text-muted-foreground block">
+                {lang === "ar" ? "إجمالي الإيرادات (المبيعات)" : "Total Revenue (Sales)"}
+              </span>
+              <span className="text-sm font-semibold tabular-nums text-foreground">
+                {cogsQ.isLoading ? "..." : formatMoney(totalRevenue, currency, locale)}
+              </span>
             </div>
             <div>
-              <span className="text-xs text-muted-foreground block">{lang === "ar" ? "تكلفة البضاعة المباعة" : "COGS (Product Costs)"}</span>
-              <span className="text-sm font-semibold tabular-nums text-foreground/80">− {cogsQ.isLoading ? "..." : formatMoney(totalCogs, currency, locale)}</span>
+              <span className="text-xs text-muted-foreground block">
+                {lang === "ar" ? "تكلفة البضاعة المباعة" : "COGS (Product Costs)"}
+              </span>
+              <span className="text-sm font-semibold tabular-nums text-foreground/80">
+                − {cogsQ.isLoading ? "..." : formatMoney(totalCogs, currency, locale)}
+              </span>
             </div>
             <div>
-              <span className="text-xs text-muted-foreground block">{lang === "ar" ? "المصاريف التشغيلية" : "OPEX (Operations)"}</span>
-              <span className="text-sm font-semibold tabular-nums text-foreground/80">− {formatMoney(totalOpex, currency, locale)}</span>
+              <span className="text-xs text-muted-foreground block">
+                {lang === "ar" ? "المصاريف التشغيلية" : "OPEX (Operations)"}
+              </span>
+              <span className="text-sm font-semibold tabular-nums text-foreground/80">
+                − {formatMoney(totalOpex, currency, locale)}
+              </span>
             </div>
             <div>
-              <span className="text-xs text-muted-foreground block">{lang === "ar" ? "صافي الربح الفعلي" : "Net Profit"}</span>
-              <span className={`text-sm font-bold tabular-nums ${netProfit >= 0 ? "text-emerald-600 dark:text-emerald-500" : "text-rose-600 dark:text-rose-500"}`}>
+              <span className="text-xs text-muted-foreground block">
+                {lang === "ar" ? "صافي الربح الفعلي" : "Net Profit"}
+              </span>
+              <span
+                className={`text-sm font-bold tabular-nums ${netProfit >= 0 ? "text-emerald-600 dark:text-emerald-500" : "text-rose-600 dark:text-rose-500"}`}
+              >
                 {cogsQ.isLoading ? "..." : formatMoney(netProfit, currency, locale)}
               </span>
             </div>
@@ -618,11 +763,25 @@ function ExpensesPage() {
                 disabled={scanning}
                 className="border-primary/30 text-primary hover:bg-primary/5 text-xs h-8 px-2.5 shrink-0 shadow-sm transition-all duration-200 hover:shadow hover:scale-[1.01] active:scale-95"
               >
-                {scanning ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
+                {scanning ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <Sparkles className="h-3.5 w-3.5" />
+                )}
               </Button>
-              <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) setEditing(null); }}>
+              <Dialog
+                open={open}
+                onOpenChange={(v) => {
+                  setOpen(v);
+                  if (!v) setEditing(null);
+                }}
+              >
                 <DialogTrigger asChild>
-                  <Button size="sm" className="text-xs h-8 px-2.5 shrink-0 shadow-sm transition-all duration-200 hover:shadow hover:scale-[1.01] active:scale-95" onClick={() => setEditing(null)}>
+                  <Button
+                    size="sm"
+                    className="text-xs h-8 px-2.5 shrink-0 shadow-sm transition-all duration-200 hover:shadow hover:scale-[1.01] active:scale-95"
+                    onClick={() => setEditing(null)}
+                  >
                     <Plus className="h-3.5 w-3.5 me-1" />
                     {lang === "ar" ? "إضافة" : "Add"}
                   </Button>
@@ -630,7 +789,11 @@ function ExpensesPage() {
                 <ExpenseDialog
                   expense={editing}
                   categories={categories}
-                  onSaved={() => { setOpen(false); setEditing(null); qc.invalidateQueries({ queryKey: ["expenses"] }); }}
+                  onSaved={() => {
+                    setOpen(false);
+                    setEditing(null);
+                    qc.invalidateQueries({ queryKey: ["expenses"] });
+                  }}
                 />
               </Dialog>
             </div>
@@ -645,7 +808,10 @@ function ExpensesPage() {
               </Card>
             ) : (
               filteredList.map((e) => (
-                <Card key={e.id} className="overflow-hidden border border-border/60 shadow-md rounded-2xl bg-card/40 backdrop-blur-sm p-4 transition-all duration-300 hover:scale-[1.005] hover:border-primary/40 hover:shadow-lg relative group">
+                <Card
+                  key={e.id}
+                  className="overflow-hidden border border-border/60 shadow-md rounded-2xl bg-card/40 backdrop-blur-sm p-4 transition-all duration-300 hover:scale-[1.005] hover:border-primary/40 hover:shadow-lg relative group"
+                >
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
@@ -655,7 +821,9 @@ function ExpensesPage() {
                         </span>
                       </div>
                       <p className="mt-1.5 break-words text-xs text-muted-foreground leading-relaxed">
-                        {e.store_name ? <span className="font-semibold text-foreground/90">{e.store_name}</span> : null}
+                        {e.store_name ? (
+                          <span className="font-semibold text-foreground/90">{e.store_name}</span>
+                        ) : null}
                         {e.store_name && e.description ? " — " : null}
                         {e.description || (!e.store_name ? "—" : "")}
                       </p>
@@ -664,7 +832,12 @@ function ExpensesPage() {
                           {formatMoney(Number(e.amount), e.currency, locale)}
                         </span>
                         {e.receipt_url && (
-                          <a href={e.receipt_url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-[10px] font-semibold text-primary hover:underline">
+                          <a
+                            href={e.receipt_url}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="inline-flex items-center gap-1 text-[10px] font-semibold text-primary hover:underline"
+                          >
                             <FileText className="h-3 w-3" /> {lang === "ar" ? "إيصال" : "Receipt"}
                           </a>
                         )}
@@ -678,7 +851,10 @@ function ExpensesPage() {
                         size="icon"
                         className="h-8 w-8 text-muted-foreground hover:text-foreground"
                         aria-label={lang === "ar" ? "تعديل" : "Edit"}
-                        onClick={() => { setEditing(e); setOpen(true); }}
+                        onClick={() => {
+                          setEditing(e);
+                          setOpen(true);
+                        }}
                       >
                         <Pencil className="h-4 w-4" />
                       </Button>
@@ -707,7 +883,15 @@ function ExpensesPage() {
 // ============================================================================
 // Basic (manual) add/edit dialog
 // ============================================================================
-function ExpenseDialog({ expense, categories, onSaved }: { expense: Expense | null; categories: string[]; onSaved: () => void }) {
+function ExpenseDialog({
+  expense,
+  categories,
+  onSaved,
+}: {
+  expense: Expense | null;
+  categories: string[];
+  onSaved: () => void;
+}) {
   const t = useT();
   const { lang } = useI18n();
   const brand = useBrand();
@@ -743,7 +927,9 @@ function ExpenseDialog({ expense, categories, onSaved }: { expense: Expense | nu
       return;
     }
     if (file.size > 12 * 1024 * 1024) {
-      toast.error(lang === "ar" ? "حجم الملف يجب ألا يتجاوز 12 ميغابايت" : "File must be 12MB or smaller");
+      toast.error(
+        lang === "ar" ? "حجم الملف يجب ألا يتجاوز 12 ميغابايت" : "File must be 12MB or smaller",
+      );
       return;
     }
     setReceiptFile(file);
@@ -753,12 +939,20 @@ function ExpenseDialog({ expense, categories, onSaved }: { expense: Expense | nu
     if (!form.category.trim()) return toast.error(t("expenses.category"));
     setSaving(true);
     let uploadedUrl: string | null = null;
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) { setSaving(false); return; }
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) {
+      setSaving(false);
+      return;
+    }
     try {
-      if (receiptFile) uploadedUrl = await uploadPublicMedia(brand.id, receiptFile, "expense-receipt");
+      if (receiptFile)
+        uploadedUrl = await uploadPublicMedia(brand.id, receiptFile, "expense-receipt");
       const normalized = form.category.trim().replace(/\s+/g, " ");
-      const category = categories.find((item) => item.toLocaleLowerCase() === normalized.toLocaleLowerCase()) ?? normalized;
+      const category =
+        categories.find((item) => item.toLocaleLowerCase() === normalized.toLocaleLowerCase()) ??
+        normalized;
       const payload = {
         user_id: user.id,
         brand_id: brand.id,
@@ -781,7 +975,9 @@ function ExpenseDialog({ expense, categories, onSaved }: { expense: Expense | nu
       onSaved();
     } catch (error: any) {
       if (uploadedUrl) void deletePublicMediaUrl(brand.id, uploadedUrl).catch(() => undefined);
-      toast.error(error?.message ?? (lang === "ar" ? "تعذر حفظ المصروف" : "Failed to save expense"));
+      toast.error(
+        error?.message ?? (lang === "ar" ? "تعذر حفظ المصروف" : "Failed to save expense"),
+      );
     } finally {
       setSaving(false);
     }
@@ -804,82 +1000,204 @@ function ExpenseDialog({ expense, categories, onSaved }: { expense: Expense | nu
         </div>
         <div>
           <Label>{t("expenses.description")}</Label>
-          <Input value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
+          <Input
+            value={form.description}
+            onChange={(e) => setForm({ ...form, description: e.target.value })}
+          />
         </div>
         <div className="grid grid-cols-2 gap-3">
           <div>
             <Label>{t("expenses.amount")}</Label>
-            <Input type="number" step="0.01" min={0} value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} />
+            <Input
+              type="number"
+              step="0.01"
+              min={0}
+              value={form.amount}
+              onChange={(e) => setForm({ ...form, amount: e.target.value })}
+            />
           </div>
           <div>
             <Label>{t("expenses.date")}</Label>
-            <Input type="date" value={form.expense_date} onChange={(e) => setForm({ ...form, expense_date: e.target.value })} />
+            <Input
+              type="date"
+              value={form.expense_date}
+              onChange={(e) => setForm({ ...form, expense_date: e.target.value })}
+            />
           </div>
         </div>
         <div>
           <Label>{t("expenses.notes")}</Label>
-          <Textarea rows={3} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
+          <Textarea
+            rows={3}
+            value={form.notes}
+            onChange={(e) => setForm({ ...form, notes: e.target.value })}
+          />
         </div>
         <div>
-          <Label>{lang === "ar" ? "إرفاق إيصال (اختياري)" : "Upload receipt file (optional)"}</Label>
-          <input ref={fileInputRef} type="file" className="hidden" accept="image/*,application/pdf" onChange={(event) => chooseReceipt(event.target.files?.[0] ?? null)} />
+          <Label>
+            {lang === "ar" ? "إرفاق إيصال (اختياري)" : "Upload receipt file (optional)"}
+          </Label>
+          <input
+            ref={fileInputRef}
+            type="file"
+            className="hidden"
+            accept="image/*,application/pdf"
+            onChange={(event) => chooseReceipt(event.target.files?.[0] ?? null)}
+          />
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
-            onDragEnter={(event) => { event.preventDefault(); setDragging(true); }}
+            onDragEnter={(event) => {
+              event.preventDefault();
+              setDragging(true);
+            }}
             onDragOver={(event) => event.preventDefault()}
             onDragLeave={() => setDragging(false)}
-            onDrop={(event) => { event.preventDefault(); setDragging(false); chooseReceipt(event.dataTransfer.files?.[0] ?? null); }}
-            className={cn("mt-1 flex min-h-28 w-full flex-col items-center justify-center rounded-lg border-2 border-dashed px-4 py-4 text-center transition-colors", dragging ? "border-primary bg-primary/5" : "border-border hover:border-primary/50 hover:bg-secondary/30")}
+            onDrop={(event) => {
+              event.preventDefault();
+              setDragging(false);
+              chooseReceipt(event.dataTransfer.files?.[0] ?? null);
+            }}
+            className={cn(
+              "mt-1 flex min-h-28 w-full flex-col items-center justify-center rounded-lg border-2 border-dashed px-4 py-4 text-center transition-colors",
+              dragging
+                ? "border-primary bg-primary/5"
+                : "border-border hover:border-primary/50 hover:bg-secondary/30",
+            )}
           >
             <UploadCloud className="mb-2 h-6 w-6 text-muted-foreground" />
-            <span className="text-sm font-medium">{lang === "ar" ? "اسحب الملف هنا أو اضغط للاختيار" : "Drop a file here or click to browse"}</span>
-            <span className="mt-1 text-xs text-muted-foreground">{lang === "ar" ? "صور أو PDF، حتى 12 ميغابايت" : "Images or PDF, up to 12MB"}</span>
+            <span className="text-sm font-medium">
+              {lang === "ar"
+                ? "اسحب الملف هنا أو اضغط للاختيار"
+                : "Drop a file here or click to browse"}
+            </span>
+            <span className="mt-1 text-xs text-muted-foreground">
+              {lang === "ar" ? "صور أو PDF، حتى 12 ميغابايت" : "Images or PDF, up to 12MB"}
+            </span>
           </button>
           {(receiptFile || expense?.receipt_url) && (
             <div className="mt-2 flex items-center justify-between rounded-md border bg-secondary/30 px-3 py-2 text-sm">
-              <span className="flex min-w-0 items-center gap-2"><FileText className="h-4 w-4 shrink-0" /><span className="truncate">{receiptFile?.name ?? (lang === "ar" ? "الإيصال الحالي" : "Current receipt")}</span></span>
-              {receiptFile ? <Button type="button" variant="ghost" size="icon" className="h-8 w-8" onClick={() => setReceiptFile(null)}><X className="h-4 w-4" /></Button> : <a href={expense?.receipt_url ?? "#"} target="_blank" rel="noreferrer" className="text-xs font-medium text-primary hover:underline">{lang === "ar" ? "عرض" : "View"}</a>}
+              <span className="flex min-w-0 items-center gap-2">
+                <FileText className="h-4 w-4 shrink-0" />
+                <span className="truncate">
+                  {receiptFile?.name ?? (lang === "ar" ? "الإيصال الحالي" : "Current receipt")}
+                </span>
+              </span>
+              {receiptFile ? (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8"
+                  onClick={() => setReceiptFile(null)}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              ) : (
+                <a
+                  href={expense?.receipt_url ?? "#"}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-xs font-medium text-primary hover:underline"
+                >
+                  {lang === "ar" ? "عرض" : "View"}
+                </a>
+              )}
             </div>
           )}
         </div>
       </div>
       <DialogFooter>
-        <Button onClick={save} disabled={saving}>{saving && <Loader2 className="me-2 h-4 w-4 animate-spin" />}{t("common.save")}</Button>
+        <Button onClick={save} disabled={saving}>
+          {saving && <Loader2 className="me-2 h-4 w-4 animate-spin" />}
+          {t("common.save")}
+        </Button>
       </DialogFooter>
     </DialogContent>
   );
 }
 
-function CreatableCategorySelect({ value, categories, lang, onChange }: { value: string; categories: string[]; lang: "en" | "ar"; onChange: (value: string) => void }) {
+function CreatableCategorySelect({
+  value,
+  categories,
+  lang,
+  onChange,
+}: {
+  value: string;
+  categories: string[];
+  lang: "en" | "ar";
+  onChange: (value: string) => void;
+}) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const normalizedQuery = query.trim().replace(/\s+/g, " ");
-  const exactMatch = categories.find((category) => category.toLocaleLowerCase() === normalizedQuery.toLocaleLowerCase());
-  const select = (category: string) => { onChange(category); setQuery(""); setOpen(false); };
+  const exactMatch = categories.find(
+    (category) => category.toLocaleLowerCase() === normalizedQuery.toLocaleLowerCase(),
+  );
+  const select = (category: string) => {
+    onChange(category);
+    setQuery("");
+    setOpen(false);
+  };
 
   return (
-    <Popover open={open} onOpenChange={(next) => { setOpen(next); if (!next) setQuery(""); }}>
+    <Popover
+      open={open}
+      onOpenChange={(next) => {
+        setOpen(next);
+        if (!next) setQuery("");
+      }}
+    >
       <PopoverTrigger asChild>
-        <Button type="button" variant="outline" role="combobox" aria-expanded={open} className="mt-1 w-full justify-between font-normal">
-          <span className={cn("truncate", !value && "text-muted-foreground")}>{value || (lang === "ar" ? "اختر أو أنشئ فئة" : "Select or create a category")}</span>
+        <Button
+          type="button"
+          variant="outline"
+          role="combobox"
+          aria-expanded={open}
+          className="mt-1 w-full justify-between font-normal"
+        >
+          <span className={cn("truncate", !value && "text-muted-foreground")}>
+            {value || (lang === "ar" ? "اختر أو أنشئ فئة" : "Select or create a category")}
+          </span>
           <ChevronsUpDown className="ms-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
         <Command shouldFilter={false}>
-          <CommandInput value={query} onValueChange={setQuery} placeholder={lang === "ar" ? "ابحث أو اكتب فئة جديدة..." : "Search or type a new category..."} dir={lang === "ar" ? "rtl" : "ltr"} />
+          <CommandInput
+            value={query}
+            onValueChange={setQuery}
+            placeholder={
+              lang === "ar" ? "ابحث أو اكتب فئة جديدة..." : "Search or type a new category..."
+            }
+            dir={lang === "ar" ? "rtl" : "ltr"}
+          />
           <CommandList>
-            {!categories.length && !normalizedQuery && <CommandEmpty>{lang === "ar" ? "لا توجد فئات بعد" : "No categories yet"}</CommandEmpty>}
+            {!categories.length && !normalizedQuery && (
+              <CommandEmpty>
+                {lang === "ar" ? "لا توجد فئات بعد" : "No categories yet"}
+              </CommandEmpty>
+            )}
             <CommandGroup heading={lang === "ar" ? "الفئات المستخدمة" : "Existing categories"}>
-              {categories.filter((category) => category.toLocaleLowerCase().includes(normalizedQuery.toLocaleLowerCase())).map((category) => (
-                <CommandItem key={category} value={category} onSelect={() => select(category)}>
-                  <Check className={cn("h-4 w-4", value === category ? "opacity-100" : "opacity-0")} /> {category}
-                </CommandItem>
-              ))}
+              {categories
+                .filter((category) =>
+                  category.toLocaleLowerCase().includes(normalizedQuery.toLocaleLowerCase()),
+                )
+                .map((category) => (
+                  <CommandItem key={category} value={category} onSelect={() => select(category)}>
+                    <Check
+                      className={cn("h-4 w-4", value === category ? "opacity-100" : "opacity-0")}
+                    />{" "}
+                    {category}
+                  </CommandItem>
+                ))}
               {normalizedQuery && !exactMatch && (
-                <CommandItem value={`create-${normalizedQuery}`} onSelect={() => select(normalizedQuery)}>
-                  <Plus className="h-4 w-4" /> {lang === "ar" ? `إنشاء «${normalizedQuery}»` : `Create “${normalizedQuery}”`}
+                <CommandItem
+                  value={`create-${normalizedQuery}`}
+                  onSelect={() => select(normalizedQuery)}
+                >
+                  <Plus className="h-4 w-4" />{" "}
+                  {lang === "ar" ? `إنشاء «${normalizedQuery}»` : `Create “${normalizedQuery}”`}
                 </CommandItem>
               )}
             </CommandGroup>
@@ -894,7 +1212,10 @@ function CreatableCategorySelect({ value, categories, lang, onChange }: { value:
 // AI Receipt Review Dialog — professional commercial-receipt layout
 // ============================================================================
 function ReceiptReviewDialog({
-  open, onOpenChange, scanned, onSaved,
+  open,
+  onOpenChange,
+  scanned,
+  onSaved,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
@@ -909,7 +1230,9 @@ function ReceiptReviewDialog({
   const [form, setForm] = useState<ScannedExpense | null>(scanned);
   const [saving, setSaving] = useState(false);
 
-  useEffect(() => { setForm(scanned); }, [scanned]);
+  useEffect(() => {
+    setForm(scanned);
+  }, [scanned]);
 
   if (!form) {
     return (
@@ -919,7 +1242,8 @@ function ReceiptReviewDialog({
     );
   }
 
-  const setF = (patch: Partial<ScannedExpense>) => setForm((prev) => prev ? { ...prev, ...patch } : prev);
+  const setF = (patch: Partial<ScannedExpense>) =>
+    setForm((prev) => (prev ? { ...prev, ...patch } : prev));
   const setItem = (idx: number, patch: Partial<ScannedLineItem>) => {
     setForm((prev) => {
       if (!prev) return prev;
@@ -936,7 +1260,8 @@ function ReceiptReviewDialog({
     });
   };
 
-  const addItem = () => setF({ items: [...form.items, { name: "", quantity: 1, unit_price: 0, line_total: 0 }] });
+  const addItem = () =>
+    setF({ items: [...form.items, { name: "", quantity: 1, unit_price: 0, line_total: 0 }] });
   const removeItem = (idx: number) => setF({ items: form.items.filter((_, i) => i !== idx) });
 
   const computedSubtotal = form.items.reduce((s, i) => s + Number(i.line_total || 0), 0);
@@ -944,10 +1269,13 @@ function ReceiptReviewDialog({
   const grand = Number(form.amount) || subtotal + Number(form.tax_amount || 0);
 
   const save = async () => {
-    if (!form.category.trim()) return toast.error(lang === "ar" ? "الفئة مطلوبة" : "Category required");
+    if (!form.category.trim())
+      return toast.error(lang === "ar" ? "الفئة مطلوبة" : "Category required");
     setSaving(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       if (!user) return;
       const payload = {
         user_id: user.id,
@@ -996,7 +1324,11 @@ function ReceiptReviewDialog({
               <StoreIcon className="h-3.5 w-3.5" />
               {lang === "ar" ? "اسم المتجر" : "Store name"}
             </Label>
-            <Input value={form.store_name} onChange={(e) => setF({ store_name: e.target.value })} className="text-base font-semibold" />
+            <Input
+              value={form.store_name}
+              onChange={(e) => setF({ store_name: e.target.value })}
+              className="text-base font-semibold"
+            />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
@@ -1004,14 +1336,22 @@ function ReceiptReviewDialog({
                 <Calendar className="h-3.5 w-3.5" />
                 {lang === "ar" ? "التاريخ" : "Date"}
               </Label>
-              <Input type="date" value={form.expense_date} onChange={(e) => setF({ expense_date: e.target.value })} />
+              <Input
+                type="date"
+                value={form.expense_date}
+                onChange={(e) => setF({ expense_date: e.target.value })}
+              />
             </div>
             <div>
               <Label className="flex items-center gap-2 text-xs uppercase tracking-wider text-muted-foreground mb-1">
                 <Clock className="h-3.5 w-3.5" />
                 {lang === "ar" ? "الوقت" : "Time"}
               </Label>
-              <Input type="time" value={form.receipt_time} onChange={(e) => setF({ receipt_time: e.target.value })} />
+              <Input
+                type="time"
+                value={form.receipt_time}
+                onChange={(e) => setF({ receipt_time: e.target.value })}
+              />
             </div>
           </div>
         </div>
@@ -1038,25 +1378,51 @@ function ReceiptReviewDialog({
             </div>
             {form.items.length === 0 ? (
               <div className="p-4 text-center text-sm text-muted-foreground">
-                {lang === "ar" ? "لا توجد بنود مستخرجة. أضف يدوياً." : "No items extracted. Add manually."}
+                {lang === "ar"
+                  ? "لا توجد بنود مستخرجة. أضف يدوياً."
+                  : "No items extracted. Add manually."}
               </div>
-            ) : form.items.map((it, idx) => (
-              <div key={idx} className="grid grid-cols-[1fr_70px_100px_100px_36px] gap-2 px-3 py-2 border-t items-center">
-                <Input value={it.name} onChange={(e) => setItem(idx, { name: e.target.value })} className="h-9" />
-                <Input type="number" min={1} step={1} value={it.quantity}
-                  onChange={(e) => setItem(idx, { quantity: Number(e.target.value) || 0 })}
-                  className="h-9 text-center" />
-                <Input type="number" min={0} step={0.001} value={it.unit_price}
-                  onChange={(e) => setItem(idx, { unit_price: Number(e.target.value) || 0 })}
-                  className="h-9 text-end" />
-                <div className="text-end text-sm font-medium tabular-nums">
-                  {formatMoney(it.line_total, form.currency, locale)}
+            ) : (
+              form.items.map((it, idx) => (
+                <div
+                  key={idx}
+                  className="grid grid-cols-[1fr_70px_100px_100px_36px] gap-2 px-3 py-2 border-t items-center"
+                >
+                  <Input
+                    value={it.name}
+                    onChange={(e) => setItem(idx, { name: e.target.value })}
+                    className="h-9"
+                  />
+                  <Input
+                    type="number"
+                    min={1}
+                    step={1}
+                    value={it.quantity}
+                    onChange={(e) => setItem(idx, { quantity: Number(e.target.value) || 0 })}
+                    className="h-9 text-center"
+                  />
+                  <Input
+                    type="number"
+                    min={0}
+                    step={0.001}
+                    value={it.unit_price}
+                    onChange={(e) => setItem(idx, { unit_price: Number(e.target.value) || 0 })}
+                    className="h-9 text-end"
+                  />
+                  <div className="text-end text-sm font-medium tabular-nums">
+                    {formatMoney(it.line_total, form.currency, locale)}
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-9 w-9"
+                    onClick={() => removeItem(idx)}
+                  >
+                    <Trash2 className="h-4 w-4 text-muted-foreground" />
+                  </Button>
                 </div>
-                <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => removeItem(idx)}>
-                  <Trash2 className="h-4 w-4 text-muted-foreground" />
-                </Button>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         </div>
 
@@ -1065,7 +1431,10 @@ function ReceiptReviewDialog({
           <div className="grid grid-cols-2 gap-3">
             <div>
               <Label className="text-xs">{lang === "ar" ? "العملة" : "Currency"}</Label>
-              <Input value={form.currency} onChange={(e) => setF({ currency: e.target.value.toUpperCase().slice(0, 3) })} />
+              <Input
+                value={form.currency}
+                onChange={(e) => setF({ currency: e.target.value.toUpperCase().slice(0, 3) })}
+              />
             </div>
             <div>
               <Label className="text-xs">{lang === "ar" ? "الفئة" : "Category"}</Label>
@@ -1077,30 +1446,49 @@ function ReceiptReviewDialog({
 
           <div className="space-y-2 text-sm">
             <div className="flex items-center justify-between">
-              <span className="text-muted-foreground">{lang === "ar" ? "المجموع الفرعي" : "Subtotal"}</span>
+              <span className="text-muted-foreground">
+                {lang === "ar" ? "المجموع الفرعي" : "Subtotal"}
+              </span>
               <span className="tabular-nums">{formatMoney(subtotal, form.currency, locale)}</span>
             </div>
 
             <div className="grid grid-cols-[1fr_90px_1fr] gap-2 items-center">
-              <span className="text-muted-foreground">{lang === "ar" ? "الضريبة / VAT" : "Tax / VAT"}</span>
+              <span className="text-muted-foreground">
+                {lang === "ar" ? "الضريبة / VAT" : "Tax / VAT"}
+              </span>
               <div className="flex items-center gap-1">
-                <Input type="number" min={0} step={0.1} value={form.tax_rate}
+                <Input
+                  type="number"
+                  min={0}
+                  step={0.1}
+                  value={form.tax_rate}
                   onChange={(e) => setF({ tax_rate: Number(e.target.value) || 0 })}
-                  className="h-8 text-end" />
+                  className="h-8 text-end"
+                />
                 <span className="text-xs text-muted-foreground">%</span>
               </div>
-              <Input type="number" min={0} step={0.001} value={form.tax_amount}
+              <Input
+                type="number"
+                min={0}
+                step={0.001}
+                value={form.tax_amount}
                 onChange={(e) => setF({ tax_amount: Number(e.target.value) || 0 })}
-                className="h-8 text-end" />
+                className="h-8 text-end"
+              />
             </div>
 
             <Separator />
 
             <div className="flex items-center justify-between text-base font-bold pt-1">
               <span>{lang === "ar" ? "الإجمالي النهائي" : "Grand Total"}</span>
-              <Input type="number" min={0} step={0.001} value={form.amount}
+              <Input
+                type="number"
+                min={0}
+                step={0.001}
+                value={form.amount}
                 onChange={(e) => setF({ amount: Number(e.target.value) || 0 })}
-                className="h-10 w-40 text-end text-base font-bold" />
+                className="h-10 w-40 text-end text-base font-bold"
+              />
             </div>
           </div>
         </div>
@@ -1109,11 +1497,18 @@ function ReceiptReviewDialog({
         <div className="mt-4 grid gap-3">
           <div>
             <Label>{lang === "ar" ? "الوصف" : "Description"}</Label>
-            <Input value={form.description} onChange={(e) => setF({ description: e.target.value })} />
+            <Input
+              value={form.description}
+              onChange={(e) => setF({ description: e.target.value })}
+            />
           </div>
           <div>
             <Label>{lang === "ar" ? "ملاحظات" : "Notes"}</Label>
-            <Textarea rows={2} value={form.notes} onChange={(e) => setF({ notes: e.target.value })} />
+            <Textarea
+              rows={2}
+              value={form.notes}
+              onChange={(e) => setF({ notes: e.target.value })}
+            />
           </div>
         </div>
 
@@ -1157,7 +1552,12 @@ type CogOrder = {
 // COGS Section Component
 // ============================================================================
 function CogsSection({
-  orders, loading, currency, locale, lang, onDownload,
+  orders,
+  loading,
+  currency,
+  locale,
+  lang,
+  onDownload,
 }: {
   orders: CogOrder[];
   loading: boolean;
@@ -1206,7 +1606,11 @@ function CogsSection({
                 : "Auto-calculated from variant cost prices of completed orders"}
             </p>
           </div>
-          {expanded ? <ChevronDown className="h-4 w-4 ms-auto text-muted-foreground" /> : <ChevronRight className="h-4 w-4 ms-auto text-muted-foreground" />}
+          {expanded ? (
+            <ChevronDown className="h-4 w-4 ms-auto text-muted-foreground" />
+          ) : (
+            <ChevronRight className="h-4 w-4 ms-auto text-muted-foreground" />
+          )}
         </button>
         <div className="flex items-center gap-3 ms-4">
           {loading ? (
@@ -1243,7 +1647,8 @@ function CogsSection({
             <div key={order.id} className="border-b last:border-b-0">
               <div className="flex items-center justify-between px-4 py-2 bg-secondary/30">
                 <span className="text-xs font-semibold text-muted-foreground">
-                  #{order.invoice_number} &nbsp;·&nbsp; {new Date(order.created_at).toLocaleDateString(locale)}
+                  #{order.invoice_number} &nbsp;·&nbsp;{" "}
+                  {new Date(order.created_at).toLocaleDateString(locale)}
                 </span>
                 <span className="text-xs font-bold tabular-nums">
                   {formatMoney(order.orderCogs, order.currency, locale)}
@@ -1252,21 +1657,35 @@ function CogsSection({
               <table className="w-full text-sm">
                 <thead className="text-xs text-muted-foreground">
                   <tr>
-                    <th className="px-4 py-1.5 text-start font-medium">{lang === "ar" ? "المنتج" : "Product"}</th>
-                    <th className="px-4 py-1.5 text-center font-medium">{lang === "ar" ? "الكمية" : "Qty"}</th>
-                    <th className="px-4 py-1.5 text-end font-medium">{lang === "ar" ? "تكلفة الوحدة" : "Unit cost"}</th>
-                    <th className="px-4 py-1.5 text-end font-medium">{lang === "ar" ? "إجمالي التكلفة" : "Total cost"}</th>
+                    <th className="px-4 py-1.5 text-start font-medium">
+                      {lang === "ar" ? "المنتج" : "Product"}
+                    </th>
+                    <th className="px-4 py-1.5 text-center font-medium">
+                      {lang === "ar" ? "الكمية" : "Qty"}
+                    </th>
+                    <th className="px-4 py-1.5 text-end font-medium">
+                      {lang === "ar" ? "تكلفة الوحدة" : "Unit cost"}
+                    </th>
+                    <th className="px-4 py-1.5 text-end font-medium">
+                      {lang === "ar" ? "إجمالي التكلفة" : "Total cost"}
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
-                  {order.items.filter((i) => i.itemCogs > 0).map((item) => (
-                    <tr key={item.id} className="border-t">
-                      <td className="px-4 py-2 max-w-[200px] truncate">{item.description}</td>
-                      <td className="px-4 py-2 text-center tabular-nums">{item.quantity}</td>
-                      <td className="px-4 py-2 text-end tabular-nums">{formatMoney(item.cost, currency, locale)}</td>
-                      <td className="px-4 py-2 text-end tabular-nums font-medium">{formatMoney(item.itemCogs, currency, locale)}</td>
-                    </tr>
-                  ))}
+                  {order.items
+                    .filter((i) => i.itemCogs > 0)
+                    .map((item) => (
+                      <tr key={item.id} className="border-t">
+                        <td className="px-4 py-2 max-w-[200px] truncate">{item.description}</td>
+                        <td className="px-4 py-2 text-center tabular-nums">{item.quantity}</td>
+                        <td className="px-4 py-2 text-end tabular-nums">
+                          {formatMoney(item.cost, currency, locale)}
+                        </td>
+                        <td className="px-4 py-2 text-end tabular-nums font-medium">
+                          {formatMoney(item.itemCogs, currency, locale)}
+                        </td>
+                      </tr>
+                    ))}
                 </tbody>
               </table>
             </div>

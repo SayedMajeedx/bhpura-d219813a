@@ -15,7 +15,7 @@ import {
   AlertCircle,
   ArrowUpRight,
   ShieldCheck,
-  Zap
+  Zap,
 } from "lucide-react";
 import { formatDate, formatMoney } from "@/lib/format";
 import { useI18n, useT } from "@/lib/i18n";
@@ -49,7 +49,14 @@ function Dashboard() {
         .eq("brand_id", brandId)
         .maybeSingle();
       if (error) throw error;
-      return data ?? { business_name: "", currency: "BHD", card_processing_fee: 0, benefit_processing_fee: 0 };
+      return (
+        data ?? {
+          business_name: "",
+          currency: "BHD",
+          card_processing_fee: 0,
+          benefit_processing_fee: 0,
+        }
+      );
     },
   });
 
@@ -74,7 +81,9 @@ function Dashboard() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("product_variants")
-        .select("id, product_id, size, color, selling_price, cost_price, stock_main, stock_incubator, created_at")
+        .select(
+          "id, product_id, size, color, selling_price, cost_price, stock_main, stock_incubator, created_at",
+        )
         .eq("brand_id", brandId);
       if (error) throw error;
       return data ?? [];
@@ -105,7 +114,9 @@ function Dashboard() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("orders")
-        .select("id, invoice_number, created_at, currency, total, status, customer_id, customer_name_snapshot, customer_email_snapshot, customer_phone_snapshot, customers(name), payment_method, order_items(id, variant_id, quantity, unit_price, line_total)")
+        .select(
+          "id, invoice_number, created_at, currency, total, status, customer_id, customer_name_snapshot, customer_email_snapshot, customer_phone_snapshot, customers(name), payment_method, order_items(id, variant_id, quantity, unit_price, line_total)",
+        )
         .eq("brand_id", brandId)
         .in("status", ["confirmed", "paid", "shipped", "completed"])
         .order("created_at", { ascending: false });
@@ -121,7 +132,9 @@ function Dashboard() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("orders")
-        .select("id, invoice_number, created_at, currency, total, status, payment_status, customer_name_snapshot, customer_email_snapshot, customer_phone_snapshot, customers(name)")
+        .select(
+          "id, invoice_number, created_at, currency, total, status, payment_status, customer_name_snapshot, customer_email_snapshot, customer_phone_snapshot, customers(name)",
+        )
         .eq("brand_id", brandId)
         .order("created_at", { ascending: false })
         .order("invoice_number", { ascending: false })
@@ -204,7 +217,8 @@ function Dashboard() {
       }
     });
 
-    const opex = expenses.reduce((sum, e) => sum + Number(e.amount || 0), 0) + paymentProcessingFees;
+    const opex =
+      expenses.reduce((sum, e) => sum + Number(e.amount || 0), 0) + paymentProcessingFees;
 
     const totalExpenses = cogs + opex;
     const netProfit = revenue - totalExpenses;
@@ -246,7 +260,7 @@ function Dashboard() {
       const custOrders = ordersByCustomer.get(c.id) ?? [];
       const totalOrders = custOrders.length;
       const lifetimeSpend = custOrders.reduce((sum, o) => sum + Number(o.total || 0), 0);
-      
+
       let lastOrderMs = 0;
       custOrders.forEach((o) => {
         const ms = new Date(o.created_at).getTime();
@@ -254,7 +268,7 @@ function Dashboard() {
       });
 
       const isVip = lifetimeSpend > 250;
-      const isIdle60 = lastOrderMs > 0 && (nowMs - lastOrderMs) > sixtyDaysMs;
+      const isIdle60 = lastOrderMs > 0 && nowMs - lastOrderMs > sixtyDaysMs;
 
       if (isVip) {
         vipCount++;
@@ -295,7 +309,7 @@ function Dashboard() {
           if (item.variant_id) {
             salesByVariant.set(
               item.variant_id,
-              (salesByVariant.get(item.variant_id) ?? 0) + Number(item.quantity || 0)
+              (salesByVariant.get(item.variant_id) ?? 0) + Number(item.quantity || 0),
             );
           }
         });
@@ -308,8 +322,16 @@ function Dashboard() {
     const getVariantDailyVelocity = (v: any) => {
       const qtySold = salesByVariant.get(v.id) || 0;
       const variantCreatedAt = v.created_at ? new Date(v.created_at) : null;
-      const daysElapsed = variantCreatedAt 
-        ? Math.max(1, Math.min(45, Math.ceil((new Date().getTime() - variantCreatedAt.getTime()) / (1000 * 60 * 60 * 24))))
+      const daysElapsed = variantCreatedAt
+        ? Math.max(
+            1,
+            Math.min(
+              45,
+              Math.ceil(
+                (new Date().getTime() - variantCreatedAt.getTime()) / (1000 * 60 * 60 * 24),
+              ),
+            ),
+          )
         : 45;
       return qtySold / daysElapsed;
     };
@@ -332,7 +354,10 @@ function Dashboard() {
       const stock = pVariants.reduce((sum, v) => sum + getVariantStock(v), 0);
       productStockMap.set(product.id, stock);
 
-      const productDailyVelocity = pVariants.reduce((sum, v) => sum + getVariantDailyVelocity(v), 0);
+      const productDailyVelocity = pVariants.reduce(
+        (sum, v) => sum + getVariantDailyVelocity(v),
+        0,
+      );
       productWeeklySalesMap.set(product.id, productDailyVelocity * 7);
     });
 
@@ -356,7 +381,7 @@ function Dashboard() {
             if (variant) {
               productSalesMap.set(
                 variant.product_id,
-                (productSalesMap.get(variant.product_id) ?? 0) + Number(item.quantity || 0)
+                (productSalesMap.get(variant.product_id) ?? 0) + Number(item.quantity || 0),
               );
             }
           }
@@ -369,9 +394,12 @@ function Dashboard() {
         const pVariants = variants.filter((v) => v.product_id === p.id);
         const unitsSold = productSalesMap.get(p.id) ?? 0;
         const stock = productStockMap.get(p.id) ?? 0;
-        
+
         // Product velocity and days left
-        const productDailyVelocity = pVariants.reduce((sum, v) => sum + getVariantDailyVelocity(v), 0);
+        const productDailyVelocity = pVariants.reduce(
+          (sum, v) => sum + getVariantDailyVelocity(v),
+          0,
+        );
         let daysLeft = Infinity;
         if (productDailyVelocity > 0) {
           daysLeft = Math.ceil(stock / productDailyVelocity);
@@ -405,10 +433,12 @@ function Dashboard() {
       const dailyVelocity = getVariantDailyVelocity(v);
       if (dailyVelocity > 0) {
         const daysLeft = Math.ceil(stock / dailyVelocity);
-        if (daysLeft <= 14) { // flag if depletes in 14 days
+        if (daysLeft <= 14) {
+          // flag if depletes in 14 days
           const sizeText = v.size ? ` (${v.size})` : "";
           const colorText = v.color ? ` - ${v.color}` : "";
-          const pName = lang === "ar" ? product.name_ar || product.name : product.name_en || product.name;
+          const pName =
+            lang === "ar" ? product.name_ar || product.name : product.name_en || product.name;
           lowStockVariants.push({
             id: v.id,
             name: `${pName}${sizeText}${colorText}`,
@@ -419,7 +449,8 @@ function Dashboard() {
       } else if (stock === 0) {
         const sizeText = v.size ? ` (${v.size})` : "";
         const colorText = v.color ? ` - ${v.color}` : "";
-        const pName = lang === "ar" ? product.name_ar || product.name : product.name_en || product.name;
+        const pName =
+          lang === "ar" ? product.name_ar || product.name : product.name_en || product.name;
         lowStockVariants.push({
           id: v.id,
           name: `${pName}${sizeText}${colorText}`,
@@ -469,7 +500,7 @@ function Dashboard() {
             icon: TrendingUp,
             color: "text-emerald-500",
             bg: "from-emerald-500/10 via-transparent to-transparent",
-            border: "hover:border-emerald-500/20"
+            border: "hover:border-emerald-500/20",
           },
           {
             label: isAr ? "نسبة هامش الربح الإجمالي" : "Gross Margin %",
@@ -478,7 +509,7 @@ function Dashboard() {
             icon: PiggyBank,
             color: "text-blue-500",
             bg: "from-blue-500/10 via-transparent to-transparent",
-            border: "hover:border-blue-500/20"
+            border: "hover:border-blue-500/20",
           },
         ]
       : []),
@@ -489,7 +520,7 @@ function Dashboard() {
       icon: Package,
       color: "text-amber-500",
       bg: "from-amber-500/10 via-transparent to-transparent",
-      border: "hover:border-amber-500/20"
+      border: "hover:border-amber-500/20",
     },
     {
       label: isAr ? "توزيع مستويات العملاء" : "Customer Tier Distribution",
@@ -498,12 +529,15 @@ function Dashboard() {
       icon: Users,
       color: "text-indigo-500",
       bg: "from-indigo-500/10 via-transparent to-transparent",
-      border: "hover:border-indigo-500/20"
+      border: "hover:border-indigo-500/20",
     },
   ];
 
   return (
-    <div className="mx-auto max-w-7xl space-y-6 p-4 sm:p-6 lg:p-8 animate-fade-in" dir={isAr ? "rtl" : "ltr"}>
+    <div
+      className="mx-auto max-w-7xl space-y-6 p-4 sm:p-6 lg:p-8 animate-fade-in"
+      dir={isAr ? "rtl" : "ltr"}
+    >
       {/* Upper header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
@@ -512,45 +546,78 @@ function Dashboard() {
             {t("dashboard.title")}
           </h1>
           <p className="mt-1.5 text-muted-foreground text-sm max-w-md">
-            {isAr ? "نظرة عامة على أداء النشاط ومقاييس التجزئة الذكية" : "Real-time retail finance and customer CRM analytics insights."}
+            {isAr
+              ? "نظرة عامة على أداء النشاط ومقاييس التجزئة الذكية"
+              : "Real-time retail finance and customer CRM analytics insights."}
           </p>
         </div>
         {/* Navigation Quicklinks */}
         <div className="flex flex-wrap gap-2 shrink-0">
-          <Link to="/admin/b/$slug/orders" params={{ slug }} className="inline-flex h-10 items-center rounded-xl bg-primary px-4 text-xs font-bold text-primary-foreground shadow-sm transition-all duration-200 hover:shadow hover:scale-[1.01] active:scale-95 gap-2">
-            <ReceiptText className="h-4 w-4" />{isAr ? "الطلبات" : "Orders"}
+          <Link
+            to="/admin/b/$slug/orders"
+            params={{ slug }}
+            className="inline-flex h-10 items-center rounded-xl bg-primary px-4 text-xs font-bold text-primary-foreground shadow-sm transition-all duration-200 hover:shadow hover:scale-[1.01] active:scale-95 gap-2"
+          >
+            <ReceiptText className="h-4 w-4" />
+            {isAr ? "الطلبات" : "Orders"}
           </Link>
-          <Link to="/admin/b/$slug/inventory" params={{ slug }} className="inline-flex h-10 items-center rounded-xl border border-border/60 bg-card/50 px-4 text-xs font-bold text-foreground shadow-sm transition-all duration-200 hover:shadow hover:scale-[1.01] active:scale-95 gap-2">
-            <Package className="h-4 w-4" />{isAr ? "المنتجات" : "Products"}
+          <Link
+            to="/admin/b/$slug/inventory"
+            params={{ slug }}
+            className="inline-flex h-10 items-center rounded-xl border border-border/60 bg-card/50 px-4 text-xs font-bold text-foreground shadow-sm transition-all duration-200 hover:shadow hover:scale-[1.01] active:scale-95 gap-2"
+          >
+            <Package className="h-4 w-4" />
+            {isAr ? "المنتجات" : "Products"}
           </Link>
-          <Link to="/admin/b/$slug/customers" params={{ slug }} className="inline-flex h-10 items-center rounded-xl border border-border/60 bg-card/50 px-4 text-xs font-bold text-foreground shadow-sm transition-all duration-200 hover:shadow hover:scale-[1.01] active:scale-95 gap-2">
-            <Users className="h-4 w-4" />{isAr ? "العملاء" : "Customers"}
+          <Link
+            to="/admin/b/$slug/customers"
+            params={{ slug }}
+            className="inline-flex h-10 items-center rounded-xl border border-border/60 bg-card/50 px-4 text-xs font-bold text-foreground shadow-sm transition-all duration-200 hover:shadow hover:scale-[1.01] active:scale-95 gap-2"
+          >
+            <Users className="h-4 w-4" />
+            {isAr ? "العملاء" : "Customers"}
           </Link>
           {canViewFinancials && (
-            <Link to="/admin/b/$slug/expenses" params={{ slug }} className="inline-flex h-10 items-center rounded-xl border border-border/60 bg-card/50 px-4 text-xs font-bold text-foreground shadow-sm transition-all duration-200 hover:shadow hover:scale-[1.01] active:scale-95 gap-2">
-              <Wallet className="h-4 w-4" />{isAr ? "المصروفات" : "Expenses"}
+            <Link
+              to="/admin/b/$slug/expenses"
+              params={{ slug }}
+              className="inline-flex h-10 items-center rounded-xl border border-border/60 bg-card/50 px-4 text-xs font-bold text-foreground shadow-sm transition-all duration-200 hover:shadow hover:scale-[1.01] active:scale-95 gap-2"
+            >
+              <Wallet className="h-4 w-4" />
+              {isAr ? "المصروفات" : "Expenses"}
             </Link>
           )}
         </div>
       </div>
 
       {/* KPI Row (Gridded and responsive) */}
-      <div className={`grid grid-cols-1 sm:grid-cols-2 ${canViewFinancials ? "lg:grid-cols-4" : "lg:grid-cols-2"} gap-4`}>
+      <div
+        className={`grid grid-cols-1 sm:grid-cols-2 ${canViewFinancials ? "lg:grid-cols-4" : "lg:grid-cols-2"} gap-4`}
+      >
         {kpis.map((k) => {
           const Icon = k.icon;
           return (
-            <Card key={k.label} className={`relative overflow-hidden p-6 transition-all duration-300 bg-gradient-to-br ${k.bg} hover:shadow-xl hover:-translate-y-1 border border-border/60 shadow-md rounded-2xl bg-card/40 backdrop-blur-sm ${k.border}`}>
+            <Card
+              key={k.label}
+              className={`relative overflow-hidden p-6 transition-all duration-300 bg-gradient-to-br ${k.bg} hover:shadow-xl hover:-translate-y-1 border border-border/60 shadow-md rounded-2xl bg-card/40 backdrop-blur-sm ${k.border}`}
+            >
               <div className="min-w-0">
                 <div className="flex min-h-10 items-start justify-between gap-3">
-                  <p className="pt-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground/80">{k.label}</p>
-                  <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-100/80 shadow-sm dark:bg-slate-800/80 ${k.color}`}>
+                  <p className="pt-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground/80">
+                    {k.label}
+                  </p>
+                  <div
+                    className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-100/80 shadow-sm dark:bg-slate-800/80 ${k.color}`}
+                  >
                     <Icon className="h-5 w-5" />
                   </div>
                 </div>
                 <p className="mt-2.5 whitespace-nowrap font-display text-[clamp(1.65rem,2.15vw,2.25rem)] font-extrabold leading-none tracking-tight text-foreground tabular-nums">
                   {k.value}
                 </p>
-                <p className="mt-2 text-xs font-medium leading-snug text-muted-foreground/90">{k.subValue}</p>
+                <p className="mt-2 text-xs font-medium leading-snug text-muted-foreground/90">
+                  {k.subValue}
+                </p>
               </div>
             </Card>
           );
@@ -566,9 +633,15 @@ function Dashboard() {
               <div>
                 <div className="flex items-center gap-2">
                   <Trophy className="h-5 w-5 text-amber-500" />
-                  <h2 className="text-xl font-display font-bold text-foreground">{isAr ? "المنتجات الأكثر حركة ورواجًا" : "Top Moving Items"}</h2>
+                  <h2 className="text-xl font-display font-bold text-foreground">
+                    {isAr ? "المنتجات الأكثر حركة ورواجًا" : "Top Moving Items"}
+                  </h2>
                 </div>
-                <p className="text-xs text-muted-foreground mt-0.5">{isAr ? "أعلى مبيعات المنتجات في الـ 45 يومًا الماضية ومعدل نفادها" : "Top item sales in the past 45 days matched with velocity runway."}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  {isAr
+                    ? "أعلى مبيعات المنتجات في الـ 45 يومًا الماضية ومعدل نفادها"
+                    : "Top item sales in the past 45 days matched with velocity runway."}
+                </p>
               </div>
               <span className="inline-flex shrink-0 items-center gap-1 text-[11px] px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-muted-foreground font-semibold border">
                 {isAr ? "مفلترة: آخر 45 يومًا" : "Past 45 days window"}
@@ -577,7 +650,9 @@ function Dashboard() {
 
             {inventoryIntel.movingItems.length === 0 ? (
               <div className="p-12 text-center text-muted-foreground bg-secondary/10 rounded-xl border border-dashed border-border">
-                {isAr ? "لا توجد بيانات كافية لعرض المنتجات الأكثر حركة." : "Insufficient sales volume to map item movement."}
+                {isAr
+                  ? "لا توجد بيانات كافية لعرض المنتجات الأكثر حركة."
+                  : "Insufficient sales volume to map item movement."}
               </div>
             ) : (
               <div className="overflow-x-auto -mx-6">
@@ -585,30 +660,48 @@ function Dashboard() {
                   <thead>
                     <tr className="text-xs font-bold text-muted-foreground uppercase border-b bg-muted/40">
                       <th className="p-3 px-6 text-start">{isAr ? "المنتج" : "Product"}</th>
-                      <th className="p-3 text-center w-28">{isAr ? "الوحدات المباعة" : "Units Sold"}</th>
-                      <th className="p-3 text-center w-28">{isAr ? "المخزون المتبقي" : "Remaining Stock"}</th>
-                      <th className="p-3 px-6 text-end w-36">{isAr ? "النفاد المتوقع" : "Days Left"}</th>
+                      <th className="p-3 text-center w-28">
+                        {isAr ? "الوحدات المباعة" : "Units Sold"}
+                      </th>
+                      <th className="p-3 text-center w-28">
+                        {isAr ? "المخزون المتبقي" : "Remaining Stock"}
+                      </th>
+                      <th className="p-3 px-6 text-end w-36">
+                        {isAr ? "النفاد المتوقع" : "Days Left"}
+                      </th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border/60">
                     {inventoryIntel.movingItems.slice(0, 8).map((item) => {
-                      const velocityText = item.daysLeft === Infinity 
-                        ? (isAr ? "∞ مستقر" : "∞ Stable") 
-                        : `${item.daysLeft} ${isAr ? "أيام" : "days"}`;
+                      const velocityText =
+                        item.daysLeft === Infinity
+                          ? isAr
+                            ? "∞ مستقر"
+                            : "∞ Stable"
+                          : `${item.daysLeft} ${isAr ? "أيام" : "days"}`;
 
-                      const runwayColor = item.daysLeft <= 7 
-                        ? "text-rose-600 bg-rose-500/10 dark:text-rose-400" 
-                        : item.daysLeft <= 14 
-                        ? "text-amber-600 bg-amber-500/10 dark:text-amber-400" 
-                        : "text-emerald-600 bg-emerald-500/10 dark:text-emerald-400";
+                      const runwayColor =
+                        item.daysLeft <= 7
+                          ? "text-rose-600 bg-rose-500/10 dark:text-rose-400"
+                          : item.daysLeft <= 14
+                            ? "text-amber-600 bg-amber-500/10 dark:text-amber-400"
+                            : "text-emerald-600 bg-emerald-500/10 dark:text-emerald-400";
 
                       return (
                         <tr key={item.id} className="hover:bg-secondary/10 transition-colors">
-                          <td className="p-3 px-6 font-semibold text-foreground truncate max-w-[200px] sm:max-w-xs">{item.title}</td>
-                          <td className="p-3 text-center font-mono font-bold text-foreground">{item.unitsSold}</td>
-                          <td className="p-3 text-center font-mono font-medium text-muted-foreground">{item.stock}</td>
+                          <td className="p-3 px-6 font-semibold text-foreground truncate max-w-[200px] sm:max-w-xs">
+                            {item.title}
+                          </td>
+                          <td className="p-3 text-center font-mono font-bold text-foreground">
+                            {item.unitsSold}
+                          </td>
+                          <td className="p-3 text-center font-mono font-medium text-muted-foreground">
+                            {item.stock}
+                          </td>
                           <td className="p-3 px-6 text-end">
-                            <span className={`inline-flex items-center justify-center text-xs font-bold px-2 py-0.5 rounded-full ${runwayColor}`}>
+                            <span
+                              className={`inline-flex items-center justify-center text-xs font-bold px-2 py-0.5 rounded-full ${runwayColor}`}
+                            >
                               {velocityText}
                             </span>
                           </td>
@@ -626,27 +719,51 @@ function Dashboard() {
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
                 <ReceiptText className="h-5 w-5 text-primary" />
-                <h2 className="text-xl font-display font-bold text-foreground">{t("dashboard.recentOrders")}</h2>
+                <h2 className="text-xl font-display font-bold text-foreground">
+                  {t("dashboard.recentOrders")}
+                </h2>
               </div>
-              <Link to="/admin/b/$slug/orders" params={{ slug }} className="text-xs text-primary font-semibold hover:underline flex items-center gap-0.5">
+              <Link
+                to="/admin/b/$slug/orders"
+                params={{ slug }}
+                className="text-xs text-primary font-semibold hover:underline flex items-center gap-0.5"
+              >
                 {isAr ? "عرض الكل" : "View All"} <ArrowUpRight className="h-3 w-3" />
               </Link>
             </div>
-            
+
             {(recentOrdersQ.data ?? []).length === 0 ? (
-              <p className="p-6 text-sm text-center text-muted-foreground bg-secondary/10 rounded-xl border border-dashed">{t("dashboard.noOrders")}</p>
+              <p className="p-6 text-sm text-center text-muted-foreground bg-secondary/10 rounded-xl border border-dashed">
+                {t("dashboard.noOrders")}
+              </p>
             ) : (
               <ul className="divide-y divide-border">
                 {(recentOrdersQ.data ?? []).map((o: any) => (
-                  <li key={o.id} className="py-3 flex items-center justify-between gap-3 text-sm hover:bg-secondary/5 px-2 rounded-lg transition-colors">
-                    <Link to="/admin/b/$slug/orders/$id" params={{ slug, id: o.id }} className="min-w-0 truncate">
-                      <span className="text-primary font-bold hover:underline">#{o.invoice_number}</span>
-                      <span className="text-muted-foreground"> · {formatDate(o.created_at, locale)}</span>
+                  <li
+                    key={o.id}
+                    className="py-3 flex items-center justify-between gap-3 text-sm hover:bg-secondary/5 px-2 rounded-lg transition-colors"
+                  >
+                    <Link
+                      to="/admin/b/$slug/orders/$id"
+                      params={{ slug, id: o.id }}
+                      className="min-w-0 truncate"
+                    >
+                      <span className="text-primary font-bold hover:underline">
+                        #{o.invoice_number}
+                      </span>
+                      <span className="text-muted-foreground">
+                        {" "}
+                        · {formatDate(o.created_at, locale)}
+                      </span>
                       {getOrderCustomerName(o) && (
-                        <span className="text-foreground/90 font-medium block sm:inline sm:ms-2">· {getOrderCustomerName(o)}</span>
+                        <span className="text-foreground/90 font-medium block sm:inline sm:ms-2">
+                          · {getOrderCustomerName(o)}
+                        </span>
                       )}
                     </Link>
-                    <span className="shrink-0 font-bold text-foreground font-mono">{formatMoney(Number(o.total), o.currency, locale)}</span>
+                    <span className="shrink-0 font-bold text-foreground font-mono">
+                      {formatMoney(Number(o.total), o.currency, locale)}
+                    </span>
                   </li>
                 ))}
               </ul>
@@ -659,31 +776,50 @@ function Dashboard() {
           <Card className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm p-6 space-y-4">
             <div className="flex items-center gap-2 pb-3 border-b border-border/60">
               <AlertCircle className="h-5 w-5 text-rose-500 animate-bounce" />
-              <h3 className="font-display font-bold text-lg text-foreground">{isAr ? "مركز الإنذار والعمليات" : "Operational Alerts"}</h3>
+              <h3 className="font-display font-bold text-lg text-foreground">
+                {isAr ? "مركز الإنذار والعمليات" : "Operational Alerts"}
+              </h3>
             </div>
 
             <div className="space-y-3.5">
               {/* Alert Segment: Low Stock Warnings */}
               <div>
-                <h4 className="text-xs uppercase font-bold text-muted-foreground tracking-wider mb-2">{isAr ? "⚠️ تحذيرات مستويات المخزون" : "⚠️ Low Stock Warnings"}</h4>
+                <h4 className="text-xs uppercase font-bold text-muted-foreground tracking-wider mb-2">
+                  {isAr ? "⚠️ تحذيرات مستويات المخزون" : "⚠️ Low Stock Warnings"}
+                </h4>
                 {inventoryIntel.lowStockVariants.length === 0 ? (
-                  <p className="text-xs text-muted-foreground bg-secondary/10 p-3 rounded-lg border border-dashed border-border">{isAr ? "جميع البضائع مستقرة ومغذية بشكل كافٍ." : "All variants fully stock stable."}</p>
+                  <p className="text-xs text-muted-foreground bg-secondary/10 p-3 rounded-lg border border-dashed border-border">
+                    {isAr
+                      ? "جميع البضائع مستقرة ومغذية بشكل كافٍ."
+                      : "All variants fully stock stable."}
+                  </p>
                 ) : (
                   <div className="space-y-2">
                     {inventoryIntel.lowStockVariants.map((item) => (
-                      <div key={item.id} className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg space-y-1">
+                      <div
+                        key={item.id}
+                        className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg space-y-1"
+                      >
                         <div className="flex justify-between items-start gap-2">
-                          <span className="text-xs font-bold text-foreground truncate max-w-[150px]">{item.name}</span>
+                          <span className="text-xs font-bold text-foreground truncate max-w-[150px]">
+                            {item.name}
+                          </span>
                           <span className="text-[10px] shrink-0 font-bold bg-amber-500/20 text-amber-700 dark:text-amber-400 px-1.5 py-0.5 rounded-full">
-                            {item.stock === 0 ? (isAr ? "نفذ" : "Out of stock") : `${item.stock} ${isAr ? "وحدات" : "units"}`}
+                            {item.stock === 0
+                              ? isAr
+                                ? "نفذ"
+                                : "Out of stock"
+                              : `${item.stock} ${isAr ? "وحدات" : "units"}`}
                           </span>
                         </div>
                         <p className="text-[10px] text-amber-800 dark:text-amber-300 font-medium">
-                          {item.stock === 0 
-                            ? (isAr ? "🚨 لا توجد كميات للبيع!" : "🚨 No quantities left for sale!") 
-                            : isAr 
-                            ? `سوف ينفد المخزون بالكامل في غضون ${item.daysLeft} أيام` 
-                            : `Will completely deplete in ${item.daysLeft} days`}
+                          {item.stock === 0
+                            ? isAr
+                              ? "🚨 لا توجد كميات للبيع!"
+                              : "🚨 No quantities left for sale!"
+                            : isAr
+                              ? `سوف ينفد المخزون بالكامل في غضون ${item.daysLeft} أيام`
+                              : `Will completely deplete in ${item.daysLeft} days`}
                         </p>
                       </div>
                     ))}
@@ -693,26 +829,37 @@ function Dashboard() {
 
               {/* Alert Segment: Retention Alerts */}
               <div>
-                <h4 className="text-xs uppercase font-bold text-muted-foreground tracking-wider mb-2">{isAr ? "🚨 حملات استعادة العملاء" : "🚨 Retention Alerts"}</h4>
+                <h4 className="text-xs uppercase font-bold text-muted-foreground tracking-wider mb-2">
+                  {isAr ? "🚨 حملات استعادة العملاء" : "🚨 Retention Alerts"}
+                </h4>
                 {crmStats.churnRiskVips.length === 0 ? (
-                  <p className="text-xs text-muted-foreground bg-secondary/10 p-3 rounded-lg border border-dashed border-border">{isAr ? "لا يوجد عملاء VIP معرضون للمغادرة حاليًا." : "No VIP customers in retention danger."}</p>
+                  <p className="text-xs text-muted-foreground bg-secondary/10 p-3 rounded-lg border border-dashed border-border">
+                    {isAr
+                      ? "لا يوجد عملاء VIP معرضون للمغادرة حاليًا."
+                      : "No VIP customers in retention danger."}
+                  </p>
                 ) : (
                   <div className="space-y-2">
                     <div className="p-3 bg-rose-500/10 border border-rose-500/20 rounded-lg space-y-2">
                       <div className="flex justify-between items-start">
-                        <span className="text-xs font-bold text-rose-800 dark:text-rose-400">{isAr ? "عملاء VIP معرضون للمغادرة" : "VIP Churn Risk Alerts"}</span>
+                        <span className="text-xs font-bold text-rose-800 dark:text-rose-400">
+                          {isAr ? "عملاء VIP معرضون للمغادرة" : "VIP Churn Risk Alerts"}
+                        </span>
                         <span className="text-[10px] font-bold bg-rose-500/20 text-rose-700 dark:text-rose-400 px-1.5 py-0.5 rounded-full">
                           {crmStats.churnRiskVips.length} {isAr ? "عملاء" : "VIPs"}
                         </span>
                       </div>
                       <p className="text-[10px] text-rose-700 dark:text-rose-300 leading-relaxed">
-                        {isAr 
-                          ? "لم يقم كبار العملاء هؤلاء بأي طلبات جديدة في الـ 60 يومًا الماضية. بادر بإعادتهم الآن!" 
+                        {isAr
+                          ? "لم يقم كبار العملاء هؤلاء بأي طلبات جديدة في الـ 60 يومًا الماضية. بادر بإعادتهم الآن!"
                           : "High-value VIP spenders with no orders in past 60 days. Launch outreach campaign immediately!"}
                       </p>
                       <div className="flex flex-wrap gap-1 border-t border-rose-500/10 pt-2">
                         {crmStats.churnRiskVips.slice(0, 3).map((v) => (
-                          <span key={v.id} className="text-[9px] font-semibold bg-rose-500/10 text-rose-900 dark:text-rose-300 px-2 py-0.5 rounded-md">
+                          <span
+                            key={v.id}
+                            className="text-[9px] font-semibold bg-rose-500/10 text-rose-900 dark:text-rose-300 px-2 py-0.5 rounded-md"
+                          >
                             👤 {v.name}
                           </span>
                         ))}

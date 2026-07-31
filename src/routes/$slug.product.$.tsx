@@ -3,7 +3,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Skeleton } from "@/components/ui/skeleton";
 
 const ProductDetail = lazy(() =>
-  import("./$slug.product.$id").then((m) => ({ default: m.ProductDetail }))
+  import("./$slug.product.$id").then((m) => ({ default: m.ProductDetail })),
 );
 
 export const Route = createFileRoute("/$slug/product/$")({

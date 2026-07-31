@@ -44,9 +44,7 @@ function onFocusIn(e: FocusEvent) {
   if (isZeroLike(target.value)) {
     // Remember decimal formatting hint so blur can restore matching zero.
     if (target.value.includes(".") || target.value.includes(",")) {
-      target.dataset.autoZeroDecimal = String(
-        (target.value.split(/[.,]/)[1] || "").length,
-      );
+      target.dataset.autoZeroDecimal = String((target.value.split(/[.,]/)[1] || "").length);
     }
     setInputValue(target, "");
   }

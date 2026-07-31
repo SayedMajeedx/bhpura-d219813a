@@ -22,7 +22,12 @@ type ProductRow = {
   category: string | null;
   image_url: string | null;
   media: Array<{ type: "image" | "video"; url: string }> | null;
-  product_variants: Array<{ id: string; selling_price: number; original_price: number | null; stock_main: number }>;
+  product_variants: Array<{
+    id: string;
+    selling_price: number;
+    original_price: number | null;
+    stock_main: number;
+  }>;
 };
 
 export const Route = createFileRoute("/$slug/search")({
@@ -39,7 +44,7 @@ export const Route = createFileRoute("/$slug/search")({
   component: SearchPage,
 });
 
-export function SearchPage() {
+function SearchPage() {
   const { brand, currency, lang, t } = useStorefront();
   const search = Route.useSearch();
   const loaderData = Route.useLoaderData();
@@ -49,7 +54,7 @@ export function SearchPage() {
   const { data, isLoading } = useQuery({
     queryKey: ["storefront", brand.slug, "search", term],
     queryFn: () => fetchStorefrontSearch(brand.id, term) as Promise<ProductRow[]>,
-    initialData: loaderData.term === term ? loaderData.results as ProductRow[] : undefined,
+    initialData: loaderData.term === term ? (loaderData.results as ProductRow[]) : undefined,
     enabled: Boolean(term),
   });
 
@@ -62,8 +67,11 @@ export function SearchPage() {
   const results = useMemo(() => {
     const rows = data ?? [];
     if (sort === "new") return rows;
-    const price = (product: ProductRow) => Number(product.product_variants?.[0]?.selling_price ?? Number.MAX_SAFE_INTEGER);
-    return rows.sort((a, b) => sort === "price-low" ? price(a) - price(b) : sort === "price-high" ? price(b) - price(a) : 0);
+    const price = (product: ProductRow) =>
+      Number(product.product_variants?.[0]?.selling_price ?? Number.MAX_SAFE_INTEGER);
+    return rows.sort((a, b) =>
+      sort === "price-low" ? price(a) - price(b) : sort === "price-high" ? price(b) - price(a) : 0,
+    );
   }, [data, sort]);
 
   return (

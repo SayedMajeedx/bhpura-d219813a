@@ -24,9 +24,9 @@ describe("Meta WhatsApp webhook security", () => {
     const body = new TextEncoder().encode('{"object":"whatsapp_business_account"}').buffer;
     const signature = await sign(body, "test-app-secret");
 
-    await expect(
-      verifyMetaWebhookSignature(body, signature, "test-app-secret"),
-    ).resolves.toBe(true);
+    await expect(verifyMetaWebhookSignature(body, signature, "test-app-secret")).resolves.toBe(
+      true,
+    );
   });
 
   it("rejects tampered bodies and malformed signatures", async () => {
@@ -34,21 +34,19 @@ describe("Meta WhatsApp webhook security", () => {
     const tampered = new TextEncoder().encode('{"ok":false}').buffer;
     const signature = await sign(original, "test-app-secret");
 
-    await expect(
-      verifyMetaWebhookSignature(tampered, signature, "test-app-secret"),
-    ).resolves.toBe(false);
+    await expect(verifyMetaWebhookSignature(tampered, signature, "test-app-secret")).resolves.toBe(
+      false,
+    );
     await expect(
       verifyMetaWebhookSignature(original, "sha256=not-hex", "test-app-secret"),
     ).resolves.toBe(false);
-    await expect(
-      verifyMetaWebhookSignature(original, null, "test-app-secret"),
-    ).resolves.toBe(false);
+    await expect(verifyMetaWebhookSignature(original, null, "test-app-secret")).resolves.toBe(
+      false,
+    );
   });
 
   it("converts Meta epoch timestamps into ISO timestamps", () => {
-    expect(normalizeMetaStatusTimestamp("1720000000")).toBe(
-      "2024-07-03T09:46:40.000Z",
-    );
+    expect(normalizeMetaStatusTimestamp("1720000000")).toBe("2024-07-03T09:46:40.000Z");
     expect(Number.isNaN(Date.parse(normalizeMetaStatusTimestamp("invalid")))).toBe(false);
   });
 });

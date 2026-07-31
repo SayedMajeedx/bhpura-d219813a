@@ -116,7 +116,10 @@ const MockOrderBadge = ({ initialStatus, onStatusChange }: OrderBadgeProps) => {
       <div data-testid="order-badge" className={`px-2 py-1 rounded text-sm ${getBadgeClass()}`}>
         {status === "paid" ? "Paid & Processing / مدفوع وقيد التنفيذ" : "Pending / قيد الانتظار"}
       </div>
-      <button onClick={() => handleUpdate("paid")} className="mt-2 px-2 py-1 bg-blue-500 text-white text-xs rounded">
+      <button
+        onClick={() => handleUpdate("paid")}
+        className="mt-2 px-2 py-1 bg-blue-500 text-white text-xs rounded"
+      >
         Mark Paid
       </button>
     </div>
@@ -189,11 +192,7 @@ describe("Admin Portal Automated E2E Scenarios via Vitest", () => {
 
   test("AUTOMATED JOURNEY 4: MOBILE VIEWPORT & ACCESSIBILITY AUDIT", () => {
     // Assert accessibility touch targets heights are >= 32px to ensure beautiful spacing on mobile viewports
-    render(
-      <button className="px-4 py-3 min-h-[44px]">
-        Touch Target Button
-      </button>
-    );
+    render(<button className="px-4 py-3 min-h-[44px]">Touch Target Button</button>);
 
     const touchButton = screen.getByRole("button", { name: /Touch Target Button/i });
     expect(touchButton).toBeInTheDocument();

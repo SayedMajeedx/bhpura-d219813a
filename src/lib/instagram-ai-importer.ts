@@ -44,22 +44,27 @@ export function scanCaptionForSoldOut(caption: string): { isSoldOut: boolean; ke
 export const fetchInstagramPosts = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .validator((raw: unknown) =>
-    z.object({
-      username: z.string().optional(),
-      urls: z.array(z.string()).optional(),
-      range: z.number().int().min(5).max(100).default(50),
-    }).parse(raw)
+    z
+      .object({
+        username: z.string().optional(),
+        urls: z.array(z.string()).optional(),
+        range: z.number().int().min(5).max(100).default(50),
+      })
+      .parse(raw),
   )
   .handler(async ({ data }) => {
     const token = process.env.APIFY_API_TOKEN;
     if (!token) {
-      throw new Error("Missing APIFY_API_TOKEN environment variable. Please configure it in your environment settings.");
+      throw new Error(
+        "Missing APIFY_API_TOKEN environment variable. Please configure it in your environment settings.",
+      );
     }
-    const directUrls = data.urls && data.urls.length > 0 
-      ? data.urls 
-      : data.username 
-        ? [`https://www.instagram.com/${data.username.replace(/^@/, "").trim()}/`] 
-        : [];
+    const directUrls =
+      data.urls && data.urls.length > 0
+        ? data.urls
+        : data.username
+          ? [`https://www.instagram.com/${data.username.replace(/^@/, "").trim()}/`]
+          : [];
 
     if (directUrls.length === 0) {
       throw new Error("Either username or direct URLs must be provided.");
@@ -67,17 +72,20 @@ export const fetchInstagramPosts = createServerFn({ method: "POST" })
 
     try {
       // Trigger the scraping actor run asynchronously
-      const runResponse = await fetch(`https://api.apify.com/v2/acts/apify~instagram-scraper/runs?token=${token}`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
+      const runResponse = await fetch(
+        `https://api.apify.com/v2/acts/apify~instagram-scraper/runs?token=${token}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            directUrls,
+            resultsLimit: data.range,
+            resultsType: "posts",
+          }),
         },
-        body: JSON.stringify({
-          directUrls,
-          resultsLimit: data.range,
-          resultsType: "posts",
-        }),
-      });
+      );
 
       if (!runResponse.ok) {
         const errText = await runResponse.text();
@@ -105,9 +113,11 @@ export const fetchInstagramPosts = createServerFn({ method: "POST" })
 export const checkScraperStatus = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .validator((raw: unknown) =>
-    z.object({
-      runId: z.string(),
-    }).parse(raw)
+    z
+      .object({
+        runId: z.string(),
+      })
+      .parse(raw),
   )
   .handler(async ({ data }) => {
     const token = process.env.APIFY_API_TOKEN;
@@ -116,7 +126,9 @@ export const checkScraperStatus = createServerFn({ method: "POST" })
     }
 
     try {
-      const response = await fetch(`https://api.apify.com/v2/acts/apify~instagram-scraper/runs/${data.runId}?token=${token}`);
+      const response = await fetch(
+        `https://api.apify.com/v2/acts/apify~instagram-scraper/runs/${data.runId}?token=${token}`,
+      );
       if (!response.ok) {
         const errText = await response.text();
         throw new Error(`Failed to poll status: Status ${response.status} - ${errText}`);
@@ -140,9 +152,11 @@ export const checkScraperStatus = createServerFn({ method: "POST" })
 export const fetchScraperDataset = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .validator((raw: unknown) =>
-    z.object({
-      datasetId: z.string(),
-    }).parse(raw)
+    z
+      .object({
+        datasetId: z.string(),
+      })
+      .parse(raw),
   )
   .handler(async ({ data }) => {
     const token = process.env.APIFY_API_TOKEN;
@@ -151,50 +165,70 @@ export const fetchScraperDataset = createServerFn({ method: "POST" })
     }
 
     try {
-      const itemsResponse = await fetch(`https://api.apify.com/v2/datasets/${data.datasetId}/items?token=${token}`);
+      const itemsResponse = await fetch(
+        `https://api.apify.com/v2/datasets/${data.datasetId}/items?token=${token}`,
+      );
       if (!itemsResponse.ok) {
         const errText = await itemsResponse.text();
-        throw new Error(`Failed to retrieve dataset items: Status ${itemsResponse.status} - ${errText}`);
+        throw new Error(
+          `Failed to retrieve dataset items: Status ${itemsResponse.status} - ${errText}`,
+        );
       }
 
-      const items = await itemsResponse.json() as any[];
+      const items = (await itemsResponse.json()) as any[];
       if (!Array.isArray(items)) {
         return [];
       }
 
-      const posts: InstagramPostPreview[] = items.map((item, index) => {
-        const caption = item.caption || item.text || "";
-        const { isSoldOut, keyword } = scanCaptionForSoldOut(caption);
-        
-        const isVideo = !!(item.isVideo || item.type === "Video" || item.type === "Reel" || (item.url && (item.url.includes("/reel/") || item.url.includes("/tv/"))));
-        
-        // Prioritized fallback cover image sequence
-        let imageUrl = item.thumbnailUrl || item.displayUrl || (item.images && item.images[0]) || (item.displayResources && item.displayResources[0]?.src) || "";
+      const posts: InstagramPostPreview[] = items
+        .map((item, index) => {
+          const caption = item.caption || item.text || "";
+          const { isSoldOut, keyword } = scanCaptionForSoldOut(caption);
 
-        // Enforce safety checks to ensure we never capture a raw .mp4 string
-        if (imageUrl.toLowerCase().includes(".mp4")) {
-          // Attempt fallbacks
-          imageUrl = item.thumbnailUrl || item.displayUrl || (item.images && item.images[0]) || "";
+          const isVideo = !!(
+            item.isVideo ||
+            item.type === "Video" ||
+            item.type === "Reel" ||
+            (item.url && (item.url.includes("/reel/") || item.url.includes("/tv/")))
+          );
+
+          // Prioritized fallback cover image sequence
+          let imageUrl =
+            item.thumbnailUrl ||
+            item.displayUrl ||
+            (item.images && item.images[0]) ||
+            (item.displayResources && item.displayResources[0]?.src) ||
+            "";
+
+          // Enforce safety checks to ensure we never capture a raw .mp4 string
           if (imageUrl.toLowerCase().includes(".mp4")) {
-            imageUrl = "";
+            // Attempt fallbacks
+            imageUrl =
+              item.thumbnailUrl || item.displayUrl || (item.images && item.images[0]) || "";
+            if (imageUrl.toLowerCase().includes(".mp4")) {
+              imageUrl = "";
+            }
           }
-        }
 
-        const dateStr = item.timestamp 
-          ? new Date(item.timestamp).toLocaleDateString("en-US", { month: "short", day: "numeric" })
-          : "Today";
+          const dateStr = item.timestamp
+            ? new Date(item.timestamp).toLocaleDateString("en-US", {
+                month: "short",
+                day: "numeric",
+              })
+            : "Today";
 
-        return {
-          id: item.id || `post-${index}`,
-          url: item.url || `https://www.instagram.com/p/${item.shortCode || index}/`,
-          imageUrl,
-          caption,
-          isSoldOut,
-          detectedKeyword: isSoldOut ? keyword : undefined,
-          date: dateStr,
-          isVideo,
-        };
-      }).filter(p => p.imageUrl);
+          return {
+            id: item.id || `post-${index}`,
+            url: item.url || `https://www.instagram.com/p/${item.shortCode || index}/`,
+            imageUrl,
+            caption,
+            isSoldOut,
+            detectedKeyword: isSoldOut ? keyword : undefined,
+            date: dateStr,
+            isVideo,
+          };
+        })
+        .filter((p) => p.imageUrl);
 
       return posts;
     } catch (error: any) {
@@ -207,7 +241,7 @@ export const fetchScraperDataset = createServerFn({ method: "POST" })
 export function extractPriceFallback(caption: string): number {
   // Normalize Eastern Arabic numerals (٠-٩) to Western Arabic (0-9)
   let text = caption.replace(/[٠-٩]/g, (d) => String.fromCharCode(d.charCodeAt(0) - 1632));
-  
+
   // Look for BHD prices specifically
   const priceMatch = text.match(/(\d+(?:\.\d{1,3})?)\s*(?:bhd|bd|د\.ب|دينار|ديناراً)/i);
   if (priceMatch) {
@@ -230,7 +264,9 @@ export function extractPriceFallback(caption: string): number {
   }
 
   // Search for price-adjacent keywords followed by raw digit under 200 (avoiding phone numbers / sizes)
-  const keywordMatch = text.match(/(?:السعر|السعر هو|بـ|price|price is)\s*[:：]?\s*(\d+(?:\.\d{1,3})?)/i);
+  const keywordMatch = text.match(
+    /(?:السعر|السعر هو|بـ|price|price is)\s*[:：]?\s*(\d+(?:\.\d{1,3})?)/i,
+  );
   if (keywordMatch) {
     let p = parseFloat(keywordMatch[1]);
     if (p > 1000) {
@@ -266,7 +302,7 @@ async function rehostSingleImage(brandId: string, imageUrl: string): Promise<str
         ContentType: contentType,
         Body: buffer,
         CacheControl: "public, max-age=31536000, immutable",
-      })
+      }),
     );
 
     return `${publicBaseUrl}/${key}`;
@@ -280,19 +316,21 @@ async function rehostSingleImage(brandId: string, imageUrl: string): Promise<str
 export const batchParseCaptionsWithAI = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .validator((raw: unknown) =>
-    z.object({
-      brandId: z.string().uuid(),
-      posts: z.array(
-        z.object({
-          id: z.string(),
-          url: z.string(),
-          imageUrl: z.string(),
-          caption: z.string(),
-          isSoldOut: z.boolean(),
-          isVideo: z.boolean().optional(),
-        })
-      ),
-    }).parse(raw)
+    z
+      .object({
+        brandId: z.string().uuid(),
+        posts: z.array(
+          z.object({
+            id: z.string(),
+            url: z.string(),
+            imageUrl: z.string(),
+            caption: z.string(),
+            isSoldOut: z.boolean(),
+            isVideo: z.boolean().optional(),
+          }),
+        ),
+      })
+      .parse(raw),
   )
   .handler(async ({ data, context }) => {
     const userId = context.userId;
@@ -328,69 +366,25 @@ export const batchParseCaptionsWithAI = createServerFn({ method: "POST" })
     try {
       try {
         const systemPrompt = [
-        "You are an expert GCC boutique product migration assistant.",
-        "Analyze a JSON array of Instagram post captions and extract structured product catalog metadata for each.",
-        "Strict Price Rules:",
-        "1. CURRENCY PRIORITY: Explicitly look for prices in BHD, BD, bd, dinar, دينار, د.ب, د.ب. (e.g. '35 BD' -> price: 35).",
-        "2. MULTIPLE CURRENCIES: If multiple currencies are listed (e.g. '35 BD / 350 SAR'), always extract the BHD/BD value (35).",
-        "3. AUTO-CONVERT: If only SAR or AED is listed (e.g. '350 SAR' or '350 ريال'), divide by 10 to auto-convert to BHD (35).",
-        "4. ARABIC NUMERALS: Normalize Eastern Arabic numerals (٠١٢٣٤٥٦٧٨٩) to standard digits (0123456789).",
-        "5. CRITICAL EXCLUSIONS:",
-        "   - Do NOT confuse abaya/clothing sizes (50 to 62) with prices unless followed by BD/BHD/دينار.",
-        "   - Do NOT confuse 8-digit phone numbers starting with 3, 6, 17, or +973, 00973 with prices.",
-        "   - Do NOT parse delivery fees (e.g. 'توصيل 2 دينار' should be ignored).",
-        "6. DECIMALS & FALLBACK: Handle 3-decimal formats (e.g. '35.000 BD' -> 35). If no explicit currency is found, check for 'السعر', 'Price', or 'بـ' followed by a number under 200. If no price is detectable, return 0.",
-        "7. SIZES: Extract standard GCC garments sizes (like 52, 54, 56, 58, 60, 62) as an array of strings. If no sizes are detectable, return a default list ['52', '54', '56', '58'].",
-        "8. CATEGORY: Categorize into 'Abayas', 'Dresses', 'Accessories' or other GCC apparel collections.",
-        "Provide a minified JSON array matching the requested schema and nothing else."
-      ].join("\n");
+          "You are an expert GCC boutique product migration assistant.",
+          "Analyze a JSON array of Instagram post captions and extract structured product catalog metadata for each.",
+          "Strict Price Rules:",
+          "1. CURRENCY PRIORITY: Explicitly look for prices in BHD, BD, bd, dinar, دينار, د.ب, د.ب. (e.g. '35 BD' -> price: 35).",
+          "2. MULTIPLE CURRENCIES: If multiple currencies are listed (e.g. '35 BD / 350 SAR'), always extract the BHD/BD value (35).",
+          "3. AUTO-CONVERT: If only SAR or AED is listed (e.g. '350 SAR' or '350 ريال'), divide by 10 to auto-convert to BHD (35).",
+          "4. ARABIC NUMERALS: Normalize Eastern Arabic numerals (٠١٢٣٤٥٦٧٨٩) to standard digits (0123456789).",
+          "5. CRITICAL EXCLUSIONS:",
+          "   - Do NOT confuse abaya/clothing sizes (50 to 62) with prices unless followed by BD/BHD/دينار.",
+          "   - Do NOT confuse 8-digit phone numbers starting with 3, 6, 17, or +973, 00973 with prices.",
+          "   - Do NOT parse delivery fees (e.g. 'توصيل 2 دينار' should be ignored).",
+          "6. DECIMALS & FALLBACK: Handle 3-decimal formats (e.g. '35.000 BD' -> 35). If no explicit currency is found, check for 'السعر', 'Price', or 'بـ' followed by a number under 200. If no price is detectable, return 0.",
+          "7. SIZES: Extract standard GCC garments sizes (like 52, 54, 56, 58, 60, 62) as an array of strings. If no sizes are detectable, return a default list ['52', '54', '56', '58'].",
+          "8. CATEGORY: Categorize into 'Abayas', 'Dresses', 'Accessories' or other GCC apparel collections.",
+          "Provide a minified JSON array matching the requested schema and nothing else.",
+        ].join("\n");
 
-      const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
-      let response = await fetch(endpoint, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-goog-api-key": apiKey,
-        },
-        body: JSON.stringify({
-          systemInstruction: { parts: [{ text: systemPrompt }] },
-          contents: [
-            {
-              role: "user",
-              parts: [
-                {
-                  text: `Analyze and extract structured catalog data for these Instagram posts:\n\n${JSON.stringify(postsPayload, null, 2)}`,
-                },
-              ],
-            },
-          ],
-          generationConfig: {
-            temperature: 0.1,
-            responseMimeType: "application/json",
-            responseJsonSchema: {
-              type: "array",
-              items: {
-                type: "object",
-                properties: {
-                  id: { type: "string" },
-                  title: { type: "string" },
-                  price: { type: "number" },
-                  description: { type: "string" },
-                  sizes: { type: "array", items: { type: "string" } },
-                  category: { type: "string" }
-                },
-                required: ["id", "title", "price", "description", "sizes", "category"]
-              }
-            },
-          },
-        }),
-      });
-
-      // Automated retry fallback if the primary model failed
-      if (!response.ok && model !== "gemini-1.5-flash-latest") {
-        console.warn(`Primary Gemini model (${model}) request failed. Retrying with ultra-stable gemini-1.5-flash-latest...`);
-        const fallbackEndpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent`;
-        response = await fetch(fallbackEndpoint, {
+        const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
+        let response = await fetch(endpoint, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -421,66 +415,134 @@ export const batchParseCaptionsWithAI = createServerFn({ method: "POST" })
                     price: { type: "number" },
                     description: { type: "string" },
                     sizes: { type: "array", items: { type: "string" } },
-                    category: { type: "string" }
+                    category: { type: "string" },
                   },
-                  required: ["id", "title", "price", "description", "sizes", "category"]
-                }
+                  required: ["id", "title", "price", "description", "sizes", "category"],
+                },
               },
             },
           }),
         });
+
+        // Automated retry fallback if the primary model failed
+        if (!response.ok && model !== "gemini-1.5-flash-latest") {
+          console.warn(
+            `Primary Gemini model (${model}) request failed. Retrying with ultra-stable gemini-1.5-flash-latest...`,
+          );
+          const fallbackEndpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent`;
+          response = await fetch(fallbackEndpoint, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "x-goog-api-key": apiKey,
+            },
+            body: JSON.stringify({
+              systemInstruction: { parts: [{ text: systemPrompt }] },
+              contents: [
+                {
+                  role: "user",
+                  parts: [
+                    {
+                      text: `Analyze and extract structured catalog data for these Instagram posts:\n\n${JSON.stringify(postsPayload, null, 2)}`,
+                    },
+                  ],
+                },
+              ],
+              generationConfig: {
+                temperature: 0.1,
+                responseMimeType: "application/json",
+                responseJsonSchema: {
+                  type: "array",
+                  items: {
+                    type: "object",
+                    properties: {
+                      id: { type: "string" },
+                      title: { type: "string" },
+                      price: { type: "number" },
+                      description: { type: "string" },
+                      sizes: { type: "array", items: { type: "string" } },
+                      category: { type: "string" },
+                    },
+                    required: ["id", "title", "price", "description", "sizes", "category"],
+                  },
+                },
+              },
+            }),
+          });
+        }
+
+        if (!response.ok) {
+          const errText = await response.text();
+          throw new Error(`Gemini batch request failed: ${response.status} - ${errText}`);
+        }
+
+        const resJson = await response.json<{
+          candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>;
+        }>();
+        const rawText = resJson.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (!rawText) {
+          throw new Error("Gemini returned an empty response candidate.");
+        }
+
+        parsedArray = JSON.parse(rawText.trim()) as any[];
+      } catch (apiErr) {
+        console.error(
+          "Gemini batch request failed completely, invoking robust local regex/heuristic fallback:",
+          apiErr,
+        );
+        // Fail-safe pure rule-based fallback mapping
+        parsedArray = data.posts.map((post) => {
+          const lines = post.caption
+            .split("\n")
+            .map((l) => l.trim())
+            .filter(Boolean);
+          const title =
+            lines.length > 0
+              ? lines[0]
+                  .replace(/[✨🌿🌟🤍🖤]/g, "")
+                  .slice(0, 60)
+                  .trim()
+              : "Instagram Product";
+
+          const price = extractPriceFallback(post.caption) || 25;
+          const description = post.caption;
+          const sizes = ["52", "54", "56", "58"];
+          const category = "Abayas";
+
+          return {
+            id: post.id,
+            title,
+            price,
+            description,
+            sizes,
+            category,
+          };
+        });
       }
-
-      if (!response.ok) {
-        const errText = await response.text();
-        throw new Error(`Gemini batch request failed: ${response.status} - ${errText}`);
-      }
-
-      const resJson = await response.json<{
-        candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>;
-      }>();
-      const rawText = resJson.candidates?.[0]?.content?.parts?.[0]?.text;
-      if (!rawText) {
-        throw new Error("Gemini returned an empty response candidate.");
-      }
-
-      parsedArray = JSON.parse(rawText.trim()) as any[];
-    } catch (apiErr) {
-      console.error("Gemini batch request failed completely, invoking robust local regex/heuristic fallback:", apiErr);
-      // Fail-safe pure rule-based fallback mapping
-      parsedArray = data.posts.map((post) => {
-        const lines = post.caption.split("\n").map((l) => l.trim()).filter(Boolean);
-        const title = lines.length > 0 ? lines[0].replace(/[✨🌿🌟🤍🖤]/g, "").slice(0, 60).trim() : "Instagram Product";
-        
-        const price = extractPriceFallback(post.caption) || 25;
-        const description = post.caption;
-        const sizes = ["52", "54", "56", "58"];
-        const category = "Abayas";
-
-        return {
-          id: post.id,
-          title,
-          price,
-          description,
-          sizes,
-          category,
-        };
-      });
-    }
 
       // Perform strict regex safety checks and complete fallback operations
       const products = data.posts.map((originalPost) => {
         const parsed = parsedArray.find((item) => item.id === originalPost.id) || {};
-        
+
         let title = parsed.title;
         if (!title || title === "Instagram Product") {
-          const lines = originalPost.caption.split("\n").map((l: string) => l.trim()).filter(Boolean);
-          title = lines.length > 0 ? lines[0].replace(/[✨🌿🌟🤍🖤]/g, "").slice(0, 60).trim() : "Instagram Product";
+          const lines = originalPost.caption
+            .split("\n")
+            .map((l: string) => l.trim())
+            .filter(Boolean);
+          title =
+            lines.length > 0
+              ? lines[0]
+                  .replace(/[✨🌿🌟🤍🖤]/g, "")
+                  .slice(0, 60)
+                  .trim()
+              : "Instagram Product";
         }
 
         let price = Number(parsed.price);
         // Regex Parser Fallback Safety Net (for zero, sizes, or over-inflated prices)
-        const isUnlikelyPrice = isNaN(price) || price === 0 || price > 200 || [52, 54, 56, 58, 60, 62].includes(price);
+        const isUnlikelyPrice =
+          isNaN(price) || price === 0 || price > 200 || [52, 54, 56, 58, 60, 62].includes(price);
         if (isUnlikelyPrice) {
           const regexPrice = extractPriceFallback(originalPost.caption);
           if (regexPrice > 0) {
@@ -491,7 +553,8 @@ export const batchParseCaptionsWithAI = createServerFn({ method: "POST" })
         }
 
         const description = parsed.description || originalPost.caption;
-        const sizes = parsed.sizes && parsed.sizes.length > 0 ? parsed.sizes : ["52", "54", "56", "58"];
+        const sizes =
+          parsed.sizes && parsed.sizes.length > 0 ? parsed.sizes : ["52", "54", "56", "58"];
         const category = parsed.category || "Abayas";
 
         return {
@@ -518,22 +581,24 @@ export const batchParseCaptionsWithAI = createServerFn({ method: "POST" })
 export const batchRehostImages = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .validator((raw: unknown) =>
-    z.object({
-      brandId: z.string().uuid(),
-      products: z.array(
-        z.object({
-          id: z.string(),
-          imageUrl: z.string(),
-          url: z.string(),
-          isSoldOut: z.boolean(),
-          title: z.string(),
-          price: z.number(),
-          description: z.string(),
-          sizes: z.array(z.string()),
-          category: z.string(),
-        })
-      ),
-    }).parse(raw)
+    z
+      .object({
+        brandId: z.string().uuid(),
+        products: z.array(
+          z.object({
+            id: z.string(),
+            imageUrl: z.string(),
+            url: z.string(),
+            isSoldOut: z.boolean(),
+            title: z.string(),
+            price: z.number(),
+            description: z.string(),
+            sizes: z.array(z.string()),
+            category: z.string(),
+          }),
+        ),
+      })
+      .parse(raw),
   )
   .handler(async ({ data }) => {
     const brandId = data.brandId;
@@ -551,7 +616,7 @@ export const batchRehostImages = createServerFn({ method: "POST" })
               const r2Url = await rehostSingleImage(brandId, product.imageUrl);
               items[idx].imageUrl = r2Url;
             }
-          })
+          }),
         );
       }
       return { products: items };
@@ -565,22 +630,24 @@ export const batchRehostImages = createServerFn({ method: "POST" })
 export const bulkInsertProducts = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .validator((raw: unknown) =>
-    z.object({
-      brandId: z.string().uuid(),
-      products: z.array(
-        z.object({
-          id: z.string(),
-          imageUrl: z.string(),
-          url: z.string(),
-          isSoldOut: z.boolean(),
-          title: z.string(),
-          price: z.number(),
-          description: z.string(),
-          sizes: z.array(z.string()),
-          category: z.string(),
-        })
-      ),
-    }).parse(raw)
+    z
+      .object({
+        brandId: z.string().uuid(),
+        products: z.array(
+          z.object({
+            id: z.string(),
+            imageUrl: z.string(),
+            url: z.string(),
+            isSoldOut: z.boolean(),
+            title: z.string(),
+            price: z.number(),
+            description: z.string(),
+            sizes: z.array(z.string()),
+            category: z.string(),
+          }),
+        ),
+      })
+      .parse(raw),
   )
   .handler(async ({ data, context }) => {
     const userId = context.userId;
@@ -627,7 +694,10 @@ export const bulkInsertProducts = createServerFn({ method: "POST" })
         const originalPost = data.products.find((p) => p.id === postInstaId);
         if (!originalPost) return;
 
-        const sizes = originalPost.sizes && originalPost.sizes.length > 0 ? originalPost.sizes : ["52", "54", "56", "58"];
+        const sizes =
+          originalPost.sizes && originalPost.sizes.length > 0
+            ? originalPost.sizes
+            : ["52", "54", "56", "58"];
         const price = originalPost.price || 25;
 
         sizes.forEach((size: string) => {
@@ -653,7 +723,7 @@ export const bulkInsertProducts = createServerFn({ method: "POST" })
         const { error: varErr } = await context.supabase
           .from("product_variants")
           .insert(variantRows);
-        
+
         if (varErr) {
           throw new Error(`Failed to batch insert variants: ${varErr.message}`);
         }

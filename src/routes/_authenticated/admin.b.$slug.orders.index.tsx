@@ -41,6 +41,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { formatDate, formatMoney, formatOrderStatus } from "@/lib/format";
 import { toast } from "sonner";
 import {
@@ -66,7 +67,13 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { deleteOrderWithPrivateReceipt } from "@/lib/benefit-receipt.functions";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
 import { Sparkles, Upload, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -188,7 +195,8 @@ const getFulfillmentBadgeDetails = (
         : lang === "ar"
           ? "تم التوصيل"
           : "Delivered",
-      classes: "bg-emerald-100 text-emerald-900 border border-emerald-300/80 font-semibold shadow-xs",
+      classes:
+        "bg-emerald-100 text-emerald-900 border border-emerald-300/80 font-semibold shadow-xs",
     };
   }
   if (["CANCELLED", "DELIVERY_FAILED", "FAILED", "RETURNED"].includes(s)) {
@@ -256,7 +264,7 @@ const renderPaymentMethodBadge = (paymentMethod: string | null | undefined, lang
       </div>
     );
   }
-  
+
   return null;
 };
 
@@ -264,7 +272,11 @@ function CustomerContactActions({ customer, lang }: { customer: any; lang: "en" 
   if (!customer?.phone) return null;
   const rawPhone = String(customer.phone);
   const cleanPhone = rawPhone.replace(/[^0-9+]/g, "");
-  const waPhone = cleanPhone.startsWith("+") ? cleanPhone.replace("+", "") : cleanPhone.length === 8 ? `973${cleanPhone}` : cleanPhone;
+  const waPhone = cleanPhone.startsWith("+")
+    ? cleanPhone.replace("+", "")
+    : cleanPhone.length === 8
+      ? `973${cleanPhone}`
+      : cleanPhone;
 
   return (
     <div className="flex items-center gap-1.5 mt-1.5">
@@ -309,7 +321,8 @@ function DeliveryAddressSnapshot({ customer, lang }: { customer: any; lang: "en"
     parts.push(`${lang === "ar" ? "شقة" : "Flat"} ${customer.flat}`);
   }
 
-  const text = parts.length > 0 ? parts.join(", ") : customer.address || customer.formatted_address || null;
+  const text =
+    parts.length > 0 ? parts.join(", ") : customer.address || customer.formatted_address || null;
   if (!text) return null;
 
   return (
@@ -320,7 +333,13 @@ function DeliveryAddressSnapshot({ customer, lang }: { customer: any; lang: "en"
   );
 }
 
-function OrderItemsSummary({ items, lang }: { items: any[] | undefined | null; lang: "en" | "ar" }) {
+function OrderItemsSummary({
+  items,
+  lang,
+}: {
+  items: any[] | undefined | null;
+  lang: "en" | "ar";
+}) {
   if (!items || items.length === 0) return null;
 
   const totalQty = items.reduce((sum: number, it: any) => sum + (Number(it.quantity) || 1), 0);
@@ -337,7 +356,9 @@ function OrderItemsSummary({ items, lang }: { items: any[] | undefined | null; l
   return (
     <div className="mt-1.5 text-[11px] font-medium text-muted-foreground flex items-center gap-1.5 bg-secondary/50 px-2 py-0.5 rounded-md w-fit max-w-full">
       <Package className="h-3 w-3 shrink-0 text-amber-600 dark:text-amber-400" />
-      <span className="font-bold text-foreground">{totalQty} {lang === "ar" ? "منتج" : totalQty === 1 ? "item" : "items"}</span>
+      <span className="font-bold text-foreground">
+        {totalQty} {lang === "ar" ? "منتج" : totalQty === 1 ? "item" : "items"}
+      </span>
       <span className="truncate text-muted-foreground">({truncated})</span>
     </div>
   );
@@ -358,11 +379,15 @@ function OrdersList() {
   const [paymentFilter, setPaymentFilter] = useState("all");
   const [fulfillmentStatusFilter, setFulfillmentStatusFilter] = useState("all");
   const [fulfillmentMethodFilter, setFulfillmentMethodFilter] = useState("all");
+  const [gatewayFilter, setGatewayFilter] = useState("all");
+  const [inspectOrder, setInspectOrder] = useState<any | null>(null);
   const [includeHistorical, setIncludeHistorical] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
 
   // New Quick Tab filter
-  const [tabFilter, setTabFilter] = useState<"all" | "unpaid" | "action_required" | "shipped" | "completed">("all");
+  const [tabFilter, setTabFilter] = useState<
+    "all" | "unpaid" | "action_required" | "shipped" | "completed"
+  >("all");
 
   // New Fulfill states
   const [isFulfillModalOpen, setIsFulfillModalOpen] = useState(false);
@@ -403,7 +428,11 @@ function OrdersList() {
 
   const handleCompleteDelivery = async (order: any, amountToCollect: number, notes?: string) => {
     if (amountToCollect < 0) {
-      toast.error(lang === "ar" ? "لا يمكن أن يكون المبلغ المحصل بالسالب" : "Collected amount cannot be negative");
+      toast.error(
+        lang === "ar"
+          ? "لا يمكن أن يكون المبلغ المحصل بالسالب"
+          : "Collected amount cannot be negative",
+      );
       return;
     }
     const ordersQueryKey = ["orders", brandId, isCourier ? "assigned-courier" : "office"];
@@ -435,12 +464,19 @@ function OrdersList() {
         const currentPaid = Number(order.advance_paid ?? order.paid_amount ?? 0);
         const newPaid = currentPaid + amountToCollect;
         const total = Number(order.total || 0);
-        const newStatus = newPaid >= total ? "paid" : newPaid > 0 ? "partially_paid" : (order.payment_status || "unpaid");
+        const newStatus =
+          newPaid >= total
+            ? "paid"
+            : newPaid > 0
+              ? "partially_paid"
+              : order.payment_status || "unpaid";
 
         let updatedNotes = order.delivery_notes || "";
         if (notes && notes.trim()) {
           const timestamp = new Date().toISOString().slice(0, 16).replace("T", " ");
-          updatedNotes = updatedNotes ? `${updatedNotes}\n[${timestamp}]: ${notes.trim()}` : notes.trim();
+          updatedNotes = updatedNotes
+            ? `${updatedNotes}\n[${timestamp}]: ${notes.trim()}`
+            : notes.trim();
         }
 
         const { error: updateErr } = await supabase
@@ -463,13 +499,12 @@ function OrdersList() {
       toast.success(
         lang === "ar"
           ? "تم تسجيل تسليم الطلب وتأكيد التحصيل بنجاح!"
-          : "Delivery completed and payment confirmed!"
+          : "Delivery completed and payment confirmed!",
       );
       setCashModalOrder(null);
       setCashCollectedAmount("");
       setCashModalNotes("");
       qc.invalidateQueries({ queryKey: ["orders", brandId] });
-
     } catch (err: any) {
       qc.setQueryData(ordersQueryKey, previousOrders);
       toast.error(err.message || "Failed to complete delivery");
@@ -508,8 +543,9 @@ function OrdersList() {
     },
   });
 
-
-  const [sortField, setSortField] = useState<"invoice_number" | "created_at" | "customer" | "status" | "total">("created_at");
+  const [sortField, setSortField] = useState<
+    "invoice_number" | "created_at" | "customer" | "status" | "total"
+  >("created_at");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
@@ -547,7 +583,9 @@ function OrdersList() {
         .select("*, customers(*), order_items(*)")
         .eq("brand_id", brandId);
       if (isCourier) {
-        const { data: { user } } = await supabase.auth.getUser();
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
         if (!user) return [];
         query = query.eq("assigned_to", user.id).eq("fulfillment_method", "delivery");
       }
@@ -612,7 +650,7 @@ function OrdersList() {
       if (order.status === "archived_historical" && !includeHistorical) {
         continue;
       }
-      
+
       const workflow = getOrderWorkflow(order);
 
       all++;
@@ -676,6 +714,12 @@ function OrdersList() {
       if (
         fulfillmentMethodFilter !== "all" &&
         order.fulfillment_method !== fulfillmentMethodFilter
+      ) {
+        return false;
+      }
+      if (
+        gatewayFilter !== "all" &&
+        String(order.payment_method || "").toLowerCase() !== gatewayFilter.toLowerCase()
       ) {
         return false;
       }
@@ -759,18 +803,53 @@ function OrdersList() {
   };
 
   const renderSortIcon = (field: typeof sortField) => {
-    if (sortField !== field) return <ArrowUpDown className="ms-1.5 h-3.5 w-3.5 opacity-50 shrink-0 inline text-muted-foreground" />;
-    return sortDirection === "asc" 
-      ? <ArrowUp className="ms-1.5 h-3.5 w-3.5 text-primary shrink-0 inline" /> 
-      : <ArrowDown className="ms-1.5 h-3.5 w-3.5 text-primary shrink-0 inline" />;
+    if (sortField !== field)
+      return (
+        <ArrowUpDown className="ms-1.5 h-3.5 w-3.5 opacity-50 shrink-0 inline text-muted-foreground" />
+      );
+    return sortDirection === "asc" ? (
+      <ArrowUp className="ms-1.5 h-3.5 w-3.5 text-primary shrink-0 inline" />
+    ) : (
+      <ArrowDown className="ms-1.5 h-3.5 w-3.5 text-primary shrink-0 inline" />
+    );
   };
 
   const tabsList = [
-    { id: "action_required", label_en: "Needs attention", label_ar: "مطلوب إجراء", count: tabCounts.action_required, icon: Clock3 },
-    { id: "unpaid", label_en: "Awaiting payment", label_ar: "بانتظار الدفع", count: tabCounts.unpaid, icon: CircleDollarSign },
-    { id: "shipped", label_en: "With courier", label_ar: "مع المندوب", count: tabCounts.shipped, icon: Truck },
-    { id: "completed", label_en: "Completed", label_ar: "مكتملة", count: tabCounts.completed, icon: CheckCircle2 },
-    { id: "all", label_en: "All orders", label_ar: "كل الطلبات", count: tabCounts.all, icon: ReceiptText },
+    {
+      id: "action_required",
+      label_en: "Needs attention",
+      label_ar: "مطلوب إجراء",
+      count: tabCounts.action_required,
+      icon: Clock3,
+    },
+    {
+      id: "unpaid",
+      label_en: "Awaiting payment",
+      label_ar: "بانتظار الدفع",
+      count: tabCounts.unpaid,
+      icon: CircleDollarSign,
+    },
+    {
+      id: "shipped",
+      label_en: "With courier",
+      label_ar: "مع المندوب",
+      count: tabCounts.shipped,
+      icon: Truck,
+    },
+    {
+      id: "completed",
+      label_en: "Completed",
+      label_ar: "مكتملة",
+      count: tabCounts.completed,
+      icon: CheckCircle2,
+    },
+    {
+      id: "all",
+      label_en: "All orders",
+      label_ar: "كل الطلبات",
+      count: tabCounts.all,
+      icon: ReceiptText,
+    },
   ] as const;
 
   const activeFilterCount = [
@@ -805,10 +884,14 @@ function OrdersList() {
     const orderStatus = String(o.status || "").toUpperCase();
     const isUpdating = updatingOrderId === o.id;
     const isDelivered =
-      ["COMPLETED", "DELIVERED"].includes(ff) ||
-      ["COMPLETED", "DELIVERED"].includes(orderStatus);
+      ["COMPLETED", "DELIVERED"].includes(ff) || ["COMPLETED", "DELIVERED"].includes(orderStatus);
     const isCancelled = ff === "CANCELLED" || orderStatus === "CANCELLED";
-    const isOutForDelivery = ["SHIPPED", "ASSIGNED", "OUT_FOR_DELIVERY", "READY_FOR_DELIVERY"].includes(ff);
+    const isOutForDelivery = [
+      "SHIPPED",
+      "ASSIGNED",
+      "OUT_FOR_DELIVERY",
+      "READY_FOR_DELIVERY",
+    ].includes(ff);
 
     const method = String(o.payment_method || "").toLowerCase();
     const isBenefit = ["benefit", "benefitpay", "benefit_pay", "bank_transfer"].includes(method);
@@ -858,7 +941,6 @@ function OrdersList() {
         if (!res.ok) throw new Error(data.error_ar && lang === "ar" ? data.error_ar : data.error);
         toast.success(successMsg);
         qc.invalidateQueries({ queryKey: ["orders", brandId] });
-
       } catch (err: any) {
         toast.error(err.message || "Failed to update order status");
       } finally {
@@ -866,7 +948,10 @@ function OrdersList() {
       }
     };
 
-    if (workflow.nextAction === "resolve_delivery_failure" || workflow.nextAction === "review_order") {
+    if (
+      workflow.nextAction === "resolve_delivery_failure" ||
+      workflow.nextAction === "review_order"
+    ) {
       return (
         <Button size="sm" variant="destructive" className="h-8 px-3 text-xs font-semibold" asChild>
           <Link to="/admin/b/$slug/orders/$id" params={{ slug, id: o.id }}>
@@ -878,7 +963,7 @@ function OrdersList() {
 
     if (isPickup) {
       // B. STORE PICKUP WORKFLOW
-      
+
       // 1. BenefitPay Manual Validation (Pickup)
       if (workflow.nextAction === "validate_payment") {
         return (
@@ -887,12 +972,22 @@ function OrdersList() {
             variant="outline"
             className="h-8 text-xs px-3 border-violet-300 text-violet-800 bg-violet-50 hover:bg-violet-100 dark:border-violet-800 dark:text-violet-200 dark:bg-violet-950/20 font-semibold"
             disabled={updatingOrderId !== null}
-            onClick={() => handleStatusUpdate(
-              { payment_status: "paid", fulfillment_status: "READY_FOR_PICKUP" },
-              lang === "ar" ? "تم تأكيد الدفع وتجهيز الطلب للاستلام!" : "Payment validated and pickup prepared!"
-            )}
+            onClick={() =>
+              handleStatusUpdate(
+                { payment_status: "paid", fulfillment_status: "READY_FOR_PICKUP" },
+                lang === "ar"
+                  ? "تم تأكيد الدفع وتجهيز الطلب للاستلام!"
+                  : "Payment validated and pickup prepared!",
+              )
+            }
           >
-            {isUpdating ? <Loader2 className="animate-spin h-3.5 w-3.5" /> : (lang === "ar" ? "تأكيد وتجهيز" : "Validate & Prepare")}
+            {isUpdating ? (
+              <Loader2 className="animate-spin h-3.5 w-3.5" />
+            ) : lang === "ar" ? (
+              "تأكيد وتجهيز"
+            ) : (
+              "Validate & Prepare"
+            )}
           </Button>
         );
       }
@@ -904,12 +999,20 @@ function OrdersList() {
             size="sm"
             className="h-8 text-xs px-3 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold dark:bg-indigo-800 dark:hover:bg-indigo-900"
             disabled={updatingOrderId !== null}
-            onClick={() => handleStatusUpdate(
-              { fulfillment_status: "READY_FOR_PICKUP" },
-              lang === "ar" ? "تم تحديد الطلب كجاهز للاستلام!" : "Order marked ready for pickup!"
-            )}
+            onClick={() =>
+              handleStatusUpdate(
+                { fulfillment_status: "READY_FOR_PICKUP" },
+                lang === "ar" ? "تم تحديد الطلب كجاهز للاستلام!" : "Order marked ready for pickup!",
+              )
+            }
           >
-            {isUpdating ? <Loader2 className="animate-spin h-3.5 w-3.5" /> : (lang === "ar" ? "جاهز للاستلام" : "Mark Ready")}
+            {isUpdating ? (
+              <Loader2 className="animate-spin h-3.5 w-3.5" />
+            ) : lang === "ar" ? (
+              "جاهز للاستلام"
+            ) : (
+              "Mark Ready"
+            )}
           </Button>
         );
       }
@@ -921,12 +1024,20 @@ function OrdersList() {
             size="sm"
             className="h-8 text-xs px-3 bg-amber-600 hover:bg-amber-700 text-white font-semibold dark:bg-amber-800 dark:hover:bg-amber-900"
             disabled={updatingOrderId !== null}
-            onClick={() => handleStatusUpdate(
-              { fulfillment_status: "READY_FOR_PICKUP" },
-              lang === "ar" ? "تم تجهيز الطلب للاستلام!" : "Order prepared!"
-            )}
+            onClick={() =>
+              handleStatusUpdate(
+                { fulfillment_status: "READY_FOR_PICKUP" },
+                lang === "ar" ? "تم تجهيز الطلب للاستلام!" : "Order prepared!",
+              )
+            }
           >
-            {isUpdating ? <Loader2 className="animate-spin h-3.5 w-3.5" /> : (lang === "ar" ? "تجهيز الطلب" : "Prepare Order")}
+            {isUpdating ? (
+              <Loader2 className="animate-spin h-3.5 w-3.5" />
+            ) : lang === "ar" ? (
+              "تجهيز الطلب"
+            ) : (
+              "Prepare Order"
+            )}
           </Button>
         );
       }
@@ -966,19 +1077,27 @@ function OrdersList() {
               size="sm"
               className="h-8 text-xs px-3 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold dark:bg-emerald-800 dark:hover:bg-emerald-900"
               disabled={updatingOrderId !== null}
-              onClick={() => handleStatusUpdate(
-                { fulfillment_status: "COMPLETED" },
-                lang === "ar" ? "تم تسليم الطلب بالكامل!" : "Handover completed!"
-              )}
+              onClick={() =>
+                handleStatusUpdate(
+                  { fulfillment_status: "COMPLETED" },
+                  lang === "ar" ? "تم تسليم الطلب بالكامل!" : "Handover completed!",
+                )
+              }
             >
-              {isUpdating ? <Loader2 className="animate-spin h-3.5 w-3.5" /> : (lang === "ar" ? "إتمام التسليم" : "Complete Handover")}
+              {isUpdating ? (
+                <Loader2 className="animate-spin h-3.5 w-3.5" />
+              ) : lang === "ar" ? (
+                "إتمام التسليم"
+              ) : (
+                "Complete Handover"
+              )}
             </Button>
           );
         }
       }
     } else if (!isDigital) {
       // A. DELIVERY WORKFLOW
-      
+
       // 1. BenefitPay Manual Validation
       if (workflow.nextAction === "validate_payment") {
         return (
@@ -987,12 +1106,20 @@ function OrdersList() {
             variant="outline"
             className="h-8 text-xs px-3 border-emerald-300 text-emerald-800 bg-emerald-50 hover:bg-emerald-100 dark:border-emerald-800 dark:text-emerald-200 dark:bg-emerald-950/20 font-semibold"
             disabled={updatingOrderId !== null}
-            onClick={() => handleStatusUpdate(
-              { payment_status: "paid" },
-              lang === "ar" ? "تم تسجيل الدفع بنجاح!" : "Order payment marked as Paid!"
-            )}
+            onClick={() =>
+              handleStatusUpdate(
+                { payment_status: "paid" },
+                lang === "ar" ? "تم تسجيل الدفع بنجاح!" : "Order payment marked as Paid!",
+              )
+            }
           >
-            {isUpdating ? <Loader2 className="animate-spin h-3.5 w-3.5" /> : (lang === "ar" ? "تأكيد الدفع" : "Validate Payment")}
+            {isUpdating ? (
+              <Loader2 className="animate-spin h-3.5 w-3.5" />
+            ) : lang === "ar" ? (
+              "تأكيد الدفع"
+            ) : (
+              "Validate Payment"
+            )}
           </Button>
         );
       }
@@ -1120,12 +1247,7 @@ function OrdersList() {
     // Shipped Track button fallback
     if (isOutForDelivery) {
       return (
-        <Button
-          size="sm"
-          variant="outline"
-          className="h-8 text-xs px-3"
-          asChild
-        >
+        <Button size="sm" variant="outline" className="h-8 text-xs px-3" asChild>
           <Link to="/admin/b/$slug/orders/$id" params={{ slug, id: o.id }}>
             {lang === "ar" ? "تتبع" : "Track"}
           </Link>
@@ -1135,12 +1257,7 @@ function OrdersList() {
 
     // General fallback -> details
     return (
-      <Button
-        size="sm"
-        variant="ghost"
-        className="h-8 text-xs px-3"
-        asChild
-      >
+      <Button size="sm" variant="ghost" className="h-8 text-xs px-3" asChild>
         <Link to="/admin/b/$slug/orders/$id" params={{ slug, id: o.id }}>
           {lang === "ar" ? "تفاصيل" : "View"}
         </Link>
@@ -1149,19 +1266,27 @@ function OrdersList() {
   };
 
   return (
-    <div className="mx-auto max-w-[1500px] space-y-5 px-3 pb-3 pt-6 sm:p-6 lg:p-8 animate-fade-in" dir={lang === "ar" ? "rtl" : "ltr"}>
+    <div
+      className="mx-auto max-w-[1500px] space-y-5 px-3 pb-3 pt-6 sm:p-6 lg:p-8 animate-fade-in"
+      dir={lang === "ar" ? "rtl" : "ltr"}
+    >
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="font-display text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
             {t("orders.title")}
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            {lang === "ar" ? "ركّز على الطلب التالي الذي يحتاج إلى إجراء" : "Focus on the next order that needs action"}
+            {lang === "ar"
+              ? "ركّز على الطلب التالي الذي يحتاج إلى إجراء"
+              : "Focus on the next order that needs action"}
           </p>
         </div>
         {!isCourier && (
           <div className="flex w-full items-center gap-2 shrink-0 sm:w-auto">
-            <OrderImporterModal brandId={brandId} onComplete={() => qc.invalidateQueries({ queryKey: ["orders", brandId] })} />
+            <OrderImporterModal
+              brandId={brandId}
+              onComplete={() => qc.invalidateQueries({ queryKey: ["orders", brandId] })}
+            />
             <Button onClick={create} className="h-11 flex-1 gap-2 shadow-sm sm:flex-none">
               <Plus className="h-4 w-4" /> {t("orders.new")}
             </Button>
@@ -1187,14 +1312,26 @@ function OrdersList() {
                 tab.id === "all" && "col-span-2 sm:col-span-1",
                 isActive
                   ? "border-primary bg-primary text-primary-foreground shadow-md"
-                  : "border-border/70 bg-card hover:border-primary/30 hover:bg-muted/40"
+                  : "border-border/70 bg-card hover:border-primary/30 hover:bg-muted/40",
               )}
             >
               <span className="flex items-center justify-between gap-4">
-                <TabIcon className={cn("h-4 w-4", isActive ? "text-primary-foreground" : "text-muted-foreground")} />
+                <TabIcon
+                  className={cn(
+                    "h-4 w-4",
+                    isActive ? "text-primary-foreground" : "text-muted-foreground",
+                  )}
+                />
                 <span className="text-lg font-semibold tabular-nums sm:text-xl">{tab.count}</span>
               </span>
-              <span className={cn("mt-2 block text-xs font-semibold", !isActive && "text-muted-foreground")}>{label}</span>
+              <span
+                className={cn(
+                  "mt-2 block text-xs font-semibold",
+                  !isActive && "text-muted-foreground",
+                )}
+              >
+                {label}
+              </span>
             </button>
           );
         })}
@@ -1228,20 +1365,32 @@ function OrdersList() {
             <SlidersHorizontal className="h-4 w-4" />
             <span className="hidden xs:inline">{lang === "ar" ? "تصفية" : "Filters"}</span>
             {activeFilterCount > 0 && (
-              <span className="rounded-full bg-background/20 px-1.5 text-[10px] font-bold">{activeFilterCount}</span>
+              <span className="rounded-full bg-background/20 px-1.5 text-[10px] font-bold">
+                {activeFilterCount}
+              </span>
             )}
           </Button>
           {(search || activeFilterCount > 0 || tabFilter !== "all") && (
-            <Button type="button" variant="ghost" size="icon" className="h-11 w-11 shrink-0 lg:hidden" onClick={clearFilters}>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="h-11 w-11 shrink-0 lg:hidden"
+              onClick={clearFilters}
+            >
               <X className="h-4 w-4" />
-              <span className="sr-only">{lang === "ar" ? "مسح عوامل التصفية" : "Clear filters"}</span>
+              <span className="sr-only">
+                {lang === "ar" ? "مسح عوامل التصفية" : "Clear filters"}
+              </span>
             </Button>
           )}
         </div>
-        <div className={cn(
-          "mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid lg:grid-cols-[170px_180px_170px_auto_auto] lg:items-center",
-          !showFilters && "hidden lg:grid"
-        )}>
+        <div
+          className={cn(
+            "mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid lg:grid-cols-[170px_180px_170px_auto_auto] lg:items-center",
+            !showFilters && "hidden lg:grid",
+          )}
+        >
           <Select value={paymentFilter} onValueChange={setPaymentFilter}>
             <SelectTrigger>
               <SelectValue />
@@ -1251,8 +1400,12 @@ function OrdersList() {
                 {lang === "ar" ? "حالة الدفع: الكل" : "Payment: All"}
               </SelectItem>
               <SelectItem value="unpaid">{lang === "ar" ? "غير مدفوع" : "Unpaid"}</SelectItem>
-              <SelectItem value="pending_verification">{lang === "ar" ? "بانتظار التحقق" : "Pending Verification"}</SelectItem>
-              <SelectItem value="partial">{lang === "ar" ? "مدفوع جزئيًا" : "Partially Paid"}</SelectItem>
+              <SelectItem value="pending_verification">
+                {lang === "ar" ? "بانتظار التحقق" : "Pending Verification"}
+              </SelectItem>
+              <SelectItem value="partial">
+                {lang === "ar" ? "مدفوع جزئيًا" : "Partially Paid"}
+              </SelectItem>
               <SelectItem value="paid">{lang === "ar" ? "مدفوع" : "Paid"}</SelectItem>
               <SelectItem value="refunded">{lang === "ar" ? "مسترجع" : "Refunded"}</SelectItem>
             </SelectContent>
@@ -1266,10 +1419,18 @@ function OrdersList() {
                 {lang === "ar" ? "حالة التنفيذ: الكل" : "Fulfillment: All"}
               </SelectItem>
               <SelectItem value="on_hold">{lang === "ar" ? "قيد الانتظار" : "On Hold"}</SelectItem>
-              <SelectItem value="needs_packing">{lang === "ar" ? "بحاجة للتعبئة" : "Needs Packing"}</SelectItem>
-              <SelectItem value="ready_for_pickup">{lang === "ar" ? "جاهز للاستلام" : "Ready for Pickup"}</SelectItem>
-              <SelectItem value="out_for_delivery">{lang === "ar" ? "خرج للتوصيل" : "Out for Delivery"}</SelectItem>
-              <SelectItem value="completed">{lang === "ar" ? "تم التوصيل / الاستلام" : "Delivered / Picked Up"}</SelectItem>
+              <SelectItem value="needs_packing">
+                {lang === "ar" ? "بحاجة للتعبئة" : "Needs Packing"}
+              </SelectItem>
+              <SelectItem value="ready_for_pickup">
+                {lang === "ar" ? "جاهز للاستلام" : "Ready for Pickup"}
+              </SelectItem>
+              <SelectItem value="out_for_delivery">
+                {lang === "ar" ? "خرج للتوصيل" : "Out for Delivery"}
+              </SelectItem>
+              <SelectItem value="completed">
+                {lang === "ar" ? "تم التوصيل / الاستلام" : "Delivered / Picked Up"}
+              </SelectItem>
               <SelectItem value="cancelled">{lang === "ar" ? "ملغي" : "Cancelled"}</SelectItem>
             </SelectContent>
           </Select>
@@ -1288,17 +1449,48 @@ function OrdersList() {
               </SelectItem>
             </SelectContent>
           </Select>
+          <Select value={gatewayFilter} onValueChange={setGatewayFilter}>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">
+                {lang === "ar" ? "بوابة الدفع: الكل" : "Gateway: All"}
+              </SelectItem>
+              <SelectItem value="benefitpay">
+                {lang === "ar" ? "تطبيق بنفت باج" : "BenefitPay"}
+              </SelectItem>
+              <SelectItem value="card">
+                {lang === "ar" ? "بطاقة ائتمان / مدى" : "Credit/Debit Card"}
+              </SelectItem>
+              <SelectItem value="tap">
+                {lang === "ar" ? "بوابة Tap" : "Tap Payments"}
+              </SelectItem>
+              <SelectItem value="cash">
+                {lang === "ar" ? "الدفع عند الاستلام (كاش)" : "Cash / COD"}
+              </SelectItem>
+            </SelectContent>
+          </Select>
           <div className="flex items-center gap-2 select-none border border-zinc-100 dark:border-zinc-800 p-2 rounded-xl bg-zinc-50/50 dark:bg-zinc-900/20 max-w-[200px] h-10 shrink-0">
             <Switch
               id="include-historical"
               checked={includeHistorical}
               onCheckedChange={setIncludeHistorical}
             />
-            <label htmlFor="include-historical" className="text-[11px] font-semibold cursor-pointer text-muted-foreground whitespace-nowrap">
+            <label
+              htmlFor="include-historical"
+              className="text-[11px] font-semibold cursor-pointer text-muted-foreground whitespace-nowrap"
+            >
               {lang === "ar" ? "شمل الأرشيف التاريخي" : "Include Historical"}
             </label>
           </div>
-          <Button type="button" variant="ghost" size="sm" className="hidden justify-self-end text-muted-foreground lg:inline-flex" onClick={clearFilters}>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="hidden justify-self-end text-muted-foreground lg:inline-flex"
+            onClick={clearFilters}
+          >
             <X className="me-1 h-3.5 w-3.5" />
             {lang === "ar" ? "مسح" : "Clear"}
           </Button>
@@ -1321,11 +1513,7 @@ function OrdersList() {
           <p className="font-medium">
             {lang === "ar" ? "لا توجد طلبات مطابقة" : "No matching orders"}
           </p>
-          <Button
-            variant="ghost"
-            className="mt-2"
-            onClick={clearFilters}
-          >
+          <Button variant="ghost" className="mt-2" onClick={clearFilters}>
             {lang === "ar" ? "مسح عوامل التصفية" : "Clear filters"}
           </Button>
         </Card>
@@ -1344,14 +1532,18 @@ function OrdersList() {
                 lang,
                 (o as any).fulfillment_method,
               );
-              const isCompleted = ["COMPLETED", "completed"].includes((o as any).fulfillment_status || "") || o.status === "completed";
+              const isCompleted =
+                ["COMPLETED", "completed"].includes((o as any).fulfillment_status || "") ||
+                o.status === "completed";
 
               return (
                 <Card
                   key={o.id}
                   className={cn(
                     "relative overflow-hidden rounded-2xl border border-border/70 bg-card p-4 shadow-sm transition-all duration-200",
-                    !isCompleted && tabFilter === "action_required" && "border-s-4 border-s-amber-500"
+                    !isCompleted &&
+                      tabFilter === "action_required" &&
+                      "border-s-4 border-s-amber-500",
                   )}
                 >
                   <div className="flex items-start justify-between gap-3">
@@ -1384,12 +1576,12 @@ function OrdersList() {
                         <CustomerContactActions customer={getOrderCustomerContact(o)} lang={lang} />
                         <OrderItemsSummary items={o.order_items} lang={lang} />
                       </div>
-                      
+
                       <div className="mt-3 flex flex-wrap items-center gap-1.5">
                         <span
                           className={cn(
                             "rounded-full px-2 py-0.5 text-[10px] uppercase tracking-wider font-bold border",
-                            PAYMENT_BADGE_CLASSES[paymentBadge]
+                            PAYMENT_BADGE_CLASSES[paymentBadge],
                           )}
                         >
                           {t(`payStatus.${paymentBadge}`)}
@@ -1397,7 +1589,7 @@ function OrdersList() {
                         <span
                           className={cn(
                             "rounded-full px-2 py-0.5 text-[10px] uppercase tracking-wider font-bold border",
-                            fulfillmentDetails.classes
+                            fulfillmentDetails.classes,
                           )}
                         >
                           {fulfillmentDetails.label}
@@ -1409,36 +1601,40 @@ function OrdersList() {
                         <div className="min-w-0 flex-1 [&>*]:w-full [&>*]:justify-center">
                           {renderContextualButton(o)}
                         </div>
-                          
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0">
-                                <MoreHorizontal className="h-4 w-4" />
-                                <span className="sr-only">{lang === "ar" ? "فتح قائمة إجراءات الطلب" : "Open order actions"}</span>
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem onClick={() => copyInvoiceLink(o.public_invoice_token, t)}>
-                                <Copy className="me-2 h-4 w-4" />
-                                {lang === "ar" ? "نسخ رابط الفاتورة" : "Copy invoice link"}
+
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0">
+                              <MoreHorizontal className="h-4 w-4" />
+                              <span className="sr-only">
+                                {lang === "ar" ? "فتح قائمة إجراءات الطلب" : "Open order actions"}
+                              </span>
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem
+                              onClick={() => copyInvoiceLink(o.public_invoice_token, t)}
+                            >
+                              <Copy className="me-2 h-4 w-4" />
+                              {lang === "ar" ? "نسخ رابط الفاتورة" : "Copy invoice link"}
+                            </DropdownMenuItem>
+                            <DropdownMenuItem asChild>
+                              <Link to="/admin/b/$slug/orders/$id" params={{ slug, id: o.id }}>
+                                <ExternalLink className="me-2 h-4 w-4" />
+                                {lang === "ar" ? "تفاصيل الطلب" : "Order details"}
+                              </Link>
+                            </DropdownMenuItem>
+                            {!isCourier && (
+                              <DropdownMenuItem
+                                className="text-destructive focus:text-destructive focus:bg-destructive/10"
+                                onClick={() => setDeleteTarget(o.id)}
+                              >
+                                <Trash2 className="me-2 h-4 w-4" />
+                                {t("common.delete")}
                               </DropdownMenuItem>
-                              <DropdownMenuItem asChild>
-                                <Link to="/admin/b/$slug/orders/$id" params={{ slug, id: o.id }}>
-                                  <ExternalLink className="me-2 h-4 w-4" />
-                                  {lang === "ar" ? "تفاصيل الطلب" : "Order details"}
-                                </Link>
-                              </DropdownMenuItem>
-                              {!isCourier && (
-                                <DropdownMenuItem
-                                  className="text-destructive focus:text-destructive focus:bg-destructive/10"
-                                  onClick={() => setDeleteTarget(o.id)}
-                                >
-                                  <Trash2 className="me-2 h-4 w-4" />
-                                  {t("common.delete")}
-                                </DropdownMenuItem>
-                              )}
-                            </DropdownMenuContent>
-                          </DropdownMenu>
+                            )}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </div>
                     </div>
                   </div>
@@ -1461,19 +1657,43 @@ function OrdersList() {
                 </colgroup>
                 <thead className="sticky top-0 z-10 border-b bg-background/95 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground backdrop-blur select-none">
                   <tr>
-                    <th className="p-4 text-start font-semibold cursor-pointer hover:bg-muted/60 transition-colors" onClick={() => toggleSort("invoice_number")}>
-                      <span className="flex items-center">{t("orders.invoice")} {renderSortIcon("invoice_number")}</span>
+                    <th
+                      className="p-4 text-start font-semibold cursor-pointer hover:bg-muted/60 transition-colors"
+                      onClick={() => toggleSort("invoice_number")}
+                    >
+                      <span className="flex items-center">
+                        {t("orders.invoice")} {renderSortIcon("invoice_number")}
+                      </span>
                     </th>
-                    <th className="p-4 text-start font-semibold cursor-pointer hover:bg-muted/60 transition-colors" onClick={() => toggleSort("created_at")}>
-                      <span className="flex items-center">{t("orders.date")} {renderSortIcon("created_at")}</span>
+                    <th
+                      className="p-4 text-start font-semibold cursor-pointer hover:bg-muted/60 transition-colors"
+                      onClick={() => toggleSort("created_at")}
+                    >
+                      <span className="flex items-center">
+                        {t("orders.date")} {renderSortIcon("created_at")}
+                      </span>
                     </th>
-                    <th className="p-4 text-start font-semibold cursor-pointer hover:bg-muted/60 transition-colors" onClick={() => toggleSort("customer")}>
-                      <span className="flex items-center">{t("orders.customer")} {renderSortIcon("customer")}</span>
+                    <th
+                      className="p-4 text-start font-semibold cursor-pointer hover:bg-muted/60 transition-colors"
+                      onClick={() => toggleSort("customer")}
+                    >
+                      <span className="flex items-center">
+                        {t("orders.customer")} {renderSortIcon("customer")}
+                      </span>
                     </th>
-                    <th className="p-4 text-start font-semibold">{lang === "ar" ? "حالة الدفع" : "Payment Status"}</th>
-                    <th className="p-4 text-start font-semibold">{lang === "ar" ? "حالة التوصيل" : "Fulfillment Status"}</th>
-                    <th className="p-4 text-end font-semibold cursor-pointer hover:bg-muted/60 transition-colors" onClick={() => toggleSort("total")}>
-                      <span className="flex items-center justify-end">{t("orders.total")} {renderSortIcon("total")}</span>
+                    <th className="p-4 text-start font-semibold">
+                      {lang === "ar" ? "حالة الدفع" : "Payment Status"}
+                    </th>
+                    <th className="p-4 text-start font-semibold">
+                      {lang === "ar" ? "حالة التوصيل" : "Fulfillment Status"}
+                    </th>
+                    <th
+                      className="p-4 text-end font-semibold cursor-pointer hover:bg-muted/60 transition-colors"
+                      onClick={() => toggleSort("total")}
+                    >
+                      <span className="flex items-center justify-end">
+                        {t("orders.total")} {renderSortIcon("total")}
+                      </span>
                     </th>
                     <th className="p-4 text-end font-semibold">{t("orders.actions")}</th>
                   </tr>
@@ -1491,14 +1711,17 @@ function OrdersList() {
                       lang,
                       (o as any).fulfillment_method,
                     );
-                    const isCompleted = ["COMPLETED", "completed"].includes((o as any).fulfillment_status || "") || o.status === "completed";
+                    const isCompleted =
+                      ["COMPLETED", "completed"].includes((o as any).fulfillment_status || "") ||
+                      o.status === "completed";
 
                     return (
                       <tr
                         key={o.id}
+                        onClick={() => setInspectOrder(o)}
                         className={cn(
-                          "group border-t border-border/70 transition-colors hover:bg-muted/40",
-                          isCompleted && "bg-emerald-50/20 dark:bg-emerald-950/10"
+                          "group border-t border-border/70 transition-colors hover:bg-muted/60 cursor-pointer",
+                          isCompleted && "bg-emerald-50/20 dark:bg-emerald-950/10",
                         )}
                       >
                         <td className="p-4 font-semibold">
@@ -1521,68 +1744,95 @@ function OrdersList() {
                               </span>
                             )}
                           </div>
-                          <CustomerContactActions customer={getOrderCustomerContact(o)} lang={lang} />
+                          <CustomerContactActions
+                            customer={getOrderCustomerContact(o)}
+                            lang={lang}
+                          />
                           <OrderItemsSummary items={o.order_items} lang={lang} />
                         </td>
                         <td className="p-4">
                           <span
                             className={cn(
                               "inline-flex whitespace-nowrap text-[10px] uppercase tracking-wider px-2.5 py-1 rounded-full font-bold border",
-                              PAYMENT_BADGE_CLASSES[paymentBadge]
+                              PAYMENT_BADGE_CLASSES[paymentBadge],
                             )}
                           >
                             {t(`payStatus.${paymentBadge}`)}
                           </span>
-                          <div className="mt-1.5">{renderPaymentMethodBadge(o.payment_method, lang)}</div>
+                          <div className="mt-1.5">
+                            {renderPaymentMethodBadge(o.payment_method, lang)}
+                          </div>
                         </td>
                         <td className="p-4">
                           <div className="flex flex-col gap-1.5 items-start">
                             <span
                               className={cn(
                                 "inline-flex whitespace-nowrap text-[10px] uppercase tracking-wider px-2.5 py-1 rounded-full font-bold border",
-                                fulfillmentDetails.classes
+                                fulfillmentDetails.classes,
                               )}
                             >
                               {fulfillmentDetails.label}
                             </span>
 
-                            {o.assigned_to && (() => {
-                              const assignedCourier = (couriersQ.data ?? []).find((c: any) => c.id === o.assigned_to);
-                              const courierName = assignedCourier?.name || (o.assigned_profile as any)?.name || (lang === "ar" ? "مندوب" : "Courier");
-                              const courierPhone = assignedCourier?.phone || (o.assigned_profile as any)?.phone;
-                              const notifiedAgo = formatNotifiedTimeAgo((o as any).courier_notified_at, lang);
+                            {o.assigned_to &&
+                              (() => {
+                                const assignedCourier = (couriersQ.data ?? []).find(
+                                  (c: any) => c.id === o.assigned_to,
+                                );
+                                const courierName =
+                                  assignedCourier?.name ||
+                                  (o.assigned_profile as any)?.name ||
+                                  (lang === "ar" ? "مندوب" : "Courier");
+                                const courierPhone =
+                                  assignedCourier?.phone || (o.assigned_profile as any)?.phone;
+                                const notifiedAgo = formatNotifiedTimeAgo(
+                                  (o as any).courier_notified_at,
+                                  lang,
+                                );
 
-                              return (
-                                <div className="mt-1 flex flex-col gap-1 text-xs">
-                                  <div className="text-[11px] font-medium text-muted-foreground flex items-center gap-1">
-                                    <Truck className="h-3 w-3 text-sky-600 dark:text-sky-400 shrink-0" />
-                                    <span className="font-semibold text-foreground truncate max-w-[120px]">{courierName}</span>
+                                return (
+                                  <div className="mt-1 flex flex-col gap-1 text-xs">
+                                    <div className="text-[11px] font-medium text-muted-foreground flex items-center gap-1">
+                                      <Truck className="h-3 w-3 text-sky-600 dark:text-sky-400 shrink-0" />
+                                      <span className="font-semibold text-foreground truncate max-w-[120px]">
+                                        {courierName}
+                                      </span>
+                                    </div>
+
+                                    {notifiedAgo ? (
+                                      <span className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/30 px-1.5 py-0.5 rounded border border-emerald-200 dark:border-emerald-800 w-fit">
+                                        🔔{" "}
+                                        {lang === "ar"
+                                          ? `تم الإشعار (${notifiedAgo})`
+                                          : `Notified ${notifiedAgo}`}
+                                      </span>
+                                    ) : (
+                                      <button
+                                        type="button"
+                                        className="text-[10px] font-bold text-white bg-emerald-600 hover:bg-emerald-700 px-2 py-0.5 rounded flex items-center gap-1 shadow-xs transition-colors w-fit"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          const courierObj =
+                                            (couriersQ.data ?? []).find(
+                                              (c: any) => c.id === o.assigned_to,
+                                            ) || (o.assigned_profile as any);
+                                          setWaModalState({
+                                            isOpen: true,
+                                            order: o,
+                                            courier: courierObj || {
+                                              id: o.assigned_to,
+                                              name: courierName,
+                                              phone: courierPhone,
+                                            },
+                                          });
+                                        }}
+                                      >
+                                        📱 {lang === "ar" ? "إشعار واتساب" : "Notify WA"}
+                                      </button>
+                                    )}
                                   </div>
-
-                                  {notifiedAgo ? (
-                                    <span className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/30 px-1.5 py-0.5 rounded border border-emerald-200 dark:border-emerald-800 w-fit">
-                                      🔔 {lang === "ar" ? `تم الإشعار (${notifiedAgo})` : `Notified ${notifiedAgo}`}
-                                    </span>
-                                  ) : (
-                                    <button
-                                      type="button"
-                                      className="text-[10px] font-bold text-white bg-emerald-600 hover:bg-emerald-700 px-2 py-0.5 rounded flex items-center gap-1 shadow-xs transition-colors w-fit"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        const courierObj = (couriersQ.data ?? []).find((c: any) => c.id === o.assigned_to) || (o.assigned_profile as any);
-                                        setWaModalState({
-                                          isOpen: true,
-                                          order: o,
-                                          courier: courierObj || { id: o.assigned_to, name: courierName, phone: courierPhone },
-                                        });
-                                      }}
-                                    >
-                                      📱 {lang === "ar" ? "إشعار واتساب" : "Notify WA"}
-                                    </button>
-                                  )}
-                                </div>
-                              );
-                            })()}
+                                );
+                              })()}
                           </div>
                         </td>
                         <td className="p-4 text-end font-bold whitespace-nowrap">
@@ -1591,16 +1841,22 @@ function OrdersList() {
                         <td className="p-3 text-end">
                           <div className="flex min-w-0 items-center justify-end gap-1">
                             {renderContextualButton(o)}
-                            
+
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="icon" className="h-8 w-8">
+                                <Button variant="ghost" size="icon" className="h-10 w-10 min-h-[44px] min-w-[44px] flex items-center justify-center">
                                   <MoreHorizontal className="h-4 w-4" />
-                                  <span className="sr-only">{lang === "ar" ? "فتح قائمة إجراءات الطلب" : "Open order actions"}</span>
+                                  <span className="sr-only">
+                                    {lang === "ar"
+                                      ? "فتح قائمة إجراءات الطلب"
+                                      : "Open order actions"}
+                                  </span>
                                 </Button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align={lang === "ar" ? "start" : "end"}>
-                                <DropdownMenuItem onClick={() => copyInvoiceLink(o.public_invoice_token, t)}>
+                                <DropdownMenuItem
+                                  onClick={() => copyInvoiceLink(o.public_invoice_token, t)}
+                                >
                                   <Copy className="me-2 h-4 w-4" />
                                   {lang === "ar" ? "نسخ رابط الفاتورة" : "Copy invoice link"}
                                 </DropdownMenuItem>
@@ -1638,7 +1894,9 @@ function OrdersList() {
                 {lang === "ar" ? "الطلبات لكل صفحة:" : "Orders per page:"}
               </span>
               <Select value={String(pageSize)} onValueChange={(v) => setPageSize(Number(v))}>
-                <SelectTrigger className="h-8 w-20 text-xs"><SelectValue /></SelectTrigger>
+                <SelectTrigger className="h-8 w-20 text-xs">
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="10">10</SelectItem>
                   <SelectItem value="20">20</SelectItem>
@@ -1646,56 +1904,83 @@ function OrdersList() {
                 </SelectContent>
               </Select>
               <span className="text-muted-foreground text-xs ms-2">
-                {lang === "ar" 
+                {lang === "ar"
                   ? `عرض ${Math.min((page - 1) * pageSize + 1, sortedOrders.length)}-${Math.min(page * pageSize, sortedOrders.length)} من ${sortedOrders.length} طلب`
                   : `Showing ${Math.min((page - 1) * pageSize + 1, sortedOrders.length)}-${Math.min(page * pageSize, sortedOrders.length)} of ${sortedOrders.length} orders`}
               </span>
             </div>
 
             <div className="flex items-center gap-1">
-              <Button variant="outline" size="sm" className="h-8 w-8 p-0" onClick={() => setPage((p) => Math.max(p - 1, 1))} disabled={page === 1}>
-                {lang === "ar" ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
-                <span className="sr-only">{lang === "ar" ? "الصفحة السابقة" : "Previous page"}</span>
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8 w-8 p-0"
+                onClick={() => setPage((p) => Math.max(p - 1, 1))}
+                disabled={page === 1}
+              >
+                {lang === "ar" ? (
+                  <ChevronRight className="h-4 w-4" />
+                ) : (
+                  <ChevronLeft className="h-4 w-4" />
+                )}
+                <span className="sr-only">
+                  {lang === "ar" ? "الصفحة السابقة" : "Previous page"}
+                </span>
               </Button>
               <div className="text-xs px-2 text-muted-foreground">
                 {lang === "ar" ? `صفحة ${page} من ${totalPages}` : `Page ${page} of ${totalPages}`}
               </div>
-              <Button variant="outline" size="sm" className="h-8 w-8 p-0" onClick={() => setPage((p) => Math.min(p + 1, totalPages))} disabled={page === totalPages}>
-                {lang === "ar" ? <ChevronLeft className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8 w-8 p-0"
+                onClick={() => setPage((p) => Math.min(p + 1, totalPages))}
+                disabled={page === totalPages}
+              >
+                {lang === "ar" ? (
+                  <ChevronLeft className="h-4 w-4" />
+                ) : (
+                  <ChevronRight className="h-4 w-4" />
+                )}
                 <span className="sr-only">{lang === "ar" ? "الصفحة التالية" : "Next page"}</span>
               </Button>
             </div>
           </div>
         </>
       )}
-      {!isCourier && <AlertDialog
-        open={deleteTarget !== null}
-        onOpenChange={(open) => {
-          if (!open) setDeleteTarget(null);
-        }}
-      >
-        <AlertDialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-lg">
-          <AlertDialogHeader>
-            <AlertDialogTitle>{t("common.delete")}</AlertDialogTitle>
-            <AlertDialogDescription>{t("orders.deleteConfirm")}</AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
-            <AlertDialogAction
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              onClick={() => {
-                if (deleteTarget) void del(deleteTarget);
-              }}
-            >
-              {t("common.delete")}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>}
+      {!isCourier && (
+        <AlertDialog
+          open={deleteTarget !== null}
+          onOpenChange={(open) => {
+            if (!open) setDeleteTarget(null);
+          }}
+        >
+          <AlertDialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-lg">
+            <AlertDialogHeader>
+              <AlertDialogTitle>{t("common.delete")}</AlertDialogTitle>
+              <AlertDialogDescription>{t("orders.deleteConfirm")}</AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
+              <AlertDialogAction
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                onClick={() => {
+                  if (deleteTarget) void del(deleteTarget);
+                }}
+              >
+                {t("common.delete")}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      )}
 
       {/* Interactive Packing Verification & Fulfillment Modal */}
       <Dialog open={isFulfillModalOpen} onOpenChange={setIsFulfillModalOpen}>
-        <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-lg bg-background border rounded-2xl shadow-2xl p-6 overflow-hidden max-h-[90vh] flex flex-col" dir={lang === "ar" ? "rtl" : "ltr"}>
+        <DialogContent
+          className="max-w-[calc(100vw-2rem)] sm:max-w-lg bg-background border rounded-2xl shadow-2xl p-6 overflow-hidden max-h-[90vh] flex flex-col"
+          dir={lang === "ar" ? "rtl" : "ltr"}
+        >
           {selectedFulfillOrder && (
             <>
               {/* Header: Order Number, Customer Name & Address Snapshot */}
@@ -1703,14 +1988,23 @@ function OrdersList() {
                 <div className="flex items-center justify-between gap-2">
                   <DialogTitle className="text-lg font-bold flex items-center gap-2">
                     <PackageCheck className="h-5 w-5 text-amber-600 dark:text-amber-400 shrink-0" />
-                    <span>{lang === "ar" ? `قائمة التعبئة والتجهيز #${selectedFulfillOrder.invoice_number}` : `Packing Slip Verification #${selectedFulfillOrder.invoice_number}`}</span>
+                    <span>
+                      {lang === "ar"
+                        ? `قائمة التعبئة والتجهيز #${selectedFulfillOrder.invoice_number}`
+                        : `Packing Slip Verification #${selectedFulfillOrder.invoice_number}`}
+                    </span>
                   </DialogTitle>
                 </div>
                 <div className="mt-1 text-xs text-muted-foreground flex flex-col gap-0.5">
                   <div className="font-semibold text-foreground text-sm flex items-center gap-1.5">
-                    <span>{getOrderCustomerName(selectedFulfillOrder) || (lang === "ar" ? "عميل زائر" : "Customer")}</span>
+                    <span>
+                      {getOrderCustomerName(selectedFulfillOrder) ||
+                        (lang === "ar" ? "عميل زائر" : "Customer")}
+                    </span>
                     {getOrderCustomerPhone(selectedFulfillOrder) && (
-                      <span className="text-xs font-normal text-muted-foreground">({getOrderCustomerPhone(selectedFulfillOrder)})</span>
+                      <span className="text-xs font-normal text-muted-foreground">
+                        ({getOrderCustomerPhone(selectedFulfillOrder)})
+                      </span>
                     )}
                   </div>
                   <DeliveryAddressSnapshot customer={selectedFulfillOrder.customers} lang={lang} />
@@ -1754,8 +2048,12 @@ function OrdersList() {
                             className="h-7 text-xs font-semibold px-2 text-primary hover:text-primary/90"
                           >
                             {allChecked
-                              ? (lang === "ar" ? "إلغاء تحديد الكل" : "Uncheck All")
-                              : (lang === "ar" ? "تحديد الكل" : "Check All")}
+                              ? lang === "ar"
+                                ? "إلغاء تحديد الكل"
+                                : "Uncheck All"
+                              : lang === "ar"
+                                ? "تحديد الكل"
+                                : "Check All"}
                           </Button>
                         )}
                       </div>
@@ -1763,36 +2061,59 @@ function OrdersList() {
                       {/* Items List */}
                       {modalItems.length === 0 ? (
                         <div className="p-4 text-center text-xs text-muted-foreground border rounded-xl bg-muted/20">
-                          {lang === "ar" ? "لا توجد تفاصيل منتجات مسجلة لهذا الطلب." : "No item line details recorded for this order."}
+                          {lang === "ar"
+                            ? "لا توجد تفاصيل منتجات مسجلة لهذا الطلب."
+                            : "No item line details recorded for this order."}
                         </div>
                       ) : (
                         <div className="space-y-2 max-h-[220px] overflow-y-auto pr-1">
                           {modalItems.map((item: any, idx: number) => {
                             const isChecked = Boolean(checkedItems[item.id]);
-                            const imgUrl = item.products?.main_image || item.products?.image_url || item.product_variants?.products?.main_image || item.selected_variant?.image_url;
+                            const imgUrl =
+                              item.products?.main_image ||
+                              item.products?.image_url ||
+                              item.product_variants?.products?.main_image ||
+                              item.selected_variant?.image_url;
                             const sku = item.product_variants?.sku || item.sku || null;
-                            const title = item.description || item.products?.title || (lang === "ar" ? "منتج" : "Product");
+                            const title =
+                              item.description ||
+                              item.products?.title ||
+                              (lang === "ar" ? "منتج" : "Product");
 
                             return (
                               <div
                                 key={item.id || idx}
-                                onClick={() => setCheckedItems((prev) => ({ ...prev, [item.id]: !prev[item.id] }))}
+                                onClick={() =>
+                                  setCheckedItems((prev) => ({
+                                    ...prev,
+                                    [item.id]: !prev[item.id],
+                                  }))
+                                }
                                 className={cn(
                                   "flex items-center gap-3 p-2.5 rounded-xl border transition-all cursor-pointer select-none",
                                   isChecked
                                     ? "bg-emerald-50/80 border-emerald-300 dark:bg-emerald-950/30 dark:border-emerald-800"
-                                    : "bg-card border-border hover:border-primary/50"
+                                    : "bg-card border-border hover:border-primary/50",
                                 )}
                               >
                                 <Checkbox
                                   checked={isChecked}
-                                  onCheckedChange={(checked) => setCheckedItems((prev) => ({ ...prev, [item.id]: Boolean(checked) }))}
+                                  onCheckedChange={(checked) =>
+                                    setCheckedItems((prev) => ({
+                                      ...prev,
+                                      [item.id]: Boolean(checked),
+                                    }))
+                                  }
                                   onClick={(e) => e.stopPropagation()}
                                   className="h-5 w-5 rounded-md border-primary/50"
                                 />
 
                                 {imgUrl ? (
-                                  <img src={imgUrl} alt={title} className="h-10 w-10 object-cover rounded-lg border shrink-0 bg-background" />
+                                  <img
+                                    src={imgUrl}
+                                    alt={title}
+                                    className="h-10 w-10 object-cover rounded-lg border shrink-0 bg-background"
+                                  />
                                 ) : (
                                   <div className="h-10 w-10 rounded-lg border bg-muted/60 flex items-center justify-center shrink-0">
                                     <Package className="h-5 w-5 text-muted-foreground" />
@@ -1801,11 +2122,23 @@ function OrdersList() {
 
                                 <div className="min-w-0 flex-1">
                                   <div className="flex items-center justify-between gap-2">
-                                    <span className={cn("font-semibold text-xs sm:text-sm truncate", isChecked && "line-through text-muted-foreground")}>
-                                      <span className="font-bold text-primary mr-1">{item.quantity}x</span> {title}
+                                    <span
+                                      className={cn(
+                                        "font-semibold text-xs sm:text-sm truncate",
+                                        isChecked && "line-through text-muted-foreground",
+                                      )}
+                                    >
+                                      <span className="font-bold text-primary mr-1">
+                                        {item.quantity}x
+                                      </span>{" "}
+                                      {title}
                                     </span>
                                     <span className="text-xs font-mono font-bold shrink-0 text-muted-foreground">
-                                      {formatMoney(Number(item.line_total || item.unit_price * item.quantity), selectedFulfillOrder.currency || "BHD", locale)}
+                                      {formatMoney(
+                                        Number(item.line_total || item.unit_price * item.quantity),
+                                        selectedFulfillOrder.currency || "BHD",
+                                        locale,
+                                      )}
                                     </span>
                                   </div>
                                   {sku && (
@@ -1831,11 +2164,15 @@ function OrdersList() {
                     </label>
                     <Select value={selectedCourierId} onValueChange={setSelectedCourierId}>
                       <SelectTrigger className="w-full">
-                        <SelectValue placeholder={lang === "ar" ? "اختر مندوب التوصيل" : "Select a courier"} />
+                        <SelectValue
+                          placeholder={lang === "ar" ? "اختر مندوب التوصيل" : "Select a courier"}
+                        />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="unassigned">
-                          {lang === "ar" ? "غير مسند (تعبئة بدون تعيين)" : "Unassigned (Pack without assigning)"}
+                          {lang === "ar"
+                            ? "غير مسند (تعبئة بدون تعيين)"
+                            : "Unassigned (Pack without assigning)"}
                         </SelectItem>
                         {(couriersQ.data ?? []).map((courier: any) => (
                           <SelectItem key={courier.id} value={courier.id}>
@@ -1853,7 +2190,11 @@ function OrdersList() {
                     <Input
                       value={fulfillNotes}
                       onChange={(e) => setFulfillNotes(e.target.value)}
-                      placeholder={lang === "ar" ? "أدخل رقم التتبع أو أي تعليمات خاصة للتوصيل..." : "Enter tracking number or special packing notes..."}
+                      placeholder={
+                        lang === "ar"
+                          ? "أدخل رقم التتبع أو أي تعليمات خاصة للتوصيل..."
+                          : "Enter tracking number or special packing notes..."
+                      }
                     />
                   </div>
                 </div>
@@ -1875,7 +2216,7 @@ function OrdersList() {
                     "font-bold shadow-md transition-all px-4",
                     (selectedFulfillOrder.order_items ?? []).every((it: any) => checkedItems[it.id])
                       ? "bg-emerald-600 hover:bg-emerald-700 text-white"
-                      : "bg-amber-600 hover:bg-amber-700 text-white"
+                      : "bg-amber-600 hover:bg-amber-700 text-white",
                   )}
                   disabled={isFulfilling}
                   onClick={async () => {
@@ -1888,17 +2229,29 @@ function OrdersList() {
                         body: JSON.stringify({
                           id: selectedFulfillOrder.id,
                           fulfillment_status: "SHIPPED",
-                          assigned_to: selectedCourierId === "unassigned" ? null : selectedCourierId,
+                          assigned_to:
+                            selectedCourierId === "unassigned" ? null : selectedCourierId,
                           delivery_notes: fulfillNotes,
-                          admin_override: ["cash", "cod"].includes(String(selectedFulfillOrder.payment_method || "").toLowerCase()),
+                          admin_override: ["cash", "cod"].includes(
+                            String(selectedFulfillOrder.payment_method || "").toLowerCase(),
+                          ),
                         }),
                       });
                       const data = await res.json<{ error?: string; error_ar?: string }>();
-                      if (!res.ok) throw new Error(data.error_ar && lang === "ar" ? data.error_ar : data.error);
-                      toast.success(lang === "ar" ? "تم تأكيد تعبئة الطلب وتجهيزه للشحن!" : "Order packed and dispatched successfully!");
+                      if (!res.ok)
+                        throw new Error(
+                          data.error_ar && lang === "ar" ? data.error_ar : data.error,
+                        );
+                      toast.success(
+                        lang === "ar"
+                          ? "تم تأكيد تعبئة الطلب وتجهيزه للشحن!"
+                          : "Order packed and dispatched successfully!",
+                      );
 
                       if (selectedCourierId !== "unassigned") {
-                        const courierObj = (couriersQ.data ?? []).find((c: any) => c.id === selectedCourierId);
+                        const courierObj = (couriersQ.data ?? []).find(
+                          (c: any) => c.id === selectedCourierId,
+                        );
                         if (courierObj && courierObj.phone) {
                           const waUrl = generateCourierWhatsAppUrl({
                             order: selectedFulfillOrder,
@@ -1913,7 +2266,8 @@ function OrdersList() {
                               : `Assigned to ${courierObj.name || "Courier"}`,
                             {
                               action: {
-                                label: lang === "ar" ? "📱 إشعار عبر واتساب" : "📱 Notify on WhatsApp",
+                                label:
+                                  lang === "ar" ? "📱 إشعار عبر واتساب" : "📱 Notify on WhatsApp",
                                 onClick: async () => {
                                   await recordCourierNotified(selectedFulfillOrder.id);
                                   qc.invalidateQueries({ queryKey: ["orders", brandId] });
@@ -1921,7 +2275,7 @@ function OrdersList() {
                                 },
                               },
                               duration: 10000,
-                            }
+                            },
                           );
                         }
                       }
@@ -1935,7 +2289,11 @@ function OrdersList() {
                     }
                   }}
                 >
-                  {isFulfilling ? <Loader2 className="animate-spin h-4 w-4 mr-1.5 inline" /> : <PackageCheck className="h-4 w-4 mr-1.5 inline" />}
+                  {isFulfilling ? (
+                    <Loader2 className="animate-spin h-4 w-4 mr-1.5 inline" />
+                  ) : (
+                    <PackageCheck className="h-4 w-4 mr-1.5 inline" />
+                  )}
                   {lang === "ar" ? "تأكيد التعبئة والتجهيز للشحن" : "Confirm Packed & Dispatch"}
                 </Button>
               </div>
@@ -1945,8 +2303,16 @@ function OrdersList() {
       </Dialog>
 
       {/* 💵 Cash Collection & Courier Delivery Completion Modal */}
-      <Dialog open={Boolean(cashModalOrder)} onOpenChange={(open) => { if (!open) setCashModalOrder(null); }}>
-        <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-md bg-background border rounded-2xl shadow-xl" dir={lang === "ar" ? "rtl" : "ltr"}>
+      <Dialog
+        open={Boolean(cashModalOrder)}
+        onOpenChange={(open) => {
+          if (!open) setCashModalOrder(null);
+        }}
+      >
+        <DialogContent
+          className="max-w-[calc(100vw-2rem)] sm:max-w-md bg-background border rounded-2xl shadow-xl"
+          dir={lang === "ar" ? "rtl" : "ltr"}
+        >
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-lg font-bold">
               <CircleDollarSign className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
@@ -1958,20 +2324,46 @@ function OrdersList() {
             <div className="space-y-4 py-2">
               <div className="rounded-xl bg-muted/60 border p-3.5 space-y-1.5 text-sm">
                 <div className="flex justify-between items-center">
-                  <span className="text-muted-foreground">{lang === "ar" ? "رقم الفاتورة / الطلب:" : "Invoice / Order #"}</span>
-                  <span className="font-mono font-bold text-primary">#{cashModalOrder.invoice_number || cashModalOrder.id.slice(0, 8)}</span>
+                  <span className="text-muted-foreground">
+                    {lang === "ar" ? "رقم الفاتورة / الطلب:" : "Invoice / Order #"}
+                  </span>
+                  <span className="font-mono font-bold text-primary">
+                    #{cashModalOrder.invoice_number || cashModalOrder.id.slice(0, 8)}
+                  </span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-muted-foreground">{lang === "ar" ? "العميل:" : "Customer:"}</span>
-                  <span className="font-semibold">{getOrderCustomerName(cashModalOrder) || (lang === "ar" ? "عميل" : "Customer")}</span>
+                  <span className="text-muted-foreground">
+                    {lang === "ar" ? "العميل:" : "Customer:"}
+                  </span>
+                  <span className="font-semibold">
+                    {getOrderCustomerName(cashModalOrder) || (lang === "ar" ? "عميل" : "Customer")}
+                  </span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-muted-foreground">{lang === "ar" ? "إجمالي الطلب:" : "Total Amount:"}</span>
-                  <span className="font-semibold">{formatMoney(Number(cashModalOrder.total), cashModalOrder.currency ?? "BHD", locale)}</span>
+                  <span className="text-muted-foreground">
+                    {lang === "ar" ? "إجمالي الطلب:" : "Total Amount:"}
+                  </span>
+                  <span className="font-semibold">
+                    {formatMoney(
+                      Number(cashModalOrder.total),
+                      cashModalOrder.currency ?? "BHD",
+                      locale,
+                    )}
+                  </span>
                 </div>
                 <div className="flex justify-between items-center text-emerald-700 dark:text-emerald-400 font-bold border-t pt-2 mt-1">
                   <span>{lang === "ar" ? "المبلغ المتبقي للتحصيل:" : "Remaining Balance:"}</span>
-                  <span className="text-base font-extrabold">{formatMoney(Math.max(0, Number(cashModalOrder.total) - Number(cashModalOrder.paid_amount ?? cashModalOrder.advance_paid ?? 0)), cashModalOrder.currency ?? "BHD", locale)}</span>
+                  <span className="text-base font-extrabold">
+                    {formatMoney(
+                      Math.max(
+                        0,
+                        Number(cashModalOrder.total) -
+                          Number(cashModalOrder.paid_amount ?? cashModalOrder.advance_paid ?? 0),
+                      ),
+                      cashModalOrder.currency ?? "BHD",
+                      locale,
+                    )}
+                  </span>
                 </div>
               </div>
 
@@ -1997,7 +2389,11 @@ function OrdersList() {
                 <Input
                   value={cashModalNotes}
                   onChange={(e) => setCashModalNotes(e.target.value)}
-                  placeholder={lang === "ar" ? "مثال: تم الاستلام من البواب / تحصيل عبر بنفت باج" : "e.g. Received at gate / BenefitPay transfer"}
+                  placeholder={
+                    lang === "ar"
+                      ? "مثال: تم الاستلام من البواب / تحصيل عبر بنفت باج"
+                      : "e.g. Received at gate / BenefitPay transfer"
+                  }
                 />
               </div>
 
@@ -2017,13 +2413,19 @@ function OrdersList() {
                   onClick={() => {
                     const amt = Number(cashCollectedInput);
                     if (isNaN(amt) || amt < 0) {
-                      toast.error(lang === "ar" ? "يرجى إدخال مبلغ صحيح (غير سالب)" : "Please enter a valid non-negative amount");
+                      toast.error(
+                        lang === "ar"
+                          ? "يرجى إدخال مبلغ صحيح (غير سالب)"
+                          : "Please enter a valid non-negative amount",
+                      );
                       return;
                     }
                     handleCompleteDelivery(cashModalOrder, amt, cashModalNotes);
                   }}
                 >
-                  {isSubmittingCash ? <Loader2 className="animate-spin h-4 w-4 mr-1.5 inline" /> : null}
+                  {isSubmittingCash ? (
+                    <Loader2 className="animate-spin h-4 w-4 mr-1.5 inline" />
+                  ) : null}
                   {lang === "ar" ? "تأكيد التحصيل والتسليم" : "Confirm Cash & Complete"}
                 </Button>
               </div>
@@ -2031,6 +2433,13 @@ function OrdersList() {
           )}
         </DialogContent>
       </Dialog>
+      <OrderQuickInspectSheet
+        order={inspectOrder}
+        slug={slug}
+        lang={lang}
+        locale={locale}
+        onClose={() => setInspectOrder(null)}
+      />
     </div>
   );
 }
@@ -2038,7 +2447,14 @@ function OrdersList() {
 const ORDER_HEADER_MAPS = {
   order_number: ["name", "order number", "order_number", "رقم الطلب", "id"],
   order_date: ["created at", "created_at", "order date", "order_date", "تاريخ الطلب", "date"],
-  customer_name: ["billing name", "shipping name", "customer name", "اسم العميل", "الاسم الكامل", "name"],
+  customer_name: [
+    "billing name",
+    "shipping name",
+    "customer name",
+    "اسم العميل",
+    "الاسم الكامل",
+    "name",
+  ],
   customer_phone: ["billing phone", "shipping phone", "phone", "جوال العميل", "رقم الهاتف", "جوال"],
   customer_email: ["email", "billing email", "البريد الالكتروني", "البريد الإلكتروني"],
   total_price: ["total", "order total", "الإجمالي", "إجمالي الطلب", "total_price"],
@@ -2081,17 +2497,17 @@ function parseCSV(text: string): string[][] {
       } else {
         inQuotes = !inQuotes;
       }
-    } else if (char === ',' && !inQuotes) {
+    } else if (char === "," && !inQuotes) {
       row.push(currentVal.trim());
       currentVal = "";
-    } else if ((char === '\r' || char === '\n') && !inQuotes) {
+    } else if ((char === "\r" || char === "\n") && !inQuotes) {
       row.push(currentVal.trim());
       currentVal = "";
-      if (row.length > 0 && row.some(val => val !== "")) {
+      if (row.length > 0 && row.some((val) => val !== "")) {
         lines.push(row);
       }
       row = [];
-      if (char === '\r' && nextChar === '\n') {
+      if (char === "\r" && nextChar === "\n") {
         i++;
       }
     } else {
@@ -2102,13 +2518,15 @@ function parseCSV(text: string): string[][] {
     row.push(currentVal.trim());
     lines.push(row);
   }
-  return lines.filter(r => r.length > 0 && r.some(val => val !== ""));
+  return lines.filter((r) => r.length > 0 && r.some((val) => val !== ""));
 }
 
 function OrderImporterModal({ brandId, onComplete }: { brandId: string; onComplete: () => void }) {
   const [isOpen, setIsOpen] = useState(false);
   const [step, setStep] = useState<"preset" | "mapper" | "importing" | "success">("preset");
-  const [preset, setPreset] = useState<"shopify" | "woocommerce" | "salla" | "zid" | "custom">("shopify");
+  const [preset, setPreset] = useState<"shopify" | "woocommerce" | "salla" | "zid" | "custom">(
+    "shopify",
+  );
   const [parsedRows, setParsedRows] = useState<string[][]>([]);
   const [headers, setHeaders] = useState<string[]>([]);
   const [mappings, setMappings] = useState<Record<string, number>>({
@@ -2137,11 +2555,15 @@ function OrderImporterModal({ brandId, onComplete }: { brandId: string; onComple
       const text = event.target?.result as string;
       const rows = parseCSV(text);
       if (rows.length < 2) {
-        toast.error(isAr ? "ملف الـ CSV فارغ أو يحتوي على صف الرأس فقط." : "CSV file is empty or only contains the header row.");
+        toast.error(
+          isAr
+            ? "ملف الـ CSV فارغ أو يحتوي على صف الرأس فقط."
+            : "CSV file is empty or only contains the header row.",
+        );
         return;
       }
 
-      const fileHeaders = rows[0].map(h => h.trim());
+      const fileHeaders = rows[0].map((h) => h.trim());
       setParsedRows(rows.slice(1));
       setHeaders(fileHeaders);
 
@@ -2159,8 +2581,12 @@ function OrderImporterModal({ brandId, onComplete }: { brandId: string; onComple
       };
 
       Object.entries(ORDER_HEADER_MAPS).forEach(([field, aliases]) => {
-        const foundIdx = fileHeaders.findIndex(h =>
-          aliases.some(alias => h.toLowerCase() === alias.toLowerCase() || h.toLowerCase().includes(alias.toLowerCase()))
+        const foundIdx = fileHeaders.findIndex((h) =>
+          aliases.some(
+            (alias) =>
+              h.toLowerCase() === alias.toLowerCase() ||
+              h.toLowerCase().includes(alias.toLowerCase()),
+          ),
         );
         newMappings[field as keyof typeof newMappings] = foundIdx;
       });
@@ -2177,13 +2603,19 @@ function OrderImporterModal({ brandId, onComplete }: { brandId: string; onComple
     reader.readAsText(file);
   };
 
-  const startImport = async (dataRows: string[][], finalMappings: Record<string, number>, headersList: string[] = headers) => {
+  const startImport = async (
+    dataRows: string[][],
+    finalMappings: Record<string, number>,
+    headersList: string[] = headers,
+  ) => {
     setStep("importing");
-    setProgress(isAr ? "بدء عملية استيراد الطلبات الفاخرة..." : "Starting premium order import pipeline...");
+    setProgress(
+      isAr ? "بدء عملية استيراد الطلبات الفاخرة..." : "Starting premium order import pipeline...",
+    );
 
     const findHeaderIdx = (names: string[]) => {
-      return headersList.findIndex(h =>
-        names.some(name => h.trim().toLowerCase() === name.toLowerCase())
+      return headersList.findIndex((h) =>
+        names.some((name) => h.trim().toLowerCase() === name.toLowerCase()),
       );
     };
 
@@ -2214,16 +2646,23 @@ function OrderImporterModal({ brandId, onComplete }: { brandId: string; onComple
         const notesIdx = findHeaderIdx(["note", "notes"]);
 
         orderNum = orderNumIdx !== -1 ? row[orderNumIdx] : "";
-        orderDate = dateIdx !== -1 && row[dateIdx] ? new Date(row[dateIdx]).toISOString() : new Date().toISOString();
+        orderDate =
+          dateIdx !== -1 && row[dateIdx]
+            ? new Date(row[dateIdx]).toISOString()
+            : new Date().toISOString();
         customerPhone = phoneIdx !== -1 ? sanitizeGCCPhone(row[phoneIdx]) : null;
         customerEmail = emailIdx !== -1 ? row[emailIdx] || null : null;
         customerName = billingNameIdx !== -1 ? row[billingNameIdx] || null : null;
-        itemQty = itemQtyIdx !== -1 ? parseInt(row[itemQtyIdx]?.replace(/[^\d]/g, "") || "1") || 1 : 1;
+        itemQty =
+          itemQtyIdx !== -1 ? parseInt(row[itemQtyIdx]?.replace(/[^\d]/g, "") || "1") || 1 : 1;
         itemName = itemNameIdx !== -1 ? row[itemNameIdx] : "Line Item";
-        itemPrice = itemPriceIdx !== -1 ? parseFloat(row[itemPriceIdx]?.replace(/[^\d.]/g, "") || "0") || 0.0 : 0.0;
-        totalPrice = totalIdx !== -1 ? parseFloat(row[totalIdx]?.replace(/[^\d.]/g, "") || "0") || 0.0 : 0.0;
+        itemPrice =
+          itemPriceIdx !== -1
+            ? parseFloat(row[itemPriceIdx]?.replace(/[^\d.]/g, "") || "0") || 0.0
+            : 0.0;
+        totalPrice =
+          totalIdx !== -1 ? parseFloat(row[totalIdx]?.replace(/[^\d.]/g, "") || "0") || 0.0 : 0.0;
         notesVal = notesIdx !== -1 ? row[notesIdx] || null : null;
-
       } else if (preset === "woocommerce") {
         const orderNumIdx = findHeaderIdx(["order number", "order_number", "id", "post_id"]);
         const dateIdx = findHeaderIdx(["order date", "order_date", "post_date"]);
@@ -2237,19 +2676,26 @@ function OrderImporterModal({ brandId, onComplete }: { brandId: string; onComple
         const totalIdx = findHeaderIdx(["order total", "_order_total", "total"]);
 
         orderNum = orderNumIdx !== -1 ? row[orderNumIdx] : "";
-        orderDate = dateIdx !== -1 && row[dateIdx] ? new Date(row[dateIdx]).toISOString() : new Date().toISOString();
+        orderDate =
+          dateIdx !== -1 && row[dateIdx]
+            ? new Date(row[dateIdx]).toISOString()
+            : new Date().toISOString();
         customerPhone = phoneIdx !== -1 ? sanitizeGCCPhone(row[phoneIdx]) : null;
         customerEmail = emailIdx !== -1 ? row[emailIdx] || null : null;
-        
+
         const first = firstNameIdx !== -1 ? row[firstNameIdx] : "";
         const last = lastNameIdx !== -1 ? row[lastNameIdx] : "";
         customerName = `${first} ${last}`.trim() || null;
 
-        itemQty = itemQtyIdx !== -1 ? parseInt(row[itemQtyIdx]?.replace(/[^\d]/g, "") || "1") || 1 : 1;
+        itemQty =
+          itemQtyIdx !== -1 ? parseInt(row[itemQtyIdx]?.replace(/[^\d]/g, "") || "1") || 1 : 1;
         itemName = itemNameIdx !== -1 ? row[itemNameIdx] : "Line Item";
-        itemPrice = itemPriceIdx !== -1 ? parseFloat(row[itemPriceIdx]?.replace(/[^\d.]/g, "") || "0") || 0.0 : 0.0;
-        totalPrice = totalIdx !== -1 ? parseFloat(row[totalIdx]?.replace(/[^\d.]/g, "") || "0") || 0.0 : 0.0;
-
+        itemPrice =
+          itemPriceIdx !== -1
+            ? parseFloat(row[itemPriceIdx]?.replace(/[^\d.]/g, "") || "0") || 0.0
+            : 0.0;
+        totalPrice =
+          totalIdx !== -1 ? parseFloat(row[totalIdx]?.replace(/[^\d.]/g, "") || "0") || 0.0 : 0.0;
       } else if (preset === "salla" || preset === "zid") {
         const orderNumIdx = findHeaderIdx(["رقم الطلب", "رقم طلب سلة", "id", "order_id"]);
         const dateIdx = findHeaderIdx(["تاريخ الطلب", "تاريخ طلب سلة", "date", "created_at"]);
@@ -2262,25 +2708,49 @@ function OrderImporterModal({ brandId, onComplete }: { brandId: string; onComple
         const totalIdx = findHeaderIdx(["إجمالي الطلب", "الإجمالي", "total"]);
 
         orderNum = orderNumIdx !== -1 ? row[orderNumIdx] : "";
-        orderDate = dateIdx !== -1 && row[dateIdx] ? new Date(row[dateIdx]).toISOString() : new Date().toISOString();
+        orderDate =
+          dateIdx !== -1 && row[dateIdx]
+            ? new Date(row[dateIdx]).toISOString()
+            : new Date().toISOString();
         customerPhone = phoneIdx !== -1 ? sanitizeGCCPhone(row[phoneIdx]) : null;
         customerEmail = emailIdx !== -1 ? row[emailIdx] || null : null;
         customerName = nameIdx !== -1 ? row[nameIdx] || null : null;
-        itemQty = itemQtyIdx !== -1 ? parseInt(row[itemQtyIdx]?.replace(/[^\d]/g, "") || "1") || 1 : 1;
+        itemQty =
+          itemQtyIdx !== -1 ? parseInt(row[itemQtyIdx]?.replace(/[^\d]/g, "") || "1") || 1 : 1;
         itemName = itemNameIdx !== -1 ? row[itemNameIdx] : "Line Item";
-        itemPrice = itemPriceIdx !== -1 ? parseFloat(row[itemPriceIdx]?.replace(/[^\d.]/g, "") || "0") || 0.0 : 0.0;
-        totalPrice = totalIdx !== -1 ? parseFloat(row[totalIdx]?.replace(/[^\d.]/g, "") || "0") || 0.0 : 0.0;
-
+        itemPrice =
+          itemPriceIdx !== -1
+            ? parseFloat(row[itemPriceIdx]?.replace(/[^\d.]/g, "") || "0") || 0.0
+            : 0.0;
+        totalPrice =
+          totalIdx !== -1 ? parseFloat(row[totalIdx]?.replace(/[^\d.]/g, "") || "0") || 0.0 : 0.0;
       } else {
         orderNum = finalMappings.order_number !== -1 ? row[finalMappings.order_number] : "";
-        orderDate = finalMappings.order_date !== -1 && row[finalMappings.order_date] ? new Date(row[finalMappings.order_date]).toISOString() : new Date().toISOString();
-        customerPhone = finalMappings.customer_phone !== -1 ? sanitizeGCCPhone(row[finalMappings.customer_phone]) : null;
-        customerEmail = finalMappings.customer_email !== -1 ? row[finalMappings.customer_email] || null : null;
-        customerName = finalMappings.customer_name !== -1 ? row[finalMappings.customer_name] || null : null;
-        itemQty = finalMappings.item_quantity !== -1 ? parseInt(row[finalMappings.item_quantity]?.replace(/[^\d]/g, "") || "1") || 1 : 1;
+        orderDate =
+          finalMappings.order_date !== -1 && row[finalMappings.order_date]
+            ? new Date(row[finalMappings.order_date]).toISOString()
+            : new Date().toISOString();
+        customerPhone =
+          finalMappings.customer_phone !== -1
+            ? sanitizeGCCPhone(row[finalMappings.customer_phone])
+            : null;
+        customerEmail =
+          finalMappings.customer_email !== -1 ? row[finalMappings.customer_email] || null : null;
+        customerName =
+          finalMappings.customer_name !== -1 ? row[finalMappings.customer_name] || null : null;
+        itemQty =
+          finalMappings.item_quantity !== -1
+            ? parseInt(row[finalMappings.item_quantity]?.replace(/[^\d]/g, "") || "1") || 1
+            : 1;
         itemName = finalMappings.item_name !== -1 ? row[finalMappings.item_name] : "Line Item";
-        itemPrice = finalMappings.item_price !== -1 ? parseFloat(row[finalMappings.item_price]?.replace(/[^\d.]/g, "") || "0") || 0.0 : 0.0;
-        totalPrice = finalMappings.total_price !== -1 ? parseFloat(row[finalMappings.total_price]?.replace(/[^\d.]/g, "") || "0") || 0.0 : 0.0;
+        itemPrice =
+          finalMappings.item_price !== -1
+            ? parseFloat(row[finalMappings.item_price]?.replace(/[^\d.]/g, "") || "0") || 0.0
+            : 0.0;
+        totalPrice =
+          finalMappings.total_price !== -1
+            ? parseFloat(row[finalMappings.total_price]?.replace(/[^\d.]/g, "") || "0") || 0.0
+            : 0.0;
       }
 
       if (!orderNum) return;
@@ -2290,7 +2760,7 @@ function OrderImporterModal({ brandId, onComplete }: { brandId: string; onComple
         existing.items.push({
           name: itemName,
           quantity: itemQty,
-          price: itemPrice
+          price: itemPrice,
         });
       } else {
         ordersMap.set(orderNum, {
@@ -2307,9 +2777,9 @@ function OrderImporterModal({ brandId, onComplete }: { brandId: string; onComple
             {
               name: itemName,
               quantity: itemQty,
-              price: itemPrice
-            }
-          ]
+              price: itemPrice,
+            },
+          ],
         });
       }
     });
@@ -2318,14 +2788,18 @@ function OrderImporterModal({ brandId, onComplete }: { brandId: string; onComple
     setTotalCount(parsedOrders.length);
 
     if (parsedOrders.length === 0) {
-      toast.error(isAr ? "لم نتمكن من تحديد أي طلبات صالحة في هذا الملف." : "No valid orders could be parsed from this file.");
+      toast.error(
+        isAr
+          ? "لم نتمكن من تحديد أي طلبات صالحة في هذا الملف."
+          : "No valid orders could be parsed from this file.",
+      );
       setStep("preset");
       return;
     }
 
     try {
       const { importHistoricalOrders } = await import("@/lib/order-importer");
-      
+
       const batchSize = 25;
       let totalSuccess = 0;
 
@@ -2334,14 +2808,14 @@ function OrderImporterModal({ brandId, onComplete }: { brandId: string; onComple
         setProgress(
           isAr
             ? `جاري استيراد ${i} من أصل ${parsedOrders.length} طلب تاريخي...`
-            : `Importing ${i} / ${parsedOrders.length} legacy orders...`
+            : `Importing ${i} / ${parsedOrders.length} legacy orders...`,
         );
 
         const result = await importHistoricalOrders({
           data: {
             brandId,
-            orders: chunk
-          }
+            orders: chunk,
+          },
         });
 
         totalSuccess += result.successCount;
@@ -2423,12 +2897,7 @@ function OrderImporterModal({ brandId, onComplete }: { brandId: string; onComple
               <label className="bg-primary text-primary-foreground text-xs font-semibold px-5 py-2.5 rounded-xl shadow-lg shadow-primary/15 hover:shadow-xl transition-all cursor-pointer flex items-center gap-2">
                 <Upload className="h-4 w-4" />
                 {isAr ? "اختر ملف الـ CSV" : "Select CSV File"}
-                <input
-                  type="file"
-                  accept=".csv"
-                  onChange={handleFileUpload}
-                  className="hidden"
-                />
+                <input type="file" accept=".csv" onChange={handleFileUpload} className="hidden" />
               </label>
             </div>
           </div>
@@ -2446,21 +2915,46 @@ function OrderImporterModal({ brandId, onComplete }: { brandId: string; onComple
               {[
                 { key: "order_number", label: isAr ? "رقم الطلب" : "Order Number", required: true },
                 { key: "order_date", label: isAr ? "تاريخ الطلب" : "Order Date", required: true },
-                { key: "customer_name", label: isAr ? "اسم العميل" : "Customer Name", required: false },
-                { key: "customer_phone", label: isAr ? "رقم جوال العميل" : "Customer Phone", required: false },
-                { key: "customer_email", label: isAr ? "البريد الإلكتروني" : "Customer Email", required: false },
-                { key: "total_price", label: isAr ? "إجمالي الطلب" : "Total Price", required: true },
+                {
+                  key: "customer_name",
+                  label: isAr ? "اسم العميل" : "Customer Name",
+                  required: false,
+                },
+                {
+                  key: "customer_phone",
+                  label: isAr ? "رقم جوال العميل" : "Customer Phone",
+                  required: false,
+                },
+                {
+                  key: "customer_email",
+                  label: isAr ? "البريد الإلكتروني" : "Customer Email",
+                  required: false,
+                },
+                {
+                  key: "total_price",
+                  label: isAr ? "إجمالي الطلب" : "Total Price",
+                  required: true,
+                },
                 { key: "item_name", label: isAr ? "اسم المنتج" : "Item Name", required: true },
-                { key: "item_quantity", label: isAr ? "كمية المنتج" : "Item Quantity", required: true },
+                {
+                  key: "item_quantity",
+                  label: isAr ? "كمية المنتج" : "Item Quantity",
+                  required: true,
+                },
                 { key: "item_price", label: isAr ? "سعر المنتج" : "Item Price", required: true },
               ].map((field) => (
-                <div key={field.key} className="flex items-center justify-between gap-4 p-3 bg-zinc-50 dark:bg-zinc-900/40 rounded-xl border border-zinc-100 dark:border-zinc-800">
+                <div
+                  key={field.key}
+                  className="flex items-center justify-between gap-4 p-3 bg-zinc-50 dark:bg-zinc-900/40 rounded-xl border border-zinc-100 dark:border-zinc-800"
+                >
                   <span className="text-xs font-semibold text-foreground">
                     {field.label} {field.required && <span className="text-rose-500">*</span>}
                   </span>
                   <Select
                     value={mappings[field.key]?.toString() || "-1"}
-                    onValueChange={(val) => setMappings(m => ({ ...m, [field.key]: parseInt(val) }))}
+                    onValueChange={(val) =>
+                      setMappings((m) => ({ ...m, [field.key]: parseInt(val) }))
+                    }
                   >
                     <SelectTrigger className="w-[180px] h-8 text-xs">
                       <SelectValue placeholder={isAr ? "اختر العمود..." : "Select..."} />
@@ -2468,7 +2962,9 @@ function OrderImporterModal({ brandId, onComplete }: { brandId: string; onComple
                     <SelectContent>
                       <SelectItem value="-1">-- {isAr ? "تجاوز" : "Skip"} --</SelectItem>
                       {headers.map((h, idx) => (
-                        <SelectItem key={idx} value={idx.toString()}>{h}</SelectItem>
+                        <SelectItem key={idx} value={idx.toString()}>
+                          {h}
+                        </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -2477,13 +2973,21 @@ function OrderImporterModal({ brandId, onComplete }: { brandId: string; onComple
             </div>
 
             <div className="pt-4 border-t border-zinc-100 dark:border-zinc-800 flex justify-end gap-2">
-              <Button variant="ghost" onClick={() => setStep("preset")} className="text-xs font-semibold">
+              <Button
+                variant="ghost"
+                onClick={() => setStep("preset")}
+                className="text-xs font-semibold"
+              >
                 {isAr ? "رجوع" : "Back"}
               </Button>
               <Button
                 onClick={() => {
                   if (mappings.order_number === -1 || mappings.item_name === -1) {
-                    toast.error(isAr ? "رقم الطلب واسم المنتج حقول إلزامية للتجهيز." : "Order Number and Item Name are mandatory fields.");
+                    toast.error(
+                      isAr
+                        ? "رقم الطلب واسم المنتج حقول إلزامية للتجهيز."
+                        : "Order Number and Item Name are mandatory fields.",
+                    );
                     return;
                   }
                   startImport(parsedRows, mappings);
@@ -2500,7 +3004,9 @@ function OrderImporterModal({ brandId, onComplete }: { brandId: string; onComple
           <div className="py-12 flex flex-col items-center justify-center text-center space-y-4">
             <Loader2 className="h-10 w-10 text-primary animate-spin" />
             <div className="space-y-1">
-              <p className="font-semibold text-sm">{isAr ? "جاري استيراد تاريخ مبيعاتك..." : "Processing order database migration..."}</p>
+              <p className="font-semibold text-sm">
+                {isAr ? "جاري استيراد تاريخ مبيعاتك..." : "Processing order database migration..."}
+              </p>
               <p className="text-xs text-muted-foreground">{progress}</p>
             </div>
           </div>
@@ -2512,19 +3018,126 @@ function OrderImporterModal({ brandId, onComplete }: { brandId: string; onComple
               <Check className="h-6 w-6" />
             </div>
             <div className="space-y-1">
-              <p className="font-bold text-lg">{isAr ? "اكتمل الترحيل بنجاح وافر!" : "Historical Migration Completed!"}</p>
+              <p className="font-bold text-lg">
+                {isAr ? "اكتمل الترحيل بنجاح وافر!" : "Historical Migration Completed!"}
+              </p>
               <p className="text-xs text-muted-foreground leading-relaxed max-w-sm">
                 {isAr
                   ? `تم بنجاح ترحيل واستيراد ${successCount} من أصل ${totalCount} طلبات سابقة مع مطابقتها بالعملاء بنجاح.`
                   : `Successfully imported ${successCount} out of ${totalCount} historical sales, matching billing phone entries directly.`}
               </p>
             </div>
-            <Button onClick={handleClose} className="bg-primary text-xs font-semibold px-6 py-2.5 rounded-xl shadow-lg shadow-primary/10">
+            <Button
+              onClick={handleClose}
+              className="bg-primary text-xs font-semibold px-6 py-2.5 rounded-xl shadow-lg shadow-primary/10"
+            >
               {isAr ? "استمرار إلى اللوحة" : "Proceed to Dashboard"}
             </Button>
           </div>
         )}
       </DialogContent>
     </Dialog>
+  );
+}
+
+function OrderQuickInspectSheet({
+  order,
+  slug,
+  lang,
+  locale,
+  onClose,
+}: {
+  order: any | null;
+  slug: string;
+  lang: string;
+  locale: string;
+  onClose: () => void;
+}) {
+  if (!order) return null;
+  const isAr = lang === "ar";
+  const items = order.order_items ?? [];
+
+  return (
+    <Sheet open={Boolean(order)} onOpenChange={(open: boolean) => !open && onClose()}>
+      <SheetContent
+        side={isAr ? "left" : "right"}
+        className="w-full sm:max-w-lg p-0 flex flex-col bg-background shadow-2xl"
+      >
+        <div className="p-6 border-b space-y-1">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-mono font-bold text-muted-foreground">
+              {formatDate(order.created_at ?? order.order_date, locale)}
+            </span>
+            <Link
+              to="/admin/b/$slug/orders/$id"
+              params={{ slug, id: order.id }}
+              className="text-xs font-semibold text-primary hover:underline flex items-center gap-1"
+            >
+              {isAr ? "تفاصيل إضافية" : "Full Details"} <ExternalLink className="h-3 w-3" />
+            </Link>
+          </div>
+          <SheetTitle className="text-xl font-bold font-display">
+            #{order.invoice_number}
+          </SheetTitle>
+        </div>
+
+        <div className="flex-1 overflow-y-auto p-6 space-y-6">
+          {/* Customer Card */}
+          <div className="rounded-xl border p-4 space-y-2 bg-card">
+            <h4 className="text-xs uppercase tracking-wider font-bold text-muted-foreground">
+              {isAr ? "معلومات العميل" : "Customer Overview"}
+            </h4>
+            <div className="text-sm font-semibold">
+              {getOrderCustomerName(order) || (isAr ? "عميل غير مسجل" : "Guest Customer")}
+            </div>
+            <CustomerContactActions customer={getOrderCustomerContact(order)} lang={lang as "en" | "ar"} />
+          </div>
+
+          {/* Line Items */}
+          <div className="space-y-3">
+            <h4 className="text-xs uppercase tracking-wider font-bold text-muted-foreground">
+              {isAr ? "المنتجات والأصناف" : "Order Line Items"}
+            </h4>
+            <div className="divide-y border rounded-xl overflow-hidden bg-card">
+              {items.map((it: any, idx: number) => (
+                <div key={it.id || idx} className="p-3.5 flex items-center justify-between gap-3 text-xs">
+                  <div>
+                    <div className="font-semibold text-sm">
+                      <span className="text-primary font-bold mr-1">{it.quantity}x</span>
+                      {it.name_en || it.name_ar || "Item"}
+                    </div>
+                  </div>
+                  <div className="font-mono font-bold shrink-0 text-sm">
+                    {formatMoney(Number(it.line_total || it.unit_price * it.quantity), order.currency || "BHD", locale)}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Payment Breakdown */}
+          <div className="rounded-xl border p-4 space-y-2 bg-card">
+            <div className="flex justify-between items-center text-sm font-bold pt-1 border-t">
+              <span>{isAr ? "الإجمالي النهائي" : "Total Amount"}</span>
+              <span className="text-base text-primary font-mono">
+                {formatMoney(Number(order.total), order.currency || "BHD", locale)}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div className="p-4 border-t bg-muted/20 flex gap-2">
+          <Button
+            asChild
+            className="flex-1 bg-primary text-primary-foreground font-bold h-11 rounded-xl"
+          >
+            <Link to="/admin/b/$slug/orders/$id" params={{ slug, id: order.id }}>
+              <ExternalLink className="h-4 w-4 me-2" />
+              {isAr ? "فتح صفحة الطلب الكاملة" : "Open Order Record Page"}
+            </Link>
+          </Button>
+        </div>
+      </SheetContent>
+    </Sheet>
   );
 }

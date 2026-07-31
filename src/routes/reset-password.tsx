@@ -90,13 +90,25 @@ function ResetPasswordPage() {
           <form onSubmit={submit} className="space-y-4">
             <div>
               <Label htmlFor="password">{t("auth.newPassword")}</Label>
-              <Input id="password" type="password" required minLength={8}
-                value={password} onChange={(e) => setPassword(e.target.value)} />
+              <Input
+                id="password"
+                type="password"
+                required
+                minLength={8}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
             </div>
             <div>
               <Label htmlFor="confirm">{t("auth.confirmPassword")}</Label>
-              <Input id="confirm" type="password" required minLength={8}
-                value={confirm} onChange={(e) => setConfirm(e.target.value)} />
+              <Input
+                id="confirm"
+                type="password"
+                required
+                minLength={8}
+                value={confirm}
+                onChange={(e) => setConfirm(e.target.value)}
+              />
             </div>
             <Button type="submit" className="w-full" disabled={loading || !ready}>
               {loading ? t("common.pleaseWait") : t("auth.updatePassword")}

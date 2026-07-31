@@ -41,7 +41,8 @@ export const Route = createFileRoute("/api/public/payments/create-tap-charge")({
           // 2. Fetch Order and customer details
           const { data: orderResult, error: orderError } = await supabaseAdmin
             .from("orders")
-            .select(`
+            .select(
+              `
               id,
               total,
               subtotal,
@@ -53,7 +54,8 @@ export const Route = createFileRoute("/api/public/payments/create-tap-charge")({
                 phone,
                 email
               )
-            ` as any)
+            ` as any,
+            )
             .eq("id", orderId)
             .eq("brand_id", brandId)
             .maybeSingle();

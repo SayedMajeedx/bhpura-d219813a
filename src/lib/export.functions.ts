@@ -12,7 +12,7 @@ type ExportParams = {
 
 // Function to sanitize data to prevent CSV/Excel injection
 const sanitizeData = (data: any[]) => {
-  return data.map(row => {
+  return data.map((row) => {
     const sanitizedRow: any = {};
     for (const [key, value] of Object.entries(row)) {
       if (typeof value === "string") {
@@ -20,9 +20,14 @@ const sanitizeData = (data: any[]) => {
         if (key.toLowerCase().includes("email") || key.toLowerCase().includes("phone")) {
           continue; // Strip PII completely
         }
-        
+
         // Prevent formula injection in Excel/CSV
-        if (value.startsWith("=") || value.startsWith("+") || value.startsWith("-") || value.startsWith("@")) {
+        if (
+          value.startsWith("=") ||
+          value.startsWith("+") ||
+          value.startsWith("-") ||
+          value.startsWith("@")
+        ) {
           sanitizedRow[key] = "'" + value;
         } else {
           sanitizedRow[key] = value;
@@ -39,7 +44,7 @@ export const generateExportData = createServerFn({ method: "POST" })
   .validator((params: ExportParams) => params)
   .handler(async ({ data: params }) => {
     const { reportType, from, to, tz, format } = params;
-    
+
     // Fetch data from Supabase using the secured RPC
     const { data: rawData, error } = await (supabase as any).rpc("rpc_reporting_export", {
       p_report_type: reportType,
@@ -75,20 +80,20 @@ export const generateExportData = createServerFn({ method: "POST" })
 
     if (format === "csv") {
       const csvContent = xlsx.utils.sheet_to_csv(worksheet);
-      return { 
-        content: csvContent, 
-        mimeType: "text/csv", 
+      return {
+        content: csvContent,
+        mimeType: "text/csv",
         extension: "csv",
-        isBase64: false 
+        isBase64: false,
       };
     } else {
       // Generate base64 string for XLSX
       const buffer = xlsx.write(workbook, { type: "base64", bookType: "xlsx" });
-      return { 
-        content: buffer, 
-        mimeType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", 
+      return {
+        content: buffer,
+        mimeType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         extension: "xlsx",
-        isBase64: true 
+        isBase64: true,
       };
     }
   });

@@ -20,7 +20,9 @@ export const Route = createFileRoute("/api/public/webhooks/tap")({
           const brandId = metadata.brand_id;
 
           if (!orderId || !brandId) {
-            return new Response("Missing order_id or brand_id in charge metadata.", { status: 400 });
+            return new Response("Missing order_id or brand_id in charge metadata.", {
+              status: 400,
+            });
           }
 
           const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -33,8 +35,15 @@ export const Route = createFileRoute("/api/public/webhooks/tap")({
           const credential = credentialRows?.[0];
 
           if (credError || !credential || !credential.api_key) {
-            console.error("[Tap Webhook Auth Error]: Missing/inactive credential for brand", brandId, credError);
-            return new Response("Tap Payments integration is not active or configured for this brand.", { status: 400 });
+            console.error(
+              "[Tap Webhook Auth Error]: Missing/inactive credential for brand",
+              brandId,
+              credError,
+            );
+            return new Response(
+              "Tap Payments integration is not active or configured for this brand.",
+              { status: 400 },
+            );
           }
 
           // 2. BACK-CHANNEL SECURE CHECK: Query Tap Charges API directly to authorize and verify payload
@@ -49,7 +58,9 @@ export const Route = createFileRoute("/api/public/webhooks/tap")({
           if (!tapRes.ok) {
             const errText = await tapRes.text();
             console.error("[Tap Webhook Verification Fail]: Status:", tapRes.status, errText);
-            return new Response("Failed to authenticate charge reference with gateway API.", { status: 400 });
+            return new Response("Failed to authenticate charge reference with gateway API.", {
+              status: 400,
+            });
           }
 
           const tapCharge = await tapRes.json<{
@@ -61,7 +72,12 @@ export const Route = createFileRoute("/api/public/webhooks/tap")({
           const verifiedBrandId = tapCharge.metadata?.brand_id;
 
           if (verifiedOrderId !== orderId || verifiedBrandId !== brandId) {
-            console.error("[Tap Webhook Tampering Blocked]: Metadata mismatch. Payload:", { orderId, brandId }, "Tap:", { verifiedOrderId, verifiedBrandId });
+            console.error(
+              "[Tap Webhook Tampering Blocked]: Metadata mismatch. Payload:",
+              { orderId, brandId },
+              "Tap:",
+              { verifiedOrderId, verifiedBrandId },
+            );
             return new Response("Metadata verification failure.", { status: 400 });
           }
 
@@ -78,11 +94,20 @@ export const Route = createFileRoute("/api/public/webhooks/tap")({
 
           if (existingOrder) {
             if (existingOrder.id !== orderId) {
-              console.error("[Tap Webhook Replay Attack Blocked]: Charge reference", chargeId, "was already used for order", existingOrder.id);
+              console.error(
+                "[Tap Webhook Replay Attack Blocked]: Charge reference",
+                chargeId,
+                "was already used for order",
+                existingOrder.id,
+              );
               return new Response("Duplicate payment reference.", { status: 400 });
             }
             if (existingOrder.payment_status === "paid") {
-              console.log("[Tap Webhook Idempotency]: Order", orderId, "already paid. Skipping duplicate update.");
+              console.log(
+                "[Tap Webhook Idempotency]: Order",
+                orderId,
+                "already paid. Skipping duplicate update.",
+              );
               return new Response("OK", { status: 200 });
             }
           }
@@ -104,10 +129,13 @@ export const Route = createFileRoute("/api/public/webhooks/tap")({
               return new Response(`Database update error: ${updateError.message}`, { status: 500 });
             }
 
-            console.log(`[Tap Webhook Success]: Securely verified and confirmed payment for Order ${orderId}`);
-
+            console.log(
+              `[Tap Webhook Success]: Securely verified and confirmed payment for Order ${orderId}`,
+            );
           } else {
-            console.warn(`[Tap Webhook Non-success Status]: Charge status ${verifiedStatus} for Order ${orderId}`);
+            console.warn(
+              `[Tap Webhook Non-success Status]: Charge status ${verifiedStatus} for Order ${orderId}`,
+            );
           }
 
           return new Response("OK", { status: 200 });

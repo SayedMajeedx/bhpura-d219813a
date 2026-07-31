@@ -1,12 +1,41 @@
 import { Link, useRouterState, useNavigate, useParams } from "@tanstack/react-router";
-import { LayoutDashboard, Package, Users, ReceiptText, Settings, LogOut, Languages, Menu, Wallet, Megaphone, Shield, Store, Crown, Plug, Tags, FileText, BadgePercent, Mail, Clock as ClockIcon, BarChart } from "lucide-react";
+import {
+  LayoutDashboard,
+  Package,
+  Users,
+  ReceiptText,
+  Settings,
+  LogOut,
+  Languages,
+  Menu,
+  Wallet,
+  Megaphone,
+  Shield,
+  Store,
+  Crown,
+  Plug,
+  Tags,
+  FileText,
+  BadgePercent,
+  Mail,
+  Clock as ClockIcon,
+  BarChart,
+  Search,
+} from "lucide-react";
+import { SpotlightCommandPalette } from "@/components/spotlight-command-palette";
 import { useState, useEffect, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { useI18n } from "@/lib/i18n";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
 import { useProfile } from "@/lib/profile-context";
 import { toast } from "sonner";
@@ -18,11 +47,33 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
   const { t, lang, setLang } = useI18n();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const { profile, isAdmin, isSuperAdmin, isCourier, isLoading, profileError, signOutAndRedirect, hasPermission } = useProfile();
+  const {
+    profile,
+    isAdmin,
+    isSuperAdmin,
+    isCourier,
+    isLoading,
+    profileError,
+    signOutAndRedirect,
+    hasPermission,
+  } = useProfile();
 
   // Extract slug from current URL when inside /b/:slug/*
   const routeParams = useParams({ strict: false }) as { slug?: string };
   const urlSlug = routeParams?.slug ?? null;
+
+  const [spotlightOpen, setSpotlightOpen] = useState(false);
+
+  useEffect(() => {
+    const down = (e: KeyboardEvent) => {
+      if (e.key === "k" && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault();
+        setSpotlightOpen((open) => !open);
+      }
+    };
+    document.addEventListener("keydown", down);
+    return () => document.removeEventListener("keydown", down);
+  }, []);
 
   const [hasImpersonationToken, setHasImpersonationToken] = useState(false);
 
@@ -37,12 +88,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       const { stopImpersonationSession } = await import("@/lib/impersonation.functions");
       await stopImpersonationSession();
       if (typeof document !== "undefined") {
-        document.cookie = "boutq_impersonation_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+        document.cookie =
+          "boutq_impersonation_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
       }
       toast.success(
         lang === "ar"
           ? "تم الخروج من وضع المحاكاة بنجاح"
-          : "Successfully exited impersonation mode."
+          : "Successfully exited impersonation mode.",
       );
       window.location.href = "/admin/brands";
     } catch (err: any) {
@@ -54,7 +106,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const activeSlug = urlSlug ?? profile?.brand?.slug ?? null;
 
   // close drawer when route changes
-  useEffect(() => { setMobileOpen(false); }, [pathname]);
+  useEffect(() => {
+    setMobileOpen(false);
+  }, [pathname]);
 
   // Lock body viewport scrolling for premium native app panel feel
   useEffect(() => {
@@ -80,7 +134,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (isLoading) return;
     if (profile && profile.status === "inactive") {
-      (async () => { await signOutAndRedirect(); })();
+      (async () => {
+        await signOutAndRedirect();
+      })();
     }
   }, [isLoading, profile, signOutAndRedirect]);
 
@@ -100,10 +156,24 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   // Build brand-prefixed nav items. If no active slug, links go to /dashboard (redirector).
   const nav = useMemo(() => {
-    const items: { to: string; params?: any; label: string; icon: typeof LayoutDashboard; permission?: string; adminOnly?: boolean; section: "overview" | "operations" | "growth_finance" | "storefront_settings" }[] = [];
+    const items: {
+      to: string;
+      params?: any;
+      label: string;
+      icon: typeof LayoutDashboard;
+      permission?: string;
+      adminOnly?: boolean;
+      section: "overview" | "operations" | "growth_finance" | "storefront_settings";
+    }[] = [];
     if (activeSlug) {
       if (isCourier) {
-        items.push({ to: "/admin/b/$slug/orders", params: { slug: activeSlug }, label: t("nav.orders"), icon: ReceiptText, section: "operations" });
+        items.push({
+          to: "/admin/b/$slug/orders",
+          params: { slug: activeSlug },
+          label: t("nav.orders"),
+          icon: ReceiptText,
+          section: "operations",
+        });
         return items;
       }
 
@@ -123,7 +193,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           icon: BarChart,
           permission: "manage_orders",
           section: "overview",
-        }
+        },
       );
 
       // Group 2: OPERATIONS
@@ -159,7 +229,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           icon: Tags,
           permission: "manage_inventory",
           section: "operations",
-        }
+        },
       );
 
       // Group 3: GROWTH & FINANCE
@@ -187,7 +257,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           icon: Wallet,
           permission: "view_financials",
           section: "growth_finance",
-        }
+        },
       );
 
       // Group 4: STOREFRONT & SETTINGS
@@ -217,7 +287,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           icon: FileText,
           permission: "manage_settings",
           section: "storefront_settings",
-        }
+        },
       );
       if (isAdmin) {
         items.push({
@@ -251,13 +321,20 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     navigate({ to: "/auth" });
   };
 
-  const brandLabel = profile?.brand?.[lang === "ar" ? "name_ar" : "name_en"] ?? profile?.brand?.name_en ?? t("app.title");
-  const currentPageLabel = nav.find((item) => pathname.startsWith(item.to.replace("$slug", item.params?.slug ?? "")))?.label;
+  const brandLabel =
+    profile?.brand?.[lang === "ar" ? "name_ar" : "name_en"] ??
+    profile?.brand?.name_en ??
+    t("app.title");
+  const currentPageLabel = nav.find((item) =>
+    pathname.startsWith(item.to.replace("$slug", item.params?.slug ?? "")),
+  )?.label;
 
   const SidebarContent = (
     <>
       <div className="p-6 border-b border-sidebar-border">
-        <h1 className="text-2xl font-display text-sidebar-foreground leading-tight">{brandLabel}</h1>
+        <h1 className="text-2xl font-display text-sidebar-foreground leading-tight">
+          {brandLabel}
+        </h1>
         <p className="mt-1 text-xs text-sidebar-foreground/70">{t("app.subtitle")}</p>
       </div>
 
@@ -277,7 +354,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <SelectContent>
               {(brandsQ.data ?? []).map((b) => (
                 <SelectItem key={b.id} value={b.slug}>
-                  {b.name_en}{!b.is_active ? " (inactive)" : ""}
+                  {b.name_en}
+                  {!b.is_active ? " (inactive)" : ""}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -288,7 +366,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               "flex items-center gap-2 px-2 py-1.5 rounded-md text-xs transition-colors",
               pathname === "/admin/brands"
                 ? "bg-sidebar-primary text-sidebar-primary-foreground"
-                : "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                : "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
             )}
           >
             <Store className="h-3.5 w-3.5" />
@@ -300,7 +378,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               "flex items-center gap-2 px-2 py-1.5 rounded-md text-xs transition-colors",
               pathname === "/admin/super/requests"
                 ? "bg-sidebar-primary text-sidebar-primary-foreground"
-                : "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                : "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
             )}
           >
             <ClockIcon className="h-3.5 w-3.5" />
@@ -312,7 +390,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               "flex items-center gap-2 px-2 py-1.5 rounded-md text-xs transition-colors",
               pathname === "/admin/super/settings"
                 ? "bg-sidebar-primary text-sidebar-primary-foreground"
-                : "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                : "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
             )}
           >
             <Settings className="h-3.5 w-3.5" />
@@ -325,8 +403,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <div className="px-3 pt-3">
           <a
             href={
-              typeof window !== "undefined" && 
-              window.location.hostname.toLowerCase() !== "localhost" && 
+              typeof window !== "undefined" &&
+              window.location.hostname.toLowerCase() !== "localhost" &&
               window.location.hostname.toLowerCase() !== "127.0.0.1"
                 ? `https://${activeSlug}.boutq.store`
                 : `/${activeSlug}`
@@ -346,7 +424,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           { id: "overview", header: lang === "ar" ? "نظرة عامة" : "OVERVIEW" },
           { id: "operations", header: lang === "ar" ? "العمليات" : "OPERATIONS" },
           { id: "growth_finance", header: lang === "ar" ? "النمو والمالية" : "GROWTH & FINANCE" },
-          { id: "storefront_settings", header: lang === "ar" ? "المتجر والإعدادات" : "STOREFRONT & SETTINGS" },
+          {
+            id: "storefront_settings",
+            header: lang === "ar" ? "المتجر والإعدادات" : "STOREFRONT & SETTINGS",
+          },
         ].map((sec) => {
           const items = nav.filter((item) => item.section === sec.id);
           if (items.length === 0) return null;
@@ -357,7 +438,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               </div>
               <div className="flex flex-col gap-1">
                 {items.map((item) => {
-                  const active = pathname.startsWith(item.to.replace("$slug", item.params?.slug ?? ""));
+                  const active = pathname.startsWith(
+                    item.to.replace("$slug", item.params?.slug ?? ""),
+                  );
                   const Icon = item.icon;
                   return (
                     <Link
@@ -365,15 +448,15 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                       to={item.to as any}
                       params={item.params}
                       className={cn(
-                        "flex items-center gap-3 py-2 text-sm transition-all",
+                        "flex items-center gap-3 py-2.5 min-h-[44px] text-sm transition-all",
                         active
                           ? cn(
                               "bg-white/15 text-white font-semibold transition-all",
                               lang === "ar"
                                 ? "border-r-4 border-amber-400 pr-3 rounded-l-lg"
-                                : "border-l-4 border-amber-400 pl-3 rounded-r-lg"
+                                : "border-l-4 border-amber-400 pl-3 rounded-r-lg",
                             )
-                          : "text-white/70 hover:text-white hover:bg-white/10 rounded-lg transition-colors px-3"
+                          : "text-white/70 hover:text-white hover:bg-white/10 rounded-lg transition-colors px-3",
                       )}
                     >
                       <Icon className="h-4 w-4" />
@@ -406,7 +489,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </p>
           {profileError && (
             <p className="text-xs text-muted-foreground/70">
-              {lang === "ar" ? "حدث خطأ أثناء التحقق." : "There was an error verifying your account."}
+              {lang === "ar"
+                ? "حدث خطأ أثناء التحقق."
+                : "There was an error verifying your account."}
             </p>
           )}
           <Button variant="outline" onClick={signOut}>
@@ -443,77 +528,105 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       )}
       <div className="flex-1 flex bg-background overflow-hidden">
         <aside className="no-print hidden md:flex w-64 border-r border-sidebar-border bg-sidebar text-sidebar-foreground flex-col shrink-0">
-        {SidebarContent}
-      </aside>
+          {SidebarContent}
+        </aside>
 
-      <div className="md:hidden no-print fixed top-0 inset-x-0 z-40 h-14 flex items-center justify-between px-3 border-b border-sidebar-border bg-sidebar text-sidebar-foreground">
-        <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
-          <SheetTrigger asChild>
-            <Button variant="ghost" size="icon" aria-label="Menu">
-              <Menu className="h-5 w-5" />
-            </Button>
-          </SheetTrigger>
-          <SheetContent
-            side={lang === "ar" ? "right" : "left"}
-            className="w-72 border-0 p-0 flex flex-col bg-sidebar text-sidebar-foreground shadow-2xl"
-          >
-            <SheetTitle className="sr-only">{brandLabel}</SheetTitle>
-            {SidebarContent}
-          </SheetContent>
-        </Sheet>
-        <div className="min-w-0 text-center leading-tight flex-1 px-2">
-          <h1 className="truncate text-base font-display text-sidebar-foreground">{brandLabel}</h1>
-          {currentPageLabel && <div className="truncate text-[10px] text-sidebar-foreground/70">{currentPageLabel}</div>}
-        </div>
-        <div className="flex items-center gap-1 shrink-0">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8 text-sidebar-foreground/80 hover:text-sidebar-foreground"
-            onClick={() => setLang(lang === "en" ? "ar" : "en")}
-            aria-label="Toggle language"
-          >
-            <span className="text-[10px] font-bold uppercase">{lang === "en" ? "AR" : "EN"}</span>
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8 text-sidebar-foreground/80 hover:text-sidebar-foreground"
-            onClick={signOut}
-            aria-label={t("nav.signOut")}
-          >
-            <LogOut className="h-4 w-4" />
-          </Button>
-        </div>
-      </div>
-
-      <main className="flex-1 flex flex-col print-area pt-14 md:pt-0 bg-background/95 overflow-hidden">
-        <header className="no-print hidden md:flex h-14 border-b border-border bg-card shrink-0 items-center justify-between px-8">
-          <div className="font-display font-medium text-lg text-foreground">
-            {currentPageLabel || ""}
+        <div className="md:hidden no-print fixed top-0 inset-x-0 z-40 h-14 flex items-center justify-between px-3 border-b border-sidebar-border bg-sidebar text-sidebar-foreground">
+          <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
+            <SheetTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-10 w-10 min-h-[44px] min-w-[44px] flex items-center justify-center" aria-label="Menu">
+                <Menu className="h-5 w-5" />
+              </Button>
+            </SheetTrigger>
+            <SheetContent
+              side={lang === "ar" ? "right" : "left"}
+              className="w-72 border-0 p-0 flex flex-col bg-sidebar text-sidebar-foreground shadow-2xl"
+            >
+              <SheetTitle className="sr-only">{brandLabel}</SheetTitle>
+              {SidebarContent}
+            </SheetContent>
+          </Sheet>
+          <div className="min-w-0 text-center leading-tight flex-1 px-2">
+            <h1 className="truncate text-base font-display text-sidebar-foreground">
+              {brandLabel}
+            </h1>
+            {currentPageLabel && (
+              <div className="truncate text-[10px] text-sidebar-foreground/70">
+                {currentPageLabel}
+              </div>
+            )}
           </div>
-          <div className="flex items-center gap-6">
-            <div className="flex items-center gap-2">
-              <Languages className="h-4 w-4 text-muted-foreground" />
-              <Select value={lang} onValueChange={(v) => setLang(v as "en" | "ar")}>
-                <SelectTrigger className="h-8 text-xs w-28"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="en">English</SelectItem>
-                  <SelectItem value="ar">العربية</SelectItem>
-                </SelectContent>
-              </Select>
+          <div className="flex items-center gap-1 shrink-0">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-10 w-10 min-h-[44px] min-w-[44px] flex items-center justify-center text-sidebar-foreground/80 hover:text-sidebar-foreground"
+              onClick={() => setLang(lang === "en" ? "ar" : "en")}
+              aria-label="Toggle language"
+            >
+              <span className="text-[11px] font-bold uppercase">{lang === "en" ? "AR" : "EN"}</span>
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-10 w-10 min-h-[44px] min-w-[44px] flex items-center justify-center text-sidebar-foreground/80 hover:text-sidebar-foreground"
+              onClick={signOut}
+              aria-label={t("nav.signOut")}
+            >
+              <LogOut className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+
+        <main className="flex-1 flex flex-col print-area pt-14 md:pt-0 bg-background/95 overflow-hidden">
+          <header className="no-print hidden md:flex h-14 border-b border-border bg-card shrink-0 items-center justify-between px-8">
+            <div className="flex items-center gap-4">
+              <div className="font-display font-medium text-lg text-foreground">
+                {currentPageLabel || ""}
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setSpotlightOpen(true)}
+                className="h-8 px-3 gap-2 text-xs text-muted-foreground hover:text-foreground bg-muted/40 hover:bg-muted/70 border-border/60 rounded-lg transition-all"
+              >
+                <Search className="h-3.5 w-3.5 text-muted-foreground" />
+                <span className="hidden lg:inline">
+                  {lang === "ar" ? "بحث سريع..." : "Quick search..."}
+                </span>
+                <kbd className="pointer-events-none inline-flex h-5 select-none items-center gap-0.5 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium opacity-100">
+                  <span className="text-xs">⌘</span>K
+                </kbd>
+              </Button>
             </div>
-            <Button variant="ghost" size="sm" className="h-8 gap-2 text-xs text-muted-foreground hover:text-foreground" onClick={signOut}>
-              <LogOut className="h-3.5 w-3.5" /> {t("nav.signOut")}
-            </Button>
-          </div>
-        </header>
+            <div className="flex items-center gap-6">
+              <div className="flex items-center gap-2">
+                <Languages className="h-4 w-4 text-muted-foreground" />
+                <Select value={lang} onValueChange={(v) => setLang(v as "en" | "ar")}>
+                  <SelectTrigger className="h-8 text-xs w-28">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="en">English</SelectItem>
+                    <SelectItem value="ar">العربية</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 gap-2 text-xs text-muted-foreground hover:text-foreground"
+                onClick={signOut}
+              >
+                <LogOut className="h-3.5 w-3.5" /> {t("nav.signOut")}
+              </Button>
+            </div>
+          </header>
 
-        <div className="flex-1 overflow-auto min-h-0">
-          {children}
-        </div>
-      </main>
+          <div className="flex-1 overflow-auto min-h-0">{children}</div>
+        </main>
       </div>
+      <SpotlightCommandPalette open={spotlightOpen} onOpenChange={setSpotlightOpen} />
     </div>
   );
 }

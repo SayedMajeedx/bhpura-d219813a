@@ -8,7 +8,7 @@ import { supabaseAdmin } from "@/integrations/supabase/client.server";
 export async function enforceMutationSafeguard(
   supabaseClient: any,
   userId: string,
-  targetBrandId: string
+  targetBrandId: string,
 ): Promise<void> {
   // 1. Fetch the user's role and their assigned brand_id
   const { data: profile, error: profileErr } = await supabaseAdmin
@@ -37,7 +37,7 @@ export async function enforceMutationSafeguard(
 
     if (!overwriteAllowed) {
       throw new Error(
-        "MUTATION_BLOCKED: Superadmin Impersonation mode is strictly read-only. Enterprise safeguards prevent modifying live merchant finances or data unless developer overwrite is enabled."
+        "MUTATION_BLOCKED: Superadmin Impersonation mode is strictly read-only. Enterprise safeguards prevent modifying live merchant finances or data unless developer overwrite is enabled.",
       );
     }
   }

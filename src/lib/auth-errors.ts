@@ -14,14 +14,16 @@ const RULES: Array<{ match: RegExp; msg: Pair }> = [
     },
   },
   {
-    match: /user already registered|already registered|already exists|duplicate key|users_email_key/i,
+    match:
+      /user already registered|already registered|already exists|duplicate key|users_email_key/i,
     msg: {
       ar: "هذا البريد الإلكتروني مسجّل مسبقًا. جرّب تسجيل الدخول أو استعادة كلمة المرور.",
       en: "This email is already registered. Try signing in or resetting your password.",
     },
   },
   {
-    match: /password.*(should be|must be).*(at least )?(6|8)|password.*too short|weak.?password|password.*strength|password.*characters/i,
+    match:
+      /password.*(should be|must be).*(at least )?(6|8)|password.*too short|weak.?password|password.*strength|password.*characters/i,
     msg: {
       ar: "كلمة المرور ضعيفة جدًا. يجب أن تحتوي على 8 أحرف على الأقل مع أرقام وأحرف مختلفة.",
       en: "Password is too weak. Use at least 8 characters with a mix of letters and numbers.",

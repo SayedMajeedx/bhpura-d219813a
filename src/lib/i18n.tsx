@@ -115,7 +115,6 @@ const en: Dict = {
   "log.variant.created": "Variant '{variant}' added",
   "log.variant.deleted": "Variant '{variant}' deleted",
 
-
   "customers.title": "Customers",
   "customers.subtitle": "Your clientele, kept close.",
   "customers.new": "New customer",
@@ -156,16 +155,19 @@ const en: Dict = {
 
   "nav.integrations": "Integrations",
   "integrations.title": "Developer Integrations",
-  "integrations.subtitle": "Store API credentials and webhooks for shipping carriers, payment gateways, and custom services. Live wiring is not enabled yet.",
+  "integrations.subtitle":
+    "Store API credentials and webhooks for shipping carriers, payment gateways, and custom services. Live wiring is not enabled yet.",
   "integrations.new": "New integration",
-  "integrations.none": "No integrations yet. Add your first credential to prepare for a future carrier or gateway.",
+  "integrations.none":
+    "No integrations yet. Add your first credential to prepare for a future carrier or gateway.",
   "integrations.provider": "Provider",
   "integrations.baseUrl": "API Base URL",
   "integrations.apiKey": "API Key",
   "integrations.webhookSecret": "Webhook Secret",
   "integrations.notes": "Notes",
   "integrations.active": "Active",
-  "integrations.warning": "Credentials are stored as-is inside your workspace. Do not paste production secrets until we ship encrypted storage.",
+  "integrations.warning":
+    "Credentials are stored as-is inside your workspace. Do not paste production secrets until we ship encrypted storage.",
   "integrations.webhookHint": "Point this URL at your provider once wiring goes live:",
 
   "settings.shippingTitle": "Shipping & Fulfillment",
@@ -177,7 +179,8 @@ const en: Dict = {
 
   "brands.editTitle": "Edit brand",
   "brands.delete": "Delete brand",
-  "brands.deleteWarning": "This will hide the brand from the storefront and its admin workspace. Existing orders, products, and customers are kept intact.",
+  "brands.deleteWarning":
+    "This will hide the brand from the storefront and its admin workspace. Existing orders, products, and customers are kept intact.",
   "brands.deleteHardOption": "Permanently delete all brand data and media",
   "brands.deleteConfirmText": "Type the brand slug to confirm:",
   "brands.deleteSuccess": "Brand removed",
@@ -188,7 +191,6 @@ const en: Dict = {
   "fulfillment.pickup": "Pickup from branch",
   "fulfillment.deliveryFee": "Delivery fee",
   "fulfillment.free": "Free",
-
 
   "inventory.title": "Inventory",
   "inventory.subtitle": "Products, variants, and customization add-ons.",
@@ -203,7 +205,8 @@ const en: Dict = {
   "inventory.imageUrl": "Image URL",
   "inventory.description": "Description",
   "inventory.addVariant": "Add variant",
-  "inventory.addonsIntro": "Reusable add-ons like embroidery, custom sizing, fabric upgrades. Pick them per order line.",
+  "inventory.addonsIntro":
+    "Reusable add-ons like embroidery, custom sizing, fabric upgrades. Pick them per order line.",
   "inventory.addonName": "Add-on name (e.g. Hand embroidery)",
   "inventory.addonPrice": "Price",
   "inventory.noAddons": "No add-ons yet.",
@@ -241,7 +244,6 @@ const en: Dict = {
   "orders.printA4": "Download PDF",
   "orders.actions": "Actions",
   "orders.popupBlocked": "Popup blocked — allow popups to print the receipt.",
-
 
   "orderDetail.back": "Back to orders",
   "orderDetail.sendInvoice": "Send invoice",
@@ -292,7 +294,8 @@ const en: Dict = {
   "settings.accent": "Accent color",
   "settings.textColor": "Text color",
   "settings.bgColor": "Background color",
-  "settings.previewText": "This is a preview of how invoice text will appear with your chosen styles.",
+  "settings.previewText":
+    "This is a preview of how invoice text will appear with your chosen styles.",
   "settings.save": "Save settings",
   "settings.saved": "Saved",
 
@@ -311,7 +314,8 @@ const en: Dict = {
   "orderDetail.vat": "VAT",
   "orderDetail.grandTotal": "Grand Total",
   "orderDetail.addonsHint": "Add options in Inventory → Customization add-ons.",
-  "orderDetail.insufficientStock": "Insufficient stock for one or more items. Adjust quantities or restock before confirming.",
+  "orderDetail.insufficientStock":
+    "Insufficient stock for one or more items. Adjust quantities or restock before confirming.",
   "orderDetail.stockUpdated": "Inventory updated",
   "orderDetail.advancePaid": "Advance Payment",
   "orderDetail.remaining": "Remaining Balance",
@@ -352,7 +356,8 @@ const en: Dict = {
   "team.reactivate": "Reactivate Account",
   "team.editUser": "Edit User",
   "team.deleteUser": "Delete User",
-  "team.deleteConfirm": "Are you sure you want to delete this user? All user data will be permanently deleted. This action cannot be undone.",
+  "team.deleteConfirm":
+    "Are you sure you want to delete this user? All user data will be permanently deleted. This action cannot be undone.",
 };
 
 const ar: Dict = {
@@ -465,7 +470,6 @@ const ar: Dict = {
   "log.variant.created": "تمت إضافة المتغيّر '{variant}'",
   "log.variant.deleted": "تم حذف المتغيّر '{variant}'",
 
-
   "customers.title": "العملاء",
   "customers.subtitle": "عملاؤك المميّزون دائماً بالقرب.",
   "customers.new": "عميل جديد",
@@ -506,7 +510,8 @@ const ar: Dict = {
 
   "nav.integrations": "ربط المطورين",
   "integrations.title": "ربط المطورين",
-  "integrations.subtitle": "احفظ مفاتيح واجهات برمجة التطبيقات لشركات الشحن وبوابات الدفع والخدمات المخصصة. لم يتم تفعيل التنفيذ الفعلي بعد.",
+  "integrations.subtitle":
+    "احفظ مفاتيح واجهات برمجة التطبيقات لشركات الشحن وبوابات الدفع والخدمات المخصصة. لم يتم تفعيل التنفيذ الفعلي بعد.",
   "integrations.new": "إضافة تكامل",
   "integrations.none": "لا توجد تكاملات بعد. أضف أول اعتماد للتحضير لبوابة شحن أو دفع مستقبلية.",
   "integrations.provider": "الخدمة",
@@ -515,7 +520,8 @@ const ar: Dict = {
   "integrations.webhookSecret": "سر الويبهوك",
   "integrations.notes": "ملاحظات",
   "integrations.active": "مفعّل",
-  "integrations.warning": "يتم حفظ البيانات كما هي داخل مساحة عملك. لا تلصق أسرار الإنتاج قبل تفعيل التخزين المشفّر.",
+  "integrations.warning":
+    "يتم حفظ البيانات كما هي داخل مساحة عملك. لا تلصق أسرار الإنتاج قبل تفعيل التخزين المشفّر.",
   "integrations.webhookHint": "استخدم هذا الرابط عند تفعيل التكامل مع مزوّد الخدمة:",
 
   "settings.shippingTitle": "الشحن والاستلام",
@@ -527,7 +533,8 @@ const ar: Dict = {
 
   "brands.editTitle": "تعديل العلامة",
   "brands.delete": "حذف العلامة",
-  "brands.deleteWarning": "سيتم إخفاء العلامة من المتجر ولوحة التحكم. الطلبات والمنتجات والعملاء الحاليون يبقون كما هم.",
+  "brands.deleteWarning":
+    "سيتم إخفاء العلامة من المتجر ولوحة التحكم. الطلبات والمنتجات والعملاء الحاليون يبقون كما هم.",
   "brands.deleteHardOption": "حذف جميع بيانات وملفات العلامة نهائياً",
   "brands.deleteConfirmText": "اكتب معرّف العلامة للتأكيد:",
   "brands.deleteSuccess": "تم حذف العلامة",
@@ -538,7 +545,6 @@ const ar: Dict = {
   "fulfillment.pickup": "استلام من الفرع",
   "fulfillment.deliveryFee": "رسوم التوصيل",
   "fulfillment.free": "مجانًا",
-
 
   "inventory.title": "المخزون",
   "inventory.subtitle": "المنتجات والمتغيّرات وإضافات التخصيص.",
@@ -553,7 +559,8 @@ const ar: Dict = {
   "inventory.imageUrl": "رابط الصورة",
   "inventory.description": "الوصف",
   "inventory.addVariant": "إضافة متغيّر",
-  "inventory.addonsIntro": "إضافات قابلة لإعادة الاستخدام مثل التطريز والقياس المخصّص وترقية الأقمشة. اخترها لكل بند طلب.",
+  "inventory.addonsIntro":
+    "إضافات قابلة لإعادة الاستخدام مثل التطريز والقياس المخصّص وترقية الأقمشة. اخترها لكل بند طلب.",
   "inventory.addonName": "اسم الإضافة (مثل: تطريز يدوي)",
   "inventory.addonPrice": "السعر",
   "inventory.noAddons": "لا توجد إضافات بعد.",
@@ -591,7 +598,6 @@ const ar: Dict = {
   "orders.printA4": "تحميل الفاتورة PDF",
   "orders.actions": "إجراءات",
   "orders.popupBlocked": "تم حظر النافذة المنبثقة — يرجى السماح بالنوافذ لطباعة الإيصال.",
-
 
   "orderDetail.back": "العودة للطلبات",
   "orderDetail.sendInvoice": "إرسال الفاتورة",
@@ -661,7 +667,8 @@ const ar: Dict = {
   "orderDetail.vat": "ضريبة القيمة المضافة",
   "orderDetail.grandTotal": "الإجمالي الكلي",
   "orderDetail.addonsHint": "أضف الخيارات من المخزون ← إضافات التخصيص.",
-  "orderDetail.insufficientStock": "المخزون غير كافٍ لأحد البنود. عدّل الكميات أو أعِد التخزين قبل التأكيد.",
+  "orderDetail.insufficientStock":
+    "المخزون غير كافٍ لأحد البنود. عدّل الكميات أو أعِد التخزين قبل التأكيد.",
   "orderDetail.stockUpdated": "تم تحديث المخزون",
   "orderDetail.advancePaid": "المبلغ المقدم",
   "orderDetail.remaining": "المبلغ المتبقي",
@@ -702,12 +709,18 @@ const ar: Dict = {
   "team.reactivate": "إعادة تنشيط الحساب",
   "team.editUser": "تعديل المستخدم",
   "team.deleteUser": "حذف المستخدم",
-  "team.deleteConfirm": "هل أنت متأكد من حذف هذا المستخدم؟ سيتم حذف جميع بيانات المستخدم نهائياً. لا يمكن التراجع عن هذا الإجراء.",
+  "team.deleteConfirm":
+    "هل أنت متأكد من حذف هذا المستخدم؟ سيتم حذف جميع بيانات المستخدم نهائياً. لا يمكن التراجع عن هذا الإجراء.",
 };
 
 const dicts: Record<Lang, Dict> = { en, ar };
 
-type Ctx = { lang: Lang; setLang: (l: Lang) => void; t: (key: string) => string; dir: "ltr" | "rtl" };
+type Ctx = {
+  lang: Lang;
+  setLang: (l: Lang) => void;
+  t: (key: string) => string;
+  dir: "ltr" | "rtl";
+};
 const I18nContext = createContext<Ctx | null>(null);
 
 function readInitial(): Lang {
@@ -719,7 +732,9 @@ function readInitial(): Lang {
 export function I18nProvider({ children }: { children: ReactNode }) {
   const [lang, setLangState] = useState<Lang>("ar");
 
-  useEffect(() => { setLangState(readInitial()); }, []);
+  useEffect(() => {
+    setLangState(readInitial());
+  }, []);
 
   useEffect(() => {
     const dir = lang === "ar" ? "rtl" : "ltr";

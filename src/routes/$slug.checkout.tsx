@@ -8,10 +8,38 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Loader2, CreditCard, Banknote, QrCode, Truck, Store, User, Download, Mail, MessageCircle, Copy, UploadCloud, CheckCircle2, X } from "lucide-react";
+import {
+  Loader2,
+  CreditCard,
+  Banknote,
+  QrCode,
+  Truck,
+  Store,
+  User,
+  Download,
+  Mail,
+  MessageCircle,
+  Copy,
+  UploadCloud,
+  CheckCircle2,
+  X,
+} from "lucide-react";
 import { uploadBenefitReceipt } from "@/lib/benefit-receipt";
 import { trackStorefrontEvent } from "@/lib/storefront-analytics";
 import { ResponsiveImage } from "@/components/responsive-media";
@@ -24,7 +52,8 @@ export const Route = createFileRoute("/$slug/checkout")({
 type Fulfillment = "delivery" | "pickup" | "digital";
 
 function Checkout() {
-  const { brand, settings, cart, cartTotal, currency, lang, t, clearCart, session } = useStorefront();
+  const { brand, settings, cart, cartTotal, currency, lang, t, clearCart, session } =
+    useStorefront();
   const navigate = useNavigate();
   const [submitting, setSubmitting] = useState(false);
   const [idempotencyKey] = useState(() => crypto.randomUUID());
@@ -41,9 +70,9 @@ function Checkout() {
         toast.error(
           t(
             "فشلت عملية الدفع بالبطاقة. يرجى التحقق من بيانات البطاقة والمحاولة مرة أخرى.",
-            "Card payment failed. Please check your card details and try again."
+            "Card payment failed. Please check your card details and try again.",
           ),
-          { duration: 6000 }
+          { duration: 6000 },
         );
         // Clear the query parameter so it doesn't fire again on refresh
         const cleanUrl = window.location.pathname;
@@ -68,7 +97,11 @@ function Checkout() {
   const [saveToProfile, setSaveToProfile] = useState(false);
   const [whatsappOrderUpdates, setWhatsappOrderUpdates] = useState(false);
 
-  const [showAccountPopup, setShowAccountPopup] = useState<{ show: boolean; field: "email" | "phone" | null; value: string }>({
+  const [showAccountPopup, setShowAccountPopup] = useState<{
+    show: boolean;
+    field: "email" | "phone" | null;
+    value: string;
+  }>({
     show: false,
     field: null,
     value: "",
@@ -186,10 +219,30 @@ function Checkout() {
     }
   };
 
-  const availableMethods: Array<{ id: "cod" | "card" | "benefit"; ar: string; en: string; icon: any }> = [
-    settings.cod_enabled && { id: "cod" as const, ar: "الدفع عند الاستلام", en: "Cash on delivery", icon: Banknote },
-    settings.card_enabled && { id: "card" as const, ar: "الدفع بالبطاقة", en: "Card payment", icon: CreditCard },
-    settings.benefit_enabled && { id: "benefit" as const, ar: "عن طريق البنفت", en: "Benefit Pay", icon: QrCode },
+  const availableMethods: Array<{
+    id: "cod" | "card" | "benefit";
+    ar: string;
+    en: string;
+    icon: any;
+  }> = [
+    settings.cod_enabled && {
+      id: "cod" as const,
+      ar: "الدفع عند الاستلام",
+      en: "Cash on delivery",
+      icon: Banknote,
+    },
+    settings.card_enabled && {
+      id: "card" as const,
+      ar: "الدفع بالبطاقة",
+      en: "Card payment",
+      icon: CreditCard,
+    },
+    settings.benefit_enabled && {
+      id: "benefit" as const,
+      ar: "عن طريق البنفت",
+      en: "Benefit Pay",
+      icon: QrCode,
+    },
   ].filter(Boolean) as any;
 
   const [method, setMethod] = useState<"cod" | "card" | "benefit" | "">(
@@ -198,20 +251,58 @@ function Checkout() {
 
   const fulfillmentOptions = useMemo(() => {
     const opts: Array<{ id: Fulfillment; ar: string; en: string; icon: any; fee: number }> = [];
-    if (settings.delivery_enabled) opts.push({ id: "delivery", ar: "توصيل", en: "Delivery", icon: Truck, fee: settings.delivery_fee });
-    if (settings.pickup_enabled) opts.push({ id: "pickup", ar: "استلام من الفرع", en: "Pickup from branch", icon: Store, fee: 0 });
-    if (settings.digital_delivery_enabled) opts.push({ id: "digital", ar: "تسليم رقمي", en: "Digital delivery", icon: Download, fee: 0 });
+    if (settings.delivery_enabled)
+      opts.push({
+        id: "delivery",
+        ar: "توصيل",
+        en: "Delivery",
+        icon: Truck,
+        fee: settings.delivery_fee,
+      });
+    if (settings.pickup_enabled)
+      opts.push({
+        id: "pickup",
+        ar: "استلام من الفرع",
+        en: "Pickup from branch",
+        icon: Store,
+        fee: 0,
+      });
+    if (settings.digital_delivery_enabled)
+      opts.push({
+        id: "digital",
+        ar: "تسليم رقمي",
+        en: "Digital delivery",
+        icon: Download,
+        fee: 0,
+      });
     return opts;
-  }, [settings.delivery_enabled, settings.pickup_enabled, settings.digital_delivery_enabled, settings.delivery_fee]);
+  }, [
+    settings.delivery_enabled,
+    settings.pickup_enabled,
+    settings.digital_delivery_enabled,
+    settings.delivery_fee,
+  ]);
 
-  const [fulfillment, setFulfillment] = useState<Fulfillment>(fulfillmentOptions[0]?.id ?? "delivery");
+  const [fulfillment, setFulfillment] = useState<Fulfillment>(
+    fulfillmentOptions[0]?.id ?? "delivery",
+  );
   useEffect(() => {
     if (fulfillmentOptions.length > 0 && !fulfillmentOptions.find((o) => o.id === fulfillment)) {
       setFulfillment(fulfillmentOptions[0].id);
     }
   }, [fulfillmentOptions, fulfillment]);
 
-  const [branches, setBranches] = useState<Array<{ id: string; name_ar: string | null; name_en: string | null; location_ar: string | null; location_en: string | null; notes_ar: string | null; notes_en: string | null }>>([]);
+  const [branches, setBranches] = useState<
+    Array<{
+      id: string;
+      name_ar: string | null;
+      name_en: string | null;
+      location_ar: string | null;
+      location_en: string | null;
+      notes_ar: string | null;
+      notes_en: string | null;
+    }>
+  >([]);
   const [branchId, setBranchId] = useState<string>("");
   const [digitalChannel, setDigitalChannel] = useState<"email" | "whatsapp">("email");
   const [digitalContact, setDigitalContact] = useState("");
@@ -225,13 +316,15 @@ function Checkout() {
       const { data } = await supabase.rpc("get_public_branches" as any, {
         p_brand_id: brand.id,
       });
-      const list = ((data ?? []) as any[]);
+      const list = (data ?? []) as any[];
       setBranches(list);
       setBranchId((cur) => cur || (list[0]?.id ?? ""));
     })();
   }, [brand.id, settings.pickup_enabled]);
-  const branchLabel = (b: typeof branches[number]) => (lang === "ar" ? (b.name_ar || b.name_en || "") : (b.name_en || b.name_ar || ""));
-  const branchLoc = (b: typeof branches[number]) => (lang === "ar" ? (b.location_ar || b.location_en || "") : (b.location_en || b.location_ar || ""));
+  const branchLabel = (b: (typeof branches)[number]) =>
+    lang === "ar" ? b.name_ar || b.name_en || "" : b.name_en || b.name_ar || "";
+  const branchLoc = (b: (typeof branches)[number]) =>
+    lang === "ar" ? b.location_ar || b.location_en || "" : b.location_en || b.location_ar || "";
 
   const [selectedZoneId, setSelectedZoneId] = useState<string>("");
   const zones = settings.shipping_zones ?? [];
@@ -243,21 +336,36 @@ function Checkout() {
 
   const selectedZone = zones.find((z) => z.id === selectedZoneId);
 
-  const shipping = fulfillment === "delivery"
-    ? (zones.length > 0 ? (selectedZone?.fee ?? 0) : Number(settings.delivery_fee || 0))
-    : 0;
+  const shipping =
+    fulfillment === "delivery"
+      ? zones.length > 0
+        ? (selectedZone?.fee ?? 0)
+        : Number(settings.delivery_fee || 0)
+      : 0;
   const promoDiscount = Math.min(appliedPromo?.amount ?? 0, cartTotal);
   const grandTotal = Math.max(0, cartTotal - promoDiscount) + shipping;
 
   useEffect(() => {
     if (!cart.length) return;
-    trackStorefrontEvent("begin_checkout", {
-      currency, value: Number(cartTotal.toFixed(3)),
-      items: cart.map((item) => ({ item_id: item.product_id, item_name: item.name, price: item.price, quantity: item.qty })),
-    }, cart.map((item) => `${item.cart_line_id}:${item.qty}`).join("|"));
+    trackStorefrontEvent(
+      "begin_checkout",
+      {
+        currency,
+        value: Number(cartTotal.toFixed(3)),
+        items: cart.map((item) => ({
+          item_id: item.product_id,
+          item_name: item.name,
+          price: item.price,
+          quantity: item.qty,
+        })),
+      },
+      cart.map((item) => `${item.cart_line_id}:${item.qty}`).join("|"),
+    );
   }, [cart, cartTotal, currency]);
 
-  useEffect(() => { setAppliedPromo(null); }, [cart, brand.id]);
+  useEffect(() => {
+    setAppliedPromo(null);
+  }, [cart, brand.id]);
 
   const applyPromo = async () => {
     const code = promoInput.trim().toUpperCase();
@@ -268,21 +376,61 @@ function Checkout() {
       line_total: Number((item.price * item.qty).toFixed(3)),
     }));
     const { data, error } = await supabase.rpc("validate_promo_code" as any, {
-      p_brand_slug: brand.slug, p_code: code, p_subtotal: cartTotal, p_items: promoItems, p_customer_id: null,
+      p_brand_slug: brand.slug,
+      p_code: code,
+      p_subtotal: cartTotal,
+      p_items: promoItems,
+      p_customer_id: null,
     });
     setCheckingPromo(false);
     if (error) return toast.error(t("تعذر التحقق من الرمز", "Could not validate this code"));
     const result = data as any;
     if (!result?.valid) {
       setAppliedPromo(null);
-      if (result?.reason === "MINIMUM_NOT_MET") return toast.error(t(`الحد الأدنى للطلب ${formatPrice(Number(result.minimum_order_amount), currency, lang)}`, `Minimum order is ${formatPrice(Number(result.minimum_order_amount), currency, lang)}`));
-      if (result?.reason === "CODE_INACTIVE") return toast.error(t("رمز الخصم هذا لم يعد نشطاً.", "This promotional code is no longer active."));
-      if (result?.reason === "FIRST_ORDER_ONLY") return toast.error(t("رمز الخصم هذا مخصص للعملاء الجدد فقط.", "This promo code is restricted to first-time customers only."));
-      if (result?.reason === "AUTH_REQUIRED") return toast.error(t("سجّل الدخول لاستخدام هذا الرمز.", "Sign in to use this promo code."));
-      if (result?.reason === "USAGE_LIMIT_REACHED") return toast.error(t("لقد وصلت إلى الحد المسموح لاستخدام هذا الرمز.", "You have reached this code's usage limit."));
-      if (result?.reason === "NO_ELIGIBLE_ITEMS") return toast.error(t("لا يمكن تطبيق رمز الخصم هذا على المنتجات المخفضة مسبقاً.", "This promo code cannot be applied to items already on discount/sale."));
-      if (result?.reason === "CODE_NOT_FOUND") return toast.error(t("رمز الخصم غير موجود لهذا المتجر.", "This promo code does not exist for this brand."));
-      return toast.error(t("تعذر تطبيق رمز الخصم. تحقق من شروطه.", "This promo code could not be applied. Check its eligibility rules."));
+      if (result?.reason === "MINIMUM_NOT_MET")
+        return toast.error(
+          t(
+            `الحد الأدنى للطلب ${formatPrice(Number(result.minimum_order_amount), currency, lang)}`,
+            `Minimum order is ${formatPrice(Number(result.minimum_order_amount), currency, lang)}`,
+          ),
+        );
+      if (result?.reason === "CODE_INACTIVE")
+        return toast.error(
+          t("رمز الخصم هذا لم يعد نشطاً.", "This promotional code is no longer active."),
+        );
+      if (result?.reason === "FIRST_ORDER_ONLY")
+        return toast.error(
+          t(
+            "رمز الخصم هذا مخصص للعملاء الجدد فقط.",
+            "This promo code is restricted to first-time customers only.",
+          ),
+        );
+      if (result?.reason === "AUTH_REQUIRED")
+        return toast.error(t("سجّل الدخول لاستخدام هذا الرمز.", "Sign in to use this promo code."));
+      if (result?.reason === "USAGE_LIMIT_REACHED")
+        return toast.error(
+          t(
+            "لقد وصلت إلى الحد المسموح لاستخدام هذا الرمز.",
+            "You have reached this code's usage limit.",
+          ),
+        );
+      if (result?.reason === "NO_ELIGIBLE_ITEMS")
+        return toast.error(
+          t(
+            "لا يمكن تطبيق رمز الخصم هذا على المنتجات المخفضة مسبقاً.",
+            "This promo code cannot be applied to items already on discount/sale.",
+          ),
+        );
+      if (result?.reason === "CODE_NOT_FOUND")
+        return toast.error(
+          t("رمز الخصم غير موجود لهذا المتجر.", "This promo code does not exist for this brand."),
+        );
+      return toast.error(
+        t(
+          "تعذر تطبيق رمز الخصم. تحقق من شروطه.",
+          "This promo code could not be applied. Check its eligibility rules.",
+        ),
+      );
     }
     setAppliedPromo({ code: result.code, amount: Number(result.discount_amount) });
     setPromoInput(result.code);
@@ -309,7 +457,12 @@ function Checkout() {
     }
     const customerEmail = form.email.trim();
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(customerEmail)) {
-      toast.error(t("يرجى إدخال بريد إلكتروني صحيح لتصلك تحديثات الطلب", "Enter a valid email address to receive order updates"));
+      toast.error(
+        t(
+          "يرجى إدخال بريد إلكتروني صحيح لتصلك تحديثات الطلب",
+          "Enter a valid email address to receive order updates",
+        ),
+      );
       return;
     }
     if (fulfillment === "delivery") {
@@ -323,7 +476,12 @@ function Checkout() {
       return;
     }
     if (method === "benefit" && !benefitReceipt) {
-      toast.error(t("يرجى إرفاق صورة إيصال التحويل لتأكيد الطلب", "Please attach the transfer receipt to confirm your order"));
+      toast.error(
+        t(
+          "يرجى إرفاق صورة إيصال التحويل لتأكيد الطلب",
+          "Please attach the transfer receipt to confirm your order",
+        ),
+      );
       return;
     }
     if (fulfillment === "pickup" && branches.length > 0 && !branchId) {
@@ -333,7 +491,12 @@ function Checkout() {
     if (fulfillment === "digital") {
       const contact = digitalContact.trim();
       if (!contact) {
-        toast.error(t("أدخل البريد الإلكتروني أو رقم/معرّف واتساب", "Enter the email or WhatsApp number/user ID"));
+        toast.error(
+          t(
+            "أدخل البريد الإلكتروني أو رقم/معرّف واتساب",
+            "Enter the email or WhatsApp number/user ID",
+          ),
+        );
         return;
       }
       if (digitalChannel === "email" && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contact)) {
@@ -343,7 +506,10 @@ function Checkout() {
     }
     setSubmitting(true);
     try {
-      const benefitReceiptId = method === "benefit" && benefitReceipt ? await uploadBenefitReceipt(brand.id, benefitReceipt) : null;
+      const benefitReceiptId =
+        method === "benefit" && benefitReceipt
+          ? await uploadBenefitReceipt(brand.id, benefitReceipt)
+          : null;
       const { data, error } = await supabase.rpc("place_storefront_order", {
         p_brand_slug: brand.slug,
         p_customer: {
@@ -374,13 +540,29 @@ function Checkout() {
         p_payment_method: method,
         p_notes: form.notes || undefined,
         p_fulfillment: fulfillment,
-        p_branch_id: fulfillment === "pickup" ? (branchId || null) : null,
+        p_branch_id: fulfillment === "pickup" ? branchId || null : null,
         p_digital_channel: fulfillment === "digital" ? digitalChannel : null,
         p_digital_contact: fulfillment === "digital" ? digitalContact.trim() : null,
         p_promo_code: appliedPromo?.code ?? null,
         p_benefit_receipt_id: benefitReceiptId,
-        p_shipping_fee: fulfillment === "delivery" ? (zones.length > 0 ? (selectedZone?.fee ?? 0) : Number(settings.delivery_fee || 0)) : 0,
-        p_shipping_zone: fulfillment === "delivery" ? (zones.length > 0 ? (selectedZone ? (lang === "ar" ? selectedZone.name_ar : selectedZone.name_en) : null) : (lang === "ar" ? "توصيل" : "Delivery")) : null,
+        p_shipping_fee:
+          fulfillment === "delivery"
+            ? zones.length > 0
+              ? (selectedZone?.fee ?? 0)
+              : Number(settings.delivery_fee || 0)
+            : 0,
+        p_shipping_zone:
+          fulfillment === "delivery"
+            ? zones.length > 0
+              ? selectedZone
+                ? lang === "ar"
+                  ? selectedZone.name_ar
+                  : selectedZone.name_en
+                : null
+              : lang === "ar"
+                ? "توصيل"
+                : "Delivery"
+            : null,
         p_idempotency_key: idempotencyKey,
       } as any);
       if (error) throw error;
@@ -398,14 +580,28 @@ function Checkout() {
           console.warn("[checkout] WhatsApp order-update consent could not be recorded");
         }
       }
-      trackStorefrontEvent("purchase", {
-        transaction_id: String(orderId ?? ""), currency, value: Number(grandTotal.toFixed(3)),
-        shipping: Number(shipping.toFixed(3)), coupon: appliedPromo?.code ?? undefined,
-        items: cart.map((item) => ({ item_id: item.product_id, item_name: item.name, price: item.price, quantity: item.qty })),
-      }, String(orderId ?? ""));
+      trackStorefrontEvent(
+        "purchase",
+        {
+          transaction_id: String(orderId ?? ""),
+          currency,
+          value: Number(grandTotal.toFixed(3)),
+          shipping: Number(shipping.toFixed(3)),
+          coupon: appliedPromo?.code ?? undefined,
+          items: cart.map((item) => ({
+            item_id: item.product_id,
+            item_name: item.name,
+            price: item.price,
+            quantity: item.qty,
+          })),
+        },
+        String(orderId ?? ""),
+      );
       // If they chose to pay via Card, redirect to payment gateway
       if (method === "card") {
-        const toastId = toast.loading(t("جاري تحويلك لبوابة الدفع...", "Redirecting you to the payment gateway..."));
+        const toastId = toast.loading(
+          t("جاري تحويلك لبوابة الدفع...", "Redirecting you to the payment gateway..."),
+        );
         try {
           const chargeRes = await fetch("/api/public/payments/create-tap-charge", {
             method: "POST",
@@ -416,12 +612,12 @@ function Checkout() {
               redirectUrl: `${window.location.origin}/api/public/payments/tap-redirect?order_id=${orderId}&brand_id=${brand.id}`,
             }),
           });
-          
+
           if (!chargeRes.ok) {
             const errData = await chargeRes.json<{ error?: string }>();
             throw new Error(errData.error || "Failed to initiate card payment.");
           }
-          
+
           const { redirectUrl } = await chargeRes.json<{ redirectUrl: string }>();
           toast.dismiss(toastId);
           window.location.href = redirectUrl;
@@ -445,33 +641,81 @@ function Checkout() {
         toast.error(t("المخزون غير كافٍ لأحد المنتجات", "Insufficient stock for one item"));
       } else if (msg.includes("PAYMENT_METHOD_DISABLED")) {
         toast.error(t("طريقة الدفع غير متاحة", "Payment method unavailable"));
-      } else if (msg.includes("DELIVERY_DISABLED") || msg.includes("PICKUP_DISABLED") || msg.includes("DIGITAL_DELIVERY_DISABLED")) {
+      } else if (
+        msg.includes("DELIVERY_DISABLED") ||
+        msg.includes("PICKUP_DISABLED") ||
+        msg.includes("DIGITAL_DELIVERY_DISABLED")
+      ) {
         toast.error(t("طريقة التسليم غير متاحة", "Fulfillment method unavailable"));
-      } else if (msg.includes("DIGITAL_CONTACT") || msg.includes("DIGITAL_EMAIL") || msg.includes("DIGITAL_CHANNEL")) {
+      } else if (
+        msg.includes("DIGITAL_CONTACT") ||
+        msg.includes("DIGITAL_EMAIL") ||
+        msg.includes("DIGITAL_CHANNEL")
+      ) {
         toast.error(t("تحقق من بيانات التسليم الرقمي", "Check the digital delivery details"));
       } else if (msg.includes("PROMO_FIRST_ORDER_ONLY")) {
         setAppliedPromo(null);
-        toast.error(t("رمز الخصم هذا مخصص للعملاء الجدد فقط.", "This promo code is restricted to first-time customers only."));
+        toast.error(
+          t(
+            "رمز الخصم هذا مخصص للعملاء الجدد فقط.",
+            "This promo code is restricted to first-time customers only.",
+          ),
+        );
       } else if (msg.includes("PROMO_USAGE_LIMIT_REACHED")) {
         setAppliedPromo(null);
-        toast.error(t("لقد وصلت إلى الحد المسموح لاستخدام هذا الرمز.", "You have reached this code's usage limit."));
+        toast.error(
+          t(
+            "لقد وصلت إلى الحد المسموح لاستخدام هذا الرمز.",
+            "You have reached this code's usage limit.",
+          ),
+        );
       } else if (msg.includes("PROMO_NO_ELIGIBLE_ITEMS")) {
         setAppliedPromo(null);
-        toast.error(t("لا يمكن تطبيق رمز الخصم هذا على المنتجات المخفضة مسبقاً.", "This promo code cannot be applied to items already on discount/sale."));
+        toast.error(
+          t(
+            "لا يمكن تطبيق رمز الخصم هذا على المنتجات المخفضة مسبقاً.",
+            "This promo code cannot be applied to items already on discount/sale.",
+          ),
+        );
       } else if (msg.includes("PROMO_AUTH_REQUIRED")) {
         setAppliedPromo(null);
         toast.error(t("سجّل الدخول لاستخدام هذا الرمز.", "Sign in to use this promo code."));
       } else if (msg.includes("RECEIPT_STORAGE_UNREACHABLE")) {
-        toast.error(t("تعذر الوصول إلى التخزين الآمن للإيصال. حاول مرة أخرى أو تواصل مع المتجر.", "The secure receipt upload could not be reached. Please retry or contact the store."));
+        toast.error(
+          t(
+            "تعذر الوصول إلى التخزين الآمن للإيصال. حاول مرة أخرى أو تواصل مع المتجر.",
+            "The secure receipt upload could not be reached. Please retry or contact the store.",
+          ),
+        );
       } else if (msg.includes("BENEFIT_RECEIPT")) {
-        toast.error(t("تعذر التحقق من إيصال التحويل. أعد رفع الصورة وحاول مرة أخرى.", "The transfer receipt could not be verified. Upload it again and retry."));
+        toast.error(
+          t(
+            "تعذر التحقق من إيصال التحويل. أعد رفع الصورة وحاول مرة أخرى.",
+            "The transfer receipt could not be verified. Upload it again and retry.",
+          ),
+        );
       } else if (msg.includes("CUSTOMER_ACCOUNT_EXISTS_SIGN_IN_REQUIRED")) {
-        toast.error(t("هذا البريد الإلكتروني أو رقم الهاتف مرتبط بحساب موجود. سجّل الدخول لإكمال الطلب بأمان.", "This email or phone belongs to an existing account. Sign in to continue securely."));
+        toast.error(
+          t(
+            "هذا البريد الإلكتروني أو رقم الهاتف مرتبط بحساب موجود. سجّل الدخول لإكمال الطلب بأمان.",
+            "This email or phone belongs to an existing account. Sign in to continue securely.",
+          ),
+        );
       } else if (msg.includes("CUSTOMER_CONTACT_ALREADY_REGISTERED")) {
-        toast.error(t("البريد الإلكتروني أو رقم الهاتف مستخدم في حساب عميل آخر.", "This email or phone is already used by another customer account."));
+        toast.error(
+          t(
+            "البريد الإلكتروني أو رقم الهاتف مستخدم في حساب عميل آخر.",
+            "This email or phone is already used by another customer account.",
+          ),
+        );
       } else if (msg.includes("PROMO_")) {
         setAppliedPromo(null);
-        toast.error(t("رمز الخصم لم يعد صالحاً لهذا الطلب", "The promo code is no longer valid for this order"));
+        toast.error(
+          t(
+            "رمز الخصم لم يعد صالحاً لهذا الطلب",
+            "The promo code is no longer valid for this order",
+          ),
+        );
       } else {
         toast.error(msg);
       }
@@ -488,10 +732,21 @@ function Checkout() {
           <Card className="p-4 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 border-primary/30 bg-primary/5">
             <div className="flex min-w-0 items-center gap-3">
               <User className="h-5 w-5 shrink-0" />
-              <p className="text-sm min-w-0 break-words">{t("لديك حساب؟ سجّل الدخول لملء البيانات تلقائيًا.", "Have an account? Sign in to prefill your details.")}</p>
+              <p className="text-sm min-w-0 break-words">
+                {t(
+                  "لديك حساب؟ سجّل الدخول لملء البيانات تلقائيًا.",
+                  "Have an account? Sign in to prefill your details.",
+                )}
+              </p>
             </div>
             <Button asChild size="sm" variant="outline" className="shrink-0">
-              <Link to="/$slug/auth" params={{ slug: brand.slug }} search={{ redirect: mounted ? window.location.pathname : "" }}>{t("سجّل الدخول", "Sign in")}</Link>
+              <Link
+                to="/$slug/auth"
+                params={{ slug: brand.slug }}
+                search={{ redirect: mounted ? window.location.pathname : "" }}
+              >
+                {t("سجّل الدخول", "Sign in")}
+              </Link>
             </Button>
           </Card>
         )}
@@ -501,20 +756,52 @@ function Checkout() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <Label htmlFor="checkout-name">{t("الاسم الكامل", "Full name")} *</Label>
-              <Input id="checkout-name" name="name" autoComplete="name" className="h-11" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+              <Input
+                id="checkout-name"
+                name="name"
+                autoComplete="name"
+                className="h-11"
+                value={form.name}
+                onChange={(e) => setForm({ ...form, name: e.target.value })}
+              />
             </div>
             <div>
               <Label htmlFor="checkout-phone">{t("رقم الهاتف", "Phone")} *</Label>
-              <Input id="checkout-phone" name="phone" type="tel" inputMode="tel" autoComplete="tel" className="h-11" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} onBlur={(e) => checkRegisteredAccount("phone", e.target.value)} />
+              <Input
+                id="checkout-phone"
+                name="phone"
+                type="tel"
+                inputMode="tel"
+                autoComplete="tel"
+                className="h-11"
+                value={form.phone}
+                onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                onBlur={(e) => checkRegisteredAccount("phone", e.target.value)}
+              />
             </div>
             <div className="sm:col-span-2">
               <Label htmlFor="checkout-email">{t("البريد الإلكتروني", "Email")}</Label>
-              <Input id="checkout-email" name="email" required type="email" autoComplete="email" className="h-11" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} onBlur={(e) => checkRegisteredAccount("email", e.target.value)} />
+              <Input
+                id="checkout-email"
+                name="email"
+                required
+                type="email"
+                autoComplete="email"
+                className="h-11"
+                value={form.email}
+                onChange={(e) => setForm({ ...form, email: e.target.value })}
+                onBlur={(e) => checkRegisteredAccount("email", e.target.value)}
+              />
             </div>
           </div>
           <div>
             <Label htmlFor="checkout-notes">{t("ملاحظات", "Notes")}</Label>
-            <Textarea id="checkout-notes" name="notes" value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
+            <Textarea
+              id="checkout-notes"
+              name="notes"
+              value={form.notes}
+              onChange={(e) => setForm({ ...form, notes: e.target.value })}
+            />
           </div>
           {session?.user && (
             <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-border/70 bg-muted/20 p-3">
@@ -574,9 +861,22 @@ function Checkout() {
                     type="button"
                     onClick={() => setFulfillment(opt.id)}
                     className={`text-start flex items-center gap-3 p-4 rounded-lg border transition-all ${active ? "border-current" : "border-input"}`}
-                    style={active ? { borderColor: settings.primary_color, backgroundColor: `${settings.primary_color}11` } : undefined}
+                    style={
+                      active
+                        ? {
+                            borderColor: settings.primary_color,
+                            backgroundColor: `${settings.primary_color}11`,
+                          }
+                        : undefined
+                    }
                   >
-                    <div className="h-10 w-10 rounded-md grid place-items-center" style={{ backgroundColor: active ? settings.primary_color : "hsl(var(--muted))", color: active ? "#fff" : "inherit" }}>
+                    <div
+                      className="h-10 w-10 rounded-md grid place-items-center"
+                      style={{
+                        backgroundColor: active ? settings.primary_color : "hsl(var(--muted))",
+                        color: active ? "#fff" : "inherit",
+                      }}
+                    >
                       <Icon className="h-5 w-5" />
                     </div>
                     <div className="flex-1 min-w-0">
@@ -609,20 +909,38 @@ function Checkout() {
                       type="button"
                       onClick={() => setBranchId(b.id)}
                       className={`relative text-start p-4 rounded-xl border-2 transition-all hover:shadow-sm ${active ? "shadow-sm" : "border-input bg-background hover:border-foreground/30"}`}
-                      style={active ? { borderColor: settings.primary_color, backgroundColor: `${settings.primary_color}14` } : undefined}
+                      style={
+                        active
+                          ? {
+                              borderColor: settings.primary_color,
+                              backgroundColor: `${settings.primary_color}14`,
+                            }
+                          : undefined
+                      }
                       aria-pressed={active}
                     >
                       <div className="flex items-start gap-3">
                         <span
                           className={`mt-0.5 h-5 w-5 shrink-0 rounded-full border-2 grid place-items-center transition-colors ${active ? "" : "border-muted-foreground/40"}`}
-                          style={active ? { borderColor: settings.primary_color, backgroundColor: settings.primary_color } : undefined}
+                          style={
+                            active
+                              ? {
+                                  borderColor: settings.primary_color,
+                                  backgroundColor: settings.primary_color,
+                                }
+                              : undefined
+                          }
                           aria-hidden
                         >
                           {active && <span className="h-2 w-2 rounded-full bg-white" />}
                         </span>
                         <div className="min-w-0 flex-1">
                           <div className="font-semibold truncate">{branchLabel(b)}</div>
-                          {branchLoc(b) && <div className="text-xs text-muted-foreground mt-0.5">{branchLoc(b)}</div>}
+                          {branchLoc(b) && (
+                            <div className="text-xs text-muted-foreground mt-0.5">
+                              {branchLoc(b)}
+                            </div>
+                          )}
                           {(lang === "ar" ? b.notes_ar : b.notes_en) && (
                             <div className="text-xs text-muted-foreground mt-1">
                               {lang === "ar" ? b.notes_ar : b.notes_en}
@@ -641,45 +959,98 @@ function Checkout() {
         {fulfillment === "digital" && (
           <Card className="p-5 space-y-4">
             <div>
-              <h2 className="font-display text-xl">{t("طريقة استلام المنتج الرقمي", "Digital delivery channel")}</h2>
-              <p className="text-sm text-muted-foreground">{t("اختر طريقة واحدة وأدخل بيانات الاستلام المطلوبة.", "Choose one channel and enter the required delivery contact.")}</p>
+              <h2 className="font-display text-xl">
+                {t("طريقة استلام المنتج الرقمي", "Digital delivery channel")}
+              </h2>
+              <p className="text-sm text-muted-foreground">
+                {t(
+                  "اختر طريقة واحدة وأدخل بيانات الاستلام المطلوبة.",
+                  "Choose one channel and enter the required delivery contact.",
+                )}
+              </p>
             </div>
             <div className="grid grid-cols-2 gap-3">
-              {([
-                ["email", t("البريد الإلكتروني", "Email"), Mail],
-                ["whatsapp", t("واتساب", "WhatsApp"), MessageCircle],
-              ] as const).map(([channel, label, Icon]) => (
-                <button key={channel} type="button" onClick={() => { setDigitalChannel(channel); setDigitalContact(""); }} className="flex items-center gap-2 rounded-lg border p-3" style={digitalChannel === channel ? { borderColor: settings.primary_color, backgroundColor: `${settings.primary_color}11` } : undefined}>
-                  <Icon className="h-5 w-5" /><span>{label}</span>
+              {(
+                [
+                  ["email", t("البريد الإلكتروني", "Email"), Mail],
+                  ["whatsapp", t("واتساب", "WhatsApp"), MessageCircle],
+                ] as const
+              ).map(([channel, label, Icon]) => (
+                <button
+                  key={channel}
+                  type="button"
+                  onClick={() => {
+                    setDigitalChannel(channel);
+                    setDigitalContact("");
+                  }}
+                  className="flex items-center gap-2 rounded-lg border p-3"
+                  style={
+                    digitalChannel === channel
+                      ? {
+                          borderColor: settings.primary_color,
+                          backgroundColor: `${settings.primary_color}11`,
+                        }
+                      : undefined
+                  }
+                >
+                  <Icon className="h-5 w-5" />
+                  <span>{label}</span>
                 </button>
               ))}
             </div>
             <div>
-              <Label htmlFor="digital-delivery-contact">{digitalChannel === "email" ? t("البريد الإلكتروني", "Email address") : t("رقم أو معرّف واتساب", "WhatsApp number or user ID")} *</Label>
-              <Input id="digital-delivery-contact" name="digital-delivery-contact" className="h-11" type={digitalChannel === "email" ? "email" : "text"} inputMode={digitalChannel === "email" ? "email" : "text"} autoComplete={digitalChannel === "email" ? "email" : "tel"} value={digitalContact} onChange={(e) => setDigitalContact(e.target.value)} placeholder={digitalChannel === "email" ? "name@example.com" : t("مثال: +973… أو معرّف المستخدم", "e.g. +973… or user ID")} />
+              <Label htmlFor="digital-delivery-contact">
+                {digitalChannel === "email"
+                  ? t("البريد الإلكتروني", "Email address")
+                  : t("رقم أو معرّف واتساب", "WhatsApp number or user ID")}{" "}
+                *
+              </Label>
+              <Input
+                id="digital-delivery-contact"
+                name="digital-delivery-contact"
+                className="h-11"
+                type={digitalChannel === "email" ? "email" : "text"}
+                inputMode={digitalChannel === "email" ? "email" : "text"}
+                autoComplete={digitalChannel === "email" ? "email" : "tel"}
+                value={digitalContact}
+                onChange={(e) => setDigitalContact(e.target.value)}
+                placeholder={
+                  digitalChannel === "email"
+                    ? "name@example.com"
+                    : t("مثال: +973… أو معرّف المستخدم", "e.g. +973… or user ID")
+                }
+              />
             </div>
           </Card>
         )}
 
-
         {fulfillment === "delivery" && (
           <Card className="p-5 space-y-4">
             <h2 className="font-display text-xl">{t("عنوان التوصيل", "Delivery address")}</h2>
-            
+
             {savedAddresses.length > 0 && (
               <div className="mb-4">
-                <Label htmlFor="saved-address">{t("اختر من العناوين المحفوظة", "Choose from saved addresses")}</Label>
-                <Select name="saved-address" value={selectedAddressId} onValueChange={(v) => handleAddressChange(v)}>
+                <Label htmlFor="saved-address">
+                  {t("اختر من العناوين المحفوظة", "Choose from saved addresses")}
+                </Label>
+                <Select
+                  name="saved-address"
+                  value={selectedAddressId}
+                  onValueChange={(v) => handleAddressChange(v)}
+                >
                   <SelectTrigger id="saved-address" className="mt-1.5 h-11 w-full">
                     <SelectValue placeholder={t("اختر عنواناً", "Select an address")} />
                   </SelectTrigger>
                   <SelectContent>
                     {savedAddresses.map((a) => (
                       <SelectItem key={a.id} value={a.id}>
-                        {a.label || t("عنوان", "Address")} - {a.region}, {t("مجمع", "Block")} {a.block}, {t("طريق", "Road")} {a.road}, {t("منزل", "House")} {a.house}
+                        {a.label || t("عنوان", "Address")} - {a.region}, {t("مجمع", "Block")}{" "}
+                        {a.block}, {t("طريق", "Road")} {a.road}, {t("منزل", "House")} {a.house}
                       </SelectItem>
                     ))}
-                    <SelectItem value="manual">{t("إدخال يدوي / عنوان جديد", "Enter manually / New address")}</SelectItem>
+                    <SelectItem value="manual">
+                      {t("إدخال يدوي / عنوان جديد", "Enter manually / New address")}
+                    </SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -687,7 +1058,9 @@ function Checkout() {
 
             {zones.length > 0 && (
               <div className="mb-4">
-                <Label className="font-semibold text-sm mb-1.5 block">{t("منطقة الشحن والتوصيل", "Shipping & Delivery Zone")} *</Label>
+                <Label className="font-semibold text-sm mb-1.5 block">
+                  {t("منطقة الشحن والتوصيل", "Shipping & Delivery Zone")} *
+                </Label>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   {zones.map((z) => {
                     const active = z.id === selectedZoneId;
@@ -697,12 +1070,22 @@ function Checkout() {
                         type="button"
                         onClick={() => setSelectedZoneId(z.id)}
                         className="flex items-center justify-between p-3 rounded-lg border text-sm transition-all text-start cursor-pointer hover:bg-secondary/5"
-                        style={active ? { borderColor: settings.primary_color, backgroundColor: `${settings.primary_color}11` } : undefined}
+                        style={
+                          active
+                            ? {
+                                borderColor: settings.primary_color,
+                                backgroundColor: `${settings.primary_color}11`,
+                              }
+                            : undefined
+                        }
                       >
                         <div>
                           <p className="font-medium">{lang === "ar" ? z.name_ar : z.name_en}</p>
                         </div>
-                        <div className="text-end font-mono font-semibold" style={active ? { color: settings.primary_color } : undefined}>
+                        <div
+                          className="text-end font-mono font-semibold"
+                          style={active ? { color: settings.primary_color } : undefined}
+                        >
                           {z.fee > 0 ? formatPrice(z.fee, currency, lang) : t("مجانًا", "Free")}
                         </div>
                       </button>
@@ -715,34 +1098,104 @@ function Checkout() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <Label htmlFor="checkout-address-label">{t("لقب العنوان", "Address label")}</Label>
-                <Input id="checkout-address-label" name="address-label" autoComplete="address-level3" className="h-11" placeholder={t("مثل: المنزل، المكتب", "e.g. Home, Work")} value={form.label} onChange={(e) => { setSelectedAddressId("manual"); setForm({ ...form, label: e.target.value }); }} />
+                <Input
+                  id="checkout-address-label"
+                  name="address-label"
+                  autoComplete="address-level3"
+                  className="h-11"
+                  placeholder={t("مثل: المنزل، المكتب", "e.g. Home, Work")}
+                  value={form.label}
+                  onChange={(e) => {
+                    setSelectedAddressId("manual");
+                    setForm({ ...form, label: e.target.value });
+                  }}
+                />
               </div>
               <div>
                 <Label htmlFor="checkout-region">{t("المنطقة", "Region")} *</Label>
-                <Select name="region" value={form.region} onValueChange={(v) => { setSelectedAddressId("manual"); setForm({ ...form, region: v }); }}>
-                  <SelectTrigger id="checkout-region" className="h-11"><SelectValue placeholder={t("اختر المنطقة", "Select region")} /></SelectTrigger>
+                <Select
+                  name="region"
+                  value={form.region}
+                  onValueChange={(v) => {
+                    setSelectedAddressId("manual");
+                    setForm({ ...form, region: v });
+                  }}
+                >
+                  <SelectTrigger id="checkout-region" className="h-11">
+                    <SelectValue placeholder={t("اختر المنطقة", "Select region")} />
+                  </SelectTrigger>
                   <SelectContent>
                     {BAHRAIN_REGIONS.map((r) => (
-                      <SelectItem key={r.value} value={r.value}>{lang === "ar" ? r.ar : r.en}</SelectItem>
+                      <SelectItem key={r.value} value={r.value}>
+                        {lang === "ar" ? r.ar : r.en}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
               <div>
                 <Label htmlFor="checkout-block">{t("المجمع", "Block")} *</Label>
-                <Input id="checkout-block" name="block" inputMode="numeric" autoComplete="address-level2" className="h-11" placeholder={t("مثال: 428", "e.g. 428")} value={form.block} onChange={(e) => { setSelectedAddressId("manual"); setForm({ ...form, block: e.target.value }); }} />
+                <Input
+                  id="checkout-block"
+                  name="block"
+                  inputMode="numeric"
+                  autoComplete="address-level2"
+                  className="h-11"
+                  placeholder={t("مثال: 428", "e.g. 428")}
+                  value={form.block}
+                  onChange={(e) => {
+                    setSelectedAddressId("manual");
+                    setForm({ ...form, block: e.target.value });
+                  }}
+                />
               </div>
               <div>
                 <Label htmlFor="checkout-road">{t("الطريق / الشارع", "Road / Avenue")} *</Label>
-                <Input id="checkout-road" name="road" inputMode="numeric" autoComplete="street-address" className="h-11" placeholder={t("مثال: 2825", "e.g. 2825")} value={form.road} onChange={(e) => { setSelectedAddressId("manual"); setForm({ ...form, road: e.target.value }); }} />
+                <Input
+                  id="checkout-road"
+                  name="road"
+                  inputMode="numeric"
+                  autoComplete="street-address"
+                  className="h-11"
+                  placeholder={t("مثال: 2825", "e.g. 2825")}
+                  value={form.road}
+                  onChange={(e) => {
+                    setSelectedAddressId("manual");
+                    setForm({ ...form, road: e.target.value });
+                  }}
+                />
               </div>
               <div>
                 <Label htmlFor="checkout-house">{t("منزل / بناية", "House / Building")} *</Label>
-                <Input id="checkout-house" name="house" inputMode="numeric" autoComplete="address-line1" className="h-11" placeholder={t("مثال: 12", "e.g. 12")} value={form.house} onChange={(e) => { setSelectedAddressId("manual"); setForm({ ...form, house: e.target.value }); }} />
+                <Input
+                  id="checkout-house"
+                  name="house"
+                  inputMode="numeric"
+                  autoComplete="address-line1"
+                  className="h-11"
+                  placeholder={t("مثال: 12", "e.g. 12")}
+                  value={form.house}
+                  onChange={(e) => {
+                    setSelectedAddressId("manual");
+                    setForm({ ...form, house: e.target.value });
+                  }}
+                />
               </div>
               <div>
                 <Label htmlFor="checkout-flat">{t("شقة (اختياري)", "Flat (optional)")}</Label>
-                <Input id="checkout-flat" name="flat" inputMode="numeric" autoComplete="address-line2" className="h-11" placeholder={t("مثال: 4", "e.g. 4")} value={form.flat} onChange={(e) => { setSelectedAddressId("manual"); setForm({ ...form, flat: e.target.value }); }} />
+                <Input
+                  id="checkout-flat"
+                  name="flat"
+                  inputMode="numeric"
+                  autoComplete="address-line2"
+                  className="h-11"
+                  placeholder={t("مثال: 4", "e.g. 4")}
+                  value={form.flat}
+                  onChange={(e) => {
+                    setSelectedAddressId("manual");
+                    setForm({ ...form, flat: e.target.value });
+                  }}
+                />
               </div>
             </div>
           </Card>
@@ -765,7 +1218,14 @@ function Checkout() {
                   type="button"
                   onClick={() => setMethod(m.id)}
                   className={`text-start flex items-center gap-3 p-3 rounded-lg border ${active ? "border-current" : "border-input"}`}
-                  style={active ? { borderColor: settings.primary_color, backgroundColor: `${settings.primary_color}11` } : undefined}
+                  style={
+                    active
+                      ? {
+                          borderColor: settings.primary_color,
+                          backgroundColor: `${settings.primary_color}11`,
+                        }
+                      : undefined
+                  }
                 >
                   <Icon className="h-5 w-5" />
                   <span className="font-medium">{lang === "ar" ? m.ar : m.en}</span>
@@ -784,26 +1244,117 @@ function Checkout() {
               </p>
               {settings.benefit_qr_url ? (
                 <div className="space-y-3">
-                  <ResponsiveImage src={settings.benefit_qr_url} alt="Benefit QR" preset="thumb" sizes="240px" className="mx-auto max-w-[240px] rounded-lg border bg-white p-2" />
-                  <Button type="button" variant="outline" className="w-full sm:w-auto" onClick={async () => {
-                    try { const response = await fetch(settings.benefit_qr_url!); const blob = await response.blob(); const href = URL.createObjectURL(blob); const a = document.createElement("a"); a.href = href; a.download = `${brand.slug}-benefit-qr.png`; a.click(); URL.revokeObjectURL(href); }
-                    catch { window.open(settings.benefit_qr_url!, "_blank", "noopener,noreferrer"); }
-                  }}><Download className="me-2 h-4 w-4" />{t("اضغط هنا لحفظ الباركود في الاستوديو", "Save QR Code to Gallery")}</Button>
+                  <ResponsiveImage
+                    src={settings.benefit_qr_url}
+                    alt="Benefit QR"
+                    preset="thumb"
+                    sizes="240px"
+                    className="mx-auto max-w-[240px] rounded-lg border bg-white p-2"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full sm:w-auto"
+                    onClick={async () => {
+                      try {
+                        const response = await fetch(settings.benefit_qr_url!);
+                        const blob = await response.blob();
+                        const href = URL.createObjectURL(blob);
+                        const a = document.createElement("a");
+                        a.href = href;
+                        a.download = `${brand.slug}-benefit-qr.png`;
+                        a.click();
+                        URL.revokeObjectURL(href);
+                      } catch {
+                        window.open(settings.benefit_qr_url!, "_blank", "noopener,noreferrer");
+                      }
+                    }}
+                  >
+                    <Download className="me-2 h-4 w-4" />
+                    {t("اضغط هنا لحفظ الباركود في الاستوديو", "Save QR Code to Gallery")}
+                  </Button>
                 </div>
               ) : (
                 <p className="text-sm text-muted-foreground">
-                  {t("لم يقم المتجر برفع رمز البنفت بعد.", "Store hasn't uploaded a Benefit QR yet.")}
+                  {t(
+                    "لم يقم المتجر برفع رمز البنفت بعد.",
+                    "Store hasn't uploaded a Benefit QR yet.",
+                  )}
                 </p>
               )}
-              {settings.benefit_account_number && <div className="mt-4 rounded-lg border bg-background p-3">
-                <p className="mb-2 break-all font-semibold" dir="ltr">{settings.benefit_account_number}</p>
-                <Button type="button" size="sm" variant="secondary" onClick={async () => { await navigator.clipboard.writeText(settings.benefit_account_number!); toast.success(t("تم نسخ رقم الحساب", "Account number copied")); }}><Copy className="me-2 h-4 w-4" />{t("نسخ رقم الحساب", "Copy Account Number")}</Button>
-              </div>}
+              {settings.benefit_account_number && (
+                <div className="mt-4 rounded-lg border bg-background p-3">
+                  <p className="mb-2 break-all font-semibold" dir="ltr">
+                    {settings.benefit_account_number}
+                  </p>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="secondary"
+                    onClick={async () => {
+                      await navigator.clipboard.writeText(settings.benefit_account_number!);
+                      toast.success(t("تم نسخ رقم الحساب", "Account number copied"));
+                    }}
+                  >
+                    <Copy className="me-2 h-4 w-4" />
+                    {t("نسخ رقم الحساب", "Copy Account Number")}
+                  </Button>
+                </div>
+              )}
               <div className="mt-4 text-start">
-                <Label htmlFor="benefit-receipt" className="mb-2 block font-semibold">{t("يرجى إرفاق صورة إيصال التحويل لتأكيد الطلب", "Please attach a screenshot of the payment receipt")}</Label>
-                <label className="flex min-h-32 cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed bg-background p-4 text-center hover:bg-muted/40" onDragOver={(e) => e.preventDefault()} onDrop={(e) => { e.preventDefault(); const file = e.dataTransfer.files?.[0]; if (file) setBenefitReceipt(file); }}>
-                  <input id="benefit-receipt" name="benefit-receipt" type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={(e) => setBenefitReceipt(e.target.files?.[0] ?? null)} />
-                  {benefitReceipt ? <><CheckCircle2 className="mb-2 h-7 w-7 text-emerald-600" /><span className="max-w-full truncate font-medium">{benefitReceipt.name}</span><button type="button" className="mt-2 inline-flex items-center text-xs text-destructive" onClick={(e) => { e.preventDefault(); setBenefitReceipt(null); }}><X className="me-1 h-3 w-3" />{t("إزالة", "Remove")}</button></> : <><UploadCloud className="mb-2 h-8 w-8 text-muted-foreground" /><span>{t("اسحب الصورة هنا أو اضغط للاختيار", "Drop the image here or tap to choose")}</span><span className="mt-1 text-xs text-muted-foreground">JPG, PNG, WebP · 8 MB</span></>}
+                <Label htmlFor="benefit-receipt" className="mb-2 block font-semibold">
+                  {t(
+                    "يرجى إرفاق صورة إيصال التحويل لتأكيد الطلب",
+                    "Please attach a screenshot of the payment receipt",
+                  )}
+                </Label>
+                <label
+                  className="flex min-h-32 cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed bg-background p-4 text-center hover:bg-muted/40"
+                  onDragOver={(e) => e.preventDefault()}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    const file = e.dataTransfer.files?.[0];
+                    if (file) setBenefitReceipt(file);
+                  }}
+                >
+                  <input
+                    id="benefit-receipt"
+                    name="benefit-receipt"
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    className="hidden"
+                    onChange={(e) => setBenefitReceipt(e.target.files?.[0] ?? null)}
+                  />
+                  {benefitReceipt ? (
+                    <>
+                      <CheckCircle2 className="mb-2 h-7 w-7 text-emerald-600" />
+                      <span className="max-w-full truncate font-medium">{benefitReceipt.name}</span>
+                      <button
+                        type="button"
+                        className="mt-2 inline-flex items-center text-xs text-destructive"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          setBenefitReceipt(null);
+                        }}
+                      >
+                        <X className="me-1 h-3 w-3" />
+                        {t("إزالة", "Remove")}
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <UploadCloud className="mb-2 h-8 w-8 text-muted-foreground" />
+                      <span>
+                        {t(
+                          "اسحب الصورة هنا أو اضغط للاختيار",
+                          "Drop the image here or tap to choose",
+                        )}
+                      </span>
+                      <span className="mt-1 text-xs text-muted-foreground">
+                        JPG, PNG, WebP · 8 MB
+                      </span>
+                    </>
+                  )}
                 </label>
               </div>
             </div>
@@ -827,13 +1378,25 @@ function Checkout() {
             {cart.map((c) => (
               <div key={c.cart_line_id} className="flex justify-between gap-3 text-sm">
                 <div className="min-w-0 me-2">
-                  <div className="truncate">{c.name} × {c.qty}</div>
+                  <div className="truncate">
+                    {c.name} × {c.qty}
+                  </div>
                   {[c.size, c.color, c.fabric].filter(Boolean).length > 0 && (
-                    <div className="truncate text-xs text-muted-foreground">{[c.size, c.color, c.fabric].filter(Boolean).join(" · ")}</div>
+                    <div className="truncate text-xs text-muted-foreground">
+                      {[c.size, c.color, c.fabric].filter(Boolean).join(" · ")}
+                    </div>
                   )}
                   {(c.custom_fields ?? []).map((field) => (
-                    <div key={field.key} className="text-xs text-muted-foreground break-words flex flex-wrap items-center gap-1">
-                      <span>{lang === "ar" ? (field.label_ar || field.label_en || field.key) : (field.label_en || field.label_ar || field.key)}:</span>
+                    <div
+                      key={field.key}
+                      className="text-xs text-muted-foreground break-words flex flex-wrap items-center gap-1"
+                    >
+                      <span>
+                        {lang === "ar"
+                          ? field.label_ar || field.label_en || field.key
+                          : field.label_en || field.label_ar || field.key}
+                        :
+                      </span>
                       {field.value.startsWith("http") ? (
                         <a
                           href={field.value}
@@ -851,7 +1414,11 @@ function Checkout() {
                 </div>
                 <span className="flex flex-col items-end">
                   <span>{formatPrice(c.price * c.qty, currency, lang)}</span>
-                  {Number(c.original_price || 0) > c.price && <span className="text-xs text-muted-foreground line-through">{formatPrice(Number(c.original_price) * c.qty, currency, lang)}</span>}
+                  {Number(c.original_price || 0) > c.price && (
+                    <span className="text-xs text-muted-foreground line-through">
+                      {formatPrice(Number(c.original_price) * c.qty, currency, lang)}
+                    </span>
+                  )}
                 </span>
               </div>
             ))}
@@ -863,23 +1430,52 @@ function Checkout() {
             </div>
             <div className="flex justify-between">
               <span className="text-muted-foreground">{t("رسوم التوصيل", "Delivery fee")}</span>
-              <span>{shipping > 0 ? formatPrice(shipping, currency, lang) : t("مجانًا", "Free")}</span>
+              <span>
+                {shipping > 0 ? formatPrice(shipping, currency, lang) : t("مجانًا", "Free")}
+              </span>
             </div>
-            {promoDiscount > 0 && <div className="flex justify-between font-medium text-emerald-700">
-              <span>{t("الخصم", "Discount")} ({appliedPromo?.code})</span>
-              <span>− {formatPrice(promoDiscount, currency, lang)}</span>
-            </div>}
+            {promoDiscount > 0 && (
+              <div className="flex justify-between font-medium text-emerald-700">
+                <span>
+                  {t("الخصم", "Discount")} ({appliedPromo?.code})
+                </span>
+                <span>− {formatPrice(promoDiscount, currency, lang)}</span>
+              </div>
+            )}
           </div>
           <div className="space-y-2 rounded-lg border bg-muted/20 p-3">
             <Label htmlFor="promo-code">{t("هل لديك رمز خصم؟", "Have a promo code?")}</Label>
             <div className="flex gap-2">
-              <Input id="promo-code" name="promo-code" autoComplete="off" className="h-11 uppercase" value={promoInput} onChange={(e) => { const value = e.target.value.toUpperCase(); setPromoInput(value); if (appliedPromo && value !== appliedPromo.code) setAppliedPromo(null); }} onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); applyPromo(); } }} placeholder="EID20" />
-              <Button type="button" variant="outline" onClick={applyPromo} disabled={checkingPromo}>{checkingPromo && <Loader2 className="me-2 h-4 w-4 animate-spin" />}{t("تطبيق", "Apply")}</Button>
+              <Input
+                id="promo-code"
+                name="promo-code"
+                autoComplete="off"
+                className="h-11 uppercase"
+                value={promoInput}
+                onChange={(e) => {
+                  const value = e.target.value.toUpperCase();
+                  setPromoInput(value);
+                  if (appliedPromo && value !== appliedPromo.code) setAppliedPromo(null);
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    applyPromo();
+                  }
+                }}
+                placeholder="EID20"
+              />
+              <Button type="button" variant="outline" onClick={applyPromo} disabled={checkingPromo}>
+                {checkingPromo && <Loader2 className="me-2 h-4 w-4 animate-spin" />}
+                {t("تطبيق", "Apply")}
+              </Button>
             </div>
           </div>
           <div className="border-t pt-3 flex justify-between font-semibold text-lg">
             <span>{t("الإجمالي", "Total")}</span>
-            <span style={{ color: settings.primary_color }}>{formatPrice(grandTotal, currency, lang)}</span>
+            <span style={{ color: settings.primary_color }}>
+              {formatPrice(grandTotal, currency, lang)}
+            </span>
           </div>
           <Button
             className="w-full h-12"
@@ -887,7 +1483,12 @@ function Checkout() {
               backgroundColor: settings.btn_checkout_bg ?? settings.primary_color,
               color: settings.btn_checkout_fg ?? "#fff",
             }}
-            disabled={submitting || availableMethods.length === 0 || fulfillmentOptions.length === 0 || (method === "benefit" && !benefitReceipt)}
+            disabled={
+              submitting ||
+              availableMethods.length === 0 ||
+              fulfillmentOptions.length === 0 ||
+              (method === "benefit" && !benefitReceipt)
+            }
             onClick={submit}
           >
             {submitting && <Loader2 className="h-4 w-4 me-2 animate-spin" />}
@@ -900,7 +1501,10 @@ function Checkout() {
         <div className="mx-auto flex max-w-lg items-center gap-3">
           <div className="min-w-0 flex-1">
             <div className="text-xs text-muted-foreground">{t("الإجمالي", "Total")}</div>
-            <div className="truncate text-lg font-semibold" style={{ color: settings.primary_color }}>
+            <div
+              className="truncate text-lg font-semibold"
+              style={{ color: settings.primary_color }}
+            >
               {formatPrice(grandTotal, currency, lang)}
             </div>
           </div>
@@ -910,7 +1514,12 @@ function Checkout() {
               backgroundColor: settings.btn_checkout_bg ?? settings.primary_color,
               color: settings.btn_checkout_fg ?? "#fff",
             }}
-            disabled={submitting || availableMethods.length === 0 || fulfillmentOptions.length === 0 || (method === "benefit" && !benefitReceipt)}
+            disabled={
+              submitting ||
+              availableMethods.length === 0 ||
+              fulfillmentOptions.length === 0 ||
+              (method === "benefit" && !benefitReceipt)
+            }
             onClick={submit}
           >
             {submitting && <Loader2 className="h-4 w-4 me-2 animate-spin" />}
@@ -937,11 +1546,11 @@ function Checkout() {
               {showAccountPopup.field === "email"
                 ? t(
                     `تم العثور على حساب مسجل بالبريد الإلكتروني (${showAccountPopup.value}). هل ترغب في تسجيل الدخول لتتبع طلباتك وتسهيل ملء بياناتك، أم تفضل المتابعة كزائر؟`,
-                    `A registered account already exists for this email (${showAccountPopup.value}). Would you like to sign in to track your orders, or continue placing this order as a guest?`
+                    `A registered account already exists for this email (${showAccountPopup.value}). Would you like to sign in to track your orders, or continue placing this order as a guest?`,
                   )
                 : t(
                     `تم العثور على حساب مسجل برقم الهاتف (${showAccountPopup.value}). هل ترغب في تسجيل الدخول لتتبع طلباتك وتسهيل ملء بياناتك، أم تفضل المتابعة كزائر؟`,
-                    `A registered account already exists for this phone number (${showAccountPopup.value}). Would you like to sign in to track your orders, or continue placing this order as a guest?`
+                    `A registered account already exists for this phone number (${showAccountPopup.value}). Would you like to sign in to track your orders, or continue placing this order as a guest?`,
                   )}
             </DialogDescription>
           </DialogHeader>

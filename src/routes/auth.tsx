@@ -8,7 +8,13 @@ import { Card } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { useI18n } from "@/lib/i18n";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Fingerprint, Languages, ShieldCheck } from "lucide-react";
 import { applyRememberMe } from "@/lib/session-persistence";
 import { translateAuthError } from "@/lib/auth-errors";
@@ -29,7 +35,9 @@ function AuthPage() {
   const [passkeySupported, setPasskeySupported] = useState(false);
 
   useEffect(() => {
-    setPasskeySupported(window.isSecureContext && typeof window.PublicKeyCredential !== "undefined");
+    setPasskeySupported(
+      window.isSecureContext && typeof window.PublicKeyCredential !== "undefined",
+    );
   }, []);
 
   const submit = async (e: React.FormEvent) => {
@@ -38,12 +46,22 @@ function AuthPage() {
     try {
       const { error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) throw error;
-      const { data: { user } } = await supabase.auth.getUser();
-      const { data: profile } = await supabase.from("profiles").select("role, status").eq("id", user!.id).maybeSingle();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("role, status")
+        .eq("id", user!.id)
+        .maybeSingle();
       const dashboardRoles = new Set(["super_admin", "admin", "brand_admin", "staff", "courier"]);
       if (!profile || profile.status !== "active" || !dashboardRoles.has(profile.role ?? "")) {
         await supabase.auth.signOut();
-        throw new Error(lang === "ar" ? "هذا حساب عميل متجر وليس حساب لوحة تحكم." : "This is a storefront customer account, not a dashboard account.");
+        throw new Error(
+          lang === "ar"
+            ? "هذا حساب عميل متجر وليس حساب لوحة تحكم."
+            : "This is a storefront customer account, not a dashboard account.",
+        );
       }
       applyRememberMe(remember);
       await new Promise((r) => setTimeout(r, 100));
@@ -67,16 +85,34 @@ function AuthPage() {
         .eq("id", data.user.id)
         .maybeSingle();
       const dashboardRoles = new Set(["super_admin", "admin", "brand_admin", "staff", "courier"]);
-      if (profileError || !profile || profile.status !== "active" || !dashboardRoles.has(profile.role ?? "")) {
+      if (
+        profileError ||
+        !profile ||
+        profile.status !== "active" ||
+        !dashboardRoles.has(profile.role ?? "")
+      ) {
         await supabase.auth.signOut();
-        throw new Error(lang === "ar" ? "هذا الحساب غير مخوّل لدخول لوحة التحكم." : "This account is not authorized for dashboard access.");
+        throw new Error(
+          lang === "ar"
+            ? "هذا الحساب غير مخوّل لدخول لوحة التحكم."
+            : "This account is not authorized for dashboard access.",
+        );
       }
       applyRememberMe(true);
       await navigate({ to: "/admin" });
     } catch (err: any) {
-      const cancelled = err?.name === "NotAllowedError" || /cancel|not allowed/i.test(err?.message ?? "");
-      toast.error(cancelled ? (lang === "ar" ? "تم إلغاء تسجيل الدخول بالبصمة." : "Biometric sign-in was cancelled.") : translateAuthError(err, lang as any));
-    } finally { setPasskeyLoading(false); }
+      const cancelled =
+        err?.name === "NotAllowedError" || /cancel|not allowed/i.test(err?.message ?? "");
+      toast.error(
+        cancelled
+          ? lang === "ar"
+            ? "تم إلغاء تسجيل الدخول بالبصمة."
+            : "Biometric sign-in was cancelled."
+          : translateAuthError(err, lang as any),
+      );
+    } finally {
+      setPasskeyLoading(false);
+    }
   };
 
   return (
@@ -86,7 +122,9 @@ function AuthPage() {
           <div className="flex items-center gap-2">
             <Languages className="h-4 w-4 text-muted-foreground" />
             <Select value={lang} onValueChange={(v) => setLang(v as "en" | "ar")}>
-              <SelectTrigger className="h-8 w-32 text-xs"><SelectValue /></SelectTrigger>
+              <SelectTrigger className="h-8 w-32 text-xs">
+                <SelectValue />
+              </SelectTrigger>
               <SelectContent>
                 <SelectItem value="en">English</SelectItem>
                 <SelectItem value="ar">العربية</SelectItem>
@@ -111,26 +149,31 @@ function AuthPage() {
           <form onSubmit={submit} className="space-y-4">
             <div>
               <Label htmlFor="email">{t("auth.email")}</Label>
-              <Input id="email" type="email" required value={email}
-                onChange={(e) => setEmail(e.target.value)} />
+              <Input
+                id="email"
+                type="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
             </div>
             <div>
               <Label htmlFor="password">{t("auth.password")}</Label>
-              <Input id="password" type="password" required minLength={8}
-                value={password} onChange={(e) => setPassword(e.target.value)} />
+              <Input
+                id="password"
+                type="password"
+                required
+                minLength={8}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
             </div>
             <div className="flex items-center justify-between gap-2">
               <label className="flex items-center gap-2 text-sm text-foreground cursor-pointer select-none">
-                <Checkbox
-                  checked={remember}
-                  onCheckedChange={(v) => setRemember(v === true)}
-                />
+                <Checkbox checked={remember} onCheckedChange={(v) => setRemember(v === true)} />
                 <span>{t("auth.rememberMe")}</span>
               </label>
-              <Link
-                to="/forgot-password"
-                className="text-sm text-primary hover:underline"
-              >
+              <Link to="/forgot-password" className="text-sm text-primary hover:underline">
                 {t("auth.forgotPassword")}
               </Link>
             </div>
@@ -140,17 +183,37 @@ function AuthPage() {
           </form>
           {passkeySupported && (
             <div className="mt-5 space-y-4">
-              <div className="flex items-center gap-3 text-xs text-muted-foreground"><span className="h-px flex-1 bg-border" /><span>{lang === "ar" ? "أو" : "or"}</span><span className="h-px flex-1 bg-border" /></div>
-              <Button type="button" variant="outline" className="h-12 w-full gap-2 border-primary/30 bg-primary/5 font-medium hover:bg-primary/10" disabled={passkeyLoading || loading} onClick={() => void signInWithPasskey()}>
+              <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                <span className="h-px flex-1 bg-border" />
+                <span>{lang === "ar" ? "أو" : "or"}</span>
+                <span className="h-px flex-1 bg-border" />
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                className="h-12 w-full gap-2 border-primary/30 bg-primary/5 font-medium hover:bg-primary/10"
+                disabled={passkeyLoading || loading}
+                onClick={() => void signInWithPasskey()}
+              >
                 <Fingerprint className="h-5 w-5 text-primary" />
-                {passkeyLoading ? t("common.pleaseWait") : (lang === "ar" ? "تسجيل الدخول بالبصمة" : "Sign in with Biometric")}
+                {passkeyLoading
+                  ? t("common.pleaseWait")
+                  : lang === "ar"
+                    ? "تسجيل الدخول بالبصمة"
+                    : "Sign in with Biometric"}
               </Button>
-              <p className="text-center text-[11px] text-muted-foreground">{lang === "ar" ? "استخدم Face ID أو Touch ID أو مفتاح أمان مسجّل." : "Use a registered Face ID, Touch ID, device PIN, or security key."}</p>
+              <p className="text-center text-[11px] text-muted-foreground">
+                {lang === "ar"
+                  ? "استخدم Face ID أو Touch ID أو مفتاح أمان مسجّل."
+                  : "Use a registered Face ID, Touch ID, device PIN, or security key."}
+              </p>
             </div>
           )}
         </Card>
         <div className="mt-4 text-center">
-          <Link to="/" className="text-xs text-muted-foreground hover:text-foreground">{t("auth.backHome")}</Link>
+          <Link to="/" className="text-xs text-muted-foreground hover:text-foreground">
+            {t("auth.backHome")}
+          </Link>
         </div>
       </div>
     </div>

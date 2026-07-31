@@ -35,13 +35,17 @@ export function generateCourierWhatsAppUrl(input: {
     cust.building ? (isAr ? `مبنى ${cust.building}` : `Bldg ${cust.building}`) : null,
   ].filter(Boolean);
 
-  const addr = addrParts.length > 0
-    ? addrParts.join("، ")
-    : (cust.address || (isAr ? "غير محدد" : "Not specified"));
+  const addr =
+    addrParts.length > 0
+      ? addrParts.join("، ")
+      : cust.address || (isAr ? "غير محدد" : "Not specified");
 
   // Item count
   const items = input.order.order_items || [];
-  const itemCount = items.reduce((acc: number, it: any) => acc + (Number(it.quantity) || 1), 0) || items.length || 1;
+  const itemCount =
+    items.reduce((acc: number, it: any) => acc + (Number(it.quantity) || 1), 0) ||
+    items.length ||
+    1;
 
   // COD Amount due
   const total = Number(input.order.total || 0);
@@ -51,31 +55,36 @@ export function generateCourierWhatsAppUrl(input: {
 
   let msg = "";
   if (isAr) {
-    msg = `مرحباً ${input.courierName} 👋\n` +
-          `تم إسناد طلب جديد لك:\n\n` +
-          `📌 *رقم الطلب:* #${invNum}\n` +
-          `👤 *العميل:* ${customerName || "عميل"}\n` +
-          `📞 *هاتف العميل:* ${customerPhone || "غير محدد"}\n` +
-          `📍 *العنوان:* ${addr}\n` +
-          `📦 *عدد المنتجات:* ${itemCount} صنف\n` +
-          `💰 *المبلغ المطلوب تحصيله:* ${amountDue > 0 ? `${amountDue.toFixed(3)} ${cur}` : "مدفوع بالكامل ✅"}\n\n` +
-          `🔗 *رابط تفاصيل الطلب:*\n${orderUrl}`;
+    msg =
+      `مرحباً ${input.courierName} 👋\n` +
+      `تم إسناد طلب جديد لك:\n\n` +
+      `📌 *رقم الطلب:* #${invNum}\n` +
+      `👤 *العميل:* ${customerName || "عميل"}\n` +
+      `📞 *هاتف العميل:* ${customerPhone || "غير محدد"}\n` +
+      `📍 *العنوان:* ${addr}\n` +
+      `📦 *عدد المنتجات:* ${itemCount} صنف\n` +
+      `💰 *المبلغ المطلوب تحصيله:* ${amountDue > 0 ? `${amountDue.toFixed(3)} ${cur}` : "مدفوع بالكامل ✅"}\n\n` +
+      `🔗 *رابط تفاصيل الطلب:*\n${orderUrl}`;
   } else {
-    msg = `Hi ${input.courierName} 👋\n` +
-          `A new order has been assigned to you:\n\n` +
-          `📌 *Order #:* #${invNum}\n` +
-          `👤 *Customer:* ${customerName || "Customer"}\n` +
-          `📞 *Phone:* ${customerPhone || "N/A"}\n` +
-          `📍 *Address:* ${addr}\n` +
-          `📦 *Items Count:* ${itemCount}\n` +
-          `💰 *Amount to Collect:* ${amountDue > 0 ? `${amountDue.toFixed(3)} ${cur}` : "Fully Paid ✅"}\n\n` +
-          `🔗 *Order Details Link:*\n${orderUrl}`;
+    msg =
+      `Hi ${input.courierName} 👋\n` +
+      `A new order has been assigned to you:\n\n` +
+      `📌 *Order #:* #${invNum}\n` +
+      `👤 *Customer:* ${customerName || "Customer"}\n` +
+      `📞 *Phone:* ${customerPhone || "N/A"}\n` +
+      `📍 *Address:* ${addr}\n` +
+      `📦 *Items Count:* ${itemCount}\n` +
+      `💰 *Amount to Collect:* ${amountDue > 0 ? `${amountDue.toFixed(3)} ${cur}` : "Fully Paid ✅"}\n\n` +
+      `🔗 *Order Details Link:*\n${orderUrl}`;
   }
 
   return `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`;
 }
 
-export function formatNotifiedTimeAgo(notifiedAt: string | null | undefined, lang: "ar" | "en" = "ar"): string | null {
+export function formatNotifiedTimeAgo(
+  notifiedAt: string | null | undefined,
+  lang: "ar" | "en" = "ar",
+): string | null {
   if (!notifiedAt) return null;
   const date = new Date(notifiedAt);
   if (isNaN(date.getTime())) return null;
@@ -90,7 +99,10 @@ export function formatNotifiedTimeAgo(notifiedAt: string | null | undefined, lan
 export async function recordCourierNotified(orderId: string): Promise<string> {
   const nowIso = new Date().toISOString();
   try {
-    await supabase.from("orders").update({ courier_notified_at: nowIso } as any).eq("id", orderId);
+    await supabase
+      .from("orders")
+      .update({ courier_notified_at: nowIso } as any)
+      .eq("id", orderId);
   } catch (err) {
     console.warn("[recordCourierNotified error]", err);
   }

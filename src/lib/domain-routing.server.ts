@@ -9,8 +9,7 @@ export type DomainRouteResult = {
 export async function resolveDomainRouteImpl(): Promise<DomainRouteResult> {
   try {
     const req = getRequest();
-    const host =
-      req?.headers.get("x-forwarded-host") || req?.headers.get("host") || "";
+    const host = req?.headers.get("x-forwarded-host") || req?.headers.get("host") || "";
     const hostname = host.split(":")[0].toLowerCase();
 
     // Known platform domains that should route to /admin
@@ -29,9 +28,7 @@ export async function resolveDomainRouteImpl(): Promise<DomainRouteResult> {
       return { redirect: "/admin" };
     }
 
-    const { supabaseAdmin } = await import(
-      "@/integrations/supabase/client.server"
-    );
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
     // 1. Boutq Wildcard Subdomain Mapping (e.g., pura.boutq.store -> slug "pura")
     if (hostname.endsWith(".boutq.store") && hostname !== "boutq.store") {

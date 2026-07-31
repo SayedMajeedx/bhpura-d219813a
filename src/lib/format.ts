@@ -51,10 +51,14 @@ export function formatDate(value: string | Date | null | undefined, locale = "en
 }
 
 /** Formats order status strings contextually based on fulfillment methods. */
-export function formatOrderStatus(status: string, fulfillmentMethod: string | null | undefined, lang: "ar" | "en"): string {
+export function formatOrderStatus(
+  status: string,
+  fulfillmentMethod: string | null | undefined,
+  lang: "ar" | "en",
+): string {
   const s = (status || "").toLowerCase();
   const f = (fulfillmentMethod || "").toLowerCase();
-  
+
   if (s === "shipped") {
     if (f === "pickup") {
       return lang === "ar" ? "جاهز للاستلام" : "Ready for Pickup";

@@ -7,11 +7,11 @@ export const getInvoiceAssetDataUrl = createServerFn({ method: "POST" })
   .validator((value: unknown) => inputSchema.parse(value))
   .handler(async ({ data }) => {
     const url = new URL(data.url);
-    const allowed = url.protocol === "https:" && (
-      url.hostname === "media.boutq.store"
-      || url.hostname.endsWith(".r2.cloudflarestorage.com")
-      || url.hostname.endsWith(".supabase.co")
-    );
+    const allowed =
+      url.protocol === "https:" &&
+      (url.hostname === "media.boutq.store" ||
+        url.hostname.endsWith(".r2.cloudflarestorage.com") ||
+        url.hostname.endsWith(".supabase.co"));
     if (!allowed) throw new Error("Invoice asset host is not allowed");
     const response = await fetch(url, { redirect: "follow" });
     if (!response.ok) throw new Error("Unable to load invoice asset");

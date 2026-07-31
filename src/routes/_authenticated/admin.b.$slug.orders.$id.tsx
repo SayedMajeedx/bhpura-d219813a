@@ -236,7 +236,15 @@ function fillCourierMessage(template: string, order: any, brandName: string) {
     .replaceAll("{{customer_phone}}", getOrderCustomerPhone(order));
 }
 
-function CourierOrderView({ order, slug, onUpdated }: { order: any; slug: string; onUpdated: () => void | Promise<void> }) {
+function CourierOrderView({
+  order,
+  slug,
+  onUpdated,
+}: {
+  order: any;
+  slug: string;
+  onUpdated: () => void | Promise<void>;
+}) {
   const { lang } = useI18n();
   const [notes, setNotes] = useState(order.delivery_notes ?? "");
   const [saving, setSaving] = useState(false);
@@ -245,7 +253,9 @@ function CourierOrderView({ order, slug, onUpdated }: { order: any; slug: string
   const orderTotal = Number(order.total || 0);
   const amountDue = Math.max(0, orderTotal - advancePaid);
   const [codAmount, setCodAmount] = useState(amountDue.toFixed(3));
-  const isCod = ["cod", "cash_on_delivery"].includes(String(order.payment_method ?? "").toLowerCase());
+  const isCod = ["cod", "cash_on_delivery"].includes(
+    String(order.payment_method ?? "").toLowerCase(),
+  );
   const deliveryComplete = order.fulfillment_status === "delivered";
   const currency = order.currency || "BHD";
 
@@ -260,16 +270,17 @@ function CourierOrderView({ order, slug, onUpdated }: { order: any; slug: string
   const messageQ = useQuery({
     queryKey: ["courier-delivery-message", order.id],
     queryFn: async () => {
-      const { data, error } = await (supabase.rpc as any)("get_courier_delivery_message", { p_order_id: order.id });
+      const { data, error } = await (supabase.rpc as any)("get_courier_delivery_message", {
+        p_order_id: order.id,
+      });
       if (error) throw error;
       return data as { brand_name?: string; message_en?: string; message_ar?: string };
     },
     staleTime: 300000,
   });
   const updateStatus = async (status: string) => {
-    const phone = status === "out_for_delivery"
-      ? normalizeWhatsAppNumber(getOrderCustomerPhone(order))
-      : "";
+    const phone =
+      status === "out_for_delivery" ? normalizeWhatsAppNumber(getOrderCustomerPhone(order)) : "";
     // Open synchronously from the click gesture so Safari/iOS and other mobile
     // browsers do not treat the WhatsApp handoff as a blocked popup.
     const whatsappWindow = phone ? window.open("about:blank", "_blank") : null;
@@ -280,15 +291,21 @@ function CourierOrderView({ order, slug, onUpdated }: { order: any; slug: string
         p_order_id: order.id,
         p_status: status,
         p_notes: notes || null,
-        p_cod_collected: status === "delivered" && isCodOrHasDue ? (codConfirmed || true) : false,
-        p_cod_amount: status === "delivered" && isCodOrHasDue ? (Number(codAmount) || amountDue) : null,
+        p_cod_collected: status === "delivered" && isCodOrHasDue ? codConfirmed || true : false,
+        p_cod_amount:
+          status === "delivered" && isCodOrHasDue ? Number(codAmount) || amountDue : null,
       });
 
       // 2. Always ensure fulfillment_status and payment_status align with system standards
       if (status === "delivered") {
-        const collectedAmt = isCodOrHasDue ? (Number(codAmount) || amountDue) : 0;
+        const collectedAmt = isCodOrHasDue ? Number(codAmount) || amountDue : 0;
         const newPaid = Math.max(orderTotal, advancePaid + collectedAmt);
-        const newPaymentStatus = newPaid >= orderTotal ? "paid" : newPaid > 0 ? "partially_paid" : (order.payment_status || "unpaid");
+        const newPaymentStatus =
+          newPaid >= orderTotal
+            ? "paid"
+            : newPaid > 0
+              ? "partially_paid"
+              : order.payment_status || "unpaid";
 
         const { error: directErr } = await supabase
           .from("orders")
@@ -325,11 +342,16 @@ function CourierOrderView({ order, slug, onUpdated }: { order: any; slug: string
       if (status === "out_for_delivery") {
         if (phone) {
           const settings = messageQ.data;
-          const fallback = lang === "ar"
-            ? "مرحباً {{customer_name}}، طلبك رقم {{invoice_number}} من {{brand_name}} خرج الآن للتوصيل."
-            : "Hi {{customer_name}}, your order #{{invoice_number}} from {{brand_name}} is now out for delivery.";
+          const fallback =
+            lang === "ar"
+              ? "مرحباً {{customer_name}}، طلبك رقم {{invoice_number}} من {{brand_name}} خرج الآن للتوصيل."
+              : "Hi {{customer_name}}, your order #{{invoice_number}} from {{brand_name}} is now out for delivery.";
           const template = lang === "ar" ? settings?.message_ar : settings?.message_en;
-          const message = fillCourierMessage(template || fallback, order, settings?.brand_name || "Boutq Store");
+          const message = fillCourierMessage(
+            template || fallback,
+            order,
+            settings?.brand_name || "Boutq Store",
+          );
           const url = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
           if (whatsappWindow) {
             whatsappWindow.opener = null;
@@ -343,13 +365,23 @@ function CourierOrderView({ order, slug, onUpdated }: { order: any; slug: string
       whatsappWindow?.close();
       const message = String(error?.message ?? "");
       if (message.includes("COD_CONFIRMATION_REQUIRED")) {
-        toast.error(lang === "ar" ? "أكد استلام المبلغ النقدي أولاً" : "Confirm the cash collection first");
+        toast.error(
+          lang === "ar" ? "أكد استلام المبلغ النقدي أولاً" : "Confirm the cash collection first",
+        );
       } else if (message.includes("COD_AMOUNT_MISMATCH")) {
-        toast.error(lang === "ar" ? "المبلغ المستلم لا يطابق المبلغ المطلوب" : "The received amount does not match the amount due");
+        toast.error(
+          lang === "ar"
+            ? "المبلغ المستلم لا يطابق المبلغ المطلوب"
+            : "The received amount does not match the amount due",
+        );
       } else {
-        toast.error(message || (lang === "ar" ? "تعذر تحديث حالة التوصيل" : "Unable to update delivery"));
+        toast.error(
+          message || (lang === "ar" ? "تعذر تحديث حالة التوصيل" : "Unable to update delivery"),
+        );
       }
-    } finally { setSaving(false); }
+    } finally {
+      setSaving(false);
+    }
   };
   // The delivery destination belongs to the order, not necessarily to the
   // customer's legacy profile fields. A shopper can choose any saved address
@@ -366,33 +398,82 @@ function CourierOrderView({ order, slug, onUpdated }: { order: any; slug: string
     null;
   return (
     <div className="p-4 sm:p-6 max-w-3xl mx-auto space-y-4">
-      <Link to="/admin/b/$slug/orders" params={{ slug }} className="text-sm text-muted-foreground">← {lang === "ar" ? "الطلبات المسندة" : "Assigned orders"}</Link>
+      <Link to="/admin/b/$slug/orders" params={{ slug }} className="text-sm text-muted-foreground">
+        ← {lang === "ar" ? "الطلبات المسندة" : "Assigned orders"}
+      </Link>
       <Card className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm p-5 sm:p-6 space-y-4">
         <div className="flex items-start justify-between gap-3">
-          <div><p className="text-xs text-muted-foreground">{lang === "ar" ? "طلب التوصيل" : "Delivery order"}</p><h1 className="text-2xl font-display">#{order.invoice_number}</h1></div>
+          <div>
+            <p className="text-xs text-muted-foreground">
+              {lang === "ar" ? "طلب التوصيل" : "Delivery order"}
+            </p>
+            <h1 className="text-2xl font-display">#{order.invoice_number}</h1>
+          </div>
           <div className="flex flex-col items-end gap-2">
-            <span className="rounded-full bg-primary/10 px-3 py-1 text-sm font-medium text-primary">{order.fulfillment_status || "assigned"}</span>
+            <span className="rounded-full bg-primary/10 px-3 py-1 text-sm font-medium text-primary">
+              {order.fulfillment_status || "assigned"}
+            </span>
             {/* Payment status badge */}
-            <span className={`rounded-full border px-3 py-1 text-xs font-bold tracking-wide ${PAYMENT_BADGE_CLASSES[payStatus]}`}>
-              {lang === "ar" ? PAYMENT_BADGE_LABEL[payStatus].ar : PAYMENT_BADGE_LABEL[payStatus].en}
+            <span
+              className={`rounded-full border px-3 py-1 text-xs font-bold tracking-wide ${PAYMENT_BADGE_CLASSES[payStatus]}`}
+            >
+              {lang === "ar"
+                ? PAYMENT_BADGE_LABEL[payStatus].ar
+                : PAYMENT_BADGE_LABEL[payStatus].en}
             </span>
           </div>
         </div>
         <div className="grid sm:grid-cols-2 gap-4 rounded-xl border p-4 [&>div:nth-child(3)]:hidden">
-          <div><p className="text-xs text-muted-foreground">{lang === "ar" ? "العميل" : "Customer"}</p><p className="font-semibold">{getOrderCustomerName(order) || "—"}</p></div>
-          <div><p className="text-xs text-muted-foreground">{lang === "ar" ? "الهاتف" : "Phone"}</p><a dir="ltr" className="font-semibold underline" href={`tel:${getOrderCustomerPhone(order)}`}>{getOrderCustomerPhone(order) || "—"}</a></div>
-          <div className="sm:col-span-2"><p className="text-xs text-muted-foreground">{lang === "ar" ? "عنوان التوصيل" : "Delivery address"}</p><p className="font-medium">{address || selectedAddress?.address || order.customers?.address || "—"}</p></div>
-          {isCodOrHasDue && <div className={`sm:col-span-2 rounded-lg p-3 ${order.cod_collected_at ? "bg-emerald-50 text-emerald-900" : "bg-amber-50 text-amber-900"}`}><strong>{order.cod_collected_at ? (lang === "ar" ? "تم استلام المبلغ" : "Cash received") : (lang === "ar" ? "تحصيل عند التسليم" : "Collect on delivery")}</strong>: {formatMoney(order.cod_collected_at ? Number(order.cod_collected_amount || 0) : amountDue, currency)}</div>}
+          <div>
+            <p className="text-xs text-muted-foreground">{lang === "ar" ? "العميل" : "Customer"}</p>
+            <p className="font-semibold">{getOrderCustomerName(order) || "—"}</p>
+          </div>
+          <div>
+            <p className="text-xs text-muted-foreground">{lang === "ar" ? "الهاتف" : "Phone"}</p>
+            <a
+              dir="ltr"
+              className="font-semibold underline"
+              href={`tel:${getOrderCustomerPhone(order)}`}
+            >
+              {getOrderCustomerPhone(order) || "—"}
+            </a>
+          </div>
+          <div className="sm:col-span-2">
+            <p className="text-xs text-muted-foreground">
+              {lang === "ar" ? "عنوان التوصيل" : "Delivery address"}
+            </p>
+            <p className="font-medium">
+              {address || selectedAddress?.address || order.customers?.address || "—"}
+            </p>
+          </div>
+          {isCodOrHasDue && (
+            <div
+              className={`sm:col-span-2 rounded-lg p-3 ${order.cod_collected_at ? "bg-emerald-50 text-emerald-900" : "bg-amber-50 text-amber-900"}`}
+            >
+              <strong>
+                {order.cod_collected_at
+                  ? lang === "ar"
+                    ? "تم استلام المبلغ"
+                    : "Cash received"
+                  : lang === "ar"
+                    ? "تحصيل عند التسليم"
+                    : "Collect on delivery"}
+              </strong>
+              :{" "}
+              {formatMoney(
+                order.cod_collected_at ? Number(order.cod_collected_amount || 0) : amountDue,
+                currency,
+              )}
+            </div>
+          )}
         </div>
-        <DeliveryAddressCard
-          address={selectedAddress ?? order.customers}
-          lang={lang}
-          compact
-        />
+        <DeliveryAddressCard address={selectedAddress ?? order.customers} lang={lang} compact />
 
         {/* Price breakdown */}
         <div className="rounded-xl border p-4 space-y-1">
-          <p className="mb-2 text-sm font-semibold">{lang === "ar" ? "تفاصيل الطلب والسعر" : "Order & price breakdown"}</p>
+          <p className="mb-2 text-sm font-semibold">
+            {lang === "ar" ? "تفاصيل الطلب والسعر" : "Order & price breakdown"}
+          </p>
           {(order.order_items ?? []).map((item: any) => (
             <div key={item.id} className="flex justify-between border-b py-2 text-sm gap-2">
               <span className="flex-1 min-w-0">
@@ -401,19 +482,28 @@ function CourierOrderView({ order, slug, onUpdated }: { order: any; slug: string
                   {item.quantity} × {formatMoney(Number(item.unit_price || 0), currency)}
                 </span>
               </span>
-              <span className="font-semibold tabular-nums shrink-0">{formatMoney(Number(item.line_total || item.unit_price * item.quantity || 0), currency)}</span>
+              <span className="font-semibold tabular-nums shrink-0">
+                {formatMoney(
+                  Number(item.line_total || item.unit_price * item.quantity || 0),
+                  currency,
+                )}
+              </span>
             </div>
           ))}
           {Number(order.shipping || 0) > 0 && (
             <div className="flex justify-between py-2 text-sm">
-              <span className="text-muted-foreground">{lang === "ar" ? "رسوم التوصيل" : "Delivery fee"}</span>
+              <span className="text-muted-foreground">
+                {lang === "ar" ? "رسوم التوصيل" : "Delivery fee"}
+              </span>
               <span className="tabular-nums">{formatMoney(Number(order.shipping), currency)}</span>
             </div>
           )}
           {Number(order.discount || 0) > 0 && (
             <div className="flex justify-between py-2 text-sm">
               <span className="text-muted-foreground">{lang === "ar" ? "الخصم" : "Discount"}</span>
-              <span className="tabular-nums text-emerald-700">− {formatMoney(Number(order.discount), currency)}</span>
+              <span className="tabular-nums text-emerald-700">
+                − {formatMoney(Number(order.discount), currency)}
+              </span>
             </div>
           )}
           <div className="flex justify-between pt-2 border-t font-bold text-sm">
@@ -441,34 +531,84 @@ function CourierOrderView({ order, slug, onUpdated }: { order: any; slug: string
           )}
         </div>
 
-        <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder={lang === "ar" ? "ملاحظات التوصيل" : "Delivery notes"} />
+        <Textarea
+          value={notes}
+          onChange={(e) => setNotes(e.target.value)}
+          placeholder={lang === "ar" ? "ملاحظات التوصيل" : "Delivery notes"}
+        />
         {isCodOrHasDue && !order.cod_collected_at && (
           <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 space-y-3">
             <div>
-              <p className="font-semibold text-amber-950">{lang === "ar" ? "تأكيد استلام الدفع النقدي" : "Confirm cash collection"}</p>
-              <p className="text-sm text-amber-800">{lang === "ar" ? "لا يمكن إكمال التسليم قبل تأكيد المبلغ المستلم." : "Delivery cannot be completed until the received amount is confirmed."}</p>
+              <p className="font-semibold text-amber-950">
+                {lang === "ar" ? "تأكيد استلام الدفع النقدي" : "Confirm cash collection"}
+              </p>
+              <p className="text-sm text-amber-800">
+                {lang === "ar"
+                  ? "لا يمكن إكمال التسليم قبل تأكيد المبلغ المستلم."
+                  : "Delivery cannot be completed until the received amount is confirmed."}
+              </p>
             </div>
             <div className="flex items-center gap-3">
-              <input id="cod-confirmed" type="checkbox" className="h-5 w-5" checked={codConfirmed} onChange={(e) => setCodConfirmed(e.target.checked)} />
-              <Label htmlFor="cod-confirmed">{lang === "ar" ? "استلمت المبلغ بالكامل" : "I received the full amount"}</Label>
+              <input
+                id="cod-confirmed"
+                type="checkbox"
+                className="h-5 w-5"
+                checked={codConfirmed}
+                onChange={(e) => setCodConfirmed(e.target.checked)}
+              />
+              <Label htmlFor="cod-confirmed">
+                {lang === "ar" ? "استلمت المبلغ بالكامل" : "I received the full amount"}
+              </Label>
             </div>
             <div>
               <Label>{lang === "ar" ? "المبلغ المستلم (د.ب)" : "Amount received (BHD)"}</Label>
-              <Input dir="ltr" inputMode="decimal" value={codAmount} onChange={(e) => setCodAmount(e.target.value.replace(/[^0-9.]/g, ""))} onBlur={() => setCodAmount((Number(codAmount) || 0).toFixed(3))} />
+              <Input
+                dir="ltr"
+                inputMode="decimal"
+                value={codAmount}
+                onChange={(e) => setCodAmount(e.target.value.replace(/[^0-9.]/g, ""))}
+                onBlur={() => setCodAmount((Number(codAmount) || 0).toFixed(3))}
+              />
             </div>
           </div>
         )}
         <div className="grid grid-cols-2 gap-2">
-          <Button disabled={saving || deliveryComplete} variant="outline" onClick={() => updateStatus("out_for_delivery")}>{lang === "ar" ? "خرج للتوصيل وإرسال واتساب" : "Out for delivery & WhatsApp"}</Button>
-          <Button disabled={saving || deliveryComplete || (isCodOrHasDue && !order.cod_collected_at && !codConfirmed)} onClick={() => updateStatus("delivered")}>{lang === "ar" ? "تم التسليم" : "Delivered"}</Button>
-          <Button disabled={saving || deliveryComplete} variant="destructive" onClick={() => updateStatus("delivery_failed")}>{lang === "ar" ? "تعذر التسليم" : "Delivery failed"}</Button>
-          <Button disabled={saving || deliveryComplete} variant="outline" onClick={() => updateStatus("returned")}>{lang === "ar" ? "مرتجع" : "Returned"}</Button>
+          <Button
+            disabled={saving || deliveryComplete}
+            variant="outline"
+            onClick={() => updateStatus("out_for_delivery")}
+          >
+            {lang === "ar" ? "خرج للتوصيل وإرسال واتساب" : "Out for delivery & WhatsApp"}
+          </Button>
+          <Button
+            disabled={
+              saving ||
+              deliveryComplete ||
+              (isCodOrHasDue && !order.cod_collected_at && !codConfirmed)
+            }
+            onClick={() => updateStatus("delivered")}
+          >
+            {lang === "ar" ? "تم التسليم" : "Delivered"}
+          </Button>
+          <Button
+            disabled={saving || deliveryComplete}
+            variant="destructive"
+            onClick={() => updateStatus("delivery_failed")}
+          >
+            {lang === "ar" ? "تعذر التسليم" : "Delivery failed"}
+          </Button>
+          <Button
+            disabled={saving || deliveryComplete}
+            variant="outline"
+            onClick={() => updateStatus("returned")}
+          >
+            {lang === "ar" ? "مرتجع" : "Returned"}
+          </Button>
         </div>
       </Card>
     </div>
   );
 }
-
 
 function OrderDetail() {
   const t = useT();
@@ -497,7 +637,9 @@ function OrderDetail() {
         )
         .eq("id", id);
       if (isCourier) {
-        const { data: { user } } = await supabase.auth.getUser();
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
         if (!user) throw new Error("Not authenticated");
         query = (query as any).eq("assigned_to", user.id).eq("fulfillment_method", "delivery");
       }
@@ -554,7 +696,12 @@ function OrderDetail() {
     queryKey: ["couriers", brandId],
     enabled: isAdmin,
     queryFn: async () => {
-      const { data, error } = await (supabase.from("profiles") as any).select("id, name, email, phone").eq("brand_id", brandId).eq("role", "courier").eq("status", "active").order("name");
+      const { data, error } = await (supabase.from("profiles") as any)
+        .select("id, name, email, phone")
+        .eq("brand_id", brandId)
+        .eq("role", "courier")
+        .eq("status", "active")
+        .order("name");
       if (error) throw error;
       return (data as any[]) ?? [];
     },
@@ -562,7 +709,10 @@ function OrderDetail() {
   const [waModalOpen, setWaModalOpen] = useState(false);
 
   const assignCourier = async (courierId: string) => {
-    const { error } = await (supabase.rpc as any)("assign_order_courier", { p_order_id: id, p_courier_id: courierId === "unassigned" ? null : courierId });
+    const { error } = await (supabase.rpc as any)("assign_order_courier", {
+      p_order_id: id,
+      p_courier_id: courierId === "unassigned" ? null : courierId,
+    });
     if (error) return toast.error(error.message);
     toast.success(lang === "ar" ? "تم تحديث مندوب التوصيل" : "Courier assignment updated");
     await orderQ.refetch();
@@ -586,7 +736,9 @@ function OrderDetail() {
 
   const receiptViewQ = useQuery({
     queryKey: ["benefit-receipt-view", id, orderQ.data?.benefit_receipt_key],
-    enabled: !isCourier && Boolean(orderQ.data?.payment_method === "benefit" && orderQ.data?.benefit_receipt_key),
+    enabled:
+      !isCourier &&
+      Boolean(orderQ.data?.payment_method === "benefit" && orderQ.data?.benefit_receipt_key),
     staleTime: 4 * 60 * 1000,
     refetchInterval: 4 * 60 * 1000,
     queryFn: async () => getBenefitReceiptViewUrl({ data: { orderId: id } }),
@@ -601,10 +753,13 @@ function OrderDetail() {
 
       await orderQ.refetch();
       qc.invalidateQueries({ queryKey: ["orders"] });
-      toast.success(lang === "ar" ? "تم التحقق من الدفع واعتماده" : "Payment verified and approved");
-
+      toast.success(
+        lang === "ar" ? "تم التحقق من الدفع واعتماده" : "Payment verified and approved",
+      );
     } catch (error: any) {
-      toast.error(error?.message ?? (lang === "ar" ? "تعذر اعتماد الدفع" : "Could not approve payment"));
+      toast.error(
+        error?.message ?? (lang === "ar" ? "تعذر اعتماد الدفع" : "Could not approve payment"),
+      );
     } finally {
       setApprovingBenefit(false);
     }
@@ -613,7 +768,11 @@ function OrderDetail() {
   const rejectBenefitPayment = async () => {
     const reason = rejectReason.trim();
     if (reason.length < 3) {
-      toast.error(lang === "ar" ? "يرجى إدخال سبب الرفض ليظهر للعميل" : "Enter a rejection reason for the customer");
+      toast.error(
+        lang === "ar"
+          ? "يرجى إدخال سبب الرفض ليظهر للعميل"
+          : "Enter a rejection reason for the customer",
+      );
       return;
     }
     setRejectingBenefit(true);
@@ -627,9 +786,14 @@ function OrderDetail() {
       qc.invalidateQueries({ queryKey: ["orders"] });
       setRejectReasonOpen(false);
       setRejectReason("");
-
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : (lang === "ar" ? "تعذر رفض الإيصال" : "Unable to reject receipt"));
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : lang === "ar"
+            ? "تعذر رفض الإيصال"
+            : "Unable to reject receipt",
+      );
     } finally {
       setRejectingBenefit(false);
     }
@@ -765,7 +929,7 @@ function OrderDetail() {
     let taxAmount = 0;
     let total = 0;
     if (isInclusive) {
-      taxAmount = taxable - (taxable / (1 + (taxRate / 100)));
+      taxAmount = taxable - taxable / (1 + taxRate / 100);
       total = taxable + shipping;
     } else {
       taxAmount = (taxable * taxRate) / 100;
@@ -774,7 +938,14 @@ function OrderDetail() {
     const advancePaid = Math.max(0, Number(order?.advance_paid ?? 0));
     const remaining = Math.max(0, total - advancePaid);
     return { subtotal, discount, shipping, taxAmount, total, advancePaid, remaining };
-  }, [items, order?.discount, order?.shipping, order?.tax_rate, order?.advance_paid, settingsQ.data]);
+  }, [
+    items,
+    order?.discount,
+    order?.shipping,
+    order?.tax_rate,
+    order?.advance_paid,
+    settingsQ.data,
+  ]);
 
   useEffect(() => {
     const signature = JSON.stringify({
@@ -929,13 +1100,19 @@ function OrderDetail() {
   // Courier access is intentionally limited by RLS. Their focused delivery
   // view must not wait for office-only settings, catalogue, or CRM queries.
   if (isCourier) {
-    return <CourierOrderView order={orderQ.data} slug={slug} onUpdated={async () => {
-      await Promise.all([
-        orderQ.refetch(),
-        qc.invalidateQueries({ queryKey: ["orders"] }),
-        qc.invalidateQueries({ queryKey: ["activity_logs"] }),
-      ]);
-    }} />;
+    return (
+      <CourierOrderView
+        order={orderQ.data}
+        slug={slug}
+        onUpdated={async () => {
+          await Promise.all([
+            orderQ.refetch(),
+            qc.invalidateQueries({ queryKey: ["orders"] }),
+            qc.invalidateQueries({ queryKey: ["activity_logs"] }),
+          ]);
+        }}
+      />
+    );
   }
 
   if (settingsQ.isPending || !settingsQ.data) return <div className="p-8">Loading…</div>;
@@ -1200,15 +1377,16 @@ function OrderDetail() {
     let itemsModified = originalItems.length !== items.length;
     if (!itemsModified) {
       for (const item of items) {
-        const orig = originalItems.find(o => o.id === item.id);
-        if (!orig ||
-            orig.product_id !== item.product_id ||
-            orig.variant_id !== item.variant_id ||
-            Number(orig.quantity) !== Number(item.quantity) ||
-            Number(orig.unit_price) !== Number(item.unit_price) ||
-            orig.description !== item.description ||
-            (orig.location === "incubator" ? "incubator" : "main") !== item.location ||
-            JSON.stringify(orig.customizations ?? []) !== JSON.stringify(item.customizations ?? [])
+        const orig = originalItems.find((o) => o.id === item.id);
+        if (
+          !orig ||
+          orig.product_id !== item.product_id ||
+          orig.variant_id !== item.variant_id ||
+          Number(orig.quantity) !== Number(item.quantity) ||
+          Number(orig.unit_price) !== Number(item.unit_price) ||
+          orig.description !== item.description ||
+          (orig.location === "incubator" ? "incubator" : "main") !== item.location ||
+          JSON.stringify(orig.customizations ?? []) !== JSON.stringify(item.customizations ?? [])
         ) {
           itemsModified = true;
           break;
@@ -1313,7 +1491,6 @@ function OrderDetail() {
     qc.invalidateQueries({ queryKey: ["orders"] });
     qc.invalidateQueries({ queryKey: ["variants"] });
     qc.invalidateQueries({ queryKey: ["activity_logs"] });
-
   };
 
   const copyLink = async () => {
@@ -1401,7 +1578,10 @@ function OrderDetail() {
   const isPickup = String(order?.fulfillment_method || "").toLowerCase() === "pickup";
 
   return (
-    <div className="mx-auto max-w-[1500px] p-4 pb-24 sm:p-6 lg:p-8 animate-fade-in" dir={lang === "ar" ? "rtl" : "ltr"}>
+    <div
+      className="mx-auto max-w-[1500px] p-4 pb-24 sm:p-6 lg:p-8 animate-fade-in"
+      dir={lang === "ar" ? "rtl" : "ltr"}
+    >
       <div className="no-print mb-4 flex flex-wrap items-center justify-between gap-3">
         <Link
           to="/admin/b/$slug/orders"
@@ -1424,10 +1604,18 @@ function OrderDetail() {
                 lang={lang}
                 onDone={() => qc.invalidateQueries({ queryKey: ["order", id] })}
               />
-              <Button variant="outline" onClick={copyLink} className="shadow-sm transition-all duration-200 hover:shadow hover:scale-[1.01] active:scale-95">
+              <Button
+                variant="outline"
+                onClick={copyLink}
+                className="shadow-sm transition-all duration-200 hover:shadow hover:scale-[1.01] active:scale-95"
+              >
                 <LinkIcon className="h-4 w-4 mr-2" /> {t("orders.copyLink")}
               </Button>
-              <Button variant="outline" onClick={printReceipt} className="shadow-sm transition-all duration-200 hover:shadow hover:scale-[1.01] active:scale-95">
+              <Button
+                variant="outline"
+                onClick={printReceipt}
+                className="shadow-sm transition-all duration-200 hover:shadow hover:scale-[1.01] active:scale-95"
+              >
                 <Receipt className="h-4 w-4 mr-2" /> {t("orders.printReceipt")}
               </Button>
               <Button
@@ -1440,7 +1628,10 @@ function OrderDetail() {
                     await downloadInvoicePdf(el, `invoice-${order.invoice_number ?? order.id}`);
                   } catch (err) {
                     console.error("PDF download failed", err);
-                    toast.error((err as Error)?.message ?? (lang === "ar" ? "فشل تحميل ملف PDF" : "PDF download failed"));
+                    toast.error(
+                      (err as Error)?.message ??
+                        (lang === "ar" ? "فشل تحميل ملف PDF" : "PDF download failed"),
+                    );
                   }
                 }}
               >
@@ -1450,7 +1641,11 @@ function OrderDetail() {
           )}
           {isReadOnly ? (
             isAdmin && (
-              <Button variant="outline" onClick={() => setEditingUnlocked(true)} className="shadow-sm transition-all duration-200 hover:shadow hover:scale-[1.01] active:scale-95">
+              <Button
+                variant="outline"
+                onClick={() => setEditingUnlocked(true)}
+                className="shadow-sm transition-all duration-200 hover:shadow hover:scale-[1.01] active:scale-95"
+              >
                 <Unlock className="h-4 w-4 mr-2" />
                 {lang === "ar" ? "فتح للتعديل" : "Unlock for editing"}
               </Button>
@@ -1561,7 +1756,9 @@ function OrderDetail() {
               </div>
               <details className="group col-span-1 rounded-xl border border-border/70 bg-muted/20 sm:col-span-2 lg:hidden">
                 <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 px-3 py-2.5 text-sm font-semibold [&::-webkit-details-marker]:hidden">
-                  <span>{lang === "ar" ? "تعديل الدفع وحالة الطلب" : "Edit payment & order workflow"}</span>
+                  <span>
+                    {lang === "ar" ? "تعديل الدفع وحالة الطلب" : "Edit payment & order workflow"}
+                  </span>
                   <span className="text-xs font-normal text-muted-foreground group-open:hidden">
                     {t(`payStatus.${order.payment_status ?? "unpaid"}`)}
                   </span>
@@ -1570,170 +1767,209 @@ function OrderDetail() {
                   </span>
                 </summary>
                 <div className="grid grid-cols-1 gap-3 border-t border-border/60 p-3 sm:grid-cols-2">
-              <div>
-                <Label>{t("orderDetail.orderDate")}</Label>
-                <Input
-                  type="date"
-                  value={order.order_date}
-                  onChange={(e) => setOrder({ ...order, order_date: e.target.value })}
-                />
-              </div>
-              <div>
-                <Label>{t("orderDetail.status")}</Label>
-                <Select
-                  value={order.status}
-                  onValueChange={(v) => {
-                    const updatedFulfillment = v === "completed"
-                      ? "COMPLETED"
-                      : v === "cancelled"
-                        ? "CANCELLED"
-                        : order.fulfillment_status;
-                    setOrder({ ...order, status: v, fulfillment_status: updatedFulfillment });
-                  }}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="draft">{t("status.draft")}</SelectItem>
-                    <SelectItem value="confirmed">{t("status.confirmed")}</SelectItem>
-                    <SelectItem value="completed">{t("status.completed")}</SelectItem>
-                    <SelectItem value="cancelled">{t("status.cancelled")}</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label>{t("orderDetail.paymentMethod")}</Label>
-                <Select
-                  value={order.payment_method ?? "none"}
-                  onValueChange={(v) =>
-                    setOrder({ ...order, payment_method: v === "none" ? null : v })
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">{t("orderDetail.selectPayment")}</SelectItem>
-                    <SelectItem value="cash">{t("payment.cash")}</SelectItem>
-                    <SelectItem value="card">{t("payment.card")}</SelectItem>
-                    <SelectItem value="bank_transfer">{t("payment.bank_transfer")}</SelectItem>
-                    <SelectItem value="benefit">{t("payment.benefit")}</SelectItem>
-                    <SelectItem value="apple_pay">{t("payment.apple_pay")}</SelectItem>
-                    <SelectItem value="google_pay">{t("payment.google_pay")}</SelectItem>
-                    <SelectItem value="cod">{t("payment.cod")}</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="col-span-1 space-y-3 border-t border-dashed border-border pt-3 sm:col-span-2">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {/* Payment block */}
-                  <div className="space-y-1.5">
-                    <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                      {t("orderDetail.paymentStatus")}
-                    </Label>
+                  <div>
+                    <Label>{t("orderDetail.orderDate")}</Label>
+                    <Input
+                      type="date"
+                      value={order.order_date}
+                      onChange={(e) => setOrder({ ...order, order_date: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <Label>{t("orderDetail.status")}</Label>
                     <Select
-                      value={order.payment_status ?? "unpaid"}
+                      value={order.status}
                       onValueChange={(v) => {
-                        const updatedFulfillment = (v === "paid" && (!order.fulfillment_status || ["ON_HOLD", "on_hold", "unassigned"].includes(order.fulfillment_status)))
-                          ? "NEEDS_PACKING"
-                          : order.fulfillment_status;
-                        setOrder({ ...order, payment_status: v, fulfillment_status: updatedFulfillment });
+                        const updatedFulfillment =
+                          v === "completed"
+                            ? "COMPLETED"
+                            : v === "cancelled"
+                              ? "CANCELLED"
+                              : order.fulfillment_status;
+                        setOrder({ ...order, status: v, fulfillment_status: updatedFulfillment });
                       }}
                     >
-                      <SelectTrigger className="w-full">
+                      <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        {PAYMENT_BADGE_VALUES.map((v) => (
-                          <SelectItem key={v} value={v}>
-                            {t(`payStatus.${v}`)}
-                          </SelectItem>
-                        ))}
+                        <SelectItem value="draft">{t("status.draft")}</SelectItem>
+                        <SelectItem value="confirmed">{t("status.confirmed")}</SelectItem>
+                        <SelectItem value="completed">{t("status.completed")}</SelectItem>
+                        <SelectItem value="cancelled">{t("status.cancelled")}</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label>{t("orderDetail.paymentMethod")}</Label>
+                    <Select
+                      value={order.payment_method ?? "none"}
+                      onValueChange={(v) =>
+                        setOrder({ ...order, payment_method: v === "none" ? null : v })
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">{t("orderDetail.selectPayment")}</SelectItem>
+                        <SelectItem value="cash">{t("payment.cash")}</SelectItem>
+                        <SelectItem value="card">{t("payment.card")}</SelectItem>
+                        <SelectItem value="bank_transfer">{t("payment.bank_transfer")}</SelectItem>
+                        <SelectItem value="benefit">{t("payment.benefit")}</SelectItem>
+                        <SelectItem value="apple_pay">{t("payment.apple_pay")}</SelectItem>
+                        <SelectItem value="google_pay">{t("payment.google_pay")}</SelectItem>
+                        <SelectItem value="cod">{t("payment.cod")}</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
 
-                  {/* Fulfillment block */}
-                  <div className="space-y-1.5">
-                    <div className="flex items-center justify-between gap-2">
-                      <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                        {lang === "ar" ? "حالة التجهيز والشحن" : "Fulfillment Status"}
-                      </Label>
-                      {isPickup ? (
-                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200 dark:bg-indigo-950/30 dark:text-indigo-300 dark:border-indigo-800">
-                          🏪 {lang === "ar" ? "استلام" : "Pickup"}
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-sky-50 text-sky-700 border border-sky-200 dark:bg-sky-950/30 dark:text-sky-300 dark:border-sky-800">
-                          🚚 {lang === "ar" ? "توصيل" : "Delivery"}
-                        </span>
-                      )}
-                    </div>
-                    <Select
-                      value={order.fulfillment_status ?? "ON_HOLD"}
-                      onValueChange={(v) => {
-                        const blocksFulfillment = ["SHIPPED", "NEEDS_PACKING"].includes(v);
-                        if (blocksFulfillment && isUnpaid && !isCod && !adminOverrideChecked) {
-                          toast.error(
-                            lang === "ar"
-                              ? "خطأ: لا يمكن شحن أو تجهيز طلب غير مدفوع! يرجى تأكيد الدفع أو تفعيل خيار تجاوز التحقق."
-                              : "Error: Cannot ship or pack an unpaid order! Please approve payment or toggle the admin override."
-                          );
-                          return;
-                        }
-                        setOrder({ ...order, fulfillment_status: v });
-                      }}
-                    >
-                      <SelectTrigger className="w-full">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="ON_HOLD">{lang === "ar" ? "قيد الانتظار" : "On Hold"}</SelectItem>
-                        <SelectItem value="NEEDS_PACKING">{lang === "ar" ? "بحاجة للتعبئة" : "Needs Packing"}</SelectItem>
-                        <SelectItem value="READY_FOR_PICKUP">{lang === "ar" ? "جاهز للاستلام" : "Ready for Pickup"}</SelectItem>
-                        <SelectItem value="SHIPPED">{lang === "ar" ? "تم الشحن" : "Shipped"}</SelectItem>
-                        <SelectItem value="COMPLETED">{lang === "ar" ? "مكتمل" : "Completed"}</SelectItem>
-                        <SelectItem value="CANCELLED">{lang === "ar" ? "ملغي" : "Cancelled"}</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
+                  <div className="col-span-1 space-y-3 border-t border-dashed border-border pt-3 sm:col-span-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {/* Payment block */}
+                      <div className="space-y-1.5">
+                        <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                          {t("orderDetail.paymentStatus")}
+                        </Label>
+                        <Select
+                          value={order.payment_status ?? "unpaid"}
+                          onValueChange={(v) => {
+                            const updatedFulfillment =
+                              v === "paid" &&
+                              (!order.fulfillment_status ||
+                                ["ON_HOLD", "on_hold", "unassigned"].includes(
+                                  order.fulfillment_status,
+                                ))
+                                ? "NEEDS_PACKING"
+                                : order.fulfillment_status;
+                            setOrder({
+                              ...order,
+                              payment_status: v,
+                              fulfillment_status: updatedFulfillment,
+                            });
+                          }}
+                        >
+                          <SelectTrigger className="w-full">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {PAYMENT_BADGE_VALUES.map((v) => (
+                              <SelectItem key={v} value={v}>
+                                {t(`payStatus.${v}`)}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
 
-                {isUnpaid && !isCod && (
-                  <div className="flex flex-wrap items-center justify-between gap-3 bg-muted/20 p-2.5 rounded-lg border">
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="checkbox"
-                        id="admin-override-checkbox-mobile"
-                        checked={adminOverrideChecked}
-                        onChange={(e) => setAdminOverrideChecked(e.target.checked)}
-                        className="rounded border-gray-300 text-primary focus:ring-primary h-3.5 w-3.5 cursor-pointer"
-                      />
-                      <label htmlFor="admin-override-checkbox-mobile" className="text-xs text-muted-foreground select-none cursor-pointer">
-                        {lang === "ar" ? "تجاوز التحقق من الدفع يدوياً" : "Override unpaid check"}
-                      </label>
+                      {/* Fulfillment block */}
+                      <div className="space-y-1.5">
+                        <div className="flex items-center justify-between gap-2">
+                          <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                            {lang === "ar" ? "حالة التجهيز والشحن" : "Fulfillment Status"}
+                          </Label>
+                          {isPickup ? (
+                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200 dark:bg-indigo-950/30 dark:text-indigo-300 dark:border-indigo-800">
+                              🏪 {lang === "ar" ? "استلام" : "Pickup"}
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-sky-50 text-sky-700 border border-sky-200 dark:bg-sky-950/30 dark:text-sky-300 dark:border-sky-800">
+                              🚚 {lang === "ar" ? "توصيل" : "Delivery"}
+                            </span>
+                          )}
+                        </div>
+                        <Select
+                          value={order.fulfillment_status ?? "ON_HOLD"}
+                          onValueChange={(v) => {
+                            const blocksFulfillment = ["SHIPPED", "NEEDS_PACKING"].includes(v);
+                            if (blocksFulfillment && isUnpaid && !isCod && !adminOverrideChecked) {
+                              toast.error(
+                                lang === "ar"
+                                  ? "خطأ: لا يمكن شحن أو تجهيز طلب غير مدفوع! يرجى تأكيد الدفع أو تفعيل خيار تجاوز التحقق."
+                                  : "Error: Cannot ship or pack an unpaid order! Please approve payment or toggle the admin override.",
+                              );
+                              return;
+                            }
+                            setOrder({ ...order, fulfillment_status: v });
+                          }}
+                        >
+                          <SelectTrigger className="w-full">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="ON_HOLD">
+                              {lang === "ar" ? "قيد الانتظار" : "On Hold"}
+                            </SelectItem>
+                            <SelectItem value="NEEDS_PACKING">
+                              {lang === "ar" ? "بحاجة للتعبئة" : "Needs Packing"}
+                            </SelectItem>
+                            <SelectItem value="READY_FOR_PICKUP">
+                              {lang === "ar" ? "جاهز للاستلام" : "Ready for Pickup"}
+                            </SelectItem>
+                            <SelectItem value="SHIPPED">
+                              {lang === "ar" ? "تم الشحن" : "Shipped"}
+                            </SelectItem>
+                            <SelectItem value="COMPLETED">
+                              {lang === "ar" ? "مكتمل" : "Completed"}
+                            </SelectItem>
+                            <SelectItem value="CANCELLED">
+                              {lang === "ar" ? "ملغي" : "Cancelled"}
+                            </SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
                     </div>
 
-                    <Button
-                      type="button"
-                      size="sm"
-                      className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold flex items-center justify-center gap-1 h-7 px-2.5"
-                      onClick={() => {
-                        const updatedFulfillment = (!order.fulfillment_status || ["ON_HOLD", "on_hold", "unassigned"].includes(order.fulfillment_status))
-                          ? "NEEDS_PACKING"
-                          : order.fulfillment_status;
-                        setOrder({ ...order, payment_status: "paid", fulfillment_status: updatedFulfillment });
-                        toast.success(lang === "ar" ? "تم تسجيل الدفع بنجاح!" : "Order payment marked as Paid!");
-                      }}
-                    >
-                      <CheckCircle2 className="h-3 w-3" />
-                      {lang === "ar" ? "تسجيل كمدفوع" : "Mark as Paid"}
-                    </Button>
+                    {isUnpaid && !isCod && (
+                      <div className="flex flex-wrap items-center justify-between gap-3 bg-muted/20 p-2.5 rounded-lg border">
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            id="admin-override-checkbox-mobile"
+                            checked={adminOverrideChecked}
+                            onChange={(e) => setAdminOverrideChecked(e.target.checked)}
+                            className="rounded border-gray-300 text-primary focus:ring-primary h-3.5 w-3.5 cursor-pointer"
+                          />
+                          <label
+                            htmlFor="admin-override-checkbox-mobile"
+                            className="text-xs text-muted-foreground select-none cursor-pointer"
+                          >
+                            {lang === "ar"
+                              ? "تجاوز التحقق من الدفع يدوياً"
+                              : "Override unpaid check"}
+                          </label>
+                        </div>
+
+                        <Button
+                          type="button"
+                          size="sm"
+                          className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold flex items-center justify-center gap-1 h-7 px-2.5"
+                          onClick={() => {
+                            const updatedFulfillment =
+                              !order.fulfillment_status ||
+                              ["ON_HOLD", "on_hold", "unassigned"].includes(
+                                order.fulfillment_status,
+                              )
+                                ? "NEEDS_PACKING"
+                                : order.fulfillment_status;
+                            setOrder({
+                              ...order,
+                              payment_status: "paid",
+                              fulfillment_status: updatedFulfillment,
+                            });
+                            toast.success(
+                              lang === "ar"
+                                ? "تم تسجيل الدفع بنجاح!"
+                                : "Order payment marked as Paid!",
+                            );
+                          }}
+                        >
+                          <CheckCircle2 className="h-3 w-3" />
+                          {lang === "ar" ? "تسجيل كمدفوع" : "Mark as Paid"}
+                        </Button>
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
                 </div>
               </details>
             </div>
@@ -1792,9 +2028,8 @@ function OrderDetail() {
               const selectedAddress = (addressesQ.data ?? []).find(
                 (a) => a.id === order.shipping_address_id,
               );
-              const storedAddressSnapshot = (order as any).delivery_address_snapshot as
-                | StructuredAddress
-                | null;
+              const storedAddressSnapshot = (order as any)
+                .delivery_address_snapshot as StructuredAddress | null;
               const snapshotMatchesSavedSelection =
                 storedAddressSnapshot &&
                 (!order.shipping_address_id ||
@@ -1898,28 +2133,50 @@ function OrderDetail() {
                     {method === "delivery" && isAdmin && (
                       <div className="mb-4 space-y-3 rounded-lg border bg-background p-3">
                         <Label>{lang === "ar" ? "مندوب التوصيل المسند" : "Assigned courier"}</Label>
-                        <Select value={order.assigned_to ?? "unassigned"} onValueChange={assignCourier}>
-                          <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                        <Select
+                          value={order.assigned_to ?? "unassigned"}
+                          onValueChange={assignCourier}
+                        >
+                          <SelectTrigger className="mt-1">
+                            <SelectValue />
+                          </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="unassigned">{lang === "ar" ? "غير مسند" : "Unassigned"}</SelectItem>
-                            {(couriersQ.data ?? []).map((courier: any) => <SelectItem key={courier.id} value={courier.id}>{courier.name || courier.email}</SelectItem>)}
+                            <SelectItem value="unassigned">
+                              {lang === "ar" ? "غير مسند" : "Unassigned"}
+                            </SelectItem>
+                            {(couriersQ.data ?? []).map((courier: any) => (
+                              <SelectItem key={courier.id} value={courier.id}>
+                                {courier.name || courier.email}
+                              </SelectItem>
+                            ))}
                           </SelectContent>
                         </Select>
 
                         {(() => {
                           if (!order.assigned_to) return null;
-                          const assignedCourierObj = (couriersQ.data ?? []).find((c: any) => c.id === order.assigned_to);
-                          const notifiedAgo = formatNotifiedTimeAgo((order as any).courier_notified_at, lang);
+                          const assignedCourierObj = (couriersQ.data ?? []).find(
+                            (c: any) => c.id === order.assigned_to,
+                          );
+                          const notifiedAgo = formatNotifiedTimeAgo(
+                            (order as any).courier_notified_at,
+                            lang,
+                          );
                           return (
                             <div className="space-y-2 pt-2 border-t">
                               <div className="flex flex-wrap items-center justify-between gap-2">
                                 {notifiedAgo ? (
                                   <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-300 dark:border-emerald-800 text-[11px] font-bold px-2.5 py-1">
-                                    🔔 {lang === "ar" ? `تم الإشعار (${notifiedAgo})` : `Notified ${notifiedAgo}`}
+                                    🔔{" "}
+                                    {lang === "ar"
+                                      ? `تم الإشعار (${notifiedAgo})`
+                                      : `Notified ${notifiedAgo}`}
                                   </span>
                                 ) : (
                                   <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-950/30 dark:text-amber-300 dark:border-amber-800 text-[11px] font-bold px-2.5 py-1">
-                                    ⏳ {lang === "ar" ? "لم يتم الإشعار عبر واتساب بعد" : "WhatsApp notification pending"}
+                                    ⏳{" "}
+                                    {lang === "ar"
+                                      ? "لم يتم الإشعار عبر واتساب بعد"
+                                      : "WhatsApp notification pending"}
                                   </span>
                                 )}
 
@@ -1929,7 +2186,10 @@ function OrderDetail() {
                                   className="h-8 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs px-3 shadow-sm flex items-center gap-1.5"
                                   onClick={() => setWaModalOpen(true)}
                                 >
-                                  📱 {lang === "ar" ? `إشعار ${assignedCourierObj?.name ? assignedCourierObj.name.split(" ")[0] : "المندوب"} عبر واتساب` : `Notify ${assignedCourierObj?.name ? assignedCourierObj.name.split(" ")[0] : "Courier"} on WhatsApp`}
+                                  📱{" "}
+                                  {lang === "ar"
+                                    ? `إشعار ${assignedCourierObj?.name ? assignedCourierObj.name.split(" ")[0] : "المندوب"} عبر واتساب`
+                                    : `Notify ${assignedCourierObj?.name ? assignedCourierObj.name.split(" ")[0] : "Courier"} on WhatsApp`}
                                 </Button>
                               </div>
                             </div>
@@ -1944,10 +2204,14 @@ function OrderDetail() {
                             {order.fulfillment_status || (lang === "ar" ? "مسند" : "Assigned")}
                           </span>
                           {order.payment_method === "cod" && (
-                            <span className={`rounded-full px-2.5 py-1 font-medium ${order.cod_collected_at ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-800"}`}>
+                            <span
+                              className={`rounded-full px-2.5 py-1 font-medium ${order.cod_collected_at ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-800"}`}
+                            >
                               {order.cod_collected_at
                                 ? `${lang === "ar" ? "تم استلام النقد" : "Cash received"}: ${formatMoney(Number(order.cod_collected_amount || 0), order.currency || "BHD")}`
-                                : lang === "ar" ? "النقد بانتظار التحصيل" : "Cash collection pending"}
+                                : lang === "ar"
+                                  ? "النقد بانتظار التحصيل"
+                                  : "Cash collection pending"}
                             </span>
                           )}
                         </div>
@@ -2125,7 +2389,9 @@ function OrderDetail() {
                   value={order.delivery_notes ?? ""}
                   onChange={(e) => setOrder({ ...order, delivery_notes: e.target.value })}
                   rows={3}
-                  placeholder={lang === "ar" ? "ملاحظات السائق وسجل التوصيل" : "Driver notes and courier logs"}
+                  placeholder={
+                    lang === "ar" ? "ملاحظات السائق وسجل التوصيل" : "Driver notes and courier logs"
+                  }
                   className="bg-blue-50/50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800 font-mono text-xs"
                 />
               </div>
@@ -2317,7 +2583,11 @@ function OrderDetail() {
                                       📎 {isAr ? "تحميل/عرض الملف" : "View Uploaded File"}
                                     </a>
                                     {/\.(jpg|jpeg|png|gif|webp|svg)$/i.test(cf.value) && (
-                                      <img src={cf.value} alt="" className="mt-1 max-h-24 rounded border object-contain bg-background" />
+                                      <img
+                                        src={cf.value}
+                                        alt=""
+                                        className="mt-1 max-h-24 rounded border object-contain bg-background"
+                                      />
                                     )}
                                   </div>
                                 ) : (
@@ -2401,15 +2671,18 @@ function OrderDetail() {
                   <Select
                     value={order.status}
                     onValueChange={(status) => {
-                      const updatedFulfillment = status === "completed"
-                        ? "COMPLETED"
-                        : status === "cancelled"
-                          ? "CANCELLED"
-                          : order.fulfillment_status;
+                      const updatedFulfillment =
+                        status === "completed"
+                          ? "COMPLETED"
+                          : status === "cancelled"
+                            ? "CANCELLED"
+                            : order.fulfillment_status;
                       setOrder({ ...order, status, fulfillment_status: updatedFulfillment });
                     }}
                   >
-                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="draft">{t("status.draft")}</SelectItem>
                       <SelectItem value="confirmed">{t("status.confirmed")}</SelectItem>
@@ -2422,9 +2695,16 @@ function OrderDetail() {
                   <Label>{t("orderDetail.paymentMethod")}</Label>
                   <Select
                     value={order.payment_method ?? "none"}
-                    onValueChange={(payment_method) => setOrder({ ...order, payment_method: payment_method === "none" ? null : payment_method })}
+                    onValueChange={(payment_method) =>
+                      setOrder({
+                        ...order,
+                        payment_method: payment_method === "none" ? null : payment_method,
+                      })
+                    }
                   >
-                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="none">{t("orderDetail.selectPayment")}</SelectItem>
                       <SelectItem value="cash">{t("payment.cash")}</SelectItem>
@@ -2531,7 +2811,9 @@ function OrderDetail() {
                     >
                       <DialogContent className="max-w-md">
                         <DialogHeader>
-                          <DialogTitle>{lang === "ar" ? "رفض إيصال بنفت باي" : "Reject BenefitPay receipt"}</DialogTitle>
+                          <DialogTitle>
+                            {lang === "ar" ? "رفض إيصال بنفت باي" : "Reject BenefitPay receipt"}
+                          </DialogTitle>
                           <DialogDescription>
                             {lang === "ar"
                               ? "سيُرسل سبب الرفض للعميل، وستُحذف صورة الإيصال الخاصة فوراً."
@@ -2548,12 +2830,22 @@ function OrderDetail() {
                             onChange={(event) => setRejectReason(event.target.value)}
                             maxLength={500}
                             dir={lang === "ar" ? "rtl" : "ltr"}
-                            placeholder={lang === "ar" ? "مثال: الإيصال غير واضح أو لا يطابق مبلغ الطلب" : "For example: receipt is unclear or does not match the order amount"}
+                            placeholder={
+                              lang === "ar"
+                                ? "مثال: الإيصال غير واضح أو لا يطابق مبلغ الطلب"
+                                : "For example: receipt is unclear or does not match the order amount"
+                            }
                           />
-                          <p className="text-xs text-muted-foreground">{rejectReason.trim().length}/500</p>
+                          <p className="text-xs text-muted-foreground">
+                            {rejectReason.trim().length}/500
+                          </p>
                         </div>
                         <DialogFooter>
-                          <Button type="button" variant="outline" onClick={() => setRejectReasonOpen(false)}>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => setRejectReasonOpen(false)}
+                          >
                             {lang === "ar" ? "إلغاء" : "Cancel"}
                           </Button>
                           <Button
@@ -2563,7 +2855,9 @@ function OrderDetail() {
                             disabled={rejectingBenefit || rejectReason.trim().length < 3}
                           >
                             {rejectingBenefit && <Loader2 className="me-2 h-4 w-4 animate-spin" />}
-                            {lang === "ar" ? "رفض الإيصال وإرسال السبب" : "Reject and notify customer"}
+                            {lang === "ar"
+                              ? "رفض الإيصال وإرسال السبب"
+                              : "Reject and notify customer"}
                           </Button>
                         </DialogFooter>
                       </DialogContent>
@@ -2682,10 +2976,17 @@ function OrderDetail() {
                   <Select
                     value={order.payment_status ?? "unpaid"}
                     onValueChange={(v) => {
-                      const updatedFulfillment = (v === "paid" && (!order.fulfillment_status || ["ON_HOLD", "on_hold", "unassigned"].includes(order.fulfillment_status)))
-                        ? "NEEDS_PACKING"
-                        : order.fulfillment_status;
-                      setOrder({ ...order, payment_status: v, fulfillment_status: updatedFulfillment });
+                      const updatedFulfillment =
+                        v === "paid" &&
+                        (!order.fulfillment_status ||
+                          ["ON_HOLD", "on_hold", "unassigned"].includes(order.fulfillment_status))
+                          ? "NEEDS_PACKING"
+                          : order.fulfillment_status;
+                      setOrder({
+                        ...order,
+                        payment_status: v,
+                        fulfillment_status: updatedFulfillment,
+                      });
                     }}
                   >
                     <SelectTrigger className="w-full">
@@ -2706,11 +3007,19 @@ function OrderDetail() {
                       size="sm"
                       className="mt-1 w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold flex items-center justify-center gap-1.5 shadow-sm"
                       onClick={() => {
-                        const updatedFulfillment = (!order.fulfillment_status || ["ON_HOLD", "on_hold", "unassigned"].includes(order.fulfillment_status))
-                          ? "NEEDS_PACKING"
-                          : order.fulfillment_status;
-                        setOrder({ ...order, payment_status: "paid", fulfillment_status: updatedFulfillment });
-                        toast.success(lang === "ar" ? "تم تسجيل الدفع بنجاح!" : "Order payment marked as Paid!");
+                        const updatedFulfillment =
+                          !order.fulfillment_status ||
+                          ["ON_HOLD", "on_hold", "unassigned"].includes(order.fulfillment_status)
+                            ? "NEEDS_PACKING"
+                            : order.fulfillment_status;
+                        setOrder({
+                          ...order,
+                          payment_status: "paid",
+                          fulfillment_status: updatedFulfillment,
+                        });
+                        toast.success(
+                          lang === "ar" ? "تم تسجيل الدفع بنجاح!" : "Order payment marked as Paid!",
+                        );
                       }}
                     >
                       <CheckCircle2 className="h-3.5 w-3.5" />
@@ -2744,7 +3053,7 @@ function OrderDetail() {
                         toast.error(
                           lang === "ar"
                             ? "خطأ: لا يمكن شحن أو تجهيز طلب غير مدفوع! يرجى تأكيد الدفع أو تفعيل خيار تجاوز التحقق."
-                            : "Error: Cannot ship or pack an unpaid order! Please approve payment or toggle the admin override."
+                            : "Error: Cannot ship or pack an unpaid order! Please approve payment or toggle the admin override.",
                         );
                         return;
                       }
@@ -2755,12 +3064,24 @@ function OrderDetail() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="ON_HOLD">{lang === "ar" ? "قيد الانتظار" : "On Hold"}</SelectItem>
-                      <SelectItem value="NEEDS_PACKING">{lang === "ar" ? "بحاجة للتعبئة" : "Needs Packing"}</SelectItem>
-                      <SelectItem value="READY_FOR_PICKUP">{lang === "ar" ? "جاهز للاستلام" : "Ready for Pickup"}</SelectItem>
-                      <SelectItem value="SHIPPED">{lang === "ar" ? "تم الشحن" : "Shipped"}</SelectItem>
-                      <SelectItem value="COMPLETED">{lang === "ar" ? "مكتمل" : "Completed"}</SelectItem>
-                      <SelectItem value="CANCELLED">{lang === "ar" ? "ملغي" : "Cancelled"}</SelectItem>
+                      <SelectItem value="ON_HOLD">
+                        {lang === "ar" ? "قيد الانتظار" : "On Hold"}
+                      </SelectItem>
+                      <SelectItem value="NEEDS_PACKING">
+                        {lang === "ar" ? "بحاجة للتعبئة" : "Needs Packing"}
+                      </SelectItem>
+                      <SelectItem value="READY_FOR_PICKUP">
+                        {lang === "ar" ? "جاهز للاستلام" : "Ready for Pickup"}
+                      </SelectItem>
+                      <SelectItem value="SHIPPED">
+                        {lang === "ar" ? "تم الشحن" : "Shipped"}
+                      </SelectItem>
+                      <SelectItem value="COMPLETED">
+                        {lang === "ar" ? "مكتمل" : "Completed"}
+                      </SelectItem>
+                      <SelectItem value="CANCELLED">
+                        {lang === "ar" ? "ملغي" : "Cancelled"}
+                      </SelectItem>
                     </SelectContent>
                   </Select>
 
@@ -2773,8 +3094,13 @@ function OrderDetail() {
                         onChange={(e) => setAdminOverrideChecked(e.target.checked)}
                         className="rounded border-gray-300 text-primary focus:ring-primary h-3.5 w-3.5 cursor-pointer"
                       />
-                      <label htmlFor="admin-override-checkbox" className="text-xs text-muted-foreground select-none cursor-pointer">
-                        {lang === "ar" ? "تجاوز التحقق من الدفع يدوياً" : "Override unpaid payment check"}
+                      <label
+                        htmlFor="admin-override-checkbox"
+                        className="text-xs text-muted-foreground select-none cursor-pointer"
+                      >
+                        {lang === "ar"
+                          ? "تجاوز التحقق من الدفع يدوياً"
+                          : "Override unpaid payment check"}
                       </label>
                     </div>
                   )}
@@ -2824,9 +3150,15 @@ function OrderDetail() {
                 </div>
                 {!isReadOnly && (
                   <Button onClick={save} disabled={saving} className="hidden w-full lg:flex">
-                    {saving ? <Loader2 className="me-2 h-4 w-4 animate-spin" /> : <Save className="me-2 h-4 w-4" />}
+                    {saving ? (
+                      <Loader2 className="me-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <Save className="me-2 h-4 w-4" />
+                    )}
                     {isCreationMode
-                      ? lang === "ar" ? "إنشاء وحفظ الطلب" : "Create & Save Order"
+                      ? lang === "ar"
+                        ? "إنشاء وحفظ الطلب"
+                        : "Create & Save Order"
                       : t("common.save")}
                   </Button>
                 )}
@@ -2850,10 +3182,12 @@ function OrderDetail() {
               </div>
             )}
             <Button onClick={save} disabled={saving} className="min-w-0 flex-[1.25]">
-              {saving ? <Loader2 className="me-2 h-4 w-4 animate-spin" /> : <Save className="me-2 h-4 w-4" />}
-              {isCreationMode
-                ? lang === "ar" ? "إنشاء وحفظ" : "Create & Save"
-                : t("common.save")}
+              {saving ? (
+                <Loader2 className="me-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Save className="me-2 h-4 w-4" />
+              )}
+              {isCreationMode ? (lang === "ar" ? "إنشاء وحفظ" : "Create & Save") : t("common.save")}
             </Button>
           </div>
         </div>
@@ -2871,30 +3205,30 @@ function OrderDetail() {
         </button>
       </div>
       <div className={invoicePreviewOpen ? "block" : "hidden print:block"}>
-      {/* Printable invoice */}
-      {(() => {
-        const addrs = (addressesQ.data ?? []).filter((a) => a.customer_id === order.customer_id);
-        const chosen =
-          ((order as any).delivery_address_snapshot as SavedAddress | null) ??
-          addrs.find((a) => a.id === order.shipping_address_id) ??
-          addrs.find((a) => a.is_default) ??
-          null;
-        return (
-          <InvoicePreview
-            order={{
-              ...order,
-              subtotal: totals.subtotal,
-              tax_amount: totals.taxAmount,
-              total: totals.total,
-              advance_paid: totals.advancePaid,
-            }}
-            items={items}
-            settings={settingsQ.data}
-            shippingAddress={chosen}
-            paymentBadge={paymentBadge}
-          />
-        );
-      })()}
+        {/* Printable invoice */}
+        {(() => {
+          const addrs = (addressesQ.data ?? []).filter((a) => a.customer_id === order.customer_id);
+          const chosen =
+            ((order as any).delivery_address_snapshot as SavedAddress | null) ??
+            addrs.find((a) => a.id === order.shipping_address_id) ??
+            addrs.find((a) => a.is_default) ??
+            null;
+          return (
+            <InvoicePreview
+              order={{
+                ...order,
+                subtotal: totals.subtotal,
+                tax_amount: totals.taxAmount,
+                total: totals.total,
+                advance_paid: totals.advancePaid,
+              }}
+              items={items}
+              settings={settingsQ.data}
+              shippingAddress={chosen}
+              paymentBadge={paymentBadge}
+            />
+          );
+        })()}
       </div>
       <div className="max-w-6xl mx-auto p-4 sm:p-6 lg:p-8 no-print">
         <ActivityLogList orderId={order.id} scope="order" brandId={brand.id} />
@@ -3159,7 +3493,9 @@ function InvoicePreview({
                 <span>{invoiceLang === "ar" ? "مدفوع" : "PAID"}</span>
                 {order.updated_at && (
                   <span className="text-[10px] md:text-xs font-semibold tracking-normal mt-1 opacity-90 font-mono">
-                    {new Date(order.updated_at).toLocaleDateString(invoiceLang === "ar" ? "ar-BH-u-nu-latn" : "en-BH")}
+                    {new Date(order.updated_at).toLocaleDateString(
+                      invoiceLang === "ar" ? "ar-BH-u-nu-latn" : "en-BH",
+                    )}
                   </span>
                 )}
               </div>
@@ -3247,7 +3583,10 @@ function InvoicePreview({
               </p>
               <p className="text-xs mt-2" style={{ opacity: 0.7 }}>
                 {L.date}:{" "}
-                {formatDate(order.created_at ?? order.order_date, isRTL ? "ar-BH-u-nu-latn" : "en-BH")}
+                {formatDate(
+                  order.created_at ?? order.order_date,
+                  isRTL ? "ar-BH-u-nu-latn" : "en-BH",
+                )}
               </p>
               <p className="text-xs" style={{ opacity: 0.7 }}>
                 {L.status}: {PAYMENT_BADGE_LABEL[paymentBadge ?? "unpaid"][invoiceLang]}
@@ -3648,14 +3987,16 @@ function ResendConfirmationEmailButton({
       const { data: sessionData } = await supabase.auth.getSession();
       const accessToken = sessionData.session?.access_token;
       const { data, error } = await supabase.functions.invoke("send-order-email", {
-      body: { order_id: order.id, lang, wait_for_delivery: true },
+        body: { order_id: order.id, lang, wait_for_delivery: true },
         headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : undefined,
       });
       if (error) throw error;
       if ((data as any)?.error) throw new Error(String((data as any).error));
-      toast.success(lang === "ar"
-        ? "تم قبول بريد العميل للإرسال. راجع سجل المراسلات لمتابعة الحالة."
-        : "Customer email accepted by the provider. Track it in Communications.");
+      toast.success(
+        lang === "ar"
+          ? "تم قبول بريد العميل للإرسال. راجع سجل المراسلات لمتابعة الحالة."
+          : "Customer email accepted by the provider. Track it in Communications.",
+      );
     } catch (e: any) {
       toast.error(e?.message ?? (lang === "ar" ? "فشل الإرسال" : "Failed to send"));
     } finally {
@@ -3864,7 +4205,8 @@ function ManageTemplatesDialog({
     setEditing({ name: "", channel: "both", subject: "", body: defaultBody(), is_default: false });
 
   const save = async () => {
-    if (!editing?.name || !editing?.body) return toast.error(lang === "ar" ? "الاسم والمحتوى مطلوبان" : "Name and body are required");
+    if (!editing?.name || !editing?.body)
+      return toast.error(lang === "ar" ? "الاسم والمحتوى مطلوبان" : "Name and body are required");
     const {
       data: { user },
     } = await supabase.auth.getUser();

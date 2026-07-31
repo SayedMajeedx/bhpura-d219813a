@@ -4,15 +4,17 @@ import { z } from "zod";
 
 const CustomerImportSchema = z.object({
   brandId: z.string().uuid(),
-  customers: z.array(z.object({
-    name: z.string(),
-    phone: z.string().nullable(),
-    email: z.string().nullable(),
-    notes: z.string().nullable(),
-    totalOrders: z.number().default(0),
-    totalSpend: z.number().default(0),
-    tags: z.array(z.string()).default([]),
-  })),
+  customers: z.array(
+    z.object({
+      name: z.string(),
+      phone: z.string().nullable(),
+      email: z.string().nullable(),
+      notes: z.string().nullable(),
+      totalOrders: z.number().default(0),
+      totalSpend: z.number().default(0),
+      tags: z.array(z.string()).default([]),
+    }),
+  ),
 });
 
 // Helper to verify standard brand access or superadmin impersonation
@@ -23,7 +25,9 @@ async function verifyBrandAccess(brandId: string, context: any) {
   }
 
   // 1. Check direct brand access (standard brand administrators)
-  const { data: hasAccess, error: accessErr } = await context.supabase.rpc("can_access_brand", { _brand_id: brandId });
+  const { data: hasAccess, error: accessErr } = await context.supabase.rpc("can_access_brand", {
+    _brand_id: brandId,
+  });
   if (accessErr) {
     console.error("Supabase can_access_brand RPC failed:", accessErr);
   }
@@ -45,7 +49,9 @@ async function verifyBrandAccess(brandId: string, context: any) {
         const isFixedSuperAdmin = email === "majeed@hotmail.it" || email === "majeed@hotmail.com";
 
         if (isSuperAdmin || isFixedSuperAdmin) {
-          console.log(`[Impersonation Auth] Superadmin (${email}) authorized to perform customer import on brand: ${brandId}`);
+          console.log(
+            `[Impersonation Auth] Superadmin (${email}) authorized to perform customer import on brand: ${brandId}`,
+          );
           return true; // Impersonation access granted
         }
       }
@@ -82,7 +88,9 @@ export const importCustomerDatabase = createServerFn({ method: "POST" })
         throw new Error(`Database error while querying existing customers: ${fetchErr.message}`);
       }
 
-      const existingPhones = new Set((existingCustomers ?? []).map((c: any) => c.phone).filter(Boolean));
+      const existingPhones = new Set(
+        (existingCustomers ?? []).map((c: any) => c.phone).filter(Boolean),
+      );
       const processedPhones = new Set<string>();
 
       for (const cust of data.customers) {
@@ -105,18 +113,18 @@ export const importCustomerDatabase = createServerFn({ method: "POST" })
             cust.totalSpend > 0 ? `Spend: ${cust.totalSpend} BHD` : null,
             cust.totalOrders > 0 ? `Orders: ${cust.totalOrders}` : null,
             cust.notes ? `Notes: ${cust.notes}` : null,
-          ].filter(Boolean).join(" | ");
+          ]
+            .filter(Boolean)
+            .join(" | ");
 
-          const { error: insertErr } = await context.supabase
-            .from("customers")
-            .insert({
-              user_id: userId,
-              brand_id: data.brandId,
-              name: cust.name,
-              phone: cust.phone,
-              email: cust.email,
-              notes: compositeNotes || null,
-            });
+          const { error: insertErr } = await context.supabase.from("customers").insert({
+            user_id: userId,
+            brand_id: data.brandId,
+            name: cust.name,
+            phone: cust.phone,
+            email: cust.email,
+            notes: compositeNotes || null,
+          });
 
           if (insertErr) {
             console.error("Failed to insert customer contact:", cust.name, insertErr);

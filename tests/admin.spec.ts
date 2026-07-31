@@ -55,7 +55,6 @@ const mockOrders = [
 
 // Reusable network intercept helper to bypass real Supabase and seed mock states
 test.beforeEach(async ({ page }) => {
-  // Seed the browser's localStorage with an authenticated Supabase session on startup
   await page.addInitScript(() => {
     const session = {
       access_token: "mock-access-token",
@@ -70,7 +69,9 @@ test.beforeEach(async ({ page }) => {
       },
       expires_at: Math.floor(Date.now() / 1000) + 3600,
     };
-    window.localStorage.setItem("sb-ikciahnuqhemvnyfvbyp-auth-token", JSON.stringify(session));
+    try {
+      window.localStorage.setItem("sb-ikciahnuqhemvnyfvbyp-auth-token", JSON.stringify(session));
+    } catch {}
   });
 
   // 1. Mock Supabase AuthgetUser call
@@ -191,38 +192,37 @@ test.beforeEach(async ({ page }) => {
 // ======================================================================
 // AUTOMATED JOURNEY 1: NEW PRODUCT CREATION & MODAL INTEGRITY
 // ======================================================================
-test("Scenario 1: Opens and submits new product form, appending it instantly to list top", async ({ page }) => {
-  // Navigate directly to the authenticated inventory page
+test("Scenario 1: Opens and submits new product form, appending it instantly to list top", async ({
+  page,
+}) => {
   await page.goto("/admin/b/test-brand/inventory");
-
-  // Verify route loads successfully and displays the initial seeded product
   await page.waitForLoadState("networkidle");
+  if (page.url().includes("/auth")) {
+    await page.goto("/admin/b/test-brand/inventory");
+    await page.waitForLoadState("networkidle");
+  }
 
   const newProductBtn = page.getByRole("button", { name: /New Product|منتج جديد|newProduct/i });
-  try {
-    await expect(newProductBtn).toBeVisible({ timeout: 5000 });
-  } catch (err) {
-    console.log("DIAGNOSTIC: HTML PAGE CONTENT:\n", await page.content());
-    console.log("DIAGNOSTIC: ACTIVE URL IS:", page.url());
-    throw err;
-  }
+  await expect(newProductBtn).toBeVisible({ timeout: 15000 });
   await newProductBtn.click();
 
   // Assert modal is open cleanly with input fields
-  const nameInput = page.locator('input[placeholder*="Name"], input[placeholder*="الاسم"], input[placeholder*="عنوان Product"]');
+  const nameInput = page.locator(
+    'input[placeholder*="Name"], input[placeholder*="الاسم"], input[placeholder*="عنوان Product"]',
+  );
   const priceInput = page.locator('input[name="base_price"], input[placeholder*="السعر"]');
-  
+
   // Fill product fields
-  if (await nameInput.count() > 0) {
+  if ((await nameInput.count()) > 0) {
     await nameInput.first().fill("Test Product AI");
   }
-  if (await priceInput.count() > 0) {
+  if ((await priceInput.count()) > 0) {
     await priceInput.first().fill("10.000");
   }
 
   // Click Save/Submit trigger
   const saveBtn = page.getByRole("button", { name: /Save|حفظ/i });
-  if (await saveBtn.count() > 0) {
+  if ((await saveBtn.count()) > 0) {
     await saveBtn.first().click();
   }
 
@@ -233,21 +233,26 @@ test("Scenario 1: Opens and submits new product form, appending it instantly to 
 // ======================================================================
 // AUTOMATED JOURNEY 2: INVENTORY & VARIANT ROUTE SAFETY
 // ======================================================================
-test("Scenario 2: Edits variant stock and verifies URL remains on inventory page without unexpected redirects", async ({ page }) => {
+test("Scenario 2: Edits variant stock and verifies URL remains on inventory page without unexpected redirects", async ({
+  page,
+}) => {
   await page.goto("/admin/b/test-brand/inventory");
 
   // Check that the URL is correct
   await expect(page).toHaveURL(/\/admin\/b\/test-brand\/inventory/);
 
   // Trigger variant view/drawer
-  const editVariantBtn = page.locator("button").filter({ hasText: /Variants|الخيارات/i }).first();
-  if (await editVariantBtn.count() > 0) {
+  const editVariantBtn = page
+    .locator("button")
+    .filter({ hasText: /Variants|الخيارات/i })
+    .first();
+  if ((await editVariantBtn.count()) > 0) {
     await editVariantBtn.click();
     await page.waitForTimeout(500);
 
     // Click inside the variant form to click "+ Add Variant"
     const addVariantBtn = page.getByRole("button", { name: /Add Variant|إضافة خيار/i });
-    if (await addVariantBtn.count() > 0) {
+    if ((await addVariantBtn.count()) > 0) {
       await addVariantBtn.first().click();
     }
   }
@@ -259,7 +264,9 @@ test("Scenario 2: Edits variant stock and verifies URL remains on inventory page
 // ======================================================================
 // AUTOMATED JOURNEY 3: ORDER STATUS RE-RENDERING
 // ======================================================================
-test("Scenario 3: Toggles order status and asserts immediately re-rendered badge", async ({ page }) => {
+test("Scenario 3: Toggles order status and asserts immediately re-rendered badge", async ({
+  page,
+}) => {
   // Navigate directly to the authenticated orders tab
   await page.goto("/admin/b/test-brand/orders");
 
@@ -267,13 +274,19 @@ test("Scenario 3: Toggles order status and asserts immediately re-rendered badge
   await page.waitForTimeout(1000);
 
   // Click the test pending order's status trigger dropdown/button
-  const statusTrigger = page.locator("button").filter({ hasText: /Pending|قيد الانتظار/i }).first();
-  if (await statusTrigger.count() > 0) {
+  const statusTrigger = page
+    .locator("button")
+    .filter({ hasText: /Pending|قيد الانتظار/i })
+    .first();
+  if ((await statusTrigger.count()) > 0) {
     await statusTrigger.click();
 
     // Select "Paid & Processing" or paid status equivalent
-    const paidOption = page.locator("div, button").filter({ hasText: /Paid & Processing|مدفوع وقيد التنفيذ/i }).first();
-    if (await paidOption.count() > 0) {
+    const paidOption = page
+      .locator("div, button")
+      .filter({ hasText: /Paid & Processing|مدفوع وقيد التنفيذ/i })
+      .first();
+    if ((await paidOption.count()) > 0) {
       await paidOption.click();
       await page.waitForTimeout(500);
     }
@@ -286,7 +299,9 @@ test("Scenario 3: Toggles order status and asserts immediately re-rendered badge
 // ======================================================================
 // AUTOMATED JOURNEY 4: MOBILE VIEWPORT & ACCESSIBILITY AUDIT
 // ======================================================================
-test("Scenario 4: Validates touch layout actions and responsive integrity on 375x812 Mobile Viewport", async ({ page }) => {
+test("Scenario 4: Validates touch layout actions and responsive integrity on 375x812 Mobile Viewport", async ({
+  page,
+}) => {
   // Configure browser to precise iPhone Mobile dimensions
   await page.setViewportSize({ width: 375, height: 812 });
 

@@ -14,7 +14,15 @@ export const Route = createFileRoute("/api/orders/status")({
             delivery_notes?: string | null;
             admin_override?: boolean;
           }>();
-          const { id, payment_status, fulfillment_status, status, assigned_to, delivery_notes, admin_override } = body;
+          const {
+            id,
+            payment_status,
+            fulfillment_status,
+            status,
+            assigned_to,
+            delivery_notes,
+            admin_override,
+          } = body;
 
           if (!id) {
             return new Response(JSON.stringify({ error: "Missing order id" }), {
@@ -26,8 +34,7 @@ export const Route = createFileRoute("/api/orders/status")({
           const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
           // 1. Fetch current order status details
-          const { data: order, error: fetchErr } = await (supabaseAdmin
-            .from("orders") as any)
+          const { data: order, error: fetchErr } = await (supabaseAdmin.from("orders") as any)
             .select("id, status, payment_status, fulfillment_status, delivery_notes, assigned_to")
             .eq("id", id)
             .maybeSingle();
@@ -40,15 +47,28 @@ export const Route = createFileRoute("/api/orders/status")({
           }
 
           // Determine current vs updated payment and fulfillment statuses
-          const currentPayment = payment_status !== undefined ? payment_status : order.payment_status;
-          const currentFulfillment = fulfillment_status !== undefined ? fulfillment_status : order.fulfillment_status;
+          const currentPayment =
+            payment_status !== undefined ? payment_status : order.payment_status;
+          const currentFulfillment =
+            fulfillment_status !== undefined ? fulfillment_status : order.fulfillment_status;
 
-          const isUnpaid = !currentPayment || ["unpaid", "UNPAID", "partially_paid", "PARTIALLY_PAID", "partial"].includes(currentPayment);
+          const isUnpaid =
+            !currentPayment ||
+            ["unpaid", "UNPAID", "partially_paid", "PARTIALLY_PAID", "partial"].includes(
+              currentPayment,
+            );
 
           // Validation Rule: Ensure cannot move to NEEDS_PACKING or SHIPPED if unpaid/partially paid, unless admin_override is true
-          if (fulfillment_status && ["NEEDS_PACKING", "needs_packing", "SHIPPED", "shipped"].includes(fulfillment_status)) {
+          if (
+            fulfillment_status &&
+            ["NEEDS_PACKING", "needs_packing", "SHIPPED", "shipped"].includes(fulfillment_status)
+          ) {
             if (isUnpaid && !admin_override) {
-              const paymentLabel = ["partially_paid", "PARTIALLY_PAID", "partial"].includes(currentPayment || "") ? "partially paid" : "unpaid";
+              const paymentLabel = ["partially_paid", "PARTIALLY_PAID", "partial"].includes(
+                currentPayment || "",
+              )
+                ? "partially paid"
+                : "unpaid";
               return new Response(
                 JSON.stringify({
                   error: `Order cannot be packaged or shipped because it is ${paymentLabel}.`,
@@ -57,7 +77,7 @@ export const Route = createFileRoute("/api/orders/status")({
                 {
                   status: 400,
                   headers: { "Content-Type": "application/json" },
-                }
+                },
               );
             }
           }
@@ -98,15 +118,21 @@ export const Route = createFileRoute("/api/orders/status")({
             });
           }
 
-          return new Response(JSON.stringify({ success: true, message: "Order status updated successfully" }), {
-            status: 200,
-            headers: { "Content-Type": "application/json" },
-          });
+          return new Response(
+            JSON.stringify({ success: true, message: "Order status updated successfully" }),
+            {
+              status: 200,
+              headers: { "Content-Type": "application/json" },
+            },
+          );
         } catch (err: any) {
-          return new Response(JSON.stringify({ error: err.message || "An unexpected error occurred" }), {
-            status: 500,
-            headers: { "Content-Type": "application/json" },
-          });
+          return new Response(
+            JSON.stringify({ error: err.message || "An unexpected error occurred" }),
+            {
+              status: 500,
+              headers: { "Content-Type": "application/json" },
+            },
+          );
         }
       },
     },

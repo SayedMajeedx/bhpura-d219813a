@@ -15,17 +15,21 @@ export function getEnvVariable(name: string): string | undefined {
       [key: string]: unknown;
     };
     const liveEnvironment = globalEnvironment.__CLOUDFLARE_ENV__ ?? globalEnvironment.process?.env;
-    const liveValue = liveEnvironment?.[name] ?? liveEnvironment?.[viteName] ?? liveEnvironment?.[unprefixed];
+    const liveValue =
+      liveEnvironment?.[name] ?? liveEnvironment?.[viteName] ?? liveEnvironment?.[unprefixed];
     if (liveValue) return liveValue;
   } catch {
     // Continue through the portable fallbacks.
   }
 
   try {
-    const metaEnvironment = (import.meta as ImportMeta & {
-      env?: Record<string, string | undefined>;
-    }).env;
-    const metaValue = metaEnvironment?.[name] ?? metaEnvironment?.[viteName] ?? metaEnvironment?.[unprefixed];
+    const metaEnvironment = (
+      import.meta as ImportMeta & {
+        env?: Record<string, string | undefined>;
+      }
+    ).env;
+    const metaValue =
+      metaEnvironment?.[name] ?? metaEnvironment?.[viteName] ?? metaEnvironment?.[unprefixed];
     if (metaValue) return metaValue;
   } catch {
     // import.meta.env is not available in every runtime.
@@ -33,7 +37,10 @@ export function getEnvVariable(name: string): string | undefined {
 
   try {
     const processEnvironment = typeof process !== "undefined" ? process.env : undefined;
-    const processValue = processEnvironment?.[name] ?? processEnvironment?.[viteName] ?? processEnvironment?.[unprefixed];
+    const processValue =
+      processEnvironment?.[name] ??
+      processEnvironment?.[viteName] ??
+      processEnvironment?.[unprefixed];
     if (processValue) return processValue;
   } catch {
     // process is not available in browsers without Node compatibility.
@@ -41,7 +48,8 @@ export function getEnvVariable(name: string): string | undefined {
 
   try {
     const globalEnvironment = globalThis as Record<string, unknown>;
-    const globalValue = globalEnvironment[name] ?? globalEnvironment[viteName] ?? globalEnvironment[unprefixed];
+    const globalValue =
+      globalEnvironment[name] ?? globalEnvironment[viteName] ?? globalEnvironment[unprefixed];
     return typeof globalValue === "string" && globalValue ? globalValue : undefined;
   } catch {
     return undefined;

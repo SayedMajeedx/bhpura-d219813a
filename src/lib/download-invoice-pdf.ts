@@ -12,10 +12,7 @@
 
 const PDF_RENDER_WIDTH_PX = 800;
 
-export async function downloadInvoicePdf(
-  element: HTMLElement | null,
-  filename: string,
-) {
+export async function downloadInvoicePdf(element: HTMLElement | null, filename: string) {
   if (!element || typeof window === "undefined") return;
 
   const [{ default: html2canvas }, { jsPDF }] = await Promise.all([
@@ -24,9 +21,7 @@ export async function downloadInvoicePdf(
   ]);
 
   const safeName = filename.replace(/[^a-zA-Z0-9-_\.\u0600-\u06FF]+/g, "_");
-  const finalName = safeName.toLowerCase().endsWith(".pdf")
-    ? safeName
-    : `${safeName}.pdf`;
+  const finalName = safeName.toLowerCase().endsWith(".pdf") ? safeName : `${safeName}.pdf`;
 
   // Build a fixed-width render shell. Mobile browsers still evaluate Tailwind's
   // responsive CSS against the phone viewport, so width alone is not enough: the
@@ -137,23 +132,41 @@ export async function downloadInvoicePdf(
     // Give the browser a tick to lay out the cloned subtree at the forced width.
     await new Promise((r) => requestAnimationFrame(() => r(null)));
     await document.fonts?.ready.catch(() => undefined);
-    await Promise.all(Array.from(clone.querySelectorAll("img")).map(async (img) => {
-      const src = img.currentSrc || img.src;
-      // Inline remote brand assets before html2canvas runs. A cloned image can
-      // otherwise be omitted even though it is visible in the live preview.
-      if (src && !src.startsWith("data:") && !src.startsWith("blob:")) {
-        try {
-          const { getInvoiceAssetDataUrl } = await import("@/lib/invoice-assets.functions");
-          img.src = await getInvoiceAssetDataUrl({ data: { url: src } });
-        } catch { /* keep the original URL as a fallback */ }
-      }
-      if (img.complete && img.naturalWidth > 0) return;
-      await new Promise<void>((resolve) => {
-        const timeout = window.setTimeout(resolve, 3000);
-        img.addEventListener("load", () => { window.clearTimeout(timeout); resolve(); }, { once: true });
-        img.addEventListener("error", () => { window.clearTimeout(timeout); resolve(); }, { once: true });
-      });
-    }));
+    await Promise.all(
+      Array.from(clone.querySelectorAll("img")).map(async (img) => {
+        const src = img.currentSrc || img.src;
+        // Inline remote brand assets before html2canvas runs. A cloned image can
+        // otherwise be omitted even though it is visible in the live preview.
+        if (src && !src.startsWith("data:") && !src.startsWith("blob:")) {
+          try {
+            const { getInvoiceAssetDataUrl } = await import("@/lib/invoice-assets.functions");
+            img.src = await getInvoiceAssetDataUrl({ data: { url: src } });
+          } catch {
+            /* keep the original URL as a fallback */
+          }
+        }
+        if (img.complete && img.naturalWidth > 0) return;
+        await new Promise<void>((resolve) => {
+          const timeout = window.setTimeout(resolve, 3000);
+          img.addEventListener(
+            "load",
+            () => {
+              window.clearTimeout(timeout);
+              resolve();
+            },
+            { once: true },
+          );
+          img.addEventListener(
+            "error",
+            () => {
+              window.clearTimeout(timeout);
+              resolve();
+            },
+            { once: true },
+          );
+        });
+      }),
+    );
 
     const canvas = await html2canvas(clone, {
       scale: 2,
@@ -194,7 +207,14 @@ export async function downloadInvoicePdf(
       ctx.drawImage(canvas, 0, sourceY, canvas.width, sliceHeight, 0, 0, canvas.width, sliceHeight);
       if (pageIndex > 0) pdf.addPage();
       const sliceHeightMm = sliceHeight / pxPerMm;
-      pdf.addImage(pageCanvas.toDataURL("image/jpeg", 0.94), "JPEG", margin, margin, contentW, sliceHeightMm);
+      pdf.addImage(
+        pageCanvas.toDataURL("image/jpeg", 0.94),
+        "JPEG",
+        margin,
+        margin,
+        contentW,
+        sliceHeightMm,
+      );
       sourceY += sliceHeight;
       pageIndex += 1;
     }

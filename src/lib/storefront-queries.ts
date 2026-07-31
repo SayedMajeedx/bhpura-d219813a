@@ -1,5 +1,13 @@
 import { publicSupabase as supabase } from "@/integrations/supabase/client";
 
+export async function fetchStorefrontPageData(slug: string) {
+  const { data, error } = await (supabase.rpc as any)("get_storefront_page_data", {
+    p_brand_slug: slug,
+  });
+  if (error) throw error;
+  return data;
+}
+
 export async function fetchActiveBrandIdentity(slug: string) {
   const { data, error } = await supabase
     .from("brands")
@@ -59,19 +67,24 @@ export async function fetchStorefrontSearch(brandId: string, term: string) {
   const escaped = term.replace(/[%_,()]/g, " ");
   const { data, error } = await supabase
     .from("products")
-    .select(`
+    .select(
+      `
       id, name, name_ar, name_en, description, description_ar, description_en, category, image_url, media, brand_id, created_at,
       product_variants ( id, selling_price, original_price, stock_main )
-    `)
+    `,
+    )
     .eq("brand_id", brandId)
     .eq("is_active", true)
-    .or(`name.ilike.%${escaped}%,name_ar.ilike.%${escaped}%,name_en.ilike.%${escaped}%,description.ilike.%${escaped}%,description_ar.ilike.%${escaped}%,description_en.ilike.%${escaped}%,category.ilike.%${escaped}%`);
+    .or(
+      `name.ilike.%${escaped}%,name_ar.ilike.%${escaped}%,name_en.ilike.%${escaped}%,description.ilike.%${escaped}%,description_ar.ilike.%${escaped}%,description_en.ilike.%${escaped}%,category.ilike.%${escaped}%`,
+    );
   if (error) throw error;
   return data ?? [];
 }
 
 export async function fetchProductDetail(brandId: string, targetId: string) {
-  const fullFields = "id, category, name, name_ar, name_en, description, description_ar, description_en, image_url, media, custom_fields, base_price, original_price, variant_label_size_ar, variant_label_size_en, variant_label_color_ar, variant_label_color_en, variant_label_fabric_ar, variant_label_fabric_en, product_variants(id, size, size_unit, color, fabric, selling_price, original_price, stock_main, image_url)";
+  const fullFields =
+    "id, category, name, name_ar, name_en, description, description_ar, description_en, image_url, media, custom_fields, base_price, original_price, variant_label_size_ar, variant_label_size_en, variant_label_color_ar, variant_label_color_en, variant_label_fabric_ar, variant_label_fabric_en, product_variants(id, size, size_unit, color, fabric, selling_price, original_price, stock_main, image_url)";
 
   const { data } = await supabase
     .from("products")
@@ -97,7 +110,9 @@ export async function fetchProductDetail(brandId: string, targetId: string) {
 export async function fetchRecommendationCatalog(brandId: string) {
   const { data, error } = await supabase
     .from("products")
-    .select("id, name, name_ar, name_en, category, image_url, media, product_variants(id, selling_price, original_price, stock_main)")
+    .select(
+      "id, name, name_ar, name_en, category, image_url, media, product_variants(id, selling_price, original_price, stock_main)",
+    )
     .eq("brand_id", brandId)
     .eq("is_active", true)
     .order("created_at", { ascending: false });
@@ -105,4 +120,3 @@ export async function fetchRecommendationCatalog(brandId: string) {
   if (error) throw error;
   return data ?? [];
 }
-

@@ -1,4 +1,12 @@
-import { createContext, useContext, useEffect, useState, useCallback, useMemo, type ReactNode } from "react";
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  useCallback,
+  useMemo,
+  type ReactNode,
+} from "react";
 import { DirectionProvider } from "@radix-ui/react-direction";
 import type { Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
@@ -6,7 +14,16 @@ import { trackStorefrontEvent } from "@/lib/storefront-analytics";
 import { westernNumeralLocale } from "@/lib/format";
 
 export type StoreLang = "ar" | "en";
-export type HomePromoCard = { title_en: string; title_ar: string; subtitle_en: string; subtitle_ar: string; image_url: string; href: string; background_color: string; text_color: string };
+export type HomePromoCard = {
+  title_en: string;
+  title_ar: string;
+  subtitle_en: string;
+  subtitle_ar: string;
+  image_url: string;
+  href: string;
+  background_color: string;
+  text_color: string;
+};
 export type HeroMediaItem = { type: "image" | "video"; url: string };
 export type HeroContentSlide = {
   id: string;
@@ -184,7 +201,11 @@ export function pickName(
 /** Pick the localized product description with the same fallback chain. */
 export function pickDescription(
   lang: StoreLang,
-  p: { description?: string | null; description_ar?: string | null; description_en?: string | null },
+  p: {
+    description?: string | null;
+    description_ar?: string | null;
+    description_en?: string | null;
+  },
 ): string {
   if (lang === "ar") return p.description_ar || p.description_en || p.description || "";
   return p.description_en || p.description_ar || p.description || "";
@@ -218,7 +239,9 @@ type StoreCtx = {
 
 const Ctx = createContext<StoreCtx | null>(null);
 
-function cartLineId(item: Pick<CartItem, "variant_id" | "size" | "color" | "fabric" | "custom_fields">): string {
+function cartLineId(
+  item: Pick<CartItem, "variant_id" | "size" | "color" | "fabric" | "custom_fields">,
+): string {
   const fields = [...(item.custom_fields ?? [])]
     .map((field) => ({ key: field.key, value: field.value }))
     .sort((a, b) => a.key.localeCompare(b.key));
@@ -256,10 +279,12 @@ export function StorefrontProvider({
       const c = localStorage.getItem(cartKey);
       if (c) {
         const stored = JSON.parse(c) as Array<Partial<CartItem> & { variant_id: string }>;
-        setCart(stored.map((item) => ({
-          ...item,
-          cart_line_id: item.cart_line_id || cartLineId(item as CartItem),
-        })) as CartItem[]);
+        setCart(
+          stored.map((item) => ({
+            ...item,
+            cart_line_id: item.cart_line_id || cartLineId(item as CartItem),
+          })) as CartItem[],
+        );
       }
 
       const w = localStorage.getItem(wishlistKey);
@@ -280,25 +305,30 @@ export function StorefrontProvider({
   }, [cart, cartKey]);
 
   useEffect(() => {
-    try { localStorage.setItem(wishlistKey, JSON.stringify(wishlist)); } catch {}
+    try {
+      localStorage.setItem(wishlistKey, JSON.stringify(wishlist));
+    } catch {}
   }, [wishlist, wishlistKey]);
 
-  const checkMembership = useCallback(async (activeSession: Session | null): Promise<boolean> => {
-    if (!activeSession?.user) {
-      setIsStoreMember(false);
+  const checkMembership = useCallback(
+    async (activeSession: Session | null): Promise<boolean> => {
+      if (!activeSession?.user) {
+        setIsStoreMember(false);
+        setMembershipLoading(false);
+        return false;
+      }
+      setMembershipLoading(true);
+      const { data, error } = await supabase.rpc("has_storefront_membership", {
+        p_brand_slug: brand.slug,
+      });
+      const member = !error && data === true;
+      if (error) console.error("Storefront membership check failed", error);
+      setIsStoreMember(member);
       setMembershipLoading(false);
-      return false;
-    }
-    setMembershipLoading(true);
-    const { data, error } = await supabase.rpc("has_storefront_membership", {
-      p_brand_slug: brand.slug,
-    });
-    const member = !error && data === true;
-    if (error) console.error("Storefront membership check failed", error);
-    setIsStoreMember(member);
-    setMembershipLoading(false);
-    return member;
-  }, [brand.slug]);
+      return member;
+    },
+    [brand.slug],
+  );
 
   const refreshMembership = useCallback(async (): Promise<boolean> => {
     const { data } = await supabase.auth.getSession();
@@ -318,9 +348,14 @@ export function StorefrontProvider({
     const { data } = supabase.auth.onAuthStateChange((_evt, nextSession) => {
       setSession(nextSession);
       // Run the RPC outside the auth callback to avoid blocking token storage.
-      window.setTimeout(() => { if (active) void checkMembership(nextSession); }, 0);
+      window.setTimeout(() => {
+        if (active) void checkMembership(nextSession);
+      }, 0);
     });
-    return () => { active = false; data.subscription.unsubscribe(); };
+    return () => {
+      active = false;
+      data.subscription.unsubscribe();
+    };
   }, [checkMembership]);
 
   const setLang = useCallback(
@@ -342,32 +377,40 @@ export function StorefrontProvider({
 
   const t = useCallback((ar: string, en: string) => (lang === "ar" ? ar : en), [lang]);
 
-  const addToCart = useCallback((item: CartItem) => {
-    setCart((prev) => {
-      const lineId = cartLineId(item);
-      const existing = prev.find((c) => c.cart_line_id === lineId);
-      const usedByOtherConfigurations = prev
-        .filter((c) => c.variant_id === item.variant_id && c.cart_line_id !== lineId)
-        .reduce((sum, c) => sum + c.qty, 0);
-      const availableForLine = Math.max(0, item.max_stock - usedByOtherConfigurations);
-      if (existing) {
-        return prev.map((c) =>
-          c.cart_line_id === lineId
-            ? { ...c, qty: Math.min(availableForLine, c.qty + item.qty) }
-            : c,
-        );
-      }
-      if (availableForLine <= 0) return prev;
-      return [...prev, { ...item, cart_line_id: lineId, qty: Math.min(item.qty, availableForLine) }];
-    });
-    trackStorefrontEvent("add_to_cart", {
-      currency: settings.currency,
-      value: Number((item.price * item.qty).toFixed(3)),
-      content_ids: [item.product_id],
-      content_type: "product",
-      items: [{ item_id: item.product_id, item_name: item.name, price: item.price, quantity: item.qty }],
-    });
-  }, [settings.currency]);
+  const addToCart = useCallback(
+    (item: CartItem) => {
+      setCart((prev) => {
+        const lineId = cartLineId(item);
+        const existing = prev.find((c) => c.cart_line_id === lineId);
+        const usedByOtherConfigurations = prev
+          .filter((c) => c.variant_id === item.variant_id && c.cart_line_id !== lineId)
+          .reduce((sum, c) => sum + c.qty, 0);
+        const availableForLine = Math.max(0, item.max_stock - usedByOtherConfigurations);
+        if (existing) {
+          return prev.map((c) =>
+            c.cart_line_id === lineId
+              ? { ...c, qty: Math.min(availableForLine, c.qty + item.qty) }
+              : c,
+          );
+        }
+        if (availableForLine <= 0) return prev;
+        return [
+          ...prev,
+          { ...item, cart_line_id: lineId, qty: Math.min(item.qty, availableForLine) },
+        ];
+      });
+      trackStorefrontEvent("add_to_cart", {
+        currency: settings.currency,
+        value: Number((item.price * item.qty).toFixed(3)),
+        content_ids: [item.product_id],
+        content_type: "product",
+        items: [
+          { item_id: item.product_id, item_name: item.name, price: item.price, quantity: item.qty },
+        ],
+      });
+    },
+    [settings.currency],
+  );
 
   const removeFromCart = useCallback((cart_line_id: string) => {
     setCart((prev) => prev.filter((c) => c.cart_line_id !== cart_line_id));
@@ -399,7 +442,9 @@ export function StorefrontProvider({
   const cartCount = useMemo(() => cart.reduce((s, c) => s + c.qty, 0), [cart]);
   const cartTotal = useMemo(() => cart.reduce((s, c) => s + c.qty * c.price, 0), [cart]);
   const toggleWishlist = useCallback((productId: string) => {
-    setWishlist((items) => items.includes(productId) ? items.filter((id) => id !== productId) : [...items, productId]);
+    setWishlist((items) =>
+      items.includes(productId) ? items.filter((id) => id !== productId) : [...items, productId],
+    );
   }, []);
   const isWishlisted = useCallback((productId: string) => wishlist.includes(productId), [wishlist]);
 
@@ -449,10 +494,10 @@ export function formatPrice(amount: number, currency: string, lang: StoreLang) {
   const n = new Intl.NumberFormat(
     westernNumeralLocale(lang === "ar" ? "ar-BH-u-nu-latn" : "en-BH"),
     {
-    style: "currency",
-    currency: normalizedCurrency,
-    minimumFractionDigits: fractionDigits,
-    maximumFractionDigits: fractionDigits,
+      style: "currency",
+      currency: normalizedCurrency,
+      minimumFractionDigits: fractionDigits,
+      maximumFractionDigits: fractionDigits,
     },
   );
   try {

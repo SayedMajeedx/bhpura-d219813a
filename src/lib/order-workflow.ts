@@ -47,7 +47,10 @@ export type OrderWorkflow = {
   outstanding: number;
 };
 
-const normalize = (value: unknown) => String(value ?? "").trim().toLowerCase();
+const normalize = (value: unknown) =>
+  String(value ?? "")
+    .trim()
+    .toLowerCase();
 
 export function getFulfillmentStage(order: OrderWorkflowInput): FulfillmentStage {
   const fulfillment = normalize(order.fulfillment_status);
@@ -59,7 +62,10 @@ export function getFulfillmentStage(order: OrderWorkflowInput): FulfillmentStage
   ) {
     return "completed";
   }
-  if (["cancelled", "canceled"].includes(fulfillment) || ["cancelled", "canceled"].includes(status)) {
+  if (
+    ["cancelled", "canceled"].includes(fulfillment) ||
+    ["cancelled", "canceled"].includes(status)
+  ) {
     return "cancelled";
   }
   if (fulfillment === "returned") return "returned";
@@ -80,8 +86,11 @@ export function getOrderWorkflow(order: OrderWorkflowInput): OrderWorkflow {
   const method = normalize(order.payment_method);
   const fulfillmentMethod = normalize(order.fulfillment_method) || "delivery";
   const isCod = ["cod", "cash", "cash_on_delivery", "cash on delivery"].includes(method);
-  const isManualBenefit = ["benefit", "benefitpay", "benefit_pay", "bank_transfer"].includes(method);
-  const terminal = ["completed", "cancelled", "returned"].includes(fulfillment) || payment === "refunded";
+  const isManualBenefit = ["benefit", "benefitpay", "benefit_pay", "bank_transfer"].includes(
+    method,
+  );
+  const terminal =
+    ["completed", "cancelled", "returned"].includes(fulfillment) || payment === "refunded";
   const outstanding = Math.max(0, Number((total - paid).toFixed(3)));
 
   let nextAction: OrderNextAction = "none";
@@ -95,14 +104,19 @@ export function getOrderWorkflow(order: OrderWorkflowInput): OrderWorkflow {
       if (["on_hold", "needs_packing"].includes(fulfillment) && (payment === "paid" || isCod)) {
         nextAction = "prepare_pickup";
       } else if (fulfillment === "ready_for_pickup") {
-        nextAction = payment === "paid" || outstanding <= 0 ? "hand_over_pickup" : "collect_and_hand_over";
+        nextAction =
+          payment === "paid" || outstanding <= 0 ? "hand_over_pickup" : "collect_and_hand_over";
       }
     } else if (fulfillmentMethod === "digital") {
       if (payment === "paid") nextAction = "deliver_digital";
-    } else if (["on_hold", "needs_packing"].includes(fulfillment) && (payment === "paid" || isCod)) {
+    } else if (
+      ["on_hold", "needs_packing"].includes(fulfillment) &&
+      (payment === "paid" || isCod)
+    ) {
       nextAction = "pack_and_ship";
     } else if (fulfillment === "out_for_delivery") {
-      nextAction = payment === "paid" || outstanding <= 0 ? "mark_delivered" : "collect_and_deliver";
+      nextAction =
+        payment === "paid" || outstanding <= 0 ? "mark_delivered" : "collect_and_deliver";
     } else if (!method) {
       nextAction = "review_order";
     }
@@ -110,10 +124,7 @@ export function getOrderWorkflow(order: OrderWorkflowInput): OrderWorkflow {
 
   // COD is intentionally excluded: payment is expected at pickup/delivery and
   // its current operational action is preparation or handover, not "wait".
-  const awaitingPayment =
-    !terminal &&
-    !isCod &&
-    payment !== "paid";
+  const awaitingPayment = !terminal && !isCod && payment !== "paid";
 
   return {
     payment,

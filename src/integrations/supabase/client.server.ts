@@ -1,5 +1,5 @@
-import { createClient } from '@supabase/supabase-js';
-import type { Database } from './types';
+import { createClient } from "@supabase/supabase-js";
+import type { Database } from "./types";
 
 let getEventFn: any = null;
 import(/* @vite-ignore */ "vinxi/http")
@@ -9,13 +9,13 @@ import(/* @vite-ignore */ "vinxi/http")
   .catch(() => {});
 
 function isNewSupabaseApiKey(value: string): boolean {
-  return value.startsWith('sb_publishable_') || value.startsWith('sb_secret_');
+  return value.startsWith("sb_publishable_") || value.startsWith("sb_secret_");
 }
 
 function createSupabaseFetch(supabaseKey: string): typeof fetch {
   return (input, init) => {
     const headers = new Headers(
-      typeof Request !== 'undefined' && input instanceof Request ? input.headers : undefined,
+      typeof Request !== "undefined" && input instanceof Request ? input.headers : undefined,
     );
 
     if (init?.headers) {
@@ -23,11 +23,14 @@ function createSupabaseFetch(supabaseKey: string): typeof fetch {
     }
 
     // New Supabase API keys are opaque strings, not bearer JWTs.
-    if (isNewSupabaseApiKey(supabaseKey) && headers.get('Authorization') === `Bearer ${supabaseKey}`) {
-      headers.delete('Authorization');
+    if (
+      isNewSupabaseApiKey(supabaseKey) &&
+      headers.get("Authorization") === `Bearer ${supabaseKey}`
+    ) {
+      headers.delete("Authorization");
     }
 
-    headers.set('apikey', supabaseKey);
+    headers.set("apikey", supabaseKey);
     return fetch(input, { ...init, headers });
   };
 }
@@ -40,10 +43,11 @@ function getEnvSync(name: string): string | undefined {
   try {
     if (getEventFn) {
       const event = getEventFn();
-      const env = event?.context?.cloudflare?.env || 
-                  (event?.context as any)?.env || 
-                  event?.context?.cloudflare || 
-                  (event?.context as any)?.cloudflare?.env;
+      const env =
+        event?.context?.cloudflare?.env ||
+        (event?.context as any)?.env ||
+        event?.context?.cloudflare ||
+        (event?.context as any)?.cloudflare?.env;
       if (env) {
         if (env[name]) return env[name];
         if (env[viteName]) return env[viteName];
@@ -67,18 +71,18 @@ function getEnvSync(name: string): string | undefined {
 }
 
 function createSupabaseAdminClient() {
-  let SUPABASE_URL = getEnvSync('SUPABASE_URL') || getEnvSync('VITE_SUPABASE_URL');
-  if (SUPABASE_URL && !SUPABASE_URL.startsWith('http://') && !SUPABASE_URL.startsWith('https://')) {
+  let SUPABASE_URL = getEnvSync("SUPABASE_URL") || getEnvSync("VITE_SUPABASE_URL");
+  if (SUPABASE_URL && !SUPABASE_URL.startsWith("http://") && !SUPABASE_URL.startsWith("https://")) {
     SUPABASE_URL = `https://${SUPABASE_URL}`;
   }
-  const SUPABASE_SERVICE_ROLE_KEY = getEnvSync('SUPABASE_SERVICE_ROLE_KEY');
+  const SUPABASE_SERVICE_ROLE_KEY = getEnvSync("SUPABASE_SERVICE_ROLE_KEY");
 
   if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
     const missing = [
-      ...(!SUPABASE_URL ? ['SUPABASE_URL'] : []),
-      ...(!SUPABASE_SERVICE_ROLE_KEY ? ['SUPABASE_SERVICE_ROLE_KEY'] : []),
+      ...(!SUPABASE_URL ? ["SUPABASE_URL"] : []),
+      ...(!SUPABASE_SERVICE_ROLE_KEY ? ["SUPABASE_SERVICE_ROLE_KEY"] : []),
     ];
-    const message = `Missing Supabase environment variable(s): ${missing.join(', ')}. Please configure your Supabase environment variables in your environment config or hosting panel.`;
+    const message = `Missing Supabase environment variable(s): ${missing.join(", ")}. Please configure your Supabase environment variables in your environment config or hosting panel.`;
     console.error(`[Supabase] ${message}`);
     throw new Error(message);
   }
@@ -91,7 +95,7 @@ function createSupabaseAdminClient() {
       storage: undefined,
       persistSession: false,
       autoRefreshToken: false,
-    }
+    },
   });
 }
 

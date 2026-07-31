@@ -80,7 +80,7 @@ export function CourierWhatsAppModal({
       toast.error(
         isAr
           ? "يرجى إدخال رقم هاتف المندوب قبل إرسال الإشعار"
-          : "Please enter the courier's phone number before sending"
+          : "Please enter the courier's phone number before sending",
       );
       return;
     }
@@ -119,13 +119,15 @@ export function CourierWhatsAppModal({
       toast.success(
         isAr
           ? `تم فتح واتساب لإرسال بيانات الطلب #${invNum}`
-          : `WhatsApp opened for order #${invNum}`
+          : `WhatsApp opened for order #${invNum}`,
       );
 
       onNotified?.();
       onClose();
     } catch (err: any) {
-      toast.error(err.message || (isAr ? "حدث خطأ أثناء معالجة الطلب" : "Error processing request"));
+      toast.error(
+        err.message || (isAr ? "حدث خطأ أثناء معالجة الطلب" : "Error processing request"),
+      );
     } finally {
       setIsSaving(false);
     }

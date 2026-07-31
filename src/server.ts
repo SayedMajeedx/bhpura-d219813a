@@ -43,6 +43,23 @@ function isH3SwallowedErrorBody(body: string): boolean {
   }
 }
 
+function withPerformanceCacheHeaders(request: Request, response: Response): Response {
+  const url = new URL(request.url);
+  if (
+    response.status === 200 &&
+    (url.pathname.startsWith("/assets/") || url.pathname.startsWith("/fonts/"))
+  ) {
+    const headers = new Headers(response.headers);
+    headers.set("Cache-Control", "public, max-age=31536000, immutable");
+    return new Response(response.body, {
+      status: response.status,
+      statusText: response.statusText,
+      headers,
+    });
+  }
+  return response;
+}
+
 function withSecurityHeaders(response: Response): Response {
   if (response.status === 101) return response;
   const headers = new Headers(response.headers);
@@ -71,9 +88,7 @@ async function runScheduledTasks(cron: string, env: Cloudflare.Env): Promise<voi
   console.log(JSON.stringify({ event: "whatsapp_retry_complete", cron, ...whatsappResult }));
 
   if (cron === "17 2 * * *") {
-    const { cleanupBenefitReceipts } = await import(
-      "./lib/benefit-receipt-cleanup.server"
-    );
+    const { cleanupBenefitReceipts } = await import("./lib/benefit-receipt-cleanup.server");
     const cleanupResult = await cleanupBenefitReceipts();
     console.log(JSON.stringify({ event: "benefit_receipt_cleanup_complete", ...cleanupResult }));
   }
@@ -103,7 +118,10 @@ export default {
       }
 
       const response = await handler.fetch(request);
-      return withSecurityHeaders(await normalizeCatastrophicSsrResponse(response));
+      return withPerformanceCacheHeaders(
+        request,
+        withSecurityHeaders(await normalizeCatastrophicSsrResponse(response)),
+      );
     } catch (error) {
       console.error(error);
       return withSecurityHeaders(

@@ -1,5 +1,11 @@
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const COUNTRIES = [
   { code: "+973", label: "🇧🇭 +973" },
@@ -49,11 +55,19 @@ export function PhoneInput({
 
   return (
     <div className={`flex gap-2 ${className ?? ""}`}>
-      <Select name={name ? `${name}-country-code` : undefined} value={code} onValueChange={(v) => emit(v, local)}>
-        <SelectTrigger aria-label="Country code" className="h-11 w-[110px] shrink-0"><SelectValue /></SelectTrigger>
+      <Select
+        name={name ? `${name}-country-code` : undefined}
+        value={code}
+        onValueChange={(v) => emit(v, local)}
+      >
+        <SelectTrigger aria-label="Country code" className="h-11 w-[110px] shrink-0">
+          <SelectValue />
+        </SelectTrigger>
         <SelectContent>
           {COUNTRIES.map((c) => (
-            <SelectItem key={c.code} value={c.code}>{c.label}</SelectItem>
+            <SelectItem key={c.code} value={c.code}>
+              {c.label}
+            </SelectItem>
           ))}
         </SelectContent>
       </Select>

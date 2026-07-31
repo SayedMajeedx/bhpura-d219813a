@@ -25,7 +25,11 @@ export function SupportAccessCard({ brand }: SupportAccessCardProps) {
   }, [brand.support_access_enabled]);
 
   // Query audit logs using the secure server function
-  const { data: auditLogs, isLoading: loadingLogs, error: logsError } = useQuery({
+  const {
+    data: auditLogs,
+    isLoading: loadingLogs,
+    error: logsError,
+  } = useQuery({
     queryKey: ["tenant-audit-logs", brand.id],
     queryFn: async () => {
       // Calls the server function directly!
@@ -41,8 +45,12 @@ export function SupportAccessCard({ brand }: SupportAccessCardProps) {
     onSuccess: (_, enabled) => {
       toast.success(
         lang === "ar"
-          ? (enabled ? "تم تمكين وصول الدعم الفني بنجاح" : "تم تعطيل وصول الدعم الفني")
-          : (enabled ? "Technical support access enabled successfully." : "Technical support access disabled.")
+          ? enabled
+            ? "تم تمكين وصول الدعم الفني بنجاح"
+            : "تم تعطيل وصول الدعم الفني"
+          : enabled
+            ? "Technical support access enabled successfully."
+            : "Technical support access disabled.",
       );
       qc.invalidateQueries({ queryKey: ["business-settings"] });
     },
@@ -68,7 +76,9 @@ export function SupportAccessCard({ brand }: SupportAccessCardProps) {
               <CardTitle className="text-lg font-display font-medium text-foreground flex items-center gap-2">
                 <ShieldAlert className="h-5 w-5 text-primary" />
                 <span>
-                  {lang === "ar" ? "وصول الدعم الفني لبوتك" : "Allow Boutq Technical Support Access"}
+                  {lang === "ar"
+                    ? "وصول الدعم الفني لبوتك"
+                    : "Allow Boutq Technical Support Access"}
                 </span>
               </CardTitle>
               <CardDescription className="text-xs max-w-xl leading-relaxed">
@@ -78,7 +88,9 @@ export function SupportAccessCard({ brand }: SupportAccessCardProps) {
               </CardDescription>
             </div>
             <div className="flex items-center gap-2 self-start sm:self-center">
-              {toggleMutation.isPending && <Loader2 className="h-4 w-4 animate-spin text-primary" />}
+              {toggleMutation.isPending && (
+                <Loader2 className="h-4 w-4 animate-spin text-primary" />
+              )}
               <Switch
                 checked={accessEnabled}
                 onCheckedChange={handleToggle}
@@ -130,40 +142,57 @@ export function SupportAccessCard({ brand }: SupportAccessCardProps) {
           {loadingLogs ? (
             <div className="p-8 text-center flex flex-col items-center justify-center gap-2 text-xs text-muted-foreground">
               <Loader2 className="h-5 w-5 animate-spin text-primary" />
-              <span>{lang === "ar" ? "جاري تحميل سجلات التدقيق..." : "Loading security logs..."}</span>
+              <span>
+                {lang === "ar" ? "جاري تحميل سجلات التدقيق..." : "Loading security logs..."}
+              </span>
             </div>
           ) : logsError ? (
             <div className="p-6 text-center text-xs text-destructive flex items-center justify-center gap-2">
               <AlertCircle className="h-4 w-4" />
-              <span>{lang === "ar" ? "فشل تحميل سجلات التدقيق." : "Failed to load audit logs."}</span>
+              <span>
+                {lang === "ar" ? "فشل تحميل سجلات التدقيق." : "Failed to load audit logs."}
+              </span>
             </div>
           ) : !auditLogs || auditLogs.length === 0 ? (
             <div className="p-8 text-center text-xs text-muted-foreground">
-              {lang === "ar" ? "لا توجد سجلات دخول سابقة." : "No prior access events logged for this store."}
+              {lang === "ar"
+                ? "لا توجد سجلات دخول سابقة."
+                : "No prior access events logged for this store."}
             </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse text-xs">
                 <thead>
                   <tr className="bg-zinc-50 dark:bg-zinc-900/50 border-b border-zinc-100 dark:border-zinc-800/80 text-muted-foreground font-medium">
-                    <th className="p-3.5 pl-6">{lang === "ar" ? "المهندس / المسؤول" : "Operator / Engineer"}</th>
+                    <th className="p-3.5 pl-6">
+                      {lang === "ar" ? "المهندس / المسؤول" : "Operator / Engineer"}
+                    </th>
                     <th className="p-3.5">{lang === "ar" ? "نوع الإجراء" : "Action Type"}</th>
-                    <th className="p-3.5">{lang === "ar" ? "سبب الدخول" : "Troubleshooting Reason"}</th>
-                    <th className="p-3.5 pr-6 text-right">{lang === "ar" ? "التاريخ والوقت" : "Date & Time"}</th>
+                    <th className="p-3.5">
+                      {lang === "ar" ? "سبب الدخول" : "Troubleshooting Reason"}
+                    </th>
+                    <th className="p-3.5 pr-6 text-right">
+                      {lang === "ar" ? "التاريخ والوقت" : "Date & Time"}
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800/80 font-mono text-[11px]">
                   {auditLogs.map((log: any) => {
                     const formattedDate = new Date(log.created_at).toLocaleString(
                       lang === "ar" ? "ar-BH-u-nu-latn" : "en-US",
-                      { dateStyle: "medium", timeStyle: "short" }
+                      { dateStyle: "medium", timeStyle: "short" },
                     );
 
                     return (
-                      <tr key={log.id} className="hover:bg-zinc-50/50 dark:hover:bg-zinc-900/30 transition-colors">
+                      <tr
+                        key={log.id}
+                        className="hover:bg-zinc-50/50 dark:hover:bg-zinc-900/30 transition-colors"
+                      >
                         <td className="p-3.5 pl-6 font-medium text-foreground">
                           <div>{log.operator?.name || "Boutq Support"}</div>
-                          <div className="text-[10px] text-muted-foreground font-normal">{log.operator?.email || "support@boutq.store"}</div>
+                          <div className="text-[10px] text-muted-foreground font-normal">
+                            {log.operator?.email || "support@boutq.store"}
+                          </div>
                         </td>
                         <td className="p-3.5">
                           <span
@@ -173,7 +202,9 @@ export function SupportAccessCard({ brand }: SupportAccessCardProps) {
                                 : "bg-emerald-500/10 border-emerald-500/20 text-emerald-600 dark:text-emerald-400"
                             }`}
                           >
-                            {log.action_type === "impersonation_start" ? "START_SESSION" : "EXIT_SESSION"}
+                            {log.action_type === "impersonation_start"
+                              ? "START_SESSION"
+                              : "EXIT_SESSION"}
                           </span>
                         </td>
                         <td className="p-3.5 text-muted-foreground max-w-xs truncate font-sans">

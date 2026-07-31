@@ -12,11 +12,11 @@ import { ResponsiveImage } from "@/components/responsive-media";
 
 function getDescendantCategories(catId: string, categories: any[]): any[] {
   const descendants: any[] = [];
-  const queue = categories.filter(c => c.parent_id === catId);
+  const queue = categories.filter((c) => c.parent_id === catId);
   while (queue.length > 0) {
     const current = queue.shift()!;
     descendants.push(current);
-    const children = categories.filter(c => c.parent_id === current.id);
+    const children = categories.filter((c) => c.parent_id === current.id);
     queue.push(...children);
   }
   return descendants;
@@ -54,15 +54,18 @@ export const Route = createFileRoute("/$slug/$category")({
     return {
       page,
       brand,
-      faviconUrl: (settings as any)?.favicon_url || (settings as any)?.logo_url || brand.logo_url || null,
+      faviconUrl:
+        (settings as any)?.favicon_url || (settings as any)?.logo_url || brand.logo_url || null,
     };
   },
   head: ({ loaderData }) => {
     const page = loaderData?.page as any;
     const brand = loaderData?.brand as any;
     if (!page || !brand) return {};
-    const title = page.meta_title || page.title_en || page.title_ar || brand.meta_title || brand.name_en;
-    const description = page.meta_description || brand.meta_description || `Learn more about ${brand.name_en}.`;
+    const title =
+      page.meta_title || page.title_en || page.title_ar || brand.meta_title || brand.name_en;
+    const description =
+      page.meta_description || brand.meta_description || `Learn more about ${brand.name_en}.`;
     const image = page.image_url || brand.logo_url || "https://boutq.store/og-placeholder.png";
     const favicon = loaderData?.faviconUrl;
     return {
@@ -78,7 +81,15 @@ export const Route = createFileRoute("/$slug/$category")({
         { name: "twitter:description", content: description },
         { name: "twitter:image", content: image },
       ],
-      links: favicon ? [{ rel: "icon", href: favicon, ...(faviconType(favicon) ? { type: faviconType(favicon) } : {}) }] : [],
+      links: favicon
+        ? [
+            {
+              rel: "icon",
+              href: favicon,
+              ...(faviconType(favicon) ? { type: faviconType(favicon) } : {}),
+            },
+          ]
+        : [],
     };
   },
   component: CategoryPage,
@@ -91,7 +102,13 @@ function CategoryPage() {
   const cmsPage = settings.pages.find((page) => page.slug === categorySlug);
   const [sort, setSort] = useState<"new" | "old" | "price-low" | "price-high">("new");
   const navigate = useNavigate();
-  const smartKind = ["new-arrivals", "new"].includes(categorySlug) ? "new" : ["most-selling", "best-sellers", "best-selling"].includes(categorySlug) ? "best" : ["offers", "sale", "discounts"].includes(categorySlug) ? "offers" : null;
+  const smartKind = ["new-arrivals", "new"].includes(categorySlug)
+    ? "new"
+    : ["most-selling", "best-sellers", "best-selling"].includes(categorySlug)
+      ? "best"
+      : ["offers", "sale", "discounts"].includes(categorySlug)
+        ? "offers"
+        : null;
 
   // Fetch all active categories to reconstruct full parent-child routing context locally
   const categoriesQuery = useQuery({
@@ -104,14 +121,21 @@ function CategoryPage() {
         .eq("is_active", true)
         .order("sort_order", { ascending: true });
       if (error) throw error;
-      return (data ?? []) as Array<{ id: string; slug: string; name_en: string; name_ar: string | null; parent_id: string | null; image_url: string | null }>;
+      return (data ?? []) as Array<{
+        id: string;
+        slug: string;
+        name_en: string;
+        name_ar: string | null;
+        parent_id: string | null;
+        image_url: string | null;
+      }>;
     },
     staleTime: 5 * 60_000,
   });
 
   const activeCategory = useMemo(() => {
     if (smartKind) return null;
-    return categoriesQuery.data?.find(c => c.slug === categorySlug) || null;
+    return categoriesQuery.data?.find((c) => c.slug === categorySlug) || null;
   }, [categoriesQuery.data, categorySlug, smartKind]);
 
   // URL Deep-Linking & Client-side filter State
@@ -126,11 +150,32 @@ function CategoryPage() {
   const categoryQuery = useQuery({
     queryKey: ["storefront", brand.slug, "category", categorySlug],
     queryFn: async () => {
-      if (smartKind) return { id: smartKind, slug: categorySlug, name_en: smartKind === "new" ? "New arrivals" : smartKind === "best" ? "Most selling" : "Sale", name_ar: smartKind === "new" ? "وصل حديثاً" : smartKind === "best" ? "الأكثر مبيعاً" : "تنزيلات", image_url: null };
-      const { data, error } = await (supabase.from("categories") as any).select("id, slug, name_en, name_ar, image_url, parent_id").eq("brand_id", brand.id).eq("is_active", true).eq("slug", categorySlug).maybeSingle();
+      if (smartKind)
+        return {
+          id: smartKind,
+          slug: categorySlug,
+          name_en:
+            smartKind === "new" ? "New arrivals" : smartKind === "best" ? "Most selling" : "Sale",
+          name_ar:
+            smartKind === "new" ? "وصل حديثاً" : smartKind === "best" ? "الأكثر مبيعاً" : "تنزيلات",
+          image_url: null,
+        };
+      const { data, error } = await (supabase.from("categories") as any)
+        .select("id, slug, name_en, name_ar, image_url, parent_id")
+        .eq("brand_id", brand.id)
+        .eq("is_active", true)
+        .eq("slug", categorySlug)
+        .maybeSingle();
       if (error) throw error;
       if (!data) throw notFound();
-      return data as { id: string; slug: string; name_en: string; name_ar: string | null; image_url: string | null; parent_id: string | null };
+      return data as {
+        id: string;
+        slug: string;
+        name_en: string;
+        name_ar: string | null;
+        image_url: string | null;
+        parent_id: string | null;
+      };
     },
     enabled: !cmsPage,
     staleTime: 5 * 60_000,
@@ -142,31 +187,79 @@ function CategoryPage() {
 
   // Parent Category Product Rollup
   const productsQuery = useQuery({
-    queryKey: ["storefront", brand.slug, "category-products-rollup", categorySlug, activeCategory?.id, smartKind, categoriesQuery.data?.length],
-    enabled: (Boolean(activeCategory) || Boolean(smartKind)) && !cmsPage && !categoriesQuery.isLoading,
+    queryKey: [
+      "storefront",
+      brand.slug,
+      "category-products-rollup",
+      categorySlug,
+      activeCategory?.id,
+      smartKind,
+      categoriesQuery.data?.length,
+    ],
+    enabled:
+      (Boolean(activeCategory) || Boolean(smartKind)) && !cmsPage && !categoriesQuery.isLoading,
     queryFn: async () => {
       if (smartKind === "best") {
-        const { data: ranked, error: rankError } = await (supabase.rpc as any)("get_storefront_best_sellers", { p_brand_slug: brand.slug, p_limit: 24 });
+        const { data: ranked, error: rankError } = await (supabase.rpc as any)(
+          "get_storefront_best_sellers",
+          { p_brand_slug: brand.slug, p_limit: 24 },
+        );
         if (rankError) throw rankError;
         const ids = (ranked ?? []).map((row: any) => row.product_id);
         if (!ids.length) return [] as ProductRow[];
-        const { data, error } = await supabase.from("products").select("id, name, name_ar, name_en, description, description_ar, description_en, category, image_url, media, brand_id, created_at, product_variants(id, selling_price, original_price, stock_main, size, color)").eq("brand_id", brand.id).eq("is_active", true).in("id", ids);
+        const { data, error } = await supabase
+          .from("products")
+          .select(
+            "id, name, name_ar, name_en, description, description_ar, description_en, category, image_url, media, brand_id, created_at, product_variants(id, selling_price, original_price, stock_main, size, color)",
+          )
+          .eq("brand_id", brand.id)
+          .eq("is_active", true)
+          .in("id", ids);
         if (error) throw error;
-        const order = new Map<string, number>(ids.map((id: string, index: number) => [id, index] as [string, number]));
-        return ((data ?? []) as unknown as ProductRow[]).sort((a, b) => (order.get(a.id) ?? 99) - (order.get(b.id) ?? 99));
+        const order = new Map<string, number>(
+          ids.map((id: string, index: number) => [id, index] as [string, number]),
+        );
+        return ((data ?? []) as unknown as ProductRow[]).sort(
+          (a, b) => (order.get(a.id) ?? 99) - (order.get(b.id) ?? 99),
+        );
       }
       if (smartKind === "new" || smartKind === "offers") {
-        const { data, error } = await supabase.from("products").select("id, name, name_ar, name_en, description, description_ar, description_en, category, image_url, media, brand_id, created_at, product_variants(id, selling_price, original_price, stock_main, size, color)").eq("brand_id", brand.id).eq("is_active", true).order("created_at", { ascending: false }).limit(smartKind === "new" ? 60 : 200);
+        const { data, error } = await supabase
+          .from("products")
+          .select(
+            "id, name, name_ar, name_en, description, description_ar, description_en, category, image_url, media, brand_id, created_at, product_variants(id, selling_price, original_price, stock_main, size, color)",
+          )
+          .eq("brand_id", brand.id)
+          .eq("is_active", true)
+          .order("created_at", { ascending: false })
+          .limit(smartKind === "new" ? 60 : 200);
         if (error) throw error;
         const rows = (data ?? []) as unknown as ProductRow[];
-        return smartKind === "offers" ? rows.filter((product) => product.product_variants.some((variant) => Number(variant.original_price || 0) > Number(variant.selling_price || 0))) : rows;
+        return smartKind === "offers"
+          ? rows.filter((product) =>
+              product.product_variants.some(
+                (variant) =>
+                  Number(variant.original_price || 0) > Number(variant.selling_price || 0),
+              ),
+            )
+          : rows;
       }
 
       const descendants = getDescendantCategories(activeCategory!.id, categoriesQuery.data ?? []);
       const rollupCategories = [activeCategory!, ...descendants];
-      
-      const values = [...new Set(rollupCategories.flatMap(c => [c.slug, c.name_en]).filter(Boolean))];
-      const { data, error } = await supabase.from("products").select("id, name, name_ar, name_en, description, description_ar, description_en, category, image_url, media, brand_id, created_at, product_variants(id, selling_price, original_price, stock_main, size, color)").eq("brand_id", brand.id).eq("is_active", true).in("category", values).order("created_at", { ascending: false });
+
+      const values = [
+        ...new Set(rollupCategories.flatMap((c) => [c.slug, c.name_en]).filter(Boolean)),
+      ];
+      const { data, error } = await supabase
+        .from("products")
+        .select(
+          "id, name, name_ar, name_en, description, description_ar, description_en, category, image_url, media, brand_id, created_at, product_variants(id, selling_price, original_price, stock_main, size, color)",
+        )
+        .eq("brand_id", brand.id)
+        .eq("is_active", true)
+        .in("category", values)
+        .order("created_at", { ascending: false });
       if (error) throw error;
       return (data ?? []) as unknown as ProductRow[];
     },
@@ -175,7 +268,11 @@ function CategoryPage() {
     refetchOnWindowFocus: false,
   });
 
-  const title = category ? (lang === "ar" ? category.name_ar || category.name_en : category.name_en) : "";
+  const title = category
+    ? lang === "ar"
+      ? category.name_ar || category.name_en
+      : category.name_en
+    : "";
 
   // Construct dynamic rows of pills recursively for each selected subcategory level
   const rows = useMemo(() => {
@@ -184,25 +281,27 @@ function CategoryPage() {
     const rowsList = [];
     const products = productsQuery.data ?? [];
     const categories = categoriesQuery.data ?? [];
-    
+
     // Determine the starting parent ID for subcategories
     let currentParentId = activeCategory.id;
     let levelIndex = 0;
-    
+
     while (true) {
       // Fetch subcategories under currentParentId
       const levelCategories = categories.filter((c) => c.parent_id === currentParentId);
-      
+
       if (levelCategories.length > 0) {
         // Filter out empty subcategory chips that do not have active products in their subtree
         const activeLevelCategories = levelCategories.filter((cat) => {
           const descendants = getDescendantCategories(cat.id, categories);
-          const matchValues = new Set([
-            cat.slug,
-            cat.name_en,
-            ...descendants.map(d => d.slug).filter(Boolean),
-            ...descendants.map(d => d.name_en).filter(Boolean)
-          ].filter(Boolean));
+          const matchValues = new Set(
+            [
+              cat.slug,
+              cat.name_en,
+              ...descendants.map((d) => d.slug).filter(Boolean),
+              ...descendants.map((d) => d.name_en).filter(Boolean),
+            ].filter(Boolean),
+          );
           return products.some((p) => p.category && matchValues.has(p.category));
         });
 
@@ -218,12 +317,12 @@ function CategoryPage() {
       } else {
         break;
       }
-      
+
       // Move to the next level down the selected path
       const selectedSlugForLevel = selectedSubCategorySlugs[levelIndex];
       if (selectedSlugForLevel) {
         const selectedCategoryItem = levelCategories.find(
-          (c) => c.slug === selectedSlugForLevel || c.name_en === selectedSlugForLevel
+          (c) => c.slug === selectedSlugForLevel || c.name_en === selectedSlugForLevel,
         );
         if (selectedCategoryItem) {
           currentParentId = selectedCategoryItem.id;
@@ -235,33 +334,57 @@ function CategoryPage() {
         break;
       }
     }
-    
+
     return rowsList;
-  }, [categoriesQuery.data, categoriesQuery.isLoading, productsQuery.data, selectedSubCategorySlugs, activeCategory]);
+  }, [
+    categoriesQuery.data,
+    categoriesQuery.isLoading,
+    productsQuery.data,
+    selectedSubCategorySlugs,
+    activeCategory,
+  ]);
 
   const filteredProducts = useMemo(() => {
     let list = productsQuery.data ?? [];
     const leafSlug = selectedSubCategorySlugs[selectedSubCategorySlugs.length - 1] || null;
     if (leafSlug) {
-      const selectedCat = categoriesQuery.data?.find(c => c.slug === leafSlug || c.name_en === leafSlug);
+      const selectedCat = categoriesQuery.data?.find(
+        (c) => c.slug === leafSlug || c.name_en === leafSlug,
+      );
       if (selectedCat) {
         const descendants = getDescendantCategories(selectedCat.id, categoriesQuery.data ?? []);
-        const targetValues = new Set([
-          selectedCat.slug,
-          selectedCat.name_en,
-          ...descendants.map(d => d.slug).filter(Boolean),
-          ...descendants.map(d => d.name_en).filter(Boolean)
-        ].filter(Boolean));
-        list = list.filter(p => p.category && targetValues.has(p.category));
+        const targetValues = new Set(
+          [
+            selectedCat.slug,
+            selectedCat.name_en,
+            ...descendants.map((d) => d.slug).filter(Boolean),
+            ...descendants.map((d) => d.name_en).filter(Boolean),
+          ].filter(Boolean),
+        );
+        list = list.filter((p) => p.category && targetValues.has(p.category));
       } else {
         const targetValues = new Set([leafSlug.toLowerCase().replace(/\s+/g, "-")]);
-        list = list.filter(p => p.category && targetValues.has(p.category.toLowerCase()));
+        list = list.filter((p) => p.category && targetValues.has(p.category.toLowerCase()));
       }
     }
     const rows = [...list];
     if (smartKind === "best" && sort === "new") return rows;
-    const price = (product: ProductRow) => Math.min(...product.product_variants.map((variant) => Number(variant.selling_price)).filter((value) => value >= 0), Number.MAX_SAFE_INTEGER);
-    return rows.sort((a, b) => sort === "old" ? new Date(a.created_at).getTime() - new Date(b.created_at).getTime() : sort === "price-low" ? price(a) - price(b) : sort === "price-high" ? price(b) - price(a) : new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+    const price = (product: ProductRow) =>
+      Math.min(
+        ...product.product_variants
+          .map((variant) => Number(variant.selling_price))
+          .filter((value) => value >= 0),
+        Number.MAX_SAFE_INTEGER,
+      );
+    return rows.sort((a, b) =>
+      sort === "old"
+        ? new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+        : sort === "price-low"
+          ? price(a) - price(b)
+          : sort === "price-high"
+            ? price(b) - price(a)
+            : new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+    );
   }, [productsQuery.data, selectedSubCategorySlugs, sort, smartKind, categoriesQuery.data]);
 
   const breadcrumbs = useMemo(() => {
@@ -270,29 +393,43 @@ function CategoryPage() {
       {
         label: t("الرئيسية", "Home"),
         to: "/$slug",
-        params: { slug: brand.slug }
-      }
+        params: { slug: brand.slug },
+      },
     ];
 
     if (activeCategory.parent_id) {
-      const parentCat = categoriesQuery.data?.find(c => c.id === activeCategory.parent_id);
+      const parentCat = categoriesQuery.data?.find((c) => c.id === activeCategory.parent_id);
       if (parentCat) {
         list.push({
-          label: (lang === "ar" ? parentCat.name_ar || parentCat.name_en : parentCat.name_en || parentCat.name_ar) ?? "",
+          label:
+            (lang === "ar"
+              ? parentCat.name_ar || parentCat.name_en
+              : parentCat.name_en || parentCat.name_ar) ?? "",
           to: "/$slug/$category",
-          params: { slug: brand.slug, category: parentCat.slug || parentCat.name_en }
+          params: { slug: brand.slug, category: parentCat.slug || parentCat.name_en },
         });
       }
     }
 
     list.push({
-      label: (lang === "ar" ? activeCategory.name_ar || activeCategory.name_en : activeCategory.name_en || activeCategory.name_ar) ?? "",
+      label:
+        (lang === "ar"
+          ? activeCategory.name_ar || activeCategory.name_en
+          : activeCategory.name_en || activeCategory.name_ar) ?? "",
       to: "/$slug/$category",
-      params: { slug: brand.slug, category: activeCategory.slug || activeCategory.name_en }
+      params: { slug: brand.slug, category: activeCategory.slug || activeCategory.name_en },
     });
 
     return list;
-  }, [activeCategory, categoriesQuery.data, categoriesQuery.isLoading, brand.slug, lang, t, smartKind]);
+  }, [
+    activeCategory,
+    categoriesQuery.data,
+    categoriesQuery.isLoading,
+    brand.slug,
+    lang,
+    t,
+    smartKind,
+  ]);
 
   const BackIcon = lang === "ar" ? ChevronRight : ChevronLeft;
 
@@ -300,7 +437,10 @@ function CategoryPage() {
 
   return (
     <main>
-      <section className="border-b" style={{ backgroundColor: "var(--sf-header-bg)", color: "var(--sf-header-fg)" }}>
+      <section
+        className="border-b"
+        style={{ backgroundColor: "var(--sf-header-bg)", color: "var(--sf-header-fg)" }}
+      >
         <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-12">
           {breadcrumbs ? (
             <nav className="mb-5 flex flex-wrap items-center gap-1.5 text-xs font-semibold opacity-70">
@@ -325,7 +465,11 @@ function CategoryPage() {
               })}
             </nav>
           ) : (
-            <Link to="/$slug" params={{ slug: brand.slug }} className="mb-5 inline-flex items-center gap-1 text-sm opacity-70 hover:opacity-100">
+            <Link
+              to="/$slug"
+              params={{ slug: brand.slug }}
+              className="mb-5 inline-flex items-center gap-1 text-sm opacity-70 hover:opacity-100"
+            >
               <BackIcon className="h-4 w-4" />
               {t("العودة للمتجر", "Back to store")}
             </Link>
@@ -343,8 +487,13 @@ function CategoryPage() {
                 />
               )}
               <div>
-                <p className="text-xs uppercase tracking-[0.2em] opacity-60">{t("القسم", "Category")}</p>
-                <h1 className="mt-1 font-display text-3xl sm:text-5xl" style={{ color: "var(--sf-heading)" }}>
+                <p className="text-xs uppercase tracking-[0.2em] opacity-60">
+                  {t("القسم", "Category")}
+                </p>
+                <h1
+                  className="mt-1 font-display text-3xl sm:text-5xl"
+                  style={{ color: "var(--sf-heading)" }}
+                >
                   {title}
                 </h1>
               </div>
@@ -366,7 +515,9 @@ function CategoryPage() {
                       <button
                         type="button"
                         onClick={() => {
-                          setSelectedSubCategorySlugs(selectedSubCategorySlugs.slice(0, row.levelIndex));
+                          setSelectedSubCategorySlugs(
+                            selectedSubCategorySlugs.slice(0, row.levelIndex),
+                          );
                         }}
                         className={`min-h-9 px-4 py-1.5 rounded-full text-sm transition-all shrink-0 ${
                           row.activeSlug === null
@@ -377,18 +528,26 @@ function CategoryPage() {
                         {t("الكل", "All")}
                       </button>
                       {row.categories.map((sub) => {
-                        const label = lang === "ar" ? sub.name_ar || sub.name_en : sub.name_en || sub.name_ar;
+                        const label =
+                          lang === "ar" ? sub.name_ar || sub.name_en : sub.name_en || sub.name_ar;
                         const active = row.activeSlug === sub.slug;
-                        const hasSubSubs = categoriesQuery.data?.some((c) => c.parent_id === sub.id);
+                        const hasSubSubs = categoriesQuery.data?.some(
+                          (c) => c.parent_id === sub.id,
+                        );
                         return (
                           <button
                             key={sub.id}
                             type="button"
                             onClick={() => {
                               if (active) {
-                                setSelectedSubCategorySlugs(selectedSubCategorySlugs.slice(0, row.levelIndex));
+                                setSelectedSubCategorySlugs(
+                                  selectedSubCategorySlugs.slice(0, row.levelIndex),
+                                );
                               } else {
-                                setSelectedSubCategorySlugs([...selectedSubCategorySlugs.slice(0, row.levelIndex), sub.slug]);
+                                setSelectedSubCategorySlugs([
+                                  ...selectedSubCategorySlugs.slice(0, row.levelIndex),
+                                  sub.slug,
+                                ]);
                               }
                             }}
                             className={`min-h-9 px-4 py-1.5 rounded-full text-sm transition-all shrink-0 flex items-center gap-1.5 ${
@@ -399,7 +558,9 @@ function CategoryPage() {
                           >
                             <span>{label}</span>
                             {hasSubSubs && (
-                              <ChevronDown className={`h-3 w-3 transition-transform duration-200 ${active ? "rotate-180" : ""}`} />
+                              <ChevronDown
+                                className={`h-3 w-3 transition-transform duration-200 ${active ? "rotate-180" : ""}`}
+                              />
                             )}
                           </button>
                         );
@@ -445,5 +606,12 @@ function CategoryPage() {
 
 function CategoryUnavailable() {
   const { brand, t } = useStorefront();
-  return <div className="mx-auto max-w-3xl px-4 py-20 text-center"><h1 className="text-3xl font-display">{t("القسم غير متاح", "Category unavailable")}</h1><Link to="/$slug" params={{ slug: brand.slug }} className="mt-5 inline-block underline">{t("العودة للمتجر", "Back to store")}</Link></div>;
+  return (
+    <div className="mx-auto max-w-3xl px-4 py-20 text-center">
+      <h1 className="text-3xl font-display">{t("القسم غير متاح", "Category unavailable")}</h1>
+      <Link to="/$slug" params={{ slug: brand.slug }} className="mt-5 inline-block underline">
+        {t("العودة للمتجر", "Back to store")}
+      </Link>
+    </div>
+  );
 }

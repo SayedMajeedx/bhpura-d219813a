@@ -40,5 +40,10 @@ dist-ssr
 test-results/
 playwright-report/
 
-# Temporary Scratch
+# Temporary Scratch & Artifacts
 scratch/
+.codex-*
+.tmp-*
+.wrangler-local/
+NUL
+

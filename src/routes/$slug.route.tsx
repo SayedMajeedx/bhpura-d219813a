@@ -1,4 +1,12 @@
-import { createFileRoute, Outlet, Link, notFound, useNavigate, useLocation, useRouter } from "@tanstack/react-router";
+import {
+  createFileRoute,
+  Outlet,
+  Link,
+  notFound,
+  useNavigate,
+  useLocation,
+  useRouter,
+} from "@tanstack/react-router";
 import React, { useEffect, useRef, useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { publicSupabase as supabase } from "@/integrations/supabase/client";
@@ -14,20 +22,27 @@ import {
 import { useQueryClient } from "@tanstack/react-query";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { ShoppingBag, Languages, Minus, Plus, Trash2, X, User, Search, Menu, Home, PackageSearch, FileText, LogIn, Heart, Grid2X2, ChevronDown, Sparkles } from "lucide-react";
+  ShoppingBag,
+  Languages,
+  Minus,
+  Plus,
+  Trash2,
+  X,
+  User,
+  Search,
+  Menu,
+  Home,
+  PackageSearch,
+  FileText,
+  LogIn,
+  Heart,
+  Grid2X2,
+  ChevronDown,
+  Sparkles,
+} from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { cloudflareImageUrl, imageKitVideoUrl } from "@/lib/media-delivery";
 import { faviconType, resolveBrandFavicon, useDynamicFavicon } from "@/lib/favicon";
@@ -40,32 +55,15 @@ export const Route = createFileRoute("/$slug")({
     "Cache-Control": "public, max-age=60, s-maxage=300, stale-while-revalidate=86400",
   }),
   loader: async ({ params }) => {
-    const { data: baseBrand, error: brandErr } = await supabase
-      .from("brands")
-      .select("id, slug, name_en, name_ar, logo_url, is_active, hero_media, primary_color, about_ar, about_en")
-      .eq("slug", params.slug)
-      .eq("is_active", true)
-      .maybeSingle();
-    if (brandErr || !baseBrand) throw notFound();
+    const { data: pageData, error } = await (supabase.rpc as any)("get_storefront_page_data", {
+      p_brand_slug: params.slug,
+    });
+    if (error || !pageData || !pageData.brand) throw notFound();
 
-    // SEO is deliberately non-critical. An older PostgREST schema cache may
-    // not know these additive columns yet, but that must never take a live
-    // storefront offline.
-    const [{ data: seoBrand }, { data: settings }, { data: benefitSettings }, { data: trackingSettings }] = await Promise.all([
-      supabase
-        .from("brands")
-        .select("meta_title, meta_description")
-        .eq("id", baseBrand.id)
-        .maybeSingle(),
-      supabase.from("brand_public_settings").select("*").eq("brand_id", baseBrand.id).maybeSingle(),
-      supabase.rpc("get_public_benefit_settings" as any, { p_brand_id: baseBrand.id }),
-      (supabase as any).from("brand_tracking_settings").select("google_analytics_enabled, google_analytics_id, meta_pixel_enabled, meta_pixel_id, consent_required").eq("brand_id", baseBrand.id).maybeSingle(),
-    ]);
-    const brand = {
-      ...baseBrand,
-      meta_title: (seoBrand as any)?.meta_title ?? null,
-      meta_description: (seoBrand as any)?.meta_description ?? null,
-    };
+    const brand = pageData.brand;
+    const settings = pageData.settings ?? {};
+    const benefitSettings = pageData.benefitSettings ?? [];
+    const trackingSettings = pageData.trackingSettings ?? {};
 
     const s = settings as any;
     const rawPages = Array.isArray(s?.pages) ? s.pages : [];
@@ -77,7 +75,6 @@ export const Route = createFileRoute("/$slug")({
       content_en: p?.content_en ?? null,
       image_url: p?.image_url ?? null,
       menu_icon_url: p?.menu_icon_url ?? null,
-      // Preserve the legacy layout (image above content) until an admin explicitly changes it.
       image_position: p?.image_position === "bottom" ? "bottom" : "top",
       meta_title: p?.meta_title ?? null,
       meta_description: p?.meta_description ?? null,
@@ -92,7 +89,6 @@ export const Route = createFileRoute("/$slug")({
       logo_url: s?.logo_url ?? brand.logo_url ?? null,
       favicon_url: s?.favicon_url ?? null,
       currency: s?.currency ?? "BHD",
-      // Never inherit the invoice accent here. Storefront color is independent.
       primary_color: s?.storefront_accent_color ?? brand.primary_color ?? "#8b6f47",
       storefront_accent_color: s?.storefront_accent_color ?? brand.primary_color ?? "#8b6f47",
       text_color: s?.storefront_text_color ?? "#111111",
@@ -116,7 +112,7 @@ export const Route = createFileRoute("/$slug")({
             id: String(z.id || ""),
             name_en: String(z.name_en || ""),
             name_ar: String(z.name_ar || ""),
-            fee: Number(z.fee ?? 0)
+            fee: Number(z.fee ?? 0),
           }));
         } catch (e) {
           return [];
@@ -190,20 +186,22 @@ export const Route = createFileRoute("/$slug")({
       storefront_loader_text_ar: s?.storefront_loader_text_ar ?? null,
     };
 
-
     const rawHero = brand.hero_media as any;
     const legacyHero = Array.isArray(rawHero) ? rawHero : [];
     const heroConfig = {
-      background: rawHero && !Array.isArray(rawHero) && rawHero.background
-        ? rawHero.background
-        : legacyHero[0] ?? null,
-      slides: rawHero && !Array.isArray(rawHero) && Array.isArray(rawHero.slides)
-        ? rawHero.slides.slice(0, 5)
-        : [],
+      background:
+        rawHero && !Array.isArray(rawHero) && rawHero.background
+          ? rawHero.background
+          : (legacyHero[0] ?? null),
+      slides:
+        rawHero && !Array.isArray(rawHero) && Array.isArray(rawHero.slides)
+          ? rawHero.slides.slice(0, 5)
+          : [],
     };
     return {
       brand: { ...brand, hero_media: heroConfig } as unknown as Brand,
       settings: safeSettings,
+      bootstrapData: pageData,
     };
   },
   head: ({ loaderData }) => {
@@ -212,34 +210,37 @@ export const Route = createFileRoute("/$slug")({
     const settings = typedLoaderData?.settings;
     if (!b) return { meta: [{ title: "Storefront" }] };
     const title = b.meta_title || settings?.business_name || `${b.name_en} — Online Store`;
-    const desc = b.meta_description || `Shop ${b.name_en}${b.name_ar ? " / " + b.name_ar : ""} online.`;
+    const desc =
+      b.meta_description || `Shop ${b.name_en}${b.name_ar ? " / " + b.name_ar : ""} online.`;
     const img = settings?.logo_url || b.logo_url || "https://boutq.store/og-placeholder.png";
     const favicon = resolveBrandFavicon(settings?.favicon_url, settings?.logo_url ?? b.logo_url);
     const heroBg = b.hero_media?.background;
     const firstSlide = b.hero_media?.slides?.[0];
-    let heroVideoUrl: string | null = null;
+    let lcpImageUrl: string | null = null;
 
-    if (heroBg?.url) {
-      if (heroBg.type === "video") {
-        heroVideoUrl = imageKitVideoUrl(heroBg.url, "mobile") || heroBg.url;
-      }
-    } else if (firstSlide) {
-      const slideMediaUrl = (firstSlide.media_url || firstSlide.media_url_ar || firstSlide.media_url_en) ?? "";
-      if (firstSlide.type === "video" && slideMediaUrl) {
-        heroVideoUrl = imageKitVideoUrl(slideMediaUrl, "mobile") || slideMediaUrl;
+    if (heroBg?.url && heroBg.type !== "video") {
+      lcpImageUrl = cloudflareImageUrl(heroBg.url, 640);
+    } else if (firstSlide && firstSlide.type === "image") {
+      const slideMediaUrl =
+        (firstSlide.media_url || firstSlide.media_url_ar || firstSlide.media_url_en) ?? "";
+      if (slideMediaUrl) {
+        lcpImageUrl = cloudflareImageUrl(slideMediaUrl, 640);
       }
     }
 
     const links: Array<Record<string, any>> = [
-      { rel: "icon", href: favicon, ...(faviconType(favicon) ? { type: faviconType(favicon) } : {}) },
+      {
+        rel: "icon",
+        href: favicon,
+        ...(faviconType(favicon) ? { type: faviconType(favicon) } : {}),
+      },
     ];
 
-    if (heroVideoUrl) {
+    if (lcpImageUrl) {
       links.push({
         rel: "preload",
-        as: "video",
-        href: heroVideoUrl,
-        type: "video/mp4",
+        as: "image",
+        href: lcpImageUrl,
         fetchpriority: "high",
         fetchPriority: "high",
       });
@@ -267,7 +268,10 @@ export const Route = createFileRoute("/$slug")({
 });
 
 function StorefrontLayout() {
-  const { brand, settings } = Route.useLoaderData() as unknown as { brand: Brand; settings: PublicSettings };
+  const { brand, settings } = Route.useLoaderData() as unknown as {
+    brand: Brand;
+    settings: PublicSettings;
+  };
   useDynamicFavicon(settings.favicon_url, settings.logo_url ?? brand.logo_url);
   return (
     <StorefrontProvider brand={brand} settings={settings}>
@@ -300,16 +304,27 @@ function StoreShell() {
   const btnCheckoutBg = settings.btn_checkout_bg ?? btnPrimaryBg;
   const btnCheckoutFg = settings.btn_checkout_fg ?? readableOn(btnCheckoutBg, "#ffffff");
   const cartDrawerCheckoutBg = settings.cart_drawer_checkout_bg ?? btnCheckoutBg;
-  const cartDrawerCheckoutFg = settings.cart_drawer_checkout_fg ?? readableOn(cartDrawerCheckoutBg, btnCheckoutFg);
+  const cartDrawerCheckoutFg =
+    settings.cart_drawer_checkout_fg ?? readableOn(cartDrawerCheckoutBg, btnCheckoutFg);
   const headingColor = settings.heading_color ?? primary;
   const linkColor = settings.link_color ?? primary;
   const storefrontFont = lang === "ar" ? settings.storefront_font_ar : settings.storefront_font_en;
-  const storefrontFontUrl = lang === "ar" ? settings.storefront_font_ar_url : settings.storefront_font_en_url;
+  const storefrontFontUrl =
+    lang === "ar" ? settings.storefront_font_ar_url : settings.storefront_font_en_url;
   const storefrontFontFamily = storefrontFontUrl ? "StorefrontCustomFont" : storefrontFont;
 
   useEffect(() => {
     if (storefrontFontUrl || !storefrontFont) return;
-    const globallyLoaded = new Set(["Inter", "Cormorant Garamond", "Tajawal", "Cairo", "29LT Bukra", "29LT Zarid Display", "29LT Kaff", "29LT Azer"]);
+    const globallyLoaded = new Set([
+      "Inter",
+      "Cormorant Garamond",
+      "Tajawal",
+      "Cairo",
+      "29LT Bukra",
+      "29LT Zarid Display",
+      "29LT Kaff",
+      "29LT Azer",
+    ]);
     if (globallyLoaded.has(storefrontFont)) return;
     const id = `storefront-font-${storefrontFont.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`;
     if (document.getElementById(id)) return;
@@ -350,7 +365,9 @@ function StoreShell() {
         } as React.CSSProperties
       }
     >
-      {storefrontFontUrl && <style>{`@font-face { font-family: 'StorefrontCustomFont'; src: url('${storefrontFontUrl}'); font-display: swap; }`}</style>}
+      {storefrontFontUrl && (
+        <style>{`@font-face { font-family: 'StorefrontCustomFont'; src: url('${storefrontFontUrl}'); font-display: swap; }`}</style>
+      )}
       <div className="sticky top-0 z-40">
         <AnnouncementBar />
         <StoreHeader />
@@ -375,9 +392,10 @@ function WhatsAppFab() {
   // Detect pages that render a sticky mobile bottom action bar
   const hasStickyBottom = pathname.includes("/product/") || pathname.endsWith("/checkout");
 
-  const text = lang === "ar"
-    ? `مرحباً! لدي استفسار عن متجر ${brand.name_ar || brand.name_en}`
-    : `Hi! I have a question about ${brand.name_en}`;
+  const text =
+    lang === "ar"
+      ? `مرحباً! لدي استفسار عن متجر ${brand.name_ar || brand.name_en}`
+      : `Hi! I have a question about ${brand.name_en}`;
   const href = `https://wa.me/${digits}?text=${encodeURIComponent(text)}`;
 
   return (
@@ -392,19 +410,27 @@ function WhatsAppFab() {
       style={{
         backgroundColor: "#25D366",
         color: "#fff",
-        transition: "transform 0.4s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.3s ease, bottom 0.4s cubic-bezier(0.25, 1, 0.5, 1)",
+        transition:
+          "transform 0.4s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.3s ease, bottom 0.4s cubic-bezier(0.25, 1, 0.5, 1)",
         willChange: "transform",
       }}
     >
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-7 w-7" aria-hidden="true">
-        <path d="M20.52 3.48A11.94 11.94 0 0 0 12.06 0C5.5 0 .2 5.3.2 11.86c0 2.09.55 4.13 1.6 5.93L0 24l6.38-1.67a11.86 11.86 0 0 0 5.68 1.45h.01c6.56 0 11.86-5.3 11.86-11.86 0-3.17-1.23-6.15-3.41-8.44ZM12.07 21.5h-.01a9.63 9.63 0 0 1-4.9-1.34l-.35-.21-3.79.99 1.01-3.7-.23-.38a9.63 9.63 0 0 1-1.48-5.15c0-5.32 4.33-9.65 9.66-9.65 2.58 0 5 1 6.83 2.83a9.6 9.6 0 0 1 2.82 6.82c0 5.32-4.33 9.65-9.66 9.65Zm5.29-7.23c-.29-.15-1.71-.85-1.98-.94-.27-.1-.46-.15-.66.14-.19.29-.75.94-.92 1.13-.17.19-.34.22-.63.07-.29-.14-1.23-.45-2.35-1.44-.87-.77-1.46-1.72-1.63-2.01-.17-.29-.02-.44.13-.59.13-.13.29-.34.44-.51.14-.17.19-.29.29-.48.1-.19.05-.36-.02-.51-.07-.14-.66-1.58-.9-2.17-.24-.58-.48-.5-.66-.51h-.56c-.19 0-.51.07-.77.36-.27.29-1.02 1-1.02 2.44 0 1.44 1.05 2.83 1.2 3.02.14.19 2.07 3.15 5.02 4.42.7.3 1.24.48 1.66.62.7.22 1.33.19 1.83.11.56-.08 1.71-.7 1.96-1.38.24-.68.24-1.26.17-1.38-.07-.12-.26-.19-.55-.34Z"/>
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        viewBox="0 0 24 24"
+        fill="currentColor"
+        className="h-7 w-7"
+        aria-hidden="true"
+      >
+        <path d="M20.52 3.48A11.94 11.94 0 0 0 12.06 0C5.5 0 .2 5.3.2 11.86c0 2.09.55 4.13 1.6 5.93L0 24l6.38-1.67a11.86 11.86 0 0 0 5.68 1.45h.01c6.56 0 11.86-5.3 11.86-11.86 0-3.17-1.23-6.15-3.41-8.44ZM12.07 21.5h-.01a9.63 9.63 0 0 1-4.9-1.34l-.35-.21-3.79.99 1.01-3.7-.23-.38a9.63 9.63 0 0 1-1.48-5.15c0-5.32 4.33-9.65 9.66-9.65 2.58 0 5 1 6.83 2.83a9.6 9.6 0 0 1 2.82 6.82c0 5.32-4.33 9.65-9.66 9.65Zm5.29-7.23c-.29-.15-1.71-.85-1.98-.94-.27-.1-.46-.15-.66.14-.19.29-.75.94-.92 1.13-.17.19-.34.22-.63.07-.29-.14-1.23-.45-2.35-1.44-.87-.77-1.46-1.72-1.63-2.01-.17-.29-.02-.44.13-.59.13-.13.29-.34.44-.51.14-.17.19-.29.29-.48.1-.19.05-.36-.02-.51-.07-.14-.66-1.58-.9-2.17-.24-.58-.48-.5-.66-.51h-.56c-.19 0-.51.07-.77.36-.27.29-1.02 1-1.02 2.44 0 1.44 1.05 2.83 1.2 3.02.14.19 2.07 3.15 5.02 4.42.7.3 1.24.48 1.66.62.7.22 1.33.19 1.83.11.56-.08 1.71-.7 1.96-1.38.24-.68.24-1.26.17-1.38-.07-.12-.26-.19-.55-.34Z" />
       </svg>
     </a>
   );
 }
 
 function StoreHeader() {
-  const { brand, settings, lang, setLang, t, cartCount, session, isStoreMember, wishlistCount } = useStorefront();
+  const { brand, settings, lang, setLang, t, cartCount, session, isStoreMember, wishlistCount } =
+    useStorefront();
   const displayName = lang === "ar" ? brand.name_ar || brand.name_en : brand.name_en;
   const align = settings.logo_align ?? "left";
   const logoSize = settings.logo_size || 40;
@@ -449,12 +475,14 @@ function StoreHeader() {
               />
             )}
 
-            {settings.show_header_name && <span
-              className="font-display text-lg sm:text-xl truncate"
-              style={{ color: "var(--sf-heading)" }}
-            >
-              {displayName}
-            </span>}
+            {settings.show_header_name && (
+              <span
+                className="font-display text-lg sm:text-xl truncate"
+                style={{ color: "var(--sf-heading)" }}
+              >
+                {displayName}
+              </span>
+            )}
           </Link>
           {/* Desktop search */}
           <div className="hidden md:flex flex-1 max-w-md mx-4">
@@ -471,44 +499,101 @@ function StoreHeader() {
               className="min-h-11 min-w-11 gap-1 hover:bg-black/5"
               style={{ color: "var(--sf-header-fg)" }}
               onClick={() => setLang(lang === "ar" ? "en" : "ar")}
-              aria-label={lang === "ar" ? "تغيير اللغة إلى الإنجليزية" : "Switch language to Arabic"}
+              aria-label={
+                lang === "ar" ? "تغيير اللغة إلى الإنجليزية" : "Switch language to Arabic"
+              }
             >
               <Languages className="h-4 w-4" />
               <span className="hidden sm:inline">{lang === "ar" ? "English" : "العربية"}</span>
             </Button>
 
             {session && isStoreMember ? (
-              <Button asChild variant="ghost" size="sm" className="min-h-11 min-w-11 gap-1 hover:bg-black/5" style={{ color: "var(--sf-header-fg)" }}>
-                <Link to="/$slug/account" params={{ slug: brand.slug }} title={session.user?.email ?? ""} aria-label={t("لوحة التحكم", "Dashboard")}>
+              <Button
+                asChild
+                variant="ghost"
+                size="sm"
+                className="min-h-11 min-w-11 gap-1 hover:bg-black/5"
+                style={{ color: "var(--sf-header-fg)" }}
+              >
+                <Link
+                  to="/$slug/account"
+                  params={{ slug: brand.slug }}
+                  title={session.user?.email ?? ""}
+                  aria-label={t("لوحة التحكم", "Dashboard")}
+                >
                   <User className="h-4 w-4" />
-                  <span className="hidden sm:inline max-w-[120px] truncate">{t("لوحة التحكم", "Dashboard")}</span>
+                  <span className="hidden sm:inline max-w-[120px] truncate">
+                    {t("لوحة التحكم", "Dashboard")}
+                  </span>
                 </Link>
               </Button>
             ) : (
-              <Button asChild variant="ghost" size="sm" className="min-h-11 min-w-11 gap-1 hover:bg-black/5" style={{ color: "var(--sf-header-fg)" }}>
-                <Link to="/$slug/auth" params={{ slug: brand.slug }} search={{ redirect: mounted ? window.location.pathname + window.location.search : "" }} aria-label={t("دخول", "Sign in")}>
+              <Button
+                asChild
+                variant="ghost"
+                size="sm"
+                className="min-h-11 min-w-11 gap-1 hover:bg-black/5"
+                style={{ color: "var(--sf-header-fg)" }}
+              >
+                <Link
+                  to="/$slug/auth"
+                  params={{ slug: brand.slug }}
+                  search={{
+                    redirect: mounted ? window.location.pathname + window.location.search : "",
+                  }}
+                  aria-label={t("دخول", "Sign in")}
+                >
                   <User className="h-4 w-4" />
                   <span className="hidden sm:inline">{t("دخول", "Sign in")}</span>
                 </Link>
               </Button>
             )}
 
-            <Button asChild variant="ghost" size="sm" className="relative min-h-11 min-w-11 gap-1 hover:bg-black/5" style={{ color: "var(--sf-header-fg)" }}>
-              <Link to="/$slug/wishlist" params={{ slug: brand.slug }} aria-label={t("المفضلة", "Wishlist")}>
+            <Button
+              asChild
+              variant="ghost"
+              size="sm"
+              className="relative min-h-11 min-w-11 gap-1 hover:bg-black/5"
+              style={{ color: "var(--sf-header-fg)" }}
+            >
+              <Link
+                to="/$slug/wishlist"
+                params={{ slug: brand.slug }}
+                aria-label={t("المفضلة", "Wishlist")}
+              >
                 <Heart className="h-5 w-5" />
                 <span className="hidden sm:inline">{t("المفضلة", "Wishlist")}</span>
-                {wishlistCount > 0 && <span className="absolute -top-1 -right-1 grid h-[18px] min-w-[18px] place-items-center rounded-full px-1 text-[10px] font-semibold" style={{ backgroundColor: "var(--sf-btn-primary-bg)", color: "var(--sf-btn-primary-fg)" }}>{wishlistCount}</span>}
+                {wishlistCount > 0 && (
+                  <span
+                    className="absolute -top-1 -right-1 grid h-[18px] min-w-[18px] place-items-center rounded-full px-1 text-[10px] font-semibold"
+                    style={{
+                      backgroundColor: "var(--sf-btn-primary-bg)",
+                      color: "var(--sf-btn-primary-fg)",
+                    }}
+                  >
+                    {wishlistCount}
+                  </span>
+                )}
               </Link>
             </Button>
 
             <CartDrawer>
-              <Button variant="ghost" size="sm" className="relative min-h-11 min-w-11 gap-1 hover:bg-black/5" style={{ color: "var(--sf-header-fg)" }} aria-label={t("سلة التسوق", "Shopping cart")}>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="relative min-h-11 min-w-11 gap-1 hover:bg-black/5"
+                style={{ color: "var(--sf-header-fg)" }}
+                aria-label={t("سلة التسوق", "Shopping cart")}
+              >
                 <ShoppingBag className="h-5 w-5" />
                 <span className="hidden sm:inline">{t("السلة", "Cart")}</span>
                 {cartCount > 0 && (
                   <span
                     className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-semibold grid place-items-center"
-                    style={{ backgroundColor: "var(--sf-btn-primary-bg)", color: "var(--sf-btn-primary-fg)" }}
+                    style={{
+                      backgroundColor: "var(--sf-btn-primary-bg)",
+                      color: "var(--sf-btn-primary-fg)",
+                    }}
                   >
                     {cartCount}
                   </span>
@@ -535,7 +620,10 @@ function StoreHeader() {
 function AnnouncementBar() {
   const { brand, settings, lang, session } = useStorefront();
   const { pathname } = useLocation();
-  const text = lang === "ar" ? settings.announcement_text_ar || settings.announcement_text_en : settings.announcement_text_en || settings.announcement_text_ar;
+  const text =
+    lang === "ar"
+      ? settings.announcement_text_ar || settings.announcement_text_en
+      : settings.announcement_text_en || settings.announcement_text_ar;
   const key = `announcement-dismissed:${brand.id}:${text ?? ""}`;
   const [dismissed, setDismissed] = useState(false);
   useEffect(() => {
@@ -545,14 +633,47 @@ function AnnouncementBar() {
       }
     } catch {}
   }, [key]);
-  const audienceOk = settings.announcement_audience === "all" || (settings.announcement_audience === "guest" ? !session : Boolean(session));
+  const audienceOk =
+    settings.announcement_audience === "all" ||
+    (settings.announcement_audience === "guest" ? !session : Boolean(session));
   const relative = pathname.replace(`/${brand.slug}`, "") || "/";
-  const scopeOk = settings.announcement_scope === "all" || (settings.announcement_scope === "home" && relative === "/") || (settings.announcement_scope === "checkout" && relative.startsWith("/checkout")) || (settings.announcement_scope === "catalog" && !relative.startsWith("/checkout") && !relative.startsWith("/account") && !relative.startsWith("/auth"));
+  const scopeOk =
+    settings.announcement_scope === "all" ||
+    (settings.announcement_scope === "home" && relative === "/") ||
+    (settings.announcement_scope === "checkout" && relative.startsWith("/checkout")) ||
+    (settings.announcement_scope === "catalog" &&
+      !relative.startsWith("/checkout") &&
+      !relative.startsWith("/account") &&
+      !relative.startsWith("/auth"));
   if (!settings.announcement_enabled || !text || dismissed || !audienceOk || !scopeOk) return null;
-  return <div className="relative px-12 py-2 text-center text-sm font-medium text-white" style={{ backgroundColor: settings.announcement_bg || "#111111", color: settings.announcement_fg || "#ffffff", fontWeight: settings.announcement_bold ? 700 : 500, fontStyle: settings.announcement_italic ? "italic" : "normal" }}>
-    <span>{text}</span>
-    {settings.announcement_dismissible && <button type="button" className="absolute end-1 top-1/2 grid h-11 w-11 -translate-y-1/2 place-items-center rounded-full hover:bg-white/15" aria-label="Dismiss announcement" onClick={() => { try { sessionStorage.setItem(key, "1"); } catch {} setDismissed(true); }}><X className="h-4 w-4" /></button>}
-  </div>;
+  return (
+    <div
+      className="relative px-12 py-2 text-center text-sm font-medium text-white"
+      style={{
+        backgroundColor: settings.announcement_bg || "#111111",
+        color: settings.announcement_fg || "#ffffff",
+        fontWeight: settings.announcement_bold ? 700 : 500,
+        fontStyle: settings.announcement_italic ? "italic" : "normal",
+      }}
+    >
+      <span>{text}</span>
+      {settings.announcement_dismissible && (
+        <button
+          type="button"
+          className="absolute end-1 top-1/2 grid h-11 w-11 -translate-y-1/2 place-items-center rounded-full hover:bg-white/15"
+          aria-label="Dismiss announcement"
+          onClick={() => {
+            try {
+              sessionStorage.setItem(key, "1");
+            } catch {}
+            setDismissed(true);
+          }}
+        >
+          <X className="h-4 w-4" />
+        </button>
+      )}
+    </div>
+  );
 }
 
 function NavCategoryItem({
@@ -575,7 +696,8 @@ function NavCategoryItem({
   depth?: number;
 }) {
   const categorySlug = category.slug || category.name_en;
-  const label = lang === "ar" ? category.name_ar || category.name_en : category.name_en || category.name_ar;
+  const label =
+    lang === "ar" ? category.name_ar || category.name_en : category.name_en || category.name_ar;
   const childCategories = categories.filter((sub: any) => sub.parent_id === category.id);
   const isExpanded = !!expandedCategories[category.id];
 
@@ -621,7 +743,9 @@ function NavCategoryItem({
             aria-expanded={isExpanded}
             aria-label={lang === "ar" ? "توسيع" : "Expand"}
           >
-            <ChevronDown className={`h-4 w-4 transition-transform duration-200 ${isExpanded ? "rotate-180" : ""}`} />
+            <ChevronDown
+              className={`h-4 w-4 transition-transform duration-200 ${isExpanded ? "rotate-180" : ""}`}
+            />
           </Button>
         )}
       </div>
@@ -717,7 +841,10 @@ function MobileStorefrontDropdown() {
         }}
       >
         <SheetHeader className="px-4 pt-5 pb-3 border-b border-border/10 shrink-0">
-          <SheetTitle className="text-start text-base font-semibold flex items-center gap-2" style={{ color: menuText }}>
+          <SheetTitle
+            className="text-start text-base font-semibold flex items-center gap-2"
+            style={{ color: menuText }}
+          >
             <Grid2X2 className="h-5 w-5" />
             {t("القائمة", "Menu")}
           </SheetTitle>
@@ -731,18 +858,22 @@ function MobileStorefrontDropdown() {
               {t("الأقسام", "Categories")}
             </div>
             <div className="grid grid-cols-1 gap-3">
-              {categories.filter((c: any) => !c.parent_id).map((category: any) => (
-                <NavCategoryItem
-                  key={category.id}
-                  category={category}
-                  categories={categories}
-                  expandedCategories={expandedCategories}
-                  onToggleExpand={(id) => setExpandedCategories((prev) => ({ ...prev, [id]: !prev[id] }))}
-                  brand={brand}
-                  lang={lang}
-                  close={close}
-                />
-              ))}
+              {categories
+                .filter((c: any) => !c.parent_id)
+                .map((category: any) => (
+                  <NavCategoryItem
+                    key={category.id}
+                    category={category}
+                    categories={categories}
+                    expandedCategories={expandedCategories}
+                    onToggleExpand={(id) =>
+                      setExpandedCategories((prev) => ({ ...prev, [id]: !prev[id] }))
+                    }
+                    brand={brand}
+                    lang={lang}
+                    close={close}
+                  />
+                ))}
             </div>
           </div>
 
@@ -786,7 +917,6 @@ function MobileStorefrontDropdown() {
   );
 }
 
-
 export function StorefrontMenu({ navigation = false }: { navigation?: boolean } = {}) {
   const { brand, settings, lang, t, session, isStoreMember } = useStorefront();
   const [open, setOpen] = useState(false);
@@ -795,14 +925,17 @@ export function StorefrontMenu({ navigation = false }: { navigation?: boolean } 
     setMounted(true);
   }, []);
   const displayName = lang === "ar" ? brand.name_ar || brand.name_en : brand.name_en;
-  const menuTitle = (lang === "ar" ? settings.menu_title_ar || settings.menu_title_en : settings.menu_title_en || settings.menu_title_ar) || displayName;
+  const menuTitle =
+    (lang === "ar"
+      ? settings.menu_title_ar || settings.menu_title_en
+      : settings.menu_title_en || settings.menu_title_ar) || displayName;
   const menuBg = settings.menu_bg || settings.header_bg || settings.background_color || "#ffffff";
   const menuFg = settings.menu_fg || readableOn(menuBg, settings.text_color);
   const pageLinks = settings.pages
     .map((page, index) => ({
       index: index + 1,
       slug: page.slug,
-      title: lang === "ar" ? (page.title_ar || page.title_en) : (page.title_en || page.title_ar),
+      title: lang === "ar" ? page.title_ar || page.title_en : page.title_en || page.title_ar,
     }))
     .filter((page) => settings.menu_show_pages && Boolean(page.title));
   const close = () => setOpen(false);
@@ -810,9 +943,17 @@ export function StorefrontMenu({ navigation = false }: { navigation?: boolean } 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>
-        <Button variant={navigation ? "outline" : "ghost"} size={navigation ? "default" : "sm"} className={`${navigation ? "h-11 shrink-0 rounded-xl border-dashed px-5 font-semibold shadow-sm hover:-translate-y-0.5 hover:shadow-md" : "hover:bg-black/5"} gap-2 transition-all duration-200`} style={{ color: navigation ? undefined : "var(--sf-header-fg)" }} aria-label={t("القائمة", "Menu")}>
+        <Button
+          variant={navigation ? "outline" : "ghost"}
+          size={navigation ? "default" : "sm"}
+          className={`${navigation ? "h-11 shrink-0 rounded-xl border-dashed px-5 font-semibold shadow-sm hover:-translate-y-0.5 hover:shadow-md" : "hover:bg-black/5"} gap-2 transition-all duration-200`}
+          style={{ color: navigation ? undefined : "var(--sf-header-fg)" }}
+          aria-label={t("القائمة", "Menu")}
+        >
           <Menu className="h-5 w-5" />
-          <span className={navigation ? "inline" : "hidden lg:inline"}>{navigation ? t("كل الأقسام", "All categories") : t("القائمة", "Menu")}</span>
+          <span className={navigation ? "inline" : "hidden lg:inline"}>
+            {navigation ? t("كل الأقسام", "All categories") : t("القائمة", "Menu")}
+          </span>
         </Button>
       </SheetTrigger>
       <SheetContent
@@ -823,25 +964,120 @@ export function StorefrontMenu({ navigation = false }: { navigation?: boolean } 
       >
         {open && (
           <>
-            <div className="relative shrink-0 overflow-hidden border-b px-6 pb-6 pt-7 pe-20" style={{ borderColor: "rgba(127,127,127,.18)" }}>
-              <div className="pointer-events-none absolute -end-16 -top-24 h-52 w-52 rounded-full opacity-[0.08]" style={{ backgroundColor: settings.primary_color }} />
+            <div
+              className="relative shrink-0 overflow-hidden border-b px-6 pb-6 pt-7 pe-20"
+              style={{ borderColor: "rgba(127,127,127,.18)" }}
+            >
+              <div
+                className="pointer-events-none absolute -end-16 -top-24 h-52 w-52 rounded-full opacity-[0.08]"
+                style={{ backgroundColor: settings.primary_color }}
+              />
               <div className="relative flex min-w-0 items-center gap-4">
-                {settings.logo_url && <div className="grid h-16 w-24 shrink-0 place-items-center overflow-hidden rounded-xl bg-white/5 p-1"><img src={cloudflareImageUrl(settings.logo_url, 320)} alt={displayName} className="block max-h-full max-w-full object-contain" style={{ width: "auto", height: "auto" }} /></div>}
-                <div className="min-w-0 flex-1 text-start"><SheetTitle className="truncate text-2xl font-display" style={{ color: menuFg }}>{menuTitle}</SheetTitle><p className="mt-1 truncate text-xs opacity-65">{t("اكتشف المتجر", "Explore our store")}</p></div>
+                {settings.logo_url && (
+                  <div className="grid h-16 w-24 shrink-0 place-items-center overflow-hidden rounded-xl bg-white/5 p-1">
+                    <img
+                      src={cloudflareImageUrl(settings.logo_url, 320)}
+                      alt={displayName}
+                      className="block max-h-full max-w-full object-contain"
+                      style={{ width: "auto", height: "auto" }}
+                    />
+                  </div>
+                )}
+                <div className="min-w-0 flex-1 text-start">
+                  <SheetTitle className="truncate text-2xl font-display" style={{ color: menuFg }}>
+                    {menuTitle}
+                  </SheetTitle>
+                  <p className="mt-1 truncate text-xs opacity-65">
+                    {t("اكتشف المتجر", "Explore our store")}
+                  </p>
+                </div>
               </div>
             </div>
-            <nav className="min-h-0 flex-1 space-y-1 overflow-y-auto p-4" style={{ scrollbarWidth: "none" }}>
-              {settings.menu_show_home && <Link to="/$slug" params={{ slug: brand.slug }} onClick={close} className="flex min-h-12 items-center gap-3 rounded-xl px-4 py-3 text-start transition-colors hover:bg-black/5"><Home className="h-5 w-5 shrink-0" /><span className="min-w-0 truncate">{t("الرئيسية", "Home")}</span></Link>}
-              {session && isStoreMember ? <>
-                {settings.menu_show_account && <Link to="/$slug/account" params={{ slug: brand.slug }} onClick={close} className="flex min-h-12 items-center gap-3 rounded-xl px-4 py-3 text-start transition-colors hover:bg-black/5"><User className="h-5 w-5 shrink-0" /><span className="min-w-0 truncate">{t("حسابي", "My account")}</span></Link>}
-                {settings.menu_show_orders && <Link to="/$slug/account" params={{ slug: brand.slug }} onClick={close} className="flex min-h-12 items-center gap-3 rounded-xl px-4 py-3 text-start transition-colors hover:bg-black/5"><PackageSearch className="h-5 w-5 shrink-0" /><span className="min-w-0 truncate">{t("طلباتي", "My orders")}</span></Link>}
-              </> : settings.menu_show_account && <Link to="/$slug/auth" params={{ slug: brand.slug }} search={{ redirect: mounted ? window.location.pathname + window.location.search : "" }} onClick={close} className="flex min-h-12 items-center gap-3 rounded-xl px-4 py-3 text-start transition-colors hover:bg-black/5"><LogIn className="h-5 w-5 shrink-0" /><span className="min-w-0 truncate">{t("تسجيل الدخول", "Sign in")}</span></Link>}
-              {pageLinks.length > 0 && <div className="my-3 border-t" style={{ borderColor: "rgba(127,127,127,.18)" }} />}
-              {pageLinks.map((page) => <Link key={page.index} to="/$slug/$category" params={{ slug: brand.slug, category: page.slug }} onClick={close} className="flex min-h-12 items-center gap-3 rounded-xl px-4 py-3 text-start transition-colors hover:bg-black/5"><FileText className="h-5 w-5 shrink-0" /><span className="min-w-0 truncate">{page.title}</span></Link>)}
+            <nav
+              className="min-h-0 flex-1 space-y-1 overflow-y-auto p-4"
+              style={{ scrollbarWidth: "none" }}
+            >
+              {settings.menu_show_home && (
+                <Link
+                  to="/$slug"
+                  params={{ slug: brand.slug }}
+                  onClick={close}
+                  className="flex min-h-12 items-center gap-3 rounded-xl px-4 py-3 text-start transition-colors hover:bg-black/5"
+                >
+                  <Home className="h-5 w-5 shrink-0" />
+                  <span className="min-w-0 truncate">{t("الرئيسية", "Home")}</span>
+                </Link>
+              )}
+              {session && isStoreMember ? (
+                <>
+                  {settings.menu_show_account && (
+                    <Link
+                      to="/$slug/account"
+                      params={{ slug: brand.slug }}
+                      onClick={close}
+                      className="flex min-h-12 items-center gap-3 rounded-xl px-4 py-3 text-start transition-colors hover:bg-black/5"
+                    >
+                      <User className="h-5 w-5 shrink-0" />
+                      <span className="min-w-0 truncate">{t("حسابي", "My account")}</span>
+                    </Link>
+                  )}
+                  {settings.menu_show_orders && (
+                    <Link
+                      to="/$slug/account"
+                      params={{ slug: brand.slug }}
+                      onClick={close}
+                      className="flex min-h-12 items-center gap-3 rounded-xl px-4 py-3 text-start transition-colors hover:bg-black/5"
+                    >
+                      <PackageSearch className="h-5 w-5 shrink-0" />
+                      <span className="min-w-0 truncate">{t("طلباتي", "My orders")}</span>
+                    </Link>
+                  )}
+                </>
+              ) : (
+                settings.menu_show_account && (
+                  <Link
+                    to="/$slug/auth"
+                    params={{ slug: brand.slug }}
+                    search={{
+                      redirect: mounted ? window.location.pathname + window.location.search : "",
+                    }}
+                    onClick={close}
+                    className="flex min-h-12 items-center gap-3 rounded-xl px-4 py-3 text-start transition-colors hover:bg-black/5"
+                  >
+                    <LogIn className="h-5 w-5 shrink-0" />
+                    <span className="min-w-0 truncate">{t("تسجيل الدخول", "Sign in")}</span>
+                  </Link>
+                )
+              )}
+              {pageLinks.length > 0 && (
+                <div className="my-3 border-t" style={{ borderColor: "rgba(127,127,127,.18)" }} />
+              )}
+              {pageLinks.map((page) => (
+                <Link
+                  key={page.index}
+                  to="/$slug/$category"
+                  params={{ slug: brand.slug, category: page.slug }}
+                  onClick={close}
+                  className="flex min-h-12 items-center gap-3 rounded-xl px-4 py-3 text-start transition-colors hover:bg-black/5"
+                >
+                  <FileText className="h-5 w-5 shrink-0" />
+                  <span className="min-w-0 truncate">{page.title}</span>
+                </Link>
+              ))}
             </nav>
-            <div className="m-4 mt-2 shrink-0 rounded-2xl border p-5 text-start text-sm" style={{ backgroundColor: menuBg, borderColor: `${settings.primary_color}55` }}>
-              <p className="font-medium" style={{ color: menuFg }}>{t("تسوق بكل سهولة", "Shopping made simple")}</p>
-              <p className="mt-1 opacity-65">{t("تصفح المنتجات وتابع طلباتك من مكان واحد.", "Browse products and follow your orders in one place.")}</p>
+            <div
+              className="m-4 mt-2 shrink-0 rounded-2xl border p-5 text-start text-sm"
+              style={{ backgroundColor: menuBg, borderColor: `${settings.primary_color}55` }}
+            >
+              <p className="font-medium" style={{ color: menuFg }}>
+                {t("تسوق بكل سهولة", "Shopping made simple")}
+              </p>
+              <p className="mt-1 opacity-65">
+                {t(
+                  "تصفح المنتجات وتابع طلباتك من مكان واحد.",
+                  "Browse products and follow your orders in one place.",
+                )}
+              </p>
             </div>
           </>
         )}
@@ -926,7 +1162,7 @@ function DesktopSubMenu({
                 </div>
               )}
             </div>
-            
+
             {hasChildren && isExpanded && (
               <div className="vertical-submenu mt-0.5 ms-3 ps-3 border-s border-slate-100 dark:border-slate-800 animate-in fade-in duration-150">
                 <DesktopSubMenu
@@ -975,7 +1211,10 @@ function DesktopStoreNavigation() {
     };
   }, []);
 
-  const isSale = (c: any) => /sale|offers?|discount|تنزيل|عروض/i.test(`${c.slug ?? ""} ${c.name_en ?? ""} ${c.name_ar ?? ""}`);
+  const isSale = (c: any) =>
+    /sale|offers?|discount|تنزيل|عروض/i.test(
+      `${c.slug ?? ""} ${c.name_en ?? ""} ${c.name_ar ?? ""}`,
+    );
 
   const handleMouseEnter = (id: string) => {
     if (timeoutRef.current) {
@@ -1038,7 +1277,12 @@ function DesktopStoreNavigation() {
                     viewBox="0 0 24 24"
                     stroke="currentColor"
                   >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2.5}
+                      d="M19 9l-7 7-7-7"
+                    />
                   </svg>
                 </Link>
                 {/* State-controlled dropdown menu card with unmount-on-exit */}
@@ -1083,14 +1327,20 @@ function DesktopStoreNavigation() {
   );
 }
 
-
 function CartDrawer({ children }: { children: React.ReactNode }) {
   const { cart, cartTotal, currency, lang, t, updateQty, removeFromCart, brand, settings } =
     useStorefront();
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
-  const drawerCheckoutBg = settings.cart_drawer_checkout_bg ?? settings.btn_checkout_bg ?? settings.btn_primary_bg ?? settings.primary_color;
-  const drawerCheckoutFg = settings.cart_drawer_checkout_fg ?? settings.btn_checkout_fg ?? readableOn(drawerCheckoutBg, "#ffffff");
+  const drawerCheckoutBg =
+    settings.cart_drawer_checkout_bg ??
+    settings.btn_checkout_bg ??
+    settings.btn_primary_bg ??
+    settings.primary_color;
+  const drawerCheckoutFg =
+    settings.cart_drawer_checkout_fg ??
+    settings.btn_checkout_fg ??
+    readableOn(drawerCheckoutBg, "#ffffff");
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
@@ -1102,7 +1352,9 @@ function CartDrawer({ children }: { children: React.ReactNode }) {
       >
         {open && (
           <>
-            <SheetHeader className={`${lang === "ar" ? "text-right sm:text-right pr-14" : "text-left sm:text-left pr-14"}`}>
+            <SheetHeader
+              className={`${lang === "ar" ? "text-right sm:text-right pr-14" : "text-left sm:text-left pr-14"}`}
+            >
               <SheetTitle>{t("سلة التسوق", "Your cart")}</SheetTitle>
             </SheetHeader>
 
@@ -1113,72 +1365,104 @@ function CartDrawer({ children }: { children: React.ReactNode }) {
                 </div>
               ) : (
                 cart.map((item) => {
-                  const displayName = pickName(lang, { name: item.name, name_ar: item.name_ar, name_en: item.name_en });
+                  const displayName = pickName(lang, {
+                    name: item.name,
+                    name_ar: item.name_ar,
+                    name_en: item.name_en,
+                  });
                   return (
-                  <div key={item.cart_line_id} className="flex gap-3 border rounded-lg p-2 items-center">
-                    {item.image ? (
-                      <img src={cloudflareImageUrl(item.image, 160)} alt={displayName} className="h-16 w-16 rounded object-cover shrink-0" />
-                    ) : (
-                      <div className="h-16 w-16 rounded bg-muted shrink-0" />
-                    )}
-                    <div className="flex-1 min-w-0">
-                      <div className="font-medium truncate">{displayName}</div>
-                      <div className="text-xs text-muted-foreground">
-                        {[item.size, item.color, item.fabric].filter(Boolean).join(" · ")}
-                      </div>
-                      {(item.custom_fields ?? []).length > 0 && (
-                        <div className="mt-1 space-y-0.5 text-xs text-muted-foreground">
-                          {item.custom_fields!.map((field) => (
-                            <div key={field.key} className="break-words">
-                              <span className="font-medium text-foreground/80">
-                                {lang === "ar" ? (field.label_ar || field.label_en || field.key) : (field.label_en || field.label_ar || field.key)}:
-                              </span>{" "}
-                              {field.value.startsWith("http") ? (
-                                <a href={field.value} target="_blank" rel="noreferrer" className="text-primary hover:underline font-medium inline-flex items-center gap-0.5 mt-0.5">
-                                  <span>📎 {lang === "ar" ? "تحميل/عرض الملف" : "View File"}</span>
-                                </a>
-                              ) : (
-                                field.value
-                              )}
-                            </div>
-                          ))}
-                        </div>
+                    <div
+                      key={item.cart_line_id}
+                      className="flex gap-3 border rounded-lg p-2 items-center"
+                    >
+                      {item.image ? (
+                        <img
+                          src={cloudflareImageUrl(item.image, 160)}
+                          alt={displayName}
+                          className="h-16 w-16 rounded object-cover shrink-0"
+                        />
+                      ) : (
+                        <div className="h-16 w-16 rounded bg-muted shrink-0" />
                       )}
-                      <div className="text-sm font-semibold mt-1" style={{ color: settings.primary_color }}>
-                        <span className="flex flex-col items-end">
-                          <span>{formatPrice(item.price * item.qty, currency, lang)}</span>
-                          {Number(item.original_price || 0) > item.price && <span className="text-xs text-muted-foreground line-through">{formatPrice(Number(item.original_price) * item.qty, currency, lang)}</span>}
-                        </span>
+                      <div className="flex-1 min-w-0">
+                        <div className="font-medium truncate">{displayName}</div>
+                        <div className="text-xs text-muted-foreground">
+                          {[item.size, item.color, item.fabric].filter(Boolean).join(" · ")}
+                        </div>
+                        {(item.custom_fields ?? []).length > 0 && (
+                          <div className="mt-1 space-y-0.5 text-xs text-muted-foreground">
+                            {item.custom_fields!.map((field) => (
+                              <div key={field.key} className="break-words">
+                                <span className="font-medium text-foreground/80">
+                                  {lang === "ar"
+                                    ? field.label_ar || field.label_en || field.key
+                                    : field.label_en || field.label_ar || field.key}
+                                  :
+                                </span>{" "}
+                                {field.value.startsWith("http") ? (
+                                  <a
+                                    href={field.value}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="text-primary hover:underline font-medium inline-flex items-center gap-0.5 mt-0.5"
+                                  >
+                                    <span>
+                                      📎 {lang === "ar" ? "تحميل/عرض الملف" : "View File"}
+                                    </span>
+                                  </a>
+                                ) : (
+                                  field.value
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                        <div
+                          className="text-sm font-semibold mt-1"
+                          style={{ color: settings.primary_color }}
+                        >
+                          <span className="flex flex-col items-end">
+                            <span>{formatPrice(item.price * item.qty, currency, lang)}</span>
+                            {Number(item.original_price || 0) > item.price && (
+                              <span className="text-xs text-muted-foreground line-through">
+                                {formatPrice(
+                                  Number(item.original_price) * item.qty,
+                                  currency,
+                                  lang,
+                                )}
+                              </span>
+                            )}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="flex flex-col items-center gap-1 shrink-0">
+                        <div className="flex items-center border rounded">
+                          <button
+                            className="grid h-11 w-11 place-items-center"
+                            onClick={() => updateQty(item.cart_line_id, item.qty - 1)}
+                            aria-label="decrease"
+                          >
+                            <Minus className="h-3 w-3" />
+                          </button>
+                          <span className="px-2 text-sm min-w-[24px] text-center">{item.qty}</span>
+                          <button
+                            className="grid h-11 w-11 place-items-center disabled:opacity-40"
+                            disabled={item.qty >= item.max_stock}
+                            onClick={() => updateQty(item.cart_line_id, item.qty + 1)}
+                            aria-label="increase"
+                          >
+                            <Plus className="h-3 w-3" />
+                          </button>
+                        </div>
+                        <button
+                          className="flex min-h-11 items-center gap-1 px-2 text-xs text-red-600"
+                          onClick={() => removeFromCart(item.cart_line_id)}
+                        >
+                          <Trash2 className="h-3 w-3" />
+                          {t("حذف", "Remove")}
+                        </button>
                       </div>
                     </div>
-                    <div className="flex flex-col items-center gap-1 shrink-0">
-                      <div className="flex items-center border rounded">
-                        <button
-                          className="grid h-11 w-11 place-items-center"
-                          onClick={() => updateQty(item.cart_line_id, item.qty - 1)}
-                          aria-label="decrease"
-                        >
-                          <Minus className="h-3 w-3" />
-                        </button>
-                        <span className="px-2 text-sm min-w-[24px] text-center">{item.qty}</span>
-                        <button
-                          className="grid h-11 w-11 place-items-center disabled:opacity-40"
-                          disabled={item.qty >= item.max_stock}
-                          onClick={() => updateQty(item.cart_line_id, item.qty + 1)}
-                          aria-label="increase"
-                        >
-                          <Plus className="h-3 w-3" />
-                        </button>
-                      </div>
-                      <button
-                        className="flex min-h-11 items-center gap-1 px-2 text-xs text-red-600"
-                        onClick={() => removeFromCart(item.cart_line_id)}
-                      >
-                        <Trash2 className="h-3 w-3" />
-                        {t("حذف", "Remove")}
-                      </button>
-                    </div>
-                  </div>
                   );
                 })
               )}
@@ -1188,11 +1472,17 @@ function CartDrawer({ children }: { children: React.ReactNode }) {
               <div className="border-t pt-4 space-y-3">
                 <div className="flex justify-between text-lg font-semibold">
                   <span>{t("الإجمالي", "Total")}</span>
-                  <span style={{ color: settings.primary_color }}>{formatPrice(cartTotal, currency, lang)}</span>
+                  <span style={{ color: settings.primary_color }}>
+                    {formatPrice(cartTotal, currency, lang)}
+                  </span>
                 </div>
                 <Button
                   className="w-full h-12"
-                  style={{ backgroundColor: drawerCheckoutBg, color: drawerCheckoutFg, borderColor: drawerCheckoutBg }}
+                  style={{
+                    backgroundColor: drawerCheckoutBg,
+                    color: drawerCheckoutFg,
+                    borderColor: drawerCheckoutBg,
+                  }}
                   onClick={() => {
                     setOpen(false);
                     navigate({ to: "/$slug/checkout", params: { slug: brand.slug } });
@@ -1228,14 +1518,21 @@ function SearchBar() {
       const pattern = `%${debounced.replace(/[%_]/g, (m: string) => `\\${m}`)}%`;
       const { data, error } = await supabase
         .from("products")
-        .select("id, name, name_ar, name_en, category, image_url, media, product_variants(selling_price, original_price)")
+        .select(
+          "id, name, name_ar, name_en, category, image_url, media, product_variants(selling_price, original_price)",
+        )
         .eq("brand_id", brand.id)
         .eq("is_active", true)
         .or(`name.ilike.${pattern},name_ar.ilike.${pattern},name_en.ilike.${pattern}`)
         .limit(8);
       if (error) throw error;
       return (data ?? []) as unknown as Array<{
-        id: string; name: string; name_ar: string | null; name_en: string | null; category: string | null; image_url: string | null;
+        id: string;
+        name: string;
+        name_ar: string | null;
+        name_en: string | null;
+        category: string | null;
+        image_url: string | null;
         media: Array<{ type: "image" | "video"; url: string }> | null;
         product_variants: Array<{ selling_price: number; original_price: number | null }>;
       }>;
@@ -1266,7 +1563,9 @@ function SearchBar() {
         className={`relative flex h-11 w-full cursor-pointer items-center rounded-md border border-black/10 bg-white/70 text-start text-sm text-muted-foreground shadow-sm transition-colors hover:bg-white/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring dark:bg-black/20 dark:hover:bg-black/30 ${lang === "ar" ? "pr-9 pl-3" : "pl-9 pr-3"}`}
         onClick={() => setModalOpen(true)}
       >
-        <Search className={`pointer-events-none absolute top-1/2 -translate-y-1/2 h-4 w-4 opacity-60 ${lang === "ar" ? "right-3" : "left-3"}`} />
+        <Search
+          className={`pointer-events-none absolute top-1/2 -translate-y-1/2 h-4 w-4 opacity-60 ${lang === "ar" ? "right-3" : "left-3"}`}
+        />
         <span className="truncate">{searchPlaceholder}</span>
       </button>
 
@@ -1285,7 +1584,11 @@ function SearchBar() {
                 const query = q.trim();
                 if (!query) return;
                 setModalOpen(false);
-                navigate({ to: "/$slug/search", params: { slug: brand.slug }, search: { q: query } });
+                navigate({
+                  to: "/$slug/search",
+                  params: { slug: brand.slug },
+                  search: { q: query },
+                });
               }}
               className="flex-1"
             >
@@ -1322,7 +1625,8 @@ function SearchBar() {
                 {topCategories.length > 0 ? (
                   <div className="flex flex-wrap gap-2">
                     {topCategories.map((cat: any) => {
-                      const catName = lang === "ar" ? cat.name_ar || cat.name_en : cat.name_en || cat.name_ar;
+                      const catName =
+                        lang === "ar" ? cat.name_ar || cat.name_en : cat.name_en || cat.name_ar;
                       return (
                         <Link
                           key={cat.id}
@@ -1338,7 +1642,10 @@ function SearchBar() {
                   </div>
                 ) : (
                   <div className="text-xs text-muted-foreground">
-                    {t("ابدأ بكتابة حرفين أو أكثر لبدء البحث الفوري.", "Type 2 or more characters to start instant searching.")}
+                    {t(
+                      "ابدأ بكتابة حرفين أو أكثر لبدء البحث الفوري.",
+                      "Type 2 or more characters to start instant searching.",
+                    )}
                   </div>
                 )}
               </div>
@@ -1373,29 +1680,47 @@ function SearchBar() {
                       const displayName = pickName(lang, p);
                       const price = p.product_variants?.[0]?.selling_price ?? 0;
                       const oldPrice = Number(p.product_variants?.[0]?.original_price ?? 0);
-                      const imageUrl = p.image_url || p.media?.find((item) => item.type === "image")?.url || null;
-                      const discount = oldPrice > price ? Math.round((1 - price / oldPrice) * 100) : 0;
+                      const imageUrl =
+                        p.image_url || p.media?.find((item) => item.type === "image")?.url || null;
+                      const discount =
+                        oldPrice > price ? Math.round((1 - price / oldPrice) * 100) : 0;
 
                       return (
                         <li key={p.id} className="first:pt-0 last:pb-0 py-2.5">
                           <Link
                             to="/$slug/product/$id"
                             params={{ slug: brand.slug, id: p.id }}
-                            onClick={() => { setModalOpen(false); setQ(""); }}
+                            onClick={() => {
+                              setModalOpen(false);
+                              setQ("");
+                            }}
                             className="flex items-center gap-3 group"
                           >
                             <div className="h-12 w-12 shrink-0 rounded-lg bg-neutral-100 dark:bg-neutral-900 border border-neutral-200/50 dark:border-neutral-800/40 overflow-hidden relative">
                               {imageUrl && (
-                                <img src={cloudflareImageUrl(imageUrl, 120)} alt={displayName} className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                                <img
+                                  src={cloudflareImageUrl(imageUrl, 120)}
+                                  alt={displayName}
+                                  className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-300"
+                                />
                               )}
                             </div>
                             <div className="flex-1 min-w-0 text-start">
-                              <div className="text-sm font-semibold truncate group-hover:text-amber-500 transition-colors" style={{ color: "var(--sf-heading)" }}>{displayName}</div>
+                              <div
+                                className="text-sm font-semibold truncate group-hover:text-amber-500 transition-colors"
+                                style={{ color: "var(--sf-heading)" }}
+                              >
+                                {displayName}
+                              </div>
                               <div className="flex items-center gap-2 mt-0.5 text-xs text-muted-foreground">
-                                <span className="font-semibold text-neutral-900 dark:text-neutral-100">{formatPrice(Number(price), currency, lang)}</span>
+                                <span className="font-semibold text-neutral-900 dark:text-neutral-100">
+                                  {formatPrice(Number(price), currency, lang)}
+                                </span>
                                 {oldPrice > Number(price) && (
                                   <>
-                                    <span className="line-through text-[10px]">{formatPrice(oldPrice, currency, lang)}</span>
+                                    <span className="line-through text-[10px]">
+                                      {formatPrice(oldPrice, currency, lang)}
+                                    </span>
                                     {discount > 0 && (
                                       <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-red-100 text-red-700 dark:bg-red-950/45 dark:text-red-400 font-medium">
                                         {discount}% {t("خصم", "OFF")}
@@ -1426,7 +1751,7 @@ function StoreFooter() {
     .map((p, i) => ({
       idx: i + 1,
       slug: p.slug,
-      title: lang === "ar" ? (p.title_ar || p.title_en) : (p.title_en || p.title_ar),
+      title: lang === "ar" ? p.title_ar || p.title_en : p.title_en || p.title_ar,
       hasContent: Boolean(p.title_ar || p.title_en),
     }))
     .filter((p) => p.hasContent && p.title);
@@ -1441,7 +1766,7 @@ function StoreFooter() {
         color: "var(--sf-footer-fg)",
       }}
     >
-      <div 
+      <div
         className="mx-auto max-w-7xl px-4 sm:px-6 flex flex-col items-center gap-2.5 text-center text-xs"
         style={{ color: "var(--sf-footer-fg)" }}
       >
@@ -1487,7 +1812,9 @@ function StoreFooter() {
               {lang === "ar" ? brand.name_ar || brand.name_en : brand.name_en}
             </span>
           )}
-          <span>© {new Date().getFullYear()} — {t("جميع الحقوق محفوظة", "All rights reserved")}</span>
+          <span>
+            © {new Date().getFullYear()} — {t("جميع الحقوق محفوظة", "All rights reserved")}
+          </span>
           {settings.analytics_consent_required && (
             <button
               type="button"
@@ -1511,11 +1838,12 @@ function StorefrontError({ error }: { error?: any }) {
     }
   }, [error]);
 
-  const errorMsg = error instanceof Error 
-    ? error.message 
-    : typeof error === "object" && error !== null 
-      ? (error.message || JSON.stringify(error)) 
-      : String(error || "");
+  const errorMsg =
+    error instanceof Error
+      ? error.message
+      : typeof error === "object" && error !== null
+        ? error.message || JSON.stringify(error)
+        : String(error || "");
 
   return (
     <div className="min-h-screen grid place-items-center p-8">
@@ -1524,7 +1852,9 @@ function StorefrontError({ error }: { error?: any }) {
           <X className="h-5 w-5" />
         </div>
         <h1 className="text-2xl font-display mb-2">Storefront unavailable</h1>
-        <p className="text-muted-foreground mb-2">This brand doesn't have an active storefront yet.</p>
+        <p className="text-muted-foreground mb-2">
+          This brand doesn't have an active storefront yet.
+        </p>
         {error && (
           <div className="mt-4 p-3 bg-destructive/10 text-xs font-mono text-left rounded overflow-auto max-h-40 text-destructive border border-destructive/20 select-all">
             <div className="font-bold mb-1">Diagnostic Info:</div>

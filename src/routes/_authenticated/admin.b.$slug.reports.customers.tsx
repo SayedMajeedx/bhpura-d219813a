@@ -12,7 +12,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { AlertCircle, UserPlus, Users as UsersIcon } from "lucide-react";
 import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip, Legend } from "recharts";
 
@@ -33,29 +40,64 @@ function ReportsCustomers() {
   const [includeHistorical, setIncludeHistorical] = useState(false);
   const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
-  const { data: customersData, isLoading, error } = useQuery({
-    queryKey: ["reports-customers", date?.from?.toISOString(), date?.to?.toISOString(), timezone, includeHistorical],
+  const {
+    data: customersData,
+    isLoading,
+    error,
+  } = useQuery({
+    queryKey: [
+      "reports-customers",
+      date?.from?.toISOString(),
+      date?.to?.toISOString(),
+      timezone,
+      includeHistorical,
+    ],
     queryFn: async () => {
       if (!date?.from || !date?.to) return null;
-      return await fetchReportingCustomers({ from: date.from, to: date.to }, timezone, includeHistorical, 50, 0, slug);
+      return await fetchReportingCustomers(
+        { from: date.from, to: date.to },
+        timezone,
+        includeHistorical,
+        50,
+        0,
+        slug,
+      );
     },
     enabled: !!date?.from && !!date?.to,
   });
 
-  const pieData = customersData ? [
-    { name: lang === "ar" ? "عملاء جدد" : "New Customers", value: customersData.new_customers_count, color: "#6b1d24" },
-    { name: lang === "ar" ? "عملاء متكررون" : "Returning Customers", value: customersData.returning_customers_count, color: "#c59a66" },
-  ] : [];
+  const pieData = customersData
+    ? [
+        {
+          name: lang === "ar" ? "عملاء جدد" : "New Customers",
+          value: customersData.new_customers_count,
+          color: "#6b1d24",
+        },
+        {
+          name: lang === "ar" ? "عملاء متكررون" : "Returning Customers",
+          value: customersData.returning_customers_count,
+          color: "#c59a66",
+        },
+      ]
+    : [];
 
-  const totalCustomers = customersData ? customersData.new_customers_count + customersData.returning_customers_count : 0;
+  const totalCustomers = customersData
+    ? customersData.new_customers_count + customersData.returning_customers_count
+    : 0;
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-background p-4 rounded-lg border">
         <DatePickerWithRange date={date} setDate={setDate} />
         <div className="flex items-center space-x-2">
-          <Switch id="historical-customers" checked={includeHistorical} onCheckedChange={setIncludeHistorical} />
-          <Label htmlFor="historical-customers">{lang === "ar" ? "تضمين الأرشيف" : "Include archived"}</Label>
+          <Switch
+            id="historical-customers"
+            checked={includeHistorical}
+            onCheckedChange={setIncludeHistorical}
+          />
+          <Label htmlFor="historical-customers">
+            {lang === "ar" ? "تضمين الأرشيف" : "Include archived"}
+          </Label>
         </div>
       </div>
 
@@ -77,13 +119,17 @@ function ReportsCustomers() {
               title={lang === "ar" ? "العملاء الجدد" : "New Customers"}
               value={customersData.new_customers_count}
               icon={<UserPlus />}
-              description={lang === "ar" ? "أول طلب لهم في هذه الفترة" : "First order within this period"}
+              description={
+                lang === "ar" ? "أول طلب لهم في هذه الفترة" : "First order within this period"
+              }
             />
             <KpiCard
               title={lang === "ar" ? "العملاء المتكررون" : "Returning Customers"}
               value={customersData.returning_customers_count}
               icon={<UsersIcon />}
-              description={lang === "ar" ? "طلبوا سابقاً قبل هذه الفترة" : "Have ordered before this period"}
+              description={
+                lang === "ar" ? "طلبوا سابقاً قبل هذه الفترة" : "Have ordered before this period"
+              }
             />
           </div>
 
@@ -113,9 +159,13 @@ function ReportsCustomers() {
                             <Cell key={`cell-${index}`} fill={entry.color} />
                           ))}
                         </Pie>
-                        <Tooltip 
-                          contentStyle={{ backgroundColor: 'hsl(var(--background))', borderColor: 'hsl(var(--border))', borderRadius: '8px' }}
-                          itemStyle={{ color: 'hsl(var(--foreground))' }}
+                        <Tooltip
+                          contentStyle={{
+                            backgroundColor: "hsl(var(--background))",
+                            borderColor: "hsl(var(--border))",
+                            borderRadius: "8px",
+                          }}
+                          itemStyle={{ color: "hsl(var(--foreground))" }}
                         />
                         <Legend verticalAlign="bottom" height={36} />
                       </PieChart>
@@ -133,7 +183,9 @@ function ReportsCustomers() {
               <CardHeader>
                 <CardTitle>{lang === "ar" ? "أفضل العملاء" : "Top Customers"}</CardTitle>
                 <CardDescription>
-                  {lang === "ar" ? "العملاء الأعلى إنفاقاً في هذه الفترة" : "Highest spending customers in this period"}
+                  {lang === "ar"
+                    ? "العملاء الأعلى إنفاقاً في هذه الفترة"
+                    : "Highest spending customers in this period"}
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -143,8 +195,12 @@ function ReportsCustomers() {
                       <TableHeader>
                         <TableRow>
                           <TableHead>{lang === "ar" ? "العميل" : "Customer"}</TableHead>
-                          <TableHead className="text-center">{lang === "ar" ? "الطلبات" : "Orders"}</TableHead>
-                          <TableHead className="text-right">{lang === "ar" ? "إجمالي الإنفاق" : "Total Spent"}</TableHead>
+                          <TableHead className="text-center">
+                            {lang === "ar" ? "الطلبات" : "Orders"}
+                          </TableHead>
+                          <TableHead className="text-right">
+                            {lang === "ar" ? "إجمالي الإنفاق" : "Total Spent"}
+                          </TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -152,7 +208,9 @@ function ReportsCustomers() {
                           <TableRow key={idx}>
                             <TableCell className="font-medium">{c.customer_name}</TableCell>
                             <TableCell className="text-center">{c.paid_order_count}</TableCell>
-                            <TableCell className="text-right">{formatMoney(c.total_pov, c.currency, lang)}</TableCell>
+                            <TableCell className="text-right">
+                              {formatMoney(c.total_pov, c.currency, lang)}
+                            </TableCell>
                           </TableRow>
                         ))}
                       </TableBody>
@@ -160,7 +218,9 @@ function ReportsCustomers() {
                   </div>
                 ) : (
                   <div className="text-center p-8 border rounded-lg bg-muted/20">
-                    <p className="text-muted-foreground">{lang === "ar" ? "لا توجد بيانات للعملاء" : "No customer data available."}</p>
+                    <p className="text-muted-foreground">
+                      {lang === "ar" ? "لا توجد بيانات للعملاء" : "No customer data available."}
+                    </p>
                   </div>
                 )}
               </CardContent>

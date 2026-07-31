@@ -34,13 +34,15 @@ export const getSubscriptionReceiptUploadUrl = createServerFn({ method: "POST" }
   .validator((raw: unknown) => CreateUploadInput.parse(raw))
   .handler(async ({ data, context }) => {
     // Check access to brand
-    const { data: hasAccess } = await context.supabase.rpc("can_access_brand", { _brand_id: data.brandId });
+    const { data: hasAccess } = await context.supabase.rpc("can_access_brand", {
+      _brand_id: data.brandId,
+    });
     if (!hasAccess) throw new Error("UNAUTHORIZED_BRAND_ACCESS");
 
     const { createPrivateUploadUrl } = await import("@/lib/private-r2.server");
     const receiptId = crypto.randomUUID();
     const objectKey = `brands/${data.brandId}/subscription-receipts/${receiptId}.${imageTypes[data.contentType]}`;
-    
+
     const uploadUrl = await createPrivateUploadUrl(objectKey, data.contentType);
     return { objectKey, uploadUrl };
   });
@@ -51,7 +53,9 @@ export const submitSubscriptionReceipt = createServerFn({ method: "POST" })
   .validator((raw: unknown) => SubmitReceiptInput.parse(raw))
   .handler(async ({ data, context }) => {
     // Check access to brand
-    const { data: hasAccess } = await context.supabase.rpc("can_access_brand", { _brand_id: data.brandId });
+    const { data: hasAccess } = await context.supabase.rpc("can_access_brand", {
+      _brand_id: data.brandId,
+    });
     if (!hasAccess) throw new Error("UNAUTHORIZED_BRAND_ACCESS");
 
     // Inspect private R2 object to verify the merchant actually uploaded it
@@ -65,7 +69,7 @@ export const submitSubscriptionReceipt = createServerFn({ method: "POST" })
       .update({
         payment_receipt_url: data.objectKey,
         payment_receipt_uploaded_at: new Date().toISOString(),
-        subscription_status: "pending_verification"
+        subscription_status: "pending_verification",
       })
       .eq("id", data.brandId);
 
@@ -80,10 +84,12 @@ export const getSubscriptionReceiptViewUrl = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     // Restrict access ONLY to super admins
     const { data: isSuperAdmin } = await context.supabase.rpc("is_admin");
-    const { data: { user } } = await context.supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await context.supabase.auth.getUser();
     const email = (user?.email || "").toLowerCase();
     const isFixedSuperAdmin = email === "majeed@hotmail.it";
-    
+
     if (!isSuperAdmin && !isFixedSuperAdmin) {
       throw new Error("UNAUTHORIZED_SUPER_ADMIN_ONLY");
     }
@@ -99,10 +105,12 @@ export const approveSubscriptionSaaS = createServerFn({ method: "POST" })
   .validator((raw: unknown) => AdminReviewInput.parse(raw))
   .handler(async ({ data, context }) => {
     const { data: isSuperAdmin } = await context.supabase.rpc("is_admin");
-    const { data: { user } } = await context.supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await context.supabase.auth.getUser();
     const email = (user?.email || "").toLowerCase();
     const isFixedSuperAdmin = email === "majeed@hotmail.it";
-    
+
     if (!isSuperAdmin && !isFixedSuperAdmin) {
       throw new Error("UNAUTHORIZED_SUPER_ADMIN_ONLY");
     }
@@ -118,11 +126,14 @@ export const approveSubscriptionSaaS = createServerFn({ method: "POST" })
     // Calculate new expiration date
     let baseDate = new Date();
     // If they already have an active future expiration, extend from that date!
-    if (brand.subscription_expires_at && new Date(brand.subscription_expires_at).getTime() > Date.now()) {
+    if (
+      brand.subscription_expires_at &&
+      new Date(brand.subscription_expires_at).getTime() > Date.now()
+    ) {
       baseDate = new Date(brand.subscription_expires_at);
     }
-    
-    baseDate.setDate(baseDate.getDate() + (30 * data.months));
+
+    baseDate.setDate(baseDate.getDate() + 30 * data.months);
     const newExpiresAt = baseDate.toISOString();
 
     const { error } = await context.supabase
@@ -132,7 +143,7 @@ export const approveSubscriptionSaaS = createServerFn({ method: "POST" })
         subscription_status: "active",
         subscription_expires_at: newExpiresAt,
         payment_receipt_url: null, // Processed
-        payment_receipt_uploaded_at: null
+        payment_receipt_uploaded_at: null,
       })
       .eq("id", data.brandId);
 
@@ -146,10 +157,12 @@ export const rejectSubscriptionSaaS = createServerFn({ method: "POST" })
   .validator((raw: unknown) => AdminRejectInput.parse(raw))
   .handler(async ({ data, context }) => {
     const { data: isSuperAdmin } = await context.supabase.rpc("is_admin");
-    const { data: { user } } = await context.supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await context.supabase.auth.getUser();
     const email = (user?.email || "").toLowerCase();
     const isFixedSuperAdmin = email === "majeed@hotmail.it";
-    
+
     if (!isSuperAdmin && !isFixedSuperAdmin) {
       throw new Error("UNAUTHORIZED_SUPER_ADMIN_ONLY");
     }
@@ -174,7 +187,7 @@ export const rejectSubscriptionSaaS = createServerFn({ method: "POST" })
       .update({
         subscription_status: "suspended",
         payment_receipt_url: null,
-        payment_receipt_uploaded_at: null
+        payment_receipt_uploaded_at: null,
       })
       .eq("id", data.brandId);
 

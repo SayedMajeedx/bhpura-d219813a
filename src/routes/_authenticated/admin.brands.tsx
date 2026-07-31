@@ -18,24 +18,24 @@ import {
   DialogTrigger,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { 
-  Plus, 
-  Store, 
-  ExternalLink, 
-  Crown, 
-  Pencil, 
-  Trash2, 
-  AlertTriangle, 
-  DollarSign, 
-  Users, 
-  Clock as ClockIcon, 
-  Eye, 
-  CheckCircle, 
-  XCircle, 
+import {
+  Plus,
+  Store,
+  ExternalLink,
+  Crown,
+  Pencil,
+  Trash2,
+  AlertTriangle,
+  DollarSign,
+  Users,
+  Clock as ClockIcon,
+  Eye,
+  CheckCircle,
+  XCircle,
   TrendingUp,
   Loader2,
   CalendarRange,
-  Shield
+  Shield,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useI18n, useT } from "@/lib/i18n";
@@ -44,10 +44,10 @@ import { startImpersonationSession } from "@/lib/impersonation.functions";
 import { purgeBrandPublicMedia } from "@/lib/r2-upload";
 import { purgeBrandPrivateReceipts } from "@/lib/benefit-receipt.functions";
 import { META_DESCRIPTION_LIMIT, META_TITLE_LIMIT, sanitizeMetaText } from "@/lib/seo";
-import { 
-  getSubscriptionReceiptViewUrl, 
-  approveSubscriptionSaaS, 
-  rejectSubscriptionSaaS 
+import {
+  getSubscriptionReceiptViewUrl,
+  approveSubscriptionSaaS,
+  rejectSubscriptionSaaS,
 } from "@/lib/saas-subscription.functions";
 
 export const Route = createFileRoute("/_authenticated/admin/brands")({
@@ -100,17 +100,32 @@ function BrandsPage() {
   const [open, setOpen] = useState(false);
 
   const handleImpersonate = async (brandId: string, slug: string) => {
-    const toastId = toast.loading(lang === "ar" ? "جاري تفعيل قناة محاكاة المسؤول الخارق..." : "Initializing Superadmin Impersonation session...");
+    const toastId = toast.loading(
+      lang === "ar"
+        ? "جاري تفعيل قناة محاكاة المسؤول الخارق..."
+        : "Initializing Superadmin Impersonation session...",
+    );
     try {
       const res = await startImpersonationSession({ data: { targetTenantId: brandId } });
       if (res && "token" in res && res.token) {
         document.cookie = `boutq_impersonation_token=${res.token}; path=/; max-age=${60 * 60 * 24}; samesite=lax${window.location.protocol === "https:" ? "; secure" : ""}`;
       }
-      toast.success(lang === "ar" ? "تم تسجيل الجلسة في سجل التدقيق الموثق! جاري التحويل..." : "Audit log recorded! Redirecting to merchant dashboard...", { id: toastId });
+      toast.success(
+        lang === "ar"
+          ? "تم تسجيل الجلسة في سجل التدقيق الموثق! جاري التحويل..."
+          : "Audit log recorded! Redirecting to merchant dashboard...",
+        { id: toastId },
+      );
       window.location.href = `/admin/b/${slug}/dashboard`;
     } catch (err: any) {
       console.error(err);
-      toast.error(err.message || (lang === "ar" ? "فشل تفعيل جلسة المحاكاة. يرجى مراجعة الصلاحيات." : "Impersonation launch blocked. Verify operator permissions."), { id: toastId });
+      toast.error(
+        err.message ||
+          (lang === "ar"
+            ? "فشل تفعيل جلسة المحاكاة. يرجى مراجعة الصلاحيات."
+            : "Impersonation launch blocked. Verify operator permissions."),
+        { id: toastId },
+      );
     }
   };
   const [editing, setEditing] = useState<Brand | null>(null);
@@ -140,11 +155,13 @@ function BrandsPage() {
   const refresh = () => qc.invalidateQueries({ queryKey: ["brands"] });
 
   // Filter pending approvals
-  const pendingApprovals = brands.filter(b => b.subscription_status === "pending_verification" && b.payment_receipt_url);
+  const pendingApprovals = brands.filter(
+    (b) => b.subscription_status === "pending_verification" && b.payment_receipt_url,
+  );
 
   // Compute Platform KPI Stats
-  const activeSaaSCount = brands.filter(b => b.subscription_status === "active").length;
-  
+  const activeSaaSCount = brands.filter((b) => b.subscription_status === "active").length;
+
   // Calculate SaaS MRR in BHD
   const totalMRR = brands.reduce((sum, b) => {
     if (b.subscription_status !== "active") return sum;
@@ -170,10 +187,14 @@ function BrandsPage() {
         data: {
           brandId: approvingBrand.id,
           tier: approveTier,
-          months: approveMonths
-        }
+          months: approveMonths,
+        },
       });
-      toast.success(lang === "ar" ? "تم تفعيل الاشتراك وتمديد الصلاحية بنجاح!" : "Subscription approved and extended successfully!");
+      toast.success(
+        lang === "ar"
+          ? "تم تفعيل الاشتراك وتمديد الصلاحية بنجاح!"
+          : "Subscription approved and extended successfully!",
+      );
       setApprovingBrand(null);
       refresh();
     } catch (err: any) {
@@ -184,11 +205,20 @@ function BrandsPage() {
   };
 
   const handleReject = async (brandId: string) => {
-    if (!confirm(lang === "ar" ? "هل أنت متأكد من رفض هذا الإيصال؟ سيتم حذف الملف وتعليق المتجر." : "Are you sure you want to reject this receipt? The file will be purged and account suspended.")) return;
+    if (
+      !confirm(
+        lang === "ar"
+          ? "هل أنت متأكد من رفض هذا الإيصال؟ سيتم حذف الملف وتعليق المتجر."
+          : "Are you sure you want to reject this receipt? The file will be purged and account suspended.",
+      )
+    )
+      return;
     setRejecting(brandId);
     try {
       await rejectSubscriptionSaaS({ data: { brandId } });
-      toast.success(lang === "ar" ? "تم رفض وإزالة الإيصال بنجاح." : "Receipt rejected and storage cleaned.");
+      toast.success(
+        lang === "ar" ? "تم رفض وإزالة الإيصال بنجاح." : "Receipt rejected and storage cleaned.",
+      );
       refresh();
     } catch (err: any) {
       toast.error(err.message || "Failed to reject subscription.");
@@ -198,12 +228,16 @@ function BrandsPage() {
   };
 
   return (
-    <div className="mx-auto max-w-6xl space-y-6 p-4 sm:p-6 lg:p-8 animate-fade-in" dir={lang === "ar" ? "rtl" : "ltr"}>
+    <div
+      className="mx-auto max-w-6xl space-y-6 p-4 sm:p-6 lg:p-8 animate-fade-in"
+      dir={lang === "ar" ? "rtl" : "ltr"}
+    >
       {/* Header Panel */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-border/60 pb-6">
         <div>
           <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-primary mb-1">
-            <Crown className="h-3.5 w-3.5 text-amber-500 animate-pulse" /> {lang === "ar" ? "المدير الأعلى" : "Super Admin Cockpit"}
+            <Crown className="h-3.5 w-3.5 text-amber-500 animate-pulse" />{" "}
+            {lang === "ar" ? "المدير الأعلى" : "Super Admin Cockpit"}
           </div>
           <h1 className="font-display text-4xl font-extrabold tracking-tight bg-clip-text bg-gradient-to-r from-slate-900 via-slate-800 to-slate-950 dark:from-slate-50 dark:to-slate-300">
             {lang === "ar" ? "لوحة تحكم بوتك SaaS" : "Boutq SaaS Dashboard"}
@@ -217,7 +251,8 @@ function BrandsPage() {
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
             <Button className="h-11 shadow-sm transition-all duration-200 hover:shadow hover:scale-[1.01] active:scale-95">
-              <Plus className="h-4 w-4 me-2" /> {lang === "ar" ? "إطلاق بوتيك جديد" : "Deploy New Boutique"}
+              <Plus className="h-4 w-4 me-2" />{" "}
+              {lang === "ar" ? "إطلاق بوتيك جديد" : "Deploy New Boutique"}
             </Button>
           </DialogTrigger>
           <NewBrandDialog
@@ -237,7 +272,9 @@ function BrandsPage() {
             <Users className="h-6 w-6" />
           </div>
           <div>
-            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest block">{lang === "ar" ? "إجمالي البوتيكات" : "Total Boutique Tenants"}</span>
+            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest block">
+              {lang === "ar" ? "إجمالي البوتيكات" : "Total Boutique Tenants"}
+            </span>
             <span className="text-2xl font-bold font-display mt-0.5 block">{brands.length}</span>
           </div>
         </Card>
@@ -248,8 +285,12 @@ function BrandsPage() {
             <TrendingUp className="h-6 w-6" />
           </div>
           <div>
-            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest block">{lang === "ar" ? "الاشتراكات النشطة" : "Active SaaS Subscriptions"}</span>
-            <span className="text-2xl font-bold font-display text-emerald-600 dark:text-emerald-500 mt-0.5 block">{activeSaaSCount}</span>
+            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest block">
+              {lang === "ar" ? "الاشتراكات النشطة" : "Active SaaS Subscriptions"}
+            </span>
+            <span className="text-2xl font-bold font-display text-emerald-600 dark:text-emerald-500 mt-0.5 block">
+              {activeSaaSCount}
+            </span>
           </div>
         </Card>
 
@@ -259,8 +300,12 @@ function BrandsPage() {
             <DollarSign className="h-6 w-6" />
           </div>
           <div>
-            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest block">{lang === "ar" ? "الإيراد الشهري المتكرر (MRR)" : "Monthly Recurring Revenue"}</span>
-            <span className="text-2xl font-bold font-display text-blue-600 dark:text-blue-500 mt-0.5 block">{totalMRR} BHD</span>
+            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest block">
+              {lang === "ar" ? "الإيراد الشهري المتكرر (MRR)" : "Monthly Recurring Revenue"}
+            </span>
+            <span className="text-2xl font-bold font-display text-blue-600 dark:text-blue-500 mt-0.5 block">
+              {totalMRR} BHD
+            </span>
           </div>
         </Card>
       </div>
@@ -272,7 +317,7 @@ function BrandsPage() {
             {lang === "ar" ? "المحلات المتاحة" : "All Shops"} ({brands.length})
           </TabsTrigger>
           <TabsTrigger value="receipt-approvals" className="h-9 font-medium text-xs relative">
-            {lang === "ar" ? "إيصالات الاشتراكات" : "Receipt Approvals"} 
+            {lang === "ar" ? "إيصالات الاشتراكات" : "Receipt Approvals"}
             {pendingApprovals.length > 0 && (
               <span className="absolute -top-1.5 -right-1.5 h-5 w-5 bg-rose-500 text-white rounded-full text-[10px] flex items-center justify-center font-bold animate-bounce">
                 {pendingApprovals.length}
@@ -293,7 +338,10 @@ function BrandsPage() {
           ) : (
             <div className="grid gap-4 sm:grid-cols-2">
               {brands.map((b) => (
-                <Card key={b.id} className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm p-6 relative flex flex-col justify-between h-56 transition-all duration-200 hover:shadow-xl hover:scale-[1.01]">
+                <Card
+                  key={b.id}
+                  className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm p-6 relative flex flex-col justify-between h-56 transition-all duration-200 hover:shadow-xl hover:scale-[1.01]"
+                >
                   <div>
                     <div className="flex items-center gap-3 mb-3">
                       {b.logo_url ? (
@@ -311,13 +359,18 @@ function BrandsPage() {
                         <div className="font-display font-medium text-lg truncate flex items-center gap-2">
                           <span>{lang === "ar" ? b.name_ar || b.name_en : b.name_en}</span>
                         </div>
-                        <div className="text-xs text-muted-foreground truncate font-mono">{b.slug}.boutq.store</div>
+                        <div className="text-xs text-muted-foreground truncate font-mono">
+                          {b.slug}.boutq.store
+                        </div>
                       </div>
-                      
+
                       {/* Subscription status badges */}
                       <div className="flex flex-col items-end gap-1 shrink-0">
                         {b.support_access_enabled === false && (
-                          <Badge variant="destructive" className="bg-rose-500 hover:bg-rose-600 text-white text-[9px] font-semibold py-0 h-4">
+                          <Badge
+                            variant="destructive"
+                            className="bg-rose-500 hover:bg-rose-600 text-white text-[9px] font-semibold py-0 h-4"
+                          >
                             {lang === "ar" ? "الخصوصية مفعلة" : "Privacy Lock"}
                           </Badge>
                         )}
@@ -337,7 +390,10 @@ function BrandsPage() {
                         {b.subscription_expires_at && (
                           <span className="text-[9px] text-muted-foreground font-semibold flex items-center gap-0.5">
                             <ClockIcon className="h-2.5 w-2.5" />
-                            {new Date(b.subscription_expires_at).toLocaleDateString(lang === "ar" ? "ar-BH-u-nu-latn" : "en-US", { month: "short", day: "numeric" })}
+                            {new Date(b.subscription_expires_at).toLocaleDateString(
+                              lang === "ar" ? "ar-BH-u-nu-latn" : "en-US",
+                              { month: "short", day: "numeric" },
+                            )}
                           </span>
                         )}
                       </div>
@@ -347,24 +403,44 @@ function BrandsPage() {
                   <div className="flex flex-wrap gap-1.5 border-t border-border/60 pt-3">
                     {b.support_access_enabled === false ? (
                       <div className="flex-1 flex flex-col gap-1">
-                        <Button variant="secondary" size="sm" className="w-full h-9 opacity-50 cursor-not-allowed" disabled>
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          className="w-full h-9 opacity-50 cursor-not-allowed"
+                          disabled
+                        >
                           <Shield className="h-3.5 w-3.5 me-1 text-zinc-400" />
                           {lang === "ar" ? "المحاكاة معطلة" : "Impersonation Disabled"}
                         </Button>
                       </div>
                     ) : (
-                      <Button variant="secondary" size="sm" className="flex-1 h-9 shadow-sm transition-all duration-200 hover:shadow hover:scale-[1.01] active:scale-95" onClick={() => handleImpersonate(b.id, b.slug)}>
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        className="flex-1 h-9 shadow-sm transition-all duration-200 hover:shadow hover:scale-[1.01] active:scale-95"
+                        onClick={() => handleImpersonate(b.id, b.slug)}
+                      >
                         <Shield className="h-3.5 w-3.5 me-1 text-amber-500 animate-pulse" />
                         {lang === "ar" ? "محاكاة اللوحة" : "Impersonate"}
                       </Button>
                     )}
-                    <Button asChild variant="outline" size="sm" className="flex-1 h-9 shadow-sm transition-all duration-200 hover:shadow hover:scale-[1.01] active:scale-95">
+                    <Button
+                      asChild
+                      variant="outline"
+                      size="sm"
+                      className="flex-1 h-9 shadow-sm transition-all duration-200 hover:shadow hover:scale-[1.01] active:scale-95"
+                    >
                       <Link to="/$slug" params={{ slug: b.slug }}>
                         <ExternalLink className="h-3.5 w-3.5 me-1" />
                         {lang === "ar" ? "المتجر" : "Storefront"}
                       </Link>
                     </Button>
-                    <Button variant="outline" size="sm" className="h-9 shadow-sm transition-all duration-200 hover:shadow hover:scale-[1.01] active:scale-95" onClick={() => setEditing(b)}>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-9 shadow-sm transition-all duration-200 hover:shadow hover:scale-[1.01] active:scale-95"
+                      onClick={() => setEditing(b)}
+                    >
                       <Pencil className="h-3.5 w-3.5" />
                     </Button>
                     <Button
@@ -387,15 +463,22 @@ function BrandsPage() {
           {pendingApprovals.length === 0 ? (
             <Card className="p-12 text-center border-dashed border-zinc-200 dark:border-zinc-800">
               <CheckCircle className="h-10 w-10 mx-auto text-emerald-500 mb-3 animate-bounce" />
-              <h3 className="font-display font-medium text-lg">{lang === "ar" ? "قائمة المراجعة فارغة تماماً!" : "Inbox is perfectly clean!"}</h3>
+              <h3 className="font-display font-medium text-lg">
+                {lang === "ar" ? "قائمة المراجعة فارغة تماماً!" : "Inbox is perfectly clean!"}
+              </h3>
               <p className="text-muted-foreground text-xs mt-1">
-                {lang === "ar" ? "لا توجد إيصالات دفع معلقة للمراجعة في الوقت الحالي." : "No boutique payment receipts are awaiting approval at the moment."}
+                {lang === "ar"
+                  ? "لا توجد إيصالات دفع معلقة للمراجعة في الوقت الحالي."
+                  : "No boutique payment receipts are awaiting approval at the moment."}
               </p>
             </Card>
           ) : (
             <div className="space-y-3">
               {pendingApprovals.map((b) => (
-                <Card key={b.id} className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm p-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <Card
+                  key={b.id}
+                  className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm p-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
+                >
                   <div className="flex items-center gap-3">
                     <div className="h-11 w-11 rounded-full bg-amber-500/5 grid place-items-center text-amber-500">
                       <ClockIcon className="h-5 w-5 animate-pulse" />
@@ -404,10 +487,15 @@ function BrandsPage() {
                       <h4 className="font-display font-medium text-base text-zinc-900 dark:text-zinc-100">
                         {lang === "ar" ? b.name_ar || b.name_en : b.name_en}
                       </h4>
-                      <p className="text-xs text-muted-foreground font-mono">/{b.slug} • ID: {b.id.substring(0, 8)}...</p>
+                      <p className="text-xs text-muted-foreground font-mono">
+                        /{b.slug} • ID: {b.id.substring(0, 8)}...
+                      </p>
                       {b.payment_receipt_uploaded_at && (
                         <p className="text-[10px] text-zinc-400 mt-1">
-                          {lang === "ar" ? "تم الرفع:" : "Uploaded:"} {new Date(b.payment_receipt_uploaded_at).toLocaleString(lang === "ar" ? "ar-BH-u-nu-latn" : "en-US")}
+                          {lang === "ar" ? "تم الرفع:" : "Uploaded:"}{" "}
+                          {new Date(b.payment_receipt_uploaded_at).toLocaleString(
+                            lang === "ar" ? "ar-BH-u-nu-latn" : "en-US",
+                          )}
                         </p>
                       )}
                     </div>
@@ -415,19 +503,21 @@ function BrandsPage() {
 
                   <div className="flex items-center gap-2">
                     {/* View R2 Receipt Button */}
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
+                    <Button
+                      variant="outline"
+                      size="sm"
                       className="gap-1 text-xs font-medium shadow-sm transition-all duration-200 hover:shadow hover:scale-[1.01] active:scale-95"
-                      onClick={() => b.payment_receipt_url && handleViewReceipt(b.payment_receipt_url)}
+                      onClick={() =>
+                        b.payment_receipt_url && handleViewReceipt(b.payment_receipt_url)
+                      }
                     >
                       <Eye className="h-4 w-4 text-primary" />
                       <span>{lang === "ar" ? "عرض إيصال R2" : "View Receipt"}</span>
                     </Button>
 
                     {/* Open Approve Dialog */}
-                    <Button 
-                      size="sm" 
+                    <Button
+                      size="sm"
                       className="bg-emerald-600 hover:bg-emerald-700 text-white gap-1 text-xs font-medium shadow-sm transition-all duration-200 hover:shadow hover:scale-[1.01] active:scale-95"
                       onClick={() => {
                         setApprovingBrand(b);
@@ -440,9 +530,9 @@ function BrandsPage() {
                     </Button>
 
                     {/* Reject Receipt */}
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
+                    <Button
+                      variant="ghost"
+                      size="sm"
                       disabled={rejecting === b.id}
                       className="text-rose-500 hover:text-rose-600 hover:bg-rose-500/5 gap-1 text-xs font-medium transition-all duration-200 hover:scale-[1.01] active:scale-95"
                       onClick={() => handleReject(b.id)}
@@ -474,13 +564,19 @@ function BrandsPage() {
             </DialogHeader>
             <div className="space-y-4 py-3">
               <div className="p-3 bg-muted/40 border border-border/40 rounded-xl font-mono text-xs">
-                <p className="text-xs text-muted-foreground uppercase font-bold tracking-widest">{lang === "ar" ? "المحل المختار" : "Boutique Brand"}</p>
-                <p className="font-display font-semibold mt-0.5 text-foreground text-sm">{approvingBrand.name_en}</p>
+                <p className="text-xs text-muted-foreground uppercase font-bold tracking-widest">
+                  {lang === "ar" ? "المحل المختار" : "Boutique Brand"}
+                </p>
+                <p className="font-display font-semibold mt-0.5 text-foreground text-sm">
+                  {approvingBrand.name_en}
+                </p>
               </div>
 
               {/* Tier Selection */}
               <div className="space-y-2">
-                <Label className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">{lang === "ar" ? "تحديد باقة الاشتراك" : "Assign Plan Tier"}</Label>
+                <Label className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+                  {lang === "ar" ? "تحديد باقة الاشتراك" : "Assign Plan Tier"}
+                </Label>
                 <div className="grid grid-cols-2 gap-2">
                   <button
                     type="button"
@@ -491,7 +587,9 @@ function BrandsPage() {
                         : "border-border/60 bg-background hover:border-zinc-300"
                     }`}
                   >
-                    <span className="font-semibold text-xs text-foreground">{lang === "ar" ? "الباقة الأساسية" : "Basic Boutique"}</span>
+                    <span className="font-semibold text-xs text-foreground">
+                      {lang === "ar" ? "الباقة الأساسية" : "Basic Boutique"}
+                    </span>
                     <span className="text-[10px] text-muted-foreground">19 BHD/month</span>
                   </button>
                   <button
@@ -503,7 +601,9 @@ function BrandsPage() {
                         : "border-border/60 bg-background hover:border-zinc-300"
                     }`}
                   >
-                    <span className="font-semibold text-xs text-foreground">{lang === "ar" ? "الباقة المتقدمة" : "Growth VIP"}</span>
+                    <span className="font-semibold text-xs text-foreground">
+                      {lang === "ar" ? "الباقة المتقدمة" : "Growth VIP"}
+                    </span>
                     <span className="text-[10px] text-muted-foreground">49 BHD/month</span>
                   </button>
                 </div>
@@ -511,7 +611,10 @@ function BrandsPage() {
 
               {/* Month Selection */}
               <div className="space-y-2">
-                <Label htmlFor="approve-months" className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+                <Label
+                  htmlFor="approve-months"
+                  className="text-xs font-semibold tracking-wide text-muted-foreground uppercase"
+                >
                   {lang === "ar" ? "مدة الترخيص (أشهر)" : "SaaS License Duration (Months)"}
                 </Label>
                 <div className="grid grid-cols-4 gap-2">
@@ -533,12 +636,17 @@ function BrandsPage() {
               </div>
             </div>
             <DialogFooter className="gap-2">
-              <Button variant="outline" onClick={() => setApprovingBrand(null)} disabled={approving} className="shadow-sm transition-all duration-200 hover:scale-[1.01] active:scale-95">
+              <Button
+                variant="outline"
+                onClick={() => setApprovingBrand(null)}
+                disabled={approving}
+                className="shadow-sm transition-all duration-200 hover:scale-[1.01] active:scale-95"
+              >
                 {lang === "ar" ? "إلغاء" : "Cancel"}
               </Button>
-              <Button 
-                onClick={handleApprove} 
-                disabled={approving} 
+              <Button
+                onClick={handleApprove}
+                disabled={approving}
                 className="bg-emerald-600 hover:bg-emerald-700 text-white gap-1.5 shadow-sm transition-all duration-200 hover:scale-[1.01] active:scale-95"
               >
                 {approving ? (
@@ -606,7 +714,7 @@ function NewBrandDialog({ onSaved }: { onSaved: () => void }) {
       const {
         data: { user },
       } = await supabase.auth.getUser();
-      
+
       // Deploying tenant using RPC for instant, correct seeding!
       const { error } = await supabase.rpc("create_tenant_with_defaults" as any, {
         p_slug: slug,
@@ -615,13 +723,14 @@ function NewBrandDialog({ onSaved }: { onSaved: () => void }) {
         p_primary_color: "#800020",
         p_owner_id: user?.id ?? "00000000-0000-0000-0000-000000000000",
         p_owner_email: user?.email ?? "super_admin@pura.bh",
-        p_owner_name: "Super Admin Deployment"
+        p_owner_name: "Super Admin Deployment",
       });
 
       if (error) throw error;
 
       // Update plan_type and trial_ends_at on the newly created brand row
-      const trialEndsAt = planType === "trial" ? new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString() : null;
+      const trialEndsAt =
+        planType === "trial" ? new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString() : null;
       const { data: brandRow } = await supabase
         .from("brands")
         .select("id")
@@ -634,7 +743,7 @@ function NewBrandDialog({ onSaved }: { onSaved: () => void }) {
           .update({
             plan_type: planType,
             trial_ends_at: trialEndsAt,
-            updated_at: new Date().toISOString()
+            updated_at: new Date().toISOString(),
           })
           .eq("id", brandRow.id);
 
@@ -643,7 +752,9 @@ function NewBrandDialog({ onSaved }: { onSaved: () => void }) {
         }
       }
 
-      toast.success(lang === "ar" ? "تم تهيئة المتجر وإطلاقه بنجاح!" : "Tenant database provisioned and live!");
+      toast.success(
+        lang === "ar" ? "تم تهيئة المتجر وإطلاقه بنجاح!" : "Tenant database provisioned and live!",
+      );
       onSaved();
     } catch (err: any) {
       toast.error(err?.message ?? "Error");
@@ -655,7 +766,9 @@ function NewBrandDialog({ onSaved }: { onSaved: () => void }) {
   return (
     <DialogContent className="max-w-md bg-background/95 backdrop-blur-md border border-border/60 text-foreground p-6 rounded-2xl shadow-xl">
       <DialogHeader>
-        <DialogTitle className="font-display font-bold text-lg">{lang === "ar" ? "علامة تجارية جديدة" : "New Brand"}</DialogTitle>
+        <DialogTitle className="font-display font-bold text-lg">
+          {lang === "ar" ? "علامة تجارية جديدة" : "New Brand"}
+        </DialogTitle>
       </DialogHeader>
       <div className="space-y-3">
         <div>
@@ -727,7 +840,11 @@ function NewBrandDialog({ onSaved }: { onSaved: () => void }) {
         </div>
       </div>
       <DialogFooter>
-        <Button onClick={submit} disabled={saving} className="shadow-sm transition-all duration-200 hover:scale-[1.01] active:scale-95">
+        <Button
+          onClick={submit}
+          disabled={saving}
+          className="shadow-sm transition-all duration-200 hover:scale-[1.01] active:scale-95"
+        >
           {lang === "ar" ? "إنشاء" : "Create"}
         </Button>
       </DialogFooter>
@@ -869,27 +986,35 @@ function EditBrandDialog({ brand, onSaved }: { brand: Brand; onSaved: () => void
           <div>
             <div className="flex items-center justify-between gap-3">
               <Label>{isAr ? "عنوان محركات البحث" : "Meta Title"}</Label>
-              <span className="text-xs text-muted-foreground">{form.meta_title.length}/{META_TITLE_LIMIT}</span>
+              <span className="text-xs text-muted-foreground">
+                {form.meta_title.length}/{META_TITLE_LIMIT}
+              </span>
             </div>
             <Input
               value={form.meta_title}
               maxLength={META_TITLE_LIMIT}
               onChange={(event) => setForm({ ...form, meta_title: event.target.value })}
-              placeholder={isAr ? "عنوان المتجر في نتائج البحث" : "Store title shown in search results"}
+              placeholder={
+                isAr ? "عنوان المتجر في نتائج البحث" : "Store title shown in search results"
+              }
               dir={isAr ? "rtl" : "ltr"}
             />
           </div>
           <div>
             <div className="flex items-center justify-between gap-3">
               <Label>{isAr ? "وصف محركات البحث" : "Meta Description"}</Label>
-              <span className="text-xs text-muted-foreground">{form.meta_description.length}/{META_DESCRIPTION_LIMIT}</span>
+              <span className="text-xs text-muted-foreground">
+                {form.meta_description.length}/{META_DESCRIPTION_LIMIT}
+              </span>
             </div>
             <Textarea
               rows={3}
               value={form.meta_description}
               maxLength={META_DESCRIPTION_LIMIT}
               onChange={(event) => setForm({ ...form, meta_description: event.target.value })}
-              placeholder={isAr ? "وصف مختصر وجذاب للمتجر" : "A concise description of this storefront"}
+              placeholder={
+                isAr ? "وصف مختصر وجذاب للمتجر" : "A concise description of this storefront"
+              }
               dir={isAr ? "rtl" : "ltr"}
             />
           </div>
@@ -910,7 +1035,11 @@ function EditBrandDialog({ brand, onSaved }: { brand: Brand; onSaved: () => void
         </div>
       </div>
       <DialogFooter>
-        <Button onClick={save} disabled={saving} className="shadow-sm transition-all duration-200 hover:scale-[1.01] active:scale-95">
+        <Button
+          onClick={save}
+          disabled={saving}
+          className="shadow-sm transition-all duration-200 hover:scale-[1.01] active:scale-95"
+        >
           {t("common.save")}
         </Button>
       </DialogFooter>

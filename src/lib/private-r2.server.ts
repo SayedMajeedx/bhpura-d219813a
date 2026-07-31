@@ -7,7 +7,12 @@ type PrivateR2Config = {
 };
 
 function sanitizeValue(value: string | undefined): string | undefined {
-  return value?.trim().replace(/^['"]|['"]$/g, "").trim() || undefined;
+  return (
+    value
+      ?.trim()
+      .replace(/^['"]|['"]$/g, "")
+      .trim() || undefined
+  );
 }
 
 function runtimeEnv(): Record<string, string | undefined> {
@@ -24,9 +29,7 @@ function privateR2(): PrivateR2Config {
     env.R2_PRIVATE_ACCESS_KEY_ID ?? env.R2_ACCESS_KEY_ID ?? env.ACCESS_KEY_ID,
   );
   const secretAccessKey = sanitizeValue(
-    env.R2_PRIVATE_SECRET_ACCESS_KEY ??
-      env.R2_SECRET_ACCESS_KEY ??
-      env.SECRET_ACCESS_KEY,
+    env.R2_PRIVATE_SECRET_ACCESS_KEY ?? env.R2_SECRET_ACCESS_KEY ?? env.SECRET_ACCESS_KEY,
   );
   const bucket = sanitizeValue(env.R2_PRIVATE_BUCKET ?? env.R2_PRIVATE_BUCKET_NAME);
 
@@ -60,10 +63,7 @@ async function signedRequest(
   return fetch(signed);
 }
 
-export async function createPrivateUploadUrl(
-  key: string,
-  contentType: string,
-): Promise<string> {
+export async function createPrivateUploadUrl(key: string, contentType: string): Promise<string> {
   const config = privateR2();
   const url = objectUrl(config, key);
   url.searchParams.set("X-Amz-Expires", "300");
@@ -134,9 +134,7 @@ export async function purgePrivatePrefix(prefix: string): Promise<number> {
   let continuationToken: string | undefined;
   let deleted = 0;
   do {
-    const listUrl = new URL(
-      `${config.endpoint}/${encodeURIComponent(config.bucket)}`,
-    );
+    const listUrl = new URL(`${config.endpoint}/${encodeURIComponent(config.bucket)}`);
     listUrl.searchParams.set("list-type", "2");
     listUrl.searchParams.set("prefix", prefix);
     listUrl.searchParams.set("max-keys", "1000");
@@ -160,9 +158,5 @@ export async function purgePrivatePrefix(prefix: string): Promise<number> {
 
 export function isPrivateReceiptKey(key: string, brandId?: string): boolean {
   const prefix = brandId ? `brands/${brandId}/benefit-receipts/` : "brands/";
-  return (
-    key.startsWith(prefix) &&
-    key.includes("/benefit-receipts/") &&
-    !key.includes("..")
-  );
+  return key.startsWith(prefix) && key.includes("/benefit-receipts/") && !key.includes("..");
 }

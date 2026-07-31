@@ -34,21 +34,25 @@ function IndexComponent({ text }: { text: string }) {
 
 function IndexRedirector() {
   const navigate = useNavigate();
-  const isAr = typeof navigator !== "undefined" && (navigator.language?.startsWith("ar") || navigator.languages?.some(l => l.startsWith("ar")));
-  const [loaderText, setLoaderText] = useState(isAr ? "جاري فتح المتجر الإلكتروني..." : "Resolving boutique storefront...");
+  const isAr =
+    typeof navigator !== "undefined" &&
+    (navigator.language?.startsWith("ar") || navigator.languages?.some((l) => l.startsWith("ar")));
+  const [loaderText, setLoaderText] = useState(
+    isAr ? "جاري فتح المتجر الإلكتروني..." : "Resolving boutique storefront...",
+  );
 
   useEffect(() => {
     const resolveRouting = async () => {
       try {
         const hostname = window.location.hostname.toLowerCase();
-        
+
         // List of known platform domains that should go to the Super Admin / Merchant login
-        const isPlatformDomain = 
-          hostname === "localhost" || 
-          hostname === "127.0.0.1" || 
-          hostname.endsWith(".pura.bh") || 
-          hostname === "pura.bh" || 
-          hostname.endsWith(".pages.dev") || 
+        const isPlatformDomain =
+          hostname === "localhost" ||
+          hostname === "127.0.0.1" ||
+          hostname.endsWith(".pura.bh") ||
+          hostname === "pura.bh" ||
+          hostname.endsWith(".pages.dev") ||
           hostname.endsWith(".workers.dev");
 
         if (isPlatformDomain) {
@@ -64,10 +68,10 @@ function IndexRedirector() {
               .select("storefront_loader_text_en, storefront_loader_text_ar")
               .eq("brand_id", brandId)
               .maybeSingle();
-            
+
             if (settings) {
-              const customText = isAr 
-                ? settings.storefront_loader_text_ar 
+              const customText = isAr
+                ? settings.storefront_loader_text_ar
                 : settings.storefront_loader_text_en;
               if (customText) {
                 setLoaderText(customText);
@@ -94,9 +98,9 @@ function IndexRedirector() {
               if (brand.id) {
                 await fetchCustomLoaderText(brand.id);
               }
-              void navigate({ 
-                to: "/$slug", 
-                params: { slug: brand.slug } 
+              void navigate({
+                to: "/$slug",
+                params: { slug: brand.slug },
               });
               return;
             }
@@ -118,14 +122,17 @@ function IndexRedirector() {
             if (brand.id) {
               await fetchCustomLoaderText(brand.id);
             }
-            void navigate({ 
-              to: "/$slug", 
-              params: { slug: brand.slug } 
+            void navigate({
+              to: "/$slug",
+              params: { slug: brand.slug },
             });
             return;
           }
         } catch (customDomainErr) {
-          console.log("Custom domain query bypassed due to column-level select permissions:", customDomainErr);
+          console.log(
+            "Custom domain query bypassed due to column-level select permissions:",
+            customDomainErr,
+          );
         }
 
         // Fallback: If no matching storefront resolved, route to admin
@@ -141,5 +148,3 @@ function IndexRedirector() {
 
   return <IndexComponent text={loaderText} />;
 }
-
-export default IndexRedirector;

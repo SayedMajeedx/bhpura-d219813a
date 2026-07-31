@@ -24,7 +24,10 @@ export async function requireBrandPermission(slug: string, permission: string) {
   const permissions = Array.isArray(profile?.permissions) ? profile.permissions : [];
   const isActive = profile?.status === "active";
 
-  if (!isActive || (!isSuperAdmin && !isAdmin && !isAssignedOrderCourier && !permissions.includes(permission))) {
+  if (
+    !isActive ||
+    (!isSuperAdmin && !isAdmin && !isAssignedOrderCourier && !permissions.includes(permission))
+  ) {
     throw redirect({ to: "/admin/b/$slug/dashboard", params: { slug } });
   }
 }

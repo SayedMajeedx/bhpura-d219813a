@@ -65,8 +65,8 @@ export function printThermalReceipt(a: ThermalArgs) {
       const unit = Number(it.unit_price) + Number(it.customization_total);
       const addons =
         (it.customizations ?? []).length > 0
-          ? `<div class="addons">${it.customizations!
-              .map((c) => `+ ${escapeHtml(c.name)} (${money(c.price_delta)})`)
+          ? `<div class="addons">${it
+              .customizations!.map((c) => `+ ${escapeHtml(c.name)} (${money(c.price_delta)})`)
               .join("<br/>")}</div>`
           : "";
       return `
@@ -82,9 +82,7 @@ export function printThermalReceipt(a: ThermalArgs) {
     })
     .join("");
 
-  const rows: [string, string][] = [
-    [a.labels.subtotal, money(a.subtotal)],
-  ];
+  const rows: [string, string][] = [[a.labels.subtotal, money(a.subtotal)]];
   if (a.discount > 0) rows.push([a.labels.discount, `- ${money(a.discount)}`]);
   if (a.taxRate > 0) rows.push([`${a.labels.vat} (${a.taxRate}%)`, money(a.taxAmount)]);
   if (a.shipping > 0) rows.push([a.labels.shipping, money(a.shipping)]);

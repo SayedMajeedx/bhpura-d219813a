@@ -10,25 +10,25 @@ import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { useI18n } from "@/lib/i18n";
 import { SUPER_ADMIN_EMAIL } from "@/lib/profile-context";
-import { 
-  getPlatformSettings, 
-  updatePlatformSettings, 
+import {
+  getPlatformSettings,
+  updatePlatformSettings,
   getPlatformLogoUploadUrl,
-  getPlatformQrUploadUrl
+  getPlatformQrUploadUrl,
 } from "@/lib/onboarding.functions";
-import { 
-  Sliders, 
-  DollarSign, 
-  Phone, 
-  UploadCloud, 
-  Loader2, 
-  Image as ImageIcon, 
-  Check, 
-  ArrowRight, 
-  ShieldAlert, 
+import {
+  Sliders,
+  DollarSign,
+  Phone,
+  UploadCloud,
+  Loader2,
+  Image as ImageIcon,
+  Check,
+  ArrowRight,
+  ShieldAlert,
   Trash2,
   Globe,
-  QrCode
+  QrCode,
 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/admin/super/settings")({
@@ -37,14 +37,14 @@ export const Route = createFileRoute("/_authenticated/admin/super/settings")({
       data: { user },
     } = await supabase.auth.getUser();
     if (!user) throw redirect({ to: "/auth" });
-    
+
     const email = (user.email || "").toLowerCase();
     const { data: profile } = await supabase
       .from("profiles")
       .select("role")
       .eq("id", user.id)
       .maybeSingle();
-      
+
     const isSuperAdmin = email === SUPER_ADMIN_EMAIL || profile?.role === "super_admin";
     if (!isSuperAdmin) throw redirect({ to: "/admin" });
   },
@@ -75,7 +75,7 @@ function SuperAdminSettings() {
     queryFn: async () => {
       const data = await getPlatformSettings();
       return data;
-    }
+    },
   });
 
   // Sync state once query data resolves
@@ -101,41 +101,41 @@ function SuperAdminSettings() {
 
     if (!["image/png", "image/jpeg", "image/webp", "image/svg+xml"].includes(file.type)) {
       toast.error(
-        lang === "ar" 
-          ? "الرجاء رفع صورة صالحة (PNG, JPEG, WEBP, SVG)." 
-          : "Please upload a valid image file (PNG, JPEG, WEBP, SVG)."
+        lang === "ar"
+          ? "الرجاء رفع صورة صالحة (PNG, JPEG, WEBP, SVG)."
+          : "Please upload a valid image file (PNG, JPEG, WEBP, SVG).",
       );
       return;
     }
 
     if (file.size > 5 * 1024 * 1024) {
       toast.error(
-        lang === "ar" 
-          ? "الحد الأقصى لحجم الملف هو 5 ميجابايت." 
-          : "Maximum logo file size is 5MB."
+        lang === "ar" ? "الحد الأقصى لحجم الملف هو 5 ميجابايت." : "Maximum logo file size is 5MB.",
       );
       return;
     }
 
     setUploadingUploadingLogo(true);
     const toastId = toast.loading(
-      lang === "ar" ? "جاري تفعيل قناة التحميل..." : "Opening secure logo upload channel..."
+      lang === "ar" ? "جاري تفعيل قناة التحميل..." : "Opening secure logo upload channel...",
     );
 
     try {
       const { uploadUrl, publicUrl } = await getPlatformLogoUploadUrl({
-        data: { contentType: file.type }
+        data: { contentType: file.type },
       });
 
       toast.loading(
-        lang === "ar" ? "جاري حفظ وتجهيز الشعار الفاخر..." : "Storing master logo in R2 public storage...",
-        { id: toastId }
+        lang === "ar"
+          ? "جاري حفظ وتجهيز الشعار الفاخر..."
+          : "Storing master logo in R2 public storage...",
+        { id: toastId },
       );
 
       const res = await fetch(uploadUrl, {
         method: "PUT",
         headers: { "Content-Type": file.type },
-        body: file
+        body: file,
       });
 
       if (!res.ok) throw new Error("R2 upload failure");
@@ -143,14 +143,16 @@ function SuperAdminSettings() {
       setPlatformIconUrl(publicUrl);
       setLogoPreviewUrl(URL.createObjectURL(file));
       toast.success(
-        lang === "ar" ? "تم رفع وتعيين شعار المنصة بنجاح!" : "Platform master logo uploaded successfully!",
-        { id: toastId }
+        lang === "ar"
+          ? "تم رفع وتعيين شعار المنصة بنجاح!"
+          : "Platform master logo uploaded successfully!",
+        { id: toastId },
       );
     } catch (err) {
       console.error(err);
       toast.error(
         lang === "ar" ? "فشل تحميل الشعار. حاول مجدداً." : "Failed to upload logo asset.",
-        { id: toastId }
+        { id: toastId },
       );
     } finally {
       setUploadingUploadingLogo(false);
@@ -164,41 +166,41 @@ function SuperAdminSettings() {
 
     if (!["image/png", "image/jpeg", "image/webp"].includes(file.type)) {
       toast.error(
-        lang === "ar" 
-          ? "الرجاء رفع صورة صالحة (PNG, JPEG, WEBP)." 
-          : "Please upload a valid image file (PNG, JPEG, WEBP)."
+        lang === "ar"
+          ? "الرجاء رفع صورة صالحة (PNG, JPEG, WEBP)."
+          : "Please upload a valid image file (PNG, JPEG, WEBP).",
       );
       return;
     }
 
     if (file.size > 5 * 1024 * 1024) {
       toast.error(
-        lang === "ar" 
-          ? "الحد الأقصى لحجم الملف هو 5 ميجابايت." 
-          : "Maximum QR file size is 5MB."
+        lang === "ar" ? "الحد الأقصى لحجم الملف هو 5 ميجابايت." : "Maximum QR file size is 5MB.",
       );
       return;
     }
 
     setUploadingQr(true);
     const toastId = toast.loading(
-      lang === "ar" ? "جاري تفعيل قناة التحميل..." : "Opening secure QR upload channel..."
+      lang === "ar" ? "جاري تفعيل قناة التحميل..." : "Opening secure QR upload channel...",
     );
 
     try {
       const { uploadUrl, publicUrl } = await getPlatformQrUploadUrl({
-        data: { contentType: file.type }
+        data: { contentType: file.type },
       });
 
       toast.loading(
-        lang === "ar" ? "جاري حفظ وتجهيز رمز الاستجابة السريع..." : "Storing QR code in R2 public storage...",
-        { id: toastId }
+        lang === "ar"
+          ? "جاري حفظ وتجهيز رمز الاستجابة السريع..."
+          : "Storing QR code in R2 public storage...",
+        { id: toastId },
       );
 
       const res = await fetch(uploadUrl, {
         method: "PUT",
         headers: { "Content-Type": file.type },
-        body: file
+        body: file,
       });
 
       if (!res.ok) throw new Error("R2 upload failure");
@@ -206,15 +208,16 @@ function SuperAdminSettings() {
       setBenefitPayQrUrl(publicUrl);
       setQrPreviewUrl(URL.createObjectURL(file));
       toast.success(
-        lang === "ar" ? "تم رفع وتعيين رمز بنفت بي بنجاح!" : "BenefitPay QR code uploaded successfully!",
-        { id: toastId }
+        lang === "ar"
+          ? "تم رفع وتعيين رمز بنفت بي بنجاح!"
+          : "BenefitPay QR code uploaded successfully!",
+        { id: toastId },
       );
     } catch (err) {
       console.error(err);
-      toast.error(
-        lang === "ar" ? "فشل تحميل الرمز. حاول مجدداً." : "Failed to upload QR asset.",
-        { id: toastId }
-      );
+      toast.error(lang === "ar" ? "فشل تحميل الرمز. حاول مجدداً." : "Failed to upload QR asset.", {
+        id: toastId,
+      });
     } finally {
       setUploadingQr(false);
     }
@@ -225,7 +228,7 @@ function SuperAdminSettings() {
     e.preventDefault();
     setSubmitting(true);
     const toastId = toast.loading(
-      lang === "ar" ? "جاري حفظ إعدادات المنصة..." : "Saving global platform settings..."
+      lang === "ar" ? "جاري حفظ إعدادات المنصة..." : "Saving global platform settings...",
     );
 
     try {
@@ -237,21 +240,25 @@ function SuperAdminSettings() {
           benefitPayQrUrl,
           merchantAccountName: merchantAccountName.trim(),
           whatsappSupportNumber: whatsappNumber.trim(),
-          superadminImpersonationMutationAllowed: impersonationBypass
-        }
+          superadminImpersonationMutationAllowed: impersonationBypass,
+        },
       });
 
       await qc.invalidateQueries({ queryKey: ["platform-settings-singleton"] });
-      
+
       toast.success(
-        lang === "ar" ? "تم تحديث إعدادات المنصة بنجاح!" : "Platform configuration updated successfully!",
-        { id: toastId }
+        lang === "ar"
+          ? "تم تحديث إعدادات المنصة بنجاح!"
+          : "Platform configuration updated successfully!",
+        { id: toastId },
       );
     } catch (err: any) {
       console.error(err);
       toast.error(
-        lang === "ar" ? "فشل تحديث الإعدادات." : err.message || "Failed to update platform settings.",
-        { id: toastId }
+        lang === "ar"
+          ? "فشل تحديث الإعدادات."
+          : err.message || "Failed to update platform settings.",
+        { id: toastId },
       );
     } finally {
       setSubmitting(false);
@@ -267,7 +274,10 @@ function SuperAdminSettings() {
   }
 
   return (
-    <div className="mx-auto max-w-4xl space-y-6 p-4 sm:p-6 lg:p-8 animate-fade-in" dir={lang === "ar" ? "rtl" : "ltr"}>
+    <div
+      className="mx-auto max-w-4xl space-y-6 p-4 sm:p-6 lg:p-8 animate-fade-in"
+      dir={lang === "ar" ? "rtl" : "ltr"}
+    >
       {/* Premium Header bar */}
       <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between border-b border-border/60 pb-5">
         <div>
@@ -276,8 +286,8 @@ function SuperAdminSettings() {
             <span>{lang === "ar" ? "إعدادات المنصة العامة" : "Platform Master Settings"}</span>
           </h1>
           <p className="text-xs text-muted-foreground mt-1">
-            {lang === "ar" 
-              ? "تحكم ديناميكياً بأسعار التسجيل، شعار العلامة التجارية، وأرقام دعم العملاء." 
+            {lang === "ar"
+              ? "تحكم ديناميكياً بأسعار التسجيل، شعار العلامة التجارية، وأرقام دعم العملاء."
               : "Manage core platform pricing, whitelabel logo branding, and client service attributes."}
           </p>
         </div>
@@ -289,7 +299,9 @@ function SuperAdminSettings() {
           <CardHeader className="pb-3 border-b border-border/60">
             <CardTitle className="text-sm font-medium text-zinc-800 dark:text-zinc-200 flex items-center gap-2">
               <Globe className="h-4 w-4 text-primary" />
-              {lang === "ar" ? "شعار المنصة الرئيسي (Whitelabel Assets)" : "Platform Master Logo Asset"}
+              {lang === "ar"
+                ? "شعار المنصة الرئيسي (Whitelabel Assets)"
+                : "Platform Master Logo Asset"}
             </CardTitle>
             <CardDescription className="text-xs">
               {lang === "ar"
@@ -332,7 +344,9 @@ function SuperAdminSettings() {
                   {uploadingLogo ? (
                     <div className="space-y-2 flex flex-col items-center">
                       <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                      <span className="text-xs font-medium text-zinc-500">{lang === "ar" ? "جاري الرفع..." : "Uploading logo..."}</span>
+                      <span className="text-xs font-medium text-zinc-500">
+                        {lang === "ar" ? "جاري الرفع..." : "Uploading logo..."}
+                      </span>
                     </div>
                   ) : (
                     <div className="space-y-1.5 text-zinc-500">
@@ -376,7 +390,9 @@ function SuperAdminSettings() {
             {/* Standard Price BHD */}
             <div className="space-y-1.5">
               <Label className="text-xs font-semibold text-zinc-600 dark:text-zinc-400">
-                {lang === "ar" ? "السعر الأساسي لتفعيل المتجر (BHD)" : "Standard Lifetime Price (BHD)"}
+                {lang === "ar"
+                  ? "السعر الأساسي لتفعيل المتجر (BHD)"
+                  : "Standard Lifetime Price (BHD)"}
               </Label>
               <div className="relative">
                 <Input
@@ -388,16 +404,22 @@ function SuperAdminSettings() {
                   onChange={(e) => setBasePrice(Number(e.target.value) || 0)}
                   required
                 />
-                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-xs font-bold text-zinc-400 uppercase">BHD</span>
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-xs font-bold text-zinc-400 uppercase">
+                  BHD
+                </span>
               </div>
             </div>
 
             {/* Discount Price BHD */}
             <div className="space-y-1.5">
               <Label className="text-xs font-semibold text-zinc-600 dark:text-zinc-400 flex items-center justify-between">
-                <span>{lang === "ar" ? "سعر الخصم النشط (BHD)" : "Promotional Discounted Price (BHD)"}</span>
+                <span>
+                  {lang === "ar" ? "سعر الخصم النشط (BHD)" : "Promotional Discounted Price (BHD)"}
+                </span>
                 <span className="text-[10px] text-zinc-400 font-normal">
-                  {lang === "ar" ? "[اتركه فارغاً لعدم تطبيق خصم]" : "[Leave blank for no discount]"}
+                  {lang === "ar"
+                    ? "[اتركه فارغاً لعدم تطبيق خصم]"
+                    : "[Leave blank for no discount]"}
                 </span>
               </Label>
               <div className="relative">
@@ -413,7 +435,9 @@ function SuperAdminSettings() {
                     setDiscountPrice(val === "" ? null : Number(val));
                   }}
                 />
-                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-xs font-bold text-zinc-400 uppercase">BHD</span>
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-xs font-bold text-zinc-400 uppercase">
+                  BHD
+                </span>
               </div>
             </div>
           </CardContent>
@@ -456,14 +480,20 @@ function SuperAdminSettings() {
             {/* QR Code Upload Section */}
             <div className="space-y-1.5">
               <Label className="text-xs font-semibold text-zinc-600 dark:text-zinc-400">
-                {lang === "ar" ? "رمز الاستجابة السريع المخصص (QR Code Image)" : "BenefitPay Merchant QR Code Asset"}
+                {lang === "ar"
+                  ? "رمز الاستجابة السريع المخصص (QR Code Image)"
+                  : "BenefitPay Merchant QR Code Asset"}
               </Label>
               <div className="flex flex-col md:flex-row items-center gap-6 pt-1">
                 {/* QR Image Preview Block */}
                 <div className="h-28 w-28 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50 flex flex-col items-center justify-center overflow-hidden shrink-0 relative group p-2">
                   {qrPreviewUrl ? (
                     <>
-                      <img src={qrPreviewUrl} alt="QR Code Preview" className="h-full w-full object-contain" />
+                      <img
+                        src={qrPreviewUrl}
+                        alt="QR Code Preview"
+                        className="h-full w-full object-contain"
+                      />
                       <button
                         type="button"
                         onClick={() => {
@@ -478,7 +508,9 @@ function SuperAdminSettings() {
                   ) : (
                     <div className="text-zinc-400 dark:text-zinc-600 flex flex-col items-center gap-1.5 text-center">
                       <QrCode className="h-10 w-10 stroke-[1.25]" />
-                      <span className="text-[8px] uppercase font-bold tracking-wider">{lang === "ar" ? "افتراضي" : "Default QR"}</span>
+                      <span className="text-[8px] uppercase font-bold tracking-wider">
+                        {lang === "ar" ? "افتراضي" : "Default QR"}
+                      </span>
                     </div>
                   )}
                 </div>
@@ -492,13 +524,17 @@ function SuperAdminSettings() {
                     {uploadingQr ? (
                       <div className="space-y-2 flex flex-col items-center">
                         <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                        <span className="text-xs font-medium text-zinc-500">{lang === "ar" ? "جاري الرفع..." : "Uploading QR..."}</span>
+                        <span className="text-xs font-medium text-zinc-500">
+                          {lang === "ar" ? "جاري الرفع..." : "Uploading QR..."}
+                        </span>
                       </div>
                     ) : (
                       <div className="space-y-1.5 text-zinc-500">
                         <UploadCloud className="h-5 w-5 mx-auto text-primary/80" />
                         <p className="text-xs font-semibold">
-                          {lang === "ar" ? "اضغط لرفع رمز الاستجابة السريع الجديد" : "Click to select BenefitPay QR image"}
+                          {lang === "ar"
+                            ? "اضغط لرفع رمز الاستجابة السريع الجديد"
+                            : "Click to select BenefitPay QR image"}
                         </p>
                         <p className="text-[10px] text-muted-foreground">
                           PNG, JPG, WEBP (Max 5MB)
@@ -536,7 +572,9 @@ function SuperAdminSettings() {
           <CardContent className="space-y-6">
             <div className="space-y-1.5 max-w-md">
               <Label className="text-xs font-semibold text-zinc-600 dark:text-zinc-400">
-                {lang === "ar" ? "رقم دعم العملاء بالواتساب (رمز الدولة + الرقم)" : "WhatsApp Support Phone Number (Country Code + No)"}
+                {lang === "ar"
+                  ? "رقم دعم العملاء بالواتساب (رمز الدولة + الرقم)"
+                  : "WhatsApp Support Phone Number (Country Code + No)"}
               </Label>
               <div className="relative">
                 <Input
@@ -558,7 +596,9 @@ function SuperAdminSettings() {
               <div className="space-y-0.5 max-w-xl">
                 <Label className="text-xs font-semibold text-zinc-800 dark:text-zinc-200 flex items-center gap-1.5">
                   <ShieldAlert className="h-4 w-4 text-rose-500" />
-                  {lang === "ar" ? "السماح بالتعديلات أثناء تقمص الأدوار (Impersonation Write Access)" : "Developer Mode - Impersonation Write Access"}
+                  {lang === "ar"
+                    ? "السماح بالتعديلات أثناء تقمص الأدوار (Impersonation Write Access)"
+                    : "Developer Mode - Impersonation Write Access"}
                 </Label>
                 <p className="text-[11px] text-muted-foreground leading-normal">
                   {lang === "ar"

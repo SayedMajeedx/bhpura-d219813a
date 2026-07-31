@@ -11,7 +11,9 @@ import { supabase } from "@/integrations/supabase/client";
  */
 export const Route = createFileRoute("/_authenticated/admin/")({
   beforeLoad: async () => {
-    const { data: { user } } = await supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
     if (!user) throw redirect({ to: "/auth" });
 
     const { data: profile } = await supabase
@@ -42,11 +44,7 @@ export const Route = createFileRoute("/_authenticated/admin/")({
       throw redirect({ to: "/admin/brands" });
     }
 
-    const { data: fallback } = await supabase
-      .from("brands")
-      .select("slug")
-      .limit(1)
-      .maybeSingle();
+    const { data: fallback } = await supabase.from("brands").select("slug").limit(1).maybeSingle();
     if (fallback?.slug) {
       throw redirect({ to: "/admin/b/$slug/dashboard", params: { slug: fallback.slug } });
     }

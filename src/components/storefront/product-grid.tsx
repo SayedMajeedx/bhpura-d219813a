@@ -19,7 +19,7 @@ export function ProductGrid({
 }) {
   const { t, lang } = useStorefront();
 
-  // [TECH ADVISOR #2]: Hydration guard. Initial render uses "2" columns. 
+  // [TECH ADVISOR #2]: Hydration guard. Initial render uses "2" columns.
   // Read preference from localStorage only in useEffect after mount to completely prevent hydration mismatches!
   const [mobileCols, setMobileCols] = useState("2");
   const [mounted, setMounted] = useState(false);
@@ -68,7 +68,10 @@ export function ProductGrid({
       <Card className="p-8 sm:p-12 text-center text-muted-foreground">
         <p>
           {categoryEmpty
-            ? t("لا توجد منتجات متاحة في هذا القسم حالياً.", "No products are currently available in this category.")
+            ? t(
+                "لا توجد منتجات متاحة في هذا القسم حالياً.",
+                "No products are currently available in this category.",
+              )
             : t("لا توجد منتجات بعد.", "No products yet.")}
         </p>
         {categoryEmpty && (
@@ -92,7 +95,7 @@ export function ProductGrid({
         <span className="text-xs text-muted-foreground font-medium">
           {products.length} {products.length === 1 ? t("منتج", "product") : t("منتجات", "products")}
         </span>
-        
+
         {/* Toggle columns trigger button (strictly visible on mobile viewport <md) */}
         <div className="flex items-center gap-1.5 md:hidden">
           <button

@@ -21,7 +21,21 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Check, MessageCircle, Search, Megaphone, Save, Trash2, Plus, Play, Pause, Square, ExternalLink, ShieldCheck, Download } from "lucide-react";
+import {
+  Check,
+  MessageCircle,
+  Search,
+  Megaphone,
+  Save,
+  Trash2,
+  Plus,
+  Play,
+  Pause,
+  Square,
+  ExternalLink,
+  ShieldCheck,
+  Download,
+} from "lucide-react";
 import { useI18n } from "@/lib/i18n";
 import { toast } from "sonner";
 import { useBrand } from "@/lib/brand-context";
@@ -29,7 +43,8 @@ import { buildCustomerCrmStats, type CustomerMetricOrder } from "@/lib/commerce-
 
 export const Route = createFileRoute("/_authenticated/admin/b/$slug/campaigns")({
   validateSearch: (search: Record<string, unknown>) => ({
-    segment: (typeof search.segment === "string" ? search.segment : "All") as "All" | "VIP" | "Churn Risk" | "New Buyer",
+    segment: (typeof search.segment === "string" ? search.segment : "All") as
+      "All" | "VIP" | "Churn Risk" | "New Buyer",
   }),
   component: CampaignsPage,
 });
@@ -46,7 +61,8 @@ function isMobileBrowser() {
 }
 
 const CHANNEL = "whatsapp";
-const DEFAULT_EN = "Hi {{customer_name}}, this is {{business_name}}. We have exciting news for you!";
+const DEFAULT_EN =
+  "Hi {{customer_name}}, this is {{business_name}}. We have exciting news for you!";
 const DEFAULT_AR = "مرحبًا {{customer_name}}، معكم {{business_name}}. لدينا عرض مميز لك!";
 
 function CampaignsPage() {
@@ -57,7 +73,9 @@ function CampaignsPage() {
   const brandId = brand.id;
 
   const { segment } = Route.useSearch();
-  const [selectedSegment, setSelectedSegment] = useState<"All" | "VIP" | "Churn Risk" | "New Buyer">(segment || "All");
+  const [selectedSegment, setSelectedSegment] = useState<
+    "All" | "VIP" | "Churn Risk" | "New Buyer"
+  >(segment || "All");
   const [selectedCustomerIds, setSelectedCustomerIds] = useState<string[]>([]);
 
   useEffect(() => {
@@ -124,10 +142,7 @@ function CampaignsPage() {
     },
   });
 
-  const customerCrmStats = useMemo(
-    () => buildCustomerCrmStats(ordersQ.data ?? []),
-    [ordersQ.data],
-  );
+  const customerCrmStats = useMemo(() => buildCustomerCrmStats(ordersQ.data ?? []), [ordersQ.data]);
 
   const businessQ = useQuery({
     queryKey: ["campaigns-business", brandId],
@@ -163,7 +178,9 @@ function CampaignsPage() {
     const name = saveName.trim();
     if (!name) return toast.error(isAr ? "أدخل اسم القالب" : "Enter a template name");
     if (!message.trim()) return toast.error(isAr ? "الرسالة فارغة" : "Message is empty");
-    const { data: { user } } = await supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
     if (!user) return;
 
     if (saveMode === "update" && selectedId) {
@@ -242,7 +259,9 @@ function CampaignsPage() {
     const validFiltered = filtered.filter((c) => c.phone && c.phone.trim());
     const allSelected = validFiltered.every((c) => selectedCustomerIds.includes(c.id));
     if (allSelected) {
-      setSelectedCustomerIds((prev) => prev.filter((id) => !validFiltered.some((c) => c.id === id)));
+      setSelectedCustomerIds((prev) =>
+        prev.filter((id) => !validFiltered.some((c) => c.id === id)),
+      );
     } else {
       setSelectedCustomerIds((prev) => {
         const next = [...prev];
@@ -256,7 +275,7 @@ function CampaignsPage() {
 
   const toggleSelectCustomer = (id: string) => {
     setSelectedCustomerIds((prev) =>
-      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
     );
   };
 
@@ -268,11 +287,14 @@ function CampaignsPage() {
     [businessName, message],
   );
 
-  const buildWhatsAppUrl = useCallback((customer: Customer) => {
-    const phone = customer.phone?.replace(/[^\d]/g, "") || "";
-    if (!phone) return null;
-    return `https://wa.me/${phone}?text=${encodeURIComponent(buildMessage(customer.name))}`;
-  }, [buildMessage]);
+  const buildWhatsAppUrl = useCallback(
+    (customer: Customer) => {
+      const phone = customer.phone?.replace(/[^\d]/g, "") || "";
+      if (!phone) return null;
+      return `https://wa.me/${phone}?text=${encodeURIComponent(buildMessage(customer.name))}`;
+    },
+    [buildMessage],
+  );
 
   const send = (c: Customer) => {
     if (!c.phone || !c.phone.trim()) {
@@ -292,9 +314,15 @@ function CampaignsPage() {
 
   // Launch bulk campaign wizard modal pre-population
   const launchBulkCampaign = () => {
-    const list = filtered.filter((c) => selectedCustomerIds.includes(c.id) && c.phone && c.phone.trim());
+    const list = filtered.filter(
+      (c) => selectedCustomerIds.includes(c.id) && c.phone && c.phone.trim(),
+    );
     if (list.length === 0) {
-      toast.error(isAr ? "لا يوجد عملاء محددون لديهم أرقام هواتف" : "No selected customers with phone numbers");
+      toast.error(
+        isAr
+          ? "لا يوجد عملاء محددون لديهم أرقام هواتف"
+          : "No selected customers with phone numbers",
+      );
       return;
     }
     setBulkQueue(list);
@@ -344,7 +372,11 @@ function CampaignsPage() {
     const win = window.open(url, "whatsapp_campaign_window");
     if (!win) {
       setBulkSent((prev) => ({ ...prev, [customer.id]: "queued" }));
-      toast.error(isAr ? "Ø§Ø³Ù…Ø­ Ø¨Ø§Ù„Ù†ÙˆØ§ÙØ° Ø§Ù„Ù…Ù†Ø¨Ø«Ù‚Ø© Ù„Ø¨Ø¯Ø¡ Ø§Ù„Ø­Ù…Ù„Ø©" : "Allow popups to start the campaign");
+      toast.error(
+        isAr
+          ? "Ø§Ø³Ù…Ø­ Ø¨Ø§Ù„Ù†ÙˆØ§ÙØ° Ø§Ù„Ù…Ù†Ø¨Ø«Ù‚Ø© Ù„Ø¨Ø¯Ø¡ Ø§Ù„Ø­Ù…Ù„Ø©"
+          : "Allow popups to start the campaign",
+      );
       return;
     }
 
@@ -355,9 +387,15 @@ function CampaignsPage() {
 
   // Export selected segments to a CSV format compatible with free Chrome/browser bulk-sender extensions
   const exportBulkCampaignCsv = () => {
-    const list = filtered.filter((c) => selectedCustomerIds.includes(c.id) && c.phone && c.phone.trim());
+    const list = filtered.filter(
+      (c) => selectedCustomerIds.includes(c.id) && c.phone && c.phone.trim(),
+    );
     if (list.length === 0) {
-      toast.error(isAr ? "لا يوجد عملاء محددون لديهم أرقام هواتف" : "No selected customers with phone numbers");
+      toast.error(
+        isAr
+          ? "لا يوجد عملاء محددون لديهم أرقام هواتف"
+          : "No selected customers with phone numbers",
+      );
       return;
     }
 
@@ -389,11 +427,21 @@ function CampaignsPage() {
   const modeRef = useRef(bulkMode);
   const delayRef = useRef(bulkDelay);
 
-  useEffect(() => { activeRef.current = bulkActive; }, [bulkActive]);
-  useEffect(() => { indexRef.current = bulkIndex; }, [bulkIndex]);
-  useEffect(() => { queueRef.current = bulkQueue; }, [bulkQueue]);
-  useEffect(() => { modeRef.current = bulkMode; }, [bulkMode]);
-  useEffect(() => { delayRef.current = bulkDelay; }, [bulkDelay]);
+  useEffect(() => {
+    activeRef.current = bulkActive;
+  }, [bulkActive]);
+  useEffect(() => {
+    indexRef.current = bulkIndex;
+  }, [bulkIndex]);
+  useEffect(() => {
+    queueRef.current = bulkQueue;
+  }, [bulkQueue]);
+  useEffect(() => {
+    modeRef.current = bulkMode;
+  }, [bulkMode]);
+  useEffect(() => {
+    delayRef.current = bulkDelay;
+  }, [bulkDelay]);
 
   // Throttling-resistant recursive campaign queue handler
   useEffect(() => {
@@ -415,7 +463,9 @@ function CampaignsPage() {
 
       if (idx >= q.length) {
         setBulkActive(false);
-        toast.success(isAr ? "تم إكمال الحملة التلقائية بنجاح!" : "Automated campaign completed successfully!");
+        toast.success(
+          isAr ? "تم إكمال الحملة التلقائية بنجاح!" : "Automated campaign completed successfully!",
+        );
         return;
       }
 
@@ -424,7 +474,6 @@ function CampaignsPage() {
 
       const url = buildWhatsAppUrl(customer);
       if (url) {
-        
         try {
           // Re-use dedicated workspace tab to bypass standard browser popup blocker policies
           if (bulkWindowRef.current && !bulkWindowRef.current.closed) {
@@ -434,7 +483,11 @@ function CampaignsPage() {
           } else {
             setBulkActive(false);
             setBulkSent((prev) => ({ ...prev, [customer.id]: "queued" }));
-            toast.info(isAr ? "Ø§Ø¶ØºØ· Ø§Ø³ØªØ¦Ù†Ø§Ù Ù„ÙØªØ­ Ø§Ù„Ù…Ø­Ø§Ø¯Ø«Ø© Ø§Ù„ØªØ§Ù„ÙŠØ©" : "Tap Resume to open the next chat");
+            toast.info(
+              isAr
+                ? "Ø§Ø¶ØºØ· Ø§Ø³ØªØ¦Ù†Ø§Ù Ù„ÙØªØ­ Ø§Ù„Ù…Ø­Ø§Ø¯Ø«Ø© Ø§Ù„ØªØ§Ù„ÙŠØ©"
+                : "Tap Resume to open the next chat",
+            );
             return;
           }
         } catch (err) {
@@ -443,7 +496,7 @@ function CampaignsPage() {
           toast.error(isAr ? "ØªØ¹Ø°Ø± ÙØªØ­ ÙˆØ§ØªØ³Ø§Ø¨" : "Could not open WhatsApp");
           return;
         }
-        
+
         setBulkSent((prev) => ({ ...prev, [customer.id]: "sent" }));
         setSent((prev) => ({ ...prev, [customer.id]: true }));
       } else {
@@ -457,7 +510,9 @@ function CampaignsPage() {
         timeoutId = setTimeout(runNext, delayRef.current);
       } else {
         setBulkActive(false);
-        toast.success(isAr ? "تم إكمال الحملة التلقائية بنجاح!" : "Automated campaign completed successfully!");
+        toast.success(
+          isAr ? "تم إكمال الحملة التلقائية بنجاح!" : "Automated campaign completed successfully!",
+        );
       }
     };
 
@@ -497,16 +552,22 @@ function CampaignsPage() {
         window.open(url, "_blank", "noopener,noreferrer");
         return;
       }
-      
+
       try {
         if (bulkWindowRef.current && !bulkWindowRef.current.closed) {
           bulkWindowRef.current.location.href = url;
-          try { bulkWindowRef.current.focus(); } catch {}
+          try {
+            bulkWindowRef.current.focus();
+          } catch {}
         } else {
           const win = window.open(url, "whatsapp_campaign_window");
           if (!win) {
             setBulkSent((prev) => ({ ...prev, [customer.id]: "queued" }));
-            toast.error(isAr ? "Ø§Ø³Ù…Ø­ Ø¨Ø§Ù„Ù†ÙˆØ§ÙØ° Ø§Ù„Ù…Ù†Ø¨Ø«Ù‚Ø© Ø£Ùˆ Ø­Ø§ÙˆÙ„ Ù…Ø¬Ø¯Ø¯Ù‹Ø§" : "Allow popups or try again");
+            toast.error(
+              isAr
+                ? "Ø§Ø³Ù…Ø­ Ø¨Ø§Ù„Ù†ÙˆØ§ÙØ° Ø§Ù„Ù…Ù†Ø¨Ø«Ù‚Ø© Ø£Ùˆ Ø­Ø§ÙˆÙ„ Ù…Ø¬Ø¯Ø¯Ù‹Ø§"
+                : "Allow popups or try again",
+            );
             return;
           }
           bulkWindowRef.current = win;
@@ -516,7 +577,7 @@ function CampaignsPage() {
         toast.error(isAr ? "ØªØ¹Ø°Ø± ÙØªØ­ ÙˆØ§ØªØ³Ø§Ø¨" : "Could not open WhatsApp");
         return;
       }
-      
+
       setBulkSent((prev) => ({ ...prev, [customer.id]: "sent" }));
       setSent((prev) => ({ ...prev, [customer.id]: true }));
     } else {
@@ -559,7 +620,9 @@ function CampaignsPage() {
               {isAr ? "🎯 الفئة المستهدفة للحملة" : "🎯 Target Campaign Audience"}
             </Label>
             <p className="text-xs text-muted-foreground mt-0.5">
-              {isAr ? "قم بتصفية مستقبلي البث باستخدام تصنيفات CRM الذكية" : "Filter broadcast recipients using smart CRM categories"}
+              {isAr
+                ? "قم بتصفية مستقبلي البث باستخدام تصنيفات CRM الذكية"
+                : "Filter broadcast recipients using smart CRM categories"}
             </p>
           </div>
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
@@ -571,8 +634,12 @@ function CampaignsPage() {
                 <SelectContent>
                   <SelectItem value="All">{isAr ? "كل العملاء (All)" : "All Customers"}</SelectItem>
                   <SelectItem value="VIP">{isAr ? "كبار العملاء (VIP)" : "VIP"}</SelectItem>
-                  <SelectItem value="Churn Risk">{isAr ? "معرض للمغادرة (Churn Risk)" : "Churn Risk"}</SelectItem>
-                  <SelectItem value="New Buyer">{isAr ? "مشتري جديد (New Buyer)" : "New Buyer"}</SelectItem>
+                  <SelectItem value="Churn Risk">
+                    {isAr ? "معرض للمغادرة (Churn Risk)" : "Churn Risk"}
+                  </SelectItem>
+                  <SelectItem value="New Buyer">
+                    {isAr ? "مشتري جديد (New Buyer)" : "New Buyer"}
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -581,14 +648,18 @@ function CampaignsPage() {
 
         {/* Quick horizontal filter pill shortcuts */}
         <div className="flex flex-wrap items-center gap-2 border-t border-border/60 pt-3">
-          <span className="text-xs text-muted-foreground">{isAr ? "فئات سريعة:" : "Quick filters:"}</span>
+          <span className="text-xs text-muted-foreground">
+            {isAr ? "فئات سريعة:" : "Quick filters:"}
+          </span>
           {(["All", "VIP", "Churn Risk", "New Buyer"] as const).map((seg) => {
             const isActive = selectedSegment === seg;
             let count = 0;
             if (seg === "All") {
               count = customersQ.data?.length ?? 0;
             } else {
-              count = (customersQ.data ?? []).filter((c) => customerCrmStats.get(c.id)?.badge === seg).length;
+              count = (customersQ.data ?? []).filter(
+                (c) => customerCrmStats.get(c.id)?.badge === seg,
+              ).length;
             }
             return (
               <button
@@ -605,9 +676,13 @@ function CampaignsPage() {
                 {seg === "VIP" && (isAr ? "كبار العملاء" : "VIP")}
                 {seg === "Churn Risk" && (isAr ? "معرض للمغادرة" : "Churn Risk")}
                 {seg === "New Buyer" && (isAr ? "مشترون جدد" : "New Buyer")}
-                <span className={`inline-flex items-center justify-center rounded-full px-1.5 py-0.5 text-[10px] font-bold ${
-                  isActive ? "bg-primary-foreground/20 text-primary-foreground" : "bg-muted text-muted-foreground"
-                }`}>
+                <span
+                  className={`inline-flex items-center justify-center rounded-full px-1.5 py-0.5 text-[10px] font-bold ${
+                    isActive
+                      ? "bg-primary-foreground/20 text-primary-foreground"
+                      : "bg-muted text-muted-foreground"
+                  }`}
+                >
                   {count}
                 </span>
               </button>
@@ -627,7 +702,7 @@ function CampaignsPage() {
               <SelectTrigger className="mt-1 text-start">
                 <SelectValue
                   placeholder={
-                     templates.length === 0
+                    templates.length === 0
                       ? isAr
                         ? "لا توجد قوالب محفوظة بعد"
                         : "No saved templates yet"
@@ -647,15 +722,29 @@ function CampaignsPage() {
             </Select>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" onClick={() => openSave("new")} className="shadow-sm transition-all duration-200 hover:shadow hover:scale-[1.01] active:scale-95">
+            <Button
+              variant="outline"
+              onClick={() => openSave("new")}
+              className="shadow-sm transition-all duration-200 hover:shadow hover:scale-[1.01] active:scale-95"
+            >
               <Plus className="h-4 w-4 me-2" />
               {isAr ? "قالب جديد" : "New"}
             </Button>
-            <Button variant="outline" onClick={() => openSave("update")} disabled={!selectedId} className="shadow-sm transition-all duration-200 hover:shadow hover:scale-[1.01] active:scale-95">
+            <Button
+              variant="outline"
+              onClick={() => openSave("update")}
+              disabled={!selectedId}
+              className="shadow-sm transition-all duration-200 hover:shadow hover:scale-[1.01] active:scale-95"
+            >
               <Save className="h-4 w-4 me-2" />
               {isAr ? "حفظ القالب" : "Save Template"}
             </Button>
-            <Button variant="ghost" onClick={deleteTemplate} disabled={!selectedId} className="shadow-sm transition-all duration-200 hover:shadow hover:scale-[1.01] active:scale-95">
+            <Button
+              variant="ghost"
+              onClick={deleteTemplate}
+              disabled={!selectedId}
+              className="shadow-sm transition-all duration-200 hover:shadow hover:scale-[1.01] active:scale-95"
+            >
               <Trash2 className="h-4 w-4 me-2 text-destructive" />
               {isAr ? "حذف" : "Delete"}
             </Button>
@@ -664,9 +753,7 @@ function CampaignsPage() {
 
         {/* Message body */}
         <div>
-          <Label className="text-sm font-medium">
-            {isAr ? "نص الرسالة" : "Broadcast message"}
-          </Label>
+          <Label className="text-sm font-medium">{isAr ? "نص الرسالة" : "Broadcast message"}</Label>
           <Textarea
             ref={textareaRef}
             value={message}
@@ -718,7 +805,12 @@ function CampaignsPage() {
                 {isAr ? "مرسلة" : "sent"}
               </span>
               {Object.keys(sent).length > 0 && (
-                <Button variant="ghost" size="sm" onClick={() => setSent({})} className="shadow-sm transition-all duration-200 hover:shadow hover:scale-[1.01] active:scale-95">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setSent({})}
+                  className="shadow-sm transition-all duration-200 hover:shadow hover:scale-[1.01] active:scale-95"
+                >
                   {isAr ? "إعادة تعيين" : "Reset"}
                 </Button>
               )}
@@ -753,147 +845,190 @@ function CampaignsPage() {
           </div>
         ) : (
           <>
-          {/* Mobile checklist view */}
-          <div className="space-y-3 p-3 sm:hidden">
-            <div className="flex items-center justify-between border-b pb-2 px-1 text-xs text-muted-foreground">
-              <span className="font-semibold">{isAr ? "تحديد الكل" : "Select All"}</span>
-              <input
-                type="checkbox"
-                className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary accent-primary cursor-pointer"
-                checked={filtered.length > 0 && filtered.filter((c) => c.phone && c.phone.trim()).every((c) => selectedCustomerIds.includes(c.id))}
-                onChange={toggleSelectAll}
-              />
-            </div>
-            {filtered.map((c) => {
-              const isSent = !!sent[c.id];
-              const stats = customerCrmStats.get(c.id);
-              const orderCount = stats?.totalOrders ?? 0;
-              const isChecked = selectedCustomerIds.includes(c.id);
-              return (
-                <div key={c.id} className={`rounded-lg border p-3 transition-colors ${isChecked ? "border-primary/40 bg-primary/5" : "bg-background"} ${isSent ? "opacity-75" : ""}`}>
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex items-start gap-2.5 min-w-0">
-                      <input
-                        type="checkbox"
-                        className="mt-1 h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary accent-primary cursor-pointer"
-                        checked={isChecked}
-                        onChange={() => toggleSelectCustomer(c.id)}
-                        disabled={!c.phone}
-                      />
-                      <div className="min-w-0">
-                        <div className="font-semibold text-foreground truncate">{c.name}</div>
-                        <div className="text-xs text-muted-foreground mt-0.5" dir="ltr">{c.phone || "—"}</div>
-                      </div>
-                    </div>
-                    {stats?.badge && (
-                      <span className={`inline-flex shrink-0 items-center rounded-full px-1.5 py-0.5 text-[10px] font-bold ${
-                        stats.badge === "VIP" ? "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400" :
-                        stats.badge === "Churn Risk" ? "bg-rose-100 text-rose-800 dark:bg-rose-900/30 dark:text-rose-400" :
-                        stats.badge === "New Buyer" ? "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400" :
-                        "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300"
-                      }`}>
-                        {stats.badge}
-                      </span>
-                    )}
-                  </div>
-                  <div className="mt-2 flex items-center justify-between gap-3 text-xs text-muted-foreground border-t border-border/40 pt-2">
-                    <span>{isAr ? "إجمالي الطلبات" : "Total orders"}: {orderCount}</span>
-                    <div>
-                      {isSent ? (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 px-2 py-0.5 font-medium text-emerald-700 dark:text-emerald-400"><Check className="h-3 w-3" />{isAr ? "تم الإرسال" : "Sent"}</span>
-                      ) : (
-                        <Button size="sm" className="h-7 text-[11px]" variant="outline" onClick={() => send(c)} disabled={!c.phone}><MessageCircle className="me-1 h-3 w-3" />{isAr ? "إرسال" : "Send"}</Button>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-
-          {/* Desktop table view */}
-          <div className="hidden overflow-x-auto sm:block">
-            <table className="w-full min-w-[560px] text-sm">
-              <thead className="border-b bg-muted/40 font-semibold text-muted-foreground">
-                <tr>
-                  <th className="p-4 w-12 text-center">
-                    <input
-                      type="checkbox"
-                      className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary accent-primary cursor-pointer"
-                      checked={filtered.length > 0 && filtered.filter((c) => c.phone && c.phone.trim()).every((c) => selectedCustomerIds.includes(c.id))}
-                      onChange={toggleSelectAll}
-                    />
-                  </th>
-                  <th className="p-4 font-semibold text-xs uppercase tracking-wider text-start">{isAr ? "الاسم" : "Name"}</th>
-                  <th className="p-4 font-semibold text-xs uppercase tracking-wider text-start">{isAr ? "الهاتف" : "Phone"}</th>
-                  <th className="p-4 font-semibold text-xs uppercase tracking-wider text-start">
-                    {isAr ? "الشريحة (RFM)" : "CRM Segment"}
-                  </th>
-                  <th className="p-4 font-semibold text-xs uppercase tracking-wider text-start">
-                    {isAr ? "إجمالي الطلبات" : "Total Orders"}
-                  </th>
-                  <th className="p-4"></th>
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.map((c) => {
-                  const isSent = !!sent[c.id];
-                  const stats = customerCrmStats.get(c.id);
-                  const orderCount = stats?.totalOrders ?? 0;
-                  const isChecked = selectedCustomerIds.includes(c.id);
-                  return (
-                    <tr
-                      key={c.id}
-                      className={`border-t border-border transition-colors hover:bg-secondary/20 ${
-                        isChecked ? "bg-primary/5 hover:bg-primary/10" : ""
-                      } ${isSent ? "opacity-75" : ""}`}
-                    >
-                      <td className="p-4 text-center">
+            {/* Mobile checklist view */}
+            <div className="space-y-3 p-3 sm:hidden">
+              <div className="flex items-center justify-between border-b pb-2 px-1 text-xs text-muted-foreground">
+                <span className="font-semibold">{isAr ? "تحديد الكل" : "Select All"}</span>
+                <input
+                  type="checkbox"
+                  className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary accent-primary cursor-pointer"
+                  checked={
+                    filtered.length > 0 &&
+                    filtered
+                      .filter((c) => c.phone && c.phone.trim())
+                      .every((c) => selectedCustomerIds.includes(c.id))
+                  }
+                  onChange={toggleSelectAll}
+                />
+              </div>
+              {filtered.map((c) => {
+                const isSent = !!sent[c.id];
+                const stats = customerCrmStats.get(c.id);
+                const orderCount = stats?.totalOrders ?? 0;
+                const isChecked = selectedCustomerIds.includes(c.id);
+                return (
+                  <div
+                    key={c.id}
+                    className={`rounded-lg border p-3 transition-colors ${isChecked ? "border-primary/40 bg-primary/5" : "bg-background"} ${isSent ? "opacity-75" : ""}`}
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-start gap-2.5 min-w-0">
                         <input
                           type="checkbox"
-                          className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary accent-primary cursor-pointer"
+                          className="mt-1 h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary accent-primary cursor-pointer"
                           checked={isChecked}
                           onChange={() => toggleSelectCustomer(c.id)}
                           disabled={!c.phone}
                         />
-                      </td>
-                      <td className="p-4 font-medium">{c.name}</td>
-                      <td className="p-4 text-muted-foreground font-mono" dir="ltr">
-                        {c.phone || "—"}
-                      </td>
-                      <td className="p-4">
-                        {stats?.badge ? (
-                          <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-bold ${
-                            stats.badge === "VIP" ? "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400" :
-                            stats.badge === "Churn Risk" ? "bg-rose-100 text-rose-800 dark:bg-rose-900/30 dark:text-rose-400" :
-                            stats.badge === "New Buyer" ? "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400" :
-                            "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300"
-                          }`}>
-                            {stats.badge}
-                          </span>
-                        ) : (
-                          <span className="text-muted-foreground text-xs">—</span>
-                        )}
-                      </td>
-                      <td className="p-4 text-muted-foreground font-mono">{orderCount}</td>
-                      <td className="p-4 text-end">
+                        <div className="min-w-0">
+                          <div className="font-semibold text-foreground truncate">{c.name}</div>
+                          <div className="text-xs text-muted-foreground mt-0.5" dir="ltr">
+                            {c.phone || "—"}
+                          </div>
+                        </div>
+                      </div>
+                      {stats?.badge && (
+                        <span
+                          className={`inline-flex shrink-0 items-center rounded-full px-1.5 py-0.5 text-[10px] font-bold ${
+                            stats.badge === "VIP"
+                              ? "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400"
+                              : stats.badge === "Churn Risk"
+                                ? "bg-rose-100 text-rose-800 dark:bg-rose-900/30 dark:text-rose-400"
+                                : stats.badge === "New Buyer"
+                                  ? "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400"
+                                  : "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300"
+                          }`}
+                        >
+                          {stats.badge}
+                        </span>
+                      )}
+                    </div>
+                    <div className="mt-2 flex items-center justify-between gap-3 text-xs text-muted-foreground border-t border-border/40 pt-2">
+                      <span>
+                        {isAr ? "إجمالي الطلبات" : "Total orders"}: {orderCount}
+                      </span>
+                      <div>
                         {isSent ? (
-                          <span className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 font-medium">
-                            <Check className="h-3 w-3" /> {isAr ? "تم الإرسال" : "Sent"}
+                          <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 px-2 py-0.5 font-medium text-emerald-700 dark:text-emerald-400">
+                            <Check className="h-3 w-3" />
+                            {isAr ? "تم الإرسال" : "Sent"}
                           </span>
                         ) : (
-                          <Button size="sm" onClick={() => send(c)} disabled={!c.phone}>
-                            <MessageCircle className="h-4 w-4 me-2" />
-                            {isAr ? "إرسال عبر الواتساب" : "Send via WhatsApp"}
+                          <Button
+                            size="sm"
+                            className="h-7 text-[11px]"
+                            variant="outline"
+                            onClick={() => send(c)}
+                            disabled={!c.phone}
+                          >
+                            <MessageCircle className="me-1 h-3 w-3" />
+                            {isAr ? "إرسال" : "Send"}
                           </Button>
                         )}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Desktop table view */}
+            <div className="hidden overflow-x-auto sm:block">
+              <table className="w-full min-w-[560px] text-sm">
+                <thead className="border-b bg-muted/40 font-semibold text-muted-foreground">
+                  <tr>
+                    <th className="p-4 w-12 text-center">
+                      <input
+                        type="checkbox"
+                        className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary accent-primary cursor-pointer"
+                        checked={
+                          filtered.length > 0 &&
+                          filtered
+                            .filter((c) => c.phone && c.phone.trim())
+                            .every((c) => selectedCustomerIds.includes(c.id))
+                        }
+                        onChange={toggleSelectAll}
+                      />
+                    </th>
+                    <th className="p-4 font-semibold text-xs uppercase tracking-wider text-start">
+                      {isAr ? "الاسم" : "Name"}
+                    </th>
+                    <th className="p-4 font-semibold text-xs uppercase tracking-wider text-start">
+                      {isAr ? "الهاتف" : "Phone"}
+                    </th>
+                    <th className="p-4 font-semibold text-xs uppercase tracking-wider text-start">
+                      {isAr ? "الشريحة (RFM)" : "CRM Segment"}
+                    </th>
+                    <th className="p-4 font-semibold text-xs uppercase tracking-wider text-start">
+                      {isAr ? "إجمالي الطلبات" : "Total Orders"}
+                    </th>
+                    <th className="p-4"></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filtered.map((c) => {
+                    const isSent = !!sent[c.id];
+                    const stats = customerCrmStats.get(c.id);
+                    const orderCount = stats?.totalOrders ?? 0;
+                    const isChecked = selectedCustomerIds.includes(c.id);
+                    return (
+                      <tr
+                        key={c.id}
+                        className={`border-t border-border transition-colors hover:bg-secondary/20 ${
+                          isChecked ? "bg-primary/5 hover:bg-primary/10" : ""
+                        } ${isSent ? "opacity-75" : ""}`}
+                      >
+                        <td className="p-4 text-center">
+                          <input
+                            type="checkbox"
+                            className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary accent-primary cursor-pointer"
+                            checked={isChecked}
+                            onChange={() => toggleSelectCustomer(c.id)}
+                            disabled={!c.phone}
+                          />
+                        </td>
+                        <td className="p-4 font-medium">{c.name}</td>
+                        <td className="p-4 text-muted-foreground font-mono" dir="ltr">
+                          {c.phone || "—"}
+                        </td>
+                        <td className="p-4">
+                          {stats?.badge ? (
+                            <span
+                              className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-bold ${
+                                stats.badge === "VIP"
+                                  ? "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400"
+                                  : stats.badge === "Churn Risk"
+                                    ? "bg-rose-100 text-rose-800 dark:bg-rose-900/30 dark:text-rose-400"
+                                    : stats.badge === "New Buyer"
+                                      ? "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400"
+                                      : "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300"
+                              }`}
+                            >
+                              {stats.badge}
+                            </span>
+                          ) : (
+                            <span className="text-muted-foreground text-xs">—</span>
+                          )}
+                        </td>
+                        <td className="p-4 text-muted-foreground font-mono">{orderCount}</td>
+                        <td className="p-4 text-end">
+                          {isSent ? (
+                            <span className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 font-medium">
+                              <Check className="h-3 w-3" /> {isAr ? "تم الإرسال" : "Sent"}
+                            </span>
+                          ) : (
+                            <Button size="sm" onClick={() => send(c)} disabled={!c.phone}>
+                              <MessageCircle className="h-4 w-4 me-2" />
+                              {isAr ? "إرسال عبر الواتساب" : "Send via WhatsApp"}
+                            </Button>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           </>
         )}
       </Card>
@@ -904,8 +1039,12 @@ function CampaignsPage() {
           <DialogHeader>
             <DialogTitle>
               {saveMode === "update"
-                ? isAr ? "تحديث القالب" : "Update template"
-                : isAr ? "حفظ قالب جديد" : "Save new template"}
+                ? isAr
+                  ? "تحديث القالب"
+                  : "Update template"
+                : isAr
+                  ? "حفظ قالب جديد"
+                  : "Save new template"}
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-3">
@@ -935,16 +1074,30 @@ function CampaignsPage() {
       </Dialog>
 
       {/* IMMERSIVE BULK CAMPAIGN SENDER MODAL */}
-      <Dialog open={bulkOpen} onOpenChange={(v) => { if (!bulkActive) setBulkOpen(v); }}>
-        <DialogContent className="sm:max-w-2xl max-h-[85vh] flex flex-col p-0 overflow-hidden" dir={isAr ? "rtl" : "ltr"}>
+      <Dialog
+        open={bulkOpen}
+        onOpenChange={(v) => {
+          if (!bulkActive) setBulkOpen(v);
+        }}
+      >
+        <DialogContent
+          className="sm:max-w-2xl max-h-[85vh] flex flex-col p-0 overflow-hidden"
+          dir={isAr ? "rtl" : "ltr"}
+        >
           <div className="p-6 border-b border-border flex items-center justify-between">
             <div className="flex items-center gap-2.5">
               <div className="h-9 w-9 rounded bg-emerald-500/10 text-emerald-600 flex items-center justify-center animate-bounce">
                 <Megaphone className="h-4.5 w-4.5" />
               </div>
               <div>
-                <DialogTitle className="text-xl font-display">{isAr ? "مساعد الإرسال الجماعي" : "Bulk Campaign Wizard"}</DialogTitle>
-                <p className="text-xs text-muted-foreground mt-0.5">{isAr ? `إرسال إلى ${bulkQueue.length} عميل محدد.` : `Targeting ${bulkQueue.length} segments.`}</p>
+                <DialogTitle className="text-xl font-display">
+                  {isAr ? "مساعد الإرسال الجماعي" : "Bulk Campaign Wizard"}
+                </DialogTitle>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  {isAr
+                    ? `إرسال إلى ${bulkQueue.length} عميل محدد.`
+                    : `Targeting ${bulkQueue.length} segments.`}
+                </p>
               </div>
             </div>
             {bulkActive && (
@@ -958,17 +1111,23 @@ function CampaignsPage() {
           <div className="flex-1 overflow-y-auto p-6 space-y-6">
             {/* Mode selection tabs */}
             <div>
-              <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{isAr ? "طريقة التشغيل" : "Sender Mode"}</Label>
+              <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                {isAr ? "طريقة التشغيل" : "Sender Mode"}
+              </Label>
               <div className="grid grid-cols-2 gap-2 mt-2 p-1 bg-secondary rounded-lg">
                 <button
-                  onClick={() => { if (!bulkActive) setBulkMode("guided"); }}
+                  onClick={() => {
+                    if (!bulkActive) setBulkMode("guided");
+                  }}
                   disabled={bulkActive}
                   className={`py-2 px-3 text-sm rounded-md font-medium transition-all ${bulkMode === "guided" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
                 >
                   {isAr ? "توجيه خطوة بخطوة" : "Guided Step-by-Step"}
                 </button>
                 <button
-                  onClick={() => { if (!bulkActive) setBulkMode("auto"); }}
+                  onClick={() => {
+                    if (!bulkActive) setBulkMode("auto");
+                  }}
                   disabled={bulkActive}
                   className={`py-2 px-3 text-sm rounded-md font-medium transition-all ${bulkMode === "auto" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"}`}
                 >
@@ -976,9 +1135,13 @@ function CampaignsPage() {
                 </button>
               </div>
               <p className="text-xs text-muted-foreground mt-1.5">
-                {bulkMode === "guided" 
-                  ? (isAr ? "💡 ينصح به لتخطي حواجب منبثقات المتصفح بالكامل. اضغط لفتح المحادثة التالية فوراً." : "💡 Recommended mode. 100% bypasses popup-blockers and lets you review before sending.") 
-                  : (isAr ? "⚡ يقوم النظام بفتح المحادثات تلو الأخرى تلقائياً. تأكد من تفعيل المنبثقات في المتصفح." : "⚡ Sequentially opens WhatsApp Web tabs automatically. Please enable popups in your browser address bar.")}
+                {bulkMode === "guided"
+                  ? isAr
+                    ? "💡 ينصح به لتخطي حواجب منبثقات المتصفح بالكامل. اضغط لفتح المحادثة التالية فوراً."
+                    : "💡 Recommended mode. 100% bypasses popup-blockers and lets you review before sending."
+                  : isAr
+                    ? "⚡ يقوم النظام بفتح المحادثات تلو الأخرى تلقائياً. تأكد من تفعيل المنبثقات في المتصفح."
+                    : "⚡ Sequentially opens WhatsApp Web tabs automatically. Please enable popups in your browser address bar."}
               </p>
             </div>
 
@@ -987,10 +1150,20 @@ function CampaignsPage() {
               <div className="space-y-4 rounded-lg border p-4 bg-muted/20">
                 <div className="flex items-center justify-between gap-4">
                   <div className="space-y-0.5">
-                    <Label className="text-sm font-medium">{isAr ? "تأخير الفتح التلقائي (بالثانية)" : "Queue Delay (Seconds)"}</Label>
-                    <div className="text-xs text-muted-foreground">{isAr ? "المهلة الفاصلة بين فتح كل علامة تبويب." : "Time elapsed between each browser window trigger."}</div>
+                    <Label className="text-sm font-medium">
+                      {isAr ? "تأخير الفتح التلقائي (بالثانية)" : "Queue Delay (Seconds)"}
+                    </Label>
+                    <div className="text-xs text-muted-foreground">
+                      {isAr
+                        ? "المهلة الفاصلة بين فتح كل علامة تبويب."
+                        : "Time elapsed between each browser window trigger."}
+                    </div>
                   </div>
-                  <Select value={String(bulkDelay)} onValueChange={(v) => setBulkDelay(Number(v))} disabled={bulkActive}>
+                  <Select
+                    value={String(bulkDelay)}
+                    onValueChange={(v) => setBulkDelay(Number(v))}
+                    disabled={bulkActive}
+                  >
                     <SelectTrigger className="w-28 text-center font-mono font-medium">
                       <SelectValue />
                     </SelectTrigger>
@@ -1004,7 +1177,11 @@ function CampaignsPage() {
                 </div>
                 <div className="flex items-start gap-2 text-xs border border-amber-200/50 bg-amber-50/50 p-2.5 rounded text-amber-800 dark:border-amber-900/20 dark:bg-amber-950/10 dark:text-amber-300">
                   <ShieldCheck className="h-4 w-4 shrink-0 mt-0.5" />
-                  <span>{isAr ? "يرجى البقاء في هذه الصفحة وتفعيل خيار 'سماح بالنوافذ المنبثقة' من شريط العنوان لتتمكن الحملة من إتمام الإرسال تلقائياً دون تجميد." : "Keep this tab visible and verify you've granted Popups Permission in your browser search/address bar for a smooth flow."}</span>
+                  <span>
+                    {isAr
+                      ? "يرجى البقاء في هذه الصفحة وتفعيل خيار 'سماح بالنوافذ المنبثقة' من شريط العنوان لتتمكن الحملة من إتمام الإرسال تلقائياً دون تجميد."
+                      : "Keep this tab visible and verify you've granted Popups Permission in your browser search/address bar for a smooth flow."}
+                  </span>
                 </div>
               </div>
             )}
@@ -1012,12 +1189,16 @@ function CampaignsPage() {
             {/* Progress Section */}
             <div className="space-y-2">
               <div className="flex items-center justify-between text-sm">
-                <span className="font-semibold text-muted-foreground">{isAr ? "مستوى تقدم البث:" : "Campaign Progress:"}</span>
-                <span className="font-mono font-bold text-primary">{bulkIndex} / {bulkQueue.length}</span>
+                <span className="font-semibold text-muted-foreground">
+                  {isAr ? "مستوى تقدم البث:" : "Campaign Progress:"}
+                </span>
+                <span className="font-mono font-bold text-primary">
+                  {bulkIndex} / {bulkQueue.length}
+                </span>
               </div>
               <div className="h-3 w-full bg-secondary rounded-full overflow-hidden">
-                <div 
-                  className="h-full bg-emerald-500 transition-all duration-300 rounded-full" 
+                <div
+                  className="h-full bg-emerald-500 transition-all duration-300 rounded-full"
                   style={{ width: `${(bulkIndex / bulkQueue.length) * 100}%` }}
                 />
               </div>
@@ -1025,31 +1206,47 @@ function CampaignsPage() {
 
             {/* Recipient Queue Grid */}
             <div className="space-y-2">
-              <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{isAr ? "قائمة المستلمين وقنواتهم" : "Recipient List Queue"}</Label>
+              <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                {isAr ? "قائمة المستلمين وقنواتهم" : "Recipient List Queue"}
+              </Label>
               <div className="border rounded-lg overflow-hidden max-h-48 overflow-y-auto divide-y">
                 {bulkQueue.map((c, idx) => {
                   const status = bulkSent[c.id] || "queued";
                   return (
-                    <div key={c.id} className={`p-2.5 flex items-center justify-between text-xs transition-colors ${idx === bulkIndex ? "bg-primary/5 font-semibold" : ""}`}>
+                    <div
+                      key={c.id}
+                      className={`p-2.5 flex items-center justify-between text-xs transition-colors ${idx === bulkIndex ? "bg-primary/5 font-semibold" : ""}`}
+                    >
                       <div className="flex items-center gap-2">
                         <span className="text-muted-foreground font-mono w-5">#{idx + 1}</span>
                         <div>
                           <div className="font-medium">{c.name}</div>
-                          <div className="text-muted-foreground text-[10px] font-mono" dir="ltr">{c.phone}</div>
+                          <div className="text-muted-foreground text-[10px] font-mono" dir="ltr">
+                            {c.phone}
+                          </div>
                         </div>
                       </div>
                       <div>
                         {status === "queued" && (
-                          <span className="text-muted-foreground bg-muted/60 px-2 py-0.5 rounded text-[10px] font-medium">{isAr ? "في الانتظار" : "Queued"}</span>
+                          <span className="text-muted-foreground bg-muted/60 px-2 py-0.5 rounded text-[10px] font-medium">
+                            {isAr ? "في الانتظار" : "Queued"}
+                          </span>
                         )}
                         {status === "sending" && (
-                          <span className="text-amber-700 bg-amber-500/10 px-2 py-0.5 rounded text-[10px] font-medium animate-pulse">{isAr ? "جاري الإرسال" : "Sending..."}</span>
+                          <span className="text-amber-700 bg-amber-500/10 px-2 py-0.5 rounded text-[10px] font-medium animate-pulse">
+                            {isAr ? "جاري الإرسال" : "Sending..."}
+                          </span>
                         )}
                         {status === "sent" && (
-                          <span className="text-emerald-700 bg-emerald-500/10 px-2 py-0.5 rounded text-[10px] font-semibold flex items-center gap-1"><Check className="h-2.5 w-2.5" />{isAr ? "تم فتح الشات" : "Opened"}</span>
+                          <span className="text-emerald-700 bg-emerald-500/10 px-2 py-0.5 rounded text-[10px] font-semibold flex items-center gap-1">
+                            <Check className="h-2.5 w-2.5" />
+                            {isAr ? "تم فتح الشات" : "Opened"}
+                          </span>
                         )}
                         {status === "skipped" && (
-                          <span className="text-destructive bg-destructive/10 px-2 py-0.5 rounded text-[10px] font-medium">{isAr ? "تخطي" : "Skipped"}</span>
+                          <span className="text-destructive bg-destructive/10 px-2 py-0.5 rounded text-[10px] font-medium">
+                            {isAr ? "تخطي" : "Skipped"}
+                          </span>
                         )}
                       </div>
                     </div>
@@ -1060,33 +1257,62 @@ function CampaignsPage() {
           </div>
 
           <div className="p-6 border-t border-border bg-muted/20 flex items-center justify-between gap-3">
-            <Button variant="ghost" onClick={() => { setBulkActive(false); setBulkOpen(false); }} disabled={bulkActive}>
+            <Button
+              variant="ghost"
+              onClick={() => {
+                setBulkActive(false);
+                setBulkOpen(false);
+              }}
+              disabled={bulkActive}
+            >
               {isAr ? "إغلاق النافذة" : "Cancel Wizard"}
             </Button>
 
             <div className="flex items-center gap-2">
               {bulkMode === "guided" ? (
-                <Button onClick={sendGuidedNext} disabled={bulkIndex >= bulkQueue.length} className="bg-emerald-600 hover:bg-emerald-500 text-white font-medium">
+                <Button
+                  onClick={sendGuidedNext}
+                  disabled={bulkIndex >= bulkQueue.length}
+                  className="bg-emerald-600 hover:bg-emerald-500 text-white font-medium"
+                >
                   <ExternalLink className="h-4 w-4 me-1.5" />
-                  {bulkIndex === 0 
-                    ? (isAr ? "بدء الإرسال (التالي)" : "Start Send Next") 
-                    : (isAr ? "فتح الشات التالي" : "Open Next Chat")}
+                  {bulkIndex === 0
+                    ? isAr
+                      ? "بدء الإرسال (التالي)"
+                      : "Start Send Next"
+                    : isAr
+                      ? "فتح الشات التالي"
+                      : "Open Next Chat"}
                 </Button>
               ) : (
                 <>
                   {bulkActive ? (
-                    <Button onClick={() => setBulkActive(false)} variant="outline" className="border-amber-200 text-amber-800 bg-amber-50 hover:bg-amber-100 flex items-center gap-1.5 font-medium">
+                    <Button
+                      onClick={() => setBulkActive(false)}
+                      variant="outline"
+                      className="border-amber-200 text-amber-800 bg-amber-50 hover:bg-amber-100 flex items-center gap-1.5 font-medium"
+                    >
                       <Pause className="h-4 w-4" />
                       {isAr ? "إيقاف مؤقت" : "Pause Queue"}
                     </Button>
                   ) : (
-                    <Button onClick={handleStartAutomated} disabled={bulkIndex >= bulkQueue.length} className="bg-emerald-600 hover:bg-emerald-500 text-white font-medium flex items-center gap-1.5">
+                    <Button
+                      onClick={handleStartAutomated}
+                      disabled={bulkIndex >= bulkQueue.length}
+                      className="bg-emerald-600 hover:bg-emerald-500 text-white font-medium flex items-center gap-1.5"
+                    >
                       <Play className="h-4 w-4" />
-                      {bulkIndex === 0 ? (isAr ? "بدء الإرسال التلقائي" : "Start Automated Send") : (isAr ? "استئناف" : "Resume Queue")}
+                      {bulkIndex === 0
+                        ? isAr
+                          ? "بدء الإرسال التلقائي"
+                          : "Start Automated Send"
+                        : isAr
+                          ? "استئناف"
+                          : "Resume Queue"}
                     </Button>
                   )}
                   {bulkIndex > 0 && (
-                    <Button 
+                    <Button
                       onClick={() => {
                         setBulkActive(false);
                         setBulkIndex(0);
@@ -1095,8 +1321,8 @@ function CampaignsPage() {
                           initialSent[c.id] = "queued";
                         });
                         setBulkSent(initialSent);
-                      }} 
-                      variant="ghost" 
+                      }}
+                      variant="ghost"
                       className="text-muted-foreground hover:text-foreground"
                     >
                       <Square className="h-4 w-4 text-destructive me-1.5" />

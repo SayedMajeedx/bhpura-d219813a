@@ -197,7 +197,9 @@ async function handleCreate(
   const { email, name, phone, role, password } = body;
   let { brand_id } = body;
 
-  const normalizedEmail = String(email ?? "").trim().toLowerCase();
+  const normalizedEmail = String(email ?? "")
+    .trim()
+    .toLowerCase();
 
   if (!normalizedEmail) {
     return new Response(JSON.stringify({ error: "Email is required" }), {
@@ -259,24 +261,29 @@ async function handleCreate(
     // with no profile, or the unassigned default profile created by the auth
     // trigger, has no active workforce access and may be attached to this
     // brand by an authorized admin. Customer rows are deliberately untouched.
-    const isAvailableForTeamAccess = !existingProfile || (
-      existingProfile.brand_id === null && existingProfile.role === "staff"
-    );
+    const isAvailableForTeamAccess =
+      !existingProfile || (existingProfile.brand_id === null && existingProfile.role === "staff");
     if (!isAvailableForTeamAccess) {
-      return new Response(JSON.stringify({
-        error: "This email already has a team account. Edit the existing team member instead.",
-        code: "TEAM_ACCOUNT_EXISTS",
-      }), {
-        status: 409,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return new Response(
+        JSON.stringify({
+          error: "This email already has a team account. Edit the existing team member instead.",
+          code: "TEAM_ACCOUNT_EXISTS",
+        }),
+        {
+          status: 409,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        },
+      );
     }
   } else {
     if (!String(password ?? "").trim()) {
-      return new Response(JSON.stringify({ error: "A temporary password is required for a new account" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return new Response(
+        JSON.stringify({ error: "A temporary password is required for a new account" }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        },
+      );
     }
     const { data: authData, error: authError } = await supabase.auth.admin.createUser({
       email: normalizedEmail,
@@ -401,10 +408,13 @@ async function handleUpdate(
       password: String(password).trim(),
     });
     if (authUpdateError) {
-      return new Response(JSON.stringify({ error: `Failed to update password in auth: ${authUpdateError.message}` }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return new Response(
+        JSON.stringify({ error: `Failed to update password in auth: ${authUpdateError.message}` }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        },
+      );
     }
   }
 
@@ -444,10 +454,13 @@ async function handleUpdate(
 
   // If we only updated the password, we can return success directly without modifying profiles table
   if (Object.keys(updates).length === 0) {
-    return new Response(JSON.stringify({ success: true, message: "Password updated successfully" }), {
-      status: 200,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return new Response(
+      JSON.stringify({ success: true, message: "Password updated successfully" }),
+      {
+        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      },
+    );
   }
 
   const { error } = await supabase.from("profiles").update(updates).eq("id", userId);
@@ -532,14 +545,17 @@ async function handleDelete(
   // Removing employment must never delete an independently owned storefront
   // customer account, its orders, addresses, or password.
   if ((customerIdentityCount ?? 0) > 0) {
-    const { error: unlinkError } = await supabase.from("profiles").upsert({
-      id: userId,
-      email: target.email,
-      name: target.email?.split("@")[0] || "Customer",
-      role: "staff",
-      status: "active",
-      brand_id: null,
-    }, { onConflict: "id" });
+    const { error: unlinkError } = await supabase.from("profiles").upsert(
+      {
+        id: userId,
+        email: target.email,
+        name: target.email?.split("@")[0] || "Customer",
+        role: "staff",
+        status: "active",
+        brand_id: null,
+      },
+      { onConflict: "id" },
+    );
     if (unlinkError) {
       return new Response(JSON.stringify({ error: unlinkError.message }), {
         status: 500,
@@ -577,7 +593,12 @@ async function findAuthUserByEmail(supabase: any, email: string) {
     const { data, error } = await supabase.auth.admin.listUsers({ page, perPage: 1000 });
     if (error) throw error;
     const users = data?.users ?? [];
-    const match = users.find((user: any) => String(user.email ?? "").trim().toLowerCase() === email);
+    const match = users.find(
+      (user: any) =>
+        String(user.email ?? "")
+          .trim()
+          .toLowerCase() === email,
+    );
     if (match) return match;
     if (users.length < 1000) break;
   }

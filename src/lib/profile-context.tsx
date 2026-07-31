@@ -169,13 +169,18 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
   const hasPermission = useCallback(
     (permission: string): boolean => {
       if (!isActive) return false;
-      if (profile?.role === "admin" || profile?.role === "brand_admin" || profile?.role === "super_admin" || emailIsSuperAdmin) {
+      if (
+        profile?.role === "admin" ||
+        profile?.role === "brand_admin" ||
+        profile?.role === "super_admin" ||
+        emailIsSuperAdmin
+      ) {
         return true; // Admins automatically possess all permissions.
       }
       const permissions = (profile?.permissions as string[]) || [];
       return permissions.includes(permission);
     },
-    [isActive, profile, emailIsSuperAdmin]
+    [isActive, profile, emailIsSuperAdmin],
   );
 
   // Only authorized roles or users with explicit financials permission can view financial data

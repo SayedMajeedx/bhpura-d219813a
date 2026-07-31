@@ -7,27 +7,33 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import { useI18n } from "@/lib/i18n";
-import { 
-  Building2, 
-  User, 
-  Languages, 
-  Check, 
-  Store, 
-  Sparkles, 
-  CheckCircle2, 
+import {
+  Building2,
+  User,
+  Languages,
+  Check,
+  Store,
+  Sparkles,
+  CheckCircle2,
   Loader2,
   UploadCloud,
   ChevronRight,
   Info,
   PhoneCall,
   QrCode,
-  Copy
+  Copy,
 } from "lucide-react";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { 
-  getOnboardingReceiptUploadUrl, 
-  createTenantRequest, 
-  getOnboardingPrice 
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  getOnboardingReceiptUploadUrl,
+  createTenantRequest,
+  getOnboardingPrice,
 } from "@/lib/onboarding.functions";
 
 export const Route = createFileRoute("/onboard")({
@@ -37,16 +43,31 @@ export const Route = createFileRoute("/onboard")({
 
 function OnboardPage() {
   const { lang, setLang } = useI18n();
-  const [liveSales, setLiveSales] = useState(4284.150);
+  const [liveSales, setLiveSales] = useState(4284.15);
   const [activeNotifyIdx, setActiveNotifyIdx] = useState(0);
   const [showFeaturesModal, setShowFeaturesModal] = useState(false);
   const [copiedIban, setCopiedIban] = useState(false);
   const [activeOnboardTab, setActiveOnboardTab] = useState<"trial" | "paid">("trial");
 
   const notifications = [
-    { name_en: "Sofia Al Khalifa", name_ar: "صوفيا آل خليفة", item: "Organza Silk Abaya", price: "145.000 BHD" },
-    { name_en: "Fatima Al Doseri", name_ar: "فاطمة الدوسري", item: "Velvet Gown", price: "280.000 BHD" },
-    { name_en: "Amina Al Jalahma", name_ar: "أمينة الجلاهمة", item: "Linen Trench Abaya", price: "110.000 BHD" },
+    {
+      name_en: "Sofia Al Khalifa",
+      name_ar: "صوفيا آل خليفة",
+      item: "Organza Silk Abaya",
+      price: "145.000 BHD",
+    },
+    {
+      name_en: "Fatima Al Doseri",
+      name_ar: "فاطمة الدوسري",
+      item: "Velvet Gown",
+      price: "280.000 BHD",
+    },
+    {
+      name_en: "Amina Al Jalahma",
+      name_ar: "أمينة الجلاهمة",
+      item: "Linen Trench Abaya",
+      price: "110.000 BHD",
+    },
   ];
 
   useEffect(() => {
@@ -80,8 +101,11 @@ function OnboardPage() {
   useEffect(() => {
     async function loadDynamicSettings() {
       try {
-        const { data, error } = await (supabase as any).from("system_settings")
-          .select("base_price_bhd, discount_price_bhd, platform_icon_url, whatsapp_support_number, benefit_pay_qr_url, merchant_account_name")
+        const { data, error } = await (supabase as any)
+          .from("system_settings")
+          .select(
+            "base_price_bhd, discount_price_bhd, platform_icon_url, whatsapp_support_number, benefit_pay_qr_url, merchant_account_name",
+          )
           .eq("id", 1)
           .maybeSingle();
 
@@ -125,8 +149,10 @@ function OnboardPage() {
   const [officialSubdomain, setOfficialSubdomain] = useState("");
   const [officialBusinessType, setOfficialBusinessType] = useState("Fashion");
   const [officialSubdomainChecking, setOfficialSubdomainChecking] = useState(false);
-  const [officialSubdomainAvailable, setOfficialSubdomainAvailable] = useState<boolean | null>(null);
-  
+  const [officialSubdomainAvailable, setOfficialSubdomainAvailable] = useState<boolean | null>(
+    null,
+  );
+
   // File Uploader state for Card B (Official Paid Activation)
   const [uploading, setUploading] = useState(false);
   const [receiptKey, setReceiptKey] = useState<string | null>(null);
@@ -164,7 +190,8 @@ function OnboardPage() {
 
         if (brandError) throw brandError;
 
-        const { data: pendingData, error: pendingError } = await (supabase as any).from("tenant_requests")
+        const { data: pendingData, error: pendingError } = await (supabase as any)
+          .from("tenant_requests")
           .select("id")
           .eq("desired_subdomain", cleaned)
           .eq("status", "pending")
@@ -215,7 +242,8 @@ function OnboardPage() {
 
         if (brandError) throw brandError;
 
-        const { data: pendingData, error: pendingError } = await (supabase as any).from("tenant_requests")
+        const { data: pendingData, error: pendingError } = await (supabase as any)
+          .from("tenant_requests")
           .select("id")
           .eq("desired_subdomain", cleaned)
           .eq("status", "pending")
@@ -244,24 +272,37 @@ function OnboardPage() {
     if (!file) return;
 
     if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
-      toast.error(lang === "ar" ? "يرجى تحميل صورة صالحة (JPEG, PNG, WEBP)." : "Please upload a valid image file (JPEG, PNG, WEBP).");
+      toast.error(
+        lang === "ar"
+          ? "يرجى تحميل صورة صالحة (JPEG, PNG, WEBP)."
+          : "Please upload a valid image file (JPEG, PNG, WEBP).",
+      );
       return;
     }
 
     if (file.size > 8 * 1024 * 1024) {
-      toast.error(lang === "ar" ? "الحد الأقصى لحجم الملف هو 8 ميجابايت." : "Maximum file size is 8MB.");
+      toast.error(
+        lang === "ar" ? "الحد الأقصى لحجم الملف هو 8 ميجابايت." : "Maximum file size is 8MB.",
+      );
       return;
     }
 
     setUploading(true);
-    const toastId = toast.loading(lang === "ar" ? "جاري تفعيل قناة التحميل المشفرة..." : "Preparing secure R2 upload tunnel...");
+    const toastId = toast.loading(
+      lang === "ar" ? "جاري تفعيل قناة التحميل المشفرة..." : "Preparing secure R2 upload tunnel...",
+    );
 
     try {
       const { objectKey, uploadUrl } = await getOnboardingReceiptUploadUrl({
-        data: { contentType: file.type as any }
+        data: { contentType: file.type as any },
       });
 
-      toast.loading(lang === "ar" ? "جاري تشفير وحفظ لقطة الشاشة في R2 الخصوصي..." : "Encrypting and storing receipt screenshot in Private R2 Bucket...", { id: toastId });
+      toast.loading(
+        lang === "ar"
+          ? "جاري تشفير وحفظ لقطة الشاشة في R2 الخصوصي..."
+          : "Encrypting and storing receipt screenshot in Private R2 Bucket...",
+        { id: toastId },
+      );
       const response = await fetch(uploadUrl, {
         method: "PUT",
         headers: { "Content-Type": file.type },
@@ -273,11 +314,20 @@ function OnboardPage() {
       }
 
       setReceiptKey(objectKey);
-      toast.success(lang === "ar" ? "تم رفع إيصال الدفع وتشفيره بنجاح!" : "Payment receipt uploaded and encrypted securely!", { id: toastId });
-
+      toast.success(
+        lang === "ar"
+          ? "تم رفع إيصال الدفع وتشفيره بنجاح!"
+          : "Payment receipt uploaded and encrypted securely!",
+        { id: toastId },
+      );
     } catch (err: any) {
       console.error(err);
-      toast.error(lang === "ar" ? "فشل تحميل إيصال الدفع. يرجى المحاولة لاحقاً." : "Failed to upload payment receipt. Please retry.", { id: toastId });
+      toast.error(
+        lang === "ar"
+          ? "فشل تحميل إيصال الدفع. يرجى المحاولة لاحقاً."
+          : "Failed to upload payment receipt. Please retry.",
+        { id: toastId },
+      );
     } finally {
       setUploading(false);
     }
@@ -287,16 +337,22 @@ function OnboardPage() {
   const handleRegisterTrial = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!trialFullName || !trialContactNumber || !trialEmail || !trialSubdomain) {
-      toast.error(lang === "ar" ? "يرجى ملء جميع الحقول المطلوبة." : "Please fill out all required fields.");
+      toast.error(
+        lang === "ar" ? "يرجى ملء جميع الحقول المطلوبة." : "Please fill out all required fields.",
+      );
       return;
     }
 
     if (trialSubdomainAvailable === false) {
-      toast.error(lang === "ar" ? "رابط المتجر هذا محجوز مسبقاً." : "This store subdomain is already taken.");
+      toast.error(
+        lang === "ar" ? "رابط المتجر هذا محجوز مسبقاً." : "This store subdomain is already taken.",
+      );
       return;
     }
 
-    const toastId = toast.loading(lang === "ar" ? "جاري إرسال طلب تفعيل النسخة التجريبية..." : "Sending trial request...");
+    const toastId = toast.loading(
+      lang === "ar" ? "جاري إرسال طلب تفعيل النسخة التجريبية..." : "Sending trial request...",
+    );
 
     try {
       // Save metadata lead safely to tenant_requests with status 'pending'
@@ -308,18 +364,24 @@ function OnboardPage() {
           desiredSubdomain: trialSubdomain,
           requestType: "trial",
           businessType: trialBusinessType,
-        }
+        },
       });
 
-      const waMessage = lang === "ar"
-        ? `مرحباً دعم بوتيك (Boutq)! لقد أرسلت للتو طلب تفعيل باقة الـ 3 أيام المجانية لمتجري باسم: "${trialFullName}" والرابط المطلوب: "${trialSubdomain}.boutq.store". البريد الإلكتروني: ${trialEmail}.`
-        : `Hello Boutq Support! I just submitted a request for a 3-Day Free Trial workspace. Owner: "${trialFullName}", Desired subdomain: "${trialSubdomain}.boutq.store", Contact: ${trialContactNumber}, Email: ${trialEmail}.`;
+      const waMessage =
+        lang === "ar"
+          ? `مرحباً دعم بوتيك (Boutq)! لقد أرسلت للتو طلب تفعيل باقة الـ 3 أيام المجانية لمتجري باسم: "${trialFullName}" والرابط المطلوب: "${trialSubdomain}.boutq.store". البريد الإلكتروني: ${trialEmail}.`
+          : `Hello Boutq Support! I just submitted a request for a 3-Day Free Trial workspace. Owner: "${trialFullName}", Desired subdomain: "${trialSubdomain}.boutq.store", Contact: ${trialContactNumber}, Email: ${trialEmail}.`;
 
       const encodedMessage = encodeURIComponent(waMessage);
       const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodedMessage}`;
 
-      toast.success(lang === "ar" ? "تم تسجيل طلبك! بانتظار التفعيل اليدوي..." : "Request Received - Waiting for Manual Activation", { id: toastId });
-      
+      toast.success(
+        lang === "ar"
+          ? "تم تسجيل طلبك! بانتظار التفعيل اليدوي..."
+          : "Request Received - Waiting for Manual Activation",
+        { id: toastId },
+      );
+
       setSubmittedSubdomain(trialSubdomain);
       setIsTrialSuccess(true);
       setIsDeployedPending(true);
@@ -328,10 +390,11 @@ function OnboardPage() {
       setTimeout(() => {
         window.open(whatsappUrl, "_blank");
       }, 1200);
-
     } catch (err: any) {
       console.error(err);
-      toast.error(err.message || "An unexpected error occurred during submission.", { id: toastId });
+      toast.error(err.message || "An unexpected error occurred during submission.", {
+        id: toastId,
+      });
     }
   };
 
@@ -339,21 +402,33 @@ function OnboardPage() {
   const handleRegisterPaid = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!officialFullName || !officialContactNumber || !officialEmail || !officialSubdomain) {
-      toast.error(lang === "ar" ? "يرجى ملء جميع الحقول المطلوبة." : "Please fill out all required fields.");
+      toast.error(
+        lang === "ar" ? "يرجى ملء جميع الحقول المطلوبة." : "Please fill out all required fields.",
+      );
       return;
     }
 
     if (officialSubdomainAvailable === false) {
-      toast.error(lang === "ar" ? "رابط المتجر هذا محجوز مسبقاً." : "This store subdomain is already taken.");
+      toast.error(
+        lang === "ar" ? "رابط المتجر هذا محجوز مسبقاً." : "This store subdomain is already taken.",
+      );
       return;
     }
 
     if (!receiptKey) {
-      toast.error(lang === "ar" ? "يرجى رفع لقطة شاشة تأكيد الدفع قبل المتابعة." : "Please upload your payment receipt screenshot before submitting.");
+      toast.error(
+        lang === "ar"
+          ? "يرجى رفع لقطة شاشة تأكيد الدفع قبل المتابعة."
+          : "Please upload your payment receipt screenshot before submitting.",
+      );
       return;
     }
 
-    const toastId = toast.loading(lang === "ar" ? "جاري إرسال طلب تفعيل متجرك الرسمي..." : "Sending official store activation request...");
+    const toastId = toast.loading(
+      lang === "ar"
+        ? "جاري إرسال طلب تفعيل متجرك الرسمي..."
+        : "Sending official store activation request...",
+    );
 
     try {
       // Save metadata lead safely to tenant_requests as 'pending'
@@ -366,28 +441,29 @@ function OnboardPage() {
           requestType: "paid",
           benefitReceiptUrl: receiptKey,
           businessType: officialBusinessType,
-        }
+        },
       });
 
       toast.success(
-        lang === "ar" 
-          ? "تم إرسال طلب تفعيل متجرك بنجاح! طلبك الآن قيد التدقيق وسيتم تفعيله يدوياً." 
+        lang === "ar"
+          ? "تم إرسال طلب تفعيل متجرك بنجاح! طلبك الآن قيد التدقيق وسيتم تفعيله يدوياً."
           : "Request Received - Waiting for Manual Activation",
-        { id: toastId, duration: 6000 }
+        { id: toastId, duration: 6000 },
       );
 
       setSubmittedSubdomain(officialSubdomain);
       setIsTrialSuccess(false);
       setIsDeployedPending(true);
-
     } catch (err: any) {
       console.error(err);
-      toast.error(err.message || "An unexpected error occurred during activation submission.", { id: toastId });
+      toast.error(err.message || "An unexpected error occurred during activation submission.", {
+        id: toastId,
+      });
     }
   };
 
   const handleCopyIban = (ibanStr: string) => {
-    navigator.clipboard.writeText(ibanStr.replace(/\s+/g, ''));
+    navigator.clipboard.writeText(ibanStr.replace(/\s+/g, ""));
     setCopiedIban(true);
     toast.success(lang === "ar" ? "تم نسخ الـ IBAN بنجاح!" : "IBAN copied to clipboard!");
     setTimeout(() => setCopiedIban(false), 2000);
@@ -410,9 +486,11 @@ function OnboardPage() {
           </div>
 
           <h1 className="text-2xl md:text-3xl font-display font-medium tracking-tight mb-3">
-            {lang === "ar" ? "تم استلام الطلب - بانتظار التفعيل" : "Request Received - Waiting for Manual Activation"}
+            {lang === "ar"
+              ? "تم استلام الطلب - بانتظار التفعيل"
+              : "Request Received - Waiting for Manual Activation"}
           </h1>
-          
+
           <p className="text-zinc-400 text-sm leading-relaxed mb-6">
             {lang === "ar"
               ? `لقد تم إرسال طلب تفعيل مساحة متجرك الفاخرة "${submittedSubdomain}.boutq.store" بنجاح إلى فريق الإدارة.`
@@ -424,7 +502,9 @@ function OnboardPage() {
               <Info className="h-5 w-5 text-primary shrink-0 mt-0.5" />
               <div className="text-xs text-zinc-400 leading-relaxed">
                 <p className="font-semibold text-zinc-200 mb-1">
-                  {lang === "ar" ? "ما الخطوات التالية لتفعيل متجرك؟" : "What is the deployment procedure?"}
+                  {lang === "ar"
+                    ? "ما الخطوات التالية لتفعيل متجرك؟"
+                    : "What is the deployment procedure?"}
                 </p>
                 {isTrialSuccess ? (
                   <p>
@@ -444,8 +524,8 @@ function OnboardPage() {
           </div>
 
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               className="bg-transparent hover:bg-zinc-900 border-zinc-800 hover:border-zinc-700 text-zinc-300 hover:text-white transition-all"
               onClick={() => {
                 setIsDeployedPending(false);
@@ -463,7 +543,7 @@ function OnboardPage() {
               {lang === "ar" ? "العودة للرئيسية" : "Start Over"}
             </Button>
 
-            <a 
+            <a
               href={`https://wa.me/${whatsappNumber}?text=Hello!%20Inquiring%20about%20my%20onboarding%20registration%20for%20subdomain:%20${submittedSubdomain}`}
               target="_blank"
               rel="noopener noreferrer"
@@ -521,7 +601,10 @@ function OnboardPage() {
         <div className="absolute inset-0 pointer-events-none opacity-30 dark:opacity-50 z-0">
           {/* Glowing gradient backdrops */}
           <div className="absolute top-[20%] right-[-10%] w-72 h-72 rounded-full bg-rose-500/10 blur-3xl animate-pulse-soft" />
-          <div className="absolute bottom-[25%] left-[-10%] w-80 h-80 rounded-full bg-[#B76E79]/15 blur-3xl animate-pulse-soft" style={{ animationDelay: "2s" }} />
+          <div
+            className="absolute bottom-[25%] left-[-10%] w-80 h-80 rounded-full bg-[#B76E79]/15 blur-3xl animate-pulse-soft"
+            style={{ animationDelay: "2s" }}
+          />
 
           {/* New Order Pill Notification */}
           <div className="absolute top-[22%] left-6 right-6 z-20 animate-banner-slide">
@@ -533,10 +616,9 @@ function OnboardPage() {
                 </span>
               </div>
               <div className="text-[10px] font-medium text-zinc-200 truncate max-w-[120px]">
-                {lang === "ar" 
+                {lang === "ar"
                   ? `${notifications[activeNotifyIdx].name_ar} • ${notifications[activeNotifyIdx].item}`
-                  : `${notifications[activeNotifyIdx].name_en} • ${notifications[activeNotifyIdx].item}`
-                }
+                  : `${notifications[activeNotifyIdx].name_en} • ${notifications[activeNotifyIdx].item}`}
               </div>
               <div className="text-[10px] font-bold text-emerald-400 whitespace-nowrap">
                 {notifications[activeNotifyIdx].price}
@@ -562,20 +644,23 @@ function OnboardPage() {
             {/* Sparkline visualization */}
             <div className="h-8 mt-4 flex items-end gap-1.5">
               {[40, 55, 45, 60, 75, 50, 70, 85, 90, 80, 95].map((h, i) => (
-                <div 
-                  key={i} 
-                  className="flex-1 rounded-t bg-zinc-800/60 transition-all duration-500" 
-                  style={{ 
+                <div
+                  key={i}
+                  className="flex-1 rounded-t bg-zinc-800/60 transition-all duration-500"
+                  style={{
                     height: `${h}%`,
-                    backgroundColor: i === 10 ? "#B76E79" : undefined 
-                  }} 
+                    backgroundColor: i === 10 ? "#B76E79" : undefined,
+                  }}
                 />
               ))}
             </div>
           </div>
 
           {/* Luxury Abaya Product Card */}
-          <div className="absolute bottom-[24%] left-6 w-[75%] bg-zinc-900/85 border border-zinc-800/80 backdrop-blur-md p-4 rounded-xl shadow-lg animate-float-slower" style={{ animationDelay: "1s" }}>
+          <div
+            className="absolute bottom-[24%] left-6 w-[75%] bg-zinc-900/85 border border-zinc-800/80 backdrop-blur-md p-4 rounded-xl shadow-lg animate-float-slower"
+            style={{ animationDelay: "1s" }}
+          >
             <div className="flex items-center gap-3">
               <div className="h-10 w-10 rounded-lg bg-zinc-800/80 flex items-center justify-center border border-zinc-700/60">
                 <Store className="h-5 w-5 text-[#B76E79]" />
@@ -595,7 +680,10 @@ function OnboardPage() {
           </div>
 
           {/* Floating VIP customer tag */}
-          <div className="absolute bottom-[36%] right-6 bg-rose-500/10 border border-rose-500/20 text-rose-300 text-[9px] font-bold px-3 py-1.5 rounded-full shadow-md animate-float-slow" style={{ animationDelay: "2.5s" }}>
+          <div
+            className="absolute bottom-[36%] right-6 bg-rose-500/10 border border-rose-500/20 text-rose-300 text-[9px] font-bold px-3 py-1.5 rounded-full shadow-md animate-float-slow"
+            style={{ animationDelay: "2.5s" }}
+          >
             {lang === "ar" ? "عملاء كبار الشخصيات VIP" : "VIP CONCIERGE"}
           </div>
         </div>
@@ -603,10 +691,10 @@ function OnboardPage() {
         {/* Top Header Section */}
         <div className="relative z-10 flex items-center gap-2">
           {platformIconUrl && !logoError ? (
-            <img 
-              src={platformIconUrl} 
-              alt="Boutq Logo" 
-              className="h-8 object-contain" 
+            <img
+              src={platformIconUrl}
+              alt="Boutq Logo"
+              className="h-8 object-contain"
               onError={() => setLogoError(true)}
             />
           ) : (
@@ -621,19 +709,23 @@ function OnboardPage() {
         <div className="relative z-10 space-y-6 max-w-sm mt-auto mb-16">
           <Sparkles className="h-10 w-10 text-[#B76E79] animate-pulse" />
           <h2 className="text-4xl font-display font-medium leading-tight tracking-tight">
-            {lang === "ar" ? "أطلق مساحتك التجارية الفاخرة اليوم" : "Own your professional luxury boutique store."}
+            {lang === "ar"
+              ? "أطلق مساحتك التجارية الفاخرة اليوم"
+              : "Own your professional luxury boutique store."}
           </h2>
           <p className="text-zinc-400 text-sm leading-relaxed">
             {lang === "ar"
-               ? "منصة الإدارة المتكاملة لمصممي الأزياء، العبايات، وصالات العرض النخبوية في البحرين والخليج العربي. واجهات في غاية الفخامة والدقة."
-               : "The premium management stack designed for visual designers, Abaya houses, and high-end couture stores in Bahrain and the GCC. Exquisite storefront interfaces."}
+              ? "منصة الإدارة المتكاملة لمصممي الأزياء، العبايات، وصالات العرض النخبوية في البحرين والخليج العربي. واجهات في غاية الفخامة والدقة."
+              : "The premium management stack designed for visual designers, Abaya houses, and high-end couture stores in Bahrain and the GCC. Exquisite storefront interfaces."}
           </p>
         </div>
 
         {/* Footer info badge */}
         <div className="relative z-10 text-xs text-zinc-500 flex items-center gap-1.5 mt-auto">
           <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
-          <span>{lang === "ar" ? "بنية سحابية فائقة الأمان" : "RLS-Secured Enterprise Deployment Stack"}</span>
+          <span>
+            {lang === "ar" ? "بنية سحابية فائقة الأمان" : "RLS-Secured Enterprise Deployment Stack"}
+          </span>
         </div>
       </div>
 
@@ -643,10 +735,10 @@ function OnboardPage() {
         <div className="flex justify-between items-center gap-4 mb-8">
           <div className="flex items-center gap-2 md:hidden">
             {platformIconUrl && !logoError ? (
-              <img 
-                src={platformIconUrl} 
-                alt="Boutq Logo" 
-                className="h-6 object-contain" 
+              <img
+                src={platformIconUrl}
+                alt="Boutq Logo"
+                className="h-6 object-contain"
                 onError={() => setLogoError(true)}
               />
             ) : (
@@ -657,7 +749,7 @@ function OnboardPage() {
             )}
           </div>
           <div className="flex justify-end items-center gap-4 ml-auto">
-            <a 
+            <a
               href="https://pura.boutq.store"
               target="_blank"
               rel="noopener noreferrer"
@@ -669,7 +761,9 @@ function OnboardPage() {
             <div className="flex items-center gap-2">
               <Languages className="h-4 w-4 text-muted-foreground" />
               <Select value={lang} onValueChange={(v) => setLang(v as "en" | "ar")}>
-                <SelectTrigger className="h-8 w-28 text-xs"><SelectValue /></SelectTrigger>
+                <SelectTrigger className="h-8 w-28 text-xs">
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="en">English</SelectItem>
                   <SelectItem value="ar">العربية</SelectItem>
@@ -704,14 +798,18 @@ function OnboardPage() {
         <div className="lg:hidden bg-zinc-950 text-white border border-[#B76E79]/30 rounded-2xl p-4 mb-6 shadow-lg shadow-rose-950/5 flex flex-col gap-3.5 relative overflow-hidden select-none">
           {/* Background glow orb */}
           <div className="absolute -top-12 -right-12 w-24 h-24 rounded-full bg-[#B76E79]/10 blur-xl animate-pulse-soft" />
-          
+
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-1.5 text-[9px] text-zinc-400 font-bold uppercase tracking-wider">
               <span className="h-1.5 w-1.5 rounded-full bg-[#B76E79] animate-ping shrink-0" />
               {lang === "ar" ? "نشاط منصة BOUTQ المباشر" : "LIVE BOUTQ NETWORK TRACKER"}
             </div>
             <span className="text-[11px] font-mono text-emerald-500 font-bold tracking-tight bg-emerald-500/10 px-2.5 py-0.5 rounded-md animate-pulse">
-              {liveSales.toLocaleString(undefined, { minimumFractionDigits: 3, maximumFractionDigits: 3 })} BHD
+              {liveSales.toLocaleString(undefined, {
+                minimumFractionDigits: 3,
+                maximumFractionDigits: 3,
+              })}{" "}
+              BHD
             </span>
           </div>
 
@@ -722,7 +820,9 @@ function OnboardPage() {
               <span className="text-zinc-300 font-medium text-[11px] truncate">
                 {lang === "ar" ? "طلب جديد من" : "New order from"}{" "}
                 <strong className="text-white">
-                  {lang === "ar" ? notifications[activeNotifyIdx].name_ar : notifications[activeNotifyIdx].name_en}
+                  {lang === "ar"
+                    ? notifications[activeNotifyIdx].name_ar
+                    : notifications[activeNotifyIdx].name_en}
                 </strong>
               </span>
             </div>
@@ -737,8 +837,8 @@ function OnboardPage() {
           <button
             onClick={() => setActiveOnboardTab("trial")}
             className={`flex-1 py-2 text-center text-xs font-semibold rounded-lg transition-all ${
-              activeOnboardTab === "trial" 
-                ? "bg-white dark:bg-zinc-800 text-[#B76E79] shadow-sm font-bold" 
+              activeOnboardTab === "trial"
+                ? "bg-white dark:bg-zinc-800 text-[#B76E79] shadow-sm font-bold"
                 : "text-muted-foreground hover:text-foreground"
             }`}
           >
@@ -747,8 +847,8 @@ function OnboardPage() {
           <button
             onClick={() => setActiveOnboardTab("paid")}
             className={`flex-1 py-2 text-center text-xs font-semibold rounded-lg transition-all ${
-              activeOnboardTab === "paid" 
-                ? "bg-white dark:bg-zinc-800 text-primary shadow-sm font-bold" 
+              activeOnboardTab === "paid"
+                ? "bg-white dark:bg-zinc-800 text-primary shadow-sm font-bold"
                 : "text-muted-foreground hover:text-foreground"
             }`}
           >
@@ -758,15 +858,16 @@ function OnboardPage() {
 
         {/* Dual Card responsive Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
-          
           {/* CARD A: 3-Day Free Trial */}
-          <Card className={`border-zinc-100 dark:border-zinc-800/80 shadow-md flex-col justify-between relative overflow-hidden group ${
-            activeOnboardTab === "trial" ? "flex" : "hidden lg:flex"
-          }`}>
+          <Card
+            className={`border-zinc-100 dark:border-zinc-800/80 shadow-md flex-col justify-between relative overflow-hidden group ${
+              activeOnboardTab === "trial" ? "flex" : "hidden lg:flex"
+            }`}
+          >
             <div className="absolute top-0 right-0 p-4 opacity-[0.02] select-none pointer-events-none">
               <Sparkles className="h-32 w-32" />
             </div>
-            
+
             <CardHeader className="border-b border-zinc-50 dark:border-zinc-900 pb-5">
               <div className="flex justify-between items-start gap-4">
                 <div>
@@ -774,8 +875,8 @@ function OnboardPage() {
                     {lang === "ar" ? "تجربة مجانية لمدة 3 أيام" : "3-Day Free Trial"}
                   </CardTitle>
                   <CardDescription className="text-xs text-muted-foreground mt-1 leading-relaxed">
-                    {lang === "ar" 
-                      ? "جرّب ميزات منصة Boutq مجاناً لمدة 3 أيام • ترقية في أي وقت لباقة التأسيس بـ 49 د.ب/سنوياً." 
+                    {lang === "ar"
+                      ? "جرّب ميزات منصة Boutq مجاناً لمدة 3 أيام • ترقية في أي وقت لباقة التأسيس بـ 49 د.ب/سنوياً."
                       : "Test all features free for 3 days • Upgrade anytime to the 49 BHD/year Founder Plan."}
                   </CardDescription>
                 </div>
@@ -788,30 +889,45 @@ function OnboardPage() {
             <div className="px-6 py-4 bg-zinc-50 dark:bg-zinc-900/50 border-b border-zinc-100 dark:border-zinc-800/60 space-y-2.5 text-xs select-none">
               <div className="flex items-center gap-2.5 text-muted-foreground">
                 <Check className="h-4 w-4 text-[#B76E79] shrink-0" />
-                <span>{lang === "ar" ? "وصول كامل للوحة التحكم والمبيعات" : "Full admin dashboard & revenue reporting"}</span>
+                <span>
+                  {lang === "ar"
+                    ? "وصول كامل للوحة التحكم والمبيعات"
+                    : "Full admin dashboard & revenue reporting"}
+                </span>
               </div>
               <div className="flex items-center gap-2.5 text-muted-foreground">
                 <Check className="h-4 w-4 text-[#B76E79] shrink-0" />
-                <span>{lang === "ar" ? "معاينة حية للمتجر التجريبي الخاص بك" : "Live customer-facing storefront preview"}</span>
+                <span>
+                  {lang === "ar"
+                    ? "معاينة حية للمتجر التجريبي الخاص بك"
+                    : "Live customer-facing storefront preview"}
+                </span>
               </div>
               <div className="flex items-center gap-2.5 text-muted-foreground">
                 <Check className="h-4 w-4 text-[#B76E79] shrink-0" />
-                <span>{lang === "ar" ? "تفعيل وإعداد عبر الواتساب فوراً" : "Instant concierge setup via WhatsApp"}</span>
+                <span>
+                  {lang === "ar"
+                    ? "تفعيل وإعداد عبر الواتساب فوراً"
+                    : "Instant concierge setup via WhatsApp"}
+                </span>
               </div>
             </div>
 
             <CardContent className="pt-6 space-y-4">
               <form onSubmit={handleRegisterTrial} className="space-y-4">
                 <div className="space-y-1.5">
-                  <Label htmlFor="trial-name" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  <Label
+                    htmlFor="trial-name"
+                    className="text-xs font-semibold uppercase tracking-wider text-muted-foreground"
+                  >
                     {lang === "ar" ? "الاسم الكامل" : "Owner Full Name"}
                   </Label>
                   <div className="relative">
                     <User className="absolute left-3 top-2.5 h-4.5 w-4.5 text-zinc-400" />
-                    <Input 
-                      id="trial-name" 
-                      placeholder={lang === "ar" ? "أدخل اسمك الكامل" : "Enter your full name"} 
-                      required 
+                    <Input
+                      id="trial-name"
+                      placeholder={lang === "ar" ? "أدخل اسمك الكامل" : "Enter your full name"}
+                      required
                       className="pl-10 text-sm"
                       value={trialFullName}
                       onChange={(e) => setTrialFullName(e.target.value)}
@@ -822,13 +938,20 @@ function OnboardPage() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1.5">
-                    <Label htmlFor="trial-phone" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    <Label
+                      htmlFor="trial-phone"
+                      className="text-xs font-semibold uppercase tracking-wider text-muted-foreground"
+                    >
                       {lang === "ar" ? "رقم الهاتف / الواتساب" : "WhatsApp Number"}
                     </Label>
-                    <Input 
-                      id="trial-phone" 
-                      placeholder={lang === "ar" ? "أدخل رقم الواتساب (مثال: 39955508)" : "Enter WhatsApp number (e.g. 39955508)"} 
-                      required 
+                    <Input
+                      id="trial-phone"
+                      placeholder={
+                        lang === "ar"
+                          ? "أدخل رقم الواتساب (مثال: 39955508)"
+                          : "Enter WhatsApp number (e.g. 39955508)"
+                      }
+                      required
                       className="text-sm"
                       value={trialContactNumber}
                       onChange={(e) => setTrialContactNumber(e.target.value)}
@@ -837,14 +960,21 @@ function OnboardPage() {
                   </div>
 
                   <div className="space-y-1.5">
-                    <Label htmlFor="trial-email" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    <Label
+                      htmlFor="trial-email"
+                      className="text-xs font-semibold uppercase tracking-wider text-muted-foreground"
+                    >
                       {lang === "ar" ? "البريد الإلكتروني" : "Email Address"}
                     </Label>
-                    <Input 
-                      id="trial-email" 
-                      type="email" 
-                      placeholder={lang === "ar" ? "أدخل البريد الإلكتروني (مثال: name@domain.com)" : "Enter email address (e.g. name@domain.com)"} 
-                      required 
+                    <Input
+                      id="trial-email"
+                      type="email"
+                      placeholder={
+                        lang === "ar"
+                          ? "أدخل البريد الإلكتروني (مثال: name@domain.com)"
+                          : "Enter email address (e.g. name@domain.com)"
+                      }
+                      required
                       className="text-sm"
                       value={trialEmail}
                       onChange={(e) => setTrialEmail(e.target.value)}
@@ -854,39 +984,62 @@ function OnboardPage() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label htmlFor="trial-subdomain" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  <Label
+                    htmlFor="trial-subdomain"
+                    className="text-xs font-semibold uppercase tracking-wider text-muted-foreground"
+                  >
                     {lang === "ar" ? "رابط موقع متجرك المطلوب" : "Desired Boutique Subdomain"}
                   </Label>
                   <div className="relative flex items-center">
-                    <span className="absolute left-3 text-xs text-zinc-400 font-medium font-mono select-none">https://</span>
-                    <Input 
-                      id="trial-subdomain" 
-                      placeholder={lang === "ar" ? "أدخل اسم المتجر المطلوب (مثال: velvet)" : "Enter boutique name (e.g. velvet)"} 
-                      required 
+                    <span className="absolute left-3 text-xs text-zinc-400 font-medium font-mono select-none">
+                      https://
+                    </span>
+                    <Input
+                      id="trial-subdomain"
+                      placeholder={
+                        lang === "ar"
+                          ? "أدخل اسم المتجر المطلوب (مثال: velvet)"
+                          : "Enter boutique name (e.g. velvet)"
+                      }
+                      required
                       className="pl-16 pr-24 font-mono text-xs text-primary"
                       value={trialSubdomain}
                       onChange={(e) => setTrialSubdomain(e.target.value)}
                       autoComplete="off"
                     />
-                    <span className="absolute right-3 text-[10px] text-zinc-400 font-mono font-bold select-none">.boutq.store</span>
+                    <span className="absolute right-3 text-[10px] text-zinc-400 font-mono font-bold select-none">
+                      .boutq.store
+                    </span>
                   </div>
-                  
+
                   {trialSubdomain && (
                     <p className="text-[10px] flex items-center gap-1 mt-1">
                       {trialSubdomainChecking ? (
                         <>
                           <Loader2 className="h-3 w-3 animate-spin text-zinc-400" />
-                          <span className="text-muted-foreground">{lang === "ar" ? "جاري التحقق من التوافر..." : "Checking availability..."}</span>
+                          <span className="text-muted-foreground">
+                            {lang === "ar"
+                              ? "جاري التحقق من التوافر..."
+                              : "Checking availability..."}
+                          </span>
                         </>
                       ) : trialSubdomainAvailable === true ? (
                         <>
                           <Check className="h-3 w-3 text-emerald-500" />
-                          <span className="text-emerald-500 font-semibold">{lang === "ar" ? "الرابط متوفر وصالح للاستخدام!" : "Subdomain handle is available!"}</span>
+                          <span className="text-emerald-500 font-semibold">
+                            {lang === "ar"
+                              ? "الرابط متوفر وصالح للاستخدام!"
+                              : "Subdomain handle is available!"}
+                          </span>
                         </>
                       ) : (
                         <>
                           <span className="h-1.5 w-1.5 rounded-full bg-rose-500 inline-block" />
-                          <span className="text-rose-500 font-semibold">{lang === "ar" ? "الرابط محجوز مسبقاً!" : "This subdomain is already taken."}</span>
+                          <span className="text-rose-500 font-semibold">
+                            {lang === "ar"
+                              ? "الرابط محجوز مسبقاً!"
+                              : "This subdomain is already taken."}
+                          </span>
                         </>
                       )}
                     </p>
@@ -894,11 +1047,17 @@ function OnboardPage() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label htmlFor="trial-business-type" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  <Label
+                    htmlFor="trial-business-type"
+                    className="text-xs font-semibold uppercase tracking-wider text-muted-foreground"
+                  >
                     {lang === "ar" ? "نوع النشاط التجاري" : "Business / Store Type"}
                   </Label>
                   <Select value={trialBusinessType} onValueChange={setTrialBusinessType}>
-                    <SelectTrigger id="trial-business-type" className="h-10 text-xs text-primary bg-background border-zinc-200">
+                    <SelectTrigger
+                      id="trial-business-type"
+                      className="h-10 text-xs text-primary bg-background border-zinc-200"
+                    >
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -918,12 +1077,14 @@ function OnboardPage() {
                   </Select>
                 </div>
 
-                <Button 
-                  type="submit" 
+                <Button
+                  type="submit"
                   className="w-full h-11 text-xs font-semibold uppercase tracking-wider gap-2 bg-[#B76E79] hover:bg-[#a35e69] text-white mt-4"
                   disabled={trialSubdomainChecking || trialSubdomainAvailable === false}
                 >
-                  {lang === "ar" ? "إرسال طلب تجربة الـ 3 أيام" : "Submit Request & Start 3-Day Trial"}
+                  {lang === "ar"
+                    ? "إرسال طلب تجربة الـ 3 أيام"
+                    : "Submit Request & Start 3-Day Trial"}
                   <ChevronRight className="h-4 w-4" />
                 </Button>
               </form>
@@ -931,9 +1092,11 @@ function OnboardPage() {
           </Card>
 
           {/* CARD B: Official Paid Registration */}
-          <Card className={`border-zinc-100 dark:border-zinc-800/80 shadow-md flex-col justify-between relative overflow-hidden group ring-1 ring-primary/40 bg-primary/[0.01] ${
-            activeOnboardTab === "paid" ? "flex" : "hidden lg:flex"
-          }`}>
+          <Card
+            className={`border-zinc-100 dark:border-zinc-800/80 shadow-md flex-col justify-between relative overflow-hidden group ring-1 ring-primary/40 bg-primary/[0.01] ${
+              activeOnboardTab === "paid" ? "flex" : "hidden lg:flex"
+            }`}
+          >
             <div className="absolute top-0 right-0 p-4 opacity-[0.02] select-none pointer-events-none">
               <Building2 className="h-32 w-32" />
             </div>
@@ -942,8 +1105,8 @@ function OnboardPage() {
               {/* Scarcity Founder Offer Badge */}
               <div className="flex">
                 <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-rose-500/10 text-rose-500 text-[9px] font-bold uppercase tracking-wider mb-2.5 animate-pulse border border-rose-500/20">
-                  {lang === "ar" 
-                    ? "🔥 عرض الإطلاق التأسيسي: ٤٩ د.ب/سنوياً (لأول متجرين فقط)" 
+                  {lang === "ar"
+                    ? "🔥 عرض الإطلاق التأسيسي: ٤٩ د.ب/سنوياً (لأول متجرين فقط)"
                     : "🔥 Founder's Launch Offer: 49 BHD/year (First 2 Stores Only)"}
                 </div>
               </div>
@@ -954,7 +1117,9 @@ function OnboardPage() {
                     {lang === "ar" ? "تفعيل المتجر الفاخر الرسمي" : "Official Store Activation"}
                   </CardTitle>
                   <CardDescription className="text-xs text-muted-foreground mt-1">
-                    {lang === "ar" ? "إصدار سنوي مرخص فوري ومدعوم بالكامل." : "Activate your annual whitelabel boutique brand platform."}
+                    {lang === "ar"
+                      ? "إصدار سنوي مرخص فوري ومدعوم بالكامل."
+                      : "Activate your annual whitelabel boutique brand platform."}
                   </CardDescription>
                 </div>
                 <div className="text-right">
@@ -984,34 +1149,51 @@ function OnboardPage() {
             <div className="px-6 py-4 bg-[#B76E79]/5 border-b border-[#B76E79]/10 space-y-2.5 text-xs select-none">
               <div className="flex items-center gap-2.5 text-[#B76E79] font-semibold">
                 <Check className="h-4 w-4 shrink-0 text-[#B76E79]" />
-                <span>{lang === "ar" ? "يتم الدفع سنوياً • يشمل نطاق فرعي، واستضافة، وبنفت بي وتحديثات برمجية." : "Billed annually • Includes wildcard domain, hosting, BenefitPay integration & tech updates."}</span>
+                <span>
+                  {lang === "ar"
+                    ? "يتم الدفع سنوياً • يشمل نطاق فرعي، واستضافة، وبنفت بي وتحديثات برمجية."
+                    : "Billed annually • Includes wildcard domain, hosting, BenefitPay integration & tech updates."}
+                </span>
               </div>
               <div className="flex items-center gap-2.5 text-muted-foreground">
                 <Check className="h-4 w-4 shrink-0 text-emerald-500" />
-                <span>{lang === "ar" ? "رابط مخصص ونطاق فرعي رسمي" : "Official custom subdomain handle"}</span>
+                <span>
+                  {lang === "ar" ? "رابط مخصص ونطاق فرعي رسمي" : "Official custom subdomain handle"}
+                </span>
               </div>
               <div className="flex items-center gap-2.5 text-muted-foreground">
                 <Check className="h-4 w-4 shrink-0 text-emerald-500" />
-                <span>{lang === "ar" ? "ضمان صيانة ودعم فني متواصل لـ 6 أشهر" : "6 Months guaranteed technical support"}</span>
+                <span>
+                  {lang === "ar"
+                    ? "ضمان صيانة ودعم فني متواصل لـ 6 أشهر"
+                    : "6 Months guaranteed technical support"}
+                </span>
               </div>
               <div className="flex items-center gap-2.5 text-muted-foreground">
                 <Check className="h-4 w-4 shrink-0 text-emerald-500" />
-                <span>{lang === "ar" ? "صفر رسوم صيانة أو استضافة شهرية" : "Zero monthly hosting or cloud storage fees"}</span>
+                <span>
+                  {lang === "ar"
+                    ? "صفر رسوم صيانة أو استضافة شهرية"
+                    : "Zero monthly hosting or cloud storage fees"}
+                </span>
               </div>
             </div>
 
             <CardContent className="pt-6 space-y-4">
               <form onSubmit={handleRegisterPaid} className="space-y-4">
                 <div className="space-y-1.5">
-                  <Label htmlFor="paid-name" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  <Label
+                    htmlFor="paid-name"
+                    className="text-xs font-semibold uppercase tracking-wider text-muted-foreground"
+                  >
                     {lang === "ar" ? "الاسم الكامل" : "Owner Full Name"}
                   </Label>
                   <div className="relative">
                     <User className="absolute left-3 top-2.5 h-4.5 w-4.5 text-zinc-400" />
-                    <Input 
-                      id="paid-name" 
-                      placeholder={lang === "ar" ? "أدخل اسمك الكامل" : "Enter your full name"} 
-                      required 
+                    <Input
+                      id="paid-name"
+                      placeholder={lang === "ar" ? "أدخل اسمك الكامل" : "Enter your full name"}
+                      required
                       className="pl-10 text-sm"
                       value={officialFullName}
                       onChange={(e) => setOfficialFullName(e.target.value)}
@@ -1022,13 +1204,20 @@ function OnboardPage() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1.5">
-                    <Label htmlFor="paid-phone" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    <Label
+                      htmlFor="paid-phone"
+                      className="text-xs font-semibold uppercase tracking-wider text-muted-foreground"
+                    >
                       {lang === "ar" ? "رقم الهاتف / الواتساب" : "WhatsApp Number"}
                     </Label>
-                    <Input 
-                      id="paid-phone" 
-                      placeholder={lang === "ar" ? "أدخل رقم الواتساب (مثال: 39955508)" : "Enter WhatsApp number (e.g. 39955508)"} 
-                      required 
+                    <Input
+                      id="paid-phone"
+                      placeholder={
+                        lang === "ar"
+                          ? "أدخل رقم الواتساب (مثال: 39955508)"
+                          : "Enter WhatsApp number (e.g. 39955508)"
+                      }
+                      required
                       className="text-sm"
                       value={officialContactNumber}
                       onChange={(e) => setOfficialContactNumber(e.target.value)}
@@ -1037,14 +1226,21 @@ function OnboardPage() {
                   </div>
 
                   <div className="space-y-1.5">
-                    <Label htmlFor="paid-email" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    <Label
+                      htmlFor="paid-email"
+                      className="text-xs font-semibold uppercase tracking-wider text-muted-foreground"
+                    >
                       {lang === "ar" ? "البريد الإلكتروني" : "Email Address"}
                     </Label>
-                    <Input 
-                      id="paid-email" 
-                      type="email" 
-                      placeholder={lang === "ar" ? "أدخل البريد الإلكتروني (مثال: name@domain.com)" : "Enter email address (e.g. name@domain.com)"} 
-                      required 
+                    <Input
+                      id="paid-email"
+                      type="email"
+                      placeholder={
+                        lang === "ar"
+                          ? "أدخل البريد الإلكتروني (مثال: name@domain.com)"
+                          : "Enter email address (e.g. name@domain.com)"
+                      }
+                      required
                       className="text-sm"
                       value={officialEmail}
                       onChange={(e) => setOfficialEmail(e.target.value)}
@@ -1054,39 +1250,60 @@ function OnboardPage() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label htmlFor="paid-subdomain" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  <Label
+                    htmlFor="paid-subdomain"
+                    className="text-xs font-semibold uppercase tracking-wider text-muted-foreground"
+                  >
                     {lang === "ar" ? "رابط موقع متجرك المطلوب" : "Desired Boutique Subdomain"}
                   </Label>
                   <div className="relative flex items-center">
-                    <span className="absolute left-3 text-xs text-zinc-400 font-medium font-mono select-none">https://</span>
-                    <Input 
-                      id="paid-subdomain" 
-                      placeholder={lang === "ar" ? "أدخل اسم المتجر المطلوب (مثال: velvet)" : "Enter boutique name (e.g. velvet)"} 
-                      required 
+                    <span className="absolute left-3 text-xs text-zinc-400 font-medium font-mono select-none">
+                      https://
+                    </span>
+                    <Input
+                      id="paid-subdomain"
+                      placeholder={
+                        lang === "ar"
+                          ? "أدخل اسم المتجر المطلوب (مثال: velvet)"
+                          : "Enter boutique name (e.g. velvet)"
+                      }
+                      required
                       className="pl-16 pr-24 font-mono text-xs text-primary"
                       value={officialSubdomain}
                       onChange={(e) => setOfficialSubdomain(e.target.value)}
                       autoComplete="off"
                     />
-                    <span className="absolute right-3 text-[10px] text-zinc-400 font-mono font-bold select-none">.boutq.store</span>
+                    <span className="absolute right-3 text-[10px] text-zinc-400 font-mono font-bold select-none">
+                      .boutq.store
+                    </span>
                   </div>
-                  
+
                   {officialSubdomain && (
                     <p className="text-[10px] flex items-center gap-1 mt-1">
                       {officialSubdomainChecking ? (
                         <>
                           <Loader2 className="h-3 w-3 animate-spin text-zinc-400" />
-                          <span className="text-muted-foreground">{lang === "ar" ? "جاري التحقق..." : "Checking availability..."}</span>
+                          <span className="text-muted-foreground">
+                            {lang === "ar" ? "جاري التحقق..." : "Checking availability..."}
+                          </span>
                         </>
                       ) : officialSubdomainAvailable === true ? (
                         <>
                           <Check className="h-3 w-3 text-emerald-500" />
-                          <span className="text-emerald-500 font-semibold">{lang === "ar" ? "الرابط متوفر وصالح للاستخدام!" : "Subdomain handle is available!"}</span>
+                          <span className="text-emerald-500 font-semibold">
+                            {lang === "ar"
+                              ? "الرابط متوفر وصالح للاستخدام!"
+                              : "Subdomain handle is available!"}
+                          </span>
                         </>
                       ) : (
                         <>
                           <span className="h-1.5 w-1.5 rounded-full bg-rose-500 inline-block" />
-                          <span className="text-rose-500 font-semibold">{lang === "ar" ? "الرابط محجوز مسبقاً!" : "This subdomain is already taken."}</span>
+                          <span className="text-rose-500 font-semibold">
+                            {lang === "ar"
+                              ? "الرابط محجوز مسبقاً!"
+                              : "This subdomain is already taken."}
+                          </span>
                         </>
                       )}
                     </p>
@@ -1094,11 +1311,17 @@ function OnboardPage() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label htmlFor="paid-business-type" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  <Label
+                    htmlFor="paid-business-type"
+                    className="text-xs font-semibold uppercase tracking-wider text-muted-foreground"
+                  >
                     {lang === "ar" ? "نوع النشاط التجاري" : "Business / Store Type"}
                   </Label>
                   <Select value={officialBusinessType} onValueChange={setOfficialBusinessType}>
-                    <SelectTrigger id="paid-business-type" className="h-10 text-xs text-primary bg-background border-zinc-200">
+                    <SelectTrigger
+                      id="paid-business-type"
+                      className="h-10 text-xs text-primary bg-background border-zinc-200"
+                    >
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -1122,27 +1345,39 @@ function OnboardPage() {
                 <div className="border border-zinc-100 dark:border-zinc-900 rounded-lg p-4 bg-zinc-50/50 dark:bg-zinc-950/20 space-y-4">
                   <div className="flex items-center gap-2 text-xs font-semibold text-zinc-700 dark:text-zinc-300">
                     <QrCode className="h-4 w-4 text-primary" />
-                    <span>{lang === "ar" ? "مسح السداد عبر بنفت بي (BenefitPay)" : "Scan & Pay via BenefitPay QR"}</span>
+                    <span>
+                      {lang === "ar"
+                        ? "مسح السداد عبر بنفت بي (BenefitPay)"
+                        : "Scan & Pay via BenefitPay QR"}
+                    </span>
                   </div>
 
                   <div className="flex flex-col sm:flex-row items-center gap-4 bg-white dark:bg-zinc-950 p-3 rounded border border-zinc-100 dark:border-zinc-900">
                     {/* Simulated or Custom Merchant QR Image */}
                     <div className="h-24 w-24 bg-zinc-50 dark:bg-zinc-900 rounded p-1.5 border border-zinc-100 dark:border-zinc-800 flex flex-col items-center justify-center shrink-0 overflow-hidden">
                       {benefitPayQrUrl ? (
-                        <img src={benefitPayQrUrl} alt="BenefitPay QR" className="h-full w-full object-contain animate-fade-in" />
+                        <img
+                          src={benefitPayQrUrl}
+                          alt="BenefitPay QR"
+                          className="h-full w-full object-contain animate-fade-in"
+                        />
                       ) : (
                         <>
                           <QrCode className="h-16 w-16 stroke-[1.25] text-zinc-900 dark:text-zinc-100" />
-                          <span className="text-[6px] font-bold text-zinc-400 dark:text-zinc-500 font-mono tracking-wider">BOUTQ-MERCHANT</span>
+                          <span className="text-[6px] font-bold text-zinc-400 dark:text-zinc-500 font-mono tracking-wider">
+                            BOUTQ-MERCHANT
+                          </span>
                         </>
                       )}
                     </div>
 
                     <div className="text-left space-y-1.5">
-                      <p className="text-xs font-bold text-zinc-800 dark:text-zinc-200">Merchant Account: {merchantAccountName}</p>
+                      <p className="text-xs font-bold text-zinc-800 dark:text-zinc-200">
+                        Merchant Account: {merchantAccountName}
+                      </p>
                       <p className="text-[10px] text-muted-foreground leading-relaxed">
-                        {lang === "ar" 
-                          ? `امسح رمز الاستجابة السريع سدد المبلغ الموضح (${displayPrice})، ثم ارفع لقطة شاشة تأكيد الدفع لتأكيد المعاملة.` 
+                        {lang === "ar"
+                          ? `امسح رمز الاستجابة السريع سدد المبلغ الموضح (${displayPrice})، ثم ارفع لقطة شاشة تأكيد الدفع لتأكيد المعاملة.`
                           : `Scan QR with BenefitPay, transfer ${displayPrice} to merchant, then upload the receipt screenshot below.`}
                       </p>
                     </div>
@@ -1152,7 +1387,9 @@ function OnboardPage() {
                   <div className="bg-zinc-50 dark:bg-zinc-900/40 p-2.5 rounded-xl border border-zinc-100 dark:border-zinc-85/80 flex items-center justify-between gap-3 text-xs select-none">
                     <div className="space-y-0.5 text-left">
                       <span className="text-[10px] text-muted-foreground uppercase tracking-wider block font-bold">
-                        {lang === "ar" ? "رقم الحساب الدولي (IBAN)" : "International Bank Account Number (IBAN)"}
+                        {lang === "ar"
+                          ? "رقم الحساب الدولي (IBAN)"
+                          : "International Bank Account Number (IBAN)"}
                       </span>
                       <code className="font-mono text-[11px] text-zinc-800 dark:text-zinc-200 font-bold">
                         BH12 KHCB 0000 0012 3456 7890
@@ -1165,13 +1402,17 @@ function OnboardPage() {
                       onClick={() => handleCopyIban("BH12KHCB0000001234567890")}
                       className="h-8 w-8 text-primary hover:text-white hover:bg-primary border-primary/20 shrink-0"
                     >
-                      {copiedIban ? <Check className="h-3.5 w-3.5 text-emerald-500" /> : <Copy className="h-3.5 w-3.5" />}
+                      {copiedIban ? (
+                        <Check className="h-3.5 w-3.5 text-emerald-500" />
+                      ) : (
+                        <Copy className="h-3.5 w-3.5" />
+                      )}
                     </Button>
                   </div>
 
                   {/* Receipt screenshot uploader */}
                   <div className="relative">
-                    <input 
+                    <input
                       id="onboarding-receipt-uploader"
                       type="file"
                       accept="image/jpeg,image/png,image/webp"
@@ -1184,22 +1425,34 @@ function OnboardPage() {
                       variant="outline"
                       className="w-full h-10 border-dashed border-primary/45 bg-primary/[0.01] hover:bg-primary/[0.04]"
                       disabled={uploading}
-                      onClick={() => document.getElementById("onboarding-receipt-uploader")?.click()}
+                      onClick={() =>
+                        document.getElementById("onboarding-receipt-uploader")?.click()
+                      }
                     >
                       {uploading ? (
                         <>
                           <Loader2 className="h-4 w-4 animate-spin text-primary" />
-                          <span className="text-xs">{lang === "ar" ? "جاري تشفير الرفع..." : "Encrypting R2 upload..."}</span>
+                          <span className="text-xs">
+                            {lang === "ar" ? "جاري تشفير الرفع..." : "Encrypting R2 upload..."}
+                          </span>
                         </>
                       ) : receiptKey ? (
                         <>
                           <Check className="h-4 w-4 text-emerald-500" />
-                          <span className="text-xs text-emerald-500 font-semibold">{lang === "ar" ? "تم رفع إيصال الدفع بنجاح!" : "Receipt Screenshot Saved!"}</span>
+                          <span className="text-xs text-emerald-500 font-semibold">
+                            {lang === "ar"
+                              ? "تم رفع إيصال الدفع بنجاح!"
+                              : "Receipt Screenshot Saved!"}
+                          </span>
                         </>
                       ) : (
                         <>
                           <UploadCloud className="h-4 w-4 text-primary" />
-                          <span className="text-xs">{lang === "ar" ? "تحميل لقطة شاشة إيصال الدفع" : "Upload Receipt Screenshot"}</span>
+                          <span className="text-xs">
+                            {lang === "ar"
+                              ? "تحميل لقطة شاشة إيصال الدفع"
+                              : "Upload Receipt Screenshot"}
+                          </span>
                         </>
                       )}
                     </Button>
@@ -1215,10 +1468,15 @@ function OnboardPage() {
                   </p>
                 </div>
 
-                <Button 
-                  type="submit" 
+                <Button
+                  type="submit"
                   className="w-full h-11 text-xs font-semibold uppercase tracking-wider gap-2 bg-primary text-white mt-4"
-                  disabled={officialSubdomainChecking || officialSubdomainAvailable === false || uploading || !receiptKey}
+                  disabled={
+                    officialSubdomainChecking ||
+                    officialSubdomainAvailable === false ||
+                    uploading ||
+                    !receiptKey
+                  }
                 >
                   <Building2 className="h-4 w-4" />
                   {lang === "ar" ? "إرسال طلب التفعيل الرسمي" : "Submit Registration & Pay"}
@@ -1226,7 +1484,6 @@ function OnboardPage() {
               </form>
             </CardContent>
           </Card>
-          
         </div>
 
         {/* Footnote and sign-in links */}
@@ -1241,12 +1498,12 @@ function OnboardPage() {
       {/* Dynamic Features Transparency Modal */}
       {showFeaturesModal && (
         <div className="fixed inset-0 bg-black/70 backdrop-blur-md z-50 flex items-center justify-center p-4 overflow-y-auto animate-in fade-in duration-200">
-          <div 
+          <div
             dir={lang === "ar" ? "rtl" : "ltr"}
             className="bg-zinc-950/95 border border-zinc-800/85 rounded-3xl p-5 md:p-8 max-w-4xl w-full max-h-[90vh] md:max-h-[85vh] lg:max-h-none overflow-y-auto shadow-2xl relative animate-in fade-in zoom-in-95 duration-200 text-white select-none"
           >
             {/* Close Button */}
-            <button 
+            <button
               onClick={() => setShowFeaturesModal(false)}
               className={`absolute top-4 md:top-6 text-zinc-400 hover:text-white bg-zinc-900 hover:bg-zinc-800 h-8 w-8 rounded-full flex items-center justify-center transition-all z-10 ${
                 lang === "ar" ? "left-4 md:left-6" : "right-4 md:right-6"
@@ -1256,16 +1513,22 @@ function OnboardPage() {
             </button>
 
             {/* Header */}
-            <div className={`mb-6 flex items-center gap-3 border-b border-zinc-800/50 pb-4 ${
-              lang === "ar" ? "pl-10" : "pr-10"
-            }`}>
+            <div
+              className={`mb-6 flex items-center gap-3 border-b border-zinc-800/50 pb-4 ${
+                lang === "ar" ? "pl-10" : "pr-10"
+              }`}
+            >
               <Store className="h-6 w-6 text-[#B76E79] shrink-0" />
               <div>
                 <h3 className="text-lg md:text-xl font-display font-medium">
-                  {lang === "ar" ? "المميزات الفاخرة لمنصة Boutq" : "Premium Features of the Boutq Platform"}
+                  {lang === "ar"
+                    ? "المميزات الفاخرة لمنصة Boutq"
+                    : "Premium Features of the Boutq Platform"}
                 </h3>
                 <p className="text-xs text-zinc-400 mt-0.5">
-                  {lang === "ar" ? "تفاصيل الشفافية الفنية والميزات المتوفرة في الكود البرمجي" : "Full technical transparency of features ready in our codebase"}
+                  {lang === "ar"
+                    ? "تفاصيل الشفافية الفنية والميزات المتوفرة في الكود البرمجي"
+                    : "Full technical transparency of features ready in our codebase"}
                 </p>
               </div>
             </div>
@@ -1281,15 +1544,27 @@ function OnboardPage() {
                 <ul className="space-y-2 text-xs text-zinc-300">
                   <li className="flex gap-2">
                     <span className="text-emerald-500 font-bold">•</span>
-                    <span>{lang === "ar" ? "روابط فرعية مخصصة فاخرة (اسم_متجرك.boutq.store)" : "Sleek custom subdomain handles (yourname.boutq.store)"}</span>
+                    <span>
+                      {lang === "ar"
+                        ? "روابط فرعية مخصصة فاخرة (اسم_متجرك.boutq.store)"
+                        : "Sleek custom subdomain handles (yourname.boutq.store)"}
+                    </span>
                   </li>
                   <li className="flex gap-2">
                     <span className="text-emerald-500 font-bold">•</span>
-                    <span>{lang === "ar" ? "تصميم محمول فاخر متجاوب ومريح لنظر المشتري" : "Couture mobile-first layout optimized for luxury catalog browsing"}</span>
+                    <span>
+                      {lang === "ar"
+                        ? "تصميم محمول فاخر متجاوب ومريح لنظر المشتري"
+                        : "Couture mobile-first layout optimized for luxury catalog browsing"}
+                    </span>
                   </li>
                   <li className="flex gap-2">
                     <span className="text-emerald-500 font-bold">•</span>
-                    <span>{lang === "ar" ? "دعم كامل للغات المتعددة وعرض عملات متعددة (BHD, SAR, AED)" : "Automatic localized languages (AR/EN) and multi-currency displays"}</span>
+                    <span>
+                      {lang === "ar"
+                        ? "دعم كامل للغات المتعددة وعرض عملات متعددة (BHD, SAR, AED)"
+                        : "Automatic localized languages (AR/EN) and multi-currency displays"}
+                    </span>
                   </li>
                 </ul>
               </div>
@@ -1303,15 +1578,27 @@ function OnboardPage() {
                 <ul className="space-y-2 text-xs text-zinc-300">
                   <li className="flex gap-2">
                     <span className="text-emerald-500 font-bold">•</span>
-                    <span>{lang === "ar" ? "ربط فوري لرمز الاستجابة السريع لمحفظة BenefitPay" : "Seamless custom QR image uploads for local BenefitPay transfers"}</span>
+                    <span>
+                      {lang === "ar"
+                        ? "ربط فوري لرمز الاستجابة السريع لمحفظة BenefitPay"
+                        : "Seamless custom QR image uploads for local BenefitPay transfers"}
+                    </span>
                   </li>
                   <li className="flex gap-2">
                     <span className="text-emerald-500 font-bold">•</span>
-                    <span>{lang === "ar" ? "خيارات دفع مرنة تشمل الدفع عند الاستلام (COD)" : "Cash on Delivery checkout parameters integrated out-of-the-box"}</span>
+                    <span>
+                      {lang === "ar"
+                        ? "خيارات دفع مرنة تشمل الدفع عند الاستلام (COD)"
+                        : "Cash on Delivery checkout parameters integrated out-of-the-box"}
+                    </span>
                   </li>
                   <li className="flex gap-2">
                     <span className="text-emerald-500 font-bold">•</span>
-                    <span>{lang === "ar" ? "إرسال تفاصيل فواتير الطلبات فوراً لواتساب المتجر بنقرة واحدة" : "Instant order detail generation dispatched directly to owner's WhatsApp"}</span>
+                    <span>
+                      {lang === "ar"
+                        ? "إرسال تفاصيل فواتير الطلبات فوراً لواتساب المتجر بنقرة واحدة"
+                        : "Instant order detail generation dispatched directly to owner's WhatsApp"}
+                    </span>
                   </li>
                 </ul>
               </div>
@@ -1325,15 +1612,27 @@ function OnboardPage() {
                 <ul className="space-y-2 text-xs text-zinc-300">
                   <li className="flex gap-2">
                     <span className="text-emerald-500 font-bold">•</span>
-                    <span>{lang === "ar" ? "كتالوج إدارة المنتجات وتتبع كميات المخزون المتعددة" : "Dynamic product variants, size grids, and inventory stock control"}</span>
+                    <span>
+                      {lang === "ar"
+                        ? "كتالوج إدارة المنتجات وتتبع كميات المخزون المتعددة"
+                        : "Dynamic product variants, size grids, and inventory stock control"}
+                    </span>
                   </li>
                   <li className="flex gap-2">
                     <span className="text-emerald-500 font-bold">•</span>
-                    <span>{lang === "ar" ? "سجل تتبع النفقات والمصروفات اليومية للتشغيل" : "Operational expense tracking and real-time dashboard analytics"}</span>
+                    <span>
+                      {lang === "ar"
+                        ? "سجل تتبع النفقات والمصروفات اليومية للتشغيل"
+                        : "Operational expense tracking and real-time dashboard analytics"}
+                    </span>
                   </li>
                   <li className="flex gap-2">
                     <span className="text-emerald-500 font-bold">•</span>
-                    <span>{lang === "ar" ? "نظام أمان متطور وصلاحيات مخصصة لأعضاء الفريق" : "Advanced RLS data isolating, secure passwordless logins & staff keys"}</span>
+                    <span>
+                      {lang === "ar"
+                        ? "نظام أمان متطور وصلاحيات مخصصة لأعضاء الفريق"
+                        : "Advanced RLS data isolating, secure passwordless logins & staff keys"}
+                    </span>
                   </li>
                 </ul>
               </div>
@@ -1347,15 +1646,27 @@ function OnboardPage() {
                 <ul className="space-y-2 text-xs text-zinc-300">
                   <li className="flex gap-2">
                     <span className="text-emerald-500 font-bold">•</span>
-                    <span>{lang === "ar" ? "ضمان فني متكامل وصيانة خلو الأخطاء لـ 6 أشهر" : "6 Months comprehensive technical bug fixes and support"}</span>
+                    <span>
+                      {lang === "ar"
+                        ? "ضمان فني متكامل وصيانة خلو الأخطاء لـ 6 أشهر"
+                        : "6 Months comprehensive technical bug fixes and support"}
+                    </span>
                   </li>
                   <li className="flex gap-2">
                     <span className="text-emerald-500 font-bold">•</span>
-                    <span>{lang === "ar" ? "استضافة صور سريعة مشفرة بالكامل عبر Cloudflare R2" : "Secure localized imagery content cached over Cloudflare R2"}</span>
+                    <span>
+                      {lang === "ar"
+                        ? "استضافة صور سريعة مشفرة بالكامل عبر Cloudflare R2"
+                        : "Secure localized imagery content cached over Cloudflare R2"}
+                    </span>
                   </li>
                   <li className="flex gap-2">
                     <span className="text-emerald-500 font-bold">•</span>
-                    <span>{lang === "ar" ? "صفر رسوم استضافة أو صيانة برمجية شهرية مدى الحياة" : "Pay once, host forever with zero recurring monthly platform fees"}</span>
+                    <span>
+                      {lang === "ar"
+                        ? "صفر رسوم استضافة أو صيانة برمجية شهرية مدى الحياة"
+                        : "Pay once, host forever with zero recurring monthly platform fees"}
+                    </span>
                   </li>
                 </ul>
               </div>
@@ -1363,7 +1674,7 @@ function OnboardPage() {
 
             {/* Footer Action */}
             <div className="mt-6 flex justify-end gap-3 border-t border-zinc-800/50 pt-4">
-              <Button 
+              <Button
                 onClick={() => setShowFeaturesModal(false)}
                 className="bg-[#B76E79] hover:bg-[#a35e69] text-white text-xs font-semibold rounded-xl px-5 h-10"
               >

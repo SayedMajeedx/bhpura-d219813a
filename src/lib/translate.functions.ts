@@ -1,5 +1,10 @@
 import { createServerFn } from "@tanstack/react-start";
-import { requireSupabaseAuth, getEnvVariableAsync, getEnvDiagnostics, getGeminiCredentials } from "@/integrations/supabase/auth-middleware";
+import {
+  requireSupabaseAuth,
+  getEnvVariableAsync,
+  getEnvDiagnostics,
+  getGeminiCredentials,
+} from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
 
 const Input = z.object({
@@ -19,9 +24,14 @@ export const translateProductText = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .validator((raw: unknown) => Input.parse(raw))
   .handler(async ({ data, context }) => {
-    const { data: allowed, error: quotaError } = await (context.supabase.rpc as any)("consume_api_quota", {
-      p_action: "translation", p_limit: 100, p_window_minutes: 60,
-    });
+    const { data: allowed, error: quotaError } = await (context.supabase.rpc as any)(
+      "consume_api_quota",
+      {
+        p_action: "translation",
+        p_limit: 100,
+        p_window_minutes: 60,
+      },
+    );
     if (quotaError || !allowed) throw new Error("RATE_LIMITED");
     if (data.from === data.to) return { text: data.text };
 
@@ -31,12 +41,14 @@ export const translateProductText = createServerFn({ method: "POST" })
 
     if (!apiKey) {
       const diag = await getEnvDiagnostics();
-      throw new Error(`Missing GEMINI_API_KEY. Trace: [${creds.diagnostics || "no-trace"}]. Available env keys: [${diag.keys.join(", ")}]. (Cloudflare: ${diag.hasCloudflare}, Node: ${diag.hasProcess})`);
+      throw new Error(
+        `Missing GEMINI_API_KEY. Trace: [${creds.diagnostics || "no-trace"}]. Available env keys: [${diag.keys.join(", ")}]. (Cloudflare: ${diag.hasCloudflare}, Node: ${diag.hasProcess})`,
+      );
     }
 
     // Resolve model name elegantly and robustly
     let finalModel = modelInput.trim();
-    
+
     // If they saved a full URL in the model/base_url field, extract the model identifier or use the URL
     if (finalModel.startsWith("http://") || finalModel.startsWith("https://")) {
       try {
@@ -77,32 +89,38 @@ export const translateProductText = createServerFn({ method: "POST" })
     ].join("\n");
 
     let activeApiVersion = "v1beta";
-    let response = await fetch(`https://generativelanguage.googleapis.com/${activeApiVersion}/models/${finalModel}:generateContent`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
-      body: JSON.stringify({
-        contents: [{ role: "user", parts: [{ text: prompt }] }],
-        generationConfig: { 
-          temperature: 0.2, 
-          maxOutputTokens: 2048,
-        },
-      }),
-    });
-
-    // If v1beta returns 404, gracefully fall back to v1
-    if (response.status === 404) {
-      const fallbackApiVersion = "v1";
-      const fallbackResponse = await fetch(`https://generativelanguage.googleapis.com/${fallbackApiVersion}/models/${finalModel}:generateContent`, {
+    let response = await fetch(
+      `https://generativelanguage.googleapis.com/${activeApiVersion}/models/${finalModel}:generateContent`,
+      {
         method: "POST",
         headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
         body: JSON.stringify({
           contents: [{ role: "user", parts: [{ text: prompt }] }],
-          generationConfig: { 
-            temperature: 0.2, 
+          generationConfig: {
+            temperature: 0.2,
             maxOutputTokens: 2048,
           },
         }),
-      });
+      },
+    );
+
+    // If v1beta returns 404, gracefully fall back to v1
+    if (response.status === 404) {
+      const fallbackApiVersion = "v1";
+      const fallbackResponse = await fetch(
+        `https://generativelanguage.googleapis.com/${fallbackApiVersion}/models/${finalModel}:generateContent`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
+          body: JSON.stringify({
+            contents: [{ role: "user", parts: [{ text: prompt }] }],
+            generationConfig: {
+              temperature: 0.2,
+              maxOutputTokens: 2048,
+            },
+          }),
+        },
+      );
 
       if (fallbackResponse.ok || fallbackResponse.status !== 404) {
         activeApiVersion = fallbackApiVersion;
@@ -114,15 +132,27 @@ export const translateProductText = createServerFn({ method: "POST" })
     if (response.status === 401 || response.status === 403) throw new Error("GEMINI_AUTH_FAILED");
     if (!response.ok) {
       const details = await response.text().catch(() => "");
-      console.error(`[translateProductText] Gemini error ${response.status}: ${details.slice(0, 300)}`);
+      console.error(
+        `[translateProductText] Gemini error ${response.status}: ${details.slice(0, 300)}`,
+      );
       if (response.status === 404) {
-        throw new Error(`GEMINI_MODEL_UNAVAILABLE (Tried model: "${finalModel}" on API: "${activeApiVersion}". Response: ${details.slice(0, 150)})`);
+        throw new Error(
+          `GEMINI_MODEL_UNAVAILABLE (Tried model: "${finalModel}" on API: "${activeApiVersion}". Response: ${details.slice(0, 150)})`,
+        );
       }
-      throw new Error(`GEMINI_PROVIDER_ERROR (Status: ${response.status}. API: "${activeApiVersion}". Response: ${details.slice(0, 150)})`);
+      throw new Error(
+        `GEMINI_PROVIDER_ERROR (Status: ${response.status}. API: "${activeApiVersion}". Response: ${details.slice(0, 150)})`,
+      );
     }
 
-    const payload = await response.json() as { candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }> };
-    const out = payload.candidates?.[0]?.content?.parts?.map((part) => part.text ?? "").join("").trim() ?? "";
+    const payload = (await response.json()) as {
+      candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>;
+    };
+    const out =
+      payload.candidates?.[0]?.content?.parts
+        ?.map((part) => part.text ?? "")
+        .join("")
+        .trim() ?? "";
     if (!out) throw new Error("GEMINI_EMPTY_RESPONSE");
 
     return { text: out };

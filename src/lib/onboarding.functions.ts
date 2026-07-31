@@ -24,7 +24,7 @@ const CreateRequestInput = z.object({
 
 const AdminActionInput = z.object({
   requestId: z.string().uuid(),
-  planType: z.enum(["lifetime", "trial"]).optional()
+  planType: z.enum(["lifetime", "trial"]).optional(),
 });
 
 const UpdatePriceInput = z.object({
@@ -36,7 +36,7 @@ async function requireSuperAdmin(context: any) {
   const { data: isSuperAdmin } = await context.supabase.rpc("is_admin");
   const email = (context.claims?.email || "").toLowerCase();
   const isFixedSuperAdmin = email === "majeed@hotmail.it" || email === "majeed@hotmail.com";
-  
+
   if (!isSuperAdmin && !isFixedSuperAdmin) {
     throw new Error("UNAUTHORIZED_SUPER_ADMIN_ONLY");
   }
@@ -50,10 +50,11 @@ export const getOnboardingReceiptUploadUrl = createServerFn({ method: "POST" })
     try {
       const { getEvent } = await import(/* @vite-ignore */ "vinxi/http");
       const event = getEvent();
-      env = event?.context?.cloudflare?.env || 
-            event?.context?.env || 
-            event?.context?.cloudflare || 
-            (event?.context as any)?.cloudflare?.env;
+      env =
+        event?.context?.cloudflare?.env ||
+        event?.context?.env ||
+        event?.context?.cloudflare ||
+        (event?.context as any)?.cloudflare?.env;
     } catch {}
 
     if (!env) {
@@ -65,13 +66,15 @@ export const getOnboardingReceiptUploadUrl = createServerFn({ method: "POST" })
 
     const privateBucket = env?.R2_PRIVATE_BUCKET || env?.R2_PRIVATE_BUCKET_NAME;
     if (!privateBucket) {
-      console.warn("R2_PRIVATE_BUCKET environment variable is missing in current execution context.");
+      console.warn(
+        "R2_PRIVATE_BUCKET environment variable is missing in current execution context.",
+      );
     }
 
     const { createPrivateUploadUrl } = await import("@/lib/private-r2.server");
     const registrationId = crypto.randomUUID();
     const objectKey = `onboarding/receipts/${registrationId}.${imageTypes[data.contentType]}`;
-    
+
     const uploadUrl = await createPrivateUploadUrl(objectKey, data.contentType);
     return { objectKey, uploadUrl };
   });
@@ -81,19 +84,17 @@ export const createTenantRequest = createServerFn({ method: "POST" })
   .validator((raw: unknown) => CreateRequestInput.parse(raw))
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { error } = await supabaseAdmin
-      .from("tenant_requests")
-      .insert({
-        full_name: data.fullName,
-        email: data.email,
-        contact_number: data.contactNumber,
-        desired_subdomain: data.desiredSubdomain,
-        request_type: data.requestType,
-        status: "pending",
-        benefit_receipt_url: data.benefitReceiptUrl || null,
-        payment_verified: false,
-        business_type: data.businessType || null
-      });
+    const { error } = await supabaseAdmin.from("tenant_requests").insert({
+      full_name: data.fullName,
+      email: data.email,
+      contact_number: data.contactNumber,
+      desired_subdomain: data.desiredSubdomain,
+      request_type: data.requestType,
+      status: "pending",
+      benefit_receipt_url: data.benefitReceiptUrl || null,
+      payment_verified: false,
+      business_type: data.businessType || null,
+    });
 
     if (error) {
       console.error("Supabase tenant request insert failure:", error);
@@ -104,26 +105,25 @@ export const createTenantRequest = createServerFn({ method: "POST" })
   });
 
 // 3. Dynamic pricing retrieval server function (reading from system_settings)
-export const getOnboardingPrice = createServerFn({ method: "GET" })
-  .handler(async () => {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data, error } = await supabaseAdmin
-      .from("system_settings")
-      .select("base_price_bhd, discount_price_bhd")
-      .eq("id", 1)
-      .maybeSingle();
+export const getOnboardingPrice = createServerFn({ method: "GET" }).handler(async () => {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data, error } = await supabaseAdmin
+    .from("system_settings")
+    .select("base_price_bhd, discount_price_bhd")
+    .eq("id", 1)
+    .maybeSingle();
 
-    if (error || !data) {
-      try {
-        const { data: rpcVal } = await supabaseAdmin.rpc("get_onboarding_active_price");
-        if (rpcVal) return rpcVal;
-      } catch {}
-      return "55 BHD";
-    }
+  if (error || !data) {
+    try {
+      const { data: rpcVal } = await supabaseAdmin.rpc("get_onboarding_active_price");
+      if (rpcVal) return rpcVal;
+    } catch {}
+    return "55 BHD";
+  }
 
-    const active = data.discount_price_bhd !== null ? data.discount_price_bhd : data.base_price_bhd;
-    return `${active} BHD`;
-  });
+  const active = data.discount_price_bhd !== null ? data.discount_price_bhd : data.base_price_bhd;
+  return `${active} BHD`;
+});
 
 // 4. Update onboarding registration price in system_settings (Superadmin only)
 export const updateRegistrationPrice = createServerFn({ method: "POST" })
@@ -132,37 +132,37 @@ export const updateRegistrationPrice = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await requireSuperAdmin(context);
 
-    const parsedVal = parseFloat(data.newPrice.replace(/[^0-9.]/g, "")) || 55.00;
+    const parsedVal = parseFloat(data.newPrice.replace(/[^0-9.]/g, "")) || 55.0;
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { error } = await supabaseAdmin
-      .from("system_settings")
-      .upsert({
+    const { error } = await supabaseAdmin.from("system_settings").upsert(
+      {
         id: 1,
         base_price_bhd: parsedVal,
-        updated_at: new Date().toISOString()
-      }, { onConflict: "id" });
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "id" },
+    );
 
     if (error) throw error;
     return { success: true, updatedPrice: data.newPrice };
   });
 
 // 4.1. Get full platform settings (Public)
-export const getPlatformSettings = createServerFn({ method: "GET" })
-  .handler(async () => {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data, error } = await supabaseAdmin
-      .from("system_settings")
-      .select("*")
-      .eq("id", 1)
-      .maybeSingle();
+export const getPlatformSettings = createServerFn({ method: "GET" }).handler(async () => {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data, error } = await supabaseAdmin
+    .from("system_settings")
+    .select("*")
+    .eq("id", 1)
+    .maybeSingle();
 
-    if (error) {
-      console.error("Failed to query platform system_settings:", error);
-      return null;
-    }
-    return data;
-  });
+  if (error) {
+    console.error("Failed to query platform system_settings:", error);
+    return null;
+  }
+  return data;
+});
 
 // 4.2. Update platform settings (Superadmin only)
 const UpdatePlatformSettingsInput = z.object({
@@ -182,9 +182,8 @@ export const updatePlatformSettings = createServerFn({ method: "POST" })
     await requireSuperAdmin(context);
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { error } = await supabaseAdmin
-      .from("system_settings")
-      .upsert({
+    const { error } = await supabaseAdmin.from("system_settings").upsert(
+      {
         id: 1,
         base_price_bhd: data.basePriceBhd,
         discount_price_bhd: data.discountPriceBhd,
@@ -193,8 +192,10 @@ export const updatePlatformSettings = createServerFn({ method: "POST" })
         merchant_account_name: data.merchantAccountName,
         whatsapp_support_number: data.whatsappSupportNumber,
         superadmin_impersonation_mutation_allowed: data.superadminImpersonationMutationAllowed,
-        updated_at: new Date().toISOString()
-      }, { onConflict: "id" });
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "id" },
+    );
 
     if (error) {
       console.error("Failed to update platform settings:", error);
@@ -257,7 +258,7 @@ export const approveTenantRequest = createServerFn({ method: "POST" })
       .update({
         status: "approved",
         payment_verified: true,
-        updated_at: new Date().toISOString()
+        updated_at: new Date().toISOString(),
       })
       .eq("id", data.requestId);
 
@@ -265,8 +266,12 @@ export const approveTenantRequest = createServerFn({ method: "POST" })
 
     // Fetch the created brand by slug to set its plan details
     const brandSlug = request.desired_subdomain.toLowerCase().trim();
-    const approvedPlanType = data.planType || (request.request_type === "trial" ? "trial" : "lifetime");
-    const trialEndsAt = approvedPlanType === "trial" ? new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString() : null;
+    const approvedPlanType =
+      data.planType || (request.request_type === "trial" ? "trial" : "lifetime");
+    const trialEndsAt =
+      approvedPlanType === "trial"
+        ? new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString()
+        : null;
 
     // Since database triggers create the brand row, let's query it and update it
     const { data: brandRow } = await context.supabase
@@ -282,7 +287,7 @@ export const approveTenantRequest = createServerFn({ method: "POST" })
           plan_type: approvedPlanType,
           trial_ends_at: trialEndsAt,
           business_type: (request as any).business_type || null,
-          updated_at: new Date().toISOString()
+          updated_at: new Date().toISOString(),
         })
         .eq("id", brandRow.id);
 
@@ -305,7 +310,7 @@ export const rejectTenantRequest = createServerFn({ method: "POST" })
       .from("tenant_requests")
       .update({
         status: "rejected",
-        updated_at: new Date().toISOString()
+        updated_at: new Date().toISOString(),
       })
       .eq("id", data.requestId);
 
@@ -315,7 +320,7 @@ export const rejectTenantRequest = createServerFn({ method: "POST" })
 
 const LogImpersonationInput = z.object({
   targetTenantId: z.string().uuid(),
-  reason: z.string().optional()
+  reason: z.string().optional(),
 });
 
 // 7. Log Impersonation Start (Superadmin only)
@@ -325,14 +330,12 @@ export const logImpersonationStart = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await requireSuperAdmin(context);
 
-    const { error } = await context.supabase
-      .from("system_audit_logs")
-      .insert({
-        operator_id: context.userId,
-        target_tenant_id: data.targetTenantId,
-        action_type: "impersonation_start",
-        reason: data.reason || "Superadmin troubleshooting session initialized."
-      });
+    const { error } = await context.supabase.from("system_audit_logs").insert({
+      operator_id: context.userId,
+      target_tenant_id: data.targetTenantId,
+      action_type: "impersonation_start",
+      reason: data.reason || "Superadmin troubleshooting session initialized.",
+    });
 
     if (error) {
       console.error("Audit logging failed:", error);

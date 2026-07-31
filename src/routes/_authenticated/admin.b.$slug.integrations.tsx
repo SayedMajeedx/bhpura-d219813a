@@ -8,9 +8,34 @@ import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
-import { Plug, Plus, Pencil, Trash2, Copy, ShieldAlert, Mail, RefreshCw, Sparkles, CreditCard, Truck } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import {
+  Plug,
+  Plus,
+  Pencil,
+  Trash2,
+  Copy,
+  ShieldAlert,
+  Mail,
+  RefreshCw,
+  Sparkles,
+  CreditCard,
+  Truck,
+} from "lucide-react";
 import { toast } from "sonner";
 import { useT, useI18n } from "@/lib/i18n";
 import { useBrand } from "@/lib/brand-context";
@@ -47,9 +72,12 @@ const PROVIDER_PRESETS = [
 
 const getProviderIcon = (provider: string) => {
   if (provider === "gemini") return <Sparkles className="h-5 w-5 text-purple-500" />;
-  if (provider === "resend_customer_email" || provider === "sendpulse_admin") return <Mail className="h-5 w-5 text-primary" />;
-  if (provider === "stripe" || provider === "tap" || provider === "benefit") return <CreditCard className="h-5 w-5 text-indigo-500" />;
-  if (provider === "aramex" || provider === "posta_plus") return <Truck className="h-5 w-5 text-amber-500" />;
+  if (provider === "resend_customer_email" || provider === "sendpulse_admin")
+    return <Mail className="h-5 w-5 text-primary" />;
+  if (provider === "stripe" || provider === "tap" || provider === "benefit")
+    return <CreditCard className="h-5 w-5 text-indigo-500" />;
+  if (provider === "aramex" || provider === "posta_plus")
+    return <Truck className="h-5 w-5 text-amber-500" />;
   return <Plug className="h-5 w-5 text-muted-foreground" />;
 };
 
@@ -66,7 +94,9 @@ function IntegrationsPage() {
   const q = useQuery({
     queryKey: ["integrations", brandId],
     queryFn: async () => {
-      const { data, error } = await (supabase.rpc as any)("list_integration_credentials", { p_brand_id: brandId });
+      const { data, error } = await (supabase.rpc as any)("list_integration_credentials", {
+        p_brand_id: brandId,
+      });
       if (error) throw error;
       return (data ?? []) as Row[];
     },
@@ -74,13 +104,19 @@ function IntegrationsPage() {
 
   const del = async (id: string) => {
     if (!confirm(isAr ? "حذف هذا التكامل؟" : "Delete this integration?")) return;
-    const { error } = await (supabase.rpc as any)("delete_integration_credential", { p_id: id, p_brand_id: brandId });
+    const { error } = await (supabase.rpc as any)("delete_integration_credential", {
+      p_id: id,
+      p_brand_id: brandId,
+    });
     if (error) return toast.error(error.message);
     toast.success(t("common.delete"));
     qc.invalidateQueries({ queryKey: ["integrations", brandId] });
   };
 
-  const webhookBase = typeof window !== "undefined" ? `${window.location.origin}/api/public/webhooks` : "https://…/api/public/webhooks";
+  const webhookBase =
+    typeof window !== "undefined"
+      ? `${window.location.origin}/api/public/webhooks`
+      : "https://…/api/public/webhooks";
 
   return (
     <div className="mx-auto max-w-5xl space-y-6 p-4 sm:p-6 lg:p-8 animate-fade-in">
@@ -89,19 +125,36 @@ function IntegrationsPage() {
           <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-primary mb-1.5 font-semibold">
             <Plug className="h-3.5 w-3.5" /> {t("nav.integrations")}
           </div>
-          <h1 className="font-display text-4xl font-extrabold tracking-tight bg-clip-text bg-gradient-to-r from-slate-900 via-slate-800 to-slate-950 dark:from-slate-50 dark:to-slate-300">{t("integrations.title")}</h1>
-          <p className="mt-1.5 text-muted-foreground text-sm max-w-md">{t("integrations.subtitle")}</p>
+          <h1 className="font-display text-4xl font-extrabold tracking-tight bg-clip-text bg-gradient-to-r from-slate-900 via-slate-800 to-slate-950 dark:from-slate-50 dark:to-slate-300">
+            {t("integrations.title")}
+          </h1>
+          <p className="mt-1.5 text-muted-foreground text-sm max-w-md">
+            {t("integrations.subtitle")}
+          </p>
         </div>
-        <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) setEditing(null); }}>
+        <Dialog
+          open={open}
+          onOpenChange={(v) => {
+            setOpen(v);
+            if (!v) setEditing(null);
+          }}
+        >
           <DialogTrigger asChild>
-            <Button onClick={() => setEditing(null)} className="shadow-sm transition-all duration-200 hover:shadow hover:scale-[1.01] active:scale-95">
+            <Button
+              onClick={() => setEditing(null)}
+              className="shadow-sm transition-all duration-200 hover:shadow hover:scale-[1.01] active:scale-95"
+            >
               <Plus className="h-4 w-4 me-2" /> {t("integrations.new")}
             </Button>
           </DialogTrigger>
           <IntegrationDialog
             brandId={brandId}
             row={editing}
-            onSaved={() => { setOpen(false); setEditing(null); qc.invalidateQueries({ queryKey: ["integrations", brandId] }); }}
+            onSaved={() => {
+              setOpen(false);
+              setEditing(null);
+              qc.invalidateQueries({ queryKey: ["integrations", brandId] });
+            }}
           />
         </Dialog>
       </div>
@@ -125,75 +178,132 @@ function IntegrationsPage() {
           {(q.data ?? []).map((row) => {
             const webhookUrl = `${webhookBase}/${row.provider}/${brandId}`;
             const preset = PROVIDER_PRESETS.find((p) => p.value === row.provider);
-            const isNoWebhookProvider = row.provider === "resend_customer_email" || row.provider === "sendpulse_admin" || row.provider === "gemini";
+            const isNoWebhookProvider =
+              row.provider === "resend_customer_email" ||
+              row.provider === "sendpulse_admin" ||
+              row.provider === "gemini";
             return (
-              <Card key={row.id} className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm p-6 transition-all duration-300 hover:scale-[1.01] hover:border-primary/40 hover:shadow-xl">
+              <Card
+                key={row.id}
+                className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm p-6 transition-all duration-300 hover:scale-[1.01] hover:border-primary/40 hover:shadow-xl"
+              >
                 <div className="flex items-start justify-between gap-4 mb-4">
                   <div className="flex items-center gap-3 min-w-0">
                     <div className="p-2.5 rounded-lg bg-secondary/50 border border-secondary shrink-0">
                       {getProviderIcon(row.provider)}
                     </div>
                     <div className="min-w-0">
-                      <div className="font-display text-xl font-bold tracking-tight text-foreground truncate">{preset?.label ?? row.provider}</div>
-                      <div className="text-xs text-muted-foreground truncate font-mono mt-0.5">{row.base_url || (row.provider === "gemini" ? "gemini-1.5-flash" : "—")}</div>
+                      <div className="font-display text-xl font-bold tracking-tight text-foreground truncate">
+                        {preset?.label ?? row.provider}
+                      </div>
+                      <div className="text-xs text-muted-foreground truncate font-mono mt-0.5">
+                        {row.base_url || (row.provider === "gemini" ? "gemini-1.5-flash" : "—")}
+                      </div>
                     </div>
                   </div>
                   <div className="flex items-center gap-1 shrink-0">
-                    <span className={`text-xs px-2.5 py-0.5 rounded-full font-semibold border ${
-                      row.is_active 
-                        ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20" 
-                        : "bg-slate-500/10 text-slate-500 border-slate-500/20"
-                    }`}>
+                    <span
+                      className={`text-xs px-2.5 py-0.5 rounded-full font-semibold border ${
+                        row.is_active
+                          ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20"
+                          : "bg-slate-500/10 text-slate-500 border-slate-500/20"
+                      }`}
+                    >
                       {row.is_active ? t("integrations.active") : isAr ? "معطّل" : "Off"}
                     </span>
-                    <Button variant="ghost" size="icon" onClick={() => { setEditing(row); setOpen(true); }} className="h-8 w-8 text-muted-foreground hover:text-foreground hover:scale-105 active:scale-95 transition-all"><Pencil className="h-4 w-4" /></Button>
-                    <Button variant="ghost" size="icon" onClick={() => del(row.id)} className="h-8 w-8 text-muted-foreground hover:text-destructive hover:scale-105 active:scale-95 transition-all"><Trash2 className="h-4 w-4" /></Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => {
+                        setEditing(row);
+                        setOpen(true);
+                      }}
+                      className="h-8 w-8 text-muted-foreground hover:text-foreground hover:scale-105 active:scale-95 transition-all"
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => del(row.id)}
+                      className="h-8 w-8 text-muted-foreground hover:text-destructive hover:scale-105 active:scale-95 transition-all"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
                   </div>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm bg-secondary/20 border border-secondary/30 rounded-lg p-4">
-                  <MaskedRow 
+                  <MaskedRow
                     label={
-                      row.provider === "resend_customer_email" 
-                        ? (isAr ? "بريد المُرسل المعتمد" : "Verified sender email") 
+                      row.provider === "resend_customer_email"
+                        ? isAr
+                          ? "بريد المُرسل المعتمد"
+                          : "Verified sender email"
                         : row.provider === "gemini"
-                        ? (isAr ? "نموذج الذكاء الاصطناعي (اختياري)" : "AI Model (Optional)")
-                        : t("integrations.apiKey")
-                    } 
-                    value={row.provider === "gemini" ? (row.base_url || "gemini-1.5-flash") : row.api_key_masked} 
+                          ? isAr
+                            ? "نموذج الذكاء الاصطناعي (اختياري)"
+                            : "AI Model (Optional)"
+                          : t("integrations.apiKey")
+                    }
+                    value={
+                      row.provider === "gemini"
+                        ? row.base_url || "gemini-1.5-flash"
+                        : row.api_key_masked
+                    }
                   />
-                  <MaskedRow 
+                  <MaskedRow
                     label={
-                      row.provider === "resend_customer_email" 
-                        ? (isAr ? "مفتاح API الخاص بـ Resend" : "Resend API key") 
+                      row.provider === "resend_customer_email"
+                        ? isAr
+                          ? "مفتاح API الخاص بـ Resend"
+                          : "Resend API key"
                         : row.provider === "gemini"
-                        ? (isAr ? "مفتاح API الخاص بـ Gemini" : "Gemini API key")
-                        : t("integrations.webhookSecret")
-                    } 
-                    value={row.provider === "gemini" ? row.api_key_masked : row.webhook_secret_masked} 
+                          ? isAr
+                            ? "مفتاح API الخاص بـ Gemini"
+                            : "Gemini API key"
+                          : t("integrations.webhookSecret")
+                    }
+                    value={
+                      row.provider === "gemini" ? row.api_key_masked : row.webhook_secret_masked
+                    }
                   />
                 </div>
 
                 <div className="mt-4 pt-4 border-t border-border/80 text-xs">
                   {isNoWebhookProvider ? (
                     <div className="flex items-center gap-2 text-muted-foreground bg-primary/5 border border-primary/10 rounded-lg px-3 py-2.5">
-                      {row.provider === "gemini" ? <Sparkles className="h-4 w-4 text-purple-500 shrink-0" /> : <Mail className="h-4 w-4 text-primary shrink-0" />}
+                      {row.provider === "gemini" ? (
+                        <Sparkles className="h-4 w-4 text-purple-500 shrink-0" />
+                      ) : (
+                        <Mail className="h-4 w-4 text-primary shrink-0" />
+                      )}
                       <p className="leading-normal">
                         {row.provider === "gemini"
-                          ? (isAr 
-                            ? "يتم استخدام تكامل Gemini هذا مباشرةً لترجمة عناوين المنتجات والوصف تلقائياً وتفصيل مخرجات صياغة المحتوى الثنائي اللغة." 
-                            : "This Gemini integration is used directly for super-high-quality storefront translations and product copywriting.")
-                          : (isAr
+                          ? isAr
+                            ? "يتم استخدام تكامل Gemini هذا مباشرةً لترجمة عناوين المنتجات والوصف تلقائياً وتفصيل مخرجات صياغة المحتوى الثنائي اللغة."
+                            : "This Gemini integration is used directly for super-high-quality storefront translations and product copywriting."
+                          : isAr
                             ? "يستخدم هذا المزود مباشرةً من خدمة البريد الآمنة في Boutق عبر اتصال بروتوكول HTTP الآمن. لا يلزم إعداد رابط Webhook لدى المزود."
-                            : "This provider is used directly by Boutq's secure email service over high-speed HTTPS. No provider webhook URL is required.")}
+                            : "This provider is used directly by Boutq's secure email service over high-speed HTTPS. No provider webhook URL is required."}
                       </p>
                     </div>
                   ) : (
                     <div className="bg-secondary/10 border border-secondary/20 rounded-lg p-3">
-                      <p className="text-muted-foreground mb-1.5 font-medium">{t("integrations.webhookHint")}</p>
+                      <p className="text-muted-foreground mb-1.5 font-medium">
+                        {t("integrations.webhookHint")}
+                      </p>
                       <div className="flex items-center gap-2 bg-background/50 border rounded-md p-1.5 pl-3">
                         <code className="flex-1 truncate font-mono text-xs">{webhookUrl}</code>
-                        <Button variant="ghost" size="sm" onClick={() => { navigator.clipboard?.writeText(webhookUrl); toast.success("Copied"); }} className="h-7 px-2 shrink-0">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            navigator.clipboard?.writeText(webhookUrl);
+                            toast.success("Copied");
+                          }}
+                          className="h-7 px-2 shrink-0"
+                        >
                           <Copy className="h-3.5 w-3.5" />
                         </Button>
                       </div>
@@ -201,7 +311,11 @@ function IntegrationsPage() {
                   )}
                 </div>
 
-                {row.notes && <p className="text-xs text-muted-foreground mt-3 italic bg-secondary/10 px-3 py-1.5 rounded border border-secondary/20">{row.notes}</p>}
+                {row.notes && (
+                  <p className="text-xs text-muted-foreground mt-3 italic bg-secondary/10 px-3 py-1.5 rounded border border-secondary/20">
+                    {row.notes}
+                  </p>
+                )}
               </Card>
             );
           })}
@@ -221,12 +335,22 @@ type TrackingForm = {
 
 function AnalyticsTrackingCard({ brandId, isAr }: { brandId: string; isAr: boolean }) {
   const [saving, setSaving] = useState(false);
-  const defaults: TrackingForm = { google_analytics_enabled: false, google_analytics_id: "", meta_pixel_enabled: false, meta_pixel_id: "", consent_required: true };
+  const defaults: TrackingForm = {
+    google_analytics_enabled: false,
+    google_analytics_id: "",
+    meta_pixel_enabled: false,
+    meta_pixel_id: "",
+    consent_required: true,
+  };
   const [form, setForm] = useState<TrackingForm>(defaults);
   const q = useQuery({
     queryKey: ["brand-tracking-settings", brandId],
     queryFn: async () => {
-      const { data, error } = await (supabase as any).from("brand_tracking_settings").select("*").eq("brand_id", brandId).maybeSingle();
+      const { data, error } = await (supabase as any)
+        .from("brand_tracking_settings")
+        .select("*")
+        .eq("brand_id", brandId)
+        .maybeSingle();
       if (error && error.code !== "PGRST116") throw error;
       return data as Partial<TrackingForm> | null;
     },
@@ -244,39 +368,121 @@ function AnalyticsTrackingCard({ brandId, isAr }: { brandId: string; isAr: boole
   const save = async () => {
     const ga = form.google_analytics_id.trim().toUpperCase();
     const meta = form.meta_pixel_id.trim();
-    if (form.google_analytics_enabled && !/^G-[A-Z0-9]+$/.test(ga)) return toast.error(isAr ? "أدخل معرّف GA4 صحيحاً مثل G-XXXXXXXXXX" : "Enter a valid GA4 ID such as G-XXXXXXXXXX");
-    if (form.meta_pixel_enabled && !/^\d{5,30}$/.test(meta)) return toast.error(isAr ? "معرّف Meta Pixel يجب أن يحتوي أرقاماً فقط" : "Meta Pixel ID must contain digits only");
+    if (form.google_analytics_enabled && !/^G-[A-Z0-9]+$/.test(ga))
+      return toast.error(
+        isAr
+          ? "أدخل معرّف GA4 صحيحاً مثل G-XXXXXXXXXX"
+          : "Enter a valid GA4 ID such as G-XXXXXXXXXX",
+      );
+    if (form.meta_pixel_enabled && !/^\d{5,30}$/.test(meta))
+      return toast.error(
+        isAr
+          ? "معرّف Meta Pixel يجب أن يحتوي أرقاماً فقط"
+          : "Meta Pixel ID must contain digits only",
+      );
     setSaving(true);
-    const { error } = await (supabase as any).from("brand_tracking_settings").upsert({
-      brand_id: brandId,
-      google_analytics_enabled: form.google_analytics_enabled,
-      google_analytics_id: ga || null,
-      meta_pixel_enabled: form.meta_pixel_enabled,
-      meta_pixel_id: meta || null,
-      consent_required: form.consent_required,
-    }, { onConflict: "brand_id" });
+    const { error } = await (supabase as any).from("brand_tracking_settings").upsert(
+      {
+        brand_id: brandId,
+        google_analytics_enabled: form.google_analytics_enabled,
+        google_analytics_id: ga || null,
+        meta_pixel_enabled: form.meta_pixel_enabled,
+        meta_pixel_id: meta || null,
+        consent_required: form.consent_required,
+      },
+      { onConflict: "brand_id" },
+    );
     setSaving(false);
     if (error) return toast.error(error.message);
     toast.success(isAr ? "تم حفظ إعدادات التتبع" : "Tracking settings saved");
   };
-  return <Card className="mb-6 p-5" dir={isAr ? "rtl" : "ltr"}>
-    <div className="mb-4">
-      <h2 className="font-display text-xl">{isAr ? "التحليلات والتتبع" : "Analytics & Tracking"}</h2>
-      <p className="text-sm text-muted-foreground">{isAr ? "أدخل المعرّفات الرسمية فقط. لا يتم قبول أكواد أو نصوص برمجية مخصصة." : "Enter official IDs only. Custom scripts are never accepted."}</p>
-    </div>
-    <div className="grid gap-4">
-      <div className="rounded-lg border p-4">
-        <div className="flex items-center justify-between gap-3"><div><Label>Google Analytics 4</Label><p className="text-xs text-muted-foreground">G-XXXXXXXXXX</p></div><Switch checked={form.google_analytics_enabled} onCheckedChange={(v) => setForm((f) => ({ ...f, google_analytics_enabled: v }))} /></div>
-        <Input className="mt-3" dir="ltr" maxLength={32} value={form.google_analytics_id} onChange={(e) => setForm((f) => ({ ...f, google_analytics_id: e.target.value.toUpperCase().replace(/[^A-Z0-9-]/g, "") }))} placeholder="G-XXXXXXXXXX" />
+  return (
+    <Card className="mb-6 p-5" dir={isAr ? "rtl" : "ltr"}>
+      <div className="mb-4">
+        <h2 className="font-display text-xl">
+          {isAr ? "التحليلات والتتبع" : "Analytics & Tracking"}
+        </h2>
+        <p className="text-sm text-muted-foreground">
+          {isAr
+            ? "أدخل المعرّفات الرسمية فقط. لا يتم قبول أكواد أو نصوص برمجية مخصصة."
+            : "Enter official IDs only. Custom scripts are never accepted."}
+        </p>
       </div>
-      <div className="rounded-lg border p-4">
-        <div className="flex items-center justify-between gap-3"><div><Label>Meta Pixel</Label><p className="text-xs text-muted-foreground">{isAr ? "معرّف رقمي فقط" : "Numeric pixel ID only"}</p></div><Switch checked={form.meta_pixel_enabled} onCheckedChange={(v) => setForm((f) => ({ ...f, meta_pixel_enabled: v }))} /></div>
-        <Input className="mt-3" dir="ltr" inputMode="numeric" maxLength={30} value={form.meta_pixel_id} onChange={(e) => setForm((f) => ({ ...f, meta_pixel_id: e.target.value.replace(/\D/g, "") }))} placeholder="123456789012345" />
+      <div className="grid gap-4">
+        <div className="rounded-lg border p-4">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <Label>Google Analytics 4</Label>
+              <p className="text-xs text-muted-foreground">G-XXXXXXXXXX</p>
+            </div>
+            <Switch
+              checked={form.google_analytics_enabled}
+              onCheckedChange={(v) => setForm((f) => ({ ...f, google_analytics_enabled: v }))}
+            />
+          </div>
+          <Input
+            className="mt-3"
+            dir="ltr"
+            maxLength={32}
+            value={form.google_analytics_id}
+            onChange={(e) =>
+              setForm((f) => ({
+                ...f,
+                google_analytics_id: e.target.value.toUpperCase().replace(/[^A-Z0-9-]/g, ""),
+              }))
+            }
+            placeholder="G-XXXXXXXXXX"
+          />
+        </div>
+        <div className="rounded-lg border p-4">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <Label>Meta Pixel</Label>
+              <p className="text-xs text-muted-foreground">
+                {isAr ? "معرّف رقمي فقط" : "Numeric pixel ID only"}
+              </p>
+            </div>
+            <Switch
+              checked={form.meta_pixel_enabled}
+              onCheckedChange={(v) => setForm((f) => ({ ...f, meta_pixel_enabled: v }))}
+            />
+          </div>
+          <Input
+            className="mt-3"
+            dir="ltr"
+            inputMode="numeric"
+            maxLength={30}
+            value={form.meta_pixel_id}
+            onChange={(e) =>
+              setForm((f) => ({ ...f, meta_pixel_id: e.target.value.replace(/\D/g, "") }))
+            }
+            placeholder="123456789012345"
+          />
+        </div>
+        <div className="flex items-center justify-between gap-3 rounded-lg border p-4">
+          <div>
+            <Label>{isAr ? "طلب موافقة الزائر" : "Require visitor consent"}</Label>
+            <p className="text-xs text-muted-foreground">
+              {isAr ? "موصى به للخصوصية والامتثال." : "Recommended for privacy and compliance."}
+            </p>
+          </div>
+          <Switch
+            checked={form.consent_required}
+            onCheckedChange={(v) => setForm((f) => ({ ...f, consent_required: v }))}
+          />
+        </div>
+        <Button onClick={save} disabled={saving || q.isLoading}>
+          {saving
+            ? isAr
+              ? "جارٍ الحفظ..."
+              : "Saving..."
+            : isAr
+              ? "حفظ إعدادات التتبع"
+              : "Save tracking settings"}
+        </Button>
       </div>
-      <div className="flex items-center justify-between gap-3 rounded-lg border p-4"><div><Label>{isAr ? "طلب موافقة الزائر" : "Require visitor consent"}</Label><p className="text-xs text-muted-foreground">{isAr ? "موصى به للخصوصية والامتثال." : "Recommended for privacy and compliance."}</p></div><Switch checked={form.consent_required} onCheckedChange={(v) => setForm((f) => ({ ...f, consent_required: v }))} /></div>
-      <Button onClick={save} disabled={saving || q.isLoading}>{saving ? (isAr ? "جارٍ الحفظ..." : "Saving...") : (isAr ? "حفظ إعدادات التتبع" : "Save tracking settings")}</Button>
-    </div>
-  </Card>;
+    </Card>
+  );
 }
 
 function MaskedRow({ label, value }: { label: string; value: string | null }) {
@@ -292,14 +498,23 @@ function MaskedRow({ label, value }: { label: string; value: string | null }) {
   );
 }
 
-function IntegrationDialog({ brandId, row, onSaved }: { brandId: string; row: Row | null; onSaved: () => void }) {
+function IntegrationDialog({
+  brandId,
+  row,
+  onSaved,
+}: {
+  brandId: string;
+  row: Row | null;
+  onSaved: () => void;
+}) {
   const t = useT();
   const { lang } = useI18n();
   const isAr = lang === "ar";
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({
     provider: row?.provider ?? "aramex",
-    provider_custom: row && !PROVIDER_PRESETS.find((p) => p.value === row.provider) ? row.provider : "",
+    provider_custom:
+      row && !PROVIDER_PRESETS.find((p) => p.value === row.provider) ? row.provider : "",
     base_url: row?.base_url ?? "",
     api_key: "",
     webhook_secret: "",
@@ -309,7 +524,10 @@ function IntegrationDialog({ brandId, row, onSaved }: { brandId: string; row: Ro
   useEffect(() => {
     setForm({
       provider: row?.provider ?? "aramex",
-      provider_custom: row && !PROVIDER_PRESETS.find((provider) => provider.value === row.provider) ? row.provider : "",
+      provider_custom:
+        row && !PROVIDER_PRESETS.find((provider) => provider.value === row.provider)
+          ? row.provider
+          : "",
       base_url: row?.base_url ?? "",
       api_key: "",
       webhook_secret: "",
@@ -317,7 +535,10 @@ function IntegrationDialog({ brandId, row, onSaved }: { brandId: string; row: Ro
       notes: row?.notes ?? "",
     });
   }, [row]);
-  const providerValue = useMemo(() => form.provider === "custom" ? form.provider_custom.trim() : form.provider, [form.provider, form.provider_custom]);
+  const providerValue = useMemo(
+    () => (form.provider === "custom" ? form.provider_custom.trim() : form.provider),
+    [form.provider, form.provider_custom],
+  );
   const isResendCustomerEmail = providerValue === "resend_customer_email";
   const isSendPulseAdmin = providerValue === "sendpulse_admin";
   const isGemini = providerValue === "gemini";
@@ -347,7 +568,9 @@ function IntegrationDialog({ brandId, row, onSaved }: { brandId: string; row: Ro
         }
       : isGemini
         ? {
-            base: isAr ? "نموذج الذكاء الاصطناعي (اختياري - الافتراضي: gemini-1.5-flash)" : "AI Model (Optional - Default: gemini-1.5-flash)",
+            base: isAr
+              ? "نموذج الذكاء الاصطناعي (اختياري - الافتراضي: gemini-1.5-flash)"
+              : "AI Model (Optional - Default: gemini-1.5-flash)",
             api: isAr ? "مفتاح API الخاص بـ Gemini" : "Gemini API Key",
             secret: isAr ? "غير مستخدم (اختياري)" : "Unused (optional)",
             basePlaceholder: "gemini-1.5-flash",
@@ -389,46 +612,97 @@ function IntegrationDialog({ brandId, row, onSaved }: { brandId: string; row: Ro
   return (
     <DialogContent className="max-w-lg">
       <DialogHeader>
-        <DialogTitle>{row ? (isAr ? "تعديل التكامل" : "Edit integration") : t("integrations.new")}</DialogTitle>
+        <DialogTitle>
+          {row ? (isAr ? "تعديل التكامل" : "Edit integration") : t("integrations.new")}
+        </DialogTitle>
       </DialogHeader>
       <div className="space-y-3">
         <div>
           <Label>{t("integrations.provider")}</Label>
           <Select value={form.provider} onValueChange={(v) => setForm({ ...form, provider: v })}>
-            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
             <SelectContent>
-              {PROVIDER_PRESETS.map((p) => <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>)}
+              {PROVIDER_PRESETS.map((p) => (
+                <SelectItem key={p.value} value={p.value}>
+                  {p.label}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
           {form.provider === "custom" && (
-            <Input className="mt-2" placeholder={isAr ? "اسم الخدمة" : "Custom provider name"}
-              value={form.provider_custom} onChange={(e) => setForm({ ...form, provider_custom: e.target.value })} />
+            <Input
+              className="mt-2"
+              placeholder={isAr ? "اسم الخدمة" : "Custom provider name"}
+              value={form.provider_custom}
+              onChange={(e) => setForm({ ...form, provider_custom: e.target.value })}
+            />
           )}
         </div>
-        {fieldLabels.help && <p className="rounded-md border border-primary/20 bg-primary/5 px-3 py-2 text-sm text-muted-foreground">{fieldLabels.help}</p>}
+        {fieldLabels.help && (
+          <p className="rounded-md border border-primary/20 bg-primary/5 px-3 py-2 text-sm text-muted-foreground">
+            {fieldLabels.help}
+          </p>
+        )}
         <div>
           <Label>{fieldLabels.base}</Label>
-          <Input value={form.base_url} onChange={(e) => setForm({ ...form, base_url: e.target.value })} placeholder={fieldLabels.basePlaceholder} />
+          <Input
+            value={form.base_url}
+            onChange={(e) => setForm({ ...form, base_url: e.target.value })}
+            placeholder={fieldLabels.basePlaceholder}
+          />
         </div>
         <div>
           <Label>{fieldLabels.api}</Label>
-          <Input type="password" value={form.api_key} onChange={(e) => setForm({ ...form, api_key: e.target.value })} placeholder={row?.has_api_key ? (isAr ? "اتركه فارغاً للاحتفاظ بالمفتاح الحالي" : "Leave blank to keep the current key") : fieldLabels.apiPlaceholder} />
+          <Input
+            type="password"
+            value={form.api_key}
+            onChange={(e) => setForm({ ...form, api_key: e.target.value })}
+            placeholder={
+              row?.has_api_key
+                ? isAr
+                  ? "اتركه فارغاً للاحتفاظ بالمفتاح الحالي"
+                  : "Leave blank to keep the current key"
+                : fieldLabels.apiPlaceholder
+            }
+          />
         </div>
         <div>
           <Label>{fieldLabels.secret}</Label>
-          <Input type="password" value={form.webhook_secret} onChange={(e) => setForm({ ...form, webhook_secret: e.target.value })} placeholder={row?.has_webhook_secret ? (isAr ? "اتركه فارغاً للاحتفاظ بالسر الحالي" : "Leave blank to keep the current secret") : fieldLabels.secretPlaceholder} />
+          <Input
+            type="password"
+            value={form.webhook_secret}
+            onChange={(e) => setForm({ ...form, webhook_secret: e.target.value })}
+            placeholder={
+              row?.has_webhook_secret
+                ? isAr
+                  ? "اتركه فارغاً للاحتفاظ بالسر الحالي"
+                  : "Leave blank to keep the current secret"
+                : fieldLabels.secretPlaceholder
+            }
+          />
         </div>
         <div>
           <Label>{t("integrations.notes")}</Label>
-          <Textarea rows={2} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
+          <Textarea
+            rows={2}
+            value={form.notes}
+            onChange={(e) => setForm({ ...form, notes: e.target.value })}
+          />
         </div>
         <div className="flex items-center justify-between border border-border rounded-md p-3">
           <p className="text-sm font-medium">{t("integrations.active")}</p>
-          <Switch checked={form.is_active} onCheckedChange={(v) => setForm({ ...form, is_active: v })} />
+          <Switch
+            checked={form.is_active}
+            onCheckedChange={(v) => setForm({ ...form, is_active: v })}
+          />
         </div>
       </div>
       <DialogFooter>
-        <Button onClick={save} disabled={saving}>{t("common.save")}</Button>
+        <Button onClick={save} disabled={saving}>
+          {t("common.save")}
+        </Button>
       </DialogFooter>
     </DialogContent>
   );

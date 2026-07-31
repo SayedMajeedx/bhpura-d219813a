@@ -5,7 +5,7 @@ export const Route = createFileRoute("/platform/$filename")({
     handlers: {
       GET: async ({ params }) => {
         const { filename } = params;
-        
+
         try {
           const { handlePlatformR2Stream } = await import("../lib/r2-stream.server");
           return await handlePlatformR2Stream(filename);

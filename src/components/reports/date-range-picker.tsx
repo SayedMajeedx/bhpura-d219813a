@@ -20,15 +20,22 @@ export function DatePickerWithRange({ className, date, setDate }: DatePickerWith
     ? date.to
       ? `${format(date.from, datePattern)} – ${format(date.to, datePattern)}`
       : format(date.from, datePattern)
-    : lang === "ar" ? "اختر الفترة" : "Select dates";
+    : lang === "ar"
+      ? "اختر الفترة"
+      : "Select dates";
 
   return (
     <div className={cn("w-full sm:w-auto", className)}>
       <Popover>
         <PopoverTrigger asChild>
-          <Button variant="outline" className="h-11 w-full justify-start rounded-xl bg-white px-4 text-start font-medium shadow-sm sm:w-[310px]">
+          <Button
+            variant="outline"
+            className="h-11 w-full justify-start rounded-xl bg-white px-4 text-start font-medium shadow-sm sm:w-[310px]"
+          >
             <CalendarIcon className="me-2 h-4 w-4 text-[#6b1d24]" />
-            <span className="flex-1 tabular-nums" dir="ltr">{label}</span>
+            <span className="flex-1 tabular-nums" dir="ltr">
+              {label}
+            </span>
             <ChevronDown className="ms-2 h-4 w-4 text-muted-foreground" />
           </Button>
         </PopoverTrigger>

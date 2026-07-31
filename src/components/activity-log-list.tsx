@@ -14,7 +14,14 @@ type Props = {
   brandId?: string;
 };
 
-export function ActivityLogList({ orderId, productId, variantIds, scope = "order", limit = 50, brandId }: Props) {
+export function ActivityLogList({
+  orderId,
+  productId,
+  variantIds,
+  scope = "order",
+  limit = 50,
+  brandId,
+}: Props) {
   const t = useT();
   const { lang } = useI18n();
   const locale = lang === "ar" ? "ar-BH-u-nu-latn" : "en-US";

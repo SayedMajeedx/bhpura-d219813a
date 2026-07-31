@@ -26,13 +26,17 @@ function decodeBase64(str: string): string {
 
 export const Route = createFileRoute("/_authenticated/admin/b/$slug")({
   beforeLoad: async ({ params }) => {
-    const { data: { user } } = await supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
     if (!user) throw redirect({ to: "/auth" });
 
     // Load target brand with all subscription metadata fields
     const { data: brand, error: brandErr } = await (supabase as any)
       .from("brands")
-      .select("id, slug, name_en, name_ar, logo_url, is_active, subscription_tier, subscription_status, subscription_expires_at, payment_receipt_url, payment_receipt_uploaded_at, custom_domain, support_access_enabled, plan_type, trial_ends_at, created_at")
+      .select(
+        "id, slug, name_en, name_ar, logo_url, is_active, subscription_tier, subscription_status, subscription_expires_at, payment_receipt_url, payment_receipt_uploaded_at, custom_domain, support_access_enabled, plan_type, trial_ends_at, created_at",
+      )
       .eq("slug", params.slug)
       .maybeSingle();
 
@@ -82,7 +86,7 @@ export const Route = createFileRoute("/_authenticated/admin/b/$slug")({
         const payload = JSON.parse(decodeBase64(token));
         const matchesBrand = payload.targetTenantId === brand.id;
         const isNotExpired = payload.issuedAt > Date.now() - 1000 * 60 * 60 * 24;
-        
+
         if (!matchesBrand || !isNotExpired) {
           throw redirect({ to: "/admin/brands" });
         }
@@ -95,8 +99,7 @@ export const Route = createFileRoute("/_authenticated/admin/b/$slug")({
       throw redirect({ to: "/admin" });
     }
 
-    const { data: iconSettings } = await (supabase
-      .from("business_settings") as any)
+    const { data: iconSettings } = await (supabase.from("business_settings") as any)
       .select("favicon_url, logo_url")
       .eq("brand_id", brand.id)
       .maybeSingle();

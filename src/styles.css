@@ -44,10 +44,18 @@
 /* Majestic Maroon palette
    maroon #330a0a used sparingly as accent, white surfaces */
 :root {
-  --font-hero: '29LT Bukra', 'Tajawal', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans Arabic', sans-serif;
-  --font-heading: '29LT Zarid Display', 'Tajawal', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans Arabic', serif;
-  --font-product: '29LT Kaff', 'Tajawal', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans Arabic', sans-serif;
-  --font-ui: 'Tajawal', 'Inter', 'ArabicLocal', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans Arabic', sans-serif;
+  --font-hero:
+    "29LT Bukra", "Tajawal", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    "Noto Sans Arabic", sans-serif;
+  --font-heading:
+    "29LT Zarid Display", "Tajawal", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    Roboto, "Noto Sans Arabic", serif;
+  --font-product:
+    "29LT Kaff", "Tajawal", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    "Noto Sans Arabic", sans-serif;
+  --font-ui:
+    "Tajawal", "Inter", "ArabicLocal", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    Roboto, "Noto Sans Arabic", sans-serif;
 
   --radius: 0.5rem;
   --background: oklch(1 0 0);
@@ -56,7 +64,7 @@
   --card-foreground: oklch(0.22 0.02 25);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.22 0.02 25);
-  --primary: oklch(0.26 0.09 25);          /* maroon #330a0a */
+  --primary: oklch(0.26 0.09 25); /* maroon #330a0a */
   --primary-foreground: oklch(1 0 0);
   --secondary: oklch(0.97 0.004 20);
   --secondary-foreground: oklch(0.26 0.09 25);
@@ -110,7 +118,9 @@
 }
 
 @layer base {
-  * { border-color: var(--color-border); }
+  * {
+    border-color: var(--color-border);
+  }
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
@@ -120,7 +130,11 @@
   }
 
   /* Section & Category Headings: '29LT Zarid Display' (font-weight: 500) */
-  h1, h2, h3, .font-heading, .section-title {
+  h1,
+  h2,
+  h3,
+  .font-heading,
+  .section-title {
     font-family: var(--font-heading) !important;
     font-weight: 500;
     letter-spacing: -0.01em;
@@ -146,36 +160,62 @@
     color: var(--color-foreground);
   }
   /* Table cells inherit foreground so custom bg containers don't hide text */
-  th, td { color: inherit; }
-  th { font-weight: 600; color: oklch(0.28 0.02 25); }
+  th,
+  td {
+    color: inherit;
+  }
+  th {
+    font-weight: 600;
+    color: oklch(0.28 0.02 25);
+  }
 }
 
 /* Storefront Typography Hierarchy Classes */
 
 /* Hero Banners & Major Promos: '29LT Bukra' (font-weight: 500) */
-.font-hero, .hero-title, .hero-banner, .marketing-callout {
+.font-hero,
+.hero-title,
+.hero-banner,
+.marketing-callout {
   font-family: var(--font-hero) !important;
   font-weight: 500 !important;
 }
 
 /* Product Card Titles: '29LT Kaff' (font-weight: 400) */
-.font-product, .product-title, .product-name, .product-card-title {
+.font-product,
+.product-title,
+.product-name,
+.product-card-title {
   font-family: var(--font-product) !important;
   font-weight: 400 !important;
 }
 
 /* Prices, Sizes, Currency & Micro UI: 'Tajawal' / 'Inter' (font-weight: 400 or 500) */
-.font-ui, .price-tag, .sku-code, .size-picker, .nav-item, .filter-tag, .checkout-btn {
+.font-ui,
+.price-tag,
+.sku-code,
+.size-picker,
+.nav-item,
+.filter-tag,
+.checkout-btn {
   font-family: var(--font-ui) !important;
   font-weight: 400;
 }
 
 /* Keep keyboard focus visible even when branded controls reset native styles. */
-.storefront-shell :where(a[href], button, input, select, textarea, summary, [tabindex]:not([tabindex="-1"])):focus-visible {
+.storefront-shell
+  :where(
+    a[href],
+    button,
+    input,
+    select,
+    textarea,
+    summary,
+    [tabindex]:not([tabindex="-1"])
+  ):focus-visible {
   outline: 3px solid #2563eb !important;
   outline-offset: 3px !important;
 }
-
 
 html.lang-ar body,
 html.lang-ar h1,
@@ -203,7 +243,7 @@ input::-webkit-inner-spin-button {
   -webkit-appearance: none;
   margin: 0;
 }
-input[type=number] {
+input[type="number"] {
   -moz-appearance: textfield;
 }
 
@@ -212,13 +252,21 @@ input[type=number] {
   display: none;
 }
 .scrollbar-none {
-  -ms-overflow-style: none;  /* IE and Edge */
-  scrollbar-width: none;  /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
 }
 
 @media print {
-  @page { margin: 16mm; }
-  body { background: white !important; }
-  .no-print { display: none !important; }
-  .print-area { padding: 0 !important; }
+  @page {
+    margin: 16mm;
+  }
+  body {
+    background: white !important;
+  }
+  .no-print {
+    display: none !important;
+  }
+  .print-area {
+    padding: 0 !important;
+  }
 }

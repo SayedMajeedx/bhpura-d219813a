@@ -1,10 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  formatDate,
-  formatMoney,
-  toWesternDigits,
-  westernNumeralLocale,
-} from "../src/lib/format";
+import { formatDate, formatMoney, toWesternDigits, westernNumeralLocale } from "../src/lib/format";
 
 const easternDigits = /[٠-٩۰-۹]/;
 

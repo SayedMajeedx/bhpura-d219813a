@@ -256,8 +256,10 @@ export function printLabels(labels: LabelData[]) {
   const cleanup = () => {
     section.remove();
     style.remove();
-    if (savedBody) body.setAttribute("style", savedBody); else body.removeAttribute("style");
-    if (savedHtml) html.setAttribute("style", savedHtml); else html.removeAttribute("style");
+    if (savedBody) body.setAttribute("style", savedBody);
+    else body.removeAttribute("style");
+    if (savedHtml) html.setAttribute("style", savedHtml);
+    else html.removeAttribute("style");
     window.removeEventListener("afterprint", cleanup);
   };
 
@@ -272,7 +274,6 @@ export function printLabels(labels: LabelData[]) {
   }, 150);
 }
 
-
 function escapeHtml(s: string) {
   return s
     .replace(/&/g, "&amp;")
@@ -282,13 +283,7 @@ function escapeHtml(s: string) {
     .replace(/'/g, "&#039;");
 }
 
-export function PrintLabelButton({
-  data,
-  label,
-}: {
-  data: LabelData;
-  label?: string;
-}) {
+export function PrintLabelButton({ data, label }: { data: LabelData; label?: string }) {
   return (
     <Button
       type="button"

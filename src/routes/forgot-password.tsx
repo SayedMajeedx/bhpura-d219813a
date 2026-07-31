@@ -53,8 +53,13 @@ function ForgotPasswordPage() {
           <form onSubmit={submit} className="space-y-4">
             <div>
               <Label htmlFor="email">{t("auth.email")}</Label>
-              <Input id="email" type="email" required value={email}
-                onChange={(e) => setEmail(e.target.value)} />
+              <Input
+                id="email"
+                type="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
             </div>
             <Button type="submit" className="w-full" disabled={loading}>
               {loading ? t("common.pleaseWait") : t("auth.sendResetLink")}

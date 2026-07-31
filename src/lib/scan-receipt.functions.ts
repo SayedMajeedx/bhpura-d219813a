@@ -1,5 +1,9 @@
 import { createServerFn } from "@tanstack/react-start";
-import { requireSupabaseAuth, getEnvVariableAsync, getGeminiCredentials } from "@/integrations/supabase/auth-middleware";
+import {
+  requireSupabaseAuth,
+  getEnvVariableAsync,
+  getGeminiCredentials,
+} from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
 
 const Input = z.object({
@@ -11,11 +15,13 @@ const Input = z.object({
 const GeminiReceipt = z.object({
   store_name: z.string(),
   date: z.string(),
-  line_items: z.array(z.object({
-    product_name: z.string(),
-    quantity: z.number(),
-    unit_price: z.number(),
-  })),
+  line_items: z.array(
+    z.object({
+      product_name: z.string(),
+      quantity: z.number(),
+      unit_price: z.number(),
+    }),
+  ),
   subtotal: z.number(),
   tax_amount: z.number(),
   grand_total: z.number(),
@@ -26,7 +32,10 @@ const RESPONSE_JSON_SCHEMA = {
   additionalProperties: false,
   properties: {
     store_name: { type: "string", description: "Merchant or store name exactly as shown." },
-    date: { type: "string", description: "Receipt date formatted as YYYY-MM-DD, or an empty string if unreadable." },
+    date: {
+      type: "string",
+      description: "Receipt date formatted as YYYY-MM-DD, or an empty string if unreadable.",
+    },
     line_items: {
       type: "array",
       description: "Every readable purchased product or service line.",
@@ -77,7 +86,8 @@ function extractBase64(dataUrl: string): string {
   const comma = dataUrl.indexOf(",");
   if (comma < 0) throw new Error("INVALID_RECEIPT_DATA");
   const metadata = dataUrl.slice(0, comma);
-  if (!/^data:image\/(jpeg|png|webp);base64$/i.test(metadata)) throw new Error("INVALID_RECEIPT_TYPE");
+  if (!/^data:image\/(jpeg|png|webp);base64$/i.test(metadata))
+    throw new Error("INVALID_RECEIPT_TYPE");
   if (!metadata.includes(";base64")) throw new Error("INVALID_RECEIPT_DATA");
   const base64 = dataUrl.slice(comma + 1).replace(/\s/g, "");
   if (!base64) throw new Error("INVALID_RECEIPT_DATA");
@@ -89,16 +99,24 @@ export const scanReceipt = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .validator((raw: unknown) => Input.parse(raw))
   .handler(async ({ data, context }): Promise<ScannedExpense> => {
-    const { data: allowed, error: quotaError } = await (context.supabase.rpc as any)("consume_api_quota", {
-      p_action: "receipt_scan", p_limit: 20, p_window_minutes: 60,
-    });
+    const { data: allowed, error: quotaError } = await (context.supabase.rpc as any)(
+      "consume_api_quota",
+      {
+        p_action: "receipt_scan",
+        p_limit: 20,
+        p_window_minutes: 60,
+      },
+    );
     if (quotaError || !allowed) throw new Error("RATE_LIMITED");
 
     const creds = await getGeminiCredentials(context.supabase, context.userId);
     const apiKey = creds.apiKey;
     const model = creds.model || GEMINI_MODEL;
 
-    if (!apiKey) throw new Error("Missing GEMINI_API_KEY. To fix this instantly, please go to Settings -> Integrations, add a new 'Gemini AI Translation' integration, and paste your Gemini API Key there!");
+    if (!apiKey)
+      throw new Error(
+        "Missing GEMINI_API_KEY. To fix this instantly, please go to Settings -> Integrations, add a new 'Gemini AI Translation' integration, and paste your Gemini API Key there!",
+      );
 
     const outputLanguage = data.targetLang === "ar" ? "Arabic" : "English";
     const today = new Date().toISOString().slice(0, 10);
@@ -122,18 +140,22 @@ export const scanReceipt = createServerFn({ method: "POST" })
       },
       body: JSON.stringify({
         systemInstruction: { parts: [{ text: systemPrompt }] },
-        contents: [{
-          role: "user",
-          parts: [
-            { text: "Perform OCR on this receipt or invoice and extract its structured purchase data." },
-            {
-              inlineData: {
-                mimeType: data.mimeType,
-                data: extractBase64(data.dataUrl),
+        contents: [
+          {
+            role: "user",
+            parts: [
+              {
+                text: "Perform OCR on this receipt or invoice and extract its structured purchase data.",
               },
-            },
-          ],
-        }],
+              {
+                inlineData: {
+                  mimeType: data.mimeType,
+                  data: extractBase64(data.dataUrl),
+                },
+              },
+            ],
+          },
+        ],
         generationConfig: {
           temperature: 0,
           responseMimeType: "application/json",
@@ -148,13 +170,22 @@ export const scanReceipt = createServerFn({ method: "POST" })
       const details = await response.text().catch(() => "");
       let providerMessage = details;
       try {
-        const providerError = JSON.parse(details) as { error?: { message?: string; status?: string } };
+        const providerError = JSON.parse(details) as {
+          error?: { message?: string; status?: string };
+        };
         providerMessage = providerError.error?.message || providerError.error?.status || details;
-      } catch { /* keep the plain response body */ }
-      if (response.status === 404 || /model.*(?:not found|no longer available)/i.test(providerMessage)) {
+      } catch {
+        /* keep the plain response body */
+      }
+      if (
+        response.status === 404 ||
+        /model.*(?:not found|no longer available)/i.test(providerMessage)
+      ) {
         throw new Error("GEMINI_MODEL_UNAVAILABLE");
       }
-      console.error(`[scanReceipt] Gemini API error ${response.status}: ${providerMessage.slice(0, 300)}`);
+      console.error(
+        `[scanReceipt] Gemini API error ${response.status}: ${providerMessage.slice(0, 300)}`,
+      );
       throw new Error("GEMINI_PROVIDER_ERROR");
     }
 
@@ -167,7 +198,10 @@ export const scanReceipt = createServerFn({ method: "POST" })
       .join("")
       .trim();
     if (!raw) {
-      const reason = payload.promptFeedback?.blockReason || payload.candidates?.[0]?.finishReason || "EMPTY_RESPONSE";
+      const reason =
+        payload.promptFeedback?.blockReason ||
+        payload.candidates?.[0]?.finishReason ||
+        "EMPTY_RESPONSE";
       throw new Error(`GEMINI_SCAN_FAILED: ${reason}`);
     }
 

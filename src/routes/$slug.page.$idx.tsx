@@ -17,15 +17,21 @@ function PageView() {
   if (!Number.isInteger(n) || n < 1 || n > settings.pages.length) throw notFound();
 
   const page = settings.pages[n - 1];
-  const title = lang === "ar" ? (page.title_ar || page.title_en) : (page.title_en || page.title_ar);
-  const content = lang === "ar" ? (page.content_ar || page.content_en) : (page.content_en || page.content_ar);
+  const title = lang === "ar" ? page.title_ar || page.title_en : page.title_en || page.title_ar;
+  const content =
+    lang === "ar" ? page.content_ar || page.content_en : page.content_en || page.content_ar;
   return <StorefrontPageContent page={page} />;
 }
 
-export function StorefrontPageContent({ page }: { page: ReturnType<typeof useStorefront>["settings"]["pages"][number] }) {
+export function StorefrontPageContent({
+  page,
+}: {
+  page: ReturnType<typeof useStorefront>["settings"]["pages"][number];
+}) {
   const { lang, brand, t } = useStorefront();
-  const title = lang === "ar" ? (page.title_ar || page.title_en) : (page.title_en || page.title_ar);
-  const content = lang === "ar" ? (page.content_ar || page.content_en) : (page.content_en || page.content_ar);
+  const title = lang === "ar" ? page.title_ar || page.title_en : page.title_en || page.title_ar;
+  const content =
+    lang === "ar" ? page.content_ar || page.content_en : page.content_en || page.content_ar;
   const safeContent = renderRichTextContent(content);
   if (!title && !richTextHasContent(safeContent)) return <PageMissing />;
   return (
@@ -40,10 +46,19 @@ export function StorefrontPageContent({ page }: { page: ReturnType<typeof useSto
         {t("العودة إلى المتجر", "Back to store")}
       </Link>
       {page.image_url && page.image_position === "top" && (
-        <ResponsiveImage src={page.image_url} alt={title ?? ""} preset="content" sizes="(min-width: 1024px) 960px, 100vw" className="mb-8 h-auto max-h-[350px] w-full rounded-xl object-cover" />
+        <ResponsiveImage
+          src={page.image_url}
+          alt={title ?? ""}
+          preset="content"
+          sizes="(min-width: 1024px) 960px, 100vw"
+          className="mb-8 h-auto max-h-[350px] w-full rounded-xl object-cover"
+        />
       )}
       {title && (
-        <h1 className="font-display text-3xl sm:text-4xl mb-6" style={{ color: "var(--sf-heading)" }}>
+        <h1
+          className="font-display text-3xl sm:text-4xl mb-6"
+          style={{ color: "var(--sf-heading)" }}
+        >
           {title}
         </h1>
       )}
@@ -57,7 +72,13 @@ export function StorefrontPageContent({ page }: { page: ReturnType<typeof useSto
         </div>
       )}
       {page.image_url && page.image_position === "bottom" && (
-        <ResponsiveImage src={page.image_url} alt={title ?? ""} preset="content" sizes="(min-width: 1024px) 960px, 100vw" className="mt-8 h-auto w-full rounded-xl object-contain" />
+        <ResponsiveImage
+          src={page.image_url}
+          alt={title ?? ""}
+          preset="content"
+          sizes="(min-width: 1024px) 960px, 100vw"
+          className="mt-8 h-auto w-full rounded-xl object-contain"
+        />
       )}
     </article>
   );
@@ -68,7 +89,9 @@ function PageMissing() {
   return (
     <div className="mx-auto max-w-lg px-4 py-16">
       <Card className="p-8 text-center">
-        <p className="text-muted-foreground">{t("الصفحة غير متوفرة", "This page is not available")}</p>
+        <p className="text-muted-foreground">
+          {t("الصفحة غير متوفرة", "This page is not available")}
+        </p>
       </Card>
     </div>
   );

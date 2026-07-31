@@ -91,19 +91,18 @@ export function renderRichTextContent(value: string | null | undefined) {
 }
 
 export function richTextHasContent(value: string | null | undefined) {
-  return sanitizeRichTextHtml(value)
-    .replace(/<[^>]+>/g, "")
-    .replace(/&nbsp;/g, " ")
-    .trim().length > 0;
+  return (
+    sanitizeRichTextHtml(value)
+      .replace(/<[^>]+>/g, "")
+      .replace(/&nbsp;/g, " ")
+      .trim().length > 0
+  );
 }
 
 export function normalizeRichTextValue(value: string | null | undefined) {
   if (!value) return "";
   if (/<\/?[a-z][\s\S]*>/i.test(value)) return sanitizeRichTextHtml(value);
-  const escaped = value
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;");
+  const escaped = value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
   return escaped
     .split(/\n{2,}/)
     .map((paragraph) => `<p>${paragraph.replace(/\n/g, "<br>")}</p>`)

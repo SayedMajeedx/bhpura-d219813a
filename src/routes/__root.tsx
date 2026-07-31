@@ -21,9 +21,7 @@ function NotFoundComponent() {
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="max-w-md text-center">
         <h1 className="text-7xl font-display text-foreground">404</h1>
-        <p className="mt-2 text-sm text-muted-foreground">
-          This page couldn't be found.
-        </p>
+        <p className="mt-2 text-sm text-muted-foreground">This page couldn't be found.</p>
         <a
           href="/"
           className="mt-6 inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-90"
@@ -51,7 +49,10 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
         </p>
         <div className="mt-6 flex flex-wrap justify-center gap-2">
           <button
-            onClick={() => { router.invalidate(); reset(); }}
+            onClick={() => {
+              router.invalidate();
+              reset();
+            }}
             className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-90"
           >
             Try again
@@ -71,19 +72,35 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "Boutq — Boutique Management" },
-      { name: "description", content: "A private portal to manage your boutique inventory, customers, orders, and custom invoices." },
+      {
+        name: "description",
+        content:
+          "A private portal to manage your boutique inventory, customers, orders, and custom invoices.",
+      },
       { property: "og:title", content: "Boutq — Boutique Management" },
-      { property: "og:description", content: "A private portal to manage your boutique inventory, customers, orders, and custom invoices." },
+      {
+        property: "og:description",
+        content:
+          "A private portal to manage your boutique inventory, customers, orders, and custom invoices.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:title", content: "Boutq — Boutique Management" },
-      { name: "twitter:description", content: "A private portal to manage your boutique inventory, customers, orders, and custom invoices." },
+      {
+        name: "twitter:description",
+        content:
+          "A private portal to manage your boutique inventory, customers, orders, and custom invoices.",
+      },
       { property: "og:image", content: "https://boutq.store/og-placeholder.png" },
       { name: "twitter:image", content: "https://boutq.store/og-placeholder.png" },
     ],
     links: [
-      { rel: "preload", href: "/fonts/zariddisplay.woff2", as: "font", type: "font/woff2", crossOrigin: "anonymous" },
-      { rel: "preload", href: "/fonts/azerextralight.woff2", as: "font", type: "font/woff2", crossOrigin: "anonymous" },
+      { rel: "preconnect", href: "https://fonts.googleapis.com" },
+      { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
+      {
+        rel: "stylesheet",
+        href: "https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&family=Inter:wght@400;500;600;700&display=swap",
+      },
       { rel: "preconnect", href: "https://media.boutq.store" },
       { rel: "dns-prefetch", href: "https://media.boutq.store" },
       { rel: "preconnect", href: "https://ik.imagekit.io", crossOrigin: "anonymous" },
@@ -129,9 +146,8 @@ function RootComponent() {
     // fresh browser session, drop the persisted Supabase session before any
     // protected route can hydrate.
     (async () => {
-      const { shouldClearNonRememberedSession, markTabAlive } = await import(
-        "@/lib/session-persistence"
-      );
+      const { shouldClearNonRememberedSession, markTabAlive } =
+        await import("@/lib/session-persistence");
       if (shouldClearNonRememberedSession()) {
         const { supabase } = await import("@/integrations/supabase/client");
         await supabase.auth.signOut();

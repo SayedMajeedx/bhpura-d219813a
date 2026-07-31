@@ -10,8 +10,10 @@
     "preview": "vite preview",
     "deploy": "npm run build && wrangler deploy",
     "cf-typegen": "wrangler types",
-    "lint": "eslint . --suppressions-location eslint-suppressions.json",
+    "lint": "eslint .",
     "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "check": "npm run typecheck && npm run lint && npm run format:check && npm run test",
     "test": "vitest run",
     "typecheck": "tsc --noEmit"
   },

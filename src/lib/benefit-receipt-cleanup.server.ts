@@ -14,9 +14,7 @@ export async function cleanupBenefitReceipts(): Promise<BenefitReceiptCleanupRes
   let deletedAbandoned = 0;
   const errors: string[] = [];
 
-  const { data: expiredOrders, error: orderError } = await (
-    supabaseAdmin.from("orders") as any
-  )
+  const { data: expiredOrders, error: orderError } = await (supabaseAdmin.from("orders") as any)
     .select("id, brand_id, benefit_receipt_key")
     .not("benefit_receipt_key", "is", null)
     .lte("benefit_receipt_delete_after", now)

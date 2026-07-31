@@ -1,68 +1,12 @@
 {
-  "eslint.config.js": {
-    "prettier/prettier": {
-      "count": 11
-    }
-  },
-  "scripts/audit-system.cjs": {
-    "prettier/prettier": {
-      "count": 41
-    }
-  },
-  "scripts/check-brands.js": {
-    "prettier/prettier": {
-      "count": 14
-    }
-  },
-  "scripts/check-ports.js": {
-    "prettier/prettier": {
-      "count": 13
-    }
-  },
-  "scripts/diagnose-admin-query.js": {
-    "prettier/prettier": {
-      "count": 17
-    }
-  },
-  "scripts/diagnose-db.js": {
-    "prettier/prettier": {
-      "count": 22
-    }
-  },
-  "scripts/fetch-settings-page.js": {
-    "prettier/prettier": {
-      "count": 14
-    }
-  },
-  "scripts/get-schema.js": {
-    "prettier/prettier": {
-      "count": 14
-    }
-  },
-  "scripts/test-db.js": {
-    "prettier/prettier": {
-      "count": 16
-    }
-  },
   "src/components/activity-log-list.tsx": {
     "@typescript-eslint/no-explicit-any": {
       "count": 2
-    },
-    "prettier/prettier": {
-      "count": 9
     }
   },
   "src/components/app-shell.tsx": {
     "@typescript-eslint/no-explicit-any": {
       "count": 3
-    },
-    "prettier/prettier": {
-      "count": 91
-    }
-  },
-  "src/components/barcode-label.tsx": {
-    "prettier/prettier": {
-      "count": 34
     }
   },
   "src/components/barcode-scanner.tsx": {
@@ -71,66 +15,26 @@
     },
     "no-control-regex": {
       "count": 1
-    },
-    "prettier/prettier": {
-      "count": 59
     }
   },
   "src/components/bilingual-field.tsx": {
     "@typescript-eslint/no-explicit-any": {
       "count": 1
-    },
-    "prettier/prettier": {
-      "count": 10
     }
   },
   "src/components/courier/CourierWhatsAppModal.tsx": {
     "@typescript-eslint/no-explicit-any": {
       "count": 4
-    },
-    "prettier/prettier": {
-      "count": 3
     }
   },
   "src/components/customer-address-manager.tsx": {
     "@typescript-eslint/no-explicit-any": {
       "count": 2
-    },
-    "prettier/prettier": {
-      "count": 45
-    }
-  },
-  "src/components/delivery-address-card.tsx": {
-    "prettier/prettier": {
-      "count": 17
-    }
-  },
-  "src/components/image-cropper-dialog.tsx": {
-    "prettier/prettier": {
-      "count": 42
     }
   },
   "src/components/passkey-settings.tsx": {
     "@typescript-eslint/no-explicit-any": {
       "count": 1
-    },
-    "prettier/prettier": {
-      "count": 21
-    }
-  },
-  "src/components/phone-input.tsx": {
-    "prettier/prettier": {
-      "count": 3
-    }
-  },
-  "src/components/responsive-media.tsx": {
-    "prettier/prettier": {
-      "count": 64
-    }
-  },
-  "src/components/rich-text-editor.tsx": {
-    "prettier/prettier": {
-      "count": 7
     }
   },
   "src/components/storefront-analytics.tsx": {
@@ -145,56 +49,26 @@
     },
     "prefer-spread": {
       "count": 1
-    },
-    "prettier/prettier": {
-      "count": 30
     }
   },
   "src/components/storefront/product-card.tsx": {
     "@typescript-eslint/no-explicit-any": {
       "count": 1
-    },
-    "prettier/prettier": {
-      "count": 11
     }
   },
   "src/components/storefront/product-grid.tsx": {
     "no-empty": {
       "count": 2
-    },
-    "prettier/prettier": {
-      "count": 3
     }
   },
   "src/components/subscription-card.tsx": {
     "@typescript-eslint/no-explicit-any": {
       "count": 2
-    },
-    "prettier/prettier": {
-      "count": 67
     }
   },
   "src/components/support-access-card.tsx": {
     "@typescript-eslint/no-explicit-any": {
       "count": 2
-    },
-    "prettier/prettier": {
-      "count": 15
-    }
-  },
-  "src/components/ui/button.tsx": {
-    "prettier/prettier": {
-      "count": 4
-    }
-  },
-  "src/components/ui/sheet.tsx": {
-    "prettier/prettier": {
-      "count": 2
-    }
-  },
-  "src/components/ui/switch.tsx": {
-    "prettier/prettier": {
-      "count": 7
     }
   },
   "src/hooks/use-realtime-invalidate.tsx": {
@@ -202,20 +76,12 @@
       "count": 1
     }
   },
-  "src/integrations/supabase/auth-attacher.ts": {
-    "prettier/prettier": {
-      "count": 7
-    }
-  },
   "src/integrations/supabase/auth-middleware.ts": {
     "@typescript-eslint/no-explicit-any": {
-      "count": 17
+      "count": 16
     },
     "no-empty": {
       "count": 9
-    },
-    "prettier/prettier": {
-      "count": 72
     }
   },
   "src/integrations/supabase/client.server.ts": {
@@ -224,48 +90,21 @@
     },
     "no-empty": {
       "count": 2
-    },
-    "prettier/prettier": {
-      "count": 22
-    }
-  },
-  "src/integrations/supabase/client.ts": {
-    "prettier/prettier": {
-      "count": 18
-    }
-  },
-  "src/integrations/supabase/types.ts": {
-    "prettier/prettier": {
-      "count": 2405
     }
   },
   "src/lib/activity-log.ts": {
     "@typescript-eslint/no-explicit-any": {
       "count": 4
-    },
-    "prettier/prettier": {
-      "count": 3
     }
   },
   "src/lib/auth-errors.ts": {
     "@typescript-eslint/no-explicit-any": {
       "count": 1
-    },
-    "prettier/prettier": {
-      "count": 2
-    }
-  },
-  "src/lib/bahrain-regions.ts": {
-    "prettier/prettier": {
-      "count": 15
     }
   },
   "src/lib/benefit-receipt-cleanup.server.ts": {
     "@typescript-eslint/no-explicit-any": {
       "count": 5
-    },
-    "prettier/prettier": {
-      "count": 1
     }
   },
   "src/lib/benefit-receipt.functions.ts": {
@@ -276,48 +115,21 @@
   "src/lib/courier-whatsapp.ts": {
     "@typescript-eslint/no-explicit-any": {
       "count": 3
-    },
-    "prettier/prettier": {
-      "count": 24
     }
   },
   "src/lib/customer-importer.ts": {
     "@typescript-eslint/no-explicit-any": {
       "count": 3
-    },
-    "prettier/prettier": {
-      "count": 21
     }
   },
   "src/lib/download-invoice-pdf.ts": {
     "no-useless-escape": {
       "count": 1
-    },
-    "prettier/prettier": {
-      "count": 56
-    }
-  },
-  "src/lib/error-capture.ts": {
-    "prettier/prettier": {
-      "count": 1
-    }
-  },
-  "src/lib/format.ts": {
-    "prettier/prettier": {
-      "count": 2
     }
   },
   "src/lib/generate-variants.functions.ts": {
     "@typescript-eslint/no-explicit-any": {
       "count": 1
-    },
-    "prettier/prettier": {
-      "count": 18
-    }
-  },
-  "src/lib/i18n.tsx": {
-    "prettier/prettier": {
-      "count": 22
     }
   },
   "src/lib/impersonation.functions.ts": {
@@ -326,17 +138,11 @@
     },
     "no-empty": {
       "count": 2
-    },
-    "prettier/prettier": {
-      "count": 11
     }
   },
   "src/lib/impersonation.server.ts": {
     "@typescript-eslint/no-explicit-any": {
       "count": 1
-    },
-    "prettier/prettier": {
-      "count": 2
     }
   },
   "src/lib/instagram-ai-importer.ts": {
@@ -348,26 +154,10 @@
     },
     "prefer-const": {
       "count": 1
-    },
-    "prettier/prettier": {
-      "count": 242
-    }
-  },
-  "src/lib/invoice-assets.functions.ts": {
-    "prettier/prettier": {
-      "count": 4
     }
   },
   "src/lib/media-delivery.ts": {
     "@typescript-eslint/no-explicit-any": {
-      "count": 1
-    },
-    "prettier/prettier": {
-      "count": 16
-    }
-  },
-  "src/lib/numeric-input-behavior.ts": {
-    "prettier/prettier": {
       "count": 1
     }
   },
@@ -377,41 +167,16 @@
     },
     "no-empty": {
       "count": 3
-    },
-    "prettier/prettier": {
-      "count": 78
     }
   },
   "src/lib/order-importer.ts": {
     "@typescript-eslint/no-explicit-any": {
       "count": 3
-    },
-    "prettier/prettier": {
-      "count": 7
-    }
-  },
-  "src/lib/private-r2.server.ts": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 8
-    },
-    "no-empty": {
-      "count": 4
-    },
-    "prettier/prettier": {
-      "count": 15
-    }
-  },
-  "src/lib/profile-context.tsx": {
-    "prettier/prettier": {
-      "count": 2
     }
   },
   "src/lib/public-invoice.functions.ts": {
     "@typescript-eslint/no-explicit-any": {
       "count": 3
-    },
-    "prettier/prettier": {
-      "count": 40
     }
   },
   "src/lib/r2-stream.server.ts": {
@@ -420,9 +185,6 @@
     },
     "no-empty": {
       "count": 1
-    },
-    "prettier/prettier": {
-      "count": 21
     }
   },
   "src/lib/r2-upload.functions.ts": {
@@ -431,32 +193,11 @@
     },
     "no-empty": {
       "count": 4
-    },
-    "prettier/prettier": {
-      "count": 39
-    }
-  },
-  "src/lib/r2-upload.ts": {
-    "prettier/prettier": {
-      "count": 2
-    }
-  },
-  "src/lib/rich-text.ts": {
-    "prettier/prettier": {
-      "count": 5
-    }
-  },
-  "src/lib/saas-subscription.functions.ts": {
-    "prettier/prettier": {
-      "count": 15
     }
   },
   "src/lib/scan-receipt.functions.ts": {
     "@typescript-eslint/no-explicit-any": {
       "count": 1
-    },
-    "prettier/prettier": {
-      "count": 29
     }
   },
   "src/lib/seo.ts": {
@@ -467,30 +208,16 @@
   "src/lib/storefront-analytics.ts": {
     "@typescript-eslint/no-explicit-any": {
       "count": 1
-    },
-    "prettier/prettier": {
-      "count": 4
     }
   },
   "src/lib/storefront-context.tsx": {
     "no-empty": {
-      "count": 6
-    },
-    "prettier/prettier": {
-      "count": 50
-    }
-  },
-  "src/lib/thermal-print.ts": {
-    "prettier/prettier": {
-      "count": 5
+      "count": 4
     }
   },
   "src/lib/translate.functions.ts": {
     "@typescript-eslint/no-explicit-any": {
       "count": 1
-    },
-    "prettier/prettier": {
-      "count": 29
     }
   },
   "src/lib/universal-importer.ts": {
@@ -499,62 +226,34 @@
     },
     "prefer-const": {
       "count": 1
-    },
-    "prettier/prettier": {
-      "count": 119
     }
   },
   "src/routes/$slug.$category.tsx": {
     "@typescript-eslint/no-explicit-any": {
       "count": 17
-    },
-    "prettier/prettier": {
-      "count": 67
     }
   },
   "src/routes/$slug.account.tsx": {
     "@typescript-eslint/no-explicit-any": {
       "count": 1
     },
-    "prettier/prettier": {
-      "count": 177
-    },
     "react-hooks/rules-of-hooks": {
       "count": 1
     }
   },
-  "src/routes/$slug.auth-confirmed.tsx": {
-    "prettier/prettier": {
-      "count": 12
-    }
-  },
   "src/routes/$slug.auth.tsx": {
     "@typescript-eslint/no-explicit-any": {
-      "count": 3
-    },
-    "prettier/prettier": {
-      "count": 111
+      "count": 2
     }
   },
   "src/routes/$slug.checkout.tsx": {
     "@typescript-eslint/no-explicit-any": {
       "count": 14
-    },
-    "prettier/prettier": {
-      "count": 136
     }
   },
   "src/routes/$slug.index.tsx": {
     "@typescript-eslint/no-explicit-any": {
       "count": 9
-    },
-    "prettier/prettier": {
-      "count": 95
-    }
-  },
-  "src/routes/$slug.page.$idx.tsx": {
-    "prettier/prettier": {
-      "count": 35
     }
   },
   "src/routes/$slug.product.$id.tsx": {
@@ -563,46 +262,19 @@
     },
     "no-empty": {
       "count": 1
-    },
-    "prettier/prettier": {
-      "count": 481
     }
   },
   "src/routes/$slug.route.tsx": {
     "@typescript-eslint/no-explicit-any": {
-      "count": 53
+      "count": 51
     },
     "no-empty": {
       "count": 2
-    },
-    "prettier/prettier": {
-      "count": 194
     }
   },
   "src/routes/$slug.search.tsx": {
     "@typescript-eslint/no-explicit-any": {
       "count": 1
-    },
-    "prettier/prettier": {
-      "count": 6
-    }
-  },
-  "src/routes/$slug.thank-you.$orderId.tsx": {
-    "@typescript-eslint/no-explicit-any": {
-      "count": 1
-    },
-    "prettier/prettier": {
-      "count": 33
-    }
-  },
-  "src/routes/$slug.wishlist.tsx": {
-    "prettier/prettier": {
-      "count": 6
-    }
-  },
-  "src/routes/__root.tsx": {
-    "prettier/prettier": {
-      "count": 7
     }
   },
   "src/routes/_authenticated/admin.b.$slug.campaigns.tsx": {
@@ -611,70 +283,41 @@
     },
     "no-empty": {
       "count": 1
-    },
-    "prettier/prettier": {
-      "count": 218
     }
   },
   "src/routes/_authenticated/admin.b.$slug.categories.tsx": {
     "@typescript-eslint/no-explicit-any": {
       "count": 8
-    },
-    "prettier/prettier": {
-      "count": 38
     }
   },
   "src/routes/_authenticated/admin.b.$slug.communications.tsx": {
     "@typescript-eslint/no-explicit-any": {
       "count": 7
-    },
-    "prettier/prettier": {
-      "count": 78
-    }
-  },
-  "src/routes/_authenticated/admin.b.$slug.customers.$customerId.tsx": {
-    "prettier/prettier": {
-      "count": 49
     }
   },
   "src/routes/_authenticated/admin.b.$slug.customers.tsx": {
     "@typescript-eslint/no-explicit-any": {
       "count": 5
-    },
-    "prettier/prettier": {
-      "count": 289
     }
   },
   "src/routes/_authenticated/admin.b.$slug.dashboard.tsx": {
     "@typescript-eslint/no-explicit-any": {
       "count": 10
-    },
-    "prettier/prettier": {
-      "count": 77
     }
   },
   "src/routes/_authenticated/admin.b.$slug.discounts.tsx": {
     "@typescript-eslint/no-explicit-any": {
       "count": 3
-    },
-    "prettier/prettier": {
-      "count": 84
     }
   },
   "src/routes/_authenticated/admin.b.$slug.expenses.tsx": {
     "@typescript-eslint/no-explicit-any": {
       "count": 14
-    },
-    "prettier/prettier": {
-      "count": 158
     }
   },
   "src/routes/_authenticated/admin.b.$slug.integrations.tsx": {
     "@typescript-eslint/no-explicit-any": {
       "count": 5
-    },
-    "prettier/prettier": {
-      "count": 377
     }
   },
   "src/routes/_authenticated/admin.b.$slug.inventory.tsx": {
@@ -683,9 +326,6 @@
     },
     "no-control-regex": {
       "count": 1
-    },
-    "prettier/prettier": {
-      "count": 498
     }
   },
   "src/routes/_authenticated/admin.b.$slug.orders.$id.tsx": {
@@ -694,232 +334,111 @@
     },
     "no-control-regex": {
       "count": 1
-    },
-    "prettier/prettier": {
-      "count": 174
     }
   },
   "src/routes/_authenticated/admin.b.$slug.orders.index.tsx": {
     "@typescript-eslint/no-explicit-any": {
       "count": 50
-    },
-    "prettier/prettier": {
-      "count": 261
     }
   },
   "src/routes/_authenticated/admin.b.$slug.pages.tsx": {
     "@typescript-eslint/no-explicit-any": {
       "count": 6
-    },
-    "prettier/prettier": {
-      "count": 74
     }
   },
   "src/routes/_authenticated/admin.b.$slug.route.tsx": {
     "@typescript-eslint/no-explicit-any": {
-      "count": 4
-    },
-    "prettier/prettier": {
       "count": 4
     }
   },
   "src/routes/_authenticated/admin.b.$slug.settings.tsx": {
     "@typescript-eslint/no-explicit-any": {
       "count": 55
-    },
-    "prettier/prettier": {
-      "count": 546
     }
   },
   "src/routes/_authenticated/admin.b.$slug.team.tsx": {
     "@typescript-eslint/no-explicit-any": {
       "count": 8
-    },
-    "prettier/prettier": {
-      "count": 63
     }
   },
   "src/routes/_authenticated/admin.brands.tsx": {
     "@typescript-eslint/no-explicit-any": {
       "count": 8
-    },
-    "prettier/prettier": {
-      "count": 85
-    }
-  },
-  "src/routes/_authenticated/admin.campaigns.tsx": {
-    "prettier/prettier": {
-      "count": 1
-    }
-  },
-  "src/routes/_authenticated/admin.customers.tsx": {
-    "prettier/prettier": {
-      "count": 1
-    }
-  },
-  "src/routes/_authenticated/admin.expenses.tsx": {
-    "prettier/prettier": {
-      "count": 1
-    }
-  },
-  "src/routes/_authenticated/admin.index.tsx": {
-    "prettier/prettier": {
-      "count": 2
-    }
-  },
-  "src/routes/_authenticated/admin.inventory.tsx": {
-    "prettier/prettier": {
-      "count": 1
-    }
-  },
-  "src/routes/_authenticated/admin.orders.tsx": {
-    "prettier/prettier": {
-      "count": 1
-    }
-  },
-  "src/routes/_authenticated/admin.settings.tsx": {
-    "prettier/prettier": {
-      "count": 1
     }
   },
   "src/routes/_authenticated/admin.super.requests.tsx": {
     "@typescript-eslint/no-explicit-any": {
       "count": 6
-    },
-    "prettier/prettier": {
-      "count": 120
     }
   },
   "src/routes/_authenticated/admin.super.settings.tsx": {
     "@typescript-eslint/no-explicit-any": {
       "count": 2
-    },
-    "prettier/prettier": {
-      "count": 68
-    }
-  },
-  "src/routes/_authenticated/admin.team.tsx": {
-    "prettier/prettier": {
-      "count": 1
-    }
-  },
-  "src/routes/_authenticated/route.tsx": {
-    "prettier/prettier": {
-      "count": 12
-    }
-  },
-  "src/routes/api.cron.cleanup-benefit-receipts.ts": {
-    "prettier/prettier": {
-      "count": 1
     }
   },
   "src/routes/api.orders.status.ts": {
     "@typescript-eslint/no-explicit-any": {
       "count": 4
-    },
-    "prettier/prettier": {
-      "count": 16
     }
   },
   "src/routes/api.public.payments.create-tap-charge.ts": {
     "@typescript-eslint/no-explicit-any": {
       "count": 4
-    },
-    "prettier/prettier": {
-      "count": 2
     }
   },
   "src/routes/api.public.payments.tap-redirect.ts": {
     "@typescript-eslint/no-explicit-any": {
       "count": 2
-    },
-    "prettier/prettier": {
-      "count": 3
     }
   },
   "src/routes/api.public.webhooks.tap.ts": {
     "@typescript-eslint/no-explicit-any": {
       "count": 3
-    },
-    "prettier/prettier": {
-      "count": 9
     }
   },
   "src/routes/auth.tsx": {
     "@typescript-eslint/no-explicit-any": {
       "count": 4
-    },
-    "prettier/prettier": {
-      "count": 23
     }
   },
   "src/routes/brands.$brandId.$kind.$filename.ts": {
     "@typescript-eslint/no-explicit-any": {
       "count": 1
-    },
-    "prettier/prettier": {
-      "count": 2
     }
   },
   "src/routes/forgot-password.tsx": {
     "@typescript-eslint/no-explicit-any": {
       "count": 1
-    },
-    "prettier/prettier": {
-      "count": 2
     }
   },
   "src/routes/index.tsx": {
     "@typescript-eslint/no-explicit-any": {
       "count": 3
-    },
-    "prettier/prettier": {
-      "count": 19
     }
   },
   "src/routes/invoice.$id.tsx": {
     "@typescript-eslint/no-explicit-any": {
       "count": 6
-    },
-    "prettier/prettier": {
-      "count": 136
     }
   },
   "src/routes/onboard.tsx": {
     "@typescript-eslint/no-explicit-any": {
       "count": 7
-    },
-    "prettier/prettier": {
-      "count": 211
     }
   },
   "src/routes/platform.$filename.ts": {
     "@typescript-eslint/no-explicit-any": {
-      "count": 1
-    },
-    "prettier/prettier": {
       "count": 1
     }
   },
   "src/routes/reset-password.tsx": {
     "@typescript-eslint/no-explicit-any": {
       "count": 1
-    },
-    "prettier/prettier": {
-      "count": 4
-    }
-  },
-  "src/server.ts": {
-    "prettier/prettier": {
-      "count": 75
     }
   },
   "src/vinxi-http.d.ts": {
     "@typescript-eslint/no-explicit-any": {
       "count": 1
-    },
-    "prettier/prettier": {
-      "count": 3
     }
   },
   "supabase/functions/send-order-email/index.ts": {
@@ -928,9 +447,6 @@
     },
     "prefer-const": {
       "count": 2
-    },
-    "prettier/prettier": {
-      "count": 206
     }
   },
   "supabase/functions/user-management/index.ts": {
@@ -938,19 +454,6 @@
       "count": 12
     },
     "no-empty": {
-      "count": 2
-    },
-    "prettier/prettier": {
-      "count": 30
-    }
-  },
-  "tests/admin.spec.ts": {
-    "prettier/prettier": {
-      "count": 16
-    }
-  },
-  "tests/admin.test.tsx": {
-    "prettier/prettier": {
       "count": 2
     }
   }

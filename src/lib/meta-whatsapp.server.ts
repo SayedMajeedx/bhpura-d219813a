@@ -23,7 +23,12 @@ type MetaStatus = {
   id?: string;
   status?: string;
   timestamp?: string;
-  errors?: Array<{ code?: number; title?: string; message?: string; error_data?: { details?: string } }>;
+  errors?: Array<{
+    code?: number;
+    title?: string;
+    message?: string;
+    error_data?: { details?: string };
+  }>;
 };
 
 type MetaMessage = {
@@ -205,7 +210,10 @@ function metaErrorText(status: MetaStatus): string | null {
     error.title,
     error.message,
     error.error_data?.details,
-  ].filter(Boolean).join(": ").slice(0, 1000);
+  ]
+    .filter(Boolean)
+    .join(": ")
+    .slice(0, 1000);
 }
 
 async function processMetaWebhook(
@@ -281,7 +289,8 @@ export async function handleMetaWhatsAppWebhook(
   if (contentLength > MAX_WEBHOOK_BYTES) return new Response("Payload too large.", { status: 413 });
 
   const rawBody = await request.arrayBuffer();
-  if (rawBody.byteLength > MAX_WEBHOOK_BYTES) return new Response("Payload too large.", { status: 413 });
+  if (rawBody.byteLength > MAX_WEBHOOK_BYTES)
+    return new Response("Payload too large.", { status: 413 });
   const valid = await verifyMetaWebhookSignature(
     rawBody,
     request.headers.get("x-hub-signature-256"),
@@ -298,10 +307,12 @@ export async function handleMetaWhatsAppWebhook(
 
   ctx.waitUntil(
     processMetaWebhook(env, payload).catch((error) => {
-      console.error(JSON.stringify({
-        event: "meta_whatsapp_webhook_processing_failed",
-        error: error instanceof Error ? error.message : String(error),
-      }));
+      console.error(
+        JSON.stringify({
+          event: "meta_whatsapp_webhook_processing_failed",
+          error: error instanceof Error ? error.message : String(error),
+        }),
+      );
     }),
   );
   return new Response("EVENT_RECEIVED", { status: 200 });
@@ -357,10 +368,12 @@ async function sendClaimedEvent(
         template: {
           name: event.template_name,
           language: { code: event.language === "en" ? "en_US" : "ar" },
-          components: [{
-            type: "body",
-            parameters: templateParameters(event.parameters),
-          }],
+          components: [
+            {
+              type: "body",
+              parameters: templateParameters(event.parameters),
+            },
+          ],
         },
       }),
     },
@@ -370,9 +383,7 @@ async function sendClaimedEvent(
     messages?: Array<{ id?: string }>;
     error?: { code?: number; message?: string; error_subcode?: number };
   };
-  const payload: MetaSendResponse = await response
-    .json<MetaSendResponse>()
-    .catch(() => ({}));
+  const payload: MetaSendResponse = await response.json<MetaSendResponse>().catch(() => ({}));
 
   if (!response.ok) {
     const detail = payload.error
@@ -440,13 +451,15 @@ export async function retryWhatsAppOutbox(
         next_attempt_at: new Date(Date.now() + delayMinutes * 60_000).toISOString(),
         last_error: message.slice(0, 1000),
       });
-      console.error(JSON.stringify({
-        event: "meta_whatsapp_send_failed",
-        outboxId: event.event_id,
-        attempt: attempts,
-        dead,
-        error: message,
-      }));
+      console.error(
+        JSON.stringify({
+          event: "meta_whatsapp_send_failed",
+          outboxId: event.event_id,
+          attempt: attempts,
+          dead,
+          error: message,
+        }),
+      );
     }
   }
 

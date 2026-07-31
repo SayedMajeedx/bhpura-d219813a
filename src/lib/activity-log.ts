@@ -23,7 +23,9 @@ type LogInput = {
 };
 
 export async function logActivity(input: LogInput) {
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
   if (!user) return;
   await (supabase.from("activity_logs") as any).insert({
     user_id: user.id,
@@ -39,7 +41,9 @@ export async function logActivity(input: LogInput) {
 
 export async function logActivityBatch(inputs: LogInput[]) {
   if (inputs.length === 0) return;
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
   if (!user) return;
   await (supabase.from("activity_logs") as any).insert(
     inputs.map((i) => ({

@@ -54,12 +54,15 @@ export function BilingualField({
       const { text } = await translate({ data: { text: source, from, to } });
       const cleaned = text.trim();
       if (!cleaned) throw new Error("empty");
-      if (to === "en") onChangeEn(cleaned); else onChangeAr(cleaned);
+      if (to === "en") onChangeEn(cleaned);
+      else onChangeAr(cleaned);
       toast.success(isAr ? "تمت الترجمة" : "Translated");
     } catch (e: any) {
       const msg = String(e?.message ?? e);
-      if (msg.includes("CREDITS_EXHAUSTED")) toast.error(isAr ? "نفدت الأرصدة" : "AI credits exhausted");
-      else if (msg.includes("RATE_LIMITED")) toast.error(isAr ? "الكثير من الطلبات، حاول بعد قليل" : "Rate limited — try again shortly");
+      if (msg.includes("CREDITS_EXHAUSTED"))
+        toast.error(isAr ? "نفدت الأرصدة" : "AI credits exhausted");
+      else if (msg.includes("RATE_LIMITED"))
+        toast.error(isAr ? "الكثير من الطلبات، حاول بعد قليل" : "Rate limited — try again shortly");
       else toast.error((isAr ? "تعذر الترجمة: " : "Translation failed: ") + msg);
     } finally {
       setBusy(null);
@@ -78,14 +81,31 @@ export function BilingualField({
             className="inline-flex items-center gap-1 text-[11px] text-primary hover:underline disabled:opacity-40 disabled:no-underline"
             title={isAr ? "ترجمة تلقائية إلى الإنجليزية" : "Auto-translate to English"}
           >
-            {busy === "ar->en" ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
+            {busy === "ar->en" ? (
+              <Loader2 className="h-3 w-3 animate-spin" />
+            ) : (
+              <Sparkles className="h-3 w-3" />
+            )}
             <span>✨ {isAr ? "ترجم → EN" : "Translate → EN"}</span>
           </button>
         </div>
         {multiline ? (
-          <Textarea dir="rtl" value={valueAr} onChange={(e) => onChangeAr(e.target.value)} className="text-right" rows={rows} placeholder={placeholderAr} />
+          <Textarea
+            dir="rtl"
+            value={valueAr}
+            onChange={(e) => onChangeAr(e.target.value)}
+            className="text-right"
+            rows={rows}
+            placeholder={placeholderAr}
+          />
         ) : (
-          <Input dir="rtl" value={valueAr} onChange={(e) => onChangeAr(e.target.value)} className="text-right" placeholder={placeholderAr} />
+          <Input
+            dir="rtl"
+            value={valueAr}
+            onChange={(e) => onChangeAr(e.target.value)}
+            className="text-right"
+            placeholder={placeholderAr}
+          />
         )}
       </div>
       <div className="space-y-1">
@@ -98,14 +118,29 @@ export function BilingualField({
             className="inline-flex items-center gap-1 text-[11px] text-primary hover:underline disabled:opacity-40 disabled:no-underline"
             title={isAr ? "ترجمة تلقائية إلى العربية" : "Auto-translate to Arabic"}
           >
-            {busy === "en->ar" ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
+            {busy === "en->ar" ? (
+              <Loader2 className="h-3 w-3 animate-spin" />
+            ) : (
+              <Sparkles className="h-3 w-3" />
+            )}
             <span>✨ {isAr ? "ترجم → AR" : "Translate → AR"}</span>
           </button>
         </div>
         {multiline ? (
-          <Textarea dir="ltr" value={valueEn} onChange={(e) => onChangeEn(e.target.value)} rows={rows} placeholder={placeholderEn} />
+          <Textarea
+            dir="ltr"
+            value={valueEn}
+            onChange={(e) => onChangeEn(e.target.value)}
+            rows={rows}
+            placeholder={placeholderEn}
+          />
         ) : (
-          <Input dir="ltr" value={valueEn} onChange={(e) => onChangeEn(e.target.value)} placeholder={placeholderEn} />
+          <Input
+            dir="ltr"
+            value={valueEn}
+            onChange={(e) => onChangeEn(e.target.value)}
+            placeholder={placeholderEn}
+          />
         )}
       </div>
     </div>
@@ -113,7 +148,11 @@ export function BilingualField({
 }
 
 /** Format a size value with an optional unit, translating known units to Arabic. */
-export function formatSizeWithUnit(size: string | null | undefined, unit: string | null | undefined, lang: "ar" | "en"): string {
+export function formatSizeWithUnit(
+  size: string | null | undefined,
+  unit: string | null | undefined,
+  lang: "ar" | "en",
+): string {
   const s = (size ?? "").trim();
   if (!s) return "";
   const u = (unit ?? "").trim();

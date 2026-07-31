@@ -21,14 +21,22 @@ export function ProductCard({
     .filter((variant) => Number(variant.selling_price || 0) >= 0)
     .sort((a, b) => a.selling_price - b.selling_price);
   const discountedVariant = pricedVariants.filter(
-    (variant) => Number(variant.original_price || 0) > Number(variant.selling_price || 0)
+    (variant) => Number(variant.original_price || 0) > Number(variant.selling_price || 0),
   )[0];
   const displayVariant = discountedVariant ?? pricedVariants[0];
   const variantPrices = pricedVariants.map((v) => Number(v.selling_price || 0));
-  const minPrice = variantPrices.length > 0 ? Math.min(...variantPrices) : Number(displayVariant?.selling_price || 0);
-  const maxPrice = variantPrices.length > 0 ? Math.max(...variantPrices) : Number(displayVariant?.selling_price || 0);
+  const minPrice =
+    variantPrices.length > 0
+      ? Math.min(...variantPrices)
+      : Number(displayVariant?.selling_price || 0);
+  const maxPrice =
+    variantPrices.length > 0
+      ? Math.max(...variantPrices)
+      : Number(displayVariant?.selling_price || 0);
   const originalPrice = discountedVariant ? Number(discountedVariant.original_price) : 0;
-  const discountPercent = discountedVariant ? Math.round((1 - discountedVariant.selling_price / originalPrice) * 100) : 0;
+  const discountPercent = discountedVariant
+    ? Math.round((1 - discountedVariant.selling_price / originalPrice) * 100)
+    : 0;
   const totalStock = product.product_variants.reduce((s, v) => s + (v.stock_main || 0), 0);
   const oos = totalStock <= 0;
 
@@ -44,7 +52,11 @@ export function ProductCard({
   let badgeStyle = "";
   let badgeLabel = "";
 
-  if (discountPercent > 0 && settings.global_sale_badges_enabled && product.show_sale_badge !== false) {
+  if (
+    discountPercent > 0 &&
+    settings.global_sale_badges_enabled &&
+    product.show_sale_badge !== false
+  ) {
     badgeStyle = "bg-[#8C6D58]/15 text-[#5F4B3C] border-[#8C6D58]/25";
     badgeLabel = isAr ? `وفر ${discountPercent}%` : `Sale ${discountPercent}% off`;
   } else if (badge === "best") {
@@ -60,10 +72,16 @@ export function ProductCard({
       <button
         type="button"
         onClick={() => toggleWishlist(product.id)}
-        aria-label={wished ? t("إزالة من المفضلة", "Remove from wishlist") : t("إضافة إلى المفضلة", "Add to wishlist")}
+        aria-label={
+          wished
+            ? t("إزالة من المفضلة", "Remove from wishlist")
+            : t("إضافة إلى المفضلة", "Add to wishlist")
+        }
         className="absolute end-2.5 top-2.5 z-20 grid h-11 w-11 place-items-center rounded-full bg-white/85 backdrop-blur-[4px] text-neutral-800 shadow-sm border border-neutral-200/50 transition-all duration-300 hover:scale-105 active:scale-95 hover:bg-white hover:text-red-500"
       >
-        <Heart className={`h-4 w-4 transition-colors duration-300 ${wished ? "fill-red-600 text-red-600" : ""}`} />
+        <Heart
+          className={`h-4 w-4 transition-colors duration-300 ${wished ? "fill-red-600 text-red-600" : ""}`}
+        />
       </button>
 
       <Link
@@ -72,12 +90,16 @@ export function ProductCard({
         preload="intent"
         className="block"
         onClick={() => {
-          void (supabase.rpc as any)("record_storefront_product_engagement", { p_brand_slug: brand.slug, p_product_id: product.id, p_event: "click" });
+          void (supabase.rpc as any)("record_storefront_product_engagement", {
+            p_brand_slug: brand.slug,
+            p_product_id: product.id,
+            p_event: "click",
+          });
         }}
       >
         <div className="aspect-[3/4] rounded-xl overflow-hidden bg-muted relative">
           {badgeLabel && (
-            <span 
+            <span
               className={`absolute start-2.5 top-2.5 z-10 rounded-md border px-2.5 py-1 text-[10px] font-medium backdrop-blur-[2px] shadow-sm select-none ${badgeStyle} ${
                 isAr ? "font-display leading-none" : "tracking-widest uppercase"
               }`}
@@ -90,7 +112,7 @@ export function ProductCard({
             <ResponsiveImage
               src={cover}
               preset="card"
-              sizes="(min-width: 1024px) 25vw, (min-width: 768px) 33vw, 75vw"
+              sizes="(min-width: 1024px) 25vw, (min-width: 768px) 33vw, 50vw"
               // [TECH ADVISOR #1]: Real informational product photos MUST have dynamic/descriptive alt text
               alt={displayName}
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
@@ -114,8 +136,16 @@ export function ProductCard({
         </div>
 
         <div className="mt-2 text-start">
-          <div className="product-title text-sm font-medium truncate" style={{ color: "var(--sf-heading)" }}>{displayName}</div>
-          <div className="price-tag flex flex-wrap items-baseline gap-2 text-sm font-semibold mt-0.5" style={{ color: "var(--sf-heading)" }}>
+          <div
+            className="product-title text-sm font-medium truncate"
+            style={{ color: "var(--sf-heading)" }}
+          >
+            {displayName}
+          </div>
+          <div
+            className="price-tag flex flex-wrap items-baseline gap-2 text-sm font-semibold mt-0.5"
+            style={{ color: "var(--sf-heading)" }}
+          >
             {minPrice > 0 ? (
               minPrice === maxPrice ? (
                 <>
