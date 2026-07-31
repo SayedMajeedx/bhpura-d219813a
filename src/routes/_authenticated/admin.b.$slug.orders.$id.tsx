@@ -1086,23 +1086,22 @@ function OrderDetail() {
 
   const filteredVariantsForSearch = useMemo(() => {
     if (!productSearchQuery.trim()) return (variantsQ.data ?? []).slice(0, 25);
-    const q = productSearchQuery.trim().toLowerCase();
+    const tokens = productSearchQuery.trim().toLowerCase().split(/\s+/).filter(Boolean);
     const products = productsQ.data ?? [];
     return (variantsQ.data ?? [])
       .filter((v: any) => {
         const p = products.find((x: any) => x.id === v.product_id);
         const title = String((p as any)?.name ?? "").toLowerCase();
+        const titleAr = String((p as any)?.name_ar ?? "").toLowerCase();
+        const titleEn = String((p as any)?.name_en ?? "").toLowerCase();
         const sku = String(v.sku ?? (p as any)?.sku ?? "").toLowerCase();
         const barcode = String(v.barcode ?? "").toLowerCase();
         const size = String(v.size ?? "").toLowerCase();
         const color = String(v.color ?? "").toLowerCase();
-        return (
-          title.includes(q) ||
-          sku.includes(q) ||
-          barcode.includes(q) ||
-          size.includes(q) ||
-          color.includes(q)
-        );
+        const fabric = String(v.fabric ?? "").toLowerCase();
+
+        const fullSearchableBlob = `${title} ${titleAr} ${titleEn} ${sku} ${barcode} ${size} ${color} ${fabric}`;
+        return tokens.every((token) => fullSearchableBlob.includes(token));
       })
       .slice(0, 35);
   }, [productSearchQuery, variantsQ.data, productsQ.data]);
@@ -1110,8 +1109,18 @@ function OrderDetail() {
   const handleSelectVariantFromModal = (variant: any) => {
     const p = (productsQ.data ?? []).find((x: any) => x.id === variant.product_id);
     const isAr = lang === "ar";
-    const desc = p ? (p as any).name : `${variant.sku || "Variant"}`;
-    const price = Number(variant.price ?? (p as any)?.price ?? 0);
+    const sizeLabel = isAr ? "المقاس" : "Size";
+    const colorLabel = isAr ? "اللون" : "Color";
+    const variantTitle = [p ? (p as any).name : "", variant.size ? `${sizeLabel}: ${variant.size}` : "", variant.color ? `${colorLabel}: ${variant.color}` : ""].filter(Boolean).join(" — ");
+    const price = Number(
+      variant.selling_price ??
+        variant.price_override ??
+        variant.price ??
+        (p as any)?.selling_price ??
+        (p as any)?.base_price ??
+        (p as any)?.price ??
+        0,
+    );
     const preferredLoc: "main" | "incubator" =
       (variant.stock_main ?? 0) > 0 ? "main" : "incubator";
 
@@ -1120,7 +1129,7 @@ function OrderDetail() {
       {
         product_id: variant.product_id,
         variant_id: variant.id,
-        description: desc,
+        description: variantTitle || "Custom Item",
         quantity: 1,
         unit_price: price,
         original_price: price,
@@ -1132,7 +1141,7 @@ function OrderDetail() {
       },
     ]);
     toast.success(
-      isAr ? `تمت إضافة "${desc}" إلى الطلب!` : `Added "${desc}" to order!`,
+      isAr ? `تمت إضافة "${variantTitle}" إلى الطلب!` : `Added "${variantTitle}" to order!`,
     );
     setProductSearchOpen(false);
     setProductSearchQuery("");
@@ -3983,8 +3992,17 @@ function OrderDetail() {
                   const sku = v.sku || (p as any)?.sku;
                   const mainStock = Number(v.stock_main ?? 0);
                   const incStock = Number(v.stock_incubator ?? 0);
-                  const totalStock = mainStock + incStock;
-                  const price = Number(v.price ?? (p as any)?.price ?? 0);
+                  const fallbackStock = Number(v.stock ?? v.quantity ?? (p as any)?.stock ?? 0);
+                  const totalStock = (mainStock + incStock) > 0 ? (mainStock + incStock) : fallbackStock;
+                  const price = Number(
+                    v.selling_price ??
+                      v.price_override ??
+                      v.price ??
+                      (p as any)?.selling_price ??
+                      (p as any)?.base_price ??
+                      (p as any)?.price ??
+                      0,
+                  );
                   const getMediaUrl = (obj: any) => {
                     if (!obj) return null;
                     if (typeof obj.image_url === "string" && obj.image_url) return obj.image_url;
