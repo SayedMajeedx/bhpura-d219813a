@@ -2097,7 +2097,7 @@ function OrderDetail() {
 
   return (
     <div
-      className="mx-auto max-w-[1500px] p-4 pb-24 sm:p-6 lg:p-8 animate-fade-in"
+      className="mx-auto max-w-[1500px] p-1 sm:p-2 space-y-4 pb-20 animate-fade-in"
       dir={lang === "ar" ? "rtl" : "ltr"}
     >
       <div className="no-print mb-4 flex flex-wrap items-center justify-between gap-3">
