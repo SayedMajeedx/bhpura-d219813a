@@ -1074,9 +1074,9 @@ function OrdersList() {
               {isUpdating ? (
                 <Loader2 className="h-3.5 w-3.5 animate-spin" />
               ) : lang === "ar" ? (
-                `تحصيل ${formatMoney(remainingBal, o.currency ?? "BHD", locale)} وتسليم`
+                "تحصيل وتسليم"
               ) : (
-                `Collect BHD ${remainingBal.toFixed(3)} & Hand Over`
+                "Collect & Hand Over"
               )}
             </Button>
           );
@@ -1223,8 +1223,8 @@ function OrdersList() {
               <span className="flex items-center gap-1">
                 <CircleDollarSign className="h-3.5 w-3.5" />
                 {lang === "ar"
-                  ? `تحصيل المتبقي ${formatMoney(remainingBal, o.currency ?? "BHD", locale)} والتسليم`
-                  : `Collect BHD ${remainingBal.toFixed(3)} & Complete`}
+                  ? "تحصيل المتبقي وتسليم"
+                  : "Collect Remaining & Complete"}
               </span>
             </Button>
           );
@@ -1246,8 +1246,8 @@ function OrdersList() {
             <span className="flex items-center gap-1">
               <CircleDollarSign className="h-3.5 w-3.5" />
               {lang === "ar"
-                ? `تحصيل ${formatMoney(totalAmt, o.currency ?? "BHD", locale)} نقد والتسليم`
-                : `Collect BHD ${totalAmt.toFixed(3)} Cash & Complete`}
+                ? "تحصيل نقدًا وتسليم"
+                : "Collect Cash & Complete"}
             </span>
           </Button>
         );
@@ -1678,12 +1678,12 @@ function OrdersList() {
               <table className="w-full table-fixed text-sm">
                 <colgroup>
                   <col className="w-[8%]" />
-                  <col className="w-[12%]" />
-                  <col className="w-[24%]" />
-                  <col className="w-[15%]" />
-                  <col className="w-[15%]" />
                   <col className="w-[11%]" />
-                  <col className="w-[15%]" />
+                  <col className="w-[21%]" />
+                  <col className="w-[13%]" />
+                  <col className="w-[13%]" />
+                  <col className="w-[12%]" />
+                  <col className="w-[22%]" />
                 </colgroup>
                 <thead className="sticky top-0 z-10 border-b bg-background/95 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground backdrop-blur select-none">
                   <tr>
