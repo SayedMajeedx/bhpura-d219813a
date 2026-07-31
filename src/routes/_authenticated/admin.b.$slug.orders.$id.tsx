@@ -2254,10 +2254,10 @@ function OrderDetail() {
         disabled={isReadOnly}
         className="no-print m-0 min-w-0 border-0 p-0 disabled:opacity-80"
       >
-        <div className="mb-6 grid items-start gap-4 lg:grid-cols-[minmax(0,1.9fr)_minmax(320px,1fr)]">
+        <div className="mb-6 grid items-start gap-6 lg:grid-cols-3">
           <Card
             id="sec-overview"
-            className="scroll-mt-24 overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm p-5 sm:p-6 lg:col-start-1 lg:row-start-1"
+            className="scroll-mt-24 overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm p-5 sm:p-6 lg:col-span-1 lg:order-2"
           >
             <div className="mb-4">
               <Label className="flex items-center gap-2">
@@ -2984,7 +2984,7 @@ function OrderDetail() {
 
           <Card
             id="sec-items"
-            className="scroll-mt-24 overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm p-5 sm:p-6 lg:col-start-1 lg:row-start-2 mt-6"
+            className="scroll-mt-24 overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm p-5 sm:p-6 lg:col-span-2 lg:order-1"
           >
             <div className="flex items-center justify-between mb-4 gap-2 flex-wrap">
               <h3 className="font-display text-lg">{t("orderDetail.lineItems")}</h3>
