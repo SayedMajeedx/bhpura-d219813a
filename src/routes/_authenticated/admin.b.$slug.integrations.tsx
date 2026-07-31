@@ -40,6 +40,9 @@ import { toast } from "sonner";
 import { useT, useI18n } from "@/lib/i18n";
 import { useBrand } from "@/lib/brand-context";
 
+import { IntegrationsCommandHeader } from "@/components/integrations/IntegrationsCommandHeader";
+import { IntegrationsScopeSwitcher, type IntegrationsCategoryScope } from "@/components/integrations/IntegrationsScopeSwitcher";
+
 export const Route = createFileRoute("/_authenticated/admin/b/$slug/integrations")({
   component: IntegrationsPage,
 });
@@ -90,6 +93,7 @@ function IntegrationsPage() {
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Row | null>(null);
+  const [categoryScope, setCategoryScope] = useState<IntegrationsCategoryScope>("all");
 
   const q = useQuery({
     queryKey: ["integrations", brandId],
@@ -113,69 +117,89 @@ function IntegrationsPage() {
     qc.invalidateQueries({ queryKey: ["integrations", brandId] });
   };
 
+  const integrationsList = q.data ?? [];
+  const filteredIntegrations = useMemo(() => {
+    return integrationsList.filter((row) => {
+      if (categoryScope === "payments") {
+        return row.provider === "stripe" || row.provider === "tap" || row.provider === "benefit";
+      }
+      if (categoryScope === "shipping") {
+        return row.provider === "aramex" || row.provider === "posta_plus";
+      }
+      if (categoryScope === "email_ai") {
+        return (
+          row.provider === "resend_customer_email" ||
+          row.provider === "sendpulse_admin" ||
+          row.provider === "gemini"
+        );
+      }
+      return true;
+    });
+  }, [integrationsList, categoryScope]);
+
   const webhookBase =
     typeof window !== "undefined"
       ? `${window.location.origin}/api/public/webhooks`
       : "https://…/api/public/webhooks";
 
   return (
-    <div className="mx-auto max-w-5xl space-y-4 p-1 sm:p-2 animate-fade-in">
-      <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-primary mb-1.5 font-semibold">
-            <Plug className="h-3.5 w-3.5" /> {t("nav.integrations")}
-          </div>
-          <h1 className="font-display text-4xl font-extrabold tracking-tight bg-clip-text bg-gradient-to-r from-slate-900 via-slate-800 to-slate-950 dark:from-slate-50 dark:to-slate-300">
-            {t("integrations.title")}
-          </h1>
-          <p className="mt-1.5 text-muted-foreground text-sm max-w-md">
-            {t("integrations.subtitle")}
-          </p>
-        </div>
-        <Dialog
-          open={open}
-          onOpenChange={(v) => {
-            setOpen(v);
-            if (!v) setEditing(null);
+    <div className="space-y-3.5">
+      {/* 1. Command Header */}
+      <IntegrationsCommandHeader
+        lang={isAr ? "ar" : "en"}
+        brandName={(isAr ? brand.name_ar : brand.name_en) || brand.name_en || brand.slug}
+        integrationCount={integrationsList.length}
+        onNewIntegration={() => {
+          setEditing(null);
+          setOpen(true);
+        }}
+      />
+
+      {/* 2. Scope Switcher */}
+      <IntegrationsScopeSwitcher
+        lang={isAr ? "ar" : "en"}
+        activeScope={categoryScope}
+        onScopeChange={(scope) => setCategoryScope(scope)}
+        integrationCount={integrationsList.length}
+      />
+
+      <Dialog
+        open={open}
+        onOpenChange={(v) => {
+          setOpen(v);
+          if (!v) setEditing(null);
+        }}
+      >
+        <IntegrationDialog
+          brandId={brandId}
+          row={editing}
+          onSaved={() => {
+            setOpen(false);
+            setEditing(null);
+            qc.invalidateQueries({ queryKey: ["integrations", brandId] });
           }}
-        >
-          <DialogTrigger asChild>
-            <Button
-              onClick={() => setEditing(null)}
-              className="shadow-sm transition-all duration-200 hover:shadow hover:scale-[1.01] active:scale-95"
-            >
-              <Plus className="h-4 w-4 me-2" /> {t("integrations.new")}
-            </Button>
-          </DialogTrigger>
-          <IntegrationDialog
-            brandId={brandId}
-            row={editing}
-            onSaved={() => {
-              setOpen(false);
-              setEditing(null);
-              qc.invalidateQueries({ queryKey: ["integrations", brandId] });
-            }}
-          />
-        </Dialog>
-      </div>
+        />
+      </Dialog>
 
-      <Card className="overflow-hidden border border-amber-500/40 shadow-md rounded-2xl bg-amber-500/5 p-4 mb-4">
-        <div className="flex items-start gap-2 text-sm text-amber-800 dark:text-amber-300">
-          <ShieldAlert className="h-4 w-4 mt-0.5 text-amber-600 shrink-0" />
-          <p className="leading-relaxed">{t("integrations.warning")}</p>
-        </div>
-      </Card>
-
-      <AnalyticsTrackingCard brandId={brandId} isAr={isAr} />
-
-      {q.data && q.data.length === 0 ? (
-        <Card className="overflow-hidden border border-dashed border-border/80 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm p-12 text-center">
-          <Plug className="h-10 w-10 mx-auto text-muted-foreground mb-3 animate-pulse" />
-          <p className="text-muted-foreground">{t("integrations.none")}</p>
-        </Card>
+      {categoryScope === "pixels" ? (
+        <AnalyticsTrackingCard brandId={brandId} isAr={isAr} />
       ) : (
+        <>
+          <Card className="overflow-hidden border border-amber-500/40 shadow-md rounded-2xl bg-amber-500/5 p-4">
+            <div className="flex items-start gap-2 text-sm text-amber-800 dark:text-amber-300">
+              <ShieldAlert className="h-4 w-4 mt-0.5 text-amber-600 shrink-0" />
+              <p className="leading-relaxed">{t("integrations.warning")}</p>
+            </div>
+          </Card>
+
+          {filteredIntegrations.length === 0 ? (
+            <Card className="overflow-hidden border border-dashed border-border/80 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm p-12 text-center">
+              <Plug className="h-10 w-10 mx-auto text-muted-foreground mb-3 animate-pulse" />
+              <p className="text-muted-foreground">{t("integrations.none")}</p>
+            </Card>
+          ) : (
         <div className="grid gap-4">
-          {(q.data ?? []).map((row) => {
+          {filteredIntegrations.map((row) => {
             const webhookUrl = `${webhookBase}/${row.provider}/${brandId}`;
             const preset = PROVIDER_PRESETS.find((p) => p.value === row.provider);
             const isNoWebhookProvider =
@@ -320,6 +344,8 @@ function IntegrationsPage() {
             );
           })}
         </div>
+      )}
+        </>
       )}
     </div>
   );
