@@ -83,6 +83,11 @@ import {
 } from "@/components/ui/alert-dialog";
 import { parseVariantPrompt, type VariantGenerationPlan } from "@/lib/generate-variants.functions";
 import { OptimizedVideo, ResponsiveImage } from "@/components/responsive-media";
+import { InventoryCommandHeader } from "@/components/inventory/InventoryCommandHeader";
+import { InventoryScopeSwitcher, type InventoryScopeTab } from "@/components/inventory/InventoryScopeSwitcher";
+import { InventoryToolbar } from "@/components/inventory/InventoryToolbar";
+import { InventoryWorkQueue } from "@/components/inventory/InventoryWorkQueue";
+import { InventoryMobileCard } from "@/components/inventory/InventoryMobileCard";
 
 /** Common measurement units the admin can pick from for a "size" variant. */
 const SIZE_UNITS = ["", "cm", "mm", "m", "inch", "ft", "kg", "g", "ml", "l"] as const;
@@ -406,9 +411,11 @@ const PRODUCT_HEADER_MAPS = {
 function ProductImporterModal({
   brandId,
   onComplete,
+  renderTrigger,
 }: {
   brandId: string;
   onComplete: () => void;
+  renderTrigger?: (onClick: () => void) => React.ReactNode;
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const [step, setStep] = useState<"preset" | "mapper" | "importing" | "success">("preset");
@@ -428,6 +435,11 @@ function ProductImporterModal({
   const [totalCount, setTotalCount] = useState(0);
   const { lang } = useI18n();
   const isAr = lang === "ar";
+
+  const handleOpen = () => {
+    setIsOpen(true);
+    setStep("preset");
+  };
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -653,17 +665,18 @@ function ProductImporterModal({
 
   return (
     <>
-      <Button
-        variant="outline"
-        onClick={() => {
-          setIsOpen(true);
-          setStep("preset");
-        }}
-        className="border-primary/20 hover:border-primary/40 hover:bg-primary/5 transition-all text-primary"
-      >
-        <Sparkles className="h-4 w-4 me-2 animate-pulse text-amber-500" />
-        {isAr ? "استيراد كتالوج المنتجات" : "Import Products"}
-      </Button>
+      {renderTrigger ? (
+        renderTrigger(handleOpen)
+      ) : (
+        <Button
+          variant="outline"
+          onClick={handleOpen}
+          className="border-primary/20 hover:border-primary/40 hover:bg-primary/5 transition-all text-primary"
+        >
+          <Sparkles className="h-4 w-4 me-2 animate-pulse text-amber-500" />
+          {isAr ? "استيراد كتالوج المنتجات" : "Import Products"}
+        </Button>
+      )}
 
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
         <DialogContent className="max-w-xl border-zinc-100 dark:border-zinc-800 bg-white/95 dark:bg-zinc-950/95 backdrop-blur-xl">
@@ -881,9 +894,11 @@ function ProductImporterModal({
 function InstagramImporterModal({
   brandId,
   onComplete,
+  renderTrigger,
 }: {
   brandId: string;
   onComplete: () => void;
+  renderTrigger?: (onClick: () => void) => React.ReactNode;
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const [step, setStep] = useState<"inputs" | "grid" | "importing" | "success">("inputs");
@@ -898,6 +913,13 @@ function InstagramImporterModal({
   const [fetchStatus, setFetchStatus] = useState("");
   const { lang } = useI18n();
   const isAr = lang === "ar";
+
+  const handleOpen = () => {
+    setIsOpen(true);
+    setStep("inputs");
+    setUsername("");
+    setUrlsUrlsText("");
+  };
 
   const handleFetchPosts = async () => {
     setLoadingPosts(true);
@@ -1078,19 +1100,18 @@ function InstagramImporterModal({
 
   return (
     <>
-      <Button
-        variant="outline"
-        onClick={() => {
-          setIsOpen(true);
-          setStep("inputs");
-          setUsername("");
-          setUrlsUrlsText("");
-        }}
-        className="border-purple-200 dark:border-purple-900/50 hover:border-purple-400 hover:bg-purple-50/50 dark:hover:bg-purple-950/20 text-purple-600 dark:text-purple-400 transition-all font-semibold"
-      >
-        <Instagram className="h-4 w-4 me-2 text-purple-500 animate-pulse" />
-        {isAr ? "استيراد كتالوج انستقرام (ذكاء اصطناعي)" : "✨ Build Catalog from Instagram (AI)"}
-      </Button>
+      {renderTrigger ? (
+        renderTrigger(handleOpen)
+      ) : (
+        <Button
+          variant="outline"
+          onClick={handleOpen}
+          className="border-purple-200 dark:border-purple-900/50 hover:border-purple-400 hover:bg-purple-50/50 dark:hover:bg-purple-950/20 text-purple-600 dark:text-purple-400 transition-all font-semibold"
+        >
+          <Instagram className="h-4 w-4 me-2 text-purple-500 animate-pulse" />
+          {isAr ? "استيراد كتالوج انستقرام (ذكاء اصطناعي)" : "✨ Build Catalog from Instagram (AI)"}
+        </Button>
+      )}
 
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto rounded-3xl border border-zinc-100 dark:border-zinc-800 bg-white/95 dark:bg-zinc-950/95 backdrop-blur-xl shadow-2xl p-6 sm:p-8">
@@ -1568,282 +1589,246 @@ function ProductsSection({
     printLabels(labels);
   };
 
+  const variantsByProduct = useMemo(() => {
+    const map: Record<string, Variant[]> = {};
+    variants.forEach((v) => {
+      if (!map[v.product_id]) map[v.product_id] = [];
+      map[v.product_id].push(v);
+    });
+    return map;
+  }, [variants]);
+
+  const [scopeFilter, setScopeFilter] = useState<"all" | "low" | "out" | "featured" | "inactive">("all");
+  const [selectedCategory, setSelectedCategory] = useState<string>("all");
+  const [sortBy, setSortBy] = useState<string>("newest");
+
+  const scopeTabs: InventoryScopeTab[] = [
+    { id: "all", label_en: "All Products", label_ar: "جميع المنتجات", count: products.length, icon: Package },
+    { id: "low", label_en: "Low Stock", label_ar: "مخزون منخفض", count: lowStock, icon: AlertTriangle },
+    { id: "out", label_en: "Out of Stock", label_ar: "نفد المخزون", count: products.filter(p => productStock(p.id) === 0).length, icon: Boxes },
+    { id: "featured", label_en: "Featured / Trending", label_ar: "مميز ومطلوب", count: products.filter(p => p.featured_trending).length, icon: TrendingUp },
+    { id: "inactive", label_en: "Inactive / Hidden", label_ar: "مخفي وغير نشط", count: products.filter(p => !p.is_active).length, icon: Search },
+  ];
+
+  const categoryOptions = useMemo(() => {
+    const categoriesSet = new Set<string>();
+    products.forEach((p) => {
+      if (p.category) categoriesSet.add(p.category);
+    });
+    return Array.from(categoriesSet).map((c) => ({ id: c, name: c, name_ar: c }));
+  }, [products]);
+
+  const filteredDisplayProducts = useMemo(() => {
+    let result = products.filter((product) => {
+      const productVariants = variantsByProduct[product.id] || [];
+      const searchable = [
+        product.name,
+        product.name_ar,
+        product.name_en,
+        product.category,
+        ...productVariants.flatMap((variant) => [
+          variant.sku,
+          variant.barcode,
+          variant.size,
+          variant.color,
+        ]),
+      ]
+        .join(" ")
+        .toLowerCase();
+
+      const stock = productStock(product.id);
+      const matchesSearch = !normalizedSearch || searchable.includes(normalizedSearch);
+      const matchesCategory = selectedCategory === "all" || product.category === selectedCategory;
+
+      let matchesScope = true;
+      if (scopeFilter === "low") matchesScope = stock > 0 && stock <= 5;
+      else if (scopeFilter === "out") matchesScope = stock === 0;
+      else if (scopeFilter === "featured") matchesScope = Boolean(product.featured_trending);
+      else if (scopeFilter === "inactive") matchesScope = !product.is_active;
+
+      return matchesSearch && matchesCategory && matchesScope;
+    });
+
+    if (sortBy === "price-asc") {
+      result.sort((a, b) => (a.base_price || 0) - (b.base_price || 0));
+    } else if (sortBy === "price-desc") {
+      result.sort((a, b) => (b.base_price || 0) - (a.base_price || 0));
+    } else if (sortBy === "stock-asc") {
+      result.sort((a, b) => productStock(a.id) - productStock(b.id));
+    }
+
+    return result;
+  }, [products, variantsByProduct, normalizedSearch, selectedCategory, scopeFilter, sortBy]);
+
+  const activeFilterCount = (selectedCategory !== "all" ? 1 : 0) + (search ? 1 : 0);
+
   return (
-    <div className="space-y-6">
-      <div className="grid grid-cols-2 gap-2 lg:grid-cols-4 lg:gap-4">
-        {[
-          [Package, isAr ? "المنتجات" : "Products", products.length],
-          [Boxes, isAr ? "إجمالي الوحدات" : "Total units", totalUnits],
-          [AlertTriangle, isAr ? "مخزون منخفض" : "Low stock", lowStock],
-          [TrendingUp, isAr ? "بضائع راكدة" : "Dead Stock Items", deadStock],
-        ].map(([Icon, label, value], index) => {
-          const StatIcon = Icon as typeof Package;
-          return (
-            <Card
-              key={index}
-              className="min-w-0 overflow-hidden rounded-xl border border-border/60 bg-card/40 p-3 shadow-sm backdrop-blur-sm transition-all duration-300 hover:border-primary/30 hover:shadow-md lg:rounded-2xl lg:p-4"
+    <div className="space-y-3.5">
+      {/* 1. Integrated Command Header */}
+      <InventoryCommandHeader
+        lang={isAr ? "ar" : "en"}
+        productCount={products.length}
+        isCourier={false}
+        onCreateNew={() => {
+          setEditing(null);
+          setDialogSession((v) => v + 1);
+          setOpen(true);
+        }}
+        renderImporters={
+          <div className="flex flex-col gap-1 p-1">
+            <InstagramImporterModal brandId={brandId} onComplete={onChanged} />
+            <ProductImporterModal brandId={brandId} onComplete={onChanged} />
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={printAll}
+              className="justify-start text-xs font-semibold"
             >
-              <div className="flex min-w-0 items-center gap-2 sm:gap-4">
-                <div
-                  className={`shrink-0 rounded-lg p-2 lg:rounded-xl lg:p-3 ${index >= 2 && Number(value) > 0 ? "bg-amber-500/10 text-amber-600 dark:text-amber-400" : "bg-primary/10 text-primary"}`}
-                >
-                  <StatIcon className="h-5 w-5" />
-                </div>
-                <div className="min-w-0">
-                  <p className="line-clamp-2 text-xs leading-tight text-muted-foreground">
-                    {String(label)}
-                  </p>
-                  <p className="mt-0.5 font-display text-xl font-bold lg:text-2xl">
-                    {String(value)}
-                  </p>
-                </div>
-              </div>
-            </Card>
+              <Printer className="h-3.5 w-3.5 me-2" />
+              {isAr ? "طباعة جميع الباركودات" : "Print All Barcodes"}
+            </Button>
+          </div>
+        }
+      />
+
+      {/* 2. Operational Scope Switcher */}
+      <InventoryScopeSwitcher
+        lang={isAr ? "ar" : "en"}
+        tabs={scopeTabs}
+        activeTab={scopeFilter}
+        onTabChange={(tabId) => setScopeFilter(tabId as any)}
+      />
+
+      {/* 3. Compact Command Toolbar */}
+      <InventoryToolbar
+        lang={isAr ? "ar" : "en"}
+        search={search}
+        onSearchChange={setSearch}
+        selectedCategory={selectedCategory}
+        onCategoryChange={setSelectedCategory}
+        categories={categoryOptions}
+        sortBy={sortBy}
+        onSortChange={setSortBy}
+        activeFilterCount={activeFilterCount}
+        onClearFilters={() => {
+          setSearch("");
+          setSelectedCategory("all");
+          setScopeFilter("all");
+        }}
+      />
+
+      {/* 4. Mobile Purpose-Built Product Cards */}
+      <div className="space-y-3 block sm:hidden">
+        {filteredDisplayProducts.map((p) => {
+          const pVariants = variantsByProduct[p.id] || [];
+          const totalStock = productStock(p.id);
+          const minPrice = pVariants.length > 0
+            ? Math.min(...pVariants.map((v) => Number(v.selling_price || 0)))
+            : Number(p.base_price || 0);
+
+          return (
+            <InventoryMobileCard
+              key={p.id}
+              lang={isAr ? "ar" : "en"}
+              product={p}
+              variants={pVariants}
+              totalStock={totalStock}
+              minPrice={minPrice}
+              onEdit={(prod) => {
+                setEditing(prod);
+                setDialogSession((v) => v + 1);
+                setOpen(true);
+              }}
+              onDelete={(id) => del(id)}
+              onPrintLabel={(prod) => {
+                const labels: LabelData[] = (variantsByProduct[prod.id] || [])
+                  .filter((v) => Boolean(v.barcode))
+                  .map((v) => ({
+                    code: v.barcode!,
+                    productName: prod.name,
+                    size: v.size,
+                    color: v.color,
+                    price: v.selling_price,
+                    businessName,
+                  }));
+                if (labels.length > 0) printLabels(labels);
+                else toast.error(isAr ? "لا يوجد باركود لهذا المنتج" : "No barcode for this product");
+              }}
+              renderVariantList={(prod) => (
+                <VariantList
+                  productId={prod.id}
+                  productName={prod.name}
+                  businessName={businessName}
+                  variants={variantsByProduct[prod.id] || []}
+                  onChanged={onChanged}
+                  salesByVariant={salesByVariant}
+                  product={prod}
+                />
+              )}
+            />
           );
         })}
       </div>
 
-      <Card className="overflow-hidden rounded-2xl border border-border/60 bg-card/40 p-3 shadow-md backdrop-blur-sm sm:p-5">
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-[minmax(220px,1fr)_160px_170px] sm:gap-4">
-          <div className="relative col-span-2 sm:col-span-1">
-            <Search className="absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              className="ps-9"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder={
-                isAr ? "ابحث بالمنتج أو SKU أو الباركود" : "Search product, SKU, or barcode"
-              }
-            />
-          </div>
-          <Select
-            value={stockFilter}
-            onValueChange={(value: "all" | "low" | "out") => setStockFilter(value)}
-          >
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">{isAr ? "كل المخزون" : "All stock"}</SelectItem>
-              <SelectItem value="low">{isAr ? "مخزون منخفض" : "Low stock"}</SelectItem>
-              <SelectItem value="out">{isAr ? "نفد المخزون" : "Out of stock"}</SelectItem>
-            </SelectContent>
-          </Select>
-          <Select
-            value={visibilityFilter}
-            onValueChange={(value: "all" | "active" | "hidden") => setVisibilityFilter(value)}
-          >
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">{isAr ? "كل المنتجات" : "All visibility"}</SelectItem>
-              <SelectItem value="active">
-                {isAr ? "ظاهر في المتجر" : "Storefront active"}
-              </SelectItem>
-              <SelectItem value="hidden">{isAr ? "مخفي" : "Hidden"}</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        <p className="mt-3 text-xs text-muted-foreground">
-          {filteredProducts.length} / {products.length}{" "}
-          {isAr ? "منتجات مطابقة" : "matching products"}
-        </p>
-      </Card>
-
-      <div className="grid min-w-0 grid-cols-2 gap-2 sm:flex sm:flex-row sm:justify-end sm:gap-3 [&_button]:h-auto [&_button]:min-h-11 [&_button]:min-w-0 [&_button]:w-full [&_button]:whitespace-normal [&_button]:break-words [&_button]:px-2 [&_button]:text-center [&_button]:text-xs [&_button]:leading-tight sm:[&_button]:h-10 sm:[&_button]:min-h-0 sm:[&_button]:w-auto sm:[&_button]:whitespace-nowrap sm:[&_button]:px-4 sm:[&_button]:text-sm">
-        <InstagramImporterModal brandId={brandId} onComplete={onChanged} />
-        <ProductImporterModal brandId={brandId} onComplete={onChanged} />
-        <Button
-          variant="outline"
-          onClick={printAll}
-          className="shadow-sm transition-all duration-200 hover:shadow hover:scale-[1.01] active:scale-95"
-        >
-          <Printer className="h-4 w-4 me-2" /> {isAr ? "طباعة كل الباركودات" : "Print all barcodes"}
-        </Button>
-        <Dialog
-          open={open}
-          onOpenChange={(v) => {
-            setOpen(v);
-            if (!v) setEditing(null);
+      {/* 5. Desktop High-Density Work Queue */}
+      <div className="hidden sm:block">
+        <InventoryWorkQueue
+          lang={isAr ? "ar" : "en"}
+          products={filteredDisplayProducts}
+          variantsByProduct={variantsByProduct}
+          isLoading={false}
+          isError={false}
+          onEdit={(prod) => {
+            setEditing(prod);
+            setDialogSession((v) => v + 1);
+            setOpen(true);
           }}
-        >
-          <DialogTrigger asChild>
-            <Button
-              onClick={() => {
-                setEditing(null);
-                setDialogSession((value) => value + 1);
-              }}
-              className="shadow-sm transition-all duration-200 hover:shadow hover:scale-[1.01] active:scale-95"
-            >
-              <Plus className="h-4 w-4 me-2" /> {t("inventory.newProduct")}
-            </Button>
-          </DialogTrigger>
-          <ProductDialog
-            key={`${editing?.id ?? "new"}-${dialogSession}`}
-            product={editing}
-            onSaved={() => {
-              setOpen(false);
-              setEditing(null);
-              onChanged();
-            }}
-          />
-        </Dialog>
+          onDelete={(id) => del(id)}
+          onPrintLabel={(prod) => {
+            const labels: LabelData[] = (variantsByProduct[prod.id] || [])
+              .filter((v) => Boolean(v.barcode))
+              .map((v) => ({
+                code: v.barcode!,
+                productName: prod.name,
+                size: v.size,
+                color: v.color,
+                price: v.selling_price,
+                businessName,
+              }));
+            if (labels.length > 0) printLabels(labels);
+            else toast.error(isAr ? "لا يوجد باركود لهذا المنتج" : "No barcode for this product");
+          }}
+          renderVariantList={(prod) => (
+            <VariantList
+              productId={prod.id}
+              productName={prod.name}
+              businessName={businessName}
+              variants={variantsByProduct[prod.id] || []}
+              onChanged={onChanged}
+              salesByVariant={salesByVariant}
+              product={prod}
+            />
+          )}
+        />
       </div>
 
-      {products.length === 0 ? (
-        <Card className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm p-12 text-center">
-          <Package className="h-10 w-10 mx-auto text-muted-foreground mb-3 animate-pulse" />
-          <p className="text-muted-foreground">{t("inventory.none")}</p>
-        </Card>
-      ) : filteredProducts.length === 0 ? (
-        <Card className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm p-10 text-center">
-          <Search className="mx-auto mb-3 h-8 w-8 text-muted-foreground animate-pulse" />
-          <p className="font-medium text-lg">
-            {isAr ? "لا توجد منتجات مطابقة" : "No matching products"}
-          </p>
-          <Button
-            variant="ghost"
-            className="mt-4 shadow-sm transition-all duration-200 hover:shadow hover:scale-[1.01] active:scale-95"
-            onClick={() => {
-              setSearch("");
-              setStockFilter("all");
-              setVisibilityFilter("all");
-            }}
-          >
-            {isAr ? "مسح عوامل التصفية" : "Clear filters"}
-          </Button>
-        </Card>
-      ) : (
-        <div className="space-y-4">
-          {filteredProducts.map((p) => {
-            const pVariants = variants.filter((v) => v.product_id === p.id);
-            const stockTotal = pVariants.reduce(
-              (s, v) => s + Number(v.stock_main || 0) + Number(v.stock_incubator || 0),
-              0,
-            );
-            const prices = pVariants
-              .map((v) => Number(v.selling_price || 0))
-              .filter(Number.isFinite);
-            const isExpanded = !!expandedProducts[p.id];
-
-            return (
-              <Card
-                key={p.id}
-                className="overflow-hidden border border-border/60 shadow-md rounded-2xl bg-card/40 backdrop-blur-sm p-4 sm:p-6 transition-all duration-300 hover:border-primary/40 hover:shadow-lg hover:scale-[1.005] cursor-pointer"
-                onClick={() => toggleProduct(p.id)}
-              >
-                <div className="flex items-center justify-between gap-4">
-                  <div className="flex gap-4 flex-1 min-w-0">
-                    {p.image_url && (
-                      <img
-                        src={p.image_url}
-                        alt={p.name}
-                        className="w-12 h-14 sm:w-20 sm:h-24 object-cover rounded-md border border-border shrink-0"
-                      />
-                    )}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <h3 className="text-base sm:text-lg font-display truncate">
-                          {(isAr ? p.name_ar || p.name_en : p.name_en || p.name_ar) || p.name}
-                        </h3>
-                        <span
-                          className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${p.is_active ? "bg-emerald-100 text-emerald-700" : "bg-muted text-muted-foreground"}`}
-                        >
-                          {p.is_active ? (isAr ? "ظاهر" : "Active") : isAr ? "مخفي" : "Hidden"}
-                        </span>
-                      </div>
-                      {p.category && (
-                        <p className="text-xs text-muted-foreground mt-0.5">{p.category}</p>
-                      )}
-
-                      {isExpanded &&
-                        (() => {
-                          const desc = isAr
-                            ? p.description_ar || p.description_en
-                            : p.description_en || p.description_ar;
-                          const fallback = desc || p.description;
-                          return fallback ? (
-                            <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
-                              {fallback}
-                            </p>
-                          ) : null;
-                        })()}
-
-                      <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs">
-                        <span
-                          className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${
-                            stockTotal <= 0
-                              ? "bg-rose-100 text-rose-700 dark:bg-rose-950/40 dark:text-rose-400"
-                              : stockTotal <= 5
-                                ? "bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400"
-                                : "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400"
-                          }`}
-                        >
-                          {stockTotal <= 0
-                            ? isAr
-                              ? "نفد المخزون"
-                              : "Out of stock"
-                            : `${stockTotal} ${t("inventory.inStock")}`}
-                        </span>
-                        <span className="text-muted-foreground">
-                          {pVariants.length} {t("inventory.variantsCount")}
-                        </span>
-                        {prices.length > 0 && (
-                          <span className="font-medium text-foreground bg-secondary/50 px-2 py-0.5 rounded-sm">
-                            {formatMoney(Math.min(...prices), currency)}
-                            {Math.max(...prices) !== Math.min(...prices)
-                              ? ` – ${formatMoney(Math.max(...prices), currency)}`
-                              : ""}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-2 shrink-0">
-                    <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8"
-                        onClick={() => {
-                          setEditing(p);
-                          setDialogSession((value) => value + 1);
-                          setOpen(true);
-                        }}
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <InventoryDeleteAction
-                        message={t("common.confirmDelete")}
-                        onConfirm={() => del(p.id)}
-                      />
-                    </div>
-                    <ChevronDown
-                      className={`h-5 w-5 text-muted-foreground transition-transform duration-200 ${isExpanded ? "rotate-180" : ""}`}
-                    />
-                  </div>
-                </div>
-
-                {isExpanded && (
-                  <div onClick={(e) => e.stopPropagation()}>
-                    <VariantList
-                      productId={p.id}
-                      productName={p.name}
-                      businessName={businessName}
-                      variants={pVariants}
-                      onChanged={onChanged}
-                      salesByVariant={salesByVariant}
-                      product={p}
-                    />
-                  </div>
-                )}
-              </Card>
-            );
-          })}
-        </div>
-      )}
+      <Dialog
+        open={open}
+        onOpenChange={(v) => {
+          setOpen(v);
+          if (!v) setEditing(null);
+        }}
+      >
+        <ProductDialog
+          key={`${editing?.id ?? "new"}-${dialogSession}`}
+          product={editing}
+          onSaved={() => {
+            setOpen(false);
+            setEditing(null);
+            onChanged();
+          }}
+        />
+      </Dialog>
     </div>
   );
 }
@@ -4755,26 +4740,8 @@ function VariantList({
       </div>
 
       {/* Desktop Redesigned Table View */}
-      <div className="hidden w-full overflow-x-auto md:block border border-border/75 rounded-2xl shadow-sm bg-background">
-        <table
-          className="table-fixed text-sm w-full"
-          style={{ width: totalTableWidth, minWidth: "100%" }}
-        >
-          <colgroup>
-            <col style={{ width: 44 }} />
-            <col style={{ width: 270 }} />
-            {renderImageCol && <col style={{ width: 96 }} />}
-            {renderSkuCol && <col style={{ width: 120 }} />}
-            {renderBarcodeCol && <col style={{ width: 190 }} />}
-            {canViewFinancials && <col style={{ width: 110 }} />}
-            <col style={{ width: 110 }} />
-            <col style={{ width: 110 }} />
-            {canViewFinancials && <col style={{ width: 96 }} />}
-            <col style={{ width: 115 }} />
-            <col style={{ width: 115 }} />
-            <col style={{ width: 88 }} />
-            <col style={{ width: 60 }} />
-          </colgroup>
+      <div className="hidden w-full md:block border border-border/75 rounded-2xl shadow-2xs bg-background overflow-hidden">
+        <table className="w-full text-xs text-start border-collapse">
           <thead>
             <tr className="text-start text-xs uppercase tracking-wider border-b bg-muted/40 font-semibold text-muted-foreground">
               <th className="px-2 py-3 text-center align-middle">
