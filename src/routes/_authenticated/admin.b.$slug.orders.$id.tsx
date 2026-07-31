@@ -2258,11 +2258,13 @@ function OrderDetail() {
         disabled={isReadOnly}
         className="no-print m-0 min-w-0 border-0 p-0 disabled:opacity-80"
       >
-        <div className="mb-6 grid items-start gap-6 lg:grid-cols-3">
-          <Card
-            id="sec-overview"
-            className="scroll-mt-24 overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm p-5 sm:p-6 lg:col-span-1 lg:order-2"
-          >
+        <div className="mb-6 grid items-start gap-6 grid-cols-1 lg:grid-cols-3">
+          {/* RIGHT COLUMN (35% width) - Customer, Address & Workflow Controls */}
+          <div className="space-y-6 lg:col-span-1 lg:order-2">
+            <Card
+              id="sec-overview"
+              className="scroll-mt-24 overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm p-5 sm:p-6"
+            >
             <div className="mb-4">
               <Label className="flex items-center gap-2">
                 <Search className="h-3 w-3" /> {t("customers.searchByPhone")}
@@ -2301,7 +2303,7 @@ function OrderDetail() {
                   </p>
                 )}
             </div>
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="grid grid-cols-1 gap-4">
               <div>
                 <div className="flex items-center justify-between mb-1">
                   <Label>{t("orderDetail.customer")}</Label>
@@ -2342,19 +2344,12 @@ function OrderDetail() {
                   </SelectContent>
                 </Select>
               </div>
-              <details className="group col-span-1 rounded-xl border border-border/70 bg-muted/20 sm:col-span-2 lg:hidden">
-                <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 px-3 py-2.5 text-sm font-semibold [&::-webkit-details-marker]:hidden">
-                  <span>
-                    {lang === "ar" ? "تعديل الدفع وحالة الطلب" : "Edit payment & order workflow"}
-                  </span>
-                  <span className="text-xs font-normal text-muted-foreground group-open:hidden">
-                    {t(`payStatus.${order.payment_status ?? "unpaid"}`)}
-                  </span>
-                  <span className="hidden text-xs text-muted-foreground group-open:inline">
-                    {lang === "ar" ? "إغلاق" : "Close"}
-                  </span>
-                </summary>
-                <div className="grid grid-cols-1 gap-3 border-t border-border/60 p-3 sm:grid-cols-2">
+
+              <div className="rounded-xl border border-border/70 bg-muted/20 p-3.5 space-y-3">
+                <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                  {lang === "ar" ? "تعديل الدفع وحالة الطلب" : "Edit payment & order workflow"}
+                </p>
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   <div>
                     <Label>{t("orderDetail.orderDate")}</Label>
                     <Input
@@ -2559,7 +2554,7 @@ function OrderDetail() {
                     )}
                   </div>
                 </div>
-              </details>
+              </div>
             </div>
             {order.customer_id &&
               (() => {
@@ -2985,11 +2980,14 @@ function OrderDetail() {
               </div>
             </div>
           </Card>
+          </div>
 
-          <Card
-            id="sec-items"
-            className="scroll-mt-24 overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm p-5 sm:p-6 lg:col-span-2 lg:order-1"
-          >
+          {/* LEFT COLUMN (65% width) - Products, Line Items & Notes */}
+          <div className="space-y-6 lg:col-span-2 lg:order-1">
+            <Card
+              id="sec-items"
+              className="scroll-mt-24 overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm p-5 sm:p-6"
+            >
             <div className="flex items-center justify-between mb-4 gap-2 flex-wrap">
               <h3 className="font-display text-lg">{t("orderDetail.lineItems")}</h3>
               <div className="flex items-center gap-2 flex-wrap">
@@ -3309,7 +3307,7 @@ function OrderDetail() {
             />
           </Card>
 
-          <Card className="overflow-hidden border border-border/80 shadow-md rounded-2xl bg-card p-5 sm:p-6 lg:sticky lg:top-20 lg:col-start-2 lg:row-start-1 lg:row-span-2 space-y-6">
+          <Card className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm p-5 sm:p-6 space-y-6">
             <div className="space-y-4">
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-1">
                 <div>
@@ -3898,6 +3896,7 @@ function OrderDetail() {
               </div>
             </div>
           </Card>
+          </div>
         </div>
       </fieldset>
 
