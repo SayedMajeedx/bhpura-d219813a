@@ -45,35 +45,57 @@ export function SpotlightCommandPalette({
 
   const activeSlug = brand?.slug || routeParams?.slug || "";
 
-  // Query live matching orders & products when user types in command input
+  // Query live matching orders, products, and customers
   const liveSearchResults = useQuery({
-    queryKey: ["spotlight-search", activeSlug, searchQuery],
+    queryKey: ["spotlight-search", activeSlug, brand?.id, searchQuery],
     queryFn: async () => {
-      if (!searchQuery.trim() || searchQuery.length < 2 || !brand?.id) {
+      const q = searchQuery.trim();
+      if (!q) {
         return { orders: [], products: [], customers: [] };
       }
 
-      const term = `%${searchQuery.trim()}%`;
+      // First resolve brandId if brand context is not loaded yet
+      let bId = brand?.id;
+      if (!bId && activeSlug) {
+        const { data: bData } = await supabase
+          .from("brands")
+          .select("id")
+          .eq("slug", activeSlug)
+          .maybeSingle();
+        bId = bData?.id;
+      }
+
+      if (!bId) return { orders: [], products: [], customers: [] };
+
+      const term = `%${q}%`;
+      const isNum = !isNaN(Number(q));
+
+      // Build order query safely without invalid ilike on integer invoice_number
+      let orderQuery = supabase
+        .from("orders")
+        .select("id, invoice_number, total, currency, created_at, customer_name_snapshot")
+        .eq("brand_id", bId);
+
+      if (isNum) {
+        orderQuery = orderQuery.or(`invoice_number.eq.${parseInt(q, 10)},customer_name_snapshot.ilike.${term}`);
+      } else {
+        orderQuery = orderQuery.or(`customer_name_snapshot.ilike.${term},customer_phone_snapshot.ilike.${term}`);
+      }
 
       const [ordersRes, productsRes, customersRes] = await Promise.all([
-        supabase
-          .from("orders")
-          .select("id, invoice_number, total, currency, created_at, customer_name_snapshot")
-          .eq("brand_id", brand.id)
-          .or(`invoice_number.ilike.${term},customer_name_snapshot.ilike.${term}`)
-          .limit(5),
+        orderQuery.limit(6),
         supabase
           .from("products")
           .select("id, name_en, name_ar, base_price, image_url")
-          .eq("brand_id", brand.id)
+          .eq("brand_id", bId)
           .or(`name_en.ilike.${term},name_ar.ilike.${term}`)
-          .limit(5),
+          .limit(6),
         supabase
           .from("customers")
           .select("id, name, phone, email")
-          .eq("brand_id", brand.id)
+          .eq("brand_id", bId)
           .or(`name.ilike.${term},phone.ilike.${term},email.ilike.${term}`)
-          .limit(5),
+          .limit(6),
       ]);
 
       return {
@@ -82,8 +104,8 @@ export function SpotlightCommandPalette({
         customers: customersRes.data ?? [],
       };
     },
-    enabled: open && searchQuery.length >= 2,
-    staleTime: 10_000,
+    enabled: open && searchQuery.trim().length > 0,
+    staleTime: 5_000,
   });
 
   const handleSelect = (callback: () => void) => {

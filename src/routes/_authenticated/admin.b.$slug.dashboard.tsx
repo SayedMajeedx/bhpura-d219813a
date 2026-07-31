@@ -690,7 +690,7 @@ function Dashboard() {
 
       {/* KPI Row (Gridded and responsive) */}
       <div
-        className={`grid grid-cols-1 sm:grid-cols-2 ${canViewFinancials ? "lg:grid-cols-5" : "lg:grid-cols-2"} gap-4`}
+        className={`grid grid-cols-1 sm:grid-cols-2 ${canViewFinancials ? "lg:grid-cols-3 xl:grid-cols-5" : "lg:grid-cols-2"} gap-4`}
       >
         {kpis.map((k) => {
           const Icon = k.icon;
@@ -701,39 +701,42 @@ function Dashboard() {
           return (
             <Card
               key={k.label}
-              className={`relative overflow-hidden p-5 transition-all duration-300 bg-gradient-to-br ${k.bg} hover:shadow-xl hover:-translate-y-1 border border-border/60 shadow-md rounded-2xl bg-card/40 backdrop-blur-sm ${k.border}`}
+              className={`relative overflow-hidden p-4.5 transition-all duration-300 bg-gradient-to-br ${k.bg} hover:shadow-xl hover:-translate-y-1 border border-border/60 shadow-md rounded-2xl bg-card/40 backdrop-blur-sm ${k.border}`}
             >
               <div className="min-w-0">
-                <div className="flex min-h-10 items-start justify-between gap-2">
-                  <p className="pt-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground/80">
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground/90 truncate">
                     {k.label}
                   </p>
-                  <div
-                    className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-slate-100/80 shadow-sm dark:bg-slate-800/80 ${k.color}`}
-                  >
-                    <Icon className="h-4 w-4" />
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    {hasDelta && (
+                      <span
+                        className={`inline-flex items-center text-[10px] font-bold px-1.5 py-0.5 rounded-full border ${
+                          isPositive
+                            ? "bg-emerald-50 text-emerald-600 border-emerald-200 dark:bg-emerald-950/30 dark:border-emerald-800 dark:text-emerald-400"
+                            : "bg-rose-50 text-rose-600 border-rose-200 dark:bg-rose-950/30 dark:border-rose-800 dark:text-rose-400"
+                        }`}
+                      >
+                        {isPositive ? (
+                          <ArrowUpRight className="h-3 w-3 me-0.5" />
+                        ) : (
+                          <ArrowDownRight className="h-3 w-3 me-0.5" />
+                        )}
+                        {Math.abs(delta).toFixed(1)}%
+                      </span>
+                    )}
+                    <div
+                      className={`flex h-8 w-8 items-center justify-center rounded-xl bg-slate-100/80 shadow-sm dark:bg-slate-800/80 ${k.color}`}
+                    >
+                      <Icon className="h-4 w-4" />
+                    </div>
                   </div>
                 </div>
-                <div className="mt-2 flex items-baseline justify-between gap-2">
-                  <p className="whitespace-nowrap font-display text-[clamp(1.4rem,1.85vw,1.95rem)] font-extrabold leading-none tracking-tight text-foreground tabular-nums">
+
+                <div className="mt-3 flex items-baseline">
+                  <p className="font-display text-xl sm:text-2xl font-extrabold tracking-tight text-foreground tabular-nums truncate">
                     {k.value}
                   </p>
-                  {hasDelta && (
-                    <span
-                      className={`inline-flex items-center text-[10px] font-bold px-1.5 py-0.5 rounded-full border ${
-                        isPositive
-                          ? "bg-emerald-50 text-emerald-600 border-emerald-200 dark:bg-emerald-950/30 dark:border-emerald-800 dark:text-emerald-400"
-                          : "bg-rose-50 text-rose-600 border-rose-200 dark:bg-rose-950/30 dark:border-rose-800 dark:text-rose-400"
-                      }`}
-                    >
-                      {isPositive ? (
-                        <ArrowUpRight className="h-3 w-3 mr-0.5" />
-                      ) : (
-                        <ArrowDownRight className="h-3 w-3 mr-0.5" />
-                      )}
-                      {Math.abs(delta).toFixed(1)}%
-                    </span>
-                  )}
                 </div>
                 <p className="mt-2 text-xs font-medium leading-snug text-muted-foreground/90 truncate">
                   {k.subValue}

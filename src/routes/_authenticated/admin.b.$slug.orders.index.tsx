@@ -856,7 +856,9 @@ function OrdersList() {
     paymentFilter !== "all",
     fulfillmentStatusFilter !== "all",
     fulfillmentMethodFilter !== "all",
+    gatewayFilter !== "all",
     includeHistorical,
+    Boolean(search.trim()),
   ].filter(Boolean).length;
 
   const clearFilters = () => {
@@ -864,6 +866,7 @@ function OrdersList() {
     setPaymentFilter("all");
     setFulfillmentStatusFilter("all");
     setFulfillmentMethodFilter("all");
+    setGatewayFilter("all");
     setIncludeHistorical(false);
     setTabFilter("all");
     setPage(1);

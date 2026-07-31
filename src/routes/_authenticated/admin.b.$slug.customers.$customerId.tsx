@@ -68,6 +68,50 @@ const PAYMENT_LABELS: Record<string, { en: string; ar: string }> = {
   benefit_pay: { en: "BenefitPay", ar: "بنفت بي" },
 };
 
+function formatArabicOrderStatus(status: string | null | undefined, lang: "en" | "ar") {
+  const s = String(status || "").toLowerCase();
+  if (lang === "ar") {
+    switch (s) {
+      case "pending":
+      case "unpaid":
+        return "غير مدفوع";
+      case "pending_verification":
+        return "بانتظار التحقق";
+      case "confirmed":
+      case "paid":
+        return "مؤكد";
+      case "completed":
+      case "delivered":
+        return "مكتمل";
+      case "cancelled":
+        return "ملغي";
+      case "refunded":
+        return "مسترجع";
+      default:
+        return status || "مؤكد";
+    }
+  }
+  switch (s) {
+    case "pending":
+    case "unpaid":
+      return "Unpaid";
+    case "pending_verification":
+      return "Pending Verification";
+    case "confirmed":
+    case "paid":
+      return "Confirmed";
+    case "completed":
+    case "delivered":
+      return "Completed";
+    case "cancelled":
+      return "Cancelled";
+    case "refunded":
+      return "Refunded";
+    default:
+      return status || "Confirmed";
+  }
+}
+
 function CustomerProfilePage() {
   const { slug, customerId } = Route.useParams();
   const brand = useBrand();
@@ -279,22 +323,22 @@ function CustomerProfilePage() {
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[720px] text-sm">
+              <table className="w-full min-w-[680px] text-sm whitespace-nowrap">
                 <thead className="border-b bg-muted/40 font-semibold text-muted-foreground">
                   <tr>
-                    <th className="p-4 text-start font-semibold text-xs uppercase tracking-wider">
+                    <th className="p-4 text-start font-semibold text-xs uppercase tracking-wider whitespace-nowrap">
                       {lang === "ar" ? "رقم الطلب" : "Order ID #"}
                     </th>
-                    <th className="p-4 text-start font-semibold text-xs uppercase tracking-wider">
+                    <th className="p-4 text-start font-semibold text-xs uppercase tracking-wider whitespace-nowrap">
                       {lang === "ar" ? "التاريخ" : "Date"}
                     </th>
-                    <th className="p-4 text-start font-semibold text-xs uppercase tracking-wider">
+                    <th className="p-4 text-start font-semibold text-xs uppercase tracking-wider whitespace-nowrap">
                       {lang === "ar" ? "الحالة" : "Status"}
                     </th>
-                    <th className="p-4 text-start font-semibold text-xs uppercase tracking-wider">
+                    <th className="p-4 text-start font-semibold text-xs uppercase tracking-wider whitespace-nowrap">
                       {lang === "ar" ? "طريقة الدفع" : "Payment Method"}
                     </th>
-                    <th className="p-4 text-end font-semibold text-xs uppercase tracking-wider">
+                    <th className="p-4 text-end font-semibold text-xs uppercase tracking-wider whitespace-nowrap">
                       {lang === "ar" ? "الإجمالي" : "Total Amount"}
                     </th>
                   </tr>
@@ -319,7 +363,7 @@ function CustomerProfilePage() {
                           });
                       }}
                     >
-                      <td className="p-4">
+                      <td className="p-4 whitespace-nowrap font-mono font-bold">
                         <Link
                           to="/admin/b/$slug/orders/$id"
                           params={{ slug, id: order.id }}
@@ -328,7 +372,7 @@ function CustomerProfilePage() {
                           #{order.invoice_number}
                         </Link>
                       </td>
-                      <td className="p-4 text-muted-foreground">
+                      <td className="p-4 text-muted-foreground whitespace-nowrap">
                         <span className="inline-flex items-center gap-2">
                           <CalendarDays className="h-4 w-4" />
                           {new Date(order.order_date).toLocaleDateString(
@@ -336,15 +380,15 @@ function CustomerProfilePage() {
                           )}
                         </span>
                       </td>
-                      <td className="p-4">
-                        <span className="rounded-full bg-secondary px-2.5 py-1 text-xs font-medium text-foreground">
-                          {t(`status.${order.status}`)}
+                      <td className="p-4 whitespace-nowrap">
+                        <span className="rounded-full bg-secondary px-3 py-1 text-xs font-bold text-foreground">
+                          {formatArabicOrderStatus(order.status, lang)}
                         </span>
                       </td>
-                      <td className="p-4 text-muted-foreground">
+                      <td className="p-4 text-muted-foreground whitespace-nowrap">
                         {paymentLabel(order.payment_method, lang)}
                       </td>
-                      <td className="p-4 text-end font-semibold text-foreground">
+                      <td className="p-4 text-end font-semibold text-foreground whitespace-nowrap font-mono">
                         {formatMoney(Number(order.total), order.currency || "BHD")}
                       </td>
                     </tr>
