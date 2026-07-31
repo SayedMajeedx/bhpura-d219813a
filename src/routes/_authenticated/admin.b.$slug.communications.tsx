@@ -33,34 +33,61 @@ export const Route = createFileRoute("/_authenticated/admin/b/$slug/communicatio
   component: CommunicationsPage,
 });
 
+import { CommunicationsCommandHeader } from "@/components/communications/CommunicationsCommandHeader";
+import { CommunicationsScopeSwitcher, type CommunicationsScope } from "@/components/communications/CommunicationsScopeSwitcher";
+
 function CommunicationsPage() {
   const t = useT();
   const { lang } = useI18n();
   const isAr = lang === "ar";
   const brand = useBrand();
   const brandId = brand.id;
+  const [activeScope, setActiveScope] = useState<CommunicationsScope>("recipients");
+  const [addingRecipient, setAddingRecipient] = useState(false);
+
+  const recipientsQ = useQuery({
+    queryKey: ["brand-notification-recipients", brandId],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from("brand_notification_recipients")
+        .select("*")
+        .eq("brand_id", brandId);
+      if (error) return [];
+      return data ?? [];
+    },
+  });
 
   return (
-    <div
-      className="mx-auto max-w-6xl space-y-4 p-1 sm:p-2 animate-fade-in"
-      dir={isAr ? "rtl" : "ltr"}
-    >
-      <div>
-        <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-primary mb-1.5 font-semibold">
-          <Mail className="h-3.5 w-3.5" /> {isAr ? "الاتصالات والمراسلات" : "Communications"}
-        </div>
-        <h1 className="font-display text-4xl font-extrabold tracking-tight bg-clip-text bg-gradient-to-r from-slate-900 via-slate-800 to-slate-950 dark:from-slate-50 dark:to-slate-300">
-          {isAr ? "سجل المراسلات" : "Communications & Alerts"}
-        </h1>
-        <p className="mt-1.5 text-muted-foreground text-sm max-w-md">
-          {isAr
-            ? "أدر مستلمي التنبيهات الإدارية وتتبع سجل رسائل البريد المرسلة للعملاء."
-            : "Manage admin alert recipients and review outbound notification logs in one unified hub."}
-        </p>
-      </div>
+    <div className="space-y-3.5">
+      {/* 1. Command Header */}
+      <CommunicationsCommandHeader
+        lang={isAr ? "ar" : "en"}
+        brandName={(isAr ? brand.name_ar : brand.name_en) || brand.name_en || brand.slug}
+        recipientCount={recipientsQ.data?.length ?? 0}
+        onAddRecipient={() => {
+          setActiveScope("recipients");
+          setAddingRecipient(true);
+        }}
+      />
 
-      <AdminNotificationRecipientsCard brandId={brandId} isAr={isAr} />
-      <EmailActivityCard brandId={brandId} isAr={isAr} />
+      {/* 2. Scope Switcher */}
+      <CommunicationsScopeSwitcher
+        lang={isAr ? "ar" : "en"}
+        activeScope={activeScope}
+        onScopeChange={(scope) => setActiveScope(scope)}
+        recipientCount={recipientsQ.data?.length ?? 0}
+      />
+
+      {activeScope === "recipients" && (
+        <AdminNotificationRecipientsCard
+          brandId={brandId}
+          isAr={isAr}
+          externalAdding={addingRecipient}
+          onResetAdding={() => setAddingRecipient(false)}
+        />
+      )}
+
+      {activeScope === "logs" && <EmailActivityCard brandId={brandId} isAr={isAr} />}
     </div>
   );
 }
@@ -90,9 +117,26 @@ const NOTIFICATION_EVENT_FIELDS = [
   { key: "receive_order_delivered", en: "Order delivered", ar: "تم توصيل الطلب" },
 ] as const;
 
-function AdminNotificationRecipientsCard({ brandId, isAr }: { brandId: string; isAr: boolean }) {
+function AdminNotificationRecipientsCard({
+  brandId,
+  isAr,
+  externalAdding,
+  onResetAdding,
+}: {
+  brandId: string;
+  isAr: boolean;
+  externalAdding?: boolean;
+  onResetAdding?: () => void;
+}) {
   const qc = useQueryClient();
   const [adding, setAdding] = useState(false);
+
+  useEffect(() => {
+    if (externalAdding) {
+      setAdding(true);
+      onResetAdding?.();
+    }
+  }, [externalAdding, onResetAdding]);
   const [saving, setSaving] = useState(false);
   const emptyForm = {
     name: "",
