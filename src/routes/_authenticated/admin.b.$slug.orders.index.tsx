@@ -43,6 +43,11 @@ import {
 } from "@/components/ui/select";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { formatDate, formatMoney, formatOrderStatus } from "@/lib/format";
+import { OrdersCommandHeader } from "@/components/orders/OrdersCommandHeader";
+import { OrdersScopeSwitcher } from "@/components/orders/OrdersScopeSwitcher";
+import { OrdersToolbar } from "@/components/orders/OrdersToolbar";
+import { OrdersWorkQueue } from "@/components/orders/OrdersWorkQueue";
+import { OrderMobileCard } from "@/components/orders/OrderMobileCard";
 import { toast } from "sonner";
 import {
   generateCourierWhatsAppUrl,
@@ -574,7 +579,7 @@ function OrdersList() {
     `orders-list-${brandId}`,
   );
 
-  const { data } = useQuery({
+  const ordersQ = useQuery({
     queryKey: ["orders", brandId, isCourier ? "assigned-courier" : "office"],
     // Realtime can briefly disconnect on a courier's mobile device. A small
     // interval makes order state changes reliably appear in every workspace.
@@ -638,7 +643,7 @@ function OrdersList() {
     navigate({ to: "/admin/b/$slug/orders/$id", params: { slug, id: order.id } });
   };
 
-  const orders = useMemo(() => data ?? [], [data]);
+  const orders = useMemo(() => ordersQ.data ?? [], [ordersQ.data]);
   const normalizedSearch = search.trim().toLowerCase();
 
   // Premium Quick Tabs counts in real time
@@ -1330,640 +1335,151 @@ function OrdersList() {
 
   return (
     <div
-      className="mx-auto max-w-[1500px] space-y-4 p-1 sm:p-2 animate-fade-in"
+      className="mx-auto max-w-[1500px] space-y-3.5 p-1 sm:p-2 animate-fade-in"
       dir={lang === "ar" ? "rtl" : "ltr"}
     >
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="font-display text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
-            {t("orders.title")}
-          </h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {lang === "ar"
-              ? "ركّز على الطلب التالي الذي يحتاج إلى إجراء"
-              : "Focus on the next order that needs action"}
-          </p>
-        </div>
-        {!isCourier && (
-          <div className="flex w-full items-center gap-2 shrink-0 sm:w-auto">
-            <OrderImporterModal
-              brandId={brandId}
-              onComplete={() => qc.invalidateQueries({ queryKey: ["orders", brandId] })}
-            />
-            <Button onClick={create} className="h-11 flex-1 gap-2 shadow-sm sm:flex-none">
-              <Plus className="h-4 w-4" /> {t("orders.new")}
-            </Button>
-          </div>
-        )}
-      </div>
+      {/* 1. Integrated Application Command Header */}
+      <OrdersCommandHeader
+        lang={lang}
+        filteredCount={filteredOrders.length}
+        isCourier={isCourier}
+        brandId={brandId}
+        onCreateNew={create}
+        onRefresh={() => qc.invalidateQueries({ queryKey: ["orders", brandId] })}
+        renderImporter={
+          <OrderImporterModal
+            brandId={brandId}
+            onComplete={() => qc.invalidateQueries({ queryKey: ["orders", brandId] })}
+          />
+        }
+      />
 
-      {/* Operational queue: ordered by what a single operator should handle next. */}
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
-        {tabsList.map((tab) => {
-          const isActive = tabFilter === tab.id;
-          const label = lang === "ar" ? tab.label_ar : tab.label_en;
-          const TabIcon = tab.icon;
+      {/* 2. Segmented Operational Scope Switcher */}
+      <OrdersScopeSwitcher
+        lang={lang}
+        tabs={tabsList}
+        activeTab={tabFilter}
+        onTabChange={(tabId) => {
+          setTabFilter(tabId as any);
+          setPage(1);
+        }}
+      />
+
+      {/* 3. Compact Command Toolbar */}
+      <OrdersToolbar
+        lang={lang}
+        search={search}
+        onSearchChange={(val) => {
+          setSearch(val);
+          setPage(1);
+        }}
+        paymentFilter={paymentFilter}
+        onPaymentFilterChange={(val) => {
+          setPaymentFilter(val);
+          setPage(1);
+        }}
+        fulfillmentStatusFilter={fulfillmentStatusFilter}
+        onFulfillmentStatusFilterChange={(val) => {
+          setFulfillmentStatusFilter(val);
+          setPage(1);
+        }}
+        fulfillmentMethodFilter={fulfillmentMethodFilter}
+        onFulfillmentMethodFilterChange={(val) => {
+          setFulfillmentMethodFilter(val);
+          setPage(1);
+        }}
+        gatewayFilter={gatewayFilter}
+        onGatewayFilterChange={(val) => {
+          setGatewayFilter(val);
+          setPage(1);
+        }}
+        includeHistorical={includeHistorical}
+        onIncludeHistoricalChange={(val) => setIncludeHistorical(val)}
+        sortOrder={sortDirection === "asc" ? "oldest" : "newest"}
+        onSortOrderChange={(val) => setSortDirection(val === "oldest" ? "asc" : "desc")}
+        activeFilterCount={activeFilterCount}
+        onClearFilters={clearFilters}
+      />
+
+      {/* 4. Mobile Purpose-Built Order Cards (375px) */}
+      <div className="space-y-3 block sm:hidden">
+        {paginatedOrders.map((o: any) => {
+          const paymentBadge = resolvePaymentStatus(
+            (o as any).payment_status,
+            o.status,
+            Number(o.total),
+            Number((o as any).advance_paid ?? 0),
+          );
+          const fulfillmentDetails = getFulfillmentBadgeDetails(
+            getOrderWorkflow(o).fulfillment,
+            lang,
+            (o as any).fulfillment_method,
+          );
+
           return (
-            <button
-              key={tab.id}
-              onClick={() => {
-                setTabFilter(tab.id);
-                setPage(1); // reset pagination when tab changes
-              }}
-              className={cn(
-                "group min-w-0 rounded-xl border px-3 py-2.5 text-start transition-all sm:rounded-2xl sm:py-3",
-                tab.id === "all" && "col-span-2 sm:col-span-1",
-                isActive
-                  ? "border-primary bg-primary text-primary-foreground shadow-md"
-                  : "border-border/70 bg-card hover:border-primary/30 hover:bg-muted/40",
-              )}
-            >
-              <span className="flex items-center justify-between gap-4">
-                <TabIcon
-                  className={cn(
-                    "h-4 w-4",
-                    isActive ? "text-primary-foreground" : "text-muted-foreground",
-                  )}
-                />
-                <span className="text-lg font-semibold tabular-nums sm:text-xl">{tab.count}</span>
-              </span>
-              <span
-                className={cn(
-                  "mt-2 block text-xs font-semibold",
-                  !isActive && "text-muted-foreground",
-                )}
-              >
-                {label}
-              </span>
-            </button>
+            <OrderMobileCard
+              key={o.id}
+              lang={lang}
+              slug={slug}
+              order={o}
+              paymentBadge={
+                paymentBadge
+                  ? {
+                      label: t(`payStatus.${paymentBadge}`),
+                      className: PAYMENT_BADGE_CLASSES[paymentBadge],
+                    }
+                  : null
+              }
+              fulfillmentBadge={fulfillmentDetails}
+              renderPrimaryAction={(ord: any) => renderContextualButton(ord)}
+            />
           );
         })}
       </div>
 
-      <Card className="sticky top-2 z-20 border-border/70 bg-background/95 p-3 shadow-lg backdrop-blur supports-[backdrop-filter]:bg-background/85 sm:static sm:rounded-2xl sm:p-4">
-        <div className="flex gap-2">
-          <div className="relative flex-1">
-            <Search className="absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              className="h-11 ps-9 sm:min-w-[320px]"
-              value={search}
-              onChange={(e) => {
-                setSearch(e.target.value);
-                setPage(1);
-              }}
-              placeholder={
-                lang === "ar"
-                  ? "ابحث بالرقم أو العميل أو جهة الاتصال"
-                  : "Search invoice, customer, or contact"
-              }
-            />
-          </div>
-          <Button
-            type="button"
-            variant={activeFilterCount > 0 ? "default" : "outline"}
-            className="relative h-11 shrink-0 gap-2 lg:hidden"
-            onClick={() => setShowFilters((value) => !value)}
-            aria-expanded={showFilters}
-          >
-            <SlidersHorizontal className="h-4 w-4" />
-            <span className="hidden xs:inline">{lang === "ar" ? "تصفية" : "Filters"}</span>
-            {activeFilterCount > 0 && (
-              <span className="rounded-full bg-background/20 px-1.5 text-[10px] font-bold">
-                {activeFilterCount}
-              </span>
-            )}
-          </Button>
-          {(search || activeFilterCount > 0 || tabFilter !== "all") && (
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              className="h-11 w-11 shrink-0 lg:hidden"
-              onClick={clearFilters}
-            >
-              <X className="h-4 w-4" />
-              <span className="sr-only">
-                {lang === "ar" ? "مسح عوامل التصفية" : "Clear filters"}
-              </span>
-            </Button>
-          )}
-        </div>
-        <div
-          className={cn(
-            "mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid lg:grid-cols-[170px_180px_170px_auto_auto] lg:items-center",
-            !showFilters && "hidden lg:grid",
-          )}
-        >
-          <Select value={paymentFilter} onValueChange={setPaymentFilter}>
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">
-                {lang === "ar" ? "حالة الدفع: الكل" : "Payment: All"}
-              </SelectItem>
-              <SelectItem value="unpaid">{lang === "ar" ? "غير مدفوع" : "Unpaid"}</SelectItem>
-              <SelectItem value="pending_verification">
-                {lang === "ar" ? "بانتظار التحقق" : "Pending Verification"}
-              </SelectItem>
-              <SelectItem value="partial">
-                {lang === "ar" ? "مدفوع جزئيًا" : "Partially Paid"}
-              </SelectItem>
-              <SelectItem value="paid">{lang === "ar" ? "مدفوع" : "Paid"}</SelectItem>
-              <SelectItem value="refunded">{lang === "ar" ? "مسترجع" : "Refunded"}</SelectItem>
-            </SelectContent>
-          </Select>
-          <Select value={fulfillmentStatusFilter} onValueChange={setFulfillmentStatusFilter}>
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">
-                {lang === "ar" ? "حالة التنفيذ: الكل" : "Fulfillment: All"}
-              </SelectItem>
-              <SelectItem value="on_hold">{lang === "ar" ? "قيد الانتظار" : "On Hold"}</SelectItem>
-              <SelectItem value="needs_packing">
-                {lang === "ar" ? "بحاجة للتعبئة" : "Needs Packing"}
-              </SelectItem>
-              <SelectItem value="ready_for_pickup">
-                {lang === "ar" ? "جاهز للاستلام" : "Ready for Pickup"}
-              </SelectItem>
-              <SelectItem value="out_for_delivery">
-                {lang === "ar" ? "خرج للتوصيل" : "Out for Delivery"}
-              </SelectItem>
-              <SelectItem value="completed">
-                {lang === "ar" ? "تم التوصيل / الاستلام" : "Delivered / Picked Up"}
-              </SelectItem>
-              <SelectItem value="cancelled">{lang === "ar" ? "ملغي" : "Cancelled"}</SelectItem>
-            </SelectContent>
-          </Select>
-          <Select value={fulfillmentMethodFilter} onValueChange={setFulfillmentMethodFilter}>
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">
-                {lang === "ar" ? "طريقة التنفيذ: الكل" : "Method: All"}
-              </SelectItem>
-              <SelectItem value="delivery">{t("fulfillment.delivery")}</SelectItem>
-              <SelectItem value="pickup">{t("fulfillment.pickup")}</SelectItem>
-              <SelectItem value="digital">
-                {lang === "ar" ? "تسليم رقمي" : "Digital delivery"}
-              </SelectItem>
-            </SelectContent>
-          </Select>
-          <Select
-            value={gatewayFilter}
-            onValueChange={(value) => setGatewayFilter(value as PaymentMethodFilter)}
-          >
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">
-                {lang === "ar" ? "طريقة الدفع: الكل" : "Payment Method: All"}
-              </SelectItem>
-              <SelectItem value="benefit">
-                {lang === "ar" ? "بنفت بي (يدوي)" : "BenefitPay (Manual)"}
-              </SelectItem>
-              <SelectItem value="cod">
-                {lang === "ar" ? "الدفع عند الاستلام" : "Cash on Delivery"}
-              </SelectItem>
-              <SelectItem value="card">
-                {lang === "ar" ? "بطاقة (أونلاين)" : "Card (Online)"}
-              </SelectItem>
-            </SelectContent>
-          </Select>
-          <div className="flex items-center gap-2 select-none border border-zinc-100 dark:border-zinc-800 p-2 rounded-xl bg-zinc-50/50 dark:bg-zinc-900/20 max-w-[200px] h-10 shrink-0">
-            <Switch
-              id="include-historical"
-              checked={includeHistorical}
-              onCheckedChange={setIncludeHistorical}
-            />
-            <label
-              htmlFor="include-historical"
-              className="text-[11px] font-semibold cursor-pointer text-muted-foreground whitespace-nowrap"
-            >
-              {lang === "ar" ? "شمل الأرشيف التاريخي" : "Include Historical"}
-            </label>
-          </div>
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            className="hidden justify-self-end text-muted-foreground lg:inline-flex"
-            onClick={clearFilters}
-          >
-            <X className="me-1 h-3.5 w-3.5" />
-            {lang === "ar" ? "مسح" : "Clear"}
-          </Button>
-        </div>
-        <p className="mt-2 text-[11px] font-medium text-muted-foreground">
-          {lang === "ar"
-            ? `${filteredOrders.length} طلب مطابق`
-            : `${filteredOrders.length} matching ${filteredOrders.length === 1 ? "order" : "orders"}`}
-        </p>
-      </Card>
-
-      {orders.length === 0 ? (
-        <Card className="p-12 text-center">
-          <ReceiptText className="h-10 w-10 mx-auto text-muted-foreground mb-3" />
-          <p className="text-muted-foreground">{t("orders.none")}</p>
-        </Card>
-      ) : filteredOrders.length === 0 ? (
-        <Card className="p-10 text-center">
-          <Search className="mx-auto mb-3 h-8 w-8 text-muted-foreground" />
-          <p className="font-medium">
-            {lang === "ar" ? "لا توجد طلبات مطابقة" : "No matching orders"}
-          </p>
-          <Button variant="ghost" className="mt-2" onClick={clearFilters}>
-            {lang === "ar" ? "مسح عوامل التصفية" : "Clear filters"}
-          </Button>
-        </Card>
-      ) : (
-        <>
-          <div className="space-y-3 sm:hidden">
-            {paginatedOrders.map((o) => {
-              const paymentBadge = resolvePaymentStatus(
-                (o as any).payment_status,
-                o.status,
-                Number(o.total),
-                Number((o as any).advance_paid ?? 0),
-              );
-              const fulfillmentDetails = getFulfillmentBadgeDetails(
-                getOrderWorkflow(o).fulfillment,
-                lang,
-                (o as any).fulfillment_method,
-              );
-              const isCompleted =
-                ["COMPLETED", "completed"].includes((o as any).fulfillment_status || "") ||
-                o.status === "completed";
-
-              return (
-                <Card
-                  key={o.id}
-                  className={cn(
-                    "relative overflow-hidden rounded-2xl border border-border/70 bg-card p-4 shadow-sm transition-all duration-200",
-                    !isCompleted &&
-                      tabFilter === "action_required" &&
-                      "border-s-4 border-s-amber-500",
-                  )}
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-start justify-between gap-3">
-                        <div>
-                          <Link
-                            to="/admin/b/$slug/orders/$id"
-                            params={{ slug, id: o.id }}
-                            className="text-lg font-semibold text-primary hover:underline"
-                          >
-                            #{o.invoice_number}
-                          </Link>
-                          <p className="mt-0.5 text-[11px] text-muted-foreground">
-                            {formatDate(o.created_at ?? o.order_date, locale)}
-                          </p>
-                        </div>
-                        <div className="text-end text-base font-bold tabular-nums">
-                          {formatMoney(Number(o.total), o.currency)}
-                        </div>
-                      </div>
-                      <div className="mt-3 border-t border-border/60 pt-3 text-xs text-muted-foreground">
-                        <div className="text-sm font-semibold text-foreground">
-                          {getOrderCustomerName(o) || (
-                            <span className="text-muted-foreground italic">
-                              {t("orders.noCustomer")}
-                            </span>
-                          )}
-                        </div>
-                        <CustomerContactActions customer={getOrderCustomerContact(o)} lang={lang} />
-                        <OrderItemsSummary items={o.order_items} lang={lang} />
-                      </div>
-
-                      <div className="mt-3 flex flex-wrap items-center gap-1.5">
-                        <span
-                          className={cn(
-                            "rounded-full px-2 py-0.5 text-[10px] uppercase tracking-wider font-bold border",
-                            PAYMENT_BADGE_CLASSES[paymentBadge],
-                          )}
-                        >
-                          {t(`payStatus.${paymentBadge}`)}
-                        </span>
-                        <span
-                          className={cn(
-                            "rounded-full px-2 py-0.5 text-[10px] uppercase tracking-wider font-bold border",
-                            fulfillmentDetails.classes,
-                          )}
-                        >
-                          {fulfillmentDetails.label}
-                        </span>
-                        {renderPaymentMethodBadge(o.payment_method, lang)}
-                      </div>
-
-                      <div className="mt-4 flex items-center gap-2 border-t border-border/50 pt-3">
-                        <div className="min-w-0 flex-1 [&>*]:w-full [&>*]:justify-center">
-                          {renderContextualButton(o)}
-                        </div>
-
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0">
-                              <MoreHorizontal className="h-4 w-4" />
-                              <span className="sr-only">
-                                {lang === "ar" ? "فتح قائمة إجراءات الطلب" : "Open order actions"}
-                              </span>
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem
-                              onClick={() => copyInvoiceLink(o.public_invoice_token, t)}
-                            >
-                              <Copy className="me-2 h-4 w-4" />
-                              {lang === "ar" ? "نسخ رابط الفاتورة" : "Copy invoice link"}
-                            </DropdownMenuItem>
-                            <DropdownMenuItem asChild>
-                              <Link to="/admin/b/$slug/orders/$id" params={{ slug, id: o.id }}>
-                                <ExternalLink className="me-2 h-4 w-4" />
-                                {lang === "ar" ? "تفاصيل الطلب" : "Order details"}
-                              </Link>
-                            </DropdownMenuItem>
-                            {!isCourier && (
-                              <DropdownMenuItem
-                                className="text-destructive focus:text-destructive focus:bg-destructive/10"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setInspectOrder(null);
-                                  setDeleteTarget(o.id);
-                                }}
-                              >
-                                <Trash2 className="me-2 h-4 w-4" />
-                                {t("common.delete")}
-                              </DropdownMenuItem>
-                            )}
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </div>
-                    </div>
-                  </div>
-                </Card>
-              );
-            })}
-          </div>
-
-          <Card className="hidden overflow-hidden rounded-2xl border border-border/70 bg-card shadow-sm sm:block">
-            <div className="max-h-[calc(100vh-220px)] overflow-y-auto overflow-x-auto">
-              <table className="w-full text-sm">
-                <colgroup>
-                  <col className="w-[8%]" />
-                  <col className="w-[10%]" />
-                  <col className="w-[18%]" />
-                  <col className="w-[12%]" />
-                  <col className="w-[16%]" />
-                  <col className="w-[11%]" />
-                  <col className="w-[25%]" />
-                </colgroup>
-                <thead className="sticky top-0 z-10 border-b bg-background/95 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground backdrop-blur select-none">
-                  <tr>
-                    <th
-                      className="p-4 text-start font-semibold cursor-pointer hover:bg-muted/60 transition-colors"
-                      onClick={() => toggleSort("invoice_number")}
-                    >
-                      <span className="flex items-center">
-                        {t("orders.invoice")} {renderSortIcon("invoice_number")}
-                      </span>
-                    </th>
-                    <th
-                      className="p-4 text-start font-semibold cursor-pointer hover:bg-muted/60 transition-colors"
-                      onClick={() => toggleSort("created_at")}
-                    >
-                      <span className="flex items-center">
-                        {t("orders.date")} {renderSortIcon("created_at")}
-                      </span>
-                    </th>
-                    <th
-                      className="p-4 text-start font-semibold cursor-pointer hover:bg-muted/60 transition-colors"
-                      onClick={() => toggleSort("customer")}
-                    >
-                      <span className="flex items-center">
-                        {t("orders.customer")} {renderSortIcon("customer")}
-                      </span>
-                    </th>
-                    <th className="p-4 text-start font-semibold">
-                      {lang === "ar" ? "حالة الدفع" : "Payment Status"}
-                    </th>
-                    <th className="p-4 text-start font-semibold">
-                      {lang === "ar" ? "حالة التوصيل" : "Fulfillment Status"}
-                    </th>
-                    <th
-                      className="p-4 text-end font-semibold cursor-pointer hover:bg-muted/60 transition-colors"
-                      onClick={() => toggleSort("total")}
-                    >
-                      <span className="flex items-center justify-end">
-                        {t("orders.total")} {renderSortIcon("total")}
-                      </span>
-                    </th>
-                    <th className="p-4 text-end font-semibold">{t("orders.actions")}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {paginatedOrders.map((o) => {
-                    const paymentBadge = resolvePaymentStatus(
-                      (o as any).payment_status,
-                      o.status,
-                      Number(o.total),
-                      Number((o as any).advance_paid ?? 0),
-                    );
-                    const fulfillmentDetails = getFulfillmentBadgeDetails(
-                      getOrderWorkflow(o).fulfillment,
-                      lang,
-                      (o as any).fulfillment_method,
-                    );
-                    const isCompleted =
-                      ["COMPLETED", "completed"].includes((o as any).fulfillment_status || "") ||
-                      o.status === "completed";
-
-                    return (
-                      <tr
-                        key={o.id}
-                        onClick={() => setInspectOrder(o)}
-                        className={cn(
-                          "group border-t border-border/70 transition-colors hover:bg-muted/60 cursor-pointer",
-                          isCompleted && "bg-emerald-50/20 dark:bg-emerald-950/10",
-                        )}
-                      >
-                        <td className="p-4 font-semibold">
-                          <Link
-                            to="/admin/b/$slug/orders/$id"
-                            params={{ slug, id: o.id }}
-                            className="text-primary hover:underline"
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            #{o.invoice_number}
-                          </Link>
-                        </td>
-                        <td className="p-4 text-muted-foreground whitespace-nowrap">
-                          {formatDate(o.created_at ?? o.order_date, locale)}
-                        </td>
-                        <td className="p-4 font-medium">
-                          <div>
-                            {getOrderCustomerName(o) || (
-                              <span className="text-muted-foreground italic">
-                                {t("orders.noCustomer")}
-                              </span>
-                            )}
-                          </div>
-                          <CustomerContactActions
-                            customer={getOrderCustomerContact(o)}
-                            lang={lang}
-                          />
-                          <OrderItemsSummary items={o.order_items} lang={lang} />
-                        </td>
-                        <td className="p-4">
-                          <span
-                            className={cn(
-                              "inline-flex whitespace-nowrap text-[10px] uppercase tracking-wider px-2.5 py-1 rounded-full font-bold border",
-                              PAYMENT_BADGE_CLASSES[paymentBadge],
-                            )}
-                          >
-                            {t(`payStatus.${paymentBadge}`)}
-                          </span>
-                          <div className="mt-1.5">
-                            {renderPaymentMethodBadge(o.payment_method, lang)}
-                          </div>
-                        </td>
-                        <td className="p-4">
-                          <div className="flex flex-col gap-1.5 items-start">
-                            <span
-                              className={cn(
-                                "inline-flex whitespace-nowrap text-[10px] uppercase tracking-wider px-2.5 py-1 rounded-full font-bold border",
-                                fulfillmentDetails.classes,
-                              )}
-                            >
-                              {fulfillmentDetails.label}
-                            </span>
-
-                            {o.assigned_to &&
-                              (() => {
-                                const assignedCourier = (couriersQ.data ?? []).find(
-                                  (c: any) => c.id === o.assigned_to,
-                                );
-                                const courierName =
-                                  assignedCourier?.name ||
-                                  (o.assigned_profile as any)?.name ||
-                                  (lang === "ar" ? "مندوب" : "Courier");
-                                const courierPhone =
-                                  assignedCourier?.phone || (o.assigned_profile as any)?.phone;
-                                const notifiedAgo = formatNotifiedTimeAgo(
-                                  (o as any).courier_notified_at,
-                                  lang,
-                                );
-
-                                return (
-                                  <div className="mt-1 flex flex-col gap-1 text-xs">
-                                    <div className="text-[11px] font-medium text-muted-foreground flex items-center gap-1">
-                                      <Truck className="h-3 w-3 text-sky-600 dark:text-sky-400 shrink-0" />
-                                      <span className="font-semibold text-foreground truncate max-w-[120px]">
-                                        {courierName}
-                                      </span>
-                                    </div>
-
-                                    {!isCourier &&
-                                      (notifiedAgo ? (
-                                        <span className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/30 px-1.5 py-0.5 rounded border border-emerald-200 dark:border-emerald-800 w-fit">
-                                          🔔{" "}
-                                          {lang === "ar"
-                                            ? `تم الإشعار (${notifiedAgo})`
-                                            : `Notified ${notifiedAgo}`}
-                                        </span>
-                                      ) : (
-                                        <button
-                                          type="button"
-                                          className="text-[10px] font-bold text-white bg-emerald-600 hover:bg-emerald-700 px-2 py-0.5 rounded flex items-center gap-1 shadow-xs transition-colors w-fit"
-                                          onClick={(e) => {
-                                            e.stopPropagation();
-                                            const courierObj =
-                                              (couriersQ.data ?? []).find(
-                                                (c: any) => c.id === o.assigned_to,
-                                              ) || (o.assigned_profile as any);
-                                            setWaModalState({
-                                              isOpen: true,
-                                              order: o,
-                                              courier: courierObj || {
-                                                id: o.assigned_to,
-                                                name: courierName,
-                                                phone: courierPhone,
-                                              },
-                                            });
-                                          }}
-                                        >
-                                          📱 {lang === "ar" ? "إشعار واتساب" : "Notify WA"}
-                                        </button>
-                                      ))}
-                                  </div>
-                                );
-                              })()}
-                          </div>
-                        </td>
-                        <td className="p-4 text-end font-bold whitespace-nowrap">
-                          {formatMoney(Number(o.total), o.currency)}
-                        </td>
-                        <td className="p-3 text-end whitespace-nowrap min-w-[200px]">
-                          <div className="flex min-w-0 items-center justify-end gap-1">
-                            {renderContextualButton(o)}
-
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-10 w-10 min-h-[44px] min-w-[44px] flex items-center justify-center"
-                                  onClick={(e) => e.stopPropagation()}
-                                >
-                                  <MoreHorizontal className="h-4 w-4" />
-                                  <span className="sr-only">
-                                    {lang === "ar"
-                                      ? "فتح قائمة إجراءات الطلب"
-                                      : "Open order actions"}
-                                  </span>
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align={lang === "ar" ? "start" : "end"}>
-                                <DropdownMenuItem
-                                  onClick={() => copyInvoiceLink(o.public_invoice_token, t)}
-                                >
-                                  <Copy className="me-2 h-4 w-4" />
-                                  {lang === "ar" ? "نسخ رابط الفاتورة" : "Copy invoice link"}
-                                </DropdownMenuItem>
-                                <DropdownMenuItem asChild>
-                                  <Link to="/admin/b/$slug/orders/$id" params={{ slug, id: o.id }}>
-                                    <ExternalLink className="me-2 h-4 w-4" />
-                                    {lang === "ar" ? "تفاصيل الطلب" : "Order details"}
-                                  </Link>
-                                </DropdownMenuItem>
-                                {!isCourier && (
-                                  <DropdownMenuItem
-                                    className="text-destructive focus:text-destructive focus:bg-destructive/10"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      setInspectOrder(null);
-                                      setDeleteTarget(o.id);
-                                    }}
-                                  >
-                                    <Trash2 className="me-2 h-4 w-4" />
-                                    {t("common.delete")}
-                                  </DropdownMenuItem>
-                                )}
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          </Card>
+      {/* 5. High-Density Desktop Work Queue Table */}
+      <div className="hidden sm:block">
+        <OrdersWorkQueue
+          lang={lang}
+          slug={slug}
+          orders={paginatedOrders}
+          isLoading={ordersQ.isLoading}
+          isError={ordersQ.isError}
+          getPaymentBadge={(o: any) => {
+            const pb = resolvePaymentStatus(
+              (o as any).payment_status,
+              o.status,
+              Number(o.total),
+              Number((o as any).advance_paid ?? 0),
+            );
+            return pb
+              ? {
+                  label: t(`payStatus.${pb}`),
+                  className: PAYMENT_BADGE_CLASSES[pb],
+                }
+              : null;
+          }}
+          getFulfillmentBadge={(o: any) =>
+            getFulfillmentBadgeDetails(
+              getOrderWorkflow(o).fulfillment,
+              lang,
+              (o as any).fulfillment_method,
+            )
+          }
+          renderPrimaryAction={(o: any) => renderContextualButton(o)}
+          onCopyInvoice={(id: string) => {
+            const ord = orders.find((x: any) => x.id === id);
+            if (ord) copyInvoiceLink((ord as any).public_invoice_token, t);
+          }}
+          onPrintThermal={(o: any) => {
+            setInspectOrder(o);
+          }}
+          onWhatsAppCustomer={(o: any) => {
+            const phone = getOrderCustomerContact(o)?.phone;
+            if (phone) window.open(`https://wa.me/${phone.replace(/\D/g, "")}`, "_blank");
+          }}
+        />
+      </div>
 
           {/* Pagination Controls */}
           <div className="mt-4 flex flex-col items-center justify-between gap-3 rounded-2xl border border-border/70 bg-card p-3 text-sm shadow-sm select-none sm:flex-row sm:p-4">
@@ -2024,8 +1540,6 @@ function OrdersList() {
               </Button>
             </div>
           </div>
-        </>
-      )}
       {!isCourier && (
         <AlertDialog
           open={deleteTarget !== null}
