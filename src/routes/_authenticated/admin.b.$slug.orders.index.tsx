@@ -1176,6 +1176,38 @@ function OrdersList() {
         );
       }
 
+      // 3.5 Confirm Courier Pickup
+      if (workflow.nextAction === "confirm_pickup") {
+        return (
+          <Button
+            size="sm"
+            className="h-8 font-semibold bg-sky-600 hover:bg-sky-700 text-white text-xs px-3 shadow"
+            disabled={updatingOrderId !== null}
+            onClick={(e) => {
+              e.stopPropagation();
+              setUpdatingOrderId(o.id);
+              handleStatusUpdate(
+                { fulfillment_status: "SHIPPED" },
+                lang === "ar"
+                  ? "تم استلام الشحنة من المندوب وخرجت للتوصيل!"
+                  : "Courier picked up parcel - Out for Delivery!",
+              );
+            }}
+          >
+            {updatingOrderId === o.id ? (
+              <Loader2 className="animate-spin h-3.5 w-3.5" />
+            ) : (
+              <span className="flex items-center gap-1">
+                <Truck className="h-3.5 w-3.5" />
+                {lang === "ar"
+                  ? "تأكيد استلام المندوب (خرج للتوصيل)"
+                  : "Confirm Courier Pickup"}
+              </span>
+            )}
+          </Button>
+        );
+      }
+
       // 4. Delivery Handover & Cash Collection Actions (Courier / Driver)
       if (
         workflow.nextAction === "mark_delivered" ||
