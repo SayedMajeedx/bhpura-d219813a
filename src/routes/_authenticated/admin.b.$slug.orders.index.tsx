@@ -1690,7 +1690,11 @@ function OrdersList() {
                             {!isCourier && (
                               <DropdownMenuItem
                                 className="text-destructive focus:text-destructive focus:bg-destructive/10"
-                                onClick={() => setDeleteTarget(o.id)}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setInspectOrder(null);
+                                  setDeleteTarget(o.id);
+                                }}
                               >
                                 <Trash2 className="me-2 h-4 w-4" />
                                 {t("common.delete")}
@@ -1939,7 +1943,11 @@ function OrdersList() {
                                 {!isCourier && (
                                   <DropdownMenuItem
                                     className="text-destructive focus:text-destructive focus:bg-destructive/10"
-                                    onClick={() => setDeleteTarget(o.id)}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setInspectOrder(null);
+                                      setDeleteTarget(o.id);
+                                    }}
                                   >
                                     <Trash2 className="me-2 h-4 w-4" />
                                     {t("common.delete")}
@@ -2022,10 +2030,14 @@ function OrdersList() {
         <AlertDialog
           open={deleteTarget !== null}
           onOpenChange={(open) => {
-            if (!open) setDeleteTarget(null);
+            if (!open) {
+              setDeleteTarget(null);
+            } else {
+              setInspectOrder(null);
+            }
           }}
         >
-          <AlertDialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-lg">
+          <AlertDialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-lg z-[100]">
             <AlertDialogHeader>
               <AlertDialogTitle>{t("common.delete")}</AlertDialogTitle>
               <AlertDialogDescription>{t("orders.deleteConfirm")}</AlertDialogDescription>
