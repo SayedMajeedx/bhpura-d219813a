@@ -35,6 +35,9 @@ import {
   uniquePageSlug,
 } from "@/lib/seo";
 
+import { PagesCommandHeader } from "@/components/pages/PagesCommandHeader";
+import { PagesScopeSwitcher, type PagesScope } from "@/components/pages/PagesScopeSwitcher";
+
 export const Route = createFileRoute("/_authenticated/admin/b/$slug/pages")({
   component: PagesAndPolicies,
 });
@@ -88,6 +91,7 @@ function PagesAndPolicies() {
   const brandId = brand.id;
   const qc = useQueryClient();
   const [editorLanguage, setEditorLanguage] = useState<EditorLanguage>(isAr ? "ar" : "en");
+  const [activeScope, setActiveScope] = useState<PagesScope>("pages");
 
   const { data, isLoading } = useQuery({
     queryKey: ["business-settings-pages", brandId],
@@ -249,21 +253,24 @@ function PagesAndPolicies() {
   if (isLoading) return <div className="p-8">{isAr ? "جاري التحميل…" : "Loading…"}</div>;
 
   return (
-    <div
-      className="mx-auto max-w-6xl space-y-6 p-4 sm:p-6 lg:p-8 animate-fade-in"
-      dir={isAr ? "rtl" : "ltr"}
-    >
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <h1 className="font-display text-4xl font-extrabold tracking-tight bg-clip-text bg-gradient-to-r from-slate-900 via-slate-800 to-slate-950 dark:from-slate-50 dark:to-slate-300">
-            {isAr ? "الصفحات والسياسات" : "Pages & Policies"}
-          </h1>
-          <p className="mt-1.5 text-muted-foreground text-sm max-w-md">
-            {isAr
-              ? "أنشئ صفحات المتجر، رتّب ظهورها في تذييل المتجر، وحرّر محتواها باللغتين بسهولة."
-              : "Create storefront pages, arrange footer layout, and edit multilingual content in a clean workspace."}
-          </p>
-        </div>
+    <div className="space-y-3.5">
+      {/* 1. Command Header */}
+      <PagesCommandHeader
+        lang={isAr ? "ar" : "en"}
+        brandName={(isAr ? brand.name_ar : brand.name_en) || brand.name_en || brand.slug}
+        pageCount={pages.length}
+        saving={saving}
+        onAddPage={addPage}
+        onSave={save}
+      />
+
+      {/* 2. Scope Switcher */}
+      <PagesScopeSwitcher
+        lang={isAr ? "ar" : "en"}
+        activeScope={activeScope}
+        onScopeChange={(scope) => setActiveScope(scope)}
+        pageCount={pages.length}
+      />
         <Tabs
           value={editorLanguage}
           onValueChange={(value) => setEditorLanguage(value as EditorLanguage)}
@@ -285,7 +292,6 @@ function PagesAndPolicies() {
             </TabsTrigger>
           </TabsList>
         </Tabs>
-      </div>
 
       <Card className="overflow-hidden border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm p-6 space-y-4">
         <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
