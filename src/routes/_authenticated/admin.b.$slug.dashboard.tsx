@@ -688,7 +688,7 @@ function Dashboard() {
             >
               <div className="min-w-0">
                 <div className="flex items-center justify-between gap-2">
-                  <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground/90 truncate">
+                  <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground/90 leading-tight line-clamp-2">
                     {k.label}
                   </p>
                   <div className="flex items-center gap-1.5 shrink-0">
@@ -721,7 +721,7 @@ function Dashboard() {
                     {k.value}
                   </p>
                 </div>
-                <p className="mt-2 text-xs font-medium leading-snug text-muted-foreground/90 truncate">
+                <p className="mt-2 text-xs font-medium leading-snug text-muted-foreground/90 line-clamp-2">
                   {k.subValue}
                 </p>
               </div>

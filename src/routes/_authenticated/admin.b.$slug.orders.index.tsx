@@ -1330,7 +1330,7 @@ function OrdersList() {
 
   return (
     <div
-      className="mx-auto max-w-[1500px] space-y-5 px-3 pb-3 pt-6 sm:p-6 lg:p-8 animate-fade-in"
+      className="mx-auto max-w-[1500px] space-y-4 p-1 sm:p-2 animate-fade-in"
       dir={lang === "ar" ? "rtl" : "ltr"}
     >
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
