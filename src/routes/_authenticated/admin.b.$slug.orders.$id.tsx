@@ -2260,7 +2260,7 @@ function OrderDetail() {
       >
         <div className="mb-6 grid items-start gap-6 grid-cols-1 lg:grid-cols-3">
           {/* RIGHT COLUMN (35% width) - Customer, Address & Workflow Controls */}
-          <div className="space-y-6 lg:col-span-1 lg:order-2">
+          <div className="space-y-6 lg:col-span-1">
             <Card
               id="sec-overview"
               className="scroll-mt-24 overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm p-5 sm:p-6"
@@ -2671,7 +2671,7 @@ function OrderDetail() {
                         )}
                       </div>
                     ) : (
-                      <div className="grid gap-4 sm:grid-cols-[1fr_180px]">
+                      <div className="grid gap-4 grid-cols-1">
                         <div className="space-y-2">
                           <div className="flex flex-wrap items-center justify-between gap-2">
                             <Label>{lang === "ar" ? "عنوان التوصيل" : "Delivery address"}</Label>
@@ -2743,7 +2743,7 @@ function OrderDetail() {
                 </div>
               );
             })()}
-            <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="mt-4 grid grid-cols-1 gap-4">
               <div>
                 <Label>{t("orderDetail.notes")}</Label>
                 <Textarea
@@ -2773,7 +2773,7 @@ function OrderDetail() {
           </div>
 
           {/* LEFT COLUMN (65% width) - Products, Line Items & Notes */}
-          <div className="space-y-6 lg:col-span-2 lg:order-1">
+          <div className="space-y-6 lg:col-span-2">
             <Card
               id="sec-items"
               className="scroll-mt-24 overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm p-5 sm:p-6"
