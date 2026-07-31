@@ -528,6 +528,18 @@ function CourierOrderView({
               </span>
             </div>
           )}
+          {Number(order.tax_rate || 0) > 0 && (
+            <div className="flex justify-between py-1.5 text-xs text-muted-foreground">
+              <span>
+                {lang === "ar"
+                  ? `ضريبة القيمة المضافة (${order.tax_rate}%)`
+                  : `VAT (${order.tax_rate}%)`}
+              </span>
+              <span className="tabular-nums">
+                {formatMoney(Number(order.tax_amount || 0), currency)}
+              </span>
+            </div>
+          )}
           <div className="flex justify-between pt-2 border-t font-bold text-sm">
             <span>{lang === "ar" ? "الإجمالي" : "Total"}</span>
             <span className="tabular-nums">{formatMoney(orderTotal, currency)}</span>
@@ -964,6 +976,9 @@ function OrderDetail() {
     amount: number;
   } | null>(null);
   const [checkingPromo, setCheckingPromo] = useState(false);
+  const [discountMode, setDiscountMode] = useState<"fixed" | "percent">("fixed");
+  const [discountPercentInput, setDiscountPercentInput] = useState<string>("");
+  const [lastNonZeroTaxRate, setLastNonZeroTaxRate] = useState<number>(10);
   const promoContextRef = useRef<string | null>(null);
 
   useEffect(() => {
@@ -3330,14 +3345,74 @@ function OrderDetail() {
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <Label>{t("orderDetail.discount")}</Label>
-                    <Input
-                      type="number"
-                      step="0.001"
-                      value={order.discount}
-                      disabled={isReadOnly || !!appliedPromo}
-                      onChange={(e) => setOrder({ ...order, discount: Number(e.target.value) })}
-                    />
+                    <div className="flex items-center justify-between mb-1">
+                      <Label>{t("orderDetail.discount")}</Label>
+                      {!appliedPromo && !isReadOnly && (
+                        <div className="flex items-center rounded-md border p-0.5 text-xs bg-muted/40">
+                          <button
+                            type="button"
+                            className={cn(
+                              "px-2 py-0.5 rounded font-semibold transition-colors",
+                              discountMode === "fixed"
+                                ? "bg-background text-foreground shadow-xs"
+                                : "text-muted-foreground hover:text-foreground",
+                            )}
+                            onClick={() => setDiscountMode("fixed")}
+                          >
+                            {currency}
+                          </button>
+                          <button
+                            type="button"
+                            className={cn(
+                              "px-2 py-0.5 rounded font-semibold transition-colors",
+                              discountMode === "percent"
+                                ? "bg-background text-foreground shadow-xs"
+                                : "text-muted-foreground hover:text-foreground",
+                            )}
+                            onClick={() => {
+                              setDiscountMode("percent");
+                              if (totals.subtotal > 0 && order.discount > 0) {
+                                const pct = (order.discount / totals.subtotal) * 100;
+                                setDiscountPercentInput(pct.toFixed(1));
+                              }
+                            }}
+                          >
+                            %
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                    {discountMode === "percent" && !appliedPromo ? (
+                      <div className="relative">
+                        <Input
+                          type="number"
+                          step="0.1"
+                          min="0"
+                          max="100"
+                          placeholder="10"
+                          value={discountPercentInput}
+                          disabled={isReadOnly}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setDiscountPercentInput(val);
+                            const pct = Number(val) || 0;
+                            const calculated = Number(((totals.subtotal * pct) / 100).toFixed(3));
+                            setOrder({ ...order, discount: calculated });
+                          }}
+                        />
+                        <span className="absolute right-3 top-2.5 text-xs text-muted-foreground font-bold">
+                          %
+                        </span>
+                      </div>
+                    ) : (
+                      <Input
+                        type="number"
+                        step="0.001"
+                        value={order.discount}
+                        disabled={isReadOnly || !!appliedPromo}
+                        onChange={(e) => setOrder({ ...order, discount: Number(e.target.value) })}
+                      />
+                    )}
                     {appliedPromo && (
                       <p className="mt-1 text-xs text-muted-foreground">
                         {lang === "ar"
@@ -3357,13 +3432,46 @@ function OrderDetail() {
                   </div>
                 </div>
                 <div>
-                  <Label>{t("orderDetail.taxRate")}</Label>
+                  <div className="flex items-center justify-between mb-1">
+                    <Label>{t("orderDetail.taxRate")}</Label>
+                    {!isReadOnly && (
+                      <Button
+                        type="button"
+                        variant={Number(order.tax_rate) === 0 ? "secondary" : "outline"}
+                        size="sm"
+                        className="h-6 px-2 text-[11px] font-semibold"
+                        onClick={() => {
+                          if (Number(order.tax_rate) > 0) {
+                            setLastNonZeroTaxRate(Number(order.tax_rate));
+                            setOrder({ ...order, tax_rate: 0 });
+                          } else {
+                            setOrder({ ...order, tax_rate: lastNonZeroTaxRate || 10 });
+                          }
+                        }}
+                      >
+                        {Number(order.tax_rate) === 0
+                          ? lang === "ar"
+                            ? "✓ معفي من الضريبة"
+                            : "✓ Tax Exempt"
+                          : lang === "ar"
+                            ? "إعفاء ضريبي (0%)"
+                            : "Set Tax Exempt (0%)"}
+                      </Button>
+                    )}
+                  </div>
                   <Input
                     type="number"
                     step="0.01"
                     value={order.tax_rate}
                     onChange={(e) => setOrder({ ...order, tax_rate: Number(e.target.value) })}
                   />
+                  {Number(order.tax_rate) === 0 && (
+                    <p className="mt-1 text-xs text-emerald-700 dark:text-emerald-400 font-medium">
+                      {lang === "ar"
+                        ? "🛡️ الطلب معفي من قيمة الضريبة المضافة (0%)"
+                        : "🛡️ Order is exempt from VAT (0%)"}
+                    </p>
+                  )}
                 </div>
                 <div>
                   <Label>{t("orderDetail.advancePaid")}</Label>
