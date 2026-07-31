@@ -35,7 +35,7 @@ export const Route = createFileRoute("/api/orders/status")({
 
           // 1. Fetch current order status details
           const { data: order, error: fetchErr } = await (supabaseAdmin.from("orders") as any)
-            .select("id, status, payment_status, fulfillment_status, delivery_notes, assigned_to")
+            .select("id, status, payment_status, payment_method, fulfillment_status, delivery_notes, assigned_to")
             .eq("id", id)
             .maybeSingle();
 
@@ -58,12 +58,18 @@ export const Route = createFileRoute("/api/orders/status")({
               currentPayment,
             );
 
-          // Validation Rule: Ensure cannot move to NEEDS_PACKING or SHIPPED if unpaid/partially paid, unless admin_override is true
+          const isCod = ["cod", "cash", "cash_on_delivery", "cash on delivery"].includes(
+            String(order.payment_method || "").toLowerCase(),
+          );
+
+          // Validation Rule: Ensure prepaid online orders cannot move to packing/shipping if unpaid, unless isCod or admin_override is true
           if (
             fulfillment_status &&
-            ["NEEDS_PACKING", "needs_packing", "SHIPPED", "shipped"].includes(fulfillment_status)
+            ["NEEDS_PACKING", "needs_packing", "ASSIGNED", "assigned", "SHIPPED", "shipped"].includes(
+              fulfillment_status,
+            )
           ) {
-            if (isUnpaid && !admin_override) {
+            if (isUnpaid && !isCod && !admin_override) {
               const paymentLabel = ["partially_paid", "PARTIALLY_PAID", "partial"].includes(
                 currentPayment || "",
               )

@@ -937,7 +937,7 @@ function OrdersList() {
         const res = await fetch("/api/orders/status", {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ id: o.id, ...payload }),
+          body: JSON.stringify({ id: o.id, admin_override: true, ...payload }),
         });
         const data = await res.json<{ error?: string; error_ar?: string }>();
         if (!res.ok) throw new Error(data.error_ar && lang === "ar" ? data.error_ar : data.error);
