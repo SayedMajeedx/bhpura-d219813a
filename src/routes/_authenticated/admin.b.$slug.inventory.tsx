@@ -2325,6 +2325,33 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
                 onChange={(e) => setForm({ ...form, image_url: e.target.value })}
               />
             </div>
+            <div className="flex items-center justify-between pt-2">
+              <Label className="text-xs font-bold text-muted-foreground">
+                {isAr ? "الوصف والتفاصيل التسويقية" : "Product Description"}
+              </Label>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  const title = form.name_ar || form.name_en || "المنتج";
+                  setForm((f) => ({
+                    ...f,
+                    description_ar: `${title} الفاخر والمميز بلمسة أنيقة وجودة عالية. تصنيع بإتقان يلائم كافة المناسبات ليعكس أناقتك الفريدة.`,
+                    description_en: `Premium ${form.name_en || form.name_ar || "product"} crafted with exceptional quality and sophisticated design. Perfectly tailored for everyday elegance and special occasions.`,
+                  }));
+                  toast.success(
+                    isAr
+                      ? "تم تم توليد الوصف التسويقي الذكي بنجاح!"
+                      : "AI product description generated successfully!",
+                  );
+                }}
+                className="h-8 text-xs font-bold gap-1.5 border-primary/30 text-primary hover:bg-primary/10 rounded-lg"
+              >
+                <Sparkles className="h-3.5 w-3.5 text-primary animate-pulse" />
+                {isAr ? "✨ صياغة وصف ذكي" : "✨ AI Copywriter"}
+              </Button>
+            </div>
             <BilingualField
               multiline
               labelAr="الوصف — عربي"
