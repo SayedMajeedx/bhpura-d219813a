@@ -1560,11 +1560,9 @@ function OrderDetail() {
       if (se.message?.includes("INSUFFICIENT_STOCK")) {
         toast.error(t("orderDetail.insufficientStock"));
       } else {
+        console.warn("[sync_order_stock]", se.message);
         toast.error(se.message);
       }
-      // Continue to invalidate — items may already be saved. User can adjust.
-    } else if (DEDUCTING.has(order.status) || (orderQ.data as any)?.stock_deducted) {
-      toast.success(t("orderDetail.stockUpdated"));
     }
 
     // Stock deltas: compare prior deducted items vs current, log per-variant changes
