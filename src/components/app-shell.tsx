@@ -13,6 +13,7 @@ import { OsAppDockRail } from "@/components/os/os-app-dock-rail";
 import { OsMenuBar } from "@/components/os/os-menu-bar";
 import { OsAppWindow } from "@/components/os/os-app-window";
 import { OsMobileNavigation } from "@/components/os/os-mobile-navigation";
+import { OsRecentHistoryBar } from "@/components/os/os-recent-history-bar";
 import { cn } from "@/lib/utils";
 
 type BrandRow = { id: string; slug: string; name_en: string; is_active: boolean };
@@ -269,6 +270,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
           {/* Level 2: Active Application Window */}
           <main className="flex-1 flex flex-col min-h-0 mx-0 md:me-3 md:mb-3 overflow-hidden select-text">
+            {!isFocusMode && (
+              <OsRecentHistoryBar lang={lang} currentPageTitle={currentPageLabel} />
+            )}
             <OsAppWindow
               icon={activeNavItem?.icon}
               title={currentPageLabel || brandLabel}
