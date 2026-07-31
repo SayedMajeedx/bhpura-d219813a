@@ -81,6 +81,7 @@ import { useBrand } from "@/lib/brand-context";
 import { useProfile } from "@/lib/profile-context";
 import { getBenefitReceiptViewUrl, rejectBenefitReceipt } from "@/lib/benefit-receipt.functions";
 import { DeliveryAddressCard } from "@/components/delivery-address-card";
+import { getOrderWorkflow } from "@/lib/order-workflow";
 
 function formatDeliveryAddress(
   c:
@@ -1605,6 +1606,140 @@ function OrderDetail() {
   const isUnpaid = (order?.payment_status ?? "unpaid") === "unpaid";
   const isPickup = String(order?.fulfillment_method || "").toLowerCase() === "pickup";
 
+  const renderTopPrimaryAction = () => {
+    if (isCreationMode || !order) return null;
+    const workflow = getOrderWorkflow(order);
+
+    if (workflow.nextAction === "pack_and_ship") {
+      return (
+        <Button
+          className="bg-amber-600 hover:bg-amber-700 text-white font-bold shadow-md transition-transform hover:scale-[1.02] active:scale-95"
+          onClick={async () => {
+            try {
+              const { error } = await supabase
+                .from("orders")
+                .update({ fulfillment_status: "SHIPPED", updated_at: new Date().toISOString() } as any)
+                .eq("id", order.id);
+              if (error) throw error;
+              toast.success(lang === "ar" ? "تم تحديث الحالة إلى تعبئة وشحن" : "Marked as Pack & Ship");
+              await orderQ.refetch();
+              qc.invalidateQueries({ queryKey: ["orders"] });
+            } catch (err: any) {
+              toast.error(err?.message || (lang === "ar" ? "تعذر تحديث الحالة" : "Unable to update status"));
+            }
+          }}
+        >
+          <Truck className="h-4 w-4 me-1.5" />
+          {lang === "ar" ? "تعبئة وشحن" : "Pack & Ship"}
+        </Button>
+      );
+    }
+
+    if (workflow.nextAction === "validate_payment") {
+      return (
+        <Button
+          className="bg-purple-600 hover:bg-purple-700 text-white font-bold shadow-md transition-transform hover:scale-[1.02] active:scale-95"
+          disabled={approvingBenefit}
+          onClick={approveBenefitPayment}
+        >
+          {approvingBenefit ? (
+            <Loader2 className="h-4 w-4 me-1.5 animate-spin" />
+          ) : (
+            <Receipt className="h-4 w-4 me-1.5" />
+          )}
+          {lang === "ar" ? "اعتماد دفع البنفت" : "Approve Benefit Payment"}
+        </Button>
+      );
+    }
+
+    if (workflow.nextAction === "mark_delivered" || workflow.nextAction === "collect_and_deliver") {
+      return (
+        <Button
+          className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold shadow-md transition-transform hover:scale-[1.02] active:scale-95"
+          onClick={async () => {
+            try {
+              const { error } = await supabase
+                .from("orders")
+                .update({
+                  fulfillment_status: "COMPLETED",
+                  status: "completed",
+                  delivered_at: new Date().toISOString(),
+                  updated_at: new Date().toISOString(),
+                } as any)
+                .eq("id", order.id);
+              if (error) throw error;
+              toast.success(lang === "ar" ? "تم تسجيل تسليم الطلب وإتمامه" : "Order delivered & completed");
+              await orderQ.refetch();
+              qc.invalidateQueries({ queryKey: ["orders"] });
+            } catch (err: any) {
+              toast.error(err?.message || (lang === "ar" ? "تعذر إكمال التسليم" : "Unable to complete delivery"));
+            }
+          }}
+        >
+          <CheckCircle2 className="h-4 w-4 me-1.5" />
+          {lang === "ar" ? "تسليم الطلب" : "Mark Delivered"}
+        </Button>
+      );
+    }
+
+    if (workflow.nextAction === "prepare_pickup") {
+      return (
+        <Button
+          className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold shadow-md transition-transform hover:scale-[1.02] active:scale-95"
+          onClick={async () => {
+            try {
+              const { error } = await supabase
+                .from("orders")
+                .update({ fulfillment_status: "READY_FOR_PICKUP", updated_at: new Date().toISOString() } as any)
+                .eq("id", order.id);
+              if (error) throw error;
+              toast.success(lang === "ar" ? "تم تجهيز الطلب للاستلام" : "Ready for pickup");
+              await orderQ.refetch();
+              qc.invalidateQueries({ queryKey: ["orders"] });
+            } catch (err: any) {
+              toast.error(err?.message || (lang === "ar" ? "تعذر تحديث الحالة" : "Unable to update status"));
+            }
+          }}
+        >
+          <CheckCircle2 className="h-4 w-4 me-1.5" />
+          {lang === "ar" ? "تجهيز للاستلام" : "Prepare for Pickup"}
+        </Button>
+      );
+    }
+
+    if (workflow.nextAction === "hand_over_pickup" || workflow.nextAction === "collect_and_hand_over") {
+      return (
+        <Button
+          className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold shadow-md transition-transform hover:scale-[1.02] active:scale-95"
+          onClick={async () => {
+            try {
+              const { error } = await supabase
+                .from("orders")
+                .update({
+                  fulfillment_status: "COMPLETED",
+                  status: "completed",
+                  delivered_at: new Date().toISOString(),
+                  updated_at: new Date().toISOString(),
+                } as any)
+                .eq("id", order.id);
+              if (error) throw error;
+              toast.success(lang === "ar" ? "تم تسليم الطلب للعميل" : "Handed over to customer");
+              await orderQ.refetch();
+              qc.invalidateQueries({ queryKey: ["orders"] });
+            } catch (err: any) {
+              toast.error(err?.message || (lang === "ar" ? "تعذر إكمال التسليم" : "Unable to complete handover"));
+            }
+          }}
+        >
+          <CheckCircle2 className="h-4 w-4 me-1.5" />
+          {lang === "ar" ? "تسليم العميل" : "Hand Over"}
+        </Button>
+      );
+    }
+
+    return null;
+  };
+
   return (
     <div
       className="mx-auto max-w-[1500px] p-4 pb-24 sm:p-6 lg:p-8 animate-fade-in"
@@ -1621,6 +1756,7 @@ function OrderDetail() {
         <div className={cn("flex flex-wrap gap-2", !isReadOnly && "hidden sm:flex")}>
           {!isCreationMode && (
             <>
+              {renderTopPrimaryAction()}
               <SendInvoiceDialog
                 order={order}
                 totals={totals}

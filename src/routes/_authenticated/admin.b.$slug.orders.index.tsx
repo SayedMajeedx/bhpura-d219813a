@@ -2477,6 +2477,20 @@ function OrdersList() {
         locale={locale}
         onClose={() => setInspectOrder(null)}
       />
+      {waModalState.isOpen && waModalState.order && waModalState.courier && (
+        <CourierWhatsAppModal
+          isOpen={waModalState.isOpen}
+          onClose={() => setWaModalState({ isOpen: false, order: null, courier: null })}
+          order={waModalState.order}
+          courier={waModalState.courier}
+          lang={lang}
+          brandSlug={slug}
+          onNotified={async () => {
+            await qc.invalidateQueries({ queryKey: ["orders", brandId] });
+            await qc.invalidateQueries({ queryKey: ["activity_logs"] });
+          }}
+        />
+      )}
     </div>
   );
 }
