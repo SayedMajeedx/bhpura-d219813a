@@ -1863,37 +1863,38 @@ function OrdersList() {
                                       </span>
                                     </div>
 
-                                    {notifiedAgo ? (
-                                      <span className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/30 px-1.5 py-0.5 rounded border border-emerald-200 dark:border-emerald-800 w-fit">
-                                        🔔{" "}
-                                        {lang === "ar"
-                                          ? `تم الإشعار (${notifiedAgo})`
-                                          : `Notified ${notifiedAgo}`}
-                                      </span>
-                                    ) : (
-                                      <button
-                                        type="button"
-                                        className="text-[10px] font-bold text-white bg-emerald-600 hover:bg-emerald-700 px-2 py-0.5 rounded flex items-center gap-1 shadow-xs transition-colors w-fit"
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          const courierObj =
-                                            (couriersQ.data ?? []).find(
-                                              (c: any) => c.id === o.assigned_to,
-                                            ) || (o.assigned_profile as any);
-                                          setWaModalState({
-                                            isOpen: true,
-                                            order: o,
-                                            courier: courierObj || {
-                                              id: o.assigned_to,
-                                              name: courierName,
-                                              phone: courierPhone,
-                                            },
-                                          });
-                                        }}
-                                      >
-                                        📱 {lang === "ar" ? "إشعار واتساب" : "Notify WA"}
-                                      </button>
-                                    )}
+                                    {!isCourier &&
+                                      (notifiedAgo ? (
+                                        <span className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/30 px-1.5 py-0.5 rounded border border-emerald-200 dark:border-emerald-800 w-fit">
+                                          🔔{" "}
+                                          {lang === "ar"
+                                            ? `تم الإشعار (${notifiedAgo})`
+                                            : `Notified ${notifiedAgo}`}
+                                        </span>
+                                      ) : (
+                                        <button
+                                          type="button"
+                                          className="text-[10px] font-bold text-white bg-emerald-600 hover:bg-emerald-700 px-2 py-0.5 rounded flex items-center gap-1 shadow-xs transition-colors w-fit"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            const courierObj =
+                                              (couriersQ.data ?? []).find(
+                                                (c: any) => c.id === o.assigned_to,
+                                              ) || (o.assigned_profile as any);
+                                            setWaModalState({
+                                              isOpen: true,
+                                              order: o,
+                                              courier: courierObj || {
+                                                id: o.assigned_to,
+                                                name: courierName,
+                                                phone: courierPhone,
+                                              },
+                                            });
+                                          }}
+                                        >
+                                          📱 {lang === "ar" ? "إشعار واتساب" : "Notify WA"}
+                                        </button>
+                                      ))}
                                   </div>
                                 );
                               })()}
