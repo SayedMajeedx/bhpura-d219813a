@@ -35,6 +35,7 @@ import {
   CheckCircle2,
   ImageIcon,
   Truck,
+  UserPlus,
 } from "lucide-react";
 import {
   Dialog,
@@ -976,10 +977,166 @@ function OrderDetail() {
     amount: number;
   } | null>(null);
   const [checkingPromo, setCheckingPromo] = useState(false);
+  const [productSearchOpen, setProductSearchOpen] = useState(false);
+  const [productSearchQuery, setProductSearchQuery] = useState("");
   const [discountMode, setDiscountMode] = useState<"fixed" | "percent">("fixed");
   const [discountPercentInput, setDiscountPercentInput] = useState<string>("");
   const [lastNonZeroTaxRate, setLastNonZeroTaxRate] = useState<number>(10);
+  const [newCustomerOpen, setNewCustomerOpen] = useState(false);
+  const [newCustName, setNewCustName] = useState("");
+  const [newCustPhone, setNewCustPhone] = useState("");
+  const [newCustEmail, setNewCustEmail] = useState("");
+  const [newCustRegion, setNewCustRegion] = useState("");
+  const [newCustBlock, setNewCustBlock] = useState("");
+  const [newCustRoad, setNewCustRoad] = useState("");
+  const [newCustHouse, setNewCustHouse] = useState("");
+  const [newCustFlat, setNewCustFlat] = useState("");
+  const [creatingCustomer, setCreatingCustomer] = useState(false);
   const promoContextRef = useRef<string | null>(null);
+
+  const handleCreateInlineCustomer = async () => {
+    if (!newCustName.trim()) {
+      return toast.error(lang === "ar" ? "أدخل اسم العميل" : "Customer name is required");
+    }
+    setCreatingCustomer(true);
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
+
+      const brandId = (settingsQ.data as any)?.brand_id || (brand as any)?.id;
+
+      // 1. Insert customer
+      const { data: cust, error: custErr } = await (supabase.from("customers") as any)
+        .insert({
+          user_id: user.id,
+          brand_id: brandId,
+          name: newCustName.trim(),
+          phone: newCustPhone.trim() || null,
+          email: newCustEmail.trim().toLowerCase() || null,
+          region: newCustRegion.trim() || null,
+          block: newCustBlock.trim() || null,
+          road: newCustRoad.trim() || null,
+          house: newCustHouse.trim() || null,
+          flat: newCustFlat.trim() || null,
+        })
+        .select()
+        .single();
+
+      if (custErr) throw custErr;
+
+      // 2. Insert default address if address details provided
+      let addressId: string | null = null;
+      if (newCustRegion || newCustBlock || newCustRoad || newCustHouse) {
+        const { data: addr, error: addrErr } = await (supabase.from("customer_addresses") as any)
+          .insert({
+            user_id: user.id,
+            brand_id: brandId,
+            customer_id: cust.id,
+            label: "Home",
+            region: newCustRegion.trim() || null,
+            block: newCustBlock.trim() || null,
+            road: newCustRoad.trim() || null,
+            house: newCustHouse.trim() || null,
+            flat: newCustFlat.trim() || null,
+            is_default: true,
+          })
+          .select()
+          .single();
+
+        if (!addrErr && addr) {
+          addressId = addr.id;
+        }
+      }
+
+      toast.success(
+        lang === "ar"
+          ? `تم إضافة العميل "${cust.name}" بنجاح!`
+          : `Customer "${cust.name}" created successfully!`,
+      );
+
+      // Auto-assign to current order!
+      setOrder({
+        ...order,
+        customer_id: cust.id,
+        shipping_address_id: addressId,
+      });
+
+      // Refetch queries
+      qc.invalidateQueries({ queryKey: ["customers"] });
+      qc.invalidateQueries({ queryKey: ["customer_addresses"] });
+
+      // Reset form & close modal
+      setNewCustName("");
+      setNewCustPhone("");
+      setNewCustEmail("");
+      setNewCustRegion("");
+      setNewCustBlock("");
+      setNewCustRoad("");
+      setNewCustHouse("");
+      setNewCustFlat("");
+      setNewCustomerOpen(false);
+    } catch (err: any) {
+      toast.error(err.message || (lang === "ar" ? "تعذر إنشاء العميل" : "Failed to create customer"));
+    } finally {
+      setCreatingCustomer(false);
+    }
+  };
+
+  const filteredVariantsForSearch = useMemo(() => {
+    if (!productSearchQuery.trim()) return (variantsQ.data ?? []).slice(0, 25);
+    const q = productSearchQuery.trim().toLowerCase();
+    const products = productsQ.data ?? [];
+    return (variantsQ.data ?? [])
+      .filter((v: any) => {
+        const p = products.find((x: any) => x.id === v.product_id);
+        const title = String((p as any)?.name ?? "").toLowerCase();
+        const sku = String(v.sku ?? (p as any)?.sku ?? "").toLowerCase();
+        const barcode = String(v.barcode ?? "").toLowerCase();
+        const size = String(v.size ?? "").toLowerCase();
+        const color = String(v.color ?? "").toLowerCase();
+        return (
+          title.includes(q) ||
+          sku.includes(q) ||
+          barcode.includes(q) ||
+          size.includes(q) ||
+          color.includes(q)
+        );
+      })
+      .slice(0, 35);
+  }, [productSearchQuery, variantsQ.data, productsQ.data]);
+
+  const handleSelectVariantFromModal = (variant: any) => {
+    const p = (productsQ.data ?? []).find((x: any) => x.id === variant.product_id);
+    const isAr = lang === "ar";
+    const desc = p ? (p as any).name : `${variant.sku || "Variant"}`;
+    const price = Number(variant.price ?? (p as any)?.price ?? 0);
+    const preferredLoc: "main" | "incubator" =
+      (variant.stock_main ?? 0) > 0 ? "main" : "incubator";
+
+    setItems((prev) => [
+      ...prev,
+      {
+        product_id: variant.product_id,
+        variant_id: variant.id,
+        description: desc,
+        quantity: 1,
+        unit_price: price,
+        original_price: price,
+        customizations: [],
+        customization_total: 0,
+        line_total: price,
+        location: preferredLoc,
+        selected_variant: variant,
+      },
+    ]);
+    toast.success(
+      isAr ? `تمت إضافة "${desc}" إلى الطلب!` : `Added "${desc}" to order!`,
+    );
+    setProductSearchOpen(false);
+    setProductSearchQuery("");
+  };
 
   useEffect(() => {
     if (orderQ.data) {
@@ -2091,7 +2248,19 @@ function OrderDetail() {
             </div>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
               <div>
-                <Label>{t("orderDetail.customer")}</Label>
+                <div className="flex items-center justify-between mb-1">
+                  <Label>{t("orderDetail.customer")}</Label>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-6 px-2 text-[11px] font-semibold text-primary"
+                    onClick={() => setNewCustomerOpen(true)}
+                  >
+                    <Plus className="h-3 w-3 me-1" />
+                    {lang === "ar" ? "زبون جديد" : "New Customer"}
+                  </Button>
+                </div>
                 <Select
                   value={order.customer_id ?? "none"}
                   onValueChange={(v) => {
@@ -2768,13 +2937,21 @@ function OrderDetail() {
           >
             <div className="flex items-center justify-between mb-4 gap-2 flex-wrap">
               <h3 className="font-display text-lg">{t("orderDetail.lineItems")}</h3>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
+                <Button
+                  size="sm"
+                  className="bg-primary text-primary-foreground font-semibold"
+                  onClick={() => setProductSearchOpen(true)}
+                >
+                  <Search className="h-3.5 w-3.5 me-1.5" />
+                  {lang === "ar" ? "بحث المنتجات والـ SKU" : "Search Products & SKUs"}
+                </Button>
                 <Button size="sm" variant="outline" onClick={openBarcodeScanner}>
-                  <ScanLine className="h-3 w-3 mr-1" />{" "}
+                  <ScanLine className="h-3.5 w-3.5 me-1.5" />
                   {lang === "ar" ? "مسح الباركود" : "Scan Barcode"}
                 </Button>
                 <Button size="sm" variant="outline" onClick={addItem}>
-                  <Plus className="h-3 w-3 mr-1" /> {t("orderDetail.addLine")}
+                  <Plus className="h-3.5 w-3.5 me-1.5" /> {t("orderDetail.addLine")}
                 </Button>
               </div>
             </div>
@@ -3757,6 +3934,225 @@ function OrderDetail() {
         lang={lang}
         onNotified={() => orderQ.refetch()}
       />
+
+      {/* Product Search & Autocomplete Modal */}
+      <Dialog open={productSearchOpen} onOpenChange={setProductSearchOpen}>
+        <DialogContent className="max-w-xl p-0 overflow-hidden">
+          <DialogHeader className="p-4 pb-2 border-b">
+            <DialogTitle className="flex items-center gap-2 text-base">
+              <Search className="h-4 w-4 text-primary" />
+              {lang === "ar" ? "البحث عن منتج أو SKU أو باركود" : "Search Product, SKU, or Barcode"}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="p-4 space-y-3">
+            <div className="relative">
+              <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+              <Input
+                autoFocus
+                placeholder={
+                  lang === "ar"
+                    ? "اكتب للبحث بالاسم، الرمز (SKU)، المقاس، أو الباركود..."
+                    : "Type product title, SKU, size, or barcode..."
+                }
+                value={productSearchQuery}
+                onChange={(e) => setProductSearchQuery(e.target.value)}
+                className="ps-9 h-10 text-sm font-medium"
+              />
+              {productSearchQuery && (
+                <button
+                  type="button"
+                  className="absolute right-3 top-3 text-muted-foreground hover:text-foreground"
+                  onClick={() => setProductSearchQuery("")}
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              )}
+            </div>
+
+            <div className="max-h-[380px] overflow-y-auto space-y-2 pe-1">
+              {filteredVariantsForSearch.length === 0 ? (
+                <div className="p-8 text-center text-sm text-muted-foreground">
+                  {lang === "ar"
+                    ? `لم يتم العثور على منتجات تطابق "${productSearchQuery}"`
+                    : `No products found matching "${productSearchQuery}"`}
+                </div>
+              ) : (
+                filteredVariantsForSearch.map((v: any) => {
+                  const p = (productsQ.data ?? []).find((x: any) => x.id === v.product_id);
+                  const title = (p as any)?.name || "Product";
+                  const sku = v.sku || (p as any)?.sku;
+                  const mainStock = Number(v.stock_main ?? 0);
+                  const incStock = Number(v.stock_incubator ?? 0);
+                  const totalStock = mainStock + incStock;
+                  const price = Number(v.price ?? (p as any)?.price ?? 0);
+                  const getMediaUrl = (obj: any) => {
+                    if (!obj) return null;
+                    if (typeof obj.image_url === "string" && obj.image_url) return obj.image_url;
+                    if (typeof obj.image === "string" && obj.image) return obj.image;
+                    if (Array.isArray(obj.images) && obj.images[0]) return obj.images[0];
+                    return null;
+                  };
+                  const img = getMediaUrl(v) || getMediaUrl(p);
+
+                  return (
+                    <div
+                      key={v.id}
+                      className="flex items-center justify-between gap-3 p-2.5 rounded-xl border border-border/70 hover:border-primary/60 hover:bg-primary/5 cursor-pointer transition-all"
+                      onClick={() => handleSelectVariantFromModal(v)}
+                    >
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className="h-11 w-11 rounded-lg border bg-muted/40 overflow-hidden shrink-0 flex items-center justify-center">
+                          {img ? (
+                            <img src={img} alt={title} className="h-full w-full object-cover" />
+                          ) : (
+                            <ImageIcon className="h-5 w-5 text-muted-foreground/30" />
+                          )}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="font-semibold text-xs sm:text-sm text-foreground truncate">
+                            {title}
+                          </p>
+                          <div className="flex flex-wrap items-center gap-1.5 mt-0.5 text-[11px] text-muted-foreground">
+                            {sku && (
+                              <span className="font-mono bg-muted/80 px-1.5 py-0.5 rounded text-[10px]">
+                                {sku}
+                              </span>
+                            )}
+                            {(v.size || v.color) && (
+                              <span>
+                                {[v.size, v.color].filter(Boolean).join(" / ")}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="text-end shrink-0">
+                        <p className="font-bold text-sm text-foreground">
+                          {formatMoney(price, currency)}
+                        </p>
+                        <span
+                          className={cn(
+                            "text-[10px] font-semibold px-1.5 py-0.5 rounded inline-block mt-0.5",
+                            totalStock > 0
+                              ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300"
+                              : "bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300",
+                          )}
+                        >
+                          {totalStock > 0
+                            ? `${lang === "ar" ? "متوفر" : "In Stock"}: ${totalStock}`
+                            : lang === "ar"
+                              ? "نفذت الكمية"
+                              : "Out of Stock"}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Inline New Customer Dialog */}
+      <Dialog open={newCustomerOpen} onOpenChange={setNewCustomerOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <UserPlus className="h-5 w-5 text-primary" />
+              {lang === "ar" ? "إضافة زبون جديد" : "Create New Customer"}
+            </DialogTitle>
+            <DialogDescription>
+              {lang === "ar"
+                ? "أدخل بيانات الزبون وسيتم تعيينه مباشرة لهذا الطلب بدون فقدان التغييرات."
+                : "Enter customer details. They will be assigned to this order draft immediately."}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 py-2">
+            <div>
+              <Label>{lang === "ar" ? "اسم الزبون *" : "Full Name *"}</Label>
+              <Input
+                placeholder={lang === "ar" ? "مثال: علي محمد" : "e.g. Ali Mohamed"}
+                value={newCustName}
+                onChange={(e) => setNewCustName(e.target.value)}
+              />
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <Label>{lang === "ar" ? "رقم الهاتف" : "Phone Number"}</Label>
+                <Input
+                  dir="ltr"
+                  placeholder="33000000"
+                  value={newCustPhone}
+                  onChange={(e) => setNewCustPhone(e.target.value)}
+                />
+              </div>
+              <div>
+                <Label>{lang === "ar" ? "البريد الإلكتروني" : "Email Address"}</Label>
+                <Input
+                  dir="ltr"
+                  placeholder="ali@example.com"
+                  value={newCustEmail}
+                  onChange={(e) => setNewCustEmail(e.target.value)}
+                />
+              </div>
+            </div>
+            <div className="border-t pt-3 space-y-2">
+              <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                {lang === "ar" ? "عنوان التوصيل الافتراضي" : "Default Delivery Address"}
+              </Label>
+              <div className="grid grid-cols-2 gap-2">
+                <Input
+                  placeholder={lang === "ar" ? "المنطقة (مثال: المنامة)" : "Region (e.g. Manama)"}
+                  value={newCustRegion}
+                  onChange={(e) => setNewCustRegion(e.target.value)}
+                />
+                <Input
+                  placeholder={lang === "ar" ? "المجمع (مثال: 321)" : "Block (e.g. 321)"}
+                  value={newCustBlock}
+                  onChange={(e) => setNewCustBlock(e.target.value)}
+                />
+              </div>
+              <div className="grid grid-cols-3 gap-2">
+                <Input
+                  placeholder={lang === "ar" ? "الطريق" : "Road"}
+                  value={newCustRoad}
+                  onChange={(e) => setNewCustRoad(e.target.value)}
+                />
+                <Input
+                  placeholder={lang === "ar" ? "المنزل" : "House"}
+                  value={newCustHouse}
+                  onChange={(e) => setNewCustHouse(e.target.value)}
+                />
+                <Input
+                  placeholder={lang === "ar" ? "الشقة" : "Flat"}
+                  value={newCustFlat}
+                  onChange={(e) => setNewCustFlat(e.target.value)}
+                />
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setNewCustomerOpen(false)}
+            >
+              {lang === "ar" ? "إلغاء" : "Cancel"}
+            </Button>
+            <Button
+              type="button"
+              className="bg-primary text-primary-foreground font-bold"
+              disabled={creatingCustomer || !newCustName.trim()}
+              onClick={handleCreateInlineCustomer}
+            >
+              {creatingCustomer && <Loader2 className="me-2 h-4 w-4 animate-spin" />}
+              {lang === "ar" ? "حفظ وتعيين للطلب" : "Save & Assign to Order"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
@@ -4686,6 +5082,8 @@ function SendInvoiceDialog({
           </div>
         </DialogContent>
       </Dialog>
+
+
 
       <ManageTemplatesDialog
         open={manageOpen}
