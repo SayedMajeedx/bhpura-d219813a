@@ -610,10 +610,18 @@ function CourierOrderView({
           <div className="grid grid-cols-2 gap-2">
             <Button
               disabled={saving}
-              variant="outline"
+              variant={order.fulfillment_status === "ASSIGNED" ? "default" : "outline"}
+              className={order.fulfillment_status === "ASSIGNED" ? "col-span-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 text-sm shadow-md" : ""}
               onClick={() => updateStatus("out_for_delivery")}
             >
-              {lang === "ar" ? "خرج للتوصيل وإرسال واتساب" : "Out for delivery & WhatsApp"}
+              <Truck className="h-4 w-4 me-1.5" />
+              {order.fulfillment_status === "ASSIGNED"
+                ? lang === "ar"
+                  ? "استلام الشحنة من المحل (بدء التوصيل وإشعار الواتساب)"
+                  : "Pick Up Parcel from Store (Start Transit)"
+                : lang === "ar"
+                  ? "خرج للتوصيل وإرسال واتساب"
+                  : "Out for delivery & WhatsApp"}
             </Button>
             <Button
               disabled={
@@ -1715,10 +1723,10 @@ function OrderDetail() {
             try {
               const { error } = await supabase
                 .from("orders")
-                .update({ fulfillment_status: "SHIPPED", updated_at: new Date().toISOString() } as any)
+                .update({ fulfillment_status: "ASSIGNED", updated_at: new Date().toISOString() } as any)
                 .eq("id", order.id);
               if (error) throw error;
-              toast.success(lang === "ar" ? "تم تحديث الحالة إلى تعبئة وشحن" : "Marked as Pack & Ship");
+              toast.success(lang === "ar" ? "تم جاهزية الطلب وتعيينه للمندوب" : "Packed & Assigned to Courier");
               await orderQ.refetch();
               qc.invalidateQueries({ queryKey: ["orders"] });
             } catch (err: any) {
@@ -1727,7 +1735,32 @@ function OrderDetail() {
           }}
         >
           <Truck className="h-4 w-4 me-1.5" />
-          {lang === "ar" ? "تعبئة وشحن" : "Pack & Ship"}
+          {lang === "ar" ? "تجهيز وتعيين المندوب" : "Pack & Assign"}
+        </Button>
+      );
+    }
+
+    if (workflow.nextAction === "confirm_pickup") {
+      return (
+        <Button
+          className="bg-sky-600 hover:bg-sky-700 text-white font-bold shadow-md transition-transform hover:scale-[1.02] active:scale-95"
+          onClick={async () => {
+            try {
+              const { error } = await supabase
+                .from("orders")
+                .update({ fulfillment_status: "SHIPPED", updated_at: new Date().toISOString() } as any)
+                .eq("id", order.id);
+              if (error) throw error;
+              toast.success(lang === "ar" ? "تم استلام الشحنة من المندوب وخرجت للتوصيل" : "Courier picked up parcel - Out for Delivery");
+              await orderQ.refetch();
+              qc.invalidateQueries({ queryKey: ["orders"] });
+            } catch (err: any) {
+              toast.error(err?.message || (lang === "ar" ? "تعذر تحديث الحالة" : "Unable to update status"));
+            }
+          }}
+        >
+          <Truck className="h-4 w-4 me-1.5" />
+          {lang === "ar" ? "تأكيد استلام المندوب (خرج للتوصيل)" : "Confirm Pickup (Start Transit)"}
         </Button>
       );
     }

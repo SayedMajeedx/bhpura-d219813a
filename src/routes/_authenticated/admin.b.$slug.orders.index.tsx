@@ -2265,7 +2265,7 @@ function OrdersList() {
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify({
                           id: selectedFulfillOrder.id,
-                          fulfillment_status: "SHIPPED",
+                          fulfillment_status: "ASSIGNED",
                           assigned_to:
                             selectedCourierId === "unassigned" ? null : selectedCourierId,
                           delivery_notes: fulfillNotes,

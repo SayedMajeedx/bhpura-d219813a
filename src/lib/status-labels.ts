@@ -18,9 +18,9 @@ export const FULFILLMENT_STATUS_MAP: Record<string, StatusDefinition> = {
     badgeClasses: "bg-amber-100 text-amber-900 border-amber-300 dark:bg-amber-950/40 dark:text-amber-300",
   },
   ASSIGNED: {
-    ar: "تم التعيين للمندوب",
-    en: "Assigned to Courier",
-    badgeClasses: "bg-sky-100 text-sky-900 border-sky-300 dark:bg-sky-950/40 dark:text-sky-300",
+    ar: "تم التعيين للمندوب (بانتظار البيك اب)",
+    en: "Assigned (Awaiting Pickup)",
+    badgeClasses: "bg-indigo-100 text-indigo-900 border-indigo-300 dark:bg-indigo-950/40 dark:text-indigo-300",
   },
   SHIPPED: {
     ar: "خرج للتوصيل",

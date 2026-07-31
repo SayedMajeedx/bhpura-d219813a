@@ -14,6 +14,7 @@ export type OrderWorkflowInput = {
 export type FulfillmentStage =
   | "on_hold"
   | "needs_packing"
+  | "assigned"
   | "ready_for_pickup"
   | "out_for_delivery"
   | "completed"
@@ -25,6 +26,7 @@ export type OrderNextAction =
   | "validate_payment"
   | "prepare_pickup"
   | "pack_and_ship"
+  | "confirm_pickup"
   | "hand_over_pickup"
   | "collect_and_hand_over"
   | "mark_delivered"
@@ -70,8 +72,11 @@ export function getFulfillmentStage(order: OrderWorkflowInput): FulfillmentStage
   }
   if (fulfillment === "returned") return "returned";
   if (["delivery_failed", "failed"].includes(fulfillment)) return "failed";
-  if (["shipped", "assigned", "out_for_delivery", "ready_for_delivery"].includes(fulfillment)) {
+  if (["shipped", "out_for_delivery", "ready_for_delivery"].includes(fulfillment)) {
     return "out_for_delivery";
+  }
+  if (fulfillment === "assigned") {
+    return "assigned";
   }
   if (fulfillment === "ready_for_pickup") return "ready_for_pickup";
   if (fulfillment === "needs_packing") return "needs_packing";
@@ -114,6 +119,8 @@ export function getOrderWorkflow(order: OrderWorkflowInput): OrderWorkflow {
       (payment === "paid" || isCod)
     ) {
       nextAction = "pack_and_ship";
+    } else if (fulfillment === "assigned") {
+      nextAction = "confirm_pickup";
     } else if (fulfillment === "out_for_delivery") {
       nextAction =
         payment === "paid" || outstanding <= 0 ? "mark_delivered" : "collect_and_deliver";
