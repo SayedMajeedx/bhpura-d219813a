@@ -87,25 +87,25 @@
   --sidebar-ring: oklch(1 0 0);
 
   /* Boutq OS Radii */
-  --os-radius-control: 0.5rem;
-  --os-radius-card: 1rem;
-  --os-radius-panel: 1.25rem;
+  --os-radius-control: 0.625rem;
+  --os-radius-card: 1.125rem;
+  --os-radius-panel: 1.375rem;
   --os-radius-window: 1.5rem;
   --os-radius-dock: 1.75rem;
 
   /* Boutq OS Semantic Light Theme Tokens */
-  --os-canvas: oklch(0.985 0.005 30);
-  --os-canvas-secondary: oklch(0.96 0.008 30);
-  --os-glass: rgba(255, 255, 255, 0.72);
-  --os-glass-strong: rgba(255, 255, 255, 0.88);
+  --os-canvas: oklch(0.975 0.008 35);
+  --os-canvas-secondary: oklch(0.955 0.012 30);
+  --os-glass: rgba(255, 252, 252, 0.78);
+  --os-glass-strong: rgba(255, 250, 250, 0.92);
   --os-surface: oklch(1 0 0);
   --os-surface-elevated: oklch(1 0 0);
   --os-border: rgba(51, 10, 10, 0.12);
-  --os-highlight: rgba(255, 255, 255, 0.85);
-  --os-shadow: 0 12px 32px -4px rgba(51, 10, 10, 0.08), 0 4px 12px -2px rgba(51, 10, 10, 0.04);
-  --os-window-shadow: 0 24px 48px -8px rgba(51, 10, 10, 0.14), 0 8px 24px -4px rgba(51, 10, 10, 0.08);
-  --os-dock-shadow: 0 16px 36px -6px rgba(51, 10, 10, 0.16);
-  --os-accent-glow: oklch(0.26 0.09 25 / 15%);
+  --os-highlight: rgba(255, 255, 255, 0.92);
+  --os-shadow: 0 14px 36px -4px rgba(51, 10, 10, 0.09), 0 4px 14px -2px rgba(51, 10, 10, 0.05);
+  --os-window-shadow: 0 32px 64px -12px rgba(51, 10, 10, 0.18), 0 10px 28px -4px rgba(51, 10, 10, 0.08);
+  --os-dock-shadow: 0 20px 48px -8px rgba(51, 10, 10, 0.20), 0 6px 16px -2px rgba(51, 10, 10, 0.10);
+  --os-accent-glow: oklch(0.26 0.09 25 / 18%);
   --os-text-primary: oklch(0.22 0.02 25);
   --os-text-secondary: oklch(0.38 0.02 25);
 }
@@ -324,23 +324,32 @@ input[type="number"] {
 @layer utilities {
   .os-canvas {
     background-color: var(--os-canvas);
-    background-image: radial-gradient(
-      circle at 50% 0%,
-      var(--os-accent-glow),
-      transparent 70%
-    );
+    background-image: 
+      radial-gradient(ellipse 90% 60% at 50% -15%, oklch(0.26 0.09 25 / 22%), transparent 70%),
+      radial-gradient(circle at 5% 15%, oklch(0.96 0.035 25 / 70%), transparent 45%),
+      radial-gradient(circle at 95% 85%, oklch(0.95 0.03 35 / 60%), transparent 55%),
+      linear-gradient(185deg, var(--os-canvas) 0%, var(--os-canvas-secondary) 100%);
+    background-attachment: fixed;
+  }
+
+  .dark .os-canvas {
+    background-image: 
+      radial-gradient(ellipse 90% 60% at 50% -15%, oklch(0.28 0.09 25 / 40%), transparent 75%),
+      radial-gradient(circle at 95% 95%, oklch(0.22 0.07 25 / 30%), transparent 55%),
+      linear-gradient(185deg, oklch(0.14 0.015 60) 0%, oklch(0.17 0.018 60) 100%);
+    background-attachment: fixed;
   }
 
   .os-glass {
     background-color: var(--os-glass);
-    backdrop-filter: blur(16px) saturate(180%);
-    -webkit-backdrop-filter: blur(16px) saturate(180%);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
   }
 
   .os-glass-strong {
     background-color: var(--os-glass-strong);
-    backdrop-filter: blur(24px) saturate(200%);
-    -webkit-backdrop-filter: blur(24px) saturate(200%);
+    backdrop-filter: blur(28px) saturate(200%);
+    -webkit-backdrop-filter: blur(28px) saturate(200%);
   }
 
   .os-surface {
@@ -358,11 +367,18 @@ input[type="number"] {
     box-shadow: var(--os-shadow);
   }
 
+  .os-window-frame {
+    background-color: var(--os-surface);
+    border: 1px solid var(--os-border);
+    box-shadow: var(--os-window-shadow), inset 0 1px 0 0 var(--os-highlight);
+    border-radius: var(--os-radius-window);
+  }
+
   .os-toolbar {
     background-color: var(--os-glass);
     border-bottom: 1px solid var(--os-border);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
   }
 
   .os-hairline {
@@ -371,10 +387,13 @@ input[type="number"] {
   }
 
   .os-interactive {
-    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
   }
   .os-interactive:hover {
-    transform: translateY(-1px);
+    transform: translateY(-2px) scale(1.02);
+  }
+  .os-interactive:active {
+    transform: translateY(0) scale(0.98);
   }
 
   .os-window-shadow {
@@ -384,6 +403,22 @@ input[type="number"] {
   .os-focus-ring:focus-visible {
     outline: 2px solid var(--color-primary);
     outline-offset: 2px;
+  }
+
+  /* Sleek, quiet, and unobtrusive Boutq OS scrollbar */
+  .os-scrollbar::-webkit-scrollbar {
+    width: 5px;
+    height: 5px;
+  }
+  .os-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .os-scrollbar::-webkit-scrollbar-thumb {
+    background: oklch(0.26 0.09 25 / 12%);
+    border-radius: 9999px;
+  }
+  .os-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: oklch(0.26 0.09 25 / 28%);
   }
 }
 

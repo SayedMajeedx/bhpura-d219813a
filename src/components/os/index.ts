@@ -11,3 +11,4 @@ export * from "./os-empty-state";
 export * from "./os-section";
 export * from "./os-skeleton";
 export * from "./os-mobile-tab-bar";
+export * from "./os-app-window";

@@ -649,42 +649,25 @@ function Dashboard() {
               : "Real-time retail finance and customer CRM analytics insights."}
           </p>
         </div>
-        {/* Navigation Quicklinks */}
+        {/* Contextual Creation Actions */}
         <div className="flex flex-wrap gap-2 shrink-0">
           <Link
-            to="/admin/b/$slug/orders"
-            params={{ slug }}
-            className="inline-flex h-10 items-center rounded-xl bg-primary px-4 text-xs font-bold text-primary-foreground shadow-sm transition-all duration-200 hover:shadow hover:scale-[1.01] active:scale-95 gap-2"
+            to="/admin/b/$slug/orders/$id"
+            params={{ slug, id: "new" }}
+            className="inline-flex h-9 items-center rounded-xl bg-primary px-3.5 text-xs font-bold text-primary-foreground shadow-sm transition-all duration-200 hover:shadow hover:scale-[1.01] active:scale-95 gap-1.5"
           >
-            <ReceiptText className="h-4 w-4" />
-            {isAr ? "الطلبات" : "Orders"}
+            <ReceiptText className="h-3.5 w-3.5" />
+            {isAr ? "+ طلب جديد" : "+ New Order"}
           </Link>
           <Link
             to="/admin/b/$slug/inventory"
             params={{ slug }}
-            className="inline-flex h-10 items-center rounded-xl border border-border/60 bg-card/50 px-4 text-xs font-bold text-foreground shadow-sm transition-all duration-200 hover:shadow hover:scale-[1.01] active:scale-95 gap-2"
+            search={{ new: true } as any}
+            className="inline-flex h-9 items-center rounded-xl border border-border/60 bg-card/60 px-3.5 text-xs font-bold text-foreground shadow-sm transition-all duration-200 hover:shadow hover:scale-[1.01] active:scale-95 gap-1.5"
           >
-            <Package className="h-4 w-4" />
-            {isAr ? "المنتجات" : "Products"}
+            <Package className="h-3.5 w-3.5" />
+            {isAr ? "+ إضافة منتج" : "+ Add Product"}
           </Link>
-          <Link
-            to="/admin/b/$slug/customers"
-            params={{ slug }}
-            className="inline-flex h-10 items-center rounded-xl border border-border/60 bg-card/50 px-4 text-xs font-bold text-foreground shadow-sm transition-all duration-200 hover:shadow hover:scale-[1.01] active:scale-95 gap-2"
-          >
-            <Users className="h-4 w-4" />
-            {isAr ? "العملاء" : "Customers"}
-          </Link>
-          {canViewFinancials && (
-            <Link
-              to="/admin/b/$slug/expenses"
-              params={{ slug }}
-              className="inline-flex h-10 items-center rounded-xl border border-border/60 bg-card/50 px-4 text-xs font-bold text-foreground shadow-sm transition-all duration-200 hover:shadow hover:scale-[1.01] active:scale-95 gap-2"
-            >
-              <Wallet className="h-4 w-4" />
-              {isAr ? "المصروفات" : "Expenses"}
-            </Link>
-          )}
         </div>
       </div>
 
@@ -763,7 +746,8 @@ function Dashboard() {
               </p>
             </div>
             <span className="text-xs font-bold text-primary font-mono bg-primary/10 px-3 py-1 rounded-full border border-primary/20 w-fit">
-              {formatMoney(financials.revenueCurrent, currency, locale)} (30d Total)
+              {formatMoney(financials.revenueCurrent, currency, locale)}
+              {isAr ? " (إجمالي 30 يوم)" : " (30-Day Total)"}
             </span>
           </div>
 
