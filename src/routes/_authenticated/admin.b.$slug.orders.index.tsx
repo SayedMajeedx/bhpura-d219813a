@@ -52,6 +52,11 @@ import {
 import { CourierWhatsAppModal } from "@/components/courier/CourierWhatsAppModal";
 import { useT, useI18n } from "@/lib/i18n";
 import { resolvePaymentStatus, PAYMENT_BADGE_CLASSES } from "@/lib/payment-status";
+import {
+  matchesPaymentMethodFilter,
+  normalizePaymentMethod,
+  type PaymentMethodFilter,
+} from "@/lib/payment-method";
 import { useBrand } from "@/lib/brand-context";
 import { useProfile } from "@/lib/profile-context";
 import { useRealtimeInvalidate } from "@/hooks/use-realtime-invalidate";
@@ -232,12 +237,9 @@ function orderNeedsOperatorAction(order: any): boolean {
 }
 
 const renderPaymentMethodBadge = (paymentMethod: string | null | undefined, lang: "en" | "ar") => {
-  const method = String(paymentMethod ?? "").toLowerCase();
-  const isCard = ["card", "apple_pay", "google_pay"].includes(method);
-  const isBenefit = ["benefit", "benefitpay", "benefit_pay", "bank_transfer"].includes(method);
-  const isCod = ["cash", "cod"].includes(method);
+  const method = normalizePaymentMethod(paymentMethod);
 
-  if (isCard) {
+  if (method === "card") {
     return (
       <div className="mt-1">
         <span className="inline-flex items-center gap-1 whitespace-nowrap rounded-md px-1.5 py-0.5 text-[10px] font-semibold bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-950/30 dark:text-blue-300 dark:border-blue-900 shadow-xs">
@@ -246,7 +248,7 @@ const renderPaymentMethodBadge = (paymentMethod: string | null | undefined, lang
       </div>
     );
   }
-  if (isBenefit) {
+  if (method === "benefit") {
     return (
       <div className="mt-1">
         <span className="inline-flex items-center gap-1 whitespace-nowrap rounded-md px-1.5 py-0.5 text-[10px] font-semibold bg-violet-50 text-violet-700 border border-violet-200 dark:bg-violet-950/30 dark:text-violet-300 dark:border-violet-900 shadow-xs">
@@ -255,11 +257,11 @@ const renderPaymentMethodBadge = (paymentMethod: string | null | undefined, lang
       </div>
     );
   }
-  if (isCod) {
+  if (method === "cod") {
     return (
       <div className="mt-1">
         <span className="inline-flex items-center gap-1 whitespace-nowrap rounded-md px-1.5 py-0.5 text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-300 dark:border-emerald-900 shadow-xs">
-          💵 {lang === "ar" ? "الدفع عند الاستلام" : "COD"}
+          💵 {lang === "ar" ? "الدفع عند الاستلام" : "Cash on Delivery"}
         </span>
       </div>
     );
@@ -379,7 +381,7 @@ function OrdersList() {
   const [paymentFilter, setPaymentFilter] = useState("all");
   const [fulfillmentStatusFilter, setFulfillmentStatusFilter] = useState("all");
   const [fulfillmentMethodFilter, setFulfillmentMethodFilter] = useState("all");
-  const [gatewayFilter, setGatewayFilter] = useState("all");
+  const [gatewayFilter, setGatewayFilter] = useState<PaymentMethodFilter>("all");
   const [inspectOrder, setInspectOrder] = useState<any | null>(null);
   const [includeHistorical, setIncludeHistorical] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
@@ -635,7 +637,7 @@ function OrdersList() {
     navigate({ to: "/admin/b/$slug/orders/$id", params: { slug, id: order.id } });
   };
 
-  const orders = data ?? [];
+  const orders = useMemo(() => data ?? [], [data]);
   const normalizedSearch = search.trim().toLowerCase();
 
   // Premium Quick Tabs counts in real time
@@ -717,24 +719,7 @@ function OrdersList() {
       ) {
         return false;
       }
-      if (gatewayFilter !== "all") {
-        const pm = String(order.payment_method || "").toLowerCase();
-        const gf = gatewayFilter.toLowerCase();
-        let matchesGateway = false;
-
-        if (gf === "benefit") {
-          matchesGateway = pm.includes("benefit") || pm.includes("ben") || pm.includes("manual");
-        } else if (gf === "card") {
-          matchesGateway =
-            pm.includes("card") || pm.includes("tap") || pm.includes("creimax") || pm.includes("credit");
-        } else if (gf === "cod") {
-          matchesGateway = pm.includes("cod") || pm.includes("cash") || pm.includes("delivery");
-        } else {
-          matchesGateway = pm === gf;
-        }
-
-        if (!matchesGateway) return false;
-      }
+      if (!matchesPaymentMethodFilter(order.payment_method, gatewayFilter)) return false;
 
       // Quick tab routing
       if (tabFilter === "unpaid") {
@@ -758,6 +743,7 @@ function OrdersList() {
     paymentFilter,
     fulfillmentStatusFilter,
     fulfillmentMethodFilter,
+    gatewayFilter,
     tabFilter,
     includeHistorical,
   ]);
@@ -1464,7 +1450,10 @@ function OrdersList() {
               </SelectItem>
             </SelectContent>
           </Select>
-          <Select value={gatewayFilter} onValueChange={setGatewayFilter}>
+          <Select
+            value={gatewayFilter}
+            onValueChange={(value) => setGatewayFilter(value as PaymentMethodFilter)}
+          >
             <SelectTrigger>
               <SelectValue />
             </SelectTrigger>
@@ -1475,11 +1464,11 @@ function OrdersList() {
               <SelectItem value="benefit">
                 {lang === "ar" ? "بنفت بي (يدوي)" : "BenefitPay (Manual)"}
               </SelectItem>
-              <SelectItem value="card">
-                {lang === "ar" ? "بطاقة ائتمان / مدى" : "Credit/Debit Card"}
-              </SelectItem>
               <SelectItem value="cod">
-                {lang === "ar" ? "الدفع عند الاستلام" : "Cash / COD"}
+                {lang === "ar" ? "الدفع عند الاستلام" : "Cash on Delivery"}
+              </SelectItem>
+              <SelectItem value="card">
+                {lang === "ar" ? "بطاقة (أونلاين)" : "Card (Online)"}
               </SelectItem>
             </SelectContent>
           </Select>
