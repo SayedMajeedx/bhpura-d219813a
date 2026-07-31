@@ -149,6 +149,7 @@ function CustomerProfilePage() {
 
   const customer = customerQ.data;
   const orders = ordersQ.data ?? [];
+  const totalSpent = orders.reduce((sum, o) => sum + Number(o.total || 0), 0);
 
   return (
     <div
@@ -187,12 +188,30 @@ function CustomerProfilePage() {
         <div className="space-y-5">
           <Card className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm">
             <div className="bg-primary/5 p-5 border-b border-border/50">
-              <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
-                <UserRound className="h-6 w-6" />
+              <div className="mb-3 flex items-center justify-between">
+                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
+                  <UserRound className="h-6 w-6" />
+                </div>
+                {/* VIP / Segment Badges */}
+                <div className="flex flex-wrap gap-1 justify-end">
+                  {orders.length >= 3 || totalSpent >= 100 ? (
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-400 border border-amber-300 dark:border-amber-800">
+                      👑 {lang === "ar" ? "عميل مميز (VIP)" : "VIP Customer"}
+                    </span>
+                  ) : orders.length > 0 ? (
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-800">
+                      ✨ {lang === "ar" ? "عميل متكرر" : "Repeat Buyer"}
+                    </span>
+                  ) : null}
+                </div>
               </div>
               <h2 className="font-display text-xl font-bold">
                 {lang === "ar" ? "بيانات العميل" : "Customer Details"}
               </h2>
+              <p className="text-xs text-muted-foreground mt-1">
+                {lang === "ar" ? "إجمالي الإنفاق:" : "Lifetime Spend:"}{" "}
+                <span className="font-bold text-primary font-mono">{formatMoney(totalSpent, "BHD")}</span> ({orders.length} {lang === "ar" ? "طلبات" : "orders"})
+              </p>
             </div>
             <div className="space-y-4 p-5 text-sm">
               <Detail
@@ -209,7 +228,7 @@ function CustomerProfilePage() {
               />
               <Detail
                 icon={StickyNote}
-                label={lang === "ar" ? "ملاحظات" : "Notes"}
+                label={lang === "ar" ? "ملاحظات طاقم العمل" : "Internal Staff Notes"}
                 value={customer.notes}
               />
             </div>

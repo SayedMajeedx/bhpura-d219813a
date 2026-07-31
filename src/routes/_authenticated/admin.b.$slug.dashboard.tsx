@@ -14,9 +14,18 @@ import {
   AlertTriangle,
   AlertCircle,
   ArrowUpRight,
+  ArrowDownRight,
   ShieldCheck,
   Zap,
 } from "lucide-react";
+import {
+  ResponsiveContainer,
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  Tooltip,
+} from "recharts";
 import { formatDate, formatMoney } from "@/lib/format";
 import { useI18n, useT } from "@/lib/i18n";
 import { useProfile } from "@/lib/profile-context";
@@ -224,6 +233,65 @@ function Dashboard() {
     const netProfit = revenue - totalExpenses;
     const grossMarginPercent = revenue > 0 ? ((revenue - cogs) / revenue) * 100 : 0;
 
+    // Period Comparison Deltas (Current 30 Days vs Prior 30 Days)
+    const nowMs = new Date().getTime();
+    const thirtyDaysMs = 30 * 24 * 60 * 60 * 1000;
+    const sixtyDaysMs = 60 * 24 * 60 * 60 * 1000;
+
+    const current30Orders = orders.filter((o) => {
+      const t = new Date(o.created_at).getTime();
+      return nowMs - t <= thirtyDaysMs;
+    });
+
+    const prior30Orders = orders.filter((o) => {
+      const t = new Date(o.created_at).getTime();
+      const diff = nowMs - t;
+      return diff > thirtyDaysMs && diff <= sixtyDaysMs;
+    });
+
+    const revenueCurrent = current30Orders.reduce((sum, o) => sum + Number(o.total || 0), 0);
+    const revenuePrior = prior30Orders.reduce((sum, o) => sum + Number(o.total || 0), 0);
+    const revenueDeltaPct =
+      revenuePrior > 0
+        ? ((revenueCurrent - revenuePrior) / revenuePrior) * 100
+        : revenueCurrent > 0
+          ? 100
+          : 0;
+
+    const ordersCurrent = current30Orders.length;
+    const ordersPrior = prior30Orders.length;
+    const ordersDeltaPct =
+      ordersPrior > 0
+        ? ((ordersCurrent - ordersPrior) / ordersPrior) * 100
+        : ordersCurrent > 0
+          ? 100
+          : 0;
+
+    const aovCurrent = ordersCurrent > 0 ? revenueCurrent / ordersCurrent : 0;
+    const aovPrior = ordersPrior > 0 ? revenuePrior / ordersPrior : 0;
+    const aovDeltaPct =
+      aovPrior > 0 ? ((aovCurrent - aovPrior) / aovPrior) * 100 : aovCurrent > 0 ? 100 : 0;
+
+    // 30-Day Daily Sales Time Series Chart Data
+    const chartDataMap = new Map<string, { date: string; sales: number; orders: number }>();
+    for (let i = 29; i >= 0; i--) {
+      const d = new Date(nowMs - i * 24 * 60 * 60 * 1000);
+      const key = d.toISOString().split("T")[0];
+      const label = d.toLocaleDateString(locale, { day: "numeric", month: "short" });
+      chartDataMap.set(key, { date: label, sales: 0, orders: 0 });
+    }
+
+    orders.forEach((o) => {
+      const key = new Date(o.created_at).toISOString().split("T")[0];
+      if (chartDataMap.has(key)) {
+        const item = chartDataMap.get(key)!;
+        item.sales += Number(o.total || 0);
+        item.orders += 1;
+      }
+    });
+
+    const dailyChartSeries = Array.from(chartDataMap.values());
+
     return {
       revenue,
       cogs,
@@ -231,8 +299,15 @@ function Dashboard() {
       totalExpenses,
       netProfit,
       grossMarginPercent,
+      revenueCurrent,
+      revenueDeltaPct,
+      ordersCurrent,
+      ordersDeltaPct,
+      aovCurrent,
+      aovDeltaPct,
+      dailyChartSeries,
     };
-  }, [ordersQ.data, expensesQ.data, variantsQ.data, businessSettings.data]);
+  }, [ordersQ.data, expensesQ.data, variantsQ.data, businessSettings.data, locale]);
 
   // CRM segmentation distribution & alerts
   const crmStats = useMemo(() => {
@@ -497,10 +572,21 @@ function Dashboard() {
             label: isAr ? "الإيرادات وصافي الربح" : "Revenue & Net Profit",
             value: formatMoney(financials.revenue, currency, locale),
             subValue: `${isAr ? "صافي الربح" : "Net Profit"}: ${formatMoney(financials.netProfit, currency, locale)}`,
+            deltaPct: financials.revenueDeltaPct,
             icon: TrendingUp,
             color: "text-emerald-500",
             bg: "from-emerald-500/10 via-transparent to-transparent",
             border: "hover:border-emerald-500/20",
+          },
+          {
+            label: isAr ? "متوسط قيمة الطلب (AOV)" : "Average Order Value (AOV)",
+            value: formatMoney(financials.aovCurrent, currency, locale),
+            subValue: `${isAr ? "إجمالي الطلبات" : "Total Orders"}: ${financials.ordersCurrent}`,
+            deltaPct: financials.aovDeltaPct,
+            icon: Wallet,
+            color: "text-sky-500",
+            bg: "from-sky-500/10 via-transparent to-transparent",
+            border: "hover:border-sky-500/20",
           },
           {
             label: isAr ? "نسبة هامش الربح الإجمالي" : "Gross Margin %",
@@ -592,30 +678,52 @@ function Dashboard() {
 
       {/* KPI Row (Gridded and responsive) */}
       <div
-        className={`grid grid-cols-1 sm:grid-cols-2 ${canViewFinancials ? "lg:grid-cols-4" : "lg:grid-cols-2"} gap-4`}
+        className={`grid grid-cols-1 sm:grid-cols-2 ${canViewFinancials ? "lg:grid-cols-5" : "lg:grid-cols-2"} gap-4`}
       >
         {kpis.map((k) => {
           const Icon = k.icon;
+          const hasDelta = typeof (k as any).deltaPct === "number";
+          const delta = (k as any).deltaPct ?? 0;
+          const isPositive = delta >= 0;
+
           return (
             <Card
               key={k.label}
-              className={`relative overflow-hidden p-6 transition-all duration-300 bg-gradient-to-br ${k.bg} hover:shadow-xl hover:-translate-y-1 border border-border/60 shadow-md rounded-2xl bg-card/40 backdrop-blur-sm ${k.border}`}
+              className={`relative overflow-hidden p-5 transition-all duration-300 bg-gradient-to-br ${k.bg} hover:shadow-xl hover:-translate-y-1 border border-border/60 shadow-md rounded-2xl bg-card/40 backdrop-blur-sm ${k.border}`}
             >
               <div className="min-w-0">
-                <div className="flex min-h-10 items-start justify-between gap-3">
+                <div className="flex min-h-10 items-start justify-between gap-2">
                   <p className="pt-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground/80">
                     {k.label}
                   </p>
                   <div
-                    className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-100/80 shadow-sm dark:bg-slate-800/80 ${k.color}`}
+                    className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-slate-100/80 shadow-sm dark:bg-slate-800/80 ${k.color}`}
                   >
-                    <Icon className="h-5 w-5" />
+                    <Icon className="h-4 w-4" />
                   </div>
                 </div>
-                <p className="mt-2.5 whitespace-nowrap font-display text-[clamp(1.65rem,2.15vw,2.25rem)] font-extrabold leading-none tracking-tight text-foreground tabular-nums">
-                  {k.value}
-                </p>
-                <p className="mt-2 text-xs font-medium leading-snug text-muted-foreground/90">
+                <div className="mt-2 flex items-baseline justify-between gap-2">
+                  <p className="whitespace-nowrap font-display text-[clamp(1.4rem,1.85vw,1.95rem)] font-extrabold leading-none tracking-tight text-foreground tabular-nums">
+                    {k.value}
+                  </p>
+                  {hasDelta && (
+                    <span
+                      className={`inline-flex items-center text-[10px] font-bold px-1.5 py-0.5 rounded-full border ${
+                        isPositive
+                          ? "bg-emerald-50 text-emerald-600 border-emerald-200 dark:bg-emerald-950/30 dark:border-emerald-800 dark:text-emerald-400"
+                          : "bg-rose-50 text-rose-600 border-rose-200 dark:bg-rose-950/30 dark:border-rose-800 dark:text-rose-400"
+                      }`}
+                    >
+                      {isPositive ? (
+                        <ArrowUpRight className="h-3 w-3 mr-0.5" />
+                      ) : (
+                        <ArrowDownRight className="h-3 w-3 mr-0.5" />
+                      )}
+                      {Math.abs(delta).toFixed(1)}%
+                    </span>
+                  )}
+                </div>
+                <p className="mt-2 text-xs font-medium leading-snug text-muted-foreground/90 truncate">
                   {k.subValue}
                 </p>
               </div>
@@ -623,6 +731,70 @@ function Dashboard() {
           );
         })}
       </div>
+
+      {/* 30-Day Interactive Revenue Area Chart */}
+      {canViewFinancials && (
+        <Card className="p-6 border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div>
+              <h3 className="text-lg font-bold font-display flex items-center gap-2">
+                <TrendingUp className="h-5 w-5 text-emerald-500" />
+                {isAr ? "اتجاه المبيعات اليومية (آخر 30 يومًا)" : "Daily Sales Performance (30 Days)"}
+              </h3>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {isAr
+                  ? "مخطط حركة إجمالي المبيعات والطلبات اليومية المؤكدة"
+                  : "Daily revenue trajectory and completed volume trends."}
+              </p>
+            </div>
+            <span className="text-xs font-bold text-primary font-mono bg-primary/10 px-3 py-1 rounded-full border border-primary/20 w-fit">
+              {formatMoney(financials.revenueCurrent, currency, locale)} (30d Total)
+            </span>
+          </div>
+
+          <div className="h-64 w-full pt-2">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={financials.dailyChartSeries} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="salesGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#10b981" stopOpacity={0.35} />
+                    <stop offset="95%" stopColor="#10b981" stopOpacity={0.0} />
+                  </linearGradient>
+                </defs>
+                <XAxis dataKey="date" tick={{ fontSize: 11 }} stroke="#888888" tickLine={false} />
+                <YAxis tick={{ fontSize: 11 }} stroke="#888888" tickLine={false} />
+                <Tooltip
+                  content={({ active, payload }) => {
+                    if (active && payload && payload.length) {
+                      const data = payload[0].payload;
+                      return (
+                        <div className="rounded-xl border bg-popover/95 p-3 shadow-xl backdrop-blur-md text-xs space-y-1">
+                          <p className="font-bold text-foreground">{data.date}</p>
+                          <p className="text-emerald-500 font-mono font-bold">
+                            {formatMoney(Number(data.sales), currency, locale)}
+                          </p>
+                          <p className="text-muted-foreground">
+                            {data.orders} {isAr ? "طلبات" : "orders"}
+                          </p>
+                        </div>
+                      );
+                    }
+                    return null;
+                  }}
+                />
+                <Area
+                  type="monotone"
+                  dataKey="sales"
+                  stroke="#10b981"
+                  strokeWidth={2.5}
+                  fillOpacity={1}
+                  fill="url(#salesGrad)"
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </Card>
+      )}
 
       {/* Two Column Actionable Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
