@@ -1607,20 +1607,20 @@ function OrderDetail() {
               <Button
                 variant="outline"
                 onClick={copyLink}
-                className="shadow-sm transition-all duration-200 hover:shadow hover:scale-[1.01] active:scale-95"
+                className="shadow-xs transition-all hover:bg-accent"
               >
-                <LinkIcon className="h-4 w-4 mr-2" /> {t("orders.copyLink")}
+                <LinkIcon className="h-4 w-4 me-1.5 text-muted-foreground" /> {t("orders.copyLink")}
               </Button>
               <Button
                 variant="outline"
                 onClick={printReceipt}
-                className="shadow-sm transition-all duration-200 hover:shadow hover:scale-[1.01] active:scale-95"
+                className="shadow-xs transition-all hover:bg-accent"
               >
-                <Receipt className="h-4 w-4 mr-2" /> {t("orders.printReceipt")}
+                <Receipt className="h-4 w-4 me-1.5 text-muted-foreground" /> {t("orders.printReceipt")}
               </Button>
               <Button
                 variant="outline"
-                className="shadow-sm transition-all duration-200 hover:shadow hover:scale-[1.01] active:scale-95"
+                className="shadow-xs transition-all hover:bg-accent"
                 onClick={async () => {
                   try {
                     const el = document.querySelector<HTMLElement>(".printable-invoice");
@@ -1635,18 +1635,18 @@ function OrderDetail() {
                   }
                 }}
               >
-                <Printer className="h-4 w-4 mr-2" /> {t("orders.printA4")}
+                <Printer className="h-4 w-4 me-1.5 text-muted-foreground" /> {t("orders.printA4")}
               </Button>
             </>
           )}
           {isReadOnly ? (
             isAdmin && (
               <Button
-                variant="outline"
+                variant="default"
                 onClick={() => setEditingUnlocked(true)}
-                className="shadow-sm transition-all duration-200 hover:shadow hover:scale-[1.01] active:scale-95"
+                className="shadow-sm transition-all hover:scale-[1.01] active:scale-95 font-semibold bg-primary hover:bg-primary/90"
               >
-                <Unlock className="h-4 w-4 mr-2" />
+                <Unlock className="h-4 w-4 me-1.5" />
                 {lang === "ar" ? "فتح للتعديل" : "Unlock for editing"}
               </Button>
             )
@@ -2419,11 +2419,50 @@ function OrderDetail() {
                 const variant = it.variant_id
                   ? (variantsQ.data ?? []).find((x: any) => x.id === it.variant_id)
                   : null;
+                const product = variant
+                  ? productsQ.data?.find((x: any) => x.id === (variant as any).product_id)
+                  : (productsQ.data ?? []).find((x: any) => x.id === it.product_id);
+                const imageUrl =
+                  (variant as any)?.image_url ||
+                  (product as any)?.image_url ||
+                  (product as any)?.images?.[0];
+                const sku = (variant as any)?.sku || (product as any)?.sku;
                 const mainStock = Number((variant as any)?.stock_main ?? 0);
                 const incStock = Number((variant as any)?.stock_incubator ?? 0);
                 const isAr = lang === "ar";
                 return (
-                  <div key={idx} className="space-y-2 rounded-lg border border-border p-3">
+                  <div key={idx} className="space-y-3 rounded-xl border border-border/80 bg-card p-3.5 shadow-xs transition-all">
+                    {/* Item Thumbnail & SKU Header */}
+                    <div className="flex items-center gap-3 pb-2.5 border-b border-border/60">
+                      <div className="h-12 w-12 rounded-lg border bg-muted/30 overflow-hidden shrink-0 flex items-center justify-center">
+                        {imageUrl ? (
+                          <img
+                            src={imageUrl}
+                            alt={it.description || ""}
+                            className="h-full w-full object-cover"
+                          />
+                        ) : (
+                          <ImageIcon className="h-5 w-5 text-muted-foreground/40" />
+                        )}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="font-semibold text-sm truncate text-foreground">
+                          {it.description || (product?.name ?? (isAr ? "منتج مخصص" : "Custom Item"))}
+                        </p>
+                        {sku ? (
+                          <span className="inline-flex items-center text-[10px] font-mono font-medium px-2 py-0.5 rounded bg-muted/80 text-muted-foreground border border-border/60 mt-1">
+                            SKU: {sku}
+                          </span>
+                        ) : (
+                          <span className="text-[11px] text-muted-foreground">
+                            {variant
+                              ? `${variant.size || ""} ${variant.color || ""}`.trim() || (isAr ? "متغير" : "Variant")
+                              : (isAr ? "بند مخصص" : "Custom Line")}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
                     <div className="grid grid-cols-1 sm:grid-cols-12 gap-3">
                       <div className="sm:col-span-4">
                         <Label>{t("orderDetail.fromInventory")}</Label>
