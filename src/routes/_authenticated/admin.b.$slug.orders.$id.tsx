@@ -82,6 +82,12 @@ import { useProfile } from "@/lib/profile-context";
 import { getBenefitReceiptViewUrl, rejectBenefitReceipt } from "@/lib/benefit-receipt.functions";
 import { DeliveryAddressCard } from "@/components/delivery-address-card";
 import { getOrderWorkflow } from "@/lib/order-workflow";
+import {
+  getFulfillmentLabel,
+  getOrderStatusLabel,
+  getFulfillmentMethodLabel,
+  FULFILLMENT_STATUS_MAP,
+} from "@/lib/status-labels";
 
 function formatDeliveryAddress(
   c:
@@ -427,7 +433,7 @@ function CourierOrderView({
                 ? lang === "ar"
                   ? "تم التوصيل"
                   : "Delivered"
-                : order.fulfillment_status || "assigned"}
+                : getFulfillmentLabel(order.fulfillment_status, lang)}
             </span>
             {/* Payment status badge */}
             <span
@@ -873,6 +879,50 @@ function OrderDetail() {
   const [saving, setSaving] = useState(false);
   const [adminOverrideChecked, setAdminOverrideChecked] = useState(false);
   const [promoInput, setPromoInput] = useState("");
+  const [activeSection, setActiveSection] = useState<string>("sec-overview");
+
+  useEffect(() => {
+    if (!order?.id) return;
+    const sectionIds = ["sec-overview", "sec-items", "sec-invoice", "sec-activity"];
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            setActiveSection(entry.target.id);
+          }
+        });
+      },
+      { rootMargin: "-80px 0px -50% 0px", threshold: 0.1 },
+    );
+
+    sectionIds.forEach((id) => {
+      const el = document.getElementById(id);
+      if (el) observer.observe(el);
+    });
+
+    return () => observer.disconnect();
+  }, [order?.id]);
+
+  const scrollToSection = (id: string) => {
+    const el = document.getElementById(id);
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  };
+
+  const isDirty = useMemo(() => {
+    const serverOrder = orderQ.data as any;
+    if (!serverOrder || !order) return false;
+    return (
+      JSON.stringify(items) !== JSON.stringify(serverOrder.order_items ?? []) ||
+      order.notes !== (serverOrder.notes ?? "") ||
+      order.delivery_notes !== (serverOrder.delivery_notes ?? "") ||
+      order.customer_id !== (serverOrder.customer_id ?? null) ||
+      order.shipping_address_id !== (serverOrder.shipping_address_id ?? null) ||
+      order.payment_status !== serverOrder.payment_status ||
+      order.fulfillment_status !== serverOrder.fulfillment_status
+    );
+  }, [items, order, orderQ.data]);
   const [appliedPromo, setAppliedPromo] = useState<{
     code: string;
     id: string;
@@ -1844,13 +1894,70 @@ function OrderDetail() {
         </div>
       )}
 
+      {/* Sticky Section Navigation Bar */}
+      {!isCreationMode && (
+        <div className="no-print sticky top-0 z-30 mb-6 flex overflow-x-auto gap-2 rounded-xl border border-border/80 bg-background/95 p-1.5 backdrop-blur shadow-sm select-none">
+          <button
+            type="button"
+            onClick={() => scrollToSection("sec-overview")}
+            className={cn(
+              "px-3.5 py-1.5 rounded-lg text-xs font-bold transition-colors whitespace-nowrap flex items-center gap-1.5 touch-manipulation",
+              activeSection === "sec-overview"
+                ? "bg-primary text-primary-foreground shadow-xs"
+                : "hover:bg-muted text-muted-foreground",
+            )}
+          >
+            📍 {lang === "ar" ? "العميل والتوصيل" : "Overview & Delivery"}
+          </button>
+          <button
+            type="button"
+            onClick={() => scrollToSection("sec-items")}
+            className={cn(
+              "px-3.5 py-1.5 rounded-lg text-xs font-bold transition-colors whitespace-nowrap flex items-center gap-1.5 touch-manipulation",
+              activeSection === "sec-items"
+                ? "bg-primary text-primary-foreground shadow-xs"
+                : "hover:bg-muted text-muted-foreground",
+            )}
+          >
+            🛍️ {lang === "ar" ? "بنود الطلب" : "Line Items"}
+          </button>
+          <button
+            type="button"
+            onClick={() => scrollToSection("sec-invoice")}
+            className={cn(
+              "px-3.5 py-1.5 rounded-lg text-xs font-bold transition-colors whitespace-nowrap flex items-center gap-1.5 touch-manipulation",
+              activeSection === "sec-invoice"
+                ? "bg-primary text-primary-foreground shadow-xs"
+                : "hover:bg-muted text-muted-foreground",
+            )}
+          >
+            📄 {lang === "ar" ? "معاينة الفاتورة" : "Invoice Preview"}
+          </button>
+          <button
+            type="button"
+            onClick={() => scrollToSection("sec-activity")}
+            className={cn(
+              "px-3.5 py-1.5 rounded-lg text-xs font-bold transition-colors whitespace-nowrap flex items-center gap-1.5 touch-manipulation",
+              activeSection === "sec-activity"
+                ? "bg-primary text-primary-foreground shadow-xs"
+                : "hover:bg-muted text-muted-foreground",
+            )}
+          >
+            📜 {lang === "ar" ? "سجل النشاطات" : "Activity Log"}
+          </button>
+        </div>
+      )}
+
       {/* Editor - hidden on print */}
       <fieldset
         disabled={isReadOnly}
         className="no-print m-0 min-w-0 border-0 p-0 disabled:opacity-80"
       >
         <div className="mb-6 grid items-start gap-4 lg:grid-cols-[minmax(0,1.9fr)_minmax(320px,1fr)]">
-          <Card className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm p-5 sm:p-6 lg:col-start-1 lg:row-start-1">
+          <Card
+            id="sec-overview"
+            className="scroll-mt-24 overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm p-5 sm:p-6 lg:col-start-1 lg:row-start-1"
+          >
             <div className="mb-4">
               <Label className="flex items-center gap-2">
                 <Search className="h-3 w-3" /> {t("customers.searchByPhone")}
@@ -2364,8 +2471,8 @@ function OrderDetail() {
                           <span className="text-muted-foreground">
                             {lang === "ar" ? "حالة التوصيل:" : "Delivery status:"}
                           </span>
-                          <span className="rounded-full bg-primary/10 px-2.5 py-1 font-medium text-primary">
-                            {order.fulfillment_status || (lang === "ar" ? "مسند" : "Assigned")}
+                          <span className="rounded-full bg-primary/10 px-2.5 py-1 font-semibold text-primary">
+                            {getFulfillmentLabel(order.fulfillment_status, lang)}
                           </span>
                           {order.payment_method === "cod" && (
                             <span
@@ -2562,7 +2669,10 @@ function OrderDetail() {
             </div>
           </Card>
 
-          <Card className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm p-5 sm:p-6 lg:col-start-1 lg:row-start-2 mt-6">
+          <Card
+            id="sec-items"
+            className="scroll-mt-24 overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm p-5 sm:p-6 lg:col-start-1 lg:row-start-2 mt-6"
+          >
             <div className="flex items-center justify-between mb-4 gap-2 flex-wrap">
               <h3 className="font-display text-lg">{t("orderDetail.lineItems")}</h3>
               <div className="flex items-center gap-2">
@@ -3367,89 +3477,84 @@ function OrderDetail() {
                     </>
                   )}
                 </div>
-                {!isReadOnly && (
-                  <Button onClick={save} disabled={saving} className="hidden w-full lg:flex">
-                    {saving ? (
-                      <Loader2 className="me-2 h-4 w-4 animate-spin" />
-                    ) : (
-                      <Save className="me-2 h-4 w-4" />
-                    )}
-                    {isCreationMode
-                      ? lang === "ar"
-                        ? "إنشاء وحفظ الطلب"
-                        : "Create & Save Order"
-                      : t("common.save")}
-                  </Button>
-                )}
               </div>
             </div>
           </Card>
         </div>
       </fieldset>
 
-      {!isReadOnly && (
-        <div className="no-print fixed inset-x-0 bottom-0 z-40 border-t bg-background/95 p-3 shadow-[0_-12px_35px_-22px_rgba(0,0,0,.45)] backdrop-blur sm:hidden">
-          <div className="mx-auto flex max-w-[1500px] gap-2">
-            {!isCreationMode && (
-              <div className="min-w-0 flex-1 [&>button]:w-full">
-                <SendInvoiceDialog
-                  order={order}
-                  totals={totals}
-                  settings={settingsQ.data}
-                  currency={currency}
-                />
-              </div>
+      {/* Floating Sticky Save Bar - Only appears when form has unsaved changes */}
+      {!isReadOnly && isDirty && (
+        <div className="no-print fixed bottom-4 inset-x-4 sm:inset-x-auto sm:end-8 z-50 flex items-center gap-3 rounded-2xl border border-amber-300/80 bg-amber-50/95 dark:bg-amber-950/90 p-3.5 shadow-2xl backdrop-blur animate-in slide-in-from-bottom duration-200 max-w-lg mx-auto">
+          <span className="flex h-2.5 w-2.5 rounded-full bg-amber-500 animate-ping shrink-0" />
+          <span className="text-xs font-bold text-amber-900 dark:text-amber-200 flex-1 min-w-0">
+            {lang === "ar" ? "توجد تغييرات غير محفوظة على الطلب" : "Unsaved changes detected"}
+          </span>
+          <Button
+            onClick={save}
+            disabled={saving}
+            size="sm"
+            className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold shadow-md shrink-0 touch-manipulation"
+          >
+            {saving ? (
+              <Loader2 className="me-1.5 h-4 w-4 animate-spin" />
+            ) : (
+              <Save className="me-1.5 h-4 w-4" />
             )}
-            <Button onClick={save} disabled={saving} className="min-w-0 flex-[1.25]">
-              {saving ? (
-                <Loader2 className="me-2 h-4 w-4 animate-spin" />
-              ) : (
-                <Save className="me-2 h-4 w-4" />
-              )}
-              {isCreationMode ? (lang === "ar" ? "إنشاء وحفظ" : "Create & Save") : t("common.save")}
-            </Button>
-          </div>
+            {isCreationMode
+              ? lang === "ar"
+                ? "إنشاء وحفظ"
+                : "Create & Save"
+              : lang === "ar"
+                ? "حفظ التغييرات"
+                : "Save Changes"}
+          </Button>
         </div>
       )}
 
-      <div className="no-print mb-4 rounded-xl border bg-card">
-        <button
-          type="button"
-          onClick={() => setInvoicePreviewOpen((open) => !open)}
-          className="flex w-full items-center justify-between px-4 py-3 text-start font-medium hover:bg-muted/40"
-          aria-expanded={invoicePreviewOpen}
-        >
-          <span>{lang === "ar" ? "معاينة الفاتورة" : "Preview Invoice"}</span>
-          <span className="text-sm text-muted-foreground">{invoicePreviewOpen ? "−" : "+"}</span>
-        </button>
+      {/* Invoice Preview Section Anchor */}
+      <div id="sec-invoice" className="scroll-mt-24">
+        <div className="no-print mb-4 rounded-xl border bg-card">
+          <button
+            type="button"
+            onClick={() => setInvoicePreviewOpen((open) => !open)}
+            className="flex w-full items-center justify-between px-4 py-3 text-start font-medium hover:bg-muted/40"
+            aria-expanded={invoicePreviewOpen}
+          >
+            <span>{lang === "ar" ? "معاينة الفاتورة" : "Preview Invoice"}</span>
+            <span className="text-sm text-muted-foreground">{invoicePreviewOpen ? "−" : "+"}</span>
+          </button>
+        </div>
+        <div className={invoicePreviewOpen ? "block" : "hidden print:block"}>
+          {/* Printable invoice */}
+          {(() => {
+            const addrs = (addressesQ.data ?? []).filter((a) => a.customer_id === order.customer_id);
+            const chosen =
+              ((order as any).delivery_address_snapshot as SavedAddress | null) ??
+              addrs.find((a) => a.id === order.shipping_address_id) ??
+              addrs.find((a) => a.is_default) ??
+              null;
+            return (
+              <InvoicePreview
+                order={{
+                  ...order,
+                  subtotal: totals.subtotal,
+                  tax_amount: totals.taxAmount,
+                  total: totals.total,
+                  advance_paid: totals.advancePaid,
+                }}
+                items={items}
+                settings={settingsQ.data}
+                shippingAddress={chosen}
+                paymentBadge={paymentBadge}
+              />
+            );
+          })()}
+        </div>
       </div>
-      <div className={invoicePreviewOpen ? "block" : "hidden print:block"}>
-        {/* Printable invoice */}
-        {(() => {
-          const addrs = (addressesQ.data ?? []).filter((a) => a.customer_id === order.customer_id);
-          const chosen =
-            ((order as any).delivery_address_snapshot as SavedAddress | null) ??
-            addrs.find((a) => a.id === order.shipping_address_id) ??
-            addrs.find((a) => a.is_default) ??
-            null;
-          return (
-            <InvoicePreview
-              order={{
-                ...order,
-                subtotal: totals.subtotal,
-                tax_amount: totals.taxAmount,
-                total: totals.total,
-                advance_paid: totals.advancePaid,
-              }}
-              items={items}
-              settings={settingsQ.data}
-              shippingAddress={chosen}
-              paymentBadge={paymentBadge}
-            />
-          );
-        })()}
-      </div>
-      <div className="max-w-6xl mx-auto p-4 sm:p-6 lg:p-8 no-print">
+
+      {/* Activity Trail Section Anchor */}
+      <div id="sec-activity" className="scroll-mt-24 max-w-6xl mx-auto p-4 sm:p-6 lg:p-8 no-print">
         <ActivityLogList orderId={order.id} scope="order" brandId={brand.id} />
       </div>
 

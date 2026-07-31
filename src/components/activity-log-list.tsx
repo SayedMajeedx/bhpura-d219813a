@@ -4,6 +4,7 @@ import { Card } from "@/components/ui/card";
 import { History } from "lucide-react";
 import { useI18n, useT } from "@/lib/i18n";
 import type { ActivityLog } from "@/lib/activity-log";
+import { sanitizeActivityLogMessage } from "@/lib/status-labels";
 
 type Props = {
   orderId?: string;
@@ -72,15 +73,19 @@ export function ActivityLogList({
         <p className="text-sm text-muted-foreground">{t("activity.empty")}</p>
       ) : (
         <ol className="relative border-s border-border ms-2 space-y-4">
-          {logs.map((l) => (
-            <li key={l.id} className="ms-4">
-              <span className="absolute -start-1.5 mt-1.5 h-3 w-3 rounded-full bg-primary" />
-              <p className="text-sm">{lang === "ar" ? l.message_ar : l.message_en}</p>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                {new Date(l.created_at).toLocaleString(locale)}
-              </p>
-            </li>
-          ))}
+          {logs.map((l) => {
+            const rawMsg = lang === "ar" ? l.message_ar : l.message_en;
+            const displayMsg = sanitizeActivityLogMessage(rawMsg, lang);
+            return (
+              <li key={l.id} className="ms-4">
+                <span className="absolute -start-1.5 mt-1.5 h-3 w-3 rounded-full bg-primary" />
+                <p className="text-sm font-medium">{displayMsg}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  {new Date(l.created_at).toLocaleString(locale)}
+                </p>
+              </li>
+            );
+          })}
         </ol>
       )}
     </Card>
