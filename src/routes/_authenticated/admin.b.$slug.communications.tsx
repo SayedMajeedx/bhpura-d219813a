@@ -42,7 +42,7 @@ function CommunicationsPage() {
 
   return (
     <div
-      className="mx-auto max-w-6xl space-y-6 p-4 sm:p-6 lg:p-8 animate-fade-in"
+      className="mx-auto max-w-6xl space-y-4 p-1 sm:p-2 animate-fade-in"
       dir={isAr ? "rtl" : "ltr"}
     >
       <div>

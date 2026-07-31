@@ -345,7 +345,7 @@ function Settings() {
   return (
     <div
       dir={lang === "ar" ? "rtl" : "ltr"}
-      className="mx-auto max-w-5xl space-y-6 p-4 sm:p-6 lg:p-8 animate-fade-in"
+      className="mx-auto max-w-5xl space-y-4 p-1 sm:p-2 animate-fade-in"
     >
       {f.font_url && (
         <style>{`@font-face { font-family: 'CustomFont'; src: url('${f.font_url}'); font-display: swap; }`}</style>

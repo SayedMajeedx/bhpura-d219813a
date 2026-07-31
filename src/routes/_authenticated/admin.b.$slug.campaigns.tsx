@@ -594,7 +594,7 @@ function CampaignsPage() {
   ];
 
   return (
-    <div className="mx-auto max-w-7xl space-y-6 p-4 sm:p-6 lg:p-8 animate-fade-in">
+    <div className="mx-auto max-w-7xl space-y-4 p-1 sm:p-2 animate-fade-in">
       <div className="mb-6 flex items-center gap-3">
         <div className="h-11 w-11 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
           <Megaphone className="h-5 w-5" />

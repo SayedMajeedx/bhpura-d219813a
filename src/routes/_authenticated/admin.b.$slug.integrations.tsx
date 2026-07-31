@@ -119,7 +119,7 @@ function IntegrationsPage() {
       : "https://…/api/public/webhooks";
 
   return (
-    <div className="mx-auto max-w-5xl space-y-6 p-4 sm:p-6 lg:p-8 animate-fade-in">
+    <div className="mx-auto max-w-5xl space-y-4 p-1 sm:p-2 animate-fade-in">
       <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
         <div>
           <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-primary mb-1.5 font-semibold">
