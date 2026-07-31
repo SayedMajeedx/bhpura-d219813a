@@ -2447,13 +2447,29 @@ function OrderDetail() {
                 const variant = it.variant_id
                   ? (variantsQ.data ?? []).find((x: any) => x.id === it.variant_id)
                   : null;
-                const product = variant
-                  ? productsQ.data?.find((x: any) => x.id === (variant as any).product_id)
-                  : (productsQ.data ?? []).find((x: any) => x.id === it.product_id);
-                const imageUrl =
-                  (variant as any)?.image_url ||
-                  (product as any)?.image_url ||
-                  (product as any)?.images?.[0];
+                const product =
+                  (variant ? productsQ.data?.find((x: any) => x.id === (variant as any).product_id) : null) ??
+                  (it.product_id ? (productsQ.data ?? []).find((x: any) => x.id === it.product_id) : null) ??
+                  (productsQ.data ?? []).find((x: any) =>
+                    it.description && x.name
+                      ? String(it.description).trim().toLowerCase().includes(String(x.name).trim().toLowerCase()) ||
+                        String(x.name).trim().toLowerCase().includes(String(it.description).trim().toLowerCase())
+                      : false,
+                  );
+
+                const getMediaUrl = (obj: any) => {
+                  if (!obj) return null;
+                  if (typeof obj.image_url === "string" && obj.image_url) return obj.image_url;
+                  if (typeof obj.image === "string" && obj.image) return obj.image;
+                  if (Array.isArray(obj.images) && obj.images[0]) return obj.images[0];
+                  if (Array.isArray(obj.media) && obj.media[0]) {
+                    const m = obj.media[0];
+                    return typeof m === "string" ? m : m.url || m.poster_url || null;
+                  }
+                  return null;
+                };
+
+                const imageUrl = getMediaUrl(variant) || getMediaUrl(product);
                 const sku = (variant as any)?.sku || (product as any)?.sku;
                 const mainStock = Number((variant as any)?.stock_main ?? 0);
                 const incStock = Number((variant as any)?.stock_incubator ?? 0);
