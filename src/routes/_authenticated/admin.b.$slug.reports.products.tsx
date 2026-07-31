@@ -6,6 +6,7 @@ import { DateRange } from "react-day-picker";
 import { useI18n, useT } from "@/lib/i18n";
 import { fetchReportingProducts } from "@/lib/reporting.functions";
 import { DatePickerWithRange } from "@/components/reports/date-range-picker";
+import { ReportsToolbar } from "@/components/reports/ReportsToolbar";
 import { formatMoney } from "@/lib/format";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -77,34 +78,15 @@ function ReportsProducts() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col justify-between gap-4 rounded-2xl border bg-white p-4 shadow-sm sm:flex-row sm:items-center">
-        <div className="flex flex-col sm:flex-row gap-4">
-          <DatePickerWithRange date={date} setDate={setDate} />
-          <Select value={sortBy} onValueChange={setSortBy}>
-            <SelectTrigger className="h-11 w-full rounded-xl sm:w-[220px]">
-              <SelectValue placeholder={lang === "ar" ? "ترتيب حسب" : "Sort by"} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="units_sold_desc">
-                {lang === "ar" ? "الأكثر مبيعاً (كمية)" : "Highest Units Sold"}
-              </SelectItem>
-              <SelectItem value="net_merch_desc">
-                {lang === "ar" ? "الأعلى قيمة (صافي البضائع)" : "Highest Net Merchandise"}
-              </SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="flex items-center space-x-2">
-          <Switch
-            id="historical-products"
-            checked={includeHistorical}
-            onCheckedChange={setIncludeHistorical}
-          />
-          <Label htmlFor="historical-products">
-            {lang === "ar" ? "تضمين الأرشيف" : "Include archived"}
-          </Label>
-        </div>
-      </div>
+      <ReportsToolbar
+        lang={lang === "ar" ? "ar" : "en"}
+        date={date}
+        setDate={setDate}
+        sortBy={sortBy}
+        setSortBy={setSortBy}
+        includeHistorical={includeHistorical}
+        setIncludeHistorical={setIncludeHistorical}
+      />
 
       {isLoading ? (
         <Card className="animate-pulse">

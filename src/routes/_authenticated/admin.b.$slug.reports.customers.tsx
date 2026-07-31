@@ -6,6 +6,7 @@ import { DateRange } from "react-day-picker";
 import { useI18n, useT } from "@/lib/i18n";
 import { fetchReportingCustomers } from "@/lib/reporting.functions";
 import { DatePickerWithRange } from "@/components/reports/date-range-picker";
+import { ReportsToolbar } from "@/components/reports/ReportsToolbar";
 import { KpiCard } from "@/components/reports/kpi-card";
 import { formatMoney } from "@/lib/format";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -87,19 +88,13 @@ function ReportsCustomers() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-background p-4 rounded-lg border">
-        <DatePickerWithRange date={date} setDate={setDate} />
-        <div className="flex items-center space-x-2">
-          <Switch
-            id="historical-customers"
-            checked={includeHistorical}
-            onCheckedChange={setIncludeHistorical}
-          />
-          <Label htmlFor="historical-customers">
-            {lang === "ar" ? "تضمين الأرشيف" : "Include archived"}
-          </Label>
-        </div>
-      </div>
+      <ReportsToolbar
+        lang={lang === "ar" ? "ar" : "en"}
+        date={date}
+        setDate={setDate}
+        includeHistorical={includeHistorical}
+        setIncludeHistorical={setIncludeHistorical}
+      />
 
       {isLoading ? (
         <Card className="animate-pulse">
