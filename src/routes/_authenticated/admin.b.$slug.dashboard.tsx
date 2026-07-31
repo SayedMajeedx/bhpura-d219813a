@@ -16,7 +16,7 @@ import {
   ArrowUpRight,
   ArrowDownRight,
   ShieldCheck,
-  Zap,
+  LayoutDashboard,
 } from "lucide-react";
 import {
   ResponsiveContainer,
@@ -633,14 +633,14 @@ function Dashboard() {
 
   return (
     <div
-      className="mx-auto max-w-7xl space-y-6 p-4 sm:p-6 lg:p-8 animate-fade-in"
+      className="mx-auto max-w-7xl space-y-5 p-1 sm:p-2 animate-fade-in"
       dir={isAr ? "rtl" : "ltr"}
     >
       {/* Upper header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
         <div>
-          <h1 className="font-display text-4xl font-extrabold tracking-tight bg-clip-text bg-gradient-to-r from-slate-900 via-slate-800 to-slate-950 dark:from-slate-50 dark:to-slate-300 flex items-center gap-3">
-            <Zap className="h-8 w-8 text-primary animate-pulse shrink-0" />
+          <h1 className="font-display text-2xl font-extrabold tracking-tight text-foreground flex items-center gap-2.5">
+            <LayoutDashboard className="h-6 w-6 text-primary shrink-0" />
             {t("dashboard.title")}
           </h1>
           <p className="mt-1.5 text-muted-foreground text-sm max-w-md">
