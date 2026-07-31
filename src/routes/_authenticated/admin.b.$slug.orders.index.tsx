@@ -1200,7 +1200,7 @@ function OrdersList() {
               <span className="flex items-center gap-1">
                 <Truck className="h-3.5 w-3.5" />
                 {lang === "ar"
-                  ? "تأكيد استلام المندوب (خرج للتوصيل)"
+                  ? "تأكيد استلام المندوب"
                   : "Confirm Courier Pickup"}
               </span>
             )}
@@ -1707,16 +1707,16 @@ function OrdersList() {
           </div>
 
           <Card className="hidden overflow-hidden rounded-2xl border border-border/70 bg-card shadow-sm sm:block">
-            <div className="max-h-[calc(100vh-220px)] overflow-y-auto overflow-x-hidden">
-              <table className="w-full table-fixed text-sm">
+            <div className="max-h-[calc(100vh-220px)] overflow-y-auto overflow-x-auto">
+              <table className="w-full text-sm">
                 <colgroup>
                   <col className="w-[8%]" />
-                  <col className="w-[11%]" />
-                  <col className="w-[21%]" />
-                  <col className="w-[13%]" />
-                  <col className="w-[13%]" />
+                  <col className="w-[10%]" />
+                  <col className="w-[18%]" />
                   <col className="w-[12%]" />
-                  <col className="w-[22%]" />
+                  <col className="w-[16%]" />
+                  <col className="w-[11%]" />
+                  <col className="w-[25%]" />
                 </colgroup>
                 <thead className="sticky top-0 z-10 border-b bg-background/95 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground backdrop-blur select-none">
                   <tr>
@@ -1902,7 +1902,7 @@ function OrdersList() {
                         <td className="p-4 text-end font-bold whitespace-nowrap">
                           {formatMoney(Number(o.total), o.currency)}
                         </td>
-                        <td className="p-3 text-end">
+                        <td className="p-3 text-end whitespace-nowrap min-w-[200px]">
                           <div className="flex min-w-0 items-center justify-end gap-1">
                             {renderContextualButton(o)}
 
