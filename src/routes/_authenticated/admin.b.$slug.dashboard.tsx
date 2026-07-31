@@ -31,7 +31,7 @@ import { useI18n, useT } from "@/lib/i18n";
 import { useProfile } from "@/lib/profile-context";
 import { useBrand } from "@/lib/brand-context";
 import { useRealtimeInvalidate } from "@/hooks/use-realtime-invalidate";
-import { useMemo } from "react";
+import { useMemo, useEffect, useState } from "react";
 import { getOrderCustomerName } from "@/lib/order-customer-snapshot";
 
 export const Route = createFileRoute("/_authenticated/admin/b/$slug/dashboard")({
@@ -47,6 +47,11 @@ function Dashboard() {
   const brand = useBrand();
   const brandId = brand.id;
   const locale = lang === "ar" ? "ar-BH-u-nu-latn" : "en-US";
+
+  const [isMounted, setIsMounted] = useState(false);
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   // 1. Fetch Business settings (business name, currency, etc.)
   const businessSettings = useQuery({
@@ -239,13 +244,17 @@ function Dashboard() {
     const sixtyDaysMs = 60 * 24 * 60 * 60 * 1000;
 
     const current30Orders = orders.filter((o) => {
-      const t = new Date(o.created_at).getTime();
-      return nowMs - t <= thirtyDaysMs;
+      if (!o.created_at) return false;
+      const d = new Date(o.created_at);
+      if (isNaN(d.getTime())) return false;
+      return nowMs - d.getTime() <= thirtyDaysMs;
     });
 
     const prior30Orders = orders.filter((o) => {
-      const t = new Date(o.created_at).getTime();
-      const diff = nowMs - t;
+      if (!o.created_at) return false;
+      const d = new Date(o.created_at);
+      if (isNaN(d.getTime())) return false;
+      const diff = nowMs - d.getTime();
       return diff > thirtyDaysMs && diff <= sixtyDaysMs;
     });
 
@@ -282,7 +291,10 @@ function Dashboard() {
     }
 
     orders.forEach((o) => {
-      const key = new Date(o.created_at).toISOString().split("T")[0];
+      if (!o.created_at) return;
+      const d = new Date(o.created_at);
+      if (isNaN(d.getTime())) return;
+      const key = d.toISOString().split("T")[0];
       if (chartDataMap.has(key)) {
         const item = chartDataMap.get(key)!;
         item.sales += Number(o.total || 0);
@@ -753,45 +765,49 @@ function Dashboard() {
           </div>
 
           <div className="h-64 w-full pt-2">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={financials.dailyChartSeries} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="salesGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#10b981" stopOpacity={0.35} />
-                    <stop offset="95%" stopColor="#10b981" stopOpacity={0.0} />
-                  </linearGradient>
-                </defs>
-                <XAxis dataKey="date" tick={{ fontSize: 11 }} stroke="#888888" tickLine={false} />
-                <YAxis tick={{ fontSize: 11 }} stroke="#888888" tickLine={false} />
-                <Tooltip
-                  content={({ active, payload }) => {
-                    if (active && payload && payload.length) {
-                      const data = payload[0].payload;
-                      return (
-                        <div className="rounded-xl border bg-popover/95 p-3 shadow-xl backdrop-blur-md text-xs space-y-1">
-                          <p className="font-bold text-foreground">{data.date}</p>
-                          <p className="text-emerald-500 font-mono font-bold">
-                            {formatMoney(Number(data.sales), currency, locale)}
-                          </p>
-                          <p className="text-muted-foreground">
-                            {data.orders} {isAr ? "طلبات" : "orders"}
-                          </p>
-                        </div>
-                      );
-                    }
-                    return null;
-                  }}
-                />
-                <Area
-                  type="monotone"
-                  dataKey="sales"
-                  stroke="#10b981"
-                  strokeWidth={2.5}
-                  fillOpacity={1}
-                  fill="url(#salesGrad)"
-                />
-              </AreaChart>
-            </ResponsiveContainer>
+            {isMounted ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={financials.dailyChartSeries} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="salesGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#10b981" stopOpacity={0.35} />
+                      <stop offset="95%" stopColor="#10b981" stopOpacity={0.0} />
+                    </linearGradient>
+                  </defs>
+                  <XAxis dataKey="date" tick={{ fontSize: 11 }} stroke="#888888" tickLine={false} />
+                  <YAxis tick={{ fontSize: 11 }} stroke="#888888" tickLine={false} />
+                  <Tooltip
+                    content={({ active, payload }) => {
+                      if (active && payload && payload.length) {
+                        const data = payload[0].payload;
+                        return (
+                          <div className="rounded-xl border bg-popover/95 p-3 shadow-xl backdrop-blur-md text-xs space-y-1">
+                            <p className="font-bold text-foreground">{data.date}</p>
+                            <p className="text-emerald-500 font-mono font-bold">
+                              {formatMoney(Number(data.sales), currency, locale)}
+                            </p>
+                            <p className="text-muted-foreground">
+                              {data.orders} {isAr ? "طلبات" : "orders"}
+                            </p>
+                          </div>
+                        );
+                      }
+                      return null;
+                    }}
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="sales"
+                    stroke="#10b981"
+                    strokeWidth={2.5}
+                    fillOpacity={1}
+                    fill="url(#salesGrad)"
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="h-full w-full animate-pulse bg-muted rounded-xl" />
+            )}
           </div>
         </Card>
       )}
