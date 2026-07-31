@@ -32,6 +32,9 @@ import { META_DESCRIPTION_LIMIT, META_TITLE_LIMIT, sanitizeMetaText } from "@/li
 import { ImageCropperDialog } from "@/components/image-cropper-dialog";
 import { OptimizedVideo, ResponsiveImage } from "@/components/responsive-media";
 
+import { SettingsCommandHeader } from "@/components/settings/SettingsCommandHeader";
+import { SettingsScopeSwitcher, type SettingsTabId } from "@/components/settings/SettingsScopeSwitcher";
+
 export const Route = createFileRoute("/_authenticated/admin/b/$slug/settings")({
   beforeLoad: async ({ params }) => {
     const {
@@ -188,7 +191,9 @@ function Settings() {
   });
 
   const [f, setF] = useState<Settings | null>(null);
-  const [activeTab, setActiveTab] = useState("business");
+  const [activeTab, setActiveTab] = useState<SettingsTabId>("business");
+  const [saving, setSaving] = useState(false);
+
   useEffect(() => {
     if (data) {
       const trimmed = (data.business_name ?? "").trim();
@@ -200,44 +205,49 @@ function Settings() {
   if (!f) return <div className="p-8">Loading…</div>;
 
   const save = async () => {
-    const { error } = await supabase
-      .from("business_settings")
-      .update({
-        business_name: f.business_name,
-        logo_url: f.logo_url,
-        favicon_url: f.favicon_url,
-        address: f.address,
-        phone: f.phone,
-        email: f.email,
-        vat_number: f.vat_number,
-        currency: f.currency,
-        default_tax_rate: f.default_tax_rate,
-        primary_color: f.primary_color,
-        footer_note: f.footer_note,
-        font_family: f.font_family,
-        font_url: f.font_url,
-        font_size: f.font_size,
-        text_color: f.text_color,
-        background_color: f.background_color,
-        logo_size: f.logo_size,
-        logo_x: f.logo_x,
-        logo_y: f.logo_y,
-        logo_width: f.logo_width,
-        logo_height: f.logo_height,
-        invoice_template: f.invoice_template,
-        invoice_secondary_color: f.invoice_secondary_color,
-        invoice_show_business_details: f.invoice_show_business_details,
-        invoice_show_customer_contact: f.invoice_show_customer_contact,
-        invoice_show_fulfillment: f.invoice_show_fulfillment,
-        invoice_show_notes: f.invoice_show_notes,
-        invoice_title_en: f.invoice_title_en,
-        invoice_title_ar: f.invoice_title_ar,
-      })
-      .eq("brand_id", brandId);
-    if (error) toast.error(error.message);
-    else {
-      toast.success("Saved");
-      qc.invalidateQueries({ queryKey: ["business-settings"] });
+    setSaving(true);
+    try {
+      const { error } = await supabase
+        .from("business_settings")
+        .update({
+          business_name: f.business_name,
+          logo_url: f.logo_url,
+          favicon_url: f.favicon_url,
+          address: f.address,
+          phone: f.phone,
+          email: f.email,
+          vat_number: f.vat_number,
+          currency: f.currency,
+          default_tax_rate: f.default_tax_rate,
+          primary_color: f.primary_color,
+          footer_note: f.footer_note,
+          font_family: f.font_family,
+          font_url: f.font_url,
+          font_size: f.font_size,
+          text_color: f.text_color,
+          background_color: f.background_color,
+          logo_size: f.logo_size,
+          logo_x: f.logo_x,
+          logo_y: f.logo_y,
+          logo_width: f.logo_width,
+          logo_height: f.logo_height,
+          invoice_template: f.invoice_template,
+          invoice_secondary_color: f.invoice_secondary_color,
+          invoice_show_business_details: f.invoice_show_business_details,
+          invoice_show_customer_contact: f.invoice_show_customer_contact,
+          invoice_show_fulfillment: f.invoice_show_fulfillment,
+          invoice_show_notes: f.invoice_show_notes,
+          invoice_title_en: f.invoice_title_en,
+          invoice_title_ar: f.invoice_title_ar,
+        })
+        .eq("brand_id", brandId);
+      if (error) toast.error(error.message);
+      else {
+        toast.success(lang === "ar" ? "تم حفظ التغييرات بنجاح" : "Settings saved successfully");
+        qc.invalidateQueries({ queryKey: ["business-settings"] });
+      }
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -343,51 +353,28 @@ function Settings() {
   const activeHeader = TAB_HEADERS[activeTab] ?? TAB_HEADERS.business;
 
   return (
-    <div
-      dir={lang === "ar" ? "rtl" : "ltr"}
-      className="mx-auto max-w-5xl space-y-4 p-1 sm:p-2 animate-fade-in"
-    >
+    <div className="space-y-3.5">
       {f.font_url && (
         <style>{`@font-face { font-family: 'CustomFont'; src: url('${f.font_url}'); font-display: swap; }`}</style>
       )}
-      <div>
-        <h1 className="font-display text-4xl font-extrabold tracking-tight bg-clip-text bg-gradient-to-r from-slate-900 via-slate-800 to-slate-950 dark:from-slate-50 dark:to-slate-300 mb-2">
-          {lang === "ar" ? activeHeader.ar : activeHeader.en}
-        </h1>
-        <p className="text-muted-foreground text-sm max-w-2xl leading-relaxed">
-          {lang === "ar" ? activeHeader.arDescription : activeHeader.enDescription}
-        </p>
-      </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <div className="sticky top-16 z-20 mb-4 rounded-xl border border-border/60 bg-background/95 p-2 shadow-sm backdrop-blur sm:hidden">
-          <Label className="mb-1.5 block px-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-            {lang === "ar" ? "قسم الإعدادات" : "Settings section"}
-          </Label>
-          <Select value={activeTab} onValueChange={setActiveTab}>
-            <SelectTrigger className="h-11 w-full bg-background">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {TABS.map((tab) => (
-                <SelectItem key={tab.value} value={tab.value}>
-                  {lang === "ar" ? tab.ar : tab.en}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <TabsList className="mb-6 hidden h-auto w-full flex-wrap justify-start gap-1.5 rounded-xl border border-border/40 bg-muted/40 p-1.5 backdrop-blur-sm sm:flex">
-          {TABS.map((tab) => (
-            <TabsTrigger
-              key={tab.value}
-              value={tab.value}
-              className="rounded-lg py-2 px-3 text-xs sm:text-sm font-medium transition-all duration-200 data-[state=active]:bg-background data-[state=active]:shadow-md data-[state=active]:text-foreground hover:bg-background/20"
-            >
-              {lang === "ar" ? tab.ar : tab.en}
-            </TabsTrigger>
-          ))}
-        </TabsList>
+      {/* 1. Command Header */}
+      <SettingsCommandHeader
+        lang={lang === "ar" ? "ar" : "en"}
+        brandName={brandDisplayName}
+        activeTabLabel={lang === "ar" ? activeHeader.ar : activeHeader.en}
+        saving={saving}
+        onSave={save}
+      />
+
+      {/* 2. Scope Switcher */}
+      <SettingsScopeSwitcher
+        lang={lang === "ar" ? "ar" : "en"}
+        activeTab={activeTab}
+        onTabChange={(tab) => setActiveTab(tab)}
+      />
+
+      <Tabs value={activeTab} onValueChange={(val: any) => setActiveTab(val)} className="w-full mt-2">
 
         <TabsContent value="business" className="space-y-6 mt-0">
           <Card className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm p-6 space-y-4">
