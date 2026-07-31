@@ -489,6 +489,7 @@ function OrdersList() {
             cod_collected_at: new Date().toISOString(),
             payment_status: newStatus,
             fulfillment_status: "COMPLETED",
+            status: "completed",
             delivery_notes: updatedNotes || null,
             delivered_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),

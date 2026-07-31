@@ -256,7 +256,11 @@ function CourierOrderView({
   const isCod = ["cod", "cash_on_delivery"].includes(
     String(order.payment_method ?? "").toLowerCase(),
   );
-  const deliveryComplete = order.fulfillment_status === "delivered";
+  const ffUpper = String(order.fulfillment_status ?? "").toUpperCase();
+  const stUpper = String(order.status ?? "").toUpperCase();
+  const deliveryComplete =
+    ["COMPLETED", "DELIVERED", "PICKED_UP"].includes(ffUpper) ||
+    ["COMPLETED", "DELIVERED"].includes(stUpper);
   const currency = order.currency || "BHD";
 
   const isCodOrHasDue = isCod || amountDue > 0;
@@ -410,8 +414,19 @@ function CourierOrderView({
             <h1 className="text-2xl font-display">#{order.invoice_number}</h1>
           </div>
           <div className="flex flex-col items-end gap-2">
-            <span className="rounded-full bg-primary/10 px-3 py-1 text-sm font-medium text-primary">
-              {order.fulfillment_status || "assigned"}
+            <span
+              className={cn(
+                "rounded-full px-3 py-1 text-xs font-bold tracking-wide border",
+                deliveryComplete
+                  ? "bg-emerald-100 text-emerald-900 border-emerald-300 dark:bg-emerald-950/40 dark:text-emerald-300"
+                  : "bg-sky-100 text-sky-900 border-sky-300 dark:bg-sky-950/40 dark:text-sky-300",
+              )}
+            >
+              {deliveryComplete
+                ? lang === "ar"
+                  ? "تم التوصيل"
+                  : "Delivered"
+                : order.fulfillment_status || "assigned"}
             </span>
             {/* Payment status badge */}
             <span
@@ -572,39 +587,52 @@ function CourierOrderView({
             </div>
           </div>
         )}
-        <div className="grid grid-cols-2 gap-2">
-          <Button
-            disabled={saving || deliveryComplete}
-            variant="outline"
-            onClick={() => updateStatus("out_for_delivery")}
-          >
-            {lang === "ar" ? "خرج للتوصيل وإرسال واتساب" : "Out for delivery & WhatsApp"}
-          </Button>
-          <Button
-            disabled={
-              saving ||
-              deliveryComplete ||
-              (isCodOrHasDue && !order.cod_collected_at && !codConfirmed)
-            }
-            onClick={() => updateStatus("delivered")}
-          >
-            {lang === "ar" ? "تم التسليم" : "Delivered"}
-          </Button>
-          <Button
-            disabled={saving || deliveryComplete}
-            variant="destructive"
-            onClick={() => updateStatus("delivery_failed")}
-          >
-            {lang === "ar" ? "تعذر التسليم" : "Delivery failed"}
-          </Button>
-          <Button
-            disabled={saving || deliveryComplete}
-            variant="outline"
-            onClick={() => updateStatus("returned")}
-          >
-            {lang === "ar" ? "مرتجع" : "Returned"}
-          </Button>
-        </div>
+        {deliveryComplete ? (
+          <div className="rounded-xl border border-emerald-300/80 bg-emerald-50/80 dark:bg-emerald-950/40 p-4 text-center space-y-1 text-emerald-900 dark:text-emerald-200 shadow-xs">
+            <p className="font-bold flex items-center justify-center gap-1.5 text-sm sm:text-base">
+              <CheckCircle2 className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+              {lang === "ar" ? "تم توصيل هذا الطلب وإتمامه بنجاح" : "Order Delivered & Completed"}
+            </p>
+            <p className="text-xs text-muted-foreground">
+              {order.delivered_at
+                ? `${lang === "ar" ? "تاريخ التسليم: " : "Delivered at: "}${new Date(order.delivered_at).toLocaleString()}`
+                : (lang === "ar" ? "الطلب مسجل كـ تم التوصيل في النظام" : "Order is marked as delivered in system")}
+            </p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 gap-2">
+            <Button
+              disabled={saving}
+              variant="outline"
+              onClick={() => updateStatus("out_for_delivery")}
+            >
+              {lang === "ar" ? "خرج للتوصيل وإرسال واتساب" : "Out for delivery & WhatsApp"}
+            </Button>
+            <Button
+              disabled={
+                saving ||
+                (isCodOrHasDue && !order.cod_collected_at && !codConfirmed)
+              }
+              onClick={() => updateStatus("delivered")}
+            >
+              {lang === "ar" ? "تم التسليم" : "Delivered"}
+            </Button>
+            <Button
+              disabled={saving}
+              variant="destructive"
+              onClick={() => updateStatus("delivery_failed")}
+            >
+              {lang === "ar" ? "تعذر التسليم" : "Delivery failed"}
+            </Button>
+            <Button
+              disabled={saving}
+              variant="outline"
+              onClick={() => updateStatus("returned")}
+            >
+              {lang === "ar" ? "مرتجع" : "Returned"}
+            </Button>
+          </div>
+        )}
       </Card>
     </div>
   );
