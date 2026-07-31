@@ -910,19 +910,46 @@ function OrderDetail() {
     }
   };
 
+  const initialSnapshotRef = useRef<{ order: any; items: Item[] } | null>(null);
+
   const isDirty = useMemo(() => {
-    const serverOrder = orderQ.data as any;
-    if (!serverOrder || !order) return false;
-    return (
-      JSON.stringify(items) !== JSON.stringify(serverOrder.order_items ?? []) ||
-      order.notes !== (serverOrder.notes ?? "") ||
-      order.delivery_notes !== (serverOrder.delivery_notes ?? "") ||
-      order.customer_id !== (serverOrder.customer_id ?? null) ||
-      order.shipping_address_id !== (serverOrder.shipping_address_id ?? null) ||
-      order.payment_status !== serverOrder.payment_status ||
-      order.fulfillment_status !== serverOrder.fulfillment_status
-    );
-  }, [items, order, orderQ.data]);
+    if (!initialSnapshotRef.current || !order) return false;
+    const snap = initialSnapshotRef.current;
+
+    const currentOrderMin = {
+      notes: order.notes ?? "",
+      delivery_notes: order.delivery_notes ?? "",
+      customer_id: order.customer_id ?? null,
+      shipping_address_id: order.shipping_address_id ?? null,
+      payment_status: order.payment_status,
+      fulfillment_status: order.fulfillment_status,
+      status: order.status,
+      payment_method: order.payment_method ?? null,
+      discount: Number(order.discount ?? 0),
+      shipping: Number(order.shipping ?? 0),
+      tax_rate: Number(order.tax_rate ?? 0),
+      advance_paid: Number(order.advance_paid ?? 0),
+      order_date: order.order_date,
+    };
+
+    const orderChanged = JSON.stringify(currentOrderMin) !== JSON.stringify(snap.order);
+
+    const simplifyItem = (it: Item) => ({
+      id: it.id,
+      product_id: it.product_id,
+      variant_id: it.variant_id,
+      quantity: it.quantity,
+      unit_price: Number(it.unit_price),
+      line_total: Number(it.line_total),
+      customizations: it.customizations ?? [],
+    });
+
+    const itemsChanged =
+      JSON.stringify(items.map(simplifyItem)) !== JSON.stringify(snap.items.map(simplifyItem));
+
+    return orderChanged || itemsChanged;
+  }, [items, order]);
+
   const [appliedPromo, setAppliedPromo] = useState<{
     code: string;
     id: string;
@@ -950,6 +977,26 @@ function OrderDetail() {
         custom_field_values: normalizeCustomFieldValues(i.custom_field_values),
       }));
       setItems(loadedItems);
+
+      initialSnapshotRef.current = {
+        order: {
+          notes: orderQ.data.notes ?? "",
+          delivery_notes: orderQ.data.delivery_notes ?? "",
+          customer_id: orderQ.data.customer_id ?? null,
+          shipping_address_id: orderQ.data.shipping_address_id ?? null,
+          payment_status: orderQ.data.payment_status,
+          fulfillment_status: orderQ.data.fulfillment_status,
+          status: orderQ.data.status,
+          payment_method: orderQ.data.payment_method ?? null,
+          discount: Number(orderQ.data.discount ?? 0),
+          shipping: Number(orderQ.data.shipping ?? 0),
+          tax_rate: Number(orderQ.data.tax_rate ?? 0),
+          advance_paid: Number(orderQ.data.advance_paid ?? 0),
+          order_date: orderQ.data.order_date,
+        },
+        items: loadedItems,
+      };
+
       promoContextRef.current = JSON.stringify({
         customer: (orderQ.data as any).customer_id ?? null,
         items: loadedItems.map((item: Item) => [
@@ -2984,7 +3031,7 @@ function OrderDetail() {
             />
           </Card>
 
-          <Card className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm p-5 sm:p-6 lg:sticky lg:top-4 lg:col-start-2 lg:row-start-1 lg:row-span-2 lg:max-h-[calc(100vh-2rem)] lg:overflow-y-auto">
+          <Card className="overflow-hidden border border-border/80 shadow-md rounded-2xl bg-card p-5 sm:p-6 lg:sticky lg:top-20 lg:col-start-2 lg:row-start-1 lg:row-span-2 space-y-6">
             <div className="space-y-4">
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-1">
                 <div>
