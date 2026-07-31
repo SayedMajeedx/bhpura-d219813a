@@ -87,7 +87,7 @@ export function SpotlightCommandPalette({
         orderQuery.limit(6),
         supabase
           .from("products")
-          .select("id, name_en, name_ar, base_price, image_url")
+          .select("id, name_en, name_ar, base_price, image_url, product_variants(selling_price)")
           .eq("brand_id", bId)
           .or(`name_en.ilike.${term},name_ar.ilike.${term}`)
           .limit(6),
@@ -164,7 +164,7 @@ export function SpotlightCommandPalette({
   ];
 
   return (
-    <CommandDialog open={open} onOpenChange={onOpenChange}>
+    <CommandDialog open={open} onOpenChange={onOpenChange} commandProps={{ shouldFilter: false }}>
       <CommandInput
         placeholder={
           isAr
@@ -241,7 +241,15 @@ export function SpotlightCommandPalette({
                   </span>
                 </div>
                 <span className="text-xs font-mono font-bold text-emerald-600 dark:text-emerald-400">
-                  {formatMoney(Number(p.base_price || 0), "BHD", isAr ? "ar-BH-u-nu-latn" : "en-US")}
+                  {formatMoney(
+                    Number(p.base_price) > 0
+                      ? Number(p.base_price)
+                      : p.product_variants?.[0]?.selling_price
+                        ? Number(p.product_variants[0].selling_price)
+                        : 0,
+                    "BHD",
+                    isAr ? "ar-BH-u-nu-latn" : "en-US",
+                  )}
                 </span>
               </CommandItem>
             ))}

@@ -723,14 +723,12 @@ function OrdersList() {
         let matchesGateway = false;
 
         if (gf === "benefit") {
-          matchesGateway = pm.includes("benefit") || pm.includes("ben");
+          matchesGateway = pm.includes("benefit") || pm.includes("ben") || pm.includes("manual");
         } else if (gf === "card") {
           matchesGateway =
             pm.includes("card") || pm.includes("tap") || pm.includes("creimax") || pm.includes("credit");
         } else if (gf === "cod") {
           matchesGateway = pm.includes("cod") || pm.includes("cash") || pm.includes("delivery");
-        } else if (gf === "bank_transfer") {
-          matchesGateway = pm.includes("bank") || pm.includes("transfer");
         } else {
           matchesGateway = pm === gf;
         }
@@ -1475,16 +1473,13 @@ function OrdersList() {
                 {lang === "ar" ? "طريقة الدفع: الكل" : "Payment Method: All"}
               </SelectItem>
               <SelectItem value="benefit">
-                {lang === "ar" ? "بنفت بي (BenefitPay)" : "BenefitPay"}
+                {lang === "ar" ? "بنفت بي (يدوي)" : "BenefitPay (Manual)"}
               </SelectItem>
               <SelectItem value="card">
-                {lang === "ar" ? "بطاقة ائتمان / مدى (Card)" : "Credit/Debit Card"}
+                {lang === "ar" ? "بطاقة ائتمان / مدى" : "Credit/Debit Card"}
               </SelectItem>
               <SelectItem value="cod">
-                {lang === "ar" ? "الدفع عند الاستلام (COD)" : "Cash / COD"}
-              </SelectItem>
-              <SelectItem value="bank_transfer">
-                {lang === "ar" ? "تحويل بنكي (Bank Transfer)" : "Bank Transfer"}
+                {lang === "ar" ? "الدفع عند الاستلام" : "Cash / COD"}
               </SelectItem>
             </SelectContent>
           </Select>
