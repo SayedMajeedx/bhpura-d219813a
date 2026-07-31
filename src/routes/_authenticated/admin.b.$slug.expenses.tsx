@@ -65,6 +65,12 @@ import { useBrand } from "@/lib/brand-context";
 import { cn } from "@/lib/utils";
 import { deletePublicMediaUrl, uploadPublicMedia } from "@/lib/r2-upload";
 
+import { ExpensesCommandHeader } from "@/components/expenses/ExpensesCommandHeader";
+import { ExpensesScopeSwitcher } from "@/components/expenses/ExpensesScopeSwitcher";
+import { ExpensesToolbar } from "@/components/expenses/ExpensesToolbar";
+import { ExpensesWorkQueue } from "@/components/expenses/ExpensesWorkQueue";
+import { ExpenseMobileCard } from "@/components/expenses/ExpenseMobileCard";
+
 const MAX_SCANNER_REQUEST_BYTES = 2_500_000;
 
 function fileToDataUrl(file: Blob): Promise<string> {
@@ -243,6 +249,8 @@ function ExpensesPage() {
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [datePreset, setDatePreset] = useState<DatePreset>("month");
+  const [search, setSearch] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState("all");
   const initialMonth = useMemo(() => presetRange("month"), []);
   const [customRange, setCustomRange] = useState(initialMonth);
   const fileRef = useRef<HTMLInputElement | null>(null);
@@ -263,12 +271,23 @@ function ExpensesPage() {
     () =>
       list.filter((expense) => {
         const key = expense.expense_date.slice(0, 10);
-        return (
+        const matchesDate =
           (!activeRange.from || key >= activeRange.from) &&
-          (!activeRange.to || key <= activeRange.to)
-        );
+          (!activeRange.to || key <= activeRange.to);
+
+        const matchesSearch =
+          !search ||
+          [expense.description, expense.store_name, expense.notes, expense.category].some((field) =>
+            String(field ?? "")
+              .toLowerCase()
+              .includes(search.toLowerCase()),
+          );
+
+        const matchesCategory = categoryFilter === "all" || expense.category === categoryFilter;
+
+        return matchesDate && matchesSearch && matchesCategory;
       }),
-    [list, activeRange.from, activeRange.to],
+    [list, activeRange.from, activeRange.to, search, categoryFilter],
   );
   const currency = list[0]?.currency ?? "BHD";
   const total = useMemo(
@@ -457,112 +476,124 @@ function ExpensesPage() {
     return sum;
   }, [cogsQ.data, cardFeePercent, benefitFeePercent]);
 
-  const totalOpex = total + paymentProcessingFees; // Sum of manually created operating expenses + payment processing fees
-  const totalExpenses = totalCogs + totalOpex;
-  const netProfit = totalRevenue - totalExpenses;
+  const totalOpex = total + paymentProcessingFees;
+  const netProfit = totalRevenue - (totalCogs + totalOpex);
   const marginPercentage = totalRevenue > 0 ? (netProfit / totalRevenue) * 100 : 0;
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 max-w-6xl mx-auto space-y-6 animate-fade-in">
-      {/* Page Header */}
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="text-4xl font-display font-extrabold tracking-tight bg-clip-text bg-gradient-to-r from-slate-900 via-slate-800 to-slate-950 dark:from-slate-50 dark:to-slate-300">
-            {t("expenses.title")}
-          </h1>
-          <p className="text-muted-foreground mt-1.5 text-sm max-w-md">{t("expenses.subtitle")}</p>
-        </div>
-        {/* Date Filter preset cards */}
-        <Card className="overflow-hidden border border-border/60 shadow-md rounded-2xl bg-card/40 backdrop-blur-sm p-1.5 flex flex-wrap gap-1.5">
-          {(["today", "week", "month", "custom"] as DatePreset[]).map((preset) => (
-            <Button
-              key={preset}
-              type="button"
-              size="sm"
-              variant={datePreset === preset ? "default" : "ghost"}
-              onClick={() => setDatePreset(preset)}
-              className="text-xs h-8 shadow-sm transition-all duration-200 hover:shadow hover:scale-[1.01] active:scale-95"
-            >
-              {lang === "ar"
-                ? ({ today: "اليوم", week: "الأسبوع", month: "الشهر", custom: "مخصص" } as const)[
-                    preset
-                  ]
-                : (
-                    {
-                      today: "Today",
-                      week: "This week",
-                      month: "This month",
-                      custom: "Custom",
-                    } as const
-                  )[preset]}
-            </Button>
-          ))}
-        </Card>
-      </div>
-
-      {/* Custom Date Range Picker */}
-      {datePreset === "custom" && (
-        <Card className="overflow-hidden border border-dashed border-primary/35 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm p-4">
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div>
-              <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                {lang === "ar" ? "من تاريخ" : "From Date"}
-              </Label>
-              <Input
-                type="date"
-                value={customRange.from}
-                max={customRange.to || undefined}
-                onChange={(e) => setCustomRange((range) => ({ ...range, from: e.target.value }))}
-                className="mt-1 h-9 text-sm bg-background/50"
-              />
-            </div>
-            <div>
-              <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                {lang === "ar" ? "إلى تاريخ" : "To Date"}
-              </Label>
-              <Input
-                type="date"
-                value={customRange.to}
-                min={customRange.from || undefined}
-                onChange={(e) => setCustomRange((range) => ({ ...range, to: e.target.value }))}
-                className="mt-1 h-9 text-sm bg-background/50"
-              />
-            </div>
-          </div>
-        </Card>
-      )}
-
-      {/* Hidden file input for scanner */}
+    <div className="space-y-3.5">
+      {/* Hidden File Input for Scanner */}
       <input
         ref={fileRef}
         type="file"
         accept="image/*,application/pdf"
-        capture="environment"
         className="hidden"
-        onChange={(e) => onFilePicked(e.target.files?.[0] ?? null)}
+        onChange={(e) => void onFilePicked(e.target.files?.[0] ?? null)}
       />
 
-      <ReceiptReviewDialog
-        open={reviewOpen}
-        onOpenChange={(v) => {
-          setReviewOpen(v);
-          if (!v) setScanned(null);
+      {/* 1. Command Header */}
+      <ExpensesCommandHeader
+        lang={lang === "ar" ? "ar" : "en"}
+        expenseCount={filteredList.length}
+        scanning={scanning}
+        onScanReceipt={() => fileRef.current?.click()}
+        onCreateNew={() => {
+          setEditing(null);
+          setOpen(true);
         }}
-        scanned={scanned}
+      />
+
+      {/* 2. P&L Financial Scope Switcher */}
+      <ExpensesScopeSwitcher
+        lang={lang === "ar" ? "ar" : "en"}
+        currency={currency}
+        totalRevenue={totalRevenue}
+        totalCogs={totalCogs}
+        manualOpex={total}
+        processingFees={paymentProcessingFees}
+        netProfit={netProfit}
+        marginPercentage={marginPercentage}
+      />
+
+      {/* 3. Toolbar */}
+      <ExpensesToolbar
+        lang={lang === "ar" ? "ar" : "en"}
+        search={search}
+        onSearchChange={setSearch}
+        categoryFilter={categoryFilter}
+        onCategoryFilterChange={setCategoryFilter}
+        categories={categories}
+        datePreset={datePreset}
+        onDatePresetChange={setDatePreset}
+        activeFilterCount={(search ? 1 : 0) + (categoryFilter !== "all" ? 1 : 0)}
+        onClearFilters={() => {
+          setSearch("");
+          setCategoryFilter("all");
+        }}
+        onDownloadCogsCsv={downloadCogsCsv}
+      />
+
+      {/* 4. Mobile View */}
+      <div className="space-y-2.5 block sm:hidden">
+        {filteredList.map((e) => (
+          <ExpenseMobileCard
+            key={e.id}
+            lang={lang === "ar" ? "ar" : "en"}
+            expense={e}
+            currency={currency}
+            onEdit={(item) => {
+              setEditing(item);
+              setOpen(true);
+            }}
+            onDelete={(id) => setDeleteTargetId(id)}
+          />
+        ))}
+      </div>
+
+      {/* 5. Desktop High-Density Work Queue */}
+      <div className="hidden sm:block">
+        <ExpensesWorkQueue
+          lang={lang === "ar" ? "ar" : "en"}
+          expenses={filteredList}
+          currency={currency}
+          onEdit={(item) => {
+            setEditing(item);
+            setOpen(true);
+          }}
+          onDelete={(id) => setDeleteTargetId(id)}
+        />
+      </div>
+
+      {/* Manual Expense Modal */}
+      <ExpenseDialog
+        expense={editing}
+        categories={categories}
         onSaved={() => {
-          setReviewOpen(false);
-          setScanned(null);
-          qc.invalidateQueries({ queryKey: ["expenses"] });
+          setOpen(false);
+          void qc.invalidateQueries({ queryKey: ["expenses"] });
         }}
       />
 
-      <AlertDialog
-        open={deleteTargetId !== null}
-        onOpenChange={(open) => {
-          if (!open && !deleting) setDeleteTargetId(null);
-        }}
-      >
-        <AlertDialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-lg">
+      {/* AI Scanned Review Dialog */}
+      {scanned && (
+        <ReceiptReviewDialog
+          open={reviewOpen}
+          onOpenChange={(v) => {
+            setReviewOpen(v);
+            if (!v) setScanned(null);
+          }}
+          scanned={scanned}
+          onSaved={() => {
+            setReviewOpen(false);
+            setScanned(null);
+            qc.invalidateQueries({ queryKey: ["expenses"] });
+          }}
+        />
+      )}
+
+      {/* Delete Confirmation Alert Dialog */}
+      <AlertDialog open={!!deleteTargetId} onOpenChange={(val) => !val && setDeleteTargetId(null)}>
+        <AlertDialogContent dir={lang === "ar" ? "rtl" : "ltr"}>
           <AlertDialogHeader>
             <AlertDialogTitle>{t("common.delete")}</AlertDialogTitle>
             <AlertDialogDescription>{t("expenses.deleteConfirm")}</AlertDialogDescription>
@@ -570,312 +601,20 @@ function ExpensesPage() {
           <AlertDialogFooter>
             <AlertDialogCancel disabled={deleting}>{t("common.cancel")}</AlertDialogCancel>
             <AlertDialogAction
-              disabled={deleting || !deleteTargetId}
+              disabled={deleting}
+              onClick={() => deleteTargetId && void del(deleteTargetId)}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              onClick={(event) => {
-                event.preventDefault();
-                if (deleteTargetId) void del(deleteTargetId);
-              }}
             >
-              {deleting ? <Loader2 className="h-4 w-4 me-2 animate-spin" /> : null}
+              {deleting ? (
+                <Loader2 className="h-4 w-4 animate-spin me-2" />
+              ) : (
+                <Trash2 className="h-4 w-4 me-2" />
+              )}
               {t("common.delete")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-
-      {/* Top 3-Column KPI Metric Cards Layout */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {/* Card 1: COGS */}
-        <Card className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm p-5 flex flex-col justify-between transition-all duration-300 hover:scale-[1.02] hover:border-primary/40 hover:shadow-xl">
-          <div>
-            <div className="flex items-center gap-2 text-muted-foreground mb-1.5">
-              <Package className="h-4 w-4 shrink-0 text-muted-foreground/80" />
-              <span className="text-xs uppercase tracking-wider font-semibold">
-                {lang === "ar" ? "تكلفة البضاعة المباعة (COGS)" : "Cost of Goods Sold (COGS)"}
-              </span>
-            </div>
-            <p className="text-xs text-muted-foreground mb-3">
-              {lang === "ar"
-                ? "تحديث تلقائي من مبيعات المتغيرات"
-                : "Auto-calculated from product variant costs"}
-            </p>
-          </div>
-          <span className="text-2xl font-display font-semibold text-foreground tabular-nums">
-            {cogsQ.isLoading ? (
-              <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-            ) : (
-              formatMoney(totalCogs, currency, locale)
-            )}
-          </span>
-        </Card>
-
-        {/* Card 2: OPEX */}
-        <Card className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm p-5 flex flex-col justify-between transition-all duration-300 hover:scale-[1.02] hover:border-primary/40 hover:shadow-xl">
-          <div>
-            <div className="flex items-center gap-2 text-muted-foreground mb-1.5">
-              <Receipt className="h-4 w-4 shrink-0 text-muted-foreground/80" />
-              <span className="text-xs uppercase tracking-wider font-semibold">
-                {lang === "ar" ? "المصاريف التشغيلية (OPEX)" : "Operating Expenses (OPEX)"}
-              </span>
-            </div>
-            <p className="text-xs text-muted-foreground mb-3">
-              {lang === "ar"
-                ? "إجمالي الفواتير والمصاريف المدخلة"
-                : "Sum of manually logged business expenses"}
-            </p>
-          </div>
-          <span className="text-2xl font-display font-semibold text-foreground tabular-nums">
-            {formatMoney(totalOpex, currency, locale)}
-          </span>
-        </Card>
-
-        {/* Card 3: Total Expenses (Primary Focus Metric) */}
-        <Card className="overflow-hidden border-2 border-primary shadow-xl rounded-2xl bg-primary/5 p-5 flex flex-col justify-between transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl">
-          <div>
-            <div className="flex items-center gap-2 text-primary mb-1.5">
-              <Wallet className="h-4 w-4 shrink-0 text-primary" />
-              <span className="text-xs uppercase tracking-wider font-bold">
-                {lang === "ar" ? "إجمالي المصاريف" : "Total Expenses"}
-              </span>
-            </div>
-            <p className="text-xs text-primary/80 mb-3">
-              {lang === "ar"
-                ? "تكلفة البضاعة + المصاريف التشغيلية"
-                : "COGS + OPEX aggregated total"}
-            </p>
-          </div>
-          <span className="text-3xl font-display font-bold text-primary tabular-nums">
-            {cogsQ.isLoading ? (
-              <Loader2 className="h-5 w-5 animate-spin text-primary" />
-            ) : (
-              formatMoney(totalExpenses, currency, locale)
-            )}
-          </span>
-        </Card>
-      </div>
-
-      {/* Net Profit Summary Widget Block */}
-      <Card className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm">
-        <div className="p-5 sm:p-6 bg-gradient-to-r from-secondary/30 via-background to-secondary/15">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div>
-              <h3 className="text-base font-semibold text-foreground flex items-center gap-2">
-                <Sparkles className="h-4.5 w-4.5 text-primary" />
-                {lang === "ar" ? "ملخص صافي الأرباح" : "Net Profit Summary"}
-              </h3>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                {lang === "ar"
-                  ? "المعادلة الرياضية: الإيرادات من الطلبات المكتملة مطروحاً منها التكلفة الإجمالية للمشروع"
-                  : "Standard: Revenue from completed orders minus all business costs"}
-              </p>
-            </div>
-            <div className="flex items-center gap-3">
-              <div className="text-end">
-                <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-bold">
-                  {lang === "ar" ? "صافي الأرباح" : "Net Profit"}
-                </p>
-                <p
-                  className={`text-2xl font-display font-bold ${netProfit >= 0 ? "text-emerald-600 dark:text-emerald-500" : "text-rose-600 dark:text-rose-500"}`}
-                >
-                  {cogsQ.isLoading ? "..." : formatMoney(netProfit, currency, locale)}
-                </p>
-              </div>
-              <div
-                className={`px-2.5 py-1.5 rounded-lg text-xs font-bold shrink-0 ${netProfit >= 0 ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-400" : "bg-rose-100 text-rose-800 dark:bg-rose-950/40 dark:text-rose-400"}`}
-              >
-                {cogsQ.isLoading ? "..." : `${marginPercentage.toFixed(1)}%`}{" "}
-                {lang === "ar" ? "هامش" : "Margin"}
-              </div>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-6 pt-5 border-t border-border/60">
-            <div>
-              <span className="text-xs text-muted-foreground block">
-                {lang === "ar" ? "إجمالي الإيرادات (المبيعات)" : "Total Revenue (Sales)"}
-              </span>
-              <span className="text-sm font-semibold tabular-nums text-foreground">
-                {cogsQ.isLoading ? "..." : formatMoney(totalRevenue, currency, locale)}
-              </span>
-            </div>
-            <div>
-              <span className="text-xs text-muted-foreground block">
-                {lang === "ar" ? "تكلفة البضاعة المباعة" : "COGS (Product Costs)"}
-              </span>
-              <span className="text-sm font-semibold tabular-nums text-foreground/80">
-                − {cogsQ.isLoading ? "..." : formatMoney(totalCogs, currency, locale)}
-              </span>
-            </div>
-            <div>
-              <span className="text-xs text-muted-foreground block">
-                {lang === "ar" ? "المصاريف التشغيلية" : "OPEX (Operations)"}
-              </span>
-              <span className="text-sm font-semibold tabular-nums text-foreground/80">
-                − {formatMoney(totalOpex, currency, locale)}
-              </span>
-            </div>
-            <div>
-              <span className="text-xs text-muted-foreground block">
-                {lang === "ar" ? "صافي الربح الفعلي" : "Net Profit"}
-              </span>
-              <span
-                className={`text-sm font-bold tabular-nums ${netProfit >= 0 ? "text-emerald-600 dark:text-emerald-500" : "text-rose-600 dark:text-rose-500"}`}
-              >
-                {cogsQ.isLoading ? "..." : formatMoney(netProfit, currency, locale)}
-              </span>
-            </div>
-          </div>
-        </div>
-      </Card>
-
-      {/* Side-by-Side Dual Column Layout (Desktop) */}
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-        {/* Left Column (60%): Cost of Goods Sold Collapsible Section */}
-        <div className="lg:col-span-3 space-y-4">
-          <CogsSection
-            orders={cogsQ.data ?? []}
-            loading={cogsQ.isLoading}
-            currency={currency}
-            locale={locale}
-            lang={lang}
-            onDownload={downloadCogsCsv}
-          />
-        </div>
-
-        {/* Right Column (40%): Operating Expenses (OPEX) */}
-        <div className="lg:col-span-2 space-y-4">
-          {/* Header and Anchored Actions Directly Above the OPEX List */}
-          <div className="flex flex-wrap items-center justify-between gap-2 border border-border/60 shadow-md rounded-2xl bg-card/40 backdrop-blur-sm p-3">
-            <div>
-              <h2 className="text-sm font-bold text-foreground">
-                {lang === "ar" ? "المصاريف التشغيلية" : "Operating Expenses"}
-              </h2>
-              <span className="text-[10px] text-muted-foreground block">
-                {filteredList.length} {lang === "ar" ? "سجلات مصروفات" : "logged items"}
-              </span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => fileRef.current?.click()}
-                disabled={scanning}
-                className="border-primary/30 text-primary hover:bg-primary/5 text-xs h-8 px-2.5 shrink-0 shadow-sm transition-all duration-200 hover:shadow hover:scale-[1.01] active:scale-95"
-              >
-                {scanning ? (
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                ) : (
-                  <Sparkles className="h-3.5 w-3.5" />
-                )}
-              </Button>
-              <Dialog
-                open={open}
-                onOpenChange={(v) => {
-                  setOpen(v);
-                  if (!v) setEditing(null);
-                }}
-              >
-                <DialogTrigger asChild>
-                  <Button
-                    size="sm"
-                    className="text-xs h-8 px-2.5 shrink-0 shadow-sm transition-all duration-200 hover:shadow hover:scale-[1.01] active:scale-95"
-                    onClick={() => setEditing(null)}
-                  >
-                    <Plus className="h-3.5 w-3.5 me-1" />
-                    {lang === "ar" ? "إضافة" : "Add"}
-                  </Button>
-                </DialogTrigger>
-                <ExpenseDialog
-                  expense={editing}
-                  categories={categories}
-                  onSaved={() => {
-                    setOpen(false);
-                    setEditing(null);
-                    qc.invalidateQueries({ queryKey: ["expenses"] });
-                  }}
-                />
-              </Dialog>
-            </div>
-          </div>
-
-          {/* OPEX List of items using highly polished cards (perfectly fits 40% column size) */}
-          <div className="space-y-3">
-            {filteredList.length === 0 ? (
-              <Card className="overflow-hidden border border-dashed border-border/80 shadow-md rounded-2xl bg-card/40 backdrop-blur-sm p-8 text-center">
-                <Wallet className="h-8 w-8 mx-auto text-muted-foreground/60 mb-2" />
-                <p className="text-xs text-muted-foreground">{t("expenses.none")}</p>
-              </Card>
-            ) : (
-              filteredList.map((e) => (
-                <Card
-                  key={e.id}
-                  className="overflow-hidden border border-border/60 shadow-md rounded-2xl bg-card/40 backdrop-blur-sm p-4 transition-all duration-300 hover:scale-[1.005] hover:border-primary/40 hover:shadow-lg relative group"
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0 flex-1">
-                      <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                        <span className="font-semibold text-sm text-foreground">{e.category}</span>
-                        <span className="text-[10px] bg-secondary px-1.5 py-0.5 rounded text-muted-foreground font-medium">
-                          {new Date(e.expense_date).toLocaleDateString(locale)}
-                        </span>
-                      </div>
-                      <p className="mt-1.5 break-words text-xs text-muted-foreground leading-relaxed">
-                        {e.store_name ? (
-                          <span className="font-semibold text-foreground/90">{e.store_name}</span>
-                        ) : null}
-                        {e.store_name && e.description ? " — " : null}
-                        {e.description || (!e.store_name ? "—" : "")}
-                      </p>
-                      <div className="mt-2.5 flex items-center justify-between">
-                        <span className="font-bold text-sm text-foreground tabular-nums">
-                          {formatMoney(Number(e.amount), e.currency, locale)}
-                        </span>
-                        {e.receipt_url && (
-                          <a
-                            href={e.receipt_url}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="inline-flex items-center gap-1 text-[10px] font-semibold text-primary hover:underline"
-                          >
-                            <FileText className="h-3 w-3" /> {lang === "ar" ? "إيصال" : "Receipt"}
-                          </a>
-                        )}
-                      </div>
-                    </div>
-                    {/* Compact actions shown inside card */}
-                    <div className="flex shrink-0 items-center gap-1">
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 text-muted-foreground hover:text-foreground"
-                        aria-label={lang === "ar" ? "تعديل" : "Edit"}
-                        onClick={() => {
-                          setEditing(e);
-                          setOpen(true);
-                        }}
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
-                        aria-label={lang === "ar" ? "حذف" : "Delete"}
-                        onClick={() => setDeleteTargetId(e.id)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                </Card>
-              ))
-            )}
-          </div>
-        </div>
-      </div>
     </div>
   );
 }
