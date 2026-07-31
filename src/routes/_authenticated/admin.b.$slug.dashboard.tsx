@@ -40,6 +40,10 @@ import { useMemo, useEffect, useState } from "react";
 import { getOrderCustomerName } from "@/lib/order-customer-snapshot";
 import { OsStatusPill } from "@/components/os/os-status-pill";
 
+import { DashboardCommandHeader } from "@/components/dashboard/DashboardCommandHeader";
+import { DashboardScopeSwitcher, type DashboardViewScope } from "@/components/dashboard/DashboardScopeSwitcher";
+import { DashboardActivityQueue } from "@/components/dashboard/DashboardActivityQueue";
+
 export const Route = createFileRoute("/_authenticated/admin/b/$slug/dashboard")({
   component: Dashboard,
 });
@@ -55,6 +59,8 @@ function Dashboard() {
   const locale = lang === "ar" ? "ar-BH-u-nu-latn" : "en-US";
 
   const [isMounted, setIsMounted] = useState(false);
+  const [activeScope, setActiveScope] = useState<DashboardViewScope>("financials");
+
   useEffect(() => {
     setIsMounted(true);
   }, []);
@@ -584,59 +590,22 @@ function Dashboard() {
   ];
 
   return (
-    <div
-      className="mx-auto max-w-7xl space-y-5 p-1 sm:p-2 animate-fade-in"
-      dir={isAr ? "rtl" : "ltr"}
-    >
-      {/* Upper Command Header & Period Controls */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-1 border-b border-border/50">
-        <div>
-          <div className="flex items-center gap-2.5">
-            <LayoutDashboard className="h-6 w-6 text-primary shrink-0" />
-            <h1 className="font-display text-2xl font-extrabold tracking-tight text-foreground">
-              {t("dashboard.title")}
-            </h1>
-            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-primary/10 text-primary border border-primary/20">
-              {isAr ? "مركز القيادة" : "COMMAND CENTER"}
-            </span>
-          </div>
-          <p className="mt-1 text-xs text-muted-foreground">
-            {isAr
-              ? "مركز التحكم الفوري وإحصائيات التجار لمتابعة المبيعات والطلبات"
-              : "Real-time commerce operations dashboard and financial insights."}
-          </p>
-        </div>
+    <div className="space-y-3.5">
+      {/* 1. Integrated Command Header */}
+      <DashboardCommandHeader
+        lang={isAr ? "ar" : "en"}
+        slug={slug}
+        brandName={(isAr ? brand.name_ar : brand.name_en) || brand.name_en || brand.slug}
+        orderCount={financials.ordersCurrent}
+      />
 
-        {/* Period Baseline & Creation Quick Actions */}
-        <div className="flex flex-wrap items-center gap-2 shrink-0">
-          {/* Period Selector Indicator */}
-          <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-card border border-border/60 text-xs font-semibold text-muted-foreground shadow-2xs">
-            <CalendarDays className="h-3.5 w-3.5 text-primary" />
-            <span>{isAr ? "آخر 30 يومًا" : "Last 30 Days"}</span>
-            <span className="text-[10px] text-muted-foreground/60">
-              ({isAr ? "مقابل الفترة السابقة" : "vs prior period"})
-            </span>
-          </div>
-
-          <Link
-            to="/admin/b/$slug/orders/$id"
-            params={{ slug, id: "new" }}
-            className="inline-flex h-9 items-center rounded-xl bg-primary px-3.5 text-xs font-bold text-primary-foreground shadow-sm transition-all duration-200 hover:shadow hover:scale-[1.01] active:scale-95 gap-1.5"
-          >
-            <ReceiptText className="h-3.5 w-3.5" />
-            {isAr ? "+ طلب جديد" : "+ New Order"}
-          </Link>
-          <Link
-            to="/admin/b/$slug/inventory"
-            params={{ slug }}
-            search={{ new: true } as any}
-            className="inline-flex h-9 items-center rounded-xl border border-border/60 bg-card/80 px-3.5 text-xs font-bold text-foreground shadow-sm transition-all duration-200 hover:shadow hover:scale-[1.01] active:scale-95 gap-1.5"
-          >
-            <Package className="h-3.5 w-3.5 text-primary" />
-            {isAr ? "+ إضافة منتج" : "+ Add Product"}
-          </Link>
-        </div>
-      </div>
+      {/* 2. Scope Switcher Toolbar */}
+      <DashboardScopeSwitcher
+        lang={isAr ? "ar" : "en"}
+        activeScope={activeScope}
+        onScopeChange={(scope) => setActiveScope(scope)}
+        lowStockCount={inventoryIntel.lowStockCount}
+      />
 
       {/* Primary Financial KPIs (Top Row) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -906,64 +875,13 @@ function Dashboard() {
             </Link>
           </div>
 
-          {(recentOrdersQ.data ?? []).length === 0 ? (
-            <p className="p-6 text-xs text-center text-muted-foreground bg-secondary/10 rounded-xl border border-dashed">
-              {t("dashboard.noOrders")}
-            </p>
-          ) : (
-            <div className="divide-y divide-border/60">
-              {(recentOrdersQ.data ?? []).map((o: any) => (
-                <div
-                  key={o.id}
-                  className="py-2.5 flex items-center justify-between gap-3 text-xs hover:bg-secondary/10 px-2 rounded-lg transition-colors"
-                >
-                  <Link
-                    to="/admin/b/$slug/orders/$id"
-                    params={{ slug, id: o.id }}
-                    className="min-w-0 truncate"
-                  >
-                    <span className="text-primary font-bold hover:underline">
-                      #{o.invoice_number}
-                    </span>
-                    <span className="text-muted-foreground text-[11px]">
-                      {" "}
-                      · {formatDate(o.created_at, locale)}
-                    </span>
-                    {getOrderCustomerName(o) && (
-                      <span className="text-foreground/90 font-medium block sm:inline sm:ms-2">
-                        · {getOrderCustomerName(o)}
-                      </span>
-                    )}
-                  </Link>
-                  <div className="flex items-center gap-2 shrink-0">
-                    <span className="font-bold text-foreground font-mono">
-                      {formatMoney(Number(o.total), o.currency, locale)}
-                    </span>
-                    <OsStatusPill
-                      variant={
-                        o.payment_status === "paid"
-                          ? "success"
-                          : o.payment_status === "pending"
-                            ? "warning"
-                            : "neutral"
-                      }
-                      dot
-                    >
-                      {o.payment_status === "paid"
-                        ? isAr
-                          ? "مدفوع"
-                          : "Paid"
-                        : o.payment_status === "pending"
-                          ? isAr
-                            ? "معلق"
-                            : "Pending"
-                          : o.payment_status || o.status}
-                    </OsStatusPill>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+          <DashboardActivityQueue
+            lang={isAr ? "ar" : "en"}
+            slug={slug}
+            orders={recentOrdersQ.data ?? []}
+            currency={currency}
+            locale={locale}
+          />
         </Card>
 
         {/* Inventory Low-Stock Alerts (2 Columns) */}
