@@ -580,6 +580,30 @@ function OrdersList() {
     },
   });
 
+  const handleQuickAssignCourier = async (orderId: string, courierId: string) => {
+    try {
+      const res = await fetch("/api/orders/status", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: orderId,
+          fulfillment_status: "ASSIGNED",
+          assigned_to: courierId,
+        }),
+      });
+      if (!res.ok) throw new Error("Failed to assign courier");
+      toast.success(lang === "ar" ? "تم تعيين المندوب بنجاح!" : "Courier assigned successfully!");
+      const targetOrder = orders.find((o: any) => o.id === orderId);
+      const courierObj = (couriersQ.data ?? []).find((c: any) => c.id === courierId);
+      if (targetOrder && courierObj) {
+        setWaModalState({ isOpen: true, order: targetOrder, courier: courierObj });
+      }
+      qc.invalidateQueries({ queryKey: ["orders", brandId] });
+    } catch {
+      toast.error(lang === "ar" ? "فشل تعيين المندوب" : "Failed to assign courier");
+    }
+  };
+
   const [sortField, setSortField] = useState<
     "invoice_number" | "created_at" | "customer" | "status" | "total"
   >("created_at");
@@ -1501,6 +1525,12 @@ function OrdersList() {
             const phone = getOrderCustomerContact(o)?.phone;
             if (phone) window.open(`https://wa.me/${phone.replace(/\D/g, "")}`, "_blank");
           }}
+          couriers={couriersQ.data ?? []}
+          onQuickViewOrder={(o: any) => setInspectOrder(o)}
+          onWhatsAppCourier={(o: any, courier: any) =>
+            setWaModalState({ isOpen: true, order: o, courier })
+          }
+          onAssignCourier={handleQuickAssignCourier}
         />
       </div>
 

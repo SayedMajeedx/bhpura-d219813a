@@ -1,6 +1,7 @@
 import React from "react";
 import { Link } from "@tanstack/react-router";
 import { formatMoney, formatDate } from "@/lib/format";
+import { getOrderCustomerContact } from "@/lib/order-customer-snapshot";
 import {
   UserX,
   Phone,
@@ -10,6 +11,9 @@ import {
   Printer,
   MessageSquare,
   AlertCircle,
+  Truck,
+  CreditCard,
+  Eye,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -18,11 +22,19 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface OrdersWorkQueueProps {
   lang: "en" | "ar";
   slug: string;
   orders: any[];
+  couriers?: any[];
   isLoading: boolean;
   isError: boolean;
   getPaymentBadge: (order: any) => { label: string; className: string } | null;
@@ -31,12 +43,16 @@ interface OrdersWorkQueueProps {
   onCopyInvoice: (orderId: string) => void;
   onPrintThermal: (order: any) => void;
   onWhatsAppCustomer: (order: any) => void;
+  onWhatsAppCourier?: (order: any, courier: any) => void;
+  onAssignCourier?: (orderId: string, courierId: string) => void;
+  onQuickViewOrder: (order: any) => void;
 }
 
 export const OrdersWorkQueue: React.FC<OrdersWorkQueueProps> = ({
   lang,
   slug,
   orders,
+  couriers = [],
   isLoading,
   isError,
   getPaymentBadge,
@@ -45,6 +61,9 @@ export const OrdersWorkQueue: React.FC<OrdersWorkQueueProps> = ({
   onCopyInvoice,
   onPrintThermal,
   onWhatsAppCustomer,
+  onWhatsAppCourier,
+  onAssignCourier,
+  onQuickViewOrder,
 }) => {
   const isAr = lang === "ar";
 
@@ -82,15 +101,15 @@ export const OrdersWorkQueue: React.FC<OrdersWorkQueueProps> = ({
   }
 
   return (
-    <div className="rounded-xl border border-border/60 bg-card overflow-hidden shadow-2xs">
+    <div className="rounded-xl border border-border/60 bg-card overflow-hidden shadow-2xs select-text">
       <div className="overflow-x-auto">
         <table className="w-full text-start text-xs border-collapse">
           <thead>
             <tr className="border-b border-border/60 bg-muted/40 font-bold text-muted-foreground uppercase text-[10px] tracking-wider">
               <th className="p-3 text-start">{isAr ? "رقم الفاتورة والتاريخ" : "Order & Date"}</th>
               <th className="p-3 text-start">{isAr ? "العميل والتواصل" : "Customer / Contact"}</th>
-              <th className="p-3 text-start">{isAr ? "حالة الدفع" : "Payment"}</th>
-              <th className="p-3 text-start">{isAr ? "حالة التنفيذ" : "Fulfillment"}</th>
+              <th className="p-3 text-start">{isAr ? "طريقة وحالة الدفع" : "Payment & Type"}</th>
+              <th className="p-3 text-start">{isAr ? "حالة التنفيذ والمندوب" : "Fulfillment & Courier"}</th>
               <th className="p-3 text-end">{isAr ? "الإجمالي" : "Total"}</th>
               <th className="p-3 text-center">{isAr ? "الإجراء التالي" : "Next Action"}</th>
               <th className="p-3 text-center w-10"></th>
@@ -100,17 +119,43 @@ export const OrdersWorkQueue: React.FC<OrdersWorkQueueProps> = ({
             {orders.map((order) => {
               const paymentBadge = getPaymentBadge(order);
               const fulfillmentBadge = getFulfillmentBadge(order);
-              const customerName = order.customer_name?.trim() || "";
-              const customerPhone = order.customer_phone?.trim() || "";
+              const contact = getOrderCustomerContact(order);
+              const customerName = contact.name;
+              const customerPhone = contact.phone;
               const isGuest = !customerName;
 
+              const assignedCourier = couriers.find(
+                (c) => c.id === order.assigned_to || c.user_id === order.assigned_to,
+              );
+
+              const paymentMethodLabel =
+                order.payment_method === "benefit_pay" || order.payment_method === "benefit"
+                  ? "💳 BenefitPay"
+                  : order.payment_method === "cod" || order.is_cod
+                    ? "💵 COD"
+                    : order.payment_method === "tap" || order.payment_method === "card"
+                      ? "💳 Card"
+                      : order.payment_method
+                        ? `💳 ${order.payment_method}`
+                        : "💳 Online";
+
               return (
-                <tr key={order.id} className="hover:bg-muted/30 transition-colors group">
+                <tr
+                  key={order.id}
+                  onClick={(e) => {
+                    const target = e.target as HTMLElement;
+                    if (target.closest("button, a, select, [role='menuitem'], [data-radix-collection-item]")) return;
+                    onQuickViewOrder(order);
+                  }}
+                  className="hover:bg-primary/5 transition-colors cursor-pointer group"
+                  title={isAr ? "انقر هنا لعرض معاينة الطلب السريعة" : "Click row to quick view order"}
+                >
                   {/* Order # & Date */}
                   <td className="p-3 align-middle font-medium">
                     <Link
                       to="/admin/b/$slug/orders/$id"
                       params={{ slug, id: order.id }}
+                      onClick={(e) => e.stopPropagation()}
                       className="font-mono font-extrabold text-primary hover:underline inline-flex items-center gap-1"
                     >
                       #{order.invoice_number || order.id.slice(0, 8)}
@@ -121,7 +166,7 @@ export const OrdersWorkQueue: React.FC<OrdersWorkQueueProps> = ({
                     </div>
                   </td>
 
-                  {/* Customer / PII */}
+                  {/* Customer / PII Snapshot */}
                   <td className="p-3 align-middle">
                     {isGuest ? (
                       <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-muted-foreground/80 bg-muted/50 px-2 py-0.5 rounded-md">
@@ -136,6 +181,7 @@ export const OrdersWorkQueue: React.FC<OrdersWorkQueueProps> = ({
                         {customerPhone && (
                           <a
                             href={`tel:${customerPhone}`}
+                            onClick={(e) => e.stopPropagation()}
                             className="inline-flex items-center gap-1 text-[10px] font-mono text-muted-foreground hover:text-primary mt-0.5"
                           >
                             <Phone className="h-2.5 w-2.5" />
@@ -146,26 +192,74 @@ export const OrdersWorkQueue: React.FC<OrdersWorkQueueProps> = ({
                     )}
                   </td>
 
-                  {/* Payment Status */}
-                  <td className="p-3 align-middle">
-                    {paymentBadge && (
-                      <span
-                        className={`inline-flex px-2 py-0.5 rounded-md text-[10px] font-bold ${paymentBadge.className}`}
-                      >
-                        {paymentBadge.label}
+                  {/* Payment Status & Type Badge */}
+                  <td className="p-3 align-middle space-y-1">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      {paymentBadge && (
+                        <span
+                          className={`inline-flex px-2 py-0.5 rounded-md text-[10px] font-bold ${paymentBadge.className}`}
+                        >
+                          {paymentBadge.label}
+                        </span>
+                      )}
+                      <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-muted/80 text-[10px] font-mono text-muted-foreground font-semibold border border-border/50">
+                        {paymentMethodLabel}
                       </span>
-                    )}
+                    </div>
                   </td>
 
-                  {/* Fulfillment Status */}
-                  <td className="p-3 align-middle">
-                    {fulfillmentBadge && (
-                      <span
-                        className={`inline-flex px-2 py-0.5 rounded-md text-[10px] font-bold ${fulfillmentBadge.classes}`}
-                      >
-                        {fulfillmentBadge.label}
-                      </span>
-                    )}
+                  {/* Fulfillment Status & Assigned Courier */}
+                  <td className="p-3 align-middle space-y-1">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      {fulfillmentBadge && (
+                        <span
+                          className={`inline-flex px-2 py-0.5 rounded-md text-[10px] font-bold ${fulfillmentBadge.classes}`}
+                        >
+                          {fulfillmentBadge.label}
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Assigned Courier Badge / Quick Assign */}
+                    <div className="flex items-center gap-1 mt-1" onClick={(e) => e.stopPropagation()}>
+                      {assignedCourier ? (
+                        <div className="inline-flex items-center gap-1 text-[10px] font-bold bg-indigo-500/10 text-indigo-700 dark:text-indigo-400 border border-indigo-500/20 px-2 py-0.5 rounded-md">
+                          <Truck className="h-3 w-3 shrink-0 text-indigo-500" />
+                          <span className="truncate max-w-[110px]">
+                            {assignedCourier.name || assignedCourier.email}
+                          </span>
+                          {onWhatsAppCourier && (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onWhatsAppCourier(order, assignedCourier);
+                              }}
+                              className="ms-0.5 text-emerald-600 hover:text-emerald-700"
+                              title={isAr ? "إشعار المندوب بالواتساب" : "WhatsApp Courier"}
+                            >
+                              <MessageSquare className="h-3 w-3" />
+                            </button>
+                          )}
+                        </div>
+                      ) : onAssignCourier && couriers.length > 0 ? (
+                        <Select
+                          onValueChange={(val) => onAssignCourier(order.id, val)}
+                          defaultValue=""
+                        >
+                          <SelectTrigger className="h-6 text-[10px] font-semibold w-28 bg-background/80 border-border/60">
+                            <SelectValue placeholder={isAr ? "+ تعيين مندوب" : "+ Assign Courier"} />
+                          </SelectTrigger>
+                          <SelectContent align="start">
+                            {couriers.map((c) => (
+                              <SelectItem key={c.id} value={c.id} className="text-xs">
+                                🛵 {c.name || c.email}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      ) : null}
+                    </div>
                   </td>
 
                   {/* Total Amount */}
@@ -178,10 +272,12 @@ export const OrdersWorkQueue: React.FC<OrdersWorkQueueProps> = ({
                   </td>
 
                   {/* Primary Next Action */}
-                  <td className="p-3 align-middle text-center">{renderPrimaryAction(order)}</td>
+                  <td className="p-3 align-middle text-center" onClick={(e) => e.stopPropagation()}>
+                    {renderPrimaryAction(order)}
+                  </td>
 
                   {/* Secondary Actions Menu */}
-                  <td className="p-3 align-middle text-center">
+                  <td className="p-3 align-middle text-center" onClick={(e) => e.stopPropagation()}>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button
@@ -193,7 +289,11 @@ export const OrdersWorkQueue: React.FC<OrdersWorkQueueProps> = ({
                           <MoreVertical className="h-4 w-4" />
                         </Button>
                       </DropdownMenuTrigger>
-                      <DropdownMenuContent align={isAr ? "start" : "end"} className="w-44 text-xs">
+                      <DropdownMenuContent align={isAr ? "start" : "end"} className="w-48 text-xs">
+                        <DropdownMenuItem onClick={() => onQuickViewOrder(order)}>
+                          <Eye className="h-3.5 w-3.5 me-2 text-primary" />
+                          {isAr ? "معاينة الطلب السريعة" : "Quick View Order"}
+                        </DropdownMenuItem>
                         <DropdownMenuItem onClick={() => onCopyInvoice(order.id)}>
                           <Copy className="h-3.5 w-3.5 me-2" />
                           {isAr ? "نسخ رابط الفاتورة" : "Copy Invoice Link"}
@@ -204,8 +304,14 @@ export const OrdersWorkQueue: React.FC<OrdersWorkQueueProps> = ({
                         </DropdownMenuItem>
                         {customerPhone && (
                           <DropdownMenuItem onClick={() => onWhatsAppCustomer(order)}>
-                            <MessageSquare className="h-3.5 w-3.5 me-2" />
+                            <MessageSquare className="h-3.5 w-3.5 me-2 text-emerald-500" />
                             {isAr ? "واتساب العميل" : "WhatsApp Customer"}
+                          </DropdownMenuItem>
+                        )}
+                        {assignedCourier && onWhatsAppCourier && (
+                          <DropdownMenuItem onClick={() => onWhatsAppCourier(order, assignedCourier)}>
+                            <Truck className="h-3.5 w-3.5 me-2 text-indigo-500" />
+                            {isAr ? "واتساب المندوب" : "WhatsApp Courier"}
                           </DropdownMenuItem>
                         )}
                       </DropdownMenuContent>
