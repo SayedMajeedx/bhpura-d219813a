@@ -105,11 +105,6 @@ export function OsAppDockRail({
                   />
                 </div>
 
-                {/* Active App Side Pill */}
-                {active && (
-                  <span className="absolute top-1/2 -translate-y-1/2 start-0 -ms-1 h-3.5 w-1 rounded-r-full bg-primary shadow-xs" />
-                )}
-
                 {/* Hover Tooltip Label */}
                 <div className="absolute start-full top-1/2 -translate-y-1/2 ms-3 px-2.5 py-1 rounded-lg bg-popover text-popover-foreground text-xs font-semibold shadow-md whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity z-50 border border-border/60">
                   {label}
