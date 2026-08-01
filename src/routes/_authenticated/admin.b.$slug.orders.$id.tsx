@@ -3366,7 +3366,7 @@ function OrderDetail() {
 
       {/* Floating Sticky Save Bar - Only appears when form has unsaved changes */}
       {!isReadOnly && isDirty && (
-        <div className="no-print fixed bottom-4 inset-x-4 sm:inset-x-auto sm:end-8 z-50 flex items-center gap-3 rounded-2xl border border-amber-300/80 bg-amber-50/95 dark:bg-amber-950/90 p-3.5 shadow-2xl backdrop-blur animate-in slide-in-from-bottom duration-200 max-w-lg mx-auto">
+        <div className="no-print fixed bottom-20 inset-x-3 sm:bottom-6 sm:inset-x-auto sm:end-8 z-50 flex items-center gap-3 rounded-2xl border border-amber-300/80 bg-amber-50/95 dark:bg-amber-950/90 p-3.5 shadow-2xl backdrop-blur animate-in slide-in-from-bottom duration-200 max-w-lg mx-auto">
           <span className="flex h-2.5 w-2.5 rounded-full bg-amber-500 animate-ping shrink-0" />
           <span className="text-xs font-bold text-amber-900 dark:text-amber-200 flex-1 min-w-0">
             {lang === "ar" ? "توجد تغييرات غير محفوظة على الطلب" : "Unsaved changes detected"}
@@ -3375,7 +3375,7 @@ function OrderDetail() {
             onClick={save}
             disabled={saving}
             size="sm"
-            className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold shadow-md shrink-0 touch-manipulation"
+            className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold shadow-md shrink-0 touch-manipulation min-h-[38px]"
           >
             {saving ? (
               <Loader2 className="me-1.5 h-4 w-4 animate-spin" />
