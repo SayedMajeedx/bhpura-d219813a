@@ -12,6 +12,7 @@ import {
   Search,
   Clock3,
   CircleDollarSign,
+  CreditCard,
   Truck,
   ArrowUpDown,
   ArrowUp,
@@ -1033,7 +1034,7 @@ function OrdersList() {
         return (
           <Button
             size="sm"
-            className="h-8 text-xs px-3.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold shadow-2xs transition-all dark:bg-emerald-700 dark:hover:bg-emerald-800"
+            className="h-8 text-xs px-3.5 bg-violet-600 hover:bg-violet-700 text-white font-bold shadow-2xs transition-all dark:bg-violet-700 dark:hover:bg-violet-800"
             disabled={updatingOrderId !== null}
             onClick={(e) => {
               e.stopPropagation();
@@ -1047,10 +1048,11 @@ function OrdersList() {
           >
             {isUpdating ? (
               <Loader2 className="animate-spin h-3.5 w-3.5" />
-            ) : lang === "ar" ? (
-              "تأكيد وتجهيز"
             ) : (
-              "Validate & Prepare"
+              <span className="flex items-center gap-1.5">
+                <CreditCard className="h-3.5 w-3.5" />
+                {lang === "ar" ? "تأكيد وتجهيز" : "Validate & Prepare"}
+              </span>
             )}
           </Button>
         );
@@ -1171,7 +1173,7 @@ function OrdersList() {
         return (
           <Button
             size="sm"
-            className="h-8 text-xs px-3.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold shadow-2xs transition-all dark:bg-emerald-700 dark:hover:bg-emerald-800"
+            className="h-8 text-xs px-3.5 bg-violet-600 hover:bg-violet-700 text-white font-bold shadow-2xs transition-all dark:bg-violet-700 dark:hover:bg-violet-800"
             disabled={updatingOrderId !== null}
             onClick={(e) => {
               e.stopPropagation();
@@ -1183,10 +1185,11 @@ function OrdersList() {
           >
             {isUpdating ? (
               <Loader2 className="animate-spin h-3.5 w-3.5" />
-            ) : lang === "ar" ? (
-              "تأكيد الدفع"
             ) : (
-              "Validate Payment"
+              <span className="flex items-center gap-1.5">
+                <CreditCard className="h-3.5 w-3.5" />
+                {lang === "ar" ? "تأكيد الدفع" : "Validate Payment"}
+              </span>
             )}
           </Button>
         );
