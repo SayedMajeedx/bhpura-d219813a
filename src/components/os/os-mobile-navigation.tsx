@@ -1,6 +1,6 @@
 import * as React from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { Menu, LogOut, LayoutDashboard, ReceiptText, Package, Users, Grid } from "lucide-react";
+import { Menu, LogOut, LayoutDashboard, ReceiptText, Package, Users, Grid, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
 import { OsMobileTabBar, type OsMobileTabItem } from "./os-mobile-tab-bar";
@@ -117,7 +117,7 @@ export function OsMobileNavigation({
               variant="ghost"
               size="icon"
               className="h-10 w-10 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-xl text-foreground hover:bg-muted/80"
-              aria-label="Menu"
+              aria-label={lang === "ar" ? "القائمة الرئيسية" : "Menu"}
             >
               <Menu className="h-5 w-5" />
             </Button>
@@ -127,9 +127,20 @@ export function OsMobileNavigation({
             className="w-80 border-e border-[var(--os-border)] p-0 flex flex-col os-glass-strong text-foreground shadow-2xl"
           >
             <SheetTitle className="sr-only">{brandLabel}</SheetTitle>
-            <div className="p-5 border-b border-[var(--os-border)] bg-card/40">
-              <h2 className="text-lg font-bold font-heading">{brandLabel}</h2>
-              <p className="text-xs text-muted-foreground">{currentPageLabel || ""}</p>
+            <div className="p-5 border-b border-[var(--os-border)] bg-card/40 flex items-center justify-between">
+              <div>
+                <h2 className="text-lg font-bold font-heading">{brandLabel}</h2>
+                <p className="text-xs text-muted-foreground">{currentPageLabel || ""}</p>
+              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 rounded-lg text-muted-foreground hover:text-foreground"
+                onClick={() => onOpenChangeMobile(false)}
+                aria-label={lang === "ar" ? "إغلاق القائمة" : "Close Menu"}
+              >
+                <X className="h-4 w-4" />
+              </Button>
             </div>
             <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
               {navItems.map((item) => {
@@ -177,7 +188,7 @@ export function OsMobileNavigation({
             size="icon"
             className="h-10 w-10 min-h-[44px] min-w-[44px] flex items-center justify-center text-muted-foreground hover:text-foreground rounded-xl"
             onClick={() => onSetLang(lang === "en" ? "ar" : "en")}
-            aria-label="Toggle language"
+            aria-label={lang === "en" ? "تبديل إلى العربية" : "Switch to English"}
           >
             <span className="text-[11px] font-bold uppercase">{lang === "en" ? "AR" : "EN"}</span>
           </Button>
@@ -186,7 +197,7 @@ export function OsMobileNavigation({
             size="icon"
             className="h-10 w-10 min-h-[44px] min-w-[44px] flex items-center justify-center text-muted-foreground hover:text-destructive rounded-xl"
             onClick={onSignOut}
-            aria-label="Sign Out"
+            aria-label={lang === "ar" ? "تسجيل الخروج" : "Sign Out"}
           >
             <LogOut className="h-4 w-4" />
           </Button>

@@ -211,10 +211,18 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     );
   }
 
+  const isRouterNavigating = useRouterState({ select: (r) => r.status === "pending" || r.isLoading });
   const isImpersonating = isSuperAdmin && urlSlug !== null && hasImpersonationToken;
 
   return (
     <div className="h-screen flex flex-col os-canvas overflow-hidden select-none">
+      {/* Top Global Router Transition Progress Bar */}
+      {isRouterNavigating && (
+        <div className="fixed top-0 inset-x-0 z-[100] h-0.5 bg-primary/20 overflow-hidden pointer-events-none">
+          <div className="h-full bg-primary animate-pulse w-3/4 transition-all duration-300 shadow-sm" />
+        </div>
+      )}
+
       {/* Impersonation Warning Banner */}
       {isImpersonating && (
         <div className="no-print bg-gradient-to-r from-red-600 via-rose-600 to-amber-600 text-white px-6 py-2 text-center text-xs font-semibold flex flex-col sm:flex-row items-center justify-between gap-4 border-b border-red-700/40 shrink-0 shadow-md z-50 animate-in fade-in slide-in-from-top duration-300">

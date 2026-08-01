@@ -1,8 +1,8 @@
 import React from "react";
 import { Link } from "@tanstack/react-router";
 import { formatMoney } from "@/lib/format";
+import { getOrderCustomerContact } from "@/lib/order-customer-snapshot";
 import { UserX, Phone, ExternalLink } from "lucide-react";
-import { Button } from "@/components/ui/button";
 
 interface OrderMobileCardProps {
   lang: "en" | "ar";
@@ -22,8 +22,9 @@ export const OrderMobileCard: React.FC<OrderMobileCardProps> = ({
   renderPrimaryAction,
 }) => {
   const isAr = lang === "ar";
-  const customerName = order.customer_name?.trim() || "";
-  const customerPhone = order.customer_phone?.trim() || "";
+  const contact = getOrderCustomerContact(order);
+  const customerName = contact.name;
+  const customerPhone = contact.phone;
   const isGuest = !customerName;
 
   return (
@@ -56,13 +57,15 @@ export const OrderMobileCard: React.FC<OrderMobileCardProps> = ({
               {isAr ? "عميل زائر" : "Guest Customer"}
             </span>
           ) : (
-            <span className="font-semibold text-foreground truncate">{customerName}</span>
+            <span className="font-semibold text-foreground truncate max-w-[180px]">
+              {customerName}
+            </span>
           )}
         </div>
         {customerPhone && (
           <a
             href={`tel:${customerPhone}`}
-            className="inline-flex items-center gap-1 text-[11px] font-bold text-primary hover:underline shrink-0"
+            className="inline-flex items-center gap-1 text-[11px] font-bold text-primary hover:underline shrink-0 font-mono"
           >
             <Phone className="h-3 w-3" />
             {customerPhone}
