@@ -1729,80 +1729,97 @@ function OrderDetail() {
       className="mx-auto max-w-[1500px] p-1 sm:p-2 space-y-4 pb-20 animate-fade-in"
       dir={lang === "ar" ? "rtl" : "ltr"}
     >
-      <div className="no-print mb-4 flex flex-wrap items-center justify-between gap-3">
-        <Link
-          to="/admin/b/$slug/orders"
-          params={{ slug }}
-          className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-2"
-        >
-          <ArrowLeft className="h-4 w-4" /> {t("orderDetail.back")}
-        </Link>
-        <div className="min-w-0 flex-1 text-start sm:text-center">
-          <h1 className="truncate text-xl font-display font-bold tracking-tight sm:text-2xl">
-            {isCreationMode
-              ? lang === "ar"
-                ? "طلب جديد"
-                : "New order"
-              : `${lang === "ar" ? "الطلب" : "Order"} #${order.invoice_number ?? order.id}`}
-          </h1>
+      <div className="no-print mb-4 flex flex-wrap items-center justify-between gap-2.5">
+        <div className="flex items-center gap-2 min-w-0">
+          <Link
+            to="/admin/b/$slug/orders"
+            params={{ slug }}
+            className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1.5 shrink-0"
+          >
+            <ArrowLeft className="h-4 w-4" />{" "}
+            <span className="hidden sm:inline">{t("orderDetail.back")}</span>
+          </Link>
+          <div className="min-w-0">
+            <h1 className="truncate text-lg sm:text-2xl font-display font-bold tracking-tight">
+              {isCreationMode
+                ? lang === "ar"
+                  ? "طلب جديد"
+                  : "New order"
+                : `${lang === "ar" ? "الطلب" : "Order"} #${order.invoice_number ?? order.id}`}
+            </h1>
+          </div>
         </div>
-        <div className={cn("flex flex-wrap gap-2", !isReadOnly && "hidden sm:flex")}>
+
+        <div className="flex flex-wrap items-center gap-2">
           {!isCreationMode && (
             <>
+              {/* Primary Next Workflow Quick Action (e.g. Approve Payment, Hand Over, Pack & Ship) */}
               {renderTopPrimaryAction()}
-              <SendInvoiceDialog
-                order={order}
-                totals={totals}
-                settings={settingsQ.data}
-                currency={currency}
-              />
-              <ResendConfirmationEmailButton
-                order={order}
-                lang={lang}
-                onDone={() => qc.invalidateQueries({ queryKey: ["order", id] })}
-              />
-              <Button
-                variant="outline"
-                onClick={copyLink}
-                className="shadow-xs transition-all hover:bg-accent"
-              >
-                <LinkIcon className="h-4 w-4 me-1.5 text-muted-foreground" /> {t("orders.copyLink")}
-              </Button>
-              <Button
-                variant="outline"
-                onClick={printReceipt}
-                className="shadow-xs transition-all hover:bg-accent"
-              >
-                <Receipt className="h-4 w-4 me-1.5 text-muted-foreground" />{" "}
-                {t("orders.printReceipt")}
-              </Button>
-              <Button
-                variant="outline"
-                className="shadow-xs transition-all hover:bg-accent"
-                onClick={async () => {
-                  try {
-                    const el = document.querySelector<HTMLElement>(".printable-invoice");
-                    const { downloadInvoicePdf } = await import("@/lib/download-invoice-pdf");
-                    await downloadInvoicePdf(el, `invoice-${order.invoice_number ?? order.id}`);
-                  } catch (err) {
-                    console.error("PDF download failed", err);
-                    toast.error(
-                      (err as Error)?.message ??
-                        (lang === "ar" ? "فشل تحميل ملف PDF" : "PDF download failed"),
-                    );
-                  }
-                }}
-              >
-                <Printer className="h-4 w-4 me-1.5 text-muted-foreground" /> {t("orders.printA4")}
-              </Button>
+
+              {/* Copy Link button on all screen sizes */}
+              {order.public_invoice_token && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={copyLink}
+                  className="h-9 px-3 text-xs font-semibold shadow-2xs hover:bg-accent"
+                >
+                  <LinkIcon className="h-3.5 w-3.5 me-1 text-muted-foreground" />
+                  <span>{t("orders.copyLink")}</span>
+                </Button>
+              )}
+
+              <div className="hidden sm:flex items-center gap-2">
+                <SendInvoiceDialog
+                  order={order}
+                  totals={totals}
+                  settings={settingsQ.data}
+                  currency={currency}
+                />
+                <ResendConfirmationEmailButton
+                  order={order}
+                  lang={lang}
+                  onDone={() => qc.invalidateQueries({ queryKey: ["order", id] })}
+                />
+                <Button
+                  variant="outline"
+                  onClick={printReceipt}
+                  className="shadow-xs transition-all hover:bg-accent"
+                >
+                  <Receipt className="h-4 w-4 me-1.5 text-muted-foreground" />{" "}
+                  {t("orders.printReceipt")}
+                </Button>
+                <Button
+                  variant="outline"
+                  className="shadow-xs transition-all hover:bg-accent"
+                  onClick={async () => {
+                    try {
+                      const el = document.querySelector<HTMLElement>(".printable-invoice");
+                      const { downloadInvoicePdf } = await import("@/lib/download-invoice-pdf");
+                      await downloadInvoicePdf(el, `invoice-${order.invoice_number ?? order.id}`);
+                    } catch (err) {
+                      console.error("PDF download failed", err);
+                      toast.error(
+                        (err as Error)?.message ??
+                          (lang === "ar" ? "فشل تحميل ملف PDF" : "PDF download failed"),
+                      );
+                    }
+                  }}
+                >
+                  <Printer className="h-4 w-4 me-1.5 text-muted-foreground" /> {t("orders.printA4")}
+                </Button>
+              </div>
             </>
           )}
+
+          {/* Lock / Unlock or Save button */}
           {isReadOnly ? (
             isAdmin && (
               <Button
                 variant="default"
+                size="sm"
                 onClick={() => setEditingUnlocked(true)}
-                className="shadow-sm transition-all hover:scale-[1.01] active:scale-95 font-semibold bg-primary hover:bg-primary/90"
+                className="shadow-sm font-semibold bg-primary hover:bg-primary/90"
               >
                 <Unlock className="h-4 w-4 me-1.5" />
                 {lang === "ar" ? "فتح للتعديل" : "Unlock for editing"}
@@ -1812,18 +1829,15 @@ function OrderDetail() {
             <Button
               onClick={save}
               disabled={saving}
-              className={`${isCreationMode ? "min-w-48" : ""} lg:hidden shadow-sm transition-all duration-200 hover:shadow hover:scale-[1.01] active:scale-95`}
+              size="sm"
+              className={cn("shadow-sm transition-all font-bold", isCreationMode ? "min-w-32" : "")}
             >
               {saving ? (
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                <Loader2 className="h-4 w-4 me-1.5 animate-spin" />
               ) : (
-                <Save className="h-4 w-4 mr-2" />
+                <Save className="h-4 w-4 me-1.5" />
               )}
-              {isCreationMode
-                ? lang === "ar"
-                  ? "إنشاء وحفظ الطلب"
-                  : "Create & Save Order"
-                : t("common.save")}
+              {isCreationMode ? (lang === "ar" ? "إنشاء وحفظ" : "Create & Save") : t("common.save")}
             </Button>
           )}
         </div>
