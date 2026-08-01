@@ -42,17 +42,29 @@ import { TeamCommandHeader } from "@/components/team/TeamCommandHeader";
 import { TeamScopeSwitcher, type TeamStatusScope } from "@/components/team/TeamScopeSwitcher";
 
 export const Route = createFileRoute("/_authenticated/admin/b/$slug/team")({
-  beforeLoad: async ({ params }) => {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) throw redirect({ to: "/auth" });
+  beforeLoad: async ({ context: { queryClient }, params }) => {
+    const user = await queryClient.ensureQueryData({
+      queryKey: ["auth_user"],
+      queryFn: async () => {
+        const { data, error } = await supabase.auth.getUser();
+        if (error || !data.user) throw redirect({ to: "/auth" });
+        return data.user;
+      },
+      staleTime: 1000 * 60 * 5,
+    });
 
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("role, status, email")
-      .eq("id", user.id)
-      .maybeSingle();
+    const profile = await queryClient.ensureQueryData({
+      queryKey: ["auth_profile_role", user.id],
+      queryFn: async () => {
+        const { data } = await supabase
+          .from("profiles")
+          .select("role, status, email")
+          .eq("id", user.id)
+          .maybeSingle();
+        return data ?? null;
+      },
+      staleTime: 1000 * 60 * 5,
+    });
 
     const role = profile?.role;
     const allowed =

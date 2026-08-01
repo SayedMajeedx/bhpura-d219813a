@@ -134,17 +134,29 @@ import {
 } from "@/lib/scan-receipt.functions";
 
 export const Route = createFileRoute("/_authenticated/admin/b/$slug/expenses")({
-  beforeLoad: async ({ params }) => {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) throw redirect({ to: "/auth" });
+  beforeLoad: async ({ context: { queryClient }, params }) => {
+    const user = await queryClient.ensureQueryData({
+      queryKey: ["auth_user"],
+      queryFn: async () => {
+        const { data, error } = await supabase.auth.getUser();
+        if (error || !data.user) throw redirect({ to: "/auth" });
+        return data.user;
+      },
+      staleTime: 1000 * 60 * 5,
+    });
 
-    const { data: profile } = await (supabase as any)
-      .from("profiles")
-      .select("role, status, email, permissions")
-      .eq("id", user.id)
-      .maybeSingle();
+    const profile = await queryClient.ensureQueryData({
+      queryKey: ["caller_permissions", user.id],
+      queryFn: async () => {
+        const { data } = await (supabase as any)
+          .from("profiles")
+          .select("role, status, email, permissions")
+          .eq("id", user.id)
+          .maybeSingle();
+        return data ?? null;
+      },
+      staleTime: 1000 * 60 * 5,
+    });
 
     const email = (user.email || "").toLowerCase();
     const isFixedSuperAdmin = email === "majeed@hotmail.it";
