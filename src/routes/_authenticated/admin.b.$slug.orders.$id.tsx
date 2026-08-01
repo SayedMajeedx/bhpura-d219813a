@@ -485,6 +485,7 @@ function OrderDetail() {
 
   useEffect(() => {
     if (!order?.id) return;
+    const scrollContainer = document.querySelector(".os-scrollbar");
     const sectionIds = ["sec-overview", "sec-items", "sec-invoice", "sec-activity"];
     const observer = new IntersectionObserver(
       (entries) => {
@@ -494,7 +495,7 @@ function OrderDetail() {
           }
         });
       },
-      { rootMargin: "-80px 0px -50% 0px", threshold: 0.1 },
+      { root: scrollContainer, rootMargin: "-60px 0px -50% 0px", threshold: 0.1 },
     );
 
     sectionIds.forEach((id) => {
@@ -506,6 +507,7 @@ function OrderDetail() {
   }, [order?.id]);
 
   const scrollToSection = (id: string) => {
+    setActiveSection(id);
     const el = document.getElementById(id);
     if (el) {
       el.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -3668,48 +3670,6 @@ function OrderDetail() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
-      {/* Mobile Sticky Action Footer Bar */}
-      <div className="fixed bottom-0 left-0 right-0 z-40 p-3 bg-background/95 backdrop-blur border-t border-border shadow-[0_-4px_12px_rgba(0,0,0,0.08)] sm:hidden flex items-center justify-between gap-3 no-print">
-        <div className="flex flex-col min-w-0">
-          <span className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">
-            {lang === "ar" ? "المبلغ الإجمالي" : "Total Due"}
-          </span>
-          <span className="font-black text-base text-foreground tabular-nums truncate">
-            {formatMoney(totals.total, currency)}
-          </span>
-        </div>
-        <div className="flex items-center gap-2">
-          {order.public_invoice_token && (
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="h-9 px-3 text-xs font-semibold"
-              onClick={copyLink}
-            >
-              <Copy className="h-3.5 w-3.5 me-1" />
-              {lang === "ar" ? "الرابط" : "Link"}
-            </Button>
-          )}
-          <Button
-            type="button"
-            size="sm"
-            disabled={saving}
-            onClick={save}
-            className="h-9 px-4 bg-primary text-primary-foreground font-bold shadow-md text-xs"
-          >
-            {saving && <Loader2 className="me-1.5 h-3.5 w-3.5 animate-spin" />}
-            {isBlankDraft
-              ? lang === "ar"
-                ? "حفظ كمسودة"
-                : "Save Draft"
-              : lang === "ar"
-                ? "حفظ التغييرات"
-                : "Save Changes"}
-          </Button>
-        </div>
-      </div>
     </div>
   );
 }
