@@ -671,9 +671,9 @@ function Dashboard() {
           </div>
 
           {/* Middle Multi-Column Grid: Sales Trajectory & Action Feed */}
-          <div className="grid grid-cols-1 lg:grid-cols-5 gap-5 items-start">
+          <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 items-stretch">
             {canViewFinancials && (
-              <Card className="lg:col-span-3 p-5 border border-border/60 shadow-sm rounded-2xl bg-card/80 backdrop-blur-sm space-y-3">
+              <Card className="lg:col-span-3 p-5 border border-border/60 shadow-sm rounded-2xl bg-card/80 backdrop-blur-sm flex flex-col justify-between space-y-3 h-full">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                   <div>
                     <h3 className="text-base font-bold font-heading flex items-center gap-2">
@@ -694,12 +694,12 @@ function Dashboard() {
                   </span>
                 </div>
 
-                <div className="h-52 w-full pt-1">
+                <div className="h-56 w-full pt-1">
                   {isMounted ? (
                     <ResponsiveContainer width="100%" height="100%">
                       <AreaChart
                         data={financials.dailyChartSeries}
-                        margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
+                        margin={{ top: 15, right: 15, left: -10, bottom: 5 }}
                       >
                         <defs>
                           <linearGradient id="salesGrad" x1="0" y1="0" x2="0" y2="1">
@@ -754,8 +754,8 @@ function Dashboard() {
             <Card
               className={
                 canViewFinancials
-                  ? "lg:col-span-2 p-5 border border-border/60 shadow-sm rounded-2xl bg-card/80 backdrop-blur-sm space-y-3"
-                  : "lg:col-span-5 p-5 border border-border/60 shadow-sm rounded-2xl bg-card/80 backdrop-blur-sm space-y-3"
+                  ? "lg:col-span-2 p-5 border border-border/60 shadow-sm rounded-2xl bg-card/80 backdrop-blur-sm flex flex-col justify-between space-y-3 h-full"
+                  : "lg:col-span-5 p-5 border border-border/60 shadow-sm rounded-2xl bg-card/80 backdrop-blur-sm flex flex-col justify-between space-y-3 h-full"
               }
             >
               <div className="flex items-center justify-between pb-2 border-b border-border/60">
@@ -775,7 +775,7 @@ function Dashboard() {
               </div>
 
               {actionNeededOrders.length === 0 ? (
-                <div className="p-6 text-center text-xs text-muted-foreground bg-secondary/10 rounded-xl border border-dashed border-border space-y-1">
+                <div className="p-6 text-center text-xs text-muted-foreground bg-secondary/10 rounded-xl border border-dashed border-border space-y-1 my-auto">
                   <CheckCircle2 className="h-6 w-6 text-emerald-500 mx-auto" />
                   <p className="font-bold text-foreground">
                     {isAr ? "جميع الطلبات محدثة!" : "All orders up to date!"}
@@ -787,7 +787,7 @@ function Dashboard() {
                   </p>
                 </div>
               ) : (
-                <div className="space-y-2">
+                <div className="space-y-2 my-auto">
                   {actionNeededOrders.map((o) => (
                     <div
                       key={o.id}
@@ -826,8 +826,8 @@ function Dashboard() {
           </div>
 
           {/* Lower Feed: Activity Queue & Low Stock Alerts */}
-          <div className="grid grid-cols-1 lg:grid-cols-5 gap-5 items-start">
-            <Card className="lg:col-span-3 p-5 border border-border/60 shadow-sm rounded-2xl bg-card/80 backdrop-blur-sm space-y-3">
+          <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 items-stretch">
+            <Card className="lg:col-span-3 p-5 border border-border/60 shadow-sm rounded-2xl bg-card/80 backdrop-blur-sm flex flex-col justify-between space-y-3 h-full">
               <div className="flex items-center justify-between pb-2 border-b border-border/60">
                 <div className="flex items-center gap-2">
                   <ReceiptText className="h-4.5 w-4.5 text-primary" />
@@ -853,7 +853,7 @@ function Dashboard() {
               />
             </Card>
 
-            <Card className="lg:col-span-2 p-5 border border-border/60 shadow-sm rounded-2xl bg-card/80 backdrop-blur-sm space-y-3">
+            <Card className="lg:col-span-2 p-5 border border-border/60 shadow-sm rounded-2xl bg-card/80 backdrop-blur-sm flex flex-col justify-between space-y-3 h-full">
               <div className="flex items-center justify-between pb-2 border-b border-border/60">
                 <div className="flex items-center gap-2">
                   <Package className="h-4.5 w-4.5 text-amber-500" />
@@ -871,7 +871,7 @@ function Dashboard() {
               </div>
 
               {inventoryIntel.lowStockVariants.length === 0 ? (
-                <div className="p-6 text-center text-xs text-muted-foreground bg-secondary/10 rounded-xl border border-dashed border-border space-y-1">
+                <div className="p-6 text-center text-xs text-muted-foreground bg-secondary/10 rounded-xl border border-dashed border-border space-y-1 my-auto">
                   <CheckCircle2 className="h-6 w-6 text-emerald-500 mx-auto" />
                   <p className="font-bold text-foreground">
                     {isAr ? "جميع المستويات مستقرة" : "Stock Levels Healthy"}
@@ -883,7 +883,7 @@ function Dashboard() {
                   </p>
                 </div>
               ) : (
-                <div className="space-y-2">
+                <div className="space-y-2 my-auto">
                   {inventoryIntel.lowStockVariants.map((item) => (
                     <div
                       key={item.id}
