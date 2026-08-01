@@ -1730,9 +1730,59 @@ function OrderDetail() {
     return null;
   };
 
+  const renderMobileActionBar = () => (
+    <div
+      className="mt-3 flex items-center gap-2 border-t border-border/60 pt-3"
+      aria-label={lang === "ar" ? "إجراءات الطلب" : "Order actions"}
+    >
+      {!isReadOnly && (isDirty || isCreationMode) ? (
+        <Button
+          onClick={save}
+          disabled={saving}
+          className="min-h-11 flex-1 rounded-xl font-bold shadow-md"
+        >
+          {saving ? (
+            <Loader2 className="me-2 h-4 w-4 animate-spin" />
+          ) : (
+            <Save className="me-2 h-4 w-4" />
+          )}
+          {isCreationMode
+            ? lang === "ar"
+              ? "إنشاء وحفظ"
+              : "Create & save"
+            : lang === "ar"
+              ? "حفظ التغييرات"
+              : "Save changes"}
+        </Button>
+      ) : (
+        <div className="flex min-w-0 flex-1 [&>button]:min-h-11 [&>button]:w-full [&>button]:rounded-xl">
+          {renderTopPrimaryAction() || (
+            <Button
+              variant="outline"
+              onClick={() => scrollToSection("sec-overview")}
+              className="font-bold"
+            >
+              {lang === "ar" ? "عرض تفاصيل الطلب" : "Review order details"}
+            </Button>
+          )}
+        </div>
+      )}
+      <Button
+        type="button"
+        variant="outline"
+        size="icon"
+        className="h-11 w-11 shrink-0 rounded-xl bg-card"
+        onClick={() => setMobileActionsOpen(true)}
+        aria-label={lang === "ar" ? "المزيد من إجراءات الطلب" : "More order actions"}
+      >
+        <MoreHorizontal className="h-5 w-5" />
+      </Button>
+    </div>
+  );
+
   return (
     <div
-      className="mx-auto max-w-[1500px] space-y-3 p-1 pb-36 sm:space-y-4 sm:p-2 sm:pb-20 animate-fade-in"
+      className="mx-auto max-w-[1500px] space-y-3 p-1 pb-24 sm:space-y-4 sm:p-2 sm:pb-20 animate-fade-in"
       dir={lang === "ar" ? "rtl" : "ltr"}
     >
       <div className="no-print mb-2 flex items-center justify-between gap-2.5 rounded-2xl border border-border/60 bg-card/70 px-3 py-2.5 shadow-sm backdrop-blur sm:mb-4 sm:rounded-none sm:border-0 sm:bg-transparent sm:px-0 sm:py-0 sm:shadow-none">
@@ -1907,6 +1957,7 @@ function OrderDetail() {
               </p>
             </div>
           </div>
+          {renderMobileActionBar()}
         </section>
       )}
 
@@ -3535,58 +3586,11 @@ function OrderDetail() {
         </div>
       </div>
 
-      <div
-        className="no-print fixed inset-x-0 bottom-0 z-50 border-t border-border/70 bg-background/92 px-3 pb-[calc(env(safe-area-inset-bottom)+0.65rem)] pt-2 shadow-[0_-12px_32px_-20px_rgba(0,0,0,0.45)] backdrop-blur-xl sm:hidden"
-        aria-label={lang === "ar" ? "إجراءات الطلب" : "Order actions"}
-      >
-        <div className="mx-auto flex max-w-lg items-center gap-2">
-          {!isReadOnly && (isDirty || isCreationMode) ? (
-            <Button
-              onClick={save}
-              disabled={saving}
-              className="min-h-11 flex-1 rounded-xl font-bold shadow-md"
-            >
-              {saving ? (
-                <Loader2 className="me-2 h-4 w-4 animate-spin" />
-              ) : (
-                <Save className="me-2 h-4 w-4" />
-              )}
-              {isCreationMode
-                ? lang === "ar"
-                  ? "إنشاء وحفظ"
-                  : "Create & save"
-                : lang === "ar"
-                  ? "حفظ التغييرات"
-                  : "Save changes"}
-            </Button>
-          ) : (
-            <div className="flex min-w-0 flex-1 [&>button]:min-h-11 [&>button]:w-full [&>button]:rounded-xl">
-              {renderTopPrimaryAction() || (
-                <Button
-                  variant="outline"
-                  onClick={() => scrollToSection("sec-overview")}
-                  className="font-bold"
-                >
-                  {lang === "ar" ? "عرض تفاصيل الطلب" : "Review order details"}
-                </Button>
-              )}
-            </div>
-          )}
-          <Button
-            type="button"
-            variant="outline"
-            size="icon"
-            className="h-11 w-11 shrink-0 rounded-xl bg-card"
-            onClick={() => setMobileActionsOpen(true)}
-            aria-label={lang === "ar" ? "المزيد من إجراءات الطلب" : "More order actions"}
-          >
-            <MoreHorizontal className="h-5 w-5" />
-          </Button>
-        </div>
-      </div>
-
       <Dialog open={mobileActionsOpen} onOpenChange={setMobileActionsOpen}>
-        <DialogContent className="top-auto bottom-0 w-full max-w-none translate-y-0 rounded-b-none rounded-t-3xl border-x-0 border-b-0 p-5 sm:hidden">
+        <DialogContent
+          closeLabel={lang === "ar" ? "إغلاق" : "Close"}
+          className="top-auto bottom-0 w-full max-w-none translate-y-0 rounded-b-none rounded-t-3xl border-x-0 border-b-0 p-5 sm:hidden"
+        >
           <DialogHeader>
             <DialogTitle>{lang === "ar" ? "إجراءات الطلب" : "Order actions"}</DialogTitle>
             <DialogDescription>

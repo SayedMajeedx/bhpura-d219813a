@@ -458,6 +458,34 @@ test("Comprehensive Mobile UX Audit at 390x844 Viewport", async ({ page }) => {
     expect(routeA11y.unnamedButtons, `Unnamed visible buttons on ${route.path}`).toEqual([]);
     expect(routeA11y.hasDocumentOverflow, `Document-level overflow on ${route.path}`).toBe(false);
 
+    if (route.name === "Order Detail") {
+      const orderActions = page.locator(
+        '[aria-label="Order actions"], [aria-label="إجراءات الطلب"]',
+      );
+      const mobileNavigation = page.locator('[aria-label="Mobile Navigation"]');
+      await expect(
+        orderActions,
+        "Order actions must remain visible in the mobile summary",
+      ).toBeVisible();
+      await expect(mobileNavigation, "Mobile navigation must remain visible").toBeVisible();
+
+      const [actionBox, navigationBox, actionPosition] = await Promise.all([
+        orderActions.boundingBox(),
+        mobileNavigation.boundingBox(),
+        orderActions.evaluate((element) => getComputedStyle(element).position),
+      ]);
+
+      expect(actionPosition, "Order actions must stay in document flow").toBe("static");
+      expect(actionBox, "Order actions must have measurable dimensions").not.toBeNull();
+      expect(navigationBox, "Mobile navigation must have measurable dimensions").not.toBeNull();
+      if (actionBox && navigationBox) {
+        expect(
+          actionBox.y + actionBox.height <= navigationBox.y,
+          "Order actions must not overlap the global mobile navigation",
+        ).toBe(true);
+      }
+    }
+
     // Assert body is non-empty
     const bodyText = (await page.innerText("body")).trim();
     expect(bodyText.length, `Route ${route.path} rendered blank page`).toBeGreaterThan(10);
