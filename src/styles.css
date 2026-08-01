@@ -430,6 +430,25 @@ input[type="number"] {
   .os-scrollbar::-webkit-scrollbar-thumb:hover {
     background: oklch(0.26 0.09 25 / 28%);
   }
+
+  /* State-of-the-Art Liquid Boutq OS Page Transition (120 FPS GPU Accelerated) */
+  @keyframes osPageTransition {
+    0% {
+      opacity: 0;
+      transform: translate3d(0, 6px, 0);
+    }
+    100% {
+      opacity: 1;
+      transform: translate3d(0, 0, 0);
+    }
+  }
+
+  .os-page-transition {
+    animation: osPageTransition 200ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    backface-visibility: hidden;
+    transform-style: preserve-3d;
+    will-change: opacity, transform;
+  }
 }
 
 /* Accessibility & Environmental Fallbacks */

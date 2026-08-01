@@ -11,6 +11,7 @@ export interface OsAppWindowProps extends Omit<React.HTMLAttributes<HTMLDivEleme
   badge?: React.ReactNode;
   isFocusMode?: boolean;
   onToggleFocusMode?: () => void;
+  pageKey?: string;
 }
 
 export const OsAppWindow = React.forwardRef<HTMLDivElement, OsAppWindowProps>(
@@ -23,6 +24,7 @@ export const OsAppWindow = React.forwardRef<HTMLDivElement, OsAppWindowProps>(
       badge,
       isFocusMode = false,
       onToggleFocusMode,
+      pageKey,
       className,
       children,
       ...props
@@ -72,7 +74,7 @@ export const OsAppWindow = React.forwardRef<HTMLDivElement, OsAppWindowProps>(
                 variant="ghost"
                 size="icon"
                 onClick={onToggleFocusMode}
-                className="h-6 w-6 text-muted-foreground hover:text-foreground rounded-md p-0"
+                className="hidden md:inline-flex h-6 w-6 text-muted-foreground hover:text-foreground rounded-md p-0"
                 title={
                   isFocusMode
                     ? "خروج من مساحة العمل المركزة / Exit Focus Workspace"
@@ -94,8 +96,11 @@ export const OsAppWindow = React.forwardRef<HTMLDivElement, OsAppWindowProps>(
           </div>
         </div>
 
-        {/* Opaque Readable Content Area */}
-        <div className="flex-1 overflow-auto os-scrollbar p-4 sm:p-5 bg-card/95 text-card-foreground">
+        {/* Opaque Readable Content Area with Butter-Smooth Page Transition */}
+        <div
+          key={pageKey}
+          className="flex-1 overflow-auto os-scrollbar p-4 sm:p-5 bg-card/95 text-card-foreground os-page-transition"
+        >
           {children}
         </div>
       </div>

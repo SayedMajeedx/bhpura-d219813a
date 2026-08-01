@@ -59,40 +59,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const routeParams = useParams({ strict: false }) as { slug?: string };
   const urlSlug = routeParams?.slug ?? null;
 
-  const isRouterNavigating = useRouterState({
-    select: (r) => r.status === "pending" || r.isLoading,
-  });
-
-  const signalNavigationIntent = (event: {
-    target: EventTarget | null;
-    currentTarget: EventTarget & HTMLDivElement;
-  }) => {
-    if (!(event.target instanceof Element)) return;
-    const anchor = event.target.closest("a[href]");
-    if (!(anchor instanceof HTMLAnchorElement)) return;
-    if (anchor.target === "_blank" || anchor.hasAttribute("download")) return;
-
-    const target = new URL(anchor.href, window.location.origin);
-    if (target.origin !== window.location.origin) return;
-    if (!target.pathname.startsWith("/admin/")) return;
-    if (target.pathname === pathname) return;
-
-    const indicator = event.currentTarget.querySelector<HTMLElement>(
-      "[data-navigation-feedback-indicator]",
-    );
-    if (indicator) {
-      const feedbackAt = performance.now();
-      indicator.hidden = false;
-      indicator.dataset.navigationFeedback = "true";
-      indicator.dataset.navigationStartedAt = String(feedbackAt);
-      indicator.dataset.navigationTarget = target.pathname;
-      document.documentElement.dataset.navigationFeedbackAt = String(feedbackAt);
-    }
-
-    const skeleton = event.currentTarget.querySelector<HTMLElement>("[data-destination-skeleton]");
-    if (skeleton) skeleton.hidden = false;
-  };
-
   const [spotlightOpen, setSpotlightOpen] = useState(false);
 
   // Global Command Center keyboard listener (Cmd/Ctrl+K and Esc for focus mode)
@@ -108,6 +74,17 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     };
     document.addEventListener("keydown", down);
     return () => document.removeEventListener("keydown", down);
+  }, [isFocusMode]);
+
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth < 768 && isFocusMode) {
+        setIsFocusMode(false);
+      }
+    };
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
   }, [isFocusMode]);
 
   const [hasImpersonationToken, setHasImpersonationToken] = useState<boolean>(() => {
@@ -286,24 +263,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const isImpersonating = isSuperAdmin && urlSlug !== null && hasImpersonationToken;
 
   return (
-    <div
-      className="h-screen flex flex-col os-canvas overflow-hidden select-none"
-      onPointerDownCapture={signalNavigationIntent}
-      onClickCapture={signalNavigationIntent}
-    >
-      {/* Top Global Router Transition Progress Bar */}
-      <div
-        data-navigation-feedback-indicator="true"
-        data-navigation-feedback={isRouterNavigating ? "true" : "false"}
-        data-navigation-target={pathname}
-        hidden={!isRouterNavigating}
-        className="fixed top-0 inset-x-0 z-[100] h-0.5 bg-primary/20 overflow-hidden pointer-events-none"
-        role="status"
-        aria-label={lang === "ar" ? "جارٍ فتح التطبيق" : "Opening application"}
-      >
-        <div className="h-full bg-primary animate-pulse w-3/4 transition-all duration-300 shadow-sm" />
-      </div>
-
+    <div className="h-screen flex flex-col os-canvas overflow-hidden select-none">
       {/* Impersonation Warning Banner */}
       {isImpersonating && (
         <div className="no-print bg-gradient-to-r from-red-600 via-rose-600 to-amber-600 text-white px-6 py-2 text-center text-xs font-semibold flex flex-col sm:flex-row items-center justify-between gap-4 border-b border-red-700/40 shrink-0 shadow-md z-50 animate-in fade-in slide-in-from-top duration-300">
@@ -393,20 +353,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
           {/* Level 2: Active Application Window */}
           <main className="relative flex-1 flex flex-col min-h-0 mx-0 md:mx-3 md:mb-3 overflow-hidden select-text">
-            <div
-              data-destination-skeleton="true"
-              aria-hidden="true"
-              hidden={!isRouterNavigating}
-              className="absolute inset-x-3 top-12 z-40 h-1 overflow-hidden rounded-full bg-primary/10 pointer-events-none"
-            >
-              <div className="h-full w-1/2 animate-pulse rounded-full bg-primary/60" />
-            </div>
             <OsAppWindow
               icon={activeNavItem?.icon}
               title={currentPageLabel || brandLabel}
               subtitle={undefined}
               isFocusMode={isFocusMode}
               onToggleFocusMode={() => setIsFocusMode(!isFocusMode)}
+              pageKey={pathname}
               badge={
                 activeSlug && (
                   <span className="hidden lg:inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-primary/10 text-primary border border-primary/20">
