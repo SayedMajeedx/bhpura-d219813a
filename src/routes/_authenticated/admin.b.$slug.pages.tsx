@@ -382,7 +382,11 @@ function PagesAndPolicies() {
                 : "Opens a WhatsApp chat from every storefront page."}
             </p>
           </div>
-          <Switch checked={waEnabled} onCheckedChange={setWaEnabled} />
+          <Switch
+            checked={waEnabled}
+            onCheckedChange={setWaEnabled}
+            aria-label={lang === "ar" ? "تفعيل زر واتساب" : "Enable WhatsApp button"}
+          />
         </div>
         <div>
           <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1.5 block">

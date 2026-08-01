@@ -132,15 +132,6 @@ export function OsMobileNavigation({
                 <h2 className="text-lg font-bold font-heading">{brandLabel}</h2>
                 <p className="text-xs text-muted-foreground">{currentPageLabel || ""}</p>
               </div>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8 rounded-lg text-muted-foreground hover:text-foreground"
-                onClick={() => onOpenChangeMobile(false)}
-                aria-label={lang === "ar" ? "إغلاق القائمة" : "Close Menu"}
-              >
-                <X className="h-4 w-4" />
-              </Button>
             </div>
             <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
               {navItems.map((item) => {

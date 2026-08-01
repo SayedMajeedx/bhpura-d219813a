@@ -120,7 +120,8 @@ function IntegrationsPage() {
     qc.invalidateQueries({ queryKey: ["integrations", brandId] });
   };
 
-  const integrationsList = q.data ?? [];
+  const rawIntegrationsData = q.data;
+  const integrationsList = useMemo(() => rawIntegrationsData ?? [], [rawIntegrationsData]);
   const filteredIntegrations = useMemo(() => {
     return integrationsList.filter((row) => {
       if (categoryScope === "payments") {

@@ -268,7 +268,8 @@ function ExpensesPage() {
   const fileRef = useRef<HTMLInputElement | null>(null);
   const scanFn = useServerFn(scanReceipt);
 
-  const list = q.data ?? [];
+  const rawList = q.data;
+  const list = useMemo(() => rawList ?? [], [rawList]);
   const categories = useMemo(() => {
     const canonical = new Map<string, string>();
     list.forEach((expense) => {
@@ -577,14 +578,22 @@ function ExpensesPage() {
       </div>
 
       {/* Manual Expense Modal */}
-      <ExpenseDialog
-        expense={editing}
-        categories={categories}
-        onSaved={() => {
-          setOpen(false);
-          void qc.invalidateQueries({ queryKey: ["expenses"] });
-        }}
-      />
+      {open && (
+        <ExpenseDialog
+          key={editing?.id ?? "new-expense"}
+          open={open}
+          onOpenChange={(nextOpen) => {
+            setOpen(nextOpen);
+            if (!nextOpen) setEditing(null);
+          }}
+          expense={editing}
+          categories={categories}
+          onSaved={() => {
+            setOpen(false);
+            void qc.invalidateQueries({ queryKey: ["expenses"] });
+          }}
+        />
+      )}
 
       {/* AI Scanned Review Dialog */}
       {scanned && (
@@ -635,10 +644,14 @@ function ExpensesPage() {
 // Basic (manual) add/edit dialog
 // ============================================================================
 function ExpenseDialog({
+  open,
+  onOpenChange,
   expense,
   categories,
   onSaved,
 }: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
   expense: Expense | null;
   categories: string[];
   onSaved: () => void;
@@ -658,18 +671,6 @@ function ExpenseDialog({
     expense_date: expense?.expense_date ?? new Date().toISOString().slice(0, 10),
     notes: expense?.notes ?? "",
   });
-
-  useEffect(() => {
-    setForm({
-      category: expense?.category ?? "",
-      description: expense?.description ?? "",
-      amount: expense ? String(expense.amount) : "0",
-      currency: expense?.currency ?? "BHD",
-      expense_date: expense?.expense_date ?? new Date().toISOString().slice(0, 10),
-      notes: expense?.notes ?? "",
-    });
-    setReceiptFile(null);
-  }, [expense]);
 
   const chooseReceipt = (file: File | null) => {
     if (!file) return;
@@ -735,136 +736,138 @@ function ExpenseDialog({
   };
 
   return (
-    <DialogContent>
-      <DialogHeader>
-        <DialogTitle>{expense ? t("expenses.edit") : t("expenses.add")}</DialogTitle>
-      </DialogHeader>
-      <div className="space-y-3">
-        <div>
-          <Label>{t("expenses.category")}</Label>
-          <CreatableCategorySelect
-            value={form.category}
-            categories={categories}
-            lang={lang}
-            onChange={(category) => setForm({ ...form, category })}
-          />
-        </div>
-        <div>
-          <Label>{t("expenses.description")}</Label>
-          <Input
-            value={form.description}
-            onChange={(e) => setForm({ ...form, description: e.target.value })}
-          />
-        </div>
-        <div className="grid grid-cols-2 gap-3">
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>{expense ? t("expenses.edit") : t("expenses.add")}</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-3">
           <div>
-            <Label>{t("expenses.amount")}</Label>
-            <Input
-              type="number"
-              step="0.01"
-              min={0}
-              value={form.amount}
-              onChange={(e) => setForm({ ...form, amount: e.target.value })}
+            <Label>{t("expenses.category")}</Label>
+            <CreatableCategorySelect
+              value={form.category}
+              categories={categories}
+              lang={lang}
+              onChange={(category) => setForm({ ...form, category })}
             />
           </div>
           <div>
-            <Label>{t("expenses.date")}</Label>
+            <Label>{t("expenses.description")}</Label>
             <Input
-              type="date"
-              value={form.expense_date}
-              onChange={(e) => setForm({ ...form, expense_date: e.target.value })}
+              value={form.description}
+              onChange={(e) => setForm({ ...form, description: e.target.value })}
             />
           </div>
-        </div>
-        <div>
-          <Label>{t("expenses.notes")}</Label>
-          <Textarea
-            rows={3}
-            value={form.notes}
-            onChange={(e) => setForm({ ...form, notes: e.target.value })}
-          />
-        </div>
-        <div>
-          <Label>
-            {lang === "ar" ? "إرفاق إيصال (اختياري)" : "Upload receipt file (optional)"}
-          </Label>
-          <input
-            ref={fileInputRef}
-            type="file"
-            className="hidden"
-            accept="image/*,application/pdf"
-            onChange={(event) => chooseReceipt(event.target.files?.[0] ?? null)}
-          />
-          <button
-            type="button"
-            onClick={() => fileInputRef.current?.click()}
-            onDragEnter={(event) => {
-              event.preventDefault();
-              setDragging(true);
-            }}
-            onDragOver={(event) => event.preventDefault()}
-            onDragLeave={() => setDragging(false)}
-            onDrop={(event) => {
-              event.preventDefault();
-              setDragging(false);
-              chooseReceipt(event.dataTransfer.files?.[0] ?? null);
-            }}
-            className={cn(
-              "mt-1 flex min-h-28 w-full flex-col items-center justify-center rounded-lg border-2 border-dashed px-4 py-4 text-center transition-colors",
-              dragging
-                ? "border-primary bg-primary/5"
-                : "border-border hover:border-primary/50 hover:bg-secondary/30",
-            )}
-          >
-            <UploadCloud className="mb-2 h-6 w-6 text-muted-foreground" />
-            <span className="text-sm font-medium">
-              {lang === "ar"
-                ? "اسحب الملف هنا أو اضغط للاختيار"
-                : "Drop a file here or click to browse"}
-            </span>
-            <span className="mt-1 text-xs text-muted-foreground">
-              {lang === "ar" ? "صور أو PDF، حتى 12 ميغابايت" : "Images or PDF, up to 12MB"}
-            </span>
-          </button>
-          {(receiptFile || expense?.receipt_url) && (
-            <div className="mt-2 flex items-center justify-between rounded-md border bg-secondary/30 px-3 py-2 text-sm">
-              <span className="flex min-w-0 items-center gap-2">
-                <FileText className="h-4 w-4 shrink-0" />
-                <span className="truncate">
-                  {receiptFile?.name ?? (lang === "ar" ? "الإيصال الحالي" : "Current receipt")}
-                </span>
-              </span>
-              {receiptFile ? (
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8"
-                  onClick={() => setReceiptFile(null)}
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-              ) : (
-                <a
-                  href={expense?.receipt_url ?? "#"}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="text-xs font-medium text-primary hover:underline"
-                >
-                  {lang === "ar" ? "عرض" : "View"}
-                </a>
-              )}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <Label>{t("expenses.amount")}</Label>
+              <Input
+                type="number"
+                step="0.01"
+                min={0}
+                value={form.amount}
+                onChange={(e) => setForm({ ...form, amount: e.target.value })}
+              />
             </div>
-          )}
+            <div>
+              <Label>{t("expenses.date")}</Label>
+              <Input
+                type="date"
+                value={form.expense_date}
+                onChange={(e) => setForm({ ...form, expense_date: e.target.value })}
+              />
+            </div>
+          </div>
+          <div>
+            <Label>{t("expenses.notes")}</Label>
+            <Textarea
+              rows={3}
+              value={form.notes}
+              onChange={(e) => setForm({ ...form, notes: e.target.value })}
+            />
+          </div>
+          <div>
+            <Label>
+              {lang === "ar" ? "إرفاق إيصال (اختياري)" : "Upload receipt file (optional)"}
+            </Label>
+            <input
+              ref={fileInputRef}
+              type="file"
+              className="hidden"
+              accept="image/*,application/pdf"
+              onChange={(event) => chooseReceipt(event.target.files?.[0] ?? null)}
+            />
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              onDragEnter={(event) => {
+                event.preventDefault();
+                setDragging(true);
+              }}
+              onDragOver={(event) => event.preventDefault()}
+              onDragLeave={() => setDragging(false)}
+              onDrop={(event) => {
+                event.preventDefault();
+                setDragging(false);
+                chooseReceipt(event.dataTransfer.files?.[0] ?? null);
+              }}
+              className={cn(
+                "mt-1 flex min-h-28 w-full flex-col items-center justify-center rounded-lg border-2 border-dashed px-4 py-4 text-center transition-colors",
+                dragging
+                  ? "border-primary bg-primary/5"
+                  : "border-border hover:border-primary/50 hover:bg-secondary/30",
+              )}
+            >
+              <UploadCloud className="mb-2 h-6 w-6 text-muted-foreground" />
+              <span className="text-sm font-medium">
+                {lang === "ar"
+                  ? "اسحب الملف هنا أو اضغط للاختيار"
+                  : "Drop a file here or click to browse"}
+              </span>
+              <span className="mt-1 text-xs text-muted-foreground">
+                {lang === "ar" ? "صور أو PDF، حتى 12 ميغابايت" : "Images or PDF, up to 12MB"}
+              </span>
+            </button>
+            {(receiptFile || expense?.receipt_url) && (
+              <div className="mt-2 flex items-center justify-between rounded-md border bg-secondary/30 px-3 py-2 text-sm">
+                <span className="flex min-w-0 items-center gap-2">
+                  <FileText className="h-4 w-4 shrink-0" />
+                  <span className="truncate">
+                    {receiptFile?.name ?? (lang === "ar" ? "الإيصال الحالي" : "Current receipt")}
+                  </span>
+                </span>
+                {receiptFile ? (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={() => setReceiptFile(null)}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                ) : (
+                  <a
+                    href={expense?.receipt_url ?? "#"}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-xs font-medium text-primary hover:underline"
+                  >
+                    {lang === "ar" ? "عرض" : "View"}
+                  </a>
+                )}
+              </div>
+            )}
+          </div>
         </div>
-      </div>
-      <DialogFooter>
-        <Button onClick={save} disabled={saving}>
-          {saving && <Loader2 className="me-2 h-4 w-4 animate-spin" />}
-          {t("common.save")}
-        </Button>
-      </DialogFooter>
-    </DialogContent>
+        <DialogFooter>
+          <Button onClick={save} disabled={saving}>
+            {saving && <Loader2 className="me-2 h-4 w-4 animate-spin" />}
+            {t("common.save")}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 

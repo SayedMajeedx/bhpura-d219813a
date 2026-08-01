@@ -87,7 +87,9 @@ test.beforeEach(async ({ page }) => {
     };
     try {
       window.localStorage.setItem("sb-ikciahnuqhemvnyfvbyp-auth-token", JSON.stringify(session));
-    } catch {}
+    } catch {
+      /* ignore storage error */
+    }
   });
 
   // Mock Supabase Auth
@@ -179,7 +181,24 @@ test.beforeEach(async ({ page }) => {
         status: 200,
         contentType: "application/json",
         headers: { "content-range": "0-0/1" },
-        body: JSON.stringify(mockOrders),
+        body: JSON.stringify(isSingle ? mockOrders[0] : mockOrders),
+      });
+      return;
+    }
+
+    if (url.includes("/customers")) {
+      const customer = {
+        id: "cust-1",
+        brand_id: "test-brand",
+        name: "John Doe",
+        phone: "97312345678",
+        email: "john@example.com",
+        notes: null,
+      };
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify(isSingle ? customer : [customer]),
       });
       return;
     }
@@ -219,7 +238,9 @@ test("Comprehensive Mobile UX Audit at 390x844 Viewport", async ({ page }) => {
   };
 
   page.on("console", (msg) => console.log("BROWSER LOG:", msg.type(), msg.text()));
-  page.on("requestfailed", (req) => console.log("FAILED REQ:", req.url(), req.failure()?.errorText));
+  page.on("requestfailed", (req) =>
+    console.log("FAILED REQ:", req.url(), req.failure()?.errorText),
+  );
   page.on("response", (res) => {
     if (res.status() >= 400) console.log("ERROR RESP:", res.status(), res.url());
   });
@@ -266,7 +287,8 @@ test("Comprehensive Mobile UX Audit at 390x844 Viewport", async ({ page }) => {
   for (let i = 0; i < headerButtonCount; i++) {
     const btn = headerButtons.nth(i);
     const box = await btn.boundingBox();
-    const ariaLabel = (await btn.getAttribute("aria-label")) || (await btn.innerText()) || `HeaderBtn-${i}`;
+    const ariaLabel =
+      (await btn.getAttribute("aria-label")) || (await btn.innerText()) || `HeaderBtn-${i}`;
     if (box) {
       const isViolating = box.width < 44 || box.height < 44;
       auditResults.tapTargets.push({
@@ -321,34 +343,131 @@ test("Comprehensive Mobile UX Audit at 390x844 Viewport", async ({ page }) => {
   await page.waitForTimeout(200);
 
   // 3. Test Mobile Navigation across pages
-  const routesToTest = [
+  const allRoutesToTest = [
     { name: "Dashboard", path: "/admin/b/test-brand/dashboard" },
     { name: "Orders", path: "/admin/b/test-brand/orders" },
-    { name: "Inventory", path: "/admin/b/test-brand/products" },
+    { name: "Order Detail", path: "/admin/b/test-brand/orders/order-1" },
+    { name: "Customers", path: "/admin/b/test-brand/customers" },
+    { name: "Customer Detail", path: "/admin/b/test-brand/customers/cust-1" },
+    { name: "Inventory", path: "/admin/b/test-brand/inventory" },
+    { name: "Categories", path: "/admin/b/test-brand/categories" },
+    { name: "Campaigns", path: "/admin/b/test-brand/campaigns" },
+    { name: "Discounts", path: "/admin/b/test-brand/discounts" },
+    { name: "Expenses", path: "/admin/b/test-brand/expenses" },
+    { name: "Communications", path: "/admin/b/test-brand/communications" },
+    { name: "Pages", path: "/admin/b/test-brand/pages" },
+    { name: "Team", path: "/admin/b/test-brand/team" },
+    { name: "Integrations", path: "/admin/b/test-brand/integrations" },
     { name: "Settings", path: "/admin/b/test-brand/settings" },
     { name: "Reports", path: "/admin/b/test-brand/reports" },
+    { name: "Sales Reports", path: "/admin/b/test-brand/reports/sales" },
+    { name: "Product Reports", path: "/admin/b/test-brand/reports/products" },
+    { name: "Customer Reports", path: "/admin/b/test-brand/reports/customers" },
+    { name: "Report Export", path: "/admin/b/test-brand/reports/export" },
   ];
+  const requestedRoutes = process.env.AUDIT_ROUTES?.split(",").map((route) => route.trim());
+  const routesToTest = requestedRoutes?.length
+    ? allRoutesToTest.filter((route) => requestedRoutes.includes(route.name))
+    : allRoutesToTest;
 
   for (const route of routesToTest) {
     const pageConsoleErrors: string[] = [];
     const pageUncaughtExceptions: Error[] = [];
+    let responseStatus = 200;
 
-    page.on("console", (msg) => {
-      if (msg.type() === "error") pageConsoleErrors.push(msg.text());
-    });
-    page.on("pageerror", (err) => {
+    const responseHandler = (res: any) => {
+      if (res.url().includes(route.path)) {
+        responseStatus = res.status();
+      }
+    };
+    page.on("response", responseHandler);
+
+    const consoleHandler = (msg: any) => {
+      if (msg.type() === "error") {
+        const text = msg.text();
+        const lower = text.toLowerCase();
+        const isNetworkNoise =
+          lower.includes("websocket") ||
+          lower.includes("wss://") ||
+          lower.includes("ws://") ||
+          lower.includes("failed to load resource") ||
+          lower.includes("net::err_") ||
+          lower.includes("status of 401") ||
+          lower.includes("status of 403") ||
+          lower.includes("status of 404");
+        if (!isNetworkNoise) {
+          pageConsoleErrors.push(text);
+        }
+      }
+    };
+    const pageErrorHandler = (err: Error) => {
       pageUncaughtExceptions.push(err);
+    };
+    page.on("console", consoleHandler);
+    page.on("pageerror", pageErrorHandler);
+
+    // The dashboard is already loaded above. Reloading the identical URL aborts
+    // in-flight observers during React's development-only mount cycle and can
+    // manufacture an unmounted-update warning that users never encounter.
+    if (new URL(page.url()).pathname !== route.path) {
+      const response = await page.goto(route.path);
+      if (response) responseStatus = response.status();
+      await page.waitForLoadState("networkidle");
+    }
+
+    page.off("response", responseHandler);
+
+    // Assert non-blank page and non-404 status
+    expect(responseStatus, `Route ${route.path} returned HTTP ${responseStatus}`).toBeLessThan(400);
+
+    // Every application route owns exactly one visible semantic page heading.
+    const pageHeading = page.locator("main h1");
+    await expect(
+      pageHeading,
+      `Route ${route.path} must expose exactly one page heading`,
+    ).toHaveCount(1);
+    await expect(pageHeading, `Route ${route.path} missing its visible page heading`).toBeVisible({
+      timeout: 5000,
     });
 
-    await page.goto(route.path);
-    await page.waitForLoadState("networkidle");
+    const routeA11y = await page.evaluate(() => {
+      const visibleButtons = [...document.querySelectorAll<HTMLButtonElement>("button")].filter(
+        (button) => {
+          const style = getComputedStyle(button);
+          const rect = button.getBoundingClientRect();
+          return style.display !== "none" && style.visibility !== "hidden" && rect.width > 0;
+        },
+      );
+      const unnamedButtons = visibleButtons
+        .filter(
+          (button) =>
+            !button.getAttribute("aria-label")?.trim() &&
+            !button.getAttribute("aria-labelledby")?.trim() &&
+            !button.getAttribute("title")?.trim() &&
+            !button.labels?.length &&
+            !button.textContent?.trim(),
+        )
+        .map((button) => button.outerHTML.slice(0, 800));
+      return {
+        unnamedButtons,
+        hasDocumentOverflow:
+          document.documentElement.scrollWidth > document.documentElement.clientWidth ||
+          document.body.scrollWidth > document.documentElement.clientWidth,
+      };
+    });
+    expect(routeA11y.unnamedButtons, `Unnamed visible buttons on ${route.path}`).toEqual([]);
+    expect(routeA11y.hasDocumentOverflow, `Document-level overflow on ${route.path}`).toBe(false);
+
+    // Assert body is non-empty
+    const bodyText = (await page.innerText("body")).trim();
+    expect(bodyText.length, `Route ${route.path} rendered blank page`).toBeGreaterThan(10);
 
     // Check table horizontal scrollability if tables exist
     const tables = page.locator("table");
     const tableCount = await tables.count();
     let tableAudit = null;
 
-    if (tableCount > 0) {
+    if (tableCount > 0 && (await tables.first().isVisible())) {
       tableAudit = await page.evaluate(() => {
         const table = document.querySelector("table");
         if (!table) return null;
@@ -359,24 +478,40 @@ test("Comprehensive Mobile UX Audit at 390x844 Viewport", async ({ page }) => {
           tableWidth,
           containerWidth,
           isScrollable: container ? container.scrollWidth > container.clientWidth : false,
+          isValidTable: tableWidth > 0 && containerWidth > 0,
         };
       });
+
+      if (tableAudit && tableAudit.tableWidth > 0) {
+        expect(
+          tableAudit.isValidTable,
+          `Visible table on ${route.path} has 0-size dimensions`,
+        ).toBe(true);
+      }
     }
+
+    const rawStatuses = ["\npending\n", "\nunpaid\n", "\nneeds_packing\n"].filter((s) =>
+      bodyText.includes(s),
+    );
+
+    page.off("console", consoleHandler);
+    page.off("pageerror", pageErrorHandler);
 
     auditResults.pageAudits[route.name] = {
       path: route.path,
+      responseStatus,
       consoleErrors: pageConsoleErrors,
       uncaughtExceptions: pageUncaughtExceptions,
+      rawStatuses,
       hasTables: tableCount > 0,
       tableAudit,
     };
   }
 
-  console.log("=== MOBILE UX AUDIT COMPLETE ===");
-  console.log(JSON.stringify(auditResults, null, 2));
-
-  // Assert zero uncaught exceptions across mobile navigation
+  // Assert zero uncaught application exceptions, raw status leak, or console errors across mobile navigation
   Object.values(auditResults.pageAudits).forEach((pAudit: any) => {
-    expect(pAudit.uncaughtExceptions).toEqual([]);
+    expect(pAudit.uncaughtExceptions, `Uncaught exceptions on ${pAudit.path}`).toEqual([]);
+    expect(pAudit.consoleErrors, `Console errors/React warnings on ${pAudit.path}`).toEqual([]);
+    expect(pAudit.rawStatuses, `Raw unformatted status strings on ${pAudit.path}`).toEqual([]);
   });
 });

@@ -33,7 +33,7 @@ export function OsMenuBar({
   return (
     <header
       className={cn(
-        "no-print hidden md:flex h-10 border border-[var(--os-border)] os-glass shadow-2xs shrink-0 items-center justify-between px-4 my-2.5 me-3 md:me-4 rounded-xl transition-all select-none z-30",
+        "no-print hidden md:flex h-10 border border-[var(--os-border)] os-glass shadow-2xs shrink-0 items-center justify-between px-4 my-2.5 ms-3.5 me-4 rounded-xl transition-all select-none z-30",
         className,
       )}
     >
@@ -55,6 +55,7 @@ export function OsMenuBar({
         <button
           type="button"
           onClick={onOpenSpotlight}
+          aria-label={lang === "ar" ? "البحث السريع (Cmd+K)" : "Quick Search (Cmd+K)"}
           className="h-6.5 px-2 gap-1.5 text-xs text-muted-foreground hover:text-foreground bg-background/50 hover:bg-background/90 border border-[var(--os-border)] rounded-md flex items-center transition-all shadow-2xs"
         >
           <Search className="h-3 w-3 text-muted-foreground" />
@@ -72,6 +73,7 @@ export function OsMenuBar({
         <button
           type="button"
           onClick={() => onSetLang(lang === "en" ? "ar" : "en")}
+          aria-label={lang === "en" ? "التحويل للعربية" : "Switch to English"}
           className="h-6.5 px-2 text-[10px] font-bold uppercase tracking-wide text-muted-foreground hover:text-foreground bg-background/40 hover:bg-background/80 border border-[var(--os-border)] rounded-md flex items-center gap-1 transition-colors"
           title={lang === "en" ? "التحويل للعربية" : "Switch to English"}
         >
@@ -85,6 +87,7 @@ export function OsMenuBar({
             <Button
               variant="ghost"
               size="sm"
+              aria-label={lang === "ar" ? "حساب المستخدم" : "User Profile"}
               className="h-6.5 w-6.5 rounded-md p-0 text-muted-foreground hover:text-foreground hover:bg-muted/80 border border-transparent hover:border-border/60"
             >
               <User className="h-3.5 w-3.5" />

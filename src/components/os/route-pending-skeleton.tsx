@@ -34,7 +34,10 @@ export function RoutePendingSkeleton() {
           <div className="h-9 w-32 bg-muted/40 rounded-lg" />
         </div>
         {[...Array(5)].map((_, i) => (
-          <div key={i} className="flex items-center justify-between py-2 border-b border-border/20 last:border-0">
+          <div
+            key={i}
+            className="flex items-center justify-between py-2 border-b border-border/20 last:border-0"
+          >
             <div className="flex items-center gap-3">
               <div className="h-8 w-8 rounded-lg bg-muted/60" />
               <div className="space-y-1.5">

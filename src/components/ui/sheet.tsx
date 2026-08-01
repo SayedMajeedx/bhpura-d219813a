@@ -61,9 +61,12 @@ const SheetContent = React.forwardRef<
   <SheetPortal>
     <SheetOverlay />
     <SheetPrimitive.Content ref={ref} className={cn(sheetVariants({ side }), className)} {...props}>
-      <SheetPrimitive.Close className="absolute end-4 top-[max(1rem,env(safe-area-inset-top))] z-20 inline-flex h-10 w-10 cursor-pointer items-center justify-center rounded-full border border-border/70 bg-background/90 text-foreground shadow-md backdrop-blur-sm transition-all hover:scale-105 hover:bg-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none">
+      <SheetPrimitive.Close
+        aria-label="إغلاق / Close"
+        className="absolute end-4 top-[max(1rem,env(safe-area-inset-top))] z-20 inline-flex h-10 w-10 cursor-pointer items-center justify-center rounded-full border border-border/70 bg-background/90 text-foreground shadow-md backdrop-blur-sm transition-all hover:scale-105 hover:bg-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none"
+      >
         <X className="h-5 w-5" strokeWidth={2} />
-        <span className="sr-only">Close</span>
+        <span className="sr-only">إغلاق / Close</span>
       </SheetPrimitive.Close>
       {children}
     </SheetPrimitive.Content>

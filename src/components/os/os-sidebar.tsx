@@ -57,9 +57,9 @@ export function OsSidebar({
       <div className="p-4 border-b border-[var(--os-border)] flex items-center justify-between gap-2 bg-card/30">
         {!collapsed ? (
           <div className="min-w-0 flex-1">
-            <h1 className="text-xl font-bold font-heading text-foreground truncate leading-tight">
+            <span className="text-xl font-bold font-heading text-foreground truncate leading-tight block">
               {brandLabel}
-            </h1>
+            </span>
             <p className="text-[11px] text-muted-foreground truncate">{brandSubtitle}</p>
           </div>
         ) : (
@@ -152,6 +152,7 @@ export function OsSidebar({
                       key={item.id}
                       to={item.to as any}
                       params={item.params as any}
+                      preload="intent"
                       className="block"
                     >
                       <OsNavItem

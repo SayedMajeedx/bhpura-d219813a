@@ -1,7 +1,7 @@
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { BrandProvider, type Brand } from "@/lib/brand-context";
-import { useT } from "@/lib/i18n";
+import { useI18n } from "@/lib/i18n";
 import { Card } from "@/components/ui/card";
 
 function getImpersonationToken(request?: Request): string | null {
@@ -156,15 +156,17 @@ function BrandLayout() {
 }
 
 function BrandError() {
-  const t = useT();
+  const { lang } = useI18n();
   return (
     <div className="min-h-[50vh] flex items-center justify-center p-6">
       <Card className="max-w-md w-full p-6 text-center space-y-3">
-        <h2 className="text-lg font-bold font-heading text-foreground">
-          {t("common.errorTitle") || "Error Loading Brand Workspace"}
-        </h2>
+        <h1 className="text-lg font-bold font-heading text-foreground">
+          {lang === "ar" ? "تعذر تحميل مساحة عمل المتجر" : "Error loading brand workspace"}
+        </h1>
         <p className="text-sm text-muted-foreground">
-          {t("common.errorMessage") || "Unable to access this store. Please verify your permissions or try refreshing."}
+          {lang === "ar"
+            ? "تعذر الوصول إلى هذا المتجر. تحقق من صلاحياتك أو أعد تحميل الصفحة."
+            : "Unable to access this store. Verify your permissions or refresh the page."}
         </p>
       </Card>
     </div>

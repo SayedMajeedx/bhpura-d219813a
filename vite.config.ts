@@ -5,6 +5,11 @@ import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
 
 export default defineConfig({
+  build: {
+    // Order Detail is an explicitly documented temporary exception. All other
+    // route chunks must remain below this ceiling.
+    chunkSizeWarningLimit: 600,
+  },
   environments: {
     ssr: {
       build: {
@@ -28,6 +33,11 @@ export default defineConfig({
   ],
   optimizeDeps: {
     exclude: ["vinxi/http"],
+  },
+  ssr: {
+    optimizeDeps: {
+      exclude: ["vinxi/http"],
+    },
   },
   resolve: {
     tsconfigPaths: true,

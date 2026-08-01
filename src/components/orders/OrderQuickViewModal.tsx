@@ -1,10 +1,5 @@
 import React from "react";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Link } from "@tanstack/react-router";
 import { formatMoney, formatDate } from "@/lib/format";
@@ -172,7 +167,9 @@ export function OrderQuickViewModal({
               </div>
               {assignedCourier ? (
                 <div className="flex items-center justify-between gap-2">
-                  <span className="font-bold text-foreground">{assignedCourier.name || assignedCourier.email}</span>
+                  <span className="font-bold text-foreground">
+                    {assignedCourier.name || assignedCourier.email}
+                  </span>
                   {onWhatsAppCourier && (
                     <Button
                       size="xs"
@@ -226,7 +223,9 @@ export function OrderQuickViewModal({
                       const itemTitle =
                         it.product_name ||
                         it.product_title ||
-                        (isAr ? it.product_name_ar || it.name_ar : it.product_name_en || it.name_en) ||
+                        (isAr
+                          ? it.product_name_ar || it.name_ar
+                          : it.product_name_en || it.name_en) ||
                         it.item_title ||
                         it.title ||
                         it.name ||
@@ -283,11 +282,17 @@ export function OrderQuickViewModal({
             const subtotal = Number(order.subtotal ?? (itemsSum > 0 ? itemsSum : totalAmount));
             const discount = Number(order.discount ?? order.discount_amount ?? 0);
             let shipping = Number(
-              order.shipping ?? order.shipping_amount ?? order.delivery_fee ?? order.shipping_fee ?? 0,
+              order.shipping ??
+                order.shipping_amount ??
+                order.delivery_fee ??
+                order.shipping_fee ??
+                0,
             );
             const tax = Number(order.tax_amount ?? order.vat ?? order.tax ?? 0);
             const advancePaid = Number(order.advance_paid ?? order.paid_amount ?? 0);
-            const netTotal = Number(order.total ?? order.total_amount ?? subtotal + shipping + tax - discount);
+            const netTotal = Number(
+              order.total ?? order.total_amount ?? subtotal + shipping + tax - discount,
+            );
 
             const calculatedDiff = netTotal - (subtotal + tax - discount);
             if (shipping === 0 && calculatedDiff > 0) {
@@ -319,7 +324,9 @@ export function OrderQuickViewModal({
 
                   {shipping > 0 && (
                     <div className="flex justify-between items-center text-indigo-600 dark:text-indigo-400">
-                      <span>{isAr ? "رسوم الشحن والتوصيل (Delivery Fee):" : "Shipping & Delivery Fee:"}</span>
+                      <span>
+                        {isAr ? "رسوم الشحن والتوصيل (Delivery Fee):" : "Shipping & Delivery Fee:"}
+                      </span>
                       <span className="font-bold">+{formatMoney(shipping, currency, lang)}</span>
                     </div>
                   )}
@@ -333,14 +340,20 @@ export function OrderQuickViewModal({
 
                   {advancePaid > 0 && (
                     <div className="flex justify-between items-center text-emerald-600 dark:text-emerald-400 pt-1 border-t border-border/40">
-                      <span>{isAr ? "الدفعة المقدمة (Deposit Paid):" : "Advance Paid / Deposit:"}</span>
+                      <span>
+                        {isAr ? "الدفعة المقدمة (Deposit Paid):" : "Advance Paid / Deposit:"}
+                      </span>
                       <span className="font-bold">-{formatMoney(advancePaid, currency, lang)}</span>
                     </div>
                   )}
 
                   {advancePaid > 0 && codRemaining > 0 && (
                     <div className="flex justify-between items-center text-amber-600 dark:text-amber-400 font-bold bg-amber-500/10 p-1.5 rounded-lg border border-amber-500/20">
-                      <span>{isAr ? "المتبقي للتحصيل عند التسليم (COD Balance):" : "Remaining COD Balance:"}</span>
+                      <span>
+                        {isAr
+                          ? "المتبقي للتحصيل عند التسليم (COD Balance):"
+                          : "Remaining COD Balance:"}
+                      </span>
                       <span>{formatMoney(codRemaining, currency, lang)}</span>
                     </div>
                   )}

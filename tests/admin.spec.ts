@@ -71,7 +71,9 @@ test.beforeEach(async ({ page }) => {
     };
     try {
       window.localStorage.setItem("sb-ikciahnuqhemvnyfvbyp-auth-token", JSON.stringify(session));
-    } catch {}
+    } catch {
+      /* ignore storage error */
+    }
   });
 
   // 1. Mock Supabase AuthgetUser call

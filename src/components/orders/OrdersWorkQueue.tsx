@@ -109,7 +109,9 @@ export const OrdersWorkQueue: React.FC<OrdersWorkQueueProps> = ({
               <th className="p-3 text-start">{isAr ? "رقم الفاتورة والتاريخ" : "Order & Date"}</th>
               <th className="p-3 text-start">{isAr ? "العميل والتواصل" : "Customer / Contact"}</th>
               <th className="p-3 text-start">{isAr ? "طريقة وحالة الدفع" : "Payment & Type"}</th>
-              <th className="p-3 text-start">{isAr ? "حالة التنفيذ والمندوب" : "Fulfillment & Courier"}</th>
+              <th className="p-3 text-start">
+                {isAr ? "حالة التنفيذ والمندوب" : "Fulfillment & Courier"}
+              </th>
               <th className="p-3 text-end">{isAr ? "الإجمالي" : "Total"}</th>
               <th className="p-3 text-center">{isAr ? "الإجراء التالي" : "Next Action"}</th>
               <th className="p-3 text-center w-10"></th>
@@ -144,11 +146,18 @@ export const OrdersWorkQueue: React.FC<OrdersWorkQueueProps> = ({
                   key={order.id}
                   onClick={(e) => {
                     const target = e.target as HTMLElement;
-                    if (target.closest("button, a, select, [role='menuitem'], [data-radix-collection-item]")) return;
+                    if (
+                      target.closest(
+                        "button, a, select, [role='menuitem'], [data-radix-collection-item]",
+                      )
+                    )
+                      return;
                     onQuickViewOrder(order);
                   }}
-                  className="hover:bg-primary/5 transition-colors cursor-pointer group"
-                  title={isAr ? "انقر هنا لعرض معاينة الطلب السريعة" : "Click row to quick view order"}
+                  className="hover:bg-muted/80 [&:hover>td]:bg-muted/80 focus-within:bg-muted/80 transition-colors cursor-pointer group"
+                  title={
+                    isAr ? "انقر هنا لعرض معاينة الطلب السريعة" : "Click row to quick view order"
+                  }
                 >
                   {/* Order # & Date */}
                   <td className="p-3 align-middle font-medium">
@@ -221,7 +230,10 @@ export const OrdersWorkQueue: React.FC<OrdersWorkQueueProps> = ({
                     </div>
 
                     {/* Assigned Courier Badge / Quick Assign */}
-                    <div className="flex items-center gap-1 mt-1" onClick={(e) => e.stopPropagation()}>
+                    <div
+                      className="flex items-center gap-1 mt-1"
+                      onClick={(e) => e.stopPropagation()}
+                    >
                       {assignedCourier ? (
                         <div className="inline-flex items-center gap-1 text-[10px] font-bold bg-indigo-500/10 text-indigo-700 dark:text-indigo-400 border border-indigo-500/20 px-2 py-0.5 rounded-md">
                           <Truck className="h-3 w-3 shrink-0 text-indigo-500" />
@@ -248,7 +260,9 @@ export const OrdersWorkQueue: React.FC<OrdersWorkQueueProps> = ({
                           defaultValue=""
                         >
                           <SelectTrigger className="h-6 text-[10px] font-semibold w-28 bg-background/80 border-border/60">
-                            <SelectValue placeholder={isAr ? "+ تعيين مندوب" : "+ Assign Courier"} />
+                            <SelectValue
+                              placeholder={isAr ? "+ تعيين مندوب" : "+ Assign Courier"}
+                            />
                           </SelectTrigger>
                           <SelectContent align="start">
                             {couriers.map((c) => (
@@ -309,7 +323,9 @@ export const OrdersWorkQueue: React.FC<OrdersWorkQueueProps> = ({
                           </DropdownMenuItem>
                         )}
                         {assignedCourier && onWhatsAppCourier && (
-                          <DropdownMenuItem onClick={() => onWhatsAppCourier(order, assignedCourier)}>
+                          <DropdownMenuItem
+                            onClick={() => onWhatsAppCourier(order, assignedCourier)}
+                          >
                             <Truck className="h-3.5 w-3.5 me-2 text-indigo-500" />
                             {isAr ? "واتساب المندوب" : "WhatsApp Courier"}
                           </DropdownMenuItem>

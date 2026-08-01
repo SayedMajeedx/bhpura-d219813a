@@ -166,6 +166,8 @@ const EMPTY_PROMO_CARD: HomePromoCard = {
 };
 const STOREFRONT_AR_FONTS = ["Tajawal", "Cairo", "Noto Sans Arabic", "Noto Kufi Arabic"];
 
+const LEGACY_SETTINGS_NAMES = new Set(["My Abaya Boutique", "متجر عباياتي", ""]);
+
 function Settings() {
   const t = useT();
   const { lang } = useI18n();
@@ -174,7 +176,6 @@ function Settings() {
   const brandId = brand.id;
   const brandDisplayName =
     (lang === "ar" ? brand.name_ar : brand.name_en) || brand.name_en || brand.slug;
-  const LEGACY_NAMES = new Set(["My Abaya Boutique", "متجر عباياتي", ""]);
   const logoInput = useRef<HTMLInputElement>(null);
   const faviconInput = useRef<HTMLInputElement>(null);
   const fontInput = useRef<HTMLInputElement>(null);
@@ -212,7 +213,7 @@ function Settings() {
   useEffect(() => {
     if (data) {
       const trimmed = (data.business_name ?? "").trim();
-      const name = LEGACY_NAMES.has(trimmed) ? brandDisplayName : trimmed;
+      const name = LEGACY_SETTINGS_NAMES.has(trimmed) ? brandDisplayName : trimmed;
       setF({ ...data, business_name: name });
     }
   }, [data, brandDisplayName]);
@@ -424,6 +425,7 @@ function Settings() {
                     type="button"
                     variant="outline"
                     size="icon"
+                    aria-label={lang === "ar" ? "رفع شعار المتجر" : "Upload store logo"}
                     onClick={() => logoInput.current?.click()}
                     disabled={uploading === "logo"}
                   >
@@ -525,6 +527,11 @@ function Settings() {
                 </p>
               </div>
               <Switch
+                aria-label={
+                  lang === "ar"
+                    ? "أسعار المنتجات شاملة ضريبة القيمة المضافة"
+                    : "Product prices include VAT"
+                }
                 checked={(f as any).vat_inclusive ?? false}
                 onCheckedChange={(v) => setF({ ...f, vat_inclusive: v } as any)}
               />

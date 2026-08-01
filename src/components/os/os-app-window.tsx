@@ -51,7 +51,9 @@ export const OsAppWindow = React.forwardRef<HTMLDivElement, OsAppWindowProps>(
 
             {/* Module Title & Subtitle */}
             <div className="min-w-0 flex items-center gap-2">
-              <h1 className="text-xs font-bold font-heading text-foreground truncate">{title}</h1>
+              <span className="text-xs font-bold font-heading text-foreground truncate">
+                {title}
+              </span>
               {subtitle && (
                 <span className="hidden md:inline text-[11px] text-muted-foreground truncate">
                   — {subtitle}
@@ -71,7 +73,16 @@ export const OsAppWindow = React.forwardRef<HTMLDivElement, OsAppWindowProps>(
                 size="icon"
                 onClick={onToggleFocusMode}
                 className="h-6 w-6 text-muted-foreground hover:text-foreground rounded-md p-0"
-                title={isFocusMode ? "Exit Focus Workspace" : "Enter Focus Workspace"}
+                title={
+                  isFocusMode
+                    ? "خروج من مساحة العمل المركزة / Exit Focus Workspace"
+                    : "دخول مساحة العمل المركزة / Enter Focus Workspace"
+                }
+                aria-label={
+                  isFocusMode
+                    ? "خروج من مساحة العمل المركزة / Exit Focus Workspace"
+                    : "دخول مساحة العمل المركزة / Enter Focus Workspace"
+                }
               >
                 {isFocusMode ? (
                   <Minimize2 className="h-3.5 w-3.5" />

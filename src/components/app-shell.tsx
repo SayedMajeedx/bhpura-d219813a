@@ -1,4 +1,4 @@
-import { useRouterState, useNavigate, useParams } from "@tanstack/react-router";
+import { useRouterState, useNavigate, useParams, useRouter } from "@tanstack/react-router";
 import { LogOut, Shield, Store, Search } from "lucide-react";
 import { SpotlightCommandPalette } from "@/components/spotlight-command-palette";
 import { useState, useEffect, useMemo } from "react";
@@ -21,6 +21,7 @@ type BrandRow = { id: string; slug: string; name_en: string; is_active: boolean 
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = useRouterState({ select: (r) => r.location.pathname });
+  const router = useRouter();
   const navigate = useNavigate();
   const { t, lang, setLang } = useI18n();
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -58,6 +59,40 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const routeParams = useParams({ strict: false }) as { slug?: string };
   const urlSlug = routeParams?.slug ?? null;
 
+  const isRouterNavigating = useRouterState({
+    select: (r) => r.status === "pending" || r.isLoading,
+  });
+
+  const signalNavigationIntent = (event: {
+    target: EventTarget | null;
+    currentTarget: EventTarget & HTMLDivElement;
+  }) => {
+    if (!(event.target instanceof Element)) return;
+    const anchor = event.target.closest("a[href]");
+    if (!(anchor instanceof HTMLAnchorElement)) return;
+    if (anchor.target === "_blank" || anchor.hasAttribute("download")) return;
+
+    const target = new URL(anchor.href, window.location.origin);
+    if (target.origin !== window.location.origin) return;
+    if (!target.pathname.startsWith("/admin/")) return;
+    if (target.pathname === pathname) return;
+
+    const indicator = event.currentTarget.querySelector<HTMLElement>(
+      "[data-navigation-feedback-indicator]",
+    );
+    if (indicator) {
+      const feedbackAt = performance.now();
+      indicator.hidden = false;
+      indicator.dataset.navigationFeedback = "true";
+      indicator.dataset.navigationStartedAt = String(feedbackAt);
+      indicator.dataset.navigationTarget = target.pathname;
+      document.documentElement.dataset.navigationFeedbackAt = String(feedbackAt);
+    }
+
+    const skeleton = event.currentTarget.querySelector<HTMLElement>("[data-destination-skeleton]");
+    if (skeleton) skeleton.hidden = false;
+  };
+
   const [spotlightOpen, setSpotlightOpen] = useState(false);
 
   // Global Command Center keyboard listener (Cmd/Ctrl+K and Esc for focus mode)
@@ -75,7 +110,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     return () => document.removeEventListener("keydown", down);
   }, [isFocusMode]);
 
-  const [hasImpersonationToken, setHasImpersonationToken] = useState(false);
+  const [hasImpersonationToken, setHasImpersonationToken] = useState<boolean>(() => {
+    if (typeof document !== "undefined") {
+      return document.cookie.includes("boutq_impersonation_token=");
+    }
+    return false;
+  });
 
   useEffect(() => {
     if (typeof document !== "undefined") {
@@ -104,6 +144,38 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   // Fallback: use the user's own brand slug when outside /b/:slug
   const activeSlug = urlSlug ?? profile?.brand?.slug ?? null;
+
+  // Warm the four primary applications once authentication and the active
+  // brand are known. This keeps the OS-like app switch fast even before a
+  // pointer happens to hover a dock item.
+  useEffect(() => {
+    if (!activeSlug || isLoading || !profile) return;
+
+    const preloadPrimaryApps = () => {
+      const destinations = [
+        "/admin/b/$slug/dashboard",
+        "/admin/b/$slug/orders",
+        "/admin/b/$slug/inventory",
+        "/admin/b/$slug/customers",
+      ] as const;
+
+      for (const to of destinations) {
+        void router.preloadRoute({ to, params: { slug: activeSlug } }).catch(() => undefined);
+      }
+    };
+
+    const idleWindow = window as Window & {
+      requestIdleCallback?: (callback: IdleRequestCallback, options?: IdleRequestOptions) => number;
+      cancelIdleCallback?: (handle: number) => void;
+    };
+    if (idleWindow.requestIdleCallback) {
+      const idleId = idleWindow.requestIdleCallback(preloadPrimaryApps, { timeout: 750 });
+      return () => idleWindow.cancelIdleCallback?.(idleId);
+    }
+
+    const timeoutId = globalThis.setTimeout(preloadPrimaryApps, 100);
+    return () => globalThis.clearTimeout(timeoutId);
+  }, [activeSlug, isLoading, profile, router]);
 
   // Close drawer when route changes
   useEffect(() => {
@@ -211,17 +283,26 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     );
   }
 
-  const isRouterNavigating = useRouterState({ select: (r) => r.status === "pending" || r.isLoading });
   const isImpersonating = isSuperAdmin && urlSlug !== null && hasImpersonationToken;
 
   return (
-    <div className="h-screen flex flex-col os-canvas overflow-hidden select-none">
+    <div
+      className="h-screen flex flex-col os-canvas overflow-hidden select-none"
+      onPointerDownCapture={signalNavigationIntent}
+      onClickCapture={signalNavigationIntent}
+    >
       {/* Top Global Router Transition Progress Bar */}
-      {isRouterNavigating && (
-        <div className="fixed top-0 inset-x-0 z-[100] h-0.5 bg-primary/20 overflow-hidden pointer-events-none">
-          <div className="h-full bg-primary animate-pulse w-3/4 transition-all duration-300 shadow-sm" />
-        </div>
-      )}
+      <div
+        data-navigation-feedback-indicator="true"
+        data-navigation-feedback={isRouterNavigating ? "true" : "false"}
+        data-navigation-target={pathname}
+        hidden={!isRouterNavigating}
+        className="fixed top-0 inset-x-0 z-[100] h-0.5 bg-primary/20 overflow-hidden pointer-events-none"
+        role="status"
+        aria-label={lang === "ar" ? "جارٍ فتح التطبيق" : "Opening application"}
+      >
+        <div className="h-full bg-primary animate-pulse w-3/4 transition-all duration-300 shadow-sm" />
+      </div>
 
       {/* Impersonation Warning Banner */}
       {isImpersonating && (
@@ -311,8 +392,15 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           )}
 
           {/* Level 2: Active Application Window */}
-          <main className="flex-1 flex flex-col min-h-0 mx-0 md:mx-3 md:mb-3 overflow-hidden select-text">
-            {!isFocusMode && <OsRecentHistoryBar lang={lang} currentPageTitle={currentPageLabel} />}
+          <main className="relative flex-1 flex flex-col min-h-0 mx-0 md:mx-3 md:mb-3 overflow-hidden select-text">
+            <div
+              data-destination-skeleton="true"
+              aria-hidden="true"
+              hidden={!isRouterNavigating}
+              className="absolute inset-x-3 top-12 z-40 h-1 overflow-hidden rounded-full bg-primary/10 pointer-events-none"
+            >
+              <div className="h-full w-1/2 animate-pulse rounded-full bg-primary/60" />
+            </div>
             <OsAppWindow
               icon={activeNavItem?.icon}
               title={currentPageLabel || brandLabel}

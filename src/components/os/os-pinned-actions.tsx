@@ -2,10 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { Pin } from "lucide-react";
 import { cn } from "@/lib/utils";
-import {
-  getPinnedActions,
-  type PinnedAction,
-} from "@/lib/os-productivity";
+import { getPinnedActions, type PinnedAction } from "@/lib/os-productivity";
 
 interface OsPinnedActionsProps {
   lang: "ar" | "en";

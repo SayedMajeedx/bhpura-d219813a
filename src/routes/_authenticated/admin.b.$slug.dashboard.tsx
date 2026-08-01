@@ -54,12 +54,8 @@ function Dashboard() {
   const brandId = brand.id;
   const locale = lang === "ar" ? "ar-BH-u-nu-latn" : "en-US";
 
-  const [isMounted, setIsMounted] = useState(false);
+  const isMounted = typeof window !== "undefined";
   const [activeScope, setActiveScope] = useState<DashboardViewScope>("financials");
-
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
 
   // 1. Fetch Business settings
   const businessSettings = useQuery({
@@ -555,7 +551,7 @@ function Dashboard() {
             border: "hover:border-emerald-500/20",
           },
           {
-            label: isAr ? "متوسط قيمة الطلب (AOV)" : "Average Order Value (AOV)",
+            label: isAr ? "متوسط قيمة الطلب" : "Average Order Value (AOV)",
             value: formatMoney(financials.aovCurrent, currency, locale),
             subValue: `${isAr ? "إجمالي الطلبات" : "Total Orders"}: ${financials.ordersCurrent}`,
             deltaPct: financials.aovDeltaPct,
@@ -588,7 +584,7 @@ function Dashboard() {
   ];
 
   return (
-    <div className="space-y-3.5">
+    <div className="mx-auto max-w-[1500px] space-y-3.5 p-1 sm:p-2">
       {/* 1. Integrated Command Header */}
       <DashboardCommandHeader
         lang={isAr ? "ar" : "en"}
@@ -998,7 +994,9 @@ function Dashboard() {
                       {isAr ? "تشخيص المخزون والبضائع" : "Inventory Stock Diagnostics"}
                     </h3>
                     <p className="text-xs text-muted-foreground">
-                      {isAr ? "تحديد المنتجات المنخفضة والراكدة" : "Low stock and dead stock alerts"}
+                      {isAr
+                        ? "تحديد المنتجات المنخفضة والراكدة"
+                        : "Low stock and dead stock alerts"}
                     </p>
                   </div>
                 </div>
@@ -1059,7 +1057,9 @@ function Dashboard() {
                       {isAr ? "تشخيص ورعاية العملاء (CRM)" : "CRM Customer Diagnostics"}
                     </h3>
                     <p className="text-xs text-muted-foreground">
-                      {isAr ? "متابعة العملاء المميزين والمعرضين للتسرب" : "VIP retention & churn risk tracking"}
+                      {isAr
+                        ? "متابعة العملاء المميزين والمعرضين للتسرب"
+                        : "VIP retention & churn risk tracking"}
                     </p>
                   </div>
                 </div>

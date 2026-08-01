@@ -20,7 +20,7 @@ export function OsMobileTabBar({ items, className }: OsMobileTabBarProps) {
   return (
     <nav
       className={cn(
-        "no-print fixed bottom-0 inset-x-0 z-40 lg:hidden flex items-center justify-around px-2 py-1.5 border-t border-[var(--os-border)] os-glass-strong shadow-2xl backdrop-blur-xl",
+        "no-print fixed bottom-0 inset-x-0 z-40 lg:hidden flex items-center justify-around px-2 py-1.5 pb-[max(0.5rem,env(safe-area-inset-bottom))] border-t border-[var(--os-border)] os-glass-strong shadow-2xl backdrop-blur-xl",
         className,
       )}
       aria-label="Mobile Navigation"

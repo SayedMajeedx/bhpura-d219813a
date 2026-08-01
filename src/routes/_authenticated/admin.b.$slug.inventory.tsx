@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useRef, useState, useMemo } from "react";
+import { useEffect, useRef, useState, useMemo, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { importProductCatalog } from "@/lib/universal-importer";
 import {
@@ -290,9 +290,9 @@ function Inventory() {
     <div className="mx-auto max-w-7xl space-y-4 p-1 sm:p-2 animate-fade-in">
       <div className="mb-6 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="font-display text-3xl font-extrabold tracking-tight bg-clip-text bg-gradient-to-r from-slate-900 via-slate-800 to-slate-950 dark:from-slate-50 dark:to-slate-300 sm:text-4xl">
+          <h2 className="font-display text-3xl font-extrabold tracking-tight bg-clip-text bg-gradient-to-r from-slate-900 via-slate-800 to-slate-950 dark:from-slate-50 dark:to-slate-300 sm:text-4xl">
             {t("inventory.title")}
-          </h1>
+          </h2>
           <p className="mt-1.5 text-muted-foreground text-sm max-w-md">{t("inventory.subtitle")}</p>
         </div>
       </div>
@@ -1494,14 +1494,17 @@ function ProductsSection({
   };
 
   const isAr = useI18n().lang === "ar";
-  const productStock = (productId: string) =>
-    variants
-      .filter((variant) => variant.product_id === productId)
-      .reduce(
-        (sum, variant) =>
-          sum + Number(variant.stock_main || 0) + Number(variant.stock_incubator || 0),
-        0,
-      );
+  const productStock = useCallback(
+    (productId: string) =>
+      variants
+        .filter((variant) => variant.product_id === productId)
+        .reduce(
+          (sum, variant) =>
+            sum + Number(variant.stock_main || 0) + Number(variant.stock_incubator || 0),
+          0,
+        ),
+    [variants],
+  );
   const normalizedSearch = search.trim().toLowerCase();
   const filteredProducts = products.filter((product) => {
     const productVariants = variants.filter((variant) => variant.product_id === product.id);
@@ -1693,7 +1696,15 @@ function ProductsSection({
     }
 
     return result;
-  }, [products, variantsByProduct, normalizedSearch, selectedCategory, scopeFilter, sortBy]);
+  }, [
+    products,
+    variantsByProduct,
+    normalizedSearch,
+    selectedCategory,
+    scopeFilter,
+    sortBy,
+    productStock,
+  ]);
 
   const activeFilterCount = (selectedCategory !== "all" ? 1 : 0) + (search ? 1 : 0);
 
@@ -2065,7 +2076,7 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
       variant_label_fabric_en: product?.variant_label_fabric_en ?? "",
     });
     setActiveDialogTab("basic");
-  }, [product?.id]);
+  }, [product]);
 
   const categoriesQ = useQuery({
     queryKey: ["categories", brand.id],

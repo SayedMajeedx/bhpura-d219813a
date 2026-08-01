@@ -79,6 +79,7 @@ export const OrdersToolbar: React.FC<OrdersToolbarProps> = ({
           <Popover>
             <PopoverTrigger asChild>
               <Button
+                aria-label={isAr ? "فتح خيارات التصفية" : "Open filter options"}
                 variant={activeFilterCount > 0 ? "default" : "outline"}
                 size="sm"
                 className="h-9 gap-1.5 text-xs font-semibold"
@@ -186,6 +187,7 @@ export const OrdersToolbar: React.FC<OrdersToolbarProps> = ({
           <Sheet>
             <SheetTrigger asChild>
               <Button
+                aria-label={isAr ? "فتح خيارات التصفية" : "Open filter options"}
                 variant={activeFilterCount > 0 ? "default" : "outline"}
                 size="sm"
                 className="h-9 px-2.5 text-xs font-semibold"
@@ -247,6 +249,7 @@ export const OrdersToolbar: React.FC<OrdersToolbarProps> = ({
         <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg border border-border/60 bg-muted/30 shrink-0">
           <Switch
             id="include-historical-toggle"
+            aria-label={isAr ? "تضمين الطلبات المؤرشفة" : "Include archived orders"}
             checked={includeHistorical}
             onCheckedChange={onIncludeHistoricalChange}
           />

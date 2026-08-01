@@ -1,7 +1,7 @@
 import { ExternalLink, ReceiptText, Calendar, User, CreditCard } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { Card } from "@/components/ui/card";
-import { formatMoney, formatDate } from "@/lib/format";
+import { formatMoney, formatDate, formatOrderStatus } from "@/lib/format";
 import { getOrderCustomerName } from "@/lib/order-customer-snapshot";
 import { OsStatusPill } from "@/components/os/os-status-pill";
 
@@ -90,7 +90,7 @@ export function DashboardActivityQueue({
                       }
                       dot
                     >
-                      {o.status}
+                      {formatOrderStatus(o.status, null, lang)}
                     </OsStatusPill>
                   </td>
                   <td className="py-3 px-4 text-end font-bold tabular-nums text-foreground">
@@ -137,7 +137,7 @@ export function DashboardActivityQueue({
                   }
                   dot
                 >
-                  {o.status}
+                  {formatOrderStatus(o.status, null, lang)}
                 </OsStatusPill>
               </div>
 

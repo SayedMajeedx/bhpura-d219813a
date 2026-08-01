@@ -21,7 +21,9 @@ test.describe("P0 - Runtime & Mobile Orders Correctness", () => {
       };
       try {
         window.localStorage.setItem("sb-ikciahnuqhemvnyfvbyp-auth-token", JSON.stringify(session));
-      } catch {}
+      } catch {
+        /* ignore storage error */
+      }
     });
 
     // Mock Supabase Auth

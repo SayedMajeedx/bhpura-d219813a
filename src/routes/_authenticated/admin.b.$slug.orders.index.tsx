@@ -615,7 +615,7 @@ function OrdersList() {
 
   // Reset page when sorting, search, filters or page size change
   useEffect(() => {
-    setPage(1);
+    if (page !== 1) setPage(1);
   }, [
     search,
     paymentFilter,
@@ -624,6 +624,7 @@ function OrdersList() {
     sortField,
     sortDirection,
     pageSize,
+    page,
   ]);
 
   useRealtimeInvalidate(
@@ -1010,10 +1011,7 @@ function OrdersList() {
       }
     };
 
-    if (
-      workflow.nextAction === "resolve_delivery_failure" ||
-      workflow.nextAction === "review_order"
-    ) {
+    if (workflow.nextAction === "resolve_delivery_failure") {
       return (
         <Button size="sm" variant="destructive" className="h-8 px-3 text-xs font-semibold" asChild>
           <Link
@@ -1021,7 +1019,26 @@ function OrdersList() {
             params={{ slug, id: o.id }}
             onClick={(e) => e.stopPropagation()}
           >
-            {lang === "ar" ? "مراجعة الطلب" : "Resolve issue"}
+            {lang === "ar" ? "معالجة المشكلة" : "Resolve issue"}
+          </Link>
+        </Button>
+      );
+    }
+
+    if (workflow.nextAction === "review_order") {
+      return (
+        <Button
+          size="sm"
+          variant="outline"
+          className="h-8 px-3 text-xs font-semibold border-primary/40 text-primary hover:bg-primary/10"
+          asChild
+        >
+          <Link
+            to="/admin/b/$slug/orders/$id"
+            params={{ slug, id: o.id }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {lang === "ar" ? "معاينة الطلب" : "Review order"}
           </Link>
         </Button>
       );
@@ -2842,10 +2859,16 @@ function OrderQuickInspectSheet({
               return acc + lineTotal;
             }, 0);
 
-            const subtotal = Number(order.subtotal ?? (itemsSum > 0 ? itemsSum : order.total ?? 0));
+            const subtotal = Number(
+              order.subtotal ?? (itemsSum > 0 ? itemsSum : (order.total ?? 0)),
+            );
             const discount = Number(order.discount ?? order.discount_amount ?? 0);
             let shipping = Number(
-              order.shipping ?? order.shipping_amount ?? order.delivery_fee ?? order.shipping_fee ?? 0,
+              order.shipping ??
+                order.shipping_amount ??
+                order.delivery_fee ??
+                order.shipping_fee ??
+                0,
             );
             const tax = Number(order.tax_amount ?? order.vat ?? order.tax ?? 0);
             const advancePaid = Number(order.advance_paid ?? order.paid_amount ?? 0);
@@ -2884,25 +2907,27 @@ function OrderQuickInspectSheet({
 
                   {shipping > 0 && (
                     <div className="flex justify-between items-center text-indigo-600 dark:text-indigo-400">
-                      <span>{isAr ? "رسوم الشحن والتوصيل (Delivery Fee):" : "Shipping & Delivery Fee:"}</span>
-                      <span className="font-bold">
-                        +{formatMoney(shipping, currency, locale)}
+                      <span>
+                        {isAr ? "رسوم الشحن والتوصيل (Delivery Fee):" : "Shipping & Delivery Fee:"}
                       </span>
+                      <span className="font-bold">+{formatMoney(shipping, currency, locale)}</span>
                     </div>
                   )}
 
                   {tax > 0 && (
                     <div className="flex justify-between items-center text-amber-600 dark:text-amber-400">
                       <span>{isAr ? "ضريبة القيمة المضافة (VAT):" : "VAT / Tax:"}</span>
-                      <span className="font-bold">
-                        +{formatMoney(tax, currency, locale)}
-                      </span>
+                      <span className="font-bold">+{formatMoney(tax, currency, locale)}</span>
                     </div>
                   )}
 
                   {advancePaid > 0 && (
                     <div className="flex justify-between items-center text-emerald-600 dark:text-emerald-400 pt-1 border-t border-border/40">
-                      <span>{isAr ? "الدفعة المقدمة المدفوعة (Deposit Paid):" : "Advance Paid / Deposit:"}</span>
+                      <span>
+                        {isAr
+                          ? "الدفعة المقدمة المدفوعة (Deposit Paid):"
+                          : "Advance Paid / Deposit:"}
+                      </span>
                       <span className="font-bold">
                         -{formatMoney(advancePaid, currency, locale)}
                       </span>
@@ -2911,7 +2936,11 @@ function OrderQuickInspectSheet({
 
                   {advancePaid > 0 && codRemaining > 0 && (
                     <div className="flex justify-between items-center text-amber-600 dark:text-amber-400 font-bold bg-amber-500/10 p-1.5 rounded-lg border border-amber-500/20">
-                      <span>{isAr ? "المتبقي للتحصيل عند التسليم (COD Balance):" : "Remaining COD Balance:"}</span>
+                      <span>
+                        {isAr
+                          ? "المتبقي للتحصيل عند التسليم (COD Balance):"
+                          : "Remaining COD Balance:"}
+                      </span>
                       <span>{formatMoney(codRemaining, currency, locale)}</span>
                     </div>
                   )}
