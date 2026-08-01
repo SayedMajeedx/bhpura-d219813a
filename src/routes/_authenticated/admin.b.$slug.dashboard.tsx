@@ -605,172 +605,356 @@ function Dashboard() {
         lowStockCount={inventoryIntel.lowStockCount}
       />
 
-      {/* Primary Financial KPIs (Top Row) */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {primaryKpis.map((k) => {
-          const Icon = k.icon;
-          const hasDelta = typeof (k as any).deltaPct === "number";
-          const delta = (k as any).deltaPct ?? 0;
-          const isPositive = delta >= 0;
+      {/* Dynamic View 1: Financial Telemetry (Default / "financials") */}
+      {activeScope === "financials" && (
+        <div className="space-y-4 animate-in fade-in duration-200">
+          {/* Primary Financial KPIs (Top Row) */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {primaryKpis.map((k) => {
+              const Icon = k.icon;
+              const hasDelta = typeof (k as any).deltaPct === "number";
+              const delta = (k as any).deltaPct ?? 0;
+              const isPositive = delta >= 0;
 
-          return (
-            <Card
-              key={k.label}
-              className={`relative overflow-hidden p-4 transition-all duration-300 bg-gradient-to-br ${k.bg} hover:shadow-lg border border-border/60 rounded-2xl bg-card/60 backdrop-blur-sm ${k.border}`}
-            >
-              <div className="min-w-0">
-                <div className="flex items-center justify-between gap-2">
-                  <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground/90 leading-tight line-clamp-2">
-                    {k.label}
-                  </p>
-                  <div className="flex items-center gap-1.5 shrink-0">
-                    {hasDelta && (
-                      <span
-                        title={
-                          isAr ? "مقارنة بـ 30 يومًا السابقة" : "Compared to previous 30-day period"
-                        }
-                        className={`inline-flex items-center text-[10px] font-bold px-1.5 py-0.5 rounded-full border ${
-                          isPositive
-                            ? "bg-emerald-50 text-emerald-600 border-emerald-200 dark:bg-emerald-950/30 dark:border-emerald-800 dark:text-emerald-400"
-                            : "bg-rose-50 text-rose-600 border-rose-200 dark:bg-rose-950/30 dark:border-rose-800 dark:text-rose-400"
-                        }`}
-                      >
-                        {isPositive ? (
-                          <ArrowUpRight className="h-3 w-3 me-0.5" />
-                        ) : (
-                          <ArrowDownRight className="h-3 w-3 me-0.5" />
+              return (
+                <Card
+                  key={k.label}
+                  className={`relative overflow-hidden p-4 transition-all duration-300 bg-gradient-to-br ${k.bg} hover:shadow-lg border border-border/60 rounded-2xl bg-card/60 backdrop-blur-sm ${k.border}`}
+                >
+                  <div className="min-w-0">
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground/90 leading-tight line-clamp-2">
+                        {k.label}
+                      </p>
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        {hasDelta && (
+                          <span
+                            title={
+                              isAr
+                                ? "مقارنة بـ 30 يومًا السابقة"
+                                : "Compared to previous 30-day period"
+                            }
+                            className={`inline-flex items-center text-[10px] font-bold px-1.5 py-0.5 rounded-full border ${
+                              isPositive
+                                ? "bg-emerald-50 text-emerald-600 border-emerald-200 dark:bg-emerald-950/30 dark:border-emerald-800 dark:text-emerald-400"
+                                : "bg-rose-50 text-rose-600 border-rose-200 dark:bg-rose-950/30 dark:border-rose-800 dark:text-rose-400"
+                            }`}
+                          >
+                            {isPositive ? (
+                              <ArrowUpRight className="h-3 w-3 me-0.5" />
+                            ) : (
+                              <ArrowDownRight className="h-3 w-3 me-0.5" />
+                            )}
+                            {Math.abs(delta).toFixed(1)}%
+                          </span>
                         )}
-                        {Math.abs(delta).toFixed(1)}%
-                      </span>
-                    )}
-                    <div
-                      className={`flex h-8 w-8 items-center justify-center rounded-xl bg-background/80 shadow-2xs border border-border/50 ${k.color}`}
-                    >
-                      <Icon className="h-4 w-4" />
+                        <div
+                          className={`flex h-8 w-8 items-center justify-center rounded-xl bg-background/80 shadow-2xs border border-border/50 ${k.color}`}
+                        >
+                          <Icon className="h-4 w-4" />
+                        </div>
+                      </div>
                     </div>
+
+                    <div className="mt-2.5 flex items-baseline">
+                      <p className="font-display text-xl sm:text-2xl font-extrabold tracking-tight text-foreground tabular-nums truncate">
+                        {k.value}
+                      </p>
+                    </div>
+                    <p className="mt-1 text-xs font-medium leading-snug text-muted-foreground line-clamp-1">
+                      {k.subValue}
+                    </p>
                   </div>
+                </Card>
+              );
+            })}
+          </div>
+
+          {/* Middle Multi-Column Grid: Sales Trajectory & Action Feed */}
+          <div className="grid grid-cols-1 lg:grid-cols-5 gap-5 items-start">
+            {canViewFinancials && (
+              <Card className="lg:col-span-3 p-5 border border-border/60 shadow-sm rounded-2xl bg-card/80 backdrop-blur-sm space-y-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <div>
+                    <h3 className="text-base font-bold font-heading flex items-center gap-2">
+                      <TrendingUp className="h-4.5 w-4.5 text-emerald-500" />
+                      {isAr
+                        ? "اتجاه المبيعات اليومية (آخر 30 يومًا)"
+                        : "Daily Sales Performance (30 Days)"}
+                    </h3>
+                    <p className="text-[11px] text-muted-foreground">
+                      {isAr
+                        ? "مخطط حركة إجمالي المبيعات والطلبات اليومية المؤكدة"
+                        : "Daily revenue trajectory and completed volume trends."}
+                    </p>
+                  </div>
+                  <span className="text-xs font-bold text-primary font-mono bg-primary/10 px-2.5 py-1 rounded-full border border-primary/20 w-fit">
+                    {formatMoney(financials.revenueCurrent, currency, locale)}
+                    {isAr ? " (إجمالي 30 يوم)" : " (30-Day Total)"}
+                  </span>
                 </div>
 
-                <div className="mt-2.5 flex items-baseline">
-                  <p className="font-display text-xl sm:text-2xl font-extrabold tracking-tight text-foreground tabular-nums truncate">
-                    {k.value}
+                <div className="h-52 w-full pt-1">
+                  {isMounted ? (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <AreaChart
+                        data={financials.dailyChartSeries}
+                        margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
+                      >
+                        <defs>
+                          <linearGradient id="salesGrad" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="#10b981" stopOpacity={0.35} />
+                            <stop offset="95%" stopColor="#10b981" stopOpacity={0.0} />
+                          </linearGradient>
+                        </defs>
+                        <XAxis
+                          dataKey="date"
+                          tick={{ fontSize: 10 }}
+                          stroke="#888888"
+                          tickLine={false}
+                        />
+                        <YAxis tick={{ fontSize: 10 }} stroke="#888888" tickLine={false} />
+                        <Tooltip
+                          content={({ active, payload }) => {
+                            if (active && payload && payload.length) {
+                              const data = payload[0].payload;
+                              return (
+                                <div className="rounded-xl border bg-popover/95 p-2.5 shadow-xl backdrop-blur-md text-xs space-y-1">
+                                  <p className="font-bold text-foreground">{data.date}</p>
+                                  <p className="text-emerald-500 font-mono font-bold">
+                                    {formatMoney(Number(data.sales), currency, locale)}
+                                  </p>
+                                  <p className="text-muted-foreground text-[11px]">
+                                    {data.orders} {isAr ? "طلبات مؤكدة" : "confirmed orders"}
+                                  </p>
+                                </div>
+                              );
+                            }
+                            return null;
+                          }}
+                        />
+                        <Area
+                          type="monotone"
+                          dataKey="sales"
+                          stroke="#10b981"
+                          strokeWidth={2}
+                          fillOpacity={1}
+                          fill="url(#salesGrad)"
+                        />
+                      </AreaChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <div className="h-full w-full animate-pulse bg-muted rounded-xl" />
+                  )}
+                </div>
+              </Card>
+            )}
+
+            {/* Action Needed Feed */}
+            <Card
+              className={
+                canViewFinancials
+                  ? "lg:col-span-2 p-5 border border-border/60 shadow-sm rounded-2xl bg-card/80 backdrop-blur-sm space-y-3"
+                  : "lg:col-span-5 p-5 border border-border/60 shadow-sm rounded-2xl bg-card/80 backdrop-blur-sm space-y-3"
+              }
+            >
+              <div className="flex items-center justify-between pb-2 border-b border-border/60">
+                <div className="flex items-center gap-2">
+                  <AlertCircle className="h-4.5 w-4.5 text-amber-500" />
+                  <h3 className="font-bold text-base font-heading text-foreground">
+                    {isAr ? "طلبات تتطلب إجراءً" : "Action Needed Feed"}
+                  </h3>
+                </div>
+                <Link
+                  to="/admin/b/$slug/orders"
+                  params={{ slug }}
+                  className="text-xs font-semibold text-primary hover:underline flex items-center gap-1"
+                >
+                  {isAr ? "إدارة الطلبات ←" : "Triage ←"}
+                </Link>
+              </div>
+
+              {actionNeededOrders.length === 0 ? (
+                <div className="p-6 text-center text-xs text-muted-foreground bg-secondary/10 rounded-xl border border-dashed border-border space-y-1">
+                  <CheckCircle2 className="h-6 w-6 text-emerald-500 mx-auto" />
+                  <p className="font-bold text-foreground">
+                    {isAr ? "جميع الطلبات محدثة!" : "All orders up to date!"}
+                  </p>
+                  <p>
+                    {isAr
+                      ? "لا توجد طلبات تحتاج إلى إجراء فوري حاليًا."
+                      : "No urgent pending merchant actions required."}
                   </p>
                 </div>
-                <p className="mt-1 text-xs font-medium leading-snug text-muted-foreground line-clamp-1">
-                  {k.subValue}
-                </p>
-              </div>
+              ) : (
+                <div className="space-y-2">
+                  {actionNeededOrders.map((o) => (
+                    <div
+                      key={o.id}
+                      className="p-2.5 bg-background/80 border border-border/60 rounded-xl flex items-center justify-between gap-3 text-xs hover:border-primary/40 transition-all shadow-2xs"
+                    >
+                      <div className="min-w-0">
+                        <Link
+                          to="/admin/b/$slug/orders/$id"
+                          params={{ slug, id: o.id }}
+                          className="font-bold text-primary hover:underline block truncate"
+                        >
+                          #{o.invoice_number} —{" "}
+                          {getOrderCustomerName(o) || (isAr ? "عميل" : "Customer")}
+                        </Link>
+                        <span className="text-[11px] text-muted-foreground">
+                          {formatDate(o.created_at, locale)}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <span className="font-mono font-bold text-foreground">
+                          {formatMoney(Number(o.total), o.currency, locale)}
+                        </span>
+                        <Link
+                          to="/admin/b/$slug/orders/$id"
+                          params={{ slug, id: o.id }}
+                          className="h-6 px-2 rounded-md bg-primary/10 text-primary text-[10px] font-bold flex items-center gap-1 hover:bg-primary/20 transition-colors"
+                        >
+                          {isAr ? "إجراء" : "Action"}
+                        </Link>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </Card>
-          );
-        })}
-      </div>
-
-      {/* Secondary Diagnostics Row (Inventory & CRM Diagnostics with Explicit Labels) */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <Card className="p-3.5 border border-border/60 bg-card/60 rounded-2xl flex items-center justify-between gap-3 shadow-2xs">
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="h-9 w-9 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 flex items-center justify-center shrink-0">
-              <Package className="h-4.5 w-4.5" />
-            </div>
-            <div className="min-w-0">
-              <p className="text-xs font-bold text-foreground truncate">
-                {isAr ? "تشخيص مستويات المخزون" : "Inventory Stock Diagnostics"}
-              </p>
-              <p className="text-[11px] text-muted-foreground truncate">
-                {isAr
-                  ? `بضائع منخفضة: ${inventoryIntel.lowStockCount} | بضائع راكدة: ${inventoryIntel.deadStockCount}`
-                  : `Low Stock: ${inventoryIntel.lowStockCount} items | Dead Stock: ${inventoryIntel.deadStockCount} items`}
-              </p>
-            </div>
           </div>
-          <Link
-            to="/admin/b/$slug/inventory"
-            params={{ slug }}
-            className="text-xs font-semibold text-primary hover:underline shrink-0"
-          >
-            {isAr ? "المخزون ←" : "View →"}
-          </Link>
-        </Card>
 
-        <Card className="p-3.5 border border-border/60 bg-card/60 rounded-2xl flex items-center justify-between gap-3 shadow-2xs">
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="h-9 w-9 rounded-xl bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20 flex items-center justify-center shrink-0">
-              <Users className="h-4.5 w-4.5" />
-            </div>
-            <div className="min-w-0">
-              <p className="text-xs font-bold text-foreground truncate">
-                {isAr ? "توزيع شرائح العملاء" : "Customer Tier Segmentation"}
-              </p>
-              <p className="text-[11px] text-muted-foreground truncate">
-                {isAr
-                  ? `عملاء مميزون (VIP): ${crmStats.vipCount} | معرضون للتسرب: ${crmStats.churnRiskCount}`
-                  : `VIP Customers: ${crmStats.vipCount} | At Churn Risk: ${crmStats.churnRiskCount}`}
-              </p>
-            </div>
+          {/* Lower Feed: Activity Queue & Low Stock Alerts */}
+          <div className="grid grid-cols-1 lg:grid-cols-5 gap-5 items-start">
+            <Card className="lg:col-span-3 p-5 border border-border/60 shadow-sm rounded-2xl bg-card/80 backdrop-blur-sm space-y-3">
+              <div className="flex items-center justify-between pb-2 border-b border-border/60">
+                <div className="flex items-center gap-2">
+                  <ReceiptText className="h-4.5 w-4.5 text-primary" />
+                  <h3 className="font-bold text-base font-heading text-foreground">
+                    {t("dashboard.recentOrders")}
+                  </h3>
+                </div>
+                <Link
+                  to="/admin/b/$slug/orders"
+                  params={{ slug }}
+                  className="text-xs text-primary font-semibold hover:underline flex items-center gap-1"
+                >
+                  {isAr ? "عرض كل الطلبات ←" : "View All Orders →"}
+                </Link>
+              </div>
+
+              <DashboardActivityQueue
+                lang={isAr ? "ar" : "en"}
+                slug={slug}
+                orders={recentOrdersQ.data ?? []}
+                currency={currency}
+                locale={locale}
+              />
+            </Card>
+
+            <Card className="lg:col-span-2 p-5 border border-border/60 shadow-sm rounded-2xl bg-card/80 backdrop-blur-sm space-y-3">
+              <div className="flex items-center justify-between pb-2 border-b border-border/60">
+                <div className="flex items-center gap-2">
+                  <Package className="h-4.5 w-4.5 text-amber-500" />
+                  <h3 className="font-bold text-base font-heading text-foreground">
+                    {isAr ? "تنبيهات انخفاض المخزون" : "Low Stock Alerts"}
+                  </h3>
+                </div>
+                <Link
+                  to="/admin/b/$slug/inventory"
+                  params={{ slug }}
+                  className="text-xs text-primary font-semibold hover:underline flex items-center gap-1"
+                >
+                  {isAr ? "المخزون ←" : "Inventory →"}
+                </Link>
+              </div>
+
+              {inventoryIntel.lowStockVariants.length === 0 ? (
+                <div className="p-6 text-center text-xs text-muted-foreground bg-secondary/10 rounded-xl border border-dashed border-border space-y-1">
+                  <CheckCircle2 className="h-6 w-6 text-emerald-500 mx-auto" />
+                  <p className="font-bold text-foreground">
+                    {isAr ? "جميع المستويات مستقرة" : "Stock Levels Healthy"}
+                  </p>
+                  <p>
+                    {isAr
+                      ? "لا توجد بضائع منخفضة أو مشرفة على النفاد."
+                      : "All product stock levels are fully replenished."}
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {inventoryIntel.lowStockVariants.map((item) => (
+                    <div
+                      key={item.id}
+                      className="p-2.5 bg-amber-500/10 border border-amber-500/20 rounded-xl flex items-center justify-between gap-2 text-xs"
+                    >
+                      <span className="font-semibold text-foreground truncate max-w-[180px]">
+                        {item.name}
+                      </span>
+                      <span className="text-[10px] shrink-0 font-bold bg-amber-500/20 text-amber-700 dark:text-amber-400 px-2 py-0.5 rounded-full">
+                        {item.stock === 0
+                          ? isAr
+                            ? "نفذ"
+                            : "Out of stock"
+                          : `${item.stock} ${isAr ? "وحدات" : "units"}`}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </Card>
           </div>
-          <Link
-            to="/admin/b/$slug/customers"
-            params={{ slug }}
-            className="text-xs font-semibold text-primary hover:underline shrink-0"
-          >
-            {isAr ? "العملاء ←" : "View →"}
-          </Link>
-        </Card>
-      </div>
+        </div>
+      )}
 
-      {/* Middle Multi-Column Grid: Sales Trajectory Chart (60%) & Operational Attention Center (40%) */}
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-5 items-start">
-        {/* Sales Trajectory Area Chart (3 Columns) */}
-        {canViewFinancials && (
-          <Card className="lg:col-span-3 p-5 border border-border/60 shadow-sm rounded-2xl bg-card/80 backdrop-blur-sm space-y-3">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+      {/* Dynamic View 2: Expanded Sales Chart Series ("sales_series") */}
+      {activeScope === "sales_series" && (
+        <div className="space-y-4 animate-in fade-in duration-200">
+          <Card className="p-6 border border-border/60 shadow-md rounded-2xl bg-card/90 space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-border/60">
               <div>
-                <h3 className="text-base font-bold font-heading flex items-center gap-2">
-                  <TrendingUp className="h-4.5 w-4.5 text-emerald-500" />
-                  {isAr
-                    ? "اتجاه المبيعات اليومية (آخر 30 يومًا)"
-                    : "Daily Sales Performance (30 Days)"}
+                <h3 className="text-lg font-extrabold flex items-center gap-2 text-foreground">
+                  <CalendarDays className="h-5 w-5 text-emerald-500" />
+                  {isAr ? "مخطط حركة المبيعات اليومية التفصيلي" : "Daily Sales Trajectory Chart"}
                 </h3>
-                <p className="text-[11px] text-muted-foreground">
+                <p className="text-xs text-muted-foreground">
                   {isAr
-                    ? "مخطط حركة إجمالي المبيعات والطلبات اليومية المؤكدة"
-                    : "Daily revenue trajectory and completed volume trends."}
+                    ? "تحليل نمو المبيعات وإيرادات المتجر اليومية للـ 30 يومًا الماضية"
+                    : "Detailed daily revenue breakdown over the last 30 operational days."}
                 </p>
               </div>
-              <span className="text-xs font-bold text-primary font-mono bg-primary/10 px-2.5 py-1 rounded-full border border-primary/20 w-fit">
-                {formatMoney(financials.revenueCurrent, currency, locale)}
-                {isAr ? " (إجمالي 30 يوم)" : " (30-Day Total)"}
-              </span>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-mono font-bold bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 px-3 py-1.5 rounded-xl border border-emerald-500/20">
+                  {isAr ? "الإجمالي: " : "Total: "}
+                  {formatMoney(financials.revenueCurrent, currency, locale)}
+                </span>
+              </div>
             </div>
 
-            <div className="h-52 w-full pt-1">
+            <div className="h-80 w-full pt-2">
               {isMounted ? (
                 <ResponsiveContainer width="100%" height="100%">
                   <AreaChart
                     data={financials.dailyChartSeries}
-                    margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
+                    margin={{ top: 15, right: 15, left: -10, bottom: 0 }}
                   >
                     <defs>
-                      <linearGradient id="salesGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#10b981" stopOpacity={0.35} />
+                      <linearGradient id="salesGradExpanded" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#10b981" stopOpacity={0.4} />
                         <stop offset="95%" stopColor="#10b981" stopOpacity={0.0} />
                       </linearGradient>
                     </defs>
-                    <XAxis
-                      dataKey="date"
-                      tick={{ fontSize: 10 }}
-                      stroke="#888888"
-                      tickLine={false}
-                    />
-                    <YAxis tick={{ fontSize: 10 }} stroke="#888888" tickLine={false} />
+                    <XAxis dataKey="date" tick={{ fontSize: 11 }} stroke="#888888" />
+                    <YAxis tick={{ fontSize: 11 }} stroke="#888888" />
                     <Tooltip
                       content={({ active, payload }) => {
                         if (active && payload && payload.length) {
                           const data = payload[0].payload;
                           return (
-                            <div className="rounded-xl border bg-popover/95 p-2.5 shadow-xl backdrop-blur-md text-xs space-y-1">
+                            <div className="rounded-xl border bg-popover/95 p-3 shadow-xl backdrop-blur-md text-xs space-y-1">
                               <p className="font-bold text-foreground">{data.date}</p>
-                              <p className="text-emerald-500 font-mono font-bold">
+                              <p className="text-emerald-500 font-mono font-extrabold text-sm">
                                 {formatMoney(Number(data.sales), currency, locale)}
                               </p>
                               <p className="text-muted-foreground text-[11px]">
@@ -786,9 +970,9 @@ function Dashboard() {
                       type="monotone"
                       dataKey="sales"
                       stroke="#10b981"
-                      strokeWidth={2}
+                      strokeWidth={3}
                       fillOpacity={1}
-                      fill="url(#salesGrad)"
+                      fill="url(#salesGradExpanded)"
                     />
                   </AreaChart>
                 </ResponsiveContainer>
@@ -797,165 +981,119 @@ function Dashboard() {
               )}
             </div>
           </Card>
-        )}
+        </div>
+      )}
 
-        {/* Operational Attention Center Feed (2 Columns) */}
-        <Card
-          className={
-            canViewFinancials
-              ? "lg:col-span-2 p-5 border border-border/60 shadow-sm rounded-2xl bg-card/80 backdrop-blur-sm space-y-3"
-              : "lg:col-span-5 p-5 border border-border/60 shadow-sm rounded-2xl bg-card/80 backdrop-blur-sm space-y-3"
-          }
-        >
-          <div className="flex items-center justify-between pb-2 border-b border-border/60">
-            <div className="flex items-center gap-2">
-              <AlertCircle className="h-4.5 w-4.5 text-amber-500" />
-              <h3 className="font-bold text-base font-heading text-foreground">
-                {isAr ? "طلبات تتطلب إجراءً" : "Action Needed Feed"}
-              </h3>
-            </div>
-            <Link
-              to="/admin/b/$slug/orders"
-              params={{ slug }}
-              className="text-xs font-semibold text-primary hover:underline flex items-center gap-1"
-            >
-              {isAr ? "إدارة الطلبات ←" : "Triage ←"}
-            </Link>
-          </div>
-
-          {actionNeededOrders.length === 0 ? (
-            <div className="p-6 text-center text-xs text-muted-foreground bg-secondary/10 rounded-xl border border-dashed border-border space-y-1">
-              <CheckCircle2 className="h-6 w-6 text-emerald-500 mx-auto" />
-              <p className="font-bold text-foreground">
-                {isAr ? "جميع الطلبات محدثة!" : "All orders up to date!"}
-              </p>
-              <p>
-                {isAr
-                  ? "لا توجد طلبات تحتاج إلى إجراء فوري حاليًا."
-                  : "No urgent pending merchant actions required."}
-              </p>
-            </div>
-          ) : (
-            <div className="space-y-2">
-              {actionNeededOrders.map((o) => (
-                <div
-                  key={o.id}
-                  className="p-2.5 bg-background/80 border border-border/60 rounded-xl flex items-center justify-between gap-3 text-xs hover:border-primary/40 transition-all shadow-2xs"
-                >
-                  <div className="min-w-0">
-                    <Link
-                      to="/admin/b/$slug/orders/$id"
-                      params={{ slug, id: o.id }}
-                      className="font-bold text-primary hover:underline block truncate"
-                    >
-                      #{o.invoice_number} —{" "}
-                      {getOrderCustomerName(o) || (isAr ? "عميل" : "Customer")}
-                    </Link>
-                    <span className="text-[11px] text-muted-foreground">
-                      {formatDate(o.created_at, locale)}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    <span className="font-mono font-bold text-foreground">
-                      {formatMoney(Number(o.total), o.currency, locale)}
-                    </span>
-                    <Link
-                      to="/admin/b/$slug/orders/$id"
-                      params={{ slug, id: o.id }}
-                      className="h-6 px-2 rounded-md bg-primary/10 text-primary text-[10px] font-bold flex items-center gap-1 hover:bg-primary/20 transition-colors"
-                    >
-                      {isAr ? "إجراء" : "Action"}
-                    </Link>
+      {/* Dynamic View 3: Diagnostics View ("diagnostics") */}
+      {activeScope === "diagnostics" && (
+        <div className="space-y-4 animate-in fade-in duration-200">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+            {/* Inventory Diagnostics Detailed Panel */}
+            <Card className="p-5 border border-border/60 shadow-md rounded-2xl bg-card/90 space-y-4">
+              <div className="flex items-center justify-between pb-3 border-b border-border/60">
+                <div className="flex items-center gap-2">
+                  <Package className="h-5 w-5 text-amber-500" />
+                  <div>
+                    <h3 className="font-extrabold text-base text-foreground">
+                      {isAr ? "تشخيص المخزون والبضائع" : "Inventory Stock Diagnostics"}
+                    </h3>
+                    <p className="text-xs text-muted-foreground">
+                      {isAr ? "تحديد المنتجات المنخفضة والراكدة" : "Low stock and dead stock alerts"}
+                    </p>
                   </div>
                 </div>
-              ))}
-            </div>
-          )}
-        </Card>
-      </div>
-
-      {/* Lower Multi-Column Grid: Recent Orders Feed (60%) & Inventory Low Stock Alerts (40%) */}
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-5 items-start">
-        {/* Recent Orders Feed (3 Columns) */}
-        <Card className="lg:col-span-3 p-5 border border-border/60 shadow-sm rounded-2xl bg-card/80 backdrop-blur-sm space-y-3">
-          <div className="flex items-center justify-between pb-2 border-b border-border/60">
-            <div className="flex items-center gap-2">
-              <ReceiptText className="h-4.5 w-4.5 text-primary" />
-              <h3 className="font-bold text-base font-heading text-foreground">
-                {t("dashboard.recentOrders")}
-              </h3>
-            </div>
-            <Link
-              to="/admin/b/$slug/orders"
-              params={{ slug }}
-              className="text-xs text-primary font-semibold hover:underline flex items-center gap-1"
-            >
-              {isAr ? "عرض كل الطلبات ←" : "View All Orders →"}
-            </Link>
-          </div>
-
-          <DashboardActivityQueue
-            lang={isAr ? "ar" : "en"}
-            slug={slug}
-            orders={recentOrdersQ.data ?? []}
-            currency={currency}
-            locale={locale}
-          />
-        </Card>
-
-        {/* Inventory Low-Stock Alerts (2 Columns) */}
-        <Card className="lg:col-span-2 p-5 border border-border/60 shadow-sm rounded-2xl bg-card/80 backdrop-blur-sm space-y-3">
-          <div className="flex items-center justify-between pb-2 border-b border-border/60">
-            <div className="flex items-center gap-2">
-              <Package className="h-4.5 w-4.5 text-amber-500" />
-              <h3 className="font-bold text-base font-heading text-foreground">
-                {isAr ? "تنبيهات انخفاض المخزون" : "Low Stock Alerts"}
-              </h3>
-            </div>
-            <Link
-              to="/admin/b/$slug/inventory"
-              params={{ slug }}
-              className="text-xs text-primary font-semibold hover:underline flex items-center gap-1"
-            >
-              {isAr ? "المخزون ←" : "Inventory →"}
-            </Link>
-          </div>
-
-          {inventoryIntel.lowStockVariants.length === 0 ? (
-            <div className="p-6 text-center text-xs text-muted-foreground bg-secondary/10 rounded-xl border border-dashed border-border space-y-1">
-              <CheckCircle2 className="h-6 w-6 text-emerald-500 mx-auto" />
-              <p className="font-bold text-foreground">
-                {isAr ? "جميع المستويات مستقرة" : "Stock Levels Healthy"}
-              </p>
-              <p>
-                {isAr
-                  ? "لا توجد بضائع منخفضة أو مشرفة على النفاد."
-                  : "All product stock levels are fully replenished."}
-              </p>
-            </div>
-          ) : (
-            <div className="space-y-2">
-              {inventoryIntel.lowStockVariants.map((item) => (
-                <div
-                  key={item.id}
-                  className="p-2.5 bg-amber-500/10 border border-amber-500/20 rounded-xl flex items-center justify-between gap-2 text-xs"
+                <Link
+                  to="/admin/b/$slug/inventory"
+                  params={{ slug }}
+                  className="text-xs font-bold text-primary hover:underline"
                 >
-                  <span className="font-semibold text-foreground truncate max-w-[180px]">
-                    {item.name}
-                  </span>
-                  <span className="text-[10px] shrink-0 font-bold bg-amber-500/20 text-amber-700 dark:text-amber-400 px-2 py-0.5 rounded-full">
-                    {item.stock === 0
-                      ? isAr
-                        ? "نفذ"
-                        : "Out of stock"
-                      : `${item.stock} ${isAr ? "وحدات" : "units"}`}
-                  </span>
+                  {isAr ? "إدارة المخزون ←" : "Manage Stock →"}
+                </Link>
+              </div>
+
+              {inventoryIntel.lowStockVariants.length === 0 ? (
+                <div className="p-8 text-center text-xs text-muted-foreground bg-emerald-500/10 rounded-xl border border-emerald-500/20 space-y-1">
+                  <CheckCircle2 className="h-8 w-8 text-emerald-500 mx-auto" />
+                  <p className="font-bold text-foreground text-sm">
+                    {isAr ? "جميع المستويات مستقرة!" : "Stock Healthy!"}
+                  </p>
+                  <p>{isAr ? "لا توجد بضائع منخفضة." : "No low stock items detected."}</p>
                 </div>
-              ))}
-            </div>
-          )}
-        </Card>
-      </div>
+              ) : (
+                <div className="space-y-2">
+                  {inventoryIntel.lowStockVariants.map((item) => (
+                    <div
+                      key={item.id}
+                      className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl flex items-center justify-between gap-3 text-xs"
+                    >
+                      <div>
+                        <p className="font-bold text-foreground">{item.name}</p>
+                        <p className="text-[10px] text-muted-foreground">
+                          {isAr ? "مستوى المخزون الحالي" : "Current stock quantity"}
+                        </p>
+                      </div>
+                      <Link
+                        to="/admin/b/$slug/inventory"
+                        params={{ slug }}
+                        className="px-2.5 py-1 rounded-lg text-xs font-bold bg-amber-500/20 text-amber-700 dark:text-amber-400 hover:bg-amber-500/30 transition-colors"
+                      >
+                        {item.stock === 0
+                          ? isAr
+                            ? "نفذ — إكمال المخزون"
+                            : "Out of Stock — Reorder"
+                          : `${item.stock} ${isAr ? "وحدات المتبقية" : "units remaining"}`}
+                      </Link>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </Card>
+
+            {/* CRM Customer Diagnostics Panel */}
+            <Card className="p-5 border border-border/60 shadow-md rounded-2xl bg-card/90 space-y-4">
+              <div className="flex items-center justify-between pb-3 border-b border-border/60">
+                <div className="flex items-center gap-2">
+                  <Users className="h-5 w-5 text-indigo-500" />
+                  <div>
+                    <h3 className="font-extrabold text-base text-foreground">
+                      {isAr ? "تشخيص ورعاية العملاء (CRM)" : "CRM Customer Diagnostics"}
+                    </h3>
+                    <p className="text-xs text-muted-foreground">
+                      {isAr ? "متابعة العملاء المميزين والمعرضين للتسرب" : "VIP retention & churn risk tracking"}
+                    </p>
+                  </div>
+                </div>
+                <Link
+                  to="/admin/b/$slug/customers"
+                  params={{ slug }}
+                  className="text-xs font-bold text-primary hover:underline"
+                >
+                  {isAr ? "سجل العملاء ←" : "Customer List →"}
+                </Link>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="p-4 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-center space-y-1">
+                  <p className="text-2xl font-extrabold font-mono text-indigo-600 dark:text-indigo-400">
+                    {crmStats.vipCount}
+                  </p>
+                  <p className="text-xs font-bold text-foreground">
+                    {isAr ? "عملاء مميزون (VIP)" : "VIP Customers"}
+                  </p>
+                </div>
+                <div className="p-4 rounded-xl bg-rose-500/10 border border-rose-500/20 text-center space-y-1">
+                  <p className="text-2xl font-extrabold font-mono text-rose-600 dark:text-rose-400">
+                    {crmStats.churnRiskCount}
+                  </p>
+                  <p className="text-xs font-bold text-foreground">
+                    {isAr ? "معرضون للتسرب" : "At Churn Risk"}
+                  </p>
+                </div>
+              </div>
+            </Card>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
