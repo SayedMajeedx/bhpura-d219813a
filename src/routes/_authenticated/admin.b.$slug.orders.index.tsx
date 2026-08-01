@@ -1033,8 +1033,7 @@ function OrdersList() {
         return (
           <Button
             size="sm"
-            variant="outline"
-            className="h-8 text-xs px-3 border-violet-300 text-violet-800 bg-violet-50 hover:bg-violet-100 dark:border-violet-800 dark:text-violet-200 dark:bg-violet-950/20 font-semibold"
+            className="h-8 text-xs px-3.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold shadow-2xs transition-all dark:bg-emerald-700 dark:hover:bg-emerald-800"
             disabled={updatingOrderId !== null}
             onClick={(e) => {
               e.stopPropagation();
@@ -1172,14 +1171,13 @@ function OrdersList() {
         return (
           <Button
             size="sm"
-            variant="outline"
-            className="h-8 text-xs px-3 border-emerald-300 text-emerald-800 bg-emerald-50 hover:bg-emerald-100 dark:border-emerald-800 dark:text-emerald-200 dark:bg-emerald-950/20 font-semibold"
+            className="h-8 text-xs px-3.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold shadow-2xs transition-all dark:bg-emerald-700 dark:hover:bg-emerald-800"
             disabled={updatingOrderId !== null}
             onClick={(e) => {
               e.stopPropagation();
               handleStatusUpdate(
                 { payment_status: "paid" },
-                lang === "ar" ? "تم تسجيل الدفع بنجاح!" : "Order payment marked as Paid!",
+                lang === "ar" ? "تم تسجيل وتأكيد الدفع بنجاح!" : "Order payment marked as Paid!",
               );
             }}
           >
