@@ -98,7 +98,7 @@ export function ExpenseMobileCard({
             variant="ghost"
             size="sm"
             onClick={() => onEdit(e)}
-            className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground gap-1"
+            className="h-9 px-3 text-xs font-medium text-muted-foreground hover:text-foreground gap-1.5 touch-manipulation"
           >
             <Pencil className="h-3.5 w-3.5" />
             <span>{isAr ? "تعديل" : "Edit"}</span>
@@ -107,7 +107,7 @@ export function ExpenseMobileCard({
             variant="ghost"
             size="sm"
             onClick={() => onDelete(e.id)}
-            className="h-7 px-2 text-xs text-rose-600 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-950/40 gap-1"
+            className="h-9 px-3 text-xs font-semibold text-rose-600 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-950/40 gap-1.5 touch-manipulation"
           >
             <Trash2 className="h-3.5 w-3.5" />
             <span>{isAr ? "حذف" : "Delete"}</span>
