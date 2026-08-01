@@ -5,10 +5,10 @@
   "type": "module",
   "scripts": {
     "dev": "vite dev",
-    "build": "vite build",
+    "build": "vite build && node -e \"import('fs').then(fs => { fs.mkdirSync('.output/server', { recursive: true }); if (fs.existsSync('dist/server/wrangler.json')) { fs.copyFileSync('dist/server/wrangler.json', '.output/server/wrangler.json'); } })\"",
     "build:dev": "vite build --mode development",
     "preview": "vite preview",
-    "deploy": "npm run build && wrangler deploy",
+    "deploy": "npm run build && wrangler deploy --config dist/server/wrangler.json",
     "cf-typegen": "wrangler types",
     "lint": "eslint .",
     "format": "prettier --write .",
