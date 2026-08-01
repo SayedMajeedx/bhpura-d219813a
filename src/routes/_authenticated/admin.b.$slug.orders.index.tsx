@@ -2763,26 +2763,59 @@ function OrderQuickInspectSheet({
               {isAr ? "المنتجات والأصناف" : "Order Line Items"}
             </h4>
             <div className="divide-y border rounded-xl overflow-hidden bg-card">
-              {items.map((it: any, idx: number) => (
-                <div
-                  key={it.id || idx}
-                  className="p-3.5 flex items-center justify-between gap-3 text-xs"
-                >
-                  <div>
-                    <div className="font-semibold text-sm">
-                      <span className="text-primary font-bold mr-1">{it.quantity}x</span>
-                      {it.name_en || it.name_ar || "Item"}
+              {items.map((it: any, idx: number) => {
+                const itemTitle =
+                  it.product_name ||
+                  it.product_title ||
+                  (isAr ? it.product_name_ar || it.name_ar : it.product_name_en || it.name_en) ||
+                  it.item_title ||
+                  it.title ||
+                  it.name ||
+                  it.products?.name ||
+                  it.products?.name_ar ||
+                  it.products?.name_en ||
+                  (isAr ? "منتج" : "Product");
+
+                const variantTitle =
+                  it.variant_title ||
+                  it.variant_name ||
+                  [it.size, it.color].filter(Boolean).join(" / ") ||
+                  it.variants?.title ||
+                  "";
+
+                const qty = it.quantity || it.qty || 1;
+                const unitPrice = Number(it.unit_price || it.price || 0);
+                const lineTotal = Number(
+                  it.line_total || it.total_price || it.total || qty * unitPrice,
+                );
+
+                return (
+                  <div
+                    key={it.id || idx}
+                    className="p-3.5 flex items-center justify-between gap-3 text-xs"
+                  >
+                    <div className="min-w-0">
+                      <div className="font-semibold text-sm text-foreground truncate">
+                        <span className="text-primary font-bold me-1.5">{qty}×</span>
+                        {itemTitle}
+                      </div>
+                      {variantTitle && (
+                        <div className="text-[11px] text-muted-foreground font-mono mt-0.5">
+                          {variantTitle}
+                        </div>
+                      )}
+                      {unitPrice > 0 && (
+                        <div className="text-[10px] text-muted-foreground font-mono">
+                          {qty} × {formatMoney(unitPrice, order.currency || "BHD", locale)}
+                        </div>
+                      )}
+                    </div>
+                    <div className="font-mono font-bold shrink-0 text-sm text-foreground">
+                      {formatMoney(lineTotal, order.currency || "BHD", locale)}
                     </div>
                   </div>
-                  <div className="font-mono font-bold shrink-0 text-sm">
-                    {formatMoney(
-                      Number(it.line_total || it.unit_price * it.quantity),
-                      order.currency || "BHD",
-                      locale,
-                    )}
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
 

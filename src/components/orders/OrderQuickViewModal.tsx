@@ -222,26 +222,49 @@ export function OrderQuickViewModal({
                       </td>
                     </tr>
                   ) : (
-                    items.map((it: any) => (
-                      <tr key={it.id || it.product_id} className="hover:bg-muted/20">
-                        <td className="p-2.5 font-semibold text-foreground">
-                          {it.product_name || it.title || (isAr ? "منتج" : "Product")}
-                          {it.variant_title && (
-                            <span className="text-[10px] text-muted-foreground block font-mono">
-                              {it.variant_title}
-                            </span>
-                          )}
-                        </td>
-                        <td className="p-2.5 text-center font-bold">{it.quantity || 1}</td>
-                        <td className="p-2.5 text-end font-mono font-bold">
-                          {formatMoney(
-                            Number(it.line_total || it.unit_price * (it.quantity || 1) || 0),
-                            currency,
-                            lang,
-                          )}
-                        </td>
-                      </tr>
-                    ))
+                    items.map((it: any, idx: number) => {
+                      const itemTitle =
+                        it.product_name ||
+                        it.product_title ||
+                        (isAr ? it.product_name_ar || it.name_ar : it.product_name_en || it.name_en) ||
+                        it.item_title ||
+                        it.title ||
+                        it.name ||
+                        it.products?.name ||
+                        it.products?.name_ar ||
+                        it.products?.name_en ||
+                        (isAr ? "منتج" : "Product");
+
+                      const variantTitle =
+                        it.variant_title ||
+                        it.variant_name ||
+                        [it.size, it.color].filter(Boolean).join(" / ") ||
+                        it.variants?.title ||
+                        "";
+
+                      const qty = it.quantity || it.qty || 1;
+                      const unitPrice = Number(it.unit_price || it.price || 0);
+                      const lineTotal = Number(
+                        it.line_total || it.total_price || it.total || qty * unitPrice,
+                      );
+
+                      return (
+                        <tr key={it.id || it.product_id || idx} className="hover:bg-muted/20">
+                          <td className="p-2.5 font-semibold text-foreground">
+                            <div>{itemTitle}</div>
+                            {variantTitle && (
+                              <span className="text-[10px] text-muted-foreground block font-mono">
+                                {variantTitle}
+                              </span>
+                            )}
+                          </td>
+                          <td className="p-2.5 text-center font-bold">{qty}</td>
+                          <td className="p-2.5 text-end font-mono font-bold">
+                            {formatMoney(lineTotal, currency, lang)}
+                          </td>
+                        </tr>
+                      );
+                    })
                   )}
                 </tbody>
               </table>
