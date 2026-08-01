@@ -3598,26 +3598,29 @@ function PremiumCurrencyInput({
   onChange,
   onBlur,
   className = "",
+  placeholder = "0.000",
 }: {
   value: string;
   onChange: (val: string) => void;
   onBlur?: (e: React.FocusEvent<HTMLInputElement>) => void;
   className?: string;
+  placeholder?: string;
 }) {
   return (
     <div
-      className="relative inline-flex items-center w-full max-w-[105px] shrink-0"
+      className="relative inline-flex items-center w-full min-w-[115px] max-w-[130px] shrink-0"
       onClick={(e) => e.stopPropagation()}
     >
       <input
         type="number"
         step="0.001"
-        className={`w-full h-9 pl-2 pr-7 text-center font-bold bg-background border border-input rounded-lg outline-none focus:ring-1 focus:ring-primary text-xs ${className}`}
+        placeholder={placeholder}
+        className={`w-full h-9.5 pl-2.5 pr-8 text-center font-mono font-bold bg-background border border-input rounded-xl outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary text-xs shadow-2xs transition-all [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none ${className}`}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         onBlur={onBlur}
       />
-      <span className="absolute right-2 text-[8px] font-black text-muted-foreground/50 pointer-events-none uppercase">
+      <span className="absolute end-2.5 text-[9px] font-black text-muted-foreground/60 pointer-events-none uppercase tracking-tight">
         BHD
       </span>
     </div>
@@ -3722,27 +3725,28 @@ function VariantDesktopRow({
       {/* Combined Variant Attributes */}
       <td className="px-2 py-3 text-start align-middle" onClick={(e) => e.stopPropagation()}>
         {isEditingAttrs ? (
-          <div className="flex flex-col gap-2 p-2 bg-secondary/40 border border-primary/25 rounded-xl max-w-[260px] shadow-sm animate-in fade-in duration-150">
-            <div className="grid grid-cols-2 gap-1.5">
+          <div className="flex flex-col gap-2.5 p-3 bg-card/95 backdrop-blur-md border border-primary/30 rounded-2xl w-[320px] sm:w-[350px] shadow-xl animate-in fade-in zoom-in-95 duration-150 relative z-40">
+            <div className="grid grid-cols-2 gap-2">
               <div>
-                <span className="text-[10px] font-bold text-muted-foreground">
+                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block mb-1">
                   {(isAr ? product?.variant_label_size_ar : product?.variant_label_size_en) ||
                     product?.variant_label_size_en ||
                     product?.variant_label_size_ar ||
                     (isAr ? "المقاس" : "Size")}
                 </span>
                 <input
-                  className="h-8 w-full px-2 rounded-md border border-input bg-background text-xs outline-none"
+                  className="h-9 w-full px-2.5 rounded-xl border border-input bg-background text-xs font-semibold outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                   value={sizeVal}
                   onChange={(e) => setSizeVal(e.target.value)}
+                  placeholder={isAr ? "المقاس" : "Size"}
                 />
               </div>
               <div>
-                <span className="text-[10px] font-bold text-muted-foreground">
+                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block mb-1">
                   {isAr ? "الوحدة" : "Unit"}
                 </span>
                 <select
-                  className="h-8 w-full px-1.5 rounded-md border border-input bg-background text-xs outline-none"
+                  className="h-9 w-full px-2 rounded-xl border border-input bg-background text-xs font-semibold outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                   value={sizeUnitVal}
                   onChange={(e) => setSizeUnitVal(e.target.value)}
                 >
@@ -3754,49 +3758,58 @@ function VariantDesktopRow({
                 </select>
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-1.5">
+            <div className="grid grid-cols-2 gap-2">
               <div>
-                <span className="text-[10px] font-bold text-muted-foreground">
+                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block mb-1">
                   {(isAr ? product?.variant_label_color_ar : product?.variant_label_color_en) ||
                     product?.variant_label_color_en ||
                     product?.variant_label_color_ar ||
                     (isAr ? "اللون" : "Color")}
                 </span>
                 <input
-                  className="h-8 w-full px-2 rounded-md border border-input bg-background text-xs outline-none"
+                  className="h-9 w-full px-2.5 rounded-xl border border-input bg-background text-xs font-semibold outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                   value={colorVal}
                   onChange={(e) => setColorVal(e.target.value)}
+                  placeholder={isAr ? "اللون" : "Color"}
                 />
               </div>
               <div>
-                <span className="text-[10px] font-bold text-muted-foreground">
+                <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block mb-1">
                   {(isAr ? product?.variant_label_fabric_ar : product?.variant_label_fabric_en) ||
                     product?.variant_label_fabric_en ||
                     product?.variant_label_fabric_ar ||
                     (isAr ? "الخامة" : "Fabric")}
                 </span>
                 <input
-                  className="h-8 w-full px-2 rounded-md border border-input bg-background text-xs outline-none"
+                  className="h-9 w-full px-2.5 rounded-xl border border-input bg-background text-xs font-semibold outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                   value={fabricVal}
                   onChange={(e) => setFabricVal(e.target.value)}
+                  placeholder={isAr ? "الخامة" : "Fabric"}
                 />
               </div>
             </div>
-            <div className="flex justify-end gap-1.5 pt-1.5 border-t border-border/55 mt-1">
-              <button
-                type="button"
-                className="h-7 w-7 rounded-md hover:bg-rose-50 hover:text-rose-600 flex items-center justify-center text-muted-foreground transition-colors"
-                onClick={() => setIsEditingAttrs(false)}
-              >
-                <X className="h-3.5 w-3.5" />
-              </button>
-              <button
-                type="button"
-                className="h-7 w-7 rounded-md hover:bg-emerald-50 hover:text-emerald-600 flex items-center justify-center text-muted-foreground transition-colors font-bold"
-                onClick={saveAttributes}
-              >
-                <Check className="h-3.5 w-3.5" />
-              </button>
+            <div className="flex items-center justify-between pt-2 border-t border-border/60 mt-0.5">
+              <span className="text-[10px] text-muted-foreground font-medium">
+                {isAr ? "تعديل المتغير" : "Edit Variant Attributes"}
+              </span>
+              <div className="flex gap-1.5">
+                <button
+                  type="button"
+                  className="h-8 px-3 rounded-lg hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-950/40 text-muted-foreground flex items-center gap-1 text-xs font-semibold transition-colors"
+                  onClick={() => setIsEditingAttrs(false)}
+                >
+                  <X className="h-3.5 w-3.5" />
+                  <span>{isAr ? "إلغاء" : "Cancel"}</span>
+                </button>
+                <button
+                  type="button"
+                  className="h-8 px-3 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 flex items-center gap-1 text-xs font-bold transition-all shadow-xs"
+                  onClick={saveAttributes}
+                >
+                  <Check className="h-3.5 w-3.5" />
+                  <span>{isAr ? "حفظ" : "Save"}</span>
+                </button>
+              </div>
             </div>
           </div>
         ) : (
