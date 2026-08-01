@@ -271,6 +271,91 @@ export function OrderQuickViewModal({
             </div>
           </div>
 
+          {/* Detailed Financial Price Breakdown */}
+          {(() => {
+            const itemsSum = items.reduce((acc: number, it: any) => {
+              const qty = it.quantity || it.qty || 1;
+              const unitPrice = Number(it.unit_price || it.price || 0);
+              const lineTotal = Number(it.line_total || it.total_price || qty * unitPrice);
+              return acc + lineTotal;
+            }, 0);
+
+            const subtotal = Number(order.subtotal ?? (itemsSum > 0 ? itemsSum : totalAmount));
+            const discount = Number(order.discount ?? order.discount_amount ?? 0);
+            let shipping = Number(
+              order.shipping ?? order.shipping_amount ?? order.delivery_fee ?? order.shipping_fee ?? 0,
+            );
+            const tax = Number(order.tax_amount ?? order.vat ?? order.tax ?? 0);
+            const advancePaid = Number(order.advance_paid ?? order.paid_amount ?? 0);
+            const netTotal = Number(order.total ?? order.total_amount ?? subtotal + shipping + tax - discount);
+
+            const calculatedDiff = netTotal - (subtotal + tax - discount);
+            if (shipping === 0 && calculatedDiff > 0) {
+              shipping = calculatedDiff;
+            }
+
+            const codRemaining = Math.max(0, netTotal - advancePaid);
+
+            return (
+              <div className="rounded-xl border border-border/60 p-4 space-y-2 bg-card/80 text-xs shadow-2xs">
+                <h4 className="text-[11px] uppercase tracking-wider font-bold text-muted-foreground border-b border-border/40 pb-2">
+                  {isAr ? "تفاصيل الحساب المالي للفاتورة" : "Financial Price Breakdown"}
+                </h4>
+
+                <div className="space-y-1.5 font-mono text-muted-foreground">
+                  <div className="flex justify-between items-center">
+                    <span>{isAr ? "مجموع المنتجات (Subtotal):" : "Items Subtotal:"}</span>
+                    <span className="font-bold text-foreground">
+                      {formatMoney(subtotal, currency, lang)}
+                    </span>
+                  </div>
+
+                  {discount > 0 && (
+                    <div className="flex justify-between items-center text-emerald-600 dark:text-emerald-400">
+                      <span>{isAr ? "الخصم المستقطع (Discount):" : "Discount Applied:"}</span>
+                      <span className="font-bold">-{formatMoney(discount, currency, lang)}</span>
+                    </div>
+                  )}
+
+                  {shipping > 0 && (
+                    <div className="flex justify-between items-center text-indigo-600 dark:text-indigo-400">
+                      <span>{isAr ? "رسوم الشحن والتوصيل (Delivery Fee):" : "Shipping & Delivery Fee:"}</span>
+                      <span className="font-bold">+{formatMoney(shipping, currency, lang)}</span>
+                    </div>
+                  )}
+
+                  {tax > 0 && (
+                    <div className="flex justify-between items-center text-amber-600 dark:text-amber-400">
+                      <span>{isAr ? "ضريبة القيمة المضافة (VAT):" : "VAT / Tax:"}</span>
+                      <span className="font-bold">+{formatMoney(tax, currency, lang)}</span>
+                    </div>
+                  )}
+
+                  {advancePaid > 0 && (
+                    <div className="flex justify-between items-center text-emerald-600 dark:text-emerald-400 pt-1 border-t border-border/40">
+                      <span>{isAr ? "الدفعة المقدمة (Deposit Paid):" : "Advance Paid / Deposit:"}</span>
+                      <span className="font-bold">-{formatMoney(advancePaid, currency, lang)}</span>
+                    </div>
+                  )}
+
+                  {advancePaid > 0 && codRemaining > 0 && (
+                    <div className="flex justify-between items-center text-amber-600 dark:text-amber-400 font-bold bg-amber-500/10 p-1.5 rounded-lg border border-amber-500/20">
+                      <span>{isAr ? "المتبقي للتحصيل عند التسليم (COD Balance):" : "Remaining COD Balance:"}</span>
+                      <span>{formatMoney(codRemaining, currency, lang)}</span>
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex justify-between items-center text-sm font-extrabold pt-2 border-t border-border/60 text-foreground">
+                  <span>{isAr ? "إجمالي الفاتورة النهائي:" : "Final Net Total:"}</span>
+                  <span className="text-base text-primary font-mono font-extrabold">
+                    {formatMoney(netTotal, currency, lang)}
+                  </span>
+                </div>
+              </div>
+            );
+          })()}
+
           {/* Quick Action Footer Buttons */}
           <div className="pt-3 border-t border-border/60 flex items-center justify-between gap-2 flex-wrap">
             <div className="flex items-center gap-1.5">
