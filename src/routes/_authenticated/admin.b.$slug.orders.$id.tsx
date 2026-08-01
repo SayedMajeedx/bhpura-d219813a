@@ -37,6 +37,11 @@ import {
   ImageIcon,
   Truck,
   UserPlus,
+  MoreHorizontal,
+  UserRound,
+  Package,
+  CreditCard,
+  MapPin,
 } from "lucide-react";
 import {
   Dialog,
@@ -477,6 +482,7 @@ function OrderDetail() {
   const [phoneSearch, setPhoneSearch] = useState("");
   const [editingUnlocked, setEditingUnlocked] = useState(false);
   const [invoicePreviewOpen, setInvoicePreviewOpen] = useState(false);
+  const [mobileActionsOpen, setMobileActionsOpen] = useState(false);
   const [hasSavedDraft, setHasSavedDraft] = useState(false);
   const [saving, setSaving] = useState(false);
   const [adminOverrideChecked, setAdminOverrideChecked] = useState(false);
@@ -1726,10 +1732,10 @@ function OrderDetail() {
 
   return (
     <div
-      className="mx-auto max-w-[1500px] p-1 sm:p-2 space-y-4 pb-20 animate-fade-in"
+      className="mx-auto max-w-[1500px] space-y-3 p-1 pb-36 sm:space-y-4 sm:p-2 sm:pb-20 animate-fade-in"
       dir={lang === "ar" ? "rtl" : "ltr"}
     >
-      <div className="no-print mb-4 flex flex-wrap items-center justify-between gap-2.5">
+      <div className="no-print mb-2 flex items-center justify-between gap-2.5 rounded-2xl border border-border/60 bg-card/70 px-3 py-2.5 shadow-sm backdrop-blur sm:mb-4 sm:rounded-none sm:border-0 sm:bg-transparent sm:px-0 sm:py-0 sm:shadow-none">
         <div className="flex items-center gap-2 min-w-0">
           <Link
             to="/admin/b/$slug/orders"
@@ -1740,7 +1746,7 @@ function OrderDetail() {
             <span className="hidden sm:inline">{t("orderDetail.back")}</span>
           </Link>
           <div className="min-w-0">
-            <h1 className="truncate text-lg sm:text-2xl font-display font-bold tracking-tight">
+            <h1 className="truncate text-base sm:text-2xl font-display font-bold tracking-tight">
               {isCreationMode
                 ? lang === "ar"
                   ? "طلب جديد"
@@ -1750,7 +1756,7 @@ function OrderDetail() {
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="hidden flex-wrap items-center gap-2 sm:flex">
           {!isCreationMode && (
             <>
               {/* Primary Next Workflow Quick Action (e.g. Approve Payment, Hand Over, Pack & Ship) */}
@@ -1852,56 +1858,112 @@ function OrderDetail() {
         </div>
       )}
 
+      {!isCreationMode && (
+        <section
+          className="no-print overflow-hidden rounded-2xl border border-border/60 bg-gradient-to-br from-card via-card to-primary/[0.04] p-4 shadow-sm sm:hidden"
+          aria-label={lang === "ar" ? "ملخص الطلب" : "Order summary"}
+        >
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                {lang === "ar" ? "الإجمالي" : "Order total"}
+              </p>
+              <p className="mt-1 font-display text-2xl font-extrabold tracking-tight">
+                {formatMoney(totals.total, currency)}
+              </p>
+            </div>
+            <div className="flex max-w-[55%] flex-wrap justify-end gap-1.5">
+              <span
+                className={cn(
+                  "rounded-full border px-2.5 py-1 text-[11px] font-bold",
+                  PAYMENT_BADGE_CLASSES[paymentBadge],
+                )}
+              >
+                {t(`payStatus.${paymentBadge}`)}
+              </span>
+              <span className="rounded-full border border-border/70 bg-background/80 px-2.5 py-1 text-[11px] font-bold text-foreground">
+                {getFulfillmentLabel(order.fulfillment_status, lang)}
+              </span>
+            </div>
+          </div>
+
+          <div className="mt-4 grid grid-cols-2 gap-2 border-t border-border/60 pt-3">
+            <div className="min-w-0 rounded-xl bg-background/60 p-2.5">
+              <div className="flex items-center gap-1.5 text-[11px] font-semibold text-muted-foreground">
+                <UserRound className="h-3.5 w-3.5" />
+                {lang === "ar" ? "العميل" : "Customer"}
+              </div>
+              <p className="mt-1 truncate text-sm font-bold">
+                {getOrderCustomerName(order) || (lang === "ar" ? "عميل زائر" : "Guest customer")}
+              </p>
+            </div>
+            <div className="min-w-0 rounded-xl bg-background/60 p-2.5">
+              <div className="flex items-center gap-1.5 text-[11px] font-semibold text-muted-foreground">
+                <MapPin className="h-3.5 w-3.5" />
+                {lang === "ar" ? "التنفيذ" : "Fulfillment"}
+              </div>
+              <p className="mt-1 truncate text-sm font-bold">
+                {getFulfillmentMethodLabel(order.fulfillment_method, lang)}
+              </p>
+            </div>
+          </div>
+        </section>
+      )}
+
       {/* Sticky Section Navigation Bar */}
       {!isCreationMode && (
-        <div className="no-print sticky top-0 z-30 mb-6 flex overflow-x-auto gap-2 rounded-xl border border-border/80 bg-background/95 p-1.5 backdrop-blur shadow-sm select-none">
+        <div className="no-print sticky top-0 z-30 mb-3 grid grid-cols-4 gap-1 rounded-2xl border border-border/80 bg-background/95 p-1.5 shadow-sm backdrop-blur select-none sm:mb-6 sm:flex sm:overflow-x-auto sm:gap-2 sm:rounded-xl">
           <button
             type="button"
             onClick={() => scrollToSection("sec-overview")}
             className={cn(
-              "px-3.5 py-1.5 rounded-lg text-xs font-bold transition-colors whitespace-nowrap flex items-center gap-1.5 touch-manipulation",
+              "min-h-11 justify-center rounded-xl px-1.5 py-1.5 text-[10px] font-bold transition-colors flex flex-col sm:flex-row items-center gap-1 sm:px-3.5 sm:text-xs sm:whitespace-nowrap touch-manipulation",
               activeSection === "sec-overview"
                 ? "bg-primary text-primary-foreground shadow-xs"
                 : "hover:bg-muted text-muted-foreground",
             )}
           >
-            📍 {lang === "ar" ? "العميل والتوصيل" : "Overview & Delivery"}
+            <UserRound className="h-3.5 w-3.5" />
+            <span>{lang === "ar" ? "نظرة عامة" : "Overview"}</span>
           </button>
           <button
             type="button"
             onClick={() => scrollToSection("sec-items")}
             className={cn(
-              "px-3.5 py-1.5 rounded-lg text-xs font-bold transition-colors whitespace-nowrap flex items-center gap-1.5 touch-manipulation",
+              "min-h-11 justify-center rounded-xl px-1.5 py-1.5 text-[10px] font-bold transition-colors flex flex-col sm:flex-row items-center gap-1 sm:px-3.5 sm:text-xs sm:whitespace-nowrap touch-manipulation",
               activeSection === "sec-items"
                 ? "bg-primary text-primary-foreground shadow-xs"
                 : "hover:bg-muted text-muted-foreground",
             )}
           >
-            🛍️ {lang === "ar" ? "بنود الطلب" : "Line Items"}
+            <Package className="h-3.5 w-3.5" />
+            <span>{lang === "ar" ? "المنتجات" : "Items"}</span>
           </button>
           <button
             type="button"
             onClick={() => scrollToSection("sec-invoice")}
             className={cn(
-              "px-3.5 py-1.5 rounded-lg text-xs font-bold transition-colors whitespace-nowrap flex items-center gap-1.5 touch-manipulation",
+              "min-h-11 justify-center rounded-xl px-1.5 py-1.5 text-[10px] font-bold transition-colors flex flex-col sm:flex-row items-center gap-1 sm:px-3.5 sm:text-xs sm:whitespace-nowrap touch-manipulation",
               activeSection === "sec-invoice"
                 ? "bg-primary text-primary-foreground shadow-xs"
                 : "hover:bg-muted text-muted-foreground",
             )}
           >
-            📄 {lang === "ar" ? "معاينة الفاتورة" : "Invoice Preview"}
+            <CreditCard className="h-3.5 w-3.5" />
+            <span>{lang === "ar" ? "الفاتورة" : "Invoice"}</span>
           </button>
           <button
             type="button"
             onClick={() => scrollToSection("sec-activity")}
             className={cn(
-              "px-3.5 py-1.5 rounded-lg text-xs font-bold transition-colors whitespace-nowrap flex items-center gap-1.5 touch-manipulation",
+              "min-h-11 justify-center rounded-xl px-1.5 py-1.5 text-[10px] font-bold transition-colors flex flex-col sm:flex-row items-center gap-1 sm:px-3.5 sm:text-xs sm:whitespace-nowrap touch-manipulation",
               activeSection === "sec-activity"
                 ? "bg-primary text-primary-foreground shadow-xs"
                 : "hover:bg-muted text-muted-foreground",
             )}
           >
-            📜 {lang === "ar" ? "سجل النشاطات" : "Activity Log"}
+            <MoreHorizontal className="h-3.5 w-3.5" />
+            <span>{lang === "ar" ? "المزيد" : "More"}</span>
           </button>
         </div>
       )}
@@ -1911,12 +1973,12 @@ function OrderDetail() {
         disabled={isReadOnly}
         className="no-print m-0 min-w-0 border-0 p-0 disabled:opacity-80"
       >
-        <div className="mb-6 grid items-start gap-6 grid-cols-1 lg:grid-cols-3">
+        <div className="mb-6 grid grid-cols-1 items-start gap-3 sm:gap-6 lg:grid-cols-3">
           {/* RIGHT COLUMN (35% width) - Customer, Address & Workflow Controls */}
-          <div className="space-y-6 lg:col-span-1">
+          <div className="space-y-3 sm:space-y-6 lg:col-span-1">
             <Card
               id="sec-overview"
-              className="scroll-mt-24 overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm p-5 sm:p-6"
+              className="scroll-mt-24 overflow-hidden rounded-2xl border border-border/60 bg-card/60 p-4 shadow-sm backdrop-blur-sm sm:bg-card/40 sm:p-6 sm:shadow-lg"
             >
               <div className="mb-4">
                 <Label className="flex items-center gap-2">
@@ -2437,10 +2499,10 @@ function OrderDetail() {
           </div>
 
           {/* LEFT COLUMN (65% width) - Products, Line Items & Notes */}
-          <div className="space-y-6 lg:col-span-2">
+          <div className="space-y-3 sm:space-y-6 lg:col-span-2">
             <Card
               id="sec-items"
-              className="scroll-mt-24 overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm p-5 sm:p-6"
+              className="scroll-mt-24 overflow-hidden rounded-2xl border border-border/60 bg-card/60 p-4 shadow-sm backdrop-blur-sm sm:bg-card/40 sm:p-6 sm:shadow-lg"
             >
               <div className="flex items-center justify-between mb-4 gap-2 flex-wrap">
                 <h3 className="font-display text-lg">{t("orderDetail.lineItems")}</h3>
@@ -3382,7 +3444,7 @@ function OrderDetail() {
 
       {/* Floating Sticky Save Bar - Only appears when form has unsaved changes */}
       {!isReadOnly && isDirty && (
-        <div className="no-print fixed bottom-20 inset-x-3 sm:bottom-6 sm:inset-x-auto sm:end-8 z-50 flex items-center gap-3 rounded-2xl border border-amber-300/80 bg-amber-50/95 dark:bg-amber-950/90 p-3.5 shadow-2xl backdrop-blur animate-in slide-in-from-bottom duration-200 max-w-lg mx-auto">
+        <div className="no-print fixed bottom-20 inset-x-3 z-50 mx-auto hidden max-w-lg items-center gap-3 rounded-2xl border border-amber-300/80 bg-amber-50/95 p-3.5 shadow-2xl backdrop-blur animate-in slide-in-from-bottom duration-200 dark:bg-amber-950/90 sm:bottom-6 sm:inset-x-auto sm:end-8 sm:flex">
           <span className="flex h-2.5 w-2.5 rounded-full bg-amber-500 animate-ping shrink-0" />
           <span className="text-xs font-bold text-amber-900 dark:text-amber-200 flex-1 min-w-0">
             {lang === "ar" ? "توجد تغييرات غير محفوظة على الطلب" : "Unsaved changes detected"}
@@ -3453,9 +3515,137 @@ function OrderDetail() {
       </div>
 
       {/* Activity Trail Section Anchor */}
-      <div id="sec-activity" className="scroll-mt-24 max-w-6xl mx-auto p-4 sm:p-6 lg:p-8 no-print">
-        <ActivityLogList orderId={order.id} scope="order" brandId={brand.id} />
+      <div
+        id="sec-activity"
+        className="no-print mx-auto max-w-6xl scroll-mt-24 px-1 pb-4 sm:p-6 lg:p-8"
+      >
+        <details className="group overflow-hidden rounded-2xl border border-border/60 bg-card/60 shadow-sm sm:hidden">
+          <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between px-4 py-3 text-sm font-bold marker:content-none">
+            <span>{lang === "ar" ? "سجل النشاطات" : "Activity history"}</span>
+            <span className="text-lg text-muted-foreground transition-transform group-open:rotate-45">
+              +
+            </span>
+          </summary>
+          <div className="border-t border-border/60 p-4">
+            <ActivityLogList orderId={order.id} scope="order" brandId={brand.id} />
+          </div>
+        </details>
+        <div className="hidden sm:block">
+          <ActivityLogList orderId={order.id} scope="order" brandId={brand.id} />
+        </div>
       </div>
+
+      <div
+        className="no-print fixed inset-x-0 bottom-0 z-50 border-t border-border/70 bg-background/92 px-3 pb-[calc(env(safe-area-inset-bottom)+0.65rem)] pt-2 shadow-[0_-12px_32px_-20px_rgba(0,0,0,0.45)] backdrop-blur-xl sm:hidden"
+        aria-label={lang === "ar" ? "إجراءات الطلب" : "Order actions"}
+      >
+        <div className="mx-auto flex max-w-lg items-center gap-2">
+          {!isReadOnly && (isDirty || isCreationMode) ? (
+            <Button
+              onClick={save}
+              disabled={saving}
+              className="min-h-11 flex-1 rounded-xl font-bold shadow-md"
+            >
+              {saving ? (
+                <Loader2 className="me-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Save className="me-2 h-4 w-4" />
+              )}
+              {isCreationMode
+                ? lang === "ar"
+                  ? "إنشاء وحفظ"
+                  : "Create & save"
+                : lang === "ar"
+                  ? "حفظ التغييرات"
+                  : "Save changes"}
+            </Button>
+          ) : (
+            <div className="flex min-w-0 flex-1 [&>button]:min-h-11 [&>button]:w-full [&>button]:rounded-xl">
+              {renderTopPrimaryAction() || (
+                <Button
+                  variant="outline"
+                  onClick={() => scrollToSection("sec-overview")}
+                  className="font-bold"
+                >
+                  {lang === "ar" ? "عرض تفاصيل الطلب" : "Review order details"}
+                </Button>
+              )}
+            </div>
+          )}
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            className="h-11 w-11 shrink-0 rounded-xl bg-card"
+            onClick={() => setMobileActionsOpen(true)}
+            aria-label={lang === "ar" ? "المزيد من إجراءات الطلب" : "More order actions"}
+          >
+            <MoreHorizontal className="h-5 w-5" />
+          </Button>
+        </div>
+      </div>
+
+      <Dialog open={mobileActionsOpen} onOpenChange={setMobileActionsOpen}>
+        <DialogContent className="top-auto bottom-0 w-full max-w-none translate-y-0 rounded-b-none rounded-t-3xl border-x-0 border-b-0 p-5 sm:hidden">
+          <DialogHeader>
+            <DialogTitle>{lang === "ar" ? "إجراءات الطلب" : "Order actions"}</DialogTitle>
+            <DialogDescription>
+              {lang === "ar"
+                ? "أدوات الفاتورة والمشاركة والطباعة"
+                : "Invoice, sharing and printing tools"}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-2 py-2">
+            {order.public_invoice_token && (
+              <Button
+                variant="outline"
+                className="min-h-12 justify-start rounded-xl"
+                onClick={() => {
+                  copyLink();
+                  setMobileActionsOpen(false);
+                }}
+              >
+                <LinkIcon className="me-2 h-4 w-4" />
+                {t("orders.copyLink")}
+              </Button>
+            )}
+            <Button
+              variant="outline"
+              className="min-h-12 justify-start rounded-xl"
+              onClick={() => {
+                printReceipt();
+                setMobileActionsOpen(false);
+              }}
+            >
+              <Receipt className="me-2 h-4 w-4" />
+              {t("orders.printReceipt")}
+            </Button>
+            <Button
+              variant="outline"
+              className="min-h-12 justify-start rounded-xl"
+              onClick={() => {
+                setMobileActionsOpen(false);
+                setInvoicePreviewOpen(true);
+                window.setTimeout(() => scrollToSection("sec-invoice"), 100);
+              }}
+            >
+              <Printer className="me-2 h-4 w-4" />
+              {lang === "ar" ? "معاينة وتنزيل الفاتورة" : "Preview and download invoice"}
+            </Button>
+            <Button
+              variant="outline"
+              className="min-h-12 justify-start rounded-xl"
+              onClick={() => {
+                setMobileActionsOpen(false);
+                window.setTimeout(() => scrollToSection("sec-activity"), 100);
+              }}
+            >
+              <MoreHorizontal className="me-2 h-4 w-4" />
+              {lang === "ar" ? "عرض سجل النشاطات" : "View activity history"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <CourierWhatsAppModal
         isOpen={waModalOpen}
