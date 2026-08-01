@@ -1,6 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { RoutePendingSkeleton } from "@/components/os/route-pending-skeleton";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -1380,6 +1381,10 @@ function OrdersList() {
       </Button>
     );
   };
+
+  if (ordersQ.isLoading) {
+    return <RoutePendingSkeleton />;
+  }
 
   return (
     <div
