@@ -369,23 +369,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               }
               actions={
                 <div className="flex items-center gap-1.5">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setSpotlightOpen(true)}
-                    className="h-6.5 px-2 gap-1 text-xs text-muted-foreground hover:text-foreground rounded-md"
-                    title={
-                      lang === "ar"
-                        ? `البحث في سجلات ${currentPageLabel || "التطبيق"}`
-                        : `Search ${currentPageLabel || "active app"} records`
-                    }
-                  >
-                    <Search className="h-3.5 w-3.5" />
-                    <span className="hidden sm:inline font-medium text-[11px]">
-                      {lang === "ar" ? "بحث في التطبيق" : "Search App"}
-                    </span>
-                  </Button>
-
                   {activeSlug && !isCourier && (
                     <a
                       href={
