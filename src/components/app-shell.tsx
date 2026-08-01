@@ -311,7 +311,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           )}
 
           {/* Level 2: Active Application Window */}
-          <main className="flex-1 flex flex-col min-h-0 mx-0 md:me-3 md:mb-3 overflow-hidden select-text">
+          <main className="flex-1 flex flex-col min-h-0 mx-0 md:mx-3 md:mb-3 overflow-hidden select-text">
             {!isFocusMode && <OsRecentHistoryBar lang={lang} currentPageTitle={currentPageLabel} />}
             <OsAppWindow
               icon={activeNavItem?.icon}

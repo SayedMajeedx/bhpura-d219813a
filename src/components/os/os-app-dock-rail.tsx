@@ -43,7 +43,7 @@ export function OsAppDockRail({
     <aside
       aria-label={lang === "ar" ? "شريط التطبيقات" : "Boutq OS App Dock"}
       className={cn(
-        "no-print hidden md:flex flex-col items-center justify-between shrink-0 border border-[var(--os-border)] os-glass-strong shadow-[var(--os-dock-shadow)] transition-all duration-300 relative z-30 my-2.5 ms-3 py-3 w-16 rounded-[var(--os-radius-dock)] overflow-visible select-none me-3 md:me-4 lg:me-5",
+        "no-print hidden md:flex flex-col items-center justify-between shrink-0 border border-[var(--os-border)] os-glass-strong shadow-[var(--os-dock-shadow)] transition-all duration-300 relative z-30 my-3 ms-3 py-3 w-16 rounded-[var(--os-radius-dock)] overflow-visible select-none",
         className,
       )}
     >
