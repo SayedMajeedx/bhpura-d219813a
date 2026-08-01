@@ -2757,20 +2757,21 @@ function OrderQuickInspectSheet({
             />
           </div>
 
-          {/* Line Items */}
+          {/* Line Items Breakdown */}
           <div className="space-y-3">
             <h4 className="text-xs uppercase tracking-wider font-bold text-muted-foreground">
-              {isAr ? "المنتجات والأصناف" : "Order Line Items"}
+              {isAr ? "المنتجات والأصناف التفصيلية" : "Order Line Items Breakdown"}
             </h4>
-            <div className="divide-y border rounded-xl overflow-hidden bg-card">
+            <div className="divide-y border border-border/60 rounded-xl overflow-hidden bg-card shadow-2xs">
               {items.map((it: any, idx: number) => {
                 const itemTitle =
+                  it.description ||
                   it.product_name ||
                   it.product_title ||
-                  (isAr ? it.product_name_ar || it.name_ar : it.product_name_en || it.name_en) ||
                   it.item_title ||
                   it.title ||
                   it.name ||
+                  (isAr ? it.product_name_ar || it.name_ar : it.product_name_en || it.name_en) ||
                   it.products?.name ||
                   it.products?.name_ar ||
                   it.products?.name_en ||
@@ -2780,7 +2781,13 @@ function OrderQuickInspectSheet({
                   it.variant_title ||
                   it.variant_name ||
                   [it.size, it.color].filter(Boolean).join(" / ") ||
-                  it.variants?.title ||
+                  (it.customizations && typeof it.customizations === "object"
+                    ? Object.entries(it.customizations)
+                        .map(([k, v]) => `${k}: ${v}`)
+                        .join(" | ")
+                    : typeof it.customizations === "string"
+                      ? it.customizations
+                      : "") ||
                   "";
 
                 const qty = it.quantity || it.qty || 1;
@@ -2792,25 +2799,23 @@ function OrderQuickInspectSheet({
                 return (
                   <div
                     key={it.id || idx}
-                    className="p-3.5 flex items-center justify-between gap-3 text-xs"
+                    className="p-3.5 flex items-start justify-between gap-3 text-xs"
                   >
-                    <div className="min-w-0">
-                      <div className="font-semibold text-sm text-foreground truncate">
-                        <span className="text-primary font-bold me-1.5">{qty}×</span>
+                    <div className="min-w-0 flex-1">
+                      <div className="font-bold text-sm text-foreground leading-snug">
+                        <span className="text-primary font-extrabold me-1.5">{qty}×</span>
                         {itemTitle}
                       </div>
                       {variantTitle && (
-                        <div className="text-[11px] text-muted-foreground font-mono mt-0.5">
+                        <div className="text-[11px] text-muted-foreground font-mono mt-0.5 bg-muted/60 px-2 py-0.5 rounded w-fit border border-border/40">
                           {variantTitle}
                         </div>
                       )}
-                      {unitPrice > 0 && (
-                        <div className="text-[10px] text-muted-foreground font-mono">
-                          {qty} × {formatMoney(unitPrice, order.currency || "BHD", locale)}
-                        </div>
-                      )}
+                      <div className="text-[10px] text-muted-foreground font-mono mt-1">
+                        {qty} × {formatMoney(unitPrice, order.currency || "BHD", locale)}
+                      </div>
                     </div>
-                    <div className="font-mono font-bold shrink-0 text-sm text-foreground">
+                    <div className="font-mono font-extrabold shrink-0 text-sm text-foreground pt-0.5">
                       {formatMoney(lineTotal, order.currency || "BHD", locale)}
                     </div>
                   </div>
@@ -2819,15 +2824,91 @@ function OrderQuickInspectSheet({
             </div>
           </div>
 
-          {/* Payment Breakdown */}
-          <div className="rounded-xl border p-4 space-y-2 bg-card">
-            <div className="flex justify-between items-center text-sm font-bold pt-1 border-t">
-              <span>{isAr ? "الإجمالي النهائي" : "Total Amount"}</span>
-              <span className="text-base text-primary font-mono">
-                {formatMoney(Number(order.total), order.currency || "BHD", locale)}
-              </span>
-            </div>
-          </div>
+          {/* Detailed Financial Price Breakdown */}
+          {(() => {
+            const currency = order.currency || "BHD";
+            const subtotal = Number(
+              order.subtotal ??
+                items.reduce(
+                  (acc: number, it: any) =>
+                    acc + Number(it.line_total || (it.unit_price || 0) * (it.quantity || 1)),
+                  0,
+                ),
+            );
+            const discount = Number(order.discount_amount ?? order.discount ?? 0);
+            const shipping = Number(
+              order.shipping_amount ?? order.delivery_fee ?? order.shipping_fee ?? 0,
+            );
+            const tax = Number(order.tax_amount ?? order.vat ?? 0);
+            const advancePaid = Number(order.advance_paid ?? order.paid_amount ?? 0);
+            const netTotal = Number(order.total ?? order.total_amount ?? subtotal + shipping - discount);
+            const codRemaining = Math.max(0, netTotal - advancePaid);
+
+            return (
+              <div className="rounded-xl border border-border/60 p-4 space-y-2.5 bg-card/80 text-xs shadow-2xs">
+                <h4 className="text-[11px] uppercase tracking-wider font-bold text-muted-foreground border-b border-border/40 pb-2">
+                  {isAr ? "تفاصيل الحساب المالي للفاتورة" : "Financial Price Breakdown"}
+                </h4>
+
+                <div className="space-y-1.5 font-mono text-muted-foreground">
+                  <div className="flex justify-between items-center">
+                    <span>{isAr ? "مجموع المنتجات:" : "Items Subtotal:"}</span>
+                    <span className="font-bold text-foreground">
+                      {formatMoney(subtotal, currency, locale)}
+                    </span>
+                  </div>
+
+                  {discount > 0 && (
+                    <div className="flex justify-between items-center text-emerald-600 dark:text-emerald-400">
+                      <span>{isAr ? "الخصم المستقطع:" : "Discount Applied:"}</span>
+                      <span className="font-bold">-{formatMoney(discount, currency, locale)}</span>
+                    </div>
+                  )}
+
+                  {shipping > 0 && (
+                    <div className="flex justify-between items-center">
+                      <span>{isAr ? "رسوم الشحن والتوصيل:" : "Shipping & Delivery Fee:"}</span>
+                      <span className="font-bold text-foreground">
+                        +{formatMoney(shipping, currency, locale)}
+                      </span>
+                    </div>
+                  )}
+
+                  {tax > 0 && (
+                    <div className="flex justify-between items-center">
+                      <span>{isAr ? "ضريبة القيمة المضافة:" : "VAT / Tax:"}</span>
+                      <span className="font-bold text-foreground">
+                        +{formatMoney(tax, currency, locale)}
+                      </span>
+                    </div>
+                  )}
+
+                  {advancePaid > 0 && (
+                    <div className="flex justify-between items-center text-indigo-600 dark:text-indigo-400 pt-1 border-t border-border/40">
+                      <span>{isAr ? "الدفعة المقدمة (مدفوع):" : "Advance Paid / Deposit:"}</span>
+                      <span className="font-bold">
+                        -{formatMoney(advancePaid, currency, locale)}
+                      </span>
+                    </div>
+                  )}
+
+                  {advancePaid > 0 && codRemaining > 0 && (
+                    <div className="flex justify-between items-center text-amber-600 dark:text-amber-400 font-bold">
+                      <span>{isAr ? "المتبقي للتحصيل عند التسليم (COD):" : "Remaining COD Balance:"}</span>
+                      <span>{formatMoney(codRemaining, currency, locale)}</span>
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex justify-between items-center text-sm font-extrabold pt-2.5 border-t border-border/60 text-foreground">
+                  <span>{isAr ? "إجمالي الفاتورة النهائي:" : "Final Net Total:"}</span>
+                  <span className="text-base text-primary font-mono">
+                    {formatMoney(netTotal, currency, locale)}
+                  </span>
+                </div>
+              </div>
+            );
+          })()}
         </div>
 
         <div className="p-4 border-t bg-muted/20 flex gap-2">
