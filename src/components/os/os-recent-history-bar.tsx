@@ -2,7 +2,12 @@ import { useEffect, useState } from "react";
 import { Link, useRouterState, useParams } from "@tanstack/react-router";
 import { Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { getRecentModules, recordVisitedModule, type RecentModule } from "@/lib/os-productivity";
+import {
+  getRecentModules,
+  recordVisitedModule,
+  resolveRouteTitles,
+  type RecentModule,
+} from "@/lib/os-productivity";
 import { OsPinnedActions } from "./os-pinned-actions";
 
 interface OsRecentHistoryBarProps {
@@ -18,11 +23,11 @@ export function OsRecentHistoryBar({ lang, currentPageTitle }: OsRecentHistoryBa
   const [recents, setRecents] = useState<RecentModule[]>([]);
 
   useEffect(() => {
-    if (currentPageTitle && pathname) {
+    if (pathname) {
       recordVisitedModule({
         path: pathname,
-        titleEn: currentPageTitle,
-        titleAr: currentPageTitle,
+        titleEn: currentPageTitle || "Workspace",
+        titleAr: currentPageTitle || "مساحة العمل",
       });
       setRecents(getRecentModules());
     }
@@ -34,12 +39,15 @@ export function OsRecentHistoryBar({ lang, currentPageTitle }: OsRecentHistoryBa
       <div className="flex items-center gap-1.5 min-w-0 overflow-hidden">
         <div className="inline-flex items-center gap-1 text-[11px] font-bold text-muted-foreground me-1 shrink-0">
           <Clock className="h-3 w-3 text-primary" />
-          <span>{isAr ? "المرارة مؤخراً:" : "Recents:"}</span>
+          <span>{isAr ? "الزيارات الأخيرة:" : "Recent Visits:"}</span>
         </div>
 
         <div className="flex items-center gap-1 overflow-x-auto scrollbar-none py-0.5">
           {recents.map((item) => {
             const isActive = pathname === item.path;
+            const titles = resolveRouteTitles(item.path, isAr ? item.titleAr : item.titleEn);
+            const label = isAr ? titles.ar : titles.en;
+
             return (
               <Link
                 key={item.path}
@@ -51,7 +59,7 @@ export function OsRecentHistoryBar({ lang, currentPageTitle }: OsRecentHistoryBa
                     : "bg-background/60 text-muted-foreground hover:bg-background hover:text-foreground border border-border/40 shadow-2xs",
                 )}
               >
-                {isAr ? item.titleAr : item.titleEn}
+                {label}
               </Link>
             );
           })}

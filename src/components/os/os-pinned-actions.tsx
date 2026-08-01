@@ -1,11 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { Pin, Plus, Package, ShoppingBag, Download, MessageSquare } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Pin } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   getPinnedActions,
-  togglePinnedAction,
   type PinnedAction,
 } from "@/lib/os-productivity";
 
@@ -20,38 +18,15 @@ export function OsPinnedActions({ lang, activeSlug, className }: OsPinnedActions
   const [pinned, setPinned] = useState<PinnedAction[]>([]);
 
   useEffect(() => {
-    setPinned(getPinnedActions());
-  }, []);
-
-  const defaultQuickActions: PinnedAction[] = [
-    {
-      id: "new_order",
-      titleEn: "+ New Order",
-      titleAr: "+ طلب جديد",
-      route: `/admin/b/${activeSlug || "default"}/orders`,
-    },
-    {
-      id: "new_product",
-      titleEn: "+ Add Product",
-      titleAr: "+ إضافة منتج",
-      route: `/admin/b/${activeSlug || "default"}/inventory`,
-    },
-    {
-      id: "export_sales",
-      titleEn: "Export Sales",
-      titleAr: "تصدير المبيعات",
-      route: `/admin/b/${activeSlug || "default"}/reports/export`,
-    },
-  ];
-
-  const actionsToRender = pinned.length > 0 ? pinned : defaultQuickActions;
+    setPinned(getPinnedActions(activeSlug));
+  }, [activeSlug]);
 
   if (!activeSlug) return null;
 
   return (
     <div className={cn("hidden sm:flex items-center gap-1.5 shrink-0 select-none", className)}>
       <div className="flex items-center gap-1 overflow-x-auto scrollbar-none py-0.5">
-        {actionsToRender.map((action) => (
+        {pinned.map((action) => (
           <Link
             key={action.id}
             to={action.route as any}

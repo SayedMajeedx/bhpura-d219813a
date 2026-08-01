@@ -170,7 +170,11 @@ export const OrdersWorkQueue: React.FC<OrdersWorkQueueProps> = ({
 
                   {/* Total Amount */}
                   <td className="p-3 align-middle text-end font-mono font-extrabold text-foreground">
-                    {formatMoney(order.total_amount || 0, order.currency || "BHD", lang)}
+                    {formatMoney(
+                      order.total ?? order.total_amount ?? order.total_price ?? 0,
+                      order.currency || "BHD",
+                      lang,
+                    )}
                   </td>
 
                   {/* Primary Next Action */}

@@ -39,7 +39,11 @@ export const OrderMobileCard: React.FC<OrderMobileCardProps> = ({
           <ExternalLink className="h-3 w-3 opacity-60" />
         </Link>
         <span className="font-mono text-sm font-extrabold text-foreground">
-          {formatMoney(order.total_amount || 0, order.currency || "BHD", lang)}
+          {formatMoney(
+            order.total ?? order.total_amount ?? order.total_price ?? 0,
+            order.currency || "BHD",
+            lang,
+          )}
         </span>
       </div>
 
