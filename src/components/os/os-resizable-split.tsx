@@ -41,10 +41,7 @@ export function OsResizableSplit({
   };
 
   return (
-    <ResizablePanelGroup
-      {...groupProps}
-      className={cn("w-full h-full min-h-0", className)}
-    >
+    <ResizablePanelGroup {...groupProps} className={cn("w-full h-full min-h-0", className)}>
       {/* Primary / Left Panel */}
       <ResizablePanel
         defaultSize={leftSize}
@@ -59,9 +56,7 @@ export function OsResizableSplit({
       <ResizableHandle withHandle className="hover:bg-primary/20 transition-colors" />
 
       {/* Secondary / Right Panel */}
-      <ResizablePanel className="min-h-0 overflow-auto scrollbar-none">
-        {rightPanel}
-      </ResizablePanel>
+      <ResizablePanel className="min-h-0 overflow-auto scrollbar-none">{rightPanel}</ResizablePanel>
     </ResizablePanelGroup>
   );
 }

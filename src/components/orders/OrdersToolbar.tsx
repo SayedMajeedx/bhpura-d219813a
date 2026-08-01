@@ -3,11 +3,7 @@ import { Search, SlidersHorizontal, X, ArrowUpDown } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   Select,
   SelectContent,
@@ -15,13 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 
 export type PaymentMethodFilter = "all" | "benefit" | "cod" | "card";
 
@@ -122,7 +112,9 @@ export const OrdersToolbar: React.FC<OrdersToolbarProps> = ({
                     <SelectItem value="pending_verification">
                       {isAr ? "بانتظار التحقق" : "Pending Verification"}
                     </SelectItem>
-                    <SelectItem value="partial">{isAr ? "مدفوع جزئيًا" : "Partially Paid"}</SelectItem>
+                    <SelectItem value="partial">
+                      {isAr ? "مدفوع جزئيًا" : "Partially Paid"}
+                    </SelectItem>
                     <SelectItem value="paid">{isAr ? "مدفوع" : "Paid"}</SelectItem>
                     <SelectItem value="refunded">{isAr ? "مسترجع" : "Refunded"}</SelectItem>
                   </SelectContent>
@@ -144,10 +136,18 @@ export const OrdersToolbar: React.FC<OrdersToolbarProps> = ({
                   <SelectContent>
                     <SelectItem value="all">{isAr ? "الكل" : "All"}</SelectItem>
                     <SelectItem value="on_hold">{isAr ? "قيد الانتظار" : "On Hold"}</SelectItem>
-                    <SelectItem value="needs_packing">{isAr ? "بحاجة للتعبئة" : "Needs Packing"}</SelectItem>
-                    <SelectItem value="ready_for_pickup">{isAr ? "جاهز للاستلام" : "Ready for Pickup"}</SelectItem>
-                    <SelectItem value="out_for_delivery">{isAr ? "خرج للتوصيل" : "Out for Delivery"}</SelectItem>
-                    <SelectItem value="completed">{isAr ? "تم التوصيل/الاستلام" : "Delivered/Picked Up"}</SelectItem>
+                    <SelectItem value="needs_packing">
+                      {isAr ? "بحاجة للتعبئة" : "Needs Packing"}
+                    </SelectItem>
+                    <SelectItem value="ready_for_pickup">
+                      {isAr ? "جاهز للاستلام" : "Ready for Pickup"}
+                    </SelectItem>
+                    <SelectItem value="out_for_delivery">
+                      {isAr ? "خرج للتوصيل" : "Out for Delivery"}
+                    </SelectItem>
+                    <SelectItem value="completed">
+                      {isAr ? "تم التوصيل/الاستلام" : "Delivered/Picked Up"}
+                    </SelectItem>
                     <SelectItem value="cancelled">{isAr ? "ملغي" : "Cancelled"}</SelectItem>
                   </SelectContent>
                 </Select>
@@ -168,8 +168,12 @@ export const OrdersToolbar: React.FC<OrdersToolbarProps> = ({
                   <SelectContent>
                     <SelectItem value="all">{isAr ? "الكل" : "All"}</SelectItem>
                     <SelectItem value="benefit">{isAr ? "بنفت بي" : "BenefitPay"}</SelectItem>
-                    <SelectItem value="cod">{isAr ? "الدفع عند الاستلام" : "Cash on Delivery"}</SelectItem>
-                    <SelectItem value="card">{isAr ? "بطاقة (أونلاين)" : "Card (Online)"}</SelectItem>
+                    <SelectItem value="cod">
+                      {isAr ? "الدفع عند الاستلام" : "Cash on Delivery"}
+                    </SelectItem>
+                    <SelectItem value="card">
+                      {isAr ? "بطاقة (أونلاين)" : "Card (Online)"}
+                    </SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -212,7 +216,10 @@ export const OrdersToolbar: React.FC<OrdersToolbarProps> = ({
                     <SelectContent>
                       <SelectItem value="all">{isAr ? "الكل" : "All"}</SelectItem>
                       <SelectItem value="unpaid">{isAr ? "غير مدفوع" : "Unpaid"}</SelectItem>
-                      <SelectItem value="pending_verification">{isAr ? "بانتظار التحقق" : "Pending Verification"}</SelectItem>                      <SelectItem value="paid">{isAr ? "مدفوع" : "Paid"}</SelectItem>
+                      <SelectItem value="pending_verification">
+                        {isAr ? "بانتظار التحقق" : "Pending Verification"}
+                      </SelectItem>{" "}
+                      <SelectItem value="paid">{isAr ? "مدفوع" : "Paid"}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

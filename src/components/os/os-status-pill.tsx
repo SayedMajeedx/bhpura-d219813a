@@ -2,12 +2,7 @@ import * as React from "react";
 import { cn } from "@/lib/utils";
 
 export type OsStatusVariant =
-  | "default"
-  | "success"
-  | "warning"
-  | "destructive"
-  | "info"
-  | "neutral";
+  "default" | "success" | "warning" | "destructive" | "info" | "neutral";
 
 export interface OsStatusPillProps extends React.HTMLAttributes<HTMLSpanElement> {
   variant?: OsStatusVariant;
@@ -32,8 +27,7 @@ export function OsStatusPill({
       "bg-amber-50 text-amber-800 border-amber-200/80 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800/80",
     destructive:
       "bg-rose-50 text-rose-700 border-rose-200/80 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800/80",
-    info:
-      "bg-sky-50 text-sky-700 border-sky-200/80 dark:bg-sky-950/40 dark:text-sky-300 dark:border-sky-800/80",
+    info: "bg-sky-50 text-sky-700 border-sky-200/80 dark:bg-sky-950/40 dark:text-sky-300 dark:border-sky-800/80",
   };
 
   const dotClasses: Record<OsStatusVariant, string> = {

@@ -271,27 +271,27 @@ function PagesAndPolicies() {
         onScopeChange={(scope) => setActiveScope(scope)}
         pageCount={pages.length}
       />
-        <Tabs
-          value={editorLanguage}
-          onValueChange={(value) => setEditorLanguage(value as EditorLanguage)}
-          dir="ltr"
-          className="shrink-0"
-        >
-          <TabsList className="grid w-64 grid-cols-2 bg-slate-100 dark:bg-slate-900/60 border rounded-xl p-1 h-11">
-            <TabsTrigger
-              value="en"
-              className="rounded-lg text-xs font-semibold data-[state=active]:bg-white dark:data-[state=active]:bg-slate-850 data-[state=active]:shadow-sm"
-            >
-              English (EN)
-            </TabsTrigger>
-            <TabsTrigger
-              value="ar"
-              className="rounded-lg text-xs font-semibold data-[state=active]:bg-white dark:data-[state=active]:bg-slate-850 data-[state=active]:shadow-sm"
-            >
-              العربية (AR)
-            </TabsTrigger>
-          </TabsList>
-        </Tabs>
+      <Tabs
+        value={editorLanguage}
+        onValueChange={(value) => setEditorLanguage(value as EditorLanguage)}
+        dir="ltr"
+        className="shrink-0"
+      >
+        <TabsList className="grid w-64 grid-cols-2 bg-slate-100 dark:bg-slate-900/60 border rounded-xl p-1 h-11">
+          <TabsTrigger
+            value="en"
+            className="rounded-lg text-xs font-semibold data-[state=active]:bg-white dark:data-[state=active]:bg-slate-850 data-[state=active]:shadow-sm"
+          >
+            English (EN)
+          </TabsTrigger>
+          <TabsTrigger
+            value="ar"
+            className="rounded-lg text-xs font-semibold data-[state=active]:bg-white dark:data-[state=active]:bg-slate-850 data-[state=active]:shadow-sm"
+          >
+            العربية (AR)
+          </TabsTrigger>
+        </TabsList>
+      </Tabs>
 
       <Card className="overflow-hidden border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm p-6 space-y-4">
         <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">

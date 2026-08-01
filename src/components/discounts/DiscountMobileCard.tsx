@@ -129,7 +129,10 @@ export function DiscountMobileCard({
         </span>
       </div>
 
-      <div className="flex items-center justify-end gap-1 pt-2 border-t border-border/40" onClick={(e) => e.stopPropagation()}>
+      <div
+        className="flex items-center justify-end gap-1 pt-2 border-t border-border/40"
+        onClick={(e) => e.stopPropagation()}
+      >
         <Button
           variant="ghost"
           size="sm"

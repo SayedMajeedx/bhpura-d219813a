@@ -1,6 +1,15 @@
 import React, { useState } from "react";
 import { formatMoney } from "@/lib/format";
-import { Package, Pencil, Trash2, Printer, MoreVertical, AlertTriangle, ChevronDown, ChevronUp } from "lucide-react";
+import {
+  Package,
+  Pencil,
+  Trash2,
+  Printer,
+  MoreVertical,
+  AlertTriangle,
+  ChevronDown,
+  ChevronUp,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -66,7 +75,11 @@ export const InventoryWorkQueue: React.FC<InventoryWorkQueueProps> = ({
         <p className="font-bold text-sm text-foreground">
           {isAr ? "لا توجد منتجات مطابقة" : "No products found"}
         </p>
-        <p>{isAr ? "جرب تغيير كلمات البحث أو مسح التصفية" : "Try adjusting search or clearing active filters."}</p>
+        <p>
+          {isAr
+            ? "جرب تغيير كلمات البحث أو مسح التصفية"
+            : "Try adjusting search or clearing active filters."}
+        </p>
       </div>
     );
   }
@@ -77,7 +90,9 @@ export const InventoryWorkQueue: React.FC<InventoryWorkQueueProps> = ({
         <table className="w-full text-start text-xs border-collapse">
           <thead>
             <tr className="border-b border-border/60 bg-muted/40 font-bold text-muted-foreground uppercase text-[10px] tracking-wider">
-              <th className="p-3 text-start">{isAr ? "اسم المنتج والرمز" : "Product & Identity"}</th>
+              <th className="p-3 text-start">
+                {isAr ? "اسم المنتج والرمز" : "Product & Identity"}
+              </th>
               <th className="p-3 text-start">{isAr ? "القسم" : "Category"}</th>
               <th className="p-3 text-start">{isAr ? "المتغيرات والأنواع" : "Variants"}</th>
               <th className="p-3 text-start">{isAr ? "حالة المخزون" : "Stock Level"}</th>
@@ -88,17 +103,17 @@ export const InventoryWorkQueue: React.FC<InventoryWorkQueueProps> = ({
           </thead>
           <tbody className="divide-y divide-border/40">
             {products.map((product) => {
-              const name = isAr
-                ? product.name_ar || product.name
-                : product.name_en || product.name;
+              const name = isAr ? product.name_ar || product.name : product.name_en || product.name;
               const pVariants = variantsByProduct[product.id] || [];
               const totalStock = pVariants.reduce(
-                (acc: number, v: any) => acc + Number(v.stock || v.stock_main || 0) + Number(v.stock_incubator || 0),
+                (acc: number, v: any) =>
+                  acc + Number(v.stock || v.stock_main || 0) + Number(v.stock_incubator || 0),
                 0,
               );
-              const minPrice = pVariants.length > 0
-                ? Math.min(...pVariants.map((v: any) => Number(v.selling_price || 0)))
-                : Number(product.base_price || 0);
+              const minPrice =
+                pVariants.length > 0
+                  ? Math.min(...pVariants.map((v: any) => Number(v.selling_price || 0)))
+                  : Number(product.base_price || 0);
 
               const isLowStock = totalStock > 0 && totalStock <= 5;
               const isOutOfStock = totalStock === 0;
@@ -106,13 +121,20 @@ export const InventoryWorkQueue: React.FC<InventoryWorkQueueProps> = ({
 
               return (
                 <React.Fragment key={product.id}>
-                  <tr className="hover:bg-muted/30 transition-colors group cursor-pointer" onClick={() => toggleExpand(product.id)}>
+                  <tr
+                    className="hover:bg-muted/30 transition-colors group cursor-pointer"
+                    onClick={() => toggleExpand(product.id)}
+                  >
                     {/* Product Name & Image */}
                     <td className="p-3 align-middle font-medium">
                       <div className="flex items-center gap-3">
                         <div className="h-10 w-10 rounded-lg bg-muted border border-border/60 flex items-center justify-center overflow-hidden shrink-0">
                           {product.image_url ? (
-                            <img src={product.image_url} alt={name} className="h-full w-full object-cover" />
+                            <img
+                              src={product.image_url}
+                              alt={name}
+                              className="h-full w-full object-cover"
+                            />
                           ) : (
                             <Package className="h-5 w-5 text-muted-foreground/60" />
                           )}
@@ -165,8 +187,8 @@ export const InventoryWorkQueue: React.FC<InventoryWorkQueueProps> = ({
                           isOutOfStock
                             ? "bg-rose-100 text-rose-800 dark:bg-rose-950/40 dark:text-rose-300"
                             : isLowStock
-                            ? "bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300"
-                            : "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300"
+                              ? "bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300"
+                              : "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300"
                         }`}
                       >
                         {isOutOfStock
@@ -174,12 +196,12 @@ export const InventoryWorkQueue: React.FC<InventoryWorkQueueProps> = ({
                             ? "نفذت الكمية"
                             : "Out of Stock"
                           : isLowStock
-                          ? isAr
-                            ? `منخفض (${totalStock})`
-                            : `Low Stock (${totalStock})`
-                          : isAr
-                          ? `متوفر (${totalStock})`
-                          : `In Stock (${totalStock})`}
+                            ? isAr
+                              ? `منخفض (${totalStock})`
+                              : `Low Stock (${totalStock})`
+                            : isAr
+                              ? `متوفر (${totalStock})`
+                              : `In Stock (${totalStock})`}
                       </span>
                     </td>
 
@@ -189,7 +211,10 @@ export const InventoryWorkQueue: React.FC<InventoryWorkQueueProps> = ({
                     </td>
 
                     {/* Primary Action Button */}
-                    <td className="p-3 align-middle text-center" onClick={(e) => e.stopPropagation()}>
+                    <td
+                      className="p-3 align-middle text-center"
+                      onClick={(e) => e.stopPropagation()}
+                    >
                       <Button
                         size="sm"
                         onClick={() => onEdit(product)}
@@ -201,14 +226,24 @@ export const InventoryWorkQueue: React.FC<InventoryWorkQueueProps> = ({
                     </td>
 
                     {/* Secondary Actions */}
-                    <td className="p-3 align-middle text-center" onClick={(e) => e.stopPropagation()}>
+                    <td
+                      className="p-3 align-middle text-center"
+                      onClick={(e) => e.stopPropagation()}
+                    >
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-muted-foreground"
+                          >
                             <MoreVertical className="h-4 w-4" />
                           </Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align={isAr ? "start" : "end"} className="w-40 text-xs">
+                        <DropdownMenuContent
+                          align={isAr ? "start" : "end"}
+                          className="w-40 text-xs"
+                        >
                           <DropdownMenuItem onClick={() => onPrintLabel(product)}>
                             <Printer className="h-3.5 w-3.5 me-2" />
                             {isAr ? "طباعة الباركوّد" : "Print Barcode"}
@@ -229,7 +264,10 @@ export const InventoryWorkQueue: React.FC<InventoryWorkQueueProps> = ({
                   {isExpanded && renderVariantList && (
                     <tr className="bg-muted/15 border-b border-border/60">
                       <td colSpan={7} className="p-3 sm:p-4">
-                        <div className="bg-card rounded-lg border border-border/60 p-3 shadow-2xs" onClick={(e) => e.stopPropagation()}>
+                        <div
+                          className="bg-card rounded-lg border border-border/60 p-3 shadow-2xs"
+                          onClick={(e) => e.stopPropagation()}
+                        >
                           {renderVariantList(product)}
                         </div>
                       </td>

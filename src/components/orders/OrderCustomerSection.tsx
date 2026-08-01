@@ -21,9 +21,7 @@ export const OrderCustomerSection: React.FC<OrderCustomerSectionProps> = ({
   const address = order.shipping_address || order.billing_address || {};
   const isGuest = !customerName;
 
-  const whatsappUrl = customerPhone
-    ? `https://wa.me/${customerPhone.replace(/\D/g, "")}`
-    : "";
+  const whatsappUrl = customerPhone ? `https://wa.me/${customerPhone.replace(/\D/g, "")}` : "";
 
   return (
     <div className="p-4 rounded-xl bg-card border border-border/60 shadow-2xs space-y-4">
@@ -53,7 +51,9 @@ export const OrderCustomerSection: React.FC<OrderCustomerSectionProps> = ({
       {isGuest ? (
         <div className="flex items-center gap-2 p-3 rounded-lg bg-muted/40 text-muted-foreground text-xs font-semibold">
           <UserX className="h-4 w-4 shrink-0" />
-          <span>{isAr ? "عميل زائر (بدون حساب مسجل)" : "Guest Customer (No registered profile)"}</span>
+          <span>
+            {isAr ? "عميل زائر (بدون حساب مسجل)" : "Guest Customer (No registered profile)"}
+          </span>
         </div>
       ) : (
         <div className="space-y-2 text-xs">

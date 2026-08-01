@@ -1,6 +1,6 @@
 import * as React from "react";
 import { Link } from "@tanstack/react-router";
-import { Store, Grid } from "lucide-react";
+import { Store, Grid, PanelLeftOpen, PanelLeftClose } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { OsBrandSwitcher, type BrandRow } from "./os-brand-switcher";
 import { type AdminNavItemConfig } from "@/config/admin-navigation";
@@ -15,6 +15,7 @@ export interface OsAppDockRailProps {
   isSuperAdmin: boolean;
   isCourier: boolean;
   brands: BrandRow[];
+  onExpandSidebar?: () => void;
   className?: string;
 }
 
@@ -27,6 +28,7 @@ export function OsAppDockRail({
   isSuperAdmin,
   isCourier,
   brands,
+  onExpandSidebar,
   className,
 }: OsAppDockRailProps) {
   const [launcherOpen, setLauncherOpen] = React.useState(false);
@@ -47,13 +49,28 @@ export function OsAppDockRail({
     >
       {/* Top: Brand Identity / App Rail */}
       <div className="flex flex-col items-center gap-3 w-full">
-        {/* Brand App Monogram */}
-        <div
-          title={brandLabel}
-          aria-label={brandLabel}
-          className="h-9 w-9 rounded-2xl bg-gradient-to-br from-primary via-primary/90 to-amber-700 text-primary-foreground font-bold font-heading text-xs flex items-center justify-center shadow-md border border-primary/20 hover:scale-105 transition-transform"
-        >
-          {brandLabel.slice(0, 2).toUpperCase()}
+        {/* Brand App Monogram + Sidebar Expand Toggle */}
+        <div className="flex flex-col items-center gap-2">
+          <div
+            title={brandLabel}
+            aria-label={brandLabel}
+            className="h-9 w-9 rounded-2xl bg-gradient-to-br from-primary via-primary/90 to-amber-700 text-primary-foreground font-bold font-heading text-xs flex items-center justify-center shadow-md border border-primary/20 hover:scale-105 transition-transform cursor-pointer"
+            onClick={onExpandSidebar}
+          >
+            {brandLabel.slice(0, 2).toUpperCase()}
+          </div>
+
+          {onExpandSidebar && (
+            <button
+              type="button"
+              onClick={onExpandSidebar}
+              title={lang === "ar" ? "توسيع شريط القائمة" : "Expand Full Sidebar"}
+              aria-label={lang === "ar" ? "توسيع شريط القائمة" : "Expand Full Sidebar"}
+              className="h-7 w-7 rounded-xl bg-muted/30 hover:bg-muted text-muted-foreground hover:text-foreground flex items-center justify-center transition-all hover:scale-110 shadow-2xs border border-border/40"
+            >
+              <PanelLeftOpen className="h-3.5 w-3.5" />
+            </button>
+          )}
         </div>
 
         <div className="w-7 h-px bg-[var(--os-border)] my-0.5" />

@@ -34,7 +34,10 @@ export const Route = createFileRoute("/_authenticated/admin/b/$slug/communicatio
 });
 
 import { CommunicationsCommandHeader } from "@/components/communications/CommunicationsCommandHeader";
-import { CommunicationsScopeSwitcher, type CommunicationsScope } from "@/components/communications/CommunicationsScopeSwitcher";
+import {
+  CommunicationsScopeSwitcher,
+  type CommunicationsScope,
+} from "@/components/communications/CommunicationsScopeSwitcher";
 
 function CommunicationsPage() {
   const t = useT();

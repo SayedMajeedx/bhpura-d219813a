@@ -41,7 +41,10 @@ import { useT, useI18n } from "@/lib/i18n";
 import { useBrand } from "@/lib/brand-context";
 
 import { IntegrationsCommandHeader } from "@/components/integrations/IntegrationsCommandHeader";
-import { IntegrationsScopeSwitcher, type IntegrationsCategoryScope } from "@/components/integrations/IntegrationsScopeSwitcher";
+import {
+  IntegrationsScopeSwitcher,
+  type IntegrationsCategoryScope,
+} from "@/components/integrations/IntegrationsScopeSwitcher";
 
 export const Route = createFileRoute("/_authenticated/admin/b/$slug/integrations")({
   component: IntegrationsPage,
@@ -198,153 +201,153 @@ function IntegrationsPage() {
               <p className="text-muted-foreground">{t("integrations.none")}</p>
             </Card>
           ) : (
-        <div className="grid gap-4">
-          {filteredIntegrations.map((row) => {
-            const webhookUrl = `${webhookBase}/${row.provider}/${brandId}`;
-            const preset = PROVIDER_PRESETS.find((p) => p.value === row.provider);
-            const isNoWebhookProvider =
-              row.provider === "resend_customer_email" ||
-              row.provider === "sendpulse_admin" ||
-              row.provider === "gemini";
-            return (
-              <Card
-                key={row.id}
-                className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm p-6 transition-all duration-300 hover:scale-[1.01] hover:border-primary/40 hover:shadow-xl"
-              >
-                <div className="flex items-start justify-between gap-4 mb-4">
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div className="p-2.5 rounded-lg bg-secondary/50 border border-secondary shrink-0">
-                      {getProviderIcon(row.provider)}
-                    </div>
-                    <div className="min-w-0">
-                      <div className="font-display text-xl font-bold tracking-tight text-foreground truncate">
-                        {preset?.label ?? row.provider}
+            <div className="grid gap-4">
+              {filteredIntegrations.map((row) => {
+                const webhookUrl = `${webhookBase}/${row.provider}/${brandId}`;
+                const preset = PROVIDER_PRESETS.find((p) => p.value === row.provider);
+                const isNoWebhookProvider =
+                  row.provider === "resend_customer_email" ||
+                  row.provider === "sendpulse_admin" ||
+                  row.provider === "gemini";
+                return (
+                  <Card
+                    key={row.id}
+                    className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm p-6 transition-all duration-300 hover:scale-[1.01] hover:border-primary/40 hover:shadow-xl"
+                  >
+                    <div className="flex items-start justify-between gap-4 mb-4">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className="p-2.5 rounded-lg bg-secondary/50 border border-secondary shrink-0">
+                          {getProviderIcon(row.provider)}
+                        </div>
+                        <div className="min-w-0">
+                          <div className="font-display text-xl font-bold tracking-tight text-foreground truncate">
+                            {preset?.label ?? row.provider}
+                          </div>
+                          <div className="text-xs text-muted-foreground truncate font-mono mt-0.5">
+                            {row.base_url || (row.provider === "gemini" ? "gemini-1.5-flash" : "—")}
+                          </div>
+                        </div>
                       </div>
-                      <div className="text-xs text-muted-foreground truncate font-mono mt-0.5">
-                        {row.base_url || (row.provider === "gemini" ? "gemini-1.5-flash" : "—")}
-                      </div>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-1 shrink-0">
-                    <span
-                      className={`text-xs px-2.5 py-0.5 rounded-full font-semibold border ${
-                        row.is_active
-                          ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20"
-                          : "bg-slate-500/10 text-slate-500 border-slate-500/20"
-                      }`}
-                    >
-                      {row.is_active ? t("integrations.active") : isAr ? "معطّل" : "Off"}
-                    </span>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => {
-                        setEditing(row);
-                        setOpen(true);
-                      }}
-                      className="h-8 w-8 text-muted-foreground hover:text-foreground hover:scale-105 active:scale-95 transition-all"
-                    >
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => del(row.id)}
-                      className="h-8 w-8 text-muted-foreground hover:text-destructive hover:scale-105 active:scale-95 transition-all"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm bg-secondary/20 border border-secondary/30 rounded-lg p-4">
-                  <MaskedRow
-                    label={
-                      row.provider === "resend_customer_email"
-                        ? isAr
-                          ? "بريد المُرسل المعتمد"
-                          : "Verified sender email"
-                        : row.provider === "gemini"
-                          ? isAr
-                            ? "نموذج الذكاء الاصطناعي (اختياري)"
-                            : "AI Model (Optional)"
-                          : t("integrations.apiKey")
-                    }
-                    value={
-                      row.provider === "gemini"
-                        ? row.base_url || "gemini-1.5-flash"
-                        : row.api_key_masked
-                    }
-                  />
-                  <MaskedRow
-                    label={
-                      row.provider === "resend_customer_email"
-                        ? isAr
-                          ? "مفتاح API الخاص بـ Resend"
-                          : "Resend API key"
-                        : row.provider === "gemini"
-                          ? isAr
-                            ? "مفتاح API الخاص بـ Gemini"
-                            : "Gemini API key"
-                          : t("integrations.webhookSecret")
-                    }
-                    value={
-                      row.provider === "gemini" ? row.api_key_masked : row.webhook_secret_masked
-                    }
-                  />
-                </div>
-
-                <div className="mt-4 pt-4 border-t border-border/80 text-xs">
-                  {isNoWebhookProvider ? (
-                    <div className="flex items-center gap-2 text-muted-foreground bg-primary/5 border border-primary/10 rounded-lg px-3 py-2.5">
-                      {row.provider === "gemini" ? (
-                        <Sparkles className="h-4 w-4 text-purple-500 shrink-0" />
-                      ) : (
-                        <Mail className="h-4 w-4 text-primary shrink-0" />
-                      )}
-                      <p className="leading-normal">
-                        {row.provider === "gemini"
-                          ? isAr
-                            ? "يتم استخدام تكامل Gemini هذا مباشرةً لترجمة عناوين المنتجات والوصف تلقائياً وتفصيل مخرجات صياغة المحتوى الثنائي اللغة."
-                            : "This Gemini integration is used directly for super-high-quality storefront translations and product copywriting."
-                          : isAr
-                            ? "يستخدم هذا المزود مباشرةً من خدمة البريد الآمنة في Boutق عبر اتصال بروتوكول HTTP الآمن. لا يلزم إعداد رابط Webhook لدى المزود."
-                            : "This provider is used directly by Boutq's secure email service over high-speed HTTPS. No provider webhook URL is required."}
-                      </p>
-                    </div>
-                  ) : (
-                    <div className="bg-secondary/10 border border-secondary/20 rounded-lg p-3">
-                      <p className="text-muted-foreground mb-1.5 font-medium">
-                        {t("integrations.webhookHint")}
-                      </p>
-                      <div className="flex items-center gap-2 bg-background/50 border rounded-md p-1.5 pl-3">
-                        <code className="flex-1 truncate font-mono text-xs">{webhookUrl}</code>
+                      <div className="flex items-center gap-1 shrink-0">
+                        <span
+                          className={`text-xs px-2.5 py-0.5 rounded-full font-semibold border ${
+                            row.is_active
+                              ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20"
+                              : "bg-slate-500/10 text-slate-500 border-slate-500/20"
+                          }`}
+                        >
+                          {row.is_active ? t("integrations.active") : isAr ? "معطّل" : "Off"}
+                        </span>
                         <Button
                           variant="ghost"
-                          size="sm"
+                          size="icon"
                           onClick={() => {
-                            navigator.clipboard?.writeText(webhookUrl);
-                            toast.success("Copied");
+                            setEditing(row);
+                            setOpen(true);
                           }}
-                          className="h-7 px-2 shrink-0"
+                          className="h-8 w-8 text-muted-foreground hover:text-foreground hover:scale-105 active:scale-95 transition-all"
                         >
-                          <Copy className="h-3.5 w-3.5" />
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => del(row.id)}
+                          className="h-8 w-8 text-muted-foreground hover:text-destructive hover:scale-105 active:scale-95 transition-all"
+                        >
+                          <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
                     </div>
-                  )}
-                </div>
 
-                {row.notes && (
-                  <p className="text-xs text-muted-foreground mt-3 italic bg-secondary/10 px-3 py-1.5 rounded border border-secondary/20">
-                    {row.notes}
-                  </p>
-                )}
-              </Card>
-            );
-          })}
-        </div>
-      )}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm bg-secondary/20 border border-secondary/30 rounded-lg p-4">
+                      <MaskedRow
+                        label={
+                          row.provider === "resend_customer_email"
+                            ? isAr
+                              ? "بريد المُرسل المعتمد"
+                              : "Verified sender email"
+                            : row.provider === "gemini"
+                              ? isAr
+                                ? "نموذج الذكاء الاصطناعي (اختياري)"
+                                : "AI Model (Optional)"
+                              : t("integrations.apiKey")
+                        }
+                        value={
+                          row.provider === "gemini"
+                            ? row.base_url || "gemini-1.5-flash"
+                            : row.api_key_masked
+                        }
+                      />
+                      <MaskedRow
+                        label={
+                          row.provider === "resend_customer_email"
+                            ? isAr
+                              ? "مفتاح API الخاص بـ Resend"
+                              : "Resend API key"
+                            : row.provider === "gemini"
+                              ? isAr
+                                ? "مفتاح API الخاص بـ Gemini"
+                                : "Gemini API key"
+                              : t("integrations.webhookSecret")
+                        }
+                        value={
+                          row.provider === "gemini" ? row.api_key_masked : row.webhook_secret_masked
+                        }
+                      />
+                    </div>
+
+                    <div className="mt-4 pt-4 border-t border-border/80 text-xs">
+                      {isNoWebhookProvider ? (
+                        <div className="flex items-center gap-2 text-muted-foreground bg-primary/5 border border-primary/10 rounded-lg px-3 py-2.5">
+                          {row.provider === "gemini" ? (
+                            <Sparkles className="h-4 w-4 text-purple-500 shrink-0" />
+                          ) : (
+                            <Mail className="h-4 w-4 text-primary shrink-0" />
+                          )}
+                          <p className="leading-normal">
+                            {row.provider === "gemini"
+                              ? isAr
+                                ? "يتم استخدام تكامل Gemini هذا مباشرةً لترجمة عناوين المنتجات والوصف تلقائياً وتفصيل مخرجات صياغة المحتوى الثنائي اللغة."
+                                : "This Gemini integration is used directly for super-high-quality storefront translations and product copywriting."
+                              : isAr
+                                ? "يستخدم هذا المزود مباشرةً من خدمة البريد الآمنة في Boutق عبر اتصال بروتوكول HTTP الآمن. لا يلزم إعداد رابط Webhook لدى المزود."
+                                : "This provider is used directly by Boutq's secure email service over high-speed HTTPS. No provider webhook URL is required."}
+                          </p>
+                        </div>
+                      ) : (
+                        <div className="bg-secondary/10 border border-secondary/20 rounded-lg p-3">
+                          <p className="text-muted-foreground mb-1.5 font-medium">
+                            {t("integrations.webhookHint")}
+                          </p>
+                          <div className="flex items-center gap-2 bg-background/50 border rounded-md p-1.5 pl-3">
+                            <code className="flex-1 truncate font-mono text-xs">{webhookUrl}</code>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                navigator.clipboard?.writeText(webhookUrl);
+                                toast.success("Copied");
+                              }}
+                              className="h-7 px-2 shrink-0"
+                            >
+                              <Copy className="h-3.5 w-3.5" />
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {row.notes && (
+                      <p className="text-xs text-muted-foreground mt-3 italic bg-secondary/10 px-3 py-1.5 rounded border border-secondary/20">
+                        {row.notes}
+                      </p>
+                    )}
+                  </Card>
+                );
+              })}
+            </div>
+          )}
         </>
       )}
     </div>

@@ -72,10 +72,7 @@ export function DiscountsScopeSwitcher({
             )}
           >
             <Icon
-              className={cn(
-                "h-3.5 w-3.5 shrink-0",
-                !isActive && tab.accent ? tab.accent : "",
-              )}
+              className={cn("h-3.5 w-3.5 shrink-0", !isActive && tab.accent ? tab.accent : "")}
             />
             <span>{tab.label}</span>
             <span

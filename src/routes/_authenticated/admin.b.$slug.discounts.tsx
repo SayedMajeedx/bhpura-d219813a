@@ -33,7 +33,10 @@ import { toast } from "sonner";
 import { formatMoney } from "@/lib/format";
 
 import { DiscountsCommandHeader } from "@/components/discounts/DiscountsCommandHeader";
-import { DiscountsScopeSwitcher, type DiscountStatusTab } from "@/components/discounts/DiscountsScopeSwitcher";
+import {
+  DiscountsScopeSwitcher,
+  type DiscountStatusTab,
+} from "@/components/discounts/DiscountsScopeSwitcher";
 import { DiscountsToolbar } from "@/components/discounts/DiscountsToolbar";
 import { DiscountsWorkQueue } from "@/components/discounts/DiscountsWorkQueue";
 import { DiscountMobileCard } from "@/components/discounts/DiscountMobileCard";
@@ -415,7 +418,8 @@ function DiscountCodes() {
     const isCapReached = p.max_redemptions != null && usage >= p.max_redemptions;
 
     let matchesTab = true;
-    if (activeTab === "active") matchesTab = p.is_active && isStarted && !isExpired && !isCapReached;
+    if (activeTab === "active")
+      matchesTab = p.is_active && isStarted && !isExpired && !isCapReached;
     else if (activeTab === "scheduled") matchesTab = p.is_active && !isStarted && !isExpired;
     else if (activeTab === "expired") matchesTab = isExpired || isCapReached;
 

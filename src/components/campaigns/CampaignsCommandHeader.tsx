@@ -67,9 +67,7 @@ export function CampaignsCommandHeader({
           >
             <Play className="h-3.5 w-3.5" />
             <span>
-              {isAr
-                ? `إطلاق حملة جماعية (${selectedCount})`
-                : `Launch Campaign (${selectedCount})`}
+              {isAr ? `إطلاق حملة جماعية (${selectedCount})` : `Launch Campaign (${selectedCount})`}
             </span>
           </Button>
         </div>

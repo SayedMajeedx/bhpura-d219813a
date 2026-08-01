@@ -49,7 +49,12 @@ export function SettingsScopeSwitcher({
     { id: "branches", icon: MapPin, labelAr: "الفروع والمواقع", labelEn: "Branches" },
     { id: "emails", icon: Mail, labelAr: "الإشعارات والبريد", labelEn: "Notifications" },
     { id: "security", icon: ShieldCheck, labelAr: "الأمان والبصمة", labelEn: "Security" },
-    { id: "subscription", icon: LicenseIcon, labelAr: "الاشتراك والترخيص", labelEn: "Subscription" },
+    {
+      id: "subscription",
+      icon: LicenseIcon,
+      labelAr: "الاشتراك والترخيص",
+      labelEn: "Subscription",
+    },
   ];
 
   return (

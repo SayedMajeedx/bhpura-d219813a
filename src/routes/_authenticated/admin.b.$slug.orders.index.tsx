@@ -66,6 +66,7 @@ import { useBrand } from "@/lib/brand-context";
 import { useProfile } from "@/lib/profile-context";
 import { useRealtimeInvalidate } from "@/hooks/use-realtime-invalidate";
 import { useEffect, useMemo, useState } from "react";
+import { getNavFilterContext, saveNavFilterContext } from "@/lib/os-productivity";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -382,11 +383,20 @@ function OrdersList() {
   const { isCourier, isAdmin } = useProfile();
   const brandId = brand.id;
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
-  const [search, setSearch] = useState("");
-  const [paymentFilter, setPaymentFilter] = useState("all");
-  const [fulfillmentStatusFilter, setFulfillmentStatusFilter] = useState("all");
-  const [fulfillmentMethodFilter, setFulfillmentMethodFilter] = useState("all");
-  const [gatewayFilter, setGatewayFilter] = useState<PaymentMethodFilter>("all");
+  // Feature 7: Context-preserving return navigation (restore saved search & filters)
+  const savedContext = getNavFilterContext("orders");
+
+  const [search, setSearch] = useState(savedContext?.search || "");
+  const [paymentFilter, setPaymentFilter] = useState(savedContext?.paymentFilter || "all");
+  const [fulfillmentStatusFilter, setFulfillmentStatusFilter] = useState(
+    savedContext?.fulfillmentStatusFilter || "all",
+  );
+  const [fulfillmentMethodFilter, setFulfillmentMethodFilter] = useState(
+    savedContext?.fulfillmentMethodFilter || "all",
+  );
+  const [gatewayFilter, setGatewayFilter] = useState<PaymentMethodFilter>(
+    savedContext?.gatewayFilter || "all",
+  );
   const [inspectOrder, setInspectOrder] = useState<any | null>(null);
   const [includeHistorical, setIncludeHistorical] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
@@ -394,7 +404,26 @@ function OrdersList() {
   // New Quick Tab filter
   const [tabFilter, setTabFilter] = useState<
     "all" | "unpaid" | "action_required" | "shipped" | "completed"
-  >("all");
+  >(savedContext?.tabFilter || "all");
+
+  // Save navigation filters when they change
+  useEffect(() => {
+    saveNavFilterContext("orders", {
+      search,
+      paymentFilter,
+      fulfillmentStatusFilter,
+      fulfillmentMethodFilter,
+      gatewayFilter,
+      tabFilter,
+    });
+  }, [
+    search,
+    paymentFilter,
+    fulfillmentStatusFilter,
+    fulfillmentMethodFilter,
+    gatewayFilter,
+    tabFilter,
+  ]);
 
   // New Fulfill states
   const [isFulfillModalOpen, setIsFulfillModalOpen] = useState(false);
@@ -1204,9 +1233,7 @@ function OrdersList() {
             ) : (
               <span className="flex items-center gap-1">
                 <Truck className="h-3.5 w-3.5" />
-                {lang === "ar"
-                  ? "تأكيد استلام المندوب"
-                  : "Confirm Courier Pickup"}
+                {lang === "ar" ? "تأكيد استلام المندوب" : "Confirm Courier Pickup"}
               </span>
             )}
           </Button>
@@ -1260,9 +1287,7 @@ function OrdersList() {
             >
               <span className="flex items-center gap-1">
                 <CircleDollarSign className="h-3.5 w-3.5" />
-                {lang === "ar"
-                  ? "تحصيل المتبقي وتسليم"
-                  : "Collect Remaining & Complete"}
+                {lang === "ar" ? "تحصيل المتبقي وتسليم" : "Collect Remaining & Complete"}
               </span>
             </Button>
           );
@@ -1283,9 +1308,7 @@ function OrdersList() {
           >
             <span className="flex items-center gap-1">
               <CircleDollarSign className="h-3.5 w-3.5" />
-              {lang === "ar"
-                ? "تحصيل نقدًا وتسليم"
-                : "Collect Cash & Complete"}
+              {lang === "ar" ? "تحصيل نقدًا وتسليم" : "Collect Cash & Complete"}
             </span>
           </Button>
         );
@@ -1481,65 +1504,63 @@ function OrdersList() {
         />
       </div>
 
-          {/* Pagination Controls */}
-          <div className="mt-4 flex flex-col items-center justify-between gap-3 rounded-2xl border border-border/70 bg-card p-3 text-sm shadow-sm select-none sm:flex-row sm:p-4">
-            <div className="flex items-center gap-2">
-              <span className="text-muted-foreground text-xs sm:text-sm">
-                {lang === "ar" ? "الطلبات لكل صفحة:" : "Orders per page:"}
-              </span>
-              <Select value={String(pageSize)} onValueChange={(v) => setPageSize(Number(v))}>
-                <SelectTrigger className="h-8 w-20 text-xs">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="10">10</SelectItem>
-                  <SelectItem value="20">20</SelectItem>
-                  <SelectItem value="50">50</SelectItem>
-                </SelectContent>
-              </Select>
-              <span className="text-muted-foreground text-xs ms-2">
-                {lang === "ar"
-                  ? `عرض ${Math.min((page - 1) * pageSize + 1, sortedOrders.length)}-${Math.min(page * pageSize, sortedOrders.length)} من ${sortedOrders.length} طلب`
-                  : `Showing ${Math.min((page - 1) * pageSize + 1, sortedOrders.length)}-${Math.min(page * pageSize, sortedOrders.length)} of ${sortedOrders.length} orders`}
-              </span>
-            </div>
+      {/* Pagination Controls */}
+      <div className="mt-4 flex flex-col items-center justify-between gap-3 rounded-2xl border border-border/70 bg-card p-3 text-sm shadow-sm select-none sm:flex-row sm:p-4">
+        <div className="flex items-center gap-2">
+          <span className="text-muted-foreground text-xs sm:text-sm">
+            {lang === "ar" ? "الطلبات لكل صفحة:" : "Orders per page:"}
+          </span>
+          <Select value={String(pageSize)} onValueChange={(v) => setPageSize(Number(v))}>
+            <SelectTrigger className="h-8 w-20 text-xs">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="10">10</SelectItem>
+              <SelectItem value="20">20</SelectItem>
+              <SelectItem value="50">50</SelectItem>
+            </SelectContent>
+          </Select>
+          <span className="text-muted-foreground text-xs ms-2">
+            {lang === "ar"
+              ? `عرض ${Math.min((page - 1) * pageSize + 1, sortedOrders.length)}-${Math.min(page * pageSize, sortedOrders.length)} من ${sortedOrders.length} طلب`
+              : `Showing ${Math.min((page - 1) * pageSize + 1, sortedOrders.length)}-${Math.min(page * pageSize, sortedOrders.length)} of ${sortedOrders.length} orders`}
+          </span>
+        </div>
 
-            <div className="flex items-center gap-1">
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-8 w-8 p-0"
-                onClick={() => setPage((p) => Math.max(p - 1, 1))}
-                disabled={page === 1}
-              >
-                {lang === "ar" ? (
-                  <ChevronRight className="h-4 w-4" />
-                ) : (
-                  <ChevronLeft className="h-4 w-4" />
-                )}
-                <span className="sr-only">
-                  {lang === "ar" ? "الصفحة السابقة" : "Previous page"}
-                </span>
-              </Button>
-              <div className="text-xs px-2 text-muted-foreground">
-                {lang === "ar" ? `صفحة ${page} من ${totalPages}` : `Page ${page} of ${totalPages}`}
-              </div>
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-8 w-8 p-0"
-                onClick={() => setPage((p) => Math.min(p + 1, totalPages))}
-                disabled={page === totalPages}
-              >
-                {lang === "ar" ? (
-                  <ChevronLeft className="h-4 w-4" />
-                ) : (
-                  <ChevronRight className="h-4 w-4" />
-                )}
-                <span className="sr-only">{lang === "ar" ? "الصفحة التالية" : "Next page"}</span>
-              </Button>
-            </div>
+        <div className="flex items-center gap-1">
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-8 w-8 p-0"
+            onClick={() => setPage((p) => Math.max(p - 1, 1))}
+            disabled={page === 1}
+          >
+            {lang === "ar" ? (
+              <ChevronRight className="h-4 w-4" />
+            ) : (
+              <ChevronLeft className="h-4 w-4" />
+            )}
+            <span className="sr-only">{lang === "ar" ? "الصفحة السابقة" : "Previous page"}</span>
+          </Button>
+          <div className="text-xs px-2 text-muted-foreground">
+            {lang === "ar" ? `صفحة ${page} من ${totalPages}` : `Page ${page} of ${totalPages}`}
           </div>
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-8 w-8 p-0"
+            onClick={() => setPage((p) => Math.min(p + 1, totalPages))}
+            disabled={page === totalPages}
+          >
+            {lang === "ar" ? (
+              <ChevronLeft className="h-4 w-4" />
+            ) : (
+              <ChevronRight className="h-4 w-4" />
+            )}
+            <span className="sr-only">{lang === "ar" ? "الصفحة التالية" : "Next page"}</span>
+          </Button>
+        </div>
+      </div>
       {!isCourier && (
         <AlertDialog
           open={deleteTarget !== null}
@@ -2700,7 +2721,10 @@ function OrderQuickInspectSheet({
             <div className="text-sm font-semibold">
               {getOrderCustomerName(order) || (isAr ? "عميل غير مسجل" : "Guest Customer")}
             </div>
-            <CustomerContactActions customer={getOrderCustomerContact(order)} lang={lang as "en" | "ar"} />
+            <CustomerContactActions
+              customer={getOrderCustomerContact(order)}
+              lang={lang as "en" | "ar"}
+            />
           </div>
 
           {/* Line Items */}
@@ -2710,7 +2734,10 @@ function OrderQuickInspectSheet({
             </h4>
             <div className="divide-y border rounded-xl overflow-hidden bg-card">
               {items.map((it: any, idx: number) => (
-                <div key={it.id || idx} className="p-3.5 flex items-center justify-between gap-3 text-xs">
+                <div
+                  key={it.id || idx}
+                  className="p-3.5 flex items-center justify-between gap-3 text-xs"
+                >
                   <div>
                     <div className="font-semibold text-sm">
                       <span className="text-primary font-bold mr-1">{it.quantity}x</span>
@@ -2718,7 +2745,11 @@ function OrderQuickInspectSheet({
                     </div>
                   </div>
                   <div className="font-mono font-bold shrink-0 text-sm">
-                    {formatMoney(Number(it.line_total || it.unit_price * it.quantity), order.currency || "BHD", locale)}
+                    {formatMoney(
+                      Number(it.line_total || it.unit_price * it.quantity),
+                      order.currency || "BHD",
+                      locale,
+                    )}
                   </div>
                 </div>
               ))}

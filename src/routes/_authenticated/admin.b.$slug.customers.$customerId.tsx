@@ -254,7 +254,10 @@ function CustomerProfilePage() {
               </h2>
               <p className="text-xs text-muted-foreground mt-1">
                 {lang === "ar" ? "إجمالي الإنفاق:" : "Lifetime Spend:"}{" "}
-                <span className="font-bold text-primary font-mono">{formatMoney(totalSpent, "BHD")}</span> ({orders.length} {lang === "ar" ? "طلبات" : "orders"})
+                <span className="font-bold text-primary font-mono">
+                  {formatMoney(totalSpent, "BHD")}
+                </span>{" "}
+                ({orders.length} {lang === "ar" ? "طلبات" : "orders"})
               </p>
             </div>
             <div className="space-y-4 p-5 text-sm">

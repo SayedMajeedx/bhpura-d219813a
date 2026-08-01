@@ -52,9 +52,7 @@ export const OrderMobileCard: React.FC<OrderMobileCardProps> = ({
               {isAr ? "عميل زائر" : "Guest Customer"}
             </span>
           ) : (
-            <span className="font-semibold text-foreground truncate">
-              {customerName}
-            </span>
+            <span className="font-semibold text-foreground truncate">{customerName}</span>
           )}
         </div>
         {customerPhone && (
@@ -71,12 +69,16 @@ export const OrderMobileCard: React.FC<OrderMobileCardProps> = ({
       {/* Badges Row */}
       <div className="flex items-center gap-1.5 flex-wrap">
         {paymentBadge && (
-          <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold ${paymentBadge.className}`}>
+          <span
+            className={`px-2 py-0.5 rounded-md text-[10px] font-bold ${paymentBadge.className}`}
+          >
             {paymentBadge.label}
           </span>
         )}
         {fulfillmentBadge && (
-          <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold ${fulfillmentBadge.classes}`}>
+          <span
+            className={`px-2 py-0.5 rounded-md text-[10px] font-bold ${fulfillmentBadge.classes}`}
+          >
             {fulfillmentBadge.label}
           </span>
         )}
@@ -84,9 +86,7 @@ export const OrderMobileCard: React.FC<OrderMobileCardProps> = ({
 
       {/* Primary Action Button Bar */}
       <div className="pt-1 flex items-center justify-end gap-2 border-t border-border/40">
-        <div className="w-full sm:w-auto">
-          {renderPrimaryAction(order)}
-        </div>
+        <div className="w-full sm:w-auto">{renderPrimaryAction(order)}</div>
       </div>
     </div>
   );

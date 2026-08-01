@@ -15,7 +15,8 @@ export const OrderFulfillmentSection: React.FC<OrderFulfillmentSectionProps> = (
 }) => {
   const isAr = lang === "ar";
   const fulfillmentMethod = order.fulfillment_method || "delivery";
-  const courierName = order.courier_name || order.courier?.name || (isAr ? "لم يتم التعيين" : "Unassigned");
+  const courierName =
+    order.courier_name || order.courier?.name || (isAr ? "لم يتم التعيين" : "Unassigned");
 
   return (
     <div className="p-4 rounded-xl bg-card border border-border/60 shadow-2xs space-y-3">

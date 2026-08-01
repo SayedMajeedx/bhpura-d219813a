@@ -58,9 +58,7 @@ export function togglePinnedAction(action: PinnedAction): boolean {
   try {
     const current = getPinnedActions();
     const exists = current.some((a) => a.id === action.id);
-    const updated = exists
-      ? current.filter((a) => a.id !== action.id)
-      : [...current, action];
+    const updated = exists ? current.filter((a) => a.id !== action.id) : [...current, action];
     localStorage.setItem(PINNED_ACTIONS_KEY, JSON.stringify(updated));
     return !exists;
   } catch {

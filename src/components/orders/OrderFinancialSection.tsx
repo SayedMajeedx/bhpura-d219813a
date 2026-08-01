@@ -58,7 +58,9 @@ export const OrderFinancialSection: React.FC<OrderFinancialSectionProps> = ({
         )}
         <div className="pt-2 border-t border-border/60 flex justify-between font-extrabold text-sm text-foreground">
           <span>{isAr ? "الإجمالي الكلي" : "Grand Total"}</span>
-          <span className="text-primary">{formatMoney(grandTotal, order.currency || "BHD", lang)}</span>
+          <span className="text-primary">
+            {formatMoney(grandTotal, order.currency || "BHD", lang)}
+          </span>
         </div>
       </div>
 

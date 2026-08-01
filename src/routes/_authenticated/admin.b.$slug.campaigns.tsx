@@ -42,7 +42,10 @@ import { useBrand } from "@/lib/brand-context";
 import { buildCustomerCrmStats, type CustomerMetricOrder } from "@/lib/commerce-metrics";
 
 import { CampaignsCommandHeader } from "@/components/campaigns/CampaignsCommandHeader";
-import { CampaignsScopeSwitcher, type CampaignSegment } from "@/components/campaigns/CampaignsScopeSwitcher";
+import {
+  CampaignsScopeSwitcher,
+  type CampaignSegment,
+} from "@/components/campaigns/CampaignsScopeSwitcher";
 
 export const Route = createFileRoute("/_authenticated/admin/b/$slug/campaigns")({
   validateSearch: (search: Record<string, unknown>) => ({

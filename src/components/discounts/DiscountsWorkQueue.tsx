@@ -1,4 +1,14 @@
-import { Pencil, Trash2, Tag, Calendar, CheckCircle2, AlertCircle, Clock, Percent, DollarSign } from "lucide-react";
+import {
+  Pencil,
+  Trash2,
+  Tag,
+  Calendar,
+  CheckCircle2,
+  AlertCircle,
+  Clock,
+  Percent,
+  DollarSign,
+} from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { formatMoney } from "@/lib/format";
@@ -54,9 +64,13 @@ export function DiscountsWorkQueue({
             <tr className="border-b border-border/60 bg-muted/40 font-semibold text-muted-foreground uppercase tracking-wider text-[10px]">
               <th className="p-3 text-start">{isAr ? "رمز الخصم" : "Promo Code"}</th>
               <th className="p-3 text-start">{isAr ? "قيمة الخصم" : "Discount Value"}</th>
-              <th className="p-3 text-start">{isAr ? "الشروط والأهلية" : "Eligibility & Conditions"}</th>
+              <th className="p-3 text-start">
+                {isAr ? "الشروط والأهلية" : "Eligibility & Conditions"}
+              </th>
               <th className="p-3 text-start">{isAr ? "الجدولة" : "Schedule"}</th>
-              <th className="p-3 text-center">{isAr ? "الاستخدام والإيرادات" : "Usage & Revenue"}</th>
+              <th className="p-3 text-center">
+                {isAr ? "الاستخدام والإيرادات" : "Usage & Revenue"}
+              </th>
               <th className="p-3 text-center">{isAr ? "الحالة" : "Status"}</th>
               <th className="p-3 text-end">{isAr ? "الإجراءات" : "Actions"}</th>
             </tr>
@@ -147,13 +161,17 @@ export function DiscountsWorkQueue({
                         {p.minimum_order_amount && (
                           <span className="text-[11px]">
                             {isAr ? "الحد الأدنى:" : "Min order:"}{" "}
-                            <b className="text-foreground">{formatMoney(p.minimum_order_amount, currency)}</b>
+                            <b className="text-foreground">
+                              {formatMoney(p.minimum_order_amount, currency)}
+                            </b>
                           </span>
                         )}
                         {p.maximum_discount_amount && p.discount_type === "percentage" && (
                           <span className="text-[11px]">
                             {isAr ? "أقصى خصم:" : "Max cap:"}{" "}
-                            <b className="text-foreground">{formatMoney(p.maximum_discount_amount, currency)}</b>
+                            <b className="text-foreground">
+                              {formatMoney(p.maximum_discount_amount, currency)}
+                            </b>
                           </span>
                         )}
                         {p.first_time_customers_only && (
@@ -161,9 +179,11 @@ export function DiscountsWorkQueue({
                             ✨ {isAr ? "للعملاء الجدد فقط" : "First-time buyers only"}
                           </span>
                         )}
-                        {!p.minimum_order_amount && !p.maximum_discount_amount && !p.first_time_customers_only && (
-                          <span className="text-muted-foreground/60">—</span>
-                        )}
+                        {!p.minimum_order_amount &&
+                          !p.maximum_discount_amount &&
+                          !p.first_time_customers_only && (
+                            <span className="text-muted-foreground/60">—</span>
+                          )}
                       </div>
                     </td>
 
@@ -174,7 +194,10 @@ export function DiscountsWorkQueue({
                           <span>
                             {isAr ? "من:" : "From:"}{" "}
                             <b className="text-foreground">
-                              {new Date(p.start_date).toLocaleDateString("en-GB", { day: "2-digit", month: "short" })}
+                              {new Date(p.start_date).toLocaleDateString("en-GB", {
+                                day: "2-digit",
+                                month: "short",
+                              })}
                             </b>
                           </span>
                         )}
@@ -182,11 +205,16 @@ export function DiscountsWorkQueue({
                           <span>
                             {isAr ? "إلى:" : "To:"}{" "}
                             <b className="text-foreground">
-                              {new Date(p.end_date).toLocaleDateString("en-GB", { day: "2-digit", month: "short" })}
+                              {new Date(p.end_date).toLocaleDateString("en-GB", {
+                                day: "2-digit",
+                                month: "short",
+                              })}
                             </b>
                           </span>
                         )}
-                        {!p.start_date && !p.end_date && <span>{isAr ? "دائم" : "Always active"}</span>}
+                        {!p.start_date && !p.end_date && (
+                          <span>{isAr ? "دائم" : "Always active"}</span>
+                        )}
                       </div>
                     </td>
 
@@ -194,7 +222,8 @@ export function DiscountsWorkQueue({
                     <td className="p-3 align-middle text-center font-mono">
                       <div className="flex flex-col items-center gap-0.5">
                         <span className="font-bold text-foreground text-xs">
-                          {usage} {p.max_redemptions ? `/ ${p.max_redemptions}` : ""} {isAr ? "استخدام" : "redemptions"}
+                          {usage} {p.max_redemptions ? `/ ${p.max_redemptions}` : ""}{" "}
+                          {isAr ? "استخدام" : "redemptions"}
                         </span>
                         {revenue > 0 && (
                           <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold">
@@ -205,7 +234,10 @@ export function DiscountsWorkQueue({
                     </td>
 
                     {/* Status Badge & Switch */}
-                    <td className="p-3 align-middle text-center" onClick={(e) => e.stopPropagation()}>
+                    <td
+                      className="p-3 align-middle text-center"
+                      onClick={(e) => e.stopPropagation()}
+                    >
                       <div className="flex flex-col items-center gap-1.5">
                         {statusBadge}
                         <Switch

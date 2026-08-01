@@ -10,6 +10,7 @@ import { useProfile } from "@/lib/profile-context";
 import { toast } from "sonner";
 import { getAdminNavItems } from "@/config/admin-navigation";
 import { OsAppDockRail } from "@/components/os/os-app-dock-rail";
+import { OsSidebar } from "@/components/os/os-sidebar";
 import { OsMenuBar } from "@/components/os/os-menu-bar";
 import { OsAppWindow } from "@/components/os/os-app-window";
 import { OsMobileNavigation } from "@/components/os/os-mobile-navigation";
@@ -24,6 +25,23 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const { t, lang, setLang } = useI18n();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [isFocusMode, setIsFocusMode] = useState(false);
+
+  const [sidebarExpanded, setSidebarExpanded] = useState<boolean>(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("boutq_os_sidebar_expanded") === "true";
+    }
+    return false;
+  });
+
+  const toggleSidebarExpanded = () => {
+    setSidebarExpanded((prev) => {
+      const next = !prev;
+      if (typeof window !== "undefined") {
+        localStorage.setItem("boutq_os_sidebar_expanded", String(next));
+      }
+      return next;
+    });
+  };
 
   const {
     profile,
@@ -221,19 +239,35 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
       {/* Main Boutq OS Workspace Frame */}
       <div className="flex-1 flex overflow-hidden">
-        {/* Level 1: Visually Detached App Dock Rail */}
-        {!isFocusMode && (
-          <OsAppDockRail
-            brandLabel={brandLabel}
-            activeSlug={activeSlug}
-            navItems={navItems}
-            pathname={pathname}
-            lang={lang}
-            isSuperAdmin={isSuperAdmin}
-            isCourier={isCourier}
-            brands={brandsQ.data ?? []}
-          />
-        )}
+        {/* Level 1: Collapsible Navigation (Full Sidebar vs Compact Dock Rail) */}
+        {!isFocusMode &&
+          (sidebarExpanded ? (
+            <OsSidebar
+              brandLabel={brandLabel}
+              brandSubtitle={activeSlug ? `@${activeSlug}` : "Boutq OS"}
+              activeSlug={activeSlug}
+              navItems={navItems}
+              pathname={pathname}
+              lang={lang}
+              isSuperAdmin={isSuperAdmin}
+              isCourier={isCourier}
+              brands={brandsQ.data ?? []}
+              collapsed={false}
+              onToggleCollapse={toggleSidebarExpanded}
+            />
+          ) : (
+            <OsAppDockRail
+              brandLabel={brandLabel}
+              activeSlug={activeSlug}
+              navItems={navItems}
+              pathname={pathname}
+              lang={lang}
+              isSuperAdmin={isSuperAdmin}
+              isCourier={isCourier}
+              brands={brandsQ.data ?? []}
+              onExpandSidebar={toggleSidebarExpanded}
+            />
+          ))}
 
         {/* Mobile Navigation Header & Bottom Dock */}
         <OsMobileNavigation
@@ -270,9 +304,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
           {/* Level 2: Active Application Window */}
           <main className="flex-1 flex flex-col min-h-0 mx-0 md:me-3 md:mb-3 overflow-hidden select-text">
-            {!isFocusMode && (
-              <OsRecentHistoryBar lang={lang} currentPageTitle={currentPageLabel} />
-            )}
+            {!isFocusMode && <OsRecentHistoryBar lang={lang} currentPageTitle={currentPageLabel} />}
             <OsAppWindow
               icon={activeNavItem?.icon}
               title={currentPageLabel || brandLabel}

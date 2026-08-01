@@ -250,7 +250,9 @@ test("Comprehensive 1920x1080 Desktop UX Audit across all routes", async ({ page
       const cursor = await el.evaluate((node) => window.getComputedStyle(node).cursor);
       // Log elements that don't have cursor: pointer
       if (cursor !== "pointer") {
-        console.log(`[UX CURSOR WARNING] Interactive element index ${i} has cursor: '${cursor}' instead of 'pointer'`);
+        console.log(
+          `[UX CURSOR WARNING] Interactive element index ${i} has cursor: '${cursor}' instead of 'pointer'`,
+        );
       }
     }
   }
@@ -265,7 +267,9 @@ test("Comprehensive 1920x1080 Desktop UX Audit across all routes", async ({ page
   if ((await orderRows.count()) > 0) {
     const firstRow = orderRows.first();
     await firstRow.hover();
-    const bgBefore = await firstRow.evaluate((node) => window.getComputedStyle(node).backgroundColor);
+    const bgBefore = await firstRow.evaluate(
+      (node) => window.getComputedStyle(node).backgroundColor,
+    );
     console.log("Order row hover computed background:", bgBefore);
   }
 

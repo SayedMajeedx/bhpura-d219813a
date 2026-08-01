@@ -1,7 +1,16 @@
 import React from "react";
 import { Link } from "@tanstack/react-router";
 import { formatMoney, formatDate } from "@/lib/format";
-import { UserX, Phone, ExternalLink, MoreVertical, Copy, Printer, MessageSquare, AlertCircle } from "lucide-react";
+import {
+  UserX,
+  Phone,
+  ExternalLink,
+  MoreVertical,
+  Copy,
+  Printer,
+  MessageSquare,
+  AlertCircle,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -63,7 +72,11 @@ export const OrdersWorkQueue: React.FC<OrdersWorkQueueProps> = ({
         <p className="font-bold text-sm text-foreground">
           {isAr ? "لا توجد طلبات مطابقة" : "No orders found"}
         </p>
-        <p>{isAr ? "جرب تغيير كلمات البحث أو مسح عوامل التصفية" : "Try adjusting search or clearing active filters."}</p>
+        <p>
+          {isAr
+            ? "جرب تغيير كلمات البحث أو مسح عوامل التصفية"
+            : "Try adjusting search or clearing active filters."}
+        </p>
       </div>
     );
   }
@@ -92,10 +105,7 @@ export const OrdersWorkQueue: React.FC<OrdersWorkQueueProps> = ({
               const isGuest = !customerName;
 
               return (
-                <tr
-                  key={order.id}
-                  className="hover:bg-muted/30 transition-colors group"
-                >
+                <tr key={order.id} className="hover:bg-muted/30 transition-colors group">
                   {/* Order # & Date */}
                   <td className="p-3 align-middle font-medium">
                     <Link
@@ -139,7 +149,9 @@ export const OrdersWorkQueue: React.FC<OrdersWorkQueueProps> = ({
                   {/* Payment Status */}
                   <td className="p-3 align-middle">
                     {paymentBadge && (
-                      <span className={`inline-flex px-2 py-0.5 rounded-md text-[10px] font-bold ${paymentBadge.className}`}>
+                      <span
+                        className={`inline-flex px-2 py-0.5 rounded-md text-[10px] font-bold ${paymentBadge.className}`}
+                      >
                         {paymentBadge.label}
                       </span>
                     )}
@@ -148,7 +160,9 @@ export const OrdersWorkQueue: React.FC<OrdersWorkQueueProps> = ({
                   {/* Fulfillment Status */}
                   <td className="p-3 align-middle">
                     {fulfillmentBadge && (
-                      <span className={`inline-flex px-2 py-0.5 rounded-md text-[10px] font-bold ${fulfillmentBadge.classes}`}>
+                      <span
+                        className={`inline-flex px-2 py-0.5 rounded-md text-[10px] font-bold ${fulfillmentBadge.classes}`}
+                      >
                         {fulfillmentBadge.label}
                       </span>
                     )}
@@ -160,9 +174,7 @@ export const OrdersWorkQueue: React.FC<OrdersWorkQueueProps> = ({
                   </td>
 
                   {/* Primary Next Action */}
-                  <td className="p-3 align-middle text-center">
-                    {renderPrimaryAction(order)}
-                  </td>
+                  <td className="p-3 align-middle text-center">{renderPrimaryAction(order)}</td>
 
                   {/* Secondary Actions Menu */}
                   <td className="p-3 align-middle text-center">

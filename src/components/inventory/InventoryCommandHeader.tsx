@@ -72,7 +72,10 @@ export const InventoryCommandHeader: React.FC<InventoryCommandHeaderProps> = ({
                   <MoreHorizontal className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align={isAr ? "start" : "end"} className="w-80 p-1.5 shadow-xl border border-border/80 rounded-xl">
+              <DropdownMenuContent
+                align={isAr ? "start" : "end"}
+                className="w-80 p-1.5 shadow-xl border border-border/80 rounded-xl"
+              >
                 {renderImporters}
               </DropdownMenuContent>
             </DropdownMenu>

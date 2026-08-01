@@ -1,14 +1,6 @@
 import * as React from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
-import {
-  Menu,
-  LogOut,
-  LayoutDashboard,
-  ReceiptText,
-  Package,
-  Users,
-  Grid,
-} from "lucide-react";
+import { Menu, LogOut, LayoutDashboard, ReceiptText, Package, Users, Grid } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
 import { OsMobileTabBar, type OsMobileTabItem } from "./os-mobile-tab-bar";

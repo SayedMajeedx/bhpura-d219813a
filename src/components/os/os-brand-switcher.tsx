@@ -56,9 +56,7 @@ export function OsBrandSwitcher({
 
       <Select
         value={activeSlug ?? ""}
-        onValueChange={(v) =>
-          navigate({ to: "/admin/b/$slug/dashboard", params: { slug: v } })
-        }
+        onValueChange={(v) => navigate({ to: "/admin/b/$slug/dashboard", params: { slug: v } })}
       >
         <SelectTrigger className="h-8 text-xs bg-background/80">
           <SelectValue placeholder={lang === "ar" ? "اختر علامة" : "Select a brand"} />

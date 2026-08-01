@@ -74,7 +74,10 @@ export function ExpenseMobileCard({
         <p className="text-xs text-muted-foreground line-clamp-1">{e.description}</p>
       )}
 
-      <div className="flex items-center justify-between pt-2 border-t border-border/40" onClick={(event) => event.stopPropagation()}>
+      <div
+        className="flex items-center justify-between pt-2 border-t border-border/40"
+        onClick={(event) => event.stopPropagation()}
+      >
         {e.receipt_url ? (
           <a
             href={e.receipt_url}

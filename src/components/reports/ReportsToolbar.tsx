@@ -2,7 +2,13 @@ import { DateRange } from "react-day-picker";
 import { DatePickerWithRange } from "@/components/reports/date-range-picker";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { ReportInterval } from "@/lib/reporting.functions";
 
 interface ReportsToolbarProps {
@@ -72,7 +78,10 @@ export function ReportsToolbar({
           checked={includeHistorical}
           onCheckedChange={setIncludeHistorical}
         />
-        <Label htmlFor="historical-toggle" className="text-xs font-medium cursor-pointer select-none">
+        <Label
+          htmlFor="historical-toggle"
+          className="text-xs font-medium cursor-pointer select-none"
+        >
           {isAr ? "تضمين الطلبات المؤرشفة" : "Include Archived Orders"}
         </Label>
       </div>

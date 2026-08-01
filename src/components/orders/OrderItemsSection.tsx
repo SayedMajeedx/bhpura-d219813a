@@ -7,10 +7,7 @@ interface OrderItemsSectionProps {
   order: any;
 }
 
-export const OrderItemsSection: React.FC<OrderItemsSectionProps> = ({
-  lang,
-  order,
-}) => {
+export const OrderItemsSection: React.FC<OrderItemsSectionProps> = ({ lang, order }) => {
   const isAr = lang === "ar";
   const items = order.items || order.order_items || [];
 
@@ -35,7 +32,10 @@ export const OrderItemsSection: React.FC<OrderItemsSectionProps> = ({
           const imgUrl = item.image_url || item.thumbnail_url;
 
           return (
-            <div key={item.id || idx} className="py-2.5 flex items-center justify-between gap-3 text-xs">
+            <div
+              key={item.id || idx}
+              className="py-2.5 flex items-center justify-between gap-3 text-xs"
+            >
               <div className="flex items-center gap-3 min-w-0">
                 <div className="h-10 w-10 rounded-lg bg-muted border border-border/60 flex items-center justify-center overflow-hidden shrink-0">
                   {imgUrl ? (
@@ -47,7 +47,9 @@ export const OrderItemsSection: React.FC<OrderItemsSectionProps> = ({
                 <div className="min-w-0">
                   <div className="font-bold text-foreground truncate">{itemTitle}</div>
                   {variantTitle && (
-                    <div className="text-[11px] text-muted-foreground font-mono">{variantTitle}</div>
+                    <div className="text-[11px] text-muted-foreground font-mono">
+                      {variantTitle}
+                    </div>
                   )}
                   <div className="text-[10px] text-muted-foreground font-mono mt-0.5">
                     {qty} × {formatMoney(unitPrice, order.currency || "BHD", lang)}

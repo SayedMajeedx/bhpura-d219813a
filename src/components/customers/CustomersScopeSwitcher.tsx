@@ -26,10 +26,34 @@ export const CustomersScopeSwitcher: React.FC<CustomersScopeSwitcherProps> = ({
     badgeStyle?: string;
   }> = [
     { id: "all", labelEn: "All Customers", labelAr: "جميع العملاء", icon: Users },
-    { id: "vip", labelEn: "VIP Segment", labelAr: "المميزون VIP", icon: Star, badgeStyle: "text-amber-600 dark:text-amber-400" },
-    { id: "repeat", labelEn: "Repeat Buyers", labelAr: "المتكررون", icon: RefreshCw, badgeStyle: "text-emerald-600 dark:text-emerald-400" },
-    { id: "new", labelEn: "New Buyers", labelAr: "العملاء الجدد", icon: UserPlus, badgeStyle: "text-blue-600 dark:text-blue-400" },
-    { id: "churn", labelEn: "Churn Risk", labelAr: "العملاء الغائبون", icon: AlertCircle, badgeStyle: "text-rose-600 dark:text-rose-400" },
+    {
+      id: "vip",
+      labelEn: "VIP Segment",
+      labelAr: "المميزون VIP",
+      icon: Star,
+      badgeStyle: "text-amber-600 dark:text-amber-400",
+    },
+    {
+      id: "repeat",
+      labelEn: "Repeat Buyers",
+      labelAr: "المتكررون",
+      icon: RefreshCw,
+      badgeStyle: "text-emerald-600 dark:text-emerald-400",
+    },
+    {
+      id: "new",
+      labelEn: "New Buyers",
+      labelAr: "العملاء الجدد",
+      icon: UserPlus,
+      badgeStyle: "text-blue-600 dark:text-blue-400",
+    },
+    {
+      id: "churn",
+      labelEn: "Churn Risk",
+      labelAr: "العملاء الغائبون",
+      icon: AlertCircle,
+      badgeStyle: "text-rose-600 dark:text-rose-400",
+    },
   ];
 
   return (
@@ -53,9 +77,7 @@ export const CustomersScopeSwitcher: React.FC<CustomersScopeSwitcherProps> = ({
             <span>{isAr ? scope.labelAr : scope.labelEn}</span>
             <span
               className={`px-1.5 py-0.2 rounded-full text-[10px] font-extrabold ${
-                isActive
-                  ? "bg-primary/10 text-primary"
-                  : "bg-muted text-muted-foreground"
+                isActive ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"
               }`}
             >
               {count}

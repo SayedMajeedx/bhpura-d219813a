@@ -19,9 +19,7 @@ export const OsSection = React.forwardRef<HTMLElement, OsSectionProps>(
                   {title}
                 </h2>
               )}
-              {description && (
-                <p className="text-xs text-muted-foreground mt-0.5">{description}</p>
-              )}
+              {description && <p className="text-xs text-muted-foreground mt-0.5">{description}</p>}
             </div>
             {action && <div className="shrink-0">{action}</div>}
           </div>

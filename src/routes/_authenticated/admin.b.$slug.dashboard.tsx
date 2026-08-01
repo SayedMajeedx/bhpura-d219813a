@@ -23,14 +23,7 @@ import {
   ChevronRight,
   Filter,
 } from "lucide-react";
-import {
-  ResponsiveContainer,
-  AreaChart,
-  Area,
-  XAxis,
-  YAxis,
-  Tooltip,
-} from "recharts";
+import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip } from "recharts";
 import { formatDate, formatMoney } from "@/lib/format";
 import { useI18n, useT } from "@/lib/i18n";
 import { useProfile } from "@/lib/profile-context";
@@ -41,7 +34,10 @@ import { getOrderCustomerName } from "@/lib/order-customer-snapshot";
 import { OsStatusPill } from "@/components/os/os-status-pill";
 
 import { DashboardCommandHeader } from "@/components/dashboard/DashboardCommandHeader";
-import { DashboardScopeSwitcher, type DashboardViewScope } from "@/components/dashboard/DashboardScopeSwitcher";
+import {
+  DashboardScopeSwitcher,
+  type DashboardViewScope,
+} from "@/components/dashboard/DashboardScopeSwitcher";
 import { DashboardActivityQueue } from "@/components/dashboard/DashboardActivityQueue";
 
 export const Route = createFileRoute("/_authenticated/admin/b/$slug/dashboard")({
@@ -211,11 +207,13 @@ function Dashboard() {
 
   // Operational Actionable Orders (Orders needing triage/action)
   const actionNeededOrders = useMemo(() => {
-    return (ordersQ.data ?? []).filter((o) => {
-      const isUnpaid = o.payment_status === "unpaid" || o.payment_status === "pending";
-      const isPendingFulfillment = o.status === "confirmed" || o.status === "needs_packing";
-      return isUnpaid || isPendingFulfillment;
-    }).slice(0, 5);
+    return (ordersQ.data ?? [])
+      .filter((o) => {
+        const isUnpaid = o.payment_status === "unpaid" || o.payment_status === "pending";
+        const isPendingFulfillment = o.status === "confirmed" || o.status === "needs_packing";
+        return isUnpaid || isPendingFulfillment;
+      })
+      .slice(0, 5);
   }, [ordersQ.data]);
 
   // Financial intelligence aggregations
@@ -629,9 +627,7 @@ function Dashboard() {
                     {hasDelta && (
                       <span
                         title={
-                          isAr
-                            ? "مقارنة بـ 30 يومًا السابقة"
-                            : "Compared to previous 30-day period"
+                          isAr ? "مقارنة بـ 30 يومًا السابقة" : "Compared to previous 30-day period"
                         }
                         className={`inline-flex items-center text-[10px] font-bold px-1.5 py-0.5 rounded-full border ${
                           isPositive
@@ -731,7 +727,9 @@ function Dashboard() {
               <div>
                 <h3 className="text-base font-bold font-heading flex items-center gap-2">
                   <TrendingUp className="h-4.5 w-4.5 text-emerald-500" />
-                  {isAr ? "اتجاه المبيعات اليومية (آخر 30 يومًا)" : "Daily Sales Performance (30 Days)"}
+                  {isAr
+                    ? "اتجاه المبيعات اليومية (آخر 30 يومًا)"
+                    : "Daily Sales Performance (30 Days)"}
                 </h3>
                 <p className="text-[11px] text-muted-foreground">
                   {isAr
@@ -748,14 +746,22 @@ function Dashboard() {
             <div className="h-52 w-full pt-1">
               {isMounted ? (
                 <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={financials.dailyChartSeries} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                  <AreaChart
+                    data={financials.dailyChartSeries}
+                    margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
+                  >
                     <defs>
                       <linearGradient id="salesGrad" x1="0" y1="0" x2="0" y2="1">
                         <stop offset="5%" stopColor="#10b981" stopOpacity={0.35} />
                         <stop offset="95%" stopColor="#10b981" stopOpacity={0.0} />
                       </linearGradient>
                     </defs>
-                    <XAxis dataKey="date" tick={{ fontSize: 10 }} stroke="#888888" tickLine={false} />
+                    <XAxis
+                      dataKey="date"
+                      tick={{ fontSize: 10 }}
+                      stroke="#888888"
+                      tickLine={false}
+                    />
                     <YAxis tick={{ fontSize: 10 }} stroke="#888888" tickLine={false} />
                     <Tooltip
                       content={({ active, payload }) => {
@@ -794,7 +800,13 @@ function Dashboard() {
         )}
 
         {/* Operational Attention Center Feed (2 Columns) */}
-        <Card className={canViewFinancials ? "lg:col-span-2 p-5 border border-border/60 shadow-sm rounded-2xl bg-card/80 backdrop-blur-sm space-y-3" : "lg:col-span-5 p-5 border border-border/60 shadow-sm rounded-2xl bg-card/80 backdrop-blur-sm space-y-3"}>
+        <Card
+          className={
+            canViewFinancials
+              ? "lg:col-span-2 p-5 border border-border/60 shadow-sm rounded-2xl bg-card/80 backdrop-blur-sm space-y-3"
+              : "lg:col-span-5 p-5 border border-border/60 shadow-sm rounded-2xl bg-card/80 backdrop-blur-sm space-y-3"
+          }
+        >
           <div className="flex items-center justify-between pb-2 border-b border-border/60">
             <div className="flex items-center gap-2">
               <AlertCircle className="h-4.5 w-4.5 text-amber-500" />
@@ -814,8 +826,14 @@ function Dashboard() {
           {actionNeededOrders.length === 0 ? (
             <div className="p-6 text-center text-xs text-muted-foreground bg-secondary/10 rounded-xl border border-dashed border-border space-y-1">
               <CheckCircle2 className="h-6 w-6 text-emerald-500 mx-auto" />
-              <p className="font-bold text-foreground">{isAr ? "جميع الطلبات محدثة!" : "All orders up to date!"}</p>
-              <p>{isAr ? "لا توجد طلبات تحتاج إلى إجراء فوري حاليًا." : "No urgent pending merchant actions required."}</p>
+              <p className="font-bold text-foreground">
+                {isAr ? "جميع الطلبات محدثة!" : "All orders up to date!"}
+              </p>
+              <p>
+                {isAr
+                  ? "لا توجد طلبات تحتاج إلى إجراء فوري حاليًا."
+                  : "No urgent pending merchant actions required."}
+              </p>
             </div>
           ) : (
             <div className="space-y-2">
@@ -830,7 +848,8 @@ function Dashboard() {
                       params={{ slug, id: o.id }}
                       className="font-bold text-primary hover:underline block truncate"
                     >
-                      #{o.invoice_number} — {getOrderCustomerName(o) || (isAr ? "عميل" : "Customer")}
+                      #{o.invoice_number} —{" "}
+                      {getOrderCustomerName(o) || (isAr ? "عميل" : "Customer")}
                     </Link>
                     <span className="text-[11px] text-muted-foreground">
                       {formatDate(o.created_at, locale)}
@@ -905,8 +924,14 @@ function Dashboard() {
           {inventoryIntel.lowStockVariants.length === 0 ? (
             <div className="p-6 text-center text-xs text-muted-foreground bg-secondary/10 rounded-xl border border-dashed border-border space-y-1">
               <CheckCircle2 className="h-6 w-6 text-emerald-500 mx-auto" />
-              <p className="font-bold text-foreground">{isAr ? "جميع المستويات مستقرة" : "Stock Levels Healthy"}</p>
-              <p>{isAr ? "لا توجد بضائع منخفضة أو مشرفة على النفاد." : "All product stock levels are fully replenished."}</p>
+              <p className="font-bold text-foreground">
+                {isAr ? "جميع المستويات مستقرة" : "Stock Levels Healthy"}
+              </p>
+              <p>
+                {isAr
+                  ? "لا توجد بضائع منخفضة أو مشرفة على النفاد."
+                  : "All product stock levels are fully replenished."}
+              </p>
             </div>
           ) : (
             <div className="space-y-2">

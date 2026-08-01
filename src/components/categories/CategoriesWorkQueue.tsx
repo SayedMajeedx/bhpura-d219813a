@@ -37,7 +37,11 @@ export const CategoriesWorkQueue: React.FC<CategoriesWorkQueueProps> = ({
         <p className="font-bold text-sm text-foreground">
           {isAr ? "لا توجد أقسام مضافة" : "No categories found"}
         </p>
-        <p>{isAr ? "قم بإضافة قسم جديد لتنظيم المنتجات في متجرك" : "Create a new category to organize your products."}</p>
+        <p>
+          {isAr
+            ? "قم بإضافة قسم جديد لتنظيم المنتجات في متجرك"
+            : "Create a new category to organize your products."}
+        </p>
       </div>
     );
   }
@@ -61,9 +65,7 @@ export const CategoriesWorkQueue: React.FC<CategoriesWorkQueueProps> = ({
 
               return (
                 <tr key={cat.id} className="hover:bg-muted/30 transition-colors">
-                  <td className="p-3 align-middle font-bold text-foreground">
-                    {name}
-                  </td>
+                  <td className="p-3 align-middle font-bold text-foreground">{name}</td>
                   <td className="p-3 align-middle font-mono text-[11px] text-muted-foreground">
                     {cat.slug || cat.id.slice(0, 8)}
                   </td>

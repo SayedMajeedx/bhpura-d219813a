@@ -1,6 +1,14 @@
 import React, { useState } from "react";
 import { formatMoney } from "@/lib/format";
-import { Package, Pencil, Trash2, Printer, MoreVertical, ChevronDown, ChevronUp } from "lucide-react";
+import {
+  Package,
+  Pencil,
+  Trash2,
+  Printer,
+  MoreVertical,
+  ChevronDown,
+  ChevronUp,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -40,7 +48,10 @@ export const InventoryMobileCard: React.FC<InventoryMobileCardProps> = ({
 
   return (
     <div className="p-3.5 rounded-xl bg-card border border-border/60 shadow-2xs space-y-2.5">
-      <div className="flex items-start justify-between gap-3" onClick={() => setIsExpanded(!isExpanded)}>
+      <div
+        className="flex items-start justify-between gap-3"
+        onClick={() => setIsExpanded(!isExpanded)}
+      >
         <div className="flex items-center gap-3 min-w-0 cursor-pointer">
           <div className="h-12 w-12 rounded-lg bg-muted border border-border/60 flex items-center justify-center overflow-hidden shrink-0">
             {product.image_url ? (
@@ -78,8 +89,8 @@ export const InventoryMobileCard: React.FC<InventoryMobileCardProps> = ({
             isOutOfStock
               ? "bg-rose-100 text-rose-800 dark:bg-rose-950/40 dark:text-rose-300"
               : isLowStock
-              ? "bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300"
-              : "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300"
+                ? "bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300"
+                : "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300"
           }`}
         >
           {isOutOfStock
@@ -87,12 +98,12 @@ export const InventoryMobileCard: React.FC<InventoryMobileCardProps> = ({
               ? "نفذت الكمية"
               : "Out of Stock"
             : isLowStock
-            ? isAr
-              ? `منخفض (${totalStock})`
-              : `Low Stock (${totalStock})`
-            : isAr
-            ? `متوفر (${totalStock})`
-            : `In Stock (${totalStock})`}
+              ? isAr
+                ? `منخفض (${totalStock})`
+                : `Low Stock (${totalStock})`
+              : isAr
+                ? `متوفر (${totalStock})`
+                : `In Stock (${totalStock})`}
         </span>
 
         {/* Mobile Actions */}
@@ -104,7 +115,11 @@ export const InventoryMobileCard: React.FC<InventoryMobileCardProps> = ({
             className="h-8 px-2 text-[11px] font-bold text-muted-foreground hover:text-foreground"
           >
             {isAr ? "المتغيرات" : "Variants"}
-            {isExpanded ? <ChevronUp className="h-3 w-3 ms-1" /> : <ChevronDown className="h-3 w-3 ms-1" />}
+            {isExpanded ? (
+              <ChevronUp className="h-3 w-3 ms-1" />
+            ) : (
+              <ChevronDown className="h-3 w-3 ms-1" />
+            )}
           </Button>
 
           <Button

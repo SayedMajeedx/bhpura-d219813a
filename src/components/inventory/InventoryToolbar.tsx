@@ -84,9 +84,15 @@ export const InventoryToolbar: React.FC<InventoryToolbarProps> = ({
           </SelectTrigger>
           <SelectContent align="end">
             <SelectItem value="newest">{isAr ? "الأحدث" : "Newest"}</SelectItem>
-            <SelectItem value="price-asc">{isAr ? "السعر: الأدنى" : "Price: Low to High"}</SelectItem>
-            <SelectItem value="price-desc">{isAr ? "السعر: الأعلى" : "Price: High to Low"}</SelectItem>
-            <SelectItem value="stock-asc">{isAr ? "المخزون: الأدنى" : "Stock: Low to High"}</SelectItem>
+            <SelectItem value="price-asc">
+              {isAr ? "السعر: الأدنى" : "Price: Low to High"}
+            </SelectItem>
+            <SelectItem value="price-desc">
+              {isAr ? "السعر: الأعلى" : "Price: High to Low"}
+            </SelectItem>
+            <SelectItem value="stock-asc">
+              {isAr ? "المخزون: الأدنى" : "Stock: Low to High"}
+            </SelectItem>
           </SelectContent>
         </Select>
       </div>

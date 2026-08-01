@@ -62,9 +62,13 @@ import {
 import { formatMoney } from "@/lib/format";
 import { buildCustomerCrmStats, type CustomerMetricOrder } from "@/lib/commerce-metrics";
 import { cn } from "@/lib/utils";
+import { getNavFilterContext, saveNavFilterContext } from "@/lib/os-productivity";
 
 import { CustomersCommandHeader } from "@/components/customers/CustomersCommandHeader";
-import { CustomersScopeSwitcher, type CustomerSegmentScope } from "@/components/customers/CustomersScopeSwitcher";
+import {
+  CustomersScopeSwitcher,
+  type CustomerSegmentScope,
+} from "@/components/customers/CustomersScopeSwitcher";
 import { CustomersToolbar } from "@/components/customers/CustomersToolbar";
 import { CustomersWorkQueue } from "@/components/customers/CustomersWorkQueue";
 import { CustomerMobileCard } from "@/components/customers/CustomerMobileCard";
@@ -842,10 +846,18 @@ function CustomersPage() {
   const { slug } = Route.useParams();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
-  const [search, setSearch] = useState("");
-  const [regionFilter, setRegionFilter] = useState("all");
+
+  // Feature 7: Context-preserving return navigation for Customers
+  const savedContext = getNavFilterContext("customers");
+  const [search, setSearch] = useState(savedContext?.search || "");
+  const [regionFilter, setRegionFilter] = useState(savedContext?.regionFilter || "all");
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [page, setPage] = useState(1);
+
+  // Save navigation context on filter changes
+  useEffect(() => {
+    saveNavFilterContext("customers", { search, regionFilter });
+  }, [search, regionFilter]);
 
   useRealtimeInvalidate(
     [
@@ -884,7 +896,7 @@ function CustomersPage() {
     if (a.is_default) defaultByCustomer.set(a.customer_id, a);
   });
 
-const businessName = useQuery({
+  const businessName = useQuery({
     queryKey: ["business-name", brandId],
     queryFn: async () => {
       const { data } = await supabase
@@ -977,7 +989,9 @@ const businessName = useQuery({
                 className="cursor-pointer gap-2 py-2 text-xs font-semibold text-primary"
               >
                 <Users className="h-4 w-4 shrink-0 text-primary" />
-                <span>{isAr ? "استيراد العملاء وجهات الاتصال" : "Universal Customer Migration"}</span>
+                <span>
+                  {isAr ? "استيراد العملاء وجهات الاتصال" : "Universal Customer Migration"}
+                </span>
               </DropdownMenuItem>
             )}
           />

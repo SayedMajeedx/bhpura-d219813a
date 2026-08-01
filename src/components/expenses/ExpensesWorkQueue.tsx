@@ -44,7 +44,9 @@ export function ExpensesWorkQueue({
               <th className="p-3 text-start">{isAr ? "التاريخ" : "Date"}</th>
               <th className="p-3 text-start">{isAr ? "التصنيف" : "Category"}</th>
               <th className="p-3 text-start">{isAr ? "المتجر / المورد" : "Store / Vendor"}</th>
-              <th className="p-3 text-start">{isAr ? "الوصف والملاحظات" : "Description & Notes"}</th>
+              <th className="p-3 text-start">
+                {isAr ? "الوصف والملاحظات" : "Description & Notes"}
+              </th>
               <th className="p-3 text-center">{isAr ? "الفاتورة" : "Receipt"}</th>
               <th className="p-3 text-end">{isAr ? "المبلغ" : "Amount"}</th>
               <th className="p-3 text-end">{isAr ? "الإجراءات" : "Actions"}</th>
@@ -54,7 +56,9 @@ export function ExpensesWorkQueue({
             {expenses.length === 0 ? (
               <tr>
                 <td colSpan={7} className="p-8 text-center text-muted-foreground">
-                  {isAr ? "لا توجد مصروفات مسجلة في هذه الفترة" : "No expenses recorded for this period."}
+                  {isAr
+                    ? "لا توجد مصروفات مسجلة في هذه الفترة"
+                    : "No expenses recorded for this period."}
                 </td>
               </tr>
             ) : (
@@ -102,15 +106,26 @@ export function ExpensesWorkQueue({
                   <td className="p-3 align-middle text-muted-foreground">
                     <div className="flex flex-col gap-0.5 max-w-[240px]">
                       {e.description && (
-                        <span className="font-semibold text-foreground truncate">{e.description}</span>
+                        <span className="font-semibold text-foreground truncate">
+                          {e.description}
+                        </span>
                       )}
-                      {e.notes && <span className="text-[11px] truncate text-muted-foreground">{e.notes}</span>}
-                      {!e.description && !e.notes && <span className="text-muted-foreground/60">—</span>}
+                      {e.notes && (
+                        <span className="text-[11px] truncate text-muted-foreground">
+                          {e.notes}
+                        </span>
+                      )}
+                      {!e.description && !e.notes && (
+                        <span className="text-muted-foreground/60">—</span>
+                      )}
                     </div>
                   </td>
 
                   {/* Receipt Link */}
-                  <td className="p-3 align-middle text-center" onClick={(event) => event.stopPropagation()}>
+                  <td
+                    className="p-3 align-middle text-center"
+                    onClick={(event) => event.stopPropagation()}
+                  >
                     {e.receipt_url ? (
                       <a
                         href={e.receipt_url}
@@ -134,7 +149,10 @@ export function ExpensesWorkQueue({
                   </td>
 
                   {/* Actions */}
-                  <td className="p-3 align-middle text-end" onClick={(event) => event.stopPropagation()}>
+                  <td
+                    className="p-3 align-middle text-end"
+                    onClick={(event) => event.stopPropagation()}
+                  >
                     <div className="flex items-center justify-end gap-1">
                       <Button
                         variant="ghost"

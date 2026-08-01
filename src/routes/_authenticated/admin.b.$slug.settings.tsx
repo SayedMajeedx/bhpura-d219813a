@@ -33,7 +33,10 @@ import { ImageCropperDialog } from "@/components/image-cropper-dialog";
 import { OptimizedVideo, ResponsiveImage } from "@/components/responsive-media";
 
 import { SettingsCommandHeader } from "@/components/settings/SettingsCommandHeader";
-import { SettingsScopeSwitcher, type SettingsTabId } from "@/components/settings/SettingsScopeSwitcher";
+import {
+  SettingsScopeSwitcher,
+  type SettingsTabId,
+} from "@/components/settings/SettingsScopeSwitcher";
 
 export const Route = createFileRoute("/_authenticated/admin/b/$slug/settings")({
   beforeLoad: async ({ params }) => {
@@ -374,8 +377,11 @@ function Settings() {
         onTabChange={(tab) => setActiveTab(tab)}
       />
 
-      <Tabs value={activeTab} onValueChange={(val: any) => setActiveTab(val)} className="w-full mt-2">
-
+      <Tabs
+        value={activeTab}
+        onValueChange={(val: any) => setActiveTab(val)}
+        className="w-full mt-2"
+      >
         <TabsContent value="business" className="space-y-6 mt-0">
           <Card className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm p-6 space-y-4">
             <h2 className="font-display text-xl font-bold">{t("settings.business")}</h2>

@@ -57,12 +57,16 @@ export const OrderDetailHeader: React.FC<OrderDetailHeaderProps> = ({
               #{order.invoice_number || order.id.slice(0, 8)}
             </h1>
             {paymentBadge && (
-              <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold ${paymentBadge.className}`}>
+              <span
+                className={`px-2 py-0.5 rounded-md text-[10px] font-bold ${paymentBadge.className}`}
+              >
                 {paymentBadge.label}
               </span>
             )}
             {fulfillmentBadge && (
-              <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold ${fulfillmentBadge.classes}`}>
+              <span
+                className={`px-2 py-0.5 rounded-md text-[10px] font-bold ${fulfillmentBadge.classes}`}
+              >
                 {fulfillmentBadge.label}
               </span>
             )}

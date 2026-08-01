@@ -40,9 +40,7 @@ export function OsPageHeader({
           {badge}
         </div>
         {description && (
-          <p className="text-sm text-muted-foreground max-w-3xl leading-relaxed">
-            {description}
-          </p>
+          <p className="text-sm text-muted-foreground max-w-3xl leading-relaxed">{description}</p>
         )}
       </div>
 

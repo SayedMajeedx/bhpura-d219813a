@@ -47,7 +47,9 @@ export const InventoryScopeSwitcher: React.FC<InventoryScopeSwitcherProps> = ({
             <TabIcon
               className={cn(
                 "h-3.5 w-3.5 shrink-0",
-                isActive ? "text-primary-foreground" : "text-muted-foreground group-hover:text-primary",
+                isActive
+                  ? "text-primary-foreground"
+                  : "text-muted-foreground group-hover:text-primary",
               )}
             />
             <span className="whitespace-nowrap">{label}</span>

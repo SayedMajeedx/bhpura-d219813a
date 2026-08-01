@@ -77,9 +77,7 @@ export const OrdersCommandHeader: React.FC<OrdersCommandHeaderProps> = ({
             </DropdownMenuTrigger>
             <DropdownMenuContent align={isAr ? "start" : "end"} className="w-48">
               <DropdownMenuItem asChild className="p-0">
-                <div className="w-full">
-                  {renderImporter}
-                </div>
+                <div className="w-full">{renderImporter}</div>
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

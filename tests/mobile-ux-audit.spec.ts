@@ -297,7 +297,11 @@ test("Comprehensive Mobile UX Audit at 390x844 Viewport", async ({ page }) => {
   if (sheetVisible) {
     const sheetBox = await sheetContent.boundingBox();
     const sheetAriaRole = await sheetContent.getAttribute("role");
-    const sheetTitle = await sheetContent.locator(".sr-only").first().innerText().catch(() => "None");
+    const sheetTitle = await sheetContent
+      .locator(".sr-only")
+      .first()
+      .innerText()
+      .catch(() => "None");
     const backdrop = page.locator("[data-state='open'].fixed.inset-0").first();
     const backdropVisible = await backdrop.isVisible();
 
@@ -389,7 +393,11 @@ test("Comprehensive Mobile UX Audit at 390x844 Viewport", async ({ page }) => {
       const el = interactiveElements.nth(i);
       if (await el.isVisible()) {
         const box = await el.boundingBox();
-        const text = (await el.innerText()).trim() || (await el.getAttribute("placeholder")) || (await el.getAttribute("aria-label")) || "Element";
+        const text =
+          (await el.innerText()).trim() ||
+          (await el.getAttribute("placeholder")) ||
+          (await el.getAttribute("aria-label")) ||
+          "Element";
         if (box && box.width > 0 && box.height > 0) {
           if (box.width < 44 || box.height < 44) {
             const labelStr = text.substring(0, 30).replace(/\n/g, " ");
@@ -415,23 +423,28 @@ test("Comprehensive Mobile UX Audit at 390x844 Viewport", async ({ page }) => {
     const tableCount = await tables.count();
     for (let i = 0; i < tableCount; i++) {
       const tbl = tables.nth(i);
-      const tblInfo = await page.evaluate((tableEl) => {
-        const container = tableEl.closest(".overflow-x-auto, [class*='overflow']");
-        const tblBox = tableEl.getBoundingClientRect();
-        const containerBox = container ? container.getBoundingClientRect() : null;
-        const ths = Array.from(tableEl.querySelectorAll("th")).map((th) => ({
-          text: th.textContent?.trim(),
-          sticky: window.getComputedStyle(th).position === "sticky",
-        }));
-        return {
-          tableWidth: Math.round(tblBox.width),
-          containerWidth: containerBox ? Math.round(containerBox.width) : null,
-          hasHorizontalScroll: container ? container.scrollWidth > container.clientWidth : tblBox.width > window.innerWidth,
-          containerOverflowX: container ? window.getComputedStyle(container).overflowX : null,
-          columnCount: ths.length,
-          headers: ths.map((h) => h.text),
-        };
-      }, await tbl.elementHandle());
+      const tblInfo = await page.evaluate(
+        (tableEl) => {
+          const container = tableEl.closest(".overflow-x-auto, [class*='overflow']");
+          const tblBox = tableEl.getBoundingClientRect();
+          const containerBox = container ? container.getBoundingClientRect() : null;
+          const ths = Array.from(tableEl.querySelectorAll("th")).map((th) => ({
+            text: th.textContent?.trim(),
+            sticky: window.getComputedStyle(th).position === "sticky",
+          }));
+          return {
+            tableWidth: Math.round(tblBox.width),
+            containerWidth: containerBox ? Math.round(containerBox.width) : null,
+            hasHorizontalScroll: container
+              ? container.scrollWidth > container.clientWidth
+              : tblBox.width > window.innerWidth,
+            containerOverflowX: container ? window.getComputedStyle(container).overflowX : null,
+            columnCount: ths.length,
+            headers: ths.map((h) => h.text),
+          };
+        },
+        await tbl.elementHandle(),
+      );
 
       pageAudit.tables.push(tblInfo);
       auditResults.mobileTables.push({

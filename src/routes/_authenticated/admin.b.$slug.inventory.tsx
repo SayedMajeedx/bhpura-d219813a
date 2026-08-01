@@ -84,7 +84,10 @@ import {
 import { parseVariantPrompt, type VariantGenerationPlan } from "@/lib/generate-variants.functions";
 import { OptimizedVideo, ResponsiveImage } from "@/components/responsive-media";
 import { InventoryCommandHeader } from "@/components/inventory/InventoryCommandHeader";
-import { InventoryScopeSwitcher, type InventoryScopeTab } from "@/components/inventory/InventoryScopeSwitcher";
+import {
+  InventoryScopeSwitcher,
+  type InventoryScopeTab,
+} from "@/components/inventory/InventoryScopeSwitcher";
 import { InventoryToolbar } from "@/components/inventory/InventoryToolbar";
 import { InventoryWorkQueue } from "@/components/inventory/InventoryWorkQueue";
 import { InventoryMobileCard } from "@/components/inventory/InventoryMobileCard";
@@ -1598,16 +1601,48 @@ function ProductsSection({
     return map;
   }, [variants]);
 
-  const [scopeFilter, setScopeFilter] = useState<"all" | "low" | "out" | "featured" | "inactive">("all");
+  const [scopeFilter, setScopeFilter] = useState<"all" | "low" | "out" | "featured" | "inactive">(
+    "all",
+  );
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [sortBy, setSortBy] = useState<string>("newest");
 
   const scopeTabs: InventoryScopeTab[] = [
-    { id: "all", label_en: "All Products", label_ar: "جميع المنتجات", count: products.length, icon: Package },
-    { id: "low", label_en: "Low Stock", label_ar: "مخزون منخفض", count: lowStock, icon: AlertTriangle },
-    { id: "out", label_en: "Out of Stock", label_ar: "نفد المخزون", count: products.filter(p => productStock(p.id) === 0).length, icon: Boxes },
-    { id: "featured", label_en: "Featured / Trending", label_ar: "مميز ومطلوب", count: products.filter(p => p.featured_trending).length, icon: TrendingUp },
-    { id: "inactive", label_en: "Inactive / Hidden", label_ar: "مخفي وغير نشط", count: products.filter(p => !p.is_active).length, icon: Search },
+    {
+      id: "all",
+      label_en: "All Products",
+      label_ar: "جميع المنتجات",
+      count: products.length,
+      icon: Package,
+    },
+    {
+      id: "low",
+      label_en: "Low Stock",
+      label_ar: "مخزون منخفض",
+      count: lowStock,
+      icon: AlertTriangle,
+    },
+    {
+      id: "out",
+      label_en: "Out of Stock",
+      label_ar: "نفد المخزون",
+      count: products.filter((p) => productStock(p.id) === 0).length,
+      icon: Boxes,
+    },
+    {
+      id: "featured",
+      label_en: "Featured / Trending",
+      label_ar: "مميز ومطلوب",
+      count: products.filter((p) => p.featured_trending).length,
+      icon: TrendingUp,
+    },
+    {
+      id: "inactive",
+      label_en: "Inactive / Hidden",
+      label_ar: "مخفي وغير نشط",
+      count: products.filter((p) => !p.is_active).length,
+      icon: Search,
+    },
   ];
 
   const categoryOptions = useMemo(() => {
@@ -1619,7 +1654,7 @@ function ProductsSection({
   }, [products]);
 
   const filteredDisplayProducts = useMemo(() => {
-    let result = products.filter((product) => {
+    const result = products.filter((product) => {
       const productVariants = variantsByProduct[product.id] || [];
       const searchable = [
         product.name,
@@ -1722,9 +1757,10 @@ function ProductsSection({
         {filteredDisplayProducts.map((p) => {
           const pVariants = variantsByProduct[p.id] || [];
           const totalStock = productStock(p.id);
-          const minPrice = pVariants.length > 0
-            ? Math.min(...pVariants.map((v) => Number(v.selling_price || 0)))
-            : Number(p.base_price || 0);
+          const minPrice =
+            pVariants.length > 0
+              ? Math.min(...pVariants.map((v) => Number(v.selling_price || 0)))
+              : Number(p.base_price || 0);
 
           return (
             <InventoryMobileCard
@@ -1752,7 +1788,8 @@ function ProductsSection({
                     businessName,
                   }));
                 if (labels.length > 0) printLabels(labels);
-                else toast.error(isAr ? "لا يوجد باركود لهذا المنتج" : "No barcode for this product");
+                else
+                  toast.error(isAr ? "لا يوجد باركود لهذا المنتج" : "No barcode for this product");
               }}
               renderVariantList={(prod) => (
                 <VariantList

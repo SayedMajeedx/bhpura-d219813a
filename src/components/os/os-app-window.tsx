@@ -3,8 +3,7 @@ import { type LucideIcon, Maximize2, Minimize2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 
-export interface OsAppWindowProps
-  extends Omit<React.HTMLAttributes<HTMLDivElement>, "title"> {
+export interface OsAppWindowProps extends Omit<React.HTMLAttributes<HTMLDivElement>, "title"> {
   icon?: LucideIcon;
   title: React.ReactNode;
   subtitle?: React.ReactNode;
@@ -52,9 +51,7 @@ export const OsAppWindow = React.forwardRef<HTMLDivElement, OsAppWindowProps>(
 
             {/* Module Title & Subtitle */}
             <div className="min-w-0 flex items-center gap-2">
-              <h1 className="text-xs font-bold font-heading text-foreground truncate">
-                {title}
-              </h1>
+              <h1 className="text-xs font-bold font-heading text-foreground truncate">{title}</h1>
               {subtitle && (
                 <span className="hidden md:inline text-[11px] text-muted-foreground truncate">
                   — {subtitle}
