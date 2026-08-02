@@ -650,7 +650,7 @@ function CampaignsPage() {
         counts={segmentCounts}
       />
 
-      <Card className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm p-4 sm:p-6 mb-6 space-y-4">
+      <Card className="mb-3 space-y-4 overflow-hidden rounded-2xl border border-border/60 bg-card/40 p-3 shadow-lg backdrop-blur-sm sm:mb-6 sm:p-6">
         {/* Template picker + actions */}
         <div className="flex flex-col sm:flex-row gap-3 sm:items-end">
           <div className="flex-1 min-w-0">
@@ -680,11 +680,11 @@ function CampaignsPage() {
               </SelectContent>
             </Select>
           </div>
-          <div className="flex gap-2">
+          <div className="grid grid-cols-3 gap-2 sm:flex">
             <Button
               variant="outline"
               onClick={() => openSave("new")}
-              className="shadow-sm transition-all duration-200 hover:shadow hover:scale-[1.01] active:scale-95"
+              className="min-w-0 px-2 shadow-sm transition-all duration-200 hover:scale-[1.01] hover:shadow active:scale-95 sm:px-4"
             >
               <Plus className="h-4 w-4 me-2" />
               {isAr ? "قالب جديد" : "New"}
@@ -693,7 +693,7 @@ function CampaignsPage() {
               variant="outline"
               onClick={() => openSave("update")}
               disabled={!selectedId}
-              className="shadow-sm transition-all duration-200 hover:shadow hover:scale-[1.01] active:scale-95"
+              className="min-w-0 px-2 shadow-sm transition-all duration-200 hover:scale-[1.01] hover:shadow active:scale-95 sm:px-4"
             >
               <Save className="h-4 w-4 me-2" />
               {isAr ? "حفظ القالب" : "Save Template"}
@@ -702,7 +702,7 @@ function CampaignsPage() {
               variant="ghost"
               onClick={deleteTemplate}
               disabled={!selectedId}
-              className="shadow-sm transition-all duration-200 hover:shadow hover:scale-[1.01] active:scale-95"
+              className="min-w-0 px-2 shadow-sm transition-all duration-200 hover:scale-[1.01] hover:shadow active:scale-95 sm:px-4"
             >
               <Trash2 className="h-4 w-4 me-2 text-destructive" />
               {isAr ? "حذف" : "Delete"}
@@ -747,8 +747,8 @@ function CampaignsPage() {
       </Card>
 
       <Card className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm">
-        <div className="p-4 border-b border-border/50 bg-primary/5 flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
-          <div className="relative flex-1 max-w-sm">
+        <div className="flex flex-col justify-between gap-3 border-b border-border/50 bg-primary/5 p-3 sm:flex-row sm:items-center sm:p-4">
+          <div className="relative w-full flex-1 sm:max-w-sm">
             <Search className="h-4 w-4 absolute start-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
             <Input
               value={search}
@@ -757,8 +757,8 @@ function CampaignsPage() {
               className="ps-9 text-start bg-background/50 focus:bg-background transition-colors duration-200"
             />
           </div>
-          <div className="flex items-center gap-4 flex-wrap justify-between sm:justify-end">
-            <div className="flex items-center gap-3 text-sm text-muted-foreground">
+          <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto sm:flex-wrap sm:items-center sm:justify-end sm:gap-4">
+            <div className="col-span-2 flex items-center justify-between gap-3 text-sm text-muted-foreground sm:col-span-1 sm:justify-start">
               <span>
                 {Object.values(sent).filter(Boolean).length}/{filtered.length}{" "}
                 {isAr ? "مرسلة" : "sent"}
@@ -777,7 +777,7 @@ function CampaignsPage() {
             <Button
               size="sm"
               variant="outline"
-              className="border-dashed hover:bg-secondary font-medium shadow-sm transition-all duration-200 hover:shadow hover:scale-[1.01] active:scale-95"
+              className="h-auto min-h-9 whitespace-normal border-dashed font-medium shadow-sm transition-all duration-200 hover:scale-[1.01] hover:bg-secondary hover:shadow active:scale-95"
               onClick={exportBulkCampaignCsv}
               disabled={selectedCustomerIds.length === 0}
             >
@@ -786,7 +786,7 @@ function CampaignsPage() {
             </Button>
             <Button
               size="sm"
-              className="bg-primary text-primary-foreground hover:bg-primary/90 font-medium shadow-sm transition-all duration-200 hover:shadow hover:scale-[1.01] active:scale-95"
+              className="h-auto min-h-9 whitespace-normal bg-primary font-medium text-primary-foreground shadow-sm transition-all duration-200 hover:scale-[1.01] hover:bg-primary/90 hover:shadow active:scale-95"
               onClick={launchBulkCampaign}
               disabled={selectedCustomerIds.length === 0}
             >

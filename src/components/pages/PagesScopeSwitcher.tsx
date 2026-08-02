@@ -41,7 +41,7 @@ export function PagesScopeSwitcher({
   ];
 
   return (
-    <div className="flex items-center gap-1.5 overflow-x-auto p-1 bg-muted/40 border border-border/60 rounded-2xl scrollbar-none">
+    <div className="grid grid-cols-2 gap-1.5 rounded-2xl border border-border/60 bg-muted/40 p-1 sm:flex sm:items-center">
       {scopes.map((s) => {
         const Icon = s.icon;
         const isActive = activeScope === s.id;
@@ -52,14 +52,14 @@ export function PagesScopeSwitcher({
             type="button"
             onClick={() => onScopeChange(s.id)}
             className={cn(
-              "flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all duration-200 cursor-pointer shrink-0",
+              "flex min-w-0 items-center justify-center gap-1.5 rounded-xl px-2 py-2 text-xs font-bold transition-all duration-200 cursor-pointer sm:justify-start sm:whitespace-nowrap sm:px-3",
               isActive
                 ? "bg-primary text-primary-foreground shadow-sm scale-[1.01]"
                 : "text-muted-foreground hover:bg-background/80 hover:text-foreground",
             )}
           >
             <Icon className="h-3.5 w-3.5 shrink-0" />
-            <span>{isAr ? s.labelAr : s.labelEn}</span>
+            <span className="truncate">{isAr ? s.labelAr : s.labelEn}</span>
             {s.badge !== undefined && (
               <span
                 className={cn(

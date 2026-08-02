@@ -54,7 +54,7 @@ export function DiscountsScopeSwitcher({
   ];
 
   return (
-    <div className="flex items-center gap-1.5 overflow-x-auto p-1 bg-muted/40 border border-border/60 rounded-xl scrollbar-none">
+    <div className="grid grid-cols-2 gap-1.5 rounded-xl border border-border/60 bg-muted/40 p-1 sm:flex sm:items-center">
       {tabs.map((tab) => {
         const Icon = tab.icon;
         const isActive = currentTab === tab.id;
@@ -65,7 +65,7 @@ export function DiscountsScopeSwitcher({
             type="button"
             onClick={() => onTabChange(tab.id)}
             className={cn(
-              "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all duration-200 cursor-pointer",
+              "flex min-w-0 items-center justify-center gap-1.5 rounded-lg px-2 py-2 text-xs font-semibold transition-all duration-200 cursor-pointer sm:whitespace-nowrap sm:px-3 sm:py-1.5",
               isActive
                 ? "bg-primary text-primary-foreground shadow-xs"
                 : "text-muted-foreground hover:bg-background/80 hover:text-foreground",
@@ -74,7 +74,7 @@ export function DiscountsScopeSwitcher({
             <Icon
               className={cn("h-3.5 w-3.5 shrink-0", !isActive && tab.accent ? tab.accent : "")}
             />
-            <span>{tab.label}</span>
+            <span className="truncate">{tab.label}</span>
             <span
               className={cn(
                 "ms-1 px-1.5 py-0.2 rounded-full text-[10px] font-bold",
