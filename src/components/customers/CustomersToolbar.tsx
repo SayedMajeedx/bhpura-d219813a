@@ -35,7 +35,7 @@ export const CustomersToolbar: React.FC<CustomersToolbarProps> = ({
   return (
     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 p-2.5 rounded-xl bg-card border border-border/60 shadow-2xs">
       {/* Search Input */}
-      <div className="relative flex-1 min-w-[220px]">
+      <div className="relative min-w-0 flex-1 sm:min-w-[220px]">
         <Search className="absolute start-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
         <Input
           value={search}
@@ -49,7 +49,9 @@ export const CustomersToolbar: React.FC<CustomersToolbarProps> = ({
         />
         {search && (
           <button
+            type="button"
             onClick={() => onSearchChange("")}
+            aria-label={isAr ? "مسح البحث" : "Clear search"}
             className="absolute end-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
           >
             <X className="h-3.5 w-3.5" />
@@ -58,8 +60,8 @@ export const CustomersToolbar: React.FC<CustomersToolbarProps> = ({
       </div>
 
       {/* Region Selector & Reset */}
-      <div className="flex items-center gap-2 shrink-0">
-        <div className="w-[180px]">
+      <div className="flex min-w-0 items-center gap-2 sm:shrink-0">
+        <div className="min-w-0 flex-1 sm:w-[180px] sm:flex-none">
           <Select value={regionFilter} onValueChange={onRegionChange}>
             <SelectTrigger className="h-8 text-xs bg-muted/30 border-border/60">
               <div className="flex items-center gap-1.5 truncate">

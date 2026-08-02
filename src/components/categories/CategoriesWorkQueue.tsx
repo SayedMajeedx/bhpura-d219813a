@@ -48,7 +48,79 @@ export const CategoriesWorkQueue: React.FC<CategoriesWorkQueueProps> = ({
 
   return (
     <div className="rounded-xl border border-border/60 bg-card overflow-hidden shadow-2xs">
-      <div className="overflow-x-auto">
+      <div className="space-y-2 p-2 sm:hidden">
+        {categories.map((cat, index) => {
+          const name = isAr ? cat.name_ar || cat.name : cat.name_en || cat.name;
+          return (
+            <article
+              key={cat.id}
+              className="rounded-xl border border-border/60 bg-background/70 p-3 shadow-2xs"
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <h2 className="truncate text-sm font-bold text-foreground">{name}</h2>
+                  <p
+                    className="mt-0.5 truncate font-mono text-[11px] text-muted-foreground"
+                    dir="ltr"
+                  >
+                    /{cat.slug || cat.id.slice(0, 8)}
+                  </p>
+                </div>
+                <span className="shrink-0 rounded-full border border-primary/20 bg-primary/10 px-2 py-1 text-[10px] font-bold text-primary">
+                  {cat.product_count || 0} {isAr ? "منتج" : "items"}
+                </span>
+              </div>
+              <div className="mt-3 flex items-center justify-between border-t border-border/50 pt-3">
+                <div
+                  className="flex items-center gap-1"
+                  aria-label={isAr ? "تغيير ترتيب القسم" : "Reorder category"}
+                >
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-10 w-10"
+                    disabled={index === 0}
+                    onClick={() => onReorder(cat.id, "up")}
+                    aria-label={isAr ? "تحريك القسم لأعلى" : "Move category up"}
+                  >
+                    <ArrowUp className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-10 w-10"
+                    disabled={index === categories.length - 1}
+                    onClick={() => onReorder(cat.id, "down")}
+                    aria-label={isAr ? "تحريك القسم لأسفل" : "Move category down"}
+                  >
+                    <ArrowDown className="h-4 w-4" />
+                  </Button>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-10 w-10 text-rose-600"
+                    onClick={() => onDelete(cat.id)}
+                    aria-label={isAr ? "حذف القسم" : "Delete category"}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    size="sm"
+                    className="h-10 px-4 text-xs font-bold"
+                    onClick={() => onEdit(cat)}
+                  >
+                    <Pencil className="me-1.5 h-3.5 w-3.5" />
+                    {isAr ? "تعديل" : "Edit"}
+                  </Button>
+                </div>
+              </div>
+            </article>
+          );
+        })}
+      </div>
+      <div className="hidden overflow-x-auto sm:block">
         <table className="w-full text-start text-xs border-collapse">
           <thead>
             <tr className="border-b border-border/60 bg-muted/40 font-bold text-muted-foreground uppercase text-[10px] tracking-wider">

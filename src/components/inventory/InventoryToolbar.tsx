@@ -97,6 +97,40 @@ export const InventoryToolbar: React.FC<InventoryToolbarProps> = ({
         </Select>
       </div>
 
+      <div className="grid grid-cols-2 gap-2 sm:hidden">
+        <Select value={selectedCategory} onValueChange={onCategoryChange}>
+          <SelectTrigger className="h-10 min-w-0 text-xs border-border/70">
+            <SelectValue placeholder={isAr ? "جميع الأقسام" : "All Categories"} />
+          </SelectTrigger>
+          <SelectContent align={isAr ? "start" : "end"}>
+            <SelectItem value="all">{isAr ? "جميع الأقسام" : "All Categories"}</SelectItem>
+            {categories.map((cat) => (
+              <SelectItem key={cat.id} value={cat.id}>
+                {isAr ? cat.name_ar || cat.name : cat.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Select value={sortBy} onValueChange={onSortChange}>
+          <SelectTrigger className="h-10 min-w-0 text-xs border-border/70">
+            <ArrowUpDown className="me-1 h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent align={isAr ? "start" : "end"}>
+            <SelectItem value="newest">{isAr ? "الأحدث" : "Newest"}</SelectItem>
+            <SelectItem value="price-asc">
+              {isAr ? "السعر: الأدنى" : "Price: Low to High"}
+            </SelectItem>
+            <SelectItem value="price-desc">
+              {isAr ? "السعر: الأعلى" : "Price: High to Low"}
+            </SelectItem>
+            <SelectItem value="stock-asc">
+              {isAr ? "المخزون: الأدنى" : "Stock: Low to High"}
+            </SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
       {/* Active Filter Chips */}
       {activeFilterCount > 0 && (
         <div className="flex items-center gap-1.5 flex-wrap pt-1">
@@ -109,6 +143,7 @@ export const InventoryToolbar: React.FC<InventoryToolbarProps> = ({
               <button
                 type="button"
                 onClick={() => onCategoryChange("all")}
+                aria-label={isAr ? "إزالة تصفية القسم" : "Remove category filter"}
                 className="hover:text-primary/70"
               >
                 <X className="h-3 w-3" />
