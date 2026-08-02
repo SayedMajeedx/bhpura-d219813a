@@ -1,4 +1,4 @@
-import { Search, Download, Calendar, X } from "lucide-react";
+import { Search, Download, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
@@ -45,21 +45,21 @@ export function ExpensesToolbar({
     { id: "today", labelAr: "اليوم", labelEn: "Today" },
     { id: "week", labelAr: "الأسبوع", labelEn: "This Week" },
     { id: "month", labelAr: "الشهر", labelEn: "This Month" },
-    { id: "custom", labelAr: "الكل / مخصص", labelEn: "All Time" },
+    { id: "custom", labelAr: "الكل", labelEn: "All" },
   ];
 
   return (
     <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between p-3 bg-card/60 backdrop-blur-sm border border-border/60 rounded-xl shadow-2xs">
       <div className="flex flex-1 flex-wrap items-center gap-2">
         {/* Date Presets */}
-        <div className="flex items-center gap-1 p-0.5 bg-muted/40 rounded-lg border border-border/40">
+        <div className="grid w-full grid-cols-4 gap-1 rounded-lg border border-border/40 bg-muted/40 p-0.5 sm:flex sm:w-auto sm:items-center">
           {presets.map((p) => (
             <button
               key={p.id}
               type="button"
               onClick={() => onDatePresetChange(p.id)}
               className={cn(
-                "px-2.5 py-1 rounded-md text-xs font-semibold transition-all duration-150 cursor-pointer",
+                "min-h-9 min-w-0 truncate rounded-md px-1.5 sm:px-2.5 py-1 text-[11px] sm:text-xs font-semibold transition-all duration-150 cursor-pointer",
                 datePreset === p.id
                   ? "bg-primary text-primary-foreground shadow-2xs"
                   : "text-muted-foreground hover:bg-background/80 hover:text-foreground",
@@ -71,7 +71,7 @@ export function ExpensesToolbar({
         </div>
 
         {/* Search Bar */}
-        <div className="relative flex-1 max-w-xs">
+        <div className="relative min-w-full flex-1 sm:min-w-0 sm:max-w-xs">
           <Search className="absolute start-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
           <Input
             value={search}
@@ -83,7 +83,7 @@ export function ExpensesToolbar({
 
         {/* Category Dropdown */}
         <Select value={categoryFilter} onValueChange={onCategoryFilterChange}>
-          <SelectTrigger className="h-9 w-[150px] text-xs font-semibold bg-background/80">
+          <SelectTrigger className="h-10 min-w-0 flex-1 text-xs font-semibold bg-background/80 sm:h-9 sm:w-[150px] sm:flex-none">
             <SelectValue placeholder={isAr ? "جميع التصنيفات" : "All Categories"} />
           </SelectTrigger>
           <SelectContent>
@@ -114,7 +114,7 @@ export function ExpensesToolbar({
         variant="outline"
         size="sm"
         onClick={onDownloadCogsCsv}
-        className="h-9 text-xs font-bold gap-1.5 self-start sm:self-auto border-border/60 hover:bg-muted/40"
+        className="h-10 w-full text-xs font-bold gap-1.5 sm:h-9 sm:w-auto self-start sm:self-auto border-border/60 hover:bg-muted/40"
       >
         <Download className="h-3.5 w-3.5 text-primary shrink-0" />
         <span>{isAr ? "تصدير تكلفة المبيعات (COGS CSV)" : "Export COGS CSV"}</span>

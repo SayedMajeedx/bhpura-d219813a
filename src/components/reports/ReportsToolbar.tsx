@@ -38,12 +38,14 @@ export function ReportsToolbar({
 
   return (
     <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between p-3 bg-card/60 backdrop-blur-sm border border-border/60 rounded-xl shadow-2xs">
-      <div className="flex flex-wrap items-center gap-2.5">
-        <DatePickerWithRange date={date} setDate={setDate} />
+      <div className="grid min-w-0 grid-cols-2 gap-2.5 sm:flex sm:flex-wrap sm:items-center">
+        <div className="col-span-2 sm:contents">
+          <DatePickerWithRange date={date} setDate={setDate} />
+        </div>
 
         {interval && setInterval && (
           <Select value={interval} onValueChange={(val) => setInterval(val as ReportInterval)}>
-            <SelectTrigger className="h-9 w-[130px] bg-background text-xs font-semibold">
+            <SelectTrigger className="h-10 w-full bg-background text-xs font-semibold sm:h-9 sm:w-[130px]">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -57,7 +59,7 @@ export function ReportsToolbar({
 
         {sortBy && setSortBy && (
           <Select value={sortBy} onValueChange={setSortBy}>
-            <SelectTrigger className="h-9 w-[190px] bg-background text-xs font-semibold">
+            <SelectTrigger className="col-span-2 h-10 w-full bg-background text-xs font-semibold sm:h-9 sm:w-[190px]">
               <SelectValue placeholder={isAr ? "ترتيب حسب" : "Sort by"} />
             </SelectTrigger>
             <SelectContent>
@@ -72,7 +74,7 @@ export function ReportsToolbar({
         )}
       </div>
 
-      <div className="flex items-center gap-2 px-2 py-1 rounded-lg bg-muted/30 border border-border/40">
+      <div className="flex min-h-10 items-center gap-2 rounded-lg border border-border/40 bg-muted/30 px-2 py-1">
         <Switch
           id="historical-toggle"
           checked={includeHistorical}
