@@ -50,7 +50,7 @@ export function IntegrationsCommandHeader({
         <Button
           type="button"
           onClick={onNewIntegration}
-          className="shadow-sm transition-all duration-200 hover:shadow hover:scale-[1.01] active:scale-95 gap-1.5 text-xs font-bold self-start sm:self-center"
+          className="w-full shadow-sm transition-all duration-200 hover:shadow hover:scale-[1.01] active:scale-95 gap-1.5 text-xs font-bold sm:w-auto sm:self-center"
         >
           <Plus className="h-3.5 w-3.5" />
           <span>{isAr ? "+ إضافة ربط جديد" : "+ Add Integration"}</span>

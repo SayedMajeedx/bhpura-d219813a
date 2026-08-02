@@ -15,7 +15,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Upload, Eye, EyeOff } from "lucide-react";
+import { AlertTriangle, Eye, EyeOff, RefreshCw, Upload } from "lucide-react";
 import { useT, useI18n } from "@/lib/i18n";
 import { PhoneInput } from "@/components/phone-input";
 import { Rnd } from "react-rnd";
@@ -181,7 +181,7 @@ function Settings() {
   const fontInput = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState<null | "logo" | "favicon" | "font">(null);
 
-  const { data } = useQuery({
+  const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["business-settings", brandId],
     queryFn: async () => {
       const {
@@ -218,7 +218,41 @@ function Settings() {
     }
   }, [data, brandDisplayName]);
 
-  if (!f) return <div className="p-8">Loading…</div>;
+  if (isError) {
+    return (
+      <Card className="flex min-h-48 flex-col items-center justify-center gap-3 rounded-2xl border-destructive/30 p-6 text-center">
+        <AlertTriangle className="h-8 w-8 text-destructive" aria-hidden="true" />
+        <h1 className="text-lg font-bold">
+          {lang === "ar"
+            ? "تعذّر تحميل إعدادات العلامة التجارية"
+            : "Brand settings could not be loaded"}
+        </h1>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => void refetch()}
+          className="min-h-11 gap-2"
+        >
+          <RefreshCw className="h-4 w-4" aria-hidden="true" />
+          {lang === "ar" ? "إعادة المحاولة" : "Try again"}
+        </Button>
+      </Card>
+    );
+  }
+
+  if (isLoading || !f) {
+    return (
+      <div
+        role="status"
+        aria-label={lang === "ar" ? "جاري تحميل الإعدادات" : "Loading settings"}
+        className="space-y-3.5"
+      >
+        <div className="h-32 animate-pulse rounded-2xl bg-muted/70" />
+        <div className="h-14 animate-pulse rounded-2xl bg-muted/60" />
+        <div className="h-72 animate-pulse rounded-2xl bg-muted/50" />
+      </div>
+    );
+  }
 
   const save = async () => {
     setSaving(true);
@@ -396,7 +430,7 @@ function Settings() {
         className="w-full mt-2"
       >
         <TabsContent value="business" className="space-y-6 mt-0">
-          <Card className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm p-6 space-y-4">
+          <Card className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm p-3 sm:p-6 space-y-4">
             <h2 className="font-display text-xl font-bold">{t("settings.business")}</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
@@ -549,7 +583,7 @@ function Settings() {
         </TabsContent>
 
         <TabsContent value="invoice" className="space-y-6 mt-0">
-          <Card className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm p-6 space-y-4">
+          <Card className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm p-3 sm:p-6 space-y-4">
             <h2 className="font-display text-xl">{t("settings.appearance")}</h2>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -798,7 +832,7 @@ function Settings() {
           </Card>
 
           {f.logo_url && (
-            <Card className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm p-6 space-y-4">
+            <Card className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm p-3 sm:p-6 space-y-4">
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <h2 className="font-display text-xl">Invoice logo position &amp; size</h2>
@@ -820,38 +854,46 @@ function Settings() {
               </div>
 
               <div
-                className="relative mx-auto border border-dashed border-border rounded-md bg-white overflow-hidden"
-                style={{ width: LOGO_CANVAS_W, height: LOGO_CANVAS_H }}
+                className="w-full overflow-x-auto rounded-md pb-2"
+                tabIndex={0}
+                aria-label={
+                  lang === "ar" ? "معاينة موضع شعار الفاتورة" : "Invoice logo position preview"
+                }
               >
-                <Rnd
-                  size={{ width: f.logo_width, height: f.logo_height }}
-                  position={{ x: f.logo_x, y: f.logo_y }}
-                  onDragStop={(_e, d) => setF({ ...f, logo_x: d.x, logo_y: d.y })}
-                  onResizeStop={(_e, _dir, ref, _delta, pos) =>
-                    setF({
-                      ...f,
-                      logo_width: parseInt(ref.style.width, 10),
-                      logo_height: parseInt(ref.style.height, 10),
-                      logo_x: pos.x,
-                      logo_y: pos.y,
-                    })
-                  }
-                  bounds="parent"
-                  lockAspectRatio
-                  className="border border-dashed border-neutral-300 hover:border-neutral-500"
+                <div
+                  className="relative mx-auto border border-dashed border-border rounded-md bg-white overflow-hidden"
+                  style={{ width: LOGO_CANVAS_W, height: LOGO_CANVAS_H }}
                 >
-                  <img
-                    src={f.logo_url}
-                    alt="logo"
-                    draggable={false}
-                    style={{
-                      width: "100%",
-                      height: "100%",
-                      objectFit: "contain",
-                      pointerEvents: "none",
-                    }}
-                  />
-                </Rnd>
+                  <Rnd
+                    size={{ width: f.logo_width, height: f.logo_height }}
+                    position={{ x: f.logo_x, y: f.logo_y }}
+                    onDragStop={(_e, d) => setF({ ...f, logo_x: d.x, logo_y: d.y })}
+                    onResizeStop={(_e, _dir, ref, _delta, pos) =>
+                      setF({
+                        ...f,
+                        logo_width: parseInt(ref.style.width, 10),
+                        logo_height: parseInt(ref.style.height, 10),
+                        logo_x: pos.x,
+                        logo_y: pos.y,
+                      })
+                    }
+                    bounds="parent"
+                    lockAspectRatio
+                    className="border border-dashed border-neutral-300 hover:border-neutral-500"
+                  >
+                    <img
+                      src={f.logo_url}
+                      alt="logo"
+                      draggable={false}
+                      style={{
+                        width: "100%",
+                        height: "100%",
+                        objectFit: "contain",
+                        pointerEvents: "none",
+                      }}
+                    />
+                  </Rnd>
+                </div>
               </div>
 
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">

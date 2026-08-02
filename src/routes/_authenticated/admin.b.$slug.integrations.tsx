@@ -146,6 +146,40 @@ function IntegrationsPage() {
       ? `${window.location.origin}/api/public/webhooks`
       : "https://…/api/public/webhooks";
 
+  if (q.isError) {
+    return (
+      <Card className="flex min-h-48 flex-col items-center justify-center gap-3 rounded-2xl border-destructive/30 p-6 text-center">
+        <ShieldAlert className="h-8 w-8 text-destructive" aria-hidden="true" />
+        <h1 className="text-lg font-bold">
+          {isAr ? "تعذّر تحميل التكاملات" : "Integrations could not be loaded"}
+        </h1>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => void q.refetch()}
+          className="min-h-11 gap-2"
+        >
+          <RefreshCw className="h-4 w-4" aria-hidden="true" />
+          {isAr ? "إعادة المحاولة" : "Try again"}
+        </Button>
+      </Card>
+    );
+  }
+
+  if (q.isLoading) {
+    return (
+      <div
+        role="status"
+        aria-label={isAr ? "جاري تحميل التكاملات" : "Loading integrations"}
+        className="space-y-3.5"
+      >
+        <div className="h-32 animate-pulse rounded-2xl bg-muted/70" />
+        <div className="h-14 animate-pulse rounded-2xl bg-muted/60" />
+        <div className="h-48 animate-pulse rounded-2xl bg-muted/50" />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-3.5">
       {/* 1. Command Header */}
@@ -197,7 +231,7 @@ function IntegrationsPage() {
           </Card>
 
           {filteredIntegrations.length === 0 ? (
-            <Card className="overflow-hidden border border-dashed border-border/80 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm p-12 text-center">
+            <Card className="overflow-hidden border border-dashed border-border/80 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm p-8 sm:p-12 text-center">
               <Plug className="h-10 w-10 mx-auto text-muted-foreground mb-3 animate-pulse" />
               <p className="text-muted-foreground">{t("integrations.none")}</p>
             </Card>
@@ -213,7 +247,7 @@ function IntegrationsPage() {
                 return (
                   <Card
                     key={row.id}
-                    className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm p-6 transition-all duration-300 hover:scale-[1.01] hover:border-primary/40 hover:shadow-xl"
+                    className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm p-3 sm:p-6 transition-all duration-300 hover:border-primary/40 hover:shadow-xl"
                   >
                     <div className="flex items-start justify-between gap-4 mb-4">
                       <div className="flex items-center gap-3 min-w-0">
@@ -246,7 +280,12 @@ function IntegrationsPage() {
                             setEditing(row);
                             setOpen(true);
                           }}
-                          className="h-8 w-8 text-muted-foreground hover:text-foreground hover:scale-105 active:scale-95 transition-all"
+                          aria-label={
+                            isAr
+                              ? `تعديل ${preset?.label ?? row.provider}`
+                              : `Edit ${preset?.label ?? row.provider}`
+                          }
+                          className="h-11 w-11 text-muted-foreground hover:text-foreground sm:h-8 sm:w-8 transition-all"
                         >
                           <Pencil className="h-4 w-4" />
                         </Button>
@@ -254,7 +293,12 @@ function IntegrationsPage() {
                           variant="ghost"
                           size="icon"
                           onClick={() => del(row.id)}
-                          className="h-8 w-8 text-muted-foreground hover:text-destructive hover:scale-105 active:scale-95 transition-all"
+                          aria-label={
+                            isAr
+                              ? `حذف ${preset?.label ?? row.provider}`
+                              : `Delete ${preset?.label ?? row.provider}`
+                          }
+                          className="h-11 w-11 text-muted-foreground hover:text-destructive sm:h-8 sm:w-8 transition-all"
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
@@ -321,7 +365,7 @@ function IntegrationsPage() {
                           <p className="text-muted-foreground mb-1.5 font-medium">
                             {t("integrations.webhookHint")}
                           </p>
-                          <div className="flex items-center gap-2 bg-background/50 border rounded-md p-1.5 pl-3">
+                          <div className="flex min-w-0 items-center gap-2 bg-background/50 border rounded-md p-1.5 ps-3">
                             <code className="flex-1 truncate font-mono text-xs">{webhookUrl}</code>
                             <Button
                               variant="ghost"
@@ -330,6 +374,7 @@ function IntegrationsPage() {
                                 navigator.clipboard?.writeText(webhookUrl);
                                 toast.success("Copied");
                               }}
+                              aria-label={isAr ? "نسخ رابط Webhook" : "Copy webhook URL"}
                               className="h-7 px-2 shrink-0"
                             >
                               <Copy className="h-3.5 w-3.5" />
@@ -427,7 +472,7 @@ function AnalyticsTrackingCard({ brandId, isAr }: { brandId: string; isAr: boole
     toast.success(isAr ? "تم حفظ إعدادات التتبع" : "Tracking settings saved");
   };
   return (
-    <Card className="mb-6 p-5" dir={isAr ? "rtl" : "ltr"}>
+    <Card className="mb-6 p-3 sm:p-5" dir={isAr ? "rtl" : "ltr"}>
       <div className="mb-4">
         <h2 className="font-display text-xl">
           {isAr ? "التحليلات والتتبع" : "Analytics & Tracking"}
@@ -640,7 +685,7 @@ function IntegrationDialog({
   };
 
   return (
-    <DialogContent className="max-w-lg">
+    <DialogContent className="max-h-[calc(100dvh-1rem)] w-[calc(100vw-1rem)] max-w-lg overflow-y-auto p-4 sm:p-6">
       <DialogHeader>
         <DialogTitle>
           {row ? (isAr ? "تعديل التكامل" : "Edit integration") : t("integrations.new")}
@@ -730,7 +775,7 @@ function IntegrationDialog({
         </div>
       </div>
       <DialogFooter>
-        <Button onClick={save} disabled={saving}>
+        <Button onClick={save} disabled={saving} className="min-h-11 w-full sm:w-auto">
           {t("common.save")}
         </Button>
       </DialogFooter>

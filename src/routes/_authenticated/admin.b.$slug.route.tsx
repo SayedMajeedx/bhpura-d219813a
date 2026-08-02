@@ -160,9 +160,9 @@ function BrandError() {
   return (
     <div className="min-h-[50vh] flex items-center justify-center p-6">
       <Card className="max-w-md w-full p-6 text-center space-y-3">
-        <h1 className="text-lg font-bold font-heading text-foreground">
+        <div className="text-lg font-bold font-heading text-foreground">
           {lang === "ar" ? "تعذر تحميل مساحة عمل المتجر" : "Error loading brand workspace"}
-        </h1>
+        </div>
         <p className="text-sm text-muted-foreground">
           {lang === "ar"
             ? "تعذر الوصول إلى هذا المتجر. تحقق من صلاحياتك أو أعد تحميل الصفحة."

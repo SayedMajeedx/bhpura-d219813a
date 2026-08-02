@@ -1,4 +1,4 @@
-import { Settings, Save, Loader2, Check } from "lucide-react";
+import { Settings, Save, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface SettingsCommandHeaderProps {
@@ -48,7 +48,7 @@ export function SettingsCommandHeader({
           type="button"
           onClick={onSave}
           disabled={saving}
-          className="shadow-sm transition-all duration-200 hover:shadow hover:scale-[1.01] active:scale-95 gap-2 text-xs font-bold self-start sm:self-center bg-primary text-primary-foreground"
+          className="w-full shadow-sm transition-all duration-200 hover:shadow hover:scale-[1.01] active:scale-95 gap-2 text-xs font-bold sm:w-auto sm:self-center bg-primary text-primary-foreground"
         >
           {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
           <span>

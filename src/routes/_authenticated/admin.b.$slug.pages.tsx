@@ -22,7 +22,16 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-import { GripVertical, ImagePlus, MessageCircle, Plus, Trash2, Upload } from "lucide-react";
+import {
+  AlertTriangle,
+  GripVertical,
+  ImagePlus,
+  MessageCircle,
+  Plus,
+  RefreshCw,
+  Trash2,
+  Upload,
+} from "lucide-react";
 import { useI18n } from "@/lib/i18n";
 import { useBrand } from "@/lib/brand-context";
 import { uploadPublicMedia } from "@/lib/r2-upload";
@@ -93,7 +102,7 @@ function PagesAndPolicies() {
   const [editorLanguage, setEditorLanguage] = useState<EditorLanguage>(isAr ? "ar" : "en");
   const [activeScope, setActiveScope] = useState<PagesScope>("pages");
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["business-settings-pages", brandId],
     queryFn: async () => {
       const { data: settings, error } = await supabase
@@ -250,7 +259,38 @@ function PagesAndPolicies() {
     }
   };
 
-  if (isLoading) return <div className="p-8">{isAr ? "جاري التحميل…" : "Loading…"}</div>;
+  if (isError) {
+    return (
+      <Card className="flex min-h-48 flex-col items-center justify-center gap-3 rounded-2xl border-destructive/30 p-6 text-center">
+        <AlertTriangle className="h-8 w-8 text-destructive" aria-hidden="true" />
+        <h1 className="text-lg font-bold">
+          {isAr ? "تعذّر تحميل الصفحات" : "Pages could not be loaded"}
+        </h1>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => void refetch()}
+          className="min-h-11 gap-2"
+        >
+          <RefreshCw className="h-4 w-4" aria-hidden="true" />
+          {isAr ? "إعادة المحاولة" : "Try again"}
+        </Button>
+      </Card>
+    );
+  }
+  if (isLoading) {
+    return (
+      <div
+        role="status"
+        aria-label={isAr ? "جاري تحميل الصفحات" : "Loading pages"}
+        className="space-y-3.5"
+      >
+        <div className="h-32 animate-pulse rounded-2xl bg-muted/70" />
+        <div className="h-14 animate-pulse rounded-2xl bg-muted/60" />
+        <div className="h-72 animate-pulse rounded-2xl bg-muted/50" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-3.5">

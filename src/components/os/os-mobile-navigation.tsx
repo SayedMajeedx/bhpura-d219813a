@@ -307,9 +307,9 @@ export function OsMobileNavigation({
         </Sheet>
 
         <div className="min-w-0 text-center leading-tight flex-1 px-2">
-          <h1 className="truncate text-base font-bold font-heading text-foreground">
+          <div className="truncate text-base font-bold font-heading text-foreground">
             {brandLabel}
-          </h1>
+          </div>
           {currentPageLabel && (
             <div className="truncate text-[10px] text-muted-foreground font-medium">
               {currentPageLabel}
