@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
@@ -1503,30 +1504,26 @@ function OrderDetail() {
     );
   }
 
-  if (!order)
+  if (!order || settingsQ.isPending || !settingsQ.data)
     return (
-      <div className="p-8 text-center text-sm font-medium text-muted-foreground">
-        {lang === "ar" ? "جاري التحميل..." : "Loading..."}
+      <div className="mx-auto max-w-[1500px] space-y-4 p-4 animate-pulse">
+        <div className="flex items-center justify-between gap-4">
+          <Skeleton className="h-8 w-48 rounded-xl" />
+          <Skeleton className="h-9 w-32 rounded-xl" />
+        </div>
+        <Skeleton className="h-12 w-full rounded-2xl" />
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+          <div className="space-y-4 lg:col-span-2">
+            <Skeleton className="h-64 w-full rounded-2xl" />
+            <Skeleton className="h-48 w-full rounded-2xl" />
+          </div>
+          <div className="space-y-4">
+            <Skeleton className="h-48 w-full rounded-2xl" />
+            <Skeleton className="h-48 w-full rounded-2xl" />
+          </div>
+        </div>
       </div>
     );
-
-  if (isCourier) {
-    return (
-      <CourierOrderView
-        order={orderQ.data}
-        slug={slug}
-        onUpdated={async () => {
-          await Promise.all([
-            orderQ.refetch(),
-            qc.invalidateQueries({ queryKey: ["orders"] }),
-            qc.invalidateQueries({ queryKey: ["activity_logs"] }),
-          ]);
-        }}
-      />
-    );
-  }
-
-  if (settingsQ.isPending || !settingsQ.data) return <div className="p-8">Loading…</div>;
 
   const copyLink = async () => {
     const url = `${window.location.origin}/invoice/${order.public_invoice_token}`;
