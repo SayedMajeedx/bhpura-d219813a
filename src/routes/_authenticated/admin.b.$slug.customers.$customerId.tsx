@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate, useRouter } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import {
   ArrowLeft,
   CalendarDays,
@@ -13,6 +13,8 @@ import {
   StickyNote,
   UserRound,
   MoreHorizontal,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useBrand } from "@/lib/brand-context";
@@ -206,6 +208,14 @@ function CustomerProfilePage() {
   const orders = ordersQ.data ?? [];
   const totalSpent = orders.reduce((sum, o) => sum + Number(o.total || 0), 0);
 
+  const PAGE_SIZE = 8;
+  const [currentPage, setCurrentPage] = useState(1);
+  const totalPages = Math.max(1, Math.ceil(orders.length / PAGE_SIZE));
+  const paginatedOrders = useMemo(() => {
+    const start = (currentPage - 1) * PAGE_SIZE;
+    return orders.slice(start, start + PAGE_SIZE);
+  }, [orders, currentPage]);
+
   return (
     <div
       className="mx-auto max-w-7xl space-y-4 p-1 sm:p-2 animate-fade-in"
@@ -395,7 +405,7 @@ function CustomerProfilePage() {
           ) : (
             <>
               <div className="space-y-2 p-3 sm:hidden">
-                {orders.map((order) => (
+                {paginatedOrders.map((order) => (
                   <button
                     key={order.id}
                     type="button"
@@ -453,7 +463,7 @@ function CustomerProfilePage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {orders.map((order) => (
+                    {paginatedOrders.map((order) => (
                       <tr
                         key={order.id}
                         tabIndex={0}
@@ -505,6 +515,42 @@ function CustomerProfilePage() {
                   </tbody>
                 </table>
               </div>
+
+              {/* Pagination Controls */}
+              {totalPages > 1 && (
+                <div className="flex items-center justify-between border-t border-border/60 bg-muted/20 px-4 py-3 text-xs">
+                  <p className="text-muted-foreground font-medium">
+                    {lang === "ar"
+                      ? `عرض ${Math.min(orders.length, (currentPage - 1) * PAGE_SIZE + 1)}–${Math.min(orders.length, currentPage * PAGE_SIZE)} من إجمالي ${orders.length} طلب`
+                      : `Showing ${Math.min(orders.length, (currentPage - 1) * PAGE_SIZE + 1)}–${Math.min(orders.length, currentPage * PAGE_SIZE)} of ${orders.length} orders`}
+                  </p>
+                  <div className="flex items-center gap-1.5">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={currentPage === 1}
+                      onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                      className="h-8 px-2.5 text-xs font-semibold"
+                    >
+                      <ChevronRight className="h-3.5 w-3.5 rtl:rotate-180" />
+                      <span className="hidden sm:inline ms-1">{lang === "ar" ? "السابق" : "Previous"}</span>
+                    </Button>
+                    <span className="px-2 font-bold text-foreground">
+                      {currentPage} / {totalPages}
+                    </span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={currentPage === totalPages}
+                      onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                      className="h-8 px-2.5 text-xs font-semibold"
+                    >
+                      <span className="hidden sm:inline me-1">{lang === "ar" ? "التالي" : "Next"}</span>
+                      <ChevronLeft className="h-3.5 w-3.5 rtl:rotate-180" />
+                    </Button>
+                  </div>
+                </div>
+              )}
             </>
           )}
         </Card>
