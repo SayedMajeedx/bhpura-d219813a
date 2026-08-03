@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useNavigate, useBlocker, useRouter } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate, useRouter } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import {
@@ -627,16 +627,16 @@ function EditCustomerDialog({
     form.email !== (customer.email ?? "") ||
     form.notes !== (customer.notes ?? "");
 
-  useBlocker({
-    shouldBlockFn: () => {
-      if (!isDirty || !open || saving) return false;
-      const msg =
-        lang === "ar"
-          ? "لديك تغييرات غير محفوظة في ملف العميل. هل أنت متأكد من المغادرة؟"
-          : "You have unsaved changes in the customer profile. Are you sure you want to leave?";
-      return !window.confirm(msg);
-    },
-  });
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (isDirty && open && !saving) {
+        e.preventDefault();
+        e.returnValue = "";
+      }
+    };
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [isDirty, open, saving]);
 
   useEffect(
     () =>

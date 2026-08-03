@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useRouter, useBlocker } from "@tanstack/react-router";
+import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, useMemo, useEffect, useRef, lazy } from "react";
 import { toast } from "sonner";
@@ -1477,16 +1477,16 @@ function OrderDetail() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [isReadOnly, saving, order, items, totals, appliedPromo, currency, settingsQ.data, variantsQ.data]);
 
-  useBlocker({
-    shouldBlockFn: () => {
-      if (!isDirty || hasSavedDraft || isReadOnly || saving) return false;
-      const msg =
-        lang === "ar"
-          ? "لديك تغييرات غير محفوظة. هل أنت متأكد من المغادرة؟"
-          : "You have unsaved changes. Are you sure you want to leave?";
-      return !window.confirm(msg);
-    },
-  });
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (isDirty && !hasSavedDraft && !isReadOnly && !saving) {
+        e.preventDefault();
+        e.returnValue = "";
+      }
+    };
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [isDirty, hasSavedDraft, isReadOnly, saving]);
 
   const copyLink = async () => {
     const url = `${window.location.origin}/invoice/${order.public_invoice_token}`;
