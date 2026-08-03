@@ -1864,45 +1864,52 @@ function OrderDetail() {
               {/* Primary Next Workflow Quick Action (e.g. Approve Payment, Hand Over, Pack & Ship) */}
               {renderTopPrimaryAction()}
 
-              {/* Desktop Actions */}
-              <div className="hidden sm:flex items-center gap-2">
-                {order.public_invoice_token && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={copyLink}
-                    className="h-9 px-3 text-xs font-semibold shadow-2xs hover:bg-accent"
-                  >
-                    <LinkIcon className="h-3.5 w-3.5 me-1 text-muted-foreground" />
-                    <span>{t("orders.copyLink")}</span>
-                  </Button>
-                )}
+              {/* Consolidated Actions */}
+              <div className="flex items-center gap-2">
                 <SendInvoiceDialog
                   order={order}
                   totals={totals}
                   settings={settingsQ.data}
                   currency={currency}
                 />
-                <ResendConfirmationEmailButton
-                  order={order}
-                  lang={lang}
-                  onDone={() => qc.invalidateQueries({ queryKey: ["order", id] })}
-                />
-                <Button
-                  variant="outline"
-                  onClick={printReceipt}
-                  className="shadow-xs transition-all hover:bg-accent"
-                >
-                  <Receipt className="h-4 w-4 me-1.5 text-muted-foreground" />{" "}
-                  {t("orders.printReceipt")}
-                </Button>
-                <Button
-                  variant="outline"
-                  className="shadow-xs transition-all hover:bg-accent"
-                  onClick={handlePrintA4}
-                >
-                  <Printer className="h-4 w-4 me-1.5 text-muted-foreground" /> {t("orders.printA4")}
-                </Button>
+
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-9 px-3 text-xs font-semibold shadow-2xs hover:bg-accent gap-1.5"
+                    >
+                      <MoreHorizontal className="h-4 w-4 text-muted-foreground" />
+                      <span className="hidden sm:inline">
+                        {lang === "ar" ? "المزيد" : "More"}
+                      </span>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-52">
+                    {order.public_invoice_token && (
+                      <DropdownMenuItem onClick={copyLink}>
+                        <LinkIcon className="h-4 w-4 me-2 text-muted-foreground" />
+                        <span>{t("orders.copyLink")}</span>
+                      </DropdownMenuItem>
+                    )}
+                    <ResendConfirmationEmailButton
+                      order={order}
+                      lang={lang}
+                      asMenuItem
+                      onDone={() => qc.invalidateQueries({ queryKey: ["order", id] })}
+                    />
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={printReceipt}>
+                      <Receipt className="h-4 w-4 me-2 text-muted-foreground" />
+                      <span>{t("orders.printReceipt")}</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={handlePrintA4}>
+                      <Printer className="h-4 w-4 me-2 text-muted-foreground" />
+                      <span>{t("orders.printA4")}</span>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
             </>
           )}
