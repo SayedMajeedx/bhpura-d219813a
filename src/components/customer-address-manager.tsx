@@ -1,5 +1,5 @@
 import { useEffect, useState, type ReactNode } from "react";
-import { ChevronDown, MapPin, Pencil, Plus, Trash2, Star, Check } from "lucide-react";
+import { ChevronDown, MapPin, Pencil, Plus, Trash2, Star, Check, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { DeliveryAddressCard } from "@/components/delivery-address-card";
@@ -180,14 +180,34 @@ export function CustomerAddressManager({
             : "Your session has expired. Please sign in again.",
         );
       }
-      const result = await (supabase.from("customer_addresses") as any).insert({
-        ...payload,
-        user_id: user.id,
-        brand_id: brandId,
-        customer_id: customerId,
-        is_default: addresses.length === 0,
-      });
-      error = result.error;
+      const normalizeVal = (v: string | null | undefined) => String(v || "").trim().toLowerCase();
+      const existingDup = addresses.find(
+        (a) =>
+          normalizeVal(a.region) === normalizeVal(payload.region) &&
+          normalizeVal(a.block) === normalizeVal(payload.block) &&
+          normalizeVal(a.road) === normalizeVal(payload.road) &&
+          normalizeVal(a.house) === normalizeVal(payload.house) &&
+          normalizeVal(a.flat) === normalizeVal(payload.flat),
+      );
+
+      if (existingDup) {
+        // Update existing address instead of creating a duplicate row!
+        const result = await (supabase.from("customer_addresses") as any)
+          .update(payload)
+          .eq("id", existingDup.id)
+          .eq("customer_id", customerId)
+          .eq("brand_id", brandId);
+        error = result.error;
+      } else {
+        const result = await (supabase.from("customer_addresses") as any).insert({
+          ...payload,
+          user_id: user.id,
+          brand_id: brandId,
+          customer_id: customerId,
+          is_default: addresses.length === 0,
+        });
+        error = result.error;
+      }
     }
 
     setSaving(false);
@@ -262,6 +282,58 @@ export function CustomerAddressManager({
     }
   };
 
+  const deduplicateAddresses = async () => {
+    if (addresses.length <= 1) return;
+    setSaving(true);
+    try {
+      const normalizeStr = (s: string | null | undefined) => String(s || "").trim().toLowerCase();
+      const map = new Map<string, ManagedCustomerAddress[]>();
+
+      for (const addr of addresses) {
+        const key = `${normalizeStr(addr.region)}|${normalizeStr(addr.block)}|${normalizeStr(addr.road)}|${normalizeStr(addr.house)}|${normalizeStr(addr.flat)}`;
+        if (!map.has(key)) map.set(key, []);
+        map.get(key)!.push(addr);
+      }
+
+      let duplicateCount = 0;
+      for (const [, group] of map) {
+        if (group.length > 1) {
+          group.sort((a, b) => (b.is_default ? 1 : 0) - (a.is_default ? 1 : 0));
+          const primary = group[0];
+          const duplicates = group.slice(1);
+
+          for (const dup of duplicates) {
+            duplicateCount++;
+            await supabase
+              .from("orders")
+              .update({ shipping_address_id: primary.id })
+              .eq("shipping_address_id", dup.id);
+
+            await supabase
+              .from("customer_addresses")
+              .delete()
+              .eq("id", dup.id);
+          }
+        }
+      }
+
+      if (duplicateCount > 0) {
+        toast.success(
+          isAr
+            ? `تم تنظيف ${duplicateCount} عنوان مكرر بنجاح!`
+            : `Cleaned up ${duplicateCount} duplicate address${duplicateCount > 1 ? "es" : ""}!`,
+        );
+        onChanged();
+      } else {
+        toast.info(isAr ? "لا توجد عناوين مكررة لتنظيفها" : "No duplicate addresses found");
+      }
+    } catch (e: any) {
+      toast.error(e.message || "Error cleaning up duplicates");
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return (
     <>
       <div className="mb-4 flex items-center justify-between gap-3">
@@ -269,12 +341,28 @@ export function CustomerAddressManager({
           <MapPin className="h-5 w-5 text-primary" />
           <h2 className="font-display text-lg">{isAr ? "عناوين التوصيل" : "Delivery Addresses"}</h2>
         </div>
-        {addresses.length > 0 && (
-          <Button type="button" variant="outline" size="sm" onClick={startAdd}>
-            <Plus className="h-4 w-4" />
-            {isAr ? "إضافة" : "Add"}
-          </Button>
-        )}
+        <div className="flex items-center gap-2">
+          {addresses.length > 1 && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={saving}
+              onClick={deduplicateAddresses}
+              className="h-8 text-xs font-bold gap-1 text-amber-700 dark:text-amber-300 border-amber-300/60 bg-amber-500/10 hover:bg-amber-500/20 rounded-lg"
+              title={isAr ? "دمج وتنظيف العناوين المكررة تلقائياً" : "Merge and clean duplicate addresses automatically"}
+            >
+              <Sparkles className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
+              <span>{isAr ? "تنظيف المكررات" : "Deduplicate"}</span>
+            </Button>
+          )}
+          {addresses.length > 0 && (
+            <Button type="button" variant="outline" size="sm" onClick={startAdd}>
+              <Plus className="h-4 w-4" />
+              {isAr ? "إضافة" : "Add"}
+            </Button>
+          )}
+        </div>
       </div>
 
       {loading ? (
