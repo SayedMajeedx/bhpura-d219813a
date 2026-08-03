@@ -1916,52 +1916,17 @@ function OrderDetail() {
             </>
           )}
 
-          {/* Lock / Unlock or Dynamic Save button with Unsaved Changes notation */}
-          {isReadOnly ? (
-            isAdmin && (
-              <Button
-                variant="default"
-                size="sm"
-                onClick={() => setEditingUnlocked(true)}
-                className="shadow-sm font-semibold bg-primary hover:bg-primary/90"
-              >
-                <Unlock className="h-4 w-4 me-1.5" />
-                {lang === "ar" ? "فتح للتعديل" : "Unlock for editing"}
-              </Button>
-            )
-          ) : (
-            <div className="flex flex-col items-end gap-1">
-              <Button
-                onClick={save}
-                disabled={saving}
-                size="sm"
-                className={cn(
-                  "shadow-sm transition-all font-bold h-9 px-3.5",
-                  isDirty
-                    ? "bg-emerald-600 hover:bg-emerald-700 text-white shadow-md ring-2 ring-emerald-500/30"
-                    : "bg-primary text-primary-foreground hover:bg-primary/90",
-                  isCreationMode ? "min-w-32" : ""
-                )}
-              >
-                {saving ? (
-                  <Loader2 className="h-4 w-4 me-1.5 animate-spin" />
-                ) : isDirty ? (
-                  <Save className="h-4 w-4 me-1.5" />
-                ) : (
-                  <Check className="h-4 w-4 me-1.5" />
-                )}
-                {isCreationMode
-                  ? (lang === "ar" ? "إنشاء وحفظ" : "Create & Save")
-                  : isDirty
-                  ? (lang === "ar" ? "حفظ التغييرات" : "Save Changes")
-                  : (lang === "ar" ? "محفوظ" : "Saved")}
-              </Button>
-              {isDirty && !isCreationMode && (
-                <span className="text-[11px] font-semibold text-amber-600 dark:text-amber-400 animate-fade-in whitespace-nowrap">
-                  {lang === "ar" ? "توجد تغييرات غير محفوظة على الطلب" : "Unsaved changes detected"}
-                </span>
-              )}
-            </div>
+          {/* Lock / Unlock when order is closed */}
+          {isReadOnly && isAdmin && (
+            <Button
+              variant="default"
+              size="sm"
+              onClick={() => setEditingUnlocked(true)}
+              className="shadow-sm font-semibold bg-primary hover:bg-primary/90"
+            >
+              <Unlock className="h-4 w-4 me-1.5" />
+              {lang === "ar" ? "فتح للتعديل" : "Unlock for editing"}
+            </Button>
           )}
         </div>
       </div>
@@ -2030,59 +1995,94 @@ function OrderDetail() {
 
       {/* Sticky Section Navigation Bar */}
       {!isCreationMode && (
-        <div className="no-print sticky top-0 z-30 mb-3 grid grid-cols-4 gap-1 rounded-2xl border border-border/80 bg-background/95 p-1.5 shadow-sm backdrop-blur select-none sm:mb-6 sm:flex sm:overflow-x-auto sm:gap-2 sm:rounded-xl">
-          <button
-            type="button"
-            onClick={() => scrollToSection("sec-overview")}
-            className={cn(
-              "min-h-11 justify-center rounded-xl px-1.5 py-1.5 text-[10px] font-bold transition-colors flex flex-col sm:flex-row items-center gap-1 sm:px-3.5 sm:text-xs sm:whitespace-nowrap touch-manipulation",
-              activeSection === "sec-overview"
-                ? "bg-primary text-primary-foreground shadow-xs"
-                : "hover:bg-muted text-muted-foreground",
-            )}
-          >
-            <UserRound className="h-3.5 w-3.5" />
-            <span>{lang === "ar" ? "نظرة عامة" : "Overview"}</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => scrollToSection("sec-items")}
-            className={cn(
-              "min-h-11 justify-center rounded-xl px-1.5 py-1.5 text-[10px] font-bold transition-colors flex flex-col sm:flex-row items-center gap-1 sm:px-3.5 sm:text-xs sm:whitespace-nowrap touch-manipulation",
-              activeSection === "sec-items"
-                ? "bg-primary text-primary-foreground shadow-xs"
-                : "hover:bg-muted text-muted-foreground",
-            )}
-          >
-            <Package className="h-3.5 w-3.5" />
-            <span>{lang === "ar" ? "المنتجات" : "Items"}</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => scrollToSection("sec-invoice")}
-            className={cn(
-              "min-h-11 justify-center rounded-xl px-1.5 py-1.5 text-[10px] font-bold transition-colors flex flex-col sm:flex-row items-center gap-1 sm:px-3.5 sm:text-xs sm:whitespace-nowrap touch-manipulation",
-              activeSection === "sec-invoice"
-                ? "bg-primary text-primary-foreground shadow-xs"
-                : "hover:bg-muted text-muted-foreground",
-            )}
-          >
-            <CreditCard className="h-3.5 w-3.5" />
-            <span>{lang === "ar" ? "الفاتورة" : "Invoice"}</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => scrollToSection("sec-activity")}
-            className={cn(
-              "min-h-11 justify-center rounded-xl px-1.5 py-1.5 text-[10px] font-bold transition-colors flex flex-col sm:flex-row items-center gap-1 sm:px-3.5 sm:text-xs sm:whitespace-nowrap touch-manipulation",
-              activeSection === "sec-activity"
-                ? "bg-primary text-primary-foreground shadow-xs"
-                : "hover:bg-muted text-muted-foreground",
-            )}
-          >
-            <MoreHorizontal className="h-3.5 w-3.5" />
-            <span>{lang === "ar" ? "المزيد" : "More"}</span>
-          </button>
+        <div className="no-print sticky top-0 z-30 mb-3 flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-border/80 bg-background/95 p-1.5 shadow-sm backdrop-blur select-none sm:mb-6 sm:rounded-xl">
+          <div className="grid grid-cols-4 gap-1 w-full sm:w-auto sm:flex sm:items-center sm:gap-2">
+            <button
+              type="button"
+              onClick={() => scrollToSection("sec-overview")}
+              className={cn(
+                "min-h-11 justify-center rounded-xl px-1.5 py-1.5 text-[10px] font-bold transition-colors flex flex-col sm:flex-row items-center gap-1 sm:px-3.5 sm:text-xs sm:whitespace-nowrap touch-manipulation",
+                activeSection === "sec-overview"
+                  ? "bg-primary text-primary-foreground shadow-xs"
+                  : "hover:bg-muted text-muted-foreground",
+              )}
+            >
+              <UserRound className="h-3.5 w-3.5" />
+              <span>{lang === "ar" ? "نظرة عامة" : "Overview"}</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => scrollToSection("sec-items")}
+              className={cn(
+                "min-h-11 justify-center rounded-xl px-1.5 py-1.5 text-[10px] font-bold transition-colors flex flex-col sm:flex-row items-center gap-1 sm:px-3.5 sm:text-xs sm:whitespace-nowrap touch-manipulation",
+                activeSection === "sec-items"
+                  ? "bg-primary text-primary-foreground shadow-xs"
+                  : "hover:bg-muted text-muted-foreground",
+              )}
+            >
+              <Package className="h-3.5 w-3.5" />
+              <span>{lang === "ar" ? "المنتجات" : "Items"}</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => scrollToSection("sec-invoice")}
+              className={cn(
+                "min-h-11 justify-center rounded-xl px-1.5 py-1.5 text-[10px] font-bold transition-colors flex flex-col sm:flex-row items-center gap-1 sm:px-3.5 sm:text-xs sm:whitespace-nowrap touch-manipulation",
+                activeSection === "sec-invoice"
+                  ? "bg-primary text-primary-foreground shadow-xs"
+                  : "hover:bg-muted text-muted-foreground",
+              )}
+            >
+              <CreditCard className="h-3.5 w-3.5" />
+              <span>{lang === "ar" ? "الفاتورة" : "Invoice"}</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => scrollToSection("sec-activity")}
+              className={cn(
+                "min-h-11 justify-center rounded-xl px-1.5 py-1.5 text-[10px] font-bold transition-colors flex flex-col sm:flex-row items-center gap-1 sm:px-3.5 sm:text-xs sm:whitespace-nowrap touch-manipulation",
+                activeSection === "sec-activity"
+                  ? "bg-primary text-primary-foreground shadow-xs"
+                  : "hover:bg-muted text-muted-foreground",
+              )}
+            >
+              <MoreHorizontal className="h-3.5 w-3.5" />
+              <span>{lang === "ar" ? "المزيد" : "More"}</span>
+            </button>
+          </div>
+
+          {/* Left Side: Dynamic Save Button & Unsaved Notation */}
+          {!isReadOnly && (
+            <div className="flex items-center gap-2.5 ms-auto sm:ms-0 px-1 py-0.5">
+              {isDirty && (
+                <span className="text-xs font-semibold text-amber-600 dark:text-amber-400 animate-fade-in hidden md:inline">
+                  {lang === "ar" ? "توجد تغييرات غير محفوظة على الطلب" : "Unsaved changes detected"}
+                </span>
+              )}
+              <Button
+                onClick={save}
+                disabled={saving}
+                size="sm"
+                className={cn(
+                  "shadow-xs font-bold h-9 px-4 transition-all rounded-xl",
+                  isDirty
+                    ? "bg-emerald-600 hover:bg-emerald-700 text-white shadow-md ring-2 ring-emerald-500/30"
+                    : "bg-primary text-primary-foreground hover:bg-primary/90"
+                )}
+              >
+                {saving ? (
+                  <Loader2 className="h-4 w-4 me-1.5 animate-spin" />
+                ) : isDirty ? (
+                  <Save className="h-4 w-4 me-1.5" />
+                ) : (
+                  <Check className="h-4 w-4 me-1.5" />
+                )}
+                {isDirty
+                  ? (lang === "ar" ? "حفظ التغييرات" : "Save Changes")
+                  : (lang === "ar" ? "محفوظ" : "Saved")}
+              </Button>
+            </div>
+          )}
         </div>
       )}
 
