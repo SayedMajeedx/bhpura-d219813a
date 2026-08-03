@@ -1028,68 +1028,7 @@ function OrderDetail() {
   const [cameraStreamPromise, setCameraStreamPromise] = useState<Promise<MediaStream> | null>(null);
   const cameraStreamRef = useRef<MediaStream | null>(null);
 
-  if (orderQ.isError) {
-    const rawErr =
-      orderQ.error instanceof Error ? orderQ.error.message : String(orderQ.error ?? "");
-    const localizedErr =
-      rawErr.includes("Cannot read properties of null") || rawErr.includes("customer_id")
-        ? lang === "ar"
-          ? "جاري إعداد بيانات الطلب..."
-          : "Loading order details..."
-        : lang === "ar"
-          ? "تأكد من وجود الطلب ثم حاول مرة أخرى."
-          : "Please confirm this order exists and try again.";
-
-    return (
-      <div className="mx-auto max-w-2xl p-6 sm:p-8">
-        <Card className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm p-6 space-y-4">
-          <h1 className="text-xl font-semibold">
-            {lang === "ar" ? "تعذر فتح الطلب" : "Unable to open this order"}
-          </h1>
-          <p className="text-sm text-muted-foreground">{localizedErr}</p>
-          <div className="flex flex-wrap gap-2">
-            <Button onClick={() => void orderQ.refetch()}>
-              {lang === "ar" ? "إعادة المحاولة" : "Try again"}
-            </Button>
-            <Button asChild variant="outline">
-              <Link to="/admin/b/$slug/orders" params={{ slug }}>
-                {lang === "ar" ? "العودة إلى الطلبات" : "Back to orders"}
-              </Link>
-            </Button>
-          </div>
-        </Card>
-      </div>
-    );
-  }
-
-  if (!order)
-    return (
-      <div className="p-8 text-center text-sm font-medium text-muted-foreground">
-        {lang === "ar" ? "جاري التحميل..." : "Loading..."}
-      </div>
-    );
-
-  // Courier access is intentionally limited by RLS. Their focused delivery
-  // view must not wait for office-only settings, catalogue, or CRM queries.
-  if (isCourier) {
-    return (
-      <CourierOrderView
-        order={orderQ.data}
-        slug={slug}
-        onUpdated={async () => {
-          await Promise.all([
-            orderQ.refetch(),
-            qc.invalidateQueries({ queryKey: ["orders"] }),
-            qc.invalidateQueries({ queryKey: ["activity_logs"] }),
-          ]);
-        }}
-      />
-    );
-  }
-
-  if (settingsQ.isPending || !settingsQ.data) return <div className="p-8">Loading…</div>;
-
-  const currency = order.currency ?? "BHD";
+  const currency = order?.currency ?? "BHD";
   const isClosedOrder = serverOrder?.status === "completed" || serverOrder?.status === "paid";
   const isReadOnly = isClosedOrder && !editingUnlocked;
   const isCreationMode = isBlankDraft && !hasSavedDraft;
@@ -1487,6 +1426,65 @@ function OrderDetail() {
     window.addEventListener("beforeunload", handleBeforeUnload);
     return () => window.removeEventListener("beforeunload", handleBeforeUnload);
   }, [isDirty, hasSavedDraft, isReadOnly, saving]);
+
+  if (orderQ.isError) {
+    const rawErr =
+      orderQ.error instanceof Error ? orderQ.error.message : String(orderQ.error ?? "");
+    const localizedErr =
+      rawErr.includes("Cannot read properties of null") || rawErr.includes("customer_id")
+        ? lang === "ar"
+          ? "جاري إعداد بيانات الطلب..."
+          : "Loading order details..."
+        : lang === "ar"
+          ? "تأكد من وجود الطلب ثم حاول مرة أخرى."
+          : "Please confirm this order exists and try again.";
+
+    return (
+      <div className="mx-auto max-w-2xl p-6 sm:p-8">
+        <Card className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm p-6 space-y-4">
+          <h1 className="text-xl font-semibold">
+            {lang === "ar" ? "تعذر فتح الطلب" : "Unable to open this order"}
+          </h1>
+          <p className="text-sm text-muted-foreground">{localizedErr}</p>
+          <div className="flex flex-wrap gap-2">
+            <Button onClick={() => void orderQ.refetch()}>
+              {lang === "ar" ? "إعادة المحاولة" : "Try again"}
+            </Button>
+            <Button asChild variant="outline">
+              <Link to="/admin/b/$slug/orders" params={{ slug }}>
+                {lang === "ar" ? "العودة إلى الطلبات" : "Back to orders"}
+              </Link>
+            </Button>
+          </div>
+        </Card>
+      </div>
+    );
+  }
+
+  if (!order)
+    return (
+      <div className="p-8 text-center text-sm font-medium text-muted-foreground">
+        {lang === "ar" ? "جاري التحميل..." : "Loading..."}
+      </div>
+    );
+
+  if (isCourier) {
+    return (
+      <CourierOrderView
+        order={orderQ.data}
+        slug={slug}
+        onUpdated={async () => {
+          await Promise.all([
+            orderQ.refetch(),
+            qc.invalidateQueries({ queryKey: ["orders"] }),
+            qc.invalidateQueries({ queryKey: ["activity_logs"] }),
+          ]);
+        }}
+      />
+    );
+  }
+
+  if (settingsQ.isPending || !settingsQ.data) return <div className="p-8">Loading…</div>;
 
   const copyLink = async () => {
     const url = `${window.location.origin}/invoice/${order.public_invoice_token}`;
