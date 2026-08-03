@@ -1869,7 +1869,7 @@ function OrderDetail() {
 
   return (
     <div
-      className="mx-auto max-w-[1500px] space-y-3 p-1 pb-24 sm:space-y-4 sm:p-2 sm:pb-20 animate-fade-in"
+      className="mx-auto max-w-[1500px] space-y-3 p-1 pb-32 sm:space-y-4 sm:p-2 sm:pb-32 md:pb-28 lg:pb-16 animate-fade-in"
       dir={lang === "ar" ? "rtl" : "ltr"}
     >
       <div className="no-print mb-2 flex items-center justify-between gap-2.5 rounded-2xl border border-border/60 bg-card/70 px-3 py-2.5 shadow-sm backdrop-blur sm:mb-4 sm:rounded-none sm:border-0 sm:bg-transparent sm:px-0 sm:py-0 sm:shadow-none">
