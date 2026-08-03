@@ -1,5 +1,6 @@
 import { useEffect, useState, type ReactNode } from "react";
-import { MapPin, Pencil, Plus, Trash2 } from "lucide-react";
+import { ChevronDown, MapPin, Pencil, Plus, Trash2 } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { DeliveryAddressCard } from "@/components/delivery-address-card";
 import { Button } from "@/components/ui/button";
@@ -83,6 +84,7 @@ export function CustomerAddressManager({
   const [editing, setEditing] = useState<ManagedCustomerAddress | null>(null);
   const [deleting, setDeleting] = useState<ManagedCustomerAddress | null>(null);
   const [saving, setSaving] = useState(false);
+  const [showOthers, setShowOthers] = useState(false);
   const [form, setForm] = useState<AddressForm>(EMPTY_FORM);
 
   useEffect(() => {
@@ -245,50 +247,127 @@ export function CustomerAddressManager({
         </button>
       ) : (
         <div className="space-y-3">
-          {addresses.map((address) => (
-            <div
-              key={address.id}
-              className="rounded-xl border p-3 transition-colors hover:bg-muted/20"
-            >
-              <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0 flex-1">
-                  <div className="mb-1 flex flex-wrap items-center gap-2">
-                    <span className="font-medium">
-                      {address.label || (isAr ? "عنوان التوصيل" : "Delivery address")}
-                    </span>
-                    {address.is_default && (
-                      <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary">
-                        {isAr ? "افتراضي" : "Default"}
+          {(() => {
+            const defaultAddress = addresses.find((a) => a.is_default) || addresses[0];
+            const otherAddresses = addresses.filter((a) => a.id !== defaultAddress?.id);
+
+            return (
+              <>
+                {/* Default Address Card */}
+                {defaultAddress && (
+                  <div
+                    key={defaultAddress.id}
+                    className="rounded-xl border border-primary/20 bg-card p-3 shadow-2xs transition-colors hover:bg-muted/20"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0 flex-1">
+                        <div className="mb-1 flex flex-wrap items-center gap-2">
+                          <span className="font-semibold text-foreground">
+                            {defaultAddress.label || (isAr ? "عنوان التوصيل" : "Delivery address")}
+                          </span>
+                          {defaultAddress.is_default && (
+                            <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-bold text-primary">
+                              {isAr ? "افتراضي" : "Default"}
+                            </span>
+                          )}
+                        </div>
+                        <DeliveryAddressCard address={defaultAddress} lang={lang} compact showLabel={false} />
+                      </div>
+                      <div className="flex shrink-0 gap-1">
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8"
+                          onClick={() => startEdit(defaultAddress)}
+                          aria-label={isAr ? "تعديل العنوان" : "Edit address"}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-destructive hover:text-destructive"
+                          onClick={() => setDeleting(defaultAddress)}
+                          aria-label={isAr ? "حذف العنوان" : "Delete address"}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Collapsible Dropdown for Other Addresses */}
+                {otherAddresses.length > 0 && (
+                  <div className="pt-1">
+                    <button
+                      type="button"
+                      onClick={() => setShowOthers((prev) => !prev)}
+                      className="flex w-full items-center justify-between rounded-xl border border-border/60 bg-muted/30 px-3.5 py-2.5 text-xs font-bold text-muted-foreground transition-all hover:bg-muted/60 hover:text-foreground"
+                    >
+                      <span>
+                        {isAr
+                          ? `العناوين الأخرى (${otherAddresses.length})`
+                          : `Other Addresses (${otherAddresses.length})`}
                       </span>
+                      <ChevronDown
+                        className={cn(
+                          "h-4 w-4 transition-transform duration-200",
+                          showOthers && "rotate-180",
+                        )}
+                      />
+                    </button>
+
+                    {showOthers && (
+                      <div className="mt-2.5 space-y-2.5 border-t border-border/40 pt-2.5 animate-in fade-in slide-in-from-top-1 duration-200">
+                        {otherAddresses.map((address) => (
+                          <div
+                            key={address.id}
+                            className="rounded-xl border p-3 transition-colors hover:bg-muted/20"
+                          >
+                            <div className="flex items-start justify-between gap-3">
+                              <div className="min-w-0 flex-1">
+                                <div className="mb-1 flex flex-wrap items-center gap-2">
+                                  <span className="font-medium">
+                                    {address.label || (isAr ? "عنوان التوصيل" : "Delivery address")}
+                                  </span>
+                                </div>
+                                <DeliveryAddressCard address={address} lang={lang} compact showLabel={false} />
+                              </div>
+                              <div className="flex shrink-0 gap-1">
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8"
+                                  onClick={() => startEdit(address)}
+                                  aria-label={isAr ? "تعديل العنوان" : "Edit address"}
+                                >
+                                  <Pencil className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 text-destructive hover:text-destructive"
+                                  onClick={() => setDeleting(address)}
+                                  aria-label={isAr ? "حذف العنوان" : "Delete address"}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
                     )}
                   </div>
-                  <DeliveryAddressCard address={address} lang={lang} compact showLabel={false} />
-                </div>
-                <div className="flex shrink-0 gap-1">
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8"
-                    onClick={() => startEdit(address)}
-                    aria-label={isAr ? "تعديل العنوان" : "Edit address"}
-                  >
-                    <Pencil className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8 text-destructive hover:text-destructive"
-                    onClick={() => setDeleting(address)}
-                    aria-label={isAr ? "حذف العنوان" : "Delete address"}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-            </div>
-          ))}
+                )}
+              </>
+            );
+          })()}
         </div>
       )}
 

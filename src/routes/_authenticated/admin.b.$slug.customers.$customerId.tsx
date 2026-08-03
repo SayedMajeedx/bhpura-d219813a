@@ -530,10 +530,19 @@ function CustomerProfilePage() {
                       size="sm"
                       disabled={currentPage === 1}
                       onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                      className="h-8 px-2.5 text-xs font-semibold"
+                      className="h-8 px-2.5 text-xs font-semibold flex items-center gap-1"
                     >
-                      <ChevronRight className="h-3.5 w-3.5 rtl:rotate-180" />
-                      <span className="hidden sm:inline ms-1">{lang === "ar" ? "السابق" : "Previous"}</span>
+                      {lang === "ar" ? (
+                        <>
+                          <span className="hidden sm:inline">السابق</span>
+                          <ChevronRight className="h-3.5 w-3.5" />
+                        </>
+                      ) : (
+                        <>
+                          <ChevronLeft className="h-3.5 w-3.5" />
+                          <span className="hidden sm:inline">Previous</span>
+                        </>
+                      )}
                     </Button>
                     <span className="px-2 font-bold text-foreground">
                       {currentPage} / {totalPages}
@@ -543,10 +552,19 @@ function CustomerProfilePage() {
                       size="sm"
                       disabled={currentPage === totalPages}
                       onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                      className="h-8 px-2.5 text-xs font-semibold"
+                      className="h-8 px-2.5 text-xs font-semibold flex items-center gap-1"
                     >
-                      <span className="hidden sm:inline me-1">{lang === "ar" ? "التالي" : "Next"}</span>
-                      <ChevronLeft className="h-3.5 w-3.5 rtl:rotate-180" />
+                      {lang === "ar" ? (
+                        <>
+                          <ChevronLeft className="h-3.5 w-3.5" />
+                          <span className="hidden sm:inline">التالي</span>
+                        </>
+                      ) : (
+                        <>
+                          <span className="hidden sm:inline">Next</span>
+                          <ChevronRight className="h-3.5 w-3.5" />
+                        </>
+                      )}
                     </Button>
                   </div>
                 </div>
