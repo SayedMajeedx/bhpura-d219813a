@@ -1388,24 +1388,45 @@ function OrderDetail() {
 
     if (logs.length > 0) await logActivityBatch(logs);
 
-    // Update snapshot ref so isDirty resets to false immediately upon saving
+    // Refetch fresh order from Supabase to sync local state and snapshot
+    const refetched = await orderQ.refetch();
+    const freshOrder = (refetched.data ?? order) as any;
+    setOrder(freshOrder);
+
+    const loadedItems: Item[] = (freshOrder.order_items ?? []).map((i: any) => ({
+      id: i.id,
+      product_id: i.product_id,
+      variant_id: i.variant_id,
+      description: i.description,
+      quantity: i.quantity,
+      unit_price: Number(i.unit_price),
+      original_price: i.original_price == null ? null : Number(i.original_price),
+      customizations: i.customizations ?? [],
+      customization_total: Number(i.customization_total),
+      line_total: Number(i.line_total),
+      location: (i.location === "incubator" ? "incubator" : "main") as "main" | "incubator",
+      selected_variant: i.selected_variant ?? null,
+      custom_field_values: normalizeCustomFieldValues(i.custom_field_values),
+    }));
+    setItems(loadedItems);
+
     initialSnapshotRef.current = {
       order: {
-        notes: order.notes ?? "",
-        delivery_notes: order.delivery_notes ?? "",
-        customer_id: order.customer_id ?? null,
-        shipping_address_id: order.shipping_address_id ?? null,
-        payment_status: order.payment_status ?? "unpaid",
-        fulfillment_status: order.fulfillment_status ?? "ON_HOLD",
-        status: order.status,
-        payment_method: order.payment_method ?? null,
-        discount: Number(totals.discount),
-        shipping: Number(totals.shipping),
-        tax_rate: Number(order.tax_rate ?? 0),
-        advance_paid: Number(totals.advancePaid),
-        order_date: order.order_date,
+        notes: freshOrder.notes ?? "",
+        delivery_notes: freshOrder.delivery_notes ?? "",
+        customer_id: freshOrder.customer_id ?? null,
+        shipping_address_id: freshOrder.shipping_address_id ?? null,
+        payment_status: freshOrder.payment_status,
+        fulfillment_status: freshOrder.fulfillment_status,
+        status: freshOrder.status,
+        payment_method: freshOrder.payment_method ?? null,
+        discount: Number(freshOrder.discount ?? 0),
+        shipping: Number(freshOrder.shipping ?? 0),
+        tax_rate: Number(freshOrder.tax_rate ?? 0),
+        advance_paid: Number(freshOrder.advance_paid ?? 0),
+        order_date: freshOrder.order_date,
       },
-      items: items.map((it) => ({ ...it })),
+      items: loadedItems,
     };
 
     toast.success(lang === "ar" ? "تم الحفظ بنجاح" : "Saved successfully");
@@ -1418,7 +1439,6 @@ function OrderDetail() {
     setHasSavedDraft(true);
     setEditingUnlocked(false);
     setSaving(false);
-    qc.invalidateQueries({ queryKey: ["order", id] });
     qc.invalidateQueries({ queryKey: ["orders"] });
     qc.invalidateQueries({ queryKey: ["variants"] });
     qc.invalidateQueries({ queryKey: ["activity_logs"] });
