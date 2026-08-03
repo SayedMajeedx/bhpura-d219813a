@@ -18,6 +18,8 @@ import {
 import {
   ArrowLeft,
   Plus,
+  Minus,
+  Check,
   Trash2,
   Copy,
   Printer,
@@ -1914,7 +1916,7 @@ function OrderDetail() {
             </>
           )}
 
-          {/* Lock / Unlock or Save button */}
+          {/* Lock / Unlock or Dynamic Save button */}
           {isReadOnly ? (
             isAdmin && (
               <Button
@@ -1932,14 +1934,26 @@ function OrderDetail() {
               onClick={save}
               disabled={saving}
               size="sm"
-              className={cn("shadow-sm transition-all font-bold", isCreationMode ? "min-w-32" : "")}
+              className={cn(
+                "shadow-sm transition-all font-bold h-9 px-3.5",
+                isDirty
+                  ? "bg-emerald-600 hover:bg-emerald-700 text-white shadow-md ring-2 ring-emerald-500/30"
+                  : "bg-primary text-primary-foreground hover:bg-primary/90",
+                isCreationMode ? "min-w-32" : ""
+              )}
             >
               {saving ? (
                 <Loader2 className="h-4 w-4 me-1.5 animate-spin" />
-              ) : (
+              ) : isDirty ? (
                 <Save className="h-4 w-4 me-1.5" />
+              ) : (
+                <Check className="h-4 w-4 me-1.5" />
               )}
-              {isCreationMode ? (lang === "ar" ? "إنشاء وحفظ" : "Create & Save") : t("common.save")}
+              {isCreationMode
+                ? (lang === "ar" ? "إنشاء وحفظ" : "Create & Save")
+                : isDirty
+                ? (lang === "ar" ? "حفظ التغييرات" : "Save Changes")
+                : (lang === "ar" ? "محفوظ" : "Saved")}
             </Button>
           )}
         </div>
@@ -2743,13 +2757,35 @@ function OrderDetail() {
                         </div>
                         <div className="sm:col-span-2">
                           <Label>{t("orderDetail.qty")}</Label>
-                          <Input
-                            type="number"
-                            min={1}
-                            className="min-w-[70px] text-center"
-                            value={it.quantity}
-                            onChange={(e) => updateItem(idx, { quantity: Number(e.target.value) })}
-                          />
+                          <div className="flex items-center rounded-lg border border-border/80 bg-background overflow-hidden h-9 shadow-2xs mt-1">
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              className="h-9 w-8 shrink-0 rounded-none hover:bg-muted active:scale-95 text-muted-foreground hover:text-foreground"
+                              onClick={() => updateItem(idx, { quantity: Math.max(1, Number(it.quantity || 1) - 1) })}
+                              title={isAr ? "إنقاص الكمية" : "Decrease quantity"}
+                            >
+                              <Minus className="h-3.5 w-3.5" />
+                            </Button>
+                            <Input
+                              type="number"
+                              min={1}
+                              value={it.quantity}
+                              onChange={(e) => updateItem(idx, { quantity: Math.max(1, Number(e.target.value)) })}
+                              className="h-9 w-12 border-0 p-0 text-center font-bold text-xs focus-visible:ring-0 focus-visible:ring-offset-0 bg-transparent [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                            />
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              className="h-9 w-8 shrink-0 rounded-none hover:bg-muted active:scale-95 text-muted-foreground hover:text-foreground"
+                              onClick={() => updateItem(idx, { quantity: Number(it.quantity || 1) + 1 })}
+                              title={isAr ? "زيادة الكمية" : "Increase quantity"}
+                            >
+                              <Plus className="h-3.5 w-3.5" />
+                            </Button>
+                          </div>
                         </div>
                         <div className="sm:col-span-3">
                           <Label>{t("orderDetail.unitPrice")}</Label>
