@@ -1,5 +1,5 @@
 import { useEffect, useState, type ReactNode } from "react";
-import { ChevronDown, MapPin, Pencil, Plus, Trash2 } from "lucide-react";
+import { ChevronDown, MapPin, Pencil, Plus, Trash2, Star, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { DeliveryAddressCard } from "@/components/delivery-address-card";
@@ -7,6 +7,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Dialog,
   DialogContent,
@@ -84,8 +91,17 @@ export function CustomerAddressManager({
   const [editing, setEditing] = useState<ManagedCustomerAddress | null>(null);
   const [deleting, setDeleting] = useState<ManagedCustomerAddress | null>(null);
   const [saving, setSaving] = useState(false);
-  const [showOthers, setShowOthers] = useState(false);
+  const [selectedAddressId, setSelectedAddressId] = useState<string>("");
   const [form, setForm] = useState<AddressForm>(EMPTY_FORM);
+
+  useEffect(() => {
+    if (addresses.length > 0) {
+      const defaultId = addresses.find((a) => a.is_default)?.id || addresses[0]?.id;
+      if (defaultId && (!selectedAddressId || !addresses.some((a) => a.id === selectedAddressId))) {
+        setSelectedAddressId(defaultId);
+      }
+    }
+  }, [addresses]);
 
   useEffect(() => {
     if (!open) return;
@@ -219,6 +235,33 @@ export function CustomerAddressManager({
     onChanged();
   };
 
+  const makeDefault = async (targetId: string) => {
+    setSaving(true);
+    try {
+      await supabase
+        .from("customer_addresses")
+        .update({ is_default: false })
+        .eq("customer_id", customerId)
+        .eq("brand_id", brandId);
+
+      const { error } = await supabase
+        .from("customer_addresses")
+        .update({ is_default: true })
+        .eq("id", targetId)
+        .eq("customer_id", customerId)
+        .eq("brand_id", brandId);
+
+      if (error) throw error;
+
+      toast.success(isAr ? "تم تعيين العنوان كعنوان افتراضي" : "Set as default address");
+      onChanged();
+    } catch (e: any) {
+      toast.error(e.message || "Error updating default address");
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return (
     <>
       <div className="mb-4 flex items-center justify-between gap-3">
@@ -246,125 +289,95 @@ export function CustomerAddressManager({
           {isAr ? "إضافة عنوان" : "Add Address"}
         </button>
       ) : (
-        <div className="space-y-3">
+        <div className="space-y-2.5">
           {(() => {
-            const defaultAddress = addresses.find((a) => a.is_default) || addresses[0];
-            const otherAddresses = addresses.filter((a) => a.id !== defaultAddress?.id);
+            const activeAddress =
+              addresses.find((a) => a.id === selectedAddressId) ||
+              addresses.find((a) => a.is_default) ||
+              addresses[0];
+
+            if (!activeAddress) return null;
 
             return (
               <>
-                {/* Default Address Card */}
-                {defaultAddress && (
-                  <div
-                    key={defaultAddress.id}
-                    className="rounded-xl border border-primary/20 bg-card p-3 shadow-2xs transition-colors hover:bg-muted/20"
-                  >
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0 flex-1">
-                        <div className="mb-1 flex flex-wrap items-center gap-2">
-                          <span className="font-semibold text-foreground">
-                            {defaultAddress.label || (isAr ? "عنوان التوصيل" : "Delivery address")}
-                          </span>
-                          {defaultAddress.is_default && (
-                            <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-bold text-primary">
-                              {isAr ? "افتراضي" : "Default"}
+                {/* Address Dropdown Picker if customer has multiple addresses */}
+                {addresses.length > 1 && (
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
+                      {isAr ? `تحديد العنوان (${addresses.length})` : `Select Address (${addresses.length})`}
+                    </label>
+                    <Select value={activeAddress.id} onValueChange={setSelectedAddressId}>
+                      <SelectTrigger className="w-full h-9 text-xs font-semibold rounded-xl bg-background border-border/80">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {addresses.map((a) => (
+                          <SelectItem key={a.id} value={a.id} className="text-xs font-medium">
+                            <span className="flex items-center gap-1.5 truncate">
+                              <strong>{a.label || (isAr ? "عنوان" : "Address")}</strong>
+                              <span className="text-muted-foreground">— {a.region || a.block || a.road}</span>
+                              {a.is_default && (
+                                <span className="ms-auto font-bold text-primary text-[10px]">
+                                  ({isAr ? "الافتراضي" : "Default"})
+                                </span>
+                              )}
                             </span>
-                          )}
-                        </div>
-                        <DeliveryAddressCard address={defaultAddress} lang={lang} compact showLabel={false} />
-                      </div>
-                      <div className="flex shrink-0 gap-1">
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8"
-                          onClick={() => startEdit(defaultAddress)}
-                          aria-label={isAr ? "تعديل العنوان" : "Edit address"}
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 text-destructive hover:text-destructive"
-                          onClick={() => setDeleting(defaultAddress)}
-                          aria-label={isAr ? "حذف العنوان" : "Delete address"}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+
+                {/* Selected Active Address Card */}
+                <div className="space-y-2">
+                  <DeliveryAddressCard address={activeAddress} lang={lang} compact showLabel={false} />
+
+                  {/* Actions Bar: Edit, Delete, Set as Default */}
+                  <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
+                    {!activeAddress.is_default ? (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        disabled={saving}
+                        onClick={() => makeDefault(activeAddress.id)}
+                        className="h-7 px-2.5 text-[11px] font-bold gap-1 text-primary border-primary/30 bg-primary/5 hover:bg-primary/10 rounded-lg"
+                      >
+                        <Star className="h-3 w-3 fill-primary text-primary" />
+                        <span>{isAr ? "تعيين كافتراضي" : "Set as Default"}</span>
+                      </Button>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded-md border border-emerald-200 dark:border-emerald-800">
+                        <Check className="h-3 w-3" />
+                        {isAr ? "العنوان الافتراضي" : "Default Address"}
+                      </span>
+                    )}
+
+                    <div className="flex items-center gap-1.5 ms-auto">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 px-2 text-[11px] font-semibold gap-1 text-muted-foreground hover:text-foreground"
+                        onClick={() => startEdit(activeAddress)}
+                      >
+                        <Pencil className="h-3 w-3" />
+                        <span>{isAr ? "تعديل" : "Edit"}</span>
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 px-2 text-[11px] font-semibold gap-1 text-destructive hover:text-destructive"
+                        onClick={() => setDeleting(activeAddress)}
+                      >
+                        <Trash2 className="h-3 w-3" />
+                        <span>{isAr ? "حذف" : "Delete"}</span>
+                      </Button>
                     </div>
                   </div>
-                )}
-
-                {/* Collapsible Dropdown for Other Addresses */}
-                {otherAddresses.length > 0 && (
-                  <div className="pt-1">
-                    <button
-                      type="button"
-                      onClick={() => setShowOthers((prev) => !prev)}
-                      className="flex w-full items-center justify-between rounded-xl border border-border/60 bg-muted/30 px-3.5 py-2.5 text-xs font-bold text-muted-foreground transition-all hover:bg-muted/60 hover:text-foreground"
-                    >
-                      <span>
-                        {isAr
-                          ? `العناوين الأخرى (${otherAddresses.length})`
-                          : `Other Addresses (${otherAddresses.length})`}
-                      </span>
-                      <ChevronDown
-                        className={cn(
-                          "h-4 w-4 transition-transform duration-200",
-                          showOthers && "rotate-180",
-                        )}
-                      />
-                    </button>
-
-                    {showOthers && (
-                      <div className="mt-2.5 space-y-2.5 border-t border-border/40 pt-2.5 animate-in fade-in slide-in-from-top-1 duration-200">
-                        {otherAddresses.map((address) => (
-                          <div
-                            key={address.id}
-                            className="rounded-xl border p-3 transition-colors hover:bg-muted/20"
-                          >
-                            <div className="flex items-start justify-between gap-3">
-                              <div className="min-w-0 flex-1">
-                                <div className="mb-1 flex flex-wrap items-center gap-2">
-                                  <span className="font-medium">
-                                    {address.label || (isAr ? "عنوان التوصيل" : "Delivery address")}
-                                  </span>
-                                </div>
-                                <DeliveryAddressCard address={address} lang={lang} compact showLabel={false} />
-                              </div>
-                              <div className="flex shrink-0 gap-1">
-                                <Button
-                                  type="button"
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-8 w-8"
-                                  onClick={() => startEdit(address)}
-                                  aria-label={isAr ? "تعديل العنوان" : "Edit address"}
-                                >
-                                  <Pencil className="h-4 w-4" />
-                                </Button>
-                                <Button
-                                  type="button"
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-8 w-8 text-destructive hover:text-destructive"
-                                  onClick={() => setDeleting(address)}
-                                  aria-label={isAr ? "حذف العنوان" : "Delete address"}
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                )}
+                </div>
               </>
             );
           })()}

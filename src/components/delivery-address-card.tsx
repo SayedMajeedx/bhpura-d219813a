@@ -42,9 +42,80 @@ export function DeliveryAddressCard({
   const hasMap =
     Number.isFinite(Number(address.latitude)) && Number.isFinite(Number(address.longitude));
 
+  const addressInlineSummary = [
+    address.region ? regionLabel(address.region, lang) : null,
+    address.block ? `${isAr ? "مجمع" : "Block"} ${address.block}` : null,
+    address.road ? `${isAr ? "طريق" : "Road"} ${address.road}` : null,
+    address.house ? `${isAr ? "منزل/مبنى" : "Bldg"} ${address.house}` : null,
+    address.flat ? `${isAr ? "شقة" : "Flat"} ${address.flat}` : null,
+    address.floor ? `${isAr ? "طابق" : "Floor"} ${address.floor}` : null,
+  ]
+    .filter(Boolean)
+    .join(isAr ? " ، " : ", ");
+
+  if (compact) {
+    return (
+      <div
+        className="rounded-xl border border-border/60 bg-card p-3 shadow-2xs transition-colors hover:bg-muted/10 space-y-1.5"
+        dir={isAr ? "rtl" : "ltr"}
+      >
+        <div className="flex items-center justify-between gap-2">
+          {showLabel && (
+            <div className="flex items-center gap-1.5 min-w-0">
+              <MapPin className="h-3.5 w-3.5 text-primary shrink-0" />
+              <span className="font-bold text-xs truncate">
+                {address.label || (isAr ? "عنوان التوصيل" : "Delivery address")}
+              </span>
+              {address.is_default && (
+                <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[9px] font-bold text-primary shrink-0">
+                  {isAr ? "افتراضي" : "Default"}
+                </span>
+              )}
+            </div>
+          )}
+          <div className="flex items-center gap-1 shrink-0">
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7"
+              aria-label={isAr ? "نسخ العنوان" : "Copy address"}
+              onClick={async () => {
+                await navigator.clipboard.writeText(copyText);
+                toast.success(isAr ? "تم نسخ العنوان" : "Address copied");
+              }}
+            >
+              <Copy className="h-3 w-3" />
+            </Button>
+            {hasMap && (
+              <Button asChild type="button" variant="ghost" size="icon" className="h-7 w-7">
+                <a
+                  target="_blank"
+                  rel="noreferrer"
+                  href={`https://www.google.com/maps/search/?api=1&query=${address.latitude},${address.longitude}`}
+                  aria-label={isAr ? "فتح العنوان في الخريطة" : "Open address in map"}
+                >
+                  <ExternalLink className="h-3 w-3" />
+                </a>
+              </Button>
+            )}
+          </div>
+        </div>
+        <p className="text-xs text-foreground/90 font-medium leading-relaxed break-words">
+          {address.formatted_address || addressInlineSummary || (isAr ? "لا تتوفّر تفاصيل عنوان" : "No address details")}
+        </p>
+        {address.delivery_notes && (
+          <p className="text-[11px] text-amber-800 dark:text-amber-300 font-medium truncate">
+            {isAr ? "ملاحظة:" : "Note:"} {address.delivery_notes}
+          </p>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div
-      className={`rounded-xl border bg-background ${compact ? "p-3" : "p-4"}`}
+      className="rounded-xl border bg-background p-4"
       dir={isAr ? "rtl" : "ltr"}
     >
       <div className="mb-3 flex items-start justify-between gap-3">
@@ -74,7 +145,7 @@ export function DeliveryAddressCard({
             }}
           >
             <Copy className="h-3.5 w-3.5" />
-            {!compact && (isAr ? "نسخ" : "Copy")}
+            {isAr ? "نسخ" : "Copy"}
           </Button>
           {hasMap && (
             <Button asChild type="button" variant="ghost" size="sm" className="h-8 gap-1 px-2">
@@ -85,7 +156,7 @@ export function DeliveryAddressCard({
                 aria-label={isAr ? "فتح العنوان في الخريطة" : "Open address in map"}
               >
                 <ExternalLink className="h-3.5 w-3.5" />
-                {!compact && (isAr ? "الخريطة" : "Map")}
+                {isAr ? "الخريطة" : "Map"}
               </a>
             </Button>
           )}
@@ -94,7 +165,7 @@ export function DeliveryAddressCard({
       {address.formatted_address && (
         <p className="mb-3 text-sm font-medium">{address.formatted_address}</p>
       )}
-      <dl className={`grid gap-x-5 gap-y-2 ${compact ? "grid-cols-2" : "sm:grid-cols-2"}`}>
+      <dl className="grid gap-x-5 gap-y-2 sm:grid-cols-2">
         {fields.map(([label, value]) => (
           <div key={label} className="min-w-0">
             <dt className="text-[11px] uppercase tracking-wide text-muted-foreground">{label}</dt>
