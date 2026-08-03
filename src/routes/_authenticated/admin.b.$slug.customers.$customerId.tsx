@@ -15,6 +15,8 @@ import {
   MoreHorizontal,
   ChevronLeft,
   ChevronRight,
+  AlertTriangle,
+  RotateCw,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useBrand } from "@/lib/brand-context";
@@ -23,6 +25,7 @@ import { formatAddressLine, regionLabel } from "@/lib/bahrain-regions";
 import { formatMoney } from "@/lib/format";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -179,10 +182,52 @@ function CustomerProfilePage() {
 
   if (customerQ.isLoading)
     return (
-      <div className="p-8 text-center text-muted-foreground">
-        {lang === "ar" ? "جاري تحميل ملف العميل…" : "Loading customer profile…"}
+      <div className="mx-auto max-w-7xl p-6 animate-pulse space-y-4">
+        <Skeleton className="h-10 w-64 rounded-xl" />
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+          <Skeleton className="h-96 rounded-2xl lg:col-span-2" />
+          <Skeleton className="h-96 rounded-2xl" />
+        </div>
       </div>
     );
+
+  if (customerQ.isError) {
+    return (
+      <div className="mx-auto max-w-xl p-8 animate-fade-in">
+        <Card className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/80 backdrop-blur-sm p-8 text-center space-y-4">
+          <AlertTriangle className="mx-auto h-10 w-10 text-amber-500 animate-pulse" />
+          <div className="space-y-1">
+            <h1 className="font-display text-xl font-bold">
+              {lang === "ar" ? "تعذر تحميل ملف العميل" : "Unable to load customer profile"}
+            </h1>
+            <p className="text-xs text-muted-foreground">
+              {customerQ.error?.message || (lang === "ar" ? "حدث خطأ في الاتصال بالشبكة" : "Connection or query error occurred")}
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center justify-center gap-2 pt-2">
+            <Button
+              type="button"
+              onClick={() => customerQ.refetch()}
+              className="gap-2 font-bold shadow-sm"
+            >
+              <RotateCw className="h-4 w-4" />
+              {lang === "ar" ? "إعادة المحاولة" : "Try Again"}
+            </Button>
+            <Button
+              asChild
+              variant="outline"
+              className="gap-2"
+            >
+              <Link to="/admin/b/$slug/customers" params={{ slug }}>
+                {lang === "ar" ? "العودة إلى العملاء" : "Back to customers"}
+              </Link>
+            </Button>
+          </div>
+        </Card>
+      </div>
+    );
+  }
+
   if (!customerQ.data) {
     return (
       <div className="mx-auto max-w-xl p-8 animate-fade-in">

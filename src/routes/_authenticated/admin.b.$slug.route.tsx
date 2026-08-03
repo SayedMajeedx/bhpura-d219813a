@@ -3,6 +3,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { BrandProvider, type Brand } from "@/lib/brand-context";
 import { useI18n } from "@/lib/i18n";
 import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { RotateCw, AlertTriangle, ArrowLeft } from "lucide-react";
 
 function getImpersonationToken(request?: Request): string | null {
   if (typeof document !== "undefined") {
@@ -158,16 +160,46 @@ function BrandLayout() {
 function BrandError() {
   const { lang } = useI18n();
   return (
-    <div className="min-h-[50vh] flex items-center justify-center p-6">
-      <Card className="max-w-md w-full p-6 text-center space-y-3">
-        <div className="text-lg font-bold font-heading text-foreground">
-          {lang === "ar" ? "تعذر تحميل مساحة عمل المتجر" : "Error loading brand workspace"}
+    <div className="min-h-[50vh] flex items-center justify-center p-6 animate-fade-in">
+      <Card className="max-w-md w-full p-8 text-center space-y-4 shadow-lg border-border/60 rounded-2xl bg-card/80 backdrop-blur-md">
+        <div className="h-12 w-12 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center mx-auto">
+          <AlertTriangle className="h-6 w-6" />
         </div>
-        <p className="text-sm text-muted-foreground">
-          {lang === "ar"
-            ? "تعذر الوصول إلى هذا المتجر. تحقق من صلاحياتك أو أعد تحميل الصفحة."
-            : "Unable to access this store. Verify your permissions or refresh the page."}
-        </p>
+        <div className="space-y-1.5">
+          <div className="text-lg font-bold font-heading text-foreground">
+            {lang === "ar" ? "تعذر تحميل مساحة عمل المتجر" : "Error loading brand workspace"}
+          </div>
+          <p className="text-xs text-muted-foreground leading-relaxed">
+            {lang === "ar"
+              ? "حدث انقطاع مؤقت في الاتصال أو انتهت الجلسة. أعد تحميل الصفحة أو انقر على زر العودة."
+              : "A temporary connection issue occurred or session expired. Reload page or click back."}
+          </p>
+        </div>
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-2 pt-2">
+          <Button
+            type="button"
+            onClick={() => window.location.reload()}
+            className="w-full sm:w-auto h-9 min-h-[36px] gap-2 font-bold shadow-sm"
+          >
+            <RotateCw className="h-4 w-4" />
+            <span>{lang === "ar" ? "إعادة تحميل الصفحة" : "Reload Page"}</span>
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => {
+              if (typeof window !== "undefined" && window.history.length > 1) {
+                window.history.back();
+              } else {
+                window.location.href = "/admin";
+              }
+            }}
+            className="w-full sm:w-auto h-9 min-h-[36px] gap-2 font-semibold"
+          >
+            <ArrowLeft className="h-4 w-4 rtl:rotate-180" />
+            <span>{lang === "ar" ? "العودة" : "Go Back"}</span>
+          </Button>
+        </div>
       </Card>
     </div>
   );
