@@ -1475,7 +1475,7 @@ function OrderDetail() {
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isReadOnly, saving, order, items, totals, fulfillmentMethod, appliedPromo, currency, settingsQ.data, variantsQ.data]);
+  }, [isReadOnly, saving, order, items, totals, appliedPromo, currency, settingsQ.data, variantsQ.data]);
 
   useBlocker({
     shouldBlockFn: () => {
