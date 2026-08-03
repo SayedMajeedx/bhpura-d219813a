@@ -1916,7 +1916,7 @@ function OrderDetail() {
             </>
           )}
 
-          {/* Lock / Unlock or Dynamic Save button */}
+          {/* Lock / Unlock or Dynamic Save button with Unsaved Changes notation */}
           {isReadOnly ? (
             isAdmin && (
               <Button
@@ -1930,31 +1930,38 @@ function OrderDetail() {
               </Button>
             )
           ) : (
-            <Button
-              onClick={save}
-              disabled={saving}
-              size="sm"
-              className={cn(
-                "shadow-sm transition-all font-bold h-9 px-3.5",
-                isDirty
-                  ? "bg-emerald-600 hover:bg-emerald-700 text-white shadow-md ring-2 ring-emerald-500/30"
-                  : "bg-primary text-primary-foreground hover:bg-primary/90",
-                isCreationMode ? "min-w-32" : ""
+            <div className="flex flex-col items-end gap-1">
+              <Button
+                onClick={save}
+                disabled={saving}
+                size="sm"
+                className={cn(
+                  "shadow-sm transition-all font-bold h-9 px-3.5",
+                  isDirty
+                    ? "bg-emerald-600 hover:bg-emerald-700 text-white shadow-md ring-2 ring-emerald-500/30"
+                    : "bg-primary text-primary-foreground hover:bg-primary/90",
+                  isCreationMode ? "min-w-32" : ""
+                )}
+              >
+                {saving ? (
+                  <Loader2 className="h-4 w-4 me-1.5 animate-spin" />
+                ) : isDirty ? (
+                  <Save className="h-4 w-4 me-1.5" />
+                ) : (
+                  <Check className="h-4 w-4 me-1.5" />
+                )}
+                {isCreationMode
+                  ? (lang === "ar" ? "إنشاء وحفظ" : "Create & Save")
+                  : isDirty
+                  ? (lang === "ar" ? "حفظ التغييرات" : "Save Changes")
+                  : (lang === "ar" ? "محفوظ" : "Saved")}
+              </Button>
+              {isDirty && !isCreationMode && (
+                <span className="text-[11px] font-semibold text-amber-600 dark:text-amber-400 animate-fade-in whitespace-nowrap">
+                  {lang === "ar" ? "توجد تغييرات غير محفوظة على الطلب" : "Unsaved changes detected"}
+                </span>
               )}
-            >
-              {saving ? (
-                <Loader2 className="h-4 w-4 me-1.5 animate-spin" />
-              ) : isDirty ? (
-                <Save className="h-4 w-4 me-1.5" />
-              ) : (
-                <Check className="h-4 w-4 me-1.5" />
-              )}
-              {isCreationMode
-                ? (lang === "ar" ? "إنشاء وحفظ" : "Create & Save")
-                : isDirty
-                ? (lang === "ar" ? "حفظ التغييرات" : "Save Changes")
-                : (lang === "ar" ? "محفوظ" : "Saved")}
-            </Button>
+            </div>
           )}
         </div>
       </div>
@@ -3575,34 +3582,7 @@ function OrderDetail() {
         </div>
       </fieldset>
 
-      {/* Floating Sticky Save Bar - Only appears when form has unsaved changes */}
-      {!isReadOnly && isDirty && (
-        <div className="no-print fixed bottom-20 inset-x-3 z-50 mx-auto hidden max-w-lg items-center gap-3 rounded-2xl border border-amber-300/80 bg-amber-50/95 p-3.5 shadow-2xl backdrop-blur animate-in slide-in-from-bottom duration-200 dark:bg-amber-950/90 sm:bottom-6 sm:inset-x-auto sm:end-8 sm:flex">
-          <span className="flex h-2.5 w-2.5 rounded-full bg-amber-500 animate-ping shrink-0" />
-          <span className="text-xs font-bold text-amber-900 dark:text-amber-200 flex-1 min-w-0">
-            {lang === "ar" ? "توجد تغييرات غير محفوظة على الطلب" : "Unsaved changes detected"}
-          </span>
-          <Button
-            onClick={save}
-            disabled={saving}
-            size="sm"
-            className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold shadow-md shrink-0 touch-manipulation min-h-[38px]"
-          >
-            {saving ? (
-              <Loader2 className="me-1.5 h-4 w-4 animate-spin" />
-            ) : (
-              <Save className="me-1.5 h-4 w-4" />
-            )}
-            {isCreationMode
-              ? lang === "ar"
-                ? "إنشاء وحفظ"
-                : "Create & Save"
-              : lang === "ar"
-                ? "حفظ التغييرات"
-                : "Save Changes"}
-          </Button>
-        </div>
-      )}
+
 
       {/* Invoice Preview Section Anchor */}
       <div id="sec-invoice" className="scroll-mt-24">
