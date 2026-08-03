@@ -1388,6 +1388,26 @@ function OrderDetail() {
 
     if (logs.length > 0) await logActivityBatch(logs);
 
+    // Update snapshot ref so isDirty resets to false immediately upon saving
+    initialSnapshotRef.current = {
+      order: {
+        notes: order.notes ?? "",
+        delivery_notes: order.delivery_notes ?? "",
+        customer_id: order.customer_id ?? null,
+        shipping_address_id: order.shipping_address_id ?? null,
+        payment_status: order.payment_status ?? "unpaid",
+        fulfillment_status: order.fulfillment_status ?? "ON_HOLD",
+        status: order.status,
+        payment_method: order.payment_method ?? null,
+        discount: Number(totals.discount),
+        shipping: Number(totals.shipping),
+        tax_rate: Number(order.tax_rate ?? 0),
+        advance_paid: Number(totals.advancePaid),
+        order_date: order.order_date,
+      },
+      items: items.map((it) => ({ ...it })),
+    };
+
     toast.success(lang === "ar" ? "تم الحفظ بنجاح" : "Saved successfully");
     try {
       localStorage.removeItem(`boutq_draft_${brandId}_${id}`);
