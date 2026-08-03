@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useRouter, useBlocker } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, useMemo, useEffect, useRef, lazy } from "react";
 import { toast } from "sonner";
@@ -52,6 +52,13 @@ import {
   DialogTrigger,
   DialogDescription,
 } from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
 import {
   generateCourierWhatsAppUrl,
   formatNotifiedTimeAgo,
@@ -257,6 +264,7 @@ function OrderDetail() {
   const { lang } = useI18n();
   const { id, slug } = Route.useParams();
   const qc = useQueryClient();
+  const router = useRouter();
   const brand = useBrand();
   const { isAdmin, isCourier } = useProfile();
   const brandId = brand.id;
@@ -1453,7 +1461,32 @@ function OrderDetail() {
     qc.invalidateQueries({ queryKey: ["orders"] });
     qc.invalidateQueries({ queryKey: ["variants"] });
     qc.invalidateQueries({ queryKey: ["activity_logs"] });
+    qc.invalidateQueries({ queryKey: ["activity_logs"] });
   };
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "s") {
+        e.preventDefault();
+        if (!isReadOnly && !saving) {
+          void save();
+        }
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isReadOnly, saving, order, items, totals, fulfillmentMethod, appliedPromo, currency, settingsQ.data, variantsQ.data]);
+
+  useBlocker({
+    shouldBlockFn: () => {
+      if (!isDirty || hasSavedDraft || isReadOnly || saving) return false;
+      const msg =
+        lang === "ar"
+          ? "لديك تغييرات غير محفوظة. هل أنت متأكد من المغادرة؟"
+          : "You have unsaved changes. Are you sure you want to leave?";
+      return !window.confirm(msg);
+    },
+  });
 
   const copyLink = async () => {
     const url = `${window.location.origin}/invoice/${order.public_invoice_token}`;
@@ -1473,6 +1506,20 @@ function OrderDetail() {
       toast.success(t("orders.linkCopied"));
     } catch {
       toast.error(t("orders.linkFailed"));
+    }
+  };
+
+  const handlePrintA4 = async () => {
+    try {
+      const el = document.querySelector<HTMLElement>(".printable-invoice");
+      const { downloadInvoicePdf } = await import("@/lib/download-invoice-pdf");
+      await downloadInvoicePdf(el, `invoice-${order.invoice_number ?? order.id}`);
+    } catch (err) {
+      console.error("PDF download failed", err);
+      toast.error(
+        (err as Error)?.message ??
+          (lang === "ar" ? "فشل تحميل ملف PDF" : "PDF download failed"),
+      );
     }
   };
 
@@ -1787,14 +1834,21 @@ function OrderDetail() {
     >
       <div className="no-print mb-2 flex items-center justify-between gap-2.5 rounded-2xl border border-border/60 bg-card/70 px-3 py-2.5 shadow-sm backdrop-blur sm:mb-4 sm:rounded-none sm:border-0 sm:bg-transparent sm:px-0 sm:py-0 sm:shadow-none">
         <div className="flex items-center gap-2 min-w-0">
-          <Link
-            to="/admin/b/$slug/orders"
-            params={{ slug }}
-            className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1.5 shrink-0"
+          <button
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              if (window.history.length > 2) {
+                router.history.back();
+              } else {
+                router.navigate({ to: `/admin/b/${slug}/orders` });
+              }
+            }}
+            className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1.5 shrink-0 transition-colors"
           >
-            <ArrowLeft className="h-4 w-4" />{" "}
+            <ArrowLeft className="h-4 w-4 rtl:rotate-180" />{" "}
             <span className="hidden sm:inline">{t("orderDetail.back")}</span>
-          </Link>
+          </button>
           <div className="min-w-0">
             <h1 className="truncate text-base sm:text-2xl font-display font-bold tracking-tight">
               {isCreationMode
@@ -1806,26 +1860,25 @@ function OrderDetail() {
           </div>
         </div>
 
-        <div className="hidden flex-wrap items-center gap-2 sm:flex">
+        <div className="flex flex-wrap items-center gap-2">
           {!isCreationMode && (
             <>
               {/* Primary Next Workflow Quick Action (e.g. Approve Payment, Hand Over, Pack & Ship) */}
               {renderTopPrimaryAction()}
 
-              {/* Copy Link button on all screen sizes */}
-              {order.public_invoice_token && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={copyLink}
-                  className="h-9 px-3 text-xs font-semibold shadow-2xs hover:bg-accent"
-                >
-                  <LinkIcon className="h-3.5 w-3.5 me-1 text-muted-foreground" />
-                  <span>{t("orders.copyLink")}</span>
-                </Button>
-              )}
-
+              {/* Desktop Actions */}
               <div className="hidden sm:flex items-center gap-2">
+                {order.public_invoice_token && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={copyLink}
+                    className="h-9 px-3 text-xs font-semibold shadow-2xs hover:bg-accent"
+                  >
+                    <LinkIcon className="h-3.5 w-3.5 me-1 text-muted-foreground" />
+                    <span>{t("orders.copyLink")}</span>
+                  </Button>
+                )}
                 <SendInvoiceDialog
                   order={order}
                   totals={totals}
@@ -1848,19 +1901,7 @@ function OrderDetail() {
                 <Button
                   variant="outline"
                   className="shadow-xs transition-all hover:bg-accent"
-                  onClick={async () => {
-                    try {
-                      const el = document.querySelector<HTMLElement>(".printable-invoice");
-                      const { downloadInvoicePdf } = await import("@/lib/download-invoice-pdf");
-                      await downloadInvoicePdf(el, `invoice-${order.invoice_number ?? order.id}`);
-                    } catch (err) {
-                      console.error("PDF download failed", err);
-                      toast.error(
-                        (err as Error)?.message ??
-                          (lang === "ar" ? "فشل تحميل ملف PDF" : "PDF download failed"),
-                      );
-                    }
-                  }}
+                  onClick={handlePrintA4}
                 >
                   <Printer className="h-4 w-4 me-1.5 text-muted-foreground" /> {t("orders.printA4")}
                 </Button>
@@ -4028,10 +4069,12 @@ function ResendConfirmationEmailButton({
   order,
   lang,
   onDone,
+  asMenuItem = false,
 }: {
   order: any;
   lang: "ar" | "en";
   onDone: () => void;
+  asMenuItem?: boolean;
 }) {
   const [sending, setSending] = useState(false);
   const status: string = order?.confirmation_email_status ?? "pending";
@@ -4088,6 +4131,19 @@ function ResendConfirmationEmailButton({
       onDone();
     }
   };
+
+  if (asMenuItem) {
+    return (
+      <DropdownMenuItem onSelect={(e) => { e.preventDefault(); onClick(); }} disabled={sending} title={title}>
+        {sending ? (
+          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+        ) : (
+          <Mail className={`h-4 w-4 mr-2 ${color}`} />
+        )}
+        {label}
+      </DropdownMenuItem>
+    );
+  }
 
   return (
     <Button variant="outline" onClick={onClick} disabled={sending} title={title}>

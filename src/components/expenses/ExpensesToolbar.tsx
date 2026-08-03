@@ -1,3 +1,4 @@
+import React, { useEffect, useRef } from "react";
 import { Search, Download, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -8,6 +9,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { SlidersHorizontal } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type DatePreset = "today" | "week" | "month" | "custom";
@@ -40,6 +44,18 @@ export function ExpensesToolbar({
   onDownloadCogsCsv,
 }: ExpensesToolbarProps) {
   const isAr = lang === "ar";
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+        e.preventDefault();
+        searchInputRef.current?.focus();
+      }
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, []);
 
   const presets: { id: DatePreset; labelAr: string; labelEn: string }[] = [
     { id: "today", labelAr: "اليوم", labelEn: "Today" },
@@ -74,27 +90,107 @@ export function ExpensesToolbar({
         <div className="relative min-w-full flex-1 sm:min-w-0 sm:max-w-xs">
           <Search className="absolute start-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
           <Input
+            ref={searchInputRef}
             value={search}
             onChange={(e) => onSearchChange(e.target.value)}
-            placeholder={isAr ? "ابحث بالوصف أو المتجر..." : "Search description or store..."}
+            placeholder={isAr ? "ابحث بالوصف أو المتجر... (⌘K)" : "Search description or store... (⌘K)"}
             className="ps-9 h-9 text-xs bg-background/80"
           />
         </div>
 
-        {/* Category Dropdown */}
-        <Select value={categoryFilter} onValueChange={onCategoryFilterChange}>
-          <SelectTrigger className="h-10 min-w-0 flex-1 text-xs font-semibold bg-background/80 sm:h-9 sm:w-[150px] sm:flex-none">
-            <SelectValue placeholder={isAr ? "جميع التصنيفات" : "All Categories"} />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">{isAr ? "جميع التصنيفات" : "All Categories"}</SelectItem>
-            {categories.map((c) => (
-              <SelectItem key={c} value={c}>
-                {c}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        {/* Desktop Filter Popover */}
+        <div className="hidden sm:block">
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                aria-label={isAr ? "فتح خيارات التصفية" : "Open filter options"}
+                variant={activeFilterCount > 0 ? "default" : "outline"}
+                size="sm"
+                className="h-9 gap-1.5 text-xs font-semibold bg-background/80"
+              >
+                <SlidersHorizontal className="h-3.5 w-3.5" />
+                <span>{isAr ? "التصفية" : "Filters"}</span>
+                {activeFilterCount > 0 && (
+                  <span className="rounded-full bg-primary-foreground/20 px-1.5 py-0.2 text-[10px] font-bold">
+                    {activeFilterCount}
+                  </span>
+                )}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent align={isAr ? "start" : "end"} className="w-80 space-y-3 p-4">
+              <div className="text-xs font-bold text-foreground">
+                {isAr ? "تصفية المتقدمة" : "Advanced Filters"}
+              </div>
+              <div className="space-y-1">
+                <label className="text-[11px] font-medium text-muted-foreground">
+                  {isAr ? "التصنيف" : "Category"}
+                </label>
+                <Select value={categoryFilter} onValueChange={onCategoryFilterChange}>
+                  <SelectTrigger className="h-8 text-xs bg-muted/30 border-border/60">
+                    <SelectValue placeholder={isAr ? "جميع التصنيفات" : "All Categories"} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">{isAr ? "جميع التصنيفات" : "All Categories"}</SelectItem>
+                    {categories.map((c) => (
+                      <SelectItem key={c} value={c}>
+                        {c}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </PopoverContent>
+          </Popover>
+        </div>
+
+        {/* Mobile Filter Sheet */}
+        <div className="block sm:hidden w-full">
+          <Sheet>
+            <SheetTrigger asChild>
+              <Button
+                aria-label={isAr ? "فتح خيارات التصفية" : "Open filter options"}
+                variant={activeFilterCount > 0 ? "default" : "outline"}
+                size="sm"
+                className="h-10 w-full gap-1.5 text-xs font-semibold bg-background/80 justify-center"
+              >
+                <SlidersHorizontal className="h-3.5 w-3.5" />
+                <span>{isAr ? "التصفية" : "Filters"}</span>
+                {activeFilterCount > 0 && (
+                  <span className="rounded-full bg-primary-foreground/20 px-1 py-0.2 text-[10px]">
+                    {activeFilterCount}
+                  </span>
+                )}
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="bottom" className="p-4 space-y-4">
+              <SheetHeader>
+                <SheetTitle className="text-sm font-bold">
+                  {isAr ? "خيارات التصفية" : "Filter Options"}
+                </SheetTitle>
+              </SheetHeader>
+              <div className="space-y-3">
+                <div className="space-y-1">
+                  <label className="text-[11px] font-medium text-muted-foreground">
+                    {isAr ? "التصنيف" : "Category"}
+                  </label>
+                  <Select value={categoryFilter} onValueChange={onCategoryFilterChange}>
+                    <SelectTrigger className="h-9 text-xs bg-muted/30 border-border/60">
+                      <SelectValue placeholder={isAr ? "جميع التصنيفات" : "All Categories"} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">{isAr ? "جميع التصنيفات" : "All Categories"}</SelectItem>
+                      {categories.map((c) => (
+                        <SelectItem key={c} value={c}>
+                          {c}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </SheetContent>
+          </Sheet>
+        </div>
 
         {activeFilterCount > 0 && (
           <Button

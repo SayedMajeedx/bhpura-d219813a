@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import { Search, SlidersHorizontal, X, ArrowUpDown } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -55,6 +55,18 @@ export const OrdersToolbar: React.FC<OrdersToolbarProps> = ({
   onClearFilters,
 }) => {
   const isAr = lang === "ar";
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+        e.preventDefault();
+        searchInputRef.current?.focus();
+      }
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, []);
 
   return (
     <div className="space-y-2">
@@ -63,12 +75,13 @@ export const OrdersToolbar: React.FC<OrdersToolbarProps> = ({
         <div className="relative flex-1">
           <Search className="absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
+            ref={searchInputRef}
             value={search}
             onChange={(e) => onSearchChange(e.target.value)}
             placeholder={
               isAr
-                ? "ابحث برقم الفاتورة، العميل، أو الهاتف..."
-                : "Search invoice, customer, or phone..."
+                ? "ابحث برقم الفاتورة، العميل، أو الهاتف... (⌘K)"
+                : "Search invoice, customer, or phone... (⌘K)"
             }
             className="h-9 ps-9 text-xs bg-background/50 border-border/70"
           />
@@ -207,8 +220,9 @@ export const OrdersToolbar: React.FC<OrdersToolbarProps> = ({
                 </SheetTitle>
               </SheetHeader>
               <div className="space-y-3">
+                {/* Payment Filter */}
                 <div className="space-y-1">
-                  <label className="text-xs font-medium text-muted-foreground">
+                  <label className="text-[11px] font-medium text-muted-foreground">
                     {isAr ? "حالة الدفع" : "Payment Status"}
                   </label>
                   <Select value={paymentFilter} onValueChange={onPaymentFilterChange}>
@@ -220,8 +234,69 @@ export const OrdersToolbar: React.FC<OrdersToolbarProps> = ({
                       <SelectItem value="unpaid">{isAr ? "غير مدفوع" : "Unpaid"}</SelectItem>
                       <SelectItem value="pending_verification">
                         {isAr ? "بانتظار التحقق" : "Pending Verification"}
-                      </SelectItem>{" "}
+                      </SelectItem>
+                      <SelectItem value="partial">
+                        {isAr ? "مدفوع جزئيًا" : "Partially Paid"}
+                      </SelectItem>
                       <SelectItem value="paid">{isAr ? "مدفوع" : "Paid"}</SelectItem>
+                      <SelectItem value="refunded">{isAr ? "مسترجع" : "Refunded"}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Fulfillment Status Filter */}
+                <div className="space-y-1">
+                  <label className="text-[11px] font-medium text-muted-foreground">
+                    {isAr ? "حالة التنفيذ" : "Fulfillment Status"}
+                  </label>
+                  <Select
+                    value={fulfillmentStatusFilter}
+                    onValueChange={onFulfillmentStatusFilterChange}
+                  >
+                    <SelectTrigger className="h-9 text-xs">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">{isAr ? "الكل" : "All"}</SelectItem>
+                      <SelectItem value="on_hold">{isAr ? "قيد الانتظار" : "On Hold"}</SelectItem>
+                      <SelectItem value="needs_packing">
+                        {isAr ? "بحاجة للتعبئة" : "Needs Packing"}
+                      </SelectItem>
+                      <SelectItem value="ready_for_pickup">
+                        {isAr ? "جاهز للاستلام" : "Ready for Pickup"}
+                      </SelectItem>
+                      <SelectItem value="out_for_delivery">
+                        {isAr ? "خرج للتوصيل" : "Out for Delivery"}
+                      </SelectItem>
+                      <SelectItem value="completed">
+                        {isAr ? "تم التوصيل/الاستلام" : "Delivered/Picked Up"}
+                      </SelectItem>
+                      <SelectItem value="cancelled">{isAr ? "ملغي" : "Cancelled"}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Gateway Filter */}
+                <div className="space-y-1">
+                  <label className="text-[11px] font-medium text-muted-foreground">
+                    {isAr ? "طريقة الدفع" : "Payment Method"}
+                  </label>
+                  <Select
+                    value={gatewayFilter}
+                    onValueChange={(val) => onGatewayFilterChange(val as PaymentMethodFilter)}
+                  >
+                    <SelectTrigger className="h-9 text-xs">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">{isAr ? "الكل" : "All"}</SelectItem>
+                      <SelectItem value="benefit">{isAr ? "بنفت بي" : "BenefitPay"}</SelectItem>
+                      <SelectItem value="cod">
+                        {isAr ? "الدفع عند الاستلام" : "Cash on Delivery"}
+                      </SelectItem>
+                      <SelectItem value="card">
+                        {isAr ? "بطاقة (أونلاين)" : "Card (Online)"}
+                      </SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

@@ -12,6 +12,7 @@ import {
   DialogFooter,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -238,11 +239,13 @@ export default function SendInvoiceDialog({
   totals,
   settings,
   currency,
+  asMenuItem = false,
 }: {
   order: any;
   totals: any;
   settings: any;
   currency: string;
+  asMenuItem?: boolean;
 }) {
   const t = useT();
   const [open, setOpen] = useState(false);
@@ -313,9 +316,15 @@ export default function SendInvoiceDialog({
     <>
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogTrigger asChild>
-          <Button variant="outline">
-            <Send className="h-4 w-4 mr-2" /> {t("orderDetail.sendInvoiceWa")}
-          </Button>
+          {asMenuItem ? (
+            <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+              <Send className="h-4 w-4 mr-2" /> {t("orderDetail.sendInvoiceWa")}
+            </DropdownMenuItem>
+          ) : (
+            <Button variant="outline">
+              <Send className="h-4 w-4 mr-2" /> {t("orderDetail.sendInvoiceWa")}
+            </Button>
+          )}
         </DialogTrigger>
         <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>

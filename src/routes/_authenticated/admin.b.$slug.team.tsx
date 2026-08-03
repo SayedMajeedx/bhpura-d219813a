@@ -449,14 +449,171 @@ function TeamManagement() {
       </Dialog>
 
       {staff.length === 0 ? (
-        <Card className="p-16 text-center border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm">
-          <Users className="h-10 w-10 mx-auto text-muted-foreground mb-3" />
-          <p className="text-muted-foreground">
-            {isAr ? "لا يوجد موظفين بعد." : "No staff members yet."}
+        <Card className="p-12 text-center border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm flex flex-col items-center justify-center min-h-[400px] animate-fade-in">
+          <div className="bg-primary/10 w-16 h-16 rounded-full flex items-center justify-center mb-4">
+            <Users className="h-8 w-8 text-primary" />
+          </div>
+          <h3 className="text-xl font-bold mb-2 text-foreground">
+            {isAr ? "فريق العمل" : "Team Members"}
+          </h3>
+          <p className="text-muted-foreground mb-8 max-w-md mx-auto">
+            {isAr 
+              ? "قم بدعوة أعضاء فريقك للتعاون في إدارة الطلبات والمخزون والإعدادات بصلاحيات مخصصة." 
+              : "Invite your team members to collaborate on managing orders, inventory, and settings with customized permissions."}
           </p>
+          <Button 
+            onClick={() => setAddOpen(true)} 
+            className="shadow-md transition-transform hover:scale-[1.02] active:scale-95 px-8 font-bold"
+            size="lg"
+          >
+            <Plus className="h-5 w-5 me-2" />
+            {isAr ? "دعوة عضو جديد" : "Invite Team Member"}
+          </Button>
         </Card>
       ) : (
-        <Card className="overflow-hidden border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm">
+        <div className="space-y-4">
+          {/* Mobile Card View */}
+          <div className="grid grid-cols-1 gap-3 md:hidden">
+            {filteredStaff.map((member) => (
+              <Card key={member.id} className="p-4 border-border/60 shadow-sm rounded-xl bg-card/80 backdrop-blur flex flex-col gap-3">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex flex-col min-w-0">
+                    <span className="font-bold text-base truncate">{member.name || member.email.split("@")[0]}</span>
+                    <span className="text-xs text-muted-foreground truncate" dir="ltr">{member.email}</span>
+                  </div>
+                  <span
+                    className={`shrink-0 inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full font-medium ${
+                      member.status === "active"
+                        ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400"
+                        : "bg-neutral-500/15 text-neutral-700 dark:text-neutral-300"
+                    }`}
+                  >
+                    {member.status === "active" ? (
+                      <>
+                        <Check className="h-3 w-3" />
+                        {isAr ? "نشط" : "Active"}
+                      </>
+                    ) : (
+                      <>
+                        <X className="h-3 w-3" />
+                        {isAr ? "غير نشط" : "Inactive"}
+                      </>
+                    )}
+                  </span>
+                </div>
+                
+                <div className="flex flex-wrap items-center gap-2">
+                  <span
+                    className={`inline-flex items-center gap-1 text-xs px-2 py-1 rounded-md font-semibold ${
+                      member.role === "super_admin"
+                        ? "bg-amber-500/15 text-amber-700 dark:text-amber-400"
+                        : member.role === "brand_admin"
+                          ? "bg-blue-500/15 text-blue-700 dark:text-blue-400"
+                          : member.role === "admin"
+                            ? "bg-primary/10 text-primary"
+                            : "bg-secondary text-secondary-foreground"
+                    }`}
+                  >
+                    {member.role === "super_admin" ? (
+                      <>
+                        <Crown className="h-3 w-3" />
+                        {isAr ? "مدير عام" : "Super Admin"}
+                      </>
+                    ) : member.role === "brand_admin" ? (
+                      <>
+                        <Shield className="h-3 w-3" />
+                        {isAr ? "مدير علامة تجارية" : "Brand Admin"}
+                      </>
+                    ) : member.role === "admin" ? (
+                      <>
+                        <Shield className="h-3 w-3" />
+                        {isAr ? "مدير" : "Admin"}
+                      </>
+                    ) : member.role === "courier" ? (
+                      <>
+                        <Users className="h-3 w-3" />
+                        {isAr ? "مندوب توصيل" : "Courier"}
+                      </>
+                    ) : (
+                      <>
+                        <Users className="h-3 w-3" />
+                        {isAr ? "موظف" : "Staff"}
+                      </>
+                    )}
+                  </span>
+                  
+                  {member.phone && (
+                    <span className="inline-flex items-center gap-1 text-[10px] font-mono bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 px-2 py-1 rounded-md" dir="ltr">
+                      📱 {member.phone}
+                    </span>
+                  )}
+                </div>
+
+                <div className="pt-3 mt-1 border-t border-border/50 flex justify-between items-center">
+                  <span className="text-[10px] text-muted-foreground font-medium">
+                    {new Date(member.created_at).toLocaleDateString(locale)}
+                  </span>
+                  
+                  <div className="flex items-center gap-1">
+                    {(() => {
+                      const isSelf = member.id === currentUser?.id;
+                      const targetIsSuper =
+                        member.role === "super_admin" ||
+                        member.email.toLowerCase() === SUPER_ADMIN_EMAIL;
+                      const canManage = !isSelf && (!targetIsSuper || isSuperAdmin);
+                      if (!canManage) {
+                        return (
+                          <span className="text-[10px] text-muted-foreground font-semibold px-2">
+                            {isSelf ? (isAr ? "أنت" : "You") : isAr ? "محمي" : "Protected"}
+                          </span>
+                        );
+                      }
+                      return (
+                        <>
+                          <Button variant="outline" size="sm" className="h-8 w-8 p-0" onClick={() => openEdit(member)}>
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          {member.status === "active" && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive/20"
+                              title={isAr ? "إلغاء تفعيل الحساب" : "Deactivate account"}
+                              onClick={() => handleUpdate(member.id, { status: "inactive" })}
+                            >
+                              <UserX className="h-4 w-4" />
+                            </Button>
+                          )}
+                          {member.status === "inactive" && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-8 w-8 p-0 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 border-emerald-200"
+                              title={isAr ? "إعادة تفعيل الحساب" : "Reactivate account"}
+                              onClick={() => handleUpdate(member.id, { status: "active" })}
+                            >
+                              <Check className="h-4 w-4" />
+                            </Button>
+                          )}
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive/20"
+                            onClick={() => setDeleteConfirm(member)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </>
+                      );
+                    })()}
+                  </div>
+                </div>
+              </Card>
+            ))}
+          </div>
+
+        {/* Desktop Table View */}
+        <Card className="hidden md:block overflow-hidden border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm">
           <div className="overflow-x-auto">
             <table className="w-full text-sm lg:min-w-[640px]">
               <thead className="border-b bg-muted/40 font-semibold text-muted-foreground">
@@ -585,28 +742,31 @@ function TeamManagement() {
                                 <Button
                                   variant="ghost"
                                   size="icon"
+                                  className="text-destructive hover:text-destructive hover:bg-destructive/10"
                                   title={isAr ? "إلغاء تفعيل الحساب" : "Deactivate account"}
                                   onClick={() => handleUpdate(member.id, { status: "inactive" })}
                                 >
-                                  <UserX className="h-4 w-4 text-amber-600" />
+                                  <UserX className="h-4 w-4" />
                                 </Button>
                               )}
                               {member.status === "inactive" && (
                                 <Button
                                   variant="ghost"
                                   size="icon"
+                                  className="text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50"
                                   title={isAr ? "إعادة تفعيل الحساب" : "Reactivate account"}
                                   onClick={() => handleUpdate(member.id, { status: "active" })}
                                 >
-                                  <Check className="h-4 w-4 text-emerald-600" />
+                                  <Check className="h-4 w-4" />
                                 </Button>
                               )}
                               <Button
                                 variant="ghost"
                                 size="icon"
+                                className="text-destructive hover:text-destructive hover:bg-destructive/10"
                                 onClick={() => setDeleteConfirm(member)}
                               >
-                                <Trash2 className="h-4 w-4 text-destructive" />
+                                <Trash2 className="h-4 w-4" />
                               </Button>
                             </>
                           );
@@ -619,6 +779,7 @@ function TeamManagement() {
             </table>
           </div>
         </Card>
+        </div>
       )}
 
       {/* Edit Dialog */}

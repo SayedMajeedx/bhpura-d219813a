@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate, useBlocker, useRouter } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import {
@@ -12,6 +12,7 @@ import {
   ReceiptText,
   StickyNote,
   UserRound,
+  MoreHorizontal,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useBrand } from "@/lib/brand-context";
@@ -31,6 +32,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 import {
   CustomerAddressManager,
@@ -115,12 +122,14 @@ function formatArabicOrderStatus(status: string | null | undefined, lang: "en" |
 
 function CustomerProfilePage() {
   const { slug, customerId } = Route.useParams();
-  const brand = useBrand();
   const { lang } = useI18n();
+  const brand = useBrand();
+  const router = useRouter();
   const t = useT();
   const qc = useQueryClient();
   const navigate = useNavigate();
   const [editing, setEditing] = useState(false);
+  const [mobileActionsOpen, setMobileActionsOpen] = useState(false);
 
   const customerQ = useQuery({
     queryKey: ["customer-profile", brand.id, customerId],
@@ -203,14 +212,21 @@ function CustomerProfilePage() {
     >
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
         <div>
-          <Link
-            to="/admin/b/$slug/customers"
-            params={{ slug }}
+          <button
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              if (window.history.length > 2) {
+                router.history.back();
+              } else {
+                router.navigate({ to: `/admin/b/${slug}/customers` });
+              }
+            }}
             className="mb-3 inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
           >
             <ArrowLeft className="h-4 w-4 rtl:rotate-180" />
             {lang === "ar" ? "العودة إلى العملاء" : "Back to customers"}
-          </Link>
+          </button>
           <h1 className="font-display text-4xl font-extrabold tracking-tight bg-clip-text bg-gradient-to-r from-slate-900 via-slate-800 to-slate-950 dark:from-slate-50 dark:to-slate-300">
             {customer.name}
           </h1>
@@ -220,45 +236,62 @@ function CustomerProfilePage() {
               : `${orders.length} order${orders.length === 1 ? "" : "s"} linked to this customer`}
           </p>
         </div>
-        <div className="grid grid-cols-3 gap-2 sm:flex">
-          {customer.phone && (
-            <Button asChild variant="outline" className="min-h-11 px-3">
-              <a
-                href={`tel:${customer.phone}`}
-                aria-label={lang === "ar" ? "الاتصال بالعميل" : "Call customer"}
-              >
-                <Phone className="h-4 w-4 sm:me-2" />
-                <span className="hidden sm:inline">{lang === "ar" ? "اتصال" : "Call"}</span>
-              </a>
-            </Button>
-          )}
-          {customer.phone && (
-            <Button asChild variant="outline" className="min-h-11 px-3 text-emerald-700">
-              <a
-                href={`https://wa.me/${customer.phone.replace(/[^\d]/g, "")}`}
-                target="_blank"
-                rel="noreferrer"
-                aria-label={
-                  lang === "ar" ? "مراسلة العميل عبر واتساب" : "Message customer on WhatsApp"
-                }
-              >
-                <MessageCircle className="h-4 w-4 sm:me-2" />
-                <span className="hidden sm:inline">{lang === "ar" ? "واتساب" : "WhatsApp"}</span>
-              </a>
-            </Button>
-          )}
+        <div className="flex gap-2">
+          {/* Desktop Actions */}
+          <div className="hidden sm:flex items-center gap-2">
+            {customer.phone && (
+              <Button asChild variant="outline" className="min-h-11 px-3">
+                <a
+                  href={`tel:${customer.phone}`}
+                  aria-label={lang === "ar" ? "الاتصال بالعميل" : "Call customer"}
+                >
+                  <Phone className="h-4 w-4 me-2" />
+                  <span>{lang === "ar" ? "اتصال" : "Call"}</span>
+                </a>
+              </Button>
+            )}
+            {customer.phone && (
+              <Button asChild variant="outline" className="min-h-11 px-3 text-emerald-700">
+                <a
+                  href={`https://wa.me/${customer.phone.replace(/[^\d]/g, "")}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  aria-label={
+                    lang === "ar" ? "مراسلة العميل عبر واتساب" : "Message customer on WhatsApp"
+                  }
+                >
+                  <MessageCircle className="h-4 w-4 me-2" />
+                  <span>{lang === "ar" ? "واتساب" : "WhatsApp"}</span>
+                </a>
+              </Button>
+            )}
+          </div>
+          
           <Button
             onClick={() => setEditing(true)}
-            className="min-h-11 shadow-sm transition-all duration-200 hover:shadow active:scale-95"
+            className="min-h-11 shadow-sm transition-all duration-200 hover:shadow active:scale-95 px-3"
           >
             <Pencil className="h-4 w-4 sm:me-2" />
             <span className="hidden sm:inline">
               {lang === "ar" ? "تعديل الملف" : "Edit Profile"}
             </span>
-            <span className="sr-only sm:hidden">
-              {lang === "ar" ? "تعديل الملف" : "Edit Profile"}
+            <span className="sm:hidden">
+              {lang === "ar" ? "تعديل" : "Edit"}
             </span>
           </Button>
+
+          {/* Mobile More Actions */}
+          {customer.phone && (
+            <div className="sm:hidden">
+              <Button 
+                variant="outline" 
+                className="min-h-11 w-11 p-0"
+                onClick={() => setMobileActionsOpen(true)}
+              >
+                <MoreHorizontal className="h-5 w-5" />
+              </Button>
+            </div>
+          )}
         </div>
       </div>
 
@@ -487,6 +520,50 @@ function CustomerProfilePage() {
           qc.invalidateQueries({ queryKey: ["customers", brand.id] });
         }}
       />
+
+      <Dialog open={mobileActionsOpen} onOpenChange={setMobileActionsOpen}>
+        <DialogContent
+          closeLabel={lang === "ar" ? "إغلاق" : "Close"}
+          className="top-auto bottom-0 w-full max-w-none translate-y-0 rounded-b-none rounded-t-3xl border-x-0 border-b-0 p-5 sm:hidden"
+        >
+          <DialogHeader>
+            <DialogTitle>{lang === "ar" ? "إجراءات العميل" : "Customer actions"}</DialogTitle>
+            <DialogDescription>
+              {lang === "ar"
+                ? "أدوات التواصل مع العميل"
+                : "Communication tools"}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-2 py-2">
+            {customer.phone && (
+              <Button
+                variant="outline"
+                className="min-h-12 justify-start rounded-xl"
+                asChild
+                onClick={() => setMobileActionsOpen(false)}
+              >
+                <a href={`tel:${customer.phone}`}>
+                  <Phone className="me-2 h-4 w-4" />
+                  {lang === "ar" ? "اتصال" : "Call"}
+                </a>
+              </Button>
+            )}
+            {customer.phone && (
+              <Button
+                variant="outline"
+                className="min-h-12 justify-start rounded-xl text-emerald-700"
+                asChild
+                onClick={() => setMobileActionsOpen(false)}
+              >
+                <a href={`https://wa.me/${customer.phone.replace(/[^\d]/g, "")}`}>
+                  <MessageCircle className="me-2 h-4 w-4" />
+                  {lang === "ar" ? "واتساب" : "WhatsApp"}
+                </a>
+              </Button>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
@@ -542,6 +619,24 @@ function EditCustomerDialog({
     notes: customer.notes ?? "",
   });
   const [saving, setSaving] = useState(false);
+  
+  const isDirty =
+    form.name !== customer.name ||
+    form.phone !== (customer.phone ?? "") ||
+    form.email !== (customer.email ?? "") ||
+    form.notes !== (customer.notes ?? "");
+
+  useBlocker({
+    shouldBlockFn: () => {
+      if (!isDirty || !open || saving) return false;
+      const msg =
+        lang === "ar"
+          ? "لديك تغييرات غير محفوظة في ملف العميل. هل أنت متأكد من المغادرة؟"
+          : "You have unsaved changes in the customer profile. Are you sure you want to leave?";
+      return !window.confirm(msg);
+    },
+  });
+
   useEffect(
     () =>
       setForm({
@@ -552,6 +647,20 @@ function EditCustomerDialog({
       }),
     [customer, open],
   );
+
+  useEffect(() => {
+    if (!open) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "s") {
+        e.preventDefault();
+        if (!saving) {
+          void save();
+        }
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [open, saving, form, customer, brandId, onSaved, lang]);
 
   const save = async () => {
     if (!form.name.trim())
