@@ -180,6 +180,21 @@ function CustomerProfilePage() {
     },
   });
 
+  const PAGE_SIZE = 8;
+  const [currentPage, setCurrentPage] = useState(1);
+
+  const customer = customerQ.data;
+  const orders = useMemo(() => ordersQ.data ?? [], [ordersQ.data]);
+  const totalSpent = useMemo(
+    () => orders.reduce((sum, o) => sum + Number(o.total || 0), 0),
+    [orders],
+  );
+  const totalPages = Math.max(1, Math.ceil(orders.length / PAGE_SIZE));
+  const paginatedOrders = useMemo(() => {
+    const start = (currentPage - 1) * PAGE_SIZE;
+    return orders.slice(start, start + PAGE_SIZE);
+  }, [orders, currentPage]);
+
   if (customerQ.isLoading)
     return (
       <div className="mx-auto max-w-7xl p-6 animate-pulse space-y-4">
@@ -228,7 +243,7 @@ function CustomerProfilePage() {
     );
   }
 
-  if (!customerQ.data) {
+  if (!customer) {
     return (
       <div className="mx-auto max-w-xl p-8 animate-fade-in">
         <Card className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm p-8 text-center">
@@ -248,18 +263,6 @@ function CustomerProfilePage() {
       </div>
     );
   }
-
-  const customer = customerQ.data;
-  const orders = ordersQ.data ?? [];
-  const totalSpent = orders.reduce((sum, o) => sum + Number(o.total || 0), 0);
-
-  const PAGE_SIZE = 8;
-  const [currentPage, setCurrentPage] = useState(1);
-  const totalPages = Math.max(1, Math.ceil(orders.length / PAGE_SIZE));
-  const paginatedOrders = useMemo(() => {
-    const start = (currentPage - 1) * PAGE_SIZE;
-    return orders.slice(start, start + PAGE_SIZE);
-  }, [orders, currentPage]);
 
   return (
     <div
