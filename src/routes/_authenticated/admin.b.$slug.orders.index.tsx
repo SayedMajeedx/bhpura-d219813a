@@ -1580,37 +1580,49 @@ function OrdersList() {
           </span>
         </div>
 
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1.5">
           <Button
+            type="button"
             variant="outline"
             size="sm"
-            className="h-8 w-8 p-0"
+            className="h-8 px-2.5 text-xs font-semibold gap-1 rounded-lg"
             onClick={() => setPage((p) => Math.max(p - 1, 1))}
-            disabled={page === 1}
+            disabled={page <= 1}
           >
             {lang === "ar" ? (
-              <ChevronRight className="h-4 w-4" />
+              <>
+                <span>السابق</span>
+                <ChevronRight className="h-3.5 w-3.5" />
+              </>
             ) : (
-              <ChevronLeft className="h-4 w-4" />
+              <>
+                <ChevronLeft className="h-3.5 w-3.5" />
+                <span>Previous</span>
+              </>
             )}
-            <span className="sr-only">{lang === "ar" ? "الصفحة السابقة" : "Previous page"}</span>
           </Button>
-          <div className="text-xs px-2 text-muted-foreground">
+          <div className="text-xs px-2 font-medium text-foreground">
             {lang === "ar" ? `صفحة ${page} من ${totalPages}` : `Page ${page} of ${totalPages}`}
           </div>
           <Button
+            type="button"
             variant="outline"
             size="sm"
-            className="h-8 w-8 p-0"
+            className="h-8 px-2.5 text-xs font-semibold gap-1 rounded-lg"
             onClick={() => setPage((p) => Math.min(p + 1, totalPages))}
-            disabled={page === totalPages}
+            disabled={page >= totalPages}
           >
             {lang === "ar" ? (
-              <ChevronLeft className="h-4 w-4" />
+              <>
+                <ChevronLeft className="h-3.5 w-3.5" />
+                <span>التالي</span>
+              </>
             ) : (
-              <ChevronRight className="h-4 w-4" />
+              <>
+                <span>Next</span>
+                <ChevronRight className="h-3.5 w-3.5" />
+              </>
             )}
-            <span className="sr-only">{lang === "ar" ? "الصفحة التالية" : "Next page"}</span>
           </Button>
         </div>
       </div>

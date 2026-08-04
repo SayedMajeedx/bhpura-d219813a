@@ -28,67 +28,89 @@ function decodeBase64(str: string): string {
 
 export const Route = createFileRoute("/_authenticated/admin/b/$slug")({
   beforeLoad: async ({ context: { queryClient }, params }) => {
-    const user = await queryClient.ensureQueryData({
-      queryKey: ["auth_user"],
-      queryFn: async () => {
-        const { data, error } = await supabase.auth.getUser();
-        if (error || !data.user) throw redirect({ to: "/auth" });
-        return data.user;
-      },
-      staleTime: 1000 * 60 * 5,
-    });
+    // Retry helper for transient network glitches in route beforeLoad
+    const fetchWithRetry = async <T,>(fn: () => Promise<T>, retries = 2): Promise<T> => {
+      try {
+        return await fn();
+      } catch (err: any) {
+        if (err && typeof err === "object" && "to" in err) throw err; // Don't catch redirects!
+        if (retries > 0) {
+          await new Promise((res) => setTimeout(res, 200));
+          return fetchWithRetry(fn, retries - 1);
+        }
+        throw err;
+      }
+    };
+
+    const user = await fetchWithRetry(() =>
+      queryClient.ensureQueryData({
+        queryKey: ["auth_user"],
+        queryFn: async () => {
+          const { data, error } = await supabase.auth.getUser();
+          if (error || !data.user) throw redirect({ to: "/auth" });
+          return data.user;
+        },
+        staleTime: 1000 * 60 * 5,
+      }),
+    );
 
     // Concurrently fetch target brand, caller profile, and business settings with 5m staleTime
     const [brand, profile, iconSettings] = await Promise.all([
-      queryClient.ensureQueryData({
-        queryKey: ["brand_by_slug", params.slug],
-        queryFn: async () => {
-          const { data: brand, error: brandErr } = await (supabase as any)
-            .from("brands")
-            .select(
-              "id, slug, name_en, name_ar, logo_url, is_active, subscription_tier, subscription_status, subscription_expires_at, payment_receipt_url, payment_receipt_uploaded_at, custom_domain, support_access_enabled, plan_type, trial_ends_at, created_at",
-            )
-            .eq("slug", params.slug)
-            .maybeSingle();
+      fetchWithRetry(() =>
+        queryClient.ensureQueryData({
+          queryKey: ["brand_by_slug", params.slug],
+          queryFn: async () => {
+            const { data: brand, error: brandErr } = await (supabase as any)
+              .from("brands")
+              .select(
+                "id, slug, name_en, name_ar, logo_url, is_active, subscription_tier, subscription_status, subscription_expires_at, payment_receipt_url, payment_receipt_uploaded_at, custom_domain, support_access_enabled, plan_type, trial_ends_at, created_at",
+              )
+              .eq("slug", params.slug)
+              .maybeSingle();
 
-          if (brandErr || !brand) {
-            throw redirect({ to: "/admin" });
-          }
-          return brand;
-        },
-        staleTime: 1000 * 60 * 5,
-      }),
-      queryClient.ensureQueryData({
-        queryKey: ["caller_profile", user.id],
-        queryFn: async () => {
-          const { data: profile } = await supabase
-            .from("profiles")
-            .select("role, status, brand_id, email")
-            .eq("id", user.id)
-            .maybeSingle();
-          return profile ?? null;
-        },
-        staleTime: 1000 * 60 * 5,
-      }),
-      queryClient.ensureQueryData({
-        queryKey: ["brand_icon_settings", params.slug],
-        queryFn: async () => {
-          const { data: brandData } = await (supabase as any)
-            .from("brands")
-            .select("id")
-            .eq("slug", params.slug)
-            .maybeSingle();
-          if (!brandData) return null;
+            if (brandErr || !brand) {
+              throw redirect({ to: "/admin" });
+            }
+            return brand;
+          },
+          staleTime: 1000 * 60 * 5,
+        }),
+      ),
+      fetchWithRetry(() =>
+        queryClient.ensureQueryData({
+          queryKey: ["caller_profile", user.id],
+          queryFn: async () => {
+            const { data: profile } = await supabase
+              .from("profiles")
+              .select("role, status, brand_id, email")
+              .eq("id", user.id)
+              .maybeSingle();
+            return profile ?? null;
+          },
+          staleTime: 1000 * 60 * 5,
+        }),
+      ),
+      fetchWithRetry(() =>
+        queryClient.ensureQueryData({
+          queryKey: ["brand_icon_settings", params.slug],
+          queryFn: async () => {
+            const { data: brandData } = await (supabase as any)
+              .from("brands")
+              .select("id")
+              .eq("slug", params.slug)
+              .maybeSingle();
+            if (!brandData) return null;
 
-          const { data: iconSettings } = await (supabase.from("business_settings") as any)
-            .select("favicon_url, logo_url")
-            .eq("brand_id", brandData.id)
-            .maybeSingle();
+            const { data: iconSettings } = await (supabase.from("business_settings") as any)
+              .select("favicon_url, logo_url")
+              .eq("brand_id", brandData.id)
+              .maybeSingle();
 
-          return iconSettings ?? null;
-        },
-        staleTime: 1000 * 60 * 5,
-      }),
+            return iconSettings ?? null;
+          },
+          staleTime: 1000 * 60 * 5,
+        }),
+      ),
     ]);
 
     const email = (user.email || "").toLowerCase();

@@ -1898,6 +1898,30 @@ function OrderDetail() {
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
+          {(isCreationMode || isDirty) && (
+            <Button
+              type="button"
+              onClick={save}
+              disabled={saving}
+              className="h-9 px-4 text-xs font-bold gap-2 shadow-sm bg-primary text-primary-foreground hover:bg-primary/90 rounded-xl"
+            >
+              {saving ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Save className="h-4 w-4" />
+              )}
+              <span>
+                {isCreationMode
+                  ? lang === "ar"
+                    ? "إنشاء وحفظ الطلب"
+                    : "Create & Save Order"
+                  : lang === "ar"
+                    ? "حفظ التغييرات"
+                    : "Save Changes"}
+              </span>
+            </Button>
+          )}
+
           {!isCreationMode && (
             <>
               {/* Primary Next Workflow Quick Action (e.g. Approve Payment, Hand Over, Pack & Ship) */}
