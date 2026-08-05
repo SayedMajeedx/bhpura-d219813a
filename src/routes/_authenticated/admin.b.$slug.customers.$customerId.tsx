@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate, useRouter } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
 import {
   ArrowLeft,
   CalendarDays,
@@ -216,7 +216,10 @@ function CustomerProfilePage() {
               {lang === "ar" ? "تعذر تحميل ملف العميل" : "Unable to load customer profile"}
             </h1>
             <p className="text-xs text-muted-foreground">
-              {customerQ.error?.message || (lang === "ar" ? "حدث خطأ في الاتصال بالشبكة" : "Connection or query error occurred")}
+              {customerQ.error?.message ||
+                (lang === "ar"
+                  ? "حدث خطأ في الاتصال بالشبكة"
+                  : "Connection or query error occurred")}
             </p>
           </div>
           <div className="flex flex-wrap items-center justify-center gap-2 pt-2">
@@ -228,11 +231,7 @@ function CustomerProfilePage() {
               <RotateCw className="h-4 w-4" />
               {lang === "ar" ? "إعادة المحاولة" : "Try Again"}
             </Button>
-            <Button
-              asChild
-              variant="outline"
-              className="gap-2"
-            >
+            <Button asChild variant="outline" className="gap-2">
               <Link to="/admin/b/$slug/customers" params={{ slug }}>
                 {lang === "ar" ? "العودة إلى العملاء" : "Back to customers"}
               </Link>
@@ -325,7 +324,7 @@ function CustomerProfilePage() {
               </Button>
             )}
           </div>
-          
+
           <Button
             onClick={() => setEditing(true)}
             className="min-h-11 shadow-sm transition-all duration-200 hover:shadow active:scale-95 px-3"
@@ -334,18 +333,18 @@ function CustomerProfilePage() {
             <span className="hidden sm:inline">
               {lang === "ar" ? "تعديل الملف" : "Edit Profile"}
             </span>
-            <span className="sm:hidden">
-              {lang === "ar" ? "تعديل" : "Edit"}
-            </span>
+            <span className="sm:hidden">{lang === "ar" ? "تعديل" : "Edit"}</span>
           </Button>
 
           {/* Mobile More Actions */}
           {customer.phone && (
             <div className="sm:hidden">
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 className="min-h-11 w-11 p-0"
                 onClick={() => setMobileActionsOpen(true)}
+                aria-label={lang === "ar" ? "المزيد من إجراءات العميل" : "More customer actions"}
+                title={lang === "ar" ? "المزيد من إجراءات العميل" : "More customer actions"}
               >
                 <MoreHorizontal className="h-5 w-5" />
               </Button>
@@ -642,9 +641,7 @@ function CustomerProfilePage() {
           <DialogHeader>
             <DialogTitle>{lang === "ar" ? "إجراءات العميل" : "Customer actions"}</DialogTitle>
             <DialogDescription>
-              {lang === "ar"
-                ? "أدوات التواصل مع العميل"
-                : "Communication tools"}
+              {lang === "ar" ? "أدوات التواصل مع العميل" : "Communication tools"}
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-2 py-2">
@@ -732,7 +729,8 @@ function EditCustomerDialog({
     notes: customer.notes ?? "",
   });
   const [saving, setSaving] = useState(false);
-  
+  const saveRef = useRef<() => Promise<unknown>>(async () => undefined);
+
   const isDirty =
     form.name !== customer.name ||
     form.phone !== (customer.phone ?? "") ||
@@ -767,7 +765,7 @@ function EditCustomerDialog({
       if ((e.metaKey || e.ctrlKey) && e.key === "s") {
         e.preventDefault();
         if (!saving) {
-          void save();
+          void saveRef.current();
         }
       }
     };
@@ -829,6 +827,7 @@ function EditCustomerDialog({
     toast.success(lang === "ar" ? "تم تحديث ملف العميل" : "Customer profile updated");
     onSaved();
   };
+  saveRef.current = save;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

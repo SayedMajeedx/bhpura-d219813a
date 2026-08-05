@@ -1,5 +1,25 @@
 import { createFileRoute } from "@tanstack/react-router";
 
+const TAP_IDEMPOTENCY_MAX_LENGTH = 50;
+
+/**
+ * Tap reuses a charge only when retries carry the same idempotent reference.
+ * Hash the tenant + checkout identity into a compact reference while retaining
+ * tenant isolation and retry stability.
+ */
+export async function buildTapIdempotentReference(
+  brandId: string,
+  orderId: string,
+  checkoutKey?: string | null,
+): Promise<string> {
+  const source = `${brandId}:${orderId}:${checkoutKey || ""}`;
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(source));
+  const hex = Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join(
+    "",
+  );
+  return `bq_${hex.slice(0, TAP_IDEMPOTENCY_MAX_LENGTH - 3)}`;
+}
+
 export const Route = createFileRoute("/api/public/payments/create-tap-charge")({
   server: {
     handlers: {
@@ -8,9 +28,8 @@ export const Route = createFileRoute("/api/public/payments/create-tap-charge")({
           const body = await request.json<{
             orderId?: string;
             brandId?: string;
-            redirectUrl?: string;
           }>();
-          const { orderId, brandId, redirectUrl } = body;
+          const { orderId, brandId } = body;
 
           if (!orderId || !brandId) {
             return new Response(JSON.stringify({ error: "Missing orderId or brandId" }), {
@@ -44,10 +63,16 @@ export const Route = createFileRoute("/api/public/payments/create-tap-charge")({
             .select(
               `
               id,
+              brand_id,
               total,
               subtotal,
               shipping,
               discount,
+              status,
+              payment_status,
+              payment_method,
+              payment_gateway_reference,
+              idempotency_key,
               customer_id,
               customers (
                 name,
@@ -67,6 +92,37 @@ export const Route = createFileRoute("/api/public/payments/create-tap-charge")({
               status: 404,
               headers: { "Content-Type": "application/json" },
             });
+          }
+
+          const paymentMethod = String(order.payment_method || "").toLowerCase();
+          const paymentStatus = String(order.payment_status || "").toLowerCase();
+          const orderStatus = String(order.status || "").toLowerCase();
+
+          if (!["card", "tap"].includes(paymentMethod)) {
+            return new Response(
+              JSON.stringify({ error: "Order is not eligible for Tap payment." }),
+              {
+                status: 409,
+                headers: { "Content-Type": "application/json" },
+              },
+            );
+          }
+
+          if (["paid", "captured", "success"].includes(paymentStatus)) {
+            return new Response(JSON.stringify({ error: "Order is already paid." }), {
+              status: 409,
+              headers: { "Content-Type": "application/json" },
+            });
+          }
+
+          if (["cancelled", "canceled", "refunded", "deleted"].includes(orderStatus)) {
+            return new Response(
+              JSON.stringify({ error: "Order cannot be paid in its current state." }),
+              {
+                status: 409,
+                headers: { "Content-Type": "application/json" },
+              },
+            );
           }
 
           const customerDetails = order.customers || {};
@@ -98,9 +154,50 @@ export const Route = createFileRoute("/api/public/payments/create-tap-charge")({
           }
 
           const requestUrl = new URL(request.url);
-          const finalRedirectUrl =
-            redirectUrl ||
-            `${requestUrl.origin}/api/public/payments/tap-redirect?order_id=${orderId}&brand_id=${brandId}`;
+          const finalRedirectUrl = `${requestUrl.origin}/api/public/payments/tap-redirect?order_id=${encodeURIComponent(orderId)}&brand_id=${encodeURIComponent(brandId)}`;
+          const tapIdempotentReference = await buildTapIdempotentReference(
+            brandId,
+            orderId,
+            order.idempotency_key,
+          );
+
+          if (order.payment_gateway_reference) {
+            const existingTapRes = await fetch(
+              `https://api.tap.company/v2/charges/${encodeURIComponent(order.payment_gateway_reference)}`,
+              {
+                method: "GET",
+                headers: {
+                  Authorization: `Bearer ${credential.api_key}`,
+                  "Content-Type": "application/json",
+                },
+              },
+            );
+
+            if (existingTapRes.ok) {
+              const existingCharge = await existingTapRes.json<{
+                metadata?: { order_id?: string; brand_id?: string };
+                transaction?: { url?: string };
+              }>();
+              if (
+                existingCharge.metadata?.order_id === orderId &&
+                existingCharge.metadata?.brand_id === brandId &&
+                existingCharge.transaction?.url
+              ) {
+                return new Response(
+                  JSON.stringify({ redirectUrl: existingCharge.transaction.url }),
+                  {
+                    status: 200,
+                    headers: { "Content-Type": "application/json" },
+                  },
+                );
+              }
+            }
+
+            return new Response(
+              JSON.stringify({ error: "Existing payment attempt could not be safely resumed." }),
+              { status: 409, headers: { "Content-Type": "application/json" } },
+            );
+          }
 
           const tapPayload = {
             amount: Number(order.total),
@@ -112,6 +209,11 @@ export const Route = createFileRoute("/api/public/payments/create-tap-charge")({
             metadata: {
               order_id: orderId,
               brand_id: brandId,
+            },
+            reference: {
+              transaction: orderId,
+              order: orderId,
+              idempotent: tapIdempotentReference,
             },
             customer: {
               first_name: firstName,
@@ -157,20 +259,51 @@ export const Route = createFileRoute("/api/public/payments/create-tap-charge")({
           const checkoutUrl = chargeData.transaction?.url;
           const chargeId = chargeData.id;
 
-          if (!checkoutUrl) {
-            return new Response(JSON.stringify({ error: "No checkout URL returned from Tap." }), {
-              status: 400,
-              headers: { "Content-Type": "application/json" },
-            });
+          if (!checkoutUrl || !chargeId) {
+            return new Response(
+              JSON.stringify({ error: "Incomplete checkout response from Tap." }),
+              {
+                status: 400,
+                headers: { "Content-Type": "application/json" },
+              },
+            );
           }
 
           // Update order with payment gateway reference
-          await supabaseAdmin
+          const { data: storedOrder, error: storeError } = await supabaseAdmin
             .from("orders")
             .update({
               payment_gateway_reference: chargeId,
             } as any)
-            .eq("id", orderId);
+            .eq("id", orderId)
+            .eq("brand_id", brandId)
+            .is("payment_gateway_reference" as any, null)
+            .select("payment_gateway_reference")
+            .maybeSingle();
+
+          if (storeError) {
+            console.error("[Tap Charge reference persistence error]:", storeError);
+            return new Response(JSON.stringify({ error: "Unable to persist payment attempt." }), {
+              status: 500,
+              headers: { "Content-Type": "application/json" },
+            });
+          }
+
+          if (!storedOrder) {
+            const { data: concurrentOrder } = await supabaseAdmin
+              .from("orders")
+              .select("payment_gateway_reference")
+              .eq("id", orderId)
+              .eq("brand_id", brandId)
+              .maybeSingle();
+
+            if (concurrentOrder?.payment_gateway_reference !== chargeId) {
+              return new Response(
+                JSON.stringify({ error: "A different payment attempt is already active." }),
+                { status: 409, headers: { "Content-Type": "application/json" } },
+              );
+            }
+          }
 
           return new Response(JSON.stringify({ redirectUrl: checkoutUrl }), {
             status: 200,

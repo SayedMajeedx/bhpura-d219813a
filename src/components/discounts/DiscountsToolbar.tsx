@@ -94,7 +94,9 @@ export function DiscountsToolbar({
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">{isAr ? "جميع الأنواع" : "All Types"}</SelectItem>
-                    <SelectItem value="percentage">{isAr ? "نسبة مئوية (%)" : "Percentage (%)"}</SelectItem>
+                    <SelectItem value="percentage">
+                      {isAr ? "نسبة مئوية (%)" : "Percentage (%)"}
+                    </SelectItem>
                     <SelectItem value="fixed">{isAr ? "مبلغ ثابت" : "Fixed Amount"}</SelectItem>
                   </SelectContent>
                 </Select>
@@ -139,7 +141,9 @@ export function DiscountsToolbar({
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">{isAr ? "جميع الأنواع" : "All Types"}</SelectItem>
-                      <SelectItem value="percentage">{isAr ? "نسبة مئوية (%)" : "Percentage (%)"}</SelectItem>
+                      <SelectItem value="percentage">
+                        {isAr ? "نسبة مئوية (%)" : "Percentage (%)"}
+                      </SelectItem>
                       <SelectItem value="fixed">{isAr ? "مبلغ ثابت" : "Fixed Amount"}</SelectItem>
                     </SelectContent>
                   </Select>

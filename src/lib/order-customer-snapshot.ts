@@ -22,11 +22,11 @@ type OrderCustomerSource = {
 export function getOrderCustomerName(order: OrderCustomerSource): string {
   const name =
     order.customer_name_snapshot?.trim() ||
-    order.customers?.name?.trim() ||
     order.customer_name?.trim() ||
-    order.customer?.name?.trim() ||
     order.billing_name?.trim() ||
     order.shipping_name?.trim() ||
+    order.customer?.name?.trim() ||
+    order.customers?.name?.trim() ||
     "";
   return name;
 }
@@ -34,9 +34,9 @@ export function getOrderCustomerName(order: OrderCustomerSource): string {
 export function getOrderCustomerEmail(order: OrderCustomerSource): string {
   return (
     order.customer_email_snapshot?.trim() ||
-    order.customers?.email?.trim() ||
     order.customer_email?.trim() ||
     order.customer?.email?.trim() ||
+    order.customers?.email?.trim() ||
     ""
   );
 }
@@ -44,9 +44,9 @@ export function getOrderCustomerEmail(order: OrderCustomerSource): string {
 export function getOrderCustomerPhone(order: OrderCustomerSource): string {
   return (
     order.customer_phone_snapshot?.trim() ||
-    order.customers?.phone?.trim() ||
     order.customer_phone?.trim() ||
     order.customer?.phone?.trim() ||
+    order.customers?.phone?.trim() ||
     ""
   );
 }

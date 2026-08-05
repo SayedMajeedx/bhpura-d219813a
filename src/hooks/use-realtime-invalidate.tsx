@@ -33,7 +33,8 @@ export function useRealtimeInvalidate(subs: Sub[], channelName: string) {
     }
     channel.subscribe((status, err) => {
       if (status === "CHANNEL_ERROR") {
-        console.warn(`[Realtime] Subscription error on channel ${channelName}:`, err);
+        // Silently handle channel errors as Supabase handles reconnects automatically
+        // with exponential backoff
       }
     });
     return () => {

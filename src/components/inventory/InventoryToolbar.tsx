@@ -156,7 +156,9 @@ export const InventoryToolbar: React.FC<InventoryToolbarProps> = ({
                       <SelectValue placeholder={isAr ? "جميع الأقسام" : "All Categories"} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">{isAr ? "جميع الأقسام" : "All Categories"}</SelectItem>
+                      <SelectItem value="all">
+                        {isAr ? "جميع الأقسام" : "All Categories"}
+                      </SelectItem>
                       {categories.map((cat) => (
                         <SelectItem key={cat.id} value={cat.id}>
                           {isAr ? cat.name_ar || cat.name : cat.name}

@@ -558,6 +558,7 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
     : minMatchingPrice;
 
   const maxStock = variant?.stock_main ?? 0;
+  const selectedVariantOutOfStock = Boolean(variant && maxStock <= 0);
 
   const displayName = pickName(lang, product);
   const displayDescription = pickDescription(lang, product);
@@ -1206,8 +1207,10 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
               style={{
                 backgroundColor: "var(--sf-btn-primary-bg)",
                 color: "var(--sf-btn-primary-fg)",
-                opacity: 1,
+                opacity: selectedVariantOutOfStock ? 0.5 : 1,
               }}
+              disabled={selectedVariantOutOfStock}
+              aria-disabled={selectedVariantOutOfStock ? "true" : undefined}
               onClick={() => doAdd(false)}
             >
               <ShoppingBag className="h-4 w-4 me-2" />
@@ -1219,8 +1222,10 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
                 backgroundColor: "var(--sf-btn-secondary-bg)",
                 color: "var(--sf-btn-secondary-fg)",
                 borderColor: "var(--sf-btn-secondary-bg)",
-                opacity: 1,
+                opacity: selectedVariantOutOfStock ? 0.5 : 1,
               }}
+              disabled={selectedVariantOutOfStock}
+              aria-disabled={selectedVariantOutOfStock ? "true" : undefined}
               onClick={() => doAdd(true)}
             >
               {t("اشتر الآن", "Buy now")}
@@ -1255,8 +1260,10 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
               style={{
                 backgroundColor: "var(--sf-btn-primary-bg)",
                 color: "var(--sf-btn-primary-fg)",
-                opacity: 1,
+                opacity: selectedVariantOutOfStock ? 0.5 : 1,
               }}
+              disabled={selectedVariantOutOfStock}
+              aria-disabled={selectedVariantOutOfStock ? "true" : undefined}
               onClick={() => doAdd(false)}
               aria-label={t("أضف للسلة", "Add to cart")}
             >
@@ -1268,8 +1275,10 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
                 backgroundColor: "var(--sf-btn-checkout-bg, var(--sf-btn-secondary-bg))",
                 color: "var(--sf-btn-checkout-fg, var(--sf-btn-secondary-fg))",
                 borderColor: "var(--sf-btn-checkout-bg, var(--sf-btn-secondary-bg))",
-                opacity: 1,
+                opacity: selectedVariantOutOfStock ? 0.5 : 1,
               }}
+              disabled={selectedVariantOutOfStock}
+              aria-disabled={selectedVariantOutOfStock ? "true" : undefined}
               onClick={() => doAdd(true)}
             >
               {t("اشتر الآن", "Buy now")}

@@ -28,7 +28,10 @@ import {
   CheckCircle2,
   MoreHorizontal,
   ExternalLink,
+  Printer,
   Copy,
+  Lock,
+  MessageSquare,
   Phone,
   MessageCircle,
   MapPin,
@@ -106,6 +109,19 @@ import { getFulfillmentStage, getOrderWorkflow } from "@/lib/order-workflow";
 export const Route = createFileRoute("/_authenticated/admin/b/$slug/orders/")({
   component: OrdersList,
 });
+
+async function authenticatedJsonHeaders() {
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+
+  if (!session?.access_token) throw new Error("Your session has expired. Please sign in again.");
+
+  return {
+    "Content-Type": "application/json",
+    Authorization: `Bearer ${session.access_token}`,
+  };
+}
 
 async function copyInvoiceLink(id: string, t: (k: string) => string) {
   const origin = typeof window !== "undefined" ? window.location.origin : "";
@@ -586,7 +602,7 @@ function OrdersList() {
     try {
       const res = await fetch("/api/orders/status", {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: await authenticatedJsonHeaders(),
         body: JSON.stringify({
           id: orderId,
           fulfillment_status: "ASSIGNED",
@@ -997,7 +1013,7 @@ function OrdersList() {
       try {
         const res = await fetch("/api/orders/status", {
           method: "PATCH",
-          headers: { "Content-Type": "application/json" },
+          headers: await authenticatedJsonHeaders(),
           body: JSON.stringify({ id: o.id, admin_override: true, ...payload }),
         });
         const data = await res.json<{ error?: string; error_ar?: string }>();
@@ -1907,7 +1923,7 @@ function OrdersList() {
                     try {
                       const res = await fetch("/api/orders/status", {
                         method: "PATCH",
-                        headers: { "Content-Type": "application/json" },
+                        headers: await authenticatedJsonHeaders(),
                         body: JSON.stringify({
                           id: selectedFulfillOrder.id,
                           fulfillment_status: "ASSIGNED",
@@ -2749,6 +2765,7 @@ function OrderQuickInspectSheet({
   locale: string;
   onClose: () => void;
 }) {
+  const { isAdmin } = useProfile();
   if (!order) return null;
   const isAr = lang === "ar";
   const items = order.order_items ?? [];
@@ -2968,6 +2985,53 @@ function OrderQuickInspectSheet({
             );
           })()}
         </div>
+
+        {isAdmin && (order.gateway_reference || order.payment_intent_id || order.tap_id) ? (
+          <div className="mx-6 mb-6 rounded-xl border border-border/60 bg-card p-4 space-y-3">
+            <div className="flex items-center justify-between border-b pb-2">
+              <div className="flex items-center gap-2">
+                <Lock className="h-4 w-4 text-primary" />
+                <span className="font-semibold text-sm">
+                  {isAr ? "تفاصيل بوابة الدفع" : "Payment Gateway Details"}
+                </span>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4 text-xs font-mono">
+              <div>
+                <span className="text-muted-foreground block mb-1">Reference ID:</span>
+                <div className="flex items-center gap-2">
+                  <span className="truncate">
+                    {order.gateway_reference || order.payment_intent_id || order.tap_id}
+                  </span>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6"
+                    onClick={() => {
+                      navigator.clipboard.writeText(
+                        order.gateway_reference || order.payment_intent_id || order.tap_id,
+                      );
+                      toast.success(isAr ? "تم النسخ" : "Copied Reference");
+                    }}
+                  >
+                    <Copy className="h-3 w-3" />
+                  </Button>
+                </div>
+              </div>
+              <div>
+                <span className="text-muted-foreground block mb-1">Gateway Status:</span>
+                <span>{order.gateway_status || "N/A"}</span>
+              </div>
+              {order.gateway_verified_at && (
+                <div className="col-span-2">
+                  <span className="text-muted-foreground block mb-1">Last Verified:</span>
+                  <span>{new Date(order.gateway_verified_at).toLocaleString(locale)}</span>
+                </div>
+              )}
+            </div>
+          </div>
+        ) : null}
 
         <div className="p-4 border-t bg-muted/20 flex gap-2">
           <Button

@@ -210,6 +210,7 @@ function Inventory() {
   const brand = useBrand();
   const brandId = brand.id;
   const [tab, setTab] = useState<"products" | "customizations">("products");
+  const [productToDelete, setProductToDelete] = useState<string | null>(null);
 
   useRealtimeInvalidate(
     [
@@ -1440,6 +1441,7 @@ function ProductsSection({
   const [stockFilter, setStockFilter] = useState<"all" | "low" | "out">("all");
   const [visibilityFilter, setVisibilityFilter] = useState<"all" | "active" | "hidden">("all");
   const [expandedProducts, setExpandedProducts] = useState<Record<string, boolean>>({});
+  const [productToDelete, setProductToDelete] = useState<string | null>(null);
 
   const toggleProduct = (productId: string) => {
     setExpandedProducts((prev) => ({
@@ -1791,7 +1793,7 @@ function ProductsSection({
                 setDialogSession((v) => v + 1);
                 setOpen(true);
               }}
-              onDelete={(id) => del(id)}
+              onDelete={(id) => setProductToDelete(id)}
               onPrintLabel={(prod) => {
                 const labels: LabelData[] = (variantsByProduct[prod.id] || [])
                   .filter((v) => Boolean(v.barcode))
@@ -1836,7 +1838,7 @@ function ProductsSection({
             setDialogSession((v) => v + 1);
             setOpen(true);
           }}
-          onDelete={(id) => del(id)}
+          onDelete={(id) => setProductToDelete(id)}
           onPrintLabel={(prod) => {
             const labels: LabelData[] = (variantsByProduct[prod.id] || [])
               .filter((v) => Boolean(v.barcode))
@@ -1864,6 +1866,38 @@ function ProductsSection({
           )}
         />
       </div>
+
+      <AlertDialog
+        open={!!productToDelete}
+        onOpenChange={(open) => !open && setProductToDelete(null)}
+      >
+        <AlertDialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-lg">
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("common.delete")}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {isAr
+                ? "هل أنت متأكد من رغبتك في حذف هذا المنتج نهائياً؟ لا يمكن التراجع عن هذا الإجراء."
+                : "Are you sure you want to permanently delete this product? This action cannot be undone."}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setProductToDelete(null)}>
+              {t("common.cancel")}
+            </AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => {
+                if (productToDelete) {
+                  void del(productToDelete);
+                  setProductToDelete(null);
+                }
+              }}
+            >
+              {t("common.delete")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <Dialog
         open={open}
@@ -2037,6 +2071,7 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
     variant_label_fabric_en: product?.variant_label_fabric_en ?? "",
   };
   const [form, setForm] = useState(initialForm);
+  const [errors, setErrors] = useState<{ name?: string; price?: string }>({});
   const [uploading, setUploading] = useState(false);
   const [cropSrc, setCropSrc] = useState<string | null>(null);
   const [pendingVideo, setPendingVideo] = useState<File | null>(null);
@@ -2080,6 +2115,7 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
       variant_label_fabric_ar: product?.variant_label_fabric_ar ?? "",
       variant_label_fabric_en: product?.variant_label_fabric_en ?? "",
     });
+    setErrors({});
     setActiveDialogTab("basic");
   }, [product]);
 
@@ -2151,8 +2187,29 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
     e.preventDefault();
     const nameAr = form.name_ar.trim();
     const nameEn = form.name_en.trim();
-    if (!nameAr && !nameEn)
-      return toast.error(isAr ? "أدخل اسم المنتج بأي لغة" : "Enter a product name in any language");
+    const basePrice = form.base_price.trim();
+
+    const newErrors: { name?: string; price?: string } = {};
+
+    if (!nameAr && !nameEn) {
+      newErrors.name = isAr
+        ? "يجب إدخال اسم المنتج (بالعربية أو الإنجليزية)"
+        : "Product name is required (Arabic or English)";
+    }
+
+    if (!basePrice || isNaN(Number(basePrice)) || Number(basePrice) < 0) {
+      newErrors.price = isAr
+        ? "يجب إدخال سعر صحيح أكبر من أو يساوي الصفر"
+        : "A valid price greater than or equal to 0 is required";
+    }
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      setActiveDialogTab("basic");
+      return;
+    }
+
+    setErrors({});
     const {
       data: { user },
     } = await supabase.auth.getUser();
@@ -2293,9 +2350,22 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
               labelEn="Product name — English"
               valueAr={form.name_ar}
               valueEn={form.name_en}
-              onChangeAr={(v) => setForm({ ...form, name_ar: v })}
-              onChangeEn={(v) => setForm({ ...form, name_en: v })}
+              onChangeAr={(v) => {
+                setForm({ ...form, name_ar: v });
+                if (v.trim() || form.name_en.trim())
+                  setErrors((prev) => ({ ...prev, name: undefined }));
+              }}
+              onChangeEn={(v) => {
+                setForm({ ...form, name_en: v });
+                if (v.trim() || form.name_ar.trim())
+                  setErrors((prev) => ({ ...prev, name: undefined }));
+              }}
             />
+            {errors.name && (
+              <p className="text-xs text-destructive font-semibold mt-1" role="alert">
+                {errors.name}
+              </p>
+            )}
             <div>
               <Label className="text-xs font-bold text-muted-foreground">
                 {t("inventory.category")}
@@ -2342,16 +2412,28 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
                 type="number"
                 step="0.001"
                 min="0"
-                className="mt-1 h-10.5 rounded-lg"
+                className={`mt-1 h-10.5 rounded-lg ${errors.price ? "border-destructive focus-visible:ring-destructive" : ""}`}
                 placeholder="0.000"
                 value={form.base_price}
-                onChange={(e) => setForm({ ...form, base_price: e.target.value })}
+                onChange={(e) => {
+                  setForm({ ...form, base_price: e.target.value });
+                  const v = e.target.value.trim();
+                  if (v && !isNaN(Number(v)) && Number(v) >= 0) {
+                    setErrors((prev) => ({ ...prev, price: undefined }));
+                  }
+                }}
               />
-              <p className="text-xs text-muted-foreground mt-1.5">
-                {isAr
-                  ? "السعر الرئيسي للمنتج. عند إضافة خيارات/متغيرات، يمكنك إدخال المبلغ الإضافي (+Amount) وسيتم جمعه تلقائياً."
-                  : "The primary base price of the product. When adding variants, you can set an upcharge (+Amount) which will be added automatically."}
-              </p>
+              {errors.price ? (
+                <p className="text-xs text-destructive font-semibold mt-1" role="alert">
+                  {errors.price}
+                </p>
+              ) : (
+                <p className="text-xs text-muted-foreground mt-1.5">
+                  {isAr
+                    ? "السعر الرئيسي للمنتج. عند إضافة خيارات/متغيرات، يمكنك إدخال المبلغ الإضافي (+Amount) وسيتم جمعه تلقائياً."
+                    : "The primary base price of the product. When adding variants, you can set an upcharge (+Amount) which will be added automatically."}
+                </p>
+              )}
             </div>
             <div>
               <Label className="text-xs font-bold text-muted-foreground">

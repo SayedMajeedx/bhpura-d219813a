@@ -65,7 +65,7 @@ function SearchPage() {
   }, [term]);
 
   const results = useMemo(() => {
-    const rows = data ?? [];
+    const rows = data ? structuredClone(data) : [];
     if (sort === "new") return rows;
     const price = (product: ProductRow) =>
       Number(product.product_variants?.[0]?.selling_price ?? Number.MAX_SAFE_INTEGER);

@@ -93,7 +93,9 @@ export function ExpensesToolbar({
             ref={searchInputRef}
             value={search}
             onChange={(e) => onSearchChange(e.target.value)}
-            placeholder={isAr ? "ابحث بالوصف أو المتجر... (⌘K)" : "Search description or store... (⌘K)"}
+            placeholder={
+              isAr ? "ابحث بالوصف أو المتجر... (⌘K)" : "Search description or store... (⌘K)"
+            }
             className="ps-9 h-9 text-xs bg-background/80"
           />
         </div>
@@ -130,7 +132,9 @@ export function ExpensesToolbar({
                     <SelectValue placeholder={isAr ? "جميع التصنيفات" : "All Categories"} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">{isAr ? "جميع التصنيفات" : "All Categories"}</SelectItem>
+                    <SelectItem value="all">
+                      {isAr ? "جميع التصنيفات" : "All Categories"}
+                    </SelectItem>
                     {categories.map((c) => (
                       <SelectItem key={c} value={c}>
                         {c}
@@ -178,7 +182,9 @@ export function ExpensesToolbar({
                       <SelectValue placeholder={isAr ? "جميع التصنيفات" : "All Categories"} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">{isAr ? "جميع التصنيفات" : "All Categories"}</SelectItem>
+                      <SelectItem value="all">
+                        {isAr ? "جميع التصنيفات" : "All Categories"}
+                      </SelectItem>
                       {categories.map((c) => (
                         <SelectItem key={c} value={c}>
                           {c}

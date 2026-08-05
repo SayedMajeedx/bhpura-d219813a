@@ -1,10 +1,12 @@
 import React from "react";
 import { describe, expect, test, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { Package, TriangleAlert, XCircle } from "lucide-react";
 import { InventoryScopeSwitcher } from "../src/components/inventory/InventoryScopeSwitcher";
 import { CustomersScopeSwitcher } from "../src/components/customers/CustomersScopeSwitcher";
 import { CategoriesWorkQueue } from "../src/components/categories/CategoriesWorkQueue";
+import { CustomersWorkQueue } from "../src/components/customers/CustomersWorkQueue";
+import { InventoryMobileCard } from "../src/components/inventory/InventoryMobileCard";
 
 describe("Phase 7A responsive workspaces", () => {
   test("inventory exposes two readable mobile scopes and an accessible overflow menu", () => {
@@ -70,5 +72,49 @@ describe("Phase 7A responsive workspaces", () => {
     expect(screen.getAllByRole("article")).toHaveLength(2);
     expect(screen.getAllByRole("button", { name: "Move category up" })).toHaveLength(2);
     expect(screen.getAllByRole("button", { name: "Move category down" })).toHaveLength(2);
+  });
+
+  test("customer deletion is reachable but requires explicit confirmation", () => {
+    const onDeleteCustomer = vi.fn();
+    render(
+      <CustomersWorkQueue
+        lang="en"
+        customers={[{ id: "customer-1", name: "Test Customer", phone: null, email: null }]}
+        defaultByCustomer={new Map()}
+        customerCrmStats={new Map()}
+        currency="BHD"
+        isLoading={false}
+        isError={false}
+        onSelectCustomer={vi.fn()}
+        onDeleteCustomer={onDeleteCustomer}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Delete customer Test Customer" }));
+    expect(onDeleteCustomer).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: "Delete" }));
+    expect(onDeleteCustomer).toHaveBeenCalledWith(expect.objectContaining({ id: "customer-1" }));
+  });
+
+  test("mobile product deletion waits for confirmation", () => {
+    const onDelete = vi.fn();
+    render(
+      <InventoryMobileCard
+        lang="en"
+        product={{ id: "product-1", name: "Test Product" }}
+        variants={[]}
+        totalStock={0}
+        minPrice={1}
+        onEdit={vi.fn()}
+        onDelete={onDelete}
+        onPrintLabel={vi.fn()}
+      />,
+    );
+
+    fireEvent.pointerDown(screen.getByRole("button", { name: "More product actions" }));
+    fireEvent.click(screen.getByText("Delete"));
+    expect(onDelete).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: "Delete" }));
+    expect(onDelete).toHaveBeenCalledWith("product-1");
   });
 });

@@ -5,6 +5,18 @@ export const Route = createFileRoute("/api/orders/status")({
     handlers: {
       PATCH: async ({ request }) => {
         try {
+          const authHeader = request.headers.get("authorization");
+          const accessToken = authHeader?.startsWith("Bearer ")
+            ? authHeader.slice("Bearer ".length).trim()
+            : "";
+
+          if (!accessToken) {
+            return new Response(JSON.stringify({ error: "Unauthorized" }), {
+              status: 401,
+              headers: { "Content-Type": "application/json" },
+            });
+          }
+
           const body = await request.json<{
             id?: string;
             payment_status?: string;
@@ -33,10 +45,36 @@ export const Route = createFileRoute("/api/orders/status")({
 
           const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
+          const {
+            data: { user },
+            error: authError,
+          } = await supabaseAdmin.auth.getUser(accessToken);
+
+          if (authError || !user) {
+            return new Response(JSON.stringify({ error: "Unauthorized" }), {
+              status: 401,
+              headers: { "Content-Type": "application/json" },
+            });
+          }
+
+          const { data: profile, error: profileError } = await (
+            supabaseAdmin.from("profiles") as any
+          )
+            .select("role, status, brand_id, permissions")
+            .eq("id", user.id)
+            .maybeSingle();
+
+          if (profileError || !profile || profile.status !== "active") {
+            return new Response(JSON.stringify({ error: "Forbidden" }), {
+              status: 403,
+              headers: { "Content-Type": "application/json" },
+            });
+          }
+
           // 1. Fetch current order status details
           const { data: order, error: fetchErr } = await (supabaseAdmin.from("orders") as any)
             .select(
-              "id, status, payment_status, payment_method, fulfillment_status, delivery_notes, assigned_to",
+              "id, brand_id, status, payment_status, payment_method, fulfillment_status, delivery_notes, assigned_to",
             )
             .eq("id", id)
             .maybeSingle();
@@ -44,6 +82,42 @@ export const Route = createFileRoute("/api/orders/status")({
           if (fetchErr || !order) {
             return new Response(JSON.stringify({ error: "Order not found" }), {
               status: 404,
+              headers: { "Content-Type": "application/json" },
+            });
+          }
+
+          const role = String(profile.role || "");
+          const permissions = Array.isArray(profile.permissions) ? profile.permissions : [];
+          const isSuperAdmin = role === "super_admin";
+          const isAdmin = ["admin", "brand_admin"].includes(role);
+          const isAssignedCourier = role === "courier" && order.assigned_to === user.id;
+          const canManageOrders =
+            isSuperAdmin || isAdmin || permissions.includes("manage_orders") || isAssignedCourier;
+          const canAccessBrand = isSuperAdmin || profile.brand_id === order.brand_id;
+
+          if (!canManageOrders || !canAccessBrand) {
+            return new Response(JSON.stringify({ error: "Forbidden" }), {
+              status: 403,
+              headers: { "Content-Type": "application/json" },
+            });
+          }
+
+          if (
+            isAssignedCourier &&
+            (payment_status !== undefined ||
+              status !== undefined ||
+              assigned_to !== undefined ||
+              admin_override !== undefined)
+          ) {
+            return new Response(JSON.stringify({ error: "Forbidden" }), {
+              status: 403,
+              headers: { "Content-Type": "application/json" },
+            });
+          }
+
+          if (admin_override && !isSuperAdmin && !isAdmin) {
+            return new Response(JSON.stringify({ error: "Forbidden" }), {
+              status: 403,
               headers: { "Content-Type": "application/json" },
             });
           }
@@ -122,7 +196,8 @@ export const Route = createFileRoute("/api/orders/status")({
           const { error: updateErr } = await supabaseAdmin
             .from("orders")
             .update(updates as any)
-            .eq("id", id);
+            .eq("id", id)
+            .eq("brand_id", order.brand_id);
 
           if (updateErr) {
             return new Response(JSON.stringify({ error: updateErr.message }), {

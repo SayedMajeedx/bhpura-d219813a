@@ -319,7 +319,11 @@ function OrderDetail() {
         { event: "INSERT", schema: "public", table: "activity_logs", filter: `order_id=eq.${id}` },
         () => void qc.invalidateQueries({ queryKey: ["activity_logs"] }),
       )
-      .subscribe();
+      .subscribe((status) => {
+        if (status === "CHANNEL_ERROR") {
+          // Handled gracefully, Supabase will auto-reconnect
+        }
+      });
 
     return () => {
       void supabase.removeChannel(channel);
@@ -496,6 +500,7 @@ function OrderDetail() {
   const [mobileActionsOpen, setMobileActionsOpen] = useState(false);
   const [hasSavedDraft, setHasSavedDraft] = useState(false);
   const [saving, setSaving] = useState(false);
+  const saveRef = useRef<() => Promise<unknown>>(async () => undefined);
   const [adminOverrideChecked, setAdminOverrideChecked] = useState(false);
   const [promoInput, setPromoInput] = useState("");
   const [activeSection, setActiveSection] = useState<string>("sec-overview");
@@ -1445,19 +1450,30 @@ function OrderDetail() {
     qc.invalidateQueries({ queryKey: ["activity_logs"] });
     qc.invalidateQueries({ queryKey: ["activity_logs"] });
   };
+  saveRef.current = save;
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === "s") {
         e.preventDefault();
         if (!isReadOnly && !saving) {
-          void save();
+          void saveRef.current();
         }
       }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isReadOnly, saving, order, items, totals, appliedPromo, currency, settingsQ.data, variantsQ.data]);
+  }, [
+    isReadOnly,
+    saving,
+    order,
+    items,
+    totals,
+    appliedPromo,
+    currency,
+    settingsQ.data,
+    variantsQ.data,
+  ]);
 
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
@@ -1554,8 +1570,7 @@ function OrderDetail() {
     } catch (err) {
       console.error("PDF download failed", err);
       toast.error(
-        (err as Error)?.message ??
-          (lang === "ar" ? "فشل تحميل ملف PDF" : "PDF download failed"),
+        (err as Error)?.message ?? (lang === "ar" ? "فشل تحميل ملف PDF" : "PDF download failed"),
       );
     }
   };
@@ -1905,11 +1920,7 @@ function OrderDetail() {
               disabled={saving}
               className="h-9 px-4 text-xs font-bold gap-2 shadow-sm bg-primary text-primary-foreground hover:bg-primary/90 rounded-xl"
             >
-              {saving ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Save className="h-4 w-4" />
-              )}
+              {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
               <span>
                 {isCreationMode
                   ? lang === "ar"
@@ -1944,9 +1955,7 @@ function OrderDetail() {
                       className="h-9 px-3 text-xs font-semibold shadow-2xs hover:bg-accent gap-1.5"
                     >
                       <MoreHorizontal className="h-4 w-4 text-muted-foreground" />
-                      <span className="hidden sm:inline">
-                        {lang === "ar" ? "المزيد" : "More"}
-                      </span>
+                      <span className="hidden sm:inline">{lang === "ar" ? "المزيد" : "More"}</span>
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-52">
@@ -2128,7 +2137,7 @@ function OrderDetail() {
                   "shadow-xs font-bold h-9 px-4 transition-all rounded-xl",
                   isDirty
                     ? "bg-emerald-600 hover:bg-emerald-700 text-white shadow-md ring-2 ring-emerald-500/30"
-                    : "bg-primary text-primary-foreground hover:bg-primary/90"
+                    : "bg-primary text-primary-foreground hover:bg-primary/90",
                 )}
               >
                 {saving ? (
@@ -2139,8 +2148,12 @@ function OrderDetail() {
                   <Check className="h-4 w-4 me-1.5" />
                 )}
                 {isDirty
-                  ? (lang === "ar" ? "حفظ التغييرات" : "Save Changes")
-                  : (lang === "ar" ? "محفوظ" : "Saved")}
+                  ? lang === "ar"
+                    ? "حفظ التغييرات"
+                    : "Save Changes"
+                  : lang === "ar"
+                    ? "محفوظ"
+                    : "Saved"}
               </Button>
             </div>
           )}
@@ -2831,7 +2844,11 @@ function OrderDetail() {
                               variant="ghost"
                               size="icon"
                               className="h-9 w-8 shrink-0 rounded-none hover:bg-muted active:scale-95 text-muted-foreground hover:text-foreground"
-                              onClick={() => updateItem(idx, { quantity: Math.max(1, Number(it.quantity || 1) - 1) })}
+                              onClick={() =>
+                                updateItem(idx, {
+                                  quantity: Math.max(1, Number(it.quantity || 1) - 1),
+                                })
+                              }
                               title={isAr ? "إنقاص الكمية" : "Decrease quantity"}
                             >
                               <Minus className="h-3.5 w-3.5" />
@@ -2840,7 +2857,9 @@ function OrderDetail() {
                               type="number"
                               min={1}
                               value={it.quantity}
-                              onChange={(e) => updateItem(idx, { quantity: Math.max(1, Number(e.target.value)) })}
+                              onChange={(e) =>
+                                updateItem(idx, { quantity: Math.max(1, Number(e.target.value)) })
+                              }
                               className="h-9 w-12 border-0 p-0 text-center font-bold text-xs focus-visible:ring-0 focus-visible:ring-offset-0 bg-transparent [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                             />
                             <Button
@@ -2848,7 +2867,9 @@ function OrderDetail() {
                               variant="ghost"
                               size="icon"
                               className="h-9 w-8 shrink-0 rounded-none hover:bg-muted active:scale-95 text-muted-foreground hover:text-foreground"
-                              onClick={() => updateItem(idx, { quantity: Number(it.quantity || 1) + 1 })}
+                              onClick={() =>
+                                updateItem(idx, { quantity: Number(it.quantity || 1) + 1 })
+                              }
                               title={isAr ? "زيادة الكمية" : "Increase quantity"}
                             >
                               <Plus className="h-3.5 w-3.5" />
@@ -3109,6 +3130,59 @@ function OrderDetail() {
                     </Select>
                   </div>
                 </div>
+                {isAdmin &&
+                  (order.gateway_reference || order.payment_intent_id || order.tap_id) && (
+                    <div className="rounded-xl border border-border/60 bg-card p-4 space-y-3 mt-4">
+                      <div className="flex items-center justify-between border-b pb-2">
+                        <div className="flex items-center gap-2">
+                          <Lock className="h-4 w-4 text-primary" />
+                          <span className="font-semibold text-sm">
+                            {lang === "ar" ? "تفاصيل بوابة الدفع" : "Payment Gateway Details"}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-4 text-xs font-mono">
+                        <div>
+                          <span className="text-muted-foreground block mb-1">Reference ID:</span>
+                          <div className="flex items-center gap-2">
+                            <span className="truncate">
+                              {order.gateway_reference || order.payment_intent_id || order.tap_id}
+                            </span>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              className="h-6 w-6"
+                              onClick={() => {
+                                navigator.clipboard.writeText(
+                                  order.gateway_reference ||
+                                    order.payment_intent_id ||
+                                    order.tap_id,
+                                );
+                                toast.success(lang === "ar" ? "تم النسخ" : "Copied Reference");
+                              }}
+                            >
+                              <Copy className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground block mb-1">Gateway Status:</span>
+                          <span>{order.gateway_status || "N/A"}</span>
+                        </div>
+                        {order.gateway_verified_at && (
+                          <div className="col-span-2">
+                            <span className="text-muted-foreground block mb-1">Last Verified:</span>
+                            <span>
+                              {new Date(order.gateway_verified_at).toLocaleString(
+                                lang === "ar" ? "ar-BH-u-nu-latn" : "en-BH",
+                              )}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
                 <div className="lg:hidden">
                   <Label>{t("orderDetail.notes")}</Label>
                   <Textarea
@@ -3479,7 +3553,7 @@ function OrderDetail() {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        {PAYMENT_BADGE_VALUES.map((v) => (
+                        {[...PAYMENT_BADGE_VALUES, "failed", "declined"].map((v) => (
                           <SelectItem key={v} value={v}>
                             {t(`payStatus.${v}`)}
                           </SelectItem>
@@ -3642,8 +3716,6 @@ function OrderDetail() {
           </div>
         </div>
       </fieldset>
-
-
 
       {/* Invoice Preview Section Anchor */}
       <div id="sec-invoice" className="scroll-mt-24">
@@ -4216,7 +4288,14 @@ function ResendConfirmationEmailButton({
 
   if (asMenuItem) {
     return (
-      <DropdownMenuItem onSelect={(e) => { e.preventDefault(); onClick(); }} disabled={sending} title={title}>
+      <DropdownMenuItem
+        onSelect={(e) => {
+          e.preventDefault();
+          onClick();
+        }}
+        disabled={sending}
+        title={title}
+      >
         {sending ? (
           <Loader2 className="h-4 w-4 mr-2 animate-spin" />
         ) : (

@@ -846,6 +846,7 @@ function CustomersPage() {
   const { slug } = Route.useParams();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
+  const [customerToDelete, setCustomerToDelete] = useState<Customer | null>(null);
 
   // Feature 7: Context-preserving return navigation for Customers
   const savedContext = getNavFilterContext("customers");
@@ -1069,9 +1070,41 @@ function CustomersPage() {
               params: { slug, customerId },
             })
           }
-          onDeleteCustomer={(c) => del(c.id)}
+          onDeleteCustomer={(c) => setCustomerToDelete(c)}
         />
       </div>
+
+      <AlertDialog
+        open={!!customerToDelete}
+        onOpenChange={(open) => !open && setCustomerToDelete(null)}
+      >
+        <AlertDialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-lg">
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("common.delete")}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {isAr
+                ? `هل أنت متأكد من رغبتك في حذف العميل "${customerToDelete?.name || ""}" نهائياً؟ لا يمكن التراجع عن هذا الإجراء.`
+                : `Are you sure you want to permanently delete customer "${customerToDelete?.name || ""}"? This action cannot be undone.`}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setCustomerToDelete(null)}>
+              {t("common.cancel")}
+            </AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => {
+                if (customerToDelete) {
+                  void del(customerToDelete.id);
+                  setCustomerToDelete(null);
+                }
+              }}
+            >
+              {t("common.delete")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Customer Creation Dialog */}
       <Dialog open={open} onOpenChange={setOpen}>

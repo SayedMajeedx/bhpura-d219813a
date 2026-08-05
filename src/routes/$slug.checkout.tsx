@@ -57,6 +57,10 @@ function Checkout() {
   const navigate = useNavigate();
   const [submitting, setSubmitting] = useState(false);
   const [idempotencyKey] = useState(() => crypto.randomUUID());
+  const [paymentErrorState, setPaymentErrorState] = useState<{
+    status: string;
+    orderId: string;
+  } | null>(null);
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
     setMounted(true);
@@ -66,31 +70,57 @@ function Checkout() {
     if (typeof window !== "undefined") {
       const searchParams = new URLSearchParams(window.location.search);
       const paymentError = searchParams.get("payment_error");
+      const orderId = searchParams.get("order_id");
       if (paymentError) {
-        toast.error(
-          t(
-            "فشلت عملية الدفع بالبطاقة. يرجى التحقق من بيانات البطاقة والمحاولة مرة أخرى.",
-            "Card payment failed. Please check your card details and try again.",
-          ),
-          { duration: 6000 },
-        );
+        if (orderId) {
+          setPaymentErrorState({ status: paymentError, orderId });
+        } else {
+          toast.error(
+            t(
+              "فشلت عملية الدفع بالبطاقة. يرجى التحقق من بيانات البطاقة والمحاولة مرة أخرى.",
+              "Card payment failed. Please check your card details and try again.",
+            ),
+            { duration: 6000 },
+          );
+        }
         // Clear the query parameter so it doesn't fire again on refresh
         const cleanUrl = window.location.pathname;
         window.history.replaceState({}, document.title, cleanUrl);
       }
     }
   }, [mounted, t]);
-  const [form, setForm] = useState({
-    name: "",
-    phone: "",
-    email: "",
-    label: "",
-    region: "",
-    block: "",
-    road: "",
-    house: "",
-    flat: "",
-    notes: "",
+  const [form, setForm] = useState<{
+    name: string;
+    phone: string;
+    email: string;
+    label: string;
+    region: string;
+    block: string;
+    road: string;
+    house: string;
+    flat: string;
+    notes: string;
+  }>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const saved = sessionStorage.getItem("checkout_form");
+        if (saved) return JSON.parse(saved);
+      } catch {
+        /* ignore invalid session storage */
+      }
+    }
+    return {
+      name: "",
+      phone: "",
+      email: "",
+      label: "",
+      region: "",
+      block: "",
+      road: "",
+      house: "",
+      flat: "",
+      notes: "",
+    };
   });
   const [savedAddresses, setSavedAddresses] = useState<any[]>([]);
   const [selectedAddressId, setSelectedAddressId] = useState<string>("");
@@ -245,9 +275,18 @@ function Checkout() {
     },
   ].filter(Boolean) as any;
 
-  const [method, setMethod] = useState<"cod" | "card" | "benefit" | "">(
-    availableMethods[0]?.id ?? "",
-  );
+  const [method, setMethod] = useState<"cod" | "card" | "benefit" | "">(() => {
+    if (typeof window !== "undefined") {
+      const saved = sessionStorage.getItem("checkout_method");
+      if (saved) return saved as any;
+    }
+    return "";
+  });
+  useEffect(() => {
+    if (!method && availableMethods.length > 0) {
+      setMethod(availableMethods[0]?.id ?? "");
+    }
+  }, [method, availableMethods]);
 
   const fulfillmentOptions = useMemo(() => {
     const opts: Array<{ id: Fulfillment; ar: string; en: string; icon: any; fee: number }> = [];
@@ -283,9 +322,13 @@ function Checkout() {
     settings.delivery_fee,
   ]);
 
-  const [fulfillment, setFulfillment] = useState<Fulfillment>(
-    fulfillmentOptions[0]?.id ?? "delivery",
-  );
+  const [fulfillment, setFulfillment] = useState<Fulfillment>(() => {
+    if (typeof window !== "undefined") {
+      const saved = sessionStorage.getItem("checkout_fulfillment");
+      if (saved) return saved as any;
+    }
+    return fulfillmentOptions[0]?.id ?? "delivery";
+  });
   useEffect(() => {
     if (fulfillmentOptions.length > 0 && !fulfillmentOptions.find((o) => o.id === fulfillment)) {
       setFulfillment(fulfillmentOptions[0].id);
@@ -303,9 +346,38 @@ function Checkout() {
       notes_en: string | null;
     }>
   >([]);
-  const [branchId, setBranchId] = useState<string>("");
-  const [digitalChannel, setDigitalChannel] = useState<"email" | "whatsapp">("email");
-  const [digitalContact, setDigitalContact] = useState("");
+  const [branchId, setBranchId] = useState<string>(() => {
+    if (typeof window !== "undefined") {
+      const saved = sessionStorage.getItem("checkout_branchId");
+      if (saved) return saved;
+    }
+    return "";
+  });
+  const [digitalChannel, setDigitalChannel] = useState<"email" | "whatsapp">(() => {
+    if (typeof window !== "undefined") {
+      const saved = sessionStorage.getItem("checkout_digitalChannel");
+      if (saved) return saved as any;
+    }
+    return "email";
+  });
+  const [digitalContact, setDigitalContact] = useState(() => {
+    if (typeof window !== "undefined") {
+      const saved = sessionStorage.getItem("checkout_digitalContact");
+      if (saved) return saved;
+    }
+    return "";
+  });
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      sessionStorage.setItem("checkout_form", JSON.stringify(form));
+      sessionStorage.setItem("checkout_method", method);
+      sessionStorage.setItem("checkout_fulfillment", fulfillment);
+      sessionStorage.setItem("checkout_branchId", branchId);
+      sessionStorage.setItem("checkout_digitalChannel", digitalChannel);
+      sessionStorage.setItem("checkout_digitalContact", digitalContact);
+    }
+  }, [form, method, fulfillment, branchId, digitalChannel, digitalContact]);
   const [promoInput, setPromoInput] = useState("");
   const [appliedPromo, setAppliedPromo] = useState<{ code: string; amount: number } | null>(null);
   const [checkingPromo, setCheckingPromo] = useState(false);
@@ -506,78 +578,83 @@ function Checkout() {
     }
     setSubmitting(true);
     try {
-      const benefitReceiptId =
-        method === "benefit" && benefitReceipt
-          ? await uploadBenefitReceipt(brand.id, benefitReceipt)
-          : null;
-      const { data, error } = await supabase.rpc("place_storefront_order", {
-        p_brand_slug: brand.slug,
-        p_customer: {
-          name: form.name,
-          phone: form.phone,
-          email: customerEmail,
-          label: form.label,
-          region: form.region,
-          block: form.block,
-          road: form.road,
-          house: form.house,
-          flat: form.flat,
-          save_to_profile: Boolean(session?.user && saveToProfile),
-        },
-        p_items: cart.map((c) => ({
-          variant_id: c.variant_id,
-          quantity: c.qty,
-          selected_variant: {
-            size: c.size,
-            color: c.color,
-            fabric: c.fabric ?? null,
+      let orderId = paymentErrorState?.orderId;
+      let confirmationToken = null;
+
+      if (method === "card" && paymentErrorState?.orderId) {
+        orderId = paymentErrorState.orderId;
+      } else {
+        const benefitReceiptId =
+          method === "benefit" && benefitReceipt
+            ? await uploadBenefitReceipt(brand.id, benefitReceipt)
+            : null;
+        const { data, error } = await supabase.rpc("place_storefront_order", {
+          p_brand_slug: brand.slug,
+          p_customer: {
+            name: form.name,
+            phone: form.phone,
+            email: customerEmail,
+            label: form.label,
+            region: form.region,
+            block: form.block,
+            road: form.road,
+            house: form.house,
+            flat: form.flat,
+            save_to_profile: Boolean(session?.user && saveToProfile),
           },
-          // Send both names during rollout. The database normalizes these to
-          // order_items.custom_field_values.
-          custom_fields: c.custom_fields ?? [],
-          custom_field_values: c.custom_fields ?? [],
-        })),
-        p_payment_method: method,
-        p_notes: form.notes || undefined,
-        p_fulfillment: fulfillment,
-        p_branch_id: fulfillment === "pickup" ? branchId || null : null,
-        p_digital_channel: fulfillment === "digital" ? digitalChannel : null,
-        p_digital_contact: fulfillment === "digital" ? digitalContact.trim() : null,
-        p_promo_code: appliedPromo?.code ?? null,
-        p_benefit_receipt_id: benefitReceiptId,
-        p_shipping_fee:
-          fulfillment === "delivery"
-            ? zones.length > 0
-              ? (selectedZone?.fee ?? 0)
-              : Number(settings.delivery_fee || 0)
-            : 0,
-        p_shipping_zone:
-          fulfillment === "delivery"
-            ? zones.length > 0
-              ? selectedZone
-                ? lang === "ar"
-                  ? selectedZone.name_ar
-                  : selectedZone.name_en
-                : null
-              : lang === "ar"
-                ? "توصيل"
-                : "Delivery"
-            : null,
-        p_idempotency_key: idempotencyKey,
-      } as any);
-      if (error) throw error;
-      const orderId = (data as any)?.order_id;
-      const confirmationToken = (data as any)?.confirmation_email_token;
-      if (brand.slug === "pura" && whatsappOrderUpdates && orderId && confirmationToken) {
-        const { error: whatsappOptInError } = await supabase.rpc(
-          "record_order_whatsapp_opt_in" as any,
-          {
-            p_order_id: orderId,
-            p_confirmation_token: confirmationToken,
-          },
-        );
-        if (whatsappOptInError) {
-          console.warn("[checkout] WhatsApp order-update consent could not be recorded");
+          p_items: cart.map((c) => ({
+            variant_id: c.variant_id,
+            quantity: c.qty,
+            selected_variant: {
+              size: c.size,
+              color: c.color,
+              fabric: c.fabric ?? null,
+            },
+            custom_fields: c.custom_fields ?? [],
+            custom_field_values: c.custom_fields ?? [],
+          })),
+          p_payment_method: method,
+          p_notes: form.notes || undefined,
+          p_fulfillment: fulfillment,
+          p_branch_id: fulfillment === "pickup" ? branchId || null : null,
+          p_digital_channel: fulfillment === "digital" ? digitalChannel : null,
+          p_digital_contact: fulfillment === "digital" ? digitalContact.trim() : null,
+          p_promo_code: appliedPromo?.code ?? null,
+          p_benefit_receipt_id: benefitReceiptId,
+          p_shipping_fee:
+            fulfillment === "delivery"
+              ? zones.length > 0
+                ? (selectedZone?.fee ?? 0)
+                : Number(settings.delivery_fee || 0)
+              : 0,
+          p_shipping_zone:
+            fulfillment === "delivery"
+              ? zones.length > 0
+                ? selectedZone
+                  ? lang === "ar"
+                    ? selectedZone.name_ar
+                    : selectedZone.name_en
+                  : null
+                : lang === "ar"
+                  ? "توصيل"
+                  : "Delivery"
+              : null,
+          p_idempotency_key: idempotencyKey,
+        } as any);
+        if (error) throw error;
+        orderId = (data as any)?.order_id;
+        confirmationToken = (data as any)?.confirmation_email_token;
+        if (brand.slug === "pura" && whatsappOrderUpdates && orderId && confirmationToken) {
+          const { error: whatsappOptInError } = await supabase.rpc(
+            "record_order_whatsapp_opt_in" as any,
+            {
+              p_order_id: orderId,
+              p_confirmation_token: confirmationToken,
+            },
+          );
+          if (whatsappOptInError) {
+            console.warn("[checkout] WhatsApp order-update consent could not be recorded");
+          }
         }
       }
       trackStorefrontEvent(
@@ -628,9 +705,17 @@ function Checkout() {
         }
       }
 
-      clearCart();
       toast.success(t("تم استلام طلبك!", "Order placed!"));
-      navigate({
+      if (typeof window !== "undefined") {
+        sessionStorage.removeItem("checkout_form");
+        sessionStorage.removeItem("checkout_method");
+        sessionStorage.removeItem("checkout_fulfillment");
+        sessionStorage.removeItem("checkout_branchId");
+        sessionStorage.removeItem("checkout_digitalChannel");
+        sessionStorage.removeItem("checkout_digitalContact");
+      }
+      clearCart();
+      await navigate({
         to: "/$slug/thank-you/$orderId",
         params: { slug: brand.slug, orderId: String(orderId ?? "") },
         search: { fulfillment, channel: fulfillment === "digital" ? digitalChannel : "email" },
@@ -728,6 +813,47 @@ function Checkout() {
     <div className="mx-auto max-w-4xl px-4 sm:px-6 pt-8 pb-28 md:py-8 grid md:grid-cols-[1fr_360px] gap-6">
       <h1 className="sr-only">{t("إتمام الطلب", "Checkout")}</h1>
       <div className="space-y-4">
+        {paymentErrorState && (
+          <Card className="p-5 border-destructive bg-destructive/5 space-y-4 col-span-full">
+            <div className="flex items-start gap-3">
+              <X className="h-5 w-5 text-destructive shrink-0 mt-0.5" />
+              <div>
+                <h3 className="font-semibold text-destructive">
+                  {t("فشلت عملية الدفع أو تم إلغاؤها", "Payment failed or cancelled")}
+                </h3>
+                <p className="text-sm text-destructive/90 mt-1">
+                  {t(
+                    "لم يتم خصم أي مبلغ وتم حفظ سلتك. يرجى المحاولة مرة أخرى أو اختيار طريقة دفع أخرى.",
+                    "Payment was declined or cancelled. Your cart has been saved and no charges were made.",
+                  )}
+                </p>
+              </div>
+            </div>
+            <div className="flex flex-wrap items-center gap-3 pt-2">
+              <Button
+                size="sm"
+                onClick={() => {
+                  setMethod("card");
+                  setTimeout(submit, 100);
+                }}
+                disabled={submitting}
+              >
+                <CreditCard className="w-4 h-4 mr-2 rtl:ml-2 rtl:mr-0" />
+                {t("إعادة المحاولة بالبطاقة", "Retry Payment")}
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => {
+                  const el = document.getElementById("payment-methods-section");
+                  if (el) el.scrollIntoView({ behavior: "smooth" });
+                }}
+              >
+                {t("اختر طريقة دفع أخرى", "Choose Another Payment Method")}
+              </Button>
+            </div>
+          </Card>
+        )}
         {!session && (
           <Card className="p-4 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 border-primary/30 bg-primary/5">
             <div className="flex min-w-0 items-center gap-3">
@@ -755,10 +881,16 @@ function Checkout() {
           <h2 className="font-display text-xl">{t("بيانات العميل", "Customer details")}</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <Label htmlFor="checkout-name">{t("الاسم الكامل", "Full name")} *</Label>
+              <Label htmlFor="checkout-name">
+                {t("الاسم الكامل", "Full name")}
+                <span className="text-destructive font-bold ms-1" aria-hidden="true">
+                  *
+                </span>
+              </Label>
               <Input
                 id="checkout-name"
                 name="name"
+                required
                 autoComplete="name"
                 className="h-11"
                 value={form.name}
@@ -766,10 +898,18 @@ function Checkout() {
               />
             </div>
             <div>
-              <Label htmlFor="checkout-phone">{t("رقم الهاتف", "Phone")} *</Label>
+              <Label htmlFor="checkout-phone">
+                {t("رقم الهاتف", "Phone")}
+                {fulfillment !== "digital" && (
+                  <span className="text-destructive font-bold ms-1" aria-hidden="true">
+                    *
+                  </span>
+                )}
+              </Label>
               <Input
                 id="checkout-phone"
                 name="phone"
+                required={fulfillment !== "digital"}
                 type="tel"
                 inputMode="tel"
                 autoComplete="tel"
@@ -780,7 +920,12 @@ function Checkout() {
               />
             </div>
             <div className="sm:col-span-2">
-              <Label htmlFor="checkout-email">{t("البريد الإلكتروني", "Email")}</Label>
+              <Label htmlFor="checkout-email">
+                {t("البريد الإلكتروني", "Email")}
+                <span className="text-destructive font-bold ms-1" aria-hidden="true">
+                  *
+                </span>
+              </Label>
               <Input
                 id="checkout-email"
                 name="email"
@@ -1002,12 +1147,15 @@ function Checkout() {
               <Label htmlFor="digital-delivery-contact">
                 {digitalChannel === "email"
                   ? t("البريد الإلكتروني", "Email address")
-                  : t("رقم أو معرّف واتساب", "WhatsApp number or user ID")}{" "}
-                *
+                  : t("رقم أو معرّف واتساب", "WhatsApp number or user ID")}
+                <span className="text-destructive font-bold ms-1" aria-hidden="true">
+                  *
+                </span>
               </Label>
               <Input
                 id="digital-delivery-contact"
                 name="digital-delivery-contact"
+                required
                 className="h-11"
                 type={digitalChannel === "email" ? "email" : "text"}
                 inputMode={digitalChannel === "email" ? "email" : "text"}

@@ -267,46 +267,13 @@ export function StorefrontProvider({
   const langKey = `storefront-lang:${brand.slug}`;
   const wishlistKey = `storefront-wishlist:${brand.slug}`;
 
-  const [lang, setLangState] = useState<StoreLang>(() => {
-    if (typeof window === "undefined") return "ar";
-    try {
-      const l = localStorage.getItem(langKey);
-      if (l === "en" || l === "ar") return l;
-    } catch {
-      /* ignore storage error */
-    }
-    return "ar";
-  });
-
-  const [cart, setCart] = useState<CartItem[]>(() => {
-    if (typeof window === "undefined") return [];
-    try {
-      const c = localStorage.getItem(cartKey);
-      if (c) {
-        const stored = JSON.parse(c) as Array<Partial<CartItem> & { variant_id: string }>;
-        return stored.map((item) => ({
-          ...item,
-          cart_line_id: item.cart_line_id || cartLineId(item as CartItem),
-        })) as CartItem[];
-      }
-    } catch {
-      /* ignore storage error */
-    }
-    return [];
-  });
-
-  const [wishlist, setWishlist] = useState<string[]>(() => {
-    if (typeof window === "undefined") return [];
-    try {
-      const w = localStorage.getItem(wishlistKey);
-      if (w) {
-        return Array.from(new Set(JSON.parse(w) as string[]));
-      }
-    } catch {
-      /* ignore storage error */
-    }
-    return [];
-  });
+  // Keep the server render and first client render identical. Browser preferences
+  // are restored after hydration so React never compares SSR Arabic/empty state
+  // with localStorage-backed English/cart/wishlist markup.
+  const [lang, setLangState] = useState<StoreLang>("ar");
+  const [cart, setCart] = useState<CartItem[]>([]);
+  const [wishlist, setWishlist] = useState<string[]>([]);
+  const [storageHydrated, setStorageHydrated] = useState(false);
 
   const [session, setSession] = useState<Session | null>(null);
   const [isStoreMember, setIsStoreMember] = useState(false);
@@ -314,19 +281,55 @@ export function StorefrontProvider({
 
   useEffect(() => {
     try {
+      const storedLang = localStorage.getItem(langKey);
+      if (storedLang === "en" || storedLang === "ar") setLangState(storedLang);
+
+      const isThankYouPage =
+        typeof window !== "undefined" && window.location.pathname.includes("/thank-you/");
+      if (isThankYouPage) {
+        localStorage.removeItem(cartKey);
+        setCart([]);
+      } else {
+        const storedCart = localStorage.getItem(cartKey);
+        if (storedCart) {
+          const parsed = JSON.parse(storedCart) as Array<
+            Partial<CartItem> & { variant_id: string }
+          >;
+          setCart(
+            parsed.map((item) => ({
+              ...item,
+              cart_line_id: item.cart_line_id || cartLineId(item as CartItem),
+            })) as CartItem[],
+          );
+        }
+      }
+
+      const storedWishlist = localStorage.getItem(wishlistKey);
+      if (storedWishlist) setWishlist(Array.from(new Set(JSON.parse(storedWishlist) as string[])));
+    } catch {
+      /* ignore invalid or unavailable browser storage */
+    } finally {
+      setStorageHydrated(true);
+    }
+  }, [cartKey, langKey, wishlistKey]);
+
+  useEffect(() => {
+    if (!storageHydrated) return;
+    try {
       localStorage.setItem(cartKey, JSON.stringify(cart));
     } catch {
       /* ignore storage error */
     }
-  }, [cart, cartKey]);
+  }, [cart, cartKey, storageHydrated]);
 
   useEffect(() => {
+    if (!storageHydrated) return;
     try {
       localStorage.setItem(wishlistKey, JSON.stringify(wishlist));
     } catch {
       /* ignore storage error */
     }
-  }, [wishlist, wishlistKey]);
+  }, [wishlist, wishlistKey, storageHydrated]);
 
   const checkMembership = useCallback(
     async (activeSession: Session | null): Promise<boolean> => {
@@ -409,6 +412,9 @@ export function StorefrontProvider({
           .reduce((sum, c) => sum + c.qty, 0);
         const availableForLine = Math.max(0, item.max_stock - usedByOtherConfigurations);
         if (existing) {
+          if (availableForLine === 0) {
+            return prev.filter((c) => c.cart_line_id !== lineId);
+          }
           return prev.map((c) =>
             c.cart_line_id === lineId
               ? { ...c, qty: Math.min(availableForLine, c.qty + item.qty) }
@@ -445,16 +451,24 @@ export function StorefrontProvider({
       const usedByOthers = prev
         .filter((c) => c.variant_id === target.variant_id && c.cart_line_id !== cart_line_id)
         .reduce((sum, c) => sum + c.qty, 0);
-      const availableForLine = Math.max(1, target.max_stock - usedByOthers);
+      const availableForLine = Math.max(0, target.max_stock - usedByOthers);
+      if (qty <= 0 || availableForLine <= 0) {
+        return prev.filter((c) => c.cart_line_id !== cart_line_id);
+      }
       return prev.map((c) =>
-        c.cart_line_id === cart_line_id
-          ? { ...c, qty: Math.min(availableForLine, Math.max(1, qty)) }
-          : c,
+        c.cart_line_id === cart_line_id ? { ...c, qty: Math.min(availableForLine, qty) } : c,
       );
     });
   }, []);
 
-  const clearCart = useCallback(() => setCart([]), []);
+  const clearCart = useCallback(() => {
+    setCart([]);
+    try {
+      localStorage.setItem(cartKey, "[]");
+    } catch {
+      /* ignore storage error */
+    }
+  }, [cartKey]);
 
   const signOut = useCallback(async () => {
     await supabase.auth.signOut();

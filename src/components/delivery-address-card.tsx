@@ -102,7 +102,9 @@ export function DeliveryAddressCard({
           </div>
         </div>
         <p className="text-xs text-foreground/90 font-medium leading-relaxed break-words">
-          {address.formatted_address || addressInlineSummary || (isAr ? "لا تتوفّر تفاصيل عنوان" : "No address details")}
+          {address.formatted_address ||
+            addressInlineSummary ||
+            (isAr ? "لا تتوفّر تفاصيل عنوان" : "No address details")}
         </p>
         {address.delivery_notes && (
           <p className="text-[11px] text-amber-800 dark:text-amber-300 font-medium truncate">
@@ -114,10 +116,7 @@ export function DeliveryAddressCard({
   }
 
   return (
-    <div
-      className="rounded-xl border bg-background p-4"
-      dir={isAr ? "rtl" : "ltr"}
-    >
+    <div className="rounded-xl border bg-background p-4" dir={isAr ? "rtl" : "ltr"}>
       <div className="mb-3 flex items-start justify-between gap-3">
         {showLabel ? (
           <div className="flex items-center gap-2">

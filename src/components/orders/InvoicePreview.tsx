@@ -416,6 +416,19 @@ export default function InvoicePreview({
                   {L.paymentMethod}: {tPayment(order.payment_method, invoiceLang)}
                 </p>
               )}
+              {(order.gateway_reference || order.payment_intent_id || order.tap_id) && (
+                <p
+                  className="text-[10px] mt-1 break-all"
+                  style={{
+                    opacity: 0.5,
+                    maxWidth: "160px",
+                    marginLeft: isRTL ? "0" : "auto",
+                    marginRight: isRTL ? "auto" : "0",
+                  }}
+                >
+                  Ref: {order.gateway_reference || order.payment_intent_id || order.tap_id}
+                </p>
+              )}
             </div>
           </div>
 

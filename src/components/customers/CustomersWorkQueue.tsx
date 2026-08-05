@@ -9,8 +9,20 @@ import {
   ChevronRight,
   AlertTriangle,
   MessageCircle,
+  Trash2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 interface CustomersWorkQueueProps {
   lang: "en" | "ar";
@@ -33,6 +45,7 @@ export const CustomersWorkQueue: React.FC<CustomersWorkQueueProps> = ({
   isLoading,
   isError,
   onSelectCustomer,
+  onDeleteCustomer,
 }) => {
   const isAr = lang === "ar";
 
@@ -199,11 +212,47 @@ export const CustomersWorkQueue: React.FC<CustomersWorkQueueProps> = ({
                     {formatMoney(stats.lifetimeSpend, currency, lang)}
                   </td>
 
-                  {/* Arrow Action */}
-                  <td className="p-3 align-middle text-center">
-                    <ChevronRight
-                      className={`h-4 w-4 text-muted-foreground group-hover:text-primary transition-transform ${isAr ? "rotate-180" : ""}`}
-                    />
+                  {/* Row actions */}
+                  <td className="p-3 align-middle text-center" onClick={(e) => e.stopPropagation()}>
+                    <div className="flex items-center justify-center gap-1">
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="h-10 w-10 text-destructive hover:text-destructive"
+                            aria-label={isAr ? `حذف العميل ${c.name}` : `Delete customer ${c.name}`}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-lg">
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>
+                              {isAr ? "حذف العميل" : "Delete customer"}
+                            </AlertDialogTitle>
+                            <AlertDialogDescription>
+                              {isAr
+                                ? `هل أنت متأكد من حذف ${c.name}؟ لا يمكن التراجع عن هذا الإجراء.`
+                                : `Delete ${c.name}? This action cannot be undone.`}
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>{isAr ? "إلغاء" : "Cancel"}</AlertDialogCancel>
+                            <AlertDialogAction
+                              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                              onClick={() => onDeleteCustomer(c)}
+                            >
+                              {isAr ? "حذف" : "Delete"}
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                      <ChevronRight
+                        className={`h-4 w-4 text-muted-foreground group-hover:text-primary transition-transform ${isAr ? "rotate-180" : ""}`}
+                      />
+                    </div>
                   </td>
                 </tr>
               );

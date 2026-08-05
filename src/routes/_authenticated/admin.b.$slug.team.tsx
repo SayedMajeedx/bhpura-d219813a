@@ -457,12 +457,12 @@ function TeamManagement() {
             {isAr ? "فريق العمل" : "Team Members"}
           </h3>
           <p className="text-muted-foreground mb-8 max-w-md mx-auto">
-            {isAr 
-              ? "قم بدعوة أعضاء فريقك للتعاون في إدارة الطلبات والمخزون والإعدادات بصلاحيات مخصصة." 
+            {isAr
+              ? "قم بدعوة أعضاء فريقك للتعاون في إدارة الطلبات والمخزون والإعدادات بصلاحيات مخصصة."
               : "Invite your team members to collaborate on managing orders, inventory, and settings with customized permissions."}
           </p>
-          <Button 
-            onClick={() => setAddOpen(true)} 
+          <Button
+            onClick={() => setAddOpen(true)}
             className="shadow-md transition-transform hover:scale-[1.02] active:scale-95 px-8 font-bold"
             size="lg"
           >
@@ -475,11 +475,18 @@ function TeamManagement() {
           {/* Mobile Card View */}
           <div className="grid grid-cols-1 gap-3 md:hidden">
             {filteredStaff.map((member) => (
-              <Card key={member.id} className="p-4 border-border/60 shadow-sm rounded-xl bg-card/80 backdrop-blur flex flex-col gap-3">
+              <Card
+                key={member.id}
+                className="p-4 border-border/60 shadow-sm rounded-xl bg-card/80 backdrop-blur flex flex-col gap-3"
+              >
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex flex-col min-w-0">
-                    <span className="font-bold text-base truncate">{member.name || member.email.split("@")[0]}</span>
-                    <span className="text-xs text-muted-foreground truncate" dir="ltr">{member.email}</span>
+                    <span className="font-bold text-base truncate">
+                      {member.name || member.email.split("@")[0]}
+                    </span>
+                    <span className="text-xs text-muted-foreground truncate" dir="ltr">
+                      {member.email}
+                    </span>
                   </div>
                   <span
                     className={`shrink-0 inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full font-medium ${
@@ -501,7 +508,7 @@ function TeamManagement() {
                     )}
                   </span>
                 </div>
-                
+
                 <div className="flex flex-wrap items-center gap-2">
                   <span
                     className={`inline-flex items-center gap-1 text-xs px-2 py-1 rounded-md font-semibold ${
@@ -541,9 +548,12 @@ function TeamManagement() {
                       </>
                     )}
                   </span>
-                  
+
                   {member.phone && (
-                    <span className="inline-flex items-center gap-1 text-[10px] font-mono bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 px-2 py-1 rounded-md" dir="ltr">
+                    <span
+                      className="inline-flex items-center gap-1 text-[10px] font-mono bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 px-2 py-1 rounded-md"
+                      dir="ltr"
+                    >
                       📱 {member.phone}
                     </span>
                   )}
@@ -553,7 +563,7 @@ function TeamManagement() {
                   <span className="text-[10px] text-muted-foreground font-medium">
                     {new Date(member.created_at).toLocaleDateString(locale)}
                   </span>
-                  
+
                   <div className="flex items-center gap-1">
                     {(() => {
                       const isSelf = member.id === currentUser?.id;
@@ -570,7 +580,12 @@ function TeamManagement() {
                       }
                       return (
                         <>
-                          <Button variant="outline" size="sm" className="h-8 w-8 p-0" onClick={() => openEdit(member)}>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-8 w-8 p-0"
+                            onClick={() => openEdit(member)}
+                          >
                             <Pencil className="h-4 w-4" />
                           </Button>
                           {member.status === "active" && (
@@ -612,173 +627,179 @@ function TeamManagement() {
             ))}
           </div>
 
-        {/* Desktop Table View */}
-        <Card className="hidden md:block overflow-hidden border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm lg:min-w-[640px]">
-              <thead className="border-b bg-muted/40 font-semibold text-muted-foreground">
-                <tr>
-                  <th className="p-4 text-start">{isAr ? "الاسم" : "Name"}</th>
-                  <th className="hidden p-4 text-start md:table-cell">
-                    {isAr ? "البريد الإلكتروني" : "Email"}
-                  </th>
-                  <th className="hidden p-4 text-start sm:table-cell">
-                    {isAr ? "الهاتف / الواتساب" : "Phone / WhatsApp"}
-                  </th>
-                  <th className="p-4 text-start">{isAr ? "الدور" : "Role"}</th>
-                  <th className="hidden p-4 text-start sm:table-cell">
-                    {isAr ? "الحالة" : "Status"}
-                  </th>
-                  <th className="hidden p-4 text-start lg:table-cell">
-                    {isAr ? "تاريخ الإنشاء" : "Created"}
-                  </th>
-                  <th className="p-4 text-end">{isAr ? "إجراءات" : "Actions"}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredStaff.map((member) => (
-                  <tr key={member.id} className="border-t border-border">
-                    <td className="p-4 font-medium">{member.name || member.email.split("@")[0]}</td>
-                    <td className="hidden p-4 text-muted-foreground md:table-cell" dir="ltr">
-                      {member.email}
-                    </td>
-                    <td className="hidden p-4 text-muted-foreground sm:table-cell" dir="ltr">
-                      {member.phone ? (
-                        <span className="inline-flex items-center gap-1 text-xs font-mono bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 px-2 py-0.5 rounded-md">
-                          📱 {member.phone}
-                        </span>
-                      ) : (
-                        <span className="text-xs text-muted-foreground/60 italic">
-                          {isAr ? "غير محدد" : "None"}
-                        </span>
-                      )}
-                    </td>
-                    <td className="p-4">
-                      <span
-                        className={`inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full ${
-                          member.role === "super_admin"
-                            ? "bg-amber-500/15 text-amber-700 dark:text-amber-400"
-                            : member.role === "brand_admin"
-                              ? "bg-blue-500/15 text-blue-700 dark:text-blue-400"
-                              : member.role === "admin"
-                                ? "bg-primary/10 text-primary"
-                                : "bg-secondary text-secondary-foreground"
-                        }`}
-                      >
-                        {member.role === "super_admin" ? (
-                          <>
-                            <Crown className="h-3 w-3" />
-                            {isAr ? "مدير عام" : "Super Admin"}
-                          </>
-                        ) : member.role === "brand_admin" ? (
-                          <>
-                            <Shield className="h-3 w-3" />
-                            {isAr ? "مدير علامة تجارية" : "Brand Admin"}
-                          </>
-                        ) : member.role === "admin" ? (
-                          <>
-                            <Shield className="h-3 w-3" />
-                            {isAr ? "مدير" : "Admin"}
-                          </>
-                        ) : member.role === "courier" ? (
-                          <>
-                            <Users className="h-3 w-3" />
-                            {isAr ? "مندوب توصيل" : "Courier"}
-                          </>
+          {/* Desktop Table View */}
+          <Card className="hidden md:block overflow-hidden border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm">
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm lg:min-w-[640px]">
+                <thead className="border-b bg-muted/40 font-semibold text-muted-foreground">
+                  <tr>
+                    <th className="p-4 text-start">{isAr ? "الاسم" : "Name"}</th>
+                    <th className="hidden p-4 text-start md:table-cell">
+                      {isAr ? "البريد الإلكتروني" : "Email"}
+                    </th>
+                    <th className="hidden p-4 text-start sm:table-cell">
+                      {isAr ? "الهاتف / الواتساب" : "Phone / WhatsApp"}
+                    </th>
+                    <th className="p-4 text-start">{isAr ? "الدور" : "Role"}</th>
+                    <th className="hidden p-4 text-start sm:table-cell">
+                      {isAr ? "الحالة" : "Status"}
+                    </th>
+                    <th className="hidden p-4 text-start lg:table-cell">
+                      {isAr ? "تاريخ الإنشاء" : "Created"}
+                    </th>
+                    <th className="p-4 text-end">{isAr ? "إجراءات" : "Actions"}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredStaff.map((member) => (
+                    <tr key={member.id} className="border-t border-border">
+                      <td className="p-4 font-medium">
+                        {member.name || member.email.split("@")[0]}
+                      </td>
+                      <td className="hidden p-4 text-muted-foreground md:table-cell" dir="ltr">
+                        {member.email}
+                      </td>
+                      <td className="hidden p-4 text-muted-foreground sm:table-cell" dir="ltr">
+                        {member.phone ? (
+                          <span className="inline-flex items-center gap-1 text-xs font-mono bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 px-2 py-0.5 rounded-md">
+                            📱 {member.phone}
+                          </span>
                         ) : (
-                          <>
-                            <Users className="h-3 w-3" />
-                            {isAr ? "موظف" : "Staff"}
-                          </>
+                          <span className="text-xs text-muted-foreground/60 italic">
+                            {isAr ? "غير محدد" : "None"}
+                          </span>
                         )}
-                      </span>
-                    </td>
-
-                    <td className="p-4">
-                      <span
-                        className={`inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full ${
-                          member.status === "active"
-                            ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400"
-                            : "bg-neutral-500/15 text-neutral-700 dark:text-neutral-300"
-                        }`}
-                      >
-                        {member.status === "active" ? (
-                          <>
-                            <Check className="h-3 w-3" />
-                            {isAr ? "نشط" : "Active"}
-                          </>
-                        ) : (
-                          <>
-                            <X className="h-3 w-3" />
-                            {isAr ? "غير نشط" : "Inactive"}
-                          </>
-                        )}
-                      </span>
-                    </td>
-                    <td className="hidden p-4 text-muted-foreground lg:table-cell">
-                      {new Date(member.created_at).toLocaleDateString(locale)}
-                    </td>
-                    <td className="p-4 text-end">
-                      <div className="flex items-center justify-end gap-1">
-                        {(() => {
-                          const isSelf = member.id === currentUser?.id;
-                          const targetIsSuper =
-                            member.role === "super_admin" ||
-                            member.email.toLowerCase() === SUPER_ADMIN_EMAIL;
-                          const canManage = !isSelf && (!targetIsSuper || isSuperAdmin);
-                          if (!canManage) {
-                            return (
-                              <span className="text-xs text-muted-foreground">
-                                {isSelf ? (isAr ? "أنت" : "You") : isAr ? "محمي" : "Protected"}
-                              </span>
-                            );
-                          }
-                          return (
+                      </td>
+                      <td className="p-4">
+                        <span
+                          className={`inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full ${
+                            member.role === "super_admin"
+                              ? "bg-amber-500/15 text-amber-700 dark:text-amber-400"
+                              : member.role === "brand_admin"
+                                ? "bg-blue-500/15 text-blue-700 dark:text-blue-400"
+                                : member.role === "admin"
+                                  ? "bg-primary/10 text-primary"
+                                  : "bg-secondary text-secondary-foreground"
+                          }`}
+                        >
+                          {member.role === "super_admin" ? (
                             <>
-                              <Button variant="ghost" size="icon" onClick={() => openEdit(member)}>
-                                <Pencil className="h-4 w-4" />
-                              </Button>
-                              {member.status === "active" && (
+                              <Crown className="h-3 w-3" />
+                              {isAr ? "مدير عام" : "Super Admin"}
+                            </>
+                          ) : member.role === "brand_admin" ? (
+                            <>
+                              <Shield className="h-3 w-3" />
+                              {isAr ? "مدير علامة تجارية" : "Brand Admin"}
+                            </>
+                          ) : member.role === "admin" ? (
+                            <>
+                              <Shield className="h-3 w-3" />
+                              {isAr ? "مدير" : "Admin"}
+                            </>
+                          ) : member.role === "courier" ? (
+                            <>
+                              <Users className="h-3 w-3" />
+                              {isAr ? "مندوب توصيل" : "Courier"}
+                            </>
+                          ) : (
+                            <>
+                              <Users className="h-3 w-3" />
+                              {isAr ? "موظف" : "Staff"}
+                            </>
+                          )}
+                        </span>
+                      </td>
+
+                      <td className="p-4">
+                        <span
+                          className={`inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full ${
+                            member.status === "active"
+                              ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400"
+                              : "bg-neutral-500/15 text-neutral-700 dark:text-neutral-300"
+                          }`}
+                        >
+                          {member.status === "active" ? (
+                            <>
+                              <Check className="h-3 w-3" />
+                              {isAr ? "نشط" : "Active"}
+                            </>
+                          ) : (
+                            <>
+                              <X className="h-3 w-3" />
+                              {isAr ? "غير نشط" : "Inactive"}
+                            </>
+                          )}
+                        </span>
+                      </td>
+                      <td className="hidden p-4 text-muted-foreground lg:table-cell">
+                        {new Date(member.created_at).toLocaleDateString(locale)}
+                      </td>
+                      <td className="p-4 text-end">
+                        <div className="flex items-center justify-end gap-1">
+                          {(() => {
+                            const isSelf = member.id === currentUser?.id;
+                            const targetIsSuper =
+                              member.role === "super_admin" ||
+                              member.email.toLowerCase() === SUPER_ADMIN_EMAIL;
+                            const canManage = !isSelf && (!targetIsSuper || isSuperAdmin);
+                            if (!canManage) {
+                              return (
+                                <span className="text-xs text-muted-foreground">
+                                  {isSelf ? (isAr ? "أنت" : "You") : isAr ? "محمي" : "Protected"}
+                                </span>
+                              );
+                            }
+                            return (
+                              <>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => openEdit(member)}
+                                >
+                                  <Pencil className="h-4 w-4" />
+                                </Button>
+                                {member.status === "active" && (
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                                    title={isAr ? "إلغاء تفعيل الحساب" : "Deactivate account"}
+                                    onClick={() => handleUpdate(member.id, { status: "inactive" })}
+                                  >
+                                    <UserX className="h-4 w-4" />
+                                  </Button>
+                                )}
+                                {member.status === "inactive" && (
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50"
+                                    title={isAr ? "إعادة تفعيل الحساب" : "Reactivate account"}
+                                    onClick={() => handleUpdate(member.id, { status: "active" })}
+                                  >
+                                    <Check className="h-4 w-4" />
+                                  </Button>
+                                )}
                                 <Button
                                   variant="ghost"
                                   size="icon"
                                   className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                                  title={isAr ? "إلغاء تفعيل الحساب" : "Deactivate account"}
-                                  onClick={() => handleUpdate(member.id, { status: "inactive" })}
+                                  onClick={() => setDeleteConfirm(member)}
                                 >
-                                  <UserX className="h-4 w-4" />
+                                  <Trash2 className="h-4 w-4" />
                                 </Button>
-                              )}
-                              {member.status === "inactive" && (
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50"
-                                  title={isAr ? "إعادة تفعيل الحساب" : "Reactivate account"}
-                                  onClick={() => handleUpdate(member.id, { status: "active" })}
-                                >
-                                  <Check className="h-4 w-4" />
-                                </Button>
-                              )}
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                                onClick={() => setDeleteConfirm(member)}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </>
-                          );
-                        })()}
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </Card>
+                              </>
+                            );
+                          })()}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </Card>
         </div>
       )}
 

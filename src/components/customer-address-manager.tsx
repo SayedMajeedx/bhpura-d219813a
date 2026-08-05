@@ -97,9 +97,12 @@ export function CustomerAddressManager({
   useEffect(() => {
     if (addresses.length > 0) {
       const defaultId = addresses.find((a) => a.is_default)?.id || addresses[0]?.id;
-      if (defaultId && (!selectedAddressId || !addresses.some((a) => a.id === selectedAddressId))) {
-        setSelectedAddressId(defaultId);
-      }
+      if (defaultId)
+        setSelectedAddressId((currentId) =>
+          currentId && addresses.some((address) => address.id === currentId)
+            ? currentId
+            : defaultId,
+        );
     }
   }, [addresses]);
 
@@ -180,7 +183,10 @@ export function CustomerAddressManager({
             : "Your session has expired. Please sign in again.",
         );
       }
-      const normalizeVal = (v: string | null | undefined) => String(v || "").trim().toLowerCase();
+      const normalizeVal = (v: string | null | undefined) =>
+        String(v || "")
+          .trim()
+          .toLowerCase();
       const existingDup = addresses.find(
         (a) =>
           normalizeVal(a.region) === normalizeVal(payload.region) &&
@@ -286,7 +292,10 @@ export function CustomerAddressManager({
     if (addresses.length <= 1) return;
     setSaving(true);
     try {
-      const normalizeStr = (s: string | null | undefined) => String(s || "").trim().toLowerCase();
+      const normalizeStr = (s: string | null | undefined) =>
+        String(s || "")
+          .trim()
+          .toLowerCase();
       const map = new Map<string, ManagedCustomerAddress[]>();
 
       for (const addr of addresses) {
@@ -309,10 +318,7 @@ export function CustomerAddressManager({
               .update({ shipping_address_id: primary.id })
               .eq("shipping_address_id", dup.id);
 
-            await supabase
-              .from("customer_addresses")
-              .delete()
-              .eq("id", dup.id);
+            await supabase.from("customer_addresses").delete().eq("id", dup.id);
           }
         }
       }
@@ -350,7 +356,11 @@ export function CustomerAddressManager({
               disabled={saving}
               onClick={deduplicateAddresses}
               className="h-8 text-xs font-bold gap-1 text-amber-700 dark:text-amber-300 border-amber-300/60 bg-amber-500/10 hover:bg-amber-500/20 rounded-lg"
-              title={isAr ? "دمج وتنظيف العناوين المكررة تلقائياً" : "Merge and clean duplicate addresses automatically"}
+              title={
+                isAr
+                  ? "دمج وتنظيف العناوين المكررة تلقائياً"
+                  : "Merge and clean duplicate addresses automatically"
+              }
             >
               <Sparkles className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
               <span>{isAr ? "تنظيف المكررات" : "Deduplicate"}</span>
@@ -392,7 +402,9 @@ export function CustomerAddressManager({
                 {addresses.length > 1 && (
                   <div className="space-y-1">
                     <label className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
-                      {isAr ? `تحديد العنوان (${addresses.length})` : `Select Address (${addresses.length})`}
+                      {isAr
+                        ? `تحديد العنوان (${addresses.length})`
+                        : `Select Address (${addresses.length})`}
                     </label>
                     <Select value={activeAddress.id} onValueChange={setSelectedAddressId}>
                       <SelectTrigger className="w-full h-9 text-xs font-semibold rounded-xl bg-background border-border/80">
@@ -403,7 +415,9 @@ export function CustomerAddressManager({
                           <SelectItem key={a.id} value={a.id} className="text-xs font-medium">
                             <span className="flex items-center gap-1.5 truncate">
                               <strong>{a.label || (isAr ? "عنوان" : "Address")}</strong>
-                              <span className="text-muted-foreground">— {a.region || a.block || a.road}</span>
+                              <span className="text-muted-foreground">
+                                — {a.region || a.block || a.road}
+                              </span>
                               {a.is_default && (
                                 <span className="ms-auto font-bold text-primary text-[10px]">
                                   ({isAr ? "الافتراضي" : "Default"})
@@ -419,7 +433,12 @@ export function CustomerAddressManager({
 
                 {/* Selected Active Address Card */}
                 <div className="space-y-2">
-                  <DeliveryAddressCard address={activeAddress} lang={lang} compact showLabel={false} />
+                  <DeliveryAddressCard
+                    address={activeAddress}
+                    lang={lang}
+                    compact
+                    showLabel={false}
+                  />
 
                   {/* Actions Bar: Edit, Delete, Set as Default */}
                   <div className="flex flex-wrap items-center justify-between gap-2 pt-1">

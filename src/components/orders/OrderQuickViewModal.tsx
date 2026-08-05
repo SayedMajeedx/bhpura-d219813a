@@ -18,6 +18,7 @@ import {
   MessageSquare,
   Package,
 } from "lucide-react";
+import { useProfile } from "@/lib/profile-context";
 
 interface OrderQuickViewModalProps {
   lang: "ar" | "en";
@@ -44,6 +45,7 @@ export function OrderQuickViewModal({
   onWhatsAppCourier,
   onAssignCourier,
 }: OrderQuickViewModalProps) {
+  const { isAdmin } = useProfile();
   if (!order) return null;
 
   const isAr = lang === "ar";
@@ -158,6 +160,14 @@ export function OrderQuickViewModal({
                 {isAr ? "حالة الدفع: " : "Status: "}
                 {order.payment_status || "pending"}
               </p>
+              {isAdmin && (order.gateway_reference || order.payment_intent_id || order.tap_id) && (
+                <div className="mt-2 pt-2 border-t border-border/40">
+                  <p className="text-[10px] text-muted-foreground mb-0.5">Reference ID:</p>
+                  <p className="text-[11px] font-mono break-all">
+                    {order.gateway_reference || order.payment_intent_id || order.tap_id}
+                  </p>
+                </div>
+              )}
             </div>
 
             <div className="p-3.5 rounded-xl bg-muted/40 border border-border/60 space-y-1 text-xs">

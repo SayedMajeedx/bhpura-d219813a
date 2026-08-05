@@ -129,6 +129,16 @@ export const Route = createFileRoute("/api/public/webhooks/tap")({
               return new Response(`Database update error: ${updateError.message}`, { status: 500 });
             }
 
+            const { error: stockError } = await supabaseAdmin.rpc("sync_order_stock", {
+              p_order_id: orderId,
+            });
+            if (stockError) {
+              console.error("[Tap Webhook Stock Sync Error]:", stockError);
+              return new Response(`Stock reconciliation error: ${stockError.message}`, {
+                status: 500,
+              });
+            }
+
             console.log(
               `[Tap Webhook Success]: Securely verified and confirmed payment for Order ${orderId}`,
             );
@@ -136,6 +146,39 @@ export const Route = createFileRoute("/api/public/webhooks/tap")({
             console.warn(
               `[Tap Webhook Non-success Status]: Charge status ${verifiedStatus} for Order ${orderId}`,
             );
+
+            const terminalFailureStatuses = new Set([
+              "ABANDONED",
+              "CANCELLED",
+              "DECLINED",
+              "FAILED",
+              "RESTRICTED",
+              "TIMEDOUT",
+              "VOID",
+            ]);
+            if (terminalFailureStatuses.has(verifiedStatus || "")) {
+              const { error: cancelError } = await supabaseAdmin
+                .from("orders")
+                .update({
+                  payment_status: verifiedStatus === "DECLINED" ? "declined" : "failed",
+                } as any)
+                .eq("id", orderId)
+                .eq("brand_id", brandId);
+              if (cancelError) {
+                console.error("[Tap Webhook Cancellation Error]:", cancelError);
+                return new Response(`Order cancellation error: ${cancelError.message}`, {
+                  status: 500,
+                });
+              }
+
+              const { error: stockError } = await supabaseAdmin.rpc("sync_order_stock", {
+                p_order_id: orderId,
+              });
+              if (stockError) {
+                console.error("[Tap Webhook Stock Release Error]:", stockError);
+                return new Response(`Stock release error: ${stockError.message}`, { status: 500 });
+              }
+            }
           }
 
           return new Response("OK", { status: 200 });

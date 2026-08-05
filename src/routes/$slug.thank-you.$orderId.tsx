@@ -3,6 +3,8 @@ import { useStorefront } from "@/lib/storefront-context";
 import { Card } from "@/components/ui/card";
 import { CheckCircle2 } from "lucide-react";
 import { useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { publicSupabase as supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/$slug/thank-you/$orderId")({
   validateSearch: (search: Record<string, unknown>) => ({
@@ -20,12 +22,48 @@ export const Route = createFileRoute("/$slug/thank-you/$orderId")({
 function ThankYou() {
   const { brand, settings, t, clearCart } = useStorefront();
   const { fulfillment, channel } = Route.useSearch();
-  const isPickup = fulfillment === "pickup";
-  const isDigital = fulfillment === "digital";
+  const { orderId } = Route.useParams();
 
   useEffect(() => {
     clearCart();
   }, [clearCart]);
+
+  // Fetch actual order details from Supabase to prevent URL manipulation and ensure correct presentation
+  const { data: order, isLoading } = useQuery({
+    queryKey: ["storefront", "order", orderId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("orders")
+        .select("fulfillment_method, digital_delivery_channel")
+        .eq("id", orderId)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!orderId,
+  });
+
+  const orderFulfillment = order?.fulfillment_method || fulfillment;
+  const orderChannel = order?.digital_delivery_channel || channel;
+
+  const isPickup = orderFulfillment === "pickup";
+  const isDigital = orderFulfillment === "digital";
+
+  if (isLoading) {
+    return (
+      <div className="mx-auto max-w-lg p-6 sm:p-8 flex items-center justify-center min-h-[300px]">
+        <div className="flex flex-col items-center gap-3">
+          <div
+            className="h-8 w-8 animate-spin rounded-full border-4 border-current border-t-transparent"
+            style={{ color: settings.primary_color }}
+          />
+          <p className="text-sm text-muted-foreground">
+            {t("جاري تحميل تفاصيل الطلب...", "Loading order details...")}
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="mx-auto max-w-lg p-6 sm:p-8 animate-in fade-in duration-500">
@@ -45,7 +83,7 @@ function ThankYou() {
         </h1>
         <p className="text-sm sm:text-base text-muted-foreground mb-6 leading-relaxed">
           {isDigital
-            ? channel === "whatsapp"
+            ? orderChannel === "whatsapp"
               ? t(
                   "تم استلام طلبك وسيتم إرسال المنتج الرقمي إليك عبر واتساب بعد تجهيز الطلب.",
                   "We received your order. Your digital product will be sent through WhatsApp once it is ready.",

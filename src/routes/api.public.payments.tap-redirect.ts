@@ -54,8 +54,29 @@ export const Route = createFileRoute("/api/public/payments/tap-redirect")({
             throw new Error(`Failed to fetch charge status from Tap: ${await tapRes.text()}`);
           }
 
-          const chargeData = await tapRes.json<{ status?: string }>();
+          const chargeData = await tapRes.json<{
+            status?: string;
+            metadata?: { order_id?: string; brand_id?: string };
+          }>();
           const chargeStatus = chargeData.status?.toUpperCase();
+
+          if (
+            chargeData.metadata?.order_id !== orderId ||
+            chargeData.metadata?.brand_id !== brandId
+          ) {
+            return new Response("Payment metadata verification failure.", { status: 400 });
+          }
+
+          const { data: order, error: orderError } = await supabaseAdmin
+            .from("orders")
+            .select("id, payment_gateway_reference, fulfillment_method, digital_delivery_channel")
+            .eq("id", orderId)
+            .eq("brand_id", brandId)
+            .maybeSingle();
+
+          if (orderError || !order || order.payment_gateway_reference !== tapId) {
+            return new Response("Payment reference verification failure.", { status: 400 });
+          }
 
           // 4. Handle success vs failure
           if (chargeStatus === "CAPTURED" || chargeStatus === "SUCCESS") {
@@ -72,39 +93,82 @@ export const Route = createFileRoute("/api/public/payments/tap-redirect")({
 
             if (updateError) {
               console.error("[Tap Redirect Update Error]:", updateError);
+              return new Response("Payment was verified but the order update failed.", {
+                status: 500,
+              });
             }
 
-            // Redirect to thank-you page
+            const { error: stockError } = await supabaseAdmin.rpc("sync_order_stock", {
+              p_order_id: orderId,
+            });
+            if (stockError) {
+              console.error("[Tap Redirect Stock Sync Error]:", stockError);
+              return new Response("Payment was verified but stock reconciliation failed.", {
+                status: 500,
+              });
+            }
+
+            const confirmationSearch = new URLSearchParams({
+              payment: "success",
+              fulfillment: order.fulfillment_method || "delivery",
+              channel: order.digital_delivery_channel || "email",
+            });
+
+            // Build confirmation messaging from the persisted order rather than
+            // stale or missing client-side checkout state.
             return new Response(null, {
               status: 302,
               headers: {
-                Location: `/${brandSlug}/thank-you/${orderId}?payment=success`,
+                Location: `/${brandSlug}/thank-you/${orderId}?${confirmationSearch.toString()}`,
               },
             });
           } else {
-            console.warn(`[Tap Payment Failed]: Order ${orderId}, Status: ${chargeStatus}`);
+            const terminalFailureStatuses = new Set([
+              "ABANDONED",
+              "CANCELLED",
+              "DECLINED",
+              "FAILED",
+              "RESTRICTED",
+              "TIMEDOUT",
+              "VOID",
+            ]);
+            const paymentError = terminalFailureStatuses.has(chargeStatus || "")
+              ? "failed"
+              : "pending";
+            console.warn(
+              `[Tap Payment Non-success]: Order ${orderId}, Status: ${chargeStatus || "UNKNOWN"}`,
+            );
 
-            // Clean up the failed/cancelled storefront order to prevent database clutter
-            const { error: deleteError } = await supabaseAdmin
-              .from("orders")
-              .delete()
-              .eq("id", orderId)
-              .eq("brand_id", brandId);
+            if (terminalFailureStatuses.has(chargeStatus || "")) {
+              const { error: cancelError } = await supabaseAdmin
+                .from("orders")
+                .update({
+                  payment_status: chargeStatus === "DECLINED" ? "declined" : "failed",
+                } as any)
+                .eq("id", orderId)
+                .eq("brand_id", brandId);
+              if (cancelError) {
+                console.error("[Tap Redirect Cancellation Error]:", cancelError);
+                return new Response("Payment failed but order cancellation failed.", {
+                  status: 500,
+                });
+              }
 
-            if (deleteError) {
-              console.error(
-                "[Tap Redirect Delete Error]: Failed to clean up failed order:",
-                deleteError,
-              );
-            } else {
-              console.log(`[Tap Redirect Cleanup]: Successfully deleted failed Order ${orderId}`);
+              const { error: stockError } = await supabaseAdmin.rpc("sync_order_stock", {
+                p_order_id: orderId,
+              });
+              if (stockError) {
+                console.error("[Tap Redirect Stock Release Error]:", stockError);
+                return new Response("Payment failed but stock release failed.", { status: 500 });
+              }
             }
 
-            // Redirect back to checkout with error parameter
+            // Retain the order for reconciliation. A redirect must never destroy an
+            // order, especially while the gateway status may still be transient.
             return new Response(null, {
               status: 302,
               headers: {
-                Location: `/${brandSlug}/checkout?payment_error=failed&order_id=${orderId}`,
+                Location: `/${brandSlug}/checkout?payment_error=${paymentError}&order_id=${orderId}`,
               },
             });
           }

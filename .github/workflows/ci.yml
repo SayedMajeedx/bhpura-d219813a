@@ -138,7 +138,7 @@ jobs:
         run: npm ci
 
       - name: Run dependency audit
-        run: npm audit --audit-level=high || echo "High vulnerability scan completed with warnings."
+        run: npm audit --audit-level=high
 
       - name: Run Gitleaks Secret Scan
         uses: gitleaks/gitleaks-action@7007d4f95d109f5466dd264878a100fb6e594d4d # v2.3.7

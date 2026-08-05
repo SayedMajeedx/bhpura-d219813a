@@ -72,7 +72,10 @@ export function ReportsToolbar({
                       <label className="text-[11px] font-medium text-muted-foreground">
                         {isAr ? "الفاصل الزمني" : "Interval"}
                       </label>
-                      <Select value={interval} onValueChange={(val) => setInterval(val as ReportInterval)}>
+                      <Select
+                        value={interval}
+                        onValueChange={(val) => setInterval(val as ReportInterval)}
+                      >
                         <SelectTrigger className="h-8 text-xs bg-muted/30 border-border/60">
                           <SelectValue />
                         </SelectTrigger>
@@ -135,7 +138,10 @@ export function ReportsToolbar({
                         <label className="text-[11px] font-medium text-muted-foreground">
                           {isAr ? "الفاصل الزمني" : "Interval"}
                         </label>
-                        <Select value={interval} onValueChange={(val) => setInterval(val as ReportInterval)}>
+                        <Select
+                          value={interval}
+                          onValueChange={(val) => setInterval(val as ReportInterval)}
+                        >
                           <SelectTrigger className="h-9 text-xs bg-muted/30 border-border/60">
                             <SelectValue />
                           </SelectTrigger>

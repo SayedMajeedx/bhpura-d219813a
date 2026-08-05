@@ -325,6 +325,8 @@ const en: Dict = {
   "payStatus.partial": "Partially Paid",
   "payStatus.unpaid": "Unpaid",
   "payStatus.refunded": "Refunded",
+  "payStatus.failed": "Failed",
+  "payStatus.declined": "Declined",
   "orderDetail.paymentStatus": "Payment Status",
 
   "invoice.total": "Total Amount",
@@ -678,6 +680,8 @@ const ar: Dict = {
   "payStatus.partial": "مدفوع جزئياً",
   "payStatus.unpaid": "غير مدفوع",
   "payStatus.refunded": "مسترجع",
+  "payStatus.failed": "فشل",
+  "payStatus.declined": "مرفوض",
   "orderDetail.paymentStatus": "حالة الدفع",
 
   "invoice.total": "المبلغ الإجمالي",
