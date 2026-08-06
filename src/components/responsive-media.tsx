@@ -160,7 +160,9 @@ export function OptimizedVideo({
   };
 
   return (
-    <div className={`relative ${wrapperClassName || "h-full w-full"}`}>
+    <div
+      className={`relative overflow-hidden bg-black/10 dark:bg-white/5 animate-pulse ${wrapperClassName || "h-full w-full"}`}
+    >
       {resolvedPoster && (
         <ResponsiveImage
           src={resolvedPoster}
@@ -196,9 +198,7 @@ export function OptimizedVideo({
         onPlaying={handleFrameReady}
         onTimeUpdate={handleFrameReady}
         onCanPlay={handleFrameReady}
-        className={`relative z-10 transition-opacity duration-500 ease-out ${
-          isVideoPlaying ? "opacity-100" : "opacity-0"
-        } ${className ?? "h-full w-full object-cover"}`}
+        className={`relative z-10 ${className ?? "h-full w-full object-cover"}`}
         {...props}
         onError={(event) => {
           props.onError?.(event);

@@ -89,12 +89,7 @@ function imageKitAssetPath(source: string): string | null {
     const sourceUrl = new URL(source);
     const endpointUrl = new URL(endpoint);
     const isPublicR2Media =
-      sourceUrl.hostname === "media.boutq.store" ||
-      sourceUrl.hostname.endsWith(".boutq.store") ||
-      sourceUrl.hostname.includes("supabase.co") ||
-      sourceUrl.hostname.includes("supabase.in") ||
-      sourceUrl.hostname.includes("r2.dev") ||
-      sourceUrl.hostname.includes("cloudflare");
+      sourceUrl.hostname === "media.boutq.store" || sourceUrl.hostname.endsWith(".boutq.store");
     const isImageKitAsset =
       sourceUrl.hostname === endpointUrl.hostname &&
       sourceUrl.pathname.startsWith(endpointUrl.pathname);
