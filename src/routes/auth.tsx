@@ -217,11 +217,11 @@ function AuthPage() {
 
           <div className="mb-6 space-y-2">
             <h2 className="text-xl sm:text-2xl font-bold font-heading text-white flex items-center gap-2">
-              <Lock className="h-5 w-5 text-primary shrink-0" />
+              <Lock className="h-5 w-5 text-rose-400 shrink-0" />
               <span>{t("auth.welcomeBack")}</span>
             </h2>
-            <p className="text-xs text-muted-foreground leading-relaxed flex items-start gap-2 bg-zinc-950/60 p-3.5 rounded-2xl border border-border">
-              <ShieldCheck className="h-4 w-4 mt-0.5 shrink-0 text-primary" />
+            <p className="text-xs text-zinc-200 leading-relaxed flex items-start gap-2 bg-zinc-950/90 p-3.5 rounded-2xl border border-zinc-800 shadow-inner">
+              <ShieldCheck className="h-4 w-4 mt-0.5 shrink-0 text-emerald-400" />
               <span>
                 {lang === "ar"
                   ? "يقتصر الدخول على الشركاء المعتمدين ومندوبي التوصيل. يرجى استخدام بيانات الاعتماد الصادرة عن إدارة البوتيك."
@@ -232,7 +232,7 @@ function AuthPage() {
 
           <form onSubmit={submit} className="space-y-4">
             <div className="space-y-1.5">
-              <Label htmlFor="email" className="text-xs font-bold text-muted-foreground">
+              <Label htmlFor="email" className="text-xs font-bold text-zinc-300">
                 {t("auth.email")}
               </Label>
               <Input
@@ -242,12 +242,12 @@ function AuthPage() {
                 placeholder="partner@boutq.store"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="h-11 bg-zinc-950/80 border-border text-foreground placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-xl transition-all font-medium"
+                className="h-11 bg-zinc-950/90 border-zinc-700 text-white placeholder:text-zinc-500 focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-2 rounded-xl transition-all font-medium"
               />
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="password" className="text-xs font-bold text-muted-foreground">
+              <Label htmlFor="password" className="text-xs font-bold text-zinc-300">
                 {t("auth.password")}
               </Label>
               <Input
@@ -258,22 +258,22 @@ function AuthPage() {
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="h-11 bg-zinc-950/80 border-border text-foreground placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-xl transition-all font-medium"
+                className="h-11 bg-zinc-950/90 border-zinc-700 text-white placeholder:text-zinc-500 focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-2 rounded-xl transition-all font-medium"
               />
             </div>
 
             <div className="flex items-center justify-between gap-2 pt-1">
-              <label className="flex items-center gap-2 text-xs font-semibold text-muted-foreground cursor-pointer select-none">
+              <label className="flex items-center gap-2 text-xs font-semibold text-zinc-300 cursor-pointer select-none">
                 <Checkbox
                   checked={remember}
                   onCheckedChange={(v) => setRemember(v === true)}
-                  className="border-border data-[state=checked]:bg-primary data-[state=checked]:border-primary data-[state=checked]:text-primary-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                  className="border-zinc-600 data-[state=checked]:bg-rose-600 data-[state=checked]:border-rose-600 data-[state=checked]:text-white focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-2"
                 />
                 <span>{t("auth.rememberMe")}</span>
               </label>
               <Link
                 to="/forgot-password"
-                className="text-xs font-bold text-primary hover:text-white underline transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-sm"
+                className="text-xs font-bold text-rose-300 hover:text-white underline transition-colors focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-2 rounded-sm"
               >
                 {t("auth.forgotPassword")}
               </Link>
@@ -282,7 +282,7 @@ function AuthPage() {
             <Button
               type="submit"
               disabled={loading}
-              className="w-full h-12 font-bold text-primary-foreground bg-primary hover:bg-primary/90 shadow-lg active:scale-[0.99] rounded-xl transition-all duration-200 mt-2 border border-primary/30 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              className="w-full h-12 font-bold text-white bg-rose-700 hover:bg-rose-600 active:bg-rose-800 shadow-lg active:scale-[0.99] rounded-xl transition-all duration-200 mt-2 border border-rose-500/40 focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-2"
             >
               {loading ? (
                 t("common.pleaseWait")
@@ -297,20 +297,20 @@ function AuthPage() {
 
           {passkeySupported && (
             <div className="mt-6 space-y-4">
-              <div className="flex items-center gap-3 text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
-                <span className="h-px flex-1 bg-border" />
+              <div className="flex items-center gap-3 text-[11px] font-bold text-zinc-400 uppercase tracking-wider">
+                <span className="h-px flex-1 bg-zinc-800" />
                 <span>{lang === "ar" ? "أو باستخدام" : "or biometric"}</span>
-                <span className="h-px flex-1 bg-border" />
+                <span className="h-px flex-1 bg-zinc-800" />
               </div>
 
               <Button
                 type="button"
                 variant="outline"
-                className="h-12 w-full gap-2.5 border-border bg-zinc-950/60 hover:bg-muted text-foreground font-semibold rounded-xl backdrop-blur-md shadow-xs transition-all active:scale-[0.99] focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                className="h-12 w-full gap-2.5 border-zinc-700 bg-zinc-950/80 hover:bg-zinc-800 text-white font-semibold rounded-xl backdrop-blur-md shadow-xs transition-all active:scale-[0.99] focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-2"
                 disabled={passkeyLoading || loading}
                 onClick={() => void signInWithPasskey()}
               >
-                <Fingerprint className="h-5 w-5 text-primary" />
+                <Fingerprint className="h-5 w-5 text-rose-400" />
                 <span>
                   {passkeyLoading
                     ? t("common.pleaseWait")
@@ -320,7 +320,7 @@ function AuthPage() {
                 </span>
               </Button>
 
-              <p className="text-center text-[11px] font-medium text-muted-foreground">
+              <p className="text-center text-[11px] font-medium text-zinc-400">
                 {lang === "ar"
                   ? "استخدم Face ID أو Touch ID أو مفتاح أمان مسجّل."
                   : "Use a registered Face ID, Touch ID, device PIN, or security key."}
@@ -333,7 +333,7 @@ function AuthPage() {
         <div className="text-center">
           <Link
             to="/"
-            className="text-xs font-bold text-primary hover:text-white transition-colors underline underline-offset-4 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-sm"
+            className="text-xs font-bold text-rose-300 hover:text-white transition-colors underline underline-offset-4 focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-2 rounded-sm"
           >
             {t("auth.backHome")}
           </Link>

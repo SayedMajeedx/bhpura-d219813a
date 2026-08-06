@@ -43,7 +43,12 @@ export function SettingsScopeSwitcher({
   const tabs = [
     { id: "business", icon: Building2, ar: "الملف التجاري", en: "Business Profile" },
     { id: "invoice", icon: Receipt, ar: "الفاتورة والطباعة", en: "Invoicing" },
-    { id: "storefront", icon: Store, ar: "واجهة المتجر", en: "Storefront SEO" },
+    {
+      id: "storefront",
+      icon: Store,
+      ar: "تصميم المتجر والـ SEO",
+      en: "Storefront & Branding",
+    },
     { id: "checkout", icon: Truck, ar: "الشحن والتسليم", en: "Fulfillment" },
     { id: "payments", icon: CreditCard, ar: "طرق الدفع", en: "Payments" },
     { id: "branches", icon: MapPin, ar: "الفروع والمواقع", en: "Branches" },
