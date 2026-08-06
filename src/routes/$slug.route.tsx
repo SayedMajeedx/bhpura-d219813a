@@ -285,18 +285,47 @@ function StorefrontLayout() {
   );
 }
 
+function hexToRgba(hex: string, alpha: number): string {
+  if (!hex || !hex.startsWith("#")) return `rgba(255, 255, 255, ${alpha})`;
+  let clean = hex.replace("#", "");
+  if (clean.length === 3) {
+    clean = clean
+      .split("")
+      .map((c) => c + c)
+      .join("");
+  }
+  if (clean.length !== 6) return `rgba(255, 255, 255, ${alpha})`;
+  const num = parseInt(clean, 16);
+  const r = (num >> 16) & 255;
+  const g = (num >> 8) & 255;
+  const b = num & 255;
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
+function isColorDark(hex: string | null | undefined): boolean {
+  if (!hex || !hex.startsWith("#")) return false;
+  let clean = hex.replace("#", "");
+  if (clean.length === 3) {
+    clean = clean
+      .split("")
+      .map((c) => c + c)
+      .join("");
+  }
+  if (clean.length !== 6) return false;
+  const num = parseInt(clean, 16);
+  const r = (num >> 16) & 255;
+  const g = (num >> 8) & 255;
+  const b = num & 255;
+  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+  return luminance < 0.5;
+}
+
 function StoreShell() {
   const { brand, settings, lang } = useStorefront();
   const qc = useQueryClient();
   const router = useRouter();
 
-  useEffect(() => {
-    // Clean up refresh tokens stored by the retired client-only pseudo-passkey flow.
-    localStorage.removeItem(`passkey_token_${brand.slug}`);
-    localStorage.removeItem(`passkey_registered_${brand.slug}`);
-  }, [brand.slug]);
-
-  const primary = settings.primary_color;
+  const primary = settings.primary_color || brand.primary_color || "#3f121a";
   const headerBg = settings.header_bg ?? settings.background_color ?? "#ffffff";
   const headerFg = settings.header_fg ?? readableOn(headerBg, settings.text_color);
   const footerBg = settings.footer_bg ?? settings.background_color ?? "#ffffff";
@@ -316,6 +345,12 @@ function StoreShell() {
   const storefrontFontUrl =
     lang === "ar" ? settings.storefront_font_ar_url : settings.storefront_font_en_url;
   const storefrontFontFamily = storefrontFontUrl ? "StorefrontCustomFont" : storefrontFont;
+
+  useEffect(() => {
+    // Clean up refresh tokens stored by the retired client-only pseudo-passkey flow.
+    localStorage.removeItem(`passkey_token_${brand.slug}`);
+    localStorage.removeItem(`passkey_registered_${brand.slug}`);
+  }, [brand.slug]);
 
   useEffect(() => {
     if (storefrontFontUrl || !storefrontFont) return;
@@ -376,7 +411,10 @@ function StoreShell() {
           ? "#059669"
           : "#330a0a";
 
-  const dynamicHeaderBg = isGlass ? "rgba(255, 255, 255, 0.78)" : headerBg;
+  const baseHeaderBg = settings.header_bg || "#ffffff";
+  const dynamicHeaderBg = isGlass ? hexToRgba(baseHeaderBg, 0.85) : baseHeaderBg;
+  const isDarkHeader = isColorDark(baseHeaderBg);
+  const dynamicHeaderFg = settings.header_fg || (isDarkHeader ? "#ffffff" : "#111111");
 
   return (
     <div
@@ -392,7 +430,7 @@ function StoreShell() {
           ["--radius-sf" as any]: radiusSf,
           ["--badge-accent-bg" as any]: badgeBg,
           ["--sf-header-bg" as any]: dynamicHeaderBg,
-          ["--sf-header-fg" as any]: headerFg,
+          ["--sf-header-fg" as any]: dynamicHeaderFg,
           ["--sf-footer-bg" as any]: footerBg,
           ["--sf-footer-fg" as any]: footerFg,
           ["--sf-btn-primary-bg" as any]: btnPrimaryBg,
@@ -403,7 +441,8 @@ function StoreShell() {
           ["--sf-btn-checkout-fg" as any]: btnCheckoutFg,
           ["--sf-cart-checkout-bg" as any]: cartDrawerCheckoutBg,
           ["--sf-cart-checkout-fg" as any]: cartDrawerCheckoutFg,
-          ["--sf-heading" as any]: headingColor,
+          ["--sf-heading" as any]:
+            settings.heading_color || (isDarkHeader ? "#ffffff" : headingColor),
           ["--sf-link" as any]: linkColor,
           ["--sf-font" as any]: `"${storefrontFontFamily}", sans-serif`,
           ["--font-sans" as any]: `"${storefrontFontFamily}", sans-serif`,
@@ -1286,12 +1325,19 @@ function DesktopStoreNavigation() {
   const mainCategories = data.filter((c: any) => !c.parent_id);
 
   return (
-    <nav className="hidden border-b bg-[var(--sf-header-bg)] text-[var(--sf-header-fg)] shadow-sm md:block overflow-visible">
+    <nav
+      className="hidden border-b shadow-sm md:block overflow-visible transition-colors duration-300"
+      style={{
+        backgroundColor: "var(--sf-header-bg)",
+        color: "var(--sf-header-fg)",
+        borderColor: "rgba(128, 128, 128, 0.15)",
+      }}
+    >
       <div className="mx-auto flex min-h-14 max-w-7xl items-center justify-center gap-2 flex-wrap px-6 py-2 overflow-visible">
         <Link
           to="/$slug"
           params={{ slug: brand.slug }}
-          className="shrink-0 rounded-xl border border-dashed px-5 py-2.5 font-semibold transition hover:-translate-y-0.5 hover:bg-black/5"
+          className="shrink-0 rounded-[var(--radius)] border border-dashed border-current/30 px-5 py-2.5 font-semibold transition hover:-translate-y-0.5 hover:bg-current/10"
         >
           {t("الصفحة الرئيسية", "Home")}
         </Link>
@@ -1313,8 +1359,8 @@ function DesktopStoreNavigation() {
                 <Link
                   to="/$slug/$category"
                   params={{ slug: brand.slug, category: url }}
-                  className={`flex items-center gap-1.5 rounded-xl px-5 py-2.5 text-base font-semibold transition hover:-translate-y-0.5 hover:bg-black/5 ${
-                    isSale(c) ? "font-bold text-red-600" : ""
+                  className={`flex items-center gap-1.5 rounded-[var(--radius)] px-5 py-2.5 text-base font-semibold transition hover:-translate-y-0.5 hover:bg-current/10 ${
+                    isSale(c) ? "font-bold text-red-500" : ""
                   }`}
                 >
                   <span>{name}</span>
@@ -1357,8 +1403,8 @@ function DesktopStoreNavigation() {
               key={c.id}
               to="/$slug/$category"
               params={{ slug: brand.slug, category: url }}
-              className={`shrink-0 rounded-xl px-5 py-2.5 text-base transition hover:-translate-y-0.5 hover:bg-black/5 ${
-                isSale(c) ? "font-bold text-red-600" : "font-semibold"
+              className={`shrink-0 rounded-[var(--radius)] px-5 py-2.5 text-base transition hover:-translate-y-0.5 hover:bg-current/10 ${
+                isSale(c) ? "font-bold text-red-500" : "font-semibold"
               }`}
               onMouseEnter={() => {
                 if (timeoutRef.current) {
@@ -1629,13 +1675,16 @@ function SearchBar() {
         variant="outline"
         aria-label={searchLabel}
         aria-haspopup="dialog"
-        className={`relative flex h-11 w-full justify-start font-normal bg-white/70 text-muted-foreground shadow-sm transition-colors hover:bg-white/90 dark:bg-black/20 dark:hover:bg-black/30 ${lang === "ar" ? "pr-9 pl-3" : "pl-9 pr-3"}`}
+        className={`relative flex h-11 w-full justify-start font-normal rounded-[var(--radius)] border bg-background/80 text-foreground shadow-sm transition-colors hover:bg-background ${lang === "ar" ? "pr-9 pl-3" : "pl-9 pr-3"}`}
+        style={{
+          borderColor: "rgba(128, 128, 128, 0.25)",
+        }}
         onClick={() => setModalOpen(true)}
       >
         <Search
-          className={`pointer-events-none absolute top-1/2 -translate-y-1/2 h-4 w-4 opacity-60 ${lang === "ar" ? "right-3" : "left-3"}`}
+          className={`pointer-events-none absolute top-1/2 -translate-y-1/2 h-4 w-4 opacity-70 ${lang === "ar" ? "right-3" : "left-3"}`}
         />
-        <span className="truncate">{searchPlaceholder}</span>
+        <span className="truncate opacity-80">{searchPlaceholder}</span>
       </Button>
 
       {/* Premium backdrop-blurred modal dialog */}
