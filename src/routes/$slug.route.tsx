@@ -453,7 +453,14 @@ function StoreShell() {
       {storefrontFontUrl && (
         <style>{`@font-face { font-family: 'StorefrontCustomFont'; src: url('${storefrontFontUrl}'); font-display: swap; }`}</style>
       )}
-      <div className="sticky top-0 z-40 backdrop-blur-md transition-all duration-300">
+      <div
+        className={`sticky top-0 z-40 ${isGlass ? "backdrop-blur-md" : ""}`}
+        style={{
+          backgroundColor: "var(--sf-header-bg)",
+          color: "var(--sf-header-fg)",
+          borderBottom: "1px solid rgba(0, 0, 0, 0.08)",
+        }}
+      >
         <AnnouncementBar />
         <StoreHeader />
         <DesktopStoreNavigation />
@@ -526,14 +533,7 @@ function StoreHeader() {
   }, []);
 
   return (
-    <header
-      className="w-full border-b backdrop-blur-md transition-colors duration-300"
-      style={{
-        backgroundColor: "var(--sf-header-bg)",
-        color: "var(--sf-header-fg)",
-        borderColor: "rgba(0,0,0,0.08)",
-      }}
-    >
+    <header className="w-full">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 py-2 flex flex-col gap-2">
         <div className="h-14 flex items-center gap-3 justify-between">
           <Link
@@ -1325,14 +1325,7 @@ function DesktopStoreNavigation() {
   const mainCategories = data.filter((c: any) => !c.parent_id);
 
   return (
-    <nav
-      className="hidden border-b shadow-sm md:block overflow-visible transition-colors duration-300"
-      style={{
-        backgroundColor: "var(--sf-header-bg)",
-        color: "var(--sf-header-fg)",
-        borderColor: "rgba(128, 128, 128, 0.15)",
-      }}
-    >
+    <nav className="hidden border-t border-white/10 md:block overflow-visible">
       <div className="mx-auto flex min-h-14 max-w-7xl items-center justify-center gap-2 flex-wrap px-6 py-2 overflow-visible">
         <Link
           to="/$slug"
