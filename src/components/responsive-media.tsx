@@ -160,9 +160,7 @@ export function OptimizedVideo({
   };
 
   return (
-    <div
-      className={`relative overflow-hidden bg-black/10 dark:bg-white/5 animate-pulse ${wrapperClassName || "h-full w-full"}`}
-    >
+    <div className={`relative ${wrapperClassName || "h-full w-full"}`}>
       {resolvedPoster && (
         <ResponsiveImage
           src={resolvedPoster}
