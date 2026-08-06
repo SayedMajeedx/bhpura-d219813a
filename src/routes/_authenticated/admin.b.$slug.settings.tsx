@@ -2505,10 +2505,10 @@ function CustomizerNavigation({
   isAr: boolean;
 }) {
   const items = [
-    ["general", isAr ? "الهوية والعرض" : "General & Branding"],
-    ["theme", isAr ? "المظهر والتنسيق" : "Theme & Styling"],
-    ["content", isAr ? "المحتوى والرسائل" : "Content & Messaging"],
-    ["promotions", isAr ? "البنرات الترويجية" : "Promotional Banners"],
+    ["theme", isAr ? "الألوان والمظهر (Theme & Colors)" : "Theme & Colors"],
+    ["general", isAr ? "الشعار والهوية (Logo & Header)" : "Logo & Header"],
+    ["content", isAr ? "المحتوى والرسائل (Content & Messaging)" : "Content & Messaging"],
+    ["promotions", isAr ? "البنرات الترويجية (Promotions)" : "Promotional Banners"],
   ] as const;
   return (
     <div
@@ -2725,7 +2725,7 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
   const [saving, setSaving] = useState(false);
   const [uploadingFont, setUploadingFont] = useState<null | "en" | "ar">(null);
   const [settingsTab, setSettingsTab] = useState<"general" | "theme" | "content" | "promotions">(
-    "general",
+    "theme",
   );
   const [contentLanguage, setContentLanguage] = useState<"en" | "ar">(lang === "ar" ? "ar" : "en");
   const enFontInput = useRef<HTMLInputElement>(null);
