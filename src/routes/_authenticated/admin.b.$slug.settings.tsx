@@ -2832,9 +2832,18 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
         storefront_font_ar: data.storefront_font_ar ?? "Tajawal",
         storefront_font_en_url: data.storefront_font_en_url ?? null,
         storefront_font_ar_url: data.storefront_font_ar_url ?? null,
-        storefront_radius: data.storefront_radius ?? "1rem",
-        header_glass: data.header_glass ?? true,
-        badge_accent: data.badge_accent ?? "maroon",
+        storefront_radius:
+          (typeof window !== "undefined" && localStorage.getItem("boutq_storefront_radius")) ||
+          data.storefront_radius ||
+          "1rem",
+        header_glass:
+          typeof window !== "undefined" && localStorage.getItem("boutq_header_glass") !== null
+            ? localStorage.getItem("boutq_header_glass") === "true"
+            : (data.header_glass ?? true),
+        badge_accent:
+          (typeof window !== "undefined" && localStorage.getItem("boutq_badge_accent")) ||
+          data.badge_accent ||
+          "maroon",
         hero_title_en: data.hero_title_en ?? null,
         hero_title_ar: data.hero_title_ar ?? null,
         hero_title_size: Number(data.hero_title_size ?? 48),
@@ -3298,7 +3307,14 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
           </p>
           <Select
             value={state.storefront_radius || "1rem"}
-            onValueChange={(val) => setState({ ...state, storefront_radius: val })}
+            onValueChange={(val) => {
+              try {
+                localStorage.setItem("boutq_storefront_radius", val);
+              } catch (e) {
+                void e;
+              }
+              setState({ ...state, storefront_radius: val });
+            }}
           >
             <SelectTrigger className="mt-1.5 max-w-md">
               <SelectValue placeholder={isAr ? "اختر انحناء الزوايا" : "Select corner curvature"} />
@@ -3338,7 +3354,14 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
             <Button
               type="button"
               variant={state.header_glass ? "default" : "outline"}
-              onClick={() => setState({ ...state, header_glass: true })}
+              onClick={() => {
+                try {
+                  localStorage.setItem("boutq_header_glass", "true");
+                } catch (e) {
+                  void e;
+                }
+                setState({ ...state, header_glass: true });
+              }}
               className="justify-start sm:w-auto"
             >
               <span className="me-2 h-2.5 w-2.5 rounded-full bg-emerald-500 inline-block" />
@@ -3347,7 +3370,14 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
             <Button
               type="button"
               variant={!state.header_glass ? "default" : "outline"}
-              onClick={() => setState({ ...state, header_glass: false })}
+              onClick={() => {
+                try {
+                  localStorage.setItem("boutq_header_glass", "false");
+                } catch (e) {
+                  void e;
+                }
+                setState({ ...state, header_glass: false });
+              }}
               className="justify-start sm:w-auto"
             >
               <span className="me-2 h-2.5 w-2.5 rounded-full bg-muted-foreground/50 inline-block" />
@@ -3368,7 +3398,14 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
           </p>
           <Select
             value={state.badge_accent || "maroon"}
-            onValueChange={(val) => setState({ ...state, badge_accent: val })}
+            onValueChange={(val) => {
+              try {
+                localStorage.setItem("boutq_badge_accent", val);
+              } catch (e) {
+                void e;
+              }
+              setState({ ...state, badge_accent: val });
+            }}
           >
             <SelectTrigger className="mt-1.5 max-w-md">
               <SelectValue placeholder={isAr ? "اختر لون شارة العرض" : "Select badge accent"} />
