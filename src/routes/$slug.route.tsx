@@ -551,13 +551,12 @@ function StoreHeader() {
                 height={55}
                 fetchPriority="high"
                 decoding="async"
-                className="shrink-0 object-contain transition-all duration-300"
+                className="shrink-0 object-contain"
                 style={{
                   height: logoSize,
                   maxHeight: logoSize,
                   width: "auto",
                   maxWidth: logoSize * 3,
-                  filter: isDarkHeader ? "brightness(0) invert(1)" : undefined,
                 }}
               />
             )}
@@ -583,7 +582,7 @@ function StoreHeader() {
             <Button
               variant="ghost"
               size="sm"
-              className="min-h-11 min-w-11 gap-1 hover:bg-black/5"
+              className="min-h-11 min-w-11 gap-1 bg-transparent hover:bg-white/10 active:bg-white/20 text-inherit border-0 shadow-none focus-visible:ring-1 focus-visible:ring-white/30"
               style={{ color: "var(--sf-header-fg)" }}
               onClick={() => setLang(lang === "ar" ? "en" : "ar")}
               aria-label={
@@ -599,7 +598,7 @@ function StoreHeader() {
                 asChild
                 variant="ghost"
                 size="sm"
-                className="min-h-11 min-w-11 gap-1 hover:bg-black/5"
+                className="min-h-11 min-w-11 gap-1 bg-transparent hover:bg-white/10 active:bg-white/20 text-inherit border-0 shadow-none focus-visible:ring-1 focus-visible:ring-white/30"
                 style={{ color: "var(--sf-header-fg)" }}
               >
                 <Link
@@ -619,7 +618,7 @@ function StoreHeader() {
                 asChild
                 variant="ghost"
                 size="sm"
-                className="min-h-11 min-w-11 gap-1 hover:bg-black/5"
+                className="min-h-11 min-w-11 gap-1 bg-transparent hover:bg-white/10 active:bg-white/20 text-inherit border-0 shadow-none focus-visible:ring-1 focus-visible:ring-white/30"
                 style={{ color: "var(--sf-header-fg)" }}
               >
                 <Link
@@ -640,7 +639,7 @@ function StoreHeader() {
               asChild
               variant="ghost"
               size="sm"
-              className="relative min-h-11 min-w-11 gap-1 hover:bg-black/5"
+              className="relative min-h-11 min-w-11 gap-1 bg-transparent hover:bg-white/10 active:bg-white/20 text-inherit border-0 shadow-none focus-visible:ring-1 focus-visible:ring-white/30"
               style={{ color: "var(--sf-header-fg)" }}
             >
               <Link
@@ -668,7 +667,7 @@ function StoreHeader() {
               <Button
                 variant="ghost"
                 size="sm"
-                className="relative min-h-11 min-w-11 gap-1 hover:bg-black/5"
+                className="relative min-h-11 min-w-11 gap-1 bg-transparent hover:bg-white/10 active:bg-white/20 text-inherit border-0 shadow-none focus-visible:ring-1 focus-visible:ring-white/30"
                 style={{ color: "var(--sf-header-fg)" }}
                 aria-label={t("سلة التسوق", "Shopping cart")}
               >
