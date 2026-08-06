@@ -215,13 +215,13 @@ function StorefrontAuth() {
   return (
     <div
       dir={lang === "ar" ? "rtl" : "ltr"}
-      className="min-h-[85vh] w-full flex flex-col items-center justify-center relative bg-zinc-950 text-white px-4 py-8 overflow-hidden selection:bg-[#B76E79] selection:text-white rounded-3xl my-4"
+      className="min-h-[85vh] w-full flex flex-col items-center justify-center relative bg-zinc-950 text-white px-4 py-8 overflow-hidden selection:bg-primary selection:text-primary-foreground rounded-3xl my-4"
     >
       {/* Dynamic Tech-Boutique Moving Luxury Gradients */}
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(183,110,121,0.22),transparent_60%)] z-0" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,var(--os-accent-glow),transparent_60%)] z-0" />
       <div className="absolute inset-0 bg-[linear-gradient(to_bottom,transparent,rgba(9,9,11,0.95))] z-0" />
       <div className="absolute top-[20%] right-[-5%] w-80 h-80 rounded-full bg-rose-500/10 blur-3xl pointer-events-none animate-pulse" />
-      <div className="absolute bottom-[20%] left-[-5%] w-96 h-96 rounded-full bg-[#B76E79]/15 blur-3xl pointer-events-none" />
+      <div className="absolute bottom-[20%] left-[-5%] w-96 h-96 rounded-full bg-primary/15 blur-3xl pointer-events-none" />
 
       {/* Subtle Grid Pattern Overlay */}
       <div className="absolute inset-0 bg-[radial-gradient(#ffffff0d_1px,transparent_1px)] [background-size:20px_20px] pointer-events-none z-0" />
@@ -236,10 +236,10 @@ function StorefrontAuth() {
           <span className="text-xs font-bold text-emerald-400">280.000 BHD</span>
         </div>
 
-        <div className="absolute bottom-[18%] right-10 bg-zinc-900/85 border border-zinc-800/80 backdrop-blur-md p-4 rounded-2xl shadow-xl w-60">
+        <div className="absolute bottom-[18%] right-10 bg-zinc-900/85 border border-border backdrop-blur-md p-4 rounded-2xl shadow-xl w-60">
           <div className="flex justify-between items-center mb-2">
             <span className="text-[10px] text-zinc-400 font-bold tracking-wider uppercase flex items-center gap-1">
-              <TrendingUp className="h-3 w-3 text-[#B76E79]" />
+              <TrendingUp className="h-3 w-3 text-primary" />
               {lang === "ar" ? "أداء المتجر" : "STORE ANALYTICS"}
             </span>
             <span className="text-[9px] bg-emerald-500/10 text-emerald-400 font-bold border border-emerald-500/20 px-2 py-0.5 rounded-full">
@@ -252,7 +252,7 @@ function StorefrontAuth() {
 
       {/* Center Auth Card Container */}
       <div className="w-full max-w-md relative z-10 space-y-6">
-        <Card className="space-y-5 p-6 sm:p-8 backdrop-blur-xl bg-zinc-900/85 border border-zinc-800/80 shadow-2xl rounded-3xl relative overflow-hidden text-white">
+        <Card className="space-y-5 p-6 sm:p-8 backdrop-blur-xl bg-zinc-900/85 border border-border shadow-2xl rounded-3xl relative overflow-hidden text-white">
           {/* Top Sheen */}
           <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/30 to-transparent pointer-events-none" />
 
@@ -261,14 +261,13 @@ function StorefrontAuth() {
               className="mx-auto mb-3.5 grid h-14 w-14 place-items-center rounded-2xl shadow-sm border border-zinc-800 backdrop-blur-md transition-transform hover:scale-105"
               style={{
                 backgroundColor: `${settings.primary_color}25`,
-                color: "#e0a2ab",
               }}
             >
-              <User className="h-7 w-7 text-[#e0a2ab]" />
+              <User className="h-7 w-7 text-primary" />
             </div>
             <h1 className="font-display text-2xl font-bold tracking-tight text-white">
               {t("حسابك في", "Your account at")}{" "}
-              <span className="text-[#e0a2ab]">
+              <span className="text-primary">
                 {lang === "ar" ? brand.name_ar || brand.name_en : brand.name_en}
               </span>
             </h1>
@@ -285,25 +284,27 @@ function StorefrontAuth() {
               className="flex items-start gap-3 rounded-2xl border bg-zinc-950/80 backdrop-blur-md p-4 text-zinc-200 shadow-xs border-zinc-800"
               role="status"
             >
-              <MailCheck className="mt-0.5 h-5 w-5 shrink-0 text-[#e0a2ab]" />
+              <MailCheck className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
               <div className="space-y-1 text-sm">
-                <div className="font-bold text-[#e0a2ab]">
+                <div className="font-bold text-primary">
                   {t("تحقق من بريدك الإلكتروني", "Check your email")}
                 </div>
                 <p className="text-xs text-zinc-300">
                   {t("أرسلنا رابط التفعيل إلى", "We sent a verification link to")}{" "}
                   <b className="text-white">{pendingVerification}</b>.
                 </p>
-                <button
+                <Button
                   type="button"
-                  className="text-xs font-bold text-[#e0a2ab] hover:text-white underline"
+                  variant="link"
+                  size="sm"
+                  className="h-auto p-0 text-xs font-bold text-primary hover:text-white underline"
                   onClick={() => {
                     setPendingVerification(null);
                     setTab("signin");
                   }}
                 >
                   {t("الذهاب لتسجيل الدخول", "Go to sign in")}
-                </button>
+                </Button>
               </div>
             </div>
           )}
@@ -376,7 +377,7 @@ function StorefrontAuth() {
                 onChange={(password) => setForm({ ...form, password })}
               />
               <Button
-                className="h-12 w-full text-white font-bold hover:opacity-95 active:scale-98 rounded-2xl transition-all shadow-lg shadow-rose-950/50 mt-1 border border-[#B76E79]/30 bg-gradient-to-r from-[#8c2028] via-[#a82a32] to-[#B76E79]"
+                className="h-12 w-full font-semibold rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-all shadow-md mt-1"
                 onClick={signIn}
                 disabled={working}
               >
@@ -418,7 +419,7 @@ function StorefrontAuth() {
                 />
               )}
               <Button
-                className="h-12 w-full text-white font-bold hover:opacity-95 active:scale-98 rounded-2xl transition-all shadow-lg shadow-rose-950/50 mt-1 border border-[#B76E79]/30 bg-gradient-to-r from-[#8c2028] via-[#a82a32] to-[#B76E79]"
+                className="h-12 w-full font-semibold rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-all shadow-md mt-1"
                 onClick={signUp}
                 disabled={working}
               >
@@ -431,7 +432,7 @@ function StorefrontAuth() {
             <Link
               to="/$slug"
               params={{ slug: brand.slug }}
-              className="inline-flex min-h-11 items-center text-xs font-bold text-[#e0a2ab] hover:text-white underline underline-offset-4 transition-colors"
+              className="inline-flex min-h-11 items-center text-xs font-bold text-primary hover:text-white underline underline-offset-4 transition-colors"
             >
               {t("متابعة كضيف", "Continue as guest")}
             </Link>
@@ -467,7 +468,7 @@ function Field({
         id={id}
         name={id}
         autoComplete={autocomplete}
-        className="h-11 bg-zinc-950/80 border-zinc-800 focus:border-[#B76E79] focus:ring-2 focus:ring-[#B76E79]/30 text-white placeholder:text-zinc-500 rounded-xl transition-all font-medium"
+        className="h-11 bg-zinc-950/80 border-zinc-800 focus:border-primary focus:ring-2 focus:ring-primary/30 text-white placeholder:text-zinc-500 rounded-xl transition-all font-medium"
         type={type}
         value={value}
         disabled={disabled}

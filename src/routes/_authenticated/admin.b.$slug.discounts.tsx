@@ -620,7 +620,7 @@ function DiscountCodes() {
 
             {/* Maximum Discount limit (For Percentage Type) */}
             {form.discount_type === "percentage" && (
-              <div className="space-y-3 rounded-xl border p-4 bg-muted/20">
+              <div className="space-y-4 rounded-xl border p-4 bg-muted/20">
                 <div className="flex items-center justify-between gap-4">
                   <div>
                     <div className="font-semibold text-sm text-foreground">
@@ -725,7 +725,7 @@ function DiscountCodes() {
             </div>
 
             {/* Eligibility Constraints Section */}
-            <div className="space-y-3.5 rounded-xl border p-4 bg-muted/10">
+            <div className="space-y-4 rounded-xl border p-4 bg-muted/10">
               <div>
                 <div className="font-bold text-sm text-foreground">
                   {ar ? "شروط الأهلية والحماية" : "Eligibility & Safeguards"}

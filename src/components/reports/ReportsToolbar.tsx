@@ -41,7 +41,7 @@ export function ReportsToolbar({
   const isAr = lang === "ar";
 
   return (
-    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between p-3 bg-card/60 backdrop-blur-sm border border-border/60 rounded-xl shadow-2xs">
+    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between p-3 bg-card border border-border rounded-xl shadow-2xs">
       <div className="grid min-w-0 grid-cols-2 gap-2.5 sm:flex sm:flex-wrap sm:items-center">
         <div className="col-span-2 sm:contents">
           <DatePickerWithRange date={date} setDate={setDate} />

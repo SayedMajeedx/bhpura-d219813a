@@ -615,7 +615,7 @@ function CustomerImporterModal({
                   : "Select your export source. We will automatically sanitize GCC phone numbers, prevent duplicates, and apply automatic VIP tagging."}
               </p>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 gap-4">
                 {[
                   {
                     id: "shopify",
@@ -698,7 +698,7 @@ function CustomerImporterModal({
                   : "Please map your CSV columns to the appropriate fields in our customer database:"}
               </p>
 
-              <div className="space-y-3">
+              <div className="space-y-4">
                 {[
                   {
                     key: "name",
@@ -1286,7 +1286,7 @@ function CustomerDialog({ customer, onSaved }: { customer: Customer | null; onSa
       <DialogHeader>
         <DialogTitle>{customer ? t("customers.editTitle") : t("customers.newTitle")}</DialogTitle>
       </DialogHeader>
-      <div className="space-y-3">
+      <div className="space-y-4">
         <div>
           <Label>
             {t("customers.name")} <span className="text-destructive">*</span>
@@ -1297,7 +1297,7 @@ function CustomerDialog({ customer, onSaved }: { customer: Customer | null; onSa
             onChange={(e) => setF({ ...f, name: e.target.value })}
           />
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <Label>{t("customers.phone")}</Label>
             <PhoneInput value={f.phone} onChange={(v) => setF({ ...f, phone: v })} />
@@ -1367,7 +1367,7 @@ function AddressFields({
 }) {
   const t = useT();
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
       {showLabel && (
         <div>
           <Label>{t("customers.addressLabel")}</Label>
@@ -1395,7 +1395,7 @@ function AddressFields({
           </SelectContent>
         </Select>
       </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
           <Label>
             {t("customers.block")} <span className="text-destructive">*</span>
@@ -1419,7 +1419,7 @@ function AddressFields({
           />
         </div>
       </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
           <Label>
             {t("customers.house")} <span className="text-destructive">*</span>

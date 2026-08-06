@@ -238,7 +238,7 @@ function AdminNotificationRecipientsCard({
 
       {adding && (
         <div className="mt-5 rounded-lg border bg-muted/20 p-4 space-y-4">
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="grid gap-4 sm:grid-cols-2">
             <div>
               <Label>{isAr ? "الاسم (اختياري)" : "Name (optional)"}</Label>
               <Input

@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
+import { OsEmptyState } from "@/components/os/os-empty-state";
 import {
   Dialog,
   DialogContent,
@@ -400,7 +401,7 @@ function TeamManagement() {
             {form.role === "staff" && (
               <div className="space-y-2">
                 <Label>{isAr ? "الصلاحيات" : "Permissions"}</Label>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 rounded-lg border border-border bg-secondary/5">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-3 rounded-lg border border-border bg-secondary/5">
                   {AVAILABLE_PERMISSIONS.map((p) => {
                     const checked = form.permissions.includes(p.id);
                     return (
@@ -449,27 +450,21 @@ function TeamManagement() {
       </Dialog>
 
       {staff.length === 0 ? (
-        <Card className="p-12 text-center border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm flex flex-col items-center justify-center min-h-[400px] animate-fade-in">
-          <div className="bg-primary/10 w-16 h-16 rounded-full flex items-center justify-center mb-4">
-            <Users className="h-8 w-8 text-primary" />
-          </div>
-          <h3 className="text-xl font-bold mb-2 text-foreground">
-            {isAr ? "فريق العمل" : "Team Members"}
-          </h3>
-          <p className="text-muted-foreground mb-8 max-w-md mx-auto">
-            {isAr
+        <OsEmptyState
+          icon={Users}
+          title={isAr ? "فريق العمل" : "Team Members"}
+          description={
+            isAr
               ? "قم بدعوة أعضاء فريقك للتعاون في إدارة الطلبات والمخزون والإعدادات بصلاحيات مخصصة."
-              : "Invite your team members to collaborate on managing orders, inventory, and settings with customized permissions."}
-          </p>
-          <Button
-            onClick={() => setAddOpen(true)}
-            className="shadow-md transition-transform hover:scale-[1.02] active:scale-95 px-8 font-bold"
-            size="lg"
-          >
-            <Plus className="h-5 w-5 me-2" />
-            {isAr ? "دعوة عضو جديد" : "Invite Team Member"}
-          </Button>
-        </Card>
+              : "Invite your team members to collaborate on managing orders, inventory, and settings with customized permissions."
+          }
+          action={
+            <Button onClick={() => setAddOpen(true)}>
+              <Plus className="h-4 w-4 me-2" />
+              {isAr ? "دعوة عضو جديد" : "Invite Team Member"}
+            </Button>
+          }
+        />
       ) : (
         <div className="space-y-4">
           {/* Mobile Card View */}
@@ -916,7 +911,7 @@ function TeamManagement() {
               {editing.role === "staff" && (
                 <div className="space-y-2">
                   <Label>{isAr ? "الصلاحيات" : "Permissions"}</Label>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 rounded-lg border border-border bg-secondary/5">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-3 rounded-lg border border-border bg-secondary/5">
                     {AVAILABLE_PERMISSIONS.map((p) => {
                       const memberPerms = (editing as any).permissions || [];
                       const checked = memberPerms.includes(p.id);

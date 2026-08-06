@@ -5,6 +5,7 @@ import { useStorefront, formatPrice, pickName } from "@/lib/storefront-context";
 import { ResponsiveImage } from "@/components/responsive-media";
 import { publicSupabase as supabase } from "@/integrations/supabase/client";
 import { type ProductRow } from "@/routes/$slug.index";
+import { Button } from "@/components/ui/button";
 
 export function ProductCard({
   product,
@@ -57,32 +58,34 @@ export function ProductCard({
     settings.global_sale_badges_enabled &&
     product.show_sale_badge !== false
   ) {
-    badgeStyle = "bg-[#8C6D58]/15 text-[#5F4B3C] border-[#8C6D58]/25";
+    badgeStyle = "bg-destructive/15 text-destructive border-destructive/25";
     badgeLabel = isAr ? `وفر ${discountPercent}%` : `Sale ${discountPercent}% off`;
   } else if (badge === "best") {
-    badgeStyle = "bg-[#4A5568]/15 text-[#2D3748] border-[#4A5568]/25";
+    badgeStyle = "bg-secondary text-secondary-foreground border-border";
     badgeLabel = isAr ? "الأكثر مبيعاً" : "Best Seller";
   } else if (badge === "trending") {
-    badgeStyle = "bg-[#2D3748]/15 text-[#1A202C] border-[#2D3748]/25";
+    badgeStyle = "bg-muted text-muted-foreground border-border";
     badgeLabel = isAr ? "رائج" : "Trending";
   }
 
   return (
     <div className={`group relative ${className || "w-full"}`}>
-      <button
+      <Button
         type="button"
+        variant="ghost"
+        size="icon"
         onClick={() => toggleWishlist(product.id)}
         aria-label={
           wished
             ? t("إزالة من المفضلة", "Remove from wishlist")
             : t("إضافة إلى المفضلة", "Add to wishlist")
         }
-        className="absolute end-2.5 top-2.5 z-20 grid h-11 w-11 place-items-center rounded-full bg-white/85 backdrop-blur-[4px] text-neutral-800 shadow-sm border border-neutral-200/50 transition-all duration-300 hover:scale-105 active:scale-95 hover:bg-white hover:text-red-500"
+        className="absolute end-2.5 top-2.5 z-20 h-11 w-11 rounded-full bg-background/85 backdrop-blur-[4px] text-foreground shadow-sm border border-border transition-all duration-300 hover:scale-105 active:scale-95 hover:bg-background hover:text-destructive"
       >
         <Heart
-          className={`h-4 w-4 transition-colors duration-300 ${wished ? "fill-red-600 text-red-600" : ""}`}
+          className={`h-4 w-4 transition-colors duration-300 ${wished ? "fill-destructive text-destructive" : ""}`}
         />
-      </button>
+      </Button>
 
       <Link
         to="/$slug/product/$id"

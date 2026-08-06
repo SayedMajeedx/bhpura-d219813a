@@ -51,10 +51,10 @@ export function DashboardActivityQueue({
   return (
     <div className="space-y-3">
       {/* Desktop Work Queue Table */}
-      <div className="hidden md:block overflow-hidden rounded-2xl border border-border/60 bg-card shadow-sm">
+      <div className="hidden md:block overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
         <table className="w-full text-start text-xs border-collapse">
           <thead>
-            <tr className="border-b border-border/60 bg-muted/40 text-muted-foreground font-bold uppercase tracking-wider">
+            <tr className="border-b border-border bg-muted/40 text-muted-foreground font-bold uppercase tracking-wider">
               <th className="py-3 px-4 text-start">{isAr ? "رقم الفاتورة" : "Invoice #"}</th>
               <th className="py-3 px-4 text-start">{isAr ? "التاريخ والوقت" : "Date & Time"}</th>
               <th className="py-3 px-4 text-start">{isAr ? "العميل" : "Customer"}</th>
@@ -121,7 +121,7 @@ export function DashboardActivityQueue({
           return (
             <Card
               key={o.id}
-              className="p-3.5 border border-border/60 bg-card rounded-2xl space-y-2 shadow-2xs"
+              className="p-3.5 border border-border bg-card rounded-2xl space-y-2 shadow-2xs"
             >
               <div className="flex items-center justify-between gap-2">
                 <span className="font-mono font-bold text-xs text-primary">

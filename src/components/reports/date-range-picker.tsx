@@ -32,7 +32,7 @@ export function DatePickerWithRange({ className, date, setDate }: DatePickerWith
             variant="outline"
             className="h-11 w-full justify-start rounded-xl bg-white px-4 text-start font-medium shadow-sm sm:w-[310px]"
           >
-            <CalendarIcon className="me-2 h-4 w-4 text-[#6b1d24]" />
+            <CalendarIcon className="me-2 h-4 w-4 text-primary" />
             <span className="flex-1 tabular-nums" dir="ltr">
               {label}
             </span>

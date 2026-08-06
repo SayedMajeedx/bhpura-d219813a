@@ -506,7 +506,7 @@ function SuperRequestsPage() {
                             <Badge
                               className={
                                 request.request_type === "trial"
-                                  ? "bg-[#B76E79]/10 text-[#B76E79] border-none font-semibold text-[10px]"
+                                  ? "bg-primary/10 text-primary border-none font-semibold text-[10px]"
                                   : "bg-emerald-500/10 text-emerald-500 border-none font-semibold text-[10px]"
                               }
                               variant="outline"
@@ -523,7 +523,7 @@ function SuperRequestsPage() {
 
                           {/* Business Type column cell */}
                           <td className="p-4">
-                            <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-zinc-100 dark:bg-zinc-800/80 text-zinc-600 dark:text-zinc-300 border border-zinc-200/50 dark:border-zinc-700/50">
+                            <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-zinc-100 dark:bg-zinc-800/80 text-zinc-600 dark:text-zinc-300 border border-border">
                               {request.business_type || (lang === "ar" ? "أزياء" : "Fashion")}
                             </span>
                           </td>

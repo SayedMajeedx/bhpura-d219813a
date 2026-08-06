@@ -172,8 +172,8 @@ export function ManageTemplatesDialog({
         )}
 
         {editing && (
-          <div className="space-y-3">
-            <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label>Name</Label>
                 <Input
@@ -357,7 +357,7 @@ export default function SendInvoiceDialog({
             </Button>
           </div>
 
-          <div className="space-y-3 mt-4">
+          <div className="space-y-4 mt-4">
             <div>
               <Label>Phone (country code + number)</Label>
               <PhoneInput value={phone} onChange={setPhone} />

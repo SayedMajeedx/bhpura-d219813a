@@ -148,47 +148,75 @@ function ReportsSales() {
                   <AreaChart data={chartData} margin={{ top: 10, right: 8, left: 0, bottom: 0 }}>
                     <defs>
                       <linearGradient id="revenueFill" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#6b1d24" stopOpacity=".28" />
-                        <stop offset="100%" stopColor="#6b1d24" stopOpacity=".02" />
+                        <stop
+                          offset="0%"
+                          stopColor="var(--color-primary, oklch(0.26 0.09 25))"
+                          stopOpacity=".28"
+                        />
+                        <stop
+                          offset="100%"
+                          stopColor="var(--color-primary, oklch(0.26 0.09 25))"
+                          stopOpacity=".02"
+                        />
                       </linearGradient>
                       <linearGradient id="merchFill" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#c59a66" stopOpacity=".22" />
-                        <stop offset="100%" stopColor="#c59a66" stopOpacity=".01" />
+                        <stop
+                          offset="0%"
+                          stopColor="var(--color-secondary, oklch(0.72 0.08 70))"
+                          stopOpacity=".22"
+                        />
+                        <stop
+                          offset="100%"
+                          stopColor="var(--color-secondary, oklch(0.72 0.08 70))"
+                          stopOpacity=".01"
+                        />
                       </linearGradient>
                     </defs>
-                    <CartesianGrid vertical={false} stroke="#eee8e6" strokeDasharray="4 6" />
+                    <CartesianGrid
+                      vertical={false}
+                      stroke="var(--color-border)"
+                      strokeDasharray="4 6"
+                    />
                     <XAxis
                       dataKey="displayDate"
                       axisLine={false}
                       tickLine={false}
-                      tick={{ fill: "#766a6b", fontSize: 12 }}
+                      tick={{ fill: "var(--color-muted-foreground)", fontSize: 12 }}
                       minTickGap={28}
                     />
                     <YAxis
                       axisLine={false}
                       tickLine={false}
-                      tick={{ fill: "#766a6b", fontSize: 12 }}
+                      tick={{ fill: "var(--color-muted-foreground)", fontSize: 12 }}
                       width={48}
                     />
                     <Tooltip
                       content={<SalesTooltip currency={currency} lang={lang} />}
-                      cursor={{ stroke: "#6b1d24", strokeOpacity: 0.18 }}
+                      cursor={{
+                        stroke: "var(--color-primary, oklch(0.26 0.09 25))",
+                        strokeOpacity: 0.18,
+                      }}
                     />
                     <Legend iconType="circle" wrapperStyle={{ paddingTop: 18, fontSize: 12 }} />
                     <Area
                       type="monotone"
                       dataKey="pov"
                       name={lang === "ar" ? "الإيرادات" : "Revenue"}
-                      stroke="#6b1d24"
+                      stroke="var(--color-primary, oklch(0.26 0.09 25))"
                       strokeWidth={3}
                       fill="url(#revenueFill)"
-                      activeDot={{ r: 5, fill: "#6b1d24", stroke: "#fff", strokeWidth: 2 }}
+                      activeDot={{
+                        r: 5,
+                        fill: "var(--color-primary, oklch(0.26 0.09 25))",
+                        stroke: "var(--color-background)",
+                        strokeWidth: 2,
+                      }}
                     />
                     <Area
                       type="monotone"
                       dataKey="net_merch"
                       name={lang === "ar" ? "صافي المنتجات" : "Net merchandise"}
-                      stroke="#c59a66"
+                      stroke="var(--color-secondary, oklch(0.72 0.08 70))"
                       strokeWidth={2.5}
                       fill="url(#merchFill)"
                     />
@@ -227,7 +255,7 @@ function ReportsSales() {
 function SalesTooltip({ active, payload, label, currency, lang }: any) {
   if (!active || !payload?.length) return null;
   return (
-    <div className="min-w-52 rounded-xl border border-black/10 bg-white p-4 shadow-xl">
+    <div className="min-w-52 rounded-xl border border-border bg-card p-4 shadow-xl">
       <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
         {label}
       </p>
@@ -247,9 +275,9 @@ function SalesTooltip({ active, payload, label, currency, lang }: any) {
 function BreakdownCard({ title, icon, rows = [], keyName, currency, lang }: any) {
   const max = Math.max(...rows.map((row: any) => Number(row.pov || 0)), 1);
   return (
-    <section className="rounded-2xl border bg-white p-5 shadow-sm">
+    <section className="rounded-2xl border bg-card p-5 shadow-xs">
       <h3 className="mb-5 flex items-center gap-2 text-lg font-semibold">
-        <span className="grid h-9 w-9 place-items-center rounded-xl bg-[#6b1d24]/8 text-[#6b1d24] [&>svg]:h-4 [&>svg]:w-4">
+        <span className="grid h-9 w-9 place-items-center rounded-xl bg-primary/10 text-primary [&>svg]:h-4 [&>svg]:w-4">
           {icon}
         </span>
         {title}
@@ -266,9 +294,9 @@ function BreakdownCard({ title, icon, rows = [], keyName, currency, lang }: any)
                   {formatMoney(row.pov, row.currency || currency, lang)}
                 </span>
               </div>
-              <div className="h-2 overflow-hidden rounded-full bg-[#f2eceb]">
+              <div className="h-2 overflow-hidden rounded-full bg-muted">
                 <div
-                  className="h-full rounded-full bg-[linear-gradient(90deg,#5b141a,#9e4b52)]"
+                  className="h-full rounded-full bg-primary"
                   style={{ width: `${Math.max(4, (Number(row.pov || 0) / max) * 100)}%` }}
                 />
               </div>

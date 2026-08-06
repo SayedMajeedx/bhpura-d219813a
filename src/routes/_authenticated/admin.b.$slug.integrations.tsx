@@ -691,7 +691,7 @@ function IntegrationDialog({
           {row ? (isAr ? "تعديل التكامل" : "Edit integration") : t("integrations.new")}
         </DialogTitle>
       </DialogHeader>
-      <div className="space-y-3">
+      <div className="space-y-4">
         <div>
           <Label>{t("integrations.provider")}</Label>
           <Select value={form.provider} onValueChange={(v) => setForm({ ...form, provider: v })}>

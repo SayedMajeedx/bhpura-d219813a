@@ -704,7 +704,7 @@ function ProductImporterModal({
                   : "Export your product catalog from your previous platform. Our system will automatically re-host all CDN images to public R2 and batch import your data."}
               </p>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 gap-4">
                 {[
                   {
                     id: "shopify",
@@ -781,7 +781,7 @@ function ProductImporterModal({
                   : "We couldn't automatically resolve some fields. Please map your CSV headers to our required product fields:"}
               </p>
 
-              <div className="space-y-3">
+              <div className="space-y-4">
                 {[
                   { key: "name", label: isAr ? "اسم المنتج" : "Product Title", required: true },
                   { key: "price", label: isAr ? "السعر (د.ب)" : "Price (BHD)", required: true },
@@ -1124,7 +1124,7 @@ function InstagramImporterModal({
 
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto rounded-3xl border border-zinc-100 dark:border-zinc-800 bg-white/95 dark:bg-zinc-950/95 backdrop-blur-xl shadow-2xl p-6 sm:p-8">
-          <DialogHeader className="border-b border-zinc-100 dark:border-zinc-800/80 pb-4">
+          <DialogHeader className="border-b border-border pb-4">
             <div className="flex items-center gap-3">
               <div className="p-2.5 rounded-2xl bg-purple-500/10 text-purple-500">
                 <Instagram className="h-5 w-5" />
@@ -1222,7 +1222,7 @@ function InstagramImporterModal({
                 </div>
               </div>
 
-              <DialogFooter className="border-t border-zinc-100 dark:border-zinc-800/80 pt-4 flex gap-2">
+              <DialogFooter className="border-t border-border pt-4 flex gap-2">
                 <Button variant="ghost" onClick={() => setIsOpen(false)} className="rounded-xl">
                   {isAr ? "إلغاء" : "Cancel"}
                 </Button>
@@ -1250,7 +1250,7 @@ function InstagramImporterModal({
 
           {step === "grid" && (
             <div className="space-y-6 py-4">
-              <div className="flex flex-wrap items-center justify-between gap-3 border-b border-zinc-100 dark:border-zinc-800/60 pb-3">
+              <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-3">
                 <div className="flex flex-wrap items-center gap-2">
                   <Button
                     variant="outline"
@@ -1348,7 +1348,7 @@ function InstagramImporterModal({
                 })}
               </div>
 
-              <DialogFooter className="border-t border-zinc-100 dark:border-zinc-800/80 pt-4 flex gap-2">
+              <DialogFooter className="border-t border-border pt-4 flex gap-2">
                 <Button variant="ghost" onClick={() => setStep("inputs")} className="rounded-xl">
                   {isAr ? "السابق" : "Back"}
                 </Button>
@@ -1380,7 +1380,7 @@ function InstagramImporterModal({
                     ? "جاري استيراد المنتجات بالذكاء الاصطناعي..."
                     : "AI Instagram-to-Storefront Ingestion"}
                 </h3>
-                <p className="text-sm text-zinc-500 dark:text-zinc-400 max-w-md font-mono bg-zinc-50 dark:bg-zinc-900 p-3 rounded-xl border border-zinc-100 dark:border-zinc-800/50">
+                <p className="text-sm text-zinc-500 dark:text-zinc-400 max-w-md font-mono bg-zinc-50 dark:bg-zinc-900 p-3 rounded-xl border border-border">
                   {progress}
                 </p>
               </div>
@@ -2506,7 +2506,7 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
                 />
               </div>
             </div>
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="flex items-center justify-between rounded-xl border border-border/80 p-4 bg-secondary/10 transition hover:bg-secondary/20">
                 <div>
                   <p className="text-sm font-bold text-foreground">
@@ -2555,7 +2555,7 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
               </div>
               <div className="space-y-4.5">
                 {/* Size Label */}
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 border-b border-border/40 pb-3">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 border-b border-border/40 pb-3">
                   <div>
                     <Label className="text-xs font-bold text-muted-foreground">
                       {isAr ? "مسمى المقاس بالعربية (مثال: التصميم)" : "Custom Size Label — Arabic"}

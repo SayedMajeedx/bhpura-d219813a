@@ -1,11 +1,14 @@
 import { cn } from "@/lib/utils";
+import { DESIGN_TOKENS } from "@/lib/design-tokens";
+
+export { DESIGN_TOKENS };
 
 /**
  * Boutq OS Surface & Token Variants
  */
 export type OsSurfaceVariant = "glass" | "glassStrong" | "solid" | "elevated" | "canvas";
 
-export type OsRadius = "sm" | "md" | "lg" | "xl" | "panel" | "window" | "dock" | "full";
+export type OsRadius = keyof typeof DESIGN_TOKENS.radii;
 
 export interface OsSurfaceOptions {
   variant?: OsSurfaceVariant;
@@ -16,7 +19,7 @@ export interface OsSurfaceOptions {
 }
 
 /**
- * Helper to generate standardized Boutq OS class names
+ * Helper to generate standardized Boutq OS class names from central tokens
  */
 export function osSurface({
   variant = "glass",
@@ -38,6 +41,8 @@ export function osSurface({
     md: "rounded-xl",
     lg: "rounded-2xl",
     xl: "rounded-3xl",
+    control: "rounded-[var(--os-radius-control)]",
+    card: "rounded-[var(--os-radius-card)]",
     panel: "rounded-[var(--os-radius-panel)]",
     window: "rounded-[var(--os-radius-window)]",
     dock: "rounded-[var(--os-radius-dock)]",

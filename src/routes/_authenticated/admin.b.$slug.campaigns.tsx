@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
+import { OsEmptyState } from "@/components/os/os-empty-state";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
@@ -26,6 +27,7 @@ import {
   MessageCircle,
   Search,
   Megaphone,
+  Users,
   Save,
   Trash2,
   Plus,
@@ -799,9 +801,16 @@ function CampaignsPage() {
         </div>
 
         {filtered.length === 0 ? (
-          <div className="p-12 text-center text-muted-foreground">
-            {isAr ? "لا يوجد عملاء." : "No customers found."}
-          </div>
+          <OsEmptyState
+            compact
+            icon={Users}
+            title={isAr ? "لا يوجد عملاء" : "No customers found"}
+            description={
+              isAr
+                ? "لم نتمكن من العثور على أي عملاء يطابقون فلتر البحث المحدد."
+                : "No customer contacts match your selected search filter."
+            }
+          />
         ) : (
           <>
             {/* Mobile checklist view */}
@@ -1006,7 +1015,7 @@ function CampaignsPage() {
                   : "Save new template"}
             </DialogTitle>
           </DialogHeader>
-          <div className="space-y-3">
+          <div className="space-y-4">
             <div>
               <Label>{isAr ? "اسم القالب" : "Template name"}</Label>
               <Input

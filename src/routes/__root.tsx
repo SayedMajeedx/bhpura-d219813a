@@ -15,6 +15,7 @@ import { I18nProvider } from "@/lib/i18n";
 import { installNumericInputBehavior } from "@/lib/numeric-input-behavior";
 import { ProfileProvider } from "@/lib/profile-context";
 import { getEnvVariable } from "@/integrations/supabase/auth-middleware";
+import { Button } from "@/components/ui/button";
 
 function NotFoundComponent() {
   return (
@@ -48,16 +49,20 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
           Try again or head back to the dashboard.
         </p>
         <div className="mt-6 flex flex-wrap justify-center gap-2">
-          <button
+          <Button
+            type="button"
+            variant="default"
             onClick={() => {
               router.invalidate();
               reset();
             }}
-            className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-90"
           >
             Try again
-          </button>
-          <a href="/" className="rounded-md border border-input bg-background px-4 py-2 text-sm">
+          </Button>
+          <a
+            href="/"
+            className="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground"
+          >
             Go home
           </a>
         </div>

@@ -7,6 +7,8 @@ import { useEffect, useMemo, useState } from "react";
 import { trackStorefrontEvent } from "@/lib/storefront-analytics";
 import { ResponsiveImage } from "@/components/responsive-media";
 import { ProductGrid } from "@/components/storefront/product-grid";
+import { Search } from "lucide-react";
+import { OsEmptyState } from "@/components/os/os-empty-state";
 import { fetchActiveBrandIdentity, fetchStorefrontSearch } from "@/lib/storefront-queries";
 
 type SearchParams = { q: string };
@@ -105,9 +107,14 @@ function SearchPage() {
           onViewAll={() => {}}
         />
       ) : (
-        <Card className="p-8 text-center text-muted-foreground">
-          {t("اكتب كلمة للبحث", "Type a search term")}
-        </Card>
+        <OsEmptyState
+          icon={Search}
+          title={t("البحث في المتجر", "Search the store")}
+          description={t(
+            "اكتب كلمة أو اسم منتج للبحث عنه في المتجر.",
+            "Type a keyword or product name to search the store.",
+          )}
+        />
       )}
     </section>
   );

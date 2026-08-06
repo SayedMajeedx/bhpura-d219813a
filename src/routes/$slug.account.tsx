@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useStorefront, formatPrice } from "@/lib/storefront-context";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { OsEmptyState } from "@/components/os/os-empty-state";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -167,7 +168,7 @@ function statusMeta(
     refunded: {
       ar: "مرتجع",
       en: "Refunded",
-      tone: "bg-neutral-100 text-neutral-800 dark:bg-neutral-850 dark:text-neutral-300 border border-neutral-200/50",
+      tone: "bg-neutral-100 text-neutral-800 dark:bg-neutral-850 dark:text-neutral-300 border border-border",
     },
   };
   const m = map[s] ?? { ar: status, en: status, tone: "bg-neutral-100 text-neutral-800 border" };
@@ -342,8 +343,7 @@ function AccountPage() {
     if (totalSpent >= 150) {
       return {
         label: t("عضوية VIP الفضية", "Silver VIP Member"),
-        style:
-          "bg-slate-50 text-slate-700 border-slate-200/60 dark:bg-slate-900/20 dark:text-slate-300",
+        style: "bg-slate-50 text-slate-700 border-border dark:bg-slate-900/20 dark:text-slate-300",
       };
     }
     return {
@@ -647,18 +647,14 @@ function OrdersSection({
 
   if (!orders || orders.length === 0) {
     return (
-      <Card className="p-12 text-center text-muted-foreground bg-card/20 border border-dashed rounded-2xl">
-        <PackageSearch className="h-10 w-10 mx-auto text-muted-foreground/60 mb-3" />
-        <p className="font-semibold text-sm text-foreground">
-          {t("لا توجد أي طلبات نشطة", "No orders placed yet")}
-        </p>
-        <p className="text-xs text-muted-foreground mt-1 max-w-xs mx-auto">
-          {t(
-            "لم تسجل أي مشتريات من هذا المتجر بعد. بمجرد إتمامك للشراء ستظهر طلباتك بالتفصيل هنا.",
-            "All purchases you make on this store will appear detailed in this panel.",
-          )}
-        </p>
-      </Card>
+      <OsEmptyState
+        icon={PackageSearch}
+        title={t("لا توجد أي طلبات نشطة", "No orders placed yet")}
+        description={t(
+          "لم تسجل أي مشتريات من هذا المتجر بعد. بمجرد إتمامك للشراء ستظهر طلباتك بالتفصيل هنا.",
+          "All purchases you make on this store will appear detailed in this panel.",
+        )}
+      />
     );
   }
 

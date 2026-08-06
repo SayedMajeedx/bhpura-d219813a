@@ -9,6 +9,7 @@ import { useMemo, useState, useEffect } from "react";
 import { StorefrontPageContent } from "@/routes/$slug.page.$idx";
 import { faviconType } from "@/lib/favicon";
 import { ResponsiveImage } from "@/components/responsive-media";
+import { Button } from "@/components/ui/button";
 
 function getDescendantCategories(catId: string, categories: any[]): any[] {
   const descendants: any[] = [];
@@ -509,24 +510,22 @@ function CategoryPage() {
                 {rows.map((row) => (
                   <div
                     key={`row-level-${row.levelIndex}`}
-                    className={`w-full ${row.levelIndex > 0 ? "border-t border-slate-100/50 pt-2 animate-in fade-in slide-in-from-top-1 duration-200" : "mt-4"}`}
+                    className={`w-full ${row.levelIndex > 0 ? "border-t border-border pt-2 animate-in fade-in slide-in-from-top-1 duration-200" : "mt-4"}`}
                   >
                     <div className="flex flex-wrap gap-2 items-center overflow-x-auto no-scrollbar py-1">
-                      <button
+                      <Button
                         type="button"
+                        variant={row.activeSlug === null ? "default" : "secondary"}
+                        size="sm"
                         onClick={() => {
                           setSelectedSubCategorySlugs(
                             selectedSubCategorySlugs.slice(0, row.levelIndex),
                           );
                         }}
-                        className={`min-h-9 px-4 py-1.5 rounded-full text-sm transition-all shrink-0 ${
-                          row.activeSlug === null
-                            ? "bg-slate-900 text-white shadow-sm font-medium"
-                            : "bg-slate-100 hover:bg-slate-200 text-slate-700 font-normal"
-                        }`}
+                        className="min-h-[44px] px-4 py-1.5 rounded-full text-sm shrink-0"
                       >
                         {t("الكل", "All")}
-                      </button>
+                      </Button>
                       {row.categories.map((sub) => {
                         const label =
                           lang === "ar" ? sub.name_ar || sub.name_en : sub.name_en || sub.name_ar;
@@ -535,9 +534,11 @@ function CategoryPage() {
                           (c) => c.parent_id === sub.id,
                         );
                         return (
-                          <button
+                          <Button
                             key={sub.id}
                             type="button"
+                            variant={active ? "default" : "secondary"}
+                            size="sm"
                             onClick={() => {
                               if (active) {
                                 setSelectedSubCategorySlugs(
@@ -550,11 +551,7 @@ function CategoryPage() {
                                 ]);
                               }
                             }}
-                            className={`min-h-9 px-4 py-1.5 rounded-full text-sm transition-all shrink-0 flex items-center gap-1.5 ${
-                              active
-                                ? "bg-slate-900 text-white shadow-sm font-medium"
-                                : "bg-slate-100 hover:bg-slate-200 text-slate-700 font-normal"
-                            }`}
+                            className="min-h-[44px] px-4 py-1.5 rounded-full text-sm shrink-0 flex items-center gap-1.5"
                           >
                             <span>{label}</span>
                             {hasSubSubs && (
@@ -562,7 +559,7 @@ function CategoryPage() {
                                 className={`h-3 w-3 transition-transform duration-200 ${active ? "rotate-180" : ""}`}
                               />
                             )}
-                          </button>
+                          </Button>
                         );
                       })}
                     </div>

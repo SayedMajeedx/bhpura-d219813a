@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from "react";
-import { Grid2X2, Rows } from "lucide-react";
+import { Grid2X2, Rows, PackageSearch } from "lucide-react";
 import { useStorefront } from "@/lib/storefront-context";
 import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { OsEmptyState } from "@/components/os/os-empty-state";
 import { type ProductRow } from "@/routes/$slug.index";
 import { ProductCard } from "./product-card";
 
@@ -53,9 +55,9 @@ export function ProductGrid({
         >
           {Array.from({ length: 4 }).map((_, i) => (
             <div key={i} className="space-y-2">
-              <Skeleton className="aspect-[3/4] rounded-xl w-full bg-neutral-100" />
-              <Skeleton className="h-3 w-3/4 bg-neutral-100" />
-              <Skeleton className="h-3 w-1/3 bg-neutral-100" />
+              <Skeleton className="aspect-[3/4] rounded-xl w-full bg-muted" />
+              <Skeleton className="h-3 w-3/4 bg-muted" />
+              <Skeleton className="h-3 w-1/3 bg-muted" />
             </div>
           ))}
         </div>
@@ -65,63 +67,65 @@ export function ProductGrid({
 
   if (products.length === 0) {
     return (
-      <Card className="p-8 sm:p-12 text-center text-muted-foreground">
-        <p>
-          {categoryEmpty
+      <OsEmptyState
+        icon={PackageSearch}
+        title={
+          categoryEmpty
+            ? t("لا توجد منتجات متاحة", "No products available")
+            : t("لا توجد منتجات بعد", "No products yet")
+        }
+        description={
+          categoryEmpty
             ? t(
-                "لا توجد منتجات متاحة في هذا القسم حالياً.",
-                "No products are currently available in this category.",
+                "لا توجد منتجات متاحة في هذا القسم حالياً. يمكنك تصفح كافة المنتجات الأخرى.",
+                "No products are currently available in this category. You can browse all other products.",
               )
-            : t("لا توجد منتجات بعد.", "No products yet.")}
-        </p>
-        {categoryEmpty && (
-          <button
-            type="button"
-            onClick={onViewAll}
-            className="mt-4 text-sm font-medium underline underline-offset-4"
-            style={{ color: "var(--sf-link)" }}
-          >
-            {t("عرض كل المنتجات", "View all products")}
-          </button>
-        )}
-      </Card>
+            : t(
+                "لم يتم إضافة أي منتجات إلى هذا المتجر حتى الآن.",
+                "No products have been added to this store yet.",
+              )
+        }
+        action={
+          categoryEmpty ? (
+            <Button variant="default" onClick={onViewAll}>
+              {t("عرض كل المنتجات", "View all products")}
+            </Button>
+          ) : undefined
+        }
+      />
     );
   }
 
   return (
     <div className="space-y-4">
       {/* Dynamic Grid Layout Switcher control bar */}
-      <div className="flex items-center justify-between pb-2 border-b border-neutral-100/50">
+      <div className="flex items-center justify-between pb-2 border-b border-border">
         <span className="text-xs text-muted-foreground font-medium">
           {products.length} {products.length === 1 ? t("منتج", "product") : t("منتجات", "products")}
         </span>
 
         {/* Toggle columns trigger button (strictly visible on mobile viewport <md) */}
         <div className="flex items-center gap-1.5 md:hidden">
-          <button
+          <Button
             type="button"
+            variant={mobileCols === "2" ? "default" : "outline"}
+            size="icon"
             onClick={() => toggleMobileCols("2")}
             aria-label={t("عرض شبكة ثنائية", "Dense 2-Column Grid")}
-            className={`grid h-11 w-11 place-items-center rounded-lg border transition-all duration-200 ${
-              mobileCols === "2"
-                ? "bg-neutral-900 text-white border-neutral-900 shadow-sm"
-                : "bg-white text-neutral-600 border-neutral-200 hover:bg-neutral-50"
-            }`}
+            className="h-11 w-11"
           >
             <Grid2X2 className="h-4 w-4" />
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
+            variant={mobileCols === "1" ? "default" : "outline"}
+            size="icon"
             onClick={() => toggleMobileCols("1")}
             aria-label={t("عرض قائمة عمودية", "Immersive 1-Column List")}
-            className={`grid h-11 w-11 place-items-center rounded-lg border transition-all duration-200 ${
-              mobileCols === "1"
-                ? "bg-neutral-900 text-white border-neutral-900 shadow-sm"
-                : "bg-white text-neutral-600 border-neutral-200 hover:bg-neutral-50"
-            }`}
+            className="h-11 w-11"
           >
             <Rows className="h-4 w-4" />
-          </button>
+          </Button>
         </div>
       </div>
 

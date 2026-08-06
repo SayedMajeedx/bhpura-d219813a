@@ -174,9 +174,9 @@ export function OsMobileNavigation({
             <SheetTitle className="sr-only">{brandLabel}</SheetTitle>
 
             {/* iOS Style Sheet Header */}
-            <div className="p-4 sm:p-5 border-b border-white/15 dark:border-white/10 bg-white/40 dark:bg-slate-900/40 backdrop-blur-md flex items-center justify-between relative z-10">
+            <div className="p-4 sm:p-5 border-b border-border/40 bg-white/40 dark:bg-slate-900/40 backdrop-blur-md flex items-center justify-between relative z-10">
               <div className="flex items-center gap-3 min-w-0">
-                <div className="h-10 w-10 rounded-2xl bg-gradient-to-br from-primary/30 via-primary/20 to-amber-500/20 border border-white/30 text-primary font-heading font-black text-lg flex items-center justify-center shadow-xs shrink-0">
+                <div className="h-10 w-10 rounded-2xl bg-gradient-to-br from-primary/30 via-primary/20 to-amber-500/20 border border-border/40 text-primary font-heading font-black text-lg flex items-center justify-center shadow-xs shrink-0">
                   {brandLabel.charAt(0)}
                 </div>
                 <div className="min-w-0">
@@ -213,7 +213,7 @@ export function OsMobileNavigation({
                       <span>{group.title}</span>
                     </div>
 
-                    <div className="space-y-1 bg-white/30 dark:bg-slate-900/30 backdrop-blur-md rounded-2xl p-1.5 border border-white/20 dark:border-white/10 shadow-2xs">
+                    <div className="space-y-1 bg-white/30 dark:bg-slate-900/30 backdrop-blur-md rounded-2xl p-1.5 border border-border/40 shadow-2xs">
                       {group.items.map((item) => {
                         const targetPath = item.to.replace("$slug", item.params?.slug ?? "");
                         const active = pathname.startsWith(targetPath);
@@ -259,9 +259,9 @@ export function OsMobileNavigation({
             </nav>
 
             {/* iOS Liquid Control Center Footer */}
-            <div className="p-3.5 border-t border-white/15 dark:border-white/10 bg-white/40 dark:bg-slate-900/40 backdrop-blur-md space-y-2.5 relative z-10">
+            <div className="p-3.5 border-t border-border/40 bg-white/40 dark:bg-slate-900/40 backdrop-blur-md space-y-2.5 relative z-10">
               {/* Language Segmented Pill Toggle */}
-              <div className="flex items-center justify-between bg-muted/60 p-1 rounded-2xl border border-white/20 dark:border-white/10">
+              <div className="flex items-center justify-between bg-muted/60 p-1 rounded-2xl border border-border/40">
                 <span className="text-xs font-semibold px-3 text-muted-foreground">
                   {lang === "ar" ? "اللغة" : "Language"}
                 </span>

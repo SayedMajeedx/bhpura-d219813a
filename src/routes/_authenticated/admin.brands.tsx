@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
+import { OsEmptyState } from "@/components/os/os-empty-state";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
@@ -329,12 +330,15 @@ function BrandsPage() {
         {/* TAB CONTENT: All Registered Tenants */}
         <TabsContent value="all-stores" className="space-y-4">
           {brands.length === 0 ? (
-            <Card className="p-12 text-center">
-              <Store className="h-10 w-10 mx-auto text-muted-foreground mb-3" />
-              <p className="text-muted-foreground">
-                {lang === "ar" ? "لم يتم إنشاء أي علامة تجارية بعد." : "No brands yet."}
-              </p>
-            </Card>
+            <OsEmptyState
+              icon={Store}
+              title={lang === "ar" ? "لا توجد علامات تجارية" : "No brands found"}
+              description={
+                lang === "ar"
+                  ? "لم يتم تسجيل أي علامات تجارية في المنظومة حتى الآن."
+                  : "No store brands have been registered in the system yet."
+              }
+            />
           ) : (
             <div className="grid gap-4 sm:grid-cols-2">
               {brands.map((b) => (
@@ -461,17 +465,15 @@ function BrandsPage() {
         {/* TAB CONTENT: Subscription Receipt Approvals Queue */}
         <TabsContent value="receipt-approvals" className="space-y-4">
           {pendingApprovals.length === 0 ? (
-            <Card className="p-12 text-center border-dashed border-zinc-200 dark:border-zinc-800">
-              <CheckCircle className="h-10 w-10 mx-auto text-emerald-500 mb-3 animate-bounce" />
-              <h3 className="font-display font-medium text-lg">
-                {lang === "ar" ? "قائمة المراجعة فارغة تماماً!" : "Inbox is perfectly clean!"}
-              </h3>
-              <p className="text-muted-foreground text-xs mt-1">
-                {lang === "ar"
+            <OsEmptyState
+              icon={CheckCircle}
+              title={lang === "ar" ? "قائمة المراجعة فارغة تماماً!" : "Inbox is perfectly clean!"}
+              description={
+                lang === "ar"
                   ? "لا توجد إيصالات دفع معلقة للمراجعة في الوقت الحالي."
-                  : "No boutique payment receipts are awaiting approval at the moment."}
-              </p>
-            </Card>
+                  : "No boutique payment receipts are awaiting approval at the moment."
+              }
+            />
           ) : (
             <div className="space-y-3">
               {pendingApprovals.map((b) => (
@@ -770,7 +772,7 @@ function NewBrandDialog({ onSaved }: { onSaved: () => void }) {
           {lang === "ar" ? "علامة تجارية جديدة" : "New Brand"}
         </DialogTitle>
       </DialogHeader>
-      <div className="space-y-3">
+      <div className="space-y-4">
         <div>
           <Label>
             {lang === "ar" ? "الاسم بالإنجليزية (يدوي)" : "Brand Name — English (manual)"}
@@ -915,7 +917,7 @@ function EditBrandDialog({ brand, onSaved }: { brand: Brand; onSaved: () => void
           {t("brands.editTitle")} — {brand.name_en}
         </DialogTitle>
       </DialogHeader>
-      <div className="space-y-3">
+      <div className="space-y-4">
         <div>
           <Label>{isAr ? "المعرّف" : "Slug"}</Label>
           <Input value={brand.slug} readOnly disabled />
@@ -925,7 +927,7 @@ function EditBrandDialog({ brand, onSaved }: { brand: Brand; onSaved: () => void
               : "Slug can't be changed — it's used in URLs and invoice links."}
           </p>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <Label>{isAr ? "الاسم (إنجليزي)" : "Name (English)"}</Label>
             <Input
@@ -964,7 +966,7 @@ function EditBrandDialog({ brand, onSaved }: { brand: Brand; onSaved: () => void
             />
           </div>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <Label>{isAr ? "نبذة (عربي)" : "About (Arabic)"}</Label>
             <Textarea
@@ -1120,7 +1122,7 @@ function DeleteBrandDialog({ brand, onDone }: { brand: Brand; onDone: () => void
           <AlertTriangle className="h-5 w-5" /> {t("brands.delete")} — {brand.name_en}
         </DialogTitle>
       </DialogHeader>
-      <div className="space-y-3">
+      <div className="space-y-4">
         <p className="text-sm text-muted-foreground">
           {hard
             ? isAr

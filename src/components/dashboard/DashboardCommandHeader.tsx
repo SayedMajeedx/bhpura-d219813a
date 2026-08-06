@@ -33,7 +33,7 @@ export function DashboardCommandHeader({
 
           <h1 className="text-xl font-extrabold tracking-tight text-foreground sm:text-2xl flex items-center gap-2">
             <span>{isAr ? "لوحة الأداء والعمليات" : "Performance & Operations"}</span>
-            <span className="inline-flex items-center px-2 py-0.5 text-xs font-bold bg-muted text-foreground border border-border/60 rounded-full">
+            <span className="inline-flex items-center px-2 py-0.5 text-xs font-bold bg-muted text-foreground border border-border rounded-full">
               {orderCount} {isAr ? "طلب" : "orders"}
             </span>
           </h1>

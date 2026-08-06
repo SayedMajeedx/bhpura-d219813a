@@ -250,20 +250,6 @@ summary {
   cursor: pointer;
 }
 
-.storefront-shell
-  :where(
-    a[href],
-    button,
-    input,
-    select,
-    textarea,
-    summary,
-    [tabindex]:not([tabindex="-1"])
-  ):focus-visible {
-  outline: 3px solid #2563eb !important;
-  outline-offset: 3px !important;
-}
-
 html.lang-ar body,
 html.lang-ar h1,
 html.lang-ar h2,
@@ -411,7 +397,7 @@ input[type="number"] {
   }
 
   .os-focus-ring:focus-visible {
-    outline: 2px solid var(--color-primary);
+    outline: 2px solid var(--color-ring);
     outline-offset: 2px;
   }
 

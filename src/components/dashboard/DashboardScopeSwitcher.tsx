@@ -47,7 +47,7 @@ export function DashboardScopeSwitcher({
   ];
 
   return (
-    <div className="flex items-center gap-1.5 overflow-x-auto p-1 bg-muted/40 border border-border/60 rounded-2xl scrollbar-none">
+    <div className="flex items-center gap-1.5 overflow-x-auto p-1 bg-muted/40 border border-border rounded-2xl scrollbar-none">
       {scopes.map((scope) => {
         const Icon = scope.icon;
         const isActive = activeScope === scope.id;

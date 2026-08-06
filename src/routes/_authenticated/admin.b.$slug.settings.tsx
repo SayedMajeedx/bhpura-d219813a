@@ -116,6 +116,7 @@ type Settings = {
   invoice_show_notes: boolean;
   invoice_title_en: string | null;
   invoice_title_ar: string | null;
+  storefront_radius?: string | null;
 };
 
 const LOGO_CANVAS_W = 600;
@@ -698,6 +699,50 @@ function Settings() {
                     onChange={(e) => setF({ ...f, background_color: e.target.value })}
                   />
                 </div>
+              </div>
+            </div>
+
+            {/* Storefront Corner Curvature Setting */}
+            <div className="rounded-lg border border-border p-4 space-y-2.5">
+              <div>
+                <Label className="font-semibold text-sm">
+                  {lang === "ar"
+                    ? "انحناء زوايا متجرك (Corner Curvature)"
+                    : "Storefront Corner Curvature"}
+                </Label>
+                <Select
+                  value={f.storefront_radius || "1rem"}
+                  onValueChange={(val) => setF({ ...f, storefront_radius: val })}
+                >
+                  <SelectTrigger className="mt-1.5">
+                    <SelectValue
+                      placeholder={lang === "ar" ? "اختر شكل الزوايا" : "Select corner style"}
+                    />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="0px">
+                      {lang === "ar"
+                        ? "مستقيمة حادة (Sharp Rectangles — 0px)"
+                        : "Sharp Rectangles (0px)"}
+                    </SelectItem>
+                    <SelectItem value="0.375rem">
+                      {lang === "ar" ? "انحناء خفيف (Subtle — 6px)" : "Subtle Rounded (6px)"}
+                    </SelectItem>
+                    <SelectItem value="1rem">
+                      {lang === "ar"
+                        ? "منحنية أنيقة (Extra Curved — 16px Default)"
+                        : "Extra Curved (16px — Default)"}
+                    </SelectItem>
+                    <SelectItem value="1.5rem">
+                      {lang === "ar" ? "دائرية بيضاوية (Pill — 24px)" : "Fully Rounded Pill (24px)"}
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="mt-1.5 text-xs text-muted-foreground">
+                  {lang === "ar"
+                    ? "اختر النمط المناسب لهوية متجرك — يطبق فوراً على بطاقات المنتجات والأزرار والقوائم."
+                    : "Choose the style that matches your brand identity — applies instantly to storefront cards, buttons, and panels."}
+                </p>
               </div>
             </div>
 
@@ -2038,10 +2083,14 @@ function HeroSlideLivePreview({
   slide,
   isAr,
   color,
+  radius = "1rem",
+  badgeAccent = "maroon",
 }: {
   slide: HeroSlide;
   isAr: boolean;
   color: string;
+  radius?: string;
+  badgeAccent?: string;
 }) {
   const title = isAr ? slide.title_ar || slide.title_en : slide.title_en || slide.title_ar;
   const body = isAr ? slide.body_ar || slide.body_en : slide.body_en || slide.body_ar;
@@ -2051,10 +2100,20 @@ function HeroSlideLivePreview({
     slide.media_url ||
     (isAr ? slide.media_url_en : slide.media_url_ar) ||
     "";
+
+  const badgeBg =
+    badgeAccent === "crimson"
+      ? "var(--color-destructive, #dc2626)"
+      : badgeAccent === "slate"
+        ? "#334155"
+        : badgeAccent === "emerald"
+          ? "#059669"
+          : "#8C6D58";
+
   return (
-    <details className="group border-t pt-3">
-      <summary className="flex cursor-pointer list-none items-center justify-between rounded-md border px-3 py-2 text-sm font-medium hover:bg-secondary [&::-webkit-details-marker]:hidden">
-        <span>{isAr ? "معاينة المتجر" : "Storefront preview"}</span>
+    <details className="group border-t border-border pt-3">
+      <summary className="flex cursor-pointer list-none items-center justify-between rounded-md border border-border px-3 py-2 text-sm font-medium hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 [&::-webkit-details-marker]:hidden">
+        <span>{isAr ? "معاينة المتجر المباشرة" : "Live storefront preview"}</span>
         <span
           aria-hidden="true"
           className="text-muted-foreground transition-transform group-open:rotate-180"
@@ -2064,44 +2123,93 @@ function HeroSlideLivePreview({
       </summary>
       <div
         dir={isAr ? "rtl" : "ltr"}
-        className="relative mx-auto mt-3 aspect-video w-full max-w-md overflow-hidden rounded-lg border bg-neutral-100"
+        style={
+          {
+            ["--primary" as any]: color || "var(--primary)",
+            ["--radius-sf" as any]: radius,
+            borderRadius: radius,
+          } as React.CSSProperties
+        }
+        className="relative mx-auto mt-3 aspect-video w-full max-w-md overflow-hidden border border-border bg-card shadow-md transition-all"
       >
-        {slide.type === "image" && mediaUrl ? (
-          <img src={mediaUrl} alt="" className="h-full w-full object-cover" />
-        ) : slide.type === "video" && mediaUrl ? (
-          <video
-            src={mediaUrl}
-            muted
-            autoPlay
-            loop
-            playsInline
-            disablePictureInPicture
-            className="h-full w-full object-cover"
-          />
-        ) : (
-          <div className="flex h-full flex-col justify-center p-5 pb-16 sm:p-8 sm:pb-16">
-            {title && (
-              <strong className="mb-2 text-xl sm:text-3xl" style={{ color }}>
-                {title}
-              </strong>
+        {/* Sample Sale Badge preview */}
+        <div
+          className="absolute top-2.5 start-2.5 z-20 px-2.5 py-1 text-[10px] font-bold text-white shadow-sm"
+          style={{ backgroundColor: badgeBg, borderRadius: `calc(${radius} * 0.5)` }}
+        >
+          {isAr ? "خصم 20%" : "20% OFF"}
+        </div>
+
+        {mediaUrl ? (
+          <div className="relative h-full w-full">
+            {slide.type === "video" ? (
+              <video
+                src={mediaUrl}
+                muted
+                autoPlay
+                loop
+                playsInline
+                disablePictureInPicture
+                className="h-full w-full object-cover"
+              />
+            ) : (
+              <img src={mediaUrl} alt="" className="h-full w-full object-cover" />
             )}
-            {body && <p className="line-clamp-2 text-xs text-neutral-700 sm:text-sm">{body}</p>}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/35 to-transparent flex flex-col justify-end p-4 text-white">
+              {title && (
+                <h4 className="font-heading font-extrabold text-base sm:text-lg text-white drop-shadow-sm">
+                  {title}
+                </h4>
+              )}
+              {body && (
+                <p className="mt-1 line-clamp-2 text-xs text-white/90 drop-shadow-sm">{body}</p>
+              )}
+              {button && (
+                <Button
+                  size="sm"
+                  className="mt-2.5 w-fit min-h-[36px] px-4 text-xs font-semibold shadow-sm text-primary-foreground"
+                  style={{
+                    backgroundColor: "var(--primary)",
+                    borderRadius: radius,
+                  }}
+                >
+                  {button}
+                </Button>
+              )}
+            </div>
+          </div>
+        ) : (
+          <div className="flex h-full flex-col justify-center p-5 text-card-foreground bg-card">
+            {title && (
+              <h4 className="font-heading font-extrabold text-base sm:text-lg text-foreground">
+                {title}
+              </h4>
+            )}
+            {body && <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">{body}</p>}
             {button && (
-              <span
-                className="mt-3 w-fit rounded-full px-4 py-2 text-xs font-semibold text-white"
-                style={{ backgroundColor: color }}
+              <Button
+                size="sm"
+                className="mt-3 w-fit min-h-[36px] px-4 text-xs font-semibold shadow-sm text-primary-foreground"
+                style={{
+                  backgroundColor: "var(--primary)",
+                  borderRadius: radius,
+                }}
               >
                 {button}
-              </span>
+              </Button>
             )}
           </div>
         )}
         <div
           dir="ltr"
-          className="pointer-events-none absolute inset-x-3 bottom-3 flex justify-between text-white mix-blend-difference"
+          className="pointer-events-none absolute inset-x-2 bottom-2 flex justify-between text-white"
         >
-          <span className="grid h-9 w-9 place-items-center text-3xl font-extralight">‹</span>
-          <span className="grid h-9 w-9 place-items-center text-3xl font-extralight">›</span>
+          <span className="grid h-7 w-7 place-items-center rounded-full bg-black/45 backdrop-blur-md border border-white/20 text-xs font-bold shadow-sm">
+            ‹
+          </span>
+          <span className="grid h-7 w-7 place-items-center rounded-full bg-black/45 backdrop-blur-md border border-white/20 text-xs font-bold shadow-sm">
+            ›
+          </span>
         </div>
       </div>
     </details>
@@ -2633,6 +2741,9 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
     storefront_font_ar: string;
     storefront_font_en_url: string | null;
     storefront_font_ar_url: string | null;
+    storefront_radius: string;
+    header_glass: boolean;
+    badge_accent: string;
     hero_title_en: string | null;
     hero_title_ar: string | null;
     hero_title_size: number;
@@ -2690,10 +2801,9 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
   const { data } = useQuery({
     queryKey: ["business-settings-theme", brandId],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("business_settings")
+      const { data, error } = await (supabase.from("business_settings") as any)
         .select(
-          "logo_size, logo_align, show_header_name, show_hero_title, show_hero_about, show_footer_name, storefront_font_en, storefront_font_ar, storefront_font_en_url, storefront_font_ar_url, hero_title_en, hero_title_ar, hero_title_size, hero_title_color, hero_title_align, storefront_accent_color, storefront_background_color, storefront_text_color, header_bg, header_fg, footer_bg, footer_fg, heading_color, link_color, btn_primary_bg, btn_primary_fg, btn_secondary_bg, btn_secondary_fg, btn_checkout_bg, btn_checkout_fg, cart_drawer_checkout_bg, cart_drawer_checkout_fg, menu_bg, menu_fg, menu_title_en, menu_title_ar, menu_show_home, menu_show_account, menu_show_orders, menu_show_pages, home_promo_cards, show_new_arrivals, show_best_sellers, new_arrivals_title_en, new_arrivals_title_ar, best_sellers_title_en, best_sellers_title_ar, announcement_enabled, announcement_text_en, announcement_text_ar, announcement_bg, announcement_fg, announcement_bold, announcement_italic, announcement_dismissible, announcement_scope, announcement_audience, global_sale_badges_enabled, storefront_loader_text_en, storefront_loader_text_ar",
+          "logo_size, logo_align, show_header_name, show_hero_title, show_hero_about, show_footer_name, storefront_font_en, storefront_font_ar, storefront_font_en_url, storefront_font_ar_url, storefront_radius, header_glass, badge_accent, hero_title_en, hero_title_ar, hero_title_size, hero_title_color, hero_title_align, storefront_accent_color, storefront_background_color, storefront_text_color, header_bg, header_fg, footer_bg, footer_fg, heading_color, link_color, btn_primary_bg, btn_primary_fg, btn_secondary_bg, btn_secondary_fg, btn_checkout_bg, btn_checkout_fg, cart_drawer_checkout_bg, cart_drawer_checkout_fg, menu_bg, menu_fg, menu_title_en, menu_title_ar, menu_show_home, menu_show_account, menu_show_orders, menu_show_pages, home_promo_cards, show_new_arrivals, show_best_sellers, new_arrivals_title_en, new_arrivals_title_ar, best_sellers_title_en, best_sellers_title_ar, announcement_enabled, announcement_text_en, announcement_text_ar, announcement_bg, announcement_fg, announcement_bold, announcement_italic, announcement_dismissible, announcement_scope, announcement_audience, global_sale_badges_enabled, storefront_loader_text_en, storefront_loader_text_ar",
         )
         .eq("brand_id", brandId)
         .maybeSingle();
@@ -2702,10 +2812,11 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
         // If the query fails due to missing storefront loader columns in DB, dynamically fall back!
         if (error.code === "42703" || error.message?.includes("storefront_loader_text")) {
           setHasLoaderColumns(false);
-          const { data: fallbackData, error: fallbackError } = await supabase
-            .from("business_settings")
+          const { data: fallbackData, error: fallbackError } = await (
+            supabase.from("business_settings") as any
+          )
             .select(
-              "logo_size, logo_align, show_header_name, show_hero_title, show_hero_about, show_footer_name, storefront_font_en, storefront_font_ar, storefront_font_en_url, storefront_font_ar_url, hero_title_en, hero_title_ar, hero_title_size, hero_title_color, hero_title_align, storefront_accent_color, storefront_background_color, storefront_text_color, header_bg, header_fg, footer_bg, footer_fg, heading_color, link_color, btn_primary_bg, btn_primary_fg, btn_secondary_bg, btn_secondary_fg, btn_checkout_bg, btn_checkout_fg, cart_drawer_checkout_bg, cart_drawer_checkout_fg, menu_bg, menu_fg, menu_title_en, menu_title_ar, menu_show_home, menu_show_account, menu_show_orders, menu_show_pages, home_promo_cards, show_new_arrivals, show_best_sellers, new_arrivals_title_en, new_arrivals_title_ar, best_sellers_title_en, best_sellers_title_ar, announcement_enabled, announcement_text_en, announcement_text_ar, announcement_bg, announcement_fg, announcement_bold, announcement_italic, announcement_dismissible, announcement_scope, announcement_audience, global_sale_badges_enabled",
+              "logo_size, logo_align, show_header_name, show_hero_title, show_hero_about, show_footer_name, storefront_font_en, storefront_font_ar, storefront_font_en_url, storefront_font_ar_url, storefront_radius, header_glass, badge_accent, hero_title_en, hero_title_ar, hero_title_size, hero_title_color, hero_title_align, storefront_accent_color, storefront_background_color, storefront_text_color, header_bg, header_fg, footer_bg, footer_fg, heading_color, link_color, btn_primary_bg, btn_primary_fg, btn_secondary_bg, btn_secondary_fg, btn_checkout_bg, btn_checkout_fg, cart_drawer_checkout_bg, cart_drawer_checkout_fg, menu_bg, menu_fg, menu_title_en, menu_title_ar, menu_show_home, menu_show_account, menu_show_orders, menu_show_pages, home_promo_cards, show_new_arrivals, show_best_sellers, new_arrivals_title_en, new_arrivals_title_ar, best_sellers_title_en, best_sellers_title_ar, announcement_enabled, announcement_text_en, announcement_text_ar, announcement_bg, announcement_fg, announcement_bold, announcement_italic, announcement_dismissible, announcement_scope, announcement_audience, global_sale_badges_enabled",
             )
             .eq("brand_id", brandId)
             .maybeSingle();
@@ -2731,6 +2842,9 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
         storefront_font_ar: data.storefront_font_ar ?? "Tajawal",
         storefront_font_en_url: data.storefront_font_en_url ?? null,
         storefront_font_ar_url: data.storefront_font_ar_url ?? null,
+        storefront_radius: data.storefront_radius ?? "1rem",
+        header_glass: data.header_glass ?? true,
+        badge_accent: data.badge_accent ?? "maroon",
         hero_title_en: data.hero_title_en ?? null,
         hero_title_ar: data.hero_title_ar ?? null,
         hero_title_size: Number(data.hero_title_size ?? 48),
@@ -3107,7 +3221,9 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
 
       <div
         className={
-          settingsTab === "theme" ? "space-y-4 rounded-xl border border-border p-4" : "hidden"
+          settingsTab === "theme"
+            ? "space-y-6 rounded-xl border border-border p-4 sm:p-5"
+            : "hidden"
         }
       >
         <div>
@@ -3134,6 +3250,124 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
             value={state.storefront_text_color}
             onChange={(value) => setState({ ...state, storefront_text_color: value })}
           />
+        </div>
+
+        {/* Storefront Corner Curvature (storefront_radius) */}
+        <div className="space-y-2 border-t border-border/60 pt-4">
+          <Label className="font-semibold text-sm">
+            {isAr
+              ? "انحناء زوايا المتجر (Storefront Corner Curvature)"
+              : "Storefront Corner Curvature"}
+          </Label>
+          <p className="text-xs text-muted-foreground">
+            {isAr
+              ? "يحدد درجة استدارة الحواف للبطاقات والأزرار والعناصر التفاعلية في متجر العميل."
+              : "Controls the corner roundness of product cards, buttons, and interactive containers across your storefront."}
+          </p>
+          <Select
+            value={state.storefront_radius || "1rem"}
+            onValueChange={(val) => setState({ ...state, storefront_radius: val })}
+          >
+            <SelectTrigger className="mt-1.5 max-w-md">
+              <SelectValue placeholder={isAr ? "اختر انحناء الزوايا" : "Select corner curvature"} />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="0px">
+                {isAr ? "مستقيمة حادة (Sharp — 0px)" : "Sharp Rectangles (0px)"}
+              </SelectItem>
+              <SelectItem value="0.375rem">
+                {isAr ? "انحناء خفيف (Subtle — 6px / 0.375rem)" : "Subtle Rounded (6px / 0.375rem)"}
+              </SelectItem>
+              <SelectItem value="1rem">
+                {isAr
+                  ? "انحناء مميز (Rounded / Extra Curved — 16px / 1rem - الافتراضي)"
+                  : "Rounded / Extra Curved (16px / 1rem - Default)"}
+              </SelectItem>
+              <SelectItem value="1.5rem">
+                {isAr
+                  ? "شبه بيضاوية / كبسولة (Pill — 24px / 1.5rem)"
+                  : "Pill / Fully Curved (24px / 1.5rem)"}
+              </SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Navigation Bar Style (header_glass) */}
+        <div className="space-y-2 border-t border-border/60 pt-4">
+          <Label className="font-semibold text-sm">
+            {isAr ? "نمط شريط التنقل العلوي (Navigation Bar Style)" : "Navigation Bar Style"}
+          </Label>
+          <p className="text-xs text-muted-foreground">
+            {isAr
+              ? "اختر بين هيدر زجاجي مضبب عائم أو خلفية صلبة لترويسة المتجر."
+              : "Choose between a modern glassmorphic blur with backdrop opacity or a solid background for the top navigation bar."}
+          </p>
+          <div className="flex flex-col sm:flex-row gap-3 pt-1">
+            <Button
+              type="button"
+              variant={state.header_glass ? "default" : "outline"}
+              onClick={() => setState({ ...state, header_glass: true })}
+              className="justify-start sm:w-auto"
+            >
+              <span className="me-2 h-2.5 w-2.5 rounded-full bg-emerald-500 inline-block" />
+              {isAr ? "زجاجي مضبب (Glassmorphic Blur)" : "Glassmorphic Blur"}
+            </Button>
+            <Button
+              type="button"
+              variant={!state.header_glass ? "default" : "outline"}
+              onClick={() => setState({ ...state, header_glass: false })}
+              className="justify-start sm:w-auto"
+            >
+              <span className="me-2 h-2.5 w-2.5 rounded-full bg-muted-foreground/50 inline-block" />
+              {isAr ? "خلفية صلبة كاملة (Solid Background)" : "Solid Background"}
+            </Button>
+          </div>
+        </div>
+
+        {/* Sale & Badge Accent (badge_accent) */}
+        <div className="space-y-2 border-t border-border/60 pt-4">
+          <Label className="font-semibold text-sm">
+            {isAr ? "لون شارات الخصومات والعروض (Sale & Badge Accent)" : "Sale & Badge Accent"}
+          </Label>
+          <p className="text-xs text-muted-foreground">
+            {isAr
+              ? "حدد لون التمييز لشارات الخصم والتنزيلات في قوائم المنتجات."
+              : "Select the accent color used for discount badges, sale tags, and product highlight labels."}
+          </p>
+          <Select
+            value={state.badge_accent || "maroon"}
+            onValueChange={(val) => setState({ ...state, badge_accent: val })}
+          >
+            <SelectTrigger className="mt-1.5 max-w-md">
+              <SelectValue placeholder={isAr ? "اختر لون شارة العرض" : "Select badge accent"} />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="maroon">
+                <div className="flex items-center gap-2">
+                  <span className="h-3 w-3 rounded-full bg-[#8C6D58]" />
+                  <span>{isAr ? "عنابي كلاسيكي (Classic Maroon)" : "Classic Maroon"}</span>
+                </div>
+              </SelectItem>
+              <SelectItem value="crimson">
+                <div className="flex items-center gap-2">
+                  <span className="h-3 w-3 rounded-full bg-[#dc2626]" />
+                  <span>{isAr ? "أحمر قرمزي (Crimson Red)" : "Crimson Red"}</span>
+                </div>
+              </SelectItem>
+              <SelectItem value="slate">
+                <div className="flex items-center gap-2">
+                  <span className="h-3 w-3 rounded-full bg-[#334155]" />
+                  <span>{isAr ? "رمادي داكن (Dark Slate)" : "Dark Slate"}</span>
+                </div>
+              </SelectItem>
+              <SelectItem value="emerald">
+                <div className="flex items-center gap-2">
+                  <span className="h-3 w-3 rounded-full bg-[#059669]" />
+                  <span>{isAr ? "أخضر زمردي (Emerald Green)" : "Emerald Green"}</span>
+                </div>
+              </SelectItem>
+            </SelectContent>
+          </Select>
         </div>
       </div>
 

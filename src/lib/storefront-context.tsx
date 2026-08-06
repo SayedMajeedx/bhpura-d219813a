@@ -162,6 +162,7 @@ export type PublicSettings = {
   analytics_consent_required: boolean;
   storefront_loader_text_en?: string | null;
   storefront_loader_text_ar?: string | null;
+  storefront_radius?: string | null;
 };
 
 export type CustomFieldValue = {

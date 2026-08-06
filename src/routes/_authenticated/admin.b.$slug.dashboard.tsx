@@ -547,7 +547,6 @@ function Dashboard() {
             deltaPct: financials.revenueDeltaPct,
             icon: TrendingUp,
             color: "text-emerald-500",
-            bg: "from-emerald-500/10 via-transparent to-transparent",
             border: "hover:border-emerald-500/20",
           },
           {
@@ -557,7 +556,6 @@ function Dashboard() {
             deltaPct: financials.aovDeltaPct,
             icon: Wallet,
             color: "text-sky-500",
-            bg: "from-sky-500/10 via-transparent to-transparent",
             border: "hover:border-sky-500/20",
           },
           {
@@ -566,7 +564,6 @@ function Dashboard() {
             subValue: `${isAr ? "تكلفة المبيعات" : "COGS"}: ${formatMoney(financials.cogs, currency, locale)}`,
             icon: PiggyBank,
             color: "text-blue-500",
-            bg: "from-blue-500/10 via-transparent to-transparent",
             border: "hover:border-blue-500/20",
           },
         ]
@@ -578,7 +575,6 @@ function Dashboard() {
       deltaPct: financials.ordersDeltaPct,
       icon: ReceiptText,
       color: "text-indigo-500",
-      bg: "from-indigo-500/10 via-transparent to-transparent",
       border: "hover:border-indigo-500/20",
     },
   ];
@@ -615,7 +611,7 @@ function Dashboard() {
               return (
                 <Card
                   key={k.label}
-                  className={`relative overflow-hidden p-4 transition-all duration-300 bg-gradient-to-br ${k.bg} hover:shadow-lg border border-border/60 rounded-2xl bg-card/60 backdrop-blur-sm ${k.border}`}
+                  className={`relative overflow-hidden p-4 transition-all duration-300 hover:shadow-md border border-border rounded-2xl bg-card ${k.border}`}
                 >
                   <div className="min-w-0">
                     <div className="flex items-center justify-between gap-2">
@@ -669,7 +665,7 @@ function Dashboard() {
           {/* Middle Multi-Column Grid: Sales Trajectory & Action Feed */}
           <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 items-stretch">
             {canViewFinancials && (
-              <Card className="lg:col-span-3 p-5 border border-border/60 shadow-sm rounded-2xl bg-card/80 backdrop-blur-sm flex flex-col justify-between space-y-3 h-full">
+              <Card className="lg:col-span-3 p-5 border border-border shadow-xs rounded-2xl bg-card flex flex-col justify-between space-y-3 h-full">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                   <div>
                     <h3 className="text-base font-bold font-heading flex items-center gap-2">
@@ -750,8 +746,8 @@ function Dashboard() {
             <Card
               className={
                 canViewFinancials
-                  ? "lg:col-span-2 p-5 border border-border/60 shadow-sm rounded-2xl bg-card/80 backdrop-blur-sm flex flex-col justify-between space-y-3 h-full"
-                  : "lg:col-span-5 p-5 border border-border/60 shadow-sm rounded-2xl bg-card/80 backdrop-blur-sm flex flex-col justify-between space-y-3 h-full"
+                  ? "lg:col-span-2 p-5 border border-border shadow-xs rounded-2xl bg-card flex flex-col justify-between space-y-3 h-full"
+                  : "lg:col-span-5 p-5 border border-border shadow-xs rounded-2xl bg-card flex flex-col justify-between space-y-3 h-full"
               }
             >
               <div className="flex items-center justify-between pb-2 border-b border-border/60">
@@ -823,7 +819,7 @@ function Dashboard() {
 
           {/* Lower Feed: Activity Queue & Low Stock Alerts */}
           <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 items-stretch">
-            <Card className="lg:col-span-3 p-5 border border-border/60 shadow-sm rounded-2xl bg-card/80 backdrop-blur-sm flex flex-col justify-between space-y-3 h-full">
+            <Card className="lg:col-span-3 p-5 border border-border shadow-xs rounded-2xl bg-card flex flex-col justify-between space-y-3 h-full">
               <div className="flex items-center justify-between pb-2 border-b border-border/60">
                 <div className="flex items-center gap-2">
                   <ReceiptText className="h-4.5 w-4.5 text-primary" />
@@ -849,7 +845,7 @@ function Dashboard() {
               />
             </Card>
 
-            <Card className="lg:col-span-2 p-5 border border-border/60 shadow-sm rounded-2xl bg-card/80 backdrop-blur-sm flex flex-col justify-between space-y-3 h-full">
+            <Card className="lg:col-span-2 p-5 border border-border shadow-xs rounded-2xl bg-card flex flex-col justify-between space-y-3 h-full">
               <div className="flex items-center justify-between pb-2 border-b border-border/60">
                 <div className="flex items-center gap-2">
                   <Package className="h-4.5 w-4.5 text-amber-500" />
@@ -907,7 +903,7 @@ function Dashboard() {
       {/* Dynamic View 2: Expanded Sales Chart Series ("sales_series") */}
       {activeScope === "sales_series" && (
         <div className="space-y-4 animate-in fade-in duration-200">
-          <Card className="p-6 border border-border/60 shadow-md rounded-2xl bg-card/90 space-y-4">
+          <Card className="p-6 border border-border shadow-xs rounded-2xl bg-card space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-border/60">
               <div>
                 <h3 className="text-lg font-extrabold flex items-center gap-2 text-foreground">
@@ -985,7 +981,7 @@ function Dashboard() {
         <div className="space-y-4 animate-in fade-in duration-200">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
             {/* Inventory Diagnostics Detailed Panel */}
-            <Card className="p-5 border border-border/60 shadow-md rounded-2xl bg-card/90 space-y-4">
+            <Card className="p-5 border border-border shadow-xs rounded-2xl bg-card space-y-4">
               <div className="flex items-center justify-between pb-3 border-b border-border/60">
                 <div className="flex items-center gap-2">
                   <Package className="h-5 w-5 text-amber-500" />
@@ -1048,7 +1044,7 @@ function Dashboard() {
             </Card>
 
             {/* CRM Customer Diagnostics Panel */}
-            <Card className="p-5 border border-border/60 shadow-md rounded-2xl bg-card/90 space-y-4">
+            <Card className="p-5 border border-border shadow-xs rounded-2xl bg-card space-y-4">
               <div className="flex items-center justify-between pb-3 border-b border-border/60">
                 <div className="flex items-center gap-2">
                   <Users className="h-5 w-5 text-indigo-500" />

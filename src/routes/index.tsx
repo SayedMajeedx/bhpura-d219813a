@@ -23,7 +23,7 @@ function IndexComponent({ text }: { text: string }) {
   return (
     <div className="flex min-h-screen items-center justify-center bg-zinc-950 text-white">
       <div className="flex flex-col items-center gap-4 px-6 text-center">
-        <Loader2 className="h-8 w-8 animate-spin text-[#800020]" />
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
         <p className="text-zinc-400 text-sm font-light tracking-wide animate-pulse max-w-md">
           {text}
         </p>

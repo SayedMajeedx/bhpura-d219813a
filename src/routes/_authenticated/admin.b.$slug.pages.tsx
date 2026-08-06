@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
+import { OsEmptyState } from "@/components/os/os-empty-state";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -31,6 +32,7 @@ import {
   RefreshCw,
   Trash2,
   Upload,
+  FileText,
 } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
 import { useBrand } from "@/lib/brand-context";
@@ -410,7 +412,7 @@ function PagesAndPolicies() {
 
           <Card className="space-y-4 overflow-hidden rounded-2xl border-border/60 bg-card/40 p-3 shadow-lg backdrop-blur-sm sm:p-6">
             <div className="flex items-center gap-2">
-              <MessageCircle className="h-5 w-5 text-[#25D366]" />
+              <MessageCircle className="h-5 w-5 text-emerald-500" />
               <h2 className="font-display text-xl font-bold">
                 {isAr ? "زر واتساب العائم" : "WhatsApp floating button"}
               </h2>
@@ -473,11 +475,15 @@ function PagesAndPolicies() {
           </div>
 
           {pages.length === 0 && (
-            <Card className="rounded-2xl border-border/60 bg-card/40 p-8 text-center shadow-lg backdrop-blur-sm sm:p-16">
-              <p className="text-muted-foreground text-sm">
-                {isAr ? "لا توجد صفحات بعد." : "No pages yet."}
-              </p>
-            </Card>
+            <OsEmptyState
+              icon={FileText}
+              title={isAr ? "لا توجد صفحات مضافة" : "No pages found"}
+              description={
+                isAr
+                  ? "قم بإنشاء صفحات جديدة لمحتوى المتجر وسياسات الاستخدام والشروط."
+                  : "Create new custom pages for store content, terms, and policies."
+              }
+            />
           )}
 
           <Accordion

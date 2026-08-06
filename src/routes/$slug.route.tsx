@@ -43,6 +43,7 @@ import {
   ChevronDown,
   Sparkles,
 } from "lucide-react";
+import { OsEmptyState } from "@/components/os/os-empty-state";
 import { Input } from "@/components/ui/input";
 import { cloudflareImageUrl, imageKitVideoUrl } from "@/lib/media-delivery";
 import { faviconType, resolveBrandFavicon, useDynamicFavicon } from "@/lib/favicon";
@@ -89,8 +90,9 @@ export const Route = createFileRoute("/$slug")({
       logo_url: s?.logo_url ?? brand.logo_url ?? null,
       favicon_url: s?.favicon_url ?? null,
       currency: s?.currency ?? "BHD",
-      primary_color: s?.storefront_accent_color ?? brand.primary_color ?? "#8b6f47",
-      storefront_accent_color: s?.storefront_accent_color ?? brand.primary_color ?? "#8b6f47",
+      primary_color: s?.storefront_accent_color ?? brand.primary_color ?? "#3f121a",
+      storefront_accent_color: s?.storefront_accent_color ?? brand.primary_color ?? "#3f121a",
+      storefront_radius: s?.storefront_radius ?? null,
       text_color: s?.storefront_text_color ?? "#111111",
       background_color: s?.storefront_background_color ?? "#ffffff",
       cod_enabled: s?.cod_enabled ?? true,
@@ -335,6 +337,8 @@ function StoreShell() {
     document.head.appendChild(link);
   }, [storefrontFont, storefrontFontUrl]);
 
+  const radiusSf = settings.storefront_radius || "1rem";
+
   return (
     <div
       dir={lang === "ar" ? "rtl" : "ltr"}
@@ -343,7 +347,9 @@ function StoreShell() {
         {
           backgroundColor: settings.background_color,
           color: settings.text_color,
-          ["--brand" as any]: primary,
+          ["--primary" as any]: primary || "#3f121a",
+          ["--primary-foreground" as any]: btnPrimaryFg,
+          ["--radius-sf" as any]: radiusSf,
           ["--sf-header-bg" as any]: headerBg,
           ["--sf-header-fg" as any]: headerFg,
           ["--sf-footer-bg" as any]: footerBg,
@@ -658,9 +664,11 @@ function AnnouncementBar() {
     >
       <span>{text}</span>
       {settings.announcement_dismissible && (
-        <button
+        <Button
           type="button"
-          className="absolute end-1 top-1/2 grid h-11 w-11 -translate-y-1/2 place-items-center rounded-full hover:bg-white/15"
+          variant="ghost"
+          size="icon"
+          className="absolute end-1 top-1/2 h-11 w-11 -translate-y-1/2 rounded-full hover:bg-white/15"
           aria-label="Dismiss announcement"
           onClick={() => {
             try {
@@ -670,7 +678,7 @@ function AnnouncementBar() {
           }}
         >
           <X className="h-4 w-4" />
-        </button>
+        </Button>
       )}
     </div>
   );
@@ -739,7 +747,7 @@ function NavCategoryItem({
             variant="ghost"
             size="sm"
             onClick={toggleExpand}
-            className="h-9 w-9 p-0 shrink-0 rounded-lg hover:bg-black/5 text-muted-foreground hover:text-foreground transition-all duration-200"
+            className="h-11 w-11 p-0 shrink-0 rounded-lg hover:bg-black/5 text-muted-foreground hover:text-foreground transition-all duration-200"
             aria-expanded={isExpanded}
             aria-label={lang === "ar" ? "توسيع" : "Expand"}
           >
@@ -1288,7 +1296,7 @@ function DesktopStoreNavigation() {
                 {/* State-controlled dropdown menu card with unmount-on-exit */}
                 {isOpen && (
                   <div className="absolute top-full left-1/2 z-50 pt-2 min-w-[230px] -translate-x-1/2">
-                    <div className="rounded-2xl border border-slate-100/60 dark:border-slate-800/80 bg-background p-3 shadow-xl transition-all duration-200 animate-in fade-in-0 slide-in-from-top-1 text-foreground">
+                    <div className="rounded-2xl border border-border bg-background p-3 shadow-xl transition-all duration-200 animate-in fade-in-0 slide-in-from-top-1 text-foreground">
                       <DesktopSubMenu
                         parentCategoryId={c.id}
                         categories={data}
@@ -1360,8 +1368,16 @@ function CartDrawer({ children }: { children: React.ReactNode }) {
 
             <div className="flex-1 overflow-auto py-4 space-y-3">
               {cart.length === 0 ? (
-                <div className="text-center text-muted-foreground py-12">
-                  {t("السلة فارغة", "Your cart is empty")}
+                <div className="py-8">
+                  <OsEmptyState
+                    compact
+                    icon={ShoppingBag}
+                    title={t("السلة فارغة", "Your cart is empty")}
+                    description={t(
+                      "لم تقم بإضافة أية منتجات بعد.",
+                      "You haven't added any products yet.",
+                    )}
+                  />
                 </div>
               ) : (
                 cart.map((item) => {
@@ -1436,31 +1452,42 @@ function CartDrawer({ children }: { children: React.ReactNode }) {
                         </div>
                       </div>
                       <div className="flex flex-col items-center gap-1 shrink-0">
-                        <div className="flex items-center border rounded">
-                          <button
-                            className="grid h-11 w-11 place-items-center"
+                        <div className="flex items-center border rounded overflow-hidden">
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="h-11 w-11 rounded-none"
                             onClick={() => updateQty(item.cart_line_id, item.qty - 1)}
                             aria-label="decrease"
                           >
                             <Minus className="h-3 w-3" />
-                          </button>
-                          <span className="px-2 text-sm min-w-[24px] text-center">{item.qty}</span>
-                          <button
-                            className="grid h-11 w-11 place-items-center disabled:opacity-40"
+                          </Button>
+                          <span className="px-2 text-sm min-w-[24px] text-center font-medium">
+                            {item.qty}
+                          </span>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="h-11 w-11 rounded-none"
                             disabled={item.qty >= item.max_stock}
                             onClick={() => updateQty(item.cart_line_id, item.qty + 1)}
                             aria-label="increase"
                           >
                             <Plus className="h-3 w-3" />
-                          </button>
+                          </Button>
                         </div>
-                        <button
-                          className="flex min-h-11 items-center gap-1 px-2 text-xs text-red-600"
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="flex min-h-11 items-center gap-1 px-2 text-xs text-destructive hover:text-destructive"
                           onClick={() => removeFromCart(item.cart_line_id)}
                         >
                           <Trash2 className="h-3 w-3" />
                           {t("حذف", "Remove")}
-                        </button>
+                        </Button>
                       </div>
                     </div>
                   );
@@ -1556,26 +1583,27 @@ function SearchBar() {
   return (
     <>
       {/* Search Input Trigger inside the page headers */}
-      <button
+      <Button
         type="button"
+        variant="outline"
         aria-label={searchLabel}
         aria-haspopup="dialog"
-        className={`relative flex h-11 w-full cursor-pointer items-center rounded-md border border-black/10 bg-white/70 text-start text-sm text-muted-foreground shadow-sm transition-colors hover:bg-white/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring dark:bg-black/20 dark:hover:bg-black/30 ${lang === "ar" ? "pr-9 pl-3" : "pl-9 pr-3"}`}
+        className={`relative flex h-11 w-full justify-start font-normal bg-white/70 text-muted-foreground shadow-sm transition-colors hover:bg-white/90 dark:bg-black/20 dark:hover:bg-black/30 ${lang === "ar" ? "pr-9 pl-3" : "pl-9 pr-3"}`}
         onClick={() => setModalOpen(true)}
       >
         <Search
           className={`pointer-events-none absolute top-1/2 -translate-y-1/2 h-4 w-4 opacity-60 ${lang === "ar" ? "right-3" : "left-3"}`}
         />
         <span className="truncate">{searchPlaceholder}</span>
-      </button>
+      </Button>
 
       {/* Premium backdrop-blurred modal dialog */}
       <Dialog open={modalOpen} onOpenChange={setModalOpen}>
         <DialogContent
-          className="sm:max-w-2xl gap-0 p-0 overflow-hidden bg-white/95 dark:bg-neutral-950/95 backdrop-blur-md border border-neutral-200/50 dark:border-neutral-800/50 shadow-2xl rounded-2xl [&>button]:text-neutral-500 [&>button]:hover:text-neutral-800 [&>button]:dark:text-neutral-400 [&>button]:dark:hover:text-neutral-100 [&>button]:top-5"
+          className="sm:max-w-2xl gap-0 p-0 overflow-hidden bg-white/95 dark:bg-neutral-950/95 backdrop-blur-md border border-border shadow-2xl rounded-2xl [&>button]:text-neutral-500 [&>button]:hover:text-neutral-800 [&>button]:dark:text-neutral-400 [&>button]:dark:hover:text-neutral-100 [&>button]:top-5"
           dir={lang === "ar" ? "rtl" : "ltr"}
         >
-          <DialogHeader className="p-4 border-b border-neutral-200/50 dark:border-neutral-800/40 flex flex-row items-center gap-2">
+          <DialogHeader className="p-4 border-b border-border flex flex-row items-center gap-2">
             <Search className="h-5 w-5 opacity-60 shrink-0" />
             <DialogTitle className="sr-only">{t("البحث", "Search")}</DialogTitle>
             <form
@@ -1604,13 +1632,16 @@ function SearchBar() {
               />
             </form>
             {q && (
-              <button
+              <Button
                 type="button"
+                variant="ghost"
+                size="icon"
                 onClick={() => setQ("")}
-                className="p-1 rounded-full hover:bg-neutral-200/60 dark:hover:bg-neutral-800/60 shrink-0 me-6"
+                aria-label={t("مسح البحث", "Clear search")}
+                className="h-11 w-11 rounded-full shrink-0 me-6"
               >
                 <X className="h-4 w-4 opacity-70" />
-              </button>
+              </Button>
             )}
           </DialogHeader>
 
@@ -1633,7 +1664,7 @@ function SearchBar() {
                           to="/$slug/$category"
                           params={{ slug: brand.slug, category: cat.slug }}
                           onClick={() => setModalOpen(false)}
-                          className="px-3.5 py-1.5 rounded-full border text-xs font-medium bg-neutral-100 hover:bg-neutral-200/60 dark:bg-neutral-900 dark:hover:bg-neutral-800 transition-all cursor-pointer border-neutral-200/60 dark:border-neutral-800/40"
+                          className="px-3.5 py-1.5 rounded-full border border-border text-xs font-medium bg-neutral-100 hover:bg-neutral-200/60 dark:bg-neutral-900 dark:hover:bg-neutral-800 transition-all cursor-pointer"
                         >
                           {catName}
                         </Link>
@@ -1675,7 +1706,7 @@ function SearchBar() {
                 )}
 
                 {!isFetching && results.length > 0 && (
-                  <ul className="divide-y divide-neutral-200/40 dark:divide-neutral-800/40">
+                  <ul className="divide-y divide-border">
                     {results.map((p) => {
                       const displayName = pickName(lang, p);
                       const price = p.product_variants?.[0]?.selling_price ?? 0;
@@ -1696,7 +1727,7 @@ function SearchBar() {
                             }}
                             className="flex items-center gap-3 group"
                           >
-                            <div className="h-12 w-12 shrink-0 rounded-lg bg-neutral-100 dark:bg-neutral-900 border border-neutral-200/50 dark:border-neutral-800/40 overflow-hidden relative">
+                            <div className="h-12 w-12 shrink-0 rounded-lg bg-neutral-100 dark:bg-neutral-900 border border-border overflow-hidden relative">
                               {imageUrl && (
                                 <img
                                   src={cloudflareImageUrl(imageUrl, 120)}
@@ -1806,7 +1837,7 @@ function StoreFooter() {
         )}
 
         {/* Minimalist footer bottom line */}
-        <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-[11px] opacity-70 border-t border-white/10 pt-2 w-full max-w-2xl">
+        <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-[11px] opacity-70 border-t border-border pt-2 w-full max-w-2xl">
           {settings.show_footer_name && (
             <span className="font-semibold" style={{ color: "var(--sf-footer-fg)" }}>
               {lang === "ar" ? brand.name_ar || brand.name_en : brand.name_en}
@@ -1816,14 +1847,15 @@ function StoreFooter() {
             © {new Date().getFullYear()} — {t("جميع الحقوق محفوظة", "All rights reserved")}
           </span>
           {settings.analytics_consent_required && (
-            <button
+            <Button
               type="button"
-              className="inline-flex min-h-11 items-center underline underline-offset-2 hover:opacity-100 py-0.5 sm:min-h-0"
+              variant="link"
+              className="inline-flex min-h-11 items-center hover:opacity-100 py-0.5 sm:min-h-0 h-auto p-0 font-normal underline underline-offset-2"
               style={{ color: "var(--sf-footer-fg)" }}
               onClick={() => window.dispatchEvent(new Event("boutq:privacy-preferences"))}
             >
               {t("خيارات الخصوصية", "Privacy choices")}
-            </button>
+            </Button>
           )}
         </div>
       </div>

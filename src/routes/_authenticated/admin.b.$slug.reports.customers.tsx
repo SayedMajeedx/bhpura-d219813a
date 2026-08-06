@@ -72,12 +72,12 @@ function ReportsCustomers() {
         {
           name: lang === "ar" ? "عملاء جدد" : "New Customers",
           value: customersData.new_customers_count,
-          color: "#6b1d24",
+          color: "oklch(0.26 0.09 25)",
         },
         {
           name: lang === "ar" ? "عملاء متكررون" : "Returning Customers",
           value: customersData.returning_customers_count,
-          color: "#c59a66",
+          color: "oklch(0.72 0.08 70)",
         },
       ]
     : [];

@@ -741,7 +741,7 @@ function ExpenseDialog({
         <DialogHeader>
           <DialogTitle>{expense ? t("expenses.edit") : t("expenses.add")}</DialogTitle>
         </DialogHeader>
-        <div className="space-y-3">
+        <div className="space-y-4">
           <div>
             <Label>{t("expenses.category")}</Label>
             <CreatableCategorySelect
@@ -758,7 +758,7 @@ function ExpenseDialog({
               onChange={(e) => setForm({ ...form, description: e.target.value })}
             />
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-4">
             <div>
               <Label>{t("expenses.amount")}</Label>
               <Input
@@ -1072,7 +1072,7 @@ function ReceiptReviewDialog({
         </DialogHeader>
 
         {/* Header block: store, date, time */}
-        <div className="rounded-lg border bg-secondary/30 p-4 space-y-3">
+        <div className="rounded-lg border bg-secondary/30 p-4 space-y-4">
           <div>
             <Label className="flex items-center gap-2 text-xs uppercase tracking-wider text-muted-foreground mb-1">
               <StoreIcon className="h-3.5 w-3.5" />
@@ -1084,7 +1084,7 @@ function ReceiptReviewDialog({
               className="text-base font-semibold"
             />
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-4">
             <div>
               <Label className="flex items-center gap-2 text-xs uppercase tracking-wider text-muted-foreground mb-1">
                 <Calendar className="h-3.5 w-3.5" />
@@ -1182,7 +1182,7 @@ function ReceiptReviewDialog({
 
         {/* Totals block — commercial receipt style */}
         <div className="mt-4 rounded-lg border p-4 bg-secondary/20">
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-4">
             <div>
               <Label className="text-xs">{lang === "ar" ? "العملة" : "Currency"}</Label>
               <Input
@@ -1248,7 +1248,7 @@ function ReceiptReviewDialog({
         </div>
 
         {/* Description + notes */}
-        <div className="mt-4 grid gap-3">
+        <div className="mt-4 grid gap-4">
           <div>
             <Label>{lang === "ar" ? "الوصف" : "Description"}</Label>
             <Input

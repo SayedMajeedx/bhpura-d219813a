@@ -248,7 +248,7 @@ const getFulfillmentBadgeDetails = (
   // ON_HOLD / default
   return {
     label: lang === "ar" ? "قيد الانتظار" : "On Hold",
-    classes: "bg-slate-200 text-slate-800 border border-slate-300/80 font-semibold shadow-xs",
+    classes: "bg-slate-200 text-slate-800 border border-border font-semibold shadow-xs",
   };
 };
 
@@ -1570,6 +1570,7 @@ function OrdersList() {
             setWaModalState({ isOpen: true, order: o, courier })
           }
           onAssignCourier={handleQuickAssignCourier}
+          onDeleteOrder={!isCourier ? (id: string) => setDeleteTarget(id) : undefined}
         />
       </div>
 

@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useStorefront, formatPrice, pickName } from "@/lib/storefront-context";
 import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useMemo, useState, useRef, useEffect, type AnchorHTMLAttributes } from "react";
 import { ChevronDown, ChevronLeft, ChevronRight, FileText, Grid2X2, Heart } from "lucide-react";
@@ -270,14 +271,14 @@ function StoreHome() {
             <SkeletonMerchandisingSection label={["وصل حديثاً", "New arrivals"]} />
             <SkeletonMerchandisingSection label={["الأكثر مبيعاً", "Best sellers"]} />
           </div>
-          <div className="mt-8 pt-6 sm:pt-8 border-t border-neutral-100/50">
+          <div className="mt-8 pt-6 sm:pt-8 border-t border-border">
             <SectionHeading fallbackAr="كل المنتجات" fallbackEn="All products" />
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
               {Array.from({ length: 4 }).map((_, i) => (
                 <div key={i} className="space-y-2">
-                  <Skeleton className="aspect-[3/4] rounded-xl w-full animate-pulse bg-neutral-100" />
-                  <Skeleton className="h-4 w-3/4 animate-pulse bg-neutral-100" />
-                  <Skeleton className="h-4 w-1/3 animate-pulse bg-neutral-100" />
+                  <Skeleton className="aspect-[3/4] rounded-xl w-full bg-muted" />
+                  <Skeleton className="h-4 w-3/4 bg-muted" />
+                  <Skeleton className="h-4 w-1/3 bg-muted" />
                 </div>
               ))}
             </div>
@@ -304,7 +305,7 @@ function StoreHome() {
         <div
           ref={productsSectionRef}
           id="products-section"
-          className={`scroll-mt-20 pt-6 sm:pt-8 ${!activeCat ? "border-t border-neutral-100/50" : ""}`}
+          className={`scroll-mt-20 pt-6 sm:pt-8 ${!activeCat ? "border-t border-border" : ""}`}
         >
           <SectionHeading
             title={activeCat ? undefined : null}
@@ -404,7 +405,7 @@ function SectionHeading({
 function SkeletonMerchandisingSection({ label }: { label: [string, string] }) {
   const { lang } = useStorefront();
   return (
-    <section className="py-4 sm:py-6 border-t border-neutral-100/50">
+    <section className="py-4 sm:py-6 border-t border-border">
       <SectionHeading fallbackAr={label[0]} fallbackEn={label[1]} />
       <div
         dir={lang === "ar" ? "rtl" : "ltr"}
@@ -415,9 +416,9 @@ function SkeletonMerchandisingSection({ label }: { label: [string, string] }) {
             key={i}
             className="flex-shrink-0 w-[72vw] sm:w-[45vw] md:w-[28vw] min-w-[240px] md:w-auto md:shrink space-y-2"
           >
-            <Skeleton className="aspect-[3/4] rounded-xl w-full animate-pulse bg-neutral-100" />
-            <Skeleton className="h-4 w-3/4 animate-pulse bg-neutral-100" />
-            <Skeleton className="h-4 w-1/3 animate-pulse bg-neutral-100" />
+            <Skeleton className="aspect-[3/4] rounded-xl w-full bg-muted" />
+            <Skeleton className="h-4 w-3/4 bg-muted" />
+            <Skeleton className="h-4 w-1/3 bg-muted" />
           </div>
         ))}
       </div>
@@ -459,7 +460,7 @@ function MerchandisingSection({
           : ["الرائج الآن", "Trending now"];
 
   return (
-    <section className="py-4 sm:py-6 border-t border-neutral-100/50">
+    <section className="py-4 sm:py-6 border-t border-border">
       <SectionHeading title={title} fallbackAr={label[0]} fallbackEn={label[1]} />
       <div
         dir={lang === "ar" ? "rtl" : "ltr"}
@@ -524,7 +525,7 @@ function HeroBanner() {
               loading="eager"
             />
           )}
-          <div className="absolute inset-0 bg-black/20" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/30 to-black/20" />
         </div>
       ) : (
         <div
@@ -626,48 +627,118 @@ function HeroContentCarousel({
               className={`col-start-1 row-start-1 aspect-video min-w-0 overflow-hidden rounded-2xl transition-[opacity,transform,filter] duration-[680ms] ease-[cubic-bezier(0.22,1,0.36,1)] [backface-visibility:hidden] [clip-path:inset(0_round_1rem)] will-change-[opacity,transform] sm:duration-[720ms] ${slideIndex === idx ? "z-10 pointer-events-auto translate-y-0 scale-100 opacity-100 blur-0" : "z-0 pointer-events-none translate-y-1 scale-[0.992] opacity-0 blur-[1px]"}`}
             >
               {slide.type === "image" && mediaUrl ? (
-                <StorefrontLink
-                  href={slide.button_href || "#products"}
-                  className="block h-full w-full overflow-hidden rounded-2xl sm:h-[320px]"
-                  aria-label={title || (lang === "ar" ? "عرض المنتجات" : "View products")}
-                >
-                  <ResponsiveImage
-                    src={mediaUrl}
-                    preset="hero"
-                    sizes="100vw"
-                    alt={title || (lang === "ar" ? "صورة العرض الرئيسي" : "Hero banner image")}
-                    className="h-full w-full object-cover"
-                    fetchPriority={slideIndex === 0 ? "high" : "auto"}
-                    loading={slideIndex === 0 ? "eager" : "lazy"}
-                  />
-                </StorefrontLink>
+                <div className="relative h-full w-full overflow-hidden rounded-2xl sm:h-[320px]">
+                  <StorefrontLink
+                    href={slide.button_href || "#products"}
+                    className="group relative block h-full w-full overflow-hidden rounded-2xl"
+                    aria-label={title || (lang === "ar" ? "عرض المنتجات" : "View products")}
+                  >
+                    <ResponsiveImage
+                      src={mediaUrl}
+                      preset="hero"
+                      sizes="100vw"
+                      alt={title || (lang === "ar" ? "صورة العرض الرئيسي" : "Hero banner image")}
+                      className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                      fetchPriority={slideIndex === 0 ? "high" : "auto"}
+                      loading={slideIndex === 0 ? "eager" : "lazy"}
+                    />
+                    {/* Directional Legibility Gradient Overlay */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/35 to-transparent pointer-events-none" />
+
+                    {(title || body || button) && (
+                      <div
+                        className="absolute inset-0 flex flex-col justify-end p-5 pb-12 sm:p-8 sm:pb-16 text-white"
+                        style={{ textAlign: settings.hero_title_align }}
+                      >
+                        {settings.show_hero_title && title && (
+                          <h1
+                            className="mb-1 font-semibold leading-tight drop-shadow-sm sm:mb-2"
+                            style={{
+                              fontSize: `clamp(1.25rem, 5vw, ${settings.hero_title_size}px)`,
+                              fontFamily: "var(--sf-font)",
+                            }}
+                          >
+                            {title}
+                          </h1>
+                        )}
+                        {settings.show_hero_about && body && (
+                          <p className="mb-3 max-w-lg line-clamp-2 text-xs leading-relaxed text-white/90 drop-shadow-sm sm:mb-4 sm:line-clamp-3 sm:text-sm">
+                            {body}
+                          </p>
+                        )}
+                        {button && (
+                          <div>
+                            <span className="inline-flex items-center rounded-full bg-primary text-primary-foreground px-4 py-2 text-xs font-semibold shadow-md transition-transform duration-200 group-hover:scale-105 sm:px-6 sm:py-2.5 sm:text-sm focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
+                              {button}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </StorefrontLink>
+                </div>
               ) : slide.type === "video" && (mediaUrl || streamIframeUrl) ? (
-                <StorefrontLink
-                  href={slide.button_href || "#products"}
-                  className="block h-full w-full cursor-pointer overflow-hidden rounded-2xl sm:h-[320px]"
-                  aria-label={title || (lang === "ar" ? "فتح الرابط" : "Open link")}
-                >
-                  <OptimizedVideo
-                    src={streamIframeUrl ? undefined : mediaUrl}
-                    streamIframeUrl={streamIframeUrl}
-                    poster={posterUrl}
-                    active={slideIndex === idx}
-                    prepare={!streamIframeUrl && slideIndex === preparedVideoIndex}
-                    preload={slideIndex === idx ? "auto" : undefined}
-                    className="pointer-events-none h-full w-full object-contain sm:object-cover"
-                    wrapperClassName="pointer-events-none h-full w-full overflow-hidden"
-                  />
-                </StorefrontLink>
+                <div className="relative h-full w-full overflow-hidden rounded-2xl sm:h-[320px]">
+                  <StorefrontLink
+                    href={slide.button_href || "#products"}
+                    className="group relative block h-full w-full cursor-pointer overflow-hidden rounded-2xl"
+                    aria-label={title || (lang === "ar" ? "فتح الرابط" : "Open link")}
+                  >
+                    <OptimizedVideo
+                      src={streamIframeUrl ? undefined : mediaUrl}
+                      streamIframeUrl={streamIframeUrl}
+                      poster={posterUrl}
+                      active={slideIndex === idx}
+                      prepare={!streamIframeUrl && slideIndex === preparedVideoIndex}
+                      preload={slideIndex === idx ? "auto" : undefined}
+                      className="pointer-events-none h-full w-full object-cover"
+                      wrapperClassName="pointer-events-none h-full w-full overflow-hidden"
+                    />
+                    {/* Directional Legibility Gradient Overlay */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/35 to-transparent pointer-events-none" />
+
+                    {(title || body || button) && (
+                      <div
+                        className="absolute inset-0 flex flex-col justify-end p-5 pb-12 sm:p-8 sm:pb-16 text-white"
+                        style={{ textAlign: settings.hero_title_align }}
+                      >
+                        {settings.show_hero_title && title && (
+                          <h1
+                            className="mb-1 font-semibold leading-tight drop-shadow-sm sm:mb-2"
+                            style={{
+                              fontSize: `clamp(1.25rem, 5vw, ${settings.hero_title_size}px)`,
+                              fontFamily: "var(--sf-font)",
+                            }}
+                          >
+                            {title}
+                          </h1>
+                        )}
+                        {settings.show_hero_about && body && (
+                          <p className="mb-3 max-w-lg line-clamp-2 text-xs leading-relaxed text-white/90 drop-shadow-sm sm:mb-4 sm:line-clamp-3 sm:text-sm">
+                            {body}
+                          </p>
+                        )}
+                        {button && (
+                          <div>
+                            <span className="inline-flex items-center rounded-full bg-primary text-primary-foreground px-4 py-2 text-xs font-semibold shadow-md transition-transform duration-200 group-hover:scale-105 sm:px-6 sm:py-2.5 sm:text-sm focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
+                              {button}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </StorefrontLink>
+                </div>
               ) : (
                 <div
-                  className="flex h-full flex-col justify-center overflow-hidden rounded-2xl bg-white/85 px-4 pb-11 pt-3 backdrop-blur sm:h-[320px] sm:p-8 sm:pb-20"
+                  className="flex h-full flex-col justify-center overflow-hidden rounded-2xl bg-card/90 text-card-foreground p-5 pb-12 backdrop-blur-md shadow-xl border border-border/40 sm:h-[320px] sm:p-8 sm:pb-20"
                   style={{ textAlign: settings.hero_title_align }}
                 >
                   {settings.show_hero_title && title && (
                     <h1
-                      className="mb-1 leading-tight sm:mb-3"
+                      className="mb-1 font-semibold leading-tight sm:mb-3"
                       style={{
-                        color: settings.hero_title_color ?? "var(--sf-heading)",
+                        color: settings.hero_title_color || "var(--color-foreground)",
                         fontSize: `clamp(1.25rem, 5vw, ${settings.hero_title_size}px)`,
                         fontFamily: "var(--sf-font)",
                       }}
@@ -676,7 +747,7 @@ function HeroContentCarousel({
                     </h1>
                   )}
                   {settings.show_hero_about && body && (
-                    <p className="mb-2 line-clamp-2 text-[11px] leading-relaxed text-neutral-700 sm:mb-4 sm:line-clamp-none sm:text-base">
+                    <p className="mb-3 line-clamp-2 text-xs leading-relaxed text-muted-foreground sm:mb-4 sm:line-clamp-none sm:text-base">
                       {body}
                     </p>
                   )}
@@ -684,11 +755,7 @@ function HeroContentCarousel({
                     <div>
                       <StorefrontLink
                         href={slide.button_href || "#products"}
-                        className="inline-flex items-center rounded-full px-4 py-2 text-xs font-semibold sm:px-6 sm:py-3 sm:text-base"
-                        style={{
-                          backgroundColor: "var(--sf-btn-primary-bg)",
-                          color: "var(--sf-btn-primary-fg)",
-                        }}
+                        className="inline-flex items-center rounded-full bg-primary text-primary-foreground px-4 py-2 text-xs font-semibold shadow-sm transition-transform duration-200 hover:scale-105 active:scale-95 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 sm:px-6 sm:py-3 sm:text-base"
                       >
                         {button}
                       </StorefrontLink>
@@ -703,40 +770,48 @@ function HeroContentCarousel({
       {slides.length > 1 && (
         <div
           dir="ltr"
-          className="pointer-events-none absolute inset-x-3 bottom-1 flex items-center justify-between text-white mix-blend-difference sm:inset-x-5 sm:bottom-6"
+          className="pointer-events-none absolute inset-x-3 bottom-2.5 z-20 flex items-center justify-between sm:inset-x-5 sm:bottom-4"
         >
-          <button
+          <Button
             type="button"
+            variant="ghost"
+            size="icon"
             onClick={() => goTo(idx - 1)}
             aria-label={lang === "ar" ? "الشريحة السابقة" : "Previous hero slide"}
-            className="pointer-events-auto grid h-11 w-11 place-items-center bg-transparent transition duration-300 hover:scale-110 hover:opacity-70 active:scale-95"
+            className="pointer-events-auto h-11 w-11 rounded-full bg-black/45 text-white backdrop-blur-md border border-border/40 shadow-md hover:bg-black/65 hover:scale-105 active:scale-95"
           >
-            <ChevronLeft strokeWidth={1} className="h-7 w-7" />
-          </button>
-          <div className="pointer-events-auto flex items-center justify-center gap-1">
+            <ChevronLeft strokeWidth={2} className="h-5 w-5" />
+          </Button>
+          <div className="pointer-events-auto flex items-center justify-center gap-1.5 rounded-full bg-black/45 px-3 py-2 backdrop-blur-md border border-border/40 shadow-md">
             {slides.map((slide, dot) => (
-              <button
+              <Button
                 key={slide.id}
                 type="button"
+                variant="ghost"
+                size="icon"
                 onClick={() => goTo(dot)}
                 aria-label={`${lang === "ar" ? "الشريحة" : "Hero slide"} ${dot + 1}`}
                 aria-current={dot === idx ? "true" : undefined}
-                className={`grid h-11 place-items-center transition-all duration-500 ${dot === idx ? "w-10" : "w-6 opacity-50"}`}
+                className="h-11 min-w-[20px] px-1 hover:bg-transparent"
               >
                 <span
-                  className={`block h-px bg-current transition-all duration-500 ${dot === idx ? "w-8" : "w-3"}`}
+                  className={`block rounded-full transition-all duration-300 ${
+                    dot === idx ? "h-1.5 w-6 bg-white" : "h-1.5 w-1.5 bg-white/50 hover:bg-white/80"
+                  }`}
                 />
-              </button>
+              </Button>
             ))}
           </div>
-          <button
+          <Button
             type="button"
+            variant="ghost"
+            size="icon"
             onClick={() => goTo(idx + 1)}
             aria-label={lang === "ar" ? "الشريحة التالية" : "Next hero slide"}
-            className="pointer-events-auto grid h-11 w-11 place-items-center bg-transparent transition duration-300 hover:scale-110 hover:opacity-70 active:scale-95"
+            className="pointer-events-auto h-11 w-11 rounded-full bg-black/45 text-white backdrop-blur-md border border-border/40 shadow-md hover:bg-black/65 hover:scale-105 active:scale-95"
           >
-            <ChevronRight strokeWidth={1} className="h-7 w-7" />
-          </button>
+            <ChevronRight strokeWidth={2} className="h-5 w-5" />
+          </Button>
         </div>
       )}
     </div>
@@ -959,9 +1034,10 @@ function Categories({
         {merged.map((c) => {
           const active = activeCategorySlugs[0] === c.key;
           return (
-            <button
+            <Button
               key={c.key}
               type="button"
+              variant={active ? "default" : "outline"}
               onClick={() => {
                 if (active) {
                   setActiveCategorySlugs([]);
@@ -969,11 +1045,7 @@ function Categories({
                   setActiveCategorySlugs([c.key]);
                 }
               }}
-              className={`shrink-0 px-4 py-2.5 ${navigation ? "hidden rounded-xl border-transparent text-base font-semibold hover:-translate-y-0.5 hover:scale-[1.03] hover:shadow-sm sm:inline-flex" : "inline-flex rounded-full border text-sm"} items-center gap-2 transition-all duration-200 active:scale-95 ${
-                active
-                  ? "bg-neutral-900 text-white border-neutral-900 font-semibold"
-                  : "bg-white/80 text-neutral-800 border-neutral-200 hover:bg-neutral-100"
-              }`}
+              className={`shrink-0 px-4 py-2.5 ${navigation ? "hidden sm:inline-flex" : "inline-flex"} rounded-full gap-2 min-h-[44px]`}
             >
               {c.image && (
                 <ResponsiveImage
@@ -985,7 +1057,7 @@ function Categories({
                 />
               )}
               {c.label}
-            </button>
+            </Button>
           );
         })}
       </div>
@@ -994,22 +1066,20 @@ function Categories({
       {rows.map((row) => (
         <div
           key={`row-level-${row.levelIndex}`}
-          className="w-full flex justify-center border-t border-neutral-100/30 pt-3 animate-in fade-in slide-in-from-top-1 duration-200"
+          className="w-full flex justify-center border-t border-border pt-3 animate-in fade-in slide-in-from-top-1 duration-200"
         >
           <div className="flex flex-wrap gap-2 justify-center">
-            <button
+            <Button
               type="button"
+              variant={row.activeSlug === null ? "default" : "secondary"}
+              size="sm"
               onClick={() => {
                 setActiveCategorySlugs(activeCategorySlugs.slice(0, row.levelIndex));
               }}
-              className={`min-h-[34px] px-3.5 py-1.5 rounded-full text-xs transition-all shrink-0 border ${
-                row.activeSlug === null
-                  ? "bg-neutral-900 text-white border-neutral-900 shadow-sm font-medium"
-                  : "bg-neutral-50 hover:bg-neutral-100 text-neutral-600 border-neutral-200 font-normal"
-              }`}
+              className="min-h-[34px] px-3.5 py-1.5 rounded-full text-xs shrink-0"
             >
               {t("الكل", "All")}
-            </button>
+            </Button>
             {row.categories.map((sub) => {
               const subSlug = sub.slug || sub.name_en;
               const subLabel =
@@ -1018,9 +1088,11 @@ function Categories({
               const hasSubSubs = categories.some((c) => c.parent_id === sub.id);
 
               return (
-                <button
+                <Button
                   key={sub.id}
                   type="button"
+                  variant={active ? "default" : "secondary"}
+                  size="sm"
                   onClick={() => {
                     if (active) {
                       setActiveCategorySlugs(activeCategorySlugs.slice(0, row.levelIndex));
@@ -1031,11 +1103,7 @@ function Categories({
                       ]);
                     }
                   }}
-                  className={`min-h-[34px] px-3.5 py-1.5 rounded-full text-xs transition-all shrink-0 border flex items-center gap-1.5 ${
-                    active
-                      ? "bg-neutral-900 text-white border-neutral-900 shadow-sm font-medium"
-                      : "bg-neutral-50 hover:bg-neutral-100 text-neutral-600 border-neutral-200 font-normal"
-                  }`}
+                  className="min-h-[34px] px-3.5 py-1.5 rounded-full text-xs shrink-0 flex items-center gap-1.5"
                 >
                   <span>{subLabel}</span>
                   {hasSubSubs && (
@@ -1043,7 +1111,7 @@ function Categories({
                       className={`h-3 w-3 transition-transform duration-200 ${active ? "rotate-180" : ""}`}
                     />
                   )}
-                </button>
+                </Button>
               );
             })}
           </div>

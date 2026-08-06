@@ -41,7 +41,7 @@ export const PAYMENT_BADGE_CLASSES: Record<PaymentBadge, string> = {
   unpaid:
     "bg-rose-100 text-rose-900 border border-rose-300/80 font-semibold dark:bg-rose-950 dark:text-rose-200",
   refunded:
-    "bg-slate-200 text-slate-800 border border-slate-300/80 font-semibold dark:bg-neutral-800 dark:text-neutral-200",
+    "bg-slate-200 text-slate-800 border border-border font-semibold dark:bg-neutral-800 dark:text-neutral-200",
 };
 
 export const PAYMENT_BADGE_KEY: Record<PaymentBadge, string> = {

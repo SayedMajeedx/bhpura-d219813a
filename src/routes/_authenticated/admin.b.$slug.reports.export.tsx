@@ -111,7 +111,7 @@ function ReportsExport() {
     <div className="grid gap-4 sm:gap-6 xl:grid-cols-[minmax(0,1.45fr)_minmax(320px,.55fr)]">
       <section className="rounded-2xl border bg-white p-4 shadow-[0_16px_45px_-34px_rgba(43,23,25,.5)] sm:p-7">
         <div className="mb-5 sm:mb-7">
-          <span className="inline-flex items-center gap-2 rounded-full bg-[#6b1d24]/7 px-3 py-1 text-xs font-semibold text-[#6b1d24]">
+          <span className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
             <Download className="h-3.5 w-3.5" />
             {lang === "ar" ? "مركز التصدير" : "EXPORT CENTRE"}
           </span>
@@ -142,14 +142,16 @@ function ReportsExport() {
                     className={cn(
                       "rounded-2xl border p-3.5 sm:p-4 text-start transition",
                       selected
-                        ? "border-[#6b1d24] bg-[#6b1d24]/5 shadow-[0_8px_22px_-18px_rgba(91,20,26,.8)]"
-                        : "hover:border-[#6b1d24]/30 hover:bg-[#faf8f7]",
+                        ? "border-primary bg-primary/5 shadow-xs"
+                        : "hover:border-primary/30 hover:bg-muted/40",
                     )}
                   >
                     <span
                       className={cn(
                         "grid h-10 w-10 place-items-center rounded-xl",
-                        selected ? "bg-[#5b141a] text-white" : "bg-muted text-muted-foreground",
+                        selected
+                          ? "bg-primary text-primary-foreground"
+                          : "bg-muted text-muted-foreground",
                       )}
                     >
                       <Icon className="h-5 w-5" />
@@ -200,7 +202,7 @@ function ReportsExport() {
           <Button
             onClick={handleExport}
             disabled={!date?.from || !date?.to || isExporting}
-            className="h-12 rounded-xl bg-[#5b141a] px-7 text-white hover:bg-[#741f27]"
+            className="h-12 rounded-xl bg-primary px-7 text-primary-foreground hover:bg-primary/90"
           >
             {isExporting ? (
               <span className="me-2 h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
@@ -219,19 +221,19 @@ function ReportsExport() {
       </section>
 
       <aside className="grid gap-3 sm:grid-cols-2 xl:block xl:space-y-4">
-        <div className="rounded-2xl bg-[linear-gradient(145deg,#481015,#6d2027)] p-6 text-white shadow-[0_20px_50px_-30px_rgba(72,16,21,.85)]">
-          <ShieldCheck className="h-8 w-8 text-[#e8cda8]" />
+        <div className="rounded-2xl bg-primary p-6 text-primary-foreground shadow-md">
+          <ShieldCheck className="h-8 w-8 text-primary-foreground/80" />
           <h3 className="mt-5 text-xl font-semibold">
             {lang === "ar" ? "الخصوصية مدمجة" : "Privacy built in"}
           </h3>
-          <p className="mt-2 text-sm leading-6 text-white/75">
+          <p className="mt-2 text-sm leading-6 text-primary-foreground/80">
             {lang === "ar"
               ? "يتم حذف البريد الإلكتروني ورقم الهاتف تلقائياً من ملفات التصدير."
               : "Email addresses and phone numbers are automatically removed from exported files."}
           </p>
         </div>
-        <div className="rounded-2xl border bg-white p-5">
-          <LockKeyhole className="h-5 w-5 text-[#6b1d24]" />
+        <div className="rounded-2xl border bg-card p-5">
+          <LockKeyhole className="h-5 w-5 text-primary" />
           <h3 className="mt-3 font-semibold">{lang === "ar" ? "وصول محمي" : "Protected access"}</h3>
           <p className="mt-1 text-sm leading-6 text-muted-foreground">
             {lang === "ar"
@@ -270,7 +272,7 @@ function FormatButton({ selected, onClick, icon, title, subtitle, tone }: any) {
       onClick={onClick}
       className={cn(
         "flex items-center gap-3 rounded-xl border p-4 text-start transition",
-        selected ? "border-[#6b1d24] bg-[#6b1d24]/5" : "hover:bg-muted/40",
+        selected ? "border-primary bg-primary/5" : "hover:bg-muted/40",
       )}
     >
       <span
@@ -286,7 +288,7 @@ function FormatButton({ selected, onClick, icon, title, subtitle, tone }: any) {
         <small className="text-muted-foreground">{subtitle}</small>
       </span>
       {selected && (
-        <span className="ms-auto h-3 w-3 rounded-full bg-[#6b1d24] ring-4 ring-[#6b1d24]/10" />
+        <span className="ms-auto h-3 w-3 rounded-full bg-primary ring-4 ring-primary/10" />
       )}
     </button>
   );

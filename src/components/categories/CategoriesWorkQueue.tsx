@@ -1,6 +1,7 @@
 import React from "react";
 import { Boxes, Pencil, Trash2, ArrowUp, ArrowDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { OsEmptyState } from "@/components/os/os-empty-state";
 
 interface CategoriesWorkQueueProps {
   lang: "en" | "ar";
@@ -32,17 +33,15 @@ export const CategoriesWorkQueue: React.FC<CategoriesWorkQueueProps> = ({
 
   if (categories.length === 0) {
     return (
-      <div className="p-12 text-center text-xs text-muted-foreground bg-card rounded-xl border border-border/60 space-y-2">
-        <Boxes className="h-8 w-8 mx-auto text-muted-foreground/60 mb-2" />
-        <p className="font-bold text-sm text-foreground">
-          {isAr ? "لا توجد أقسام مضافة" : "No categories found"}
-        </p>
-        <p>
-          {isAr
+      <OsEmptyState
+        icon={Boxes}
+        title={isAr ? "لا توجد أقسام مضافة" : "No categories found"}
+        description={
+          isAr
             ? "قم بإضافة قسم جديد لتنظيم المنتجات في متجرك"
-            : "Create a new category to organize your products."}
-        </p>
-      </div>
+            : "Create a new category to organize your products."
+        }
+      />
     );
   }
 

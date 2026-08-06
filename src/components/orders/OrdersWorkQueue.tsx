@@ -6,7 +6,7 @@ import {
   UserX,
   Phone,
   ExternalLink,
-  MoreVertical,
+  MoreHorizontal,
   Copy,
   Printer,
   MessageSquare,
@@ -14,6 +14,7 @@ import {
   Truck,
   CreditCard,
   Eye,
+  Trash2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -46,6 +47,7 @@ interface OrdersWorkQueueProps {
   onWhatsAppCourier?: (order: any, courier: any) => void;
   onAssignCourier?: (orderId: string, courierId: string) => void;
   onQuickViewOrder: (order: any) => void;
+  onDeleteOrder?: (orderId: string) => void;
 }
 
 export const OrdersWorkQueue: React.FC<OrdersWorkQueueProps> = ({
@@ -64,6 +66,7 @@ export const OrdersWorkQueue: React.FC<OrdersWorkQueueProps> = ({
   onWhatsAppCourier,
   onAssignCourier,
   onQuickViewOrder,
+  onDeleteOrder,
 }) => {
   const isAr = lang === "ar";
 
@@ -297,13 +300,23 @@ export const OrdersWorkQueue: React.FC<OrdersWorkQueueProps> = ({
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                          className="h-8 w-8 text-muted-foreground hover:text-foreground opacity-80 sm:opacity-0 group-hover:opacity-100 transition-opacity focus:opacity-100 focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 data-[state=open]:opacity-100"
                           aria-label={isAr ? "خيارات الطلب" : "Order Options"}
                         >
-                          <MoreVertical className="h-4 w-4" />
+                          <MoreHorizontal className="h-4 w-4" />
                         </Button>
                       </DropdownMenuTrigger>
-                      <DropdownMenuContent align={isAr ? "start" : "end"} className="w-48 text-xs">
+                      <DropdownMenuContent align={isAr ? "start" : "end"} className="w-52 text-xs">
+                        <DropdownMenuItem asChild>
+                          <Link
+                            to="/admin/b/$slug/orders/$id"
+                            params={{ slug, id: order.id }}
+                            className="flex items-center cursor-pointer"
+                          >
+                            <ExternalLink className="h-3.5 w-3.5 me-2 text-muted-foreground" />
+                            {isAr ? "فتح تفاصيل الطلب" : "View Order Details"}
+                          </Link>
+                        </DropdownMenuItem>
                         <DropdownMenuItem onClick={() => onQuickViewOrder(order)}>
                           <Eye className="h-3.5 w-3.5 me-2 text-primary" />
                           {isAr ? "معاينة الطلب السريعة" : "Quick View Order"}
@@ -328,6 +341,15 @@ export const OrdersWorkQueue: React.FC<OrdersWorkQueueProps> = ({
                           >
                             <Truck className="h-3.5 w-3.5 me-2 text-indigo-500" />
                             {isAr ? "واتساب المندوب" : "WhatsApp Courier"}
+                          </DropdownMenuItem>
+                        )}
+                        {onDeleteOrder && (
+                          <DropdownMenuItem
+                            onClick={() => onDeleteOrder(order.id)}
+                            className="text-destructive focus:text-destructive focus:bg-destructive/10 cursor-pointer"
+                          >
+                            <Trash2 className="h-3.5 w-3.5 me-2 text-destructive" />
+                            {isAr ? "حذف الطلب" : "Delete Order"}
                           </DropdownMenuItem>
                         )}
                       </DropdownMenuContent>

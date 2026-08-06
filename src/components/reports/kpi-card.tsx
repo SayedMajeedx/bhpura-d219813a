@@ -12,7 +12,7 @@ interface KpiCardProps {
 }
 
 const accents = {
-  burgundy: "bg-[#6b1d24]/8 text-[#6b1d24]",
+  burgundy: "bg-primary/10 text-primary",
   emerald: "bg-emerald-50 text-emerald-700",
   amber: "bg-amber-50 text-amber-700",
   blue: "bg-sky-50 text-sky-700",
@@ -30,7 +30,7 @@ export function KpiCard({
   return (
     <article
       className={cn(
-        "group rounded-2xl border border-black/[.07] bg-white p-3.5 sm:p-5 shadow-[0_14px_38px_-30px_rgba(43,23,25,.5)] transition duration-200 hover:-translate-y-0.5 hover:shadow-[0_18px_45px_-28px_rgba(43,23,25,.5)]",
+        "group rounded-2xl border border-border bg-card p-3.5 sm:p-5 shadow-xs transition duration-200 hover:-translate-y-0.5 hover:shadow-sm",
         className,
       )}
     >
@@ -49,7 +49,7 @@ export function KpiCard({
           </div>
         )}
       </div>
-      <div className="mt-3 text-[1.35rem] sm:mt-4 sm:text-[1.75rem] font-semibold leading-none tracking-tight text-[#24191a] tabular-nums">
+      <div className="mt-3 text-[1.35rem] sm:mt-4 sm:text-[1.75rem] font-semibold leading-none tracking-tight text-foreground tabular-nums">
         {value}
       </div>
       <div className="mt-3 flex min-h-5 items-center gap-2">

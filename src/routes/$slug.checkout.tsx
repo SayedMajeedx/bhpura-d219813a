@@ -15,6 +15,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { ShoppingBag } from "lucide-react";
+import { OsEmptyState } from "@/components/os/os-empty-state";
 import {
   Dialog,
   DialogContent,
@@ -511,13 +513,22 @@ function Checkout() {
 
   if (cart.length === 0) {
     return (
-      <div className="mx-auto max-w-lg p-8 text-center">
-        <Card className="p-8">
-          <p className="mb-4">{t("السلة فارغة", "Your cart is empty")}</p>
-          <Link to="/$slug" params={{ slug: brand.slug }} className="underline">
-            {t("العودة للمتجر", "Back to store")}
-          </Link>
-        </Card>
+      <div className="mx-auto max-w-lg p-8">
+        <OsEmptyState
+          icon={ShoppingBag}
+          title={t("السلة فارغة", "Your cart is empty")}
+          description={t(
+            "يبدو أنك لم تضف أي منتجات إلى سلتك بعد.",
+            "Looks like you haven't added any items to your cart yet.",
+          )}
+          action={
+            <Button variant="default" asChild>
+              <Link to="/$slug" params={{ slug: brand.slug }}>
+                {t("تصفح المنتجات", "Browse products")}
+              </Link>
+            </Button>
+          }
+        />
       </div>
     );
   }
@@ -1001,11 +1012,12 @@ function Checkout() {
                 const Icon = opt.icon;
                 const active = fulfillment === opt.id;
                 return (
-                  <button
+                  <Button
                     key={opt.id}
                     type="button"
+                    variant={active ? "outline" : "ghost"}
                     onClick={() => setFulfillment(opt.id)}
-                    className={`text-start flex items-center gap-3 p-4 rounded-lg border transition-all ${active ? "border-current" : "border-input"}`}
+                    className="text-start flex items-center justify-start gap-3 h-auto p-4 rounded-lg border transition-all"
                     style={
                       active
                         ? {
@@ -1016,7 +1028,7 @@ function Checkout() {
                     }
                   >
                     <div
-                      className="h-10 w-10 rounded-md grid place-items-center"
+                      className="h-10 w-10 rounded-md grid place-items-center shrink-0"
                       style={{
                         backgroundColor: active ? settings.primary_color : "hsl(var(--muted))",
                         color: active ? "#fff" : "inherit",
@@ -1030,7 +1042,7 @@ function Checkout() {
                         {opt.fee > 0 ? formatPrice(opt.fee, currency, lang) : t("مجانًا", "Free")}
                       </div>
                     </div>
-                  </button>
+                  </Button>
                 );
               })}
             </div>
@@ -1049,11 +1061,12 @@ function Checkout() {
                 {branches.map((b) => {
                   const active = branchId === b.id;
                   return (
-                    <button
+                    <Button
                       key={b.id}
                       type="button"
+                      variant={active ? "outline" : "ghost"}
                       onClick={() => setBranchId(b.id)}
-                      className={`relative text-start p-4 rounded-xl border-2 transition-all hover:shadow-sm ${active ? "shadow-sm" : "border-input bg-background hover:border-foreground/30"}`}
+                      className="relative text-start flex flex-col items-start justify-center h-auto p-4 rounded-xl border-2 transition-all hover:shadow-sm"
                       style={
                         active
                           ? {
@@ -1093,7 +1106,7 @@ function Checkout() {
                           )}
                         </div>
                       </div>
-                    </button>
+                    </Button>
                   );
                 })}
               </div>
@@ -1121,14 +1134,15 @@ function Checkout() {
                   ["whatsapp", t("واتساب", "WhatsApp"), MessageCircle],
                 ] as const
               ).map(([channel, label, Icon]) => (
-                <button
+                <Button
                   key={channel}
                   type="button"
+                  variant={digitalChannel === channel ? "outline" : "ghost"}
                   onClick={() => {
                     setDigitalChannel(channel);
                     setDigitalContact("");
                   }}
-                  className="flex items-center gap-2 rounded-lg border p-3"
+                  className="flex items-center gap-2 rounded-lg border p-3 h-auto justify-start"
                   style={
                     digitalChannel === channel
                       ? {
@@ -1140,7 +1154,7 @@ function Checkout() {
                 >
                   <Icon className="h-5 w-5" />
                   <span>{label}</span>
-                </button>
+                </Button>
               ))}
             </div>
             <div>
@@ -1213,11 +1227,12 @@ function Checkout() {
                   {zones.map((z) => {
                     const active = z.id === selectedZoneId;
                     return (
-                      <button
+                      <Button
                         key={z.id}
                         type="button"
+                        variant={active ? "outline" : "ghost"}
                         onClick={() => setSelectedZoneId(z.id)}
-                        className="flex items-center justify-between p-3 rounded-lg border text-sm transition-all text-start cursor-pointer hover:bg-secondary/5"
+                        className="flex items-center justify-between p-3 rounded-lg border text-sm transition-all text-start cursor-pointer hover:bg-secondary/5 h-auto"
                         style={
                           active
                             ? {
@@ -1236,7 +1251,7 @@ function Checkout() {
                         >
                           {z.fee > 0 ? formatPrice(z.fee, currency, lang) : t("مجانًا", "Free")}
                         </div>
-                      </button>
+                      </Button>
                     );
                   })}
                 </div>
@@ -1361,11 +1376,12 @@ function Checkout() {
               const Icon = m.icon;
               const active = method === m.id;
               return (
-                <button
+                <Button
                   key={m.id}
                   type="button"
+                  variant={active ? "outline" : "ghost"}
                   onClick={() => setMethod(m.id)}
-                  className={`text-start flex items-center gap-3 p-3 rounded-lg border ${active ? "border-current" : "border-input"}`}
+                  className="text-start flex items-center justify-start gap-3 p-3 rounded-lg border h-auto"
                   style={
                     active
                       ? {
@@ -1375,9 +1391,9 @@ function Checkout() {
                       : undefined
                   }
                 >
-                  <Icon className="h-5 w-5" />
+                  <Icon className="h-5 w-5 shrink-0" />
                   <span className="font-medium">{lang === "ar" ? m.ar : m.en}</span>
-                </button>
+                </Button>
               );
             })}
           </div>
@@ -1477,9 +1493,11 @@ function Checkout() {
                     <>
                       <CheckCircle2 className="mb-2 h-7 w-7 text-emerald-600" />
                       <span className="max-w-full truncate font-medium">{benefitReceipt.name}</span>
-                      <button
+                      <Button
                         type="button"
-                        className="mt-2 inline-flex items-center text-xs text-destructive"
+                        variant="ghost"
+                        size="sm"
+                        className="mt-2 inline-flex items-center text-xs text-destructive hover:text-destructive h-auto p-1"
                         onClick={(e) => {
                           e.preventDefault();
                           setBenefitReceipt(null);
@@ -1487,7 +1505,7 @@ function Checkout() {
                       >
                         <X className="me-1 h-3 w-3" />
                         {t("إزالة", "Remove")}
-                      </button>
+                      </Button>
                     </>
                   ) : (
                     <>
@@ -1626,11 +1644,7 @@ function Checkout() {
             </span>
           </div>
           <Button
-            className="w-full h-12"
-            style={{
-              backgroundColor: settings.btn_checkout_bg ?? settings.primary_color,
-              color: settings.btn_checkout_fg ?? "#fff",
-            }}
+            className="w-full h-12 bg-primary text-primary-foreground rounded-lg"
             disabled={
               submitting ||
               availableMethods.length === 0 ||
@@ -1657,11 +1671,7 @@ function Checkout() {
             </div>
           </div>
           <Button
-            className="h-12 min-w-36 shrink-0"
-            style={{
-              backgroundColor: settings.btn_checkout_bg ?? settings.primary_color,
-              color: settings.btn_checkout_fg ?? "#fff",
-            }}
+            className="h-12 min-w-36 shrink-0 bg-primary text-primary-foreground rounded-lg"
             disabled={
               submitting ||
               availableMethods.length === 0 ||
@@ -1714,8 +1724,7 @@ function Checkout() {
               {t("المتابعة كزائر", "Continue as guest")}
             </Button>
             <Button
-              className="w-full sm:w-auto h-11"
-              style={{ backgroundColor: settings.primary_color, color: "#fff" }}
+              className="w-full sm:w-auto h-11 bg-primary text-primary-foreground rounded-lg"
               asChild
             >
               <Link

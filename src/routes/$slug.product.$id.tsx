@@ -734,20 +734,26 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
                 )}
                 {media.length > 1 && (
                   <>
-                    <button
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
                       onClick={() => setMediaIdx((i) => (i - 1 + media.length) % media.length)}
-                      className="absolute top-1/2 left-2 -translate-y-1/2 bg-white/80 rounded-full p-2 shadow"
+                      className="absolute top-1/2 left-2 -translate-y-1/2 h-11 w-11 bg-white/80 rounded-full shadow hover:bg-white"
                       aria-label="previous"
                     >
                       <ChevronLeft className="h-4 w-4" />
-                    </button>
-                    <button
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
                       onClick={() => setMediaIdx((i) => (i + 1) % media.length)}
-                      className="absolute top-1/2 right-2 -translate-y-1/2 bg-white/80 rounded-full p-2 shadow"
+                      className="absolute top-1/2 right-2 -translate-y-1/2 h-11 w-11 bg-white/80 rounded-full shadow hover:bg-white"
                       aria-label="next"
                     >
                       <ChevronRight className="h-4 w-4" />
-                    </button>
+                    </Button>
                   </>
                 )}
               </>
@@ -770,10 +776,12 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
           {media.length > 1 && (
             <div className="mt-3 flex gap-2 overflow-x-auto">
               {media.map((m, i) => (
-                <button
+                <Button
                   key={i}
+                  type="button"
+                  variant="ghost"
                   onClick={() => setMediaIdx(i)}
-                  className={`h-16 w-16 rounded-lg overflow-hidden shrink-0 border-2 ${
+                  className={`h-16 w-16 p-0 rounded-lg overflow-hidden shrink-0 border-2 ${
                     i === mediaIdx ? "border-current" : "border-transparent"
                   }`}
                   style={i === mediaIdx ? { borderColor: primary } : undefined}
@@ -791,7 +799,7 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
                       className="w-full h-full object-cover"
                     />
                   )}
-                </button>
+                </Button>
               ))}
             </div>
           )}
@@ -859,14 +867,16 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
                       const hex = COLOR_MAP[color.toLowerCase()] || COLOR_MAP[color] || null;
                       const ringStyle = active ? { borderColor: primary } : {};
                       return (
-                        <button
+                        <Button
                           key={color}
                           type="button"
+                          variant="ghost"
+                          size="icon"
                           onClick={() => {
                             setSelectedColor(color);
                             setErrorMsg(null);
                           }}
-                          className={`h-11 w-11 rounded-full border-2 transition-all flex items-center justify-center relative ${
+                          className={`h-11 w-11 rounded-full border-2 p-0 relative ${
                             active ? "scale-110 shadow-sm" : "border-transparent hover:scale-105"
                           } ${oos ? "opacity-45 cursor-not-allowed" : ""}`}
                           style={ringStyle}
@@ -879,18 +889,18 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
                               style={{ backgroundColor: hex }}
                             >
                               {oos && (
-                                <span className="absolute inset-0 w-full h-[2px] bg-red-600/80 rotate-45 origin-center top-1/2 -translate-y-1/2" />
+                                <span className="absolute inset-0 w-full h-[2px] bg-destructive/80 rotate-45 origin-center top-1/2 -translate-y-1/2" />
                               )}
                             </span>
                           ) : (
                             <span className="h-7 w-7 rounded-full border bg-muted flex items-center justify-center text-[10px] font-bold uppercase truncate shadow-inner relative overflow-hidden">
                               {color.slice(0, 2)}
                               {oos && (
-                                <span className="absolute inset-0 w-full h-[2px] bg-red-600/80 rotate-45 origin-center top-1/2 -translate-y-1/2" />
+                                <span className="absolute inset-0 w-full h-[2px] bg-destructive/80 rotate-45 origin-center top-1/2 -translate-y-1/2" />
                               )}
                             </span>
                           )}
-                        </button>
+                        </Button>
                       );
                     })}
                   </div>
@@ -912,24 +922,23 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
                     {uniqueSizes.map((sz) => {
                       const active = selectedSize === sz;
                       const oos = isSizeOutOfStock[sz];
-                      const style = active
-                        ? { backgroundColor: primary, color: primaryFg, borderColor: primary }
-                        : {};
                       return (
-                        <button
+                        <Button
                           key={sz}
                           type="button"
+                          variant={active ? "default" : "outline"}
                           onClick={() => {
                             setSelectedSize(sz);
                             setErrorMsg(null);
                           }}
-                          className={`min-h-11 px-4 py-2 rounded-lg border text-sm font-medium transition-all ${
-                            active ? "shadow-sm border-transparent" : "border-input bg-background"
-                          } ${oos ? "line-through opacity-45 cursor-not-allowed bg-neutral-100 dark:bg-neutral-800 text-muted-foreground border-dashed" : "hover:border-foreground/45"}`}
-                          style={style}
+                          className={`min-h-11 px-4 py-2 rounded-lg text-sm font-medium ${
+                            oos
+                              ? "line-through opacity-45 cursor-not-allowed bg-muted text-muted-foreground border-dashed"
+                              : ""
+                          }`}
                         >
                           {sz}
-                        </button>
+                        </Button>
                       );
                     })}
                   </div>
@@ -951,24 +960,23 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
                     {uniqueFabrics.map((fb) => {
                       const active = selectedFabric === fb;
                       const oos = isFabricOutOfStock[fb];
-                      const style = active
-                        ? { backgroundColor: primary, color: primaryFg, borderColor: primary }
-                        : {};
                       return (
-                        <button
+                        <Button
                           key={fb}
                           type="button"
+                          variant={active ? "default" : "outline"}
                           onClick={() => {
                             setSelectedFabric(fb);
                             setErrorMsg(null);
                           }}
-                          className={`min-h-11 px-4 py-2 rounded-lg border text-sm font-medium transition-all ${
-                            active ? "shadow-sm border-transparent" : "border-input bg-background"
-                          } ${oos ? "line-through opacity-45 cursor-not-allowed bg-neutral-100 dark:bg-neutral-800 text-muted-foreground border-dashed" : "hover:border-foreground/45"}`}
-                          style={style}
+                          className={`min-h-11 px-4 py-2 rounded-lg text-sm font-medium ${
+                            oos
+                              ? "line-through opacity-45 cursor-not-allowed bg-muted text-muted-foreground border-dashed"
+                              : ""
+                          }`}
                         >
                           {fb}
-                        </button>
+                        </Button>
                       );
                     })}
                   </div>
@@ -989,29 +997,24 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
                           [formatSizeWithUnit(v.size, v.size_unit, lang), v.color, v.fabric]
                             .filter(Boolean)
                             .join(" · ") || t("متغيّر", "Variant");
-                        const style = active
-                          ? { backgroundColor: primary, color: primaryFg, borderColor: primary }
-                          : {};
                         return (
-                          <button
+                          <Button
                             key={v.id}
                             type="button"
+                            variant={active ? "default" : "outline"}
                             disabled={oos}
                             onClick={() => {
                               setVariantId(v.id);
                               setQty(1);
                               setErrorMsg(null);
                             }}
-                            className={`min-h-11 px-4 py-2 rounded-lg border-2 text-sm font-medium transition-all ${
-                              active
-                                ? "shadow-sm"
-                                : "border-input bg-background hover:border-foreground/40"
-                            } ${oos ? "opacity-40 line-through cursor-not-allowed" : ""}`}
-                            style={style}
+                            className={`min-h-11 px-4 py-2 rounded-lg text-sm font-medium ${
+                              oos ? "opacity-40 line-through cursor-not-allowed" : ""
+                            }`}
                             aria-pressed={active}
                           >
                             {label}
-                          </button>
+                          </Button>
                         );
                       })}
                     </div>
@@ -1165,25 +1168,29 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
           {variant && (
             <div className="mb-4">
               <div className="text-sm font-medium mb-2">{t("الكمية", "Quantity")}</div>
-              <div className="inline-flex items-center border rounded-lg">
-                <button
+              <div className="inline-flex items-center border rounded-lg overflow-hidden">
+                <Button
                   type="button"
+                  variant="ghost"
+                  size="icon"
                   aria-label={t("تقليل الكمية", "Decrease quantity")}
-                  className="grid h-11 w-11 place-items-center"
+                  className="h-11 w-11 rounded-none"
                   onClick={() => setQty((q) => Math.max(1, q - 1))}
                 >
                   −
-                </button>
-                <span className="px-4">{qty}</span>
-                <button
+                </Button>
+                <span className="px-4 text-sm font-medium">{qty}</span>
+                <Button
                   type="button"
+                  variant="ghost"
+                  size="icon"
                   aria-label={t("زيادة الكمية", "Increase quantity")}
-                  className="grid h-11 w-11 place-items-center disabled:opacity-40"
+                  className="h-11 w-11 rounded-none"
                   disabled={qty >= maxStock}
                   onClick={() => setQty((q) => Math.min(maxStock, q + 1))}
                 >
                   +
-                </button>
+                </Button>
               </div>
               <span className="ms-3 inline-flex items-center rounded-full border px-2 py-0.5 text-xs bg-white/95 text-neutral-900">
                 {maxStock} {t("متوفر", "available")}
@@ -1203,12 +1210,7 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
 
           <div className="hidden md:flex gap-2">
             <Button
-              className="flex-1 h-12 font-semibold shadow-sm hover:opacity-90"
-              style={{
-                backgroundColor: "var(--sf-btn-primary-bg)",
-                color: "var(--sf-btn-primary-fg)",
-                opacity: selectedVariantOutOfStock ? 0.5 : 1,
-              }}
+              className="flex-1 h-12 font-semibold shadow-sm hover:opacity-90 bg-primary text-primary-foreground"
               disabled={selectedVariantOutOfStock}
               aria-disabled={selectedVariantOutOfStock ? "true" : undefined}
               onClick={() => doAdd(false)}
@@ -1217,13 +1219,8 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
               {t("أضف للسلة", "Add to cart")}
             </Button>
             <Button
+              variant="outline"
               className="h-12 border-2 font-semibold hover:opacity-90"
-              style={{
-                backgroundColor: "var(--sf-btn-secondary-bg)",
-                color: "var(--sf-btn-secondary-fg)",
-                borderColor: "var(--sf-btn-secondary-bg)",
-                opacity: selectedVariantOutOfStock ? 0.5 : 1,
-              }}
               disabled={selectedVariantOutOfStock}
               aria-disabled={selectedVariantOutOfStock ? "true" : undefined}
               onClick={() => doAdd(true)}
@@ -1256,12 +1253,7 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
               </div>
             </div>
             <Button
-              className="h-11 px-3 font-semibold"
-              style={{
-                backgroundColor: "var(--sf-btn-primary-bg)",
-                color: "var(--sf-btn-primary-fg)",
-                opacity: selectedVariantOutOfStock ? 0.5 : 1,
-              }}
+              className="h-11 px-3 font-semibold bg-primary text-primary-foreground"
               disabled={selectedVariantOutOfStock}
               aria-disabled={selectedVariantOutOfStock ? "true" : undefined}
               onClick={() => doAdd(false)}
@@ -1270,13 +1262,8 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
               <ShoppingBag className="h-4 w-4" />
             </Button>
             <Button
+              variant="outline"
               className="h-11 px-4 font-semibold border-2"
-              style={{
-                backgroundColor: "var(--sf-btn-checkout-bg, var(--sf-btn-secondary-bg))",
-                color: "var(--sf-btn-checkout-fg, var(--sf-btn-secondary-fg))",
-                borderColor: "var(--sf-btn-checkout-bg, var(--sf-btn-secondary-bg))",
-                opacity: selectedVariantOutOfStock ? 0.5 : 1,
-              }}
               disabled={selectedVariantOutOfStock}
               aria-disabled={selectedVariantOutOfStock ? "true" : undefined}
               onClick={() => doAdd(true)}

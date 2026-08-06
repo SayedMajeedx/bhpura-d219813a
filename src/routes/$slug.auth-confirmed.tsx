@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { AlertCircle, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useStorefront } from "@/lib/storefront-context";
+import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/$slug/auth-confirmed")({
   component: StorefrontAuthConfirmed,
@@ -67,7 +68,9 @@ function StorefrontAuthConfirmed() {
             : t("جارٍ تأكيد حسابك", "Confirming your account")}
         </h1>
         {failed && (
-          <button
+          <Button
+            type="button"
+            variant="link"
             className="underline underline-offset-4"
             onClick={() =>
               navigate({
@@ -79,7 +82,7 @@ function StorefrontAuthConfirmed() {
             }
           >
             {t("العودة إلى تسجيل الدخول", "Return to sign in")}
-          </button>
+          </Button>
         )}
       </div>
     </main>

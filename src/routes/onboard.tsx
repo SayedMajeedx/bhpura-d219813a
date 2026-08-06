@@ -479,7 +479,7 @@ function OnboardPage() {
         <Card className="max-w-xl w-full border-zinc-900 bg-zinc-900/40 backdrop-blur-md shadow-2xl relative z-10 p-8 text-center text-white">
           <div className="h-16 w-16 bg-primary/10 rounded-full border border-primary/20 flex items-center justify-center mx-auto mb-6 text-primary">
             {isTrialSuccess ? (
-              <Sparkles className="h-8 w-8 animate-pulse text-[#B76E79]" />
+              <Sparkles className="h-8 w-8 animate-pulse text-primary" />
             ) : (
               <CheckCircle2 className="h-8 w-8 text-emerald-500 animate-bounce" />
             )}
@@ -602,7 +602,7 @@ function OnboardPage() {
           {/* Glowing gradient backdrops */}
           <div className="absolute top-[20%] right-[-10%] w-72 h-72 rounded-full bg-rose-500/10 blur-3xl animate-pulse-soft" />
           <div
-            className="absolute bottom-[25%] left-[-10%] w-80 h-80 rounded-full bg-[#B76E79]/15 blur-3xl animate-pulse-soft"
+            className="absolute bottom-[25%] left-[-10%] w-80 h-80 rounded-full bg-primary/15 blur-3xl animate-pulse-soft"
             style={{ animationDelay: "2s" }}
           />
 
@@ -627,7 +627,7 @@ function OnboardPage() {
           </div>
 
           {/* Live Sales Dashboard Card */}
-          <div className="absolute top-[32%] left-6 right-6 bg-zinc-900/85 border border-zinc-800/80 backdrop-blur-md p-5 rounded-2xl shadow-xl animate-float-slow">
+          <div className="absolute top-[32%] left-6 right-6 bg-zinc-900/85 border border-border backdrop-blur-md p-5 rounded-2xl shadow-xl animate-float-slow">
             <div className="flex justify-between items-center mb-3">
               <span className="text-[9px] text-zinc-400 font-bold tracking-widest uppercase">
                 {lang === "ar" ? "المبيعات المباشرة" : "LIVE MERCHANT SALES"}
@@ -649,7 +649,7 @@ function OnboardPage() {
                   className="flex-1 rounded-t bg-zinc-800/60 transition-all duration-500"
                   style={{
                     height: `${h}%`,
-                    backgroundColor: i === 10 ? "#B76E79" : undefined,
+                    backgroundColor: i === 10 ? "var(--color-primary)" : undefined,
                   }}
                 />
               ))}
@@ -658,12 +658,12 @@ function OnboardPage() {
 
           {/* Luxury Abaya Product Card */}
           <div
-            className="absolute bottom-[24%] left-6 w-[75%] bg-zinc-900/85 border border-zinc-800/80 backdrop-blur-md p-4 rounded-xl shadow-lg animate-float-slower"
+            className="absolute bottom-[24%] left-6 w-[75%] bg-zinc-900/85 border border-border backdrop-blur-md p-4 rounded-xl shadow-lg animate-float-slower"
             style={{ animationDelay: "1s" }}
           >
             <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-lg bg-zinc-800/80 flex items-center justify-center border border-zinc-700/60">
-                <Store className="h-5 w-5 text-[#B76E79]" />
+              <div className="h-10 w-10 rounded-lg bg-zinc-800/80 flex items-center justify-center border border-border">
+                <Store className="h-5 w-5 text-primary" />
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-[10px] font-bold text-zinc-200 truncate">
@@ -673,9 +673,7 @@ function OnboardPage() {
                   {lang === "ar" ? "المخزون: 4 قطع متبقية" : "Stock: 4 remaining"}
                 </p>
               </div>
-              <span className="text-[10px] font-bold text-[#B76E79] whitespace-nowrap">
-                145 BHD
-              </span>
+              <span className="text-[10px] font-bold text-primary whitespace-nowrap">145 BHD</span>
             </div>
           </div>
 
@@ -699,7 +697,7 @@ function OnboardPage() {
             />
           ) : (
             <>
-              <Store className="h-6 w-6 text-[#B76E79]" />
+              <Store className="h-6 w-6 text-primary" />
               <span className="font-display text-lg tracking-wider font-semibold">Boutq</span>
             </>
           )}
@@ -707,7 +705,7 @@ function OnboardPage() {
 
         {/* Central Overlay Text with luxury branding content */}
         <div className="relative z-10 space-y-6 max-w-sm mt-auto mb-16">
-          <Sparkles className="h-10 w-10 text-[#B76E79] animate-pulse" />
+          <Sparkles className="h-10 w-10 text-primary animate-pulse" />
           <h2 className="text-4xl font-display font-medium leading-tight tracking-tight">
             {lang === "ar"
               ? "أطلق مساحتك التجارية الفاخرة اليوم"
@@ -753,7 +751,7 @@ function OnboardPage() {
               href="https://pura.boutq.store"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 px-3 py-1 bg-[#B76E79]/10 hover:bg-[#B76E79]/20 border border-[#B76E79]/20 text-xs font-semibold text-[#B76E79] rounded-full transition-all select-none"
+              className="inline-flex items-center gap-1.5 px-3 py-1 bg-primary/10 hover:bg-primary/20 border border-primary/20 text-xs font-semibold text-primary rounded-full transition-all select-none"
             >
               <Sparkles className="h-3 w-3" />
               {lang === "ar" ? "المتجر النموذج" : "Live Demo"}
@@ -782,7 +780,7 @@ function OnboardPage() {
               variant="outline"
               size="sm"
               onClick={() => setShowFeaturesModal(true)}
-              className="border-[#B76E79]/30 hover:border-[#B76E79] text-[#B76E79] bg-transparent hover:bg-[#B76E79]/10 rounded-full font-semibold px-4 h-9 self-center md:self-auto shrink-0"
+              className="border-primary/30 hover:border-primary text-primary bg-transparent hover:bg-primary/10 rounded-full font-semibold px-4 h-9 self-center md:self-auto shrink-0"
             >
               ✨ {lang === "ar" ? "اكتشف جميع مميزات منصة Boutq" : "Discover All Boutq Features"}
             </Button>
@@ -795,13 +793,13 @@ function OnboardPage() {
         </div>
 
         {/* Mobile Live Activity Dashboard Banner (Brings the visual showcase premium feel to small screens) */}
-        <div className="lg:hidden bg-zinc-950 text-white border border-[#B76E79]/30 rounded-2xl p-4 mb-6 shadow-lg shadow-rose-950/5 flex flex-col gap-3.5 relative overflow-hidden select-none">
+        <div className="lg:hidden bg-zinc-950 text-white border border-primary/30 rounded-2xl p-4 mb-6 shadow-lg shadow-rose-950/5 flex flex-col gap-3.5 relative overflow-hidden select-none">
           {/* Background glow orb */}
-          <div className="absolute -top-12 -right-12 w-24 h-24 rounded-full bg-[#B76E79]/10 blur-xl animate-pulse-soft" />
+          <div className="absolute -top-12 -right-12 w-24 h-24 rounded-full bg-primary/10 blur-xl animate-pulse-soft" />
 
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-1.5 text-[9px] text-zinc-400 font-bold uppercase tracking-wider">
-              <span className="h-1.5 w-1.5 rounded-full bg-[#B76E79] animate-ping shrink-0" />
+              <span className="h-1.5 w-1.5 rounded-full bg-primary animate-ping shrink-0" />
               {lang === "ar" ? "نشاط منصة BOUTQ المباشر" : "LIVE BOUTQ NETWORK TRACKER"}
             </div>
             <span className="text-[11px] font-mono text-emerald-500 font-bold tracking-tight bg-emerald-500/10 px-2.5 py-0.5 rounded-md animate-pulse">
@@ -814,7 +812,7 @@ function OnboardPage() {
           </div>
 
           {/* Small Rotating Order Notification Pill */}
-          <div className="bg-zinc-900/50 border border-zinc-850/60 rounded-xl px-3 py-2 text-xs flex items-center justify-between gap-2.5">
+          <div className="bg-zinc-900/50 border border-border rounded-xl px-3 py-2 text-xs flex items-center justify-between gap-2.5">
             <div className="flex items-center gap-2 overflow-hidden">
               <div className="h-2 w-2 rounded-full bg-emerald-400 shrink-0" />
               <span className="text-zinc-300 font-medium text-[11px] truncate">
@@ -833,12 +831,12 @@ function OnboardPage() {
         </div>
 
         {/* Mobile Tabbed Toggle (Hidden on desktop to avoid unnecessary space) */}
-        <div className="flex lg:hidden bg-zinc-100/80 dark:bg-zinc-900/80 border border-zinc-200/50 dark:border-zinc-800 p-1 rounded-xl mb-6 select-none relative z-10">
+        <div className="flex lg:hidden bg-zinc-100/80 dark:bg-zinc-900/80 border border-border p-1 rounded-xl mb-6 select-none relative z-10">
           <button
             onClick={() => setActiveOnboardTab("trial")}
             className={`flex-1 py-2 text-center text-xs font-semibold rounded-lg transition-all ${
               activeOnboardTab === "trial"
-                ? "bg-white dark:bg-zinc-800 text-[#B76E79] shadow-sm font-bold"
+                ? "bg-white dark:bg-zinc-800 text-primary shadow-sm font-bold"
                 : "text-muted-foreground hover:text-foreground"
             }`}
           >
@@ -860,7 +858,7 @@ function OnboardPage() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
           {/* CARD A: 3-Day Free Trial */}
           <Card
-            className={`border-zinc-100 dark:border-zinc-800/80 shadow-md flex-col justify-between relative overflow-hidden group ${
+            className={`border-border shadow-md flex-col justify-between relative overflow-hidden group ${
               activeOnboardTab === "trial" ? "flex" : "hidden lg:flex"
             }`}
           >
@@ -880,15 +878,15 @@ function OnboardPage() {
                       : "Test all features free for 3 days • Upgrade anytime to the 49 BHD/year Founder Plan."}
                   </CardDescription>
                 </div>
-                <span className="text-xs bg-[#B76E79]/10 text-[#B76E79] px-2 py-1 rounded font-semibold tracking-wider">
+                <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded font-semibold tracking-wider">
                   {lang === "ar" ? "مجانـي" : "FREE"}
                 </span>
               </div>
             </CardHeader>
 
-            <div className="px-6 py-4 bg-zinc-50 dark:bg-zinc-900/50 border-b border-zinc-100 dark:border-zinc-800/60 space-y-2.5 text-xs select-none">
+            <div className="px-6 py-4 bg-zinc-50 dark:bg-zinc-900/50 border-b border-border space-y-2.5 text-xs select-none">
               <div className="flex items-center gap-2.5 text-muted-foreground">
-                <Check className="h-4 w-4 text-[#B76E79] shrink-0" />
+                <Check className="h-4 w-4 text-primary shrink-0" />
                 <span>
                   {lang === "ar"
                     ? "وصول كامل للوحة التحكم والمبيعات"
@@ -896,7 +894,7 @@ function OnboardPage() {
                 </span>
               </div>
               <div className="flex items-center gap-2.5 text-muted-foreground">
-                <Check className="h-4 w-4 text-[#B76E79] shrink-0" />
+                <Check className="h-4 w-4 text-primary shrink-0" />
                 <span>
                   {lang === "ar"
                     ? "معاينة حية للمتجر التجريبي الخاص بك"
@@ -904,7 +902,7 @@ function OnboardPage() {
                 </span>
               </div>
               <div className="flex items-center gap-2.5 text-muted-foreground">
-                <Check className="h-4 w-4 text-[#B76E79] shrink-0" />
+                <Check className="h-4 w-4 text-primary shrink-0" />
                 <span>
                   {lang === "ar"
                     ? "تفعيل وإعداد عبر الواتساب فوراً"
@@ -1079,7 +1077,7 @@ function OnboardPage() {
 
                 <Button
                   type="submit"
-                  className="w-full h-11 text-xs font-semibold uppercase tracking-wider gap-2 bg-[#B76E79] hover:bg-[#a35e69] text-white mt-4"
+                  className="w-full h-11 text-xs font-semibold uppercase tracking-wider gap-2 bg-primary hover:bg-primary/90 text-primary-foreground mt-4"
                   disabled={trialSubdomainChecking || trialSubdomainAvailable === false}
                 >
                   {lang === "ar"
@@ -1093,7 +1091,7 @@ function OnboardPage() {
 
           {/* CARD B: Official Paid Registration */}
           <Card
-            className={`border-zinc-100 dark:border-zinc-800/80 shadow-md flex-col justify-between relative overflow-hidden group ring-1 ring-primary/40 bg-primary/[0.01] ${
+            className={`border-border shadow-md flex-col justify-between relative overflow-hidden group ring-1 ring-primary/40 bg-primary/[0.01] ${
               activeOnboardTab === "paid" ? "flex" : "hidden lg:flex"
             }`}
           >
@@ -1146,9 +1144,9 @@ function OnboardPage() {
               </div>
             </CardHeader>
 
-            <div className="px-6 py-4 bg-[#B76E79]/5 border-b border-[#B76E79]/10 space-y-2.5 text-xs select-none">
-              <div className="flex items-center gap-2.5 text-[#B76E79] font-semibold">
-                <Check className="h-4 w-4 shrink-0 text-[#B76E79]" />
+            <div className="px-6 py-4 bg-primary/5 border-b border-primary/10 space-y-2.5 text-xs select-none">
+              <div className="flex items-center gap-2.5 text-primary font-semibold">
+                <Check className="h-4 w-4 shrink-0 text-primary" />
                 <span>
                   {lang === "ar"
                     ? "يتم الدفع سنوياً • يشمل نطاق فرعي، واستضافة، وبنفت بي وتحديثات برمجية."
@@ -1384,7 +1382,7 @@ function OnboardPage() {
                   </div>
 
                   {/* IBAN Copy Field */}
-                  <div className="bg-zinc-50 dark:bg-zinc-900/40 p-2.5 rounded-xl border border-zinc-100 dark:border-zinc-85/80 flex items-center justify-between gap-3 text-xs select-none">
+                  <div className="bg-zinc-50 dark:bg-zinc-900/40 p-2.5 rounded-xl border border-border flex items-center justify-between gap-3 text-xs select-none">
                     <div className="space-y-0.5 text-left">
                       <span className="text-[10px] text-muted-foreground uppercase tracking-wider block font-bold">
                         {lang === "ar"
@@ -1500,7 +1498,7 @@ function OnboardPage() {
         <div className="fixed inset-0 bg-black/70 backdrop-blur-md z-50 flex items-center justify-center p-4 overflow-y-auto animate-in fade-in duration-200">
           <div
             dir={lang === "ar" ? "rtl" : "ltr"}
-            className="bg-zinc-950/95 border border-zinc-800/85 rounded-3xl p-5 md:p-8 max-w-4xl w-full max-h-[90vh] md:max-h-[85vh] lg:max-h-none overflow-y-auto shadow-2xl relative animate-in fade-in zoom-in-95 duration-200 text-white select-none"
+            className="bg-zinc-950/95 border border-border rounded-3xl p-5 md:p-8 max-w-4xl w-full max-h-[90vh] md:max-h-[85vh] lg:max-h-none overflow-y-auto shadow-2xl relative animate-in fade-in zoom-in-95 duration-200 text-white select-none"
           >
             {/* Close Button */}
             <button
@@ -1514,11 +1512,11 @@ function OnboardPage() {
 
             {/* Header */}
             <div
-              className={`mb-6 flex items-center gap-3 border-b border-zinc-800/50 pb-4 ${
+              className={`mb-6 flex items-center gap-3 border-b border-border pb-4 ${
                 lang === "ar" ? "pl-10" : "pr-10"
               }`}
             >
-              <Store className="h-6 w-6 text-[#B76E79] shrink-0" />
+              <Store className="h-6 w-6 text-primary shrink-0" />
               <div>
                 <h3 className="text-lg md:text-xl font-display font-medium">
                   {lang === "ar"
@@ -1536,8 +1534,8 @@ function OnboardPage() {
             {/* Features Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Category 1: Storefront */}
-              <div className="bg-zinc-900/40 border border-zinc-800/40 rounded-2xl p-5 space-y-3">
-                <h4 className="text-xs font-bold text-[#B76E79] uppercase tracking-wider flex items-center gap-2">
+              <div className="bg-zinc-900/40 border border-border rounded-2xl p-5 space-y-3">
+                <h4 className="text-xs font-bold text-primary uppercase tracking-wider flex items-center gap-2">
                   <Sparkles className="h-4 w-4" />
                   {lang === "ar" ? "واجهة المتجر والتصميم" : "Storefront & UI"}
                 </h4>
@@ -1570,8 +1568,8 @@ function OnboardPage() {
               </div>
 
               {/* Category 2: Payments */}
-              <div className="bg-zinc-900/40 border border-zinc-800/40 rounded-2xl p-5 space-y-3">
-                <h4 className="text-xs font-bold text-[#B76E79] uppercase tracking-wider flex items-center gap-2">
+              <div className="bg-zinc-900/40 border border-border rounded-2xl p-5 space-y-3">
+                <h4 className="text-xs font-bold text-primary uppercase tracking-wider flex items-center gap-2">
                   <CheckCircle2 className="h-4 w-4" />
                   {lang === "ar" ? "المدفوعات والطلبات" : "Payments & Orders"}
                 </h4>
@@ -1604,8 +1602,8 @@ function OnboardPage() {
               </div>
 
               {/* Category 3: Dashboard */}
-              <div className="bg-zinc-900/40 border border-zinc-800/40 rounded-2xl p-5 space-y-3">
-                <h4 className="text-xs font-bold text-[#B76E79] uppercase tracking-wider flex items-center gap-2">
+              <div className="bg-zinc-900/40 border border-border rounded-2xl p-5 space-y-3">
+                <h4 className="text-xs font-bold text-primary uppercase tracking-wider flex items-center gap-2">
                   <Store className="h-4 w-4" />
                   {lang === "ar" ? "لوحة التحكم والإدارة" : "Dashboard & Management"}
                 </h4>
@@ -1638,8 +1636,8 @@ function OnboardPage() {
               </div>
 
               {/* Category 4: Support */}
-              <div className="bg-zinc-900/40 border border-zinc-800/40 rounded-2xl p-5 space-y-3">
-                <h4 className="text-xs font-bold text-[#B76E79] uppercase tracking-wider flex items-center gap-2">
+              <div className="bg-zinc-900/40 border border-border rounded-2xl p-5 space-y-3">
+                <h4 className="text-xs font-bold text-primary uppercase tracking-wider flex items-center gap-2">
                   <Building2 className="h-4 w-4" />
                   {lang === "ar" ? "الدعم والبنية التحتية" : "Support & Infrastructure"}
                 </h4>
@@ -1673,10 +1671,10 @@ function OnboardPage() {
             </div>
 
             {/* Footer Action */}
-            <div className="mt-6 flex justify-end gap-3 border-t border-zinc-800/50 pt-4">
+            <div className="mt-6 flex justify-end gap-3 border-t border-border pt-4">
               <Button
                 onClick={() => setShowFeaturesModal(false)}
-                className="bg-[#B76E79] hover:bg-[#a35e69] text-white text-xs font-semibold rounded-xl px-5 h-10"
+                className="bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-semibold rounded-xl px-5 h-10"
               >
                 {lang === "ar" ? "حسناً، فهمت" : "Got it, thanks"}
               </Button>

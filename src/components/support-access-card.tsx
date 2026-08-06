@@ -106,7 +106,7 @@ export function SupportAccessCard({ brand }: SupportAccessCardProps) {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center gap-2.5 p-3 rounded-lg bg-zinc-100/50 dark:bg-zinc-900/50 border border-zinc-200/50 dark:border-zinc-800/50 text-xs text-muted-foreground">
+          <div className="flex items-center gap-2.5 p-3 rounded-lg bg-zinc-100/50 dark:bg-zinc-900/50 border border-border text-xs text-muted-foreground">
             {accessEnabled ? (
               <>
                 <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />
@@ -132,7 +132,7 @@ export function SupportAccessCard({ brand }: SupportAccessCardProps) {
 
       {/* Security & Auditing Logs Card */}
       <Card className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm">
-        <CardHeader className="pb-3 border-b border-zinc-100 dark:border-zinc-900/60">
+        <CardHeader className="pb-3 border-b border-border">
           <CardTitle className="text-base font-display font-medium flex items-center gap-2">
             <History className="h-4.5 w-4.5 text-muted-foreground" />
             <span>{lang === "ar" ? "سجل تدقيق الأمان والوصول" : "Security & Audit Logs"}</span>
@@ -168,7 +168,7 @@ export function SupportAccessCard({ brand }: SupportAccessCardProps) {
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse text-xs">
                 <thead>
-                  <tr className="bg-zinc-50 dark:bg-zinc-900/50 border-b border-zinc-100 dark:border-zinc-800/80 text-muted-foreground font-medium">
+                  <tr className="bg-zinc-50 dark:bg-zinc-900/50 border-b border-border text-muted-foreground font-medium">
                     <th className="p-3.5 pl-6">
                       {lang === "ar" ? "المهندس / المسؤول" : "Operator / Engineer"}
                     </th>

@@ -264,8 +264,8 @@ function CategoryDialog({
           {category ? (isAr ? "تعديل قسم" : "Edit category") : isAr ? "قسم جديد" : "New category"}
         </DialogTitle>
       </DialogHeader>
-      <div className="space-y-3">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      <div className="space-y-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <Label>{isAr ? "الاسم (عربي)" : "Name (Arabic)"}</Label>
             <Input
@@ -283,7 +283,7 @@ function CategoryDialog({
             />
           </div>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <Label>{isAr ? "المعرّف (Slug)" : "Slug"}</Label>
             <Input
