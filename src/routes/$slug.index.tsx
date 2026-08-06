@@ -770,48 +770,44 @@ function HeroContentCarousel({
       {slides.length > 1 && (
         <div
           dir="ltr"
-          className="pointer-events-none absolute inset-x-3 bottom-3 z-20 flex items-center justify-between sm:inset-x-5 sm:bottom-4"
+          className="pointer-events-none absolute inset-x-3 bottom-1 z-20 flex items-center justify-between text-white mix-blend-difference sm:inset-x-5 sm:bottom-6"
         >
-          <Button
+          <button
             type="button"
-            variant="ghost"
-            size="icon"
             onClick={() => goTo(idx - 1)}
             aria-label={lang === "ar" ? "الشريحة السابقة" : "Previous hero slide"}
-            className="pointer-events-auto h-11 w-11 rounded-full bg-black/40 text-white backdrop-blur-md border border-white/20 shadow-md hover:bg-black/60 hover:scale-105 active:scale-95"
+            className="pointer-events-auto grid h-11 w-11 place-items-center bg-transparent transition duration-300 hover:scale-110 hover:opacity-70 active:scale-95"
           >
-            <ChevronLeft strokeWidth={2} className="h-5 w-5" />
-          </Button>
-          <div className="pointer-events-auto flex items-center justify-center gap-1.5 rounded-full bg-black/40 px-3.5 py-1.5 backdrop-blur-md border border-white/20 shadow-md">
+            <ChevronLeft strokeWidth={1} className="h-7 w-7" />
+          </button>
+          <div className="pointer-events-auto flex items-center justify-center gap-1">
             {slides.map((slide, dot) => (
-              <Button
+              <button
                 key={slide.id}
                 type="button"
-                variant="ghost"
-                size="icon"
                 onClick={() => goTo(dot)}
                 aria-label={`${lang === "ar" ? "الشريحة" : "Hero slide"} ${dot + 1}`}
                 aria-current={dot === idx ? "true" : undefined}
-                className="h-11 min-w-[20px] px-1 hover:bg-transparent"
+                className={`grid h-11 place-items-center transition-all duration-500 ${
+                  dot === idx ? "w-10" : "w-6 opacity-50"
+                }`}
               >
                 <span
-                  className={`block rounded-full transition-all duration-300 ${
-                    dot === idx ? "h-1.5 w-6 bg-white" : "h-1.5 w-1.5 bg-white/50 hover:bg-white/80"
+                  className={`block h-px bg-current transition-all duration-500 ${
+                    dot === idx ? "w-8" : "w-3"
                   }`}
                 />
-              </Button>
+              </button>
             ))}
           </div>
-          <Button
+          <button
             type="button"
-            variant="ghost"
-            size="icon"
             onClick={() => goTo(idx + 1)}
             aria-label={lang === "ar" ? "الشريحة التالية" : "Next hero slide"}
-            className="pointer-events-auto h-11 w-11 rounded-full bg-black/40 text-white backdrop-blur-md border border-white/20 shadow-md hover:bg-black/60 hover:scale-105 active:scale-95"
+            className="pointer-events-auto grid h-11 w-11 place-items-center bg-transparent transition duration-300 hover:scale-110 hover:opacity-70 active:scale-95"
           >
-            <ChevronRight strokeWidth={2} className="h-5 w-5" />
-          </Button>
+            <ChevronRight strokeWidth={1} className="h-7 w-7" />
+          </button>
         </div>
       )}
     </div>

@@ -93,6 +93,9 @@ export type PublicSettings = {
   storefront_font_ar: string;
   storefront_font_en_url: string | null;
   storefront_font_ar_url: string | null;
+  storefront_radius?: string | null;
+  header_glass?: boolean | null;
+  badge_accent?: string | null;
   hero_title_en: string | null;
   hero_title_ar: string | null;
   hero_title_size: number;
@@ -162,7 +165,6 @@ export type PublicSettings = {
   analytics_consent_required: boolean;
   storefront_loader_text_en?: string | null;
   storefront_loader_text_ar?: string | null;
-  storefront_radius?: string | null;
 };
 
 export type CustomFieldValue = {

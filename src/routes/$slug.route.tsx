@@ -93,6 +93,8 @@ export const Route = createFileRoute("/$slug")({
       primary_color: s?.storefront_accent_color ?? brand.primary_color ?? "#3f121a",
       storefront_accent_color: s?.storefront_accent_color ?? brand.primary_color ?? "#3f121a",
       storefront_radius: s?.storefront_radius ?? null,
+      header_glass: s?.header_glass ?? true,
+      badge_accent: s?.badge_accent ?? "maroon",
       text_color: s?.storefront_text_color ?? "#111111",
       background_color: s?.storefront_background_color ?? "#ffffff",
       cod_enabled: s?.cod_enabled ?? true,
@@ -338,12 +340,22 @@ function StoreShell() {
   }, [storefrontFont, storefrontFontUrl]);
 
   const [localRadius, setLocalRadius] = useState<string | null>(null);
+  const [localGlass, setLocalGlass] = useState<boolean | null>(null);
+  const [localBadge, setLocalBadge] = useState<string | null>(null);
 
   useEffect(() => {
     try {
-      const stored = localStorage.getItem("boutq_storefront_radius");
-      if (stored && ["0px", "0.375rem", "1rem", "1.5rem"].includes(stored)) {
-        setLocalRadius(stored);
+      const storedR = localStorage.getItem("boutq_storefront_radius");
+      if (storedR && ["0px", "0.375rem", "1rem", "1.5rem"].includes(storedR)) {
+        setLocalRadius(storedR);
+      }
+      const storedG = localStorage.getItem("boutq_header_glass");
+      if (storedG !== null) {
+        setLocalGlass(storedG === "true");
+      }
+      const storedB = localStorage.getItem("boutq_badge_accent");
+      if (storedB) {
+        setLocalBadge(storedB);
       }
     } catch (e) {
       // localStorage fallback
@@ -352,6 +364,19 @@ function StoreShell() {
 
   const rawRadius = localRadius || settings.storefront_radius || "0.5rem";
   const radiusSf = ["0px", "0.375rem", "1rem", "1.5rem"].includes(rawRadius) ? rawRadius : "0.5rem";
+  const isGlass = localGlass !== null ? localGlass : (settings.header_glass ?? true);
+  const badgeAccent = localBadge || settings.badge_accent || "maroon";
+
+  const badgeBg =
+    badgeAccent === "crimson"
+      ? "#dc2626"
+      : badgeAccent === "slate"
+        ? "#334155"
+        : badgeAccent === "emerald"
+          ? "#059669"
+          : "#330a0a";
+
+  const dynamicHeaderBg = isGlass ? "rgba(255, 255, 255, 0.78)" : headerBg;
 
   return (
     <div
@@ -365,7 +390,8 @@ function StoreShell() {
           ["--primary-foreground" as any]: btnPrimaryFg,
           ["--radius" as any]: radiusSf,
           ["--radius-sf" as any]: radiusSf,
-          ["--sf-header-bg" as any]: headerBg,
+          ["--badge-accent-bg" as any]: badgeBg,
+          ["--sf-header-bg" as any]: dynamicHeaderBg,
           ["--sf-header-fg" as any]: headerFg,
           ["--sf-footer-bg" as any]: footerBg,
           ["--sf-footer-fg" as any]: footerFg,
@@ -389,7 +415,7 @@ function StoreShell() {
       {storefrontFontUrl && (
         <style>{`@font-face { font-family: 'StorefrontCustomFont'; src: url('${storefrontFontUrl}'); font-display: swap; }`}</style>
       )}
-      <div className="sticky top-0 z-40">
+      <div className="sticky top-0 z-40 backdrop-blur-md transition-all duration-300">
         <AnnouncementBar />
         <StoreHeader />
         <DesktopStoreNavigation />
@@ -462,7 +488,7 @@ function StoreHeader() {
 
   return (
     <header
-      className="w-full border-b backdrop-blur"
+      className="w-full border-b backdrop-blur-md transition-colors duration-300"
       style={{
         backgroundColor: "var(--sf-header-bg)",
         color: "var(--sf-header-fg)",

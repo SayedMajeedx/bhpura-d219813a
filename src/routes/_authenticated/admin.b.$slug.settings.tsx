@@ -2203,16 +2203,16 @@ function HeroSlideLivePreview({
         )}
         <div
           dir="ltr"
-          className="pointer-events-none absolute inset-x-3 bottom-3 flex items-center justify-between text-white z-20"
+          className="pointer-events-none absolute inset-x-2 bottom-1.5 z-20 flex items-center justify-between text-white mix-blend-difference"
         >
-          <span className="grid h-8 w-8 place-items-center rounded-full bg-black/40 backdrop-blur-md border border-white/20 text-xs font-bold shadow-sm">
+          <span className="grid h-6 w-6 place-items-center bg-transparent text-sm font-light">
             ‹
           </span>
-          <div className="flex items-center justify-center gap-1.5 rounded-full bg-black/40 px-3 py-1.5 backdrop-blur-md border border-white/20 shadow-sm">
-            <span className="h-1 w-4 rounded-full bg-white" />
-            <span className="h-1.5 w-1.5 rounded-full bg-white/50" />
+          <div className="flex items-center justify-center gap-1">
+            <span className="block h-px w-5 bg-current" />
+            <span className="block h-px w-2 bg-current opacity-50" />
           </div>
-          <span className="grid h-8 w-8 place-items-center rounded-full bg-black/40 backdrop-blur-md border border-white/20 text-xs font-bold shadow-sm">
+          <span className="grid h-6 w-6 place-items-center bg-transparent text-sm font-light">
             ›
           </span>
         </div>
