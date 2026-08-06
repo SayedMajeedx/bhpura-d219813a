@@ -801,14 +801,14 @@ function NavCategoryItem({
 
   return (
     <div className="space-y-1.5 w-full">
-      <div className="flex items-center gap-1 rounded-xl border bg-background/50 transition-colors hover:bg-black/5 pr-1.5 rtl:pr-0 rtl:pl-1.5">
+      <div className="flex items-center gap-1 rounded-[var(--radius)] border border-white/15 bg-white/10 transition-colors hover:bg-white/20 active:bg-white/30 pr-1.5 rtl:pr-0 rtl:pl-1.5">
         <Link
           to="/$slug/$category"
           params={{ slug: brand.slug, category: categorySlug }}
           onClick={close}
           className="flex min-h-12 flex-1 items-center gap-3 px-2.5 py-2 min-w-0"
         >
-          <div className="grid h-9 w-9 shrink-0 place-items-center overflow-hidden rounded-lg bg-muted">
+          <div className="grid h-9 w-9 shrink-0 place-items-center overflow-hidden rounded-lg bg-white/15">
             {category.menu_icon_url ? (
               <img
                 src={cloudflareImageUrl(category.menu_icon_url, 80)}
@@ -878,8 +878,24 @@ function MobileStorefrontDropdown() {
   const { brand, settings, lang, t } = useStorefront();
   const [isOpen, setIsOpen] = useState(false);
   const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({});
-  const menuBackground = settings.menu_bg || settings.background_color || "#ffffff";
-  const menuText = settings.menu_fg || settings.text_color || "#111111";
+  const [localGlass, setLocalGlass] = useState<boolean | null>(null);
+  useEffect(() => {
+    try {
+      const storedG = localStorage.getItem("boutq_header_glass");
+      if (storedG !== null) {
+        setLocalGlass(storedG === "true");
+      }
+    } catch (_ignored) {
+      void 0;
+    }
+  }, []);
+
+  const isGlass = localGlass !== null ? localGlass : (settings.header_glass ?? true);
+  const menuBackground =
+    settings.menu_bg || settings.header_bg || settings.background_color || "#ffffff";
+  const isDarkMenu = isColorDark(menuBackground);
+  const menuText = settings.menu_fg || (isDarkMenu ? "#ffffff" : "#111111");
+  const drawerBg = isGlass ? hexToRgba(menuBackground, 0.9) : menuBackground;
 
   const { data: categories = [] } = useQuery({
     queryKey: ["storefront", brand.slug, "categories"],
@@ -915,8 +931,8 @@ function MobileStorefrontDropdown() {
     <Sheet open={isOpen} onOpenChange={setIsOpen}>
       <SheetTrigger asChild>
         <Button
-          variant="outline"
-          className="flex h-11 items-center gap-2 px-3 font-medium shadow-sm hover:bg-black/5"
+          variant="ghost"
+          className="flex h-11 items-center gap-2 px-3 font-medium rounded-[var(--radius)] border border-white/20 bg-white/10 hover:bg-white/20 active:bg-white/30 text-inherit shadow-none transition-all duration-200"
           style={{ color: "var(--sf-header-fg)" }}
         >
           <Grid2X2 className="h-4 w-4" />
@@ -926,9 +942,11 @@ function MobileStorefrontDropdown() {
       </SheetTrigger>
       <SheetContent
         side={lang === "ar" ? "right" : "left"}
-        className="w-[min(88vw,23rem)] border-r border-l p-0 flex flex-col h-full"
+        className={`w-[min(88vw,23rem)] border-r border-l p-0 flex flex-col h-full ${
+          isGlass ? "backdrop-blur-xl" : ""
+        } [&>button]:top-4 [&>button]:grid [&>button]:h-9 [&>button]:w-9 [&>button]:place-items-center [&>button]:rounded-full [&>button]:border [&>button]:border-white/20 [&>button]:bg-white/10 [&>button]:text-inherit [&>button]:hover:bg-white/20 [&>button]:opacity-100`}
         style={{
-          backgroundColor: menuBackground,
+          backgroundColor: drawerBg,
           color: menuText,
         }}
       >
