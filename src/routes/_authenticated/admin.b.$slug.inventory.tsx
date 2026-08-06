@@ -503,7 +503,7 @@ function ProductImporterModal({
     headersList: string[] = headers,
   ) => {
     setStep("importing");
-    setProgress(isAr ? "بدء عملية الاستيراد الفاخرة..." : "Starting premium import pipeline...");
+    setProgress(isAr ? "بدء استيراد الكتالوج..." : "Starting product catalog import...");
     setTotalCount(dataRows.length);
 
     const findHeaderIdx = (names: string[]) => {
@@ -649,8 +649,8 @@ function ProductImporterModal({
         const chunk = productsPayload.slice(i, i + batchSize);
         setProgress(
           isAr
-            ? `جاري نقل ${i} من أصل ${productsPayload.length} منتج وإعادة استضافة الصور على R2...`
-            : `Migrated ${i} / ${productsPayload.length} products and re-hosted CDN images to public R2...`,
+            ? `جاري نقل ${i} من أصل ${productsPayload.length} منتج...`
+            : `Migrated ${i} / ${productsPayload.length} products...`,
         );
 
         const result = await importProductCatalog({
@@ -667,7 +667,7 @@ function ProductImporterModal({
       onComplete();
     } catch (err) {
       console.error(err);
-      toast.error(isAr ? "فشل الاستيراد الفني" : "Import pipeline failure");
+      toast.error(isAr ? "تعذّر استيراد الملف" : "Import process failed");
       setStep("preset");
     }
   };
@@ -692,7 +692,7 @@ function ProductImporterModal({
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 font-display text-xl">
               <Sparkles className="h-5 w-5 text-amber-500" />
-              {isAr ? "مساعد الهجرة الشامل للمنتجات" : "Universal Product Migration Suite"}
+              {isAr ? "استيراد ونقل المنتجات" : "Import Product Catalog"}
             </DialogTitle>
           </DialogHeader>
 

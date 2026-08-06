@@ -725,7 +725,7 @@ function CampaignsPage() {
           />
           <div className="mt-2 flex flex-wrap items-center gap-2">
             <span className="text-xs text-muted-foreground">
-              {isAr ? "أدرج متغير:" : "Insert placeholder:"}
+              {isAr ? "إدراج حقل تلقائي:" : "Insert placeholder:"}
             </span>
             {placeholders.map((p) => (
               <button
@@ -784,7 +784,7 @@ function CampaignsPage() {
               disabled={selectedCustomerIds.length === 0}
             >
               <Download className="h-4 w-4 me-1.5" />
-              {isAr ? "تصدير ملف CSV للواتساب" : "Export Campaign CSV"}
+              {isAr ? "تصدير قائمة الرسائل (CSV)" : "Export Campaign CSV"}
             </Button>
             <Button
               size="sm"
@@ -925,7 +925,7 @@ function CampaignsPage() {
                       {isAr ? "الهاتف" : "Phone"}
                     </th>
                     <th className="p-4 font-semibold text-xs uppercase tracking-wider text-start">
-                      {isAr ? "الشريحة (RFM)" : "CRM Segment"}
+                      {isAr ? "فئة العملاء" : "Customer Segment"}
                     </th>
                     <th className="p-4 font-semibold text-xs uppercase tracking-wider text-start">
                       {isAr ? "إجمالي الطلبات" : "Total Orders"}

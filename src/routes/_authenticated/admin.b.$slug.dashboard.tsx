@@ -807,7 +807,7 @@ function Dashboard() {
                           params={{ slug, id: o.id }}
                           className="h-6 px-2 rounded-md bg-primary/10 text-primary text-[10px] font-bold flex items-center gap-1 hover:bg-primary/20 transition-colors"
                         >
-                          {isAr ? "إجراء" : "Action"}
+                          {isAr ? "عرض التفاصيل" : "View Details"}
                         </Link>
                       </div>
                     </div>
@@ -887,7 +887,7 @@ function Dashboard() {
                       <span className="text-[10px] shrink-0 font-bold bg-amber-500/20 text-amber-700 dark:text-amber-400 px-2 py-0.5 rounded-full">
                         {item.stock === 0
                           ? isAr
-                            ? "نفذ"
+                            ? "نفد"
                             : "Out of stock"
                           : `${item.stock} ${isAr ? "وحدات" : "units"}`}
                       </span>

@@ -247,7 +247,7 @@ export default function SendInvoiceDialog({
   currency: string;
   asMenuItem?: boolean;
 }) {
-  const t = useT();
+  const { t, lang } = useI18n();
   const [open, setOpen] = useState(false);
   const [manageOpen, setManageOpen] = useState(false);
   const qc = useQueryClient();
@@ -330,19 +330,23 @@ export default function SendInvoiceDialog({
           <DialogHeader>
             <DialogTitle>{t("orderDetail.sendInvoiceWa")}</DialogTitle>
             <DialogDescription>
-              Pick a template, tweak the message, then open WhatsApp.
+              {lang === "ar"
+                ? "اختر القالب، عدّل نص الرسالة، ثم افتح الواتساب للإرسال."
+                : "Pick a template, tweak the message, then open WhatsApp."}
             </DialogDescription>
           </DialogHeader>
 
           <div className="flex gap-2 items-end">
             <div className="flex-1">
-              <Label>Template</Label>
+              <Label>{lang === "ar" ? "قالب الرسالة" : "Template"}</Label>
               <Select value={selectedId} onValueChange={setSelectedId}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="__default">— Built-in default —</SelectItem>
+                  <SelectItem value="__default">
+                    {lang === "ar" ? "— القالب الافتراضي —" : "— Built-in default —"}
+                  </SelectItem>
                   {(templatesQ.data ?? []).map((t) => (
                     <SelectItem key={t.id} value={t.id}>
                       {t.name}
@@ -353,26 +357,30 @@ export default function SendInvoiceDialog({
               </Select>
             </div>
             <Button variant="outline" size="sm" onClick={() => setManageOpen(true)}>
-              Manage
+              {lang === "ar" ? "إدارة القوالب" : "Manage"}
             </Button>
           </div>
 
           <div className="space-y-4 mt-4">
             <div>
-              <Label>Phone (country code + number)</Label>
+              <Label>
+                {lang === "ar" ? "رقم الهاتف (مع رمز الدولة)" : "Phone (country code + number)"}
+              </Label>
               <PhoneInput value={phone} onChange={setPhone} />
             </div>
             <div>
-              <Label>Message</Label>
+              <Label>{lang === "ar" ? "نص الرسالة" : "Message"}</Label>
               <Textarea rows={10} value={message} onChange={(e) => setMessage(e.target.value)} />
             </div>
             <p className="text-xs text-muted-foreground">
-              Opens WhatsApp Web or the WhatsApp app with the message pre-filled — you send it
-              manually. Attach the printed PDF there if needed.
+              {lang === "ar"
+                ? "سيتم فتح تطبيق الواتساب مجهّزاً بنص الفاتورة لإرساله للعميل بنقرة واحدة."
+                : "Opens WhatsApp Web or the WhatsApp app with the message pre-filled — you send it manually."}
             </p>
             <DialogFooter>
               <Button onClick={openWhatsApp}>
-                <Send className="h-4 w-4 mr-2" /> Open WhatsApp
+                <Send className="h-4 w-4 mr-2" />{" "}
+                {lang === "ar" ? "فتح الواتساب للإرسال" : "Open WhatsApp"}
               </Button>
             </DialogFooter>
           </div>

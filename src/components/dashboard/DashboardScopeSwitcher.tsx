@@ -28,8 +28,8 @@ export function DashboardScopeSwitcher({
     {
       id: "financials",
       icon: TrendingUp,
-      labelAr: "المؤشرات المالية (30 يومًا)",
-      labelEn: "Financial Telemetry (30 Days)",
+      labelAr: "التقرير المالي (30 يومًا)",
+      labelEn: "Financial Overview (30 Days)",
     },
     {
       id: "sales_series",
@@ -40,8 +40,8 @@ export function DashboardScopeSwitcher({
     {
       id: "diagnostics",
       icon: ShieldAlert,
-      labelAr: "تشخيص المخزون والعملاء",
-      labelEn: "Stock & CRM Diagnostics",
+      labelAr: "تنبيهات المخزون والعملاء",
+      labelEn: "Stock & Customer Alerts",
       badge: lowStockCount > 0 ? lowStockCount : undefined,
     },
   ];

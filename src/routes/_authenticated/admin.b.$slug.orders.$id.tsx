@@ -2792,7 +2792,7 @@ function OrderDetail() {
                             <span className="text-[11px] text-muted-foreground">
                               {variant
                                 ? `${variant.size || ""} ${variant.color || ""}`.trim() ||
-                                  (isAr ? "متغير" : "Variant")
+                                  (isAr ? "خيار" : "Variant")
                                 : isAr
                                   ? "بند مخصص"
                                   : "Custom Line"}
@@ -2909,7 +2909,7 @@ function OrderDetail() {
                       {it.variant_id && (
                         <div>
                           <Label className="text-xs">
-                            {isAr ? "الموقع (خصم من)" : "Location (deduct from)"}
+                            {isAr ? "خصم المخزون من" : "Deduct Stock From"}
                           </Label>
                           <div className="flex flex-wrap gap-2 mt-1">
                             {(

@@ -1230,7 +1230,7 @@ function PaymentSettingsCard({ brandId }: { brandId: string }) {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <Label className="text-xs font-semibold">
-                    {isAr ? "المفتاح العام (Public Key)" : "Public / Publishable API Key"}
+                    {isAr ? "مفتاح API العام (Public Key)" : "Public / Publishable API Key"}
                   </Label>
                   <Input
                     type="text"
