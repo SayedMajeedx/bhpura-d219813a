@@ -2909,16 +2909,27 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
       // localStorage fallback
     }
 
+    const extendedColumns = [
+      "storefront_radius",
+      "header_glass",
+      "badge_accent",
+      "storefront_loader_text_en",
+      "storefront_loader_text_ar",
+    ];
+
     let { error } = await (supabase.from("business_settings") as any)
       .update(payload)
       .eq("brand_id", brandId);
 
-    // If update fails due to missing DB columns (42703), strip new customizer fields and update standard fields!
-    if (error && (error.code === "42703" || error.message?.includes("column"))) {
+    // If update fails due to missing DB columns (42703 / PGRST204 / schema cache mismatch), strip all extended columns and update standard fields!
+    if (
+      error &&
+      (error.code === "42703" || error.code === "PGRST204" || error.message?.includes("column"))
+    ) {
       const fallbackPayload = { ...payload };
-      delete (fallbackPayload as any).storefront_radius;
-      delete (fallbackPayload as any).header_glass;
-      delete (fallbackPayload as any).badge_accent;
+      for (const col of extendedColumns) {
+        delete (fallbackPayload as any)[col];
+      }
       const { error: err2 } = await (supabase.from("business_settings") as any)
         .update(fallbackPayload)
         .eq("brand_id", brandId);
