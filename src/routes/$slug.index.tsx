@@ -770,7 +770,7 @@ function HeroContentCarousel({
       {slides.length > 1 && (
         <div
           dir="ltr"
-          className="pointer-events-none absolute inset-x-3 bottom-2.5 z-20 flex items-center justify-between sm:inset-x-5 sm:bottom-4"
+          className="pointer-events-none absolute inset-x-3 bottom-3 z-20 flex items-center justify-between sm:inset-x-5 sm:bottom-4"
         >
           <Button
             type="button"
@@ -778,11 +778,11 @@ function HeroContentCarousel({
             size="icon"
             onClick={() => goTo(idx - 1)}
             aria-label={lang === "ar" ? "الشريحة السابقة" : "Previous hero slide"}
-            className="pointer-events-auto h-11 w-11 rounded-full bg-black/45 text-white backdrop-blur-md border border-border/40 shadow-md hover:bg-black/65 hover:scale-105 active:scale-95"
+            className="pointer-events-auto h-11 w-11 rounded-full bg-black/40 text-white backdrop-blur-md border border-white/20 shadow-md hover:bg-black/60 hover:scale-105 active:scale-95"
           >
             <ChevronLeft strokeWidth={2} className="h-5 w-5" />
           </Button>
-          <div className="pointer-events-auto flex items-center justify-center gap-1.5 rounded-full bg-black/45 px-3 py-2 backdrop-blur-md border border-border/40 shadow-md">
+          <div className="pointer-events-auto flex items-center justify-center gap-1.5 rounded-full bg-black/40 px-3.5 py-1.5 backdrop-blur-md border border-white/20 shadow-md">
             {slides.map((slide, dot) => (
               <Button
                 key={slide.id}
@@ -808,7 +808,7 @@ function HeroContentCarousel({
             size="icon"
             onClick={() => goTo(idx + 1)}
             aria-label={lang === "ar" ? "الشريحة التالية" : "Next hero slide"}
-            className="pointer-events-auto h-11 w-11 rounded-full bg-black/45 text-white backdrop-blur-md border border-border/40 shadow-md hover:bg-black/65 hover:scale-105 active:scale-95"
+            className="pointer-events-auto h-11 w-11 rounded-full bg-black/40 text-white backdrop-blur-md border border-white/20 shadow-md hover:bg-black/60 hover:scale-105 active:scale-95"
           >
             <ChevronRight strokeWidth={2} className="h-5 w-5" />
           </Button>

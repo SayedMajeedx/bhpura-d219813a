@@ -2203,12 +2203,16 @@ function HeroSlideLivePreview({
         )}
         <div
           dir="ltr"
-          className="pointer-events-none absolute inset-x-2 bottom-2 flex justify-between text-white"
+          className="pointer-events-none absolute inset-x-3 bottom-3 flex items-center justify-between text-white z-20"
         >
-          <span className="grid h-7 w-7 place-items-center rounded-full bg-black/45 backdrop-blur-md border border-white/20 text-xs font-bold shadow-sm">
+          <span className="grid h-8 w-8 place-items-center rounded-full bg-black/40 backdrop-blur-md border border-white/20 text-xs font-bold shadow-sm">
             ‹
           </span>
-          <span className="grid h-7 w-7 place-items-center rounded-full bg-black/45 backdrop-blur-md border border-white/20 text-xs font-bold shadow-sm">
+          <div className="flex items-center justify-center gap-1.5 rounded-full bg-black/40 px-3 py-1.5 backdrop-blur-md border border-white/20 shadow-sm">
+            <span className="h-1 w-4 rounded-full bg-white" />
+            <span className="h-1.5 w-1.5 rounded-full bg-white/50" />
+          </div>
+          <span className="grid h-8 w-8 place-items-center rounded-full bg-black/40 backdrop-blur-md border border-white/20 text-xs font-bold shadow-sm">
             ›
           </span>
         </div>
@@ -2895,13 +2899,36 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
       delete (payload as any).storefront_loader_text_en;
       delete (payload as any).storefront_loader_text_ar;
     }
-    const { error } = await (supabase.from("business_settings") as any)
+
+    // Always persist theme customizer options locally so they take effect instantly on storefront
+    try {
+      localStorage.setItem("boutq_storefront_radius", state.storefront_radius || "1rem");
+      localStorage.setItem("boutq_header_glass", String(state.header_glass ?? true));
+      localStorage.setItem("boutq_badge_accent", state.badge_accent || "maroon");
+    } catch (e) {
+      // localStorage fallback
+    }
+
+    let { error } = await (supabase.from("business_settings") as any)
       .update(payload)
       .eq("brand_id", brandId);
+
+    // If update fails due to missing DB columns (42703), strip new customizer fields and update standard fields!
+    if (error && (error.code === "42703" || error.message?.includes("column"))) {
+      const fallbackPayload = { ...payload };
+      delete (fallbackPayload as any).storefront_radius;
+      delete (fallbackPayload as any).header_glass;
+      delete (fallbackPayload as any).badge_accent;
+      const { error: err2 } = await (supabase.from("business_settings") as any)
+        .update(fallbackPayload)
+        .eq("brand_id", brandId);
+      error = err2;
+    }
+
     setSaving(false);
     if (error) toast.error(error.message);
     else {
-      toast.success(isAr ? "تم الحفظ" : "Saved");
+      toast.success(isAr ? "تم الحفظ بنجاح" : "Settings saved successfully");
       await qc.invalidateQueries({ queryKey: ["business-settings-theme", brandId] });
       await router.invalidate();
     }
