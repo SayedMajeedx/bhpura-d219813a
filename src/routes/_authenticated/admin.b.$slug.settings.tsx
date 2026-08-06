@@ -981,8 +981,8 @@ function Settings() {
         </TabsContent>
 
         <TabsContent value="storefront" className="space-y-6 mt-0">
-          <StorefrontSeoCard brandId={brandId} />
           <StorefrontCustomizerCard brandId={brandId} />
+          <StorefrontSeoCard brandId={brandId} />
         </TabsContent>
 
         <TabsContent value="checkout" className="space-y-6 mt-0">
