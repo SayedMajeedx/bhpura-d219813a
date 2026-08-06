@@ -441,8 +441,7 @@ function StoreShell() {
           ["--sf-btn-checkout-fg" as any]: btnCheckoutFg,
           ["--sf-cart-checkout-bg" as any]: cartDrawerCheckoutBg,
           ["--sf-cart-checkout-fg" as any]: cartDrawerCheckoutFg,
-          ["--sf-heading" as any]:
-            settings.heading_color || (isDarkHeader ? "#ffffff" : headingColor),
+          ["--sf-heading" as any]: headingColor,
           ["--sf-link" as any]: linkColor,
           ["--sf-font" as any]: `"${storefrontFontFamily}", sans-serif`,
           ["--font-sans" as any]: `"${storefrontFontFamily}", sans-serif`,
@@ -520,6 +519,7 @@ function StoreHeader() {
   const displayName = lang === "ar" ? brand.name_ar || brand.name_en : brand.name_en;
   const align = settings.logo_align ?? "left";
   const logoSize = settings.logo_size || 40;
+  const isDarkHeader = isColorDark(settings.header_bg);
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
     setMounted(true);
@@ -551,12 +551,13 @@ function StoreHeader() {
                 height={55}
                 fetchPriority="high"
                 decoding="async"
-                className="shrink-0 object-contain"
+                className="shrink-0 object-contain transition-all duration-300"
                 style={{
                   height: logoSize,
                   maxHeight: logoSize,
                   width: "auto",
                   maxWidth: logoSize * 3,
+                  filter: isDarkHeader ? "brightness(0) invert(1)" : undefined,
                 }}
               />
             )}
@@ -564,7 +565,7 @@ function StoreHeader() {
             {settings.show_header_name && (
               <span
                 className="font-display text-lg sm:text-xl truncate"
-                style={{ color: "var(--sf-heading)" }}
+                style={{ color: "var(--sf-header-fg)" }}
               >
                 {displayName}
               </span>
