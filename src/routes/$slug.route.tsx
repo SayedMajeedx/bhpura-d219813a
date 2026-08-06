@@ -750,7 +750,7 @@ function AnnouncementBar() {
           type="button"
           variant="ghost"
           size="icon"
-          className="absolute end-1 top-1/2 h-11 w-11 -translate-y-1/2 rounded-full hover:bg-white/15"
+          className="absolute end-1 top-1/2 h-8 w-8 -translate-y-1/2 rounded-md hover:bg-white/15 opacity-80 hover:opacity-100"
           aria-label="Dismiss announcement"
           onClick={() => {
             try {
@@ -944,7 +944,7 @@ function MobileStorefrontDropdown() {
         side={lang === "ar" ? "right" : "left"}
         className={`w-[min(88vw,23rem)] border-r border-l border-white/20 p-0 flex flex-col h-full ${
           isGlass ? "backdrop-blur-2xl backdrop-saturate-150" : ""
-        } [&>button]:top-4 [&>button]:grid [&>button]:h-9 [&>button]:w-9 [&>button]:place-items-center [&>button]:rounded-full [&>button]:border [&>button]:border-white/20 [&>button]:bg-white/10 [&>button]:text-inherit [&>button]:hover:bg-white/20 [&>button]:opacity-100`}
+        } [&>button]:top-4 [&>button]:grid [&>button]:h-9 [&>button]:w-9 [&>button]:place-items-center [&>button]:rounded-md [&>button]:text-inherit [&>button]:hover:bg-white/10 [&>button]:opacity-80 [&>button]:hover:opacity-100`}
         style={{
           backgroundColor: drawerBg,
           color: menuText,
@@ -1092,7 +1092,7 @@ export function StorefrontMenu({ navigation = false }: { navigation?: boolean } 
         dir={lang === "ar" ? "rtl" : "ltr"}
         className={`flex h-full w-[min(90vw,400px)] flex-col overflow-hidden border-r border-l border-white/20 p-0 shadow-2xl ${
           isGlass ? "backdrop-blur-2xl backdrop-saturate-150" : ""
-        } [&>button]:top-5 [&>button]:grid [&>button]:h-10 [&>button]:w-10 [&>button]:place-items-center [&>button]:rounded-full [&>button]:border [&>button]:border-white/20 [&>button]:bg-white/10 [&>button]:text-inherit [&>button]:hover:bg-white/20 [&>button]:opacity-100 [&>button]:shadow-sm ${
+        } [&>button]:top-5 [&>button]:grid [&>button]:h-9 [&>button]:w-9 [&>button]:place-items-center [&>button]:rounded-md [&>button]:text-inherit [&>button]:hover:bg-white/10 [&>button]:opacity-80 [&>button]:hover:opacity-100 ${
           lang === "ar" ? "[&>button]:left-5 [&>button]:right-auto" : "[&>button]:right-5"
         }`}
         style={{ backgroundColor: drawerBg, color: menuFg, zIndex: 60 }}
@@ -1773,7 +1773,7 @@ function SearchBar() {
                 size="icon"
                 onClick={() => setQ("")}
                 aria-label={t("مسح البحث", "Clear search")}
-                className="h-11 w-11 rounded-full shrink-0 me-6"
+                className="h-8 w-8 rounded-md shrink-0 me-6"
               >
                 <X className="h-4 w-4 opacity-70" />
               </Button>

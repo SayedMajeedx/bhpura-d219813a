@@ -66,7 +66,7 @@ const SheetContent = React.forwardRef<
       {!hideDefaultClose && (
         <SheetPrimitive.Close
           aria-label="إغلاق / Close"
-          className="absolute end-4 top-[max(1rem,env(safe-area-inset-top))] z-20 inline-flex h-10 w-10 cursor-pointer items-center justify-center rounded-full border border-border/70 bg-background/90 text-foreground shadow-md backdrop-blur-sm transition-all hover:scale-105 hover:bg-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none"
+          className="absolute end-4 top-[max(1rem,env(safe-area-inset-top))] z-20 inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-md text-inherit opacity-80 transition-all hover:opacity-100 hover:bg-white/10 active:bg-white/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none"
         >
           <X className="h-5 w-5" strokeWidth={2} />
           <span className="sr-only">إغلاق / Close</span>
