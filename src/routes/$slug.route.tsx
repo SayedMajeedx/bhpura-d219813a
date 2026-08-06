@@ -895,7 +895,7 @@ function MobileStorefrontDropdown() {
     settings.menu_bg || settings.header_bg || settings.background_color || "#ffffff";
   const isDarkMenu = isColorDark(menuBackground);
   const menuText = settings.menu_fg || (isDarkMenu ? "#ffffff" : "#111111");
-  const drawerBg = isGlass ? hexToRgba(menuBackground, 0.9) : menuBackground;
+  const drawerBg = isGlass ? hexToRgba(menuBackground, 0.65) : menuBackground;
 
   const { data: categories = [] } = useQuery({
     queryKey: ["storefront", brand.slug, "categories"],
@@ -942,8 +942,8 @@ function MobileStorefrontDropdown() {
       </SheetTrigger>
       <SheetContent
         side={lang === "ar" ? "right" : "left"}
-        className={`w-[min(88vw,23rem)] border-r border-l p-0 flex flex-col h-full ${
-          isGlass ? "backdrop-blur-xl" : ""
+        className={`w-[min(88vw,23rem)] border-r border-l border-white/20 p-0 flex flex-col h-full ${
+          isGlass ? "backdrop-blur-2xl backdrop-saturate-150" : ""
         } [&>button]:top-4 [&>button]:grid [&>button]:h-9 [&>button]:w-9 [&>button]:place-items-center [&>button]:rounded-full [&>button]:border [&>button]:border-white/20 [&>button]:bg-white/10 [&>button]:text-inherit [&>button]:hover:bg-white/20 [&>button]:opacity-100`}
         style={{
           backgroundColor: drawerBg,
@@ -1056,7 +1056,7 @@ export function StorefrontMenu({ navigation = false }: { navigation?: boolean } 
   const menuBg = settings.menu_bg || settings.header_bg || settings.background_color || "#ffffff";
   const isDarkMenu = isColorDark(menuBg);
   const menuFg = settings.menu_fg || (isDarkMenu ? "#ffffff" : "#111111");
-  const drawerBg = isGlass ? hexToRgba(menuBg, 0.9) : menuBg;
+  const drawerBg = isGlass ? hexToRgba(menuBg, 0.65) : menuBg;
 
   const pageLinks = settings.pages
     .map((page, index) => ({
@@ -1090,8 +1090,8 @@ export function StorefrontMenu({ navigation = false }: { navigation?: boolean } 
       <SheetContent
         side={lang === "ar" ? "right" : "left"}
         dir={lang === "ar" ? "rtl" : "ltr"}
-        className={`flex h-full w-[min(90vw,400px)] flex-col overflow-hidden border-0 p-0 shadow-2xl ${
-          isGlass ? "backdrop-blur-xl" : ""
+        className={`flex h-full w-[min(90vw,400px)] flex-col overflow-hidden border-r border-l border-white/20 p-0 shadow-2xl ${
+          isGlass ? "backdrop-blur-2xl backdrop-saturate-150" : ""
         } [&>button]:top-5 [&>button]:grid [&>button]:h-10 [&>button]:w-10 [&>button]:place-items-center [&>button]:rounded-full [&>button]:border [&>button]:border-white/20 [&>button]:bg-white/10 [&>button]:text-inherit [&>button]:hover:bg-white/20 [&>button]:opacity-100 [&>button]:shadow-sm ${
           lang === "ar" ? "[&>button]:left-5 [&>button]:right-auto" : "[&>button]:right-5"
         }`}
