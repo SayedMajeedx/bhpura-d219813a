@@ -143,7 +143,7 @@ export function OptimizedVideo({
     ? `${optimizedMobileSrc}|${optimizedDesktopSrc}`
     : (src ?? "");
   return (
-    <div className={`relative ${wrapperClassName ?? ""}`}>
+    <div className={`relative ${wrapperClassName || "h-full w-full"}`}>
       {resolvedPoster && (
         <ResponsiveImage
           src={resolvedPoster}

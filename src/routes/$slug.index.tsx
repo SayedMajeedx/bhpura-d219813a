@@ -508,11 +508,16 @@ function HeroBanner() {
       ];
 
   return (
-    <section className="relative w-full overflow-hidden min-h-[280px] py-6 sm:min-h-[55vh] sm:max-h-[640px] sm:py-0">
+    <section className="relative w-full overflow-hidden min-h-[220px] py-3 sm:min-h-[55vh] sm:max-h-[640px] sm:py-0">
       {background ? (
-        <div className="absolute inset-0">
+        <div className="absolute inset-0 h-full w-full">
           {background.type === "video" ? (
-            <OptimizedVideo src={background.url} active className="h-full w-full object-cover" />
+            <OptimizedVideo
+              src={background.url}
+              active
+              wrapperClassName="h-full w-full"
+              className="h-full w-full object-cover"
+            />
           ) : (
             <ResponsiveImage
               src={background.url}
@@ -529,14 +534,14 @@ function HeroBanner() {
         </div>
       ) : (
         <div
-          className="absolute inset-0"
+          className="absolute inset-0 h-full w-full"
           style={{
             background: `linear-gradient(135deg, ${settings.primary_color}22, ${settings.primary_color}66)`,
           }}
         />
       )}
 
-      <div className="relative z-10 mx-auto flex max-w-7xl items-center px-4 min-h-[280px] sm:min-h-[55vh] sm:px-6">
+      <div className="relative z-10 mx-auto flex max-w-7xl items-center px-3 py-1 sm:px-6 sm:py-0 min-h-[220px] sm:min-h-[55vh]">
         <HeroContentCarousel slides={slides} />
       </div>
     </section>
