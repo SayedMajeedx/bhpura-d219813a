@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Select,
   SelectContent,
@@ -2798,34 +2799,19 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
 
   const [hasLoaderColumns, setHasLoaderColumns] = useState(true);
 
-  const { data } = useQuery({
+  const { data, isLoading } = useQuery({
     queryKey: ["business-settings-theme", brandId],
     queryFn: async () => {
       const { data, error } = await (supabase.from("business_settings") as any)
-        .select(
-          "logo_size, logo_align, show_header_name, show_hero_title, show_hero_about, show_footer_name, storefront_font_en, storefront_font_ar, storefront_font_en_url, storefront_font_ar_url, storefront_radius, header_glass, badge_accent, hero_title_en, hero_title_ar, hero_title_size, hero_title_color, hero_title_align, storefront_accent_color, storefront_background_color, storefront_text_color, header_bg, header_fg, footer_bg, footer_fg, heading_color, link_color, btn_primary_bg, btn_primary_fg, btn_secondary_bg, btn_secondary_fg, btn_checkout_bg, btn_checkout_fg, cart_drawer_checkout_bg, cart_drawer_checkout_fg, menu_bg, menu_fg, menu_title_en, menu_title_ar, menu_show_home, menu_show_account, menu_show_orders, menu_show_pages, home_promo_cards, show_new_arrivals, show_best_sellers, new_arrivals_title_en, new_arrivals_title_ar, best_sellers_title_en, best_sellers_title_ar, announcement_enabled, announcement_text_en, announcement_text_ar, announcement_bg, announcement_fg, announcement_bold, announcement_italic, announcement_dismissible, announcement_scope, announcement_audience, global_sale_badges_enabled, storefront_loader_text_en, storefront_loader_text_ar",
-        )
+        .select("*")
         .eq("brand_id", brandId)
         .maybeSingle();
 
       if (error) {
-        // If the query fails due to missing storefront loader columns in DB, dynamically fall back!
-        if (error.code === "42703" || error.message?.includes("storefront_loader_text")) {
-          setHasLoaderColumns(false);
-          const { data: fallbackData, error: fallbackError } = await (
-            supabase.from("business_settings") as any
-          )
-            .select(
-              "logo_size, logo_align, show_header_name, show_hero_title, show_hero_about, show_footer_name, storefront_font_en, storefront_font_ar, storefront_font_en_url, storefront_font_ar_url, storefront_radius, header_glass, badge_accent, hero_title_en, hero_title_ar, hero_title_size, hero_title_color, hero_title_align, storefront_accent_color, storefront_background_color, storefront_text_color, header_bg, header_fg, footer_bg, footer_fg, heading_color, link_color, btn_primary_bg, btn_primary_fg, btn_secondary_bg, btn_secondary_fg, btn_checkout_bg, btn_checkout_fg, cart_drawer_checkout_bg, cart_drawer_checkout_fg, menu_bg, menu_fg, menu_title_en, menu_title_ar, menu_show_home, menu_show_account, menu_show_orders, menu_show_pages, home_promo_cards, show_new_arrivals, show_best_sellers, new_arrivals_title_en, new_arrivals_title_ar, best_sellers_title_en, best_sellers_title_ar, announcement_enabled, announcement_text_en, announcement_text_ar, announcement_bg, announcement_fg, announcement_bold, announcement_italic, announcement_dismissible, announcement_scope, announcement_audience, global_sale_badges_enabled",
-            )
-            .eq("brand_id", brandId)
-            .maybeSingle();
-          if (fallbackError) throw fallbackError;
-          return fallbackData as any;
-        }
-        throw error;
+        console.warn("[StorefrontCustomizerCard] DB query error:", error);
+        return {} as any;
       }
-      return data as any;
+      return (data || {}) as any;
     },
   });
 
@@ -2965,7 +2951,15 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
     }
   };
 
-  if (!state) return null;
+  if (!state) {
+    return (
+      <Card className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm p-6 space-y-4">
+        <Skeleton className="h-7 w-56 bg-muted" />
+        <Skeleton className="h-11 w-full bg-muted rounded-xl" />
+        <Skeleton className="h-64 w-full bg-muted rounded-2xl" />
+      </Card>
+    );
+  }
 
   return (
     <Card
