@@ -337,7 +337,21 @@ function StoreShell() {
     document.head.appendChild(link);
   }, [storefrontFont, storefrontFontUrl]);
 
-  const radiusSf = settings.storefront_radius || "1rem";
+  const [localRadius, setLocalRadius] = useState<string | null>(null);
+
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem("boutq_storefront_radius");
+      if (stored && ["0px", "0.375rem", "1rem", "1.5rem"].includes(stored)) {
+        setLocalRadius(stored);
+      }
+    } catch (e) {
+      // localStorage fallback
+    }
+  }, []);
+
+  const rawRadius = localRadius || settings.storefront_radius || "0.5rem";
+  const radiusSf = ["0px", "0.375rem", "1rem", "1.5rem"].includes(rawRadius) ? rawRadius : "0.5rem";
 
   return (
     <div
@@ -349,6 +363,7 @@ function StoreShell() {
           color: settings.text_color,
           ["--primary" as any]: primary || "#3f121a",
           ["--primary-foreground" as any]: btnPrimaryFg,
+          ["--radius" as any]: radiusSf,
           ["--radius-sf" as any]: radiusSf,
           ["--sf-header-bg" as any]: headerBg,
           ["--sf-header-fg" as any]: headerFg,
