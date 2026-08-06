@@ -77,8 +77,10 @@ function getImageKitEndpoint(): string {
   return "https://ik.imagekit.io/Boutq";
 }
 
-const IMAGEKIT_DESKTOP_VIDEO_TRANSFORMATION = "w-1080,q-50,f-mp4,ac-none";
-const IMAGEKIT_MOBILE_VIDEO_TRANSFORMATION = "w-640,q-45,f-mp4,ac-none";
+const IMAGEKIT_DESKTOP_VIDEO_WEBM = "w-960,q-42,f-webm,ac-none";
+const IMAGEKIT_DESKTOP_VIDEO_MP4 = "w-960,q-42,f-mp4,ac-none";
+const IMAGEKIT_MOBILE_VIDEO_WEBM = "w-640,q-40,f-webm,ac-none";
+const IMAGEKIT_MOBILE_VIDEO_MP4 = "w-640,q-40,f-mp4,ac-none";
 
 function imageKitAssetPath(source: string): string | null {
   const endpoint = getImageKitEndpoint();
@@ -112,21 +114,22 @@ function imageKitAssetPath(source: string): string | null {
 }
 
 /**
- * Builds one shared ImageKit rendition for all storefront video placements.
- * Keeping this transformation stable prevents every viewport from consuming a
- * separate video-processing unit on the free plan.
+ * Builds ImageKit WebM or MP4 renditions for storefront video placements.
  */
 export function imageKitVideoUrl(
   source: string,
   viewport: "mobile" | "desktop" = "desktop",
+  format: "webm" | "mp4" | "auto" = "webm",
 ): string | null {
   const assetPath = imageKitAssetPath(source);
   if (!assetPath) return null;
   const endpoint = getImageKitEndpoint();
-  const transformation =
-    viewport === "mobile"
-      ? IMAGEKIT_MOBILE_VIDEO_TRANSFORMATION
-      : IMAGEKIT_DESKTOP_VIDEO_TRANSFORMATION;
+  let transformation = IMAGEKIT_DESKTOP_VIDEO_WEBM;
+  if (viewport === "mobile") {
+    transformation = format === "mp4" ? IMAGEKIT_MOBILE_VIDEO_MP4 : IMAGEKIT_MOBILE_VIDEO_WEBM;
+  } else {
+    transformation = format === "mp4" ? IMAGEKIT_DESKTOP_VIDEO_MP4 : IMAGEKIT_DESKTOP_VIDEO_WEBM;
+  }
   return `${endpoint}/tr:${transformation}/${assetPath}`;
 }
 

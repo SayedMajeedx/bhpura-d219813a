@@ -84,8 +84,11 @@ export function OptimizedVideo({
   ...props
 }: OptimizedVideoProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
-  const optimizedDesktopSrc = src ? imageKitVideoUrl(src, "desktop") : null;
-  const optimizedMobileSrc = src ? imageKitVideoUrl(src, "mobile") : null;
+  const optimizedDesktopWebm = src ? imageKitVideoUrl(src, "desktop", "webm") : null;
+  const optimizedDesktopMp4 = src ? imageKitVideoUrl(src, "desktop", "mp4") : null;
+  const optimizedMobileWebm = src ? imageKitVideoUrl(src, "mobile", "webm") : null;
+  const optimizedMobileMp4 = src ? imageKitVideoUrl(src, "mobile", "mp4") : null;
+
   const generatedPoster = src ? imageKitVideoPosterUrl(src) : null;
   const resolvedPoster = isLikelyImageUrl(poster) ? poster : generatedPoster;
 
@@ -100,7 +103,7 @@ export function OptimizedVideo({
       video.pause();
       setIsVideoPlaying(false);
     }
-  }, [active, src, optimizedDesktopSrc, optimizedMobileSrc]);
+  }, [active, src, optimizedDesktopWebm, optimizedDesktopMp4]);
 
   if (streamIframeUrl) {
     const separator = streamIframeUrl.includes("?") ? "&" : "?";
@@ -145,9 +148,17 @@ export function OptimizedVideo({
     );
   }
 
-  const sourceKey = optimizedDesktopSrc
-    ? `${optimizedMobileSrc}|${optimizedDesktopSrc}`
+  const sourceKey = optimizedDesktopWebm
+    ? `${optimizedMobileWebm}|${optimizedDesktopWebm}`
     : (src ?? "");
+
+  const handleFrameReady = () => {
+    const video = videoRef.current;
+    if (video && (video.currentTime > 0.01 || video.readyState >= 3)) {
+      setIsVideoPlaying(true);
+    }
+  };
+
   return (
     <div className={`relative ${wrapperClassName || "h-full w-full"}`}>
       {resolvedPoster && (
@@ -161,7 +172,7 @@ export function OptimizedVideo({
             fetchPriority: active ? "high" : "auto",
           } as any)}
           loading={active ? "eager" : "lazy"}
-          className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-700 ${
+          className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-500 ease-out ${
             isVideoPlaying ? "opacity-0 pointer-events-none" : "opacity-100"
           } ${className ?? ""}`}
         />
@@ -181,13 +192,11 @@ export function OptimizedVideo({
         tabIndex={-1}
         preload={preload ?? (active ? "auto" : "none")}
         disablePictureInPicture
-        onPlay={() => setIsVideoPlaying(true)}
-        onPlaying={() => setIsVideoPlaying(true)}
-        onCanPlay={() => {
-          setIsVideoPlaying(true);
-          if (active && videoRef.current) void videoRef.current.play().catch(() => undefined);
-        }}
-        className={`relative z-10 transition-opacity duration-700 ${
+        disableRemotePlayback
+        onPlaying={handleFrameReady}
+        onTimeUpdate={handleFrameReady}
+        onCanPlay={handleFrameReady}
+        className={`relative z-10 transition-opacity duration-500 ease-out ${
           isVideoPlaying ? "opacity-100" : "opacity-0"
         } ${className ?? "h-full w-full object-cover"}`}
         {...props}
@@ -195,19 +204,36 @@ export function OptimizedVideo({
           props.onError?.(event);
         }}
       >
-        {optimizedDesktopSrc ? (
+        {optimizedDesktopWebm ? (
           <>
-            {optimizedMobileSrc ? (
+            {optimizedMobileWebm ? (
               <source
-                src={optimizedMobileSrc}
+                src={optimizedMobileWebm}
+                type="video/webm"
+                media="(max-width: 767px)"
+                {...({ fetchpriority: active ? "high" : undefined } as any)}
+              />
+            ) : null}
+            {optimizedMobileMp4 ? (
+              <source
+                src={optimizedMobileMp4}
+                type="video/mp4"
                 media="(max-width: 767px)"
                 {...({ fetchpriority: active ? "high" : undefined } as any)}
               />
             ) : null}
             <source
-              src={optimizedDesktopSrc}
+              src={optimizedDesktopWebm}
+              type="video/webm"
               {...({ fetchpriority: active ? "high" : undefined } as any)}
             />
+            {optimizedDesktopMp4 ? (
+              <source
+                src={optimizedDesktopMp4}
+                type="video/mp4"
+                {...({ fetchpriority: active ? "high" : undefined } as any)}
+              />
+            ) : null}
           </>
         ) : src ? (
           <source src={src} {...({ fetchpriority: active ? "high" : undefined } as any)} />
