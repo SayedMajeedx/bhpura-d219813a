@@ -75,11 +75,6 @@
       "count": 1
     }
   },
-  "src/routes/$slug.route.tsx": {
-    "no-empty": {
-      "count": 2
-    }
-  },
   "src/routes/_authenticated/admin.b.$slug.campaigns.tsx": {
     "no-empty": {
       "count": 1

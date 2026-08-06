@@ -717,7 +717,9 @@ function AnnouncementBar() {
       if (sessionStorage.getItem(key) === "1") {
         setDismissed(true);
       }
-    } catch {}
+    } catch {
+      void 0;
+    }
   }, [key]);
   const audienceOk =
     settings.announcement_audience === "all" ||
@@ -753,7 +755,9 @@ function AnnouncementBar() {
           onClick={() => {
             try {
               sessionStorage.setItem(key, "1");
-            } catch {}
+            } catch {
+              void 0;
+            }
             setDismissed(true);
           }}
         >
@@ -1012,13 +1016,30 @@ export function StorefrontMenu({ navigation = false }: { navigation?: boolean } 
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  const [localGlass, setLocalGlass] = useState<boolean | null>(null);
+  useEffect(() => {
+    try {
+      const storedG = localStorage.getItem("boutq_header_glass");
+      if (storedG !== null) {
+        setLocalGlass(storedG === "true");
+      }
+    } catch {
+      void 0;
+    }
+  }, []);
+
+  const isGlass = localGlass !== null ? localGlass : (settings.header_glass ?? true);
   const displayName = lang === "ar" ? brand.name_ar || brand.name_en : brand.name_en;
   const menuTitle =
     (lang === "ar"
       ? settings.menu_title_ar || settings.menu_title_en
       : settings.menu_title_en || settings.menu_title_ar) || displayName;
   const menuBg = settings.menu_bg || settings.header_bg || settings.background_color || "#ffffff";
-  const menuFg = settings.menu_fg || readableOn(menuBg, settings.text_color);
+  const isDarkMenu = isColorDark(menuBg);
+  const menuFg = settings.menu_fg || (isDarkMenu ? "#ffffff" : "#111111");
+  const drawerBg = isGlass ? hexToRgba(menuBg, 0.9) : menuBg;
+
   const pageLinks = settings.pages
     .map((page, index) => ({
       index: index + 1,
@@ -1032,10 +1053,14 @@ export function StorefrontMenu({ navigation = false }: { navigation?: boolean } 
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>
         <Button
-          variant={navigation ? "outline" : "ghost"}
+          variant="ghost"
           size={navigation ? "default" : "sm"}
-          className={`${navigation ? "h-11 shrink-0 rounded-xl border-dashed px-5 font-semibold shadow-sm hover:-translate-y-0.5 hover:shadow-md" : "hover:bg-black/5"} gap-2 transition-all duration-200`}
-          style={{ color: navigation ? undefined : "var(--sf-header-fg)" }}
+          className={`${
+            navigation
+              ? "h-11 shrink-0 rounded-[var(--radius)] border border-white/20 bg-white/10 hover:bg-white/20 active:bg-white/30 text-inherit font-semibold shadow-none"
+              : "bg-transparent hover:bg-white/10 active:bg-white/20 text-inherit border-0 shadow-none"
+          } gap-2 transition-all duration-200`}
+          style={{ color: "var(--sf-header-fg)" }}
           aria-label={t("القائمة", "Menu")}
         >
           <Menu className="h-5 w-5" />
@@ -1047,8 +1072,12 @@ export function StorefrontMenu({ navigation = false }: { navigation?: boolean } 
       <SheetContent
         side={lang === "ar" ? "right" : "left"}
         dir={lang === "ar" ? "rtl" : "ltr"}
-        className={`flex h-full w-[min(90vw,400px)] flex-col overflow-hidden border-0 p-0 shadow-2xl [&>button]:top-5 [&>button]:grid [&>button]:h-10 [&>button]:w-10 [&>button]:place-items-center [&>button]:rounded-full [&>button]:border [&>button]:bg-background/90 [&>button]:opacity-100 [&>button]:shadow-sm ${lang === "ar" ? "[&>button]:left-5 [&>button]:right-auto" : "[&>button]:right-5"}`}
-        style={{ backgroundColor: menuBg, color: menuFg, zIndex: 60 }}
+        className={`flex h-full w-[min(90vw,400px)] flex-col overflow-hidden border-0 p-0 shadow-2xl ${
+          isGlass ? "backdrop-blur-xl" : ""
+        } [&>button]:top-5 [&>button]:grid [&>button]:h-10 [&>button]:w-10 [&>button]:place-items-center [&>button]:rounded-full [&>button]:border [&>button]:border-white/20 [&>button]:bg-white/10 [&>button]:text-inherit [&>button]:hover:bg-white/20 [&>button]:opacity-100 [&>button]:shadow-sm ${
+          lang === "ar" ? "[&>button]:left-5 [&>button]:right-auto" : "[&>button]:right-5"
+        }`}
+        style={{ backgroundColor: drawerBg, color: menuFg, zIndex: 60 }}
       >
         {open && (
           <>
@@ -1090,7 +1119,8 @@ export function StorefrontMenu({ navigation = false }: { navigation?: boolean } 
                   to="/$slug"
                   params={{ slug: brand.slug }}
                   onClick={close}
-                  className="flex min-h-12 items-center gap-3 rounded-xl px-4 py-3 text-start transition-colors hover:bg-black/5"
+                  className="flex min-h-12 items-center gap-3 rounded-[var(--radius)] px-4 py-3 text-start transition-colors hover:bg-white/10 active:bg-white/20"
+                  style={{ color: menuFg }}
                 >
                   <Home className="h-5 w-5 shrink-0" />
                   <span className="min-w-0 truncate">{t("الرئيسية", "Home")}</span>
@@ -1103,7 +1133,8 @@ export function StorefrontMenu({ navigation = false }: { navigation?: boolean } 
                       to="/$slug/account"
                       params={{ slug: brand.slug }}
                       onClick={close}
-                      className="flex min-h-12 items-center gap-3 rounded-xl px-4 py-3 text-start transition-colors hover:bg-black/5"
+                      className="flex min-h-12 items-center gap-3 rounded-[var(--radius)] px-4 py-3 text-start transition-colors hover:bg-white/10 active:bg-white/20"
+                      style={{ color: menuFg }}
                     >
                       <User className="h-5 w-5 shrink-0" />
                       <span className="min-w-0 truncate">{t("حسابي", "My account")}</span>
@@ -1114,7 +1145,8 @@ export function StorefrontMenu({ navigation = false }: { navigation?: boolean } 
                       to="/$slug/account"
                       params={{ slug: brand.slug }}
                       onClick={close}
-                      className="flex min-h-12 items-center gap-3 rounded-xl px-4 py-3 text-start transition-colors hover:bg-black/5"
+                      className="flex min-h-12 items-center gap-3 rounded-[var(--radius)] px-4 py-3 text-start transition-colors hover:bg-white/10 active:bg-white/20"
+                      style={{ color: menuFg }}
                     >
                       <PackageSearch className="h-5 w-5 shrink-0" />
                       <span className="min-w-0 truncate">{t("طلباتي", "My orders")}</span>
@@ -1130,7 +1162,8 @@ export function StorefrontMenu({ navigation = false }: { navigation?: boolean } 
                       redirect: mounted ? window.location.pathname + window.location.search : "",
                     }}
                     onClick={close}
-                    className="flex min-h-12 items-center gap-3 rounded-xl px-4 py-3 text-start transition-colors hover:bg-black/5"
+                    className="flex min-h-12 items-center gap-3 rounded-[var(--radius)] px-4 py-3 text-start transition-colors hover:bg-white/10 active:bg-white/20"
+                    style={{ color: menuFg }}
                   >
                     <LogIn className="h-5 w-5 shrink-0" />
                     <span className="min-w-0 truncate">{t("تسجيل الدخول", "Sign in")}</span>
@@ -1146,7 +1179,8 @@ export function StorefrontMenu({ navigation = false }: { navigation?: boolean } 
                   to="/$slug/$category"
                   params={{ slug: brand.slug, category: page.slug }}
                   onClick={close}
-                  className="flex min-h-12 items-center gap-3 rounded-xl px-4 py-3 text-start transition-colors hover:bg-black/5"
+                  className="flex min-h-12 items-center gap-3 rounded-[var(--radius)] px-4 py-3 text-start transition-colors hover:bg-white/10 active:bg-white/20"
+                  style={{ color: menuFg }}
                 >
                   <FileText className="h-5 w-5 shrink-0" />
                   <span className="min-w-0 truncate">{page.title}</span>
