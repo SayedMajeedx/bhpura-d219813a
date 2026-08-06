@@ -77,8 +77,8 @@ function getImageKitEndpoint(): string {
   return "https://ik.imagekit.io/Boutq";
 }
 
-const IMAGEKIT_DESKTOP_VIDEO_TRANSFORMATION = "w-1280,q-55,f-auto,ac-none";
-const IMAGEKIT_MOBILE_VIDEO_TRANSFORMATION = "w-720,q-48,f-auto,ac-none";
+const IMAGEKIT_DESKTOP_VIDEO_TRANSFORMATION = "w-1080,q-50,f-mp4,ac-none";
+const IMAGEKIT_MOBILE_VIDEO_TRANSFORMATION = "w-640,q-45,f-mp4,ac-none";
 
 function imageKitAssetPath(source: string): string | null {
   const endpoint = getImageKitEndpoint();
@@ -87,7 +87,12 @@ function imageKitAssetPath(source: string): string | null {
     const sourceUrl = new URL(source);
     const endpointUrl = new URL(endpoint);
     const isPublicR2Media =
-      sourceUrl.hostname === "media.boutq.store" || sourceUrl.hostname.endsWith(".boutq.store");
+      sourceUrl.hostname === "media.boutq.store" ||
+      sourceUrl.hostname.endsWith(".boutq.store") ||
+      sourceUrl.hostname.includes("supabase.co") ||
+      sourceUrl.hostname.includes("supabase.in") ||
+      sourceUrl.hostname.includes("r2.dev") ||
+      sourceUrl.hostname.includes("cloudflare");
     const isImageKitAsset =
       sourceUrl.hostname === endpointUrl.hostname &&
       sourceUrl.pathname.startsWith(endpointUrl.pathname);

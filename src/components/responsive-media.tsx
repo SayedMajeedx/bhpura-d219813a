@@ -89,18 +89,24 @@ export function OptimizedVideo({
   const generatedPoster = src ? imageKitVideoPosterUrl(src) : null;
   const resolvedPoster = isLikelyImageUrl(poster) ? poster : generatedPoster;
 
+  const [isVideoPlaying, setIsVideoPlaying] = useState(false);
+
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
-    if (active) void video.play().catch(() => undefined);
-    else video.pause();
+    if (active) {
+      void video.play().catch(() => undefined);
+    } else {
+      video.pause();
+      setIsVideoPlaying(false);
+    }
   }, [active, src, optimizedDesktopSrc, optimizedMobileSrc]);
 
   if (streamIframeUrl) {
     const separator = streamIframeUrl.includes("?") ? "&" : "?";
     const iframeSrc = `${streamIframeUrl}${separator}autoplay=${active ? "true" : "false"}&muted=true&loop=true&controls=false&preload=metadata`;
     return (
-      <div className={wrapperClassName ?? className}>
+      <div className={wrapperClassName || "h-full w-full"}>
         {!active && resolvedPoster ? (
           <ResponsiveImage
             src={resolvedPoster}
@@ -125,7 +131,7 @@ export function OptimizedVideo({
   // Inactive carousel slides should not mount a video element.
   if (!active && !prepare && resolvedPoster) {
     return (
-      <div className={wrapperClassName ?? className}>
+      <div className={wrapperClassName || "h-full w-full"}>
         <ResponsiveImage
           src={resolvedPoster}
           preset="hero"
@@ -155,7 +161,9 @@ export function OptimizedVideo({
             fetchPriority: active ? "high" : "auto",
           } as any)}
           loading={active ? "eager" : "lazy"}
-          className={`absolute inset-0 h-full w-full object-cover ${className ?? ""}`}
+          className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-700 ${
+            isVideoPlaying ? "opacity-0 pointer-events-none" : "opacity-100"
+          } ${className ?? ""}`}
         />
       )}
       <video
@@ -173,7 +181,15 @@ export function OptimizedVideo({
         tabIndex={-1}
         preload={preload ?? (active ? "auto" : "none")}
         disablePictureInPicture
-        className={`relative z-10 ${className ?? "h-full w-full object-cover"}`}
+        onPlay={() => setIsVideoPlaying(true)}
+        onPlaying={() => setIsVideoPlaying(true)}
+        onCanPlay={() => {
+          setIsVideoPlaying(true);
+          if (active && videoRef.current) void videoRef.current.play().catch(() => undefined);
+        }}
+        className={`relative z-10 transition-opacity duration-700 ${
+          isVideoPlaying ? "opacity-100" : "opacity-0"
+        } ${className ?? "h-full w-full object-cover"}`}
         {...props}
         onError={(event) => {
           props.onError?.(event);
