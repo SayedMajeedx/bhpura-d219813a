@@ -50,10 +50,10 @@ import { faviconType, resolveBrandFavicon, useDynamicFavicon } from "@/lib/favic
 import { StorefrontAnalytics } from "@/components/storefront-analytics";
 
 export const Route = createFileRoute("/$slug")({
-  staleTime: 5 * 60_000,
-  preloadStaleTime: 5 * 60_000,
+  staleTime: 10_000,
+  preloadStaleTime: 10_000,
   headers: () => ({
-    "Cache-Control": "public, max-age=60, s-maxage=300, stale-while-revalidate=86400",
+    "Cache-Control": "public, max-age=0, s-maxage=10, must-revalidate",
   }),
   loader: async ({ params }) => {
     const { data: pageData, error } = await (supabase.rpc as any)("get_storefront_page_data", {
