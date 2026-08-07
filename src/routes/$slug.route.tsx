@@ -690,12 +690,12 @@ function StoreHeader() {
         </div>
 
         {/* Mobile: keep Menu beside Search in the sticky header. */}
-        <div dir="ltr" className="flex items-center gap-2 pb-1 md:hidden">
-          <div className={lang === "ar" ? "order-2 shrink-0" : "order-1 shrink-0"}>
-            <MobileStorefrontDropdown />
-          </div>
-          <div className={lang === "ar" ? "order-1 min-w-0 flex-1" : "order-2 min-w-0 flex-1"}>
+        <div dir={lang === "ar" ? "rtl" : "ltr"} className="flex items-center gap-2 pb-1 md:hidden">
+          <div className="min-w-0 flex-1">
             <SearchBar />
+          </div>
+          <div className="shrink-0">
+            <MobileStorefrontDropdown />
           </div>
         </div>
       </div>
