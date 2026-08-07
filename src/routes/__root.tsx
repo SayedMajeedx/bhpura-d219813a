@@ -102,6 +102,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     links: [
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
+      {
+        rel: "stylesheet",
+        href: "https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&family=Inter:wght@400;500;600;700&display=swap",
+      },
       { rel: "preconnect", href: "https://media.boutq.store" },
       { rel: "dns-prefetch", href: "https://media.boutq.store" },
       { rel: "preconnect", href: "https://ik.imagekit.io", crossOrigin: "anonymous" },
@@ -125,19 +129,6 @@ function RootShell({ children }: { children: ReactNode }) {
     <html lang="ar" dir="rtl" className="lang-ar" suppressHydrationWarning>
       <head>
         <HeadContent />
-        <link
-          rel="stylesheet"
-          href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&family=Inter:wght@400;500;600;700&display=swap"
-          media="print"
-          // @ts-ignore
-          onLoad="this.media='all'"
-        />
-        <noscript>
-          <link
-            rel="stylesheet"
-            href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&family=Inter:wght@400;500;600;700&display=swap"
-          />
-        </noscript>
         {imageKitEndpoint && (
           <script
             dangerouslySetInnerHTML={{
