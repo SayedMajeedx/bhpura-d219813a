@@ -16,7 +16,7 @@ export function imageWidths(preset: ResponsiveImagePreset): number[] {
   return PRESET_WIDTHS[preset];
 }
 
-export function cloudflareImageUrl(source: string, width: number, quality = 80): string {
+export function cloudflareImageUrl(source: string, width: number, quality = 75): string {
   if (!source || source.startsWith("data:") || source.toLowerCase().includes(".svg")) return source;
   try {
     const url = new URL(
@@ -38,7 +38,7 @@ export function cloudflareImageUrl(source: string, width: number, quality = 80):
 export function cloudflareImageSrcSet(
   source: string,
   preset: ResponsiveImagePreset,
-  quality = 82,
+  quality = 75,
 ): string | undefined {
   if (!source) return undefined;
   const widths = imageWidths(preset);
