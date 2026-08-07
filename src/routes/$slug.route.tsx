@@ -691,11 +691,11 @@ function StoreHeader() {
 
         {/* Mobile: keep Menu beside Search in the sticky header. */}
         <div dir={lang === "ar" ? "rtl" : "ltr"} className="flex items-center gap-2 pb-1 md:hidden">
-          <div className="min-w-0 flex-1">
-            <SearchBar />
-          </div>
           <div className="shrink-0">
             <MobileStorefrontDropdown />
+          </div>
+          <div className="min-w-0 flex-1">
+            <SearchBar />
           </div>
         </div>
       </div>
