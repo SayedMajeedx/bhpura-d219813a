@@ -363,7 +363,7 @@ const en: Dict = {
 };
 
 const ar: Dict = {
-  "app.title": "بوتك",
+  "app.title": "بوتيك",
   "app.subtitle": "إدارة البوتيك",
   "app.portalSubtitle": "لوحة إدارة البوتيك",
 

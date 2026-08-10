@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { useI18n } from "@/lib/i18n";
 import {
   getSubscriptionReceiptUploadUrl,
+  setSubscriptionRenewalDecision,
   submitSubscriptionReceipt,
 } from "@/lib/saas-subscription.functions";
 import {
@@ -19,8 +20,10 @@ import {
   CreditCard,
   Loader2,
   QrCode,
+  RefreshCw,
   ShieldCheck,
   UploadCloud,
+  XCircle,
 } from "lucide-react";
 
 type SubscriptionCardProps = { brand: Brand };
@@ -44,7 +47,12 @@ export function SubscriptionCard({ brand }: SubscriptionCardProps) {
     : 0;
   const expired = !isPermanent && (!expiresAt || new Date(expiresAt).getTime() <= Date.now());
   const pending = brand.subscription_status === "pending_verification";
+  const renewalWindowOpen = !isPermanent && !isTrial && (expired || daysLeft <= 30);
   const [uploading, setUploading] = useState(false);
+  const [savingDecision, setSavingDecision] = useState(false);
+  const [renewalIntent, setRenewalIntent] = useState<"renew" | "cancel" | null>(
+    brand.renewal_intent ?? null,
+  );
   const [settings, setSettings] = useState<PaymentSettings>({
     price: 49,
     qrUrl: null,
@@ -74,6 +82,32 @@ export function SubscriptionCard({ brand }: SubscriptionCardProps) {
   const copyIban = async () => {
     await navigator.clipboard.writeText(settings.iban.replace(/\s+/g, ""));
     toast.success(isAr ? "تم نسخ رقم IBAN" : "IBAN copied");
+  };
+
+  const saveRenewalDecision = async (decision: "renew" | "cancel") => {
+    setSavingDecision(true);
+    const toastId = toast.loading(isAr ? "جاري حفظ قرار التجديد..." : "Saving renewal decision...");
+    try {
+      await setSubscriptionRenewalDecision({ data: { brandId: brand.id, decision } });
+      setRenewalIntent(decision);
+      toast.success(
+        decision === "renew"
+          ? isAr
+            ? "تم تسجيل رغبتك بالتجديد وإبلاغ إدارة المنصة."
+            : "Your renewal request was recorded and shared with the platform administrator."
+          : isAr
+            ? "تم تسجيل قرار عدم التجديد. سيبقى المتجر فعالاً حتى نهاية الاشتراك."
+            : "Non-renewal recorded. Your store remains active until the subscription ends.",
+        { id: toastId },
+      );
+    } catch {
+      toast.error(
+        isAr ? "تعذر حفظ القرار. حاول مرة أخرى." : "Unable to save the decision. Try again.",
+        { id: toastId },
+      );
+    } finally {
+      setSavingDecision(false);
+    }
   };
 
   const handleUploadReceipt = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -220,7 +254,86 @@ export function SubscriptionCard({ brand }: SubscriptionCardProps) {
         </CardContent>
       </Card>
 
-      {!isPermanent && !isTrial && (
+      {renewalWindowOpen && (
+        <Card className="overflow-hidden border-amber-300/70 bg-amber-50/40 shadow-lg dark:bg-amber-950/10">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <Clock className="h-5 w-5 text-amber-600" />
+              {expired
+                ? isAr
+                  ? "انتهى اشتراكك السنوي"
+                  : "Your annual subscription has expired"
+                : isAr
+                  ? `باقي ${daysLeft} ${daysLeft === 1 ? "يوم" : "يوماً"} على انتهاء الاشتراك`
+                  : `${daysLeft} ${daysLeft === 1 ? "day" : "days"} until subscription expiry`}
+            </CardTitle>
+            <CardDescription>
+              {isAr
+                ? "اختر قرارك قبل انتهاء المدة. سيظهر القرار مباشرةً للسوبر أدمن."
+                : "Choose before the term ends. Your decision is immediately visible to the super admin."}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {!renewalIntent ? (
+              <div className="grid gap-3 sm:grid-cols-2">
+                <Button
+                  type="button"
+                  className="h-12 bg-emerald-600 text-white hover:bg-emerald-700"
+                  disabled={savingDecision}
+                  onClick={() => void saveRenewalDecision("renew")}
+                >
+                  <RefreshCw className="me-2 h-4 w-4" />
+                  {isAr ? "نعم، أريد التجديد" : "Yes, I want to renew"}
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="h-12 border-rose-300 text-rose-700 hover:bg-rose-50"
+                  disabled={savingDecision}
+                  onClick={() => void saveRenewalDecision("cancel")}
+                >
+                  <XCircle className="me-2 h-4 w-4" />
+                  {isAr ? "لا، لن أجدد" : "No, do not renew"}
+                </Button>
+              </div>
+            ) : (
+              <div className="flex flex-col gap-3 rounded-xl border bg-background/80 p-4 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <p className="font-semibold">
+                    {renewalIntent === "renew"
+                      ? isAr
+                        ? "تم تسجيل رغبتك بالتجديد"
+                        : "Renewal requested"
+                      : isAr
+                        ? "تم تسجيل قرار عدم التجديد"
+                        : "Non-renewal recorded"}
+                  </p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {renewalIntent === "renew"
+                      ? isAr
+                        ? "أكمل الدفع أدناه وارفع الإيصال للمراجعة."
+                        : "Complete payment below and upload the receipt for review."
+                      : isAr
+                        ? "سيظل المتجر فعالاً حتى تاريخ الانتهاء، ويمكنك تغيير القرار قبل ذلك."
+                        : "The store stays active until expiry; you may change this decision before then."}
+                  </p>
+                </div>
+                {renewalIntent === "cancel" && (
+                  <Button
+                    type="button"
+                    disabled={savingDecision}
+                    onClick={() => void saveRenewalDecision("renew")}
+                  >
+                    {isAr ? "غيّرت رأيي، أريد التجديد" : "I changed my mind—renew"}
+                  </Button>
+                )}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {renewalWindowOpen && renewalIntent === "renew" && (
         <Card className="overflow-hidden border-border/60 shadow-lg">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-lg">

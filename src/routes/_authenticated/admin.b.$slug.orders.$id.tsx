@@ -283,6 +283,7 @@ function OrderDetail() {
     // socket. Keep both courier and office views synchronized regardless.
     refetchInterval: isCourier ? 10_000 : 30_000,
     refetchOnWindowFocus: true,
+    enabled: id !== "new",
     queryFn: async () => {
       let query = supabase
         .from("orders")
@@ -538,6 +539,44 @@ function OrderDetail() {
   };
 
   const initialSnapshotRef = useRef<{ order: any; items: Item[] } | null>(null);
+
+  useEffect(() => {
+    if (id !== "new" || order || !settingsQ.data) return;
+    const settings = settingsQ.data as any;
+    const fulfillmentMethod = settings.delivery_enabled
+      ? "delivery"
+      : settings.pickup_enabled
+        ? "pickup"
+        : settings.digital_delivery_enabled
+          ? "digital"
+          : "delivery";
+    const shipping = fulfillmentMethod === "delivery" ? Number(settings.delivery_fee ?? 0) : 0;
+    const draft = {
+      id: "new",
+      brand_id: brandId,
+      invoice_number: 0,
+      currency: settings.currency ?? "BHD",
+      tax_rate: settings.default_tax_rate ?? 15,
+      fulfillment_method: fulfillmentMethod,
+      shipping,
+      subtotal: 0,
+      total: shipping,
+      discount: 0,
+      advance_paid: 0,
+      status: "draft",
+      payment_status: "unpaid",
+      fulfillment_status: "ON_HOLD",
+      payment_method: null,
+      customer_id: null,
+      shipping_address_id: null,
+      branch_id: null,
+      notes: "",
+      delivery_notes: "",
+      order_date: new Date().toISOString().slice(0, 10),
+    };
+    setOrder(draft);
+    initialSnapshotRef.current = { order: draft, items: [] };
+  }, [brandId, id, order, settingsQ.data]);
 
   const isDirty = useMemo(() => {
     if (!initialSnapshotRef.current || !order) return false;
@@ -1167,6 +1206,13 @@ function OrderDetail() {
 
   const save = async () => {
     if (isReadOnly) return;
+    if (id === "new" && !order.customer_id && items.length === 0) {
+      return toast.error(
+        lang === "ar"
+          ? "أضف عميلاً أو منتجاً واحداً على الأقل قبل حفظ الطلب."
+          : "Add at least one customer or product before saving the order.",
+      );
+    }
     const fulfillmentMethod = order.fulfillment_method ?? "delivery";
     if (fulfillmentMethod === "pickup" && !order.branch_id) {
       return toast.error(lang === "ar" ? "اختر فرع الاستلام" : "Select a pickup branch");
@@ -1215,35 +1261,81 @@ function OrderDetail() {
       }
     }
 
+    const orderPayload = {
+      customer_id: order.customer_id,
+      status: order.status,
+      notes: order.notes,
+      fulfillment_method: fulfillmentMethod,
+      branch_id: fulfillmentMethod === "pickup" ? (order.branch_id ?? null) : null,
+      shipping_address_id:
+        fulfillmentMethod === "delivery" ? (order.shipping_address_id ?? null) : null,
+      digital_delivery_channel:
+        fulfillmentMethod === "digital" ? order.digital_delivery_channel : null,
+      digital_delivery_contact:
+        fulfillmentMethod === "digital" ? order.digital_delivery_contact : null,
+      payment_method: order.payment_method ?? null,
+      payment_status: order.payment_status ?? "unpaid",
+      fulfillment_status: order.fulfillment_status ?? "ON_HOLD",
+      discount: totals.discount,
+      tax_rate: order.tax_rate,
+      tax_amount: totals.taxAmount,
+      promo_code: appliedPromo?.code ?? null,
+      promo_code_id: appliedPromo?.id || null,
+      shipping: totals.shipping,
+      subtotal: totals.subtotal,
+      total: totals.total,
+      advance_paid: totals.advancePaid,
+      currency,
+      order_date: order.order_date,
+    };
+
+    if (id === "new") {
+      const { data: created, error: createError } = await (supabase.from("orders") as any)
+        .insert({
+          ...orderPayload,
+          user_id: user.id,
+          brand_id: brandId,
+          invoice_number: 0,
+        })
+        .select("id")
+        .single();
+      if (createError || !created) {
+        setSaving(false);
+        return toast.error(createError?.message || "ORDER_CREATE_FAILED");
+      }
+      if (items.length > 0) {
+        const { error: itemError } = await (supabase.from("order_items") as any).insert(
+          items.map((item) => ({
+            user_id: user.id,
+            order_id: created.id,
+            product_id: item.product_id ?? null,
+            variant_id: item.variant_id ?? null,
+            description: item.description,
+            quantity: item.quantity,
+            unit_price: item.unit_price,
+            original_price: item.original_price ?? null,
+            customizations: item.customizations,
+            customization_total: item.customization_total,
+            line_total: item.line_total,
+            location: item.location ?? "main",
+          })),
+        );
+        if (itemError) {
+          await supabase.from("orders").delete().eq("id", created.id);
+          setSaving(false);
+          return toast.error(itemError.message);
+        }
+      }
+      localStorage.removeItem(`boutq_draft_${brandId}_new`);
+      await supabase.rpc("sync_order_stock", { p_order_id: created.id });
+      toast.success(lang === "ar" ? "تم إنشاء الطلب بنجاح" : "Order created successfully");
+      router.navigate({ to: "/admin/b/$slug/orders/$id", params: { slug, id: created.id } });
+      return;
+    }
+
     const { error: oe } = await supabase
       .from("orders")
-      .update({
-        customer_id: order.customer_id,
-        status: order.status,
-        notes: order.notes,
-        fulfillment_method: fulfillmentMethod,
-        branch_id: fulfillmentMethod === "pickup" ? (order.branch_id ?? null) : null,
-        shipping_address_id:
-          fulfillmentMethod === "delivery" ? (order.shipping_address_id ?? null) : null,
-        digital_delivery_channel:
-          fulfillmentMethod === "digital" ? order.digital_delivery_channel : null,
-        digital_delivery_contact:
-          fulfillmentMethod === "digital" ? order.digital_delivery_contact : null,
-        payment_method: order.payment_method ?? null,
-        payment_status: order.payment_status ?? "unpaid",
-        fulfillment_status: order.fulfillment_status ?? "ON_HOLD",
-        discount: totals.discount,
-        tax_rate: order.tax_rate,
-        tax_amount: totals.taxAmount,
-        promo_code: appliedPromo?.code ?? null,
-        promo_code_id: appliedPromo?.id || null,
-        shipping: totals.shipping,
-        subtotal: totals.subtotal,
-        total: totals.total,
-        advance_paid: totals.advancePaid,
-        currency,
-        order_date: order.order_date,
-      } as any)
+      .update(orderPayload as any)
       .eq("id", order.id);
     if (oe) {
       setSaving(false);
@@ -1580,7 +1672,8 @@ function OrderDetail() {
     const settings: any = settingsQ.data ?? {};
     const LEGACY = new Set(["Abaya Atelier", "أباية أتيليه"]);
     const rawBrand = (settings.business_name ?? "").trim();
-    const brand = !rawBrand || LEGACY.has(rawBrand) ? (lang === "ar" ? "بوتك" : "Boutq") : rawBrand;
+    const brand =
+      !rawBrand || LEGACY.has(rawBrand) ? (lang === "ar" ? "بوتيك" : "Boutq") : rawBrand;
 
     const paymentLabel = order.payment_method ? t(`payment.${order.payment_method}`) : "";
     const statusLabel = formatOrderStatus(order.status, order.fulfillment_method, lang);
@@ -4132,7 +4225,7 @@ const INVOICE_LABELS = {
     arabic: "العربية",
   },
 } as const;
-const BRAND: Record<"en" | "ar", string> = { en: "Boutq", ar: "بوتك" };
+const BRAND: Record<"en" | "ar", string> = { en: "Boutq", ar: "بوتيك" };
 const LEGACY_BRAND_NAMES = new Set(["Abaya Atelier", "أباية أتيليه"]);
 function brandFor(lang: "en" | "ar", stored?: string | null) {
   const s = (stored ?? "").trim();

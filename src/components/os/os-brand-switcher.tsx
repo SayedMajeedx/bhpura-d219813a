@@ -14,6 +14,7 @@ export interface BrandRow {
   id: string;
   slug: string;
   name_en: string;
+  name_ar: string | null;
   is_active: boolean;
 }
 
@@ -54,22 +55,24 @@ export function OsBrandSwitcher({
         {lang === "ar" ? "المدير الأعلى" : "Super Admin"}
       </div>
 
-      <Select
-        value={activeSlug ?? ""}
-        onValueChange={(v) => navigate({ to: "/admin/b/$slug/dashboard", params: { slug: v } })}
-      >
-        <SelectTrigger className="h-8 text-xs bg-background/80">
-          <SelectValue placeholder={lang === "ar" ? "اختر علامة" : "Select a brand"} />
-        </SelectTrigger>
-        <SelectContent>
-          {brands.map((b) => (
-            <SelectItem key={b.id} value={b.slug}>
-              {b.name_en}
-              {!b.is_active ? " (inactive)" : ""}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+      {activeSlug && (
+        <Select
+          value={activeSlug}
+          onValueChange={(v) => navigate({ to: "/admin/b/$slug/dashboard", params: { slug: v } })}
+        >
+          <SelectTrigger className="h-8 text-xs bg-background/80">
+            <SelectValue placeholder={lang === "ar" ? "اختر علامة" : "Select a brand"} />
+          </SelectTrigger>
+          <SelectContent>
+            {brands.map((b) => (
+              <SelectItem key={b.id} value={b.slug}>
+                {(lang === "ar" ? b.name_ar : b.name_en) || b.name_en || b.slug}
+                {!b.is_active ? " (inactive)" : ""}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      )}
 
       <div className="grid grid-cols-1 gap-1 pt-1">
         <Link

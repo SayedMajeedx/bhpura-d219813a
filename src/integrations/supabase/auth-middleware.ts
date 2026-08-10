@@ -167,8 +167,8 @@ function createSupabaseFetch(supabaseKey: string): typeof fetch {
   };
 }
 
-export const requireSupabaseAuth = createMiddleware({ type: "function" }).server(
-  async ({ next }) => {
+function createSupabaseAuthMiddleware(options?: { allowImpersonationLifecycle?: boolean }) {
+  return createMiddleware({ type: "function" }).server(async ({ next }) => {
     let SUPABASE_URL =
       (await getEnvVariableAsync("SUPABASE_URL")) ||
       (await getEnvVariableAsync("VITE_SUPABASE_URL"));
@@ -253,7 +253,11 @@ export const requireSupabaseAuth = createMiddleware({ type: "function" }).server
       }
     }
 
-    if (isImpersonating && request.method !== "GET") {
+    if (
+      isImpersonating &&
+      request.method !== "GET" &&
+      options?.allowImpersonationLifecycle !== true
+    ) {
       const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
       const { data: setting } = await supabaseAdmin
         .from("system_settings")
@@ -273,8 +277,19 @@ export const requireSupabaseAuth = createMiddleware({ type: "function" }).server
         claims: data.claims,
       },
     });
-  },
-);
+  });
+}
+
+export const requireSupabaseAuth = createSupabaseAuthMiddleware();
+
+// This middleware is intentionally reserved for the single server function that
+// terminates impersonation. Exiting a read-only session must remain possible,
+// while every other mutation continues through requireSupabaseAuth above.
+export const requireSupabaseAuthForImpersonationExit = createSupabaseAuthMiddleware({
+  allowImpersonationLifecycle: true,
+});
+
+export const requireSupabaseAuthForImpersonationLifecycle = requireSupabaseAuthForImpersonationExit;
 
 /**
  * Retrieves Gemini credentials (API key and optional custom model) from

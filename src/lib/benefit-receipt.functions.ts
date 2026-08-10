@@ -248,7 +248,18 @@ export const purgeBrandPrivateReceipts = createServerFn({ method: "POST" })
     const { data: isSuperAdmin, error } = await context.supabase.rpc("is_super_admin");
     if (error || !isSuperAdmin) throw new Error("FORBIDDEN");
     const { purgePrivatePrefix } = await import("@/lib/private-r2.server");
-    return {
-      deleted: await purgePrivatePrefix(`brands/${data.brandId}/benefit-receipts/`),
-    };
+    try {
+      return {
+        deleted: await purgePrivatePrefix(`brands/${data.brandId}/benefit-receipts/`),
+      };
+    } catch (error) {
+      console.error(
+        JSON.stringify({
+          event: "brand_private_r2_purge_failed",
+          brandId: data.brandId,
+          error: error instanceof Error ? error.message : String(error),
+        }),
+      );
+      throw error;
+    }
   });

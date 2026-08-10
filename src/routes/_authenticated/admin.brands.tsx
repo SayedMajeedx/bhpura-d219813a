@@ -90,6 +90,8 @@ type Brand = {
   custom_domain: string | null;
   plan_type: "annual" | "lifetime" | "trial" | null;
   trial_ends_at: string | null;
+  renewal_intent: "renew" | "cancel" | null;
+  renewal_intent_recorded_at: string | null;
   support_access_enabled: boolean;
 };
 
@@ -101,6 +103,9 @@ function BrandsPage() {
   const [open, setOpen] = useState(false);
 
   const handleImpersonate = async (brandId: string, slug: string) => {
+    // A stale read-only session must not block the super admin from starting a
+    // fresh, explicitly selected tenant session from the platform dashboard.
+    document.cookie = "boutq_impersonation_token=; path=/; max-age=0; samesite=lax";
     const toastId = toast.loading(
       lang === "ar"
         ? "جاري تفعيل قناة محاكاة المسؤول الخارق..."
@@ -121,10 +126,9 @@ function BrandsPage() {
     } catch (err: any) {
       console.error(err);
       toast.error(
-        err.message ||
-          (lang === "ar"
-            ? "فشل تفعيل جلسة المحاكاة. يرجى مراجعة الصلاحيات."
-            : "Impersonation launch blocked. Verify operator permissions."),
+        lang === "ar"
+          ? "تعذر بدء محاكاة المتجر. تحقق من صلاحية وصول الدعم الفني ثم حاول مجدداً."
+          : "Unable to start store impersonation. Verify support access and try again.",
         { id: toastId },
       );
     }
@@ -241,7 +245,7 @@ function BrandsPage() {
             {lang === "ar" ? "المدير الأعلى" : "Super Admin Cockpit"}
           </div>
           <h1 className="font-display text-4xl font-extrabold tracking-tight bg-clip-text bg-gradient-to-r from-slate-900 via-slate-800 to-slate-950 dark:from-slate-50 dark:to-slate-300">
-            {lang === "ar" ? "لوحة تحكم بوتك SaaS" : "Boutq SaaS Dashboard"}
+            {lang === "ar" ? "لوحة تحكم بوتيك" : "Boutq Dashboard"}
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
             {lang === "ar"
@@ -407,6 +411,23 @@ function BrandsPage() {
                             )}{" "}
                             {lang === "ar" ? "يوم متبقٍ" : "days left"}
                           </span>
+                        )}
+                        {b.renewal_intent && (
+                          <Badge
+                            className={
+                              b.renewal_intent === "renew"
+                                ? "bg-blue-600 text-white hover:bg-blue-700 text-[10px]"
+                                : "bg-rose-600 text-white hover:bg-rose-700 text-[10px]"
+                            }
+                          >
+                            {b.renewal_intent === "renew"
+                              ? lang === "ar"
+                                ? "يرغب بالتجديد"
+                                : "Wants to renew"
+                              : lang === "ar"
+                                ? "لن يجدد"
+                                : "Will not renew"}
+                          </Badge>
                         )}
                       </div>
                     </div>
@@ -1044,23 +1065,42 @@ function DeleteBrandDialog({ brand, onDone }: { brand: Brand; onDone: () => void
     if (!databasePurged) {
       const { error } = await supabase.rpc("delete_brand", { p_brand_id: brand.id, p_hard: hard });
       if (error) {
-        setWorking(false);
-        return toast.error(error.message);
+        // The database purge may have completed before media cleanup failed.
+        // A stale cached card remains a safe recovery handle for orphaned R2 files.
+        if (hard && error.message.includes("BRAND_NOT_FOUND")) {
+          setDatabasePurged(true);
+        } else {
+          setWorking(false);
+          return toast.error(error.message);
+        }
       }
       if (hard) setDatabasePurged(true);
     }
     if (hard) {
-      try {
-        await Promise.all([
-          purgeBrandPublicMedia(brand.id),
-          purgeBrandPrivateReceipts({ data: { brandId: brand.id } }),
-        ]);
-      } catch (error: any) {
+      const cleanupResults = await Promise.allSettled([
+        purgeBrandPublicMedia(brand.id),
+        purgeBrandPrivateReceipts({ data: { brandId: brand.id } }),
+      ]);
+      const failedStores = cleanupResults
+        .map((result, index) =>
+          result.status === "rejected" ? (index === 0 ? "public" : "private") : null,
+        )
+        .filter(Boolean);
+      if (failedStores.length > 0) {
+        console.error("Brand R2 cleanup failed", {
+          brandId: brand.id,
+          failedStores,
+          errors: cleanupResults.map((result) =>
+            result.status === "rejected" && result.reason instanceof Error
+              ? result.reason.message
+              : undefined,
+          ),
+        });
         setWorking(false);
         toast.error(
           isAr
             ? "تم حذف بيانات العلامة، لكن تعذر تنظيف ملفات R2. اضغط إعادة المحاولة."
-            : "Brand data was deleted, but R2 cleanup failed. Click retry to finish media cleanup.",
+            : `Brand data was deleted, but ${failedStores.join(" and ")} R2 cleanup failed. Click retry.`,
           { duration: 10000 },
         );
         return;

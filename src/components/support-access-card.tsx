@@ -77,13 +77,13 @@ export function SupportAccessCard({ brand }: SupportAccessCardProps) {
                 <ShieldAlert className="h-5 w-5 text-primary" />
                 <span>
                   {lang === "ar"
-                    ? "وصول الدعم الفني لبوتك"
+                    ? "وصول الدعم الفني لبوتيك"
                     : "Allow Boutq Technical Support Access"}
                 </span>
               </CardTitle>
               <CardDescription className="text-xs max-w-xl leading-relaxed">
                 {lang === "ar"
-                  ? "قم بتمكين هذا الخيار للسماح لمسؤولو منصة بوتك بالدخول مؤقتاً إلى لوحة تحكم متجرك لحل المشاكل التقنية أو تنفيذ ميزات مخصصة."
+                  ? "قم بتمكين هذا الخيار للسماح لمسؤولي منصة بوتيك بالدخول مؤقتاً إلى لوحة تحكم متجرك لحل المشاكل التقنية أو تنفيذ ميزات مخصصة."
                   : "Enable this toggle to allow Boutq platform administrators to temporarily access your store dashboard for remote troubleshooting and custom feature implementation."}
               </CardDescription>
             </div>
@@ -98,7 +98,7 @@ export function SupportAccessCard({ brand }: SupportAccessCardProps) {
                 id="support-access-toggle"
                 aria-label={
                   lang === "ar"
-                    ? "السماح بوصول الدعم الفني لبوتك"
+                    ? "السماح بوصول الدعم الفني لبوتيك"
                     : "Allow Boutq technical support access"
                 }
               />

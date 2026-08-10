@@ -930,11 +930,10 @@ function CustomersPage() {
   const customerCrmStats = useMemo(() => buildCustomerCrmStats(ordersQ.data ?? []), [ordersQ.data]);
 
   const del = async (id: string) => {
-    const { error } = await supabase
-      .from("customers")
-      .delete()
-      .eq("id", id)
-      .eq("brand_id", brandId);
+    const { error } = await supabase.rpc("delete_brand_customers", {
+      p_brand_id: brandId,
+      p_customer_ids: [id],
+    });
     if (error) toast.error(error.message);
     else {
       toast.success(t("common.delete"));
@@ -1021,11 +1020,10 @@ function CustomersPage() {
     if (ids.length === 0) return;
     setBulkDeleting(true);
     try {
-      const { error } = await supabase
-        .from("customers")
-        .delete()
-        .eq("brand_id", brandId)
-        .in("id", ids);
+      const { error } = await supabase.rpc("delete_brand_customers", {
+        p_brand_id: brandId,
+        p_customer_ids: ids,
+      });
       if (error) throw error;
       toast.success(isAr ? `تم حذف ${ids.length} عميل` : `${ids.length} customers deleted`);
       setSelectedCustomerIds(new Set());

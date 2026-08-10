@@ -1008,7 +1008,7 @@ function TeamManagement() {
                       <strong>{deleteConfirm.name || deleteConfirm.email}</strong>?
                       <br />
                       Team access will be removed. If this person also has a customer account, their
-                      profile, password, orders, and addresses will be preserved.
+                      password, orders, addresses, and customer data will be preserved.
                     </>
                   )}
                 </>

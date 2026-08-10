@@ -17,6 +17,7 @@ export interface OsSidebarProps {
   isCourier: boolean;
   brands: BrandRow[];
   collapsed: boolean;
+  collapsible?: boolean;
   onToggleCollapse: () => void;
   className?: string;
 }
@@ -32,6 +33,7 @@ export function OsSidebar({
   isCourier,
   brands,
   collapsed,
+  collapsible = true,
   onToggleCollapse,
   className,
 }: OsSidebarProps) {
@@ -68,32 +70,34 @@ export function OsSidebar({
           </div>
         )}
 
-        <button
-          type="button"
-          onClick={onToggleCollapse}
-          className="h-7 w-7 rounded-lg hover:bg-muted/80 text-muted-foreground hover:text-foreground flex items-center justify-center transition-colors shrink-0 outline-none os-focus-ring"
-          title={
-            collapsed
-              ? lang === "ar"
-                ? "توسيع الشريط"
-                : "Expand sidebar"
-              : lang === "ar"
-                ? "طي الشريط"
-                : "Collapse sidebar"
-          }
-        >
-          {collapsed ? (
-            lang === "ar" ? (
-              <ChevronLeft className="h-4 w-4" />
-            ) : (
+        {collapsible && (
+          <button
+            type="button"
+            onClick={onToggleCollapse}
+            className="h-7 w-7 rounded-lg hover:bg-muted/80 text-muted-foreground hover:text-foreground flex items-center justify-center transition-colors shrink-0 outline-none os-focus-ring"
+            title={
+              collapsed
+                ? lang === "ar"
+                  ? "توسيع الشريط"
+                  : "Expand sidebar"
+                : lang === "ar"
+                  ? "طي الشريط"
+                  : "Collapse sidebar"
+            }
+          >
+            {collapsed ? (
+              lang === "ar" ? (
+                <ChevronLeft className="h-4 w-4" />
+              ) : (
+                <ChevronRight className="h-4 w-4" />
+              )
+            ) : lang === "ar" ? (
               <ChevronRight className="h-4 w-4" />
-            )
-          ) : lang === "ar" ? (
-            <ChevronRight className="h-4 w-4" />
-          ) : (
-            <ChevronLeft className="h-4 w-4" />
-          )}
-        </button>
+            ) : (
+              <ChevronLeft className="h-4 w-4" />
+            )}
+          </button>
+        )}
       </div>
 
       {/* Super Admin Switcher */}

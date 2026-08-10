@@ -301,35 +301,46 @@ export const purgeBrandR2Objects = createServerFn({ method: "POST" })
     const prefix = `brands/${data.brandId}/`;
     let continuationToken: string | undefined;
     let deleted = 0;
-    do {
-      const listUrl = new URL(`${endpoint}/${encodeURIComponent(bucket)}`);
-      listUrl.searchParams.set("list-type", "2");
-      listUrl.searchParams.set("prefix", prefix);
-      listUrl.searchParams.set("max-keys", "1000");
-      if (continuationToken) listUrl.searchParams.set("continuation-token", continuationToken);
-      const listed = await signer.fetch(listUrl);
-      if (!listed.ok) throw new Error(`R2 list failed (${listed.status})`);
-      const xml = await listed.text();
-      const keys = [...xml.matchAll(/<Key>([\s\S]*?)<\/Key>/g)].map((match) =>
-        match[1].replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">"),
-      );
-      for (let index = 0; index < keys.length; index += 20) {
-        const batch = keys.slice(index, index + 20);
-        await Promise.all(
-          batch.map(async (key) => {
-            const response = await signer.fetch(r2ObjectUrl(endpoint, bucket, key), {
-              method: "DELETE",
-            });
-            if (!response.ok && response.status !== 404)
-              throw new Error(`R2 delete failed (${response.status})`);
-          }),
+    try {
+      do {
+        const listUrl = new URL(`${endpoint}/${encodeURIComponent(bucket)}`);
+        listUrl.searchParams.set("list-type", "2");
+        listUrl.searchParams.set("prefix", prefix);
+        listUrl.searchParams.set("max-keys", "1000");
+        if (continuationToken) listUrl.searchParams.set("continuation-token", continuationToken);
+        const listed = await signer.fetch(listUrl);
+        if (!listed.ok) throw new Error(`R2 list failed (${listed.status})`);
+        const xml = await listed.text();
+        const keys = [...xml.matchAll(/<Key>([\s\S]*?)<\/Key>/g)].map((match) =>
+          match[1].replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">"),
         );
-        deleted += batch.length;
-      }
-      const truncated = /<IsTruncated>true<\/IsTruncated>/.test(xml);
-      continuationToken = truncated
-        ? xml.match(/<NextContinuationToken>([\s\S]*?)<\/NextContinuationToken>/)?.[1]
-        : undefined;
-    } while (continuationToken);
-    return { deleted, prefix };
+        for (let index = 0; index < keys.length; index += 20) {
+          const batch = keys.slice(index, index + 20);
+          await Promise.all(
+            batch.map(async (key) => {
+              const response = await signer.fetch(r2ObjectUrl(endpoint, bucket, key), {
+                method: "DELETE",
+              });
+              if (!response.ok && response.status !== 404)
+                throw new Error(`R2 delete failed (${response.status})`);
+            }),
+          );
+          deleted += batch.length;
+        }
+        const truncated = /<IsTruncated>true<\/IsTruncated>/.test(xml);
+        continuationToken = truncated
+          ? xml.match(/<NextContinuationToken>([\s\S]*?)<\/NextContinuationToken>/)?.[1]
+          : undefined;
+      } while (continuationToken);
+      return { deleted, prefix };
+    } catch (error) {
+      console.error(
+        JSON.stringify({
+          event: "brand_public_r2_purge_failed",
+          brandId: data.brandId,
+          error: error instanceof Error ? error.message : String(error),
+        }),
+      );
+      throw error;
+    }
   });

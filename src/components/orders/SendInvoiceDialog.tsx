@@ -43,7 +43,7 @@ type Tpl = {
   is_default: boolean;
 };
 
-const BRAND: Record<"en" | "ar", string> = { en: "Boutq", ar: "بوتك" };
+const BRAND: Record<"en" | "ar", string> = { en: "Boutq", ar: "بوتيك" };
 const LEGACY_BRAND_NAMES = new Set(["Abaya Atelier", "أباية أتيليه"]);
 function brandFor(lang: "en" | "ar", stored?: string | null) {
   const s = (stored ?? "").trim();

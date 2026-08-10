@@ -545,17 +545,7 @@ async function handleDelete(
   // Removing employment must never delete an independently owned storefront
   // customer account, its orders, addresses, or password.
   if ((customerIdentityCount ?? 0) > 0) {
-    const { error: unlinkError } = await supabase.from("profiles").upsert(
-      {
-        id: userId,
-        email: target.email,
-        name: target.email?.split("@")[0] || "Customer",
-        role: "staff",
-        status: "active",
-        brand_id: null,
-      },
-      { onConflict: "id" },
-    );
+    const { error: unlinkError } = await supabase.from("profiles").delete().eq("id", userId);
     if (unlinkError) {
       return new Response(JSON.stringify({ error: unlinkError.message }), {
         status: 500,
@@ -565,7 +555,7 @@ async function handleDelete(
     try {
       await supabase.auth.admin.signOut(userId, "global");
     } catch (_) {}
-    return new Response(JSON.stringify({ success: true, identity_preserved: true }), {
+    return new Response(JSON.stringify({ success: true, customer_identity_preserved: true }), {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

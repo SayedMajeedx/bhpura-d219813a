@@ -1,5 +1,6 @@
 import * as React from "react";
-import { Search, Languages, LogOut, User } from "lucide-react";
+import { Link } from "@tanstack/react-router";
+import { Search, Languages, LogOut, User, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -13,6 +14,7 @@ import { cn } from "@/lib/utils";
 
 export interface OsMenuBarProps {
   brandLabel: string;
+  breadcrumbs: Array<{ label: string; href?: string }>;
   lang: "en" | "ar";
   onSetLang: (lang: "en" | "ar") => void;
   onOpenSpotlight: () => void;
@@ -23,6 +25,7 @@ export interface OsMenuBarProps {
 
 export function OsMenuBar({
   brandLabel,
+  breadcrumbs,
   lang,
   onSetLang,
   onOpenSpotlight,
@@ -37,16 +40,53 @@ export function OsMenuBar({
         className,
       )}
     >
-      {/* Left: OS Identity & Global Workspace Context */}
-      <div className="flex items-center gap-2.5 min-w-0">
-        <div className="flex items-center gap-1.5 text-xs font-bold tracking-wider text-primary">
-          <span className="h-2 w-2 rounded-full bg-primary animate-pulse" />
-          <span>Boutq OS</span>
-        </div>
-
-        <span className="text-muted-foreground/30 text-xs">/</span>
-
-        <span className="text-xs font-semibold text-foreground/90 truncate">{brandLabel}</span>
+      {/* Useful route context instead of a static product label. */}
+      <div className="flex min-w-0 items-center gap-2">
+        <nav
+          aria-label={lang === "ar" ? "مسار الصفحة" : "Breadcrumb"}
+          className="flex min-w-0 items-center gap-1.5"
+        >
+          {breadcrumbs.map((item, index) => {
+            const isLast = index === breadcrumbs.length - 1;
+            const Separator = lang === "ar" ? ChevronLeft : ChevronRight;
+            return (
+              <React.Fragment key={`${item.label}-${index}`}>
+                {index > 0 && <Separator className="h-3 w-3 shrink-0 text-muted-foreground/50" />}
+                {item.href && !isLast ? (
+                  <Link
+                    to={item.href as any}
+                    className={cn(
+                      "inline-flex shrink-0 items-center gap-1 text-xs transition-colors hover:text-primary",
+                      index === 0
+                        ? "font-bold tracking-wider text-primary"
+                        : "font-medium text-muted-foreground",
+                    )}
+                  >
+                    {index === 0 && (
+                      <span className="h-2 w-2 rounded-full bg-primary animate-pulse" />
+                    )}
+                    {item.label}
+                  </Link>
+                ) : (
+                  <span
+                    className={cn(
+                      "truncate text-xs",
+                      isLast ? "font-bold text-foreground" : "font-medium text-muted-foreground",
+                    )}
+                  >
+                    {index === 0 && breadcrumbs.length === 1 && (
+                      <span className="me-1 inline-block h-2 w-2 rounded-full bg-primary animate-pulse" />
+                    )}
+                    {item.label}
+                  </span>
+                )}
+              </React.Fragment>
+            );
+          })}
+        </nav>
+        <span className="hidden shrink-0 rounded-full border border-primary/15 bg-primary/5 px-2 py-0.5 text-[10px] font-semibold text-primary xl:inline-flex">
+          {brandLabel}
+        </span>
       </div>
 
       {/* Right: Global Search, Language, & Account Menu */}

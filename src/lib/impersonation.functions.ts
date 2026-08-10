@@ -1,6 +1,10 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import {
+  requireSupabaseAuth,
+  requireSupabaseAuthForImpersonationExit,
+  requireSupabaseAuthForImpersonationLifecycle,
+} from "@/integrations/supabase/auth-middleware";
 
 const StartImpersonationInput = z.object({
   targetTenantId: z.string().uuid(),
@@ -18,17 +22,14 @@ const ToggleSupportAccessInput = z.object({
 
 // Helper to assert superadmin authorization
 async function requireSuperAdmin(context: any) {
-  const { data: isSuperAdmin } = await context.supabase.rpc("is_admin");
-  const email = (context.claims?.email || "").toLowerCase();
-  const isFixedSuperAdmin = email === "majeed@hotmail.it" || email === "majeed@hotmail.com";
-
-  if (!isSuperAdmin && !isFixedSuperAdmin) {
+  const { data: isSuperAdmin, error } = await context.supabase.rpc("is_super_admin");
+  if (error || !isSuperAdmin) {
     throw new Error("UNAUTHORIZED_SUPER_ADMIN_ONLY");
   }
 }
 
 export const startImpersonationSession = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSupabaseAuthForImpersonationLifecycle])
   .validator((raw: unknown) => StartImpersonationInput.parse(raw))
   .handler(async ({ data, context }) => {
     await requireSuperAdmin(context);
@@ -74,7 +75,7 @@ export const startImpersonationSession = createServerFn({ method: "POST" })
   });
 
 export const stopImpersonationSession = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSupabaseAuthForImpersonationExit])
   .handler(async ({ context }) => {
     const { userId } = context;
 
@@ -120,9 +121,7 @@ export const getTenantAuditLogs = createServerFn({ method: "POST" })
       throw new Error("Unauthorized.");
     }
 
-    const email = (context.claims?.email || "").toLowerCase();
-    const isFixedSuperAdmin = email === "majeed@hotmail.it" || email === "majeed@hotmail.com";
-    const isSuperAdmin = isFixedSuperAdmin || profile.role === "super_admin";
+    const isSuperAdmin = profile.role === "super_admin";
     const belongsToBrand = profile.brand_id === data.brandId;
 
     if (!isSuperAdmin && !belongsToBrand) {
@@ -187,9 +186,7 @@ export const toggleSupportAccess = createServerFn({ method: "POST" })
       throw new Error("Unauthorized.");
     }
 
-    const email = (context.claims?.email || "").toLowerCase();
-    const isFixedSuperAdmin = email === "majeed@hotmail.it" || email === "majeed@hotmail.com";
-    const isSuperAdmin = isFixedSuperAdmin || profile.role === "super_admin";
+    const isSuperAdmin = profile.role === "super_admin";
     const belongsToBrand = profile.brand_id === data.brandId;
 
     if (!isSuperAdmin && !belongsToBrand) {

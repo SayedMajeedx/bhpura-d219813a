@@ -32,6 +32,49 @@ const AdminRejectInput = z.object({
   brandId: z.string().uuid(),
 });
 
+const RenewalDecisionInput = z.object({
+  brandId: z.string().uuid(),
+  decision: z.enum(["renew", "cancel"]),
+});
+
+const RENEWAL_WINDOW_MS = 30 * 24 * 60 * 60 * 1000;
+
+async function requireOpenRenewalWindow(context: any, brandId: string) {
+  const { data: brand } = await context.supabase
+    .from("brands")
+    .select("plan_type, subscription_expires_at, renewal_intent")
+    .eq("id", brandId)
+    .maybeSingle();
+  if (!brand || brand.plan_type !== "annual" || !brand.subscription_expires_at) {
+    throw new Error("RENEWAL_NOT_AVAILABLE");
+  }
+  const remaining = new Date(brand.subscription_expires_at).getTime() - Date.now();
+  if (remaining > RENEWAL_WINDOW_MS) throw new Error("RENEWAL_WINDOW_NOT_OPEN");
+  return brand;
+}
+
+export const setSubscriptionRenewalDecision = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .validator((raw: unknown) => RenewalDecisionInput.parse(raw))
+  .handler(async ({ data, context }) => {
+    const { data: hasAccess } = await context.supabase.rpc("can_access_brand", {
+      _brand_id: data.brandId,
+    });
+    if (!hasAccess) throw new Error("UNAUTHORIZED_BRAND_ACCESS");
+    const { enforceMutationSafeguard } = await import("@/lib/impersonation.server");
+    await enforceMutationSafeguard(context.supabase, context.userId, data.brandId);
+    await requireOpenRenewalWindow(context, data.brandId);
+    const { error } = await context.supabase
+      .from("brands")
+      .update({
+        renewal_intent: data.decision,
+        renewal_intent_recorded_at: new Date().toISOString(),
+      })
+      .eq("id", data.brandId);
+    if (error) throw error;
+    return { success: true };
+  });
+
 // 1. Get secure pre-signed upload URL for subscription receipt (Private R2 Bucket)
 export const getSubscriptionReceiptUploadUrl = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -42,6 +85,9 @@ export const getSubscriptionReceiptUploadUrl = createServerFn({ method: "POST" }
       _brand_id: data.brandId,
     });
     if (!hasAccess) throw new Error("UNAUTHORIZED_BRAND_ACCESS");
+
+    const brand = await requireOpenRenewalWindow(context, data.brandId);
+    if (brand.renewal_intent !== "renew") throw new Error("RENEWAL_DECISION_REQUIRED");
 
     const { enforceMutationSafeguard } = await import("@/lib/impersonation.server");
     await enforceMutationSafeguard(context.supabase, context.userId, data.brandId);
@@ -64,6 +110,9 @@ export const submitSubscriptionReceipt = createServerFn({ method: "POST" })
       _brand_id: data.brandId,
     });
     if (!hasAccess) throw new Error("UNAUTHORIZED_BRAND_ACCESS");
+
+    const brand = await requireOpenRenewalWindow(context, data.brandId);
+    if (brand.renewal_intent !== "renew") throw new Error("RENEWAL_DECISION_REQUIRED");
 
     // Inspect private R2 object to verify the merchant actually uploaded it
     const { inspectPrivateObject } = await import("@/lib/private-r2.server");
@@ -149,6 +198,8 @@ export const approveSubscriptionSaaS = createServerFn({ method: "POST" })
         subscription_expires_at: newExpiresAt,
         payment_receipt_url: null, // Processed
         payment_receipt_uploaded_at: null,
+        renewal_intent: null,
+        renewal_intent_recorded_at: null,
       })
       .eq("id", data.brandId);
 

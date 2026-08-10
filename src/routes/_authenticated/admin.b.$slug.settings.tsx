@@ -393,7 +393,7 @@ function Settings() {
       enDescription:
         "Manage your biometric passkeys, account security, and Boutq troubleshooting access.",
       ar: "إعدادات الأمان والخصوصية",
-      arDescription: "إدارة بصمة المرور، وأمان الحساب، وصلاحيات وصول مهندسي الدعم الفني لبوتك.",
+      arDescription: "إدارة بصمة المرور، وأمان الحساب، وصلاحيات وصول مهندسي الدعم الفني لبوتيك.",
     },
     subscription: {
       en: "Subscription Settings",

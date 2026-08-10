@@ -17,7 +17,13 @@ import { OsMobileNavigation } from "@/components/os/os-mobile-navigation";
 import { OsRecentHistoryBar } from "@/components/os/os-recent-history-bar";
 import { cn } from "@/lib/utils";
 
-type BrandRow = { id: string; slug: string; name_en: string; is_active: boolean };
+type BrandRow = {
+  id: string;
+  slug: string;
+  name_en: string;
+  name_ar: string | null;
+  is_active: boolean;
+};
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = useRouterState({ select: (r) => r.location.pathname });
@@ -119,8 +125,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     }
   };
 
-  // Fallback: use the user's own brand slug when outside /b/:slug
-  const activeSlug = urlSlug ?? profile?.brand?.slug ?? null;
+  // Super admins have a platform workspace outside /admin/b/:slug. Do not let
+  // their own profile brand leak tenant navigation into that workspace.
+  const isPlatformMode = isSuperAdmin && !urlSlug;
+  const activeSlug = urlSlug ?? (isSuperAdmin ? null : (profile?.brand?.slug ?? null));
 
   // Warm the four primary applications once authentication and the active
   // brand are known. This keeps the OS-like app switch fast even before a
@@ -195,7 +203,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("brands")
-        .select("id, slug, name_en, is_active")
+        .select("id, slug, name_en, name_ar, is_active")
         .order("name_en");
       if (error) throw error;
       return (data ?? []) as BrandRow[];
@@ -220,10 +228,19 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     navigate({ to: "/auth" });
   };
 
+  const routeBrand = activeSlug
+    ? brandsQ.data?.find((brand) => brand.slug.toLowerCase() === activeSlug.toLowerCase())
+    : undefined;
+  const profileBrandMatchesRoute =
+    !activeSlug || profile?.brand?.slug?.toLowerCase() === activeSlug.toLowerCase();
+  const activeBrand = isPlatformMode
+    ? undefined
+    : (routeBrand ?? (profileBrandMatchesRoute ? profile?.brand : undefined));
   const brandLabel =
-    profile?.brand?.[lang === "ar" ? "name_ar" : "name_en"] ??
-    profile?.brand?.name_en ??
-    t("app.title");
+    (lang === "ar" ? activeBrand?.name_ar : activeBrand?.name_en) ??
+    activeBrand?.name_en ??
+    activeSlug ??
+    (isPlatformMode ? (lang === "ar" ? "إدارة منصة بوتيك" : "Boutq Platform") : t("app.title"));
 
   const activeNavItem = navItems.find((item) => {
     const targetPath = item.to.replace("$slug", item.params?.slug ?? "");
@@ -231,6 +248,44 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   });
 
   const currentPageLabel = activeNavItem?.[lang === "ar" ? "labelAr" : "labelEn"];
+
+  const breadcrumbs = useMemo(() => {
+    const homeLabel = "Boutq OS";
+    const platformHome = "/admin/brands";
+    const tenantHome = activeSlug ? `/admin/b/${activeSlug}/dashboard` : platformHome;
+    const items: Array<{ label: string; href?: string }> = [
+      { label: homeLabel, href: pathname === tenantHome ? undefined : tenantHome },
+    ];
+
+    if (currentPageLabel && pathname !== tenantHome) {
+      const currentBase = activeNavItem
+        ? activeNavItem.to.replace("$slug", activeNavItem.params?.slug ?? "")
+        : pathname;
+      items.push({
+        label: currentPageLabel,
+        href: pathname !== currentBase ? currentBase : undefined,
+      });
+    }
+
+    const trailingPath = activeNavItem
+      ? pathname.slice(activeNavItem.to.replace("$slug", activeNavItem.params?.slug ?? "").length)
+      : "";
+    const trailingSegment = trailingPath.split("/").filter(Boolean)[0];
+    if (trailingSegment) {
+      const labels: Record<string, { ar: string; en: string }> = {
+        sales: { ar: "المبيعات", en: "Sales" },
+        products: { ar: "المنتجات", en: "Products" },
+        customers: { ar: "العملاء", en: "Customers" },
+        export: { ar: "التصدير", en: "Export" },
+        new: { ar: "طلب جديد", en: "New order" },
+      };
+      const translated = labels[trailingSegment];
+      items.push({
+        label: translated ? translated[lang] : decodeURIComponent(trailingSegment),
+      });
+    }
+    return items;
+  }, [activeNavItem, activeSlug, currentPageLabel, lang, pathname]);
 
   // SECURITY: fail closed.
   if (!isLoading && !profile) {
@@ -290,7 +345,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <div className="flex-1 flex overflow-hidden">
         {/* Level 1: Collapsible Navigation (Full Sidebar vs Compact Dock Rail) */}
         {!isFocusMode &&
-          (sidebarExpanded ? (
+          (sidebarExpanded || isPlatformMode ? (
             <OsSidebar
               brandLabel={brandLabel}
               brandSubtitle={activeSlug ? `@${activeSlug}` : "Boutq OS"}
@@ -302,6 +357,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               isCourier={isCourier}
               brands={brandsQ.data ?? []}
               collapsed={false}
+              collapsible={!isPlatformMode}
               onToggleCollapse={toggleSidebarExpanded}
             />
           ) : (
@@ -343,6 +399,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           {!isFocusMode && (
             <OsMenuBar
               brandLabel={brandLabel}
+              breadcrumbs={breadcrumbs}
               lang={lang}
               onSetLang={setLang}
               onOpenSpotlight={() => setSpotlightOpen(true)}

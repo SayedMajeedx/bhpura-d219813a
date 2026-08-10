@@ -347,6 +347,8 @@ export type Database = {
           payment_receipt_uploaded_at: string | null;
           payment_receipt_url: string | null;
           plan_type: string;
+          renewal_intent: string | null;
+          renewal_intent_recorded_at: string | null;
           primary_color: string | null;
           slug: string;
           subscription_expires_at: string | null;
@@ -374,6 +376,8 @@ export type Database = {
           payment_receipt_uploaded_at?: string | null;
           payment_receipt_url?: string | null;
           plan_type?: string;
+          renewal_intent?: string | null;
+          renewal_intent_recorded_at?: string | null;
           primary_color?: string | null;
           slug: string;
           subscription_expires_at?: string | null;
@@ -401,6 +405,8 @@ export type Database = {
           payment_receipt_uploaded_at?: string | null;
           payment_receipt_url?: string | null;
           plan_type?: string;
+          renewal_intent?: string | null;
+          renewal_intent_recorded_at?: string | null;
           primary_color?: string | null;
           slug?: string;
           subscription_expires_at?: string | null;
@@ -2455,6 +2461,10 @@ export type Database = {
       current_brand_id: { Args: never; Returns: string };
       delete_brand: {
         Args: { p_brand_id: string; p_hard?: boolean };
+        Returns: Json;
+      };
+      delete_brand_customers: {
+        Args: { p_brand_id: string; p_customer_ids: string[] };
         Returns: Json;
       };
       delete_category: { Args: { p_id: string }; Returns: Json };

@@ -34,10 +34,10 @@ describe("customers and inventory bulk selection", () => {
   it("brand-scopes both individual and bulk customer deletion", () => {
     const route = read("src/routes/_authenticated/admin.b.$slug.customers.tsx");
     expect(route).toMatch(
-      /from\("customers"\)[\s\S]*?\.delete\(\)[\s\S]*?\.eq\("id", id\)[\s\S]*?\.eq\("brand_id", brandId\)/,
+      /rpc\("delete_brand_customers",\s*\{[\s\S]*?p_brand_id: brandId,[\s\S]*?p_customer_ids: \[id\]/,
     );
     expect(route).toMatch(
-      /from\("customers"\)[\s\S]*?\.delete\(\)[\s\S]*?\.eq\("brand_id", brandId\)[\s\S]*?\.in\("id", ids\)/,
+      /rpc\("delete_brand_customers",\s*\{[\s\S]*?p_brand_id: brandId,[\s\S]*?p_customer_ids: ids/,
     );
     expect(route).toContain("setBulkDeleteOpen(true)");
   });
