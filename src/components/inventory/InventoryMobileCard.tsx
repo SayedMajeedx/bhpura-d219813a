@@ -10,6 +10,7 @@ import {
   ChevronUp,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -37,6 +38,8 @@ interface InventoryMobileCardProps {
   onDelete: (productId: string) => void;
   onPrintLabel: (product: any) => void;
   renderVariantList?: (product: any) => React.ReactNode;
+  selected?: boolean;
+  onToggleSelected?: (productId: string) => void;
 }
 
 export const InventoryMobileCard: React.FC<InventoryMobileCardProps> = ({
@@ -49,6 +52,8 @@ export const InventoryMobileCard: React.FC<InventoryMobileCardProps> = ({
   onDelete,
   onPrintLabel,
   renderVariantList,
+  selected = false,
+  onToggleSelected = () => undefined,
 }) => {
   const isAr = lang === "ar";
   const [isExpanded, setIsExpanded] = useState(false);
@@ -64,6 +69,13 @@ export const InventoryMobileCard: React.FC<InventoryMobileCardProps> = ({
           className="flex items-start justify-between gap-3"
           onClick={() => setIsExpanded(!isExpanded)}
         >
+          <div onClick={(event) => event.stopPropagation()}>
+            <Checkbox
+              checked={selected}
+              onCheckedChange={() => onToggleSelected(product.id)}
+              aria-label={isAr ? `تحديد المنتج ${name}` : `Select product ${name}`}
+            />
+          </div>
           <div className="flex items-center gap-3 min-w-0 cursor-pointer">
             <div className="h-12 w-12 rounded-lg bg-muted border border-border/60 flex items-center justify-center overflow-hidden shrink-0">
               {product.image_url ? (

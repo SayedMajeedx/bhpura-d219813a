@@ -2184,6 +2184,7 @@ export type Database = {
         Row: {
           base_price_bhd: number;
           benefit_pay_qr_url: string | null;
+          subscription_iban: string;
           discount_price_bhd: number | null;
           id: number;
           merchant_account_name: string;
@@ -2195,6 +2196,7 @@ export type Database = {
         Insert: {
           base_price_bhd?: number;
           benefit_pay_qr_url?: string | null;
+          subscription_iban?: string;
           discount_price_bhd?: number | null;
           id?: number;
           merchant_account_name?: string;
@@ -2206,6 +2208,7 @@ export type Database = {
         Update: {
           base_price_bhd?: number;
           benefit_pay_qr_url?: string | null;
+          subscription_iban?: string;
           discount_price_bhd?: number | null;
           id?: number;
           merchant_account_name?: string;

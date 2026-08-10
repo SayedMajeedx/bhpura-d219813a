@@ -8,6 +8,7 @@ import {
   getOrderCustomerPhone,
   getOrderCustomerEmail,
 } from "@/lib/order-customer-snapshot";
+import { getPaymentGatewayReference } from "@/lib/payment-reference";
 
 type SavedAddress = {
   id?: string;
@@ -416,7 +417,7 @@ export default function InvoicePreview({
                   {L.paymentMethod}: {tPayment(order.payment_method, invoiceLang)}
                 </p>
               )}
-              {(order.gateway_reference || order.payment_intent_id || order.tap_id) && (
+              {getPaymentGatewayReference(order) && (
                 <p
                   className="text-[10px] mt-1 break-all"
                   style={{
@@ -426,7 +427,7 @@ export default function InvoicePreview({
                     marginRight: isRTL ? "auto" : "0",
                   }}
                 >
-                  Ref: {order.gateway_reference || order.payment_intent_id || order.tap_id}
+                  Ref: {getPaymentGatewayReference(order)}
                 </p>
               )}
             </div>

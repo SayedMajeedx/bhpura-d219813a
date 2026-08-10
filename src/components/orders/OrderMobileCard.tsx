@@ -3,6 +3,8 @@ import { Link } from "@tanstack/react-router";
 import { formatMoney } from "@/lib/format";
 import { getOrderCustomerContact } from "@/lib/order-customer-snapshot";
 import { UserX, Phone, ExternalLink } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { getStoredPaymentMethodPresentation } from "@/lib/payment-method";
 
 interface OrderMobileCardProps {
   lang: "en" | "ar";
@@ -11,6 +13,8 @@ interface OrderMobileCardProps {
   paymentBadge: { label: string; className: string } | null;
   fulfillmentBadge: { label: string; classes: string } | null;
   renderPrimaryAction: (order: any) => React.ReactNode;
+  selected: boolean;
+  onSelectedChange: (selected: boolean) => void;
 }
 
 export const OrderMobileCard: React.FC<OrderMobileCardProps> = ({
@@ -20,25 +24,39 @@ export const OrderMobileCard: React.FC<OrderMobileCardProps> = ({
   paymentBadge,
   fulfillmentBadge,
   renderPrimaryAction,
+  selected,
+  onSelectedChange,
 }) => {
   const isAr = lang === "ar";
   const contact = getOrderCustomerContact(order);
   const customerName = contact.name;
   const customerPhone = contact.phone;
   const isGuest = !customerName;
+  const paymentMethod = getStoredPaymentMethodPresentation(order.payment_method, lang);
 
   return (
     <div className="p-3.5 rounded-xl bg-card border border-border/60 shadow-2xs space-y-2.5">
       {/* Top Row: Invoice # + Amount */}
       <div className="flex items-center justify-between gap-2">
-        <Link
-          to="/admin/b/$slug/orders/$id"
-          params={{ slug, id: order.id }}
-          className="font-mono text-xs font-bold text-primary hover:underline flex items-center gap-1"
-        >
-          #{order.invoice_number || order.id.slice(0, 8)}
-          <ExternalLink className="h-3 w-3 opacity-60" />
-        </Link>
+        <div className="flex items-center gap-2">
+          <Checkbox
+            checked={selected}
+            onCheckedChange={(checked) => onSelectedChange(checked === true)}
+            aria-label={
+              isAr
+                ? `تحديد الطلب ${order.invoice_number || order.id}`
+                : `Select order ${order.invoice_number || order.id}`
+            }
+          />
+          <Link
+            to="/admin/b/$slug/orders/$id"
+            params={{ slug, id: order.id }}
+            className="font-mono text-xs font-bold text-primary hover:underline flex items-center gap-1"
+          >
+            #{order.invoice_number || order.id.slice(0, 8)}
+            <ExternalLink className="h-3 w-3 opacity-60" />
+          </Link>
+        </div>
         <span className="font-mono text-sm font-extrabold text-foreground">
           {formatMoney(
             order.total ?? order.total_amount ?? order.total_price ?? 0,
@@ -75,6 +93,15 @@ export const OrderMobileCard: React.FC<OrderMobileCardProps> = ({
 
       {/* Badges Row */}
       <div className="flex items-center gap-1.5 flex-wrap">
+        <span
+          className={`rounded border px-2 py-0.5 text-[10px] font-semibold ${
+            paymentMethod.recognized
+              ? "border-border/50 bg-muted/80 text-foreground"
+              : "border-amber-300 bg-amber-50 text-amber-800 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-300"
+          }`}
+        >
+          {paymentMethod.label}
+        </span>
         {paymentBadge && (
           <span
             className={`px-2 py-0.5 rounded-md text-[10px] font-bold ${paymentBadge.className}`}

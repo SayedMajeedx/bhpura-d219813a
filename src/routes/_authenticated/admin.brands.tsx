@@ -88,7 +88,7 @@ type Brand = {
   payment_receipt_url: string | null;
   payment_receipt_uploaded_at: string | null;
   custom_domain: string | null;
-  plan_type: "lifetime" | "trial" | null;
+  plan_type: "annual" | "lifetime" | "trial" | null;
   trial_ends_at: string | null;
   support_access_enabled: boolean;
 };
@@ -136,7 +136,6 @@ function BrandsPage() {
   // Approval Dialog States
   const [approvingBrand, setApprovingBrand] = useState<Brand | null>(null);
   const [approveTier, setApproveTier] = useState<"basic" | "growth" | "enterprise">("basic");
-  const [approveMonths, setApproveMonths] = useState<number>(1);
   const [approving, setApproving] = useState(false);
   const [rejecting, setRejecting] = useState<string | null>(null);
 
@@ -163,13 +162,15 @@ function BrandsPage() {
   // Compute Platform KPI Stats
   const activeSaaSCount = brands.filter((b) => b.subscription_status === "active").length;
 
-  // Calculate SaaS MRR in BHD
-  const totalMRR = brands.reduce((sum, b) => {
-    if (b.subscription_status !== "active") return sum;
-    if (b.subscription_tier === "growth") return sum + 49;
-    if (b.subscription_tier === "basic" || !b.subscription_tier) return sum + 19;
-    return sum;
-  }, 0);
+  const totalAnnualRevenue = brands.reduce(
+    (sum, brand) =>
+      brand.subscription_status === "active" &&
+      brand.plan_type !== "lifetime" &&
+      brand.slug.toLowerCase() !== "pura"
+        ? sum + 49
+        : sum,
+    0,
+  );
 
   const handleViewReceipt = async (objectKey: string) => {
     try {
@@ -188,7 +189,6 @@ function BrandsPage() {
         data: {
           brandId: approvingBrand.id,
           tier: approveTier,
-          months: approveMonths,
         },
       });
       toast.success(
@@ -295,17 +295,17 @@ function BrandsPage() {
           </div>
         </Card>
 
-        {/* KPI: SaaS Platform MRR */}
+        {/* KPI: annual subscription revenue */}
         <Card className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm p-6 flex items-center gap-4 relative">
           <div className="p-3 rounded-full bg-blue-500/5 text-blue-500">
             <DollarSign className="h-6 w-6" />
           </div>
           <div>
             <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest block">
-              {lang === "ar" ? "الإيراد الشهري المتكرر (MRR)" : "Monthly Recurring Revenue"}
+              {lang === "ar" ? "إيراد الاشتراكات السنوية" : "Annual Subscription Revenue"}
             </span>
             <span className="text-2xl font-bold font-display text-blue-600 dark:text-blue-500 mt-0.5 block">
-              {totalMRR} BHD
+              {totalAnnualRevenue} BHD
             </span>
           </div>
         </Card>
@@ -378,9 +378,13 @@ function BrandsPage() {
                             {lang === "ar" ? "الخصوصية مفعلة" : "Privacy Lock"}
                           </Badge>
                         )}
-                        {b.subscription_status === "active" ? (
+                        {b.slug.toLowerCase() === "pura" || b.plan_type === "lifetime" ? (
+                          <Badge className="bg-violet-600 text-white hover:bg-violet-700 text-[10px]">
+                            {lang === "ar" ? "مشروع دائم" : "Permanent"}
+                          </Badge>
+                        ) : b.subscription_status === "active" ? (
                           <Badge className="bg-emerald-500 text-white hover:bg-emerald-600 text-[10px]">
-                            {b.subscription_tier === "growth" ? "Growth VIP" : "Basic"}
+                            {lang === "ar" ? "سنوي نشط" : "Annual active"}
                           </Badge>
                         ) : b.subscription_status === "pending_verification" ? (
                           <Badge className="bg-amber-500 text-white hover:bg-amber-600 text-[10px] animate-pulse">
@@ -391,13 +395,17 @@ function BrandsPage() {
                             Unpaid
                           </Badge>
                         )}
-                        {b.subscription_expires_at && (
+                        {b.subscription_expires_at && b.plan_type !== "lifetime" && (
                           <span className="text-[9px] text-muted-foreground font-semibold flex items-center gap-0.5">
                             <ClockIcon className="h-2.5 w-2.5" />
-                            {new Date(b.subscription_expires_at).toLocaleDateString(
-                              lang === "ar" ? "ar-BH-u-nu-latn" : "en-US",
-                              { month: "short", day: "numeric" },
-                            )}
+                            {Math.max(
+                              0,
+                              Math.ceil(
+                                (new Date(b.subscription_expires_at).getTime() - Date.now()) /
+                                  86400000,
+                              ),
+                            )}{" "}
+                            {lang === "ar" ? "يوم متبقٍ" : "days left"}
                           </span>
                         )}
                       </div>
@@ -524,7 +532,6 @@ function BrandsPage() {
                       onClick={() => {
                         setApprovingBrand(b);
                         setApproveTier("basic");
-                        setApproveMonths(1);
                       }}
                     >
                       <CheckCircle className="h-4 w-4" />
@@ -574,67 +581,10 @@ function BrandsPage() {
                 </p>
               </div>
 
-              {/* Tier Selection */}
-              <div className="space-y-2">
-                <Label className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
-                  {lang === "ar" ? "تحديد باقة الاشتراك" : "Assign Plan Tier"}
-                </Label>
-                <div className="grid grid-cols-2 gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setApproveTier("basic")}
-                    className={`p-3 rounded-lg border text-left flex flex-col justify-between h-20 transition-all ${
-                      approveTier === "basic"
-                        ? "border-primary bg-primary/[0.02] ring-1 ring-primary"
-                        : "border-border/60 bg-background hover:border-zinc-300"
-                    }`}
-                  >
-                    <span className="font-semibold text-xs text-foreground">
-                      {lang === "ar" ? "الباقة الأساسية" : "Basic Boutique"}
-                    </span>
-                    <span className="text-[10px] text-muted-foreground">19 BHD/month</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setApproveTier("growth")}
-                    className={`p-3 rounded-lg border text-left flex flex-col justify-between h-20 transition-all ${
-                      approveTier === "growth"
-                        ? "border-primary bg-primary/[0.02] ring-1 ring-primary"
-                        : "border-border/60 bg-background hover:border-zinc-300"
-                    }`}
-                  >
-                    <span className="font-semibold text-xs text-foreground">
-                      {lang === "ar" ? "الباقة المتقدمة" : "Growth VIP"}
-                    </span>
-                    <span className="text-[10px] text-muted-foreground">49 BHD/month</span>
-                  </button>
-                </div>
-              </div>
-
-              {/* Month Selection */}
-              <div className="space-y-2">
-                <Label
-                  htmlFor="approve-months"
-                  className="text-xs font-semibold tracking-wide text-muted-foreground uppercase"
-                >
-                  {lang === "ar" ? "مدة الترخيص (أشهر)" : "SaaS License Duration (Months)"}
-                </Label>
-                <div className="grid grid-cols-4 gap-2">
-                  {[1, 3, 6, 12].map((m) => (
-                    <button
-                      key={m}
-                      type="button"
-                      onClick={() => setApproveMonths(m)}
-                      className={`h-10 rounded-lg border font-medium text-xs transition-all ${
-                        approveMonths === m
-                          ? "border-primary bg-primary/5 text-primary"
-                          : "border-border/60 bg-background hover:border-zinc-300"
-                      }`}
-                    >
-                      {m} {lang === "ar" ? "شهر" : "M"}
-                    </button>
-                  ))}
-                </div>
+              <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-4 text-sm">
+                {lang === "ar"
+                  ? "الموافقة تمدد الاشتراك سنة تقويمية كاملة من تاريخ الانتهاء الحالي، أو من اليوم إذا كان منتهياً."
+                  : "Approval extends the subscription by one calendar year from its current expiry, or from today when expired."}
               </div>
             </div>
             <DialogFooter className="gap-2">
@@ -698,7 +648,7 @@ function BrandsPage() {
 function NewBrandDialog({ onSaved }: { onSaved: () => void }) {
   const { lang } = useI18n();
   const [form, setForm] = useState({ slug: "", name_en: "", name_ar: "", logo_url: "" });
-  const [planType, setPlanType] = useState<"lifetime" | "trial">("lifetime");
+  const [planType, setPlanType] = useState<"annual" | "trial">("annual");
   const [saving, setSaving] = useState(false);
 
   const submit = async () => {
@@ -733,6 +683,9 @@ function NewBrandDialog({ onSaved }: { onSaved: () => void }) {
       // Update plan_type and trial_ends_at on the newly created brand row
       const trialEndsAt =
         planType === "trial" ? new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString() : null;
+      const isOwnerProject = slug === "pura";
+      const annualExpiresAt = new Date();
+      annualExpiresAt.setFullYear(annualExpiresAt.getFullYear() + 1);
       const { data: brandRow } = await supabase
         .from("brands")
         .select("id")
@@ -743,8 +696,11 @@ function NewBrandDialog({ onSaved }: { onSaved: () => void }) {
         const { error: brandUpdateErr } = await supabase
           .from("brands")
           .update({
-            plan_type: planType,
+            plan_type: isOwnerProject ? "lifetime" : planType,
             trial_ends_at: trialEndsAt,
+            subscription_status: "active",
+            subscription_expires_at:
+              isOwnerProject || planType === "trial" ? null : annualExpiresAt.toISOString(),
             updated_at: new Date().toISOString(),
           })
           .eq("id", brandRow.id);
@@ -818,14 +774,14 @@ function NewBrandDialog({ onSaved }: { onSaved: () => void }) {
           <div className="grid grid-cols-2 gap-2 mt-1">
             <button
               type="button"
-              onClick={() => setPlanType("lifetime")}
+              onClick={() => setPlanType("annual")}
               className={`p-2.5 text-xs rounded border font-semibold text-center cursor-pointer transition-all ${
-                planType === "lifetime"
+                planType === "annual"
                   ? "border-primary bg-primary/[0.02] ring-1 ring-primary text-primary"
                   : "border-zinc-200 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-900"
               }`}
             >
-              {lang === "ar" ? "ترخيص مدى الحياة" : "Lifetime Access"}
+              {lang === "ar" ? "اشتراك سنوي" : "Annual Subscription"}
             </button>
             <button
               type="button"

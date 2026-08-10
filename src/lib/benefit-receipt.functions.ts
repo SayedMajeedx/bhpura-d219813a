@@ -194,6 +194,51 @@ export const deleteOrderWithPrivateReceipt = createServerFn({ method: "POST" })
     return { deleted: true };
   });
 
+const BulkDeleteOrdersInput = z.object({
+  brandId: z.string().uuid(),
+  orderIds: z.array(z.string().uuid()).min(1).max(100),
+});
+
+export const deleteOrdersWithPrivateReceipts = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .validator((raw: unknown) => BulkDeleteOrdersInput.parse(raw))
+  .handler(async ({ data, context }) => {
+    const uniqueIds = [...new Set(data.orderIds)];
+    const [{ data: canAccess }, { data: isAdmin }] = await Promise.all([
+      context.supabase.rpc("can_access_brand", { _brand_id: data.brandId }),
+      context.supabase.rpc("is_admin"),
+    ]);
+    if (!canAccess || !isAdmin) throw new Error("FORBIDDEN");
+
+    const { enforceMutationSafeguard } = await import("@/lib/impersonation.server");
+    await enforceMutationSafeguard(context.supabase, context.userId, data.brandId);
+
+    const { data: orders, error: readError } = await context.supabase
+      .from("orders")
+      .select("id, brand_id, benefit_receipt_key")
+      .eq("brand_id", data.brandId)
+      .in("id", uniqueIds);
+    if (readError) throw readError;
+    if (!orders || orders.length !== uniqueIds.length) throw new Error("ORDER_SET_MISMATCH");
+
+    const { deletePrivateObject, isPrivateReceiptKey } = await import("@/lib/private-r2.server");
+    for (const order of orders) {
+      if (!order.benefit_receipt_key) continue;
+      if (!isPrivateReceiptKey(order.benefit_receipt_key, data.brandId)) {
+        throw new Error("INVALID_RECEIPT_KEY");
+      }
+      await deletePrivateObject(order.benefit_receipt_key);
+    }
+
+    const { error: deleteError } = await context.supabase
+      .from("orders")
+      .delete()
+      .eq("brand_id", data.brandId)
+      .in("id", uniqueIds);
+    if (deleteError) throw deleteError;
+    return { deleted: uniqueIds.length };
+  });
+
 const BrandInput = z.object({ brandId: z.string().uuid() });
 
 export const purgeBrandPrivateReceipts = createServerFn({ method: "POST" })

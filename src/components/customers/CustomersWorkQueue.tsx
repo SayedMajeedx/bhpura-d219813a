@@ -12,6 +12,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -34,6 +35,9 @@ interface CustomersWorkQueueProps {
   isError: boolean;
   onSelectCustomer: (customerId: string) => void;
   onDeleteCustomer: (customer: any) => void;
+  selectedCustomerIds?: ReadonlySet<string>;
+  onToggleCustomer?: (customerId: string) => void;
+  onToggleAll?: () => void;
 }
 
 export const CustomersWorkQueue: React.FC<CustomersWorkQueueProps> = ({
@@ -46,8 +50,14 @@ export const CustomersWorkQueue: React.FC<CustomersWorkQueueProps> = ({
   isError,
   onSelectCustomer,
   onDeleteCustomer,
+  selectedCustomerIds = new Set<string>(),
+  onToggleCustomer = () => undefined,
+  onToggleAll = () => undefined,
 }) => {
   const isAr = lang === "ar";
+  const selectedOnPage = customers.filter((customer) =>
+    selectedCustomerIds.has(customer.id),
+  ).length;
 
   if (isLoading) {
     return (
@@ -91,6 +101,21 @@ export const CustomersWorkQueue: React.FC<CustomersWorkQueueProps> = ({
         <table className="w-full text-start text-xs border-collapse">
           <thead>
             <tr className="border-b border-border/60 bg-muted/40 font-bold text-muted-foreground uppercase text-[10px] tracking-wider">
+              <th className="p-3 text-center w-12">
+                <Checkbox
+                  checked={
+                    customers.length > 0 && selectedOnPage === customers.length
+                      ? true
+                      : selectedOnPage > 0
+                        ? "indeterminate"
+                        : false
+                  }
+                  onCheckedChange={onToggleAll}
+                  aria-label={
+                    isAr ? "تحديد كل العملاء في الصفحة" : "Select all customers on this page"
+                  }
+                />
+              </th>
               <th className="p-3 text-start">{isAr ? "العميل والتصنيف" : "Customer & Segment"}</th>
               <th className="p-3 text-start">{isAr ? "معلومات التواصل" : "Contact Details"}</th>
               <th className="p-3 text-start">
@@ -120,6 +145,13 @@ export const CustomersWorkQueue: React.FC<CustomersWorkQueueProps> = ({
                   onClick={() => onSelectCustomer(c.id)}
                   className="hover:bg-muted/30 transition-colors group cursor-pointer"
                 >
+                  <td className="p-3 text-center" onClick={(event) => event.stopPropagation()}>
+                    <Checkbox
+                      checked={selectedCustomerIds.has(c.id)}
+                      onCheckedChange={() => onToggleCustomer(c.id)}
+                      aria-label={isAr ? `تحديد العميل ${c.name}` : `Select customer ${c.name}`}
+                    />
+                  </td>
                   {/* Customer Name & Segment Badge */}
                   <td className="p-3 align-middle font-medium">
                     <div className="flex items-center gap-2.5">

@@ -7,7 +7,7 @@ import { handleR2MediaRequest } from "./lib/r2-media-server";
 
 const SECURITY_HEADERS = {
   "Content-Security-Policy":
-    "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://connect.facebook.net https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.googleapis.com https://*.r2.cloudflarestorage.com https://media.boutq.store https://www.google-analytics.com https://region1.google-analytics.com https://www.googletagmanager.com https://connect.facebook.net https://static.cloudflareinsights.com https://cloudflareinsights.com; worker-src 'self' blob:; upgrade-insecure-requests",
+    "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com https://www.googletagmanager.com https://connect.facebook.net https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://challenges.cloudflare.com https://*.supabase.co wss://*.supabase.co https://*.googleapis.com https://*.r2.cloudflarestorage.com https://media.boutq.store https://www.google-analytics.com https://region1.google-analytics.com https://www.googletagmanager.com https://connect.facebook.net https://static.cloudflareinsights.com https://cloudflareinsights.com; frame-src https://challenges.cloudflare.com; worker-src 'self' blob:; upgrade-insecure-requests",
   "Permissions-Policy": "camera=(self), microphone=(), geolocation=(), payment=()",
   "Referrer-Policy": "strict-origin-when-cross-origin",
   "Strict-Transport-Security": "max-age=63072000; includeSubDomains; preload",
@@ -78,6 +78,25 @@ async function runScheduledTasks(cron: string, env: Cloudflare.Env): Promise<voi
     __CLOUDFLARE_ENV__?: Cloudflare.Env;
   };
   g.__CLOUDFLARE_ENV__ = env;
+
+  // Payment reconciliation runs first so an unrelated messaging outage cannot
+  // delay authoritative Tap status checks or keep inventory reserved forever.
+  try {
+    const { reconcileAbandonedTapPayments } =
+      await import("./lib/tap-payment-reconciliation.server");
+    const tapResult = await reconcileAbandonedTapPayments();
+    console.log(
+      JSON.stringify({ event: "tap_payment_reconciliation_complete", cron, ...tapResult }),
+    );
+  } catch (error) {
+    console.error(
+      JSON.stringify({
+        event: "tap_payment_reconciliation_failed",
+        cron,
+        error: error instanceof Error ? error.message : String(error),
+      }),
+    );
+  }
 
   const { retryOrderEmailOutbox } = await import("./lib/order-email-outbox.server");
   const emailResult = await retryOrderEmailOutbox(env);

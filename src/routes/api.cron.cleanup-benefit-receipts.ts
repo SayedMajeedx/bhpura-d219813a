@@ -5,7 +5,12 @@ export const Route = createFileRoute("/api/cron/cleanup-benefit-receipts")({
     handlers: {
       GET: async ({ request }) => {
         const cronSecret = process.env.CRON_SECRET?.trim();
-        if (!cronSecret || request.headers.get("authorization") !== `Bearer ${cronSecret}`) {
+        const authorization = request.headers.get("authorization") ?? "";
+        const { constantTimeSecretEqual } = await import("@/lib/security.server");
+        if (
+          !cronSecret ||
+          !(await constantTimeSecretEqual(authorization, `Bearer ${cronSecret}`))
+        ) {
           return new Response("Unauthorized", { status: 401 });
         }
 

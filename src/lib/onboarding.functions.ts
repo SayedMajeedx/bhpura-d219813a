@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { verifyOnboardingTurnstile } from "@/lib/turnstile.server";
 
 const imageTypes: Record<string, string> = {
   "image/jpeg": "jpg",
@@ -10,6 +11,12 @@ const imageTypes: Record<string, string> = {
 
 const CreateUploadInput = z.object({
   contentType: z.enum(["image/jpeg", "image/png", "image/webp"]),
+  size: z
+    .number()
+    .int()
+    .positive()
+    .max(5 * 1024 * 1024),
+  turnstileToken: z.string().min(1).max(2048),
 });
 
 const CreateRequestInput = z.object({
@@ -20,11 +27,27 @@ const CreateRequestInput = z.object({
   requestType: z.enum(["trial", "paid"]),
   benefitReceiptUrl: z.string().optional(),
   businessType: z.string().optional(),
+  turnstileToken: z.string().min(1).max(2048),
 });
+
+async function requireValidTurnstile(token: string) {
+  let secret: string | undefined;
+  try {
+    const g = globalThis as any;
+    const env = g["__CLOUDFLARE_ENV__"] || g["process"]?.["env"] || process.env;
+    secret = env?.TURNSTILE_SECRET;
+  } catch {
+    // Verification fails closed below when runtime bindings are unavailable.
+  }
+
+  if (!(await verifyOnboardingTurnstile({ token, secret }))) {
+    throw new Error("TURNSTILE_VERIFICATION_FAILED");
+  }
+}
 
 const AdminActionInput = z.object({
   requestId: z.string().uuid(),
-  planType: z.enum(["lifetime", "trial"]).optional(),
+  planType: z.enum(["annual", "trial", "lifetime"]).optional(),
 });
 
 const UpdatePriceInput = z.object({
@@ -33,11 +56,8 @@ const UpdatePriceInput = z.object({
 
 // Helper to assert superadmin authorization
 async function requireSuperAdmin(context: any) {
-  const { data: isSuperAdmin } = await context.supabase.rpc("is_admin");
-  const email = (context.claims?.email || "").toLowerCase();
-  const isFixedSuperAdmin = email === "majeed@hotmail.it" || email === "majeed@hotmail.com";
-
-  if (!isSuperAdmin && !isFixedSuperAdmin) {
+  const { data: isSuperAdmin, error } = await context.supabase.rpc("is_super_admin");
+  if (error || !isSuperAdmin) {
     throw new Error("UNAUTHORIZED_SUPER_ADMIN_ONLY");
   }
 }
@@ -46,6 +66,7 @@ async function requireSuperAdmin(context: any) {
 export const getOnboardingReceiptUploadUrl = createServerFn({ method: "POST" })
   .validator((raw: unknown) => CreateUploadInput.parse(raw))
   .handler(async ({ data, context }) => {
+    await requireValidTurnstile(data.turnstileToken);
     let env: any = null;
     try {
       const { getEvent } = await import(/* @vite-ignore */ "vinxi/http");
@@ -55,13 +76,17 @@ export const getOnboardingReceiptUploadUrl = createServerFn({ method: "POST" })
         event?.context?.env ||
         event?.context?.cloudflare ||
         (event?.context as any)?.cloudflare?.env;
-    } catch {}
+    } catch {
+      // Fall back to the globally-bound Worker environment below.
+    }
 
     if (!env) {
       try {
         const g = globalThis as any;
         env = g["__CLOUDFLARE_ENV__"] || g["__env__"] || g["process"]?.["env"] || process.env;
-      } catch {}
+      } catch {
+        // Missing runtime bindings are handled by the existing upload error path.
+      }
     }
 
     const privateBucket = env?.R2_PRIVATE_BUCKET || env?.R2_PRIVATE_BUCKET_NAME;
@@ -83,6 +108,7 @@ export const getOnboardingReceiptUploadUrl = createServerFn({ method: "POST" })
 export const createTenantRequest = createServerFn({ method: "POST" })
   .validator((raw: unknown) => CreateRequestInput.parse(raw))
   .handler(async ({ data }) => {
+    await requireValidTurnstile(data.turnstileToken);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { error } = await supabaseAdmin.from("tenant_requests").insert({
       full_name: data.fullName,
@@ -98,7 +124,7 @@ export const createTenantRequest = createServerFn({ method: "POST" })
 
     if (error) {
       console.error("Supabase tenant request insert failure:", error);
-      throw new Error(`Failed to record tenant request: ${error.message}`);
+      throw new Error("TENANT_REQUEST_CREATE_FAILED");
     }
 
     return { success: true };
@@ -117,7 +143,9 @@ export const getOnboardingPrice = createServerFn({ method: "GET" }).handler(asyn
     try {
       const { data: rpcVal } = await supabaseAdmin.rpc("get_onboarding_active_price");
       if (rpcVal) return rpcVal;
-    } catch {}
+    } catch {
+      // Preserve the public fallback price when the optional RPC is unavailable.
+    }
     return "55 BHD";
   }
 
@@ -171,6 +199,7 @@ const UpdatePlatformSettingsInput = z.object({
   platformIconUrl: z.string().nullable(),
   benefitPayQrUrl: z.string().nullable(),
   merchantAccountName: z.string().min(1),
+  subscriptionIban: z.string().trim().min(12).max(64),
   whatsappSupportNumber: z.string().min(5),
   superadminImpersonationMutationAllowed: z.boolean(),
 });
@@ -190,6 +219,7 @@ export const updatePlatformSettings = createServerFn({ method: "POST" })
         platform_icon_url: data.platformIconUrl,
         benefit_pay_qr_url: data.benefitPayQrUrl,
         merchant_account_name: data.merchantAccountName,
+        subscription_iban: data.subscriptionIban.replace(/\s+/g, "").toUpperCase(),
         whatsapp_support_number: data.whatsappSupportNumber,
         superadmin_impersonation_mutation_allowed: data.superadminImpersonationMutationAllowed,
         updated_at: new Date().toISOString(),
@@ -266,8 +296,7 @@ export const approveTenantRequest = createServerFn({ method: "POST" })
 
     // Fetch the created brand by slug to set its plan details
     const brandSlug = request.desired_subdomain.toLowerCase().trim();
-    const approvedPlanType =
-      data.planType || (request.request_type === "trial" ? "trial" : "lifetime");
+    const approvedPlanType = request.request_type === "trial" ? "trial" : "annual";
     const trialEndsAt =
       approvedPlanType === "trial"
         ? new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString()
@@ -286,6 +315,11 @@ export const approveTenantRequest = createServerFn({ method: "POST" })
         .update({
           plan_type: approvedPlanType,
           trial_ends_at: trialEndsAt,
+          subscription_status: approvedPlanType === "trial" ? "active" : "active",
+          subscription_expires_at:
+            approvedPlanType === "annual"
+              ? new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString()
+              : null,
           business_type: (request as any).business_type || null,
           updated_at: new Date().toISOString(),
         })

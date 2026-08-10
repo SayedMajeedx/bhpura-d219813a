@@ -64,6 +64,7 @@ function SuperAdminSettings() {
   const [benefitPayQrUrl, setBenefitPayQrUrl] = useState<string | null>(null);
   const [qrPreviewUrl, setQrPreviewUrl] = useState<string | null>(null);
   const [merchantAccountName, setMerchantAccountName] = useState("BOUTQ-OFFICIAL");
+  const [subscriptionIban, setSubscriptionIban] = useState("BH12KHCB0000001234567890");
   const [impersonationBypass, setImpersonationBypass] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [uploadingLogo, setUploadingUploadingLogo] = useState(false);
@@ -90,6 +91,7 @@ function SuperAdminSettings() {
       setBenefitPayQrUrl(s.benefit_pay_qr_url || null);
       setQrPreviewUrl(s.benefit_pay_qr_url || null);
       setMerchantAccountName(s.merchant_account_name || "BOUTQ-OFFICIAL");
+      setSubscriptionIban(s.subscription_iban || "BH12KHCB0000001234567890");
       setImpersonationBypass(!!s.superadmin_impersonation_mutation_allowed);
     }
   }, [settingsQuery.data]);
@@ -239,6 +241,7 @@ function SuperAdminSettings() {
           platformIconUrl,
           benefitPayQrUrl,
           merchantAccountName: merchantAccountName.trim(),
+          subscriptionIban: subscriptionIban.replace(/\s+/g, "").toUpperCase(),
           whatsappSupportNumber: whatsappNumber.trim(),
           superadminImpersonationMutationAllowed: impersonationBypass,
         },
@@ -552,6 +555,27 @@ function SuperAdminSettings() {
                   </Label>
                 </div>
               </div>
+            </div>
+
+            <div className="space-y-1.5 max-w-xl">
+              <Label className="text-xs font-semibold text-zinc-600 dark:text-zinc-400">
+                {lang === "ar"
+                  ? "رقم الحساب الدولي للاشتراكات (IBAN)"
+                  : "Subscription payment IBAN"}
+              </Label>
+              <Input
+                dir="ltr"
+                value={subscriptionIban}
+                onChange={(event) => setSubscriptionIban(event.target.value.toUpperCase())}
+                placeholder="BH00 BANK 0000 0000 0000 0000"
+                className="h-11 font-mono"
+                required
+              />
+              <p className="text-[10px] text-muted-foreground">
+                {lang === "ar"
+                  ? "يظهر للتجار في صفحة الاشتراك مع زر نسخ."
+                  : "Shown to merchants on the subscription page with a copy button."}
+              </p>
             </div>
           </CardContent>
         </Card>

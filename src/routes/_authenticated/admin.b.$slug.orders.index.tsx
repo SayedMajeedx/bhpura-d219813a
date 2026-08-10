@@ -1,6 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { getPaymentGatewayReference } from "@/lib/payment-reference";
 import { RoutePendingSkeleton } from "@/components/os/route-pending-skeleton";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -62,11 +63,7 @@ import {
 import { CourierWhatsAppModal } from "@/components/courier/CourierWhatsAppModal";
 import { useT, useI18n } from "@/lib/i18n";
 import { resolvePaymentStatus, PAYMENT_BADGE_CLASSES } from "@/lib/payment-status";
-import {
-  matchesPaymentMethodFilter,
-  normalizePaymentMethod,
-  type PaymentMethodFilter,
-} from "@/lib/payment-method";
+import { matchesPaymentMethodFilter, type PaymentMethodFilter } from "@/lib/payment-method";
 import { useBrand } from "@/lib/brand-context";
 import { useProfile } from "@/lib/profile-context";
 import { useRealtimeInvalidate } from "@/hooks/use-realtime-invalidate";
@@ -82,7 +79,10 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { deleteOrderWithPrivateReceipt } from "@/lib/benefit-receipt.functions";
+import {
+  deleteOrderWithPrivateReceipt,
+  deleteOrdersWithPrivateReceipts,
+} from "@/lib/benefit-receipt.functions";
 import {
   Dialog,
   DialogContent,
@@ -105,6 +105,7 @@ import {
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
 import { getFulfillmentStage, getOrderWorkflow } from "@/lib/order-workflow";
+import { orderRequiresCourier } from "@/lib/order-fulfillment";
 
 export const Route = createFileRoute("/_authenticated/admin/b/$slug/orders/")({
   component: OrdersList,
@@ -260,40 +261,6 @@ function orderNeedsOperatorAction(order: any): boolean {
   return getOrderWorkflow(order).needsAttention;
 }
 
-const renderPaymentMethodBadge = (paymentMethod: string | null | undefined, lang: "en" | "ar") => {
-  const method = normalizePaymentMethod(paymentMethod);
-
-  if (method === "card") {
-    return (
-      <div className="mt-1">
-        <span className="inline-flex items-center gap-1 whitespace-nowrap rounded-md px-1.5 py-0.5 text-[10px] font-semibold bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-950/30 dark:text-blue-300 dark:border-blue-900 shadow-xs">
-          💳 {lang === "ar" ? "بطاقة (أونلاين)" : "Card (Online)"}
-        </span>
-      </div>
-    );
-  }
-  if (method === "benefit") {
-    return (
-      <div className="mt-1">
-        <span className="inline-flex items-center gap-1 whitespace-nowrap rounded-md px-1.5 py-0.5 text-[10px] font-semibold bg-violet-50 text-violet-700 border border-violet-200 dark:bg-violet-950/30 dark:text-violet-300 dark:border-violet-900 shadow-xs">
-          📲 {lang === "ar" ? "بنفت بي (يدوي)" : "BenefitPay (Manual)"}
-        </span>
-      </div>
-    );
-  }
-  if (method === "cod") {
-    return (
-      <div className="mt-1">
-        <span className="inline-flex items-center gap-1 whitespace-nowrap rounded-md px-1.5 py-0.5 text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-300 dark:border-emerald-900 shadow-xs">
-          💵 {lang === "ar" ? "الدفع عند الاستلام" : "Cash on Delivery"}
-        </span>
-      </div>
-    );
-  }
-
-  return null;
-};
-
 function CustomerContactActions({ customer, lang }: { customer: any; lang: "en" | "ar" }) {
   if (!customer?.phone) return null;
   const rawPhone = String(customer.phone);
@@ -401,6 +368,9 @@ function OrdersList() {
   const { isCourier, isAdmin } = useProfile();
   const brandId = brand.id;
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
+  const [selectedOrderIds, setSelectedOrderIds] = useState<Set<string>>(new Set());
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
   // Feature 7: Context-preserving return navigation (restore saved search & filters)
   const savedContext = getNavFilterContext("orders");
 
@@ -571,14 +541,38 @@ function OrdersList() {
 
   const del = async (id: string) => {
     try {
-      const { error } = await supabase.from("orders").delete().eq("id", id);
-      if (error) throw error;
+      await deleteOrderWithPrivateReceipt({ data: { orderId: id } });
       toast.success(lang === "ar" ? "تم حذف الطلب بنجاح" : "Order deleted successfully");
       qc.invalidateQueries({ queryKey: ["orders", brandId] });
     } catch (err: any) {
       toast.error(err.message || "Failed to delete order");
     } finally {
       setDeleteTarget(null);
+    }
+  };
+
+  const deleteSelectedOrders = async () => {
+    const orderIds = [...selectedOrderIds];
+    if (orderIds.length === 0) return;
+    setIsBulkDeleting(true);
+    try {
+      const result = await deleteOrdersWithPrivateReceipts({
+        data: { brandId, orderIds },
+      });
+      toast.success(
+        lang === "ar"
+          ? `تم حذف ${result.deleted} طلب بنجاح`
+          : `${result.deleted} orders deleted successfully`,
+      );
+      setSelectedOrderIds(new Set());
+      setBulkDeleteOpen(false);
+      await qc.invalidateQueries({ queryKey: ["orders", brandId] });
+    } catch (error: any) {
+      toast.error(
+        error?.message || (lang === "ar" ? "تعذر حذف الطلبات" : "Unable to delete orders"),
+      );
+    } finally {
+      setIsBulkDeleting(false);
     }
   };
 
@@ -599,6 +593,15 @@ function OrdersList() {
   });
 
   const handleQuickAssignCourier = async (orderId: string, courierId: string) => {
+    const targetOrder = orders.find((order: any) => order.id === orderId);
+    if (!targetOrder || !orderRequiresCourier(targetOrder)) {
+      toast.error(
+        lang === "ar"
+          ? "يمكن تعيين المندوب لطلبات التوصيل فقط"
+          : "Couriers can only be assigned to delivery orders",
+      );
+      return;
+    }
     try {
       const res = await fetch("/api/orders/status", {
         method: "PATCH",
@@ -611,7 +614,6 @@ function OrdersList() {
       });
       if (!res.ok) throw new Error("Failed to assign courier");
       toast.success(lang === "ar" ? "تم تعيين المندوب بنجاح!" : "Courier assigned successfully!");
-      const targetOrder = orders.find((o: any) => o.id === orderId);
       const courierObj = (couriersQ.data ?? []).find((c: any) => c.id === courierId);
       if (targetOrder && courierObj) {
         setWaModalState({ isOpen: true, order: targetOrder, courier: courierObj });
@@ -866,6 +868,9 @@ function OrdersList() {
     const start = (page - 1) * pageSize;
     return sortedOrders.slice(start, start + pageSize);
   }, [sortedOrders, page, pageSize]);
+
+  const allFilteredOrdersSelected =
+    sortedOrders.length > 0 && sortedOrders.every((order) => selectedOrderIds.has(order.id));
 
   const totalPages = Math.ceil(sortedOrders.length / pageSize) || 1;
 
@@ -1487,6 +1492,59 @@ function OrdersList() {
         onClearFilters={clearFilters}
       />
 
+      {isAdmin && (
+        <div className="flex flex-col gap-2 rounded-xl border border-border/70 bg-card p-3 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-2 text-xs font-semibold">
+            <CheckSquare className="h-4 w-4 text-primary" />
+            <span>
+              {lang === "ar"
+                ? `${selectedOrderIds.size} طلب محدد`
+                : `${selectedOrderIds.size} selected`}
+            </span>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="h-8 gap-1.5 text-xs"
+              disabled={allFilteredOrdersSelected}
+              onClick={() =>
+                setSelectedOrderIds(new Set(sortedOrders.map((order: any) => order.id)))
+              }
+            >
+              <CheckSquare className="h-3.5 w-3.5" />
+              {lang === "ar" ? "تحديد الكل" : "Select all"}
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="h-8 gap-1.5 text-xs"
+              disabled={selectedOrderIds.size === 0}
+              onClick={() => setSelectedOrderIds(new Set())}
+            >
+              <Square className="h-3.5 w-3.5" />
+              {lang === "ar" ? "إلغاء تحديد الكل" : "Deselect all"}
+            </Button>
+            {selectedOrderIds.size > 0 && (
+              <Button
+                type="button"
+                variant="destructive"
+                size="sm"
+                className="h-8 gap-1.5 text-xs"
+                onClick={() => setBulkDeleteOpen(true)}
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+                {lang === "ar"
+                  ? `حذف المحدد (${selectedOrderIds.size})`
+                  : `Delete selected (${selectedOrderIds.size})`}
+              </Button>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* 4. Mobile Purpose-Built Order Cards (375px) */}
       <div className="space-y-3 block sm:hidden">
         {paginatedOrders.map((o: any) => {
@@ -1518,6 +1576,15 @@ function OrdersList() {
               }
               fulfillmentBadge={fulfillmentDetails}
               renderPrimaryAction={(ord: any) => renderContextualButton(ord)}
+              selected={selectedOrderIds.has(o.id)}
+              onSelectedChange={(selected) =>
+                setSelectedOrderIds((current) => {
+                  const next = new Set(current);
+                  if (selected) next.add(o.id);
+                  else next.delete(o.id);
+                  return next;
+                })
+              }
             />
           );
         })}
@@ -1570,7 +1637,26 @@ function OrdersList() {
             setWaModalState({ isOpen: true, order: o, courier })
           }
           onAssignCourier={handleQuickAssignCourier}
-          onDeleteOrder={!isCourier ? (id: string) => setDeleteTarget(id) : undefined}
+          onDeleteOrder={isAdmin ? (id: string) => setDeleteTarget(id) : undefined}
+          selectedOrderIds={selectedOrderIds}
+          onToggleOrder={(id, selected) =>
+            setSelectedOrderIds((current) => {
+              const next = new Set(current);
+              if (selected) next.add(id);
+              else next.delete(id);
+              return next;
+            })
+          }
+          onToggleAll={(selected) =>
+            setSelectedOrderIds((current) => {
+              const next = new Set(current);
+              for (const order of paginatedOrders) {
+                if (selected) next.add(order.id);
+                else next.delete(order.id);
+              }
+              return next;
+            })
+          }
         />
       </div>
 
@@ -1643,7 +1729,7 @@ function OrdersList() {
           </Button>
         </div>
       </div>
-      {!isCourier && (
+      {isAdmin && (
         <AlertDialog
           open={deleteTarget !== null}
           onOpenChange={(open) => {
@@ -1668,6 +1754,46 @@ function OrdersList() {
                 }}
               >
                 {t("common.delete")}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      )}
+
+      {isAdmin && (
+        <AlertDialog open={bulkDeleteOpen} onOpenChange={setBulkDeleteOpen}>
+          <AlertDialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-lg">
+            <AlertDialogHeader>
+              <AlertDialogTitle>
+                {lang === "ar"
+                  ? `حذف ${selectedOrderIds.size} طلب؟`
+                  : `Delete ${selectedOrderIds.size} orders?`}
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                {lang === "ar"
+                  ? "سيتم حذف الطلبات المحددة نهائياً واستعادة مخزونها حسب سجلات الحجز. لا يمكن التراجع عن هذا الإجراء."
+                  : "The selected orders will be permanently deleted and reserved stock will be restored according to the inventory records. This cannot be undone."}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={isBulkDeleting}>
+                {lang === "ar" ? "إلغاء" : "Cancel"}
+              </AlertDialogCancel>
+              <AlertDialogAction
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                disabled={isBulkDeleting || selectedOrderIds.size === 0}
+                onClick={(event) => {
+                  event.preventDefault();
+                  void deleteSelectedOrders();
+                }}
+              >
+                {isBulkDeleting
+                  ? lang === "ar"
+                    ? "جارٍ الحذف..."
+                    : "Deleting..."
+                  : lang === "ar"
+                    ? "تأكيد الحذف"
+                    : "Confirm delete"}
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
@@ -2987,7 +3113,7 @@ function OrderQuickInspectSheet({
           })()}
         </div>
 
-        {isAdmin && (order.gateway_reference || order.payment_intent_id || order.tap_id) ? (
+        {isAdmin && getPaymentGatewayReference(order) ? (
           <div className="mx-6 mb-6 rounded-xl border border-border/60 bg-card p-4 space-y-3">
             <div className="flex items-center justify-between border-b pb-2">
               <div className="flex items-center gap-2">
@@ -3001,18 +3127,14 @@ function OrderQuickInspectSheet({
               <div>
                 <span className="text-muted-foreground block mb-1">Reference ID:</span>
                 <div className="flex items-center gap-2">
-                  <span className="truncate">
-                    {order.gateway_reference || order.payment_intent_id || order.tap_id}
-                  </span>
+                  <span className="truncate">{getPaymentGatewayReference(order)}</span>
                   <Button
                     type="button"
                     variant="ghost"
                     size="icon"
                     className="h-6 w-6"
                     onClick={() => {
-                      navigator.clipboard.writeText(
-                        order.gateway_reference || order.payment_intent_id || order.tap_id,
-                      );
+                      navigator.clipboard.writeText(getPaymentGatewayReference(order)!);
                       toast.success(isAr ? "تم النسخ" : "Copied Reference");
                     }}
                   >

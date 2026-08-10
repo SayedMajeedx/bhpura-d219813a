@@ -95,7 +95,7 @@ function SuperRequestsPage() {
 
   // Approval Dialog States
   const [approvingRequest, setApprovingRequest] = useState<TenantRequest | null>(null);
-  const [selectedPlan, setSelectedPlan] = useState<"lifetime" | "trial">("lifetime");
+  const [selectedPlan, setSelectedPlan] = useState<"annual" | "trial">("annual");
   const [deploying, setDeploying] = useState(false);
 
   // Queries
@@ -210,7 +210,7 @@ function SuperRequestsPage() {
   const handleApprove = (request: TenantRequest) => {
     setApprovingRequest(request);
     // Pre-select plan based on initial request type
-    setSelectedPlan(request.request_type === "trial" ? "trial" : "lifetime");
+    setSelectedPlan(request.request_type === "trial" ? "trial" : "annual");
   };
 
   // Action: Approve & Mark Deployed on Confirmed dialog
@@ -658,9 +658,9 @@ function SuperRequestsPage() {
               <div className="grid grid-cols-1 gap-3">
                 <button
                   type="button"
-                  onClick={() => setSelectedPlan("lifetime")}
+                  onClick={() => setSelectedPlan("annual")}
                   className={`p-4 rounded-lg border cursor-pointer text-left transition-all duration-150 flex flex-col justify-between ${
-                    selectedPlan === "lifetime"
+                    selectedPlan === "annual"
                       ? "border-primary dark:border-primary bg-primary/[0.02] ring-1 ring-primary"
                       : "border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 bg-background"
                   }`}
@@ -668,7 +668,7 @@ function SuperRequestsPage() {
                   <div className="flex items-center justify-between mb-1 w-full">
                     <span className="font-semibold text-sm text-foreground flex items-center gap-1.5">
                       <Crown className="h-4 w-4 text-amber-500 shrink-0" />
-                      {lang === "ar" ? "ترخيص مدى الحياة" : "Lifetime Access"}
+                      {lang === "ar" ? "اشتراك سنوي" : "Annual Subscription"}
                     </span>
                     <Badge
                       variant="outline"
@@ -679,8 +679,8 @@ function SuperRequestsPage() {
                   </div>
                   <p className="text-xs text-muted-foreground leading-relaxed">
                     {lang === "ar"
-                      ? "تفعيل كامل مع 6 أشهر دعم فني مضمون للمتجر."
-                      : "One-Time Platform License. Includes 6 months of active technical support guaranteed."}
+                      ? "تفعيل لمدة سنة من تاريخ الموافقة، ويُجدد بعد اعتماد إيصال الدفع."
+                      : "One year from approval, renewable after payment receipt verification."}
                   </p>
                 </button>
 

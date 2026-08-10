@@ -534,7 +534,8 @@ describe("server route security regressions", () => {
       },
       error: null,
     });
-    const secondEq = vi.fn().mockReturnValue({ maybeSingle });
+    const thirdEq = vi.fn().mockReturnValue({ maybeSingle });
+    const secondEq = vi.fn().mockReturnValue({ eq: thirdEq });
     const firstEq = vi.fn().mockReturnValue({ eq: secondEq });
     supabaseAdmin.from.mockReturnValue({ select: vi.fn().mockReturnValue({ eq: firstEq }) });
     const tapFetch = vi.fn();
@@ -547,7 +548,11 @@ describe("server route security regressions", () => {
       request: new Request("https://example.test/api/public/payments/create-tap-charge", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ orderId: "order-1", brandId: "brand-1" }),
+        body: JSON.stringify({
+          orderId: "order-1",
+          brandId: "brand-1",
+          confirmationToken: "confirmation-1",
+        }),
       }),
     });
 
@@ -569,7 +574,8 @@ describe("server route security regressions", () => {
       customers: { name: "Test Buyer", phone: "33333333", email: "buyer@example.test" },
     };
     const fetchOrder = vi.fn().mockResolvedValue({ data: order, error: null });
-    const orderEq2 = vi.fn().mockReturnValue({ maybeSingle: fetchOrder });
+    const orderEq3 = vi.fn().mockReturnValue({ maybeSingle: fetchOrder });
+    const orderEq2 = vi.fn().mockReturnValue({ eq: orderEq3 });
     const orderEq1 = vi.fn().mockReturnValue({ eq: orderEq2 });
 
     const persistSingle = vi.fn().mockResolvedValue({
@@ -606,6 +612,7 @@ describe("server route security regressions", () => {
         body: JSON.stringify({
           orderId: "order-1",
           brandId: "brand-1",
+          confirmationToken: "confirmation-1",
           redirectUrl: "https://attacker.example/collect",
         }),
       });
@@ -630,5 +637,78 @@ describe("server route security regressions", () => {
     );
     expect(tapRequest.redirect.url).not.toContain("attacker.example");
     expect(update).toHaveBeenCalledWith({ payment_gateway_reference: "chg_1" });
+  });
+
+  it("requires the checkout confirmation token before database or gateway access", async () => {
+    const tapFetch = vi.fn();
+    vi.stubGlobal("fetch", tapFetch);
+
+    const response = await handler(
+      CreateTapChargeRoute,
+      "POST",
+    )({
+      request: new Request("https://example.test/api/public/payments/create-tap-charge", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ orderId: "order-1", brandId: "brand-1" }),
+      }),
+    });
+
+    expect(response.status).toBe(400);
+    expect(await response.json()).toMatchObject({ code: "PAYMENT_REQUEST_INVALID" });
+    expect(supabaseAdmin.from).not.toHaveBeenCalled();
+    expect(supabaseAdmin.rpc).not.toHaveBeenCalled();
+    expect(tapFetch).not.toHaveBeenCalled();
+  });
+
+  it("rejects cross-site browser requests before database or gateway access", async () => {
+    const response = await handler(
+      CreateTapChargeRoute,
+      "POST",
+    )({
+      request: new Request("https://example.test/api/public/payments/create-tap-charge", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Origin: "https://attacker.example",
+          "Sec-Fetch-Site": "cross-site",
+        },
+        body: JSON.stringify({
+          orderId: "order-1",
+          brandId: "brand-1",
+          confirmationToken: "confirmation-1",
+        }),
+      }),
+    });
+
+    expect(response.status).toBe(403);
+    expect(await response.json()).toMatchObject({ code: "PAYMENT_ORIGIN_FORBIDDEN" });
+    expect(supabaseAdmin.from).not.toHaveBeenCalled();
+  });
+
+  it("does not expose thrown internal error details", async () => {
+    supabaseAdmin.from.mockImplementation(() => {
+      throw new Error("database-secret-detail");
+    });
+
+    const response = await handler(
+      CreateTapChargeRoute,
+      "POST",
+    )({
+      request: new Request("https://example.test/api/public/payments/create-tap-charge", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          orderId: "order-1",
+          brandId: "brand-1",
+          confirmationToken: "confirmation-1",
+        }),
+      }),
+    });
+
+    const body = await response.text();
+    expect(response.status).toBe(500);
+    expect(body).toContain("PAYMENT_INTERNAL_ERROR");
+    expect(body).not.toContain("database-secret-detail");
   });
 });

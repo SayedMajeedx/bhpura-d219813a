@@ -697,7 +697,7 @@ function Checkout() {
             body: JSON.stringify({
               orderId: String(orderId),
               brandId: brand.id,
-              redirectUrl: `${window.location.origin}/api/public/payments/tap-redirect?order_id=${orderId}&brand_id=${brand.id}`,
+              confirmationToken,
             }),
           });
 

@@ -45,11 +45,6 @@
       "count": 8
     }
   },
-  "src/lib/onboarding.functions.ts": {
-    "no-empty": {
-      "count": 3
-    }
-  },
   "src/lib/r2-stream.server.ts": {
     "no-empty": {
       "count": 1

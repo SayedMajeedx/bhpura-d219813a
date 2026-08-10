@@ -14,7 +14,7 @@ export type Brand = {
   payment_receipt_url?: string | null;
   payment_receipt_uploaded_at?: string | null;
   custom_domain?: string | null;
-  plan_type?: "lifetime" | "trial" | null;
+  plan_type?: "annual" | "lifetime" | "trial" | null;
   trial_ends_at?: string | null;
   created_at?: string;
 };

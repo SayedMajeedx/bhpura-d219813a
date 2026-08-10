@@ -18,6 +18,21 @@ export const Route = createFileRoute("/$slug/auth")({
   component: StorefrontAuth,
 });
 
+export function safeStorefrontRedirect(redirect: string | undefined, slug: string) {
+  if (!redirect) return undefined;
+  const expectedPrefix = `/${slug}`;
+  if (
+    redirect.includes("\\") ||
+    redirect.startsWith("//") ||
+    !redirect.startsWith(expectedPrefix) ||
+    (redirect.length > expectedPrefix.length && redirect[expectedPrefix.length] !== "/") ||
+    redirect.includes("/auth")
+  ) {
+    return undefined;
+  }
+  return redirect;
+}
+
 function StorefrontAuth() {
   const { brand, settings, t, lang, session, isStoreMember, membershipLoading, refreshMembership } =
     useStorefront();
@@ -25,8 +40,9 @@ function StorefrontAuth() {
   const navigate = useNavigate();
 
   const performRedirect = () => {
-    if (redirect && !redirect.includes("/auth")) {
-      void navigate({ to: redirect as any });
+    const safeRedirect = safeStorefrontRedirect(redirect, brand.slug);
+    if (safeRedirect) {
+      void navigate({ to: safeRedirect as any });
     } else {
       navigate({ to: "/$slug", params: { slug: brand.slug } });
     }
@@ -63,8 +79,9 @@ function StorefrontAuth() {
   useEffect(() => {
     if (membershipLoading || !session) return;
     if (isStoreMember) {
-      if (redirect && !redirect.includes("/auth")) {
-        void navigate({ to: redirect as any, replace: true });
+      const safeRedirect = safeStorefrontRedirect(redirect, brand.slug);
+      if (safeRedirect) {
+        void navigate({ to: safeRedirect as any, replace: true });
       } else {
         navigate({ to: "/$slug", params: { slug: brand.slug }, replace: true });
       }

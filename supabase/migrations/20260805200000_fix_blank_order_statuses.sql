@@ -107,44 +107,73 @@ BEGIN
 END;
 $function$;
 
--- Abandoned Payment Expiration
-CREATE OR REPLACE FUNCTION public.expire_abandoned_initiated_tap_orders()
-RETURNS integer
+-- Apply a Tap status only after the Worker has fetched the charge directly
+-- from Tap. The row lock and expected reference make redirect/webhook/cron
+-- races idempotent. Unknown or non-terminal statuses leave the order reserved.
+DROP FUNCTION IF EXISTS public.expire_abandoned_initiated_tap_orders();
+
+CREATE OR REPLACE FUNCTION public.reconcile_verified_tap_order(
+  p_order_id uuid,
+  p_brand_id uuid,
+  p_charge_id text,
+  p_verified_status text
+)
+RETURNS boolean
 LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path TO 'public'
 AS $$
 DECLARE
-    v_cancelled_count integer := 0;
-    v_order RECORD;
+  v_order public.orders%ROWTYPE;
+  v_status text := upper(trim(COALESCE(p_verified_status, '')));
 BEGIN
-    FOR v_order IN
-        SELECT id, brand_id, user_id, payment_gateway_reference, status, payment_status, stock_deducted
-        FROM public.orders
-        WHERE lower(trim(COALESCE(payment_method, ''))) IN ('card', 'tap', 'creimax', 'credit', 'credit_card', 'debit_card')
-          AND lower(trim(COALESCE(payment_status, ''))) = 'unpaid'
-          AND payment_gateway_reference IS NOT NULL
-          AND created_at < (NOW() - INTERVAL '30 minutes')
-          AND status NOT IN ('cancelled', 'completed', 'shipped', 'delivered', 'returned')
-    LOOP
-        -- Cancel the order and transition to failed
-        -- The trigger release_card_stock_on_terminal_payment will catch this and release stock + log
-        UPDATE public.orders
-        SET payment_status = 'failed',
-            notes = COALESCE(notes || e'\n', '') || 'Automatically cancelled due to payment expiration'
-        WHERE id = v_order.id;
+  IF v_status NOT IN (
+    'CAPTURED', 'SUCCESS', 'ABANDONED', 'CANCELLED', 'DECLINED',
+    'FAILED', 'RESTRICTED', 'TIMEDOUT', 'VOID'
+  ) THEN
+    RETURN false;
+  END IF;
 
-        v_cancelled_count := v_cancelled_count + 1;
-    END LOOP;
-    
-    RETURN v_cancelled_count;
+  SELECT * INTO v_order
+  FROM public.orders
+  WHERE id = p_order_id
+    AND brand_id = p_brand_id
+  FOR UPDATE;
+
+  IF NOT FOUND
+     OR v_order.payment_gateway_reference IS DISTINCT FROM p_charge_id
+     OR lower(trim(COALESCE(v_order.payment_status, ''))) <> 'unpaid'
+     OR lower(trim(COALESCE(v_order.payment_method, ''))) NOT IN (
+       'card', 'tap', 'creimax', 'credit', 'credit_card', 'debit_card',
+       'apple_pay', 'google_pay'
+     ) THEN
+    RETURN false;
+  END IF;
+
+  IF v_status IN ('CAPTURED', 'SUCCESS') THEN
+    UPDATE public.orders
+    SET payment_status = 'paid', status = 'confirmed'
+    WHERE id = v_order.id;
+  ELSE
+    -- release_card_stock_on_terminal_payment performs the stock release and
+    -- cancellation in the same transaction and logs the terminal transition.
+    UPDATE public.orders
+    SET payment_status = CASE WHEN v_status = 'DECLINED' THEN 'declined' ELSE 'failed' END,
+        notes = COALESCE(notes || e'\n', '') ||
+          'Tap status verified by scheduled reconciliation: ' || v_status
+    WHERE id = v_order.id;
+  END IF;
+
+  RETURN true;
 END;
 $$;
 
-REVOKE ALL ON FUNCTION public.expire_abandoned_initiated_tap_orders() FROM PUBLIC, anon, authenticated;
-GRANT EXECUTE ON FUNCTION public.expire_abandoned_initiated_tap_orders() TO service_role;
+REVOKE ALL ON FUNCTION public.reconcile_verified_tap_order(uuid, uuid, text, text)
+  FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.reconcile_verified_tap_order(uuid, uuid, text, text)
+  TO service_role;
 
-COMMENT ON FUNCTION public.expire_abandoned_initiated_tap_orders() IS
-  'Finds TAP orders created > 30 mins ago still unpaid, cancels them, and logs activity. Stock release is handled by release_card_stock_on_terminal_payment trigger.';
+COMMENT ON FUNCTION public.reconcile_verified_tap_order(uuid, uuid, text, text) IS
+  'Atomically applies a status already verified against Tap by the scheduled Worker; rejects stale, mismatched, non-terminal, and replayed transitions.';
 
 NOTIFY pgrst, 'reload schema';

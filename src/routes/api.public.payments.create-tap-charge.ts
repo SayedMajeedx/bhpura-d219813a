@@ -2,6 +2,31 @@ import { createFileRoute } from "@tanstack/react-router";
 
 const TAP_IDEMPOTENCY_MAX_LENGTH = 50;
 
+function jsonError(status: number, code: string, error: string): Response {
+  return Response.json({ code, error }, { status });
+}
+
+function isSameOriginBrowserRequest(request: Request): boolean {
+  const origin = request.headers.get("origin");
+  const fetchSite = request.headers.get("sec-fetch-site");
+  if (fetchSite === "cross-site") return false;
+  if (!origin) return true;
+
+  try {
+    return new URL(origin).origin === new URL(request.url).origin;
+  } catch {
+    return false;
+  }
+}
+
+function logPaymentError(
+  event: string,
+  requestId: string,
+  details: Record<string, string | number | boolean | null | undefined> = {},
+): void {
+  console.error(JSON.stringify({ event, requestId, ...details }));
+}
+
 /**
  * Tap reuses a charge only when retries carry the same idempotent reference.
  * Hash the tenant + checkout identity into a compact reference while retaining
@@ -28,36 +53,28 @@ export const Route = createFileRoute("/api/public/payments/create-tap-charge")({
           const body = await request.json<{
             orderId?: string;
             brandId?: string;
+            confirmationToken?: string;
           }>();
-          const { orderId, brandId } = body;
+          const { orderId, brandId, confirmationToken } = body;
+          const requestId = crypto.randomUUID();
 
-          if (!orderId || !brandId) {
-            return new Response(JSON.stringify({ error: "Missing orderId or brandId" }), {
-              status: 400,
-              headers: { "Content-Type": "application/json" },
-            });
+          if (!isSameOriginBrowserRequest(request)) {
+            return jsonError(403, "PAYMENT_ORIGIN_FORBIDDEN", "Payment request was rejected.");
+          }
+
+          if (!orderId || !brandId || !confirmationToken) {
+            return jsonError(
+              400,
+              "PAYMENT_REQUEST_INVALID",
+              "Payment request is missing required information.",
+            );
           }
 
           // Dynamically load supabaseAdmin server-only module
           const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-          // 1. Fetch Tap credentials
-          const { data: credentialRows, error: credError } = await (supabaseAdmin.rpc as any)(
-            "get_integration_credential_secret",
-            { p_brand_id: brandId, p_provider: "tap" },
-          );
-          const credential = credentialRows?.[0];
-
-          if (credError || !credential || !credential.api_key) {
-            return new Response(
-              JSON.stringify({
-                error: "Tap Payments integration is not configured or active for this brand.",
-              }),
-              { status: 400, headers: { "Content-Type": "application/json" } },
-            );
-          }
-
-          // 2. Fetch Order and customer details
+          // Bind the public request to the unguessable token returned only when this
+          // checkout created the order. A leaked order UUID is not sufficient.
           const { data: orderResult, error: orderError } = await supabaseAdmin
             .from("orders")
             .select(
@@ -83,15 +100,33 @@ export const Route = createFileRoute("/api/public/payments/create-tap-charge")({
             )
             .eq("id", orderId)
             .eq("brand_id", brandId)
+            .eq("confirmation_email_token", confirmationToken)
             .maybeSingle();
 
           const order = orderResult as any;
           if (orderError || !order) {
-            console.error("[Tap Charge order fetch error]:", orderError);
-            return new Response(JSON.stringify({ error: "Order not found" }), {
-              status: 404,
-              headers: { "Content-Type": "application/json" },
+            logPaymentError("tap_charge_order_authorization_failed", requestId, {
+              hasDatabaseError: Boolean(orderError),
             });
+            return jsonError(404, "PAYMENT_ORDER_NOT_FOUND", "Payment order was not found.");
+          }
+
+          const { data: credentialRows, error: credError } = await (supabaseAdmin.rpc as any)(
+            "get_integration_credential_secret",
+            { p_brand_id: brandId, p_provider: "tap" },
+          );
+          const credential = credentialRows?.[0];
+
+          if (credError || !credential || !credential.api_key) {
+            logPaymentError("tap_charge_credentials_unavailable", requestId, {
+              brandId,
+              hasDatabaseError: Boolean(credError),
+            });
+            return jsonError(
+              503,
+              "PAYMENT_GATEWAY_UNAVAILABLE",
+              "Card payment is temporarily unavailable. Please try again.",
+            );
           }
 
           const paymentMethod = String(order.payment_method || "").toLowerCase();
@@ -242,13 +277,15 @@ export const Route = createFileRoute("/api/public/payments/create-tap-charge")({
           });
 
           if (!tapRes.ok) {
-            const errText = await tapRes.text();
-            console.error("[Tap Charge Error Payload]:", errText);
-            return new Response(
-              JSON.stringify({
-                error: `Tap API error: ${errText}`,
-              }),
-              { status: 400, headers: { "Content-Type": "application/json" } },
+            logPaymentError("tap_charge_gateway_rejected", requestId, {
+              brandId,
+              orderId,
+              gatewayStatus: tapRes.status,
+            });
+            return jsonError(
+              502,
+              "PAYMENT_GATEWAY_REJECTED",
+              "The payment gateway could not start this payment. Please try again.",
             );
           }
 
@@ -282,11 +319,15 @@ export const Route = createFileRoute("/api/public/payments/create-tap-charge")({
             .maybeSingle();
 
           if (storeError) {
-            console.error("[Tap Charge reference persistence error]:", storeError);
-            return new Response(JSON.stringify({ error: "Unable to persist payment attempt." }), {
-              status: 500,
-              headers: { "Content-Type": "application/json" },
+            logPaymentError("tap_charge_reference_persistence_failed", requestId, {
+              brandId,
+              orderId,
             });
+            return jsonError(
+              500,
+              "PAYMENT_REFERENCE_SAVE_FAILED",
+              "Payment could not be initialized safely. Please contact support.",
+            );
           }
 
           if (!storedOrder) {
@@ -309,12 +350,18 @@ export const Route = createFileRoute("/api/public/payments/create-tap-charge")({
             status: 200,
             headers: { "Content-Type": "application/json" },
           });
-        } catch (err: any) {
-          console.error("[create-tap-charge crash]:", err);
-          return new Response(JSON.stringify({ error: err.message }), {
-            status: 500,
-            headers: { "Content-Type": "application/json" },
-          });
+        } catch (err: unknown) {
+          console.error(
+            JSON.stringify({
+              event: "tap_charge_unhandled_error",
+              errorType: err instanceof Error ? err.name : "UnknownError",
+            }),
+          );
+          return jsonError(
+            500,
+            "PAYMENT_INTERNAL_ERROR",
+            "Payment could not be started. Please try again.",
+          );
         }
       },
     },

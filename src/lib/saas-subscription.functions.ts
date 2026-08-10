@@ -11,6 +11,11 @@ const imageTypes: Record<string, string> = {
 const CreateUploadInput = z.object({
   brandId: z.string().uuid(),
   contentType: z.enum(["image/jpeg", "image/png", "image/webp"]),
+  size: z
+    .number()
+    .int()
+    .positive()
+    .max(5 * 1024 * 1024),
 });
 
 const SubmitReceiptInput = z.object({
@@ -20,8 +25,7 @@ const SubmitReceiptInput = z.object({
 
 const AdminReviewInput = z.object({
   brandId: z.string().uuid(),
-  tier: z.enum(["basic", "growth", "enterprise"]),
-  months: z.number().int().min(1).max(36),
+  tier: z.enum(["basic", "growth", "enterprise"]).default("basic"),
 });
 
 const AdminRejectInput = z.object({
@@ -38,6 +42,9 @@ export const getSubscriptionReceiptUploadUrl = createServerFn({ method: "POST" }
       _brand_id: data.brandId,
     });
     if (!hasAccess) throw new Error("UNAUTHORIZED_BRAND_ACCESS");
+
+    const { enforceMutationSafeguard } = await import("@/lib/impersonation.server");
+    await enforceMutationSafeguard(context.supabase, context.userId, data.brandId);
 
     const { createPrivateUploadUrl } = await import("@/lib/private-r2.server");
     const receiptId = crypto.randomUUID();
@@ -60,8 +67,13 @@ export const submitSubscriptionReceipt = createServerFn({ method: "POST" })
 
     // Inspect private R2 object to verify the merchant actually uploaded it
     const { inspectPrivateObject } = await import("@/lib/private-r2.server");
+    if (!data.objectKey.startsWith(`brands/${data.brandId}/subscription-receipts/`)) {
+      throw new Error("INVALID_RECEIPT_KEY");
+    }
     const head = await inspectPrivateObject(data.objectKey);
-    if (!head.ContentLength) throw new Error("RECEIPT_FILE_NOT_FOUND_IN_STORAGE");
+    if (!head.ContentLength || head.ContentLength > 5 * 1024 * 1024) {
+      throw new Error("RECEIPT_FILE_INVALID");
+    }
 
     // Update brands table
     const { error } = await context.supabase
@@ -83,14 +95,8 @@ export const getSubscriptionReceiptViewUrl = createServerFn({ method: "POST" })
   .validator((raw: unknown) => z.object({ objectKey: z.string() }).parse(raw))
   .handler(async ({ data, context }) => {
     // Restrict access ONLY to super admins
-    const { data: isSuperAdmin } = await context.supabase.rpc("is_admin");
-    const {
-      data: { user },
-    } = await context.supabase.auth.getUser();
-    const email = (user?.email || "").toLowerCase();
-    const isFixedSuperAdmin = email === "majeed@hotmail.it";
-
-    if (!isSuperAdmin && !isFixedSuperAdmin) {
+    const { data: isSuperAdmin } = await context.supabase.rpc("is_super_admin");
+    if (!isSuperAdmin) {
       throw new Error("UNAUTHORIZED_SUPER_ADMIN_ONLY");
     }
 
@@ -104,24 +110,22 @@ export const approveSubscriptionSaaS = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .validator((raw: unknown) => AdminReviewInput.parse(raw))
   .handler(async ({ data, context }) => {
-    const { data: isSuperAdmin } = await context.supabase.rpc("is_admin");
-    const {
-      data: { user },
-    } = await context.supabase.auth.getUser();
-    const email = (user?.email || "").toLowerCase();
-    const isFixedSuperAdmin = email === "majeed@hotmail.it";
-
-    if (!isSuperAdmin && !isFixedSuperAdmin) {
+    const { data: isSuperAdmin } = await context.supabase.rpc("is_super_admin");
+    if (!isSuperAdmin) {
       throw new Error("UNAUTHORIZED_SUPER_ADMIN_ONLY");
     }
 
     const { data: brand } = await context.supabase
       .from("brands")
-      .select("subscription_expires_at")
+      .select("slug, plan_type, subscription_expires_at, payment_receipt_url")
       .eq("id", data.brandId)
       .maybeSingle();
 
     if (!brand) throw new Error("BRAND_NOT_FOUND");
+    if (brand.slug.toLowerCase() === "pura" || brand.plan_type === "lifetime") {
+      throw new Error("PERMANENT_PROJECT_DOES_NOT_REQUIRE_RENEWAL");
+    }
+    if (!brand.payment_receipt_url) throw new Error("PAYMENT_RECEIPT_REQUIRED");
 
     // Calculate new expiration date
     let baseDate = new Date();
@@ -133,7 +137,7 @@ export const approveSubscriptionSaaS = createServerFn({ method: "POST" })
       baseDate = new Date(brand.subscription_expires_at);
     }
 
-    baseDate.setDate(baseDate.getDate() + 30 * data.months);
+    baseDate.setFullYear(baseDate.getFullYear() + 1);
     const newExpiresAt = baseDate.toISOString();
 
     const { error } = await context.supabase
@@ -141,6 +145,7 @@ export const approveSubscriptionSaaS = createServerFn({ method: "POST" })
       .update({
         subscription_tier: data.tier,
         subscription_status: "active",
+        plan_type: "annual",
         subscription_expires_at: newExpiresAt,
         payment_receipt_url: null, // Processed
         payment_receipt_uploaded_at: null,
@@ -156,20 +161,14 @@ export const rejectSubscriptionSaaS = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .validator((raw: unknown) => AdminRejectInput.parse(raw))
   .handler(async ({ data, context }) => {
-    const { data: isSuperAdmin } = await context.supabase.rpc("is_admin");
-    const {
-      data: { user },
-    } = await context.supabase.auth.getUser();
-    const email = (user?.email || "").toLowerCase();
-    const isFixedSuperAdmin = email === "majeed@hotmail.it";
-
-    if (!isSuperAdmin && !isFixedSuperAdmin) {
+    const { data: isSuperAdmin } = await context.supabase.rpc("is_super_admin");
+    if (!isSuperAdmin) {
       throw new Error("UNAUTHORIZED_SUPER_ADMIN_ONLY");
     }
 
     const { data: brand } = await context.supabase
       .from("brands")
-      .select("payment_receipt_url")
+      .select("payment_receipt_url, subscription_expires_at")
       .eq("id", data.brandId)
       .maybeSingle();
 
@@ -182,10 +181,14 @@ export const rejectSubscriptionSaaS = createServerFn({ method: "POST" })
       }
     }
 
+    const subscriptionStillActive = Boolean(
+      brand?.subscription_expires_at &&
+      new Date(brand.subscription_expires_at).getTime() > Date.now(),
+    );
     const { error } = await context.supabase
       .from("brands")
       .update({
-        subscription_status: "suspended",
+        subscription_status: subscriptionStillActive ? "active" : "suspended",
         payment_receipt_url: null,
         payment_receipt_uploaded_at: null,
       })

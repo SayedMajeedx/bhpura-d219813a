@@ -96,6 +96,8 @@ import {
 import { InventoryToolbar } from "@/components/inventory/InventoryToolbar";
 import { InventoryWorkQueue } from "@/components/inventory/InventoryWorkQueue";
 import { InventoryMobileCard } from "@/components/inventory/InventoryMobileCard";
+import { BulkSelectionToolbar } from "@/components/bulk-selection-toolbar";
+import { ListPagination } from "@/components/list-pagination";
 
 /** Common measurement units the admin can pick from for a "size" variant. */
 const SIZE_UNITS = ["", "cm", "mm", "m", "inch", "ft", "kg", "g", "ml", "l"] as const;
@@ -1442,6 +1444,11 @@ function ProductsSection({
   const [visibilityFilter, setVisibilityFilter] = useState<"all" | "active" | "hidden">("all");
   const [expandedProducts, setExpandedProducts] = useState<Record<string, boolean>>({});
   const [productToDelete, setProductToDelete] = useState<string | null>(null);
+  const [selectedProductIds, setSelectedProductIds] = useState<Set<string>>(new Set());
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
+  const [bulkDeleting, setBulkDeleting] = useState(false);
+  const [pageSize, setPageSize] = useState(10);
+  const [page, setPage] = useState(1);
 
   const toggleProduct = (productId: string) => {
     setExpandedProducts((prev) => ({
@@ -1486,7 +1493,7 @@ function ProductsSection({
 
   const del = async (id: string) => {
     const product = products.find((item) => item.id === id);
-    const { error } = await supabase.from("products").delete().eq("id", id);
+    const { error } = await supabase.from("products").delete().eq("id", id).eq("brand_id", brandId);
     if (error) toast.error(error.message);
     else {
       const urls = new Set(
@@ -1713,6 +1720,77 @@ function ProductsSection({
     productStock,
   ]);
 
+  const filteredProductIds = filteredDisplayProducts.map((product) => product.id);
+  const inventoryTotalPages = Math.max(1, Math.ceil(filteredDisplayProducts.length / pageSize));
+  const safeInventoryPage = Math.min(page, inventoryTotalPages);
+  const paginatedProducts = filteredDisplayProducts.slice(
+    (safeInventoryPage - 1) * pageSize,
+    safeInventoryPage * pageSize,
+  );
+  const paginatedProductIds = paginatedProducts.map((product) => product.id);
+  useEffect(() => {
+    setPage(1);
+  }, [search, selectedCategory, scopeFilter, sortBy, pageSize]);
+  useEffect(() => {
+    if (page > inventoryTotalPages) setPage(inventoryTotalPages);
+  }, [page, inventoryTotalPages]);
+  const allFilteredProductsSelected =
+    filteredProductIds.length > 0 && filteredProductIds.every((id) => selectedProductIds.has(id));
+  const toggleSelectedProduct = (productId: string) =>
+    setSelectedProductIds((current) => {
+      const next = new Set(current);
+      if (next.has(productId)) next.delete(productId);
+      else next.add(productId);
+      return next;
+    });
+  const toggleVisibleProducts = () =>
+    setSelectedProductIds((current) => {
+      const next = new Set(current);
+      if (paginatedProductIds.every((id) => next.has(id))) {
+        paginatedProductIds.forEach((id) => next.delete(id));
+      } else {
+        paginatedProductIds.forEach((id) => next.add(id));
+      }
+      return next;
+    });
+  const deleteSelectedProducts = async () => {
+    const ids = [...selectedProductIds];
+    if (ids.length === 0) return;
+    const selectedProducts = products.filter((product) => selectedProductIds.has(product.id));
+    setBulkDeleting(true);
+    try {
+      const { error } = await supabase
+        .from("products")
+        .delete()
+        .eq("brand_id", brandId)
+        .in("id", ids);
+      if (error) throw error;
+      const mediaUrls = new Set(
+        selectedProducts
+          .flatMap((product) => [
+            product.image_url,
+            ...(product.media ?? []).map((item) => item.url),
+          ])
+          .filter((url): url is string => Boolean(url)),
+      );
+      for (const url of mediaUrls) void deletePublicMediaUrl(brandId, url).catch(() => undefined);
+      toast.success(isAr ? `تم حذف ${ids.length} منتج` : `${ids.length} products deleted`);
+      setSelectedProductIds(new Set());
+      setBulkDeleteOpen(false);
+      onChanged();
+    } catch (error) {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : isAr
+            ? "تعذر حذف المنتجات"
+            : "Could not delete products",
+      );
+    } finally {
+      setBulkDeleting(false);
+    }
+  };
+
   const activeFilterCount = (selectedCategory !== "all" ? 1 : 0) + (search ? 1 : 0);
 
   return (
@@ -1770,9 +1848,27 @@ function ProductsSection({
         }}
       />
 
+      <BulkSelectionToolbar
+        lang={isAr ? "ar" : "en"}
+        entityAr="منتج"
+        entityEn="products"
+        selectedCount={selectedProductIds.size}
+        allFilteredSelected={allFilteredProductsSelected}
+        disabled={bulkDeleting || filteredDisplayProducts.length === 0}
+        onSelectAll={() =>
+          setSelectedProductIds((current) => {
+            const next = new Set(current);
+            filteredProductIds.forEach((id) => next.add(id));
+            return next;
+          })
+        }
+        onDeselectAll={() => setSelectedProductIds(new Set())}
+        onDeleteSelected={() => setBulkDeleteOpen(true)}
+      />
+
       {/* 4. Mobile Purpose-Built Product Cards */}
       <div className="space-y-3 block sm:hidden">
-        {filteredDisplayProducts.map((p) => {
+        {paginatedProducts.map((p) => {
           const pVariants = variantsByProduct[p.id] || [];
           const totalStock = productStock(p.id);
           const minPrice =
@@ -1820,6 +1916,8 @@ function ProductsSection({
                   product={prod}
                 />
               )}
+              selected={selectedProductIds.has(p.id)}
+              onToggleSelected={toggleSelectedProduct}
             />
           );
         })}
@@ -1829,7 +1927,7 @@ function ProductsSection({
       <div className="hidden sm:block">
         <InventoryWorkQueue
           lang={isAr ? "ar" : "en"}
-          products={filteredDisplayProducts}
+          products={paginatedProducts}
           variantsByProduct={variantsByProduct}
           isLoading={false}
           isError={false}
@@ -1864,8 +1962,63 @@ function ProductsSection({
               product={prod}
             />
           )}
+          selectedProductIds={selectedProductIds}
+          onToggleProduct={toggleSelectedProduct}
+          onToggleAll={toggleVisibleProducts}
         />
       </div>
+
+      <ListPagination
+        lang={isAr ? "ar" : "en"}
+        entityAr="منتج"
+        entityEn="Products"
+        totalItems={filteredDisplayProducts.length}
+        page={safeInventoryPage}
+        pageSize={pageSize}
+        onPageChange={setPage}
+        onPageSizeChange={(size) => {
+          setPageSize(size);
+          setPage(1);
+        }}
+      />
+
+      <AlertDialog open={bulkDeleteOpen} onOpenChange={setBulkDeleteOpen}>
+        <AlertDialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-lg">
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {isAr
+                ? `حذف ${selectedProductIds.size} منتج؟`
+                : `Delete ${selectedProductIds.size} products?`}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {isAr
+                ? "سيتم حذف المنتجات المحددة ومتغيراتها ومخزونها نهائياً. لا يمكن التراجع عن هذا الإجراء."
+                : "The selected products, their variants, and inventory will be permanently deleted. This cannot be undone."}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={bulkDeleting}>
+              {isAr ? "إلغاء" : "Cancel"}
+            </AlertDialogCancel>
+            <AlertDialogAction
+              disabled={bulkDeleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={(event) => {
+                event.preventDefault();
+                void deleteSelectedProducts();
+              }}
+            >
+              {bulkDeleting
+                ? isAr
+                  ? "جاري الحذف..."
+                  : "Deleting..."
+                : isAr
+                  ? "تأكيد الحذف"
+                  : "Confirm delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <AlertDialog
         open={!!productToDelete}

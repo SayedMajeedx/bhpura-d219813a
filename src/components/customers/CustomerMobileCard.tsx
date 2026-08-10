@@ -2,6 +2,7 @@ import React from "react";
 import { formatMoney } from "@/lib/format";
 import { Users, Star, Phone, Mail, MapPin, ChevronRight, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 
 interface CustomerMobileCardProps {
   lang: "en" | "ar";
@@ -10,6 +11,8 @@ interface CustomerMobileCardProps {
   stats: any;
   currency: string;
   onSelect: (customerId: string) => void;
+  selected?: boolean;
+  onToggleSelected?: (customerId: string) => void;
 }
 
 export const CustomerMobileCard: React.FC<CustomerMobileCardProps> = ({
@@ -19,6 +22,8 @@ export const CustomerMobileCard: React.FC<CustomerMobileCardProps> = ({
   stats,
   currency,
   onSelect,
+  selected = false,
+  onToggleSelected = () => undefined,
 }) => {
   const isAr = lang === "ar";
   const regionText = defaultAddress?.region || customer.region || customer.city || "";
@@ -35,6 +40,13 @@ export const CustomerMobileCard: React.FC<CustomerMobileCardProps> = ({
       className="p-3.5 rounded-xl bg-card border border-border/60 shadow-2xs space-y-2.5 cursor-pointer hover:border-primary/40 focus-visible:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 transition-all"
     >
       <div className="flex items-start justify-between gap-3">
+        <div onClick={(event) => event.stopPropagation()}>
+          <Checkbox
+            checked={selected}
+            onCheckedChange={() => onToggleSelected(customer.id)}
+            aria-label={isAr ? `تحديد العميل ${customer.name}` : `Select customer ${customer.name}`}
+          />
+        </div>
         <div className="flex items-center gap-3 min-w-0">
           <div className="h-10 w-10 rounded-full bg-primary/10 text-primary border border-primary/20 flex items-center justify-center font-bold text-sm shrink-0">
             {customer.name ? customer.name.charAt(0).toUpperCase() : "C"}

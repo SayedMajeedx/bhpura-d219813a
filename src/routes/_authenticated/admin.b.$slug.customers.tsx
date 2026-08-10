@@ -73,6 +73,8 @@ import { CustomersToolbar } from "@/components/customers/CustomersToolbar";
 import { CustomersWorkQueue } from "@/components/customers/CustomersWorkQueue";
 import { CustomerMobileCard } from "@/components/customers/CustomerMobileCard";
 import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
+import { BulkSelectionToolbar } from "@/components/bulk-selection-toolbar";
+import { ListPagination } from "@/components/list-pagination";
 
 export const Route = createFileRoute("/_authenticated/admin/b/$slug/customers")({
   component: CustomersRoute,
@@ -847,6 +849,9 @@ function CustomersPage() {
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const [customerToDelete, setCustomerToDelete] = useState<Customer | null>(null);
+  const [selectedCustomerIds, setSelectedCustomerIds] = useState<Set<string>>(new Set());
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
+  const [bulkDeleting, setBulkDeleting] = useState(false);
 
   // Feature 7: Context-preserving return navigation for Customers
   const savedContext = getNavFilterContext("customers");
@@ -925,7 +930,11 @@ function CustomersPage() {
   const customerCrmStats = useMemo(() => buildCustomerCrmStats(ordersQ.data ?? []), [ordersQ.data]);
 
   const del = async (id: string) => {
-    const { error } = await supabase.from("customers").delete().eq("id", id);
+    const { error } = await supabase
+      .from("customers")
+      .delete()
+      .eq("id", id)
+      .eq("brand_id", brandId);
     if (error) toast.error(error.message);
     else {
       toast.success(t("common.delete"));
@@ -972,6 +981,68 @@ function CustomersPage() {
 
     return matchesSearch && matchesRegion && matchesScope;
   });
+
+  const filteredCustomerIds = filteredCustomers.map((customer) => customer.id);
+  const customerTotalPages = Math.max(1, Math.ceil(filteredCustomers.length / rowsPerPage));
+  const safeCustomerPage = Math.min(page, customerTotalPages);
+  const paginatedCustomers = filteredCustomers.slice(
+    (safeCustomerPage - 1) * rowsPerPage,
+    safeCustomerPage * rowsPerPage,
+  );
+  const paginatedCustomerIds = paginatedCustomers.map((customer) => customer.id);
+  useEffect(() => {
+    setPage(1);
+  }, [search, regionFilter, segmentScope, rowsPerPage]);
+  useEffect(() => {
+    if (page > customerTotalPages) setPage(customerTotalPages);
+  }, [page, customerTotalPages]);
+  const allFilteredCustomersSelected =
+    filteredCustomerIds.length > 0 &&
+    filteredCustomerIds.every((id) => selectedCustomerIds.has(id));
+  const toggleCustomer = (customerId: string) =>
+    setSelectedCustomerIds((current) => {
+      const next = new Set(current);
+      if (next.has(customerId)) next.delete(customerId);
+      else next.add(customerId);
+      return next;
+    });
+  const toggleVisibleCustomers = () =>
+    setSelectedCustomerIds((current) => {
+      const next = new Set(current);
+      if (paginatedCustomerIds.every((id) => next.has(id))) {
+        paginatedCustomerIds.forEach((id) => next.delete(id));
+      } else {
+        paginatedCustomerIds.forEach((id) => next.add(id));
+      }
+      return next;
+    });
+  const deleteSelectedCustomers = async () => {
+    const ids = [...selectedCustomerIds];
+    if (ids.length === 0) return;
+    setBulkDeleting(true);
+    try {
+      const { error } = await supabase
+        .from("customers")
+        .delete()
+        .eq("brand_id", brandId)
+        .in("id", ids);
+      if (error) throw error;
+      toast.success(isAr ? `تم حذف ${ids.length} عميل` : `${ids.length} customers deleted`);
+      setSelectedCustomerIds(new Set());
+      setBulkDeleteOpen(false);
+      await qc.invalidateQueries({ queryKey: ["customers", brandId] });
+    } catch (error) {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : isAr
+            ? "تعذر حذف العملاء"
+            : "Could not delete customers",
+      );
+    } finally {
+      setBulkDeleting(false);
+    }
+  };
 
   return (
     <div className="space-y-3.5">
@@ -1024,9 +1095,27 @@ function CustomersPage() {
         }}
       />
 
+      <BulkSelectionToolbar
+        lang={isAr ? "ar" : "en"}
+        entityAr="عميل"
+        entityEn="customers"
+        selectedCount={selectedCustomerIds.size}
+        allFilteredSelected={allFilteredCustomersSelected}
+        disabled={bulkDeleting || filteredCustomers.length === 0}
+        onSelectAll={() =>
+          setSelectedCustomerIds((current) => {
+            const next = new Set(current);
+            filteredCustomerIds.forEach((id) => next.add(id));
+            return next;
+          })
+        }
+        onDeselectAll={() => setSelectedCustomerIds(new Set())}
+        onDeleteSelected={() => setBulkDeleteOpen(true)}
+      />
+
       {/* 4. Mobile Cards View */}
       <div className="space-y-3 block sm:hidden">
-        {filteredCustomers.map((c) => {
+        {paginatedCustomers.map((c) => {
           const def = defaultByCustomer.get(c.id);
           const stats = customerCrmStats.get(c.id) || {
             totalOrders: 0,
@@ -1049,6 +1138,8 @@ function CustomersPage() {
                   params: { slug, customerId },
                 })
               }
+              selected={selectedCustomerIds.has(c.id)}
+              onToggleSelected={toggleCustomer}
             />
           );
         })}
@@ -1058,7 +1149,7 @@ function CustomersPage() {
       <div className="hidden sm:block">
         <CustomersWorkQueue
           lang={isAr ? "ar" : "en"}
-          customers={filteredCustomers}
+          customers={paginatedCustomers}
           defaultByCustomer={defaultByCustomer}
           customerCrmStats={customerCrmStats}
           currency={currency}
@@ -1071,8 +1162,63 @@ function CustomersPage() {
             })
           }
           onDeleteCustomer={(c) => setCustomerToDelete(c)}
+          selectedCustomerIds={selectedCustomerIds}
+          onToggleCustomer={toggleCustomer}
+          onToggleAll={toggleVisibleCustomers}
         />
       </div>
+
+      <ListPagination
+        lang={isAr ? "ar" : "en"}
+        entityAr="عميل"
+        entityEn="Customers"
+        totalItems={filteredCustomers.length}
+        page={safeCustomerPage}
+        pageSize={rowsPerPage}
+        onPageChange={setPage}
+        onPageSizeChange={(size) => {
+          setRowsPerPage(size);
+          setPage(1);
+        }}
+      />
+
+      <AlertDialog open={bulkDeleteOpen} onOpenChange={setBulkDeleteOpen}>
+        <AlertDialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-lg">
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {isAr
+                ? `حذف ${selectedCustomerIds.size} عميل؟`
+                : `Delete ${selectedCustomerIds.size} customers?`}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {isAr
+                ? "سيتم حذف العملاء المحددين نهائياً. تبقى الطلبات والفواتير التاريخية محفوظة بسجلاتها الحالية، ولا يمكن التراجع عن الحذف."
+                : "The selected customers will be permanently deleted. Historical orders and invoices remain preserved with their current records. This cannot be undone."}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={bulkDeleting}>
+              {isAr ? "إلغاء" : "Cancel"}
+            </AlertDialogCancel>
+            <AlertDialogAction
+              disabled={bulkDeleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={(event) => {
+                event.preventDefault();
+                void deleteSelectedCustomers();
+              }}
+            >
+              {bulkDeleting
+                ? isAr
+                  ? "جاري الحذف..."
+                  : "Deleting..."
+                : isAr
+                  ? "تأكيد الحذف"
+                  : "Confirm delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <AlertDialog
         open={!!customerToDelete}

@@ -126,7 +126,7 @@ export const Route = createFileRoute("/api/public/webhooks/tap")({
 
             if (updateError) {
               console.error("[Tap Webhook Update Error]:", updateError);
-              return new Response(`Database update error: ${updateError.message}`, { status: 500 });
+              return new Response("Payment update failed.", { status: 500 });
             }
 
             const { error: stockError } = await supabaseAdmin.rpc("sync_order_stock", {
@@ -134,7 +134,7 @@ export const Route = createFileRoute("/api/public/webhooks/tap")({
             });
             if (stockError) {
               console.error("[Tap Webhook Stock Sync Error]:", stockError);
-              return new Response(`Stock reconciliation error: ${stockError.message}`, {
+              return new Response("Stock reconciliation failed.", {
                 status: 500,
               });
             }
@@ -166,7 +166,7 @@ export const Route = createFileRoute("/api/public/webhooks/tap")({
                 .eq("brand_id", brandId);
               if (cancelError) {
                 console.error("[Tap Webhook Cancellation Error]:", cancelError);
-                return new Response(`Order cancellation error: ${cancelError.message}`, {
+                return new Response("Payment status update failed.", {
                   status: 500,
                 });
               }
@@ -176,7 +176,7 @@ export const Route = createFileRoute("/api/public/webhooks/tap")({
               });
               if (stockError) {
                 console.error("[Tap Webhook Stock Release Error]:", stockError);
-                return new Response(`Stock release error: ${stockError.message}`, { status: 500 });
+                return new Response("Stock release failed.", { status: 500 });
               }
             }
           }
@@ -184,7 +184,7 @@ export const Route = createFileRoute("/api/public/webhooks/tap")({
           return new Response("OK", { status: 200 });
         } catch (err: any) {
           console.error("[Tap Webhook Crash]:", err);
-          return new Response(`Webhook Error: ${err.message}`, { status: 500 });
+          return new Response("Webhook processing failed.", { status: 500 });
         }
       },
     },

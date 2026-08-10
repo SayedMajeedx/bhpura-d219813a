@@ -11,6 +11,7 @@ import {
   ChevronUp,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -38,6 +39,9 @@ interface InventoryWorkQueueProps {
   onDelete: (productId: string) => void;
   onPrintLabel: (product: any) => void;
   renderVariantList?: (product: any) => React.ReactNode;
+  selectedProductIds?: ReadonlySet<string>;
+  onToggleProduct?: (productId: string) => void;
+  onToggleAll?: () => void;
 }
 
 export const InventoryWorkQueue: React.FC<InventoryWorkQueueProps> = ({
@@ -50,10 +54,14 @@ export const InventoryWorkQueue: React.FC<InventoryWorkQueueProps> = ({
   onDelete,
   onPrintLabel,
   renderVariantList,
+  selectedProductIds = new Set<string>(),
+  onToggleProduct = () => undefined,
+  onToggleAll = () => undefined,
 }) => {
   const isAr = lang === "ar";
   const [expandedProducts, setExpandedProducts] = useState<Record<string, boolean>>({});
   const [pendingDelete, setPendingDelete] = useState<any | null>(null);
+  const selectedOnPage = products.filter((product) => selectedProductIds.has(product.id)).length;
 
   const toggleExpand = (productId: string) => {
     setExpandedProducts((prev) => ({
@@ -102,6 +110,21 @@ export const InventoryWorkQueue: React.FC<InventoryWorkQueueProps> = ({
           <table className="w-full text-start text-xs border-collapse">
             <thead>
               <tr className="border-b border-border/60 bg-muted/40 font-bold text-muted-foreground uppercase text-[10px] tracking-wider">
+                <th className="p-3 text-center w-12">
+                  <Checkbox
+                    checked={
+                      products.length > 0 && selectedOnPage === products.length
+                        ? true
+                        : selectedOnPage > 0
+                          ? "indeterminate"
+                          : false
+                    }
+                    onCheckedChange={onToggleAll}
+                    aria-label={
+                      isAr ? "تحديد كل المنتجات في الصفحة" : "Select all products on this page"
+                    }
+                  />
+                </th>
                 <th className="p-3 text-start">
                   {isAr ? "اسم المنتج والرمز" : "Product & Identity"}
                 </th>
@@ -139,6 +162,13 @@ export const InventoryWorkQueue: React.FC<InventoryWorkQueueProps> = ({
                       className="hover:bg-muted/30 transition-colors group cursor-pointer"
                       onClick={() => toggleExpand(product.id)}
                     >
+                      <td className="p-3 text-center" onClick={(event) => event.stopPropagation()}>
+                        <Checkbox
+                          checked={selectedProductIds.has(product.id)}
+                          onCheckedChange={() => onToggleProduct(product.id)}
+                          aria-label={isAr ? `تحديد المنتج ${name}` : `Select product ${name}`}
+                        />
+                      </td>
                       {/* Product Name & Image */}
                       <td className="p-3 align-middle font-medium">
                         <div className="flex items-center gap-3">
@@ -280,7 +310,7 @@ export const InventoryWorkQueue: React.FC<InventoryWorkQueueProps> = ({
                     {/* Expanded Variant Detail Row */}
                     {isExpanded && renderVariantList && (
                       <tr className="bg-muted/15 border-b border-border/60">
-                        <td colSpan={7} className="p-3 sm:p-4">
+                        <td colSpan={8} className="p-3 sm:p-4">
                           <div
                             className="bg-card rounded-lg border border-border/60 p-3 shadow-2xs"
                             onClick={(e) => e.stopPropagation()}

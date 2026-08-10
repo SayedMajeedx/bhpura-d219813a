@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
-import * as xlsx from "xlsx";
+import writeXlsxFile from "write-excel-file/node";
 
 type ExportParams = {
   reportType: "sales" | "products" | "customers";
@@ -73,13 +73,8 @@ export const generateExportData = createServerFn({ method: "POST" })
     // Sanitize the data
     const sanitizedData = sanitizeData(safeData);
 
-    // Build the workbook
-    const worksheet = xlsx.utils.json_to_sheet(sanitizedData);
-    const workbook = xlsx.utils.book_new();
-    xlsx.utils.book_append_sheet(workbook, worksheet, "Export");
-
     if (format === "csv") {
-      const csvContent = xlsx.utils.sheet_to_csv(worksheet);
+      const csvContent = toCsv(sanitizedData);
       return {
         content: csvContent,
         mimeType: "text/csv",
@@ -87,13 +82,43 @@ export const generateExportData = createServerFn({ method: "POST" })
         isBase64: false,
       };
     } else {
-      // Generate base64 string for XLSX
-      const buffer = xlsx.write(workbook, { type: "base64", bookType: "xlsx" });
+      const buffer = await writeXlsxFile(toSheetData(sanitizedData), {
+        sheet: "Export",
+        stickyRowsCount: 1,
+      }).toBuffer();
       return {
-        content: buffer,
+        content: buffer.toString("base64"),
         mimeType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         extension: "xlsx",
         isBase64: true,
       };
     }
   });
+
+function toSheetData(rows: Record<string, unknown>[]) {
+  const headers = Array.from(new Set(rows.flatMap((row) => Object.keys(row))));
+  return [
+    headers.map((value) => ({ value, fontWeight: "bold" as const })),
+    ...rows.map((row) => headers.map((header) => toCellValue(row[header]))),
+  ];
+}
+
+function toCellValue(value: unknown): string | number | boolean | Date | null {
+  if (value == null) return null;
+  if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
+    return value;
+  }
+  if (value instanceof Date) return value;
+  return JSON.stringify(value);
+}
+
+function toCsv(rows: Record<string, unknown>[]): string {
+  const headers = Array.from(new Set(rows.flatMap((row) => Object.keys(row))));
+  const escape = (value: unknown) => {
+    const text = toCellValue(value)?.toString() ?? "";
+    return /[",\r\n]/.test(text) ? `"${text.replaceAll('"', '""')}"` : text;
+  };
+  return [headers.map(escape), ...rows.map((row) => headers.map((header) => escape(row[header])))]
+    .map((row) => row.join(","))
+    .join("\r\n");
+}

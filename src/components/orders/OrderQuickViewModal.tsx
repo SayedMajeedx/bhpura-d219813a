@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Link } from "@tanstack/react-router";
 import { formatMoney, formatDate } from "@/lib/format";
 import { getOrderCustomerContact } from "@/lib/order-customer-snapshot";
+import { getPaymentGatewayReference } from "@/lib/payment-reference";
 import { OsStatusPill } from "@/components/os/os-status-pill";
 import {
   ExternalLink,
@@ -19,6 +20,8 @@ import {
   Package,
 } from "lucide-react";
 import { useProfile } from "@/lib/profile-context";
+import { getStoredPaymentMethodPresentation } from "@/lib/payment-method";
+import { orderRequiresCourier } from "@/lib/order-fulfillment";
 
 interface OrderQuickViewModalProps {
   lang: "ar" | "en";
@@ -53,25 +56,13 @@ export function OrderQuickViewModal({
   const items = order.order_items || [];
   const totalAmount = Number(order.total ?? order.total_amount ?? order.total_price ?? 0);
   const currency = order.currency || "BHD";
+  const isDelivery = orderRequiresCourier(order);
 
   const assignedCourier = couriers.find(
     (c) => c.id === order.assigned_to || c.user_id === order.assigned_to,
   );
 
-  const paymentMethodLabel =
-    order.payment_method === "benefit_pay" || order.payment_method === "benefit"
-      ? isAr
-        ? "بنفت باي (BenefitPay)"
-        : "BenefitPay"
-      : order.payment_method === "cod" || order.is_cod
-        ? isAr
-          ? "الدفع نقداً عند الاستلام (COD)"
-          : "Cash on Delivery (COD)"
-        : order.payment_method === "tap" || order.payment_method === "card"
-          ? isAr
-            ? "بطاقة ائتمان / Tap"
-            : "Credit Card / Tap"
-          : order.payment_method || (isAr ? "الدفع الإلكتروني" : "Online Payment");
+  const paymentMethodLabel = getStoredPaymentMethodPresentation(order.payment_method, lang).label;
 
   return (
     <Dialog open={!!order} onOpenChange={(open) => !open && onClose()}>
@@ -150,25 +141,27 @@ export function OrderQuickViewModal({
 
           {/* Payment & Courier Metadata Bar */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="p-3.5 rounded-xl bg-muted/40 border border-border/60 space-y-1 text-xs">
-              <div className="flex items-center gap-2 font-bold text-foreground">
-                <CreditCard className="h-4 w-4 text-emerald-500 shrink-0" />
-                <span>{isAr ? "طريقة وحالة الدفع:" : "Payment Method:"}</span>
-              </div>
-              <p className="font-semibold text-primary">{paymentMethodLabel}</p>
-              <p className="text-[11px] text-muted-foreground font-mono">
-                {isAr ? "حالة الدفع: " : "Status: "}
-                {order.payment_status || "pending"}
-              </p>
-              {isAdmin && (order.gateway_reference || order.payment_intent_id || order.tap_id) && (
-                <div className="mt-2 pt-2 border-t border-border/40">
-                  <p className="text-[10px] text-muted-foreground mb-0.5">Reference ID:</p>
-                  <p className="text-[11px] font-mono break-all">
-                    {order.gateway_reference || order.payment_intent_id || order.tap_id}
-                  </p>
+            {isDelivery && (
+              <div className="p-3.5 rounded-xl bg-muted/40 border border-border/60 space-y-1 text-xs">
+                <div className="flex items-center gap-2 font-bold text-foreground">
+                  <CreditCard className="h-4 w-4 text-emerald-500 shrink-0" />
+                  <span>{isAr ? "طريقة وحالة الدفع:" : "Payment Method:"}</span>
                 </div>
-              )}
-            </div>
+                <p className="font-semibold text-primary">{paymentMethodLabel}</p>
+                <p className="text-[11px] text-muted-foreground font-mono">
+                  {isAr ? "حالة الدفع: " : "Status: "}
+                  {order.payment_status || "pending"}
+                </p>
+                {isAdmin && getPaymentGatewayReference(order) && (
+                  <div className="mt-2 pt-2 border-t border-border/40">
+                    <p className="text-[10px] text-muted-foreground mb-0.5">Reference ID:</p>
+                    <p className="text-[11px] font-mono break-all">
+                      {getPaymentGatewayReference(order)}
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
 
             <div className="p-3.5 rounded-xl bg-muted/40 border border-border/60 space-y-1 text-xs">
               <div className="flex items-center gap-2 font-bold text-foreground">

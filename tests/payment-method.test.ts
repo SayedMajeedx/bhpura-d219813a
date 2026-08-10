@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { matchesPaymentMethodFilter, normalizePaymentMethod } from "../src/lib/payment-method";
+import {
+  getStoredPaymentMethodPresentation,
+  matchesPaymentMethodFilter,
+  normalizePaymentMethod,
+} from "../src/lib/payment-method";
 
 describe("payment method filtering", () => {
   it.each([
@@ -31,5 +35,32 @@ describe("payment method filtering", () => {
     expect(matchesPaymentMethodFilter("cod", "all")).toBe(true);
     expect(matchesPaymentMethodFilter("card", "all")).toBe(true);
     expect(matchesPaymentMethodFilter(null, "all")).toBe(true);
+  });
+
+  it.each([
+    ["card", "ar", "بطاقة"],
+    ["tap", "en", "Card"],
+    ["benefit", "ar", "بنفت"],
+    ["benefit_pay", "en", "Benefit"],
+    ["cod", "ar", "الدفع عند الاستلام"],
+    ["cash_on_delivery", "en", "Cash on Delivery"],
+  ] as const)("localizes stored method %s in %s", (stored, lang, expected) => {
+    expect(getStoredPaymentMethodPresentation(stored, lang)).toMatchObject({
+      label: expected,
+      recognized: true,
+    });
+  });
+
+  it("never invents Online for missing or legacy unknown payment data", () => {
+    expect(getStoredPaymentMethodPresentation(null, "en")).toEqual({
+      label: "Not recorded",
+      recognized: false,
+      rawValue: null,
+    });
+    expect(getStoredPaymentMethodPresentation("Online", "en")).toEqual({
+      label: "Unrecognized: Online",
+      recognized: false,
+      rawValue: "Online",
+    });
   });
 });

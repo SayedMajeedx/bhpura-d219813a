@@ -181,13 +181,11 @@ export const OrdersToolbar: React.FC<OrdersToolbarProps> = ({
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">{isAr ? "الكل" : "All"}</SelectItem>
-                    <SelectItem value="benefit">{isAr ? "بنفت بي" : "BenefitPay"}</SelectItem>
+                    <SelectItem value="benefit">{isAr ? "بنفت" : "Benefit"}</SelectItem>
                     <SelectItem value="cod">
                       {isAr ? "الدفع عند الاستلام" : "Cash on Delivery"}
                     </SelectItem>
-                    <SelectItem value="card">
-                      {isAr ? "بطاقة (أونلاين)" : "Card (Online)"}
-                    </SelectItem>
+                    <SelectItem value="card">{isAr ? "بطاقة" : "Card"}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -290,13 +288,11 @@ export const OrdersToolbar: React.FC<OrdersToolbarProps> = ({
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">{isAr ? "الكل" : "All"}</SelectItem>
-                      <SelectItem value="benefit">{isAr ? "بنفت بي" : "BenefitPay"}</SelectItem>
+                      <SelectItem value="benefit">{isAr ? "بنفت" : "Benefit"}</SelectItem>
                       <SelectItem value="cod">
                         {isAr ? "الدفع عند الاستلام" : "Cash on Delivery"}
                       </SelectItem>
-                      <SelectItem value="card">
-                        {isAr ? "بطاقة (أونلاين)" : "Card (Online)"}
-                      </SelectItem>
+                      <SelectItem value="card">{isAr ? "بطاقة" : "Card"}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

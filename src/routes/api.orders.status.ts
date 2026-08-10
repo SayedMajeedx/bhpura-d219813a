@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { orderRequiresCourier } from "@/lib/order-fulfillment";
 
 export const Route = createFileRoute("/api/orders/status")({
   server: {
@@ -74,7 +75,7 @@ export const Route = createFileRoute("/api/orders/status")({
           // 1. Fetch current order status details
           const { data: order, error: fetchErr } = await (supabaseAdmin.from("orders") as any)
             .select(
-              "id, brand_id, status, payment_status, payment_method, fulfillment_status, delivery_notes, assigned_to",
+              "id, brand_id, status, payment_status, payment_method, fulfillment_method, fulfillment_status, delivery_notes, assigned_to",
             )
             .eq("id", id)
             .maybeSingle();
@@ -120,6 +121,16 @@ export const Route = createFileRoute("/api/orders/status")({
               status: 403,
               headers: { "Content-Type": "application/json" },
             });
+          }
+
+          if (assigned_to !== undefined && !orderRequiresCourier(order)) {
+            return new Response(
+              JSON.stringify({
+                error: "Couriers can only be assigned to delivery orders.",
+                error_ar: "يمكن تعيين المندوب لطلبات التوصيل فقط.",
+              }),
+              { status: 400, headers: { "Content-Type": "application/json" } },
+            );
           }
 
           // Determine current vs updated payment and fulfillment statuses

@@ -36,3 +36,35 @@ export function matchesPaymentMethodFilter(
 ): boolean {
   return filter === "all" || normalizePaymentMethod(paymentMethod) === filter;
 }
+
+export function getPaymentMethodLabel(
+  paymentMethod: string | null | undefined,
+  lang: "en" | "ar",
+): string | null {
+  const method = normalizePaymentMethod(paymentMethod);
+  if (method === "card") return lang === "ar" ? "بطاقة" : "Card";
+  if (method === "cod") return lang === "ar" ? "الدفع عند الاستلام" : "Cash on Delivery";
+  if (method === "benefit") return lang === "ar" ? "بنفت" : "Benefit";
+  return null;
+}
+
+export function getStoredPaymentMethodPresentation(
+  paymentMethod: string | null | undefined,
+  lang: "en" | "ar",
+): { label: string; recognized: boolean; rawValue: string | null } {
+  const rawValue = String(paymentMethod ?? "").trim() || null;
+  const localized = getPaymentMethodLabel(rawValue, lang);
+  if (localized) return { label: localized, recognized: true, rawValue };
+  if (rawValue) {
+    return {
+      label: lang === "ar" ? `غير معروفة: ${rawValue}` : `Unrecognized: ${rawValue}`,
+      recognized: false,
+      rawValue,
+    };
+  }
+  return {
+    label: lang === "ar" ? "غير مسجلة" : "Not recorded",
+    recognized: false,
+    rawValue: null,
+  };
+}

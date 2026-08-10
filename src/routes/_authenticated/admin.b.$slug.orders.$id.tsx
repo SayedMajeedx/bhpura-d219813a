@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, useMemo, useEffect, useRef, lazy } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { getPaymentGatewayReference } from "@/lib/payment-reference";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -3130,59 +3131,52 @@ function OrderDetail() {
                     </Select>
                   </div>
                 </div>
-                {isAdmin &&
-                  (order.gateway_reference || order.payment_intent_id || order.tap_id) && (
-                    <div className="rounded-xl border border-border/60 bg-card p-4 space-y-3 mt-4">
-                      <div className="flex items-center justify-between border-b pb-2">
-                        <div className="flex items-center gap-2">
-                          <Lock className="h-4 w-4 text-primary" />
-                          <span className="font-semibold text-sm">
-                            {lang === "ar" ? "تفاصيل بوابة الدفع" : "Payment Gateway Details"}
-                          </span>
-                        </div>
-                      </div>
-                      <div className="grid grid-cols-2 gap-4 text-xs font-mono">
-                        <div>
-                          <span className="text-muted-foreground block mb-1">Reference ID:</span>
-                          <div className="flex items-center gap-2">
-                            <span className="truncate">
-                              {order.gateway_reference || order.payment_intent_id || order.tap_id}
-                            </span>
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="icon"
-                              className="h-6 w-6"
-                              onClick={() => {
-                                navigator.clipboard.writeText(
-                                  order.gateway_reference ||
-                                    order.payment_intent_id ||
-                                    order.tap_id,
-                                );
-                                toast.success(lang === "ar" ? "تم النسخ" : "Copied Reference");
-                              }}
-                            >
-                              <Copy className="h-3 w-3" />
-                            </Button>
-                          </div>
-                        </div>
-                        <div>
-                          <span className="text-muted-foreground block mb-1">Gateway Status:</span>
-                          <span>{order.gateway_status || "N/A"}</span>
-                        </div>
-                        {order.gateway_verified_at && (
-                          <div className="col-span-2">
-                            <span className="text-muted-foreground block mb-1">Last Verified:</span>
-                            <span>
-                              {new Date(order.gateway_verified_at).toLocaleString(
-                                lang === "ar" ? "ar-BH-u-nu-latn" : "en-BH",
-                              )}
-                            </span>
-                          </div>
-                        )}
+                {isAdmin && getPaymentGatewayReference(order) && (
+                  <div className="rounded-xl border border-border/60 bg-card p-4 space-y-3 mt-4">
+                    <div className="flex items-center justify-between border-b pb-2">
+                      <div className="flex items-center gap-2">
+                        <Lock className="h-4 w-4 text-primary" />
+                        <span className="font-semibold text-sm">
+                          {lang === "ar" ? "تفاصيل بوابة الدفع" : "Payment Gateway Details"}
+                        </span>
                       </div>
                     </div>
-                  )}
+                    <div className="grid grid-cols-2 gap-4 text-xs font-mono">
+                      <div>
+                        <span className="text-muted-foreground block mb-1">Reference ID:</span>
+                        <div className="flex items-center gap-2">
+                          <span className="truncate">{getPaymentGatewayReference(order)}</span>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6"
+                            onClick={() => {
+                              navigator.clipboard.writeText(getPaymentGatewayReference(order)!);
+                              toast.success(lang === "ar" ? "تم النسخ" : "Copied Reference");
+                            }}
+                          >
+                            <Copy className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground block mb-1">Gateway Status:</span>
+                        <span>{order.gateway_status || "N/A"}</span>
+                      </div>
+                      {order.gateway_verified_at && (
+                        <div className="col-span-2">
+                          <span className="text-muted-foreground block mb-1">Last Verified:</span>
+                          <span>
+                            {new Date(order.gateway_verified_at).toLocaleString(
+                              lang === "ar" ? "ar-BH-u-nu-latn" : "en-BH",
+                            )}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
                 <div className="lg:hidden">
                   <Label>{t("orderDetail.notes")}</Label>
                   <Textarea

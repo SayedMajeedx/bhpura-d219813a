@@ -17,6 +17,7 @@ import {
   CheckCircle2,
   Loader2,
   UploadCloud,
+  ChevronDown,
   ChevronRight,
   Info,
   PhoneCall,
@@ -35,6 +36,7 @@ import {
   createTenantRequest,
   getOnboardingPrice,
 } from "@/lib/onboarding.functions";
+import { TurnstileWidget } from "@/components/TurnstileWidget";
 
 export const Route = createFileRoute("/onboard")({
   ssr: false,
@@ -95,6 +97,7 @@ function OnboardPage() {
   const [logoError, setLogoError] = useState(false);
   const [benefitPayQrUrl, setBenefitPayQrUrl] = useState<string | null>(null);
   const [merchantAccountName, setMerchantAccountName] = useState("BOUTQ-OFFICIAL");
+  const [subscriptionIban, setSubscriptionIban] = useState("BH12KHCB0000001234567890");
   const [whatsappNumber, setWhatsappNumber] = useState("97339955508");
 
   // Load Dynamic Settings on mount
@@ -104,7 +107,7 @@ function OnboardPage() {
         const { data, error } = await (supabase as any)
           .from("system_settings")
           .select(
-            "base_price_bhd, discount_price_bhd, platform_icon_url, whatsapp_support_number, benefit_pay_qr_url, merchant_account_name",
+            "base_price_bhd, discount_price_bhd, platform_icon_url, whatsapp_support_number, benefit_pay_qr_url, merchant_account_name, subscription_iban",
           )
           .eq("id", 1)
           .maybeSingle();
@@ -115,6 +118,7 @@ function OnboardPage() {
           setPlatformIconUrl(data.platform_icon_url || null);
           setBenefitPayQrUrl(data.benefit_pay_qr_url || null);
           if (data.merchant_account_name) setMerchantAccountName(data.merchant_account_name);
+          if (data.subscription_iban) setSubscriptionIban(data.subscription_iban);
           if (data.whatsapp_support_number) setWhatsappNumber(data.whatsapp_support_number);
         } else {
           // Fallback to getOnboardingPrice server function if direct query fails
@@ -156,6 +160,12 @@ function OnboardPage() {
   // File Uploader state for Card B (Official Paid Activation)
   const [uploading, setUploading] = useState(false);
   const [receiptKey, setReceiptKey] = useState<string | null>(null);
+  const [trialTurnstileToken, setTrialTurnstileToken] = useState<string | null>(null);
+  const [paidUploadTurnstileToken, setPaidUploadTurnstileToken] = useState<string | null>(null);
+  const [paidSubmitTurnstileToken, setPaidSubmitTurnstileToken] = useState<string | null>(null);
+  const [trialTurnstileReset, setTrialTurnstileReset] = useState(0);
+  const [paidUploadTurnstileReset, setPaidUploadTurnstileReset] = useState(0);
+  const [paidSubmitTurnstileReset, setPaidSubmitTurnstileReset] = useState(0);
 
   // Success Confirmation overlay trigger
   const [isDeployedPending, setIsDeployedPending] = useState(false);
@@ -182,24 +192,12 @@ function OnboardPage() {
     const checkUniqueness = async () => {
       setTrialSubdomainChecking(true);
       try {
-        const { data: brandData, error: brandError } = await supabase
-          .from("brands")
-          .select("id")
-          .eq("slug", cleaned)
-          .maybeSingle();
-
-        if (brandError) throw brandError;
-
-        const { data: pendingData, error: pendingError } = await (supabase as any)
-          .from("tenant_requests")
-          .select("id")
-          .eq("desired_subdomain", cleaned)
-          .eq("status", "pending")
-          .maybeSingle();
-
-        if (pendingError) throw pendingError;
-
-        setTrialSubdomainAvailable(!brandData && !pendingData);
+        const { data: available, error } = await (supabase.rpc as any)(
+          "is_tenant_subdomain_available",
+          { p_subdomain: cleaned },
+        );
+        if (error) throw error;
+        setTrialSubdomainAvailable(available === true);
       } catch {
         setTrialSubdomainAvailable(false);
       } finally {
@@ -234,24 +232,12 @@ function OnboardPage() {
     const checkUniqueness = async () => {
       setOfficialSubdomainChecking(true);
       try {
-        const { data: brandData, error: brandError } = await supabase
-          .from("brands")
-          .select("id")
-          .eq("slug", cleaned)
-          .maybeSingle();
-
-        if (brandError) throw brandError;
-
-        const { data: pendingData, error: pendingError } = await (supabase as any)
-          .from("tenant_requests")
-          .select("id")
-          .eq("desired_subdomain", cleaned)
-          .eq("status", "pending")
-          .maybeSingle();
-
-        if (pendingError) throw pendingError;
-
-        setOfficialSubdomainAvailable(!brandData && !pendingData);
+        const { data: available, error } = await (supabase.rpc as any)(
+          "is_tenant_subdomain_available",
+          { p_subdomain: cleaned },
+        );
+        if (error) throw error;
+        setOfficialSubdomainAvailable(available === true);
       } catch {
         setOfficialSubdomainAvailable(false);
       } finally {
@@ -271,6 +257,16 @@ function OnboardPage() {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    if (!paidUploadTurnstileToken) {
+      toast.error(
+        lang === "ar"
+          ? "يرجى إكمال فحص الأمان قبل رفع الإيصال."
+          : "Please complete the security check before uploading the receipt.",
+      );
+      e.target.value = "";
+      return;
+    }
+
     if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
       toast.error(
         lang === "ar"
@@ -280,9 +276,9 @@ function OnboardPage() {
       return;
     }
 
-    if (file.size > 8 * 1024 * 1024) {
+    if (file.size > 5 * 1024 * 1024) {
       toast.error(
-        lang === "ar" ? "الحد الأقصى لحجم الملف هو 8 ميجابايت." : "Maximum file size is 8MB.",
+        lang === "ar" ? "الحد الأقصى لحجم الملف هو 5 ميجابايت." : "Maximum file size is 5MB.",
       );
       return;
     }
@@ -294,7 +290,11 @@ function OnboardPage() {
 
     try {
       const { objectKey, uploadUrl } = await getOnboardingReceiptUploadUrl({
-        data: { contentType: file.type as any },
+        data: {
+          contentType: file.type as any,
+          size: file.size,
+          turnstileToken: paidUploadTurnstileToken,
+        },
       });
 
       toast.loading(
@@ -330,6 +330,8 @@ function OnboardPage() {
       );
     } finally {
       setUploading(false);
+      setPaidUploadTurnstileToken(null);
+      setPaidUploadTurnstileReset((value) => value + 1);
     }
   };
 
@@ -350,6 +352,15 @@ function OnboardPage() {
       return;
     }
 
+    if (!trialTurnstileToken) {
+      toast.error(
+        lang === "ar"
+          ? "يرجى إكمال فحص الأمان أولاً."
+          : "Please complete the security check first.",
+      );
+      return;
+    }
+
     const toastId = toast.loading(
       lang === "ar" ? "جاري إرسال طلب تفعيل النسخة التجريبية..." : "Sending trial request...",
     );
@@ -364,6 +375,7 @@ function OnboardPage() {
           desiredSubdomain: trialSubdomain,
           requestType: "trial",
           businessType: trialBusinessType,
+          turnstileToken: trialTurnstileToken,
         },
       });
 
@@ -395,6 +407,9 @@ function OnboardPage() {
       toast.error(err.message || "An unexpected error occurred during submission.", {
         id: toastId,
       });
+    } finally {
+      setTrialTurnstileToken(null);
+      setTrialTurnstileReset((value) => value + 1);
     }
   };
 
@@ -424,6 +439,15 @@ function OnboardPage() {
       return;
     }
 
+    if (!paidSubmitTurnstileToken) {
+      toast.error(
+        lang === "ar"
+          ? "يرجى إكمال فحص الأمان أولاً."
+          : "Please complete the security check first.",
+      );
+      return;
+    }
+
     const toastId = toast.loading(
       lang === "ar"
         ? "جاري إرسال طلب تفعيل متجرك الرسمي..."
@@ -441,6 +465,7 @@ function OnboardPage() {
           requestType: "paid",
           benefitReceiptUrl: receiptKey,
           businessType: officialBusinessType,
+          turnstileToken: paidSubmitTurnstileToken,
         },
       });
 
@@ -459,6 +484,9 @@ function OnboardPage() {
       toast.error(err.message || "An unexpected error occurred during activation submission.", {
         id: toastId,
       });
+    } finally {
+      setPaidSubmitTurnstileToken(null);
+      setPaidSubmitTurnstileReset((value) => value + 1);
     }
   };
 
@@ -472,7 +500,10 @@ function OnboardPage() {
   // SUCCESS CONFIRMATION OVERLAY (Waiting for Manual Activation freeze state)
   if (isDeployedPending) {
     return (
-      <div className="min-h-screen bg-zinc-950 flex flex-col justify-center items-center p-6 relative overflow-hidden text-white dark">
+      <div
+        dir={lang === "ar" ? "rtl" : "ltr"}
+        className="min-h-screen bg-zinc-950 flex flex-col justify-center items-center p-6 relative overflow-hidden text-white dark"
+      >
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(128,0,32,0.1),transparent_70%)]" />
         <div className="absolute inset-0 bg-[linear-gradient(to_bottom,transparent,rgba(0,0,0,0.9))]" />
 
@@ -491,13 +522,25 @@ function OnboardPage() {
               : "Request Received - Waiting for Manual Activation"}
           </h1>
 
-          <p className="text-zinc-400 text-sm leading-relaxed mb-6">
-            {lang === "ar"
-              ? `لقد تم إرسال طلب تفعيل مساحة متجرك الفاخرة "${submittedSubdomain}.boutq.store" بنجاح إلى فريق الإدارة.`
-              : `Your luxury boutique registration request for "${submittedSubdomain}.boutq.store" has been recorded in our activation queue.`}
+          <p className="text-zinc-400 text-sm leading-relaxed mb-6 text-center">
+            {lang === "ar" ? (
+              <>
+                لقد تم إرسال طلب تفعيل مساحة متجرك الفاخرة{" "}
+                <bdi dir="ltr" className="inline-block">
+                  &quot;{submittedSubdomain}.boutq.store&quot;
+                </bdi>{" "}
+                بنجاح إلى فريق الإدارة.
+              </>
+            ) : (
+              `Your luxury boutique registration request for "${submittedSubdomain}.boutq.store" has been recorded in our activation queue.`
+            )}
           </p>
 
-          <div className="bg-zinc-950/60 border border-zinc-900 rounded-lg p-5 mb-8 text-left space-y-4">
+          <div
+            className={`bg-zinc-950/60 border border-zinc-900 rounded-lg p-5 mb-8 space-y-4 ${
+              lang === "ar" ? "text-right" : "text-left"
+            }`}
+          >
             <div className="flex gap-3">
               <Info className="h-5 w-5 text-primary shrink-0 mt-0.5" />
               <div className="text-xs text-zinc-400 leading-relaxed">
@@ -855,10 +898,10 @@ function OnboardPage() {
         </div>
 
         {/* Dual Card responsive Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
+        <div className="grid grid-cols-1 items-start lg:grid-cols-2 gap-8 mb-12">
           {/* CARD A: 3-Day Free Trial */}
           <Card
-            className={`border-border shadow-md flex-col justify-between relative overflow-hidden group ${
+            className={`border-border shadow-md flex-col relative overflow-hidden group ${
               activeOnboardTab === "trial" ? "flex" : "hidden lg:flex"
             }`}
           >
@@ -884,32 +927,38 @@ function OnboardPage() {
               </div>
             </CardHeader>
 
-            <div className="px-6 py-4 bg-zinc-50 dark:bg-zinc-900/50 border-b border-border space-y-2.5 text-xs select-none">
-              <div className="flex items-center gap-2.5 text-muted-foreground">
-                <Check className="h-4 w-4 text-primary shrink-0" />
-                <span>
-                  {lang === "ar"
-                    ? "وصول كامل للوحة التحكم والمبيعات"
-                    : "Full admin dashboard & revenue reporting"}
-                </span>
+            <details className="group/features border-b border-border bg-zinc-50 dark:bg-zinc-900/50">
+              <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-6 py-3 text-xs font-semibold text-foreground transition-colors hover:bg-zinc-100 dark:hover:bg-zinc-900 [&::-webkit-details-marker]:hidden">
+                <span>{lang === "ar" ? "عرض مميزات التجربة" : "View trial features"}</span>
+                <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground transition-transform group-open/features:rotate-180" />
+              </summary>
+              <div className="space-y-2.5 border-t border-border/60 px-6 py-4 text-xs select-none">
+                <div className="flex items-center gap-2.5 text-muted-foreground">
+                  <Check className="h-4 w-4 text-primary shrink-0" />
+                  <span>
+                    {lang === "ar"
+                      ? "وصول كامل للوحة التحكم والمبيعات"
+                      : "Full admin dashboard & revenue reporting"}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2.5 text-muted-foreground">
+                  <Check className="h-4 w-4 text-primary shrink-0" />
+                  <span>
+                    {lang === "ar"
+                      ? "معاينة حية للمتجر التجريبي الخاص بك"
+                      : "Live customer-facing storefront preview"}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2.5 text-muted-foreground">
+                  <Check className="h-4 w-4 text-primary shrink-0" />
+                  <span>
+                    {lang === "ar"
+                      ? "تفعيل وإعداد عبر الواتساب فوراً"
+                      : "Instant concierge setup via WhatsApp"}
+                  </span>
+                </div>
               </div>
-              <div className="flex items-center gap-2.5 text-muted-foreground">
-                <Check className="h-4 w-4 text-primary shrink-0" />
-                <span>
-                  {lang === "ar"
-                    ? "معاينة حية للمتجر التجريبي الخاص بك"
-                    : "Live customer-facing storefront preview"}
-                </span>
-              </div>
-              <div className="flex items-center gap-2.5 text-muted-foreground">
-                <Check className="h-4 w-4 text-primary shrink-0" />
-                <span>
-                  {lang === "ar"
-                    ? "تفعيل وإعداد عبر الواتساب فوراً"
-                    : "Instant concierge setup via WhatsApp"}
-                </span>
-              </div>
-            </div>
+            </details>
 
             <CardContent className="pt-6 space-y-4">
               <form onSubmit={handleRegisterTrial} className="space-y-4">
@@ -1075,10 +1124,20 @@ function OnboardPage() {
                   </Select>
                 </div>
 
+                <TurnstileWidget
+                  language={lang}
+                  onVerify={setTrialTurnstileToken}
+                  resetKey={trialTurnstileReset}
+                />
+
                 <Button
                   type="submit"
                   className="w-full h-11 text-xs font-semibold uppercase tracking-wider gap-2 bg-primary hover:bg-primary/90 text-primary-foreground mt-4"
-                  disabled={trialSubdomainChecking || trialSubdomainAvailable === false}
+                  disabled={
+                    trialSubdomainChecking ||
+                    trialSubdomainAvailable === false ||
+                    !trialTurnstileToken
+                  }
                 >
                   {lang === "ar"
                     ? "إرسال طلب تجربة الـ 3 أيام"
@@ -1091,7 +1150,7 @@ function OnboardPage() {
 
           {/* CARD B: Official Paid Registration */}
           <Card
-            className={`border-border shadow-md flex-col justify-between relative overflow-hidden group ring-1 ring-primary/40 bg-primary/[0.01] ${
+            className={`border-border shadow-md flex-col relative overflow-hidden group ring-1 ring-primary/40 bg-primary/[0.01] ${
               activeOnboardTab === "paid" ? "flex" : "hidden lg:flex"
             }`}
           >
@@ -1144,38 +1203,48 @@ function OnboardPage() {
               </div>
             </CardHeader>
 
-            <div className="px-6 py-4 bg-primary/5 border-b border-primary/10 space-y-2.5 text-xs select-none">
-              <div className="flex items-center gap-2.5 text-primary font-semibold">
-                <Check className="h-4 w-4 shrink-0 text-primary" />
+            <details className="group/features border-b border-primary/10 bg-primary/5">
+              <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-6 py-3 text-xs font-semibold text-primary transition-colors hover:bg-primary/10 [&::-webkit-details-marker]:hidden">
                 <span>
-                  {lang === "ar"
-                    ? "يتم الدفع سنوياً • يشمل نطاق فرعي، واستضافة، وبنفت بي وتحديثات برمجية."
-                    : "Billed annually • Includes wildcard domain, hosting, BenefitPay integration & tech updates."}
+                  {lang === "ar" ? "عرض مميزات الاشتراك السنوي" : "View annual plan features"}
                 </span>
+                <ChevronDown className="h-4 w-4 shrink-0 transition-transform group-open/features:rotate-180" />
+              </summary>
+              <div className="space-y-2.5 border-t border-primary/10 px-6 py-4 text-xs select-none">
+                <div className="flex items-center gap-2.5 text-primary font-semibold">
+                  <Check className="h-4 w-4 shrink-0 text-primary" />
+                  <span>
+                    {lang === "ar"
+                      ? "يتم الدفع سنوياً • يشمل نطاق فرعي، واستضافة، وبنفت بي وتحديثات برمجية."
+                      : "Billed annually • Includes wildcard domain, hosting, BenefitPay integration & tech updates."}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2.5 text-muted-foreground">
+                  <Check className="h-4 w-4 shrink-0 text-emerald-500" />
+                  <span>
+                    {lang === "ar"
+                      ? "رابط مخصص ونطاق فرعي رسمي"
+                      : "Official custom subdomain handle"}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2.5 text-muted-foreground">
+                  <Check className="h-4 w-4 shrink-0 text-emerald-500" />
+                  <span>
+                    {lang === "ar"
+                      ? "ضمان صيانة ودعم فني متواصل لـ 6 أشهر"
+                      : "6 Months guaranteed technical support"}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2.5 text-muted-foreground">
+                  <Check className="h-4 w-4 shrink-0 text-emerald-500" />
+                  <span>
+                    {lang === "ar"
+                      ? "الاستضافة والتحديثات مشمولة طوال سنة الاشتراك"
+                      : "Hosting and platform updates included for the subscription year"}
+                  </span>
+                </div>
               </div>
-              <div className="flex items-center gap-2.5 text-muted-foreground">
-                <Check className="h-4 w-4 shrink-0 text-emerald-500" />
-                <span>
-                  {lang === "ar" ? "رابط مخصص ونطاق فرعي رسمي" : "Official custom subdomain handle"}
-                </span>
-              </div>
-              <div className="flex items-center gap-2.5 text-muted-foreground">
-                <Check className="h-4 w-4 shrink-0 text-emerald-500" />
-                <span>
-                  {lang === "ar"
-                    ? "ضمان صيانة ودعم فني متواصل لـ 6 أشهر"
-                    : "6 Months guaranteed technical support"}
-                </span>
-              </div>
-              <div className="flex items-center gap-2.5 text-muted-foreground">
-                <Check className="h-4 w-4 shrink-0 text-emerald-500" />
-                <span>
-                  {lang === "ar"
-                    ? "صفر رسوم صيانة أو استضافة شهرية"
-                    : "Zero monthly hosting or cloud storage fees"}
-                </span>
-              </div>
-            </div>
+            </details>
 
             <CardContent className="pt-6 space-y-4">
               <form onSubmit={handleRegisterPaid} className="space-y-4">
@@ -1390,14 +1459,14 @@ function OnboardPage() {
                           : "International Bank Account Number (IBAN)"}
                       </span>
                       <code className="font-mono text-[11px] text-zinc-800 dark:text-zinc-200 font-bold">
-                        BH12 KHCB 0000 0012 3456 7890
+                        {subscriptionIban}
                       </code>
                     </div>
                     <Button
                       type="button"
                       variant="outline"
                       size="icon"
-                      onClick={() => handleCopyIban("BH12KHCB0000001234567890")}
+                      onClick={() => handleCopyIban(subscriptionIban)}
                       className="h-8 w-8 text-primary hover:text-white hover:bg-primary border-primary/20 shrink-0"
                     >
                       {copiedIban ? (
@@ -1408,6 +1477,14 @@ function OnboardPage() {
                     </Button>
                   </div>
 
+                  {!receiptKey && (
+                    <TurnstileWidget
+                      language={lang}
+                      onVerify={setPaidUploadTurnstileToken}
+                      resetKey={paidUploadTurnstileReset}
+                    />
+                  )}
+
                   {/* Receipt screenshot uploader */}
                   <div className="relative">
                     <input
@@ -1416,7 +1493,7 @@ function OnboardPage() {
                       accept="image/jpeg,image/png,image/webp"
                       onChange={handleUploadReceipt}
                       className="hidden"
-                      disabled={uploading}
+                      disabled={uploading || !paidUploadTurnstileToken}
                     />
                     <Button
                       type="button"
@@ -1466,6 +1543,14 @@ function OnboardPage() {
                   </p>
                 </div>
 
+                {receiptKey && (
+                  <TurnstileWidget
+                    language={lang}
+                    onVerify={setPaidSubmitTurnstileToken}
+                    resetKey={paidSubmitTurnstileReset}
+                  />
+                )}
+
                 <Button
                   type="submit"
                   className="w-full h-11 text-xs font-semibold uppercase tracking-wider gap-2 bg-primary text-white mt-4"
@@ -1473,7 +1558,8 @@ function OnboardPage() {
                     officialSubdomainChecking ||
                     officialSubdomainAvailable === false ||
                     uploading ||
-                    !receiptKey
+                    !receiptKey ||
+                    !paidSubmitTurnstileToken
                   }
                 >
                   <Building2 className="h-4 w-4" />
@@ -1662,8 +1748,8 @@ function OnboardPage() {
                     <span className="text-emerald-500 font-bold">•</span>
                     <span>
                       {lang === "ar"
-                        ? "صفر رسوم استضافة أو صيانة برمجية شهرية مدى الحياة"
-                        : "Pay once, host forever with zero recurring monthly platform fees"}
+                        ? "اشتراك سنوي يشمل الاستضافة والصيانة البرمجية"
+                        : "Annual subscription including hosting and platform maintenance"}
                     </span>
                   </li>
                 </ul>

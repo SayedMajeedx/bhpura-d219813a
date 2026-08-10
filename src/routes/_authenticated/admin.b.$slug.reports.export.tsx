@@ -89,12 +89,16 @@ function ReportsExport() {
 
       const limit = formatType === "xlsx" ? 10_000 : 50_000;
       const rows = sanitizeRows(raw.slice(0, limit));
-      const XLSX = await import("xlsx");
-      const worksheet = XLSX.utils.json_to_sheet(rows);
-      const workbook = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(workbook, worksheet, "Boutq report");
       const fileName = `boutq_${reportType}_${format(new Date(), "yyyy-MM-dd")}.${formatType}`;
-      XLSX.writeFile(workbook, fileName, { bookType: formatType });
+      if (formatType === "xlsx") {
+        const { default: writeXlsxFile } = await import("write-excel-file/browser");
+        await writeXlsxFile(toSheetData(rows), {
+          sheet: "Boutq report",
+          stickyRowsCount: 1,
+        }).toFile(fileName);
+      } else {
+        downloadCsv(toCsv(rows), fileName);
+      }
       toast.success(lang === "ar" ? "تم تنزيل التقرير بنجاح" : "Report downloaded successfully", {
         id: toastId,
       });
@@ -256,6 +260,44 @@ function sanitizeRows(rows: Record<string, unknown>[]) {
       }),
     ),
   );
+}
+
+function toSheetData(rows: Record<string, unknown>[]) {
+  const headers = Array.from(new Set(rows.flatMap((row) => Object.keys(row))));
+  return [
+    headers.map((value) => ({ value, fontWeight: "bold" as const })),
+    ...rows.map((row) => headers.map((header) => toCellValue(row[header]))),
+  ];
+}
+
+function toCellValue(value: unknown): string | number | boolean | Date | null {
+  if (value == null) return null;
+  if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
+    return value;
+  }
+  if (value instanceof Date) return value;
+  return JSON.stringify(value);
+}
+
+function toCsv(rows: Record<string, unknown>[]): string {
+  const headers = Array.from(new Set(rows.flatMap((row) => Object.keys(row))));
+  const escape = (value: unknown) => {
+    const text = toCellValue(value)?.toString() ?? "";
+    return /[",\r\n]/.test(text) ? `"${text.replaceAll('"', '""')}"` : text;
+  };
+  return [headers.map(escape), ...rows.map((row) => headers.map((header) => escape(row[header])))]
+    .map((row) => row.join(","))
+    .join("\r\n");
+}
+
+function downloadCsv(content: string, fileName: string) {
+  const blob = new Blob(["\uFEFF", content], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = fileName;
+  link.click();
+  URL.revokeObjectURL(url);
 }
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
