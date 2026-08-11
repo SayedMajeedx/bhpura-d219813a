@@ -46,6 +46,8 @@ export function ResponsiveImage({
         ? { width: largest, height: Math.round((largest * 4) / 3) }
         : { width: largest, height: Math.round((largest * 9) / 16) };
   const computedSrcSet = fallback ? undefined : cloudflareImageSrcSet(src, preset, quality);
+  const isHighPriority = props.fetchPriority === "high" || (props as any).fetchpriority === "high";
+
   return (
     <img
       {...props}
@@ -54,6 +56,9 @@ export function ResponsiveImage({
       src={fallback ? src : cloudflareImageUrl(src, largest, quality)}
       srcSet={computedSrcSet || undefined}
       sizes={computedSrcSet ? sizes : undefined}
+      fetchPriority={isHighPriority ? "high" : props.fetchPriority}
+      loading={isHighPriority ? "eager" : (props.loading ?? "lazy")}
+      decoding={isHighPriority ? "sync" : (props.decoding ?? "async")}
       onError={(event) => {
         if (!fallback) setFallback(true);
         onError?.(event);

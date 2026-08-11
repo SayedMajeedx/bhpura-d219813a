@@ -644,8 +644,8 @@ function HeroContentCarousel({
                       sizes="100vw"
                       alt={title || (lang === "ar" ? "صورة العرض الرئيسي" : "Hero banner image")}
                       className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                      fetchPriority={slideIndex === 0 ? "high" : "auto"}
-                      loading={slideIndex === 0 ? "eager" : "lazy"}
+                      fetchPriority={idx === 0 ? "high" : "auto"}
+                      loading={idx === 0 ? "eager" : "lazy"}
                     />
                     {/* Directional Legibility Gradient Overlay */}
                     <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/35 to-transparent pointer-events-none" />
