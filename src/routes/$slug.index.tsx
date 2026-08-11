@@ -509,7 +509,7 @@ function HeroBanner() {
 
   return (
     <section className="relative w-full overflow-hidden min-h-[220px] py-3 sm:min-h-[55vh] sm:max-h-[640px] sm:py-0">
-      {background ? (
+      {background && background.url ? (
         <div className="absolute inset-0 h-full w-full">
           {background.type === "video" ? (
             <OptimizedVideo
