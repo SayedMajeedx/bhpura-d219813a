@@ -1398,6 +1398,7 @@ function PaymentSettingsCard({ brandId }: { brandId: string }) {
 }
 
 function BrandHeroCard({ brandId }: { brandId: string }) {
+  const router = useRouter();
   const { lang } = useI18n();
   const isAr = lang === "ar";
   const qc = useQueryClient();
