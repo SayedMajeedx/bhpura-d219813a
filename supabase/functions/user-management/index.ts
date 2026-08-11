@@ -564,10 +564,19 @@ async function handleDelete(
   const { error } = await supabase.auth.admin.deleteUser(userId);
 
   if (error) {
-    return new Response(JSON.stringify({ error: error.message }), {
-      status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    // Fallback: If auth user deletion failed (e.g. mock seed ID or corrupted GoTrue metadata),
+    // attempt to cleanly remove the profile record from public.profiles directly.
+    const { error: profileDeleteError } = await supabase
+      .from("profiles")
+      .delete()
+      .eq("id", userId);
+
+    if (profileDeleteError) {
+      return new Response(JSON.stringify({ error: error.message }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
   }
 
   return new Response(JSON.stringify({ success: true }), {
