@@ -1450,6 +1450,26 @@ function BrandHeroCard({
     });
   }, [data]);
 
+  useEffect(() => {
+    if (onSaveRef) {
+      onSaveRef.current = async () => {
+        if (!state) return;
+        setSaving(true);
+        const { error } = await supabase
+          .from("brands")
+          .update({
+            hero_media: { background: state.background, slides: state.slides.slice(0, 5) } as any,
+            primary_color: state.primary_color,
+            about_ar: state.about_ar,
+            about_en: state.about_en,
+          })
+          .eq("id", brandId);
+        setSaving(false);
+        if (error) throw error;
+      };
+    }
+  }, [state, brandId, onSaveRef]);
+
   const persistHeroState = async (nextState: HeroState) => {
     const { error } = await supabase
       .from("brands")
@@ -1534,11 +1554,6 @@ function BrandHeroCard({
       return;
     }
     await uploadBackground(file);
-  };
-
-  const confirmBackgroundCrop = async (blob: Blob) => {
-    await uploadBackground(blob);
-    setBackgroundCropSrc(null);
   };
 
   const uploadSlideMedia = async (file: Blob, index: number, language: "en" | "ar" = "en") => {
@@ -1779,7 +1794,10 @@ function BrandHeroCard({
             : "Position and zoom the image so the important details stay visible across desktop and mobile."
         }
         onCancel={() => setBackgroundCropSrc(null)}
-        onConfirm={confirmBackgroundCrop}
+        onConfirm={async (blob) => {
+          await uploadBackground(blob);
+          setBackgroundCropSrc(null);
+        }}
       />
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

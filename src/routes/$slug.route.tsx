@@ -194,7 +194,7 @@ export const Route = createFileRoute("/$slug")({
     const legacyHero = Array.isArray(rawHero) ? rawHero : [];
     const heroConfig = {
       background:
-        rawHero && !Array.isArray(rawHero) && rawHero.background
+        rawHero && !Array.isArray(rawHero) && rawHero.background !== undefined
           ? rawHero.background
           : (legacyHero[0] ?? null),
       slides:
