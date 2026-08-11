@@ -45,7 +45,7 @@ import {
 } from "lucide-react";
 import { OsEmptyState } from "@/components/os/os-empty-state";
 import { Input } from "@/components/ui/input";
-import { cloudflareImageUrl, imageKitVideoUrl } from "@/lib/media-delivery";
+import { cloudflareImageUrl } from "@/lib/media-delivery";
 import { faviconType, resolveBrandFavicon, useDynamicFavicon } from "@/lib/favicon";
 import { StorefrontAnalytics } from "@/components/storefront-analytics";
 

@@ -1,4 +1,4 @@
-import {
+import React, {
   useEffect,
   useRef,
   useState,
@@ -8,11 +8,10 @@ import {
 import {
   cloudflareImageSrcSet,
   cloudflareImageUrl,
-  imageKitVideoPosterUrl,
-  imageKitVideoUrl,
   isLikelyImageUrl,
   type ResponsiveImagePreset,
 } from "@/lib/media-delivery";
+import { AppVideo } from "@/components/common/AppVideo";
 
 type ResponsiveImageProps = Omit<ImgHTMLAttributes<HTMLImageElement>, "srcSet"> & {
   src: string;
@@ -23,8 +22,8 @@ type ResponsiveImageProps = Omit<ImgHTMLAttributes<HTMLImageElement>, "srcSet"> 
 export function ResponsiveImage({
   src,
   preset = "card",
-  quality = 82,
-  sizes = "100vw",
+  quality,
+  sizes,
   onError,
   ...props
 }: ResponsiveImageProps) {
@@ -83,27 +82,7 @@ export function OptimizedVideo({
   preload,
   ...props
 }: OptimizedVideoProps) {
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const optimizedDesktopWebm = src ? imageKitVideoUrl(src, "desktop", "webm") : null;
-  const optimizedDesktopMp4 = src ? imageKitVideoUrl(src, "desktop", "mp4") : null;
-  const optimizedMobileWebm = src ? imageKitVideoUrl(src, "mobile", "webm") : null;
-  const optimizedMobileMp4 = src ? imageKitVideoUrl(src, "mobile", "mp4") : null;
-
-  const generatedPoster = src ? imageKitVideoPosterUrl(src) : null;
-  const resolvedPoster = isLikelyImageUrl(poster) ? poster : generatedPoster;
-
-  const [isVideoPlaying, setIsVideoPlaying] = useState(false);
-
-  useEffect(() => {
-    const video = videoRef.current;
-    if (!video) return;
-    if (active) {
-      void video.play().catch(() => undefined);
-    } else {
-      video.pause();
-      setIsVideoPlaying(false);
-    }
-  }, [active, src, optimizedDesktopWebm, optimizedDesktopMp4]);
+  const resolvedPoster = isLikelyImageUrl(poster) ? poster : null;
 
   if (streamIframeUrl) {
     const separator = streamIframeUrl.includes("?") ? "&" : "?";
@@ -131,113 +110,17 @@ export function OptimizedVideo({
     );
   }
 
-  // Inactive carousel slides should not mount a video element.
-  if (!active && !prepare && resolvedPoster) {
-    return (
-      <div className={wrapperClassName || "h-full w-full"}>
-        <ResponsiveImage
-          src={resolvedPoster}
-          preset="hero"
-          sizes="100vw"
-          alt=""
-          className={className ?? "h-full w-full object-cover"}
-          loading="lazy"
-          decoding="async"
-        />
-      </div>
-    );
-  }
-
-  const sourceKey = optimizedDesktopWebm
-    ? `${optimizedMobileWebm}|${optimizedDesktopWebm}`
-    : (src ?? "");
-
-  const handleFrameReady = () => {
-    const video = videoRef.current;
-    if (video && (video.currentTime > 0.01 || video.readyState >= 3)) {
-      setIsVideoPlaying(true);
-    }
-  };
-
   return (
-    <div className={`relative ${wrapperClassName || "h-full w-full"}`}>
-      {resolvedPoster && (
-        <ResponsiveImage
-          src={resolvedPoster}
-          preset="hero"
-          sizes="100vw"
-          alt=""
-          {...({
-            fetchpriority: active ? "high" : "auto",
-            fetchPriority: active ? "high" : "auto",
-          } as any)}
-          loading={active ? "eager" : "lazy"}
-          className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-500 ease-out ${
-            isVideoPlaying ? "opacity-0 pointer-events-none" : "opacity-100"
-          } ${className ?? ""}`}
-        />
-      )}
-      <video
-        ref={videoRef}
-        key={sourceKey}
-        poster={resolvedPoster ?? undefined}
-        {...({
-          fetchpriority: active ? "high" : undefined,
-          fetchPriority: active ? "high" : undefined,
-        } as any)}
-        muted
-        loop
-        playsInline
-        aria-hidden="true"
-        tabIndex={-1}
-        preload={preload ?? (active ? "auto" : "none")}
-        disablePictureInPicture
-        disableRemotePlayback
-        onPlaying={handleFrameReady}
-        onTimeUpdate={handleFrameReady}
-        onCanPlay={handleFrameReady}
-        className={`relative z-10 ${className ?? "h-full w-full object-cover"}`}
-        {...props}
-        onError={(event) => {
-          props.onError?.(event);
-        }}
-      >
-        {optimizedDesktopWebm ? (
-          <>
-            {optimizedMobileWebm ? (
-              <source
-                src={optimizedMobileWebm}
-                type="video/webm"
-                media="(max-width: 767px)"
-                {...({ fetchpriority: active ? "high" : undefined } as any)}
-              />
-            ) : null}
-            {optimizedMobileMp4 ? (
-              <source
-                src={optimizedMobileMp4}
-                type="video/mp4"
-                media="(max-width: 767px)"
-                {...({ fetchpriority: active ? "high" : undefined } as any)}
-              />
-            ) : null}
-            <source
-              src={optimizedDesktopWebm}
-              type="video/webm"
-              {...({ fetchpriority: active ? "high" : undefined } as any)}
-            />
-            {optimizedDesktopMp4 ? (
-              <source
-                src={optimizedDesktopMp4}
-                type="video/mp4"
-                {...({ fetchpriority: active ? "high" : undefined } as any)}
-              />
-            ) : null}
-          </>
-        ) : src ? (
-          <source src={src} {...({ fetchpriority: active ? "high" : undefined } as any)} />
-        ) : null}
-        <track kind="captions" />
-      </video>
-    </div>
+    <AppVideo
+      src={src}
+      poster={resolvedPoster}
+      variant="hero"
+      active={active}
+      prepare={prepare}
+      className={className}
+      wrapperClassName={wrapperClassName}
+      preload={preload}
+      {...props}
+    />
   );
 }

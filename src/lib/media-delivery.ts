@@ -77,64 +77,6 @@ function getImageKitEndpoint(): string {
   return "https://ik.imagekit.io/Boutq";
 }
 
-const IMAGEKIT_DESKTOP_VIDEO_WEBM = "w-960,q-42,f-webm,ac-none";
-const IMAGEKIT_DESKTOP_VIDEO_MP4 = "w-960,q-42,f-mp4,ac-none";
-const IMAGEKIT_MOBILE_VIDEO_WEBM = "w-640,q-40,f-webm,ac-none";
-const IMAGEKIT_MOBILE_VIDEO_MP4 = "w-640,q-40,f-mp4,ac-none";
-
-function imageKitAssetPath(source: string): string | null {
-  const endpoint = getImageKitEndpoint();
-  if (!endpoint || !source || source.startsWith("data:")) return null;
-  try {
-    const sourceUrl = new URL(source);
-    const endpointUrl = new URL(endpoint);
-    const isPublicR2Media =
-      sourceUrl.hostname === "media.boutq.store" || sourceUrl.hostname.endsWith(".boutq.store");
-    const isImageKitAsset =
-      sourceUrl.hostname === endpointUrl.hostname &&
-      sourceUrl.pathname.startsWith(endpointUrl.pathname);
-    if (!isPublicR2Media && !isImageKitAsset) return null;
-
-    const endpointPath = endpointUrl.pathname.replace(/^\/+|\/+$/g, "");
-    let assetPath = sourceUrl.pathname.replace(/^\/+/, "");
-    if (isImageKitAsset && endpointPath && assetPath.startsWith(`${endpointPath}/`)) {
-      assetPath = assetPath.slice(endpointPath.length + 1);
-    }
-    // Do not stack transformations when an ImageKit URL is passed back in.
-    assetPath = assetPath.replace(/^tr:[^/]+\//, "");
-    return assetPath || null;
-  } catch {
-    return null;
-  }
-}
-
-/**
- * Builds ImageKit WebM or MP4 renditions for storefront video placements.
- */
-export function imageKitVideoUrl(
-  source: string,
-  viewport: "mobile" | "desktop" = "desktop",
-  format: "webm" | "mp4" | "auto" = "webm",
-): string | null {
-  const assetPath = imageKitAssetPath(source);
-  if (!assetPath) return null;
-  const endpoint = getImageKitEndpoint();
-  let transformation = IMAGEKIT_DESKTOP_VIDEO_WEBM;
-  if (viewport === "mobile") {
-    transformation = format === "mp4" ? IMAGEKIT_MOBILE_VIDEO_MP4 : IMAGEKIT_MOBILE_VIDEO_WEBM;
-  } else {
-    transformation = format === "mp4" ? IMAGEKIT_DESKTOP_VIDEO_MP4 : IMAGEKIT_DESKTOP_VIDEO_WEBM;
-  }
-  return `${endpoint}/tr:${transformation}/${assetPath}`;
-}
-
-export function imageKitVideoPosterUrl(source: string, width = 640): string | null {
-  const assetPath = imageKitAssetPath(source);
-  if (!assetPath) return null;
-  const endpoint = getImageKitEndpoint();
-  return `${endpoint}/${assetPath}/ik-thumbnail.jpg?tr=w-${width},q-65,f-webp`;
-}
-
 export function isLikelyImageUrl(source?: string | null): boolean {
   if (!source) return false;
   try {
