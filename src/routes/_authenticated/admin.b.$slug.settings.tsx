@@ -1434,7 +1434,7 @@ function BrandHeroCard({
     const raw = data.hero_media as any;
     const legacy = Array.isArray(raw) ? raw : [];
     setState({
-      background: raw && !Array.isArray(raw) ? (raw.background ?? null) : (legacy[0] ?? null),
+      background: raw && typeof raw === 'object' && !Array.isArray(raw) ? (raw.background !== undefined ? raw.background : null) : (legacy[0] ?? null),
       slides:
         raw && !Array.isArray(raw) && Array.isArray(raw.slides)
           ? raw.slides.slice(0, 5).map((slide: any) => ({
