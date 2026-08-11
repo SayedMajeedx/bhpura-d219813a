@@ -1450,13 +1450,47 @@ function BrandHeroCard({
     });
   }, [data]);
 
+  const persistHeroState = async (nextState: HeroState) => {
+    const { error } = await supabase
+      .from("brands")
+      .update({
+        hero_media: { background: nextState.background, slides: nextState.slides.slice(0, 5) } as any,
+        primary_color: nextState.primary_color,
+        about_ar: nextState.about_ar,
+        about_en: nextState.about_en,
+      })
+      .eq("id", brandId);
+
+    if (error) {
+      toast.error(error.message);
+    } else {
+      qc.invalidateQueries({ queryKey: ["brand-hero", brandId] });
+      qc.invalidateQueries({ queryKey: ["storefront"] });
+      router.invalidate();
+    }
+    return !error;
+  };
+
   const uploadBackground = async (file: Blob) => {
     try {
       setUploading(true);
       const url = await uploadPublicMedia(brandId, file, "hero");
-      const type: "image" | "video" = file.type.startsWith("video") ? "video" : "image";
-      setState((s) => (s ? { ...s, background: { type, url } } : s));
-      toast.success(isAr ? "تم الرفع — لا تنسَ الحفظ" : "Uploaded — remember to save");
+      const isVid = file.type.startsWith("video") || /\.(mp4|webm|mov|m4v|mkv)$/i.test((file as File).name ?? "");
+      const type: "image" | "video" = isVid ? "video" : "image";
+      const nextBg = { type, url };
+      const nextState: HeroState = state
+        ? { ...state, background: nextBg }
+        : { background: nextBg, slides: [], primary_color: null, about_ar: null, about_en: null };
+
+      setState(nextState);
+      const saved = await persistHeroState(nextState);
+      if (saved) {
+        toast.success(
+          isAr
+            ? "تم رفع خلفية الواجهة وحفظها مباشرةً في المتجر!"
+            : "Hero background uploaded & auto-saved live!"
+        );
+      }
     } catch (e: any) {
       toast.error(e.message ?? "Upload failed");
     } finally {
@@ -1464,8 +1498,21 @@ function BrandHeroCard({
     }
   };
 
+  const removeBackground = async () => {
+    if (!state) return;
+    const nextState = { ...state, background: null };
+    setState(nextState);
+    const saved = await persistHeroState(nextState);
+    if (saved) {
+      toast.success(isAr ? "تمت إزالة الخلفية وحفظ التغييرات" : "Background removed and saved");
+    }
+  };
+
   const chooseBackgroundMedia = async (file: File) => {
-    if (file.type.startsWith("image/")) {
+    const isImg = file.type.startsWith("image/") || /\.(jpg|jpeg|png|webp|gif|avif)$/i.test(file.name);
+    const isVid = file.type.startsWith("video/") || /\.(mp4|webm|mov|m4v|mkv)$/i.test(file.name);
+
+    if (isImg) {
       if (file.size > 12 * 1024 * 1024) {
         toast.error(
           isAr ? "يجب ألا يتجاوز حجم الصورة 12 ميجابايت" : "Image must be 12 MB or smaller",
@@ -1478,7 +1525,7 @@ function BrandHeroCard({
       reader.readAsDataURL(file);
       return;
     }
-    if (!file.type.startsWith("video/")) {
+    if (!isVid) {
       toast.error(isAr ? "صيغة الملف غير مدعومة" : "Unsupported file type");
       return;
     }
@@ -1497,26 +1544,27 @@ function BrandHeroCard({
   const uploadSlideMedia = async (file: Blob, index: number, language: "en" | "ar" = "en") => {
     try {
       setUploading(true);
-      const type: "image" | "video" = file.type.startsWith("video") ? "video" : "image";
+      const isVid = file.type.startsWith("video") || /\.(mp4|webm|mov|m4v|mkv)$/i.test((file as File).name ?? "");
+      const type: "image" | "video" = isVid ? "video" : "image";
       const mediaField = language === "ar" ? "media_url_ar" : "media_url_en";
       const url = await uploadPublicMedia(brandId, file, "hero");
       const streamPatch =
         language === "ar"
           ? { media_stream_uid_ar: "", media_iframe_url_ar: "", media_poster_url_ar: "" }
           : { media_stream_uid_en: "", media_iframe_url_en: "", media_poster_url_en: "" };
-      setState((current) =>
-        current
-          ? {
-              ...current,
-              slides: current.slides.map((slide, slideIndex) =>
-                slideIndex === index
-                  ? { ...slide, type, [mediaField]: url, ...streamPatch }
-                  : slide,
-              ),
-            }
-          : current,
+      
+      if (!state) return;
+      const nextSlides = state.slides.map((slide, slideIndex) =>
+        slideIndex === index
+          ? { ...slide, type, [mediaField]: url, ...streamPatch }
+          : slide,
       );
-      toast.success(isAr ? "تم الرفع — لا تنسَ الحفظ" : "Uploaded — remember to save");
+      const nextState = { ...state, slides: nextSlides };
+      setState(nextState);
+      const saved = await persistHeroState(nextState);
+      if (saved) {
+        toast.success(isAr ? "تم رفع الشريحة وحفظها مباشرةً!" : "Slide media uploaded & auto-saved!");
+      }
     } catch (error: any) {
       toast.error(error.message ?? "Upload failed");
     } finally {
