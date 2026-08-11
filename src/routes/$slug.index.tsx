@@ -488,7 +488,7 @@ function MerchandisingSection({
 }
 
 function HeroBanner() {
-  const { brand, settings } = useStorefront();
+  const { brand, settings, lang } = useStorefront();
   const background = brand.hero_media?.background;
   const slides = brand.hero_media?.slides?.length
     ? brand.hero_media.slides
@@ -507,20 +507,36 @@ function HeroBanner() {
         },
       ];
 
+  const firstSlideMedia =
+    (lang === "ar" ? slides[0]?.media_url_ar : slides[0]?.media_url_en) ||
+    slides[0]?.media_url ||
+    (lang === "ar" ? slides[0]?.media_url_en : slides[0]?.media_url_ar) ||
+    "";
+
+  const effectiveBg =
+    background && background.url
+      ? background
+      : firstSlideMedia
+        ? {
+            type: slides[0]?.type === "video" ? ("video" as const) : ("image" as const),
+            url: firstSlideMedia,
+          }
+        : null;
+
   return (
     <section className="relative w-full overflow-hidden min-h-[220px] py-3 sm:min-h-[55vh] sm:max-h-[640px] sm:py-0">
-      {background && background.url ? (
+      {effectiveBg && effectiveBg.url ? (
         <div className="absolute inset-0 h-full w-full">
-          {background.type === "video" ? (
+          {effectiveBg.type === "video" ? (
             <OptimizedVideo
-              src={background.url}
+              src={effectiveBg.url}
               active
               wrapperClassName="h-full w-full"
               className="h-full w-full object-cover"
             />
           ) : (
             <ResponsiveImage
-              src={background.url}
+              src={effectiveBg.url}
               preset="hero"
               sizes="100vw"
               alt=""
