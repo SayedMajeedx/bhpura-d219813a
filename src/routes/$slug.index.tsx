@@ -507,36 +507,20 @@ function HeroBanner() {
         },
       ];
 
-  const firstSlideMedia =
-    (lang === "ar" ? slides[0]?.media_url_ar : slides[0]?.media_url_en) ||
-    slides[0]?.media_url ||
-    (lang === "ar" ? slides[0]?.media_url_en : slides[0]?.media_url_ar) ||
-    "";
-
-  const effectiveBg =
-    background && background.url
-      ? background
-      : firstSlideMedia
-        ? {
-            type: slides[0]?.type === "video" ? ("video" as const) : ("image" as const),
-            url: firstSlideMedia,
-          }
-        : null;
-
   return (
     <section className="relative w-full overflow-hidden min-h-[220px] py-3 sm:min-h-[55vh] sm:max-h-[640px] sm:py-0">
-      {effectiveBg && effectiveBg.url ? (
+      {background && background.url ? (
         <div className="absolute inset-0 h-full w-full">
-          {effectiveBg.type === "video" ? (
+          {background.type === "video" ? (
             <OptimizedVideo
-              src={effectiveBg.url}
+              src={background.url}
               active
               wrapperClassName="h-full w-full"
               className="h-full w-full object-cover"
             />
           ) : (
             <ResponsiveImage
-              src={effectiveBg.url}
+              src={background.url}
               preset="hero"
               sizes="100vw"
               alt=""
