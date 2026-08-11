@@ -1463,7 +1463,9 @@ function BrandHeroCard({
             about_ar: state.about_ar,
             about_en: state.about_en,
           })
-          .eq("id", brandId);
+          .eq("id", brandId)
+          .select("id")
+          .single();
         setSaving(false);
         if (error) throw error;
       };
@@ -1479,7 +1481,9 @@ function BrandHeroCard({
         about_ar: nextState.about_ar,
         about_en: nextState.about_en,
       })
-      .eq("id", brandId);
+      .eq("id", brandId)
+      .select("id")
+      .single();
 
     if (error) {
       toast.error(error.message);
