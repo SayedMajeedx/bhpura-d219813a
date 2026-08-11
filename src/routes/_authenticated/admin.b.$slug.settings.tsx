@@ -1397,7 +1397,13 @@ function PaymentSettingsCard({ brandId }: { brandId: string }) {
   );
 }
 
-function BrandHeroCard({ brandId }: { brandId: string }) {
+function BrandHeroCard({
+  brandId,
+  onSaveRef,
+}: {
+  brandId: string;
+  onSaveRef?: React.MutableRefObject<(() => Promise<void>) | null>;
+}) {
   const router = useRouter();
   const { lang } = useI18n();
   const isAr = lang === "ar";
@@ -2724,6 +2730,7 @@ function StorefrontSeoCard({ brandId }: { brandId: string }) {
 }
 
 function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
+  const heroSaveRef = useRef<(() => Promise<void>) | null>(null);
   const { lang } = useI18n();
   const isAr = lang === "ar";
   const qc = useQueryClient();
@@ -2904,6 +2911,13 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
   const save = async () => {
     if (!state) return;
     setSaving(true);
+    if (heroSaveRef.current) {
+      try {
+        await heroSaveRef.current();
+      } catch (e) {
+        console.warn("[StorefrontCustomizerCard] hero save error:", e);
+      }
+    }
     const payload = { ...state };
     if (!hasLoaderColumns) {
       delete (payload as any).storefront_loader_text_en;
@@ -3129,7 +3143,7 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
           </div>
         </div>
         <div className="pt-3">
-          <BrandHeroCard brandId={brandId} />
+          <BrandHeroCard brandId={brandId} onSaveRef={heroSaveRef} />
         </div>
       </div>
 
