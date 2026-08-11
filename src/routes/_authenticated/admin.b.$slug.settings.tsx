@@ -1687,7 +1687,7 @@ function BrandHeroCard({
               <button
                 type="button"
                 className="absolute end-3 top-3 grid h-11 w-11 place-items-center rounded-full bg-background/95 text-foreground shadow transition-transform hover:scale-105"
-                onClick={() => setState({ ...state, background: null })}
+                onClick={removeBackground}
                 aria-label={isAr ? "إزالة خلفية الواجهة" : "Remove hero background"}
               >
                 <Trash2 className="h-4 w-4" />
