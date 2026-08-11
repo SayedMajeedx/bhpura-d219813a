@@ -35,26 +35,9 @@ export function AppVideo({
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isVideoPlaying, setIsVideoPlaying] = useState(false);
 
-  // Auto-derive WebM primary + MP4 fallback sources when a single src is provided
-  const resolvedWebm =
-    webmSrc ||
-    (src
-      ? src.endsWith(".webm")
-        ? src
-        : src.includes("?")
-          ? src.replace(/\.(mp4|m4v|mov)\?/i, ".webm?")
-          : src.replace(/\.(mp4|m4v|mov)$/i, ".webm")
-      : null);
-
-  const resolvedMp4 =
-    mp4Src ||
-    (src
-      ? !src.endsWith(".webm")
-        ? src
-        : src.includes("?")
-          ? src.replace(/\.webm\?/i, ".mp4?")
-          : src.replace(/\.webm$/i, ".mp4")
-      : null);
+  // Only render WebM or MP4 sources when explicitly provided or matching file extension
+  const resolvedWebm = webmSrc || (src && src.toLowerCase().endsWith(".webm") ? src : null);
+  const resolvedMp4 = mp4Src || (src && !src.toLowerCase().endsWith(".webm") ? src : null);
 
   const handleFrameReady = () => {
     const video = videoRef.current;
