@@ -35,9 +35,26 @@ export function AppVideo({
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isVideoPlaying, setIsVideoPlaying] = useState(false);
 
-  // Derive source URLs if base src is provided without explicit webmSrc / mp4Src
-  const resolvedWebm = webmSrc || (src && src.endsWith(".webm") ? src : null);
-  const resolvedMp4 = mp4Src || (src && !src.endsWith(".webm") ? src : null);
+  // Auto-derive WebM primary + MP4 fallback sources when a single src is provided
+  const resolvedWebm =
+    webmSrc ||
+    (src
+      ? src.endsWith(".webm")
+        ? src
+        : src.includes("?")
+          ? src.replace(/\.(mp4|m4v|mov)\?/i, ".webm?")
+          : src.replace(/\.(mp4|m4v|mov)$/i, ".webm")
+      : null);
+
+  const resolvedMp4 =
+    mp4Src ||
+    (src
+      ? !src.endsWith(".webm")
+        ? src
+        : src.includes("?")
+          ? src.replace(/\.webm\?/i, ".mp4?")
+          : src.replace(/\.webm$/i, ".mp4")
+      : null);
 
   const handleFrameReady = () => {
     const video = videoRef.current;
@@ -118,8 +135,9 @@ export function AppVideo({
         {...props}
       >
         {resolvedWebm && <source src={resolvedWebm} type="video/webm" />}
-        {resolvedMp4 && <source src={resolvedMp4} type="video/mp4" />}
-        {src && !resolvedWebm && !resolvedMp4 && <source src={src} />}
+        {resolvedMp4 && resolvedMp4 !== resolvedWebm && (
+          <source src={resolvedMp4} type="video/mp4" />
+        )}
         Your browser does not support the video tag.
       </video>
     </div>
