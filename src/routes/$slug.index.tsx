@@ -696,7 +696,7 @@ function HeroContentCarousel({
                       active={slideIndex === idx}
                       prepare={!streamIframeUrl && slideIndex === preparedVideoIndex}
                       preload={
-                        slideIndex === idx || slideIndex === preparedVideoIndex ? "auto" : undefined
+                        slideIndex === idx || slideIndex === preparedVideoIndex ? "metadata" : "none"
                       }
                       className="pointer-events-none h-full w-full object-cover"
                       wrapperClassName="pointer-events-none h-full w-full overflow-hidden"
