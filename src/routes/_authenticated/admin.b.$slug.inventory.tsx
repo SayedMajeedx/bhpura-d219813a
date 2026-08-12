@@ -2212,7 +2212,7 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
     base_price: product?.base_price ? String(product.base_price) : "0",
     cost_price: product?.cost_price ? String(product.cost_price) : "0",
     image_url: product?.image_url ?? "",
-    is_active: product?.is_active ?? true,
+    is_active: product?.is_active ?? false,
     featured_trending: product?.featured_trending ?? false,
     show_sale_badge: product?.show_sale_badge ?? true,
     media: (product?.media ?? []) as MediaItem[],
@@ -2258,7 +2258,7 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
       base_price: product?.base_price ? String(product.base_price) : "0",
       cost_price: product?.cost_price ? String(product.cost_price) : "0",
       image_url: product?.image_url ?? "",
-      is_active: product?.is_active ?? true,
+      is_active: product?.is_active ?? false,
       featured_trending: product?.featured_trending ?? false,
       show_sale_badge: product?.show_sale_badge ?? true,
       media: (product?.media ?? []) as MediaItem[],
@@ -2379,6 +2379,21 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
     const legacyDesc = form.description_en.trim() || form.description_ar.trim() || null;
 
     if (product) {
+      if (form.is_active) {
+        const { count, error: variantCountError } = await supabase
+          .from("product_variants")
+          .select("id", { count: "exact", head: true })
+          .eq("product_id", product.id);
+        if (variantCountError) return toast.error(variantCountError.message);
+        if (!count) {
+          setActiveDialogTab("basic");
+          return toast.error(
+            isAr
+              ? "أضف متغيراً واحداً على الأقل قبل تفعيل المنتج في المتجر."
+              : "Add at least one variant before activating this product in the storefront.",
+          );
+        }
+      }
       const patch = {
         name: legacyName,
         name_ar: nameAr || null,
@@ -2432,7 +2447,9 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
         base_price: form.base_price ? Number(form.base_price) : 0,
         cost_price: form.cost_price ? Number(form.cost_price) : 0,
         image_url: form.image_url,
-        is_active: form.is_active,
+        // A product without variants cannot be purchased. Keep new products
+        // hidden until inventory has been configured explicitly.
+        is_active: false,
         featured_trending: form.featured_trending,
         show_sale_badge: form.show_sale_badge,
         media: form.media as any,
@@ -2452,7 +2469,13 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
     }
     removedCommittedMedia.current.clear();
     uncommittedUploads.current.clear();
-    toast.success(t("common.save"));
+    toast.success(
+      !product
+        ? isAr
+          ? "تم حفظ المنتج كمخفي. أضف المتغيرات ثم فعّله من تعديل المنتج."
+          : "Product saved as hidden. Add variants, then activate it from Edit product."
+        : t("common.save"),
+    );
     onSaved();
   };
 
@@ -2698,10 +2721,18 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
                 <Switch
                   checked={form.is_active}
                   onCheckedChange={(v) => setForm({ ...form, is_active: v })}
+                  disabled={!product}
                   aria-label={isAr ? "إظهار المنتج في المتجر" : "Show product in storefront"}
                 />
               </div>
             </div>
+            {!product && (
+              <p className="-mt-2 text-xs text-amber-700 dark:text-amber-400">
+                {isAr
+                  ? "سيُحفظ المنتج كمخفي. أضف متغيراً واحداً على الأقل، ثم فعّله من تعديل المنتج."
+                  : "This product will be saved as hidden. Add at least one variant, then activate it from Edit product."}
+              </p>
+            )}
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="flex items-center justify-between rounded-xl border border-border/80 p-4 bg-secondary/10 transition hover:bg-secondary/20">
                 <div>
@@ -3291,6 +3322,7 @@ type BulkVariantRow = {
   barcode: string;
   cost_price: number;
   selling_price: number;
+  sale_price: string;
   stock_main: number;
   stock_incubator: number;
 };
@@ -3356,6 +3388,7 @@ function BulkVariantDialog({
   const [open, setOpen] = useState(false);
   const [prompt, setPrompt] = useState("");
   const [plan, setPlan] = useState<VariantGenerationPlan>(blank);
+  const [salePriceText, setSalePriceText] = useState("");
   const [sizesText, setSizesText] = useState("");
   const [colorsText, setColorsText] = useState("");
   const [rows, setRows] = useState<BulkVariantRow[]>([]);
@@ -3364,6 +3397,11 @@ function BulkVariantDialog({
 
   const applyPlan = (next: VariantGenerationPlan) => {
     setPlan(next);
+    setSalePriceText(
+      next.selling_price > 0 && next.selling_price < Number(product?.base_price ?? 0)
+        ? String(next.selling_price)
+        : "",
+    );
     setSizesText(next.sizes.join(", "));
     setColorsText(next.colors.join(", "));
     setRows([]);
@@ -3407,6 +3445,17 @@ function BulkVariantDialog({
       );
     if (!plan.base_sku.trim())
       return toast.error(isAr ? "أدخل رمز المنتج الأساسي" : "Enter a base SKU");
+    const basePrice = Number(product?.base_price ?? 0);
+    const salePrice = salePriceText.trim() === "" ? null : Number(salePriceText);
+    if (
+      salePrice !== null &&
+      (!Number.isFinite(salePrice) || salePrice < 0 || salePrice >= basePrice)
+    )
+      return toast.error(
+        isAr
+          ? "يجب أن يكون سعر التخفيض أقل من السعر الأساسي، أو اتركه فارغاً."
+          : "Sale price must be lower than the regular price, or leave it blank.",
+      );
     const usedBarcodes = new Set(variants.map((v) => v.barcode).filter(Boolean) as string[]);
     const sizeAxis = sizes.length ? sizes : [""];
     const colorAxis = colors.length ? colors : [""];
@@ -3415,6 +3464,9 @@ function BulkVariantDialog({
         const suffix = [color, size].map(skuPart).filter(Boolean).join("-");
         return {
           ...plan,
+          cost_price: Number(product?.cost_price ?? 0),
+          selling_price: salePrice ?? basePrice,
+          sale_price: salePrice === null ? "" : String(salePrice),
           size,
           color,
           size_unit: plan.size_unit,
@@ -3444,7 +3496,10 @@ function BulkVariantDialog({
         existingBarcodes.has(barcode) ||
         seenSkus.has(sku) ||
         seenBarcodes.has(barcode) ||
-        row.selling_price < 0 ||
+        (row.sale_price !== "" &&
+          (!Number.isFinite(Number(row.sale_price)) ||
+            Number(row.sale_price) < 0 ||
+            Number(row.sale_price) >= Number(product?.base_price ?? 0))) ||
         row.cost_price < 0 ||
         !Number.isInteger(row.stock_main) ||
         row.stock_main < 0 ||
@@ -3477,22 +3532,31 @@ function BulkVariantDialog({
           fabric: row.fabric || null,
           sku: row.sku.trim(),
           barcode: row.barcode.trim(),
-          cost_price: canViewFinancials ? Number(product?.cost_price ?? row.cost_price) : 0,
-          selling_price: row.selling_price,
-          original_price:
-            row.selling_price < Number(product?.base_price ?? 0)
-              ? Number(product?.base_price ?? 0)
-              : null,
+          cost_price: Number(product?.cost_price ?? 0),
+          selling_price:
+            row.sale_price === "" ? Number(product?.base_price ?? 0) : Number(row.sale_price),
+          original_price: row.sale_price !== "" ? Number(product?.base_price ?? 0) : null,
           stock_main: row.stock_main,
           stock_incubator: row.stock_incubator,
         })),
       );
       if (error) throw error;
-      toast.success(isAr ? `تمت إضافة ${rows.length} متغير` : `${rows.length} variants added`);
+      toast.success(
+        variants.length === 0
+          ? isAr
+            ? `تمت إضافة ${rows.length} متغير. يمكنك الآن تفعيل المنتج من شاشة التعديل.`
+            : `${rows.length} variants added. You can now activate the product from Edit product.`
+          : isAr
+            ? `تمت إضافة ${rows.length} متغير`
+            : `${rows.length} variants added`,
+      );
       setOpen(false);
       setRows([]);
       setPrompt("");
-      applyPlan(blank);
+      setPlan(blank);
+      setSalePriceText("");
+      setSizesText("");
+      setColorsText("");
       onChanged();
     } catch (error) {
       toast.error(error instanceof Error ? error.message : isAr ? "فشل الحفظ" : "Save failed");
@@ -3502,7 +3566,19 @@ function BulkVariantDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog
+      open={open}
+      onOpenChange={(nextOpen) => {
+        setOpen(nextOpen);
+        if (nextOpen) {
+          setPlan(blank);
+          setSalePriceText("");
+          setSizesText("");
+          setColorsText("");
+          setRows([]);
+        }
+      }}
+    >
       <DialogTrigger asChild>
         <Button variant="outline" size="sm">
           <Wand2 className="me-2 h-4 w-4" />
@@ -3588,24 +3664,31 @@ function BulkVariantDialog({
           </div>
           {canViewFinancials && (
             <div>
-              <Label>{isAr ? "التكلفة" : "Cost"}</Label>
+              <Label>{isAr ? "التكلفة الموروثة" : "Inherited cost"}</Label>
               <Input
+                className="bg-muted/50 text-muted-foreground disabled:cursor-not-allowed disabled:opacity-100"
                 type="number"
                 min="0"
                 step="0.01"
-                value={plan.cost_price}
-                onChange={(e) => setPlan({ ...plan, cost_price: Number(e.target.value) })}
+                value={Number(product?.cost_price ?? 0)}
+                disabled
               />
             </div>
           )}
           <div>
-            <Label>{isAr ? "سعر البيع" : "Selling price"}</Label>
+            <Label>{isAr ? "سعر التخفيض (اختياري)" : "Sale price (optional)"}</Label>
             <Input
               type="number"
               min="0"
               step="0.01"
-              value={plan.selling_price}
-              onChange={(e) => setPlan({ ...plan, selling_price: Number(e.target.value) })}
+              max={Math.max(0, Number(product?.base_price ?? 0) - 0.001)}
+              placeholder={
+                isAr
+                  ? `الأساسي ${Number(product?.base_price ?? 0)}`
+                  : `Regular ${Number(product?.base_price ?? 0)}`
+              }
+              value={salePriceText}
+              onChange={(e) => setSalePriceText(e.target.value)}
             />
           </div>
           <div>
@@ -3652,7 +3735,7 @@ function BulkVariantDialog({
                       "SKU",
                       isAr ? "الباركود" : "Barcode",
                       ...(canViewFinancials ? [isAr ? "التكلفة" : "Cost"] : []),
-                      isAr ? "السعر" : "Price",
+                      isAr ? "سعر التخفيض" : "Sale price",
                       isAr ? "الرئيسي" : "Main",
                       isAr ? "الحاضنة" : "Incubator",
                       "",
@@ -3693,10 +3776,9 @@ function BulkVariantDialog({
                           type="number"
                           min="0"
                           step="0.01"
-                          value={row.selling_price}
-                          onChange={(e) =>
-                            patchRow(index, { selling_price: Number(e.target.value) })
-                          }
+                          placeholder={String(product?.base_price ?? 0)}
+                          value={row.sale_price}
+                          onChange={(e) => patchRow(index, { sale_price: e.target.value })}
                         />
                       </td>
                       <td className="p-1">
@@ -4739,6 +4821,13 @@ function VariantList({
       image_url: row.image_url || null,
     });
     if (error) return toast.error(error.message);
+    if (variants.length === 0) {
+      toast.success(
+        isAr
+          ? "تمت إضافة أول متغير. يمكنك الآن تفعيل المنتج من شاشة التعديل."
+          : "First variant added. You can now activate the product from Edit product.",
+      );
+    }
     setRow(empty);
     setAdding(false);
     onChanged();
