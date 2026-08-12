@@ -3541,15 +3541,31 @@ function BulkVariantDialog({
         })),
       );
       if (error) throw error;
-      toast.success(
-        variants.length === 0
-          ? isAr
-            ? `تمت إضافة ${rows.length} متغير. يمكنك الآن تفعيل المنتج من شاشة التعديل.`
-            : `${rows.length} variants added. You can now activate the product from Edit product.`
-          : isAr
-            ? `تمت إضافة ${rows.length} متغير`
-            : `${rows.length} variants added`,
-      );
+      let activationFailed = false;
+      if (variants.length === 0) {
+        const { error: activationError } = await supabase
+          .from("products")
+          .update({ is_active: true })
+          .eq("id", productId);
+        activationFailed = Boolean(activationError);
+      }
+      if (activationFailed) {
+        toast.error(
+          isAr
+            ? "تمت إضافة المتغيرات، لكن تعذر تفعيل المنتج تلقائياً."
+            : "Variants added, but the product could not be activated automatically.",
+        );
+      } else {
+        toast.success(
+          variants.length === 0
+            ? isAr
+              ? `تمت إضافة ${rows.length} متغير وتفعيل المنتج تلقائياً.`
+              : `${rows.length} variants added and the product was activated automatically.`
+            : isAr
+              ? `تمت إضافة ${rows.length} متغير`
+              : `${rows.length} variants added`,
+        );
+      }
       setOpen(false);
       setRows([]);
       setPrompt("");
@@ -4822,10 +4838,22 @@ function VariantList({
     });
     if (error) return toast.error(error.message);
     if (variants.length === 0) {
+      const { error: activationError } = await supabase
+        .from("products")
+        .update({ is_active: true })
+        .eq("id", productId);
+      if (activationError) {
+        onChanged();
+        return toast.error(
+          isAr
+            ? "تمت إضافة المتغير، لكن تعذر تفعيل المنتج تلقائياً."
+            : "Variant added, but the product could not be activated automatically.",
+        );
+      }
       toast.success(
         isAr
-          ? "تمت إضافة أول متغير. يمكنك الآن تفعيل المنتج من شاشة التعديل."
-          : "First variant added. You can now activate the product from Edit product.",
+          ? "تمت إضافة أول متغير وتفعيل المنتج تلقائياً."
+          : "First variant added and the product was activated automatically.",
       );
     }
     setRow(empty);
