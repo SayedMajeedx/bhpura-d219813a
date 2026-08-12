@@ -74,6 +74,7 @@ export function ImageCropperDialog({
   const [zoom, setZoom] = useState(1);
   const [area, setArea] = useState<Area | null>(null);
   const [processing, setProcessing] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
   useEffect(() => {
     if (!open) return;
@@ -81,6 +82,49 @@ export function ImageCropperDialog({
     setZoom(1);
     setArea(null);
   }, [imageSrc, open]);
+
+  useEffect(() => {
+    if (!heroPreview || !open || !imageSrc || !area) {
+      setPreviewUrl((current) => {
+        if (current) URL.revokeObjectURL(current);
+        return null;
+      });
+      return;
+    }
+
+    let disposed = false;
+    const timer = window.setTimeout(async () => {
+      try {
+        const previewWidth = 800;
+        const blob = await getCroppedBlob(
+          imageSrc,
+          area,
+          previewWidth,
+          Math.round(previewWidth / aspect),
+        );
+        if (disposed) return;
+        const nextUrl = URL.createObjectURL(blob);
+        setPreviewUrl((current) => {
+          if (current) URL.revokeObjectURL(current);
+          return nextUrl;
+        });
+      } catch {
+        // The final confirmation path reports encoding errors; keep preview unobtrusive.
+      }
+    }, 120);
+
+    return () => {
+      disposed = true;
+      window.clearTimeout(timer);
+    };
+  }, [area, aspect, heroPreview, imageSrc, open]);
+
+  useEffect(
+    () => () => {
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
+    },
+    [previewUrl],
+  );
 
   const onCropComplete = useCallback((_: Area, pixels: Area) => setArea(pixels), []);
 
@@ -221,18 +265,21 @@ export function ImageCropperDialog({
                 </span>
               </summary>
               <div className="px-3 pb-3">
-                <div className="relative mx-auto aspect-video w-full max-w-md overflow-hidden rounded-md border bg-muted">
-                  <div className="pointer-events-none absolute inset-0">
-                    <Cropper
-                      image={imageSrc}
-                      crop={crop}
-                      zoom={zoom}
-                      aspect={aspect}
-                      onCropChange={() => {}}
-                      onZoomChange={() => {}}
-                      objectFit="contain"
+                <div
+                  className="relative mx-auto w-full max-w-xl overflow-hidden rounded-md border bg-muted"
+                  style={{ aspectRatio: String(aspect) }}
+                >
+                  {previewUrl ? (
+                    <img
+                      src={previewUrl}
+                      alt={isAr ? "معاينة الصورة المقصوصة" : "Cropped storefront preview"}
+                      className="absolute inset-0 h-full w-full object-cover"
                     />
-                  </div>
+                  ) : (
+                    <div className="absolute inset-0 grid place-items-center">
+                      <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                    </div>
+                  )}
                   <div className="pointer-events-none absolute inset-x-3 bottom-3 flex items-end justify-between text-white mix-blend-difference">
                     <span className="grid h-9 w-9 place-items-center text-3xl font-extralight leading-none">
                       ‹

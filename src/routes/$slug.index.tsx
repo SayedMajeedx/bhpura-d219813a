@@ -337,7 +337,7 @@ function PromoCards() {
   );
   if (!cards.length) return null;
   return (
-    <div className="mb-6 sm:mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2">
+    <div className="mb-6 grid grid-cols-1 gap-3 sm:mb-8 sm:grid-cols-2 sm:gap-4">
       {cards.map((card, index) => {
         const title =
           lang === "ar" ? card.title_ar || card.title_en : card.title_en || card.title_ar;
@@ -350,7 +350,7 @@ function PromoCards() {
             key={index}
             href={card.href || "#products"}
             aria-label={title || (lang === "ar" ? "عرض خاص" : "Special offer")}
-            className="group relative aspect-[16/9] overflow-hidden rounded-2xl border shadow-sm sm:aspect-[2/1]"
+            className="group relative aspect-[2/1] overflow-hidden rounded-2xl border shadow-sm sm:aspect-auto sm:h-[216px]"
             style={{
               backgroundColor: card.background_color || "#f4f4f4",
               color: card.text_color || "#ffffff",
