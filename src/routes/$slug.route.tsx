@@ -1980,7 +1980,7 @@ function StoreFooter() {
           <div className="hidden sm:inline text-white/20">•</div>
           <div className="inline-flex items-center gap-1.5">
             <span className="text-emerald-500/90">💸</span>
-            <span>{t("الدفع كاش عند الاستلام أو بنفت بين", "Cash on Arrival & BenefitPay")}</span>
+            <span>{t("الدفع كاش عند الاستلام أو بنفت بي", "Cash on Arrival & BenefitPay")}</span>
           </div>
           <div className="hidden sm:inline text-white/20">•</div>
           <div className="inline-flex items-center gap-1.5">
