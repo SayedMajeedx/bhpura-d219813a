@@ -1971,6 +1971,24 @@ function StoreFooter() {
           </nav>
         )}
 
+        {/* Custom Boutique Trust & Security Reassurance Bar */}
+        <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 my-2 py-2.5 px-4 text-[11px] font-medium opacity-90 border-y border-white/10 rounded-xl bg-white/5 backdrop-blur-xs max-w-3xl w-full">
+          <div className="inline-flex items-center gap-1.5">
+            <span className="text-amber-500/90">✨</span>
+            <span>{t("تصاميم حصرية خاصّة بنا", "Exclusive In-House Designs")}</span>
+          </div>
+          <div className="hidden sm:inline text-white/20">•</div>
+          <div className="inline-flex items-center gap-1.5">
+            <span className="text-emerald-500/90">💸</span>
+            <span>{t("الدفع كاش عند الاستلام أو بنفت بين", "Cash on Arrival & BenefitPay")}</span>
+          </div>
+          <div className="hidden sm:inline text-white/20">•</div>
+          <div className="inline-flex items-center gap-1.5">
+            <span className="text-sky-500/90">🔒</span>
+            <span>{t("موقع آمن ومشفّر 256-Bit", "256-Bit SSL Encrypted")}</span>
+          </div>
+        </div>
+
         {/* Minimalist footer bottom line */}
         <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-[11px] opacity-70 border-t border-border pt-2 w-full max-w-2xl">
           {settings.show_footer_name && (
