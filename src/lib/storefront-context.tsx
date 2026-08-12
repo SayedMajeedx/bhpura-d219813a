@@ -124,6 +124,7 @@ export type PublicSettings = {
     image_position: "top" | "bottom";
     meta_title: string | null;
     meta_description: string | null;
+    group?: "company" | "help" | null;
   }>;
   socials: Array<{ name: string; url: string }>;
   whatsapp_enabled: boolean;

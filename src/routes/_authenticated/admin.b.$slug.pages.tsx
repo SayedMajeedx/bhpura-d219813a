@@ -65,6 +65,7 @@ type PageSlot = {
   image_position: "top" | "bottom";
   meta_title: string;
   meta_description: string;
+  group?: "company" | "help";
 };
 
 type Social = { name: string; url: string };
@@ -90,6 +91,7 @@ const emptyPage = (): PageSlot => ({
   image_position: "bottom",
   meta_title: "",
   meta_description: "",
+  group: "help",
 });
 
 const normalizePlatform = (name: string) =>
@@ -144,6 +146,7 @@ function PagesAndPolicies() {
         image_position: page?.image_position === "bottom" ? "bottom" : "top",
         meta_title: page?.meta_title ?? "",
         meta_description: page?.meta_description ?? "",
+        group: page?.group === "company" ? "company" : "help",
       })),
     );
     const rawSocials = Array.isArray(data.socials) ? data.socials : [];
@@ -547,24 +550,47 @@ function PagesAndPolicies() {
 
                   <AccordionContent className="border-t pt-5">
                     <div className="space-y-5" dir={editorLanguage === "ar" ? "rtl" : "ltr"}>
-                      <div>
-                        <Label>{editorLanguage === "ar" ? "عنوان الصفحة" : "Page title"}</Label>
-                        <Input
-                          value={editorLanguage === "ar" ? page.title_ar : page.title_en}
-                          onChange={(event) =>
-                            updatePage(
-                              index,
-                              editorLanguage === "ar"
-                                ? { title_ar: event.target.value }
-                                : { title_en: event.target.value },
-                            )
-                          }
-                          placeholder={
-                            editorLanguage === "ar" ? "مثال: دليل المقاسات" : "e.g. Size Guide"
-                          }
-                          dir={editorLanguage === "ar" ? "rtl" : "ltr"}
-                          className={editorLanguage === "ar" ? "text-right" : "text-left"}
-                        />
+                      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                        <div>
+                          <Label>{editorLanguage === "ar" ? "عنوان الصفحة" : "Page title"}</Label>
+                          <Input
+                            value={editorLanguage === "ar" ? page.title_ar : page.title_en}
+                            onChange={(event) =>
+                              updatePage(
+                                index,
+                                editorLanguage === "ar"
+                                  ? { title_ar: event.target.value }
+                                  : { title_en: event.target.value },
+                              )
+                            }
+                            placeholder={
+                              editorLanguage === "ar" ? "مثال: دليل المقاسات" : "e.g. Size Guide"
+                            }
+                            dir={editorLanguage === "ar" ? "rtl" : "ltr"}
+                            className={editorLanguage === "ar" ? "text-right" : "text-left"}
+                          />
+                        </div>
+                        <div>
+                          <Label>{isAr ? "مجموعة رابط التذييل" : "Footer accordion group"}</Label>
+                          <Select
+                            value={page.group || "help"}
+                            onValueChange={(value) =>
+                              updatePage(index, { group: value as "company" | "help" })
+                            }
+                          >
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="company">
+                                {isAr ? "الشركة (عن المتجر، التواصل)" : "Company (About, Contact)"}
+                              </SelectItem>
+                              <SelectItem value="help">
+                                {isAr ? "المساعدة (الشروط، المقاسات، التوصيل)" : "Help (Policies, FAQs, Shipping)"}
+                              </SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
                       </div>
 
                       <div>
