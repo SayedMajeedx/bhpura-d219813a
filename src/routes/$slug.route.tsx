@@ -67,7 +67,17 @@ export const Route = createFileRoute("/$slug")({
     const trackingSettings = pageData.trackingSettings ?? {};
 
     const s = settings as any;
-    const rawPages = Array.isArray(s?.pages) ? s.pages : [];
+    const rawPagesData = s?.pages;
+    const rawPages = Array.isArray(rawPagesData)
+      ? rawPagesData
+      : Array.isArray(rawPagesData?.items)
+        ? rawPagesData.items
+        : [];
+    const footerTitles =
+      !Array.isArray(rawPagesData) && typeof rawPagesData === "object" && rawPagesData !== null
+        ? rawPagesData.footer_titles
+        : null;
+
     const normalizedPages = rawPages.map((p: any, index: number) => ({
       slug: p?.slug ?? `page-${index + 1}`,
       title_ar: p?.title_ar ?? null,
@@ -79,6 +89,7 @@ export const Route = createFileRoute("/$slug")({
       image_position: p?.image_position === "bottom" ? "bottom" : "top",
       meta_title: p?.meta_title ?? null,
       meta_description: p?.meta_description ?? null,
+      group: p?.group === "company" ? "company" : "help",
     }));
     const rawSocials = Array.isArray(s?.socials) ? s.socials : [];
     const normalizedSocials = rawSocials
@@ -141,10 +152,10 @@ export const Route = createFileRoute("/$slug")({
       header_fg: s?.header_fg ?? null,
       footer_bg: s?.footer_bg ?? null,
       footer_fg: s?.footer_fg ?? null,
-      footer_company_title_en: s?.footer_company_title_en ?? null,
-      footer_company_title_ar: s?.footer_company_title_ar ?? null,
-      footer_help_title_en: s?.footer_help_title_en ?? null,
-      footer_help_title_ar: s?.footer_help_title_ar ?? null,
+      footer_company_title_en: footerTitles?.company_en ?? null,
+      footer_company_title_ar: footerTitles?.company_ar ?? null,
+      footer_help_title_en: footerTitles?.help_en ?? null,
+      footer_help_title_ar: footerTitles?.help_ar ?? null,
       heading_color: s?.heading_color ?? null,
       link_color: s?.link_color ?? null,
       btn_primary_bg: s?.btn_primary_bg ?? null,

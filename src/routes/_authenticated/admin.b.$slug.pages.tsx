@@ -112,9 +112,7 @@ function PagesAndPolicies() {
     queryFn: async () => {
       const { data: settings, error } = await supabase
         .from("business_settings")
-        .select(
-          "pages, whatsapp_enabled, whatsapp_number, socials, footer_company_title_en, footer_company_title_ar, footer_help_title_en, footer_help_title_ar",
-        )
+        .select("pages, whatsapp_enabled, whatsapp_number, socials")
         .eq("brand_id", brandId)
         .maybeSingle();
       if (error) throw error;
@@ -139,7 +137,17 @@ function PagesAndPolicies() {
 
   useEffect(() => {
     if (!data) return;
-    const rawPages = Array.isArray(data.pages) ? data.pages : [];
+    const rawPagesData = data.pages;
+    const rawPages = Array.isArray(rawPagesData)
+      ? rawPagesData
+      : Array.isArray(rawPagesData?.items)
+        ? rawPagesData.items
+        : [];
+    const footerTitles =
+      !Array.isArray(rawPagesData) && typeof rawPagesData === "object" && rawPagesData !== null
+        ? rawPagesData.footer_titles
+        : null;
+
     setPages(
       rawPages.map((page: any) => ({
         slug: page?.slug ?? "",
@@ -164,10 +172,10 @@ function PagesAndPolicies() {
     );
     setWaEnabled(Boolean(data.whatsapp_enabled));
     setWaNumber(data.whatsapp_number ?? "");
-    setCompanyTitleEn(data.footer_company_title_en ?? "Company");
-    setCompanyTitleAr(data.footer_company_title_ar ?? "الشركة");
-    setHelpTitleEn(data.footer_help_title_en ?? "Help");
-    setHelpTitleAr(data.footer_help_title_ar ?? "المساعدة");
+    setCompanyTitleEn(footerTitles?.company_en ?? "Company");
+    setCompanyTitleAr(footerTitles?.company_ar ?? "الشركة");
+    setHelpTitleEn(footerTitles?.help_en ?? "Help");
+    setHelpTitleAr(footerTitles?.help_ar ?? "المساعدة");
   }, [data]);
 
   const updatePage = (index: number, patch: Partial<PageSlot>) => {
@@ -258,16 +266,21 @@ function PagesAndPolicies() {
       .map((social) => ({ name: social.name.trim(), url: social.url.trim() }))
       .filter((social) => social.name && social.url);
     const number = waNumber.replace(/\s+/g, "").replace(/^00/, "+");
+    const pagesPayload = {
+      items: cleanedPages,
+      footer_titles: {
+        company_en: companyTitleEn.trim() || "Company",
+        company_ar: companyTitleAr.trim() || "الشركة",
+        help_en: helpTitleEn.trim() || "Help",
+        help_ar: helpTitleAr.trim() || "المساعدة",
+      },
+    };
     const { error } = await (supabase.from("business_settings") as any)
       .update({
-        pages: cleanedPages,
+        pages: pagesPayload,
         socials: cleanedSocials,
         whatsapp_enabled: waEnabled,
         whatsapp_number: number || null,
-        footer_company_title_en: companyTitleEn.trim() || null,
-        footer_company_title_ar: companyTitleAr.trim() || null,
-        footer_help_title_en: helpTitleEn.trim() || null,
-        footer_help_title_ar: helpTitleAr.trim() || null,
       })
       .eq("brand_id", brandId);
     setSaving(false);
