@@ -4670,6 +4670,16 @@ function VariantList({
   };
   const [row, setRow] = useState(empty);
 
+  const startAdding = () => {
+    setRow({
+      ...empty,
+      cost_price: String(product?.cost_price ?? 0),
+      selling_price: "",
+      original_price: String(product?.base_price ?? 0),
+    });
+    setAdding(true);
+  };
+
   const genBarcode = () => {
     const random = new Uint32Array(1);
     crypto.getRandomValues(random);
@@ -5497,7 +5507,7 @@ function VariantList({
               className="h-9 px-3.5 rounded-xl text-xs font-bold hover:bg-secondary/40 touch-manipulation"
               onClick={(e) => {
                 e.preventDefault();
-                setAdding(true);
+                startAdding();
               }}
             >
               <Plus className="h-3.5 w-3.5 mr-1" /> {t("inventory.addVariant")}
