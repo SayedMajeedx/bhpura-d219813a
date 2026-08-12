@@ -323,7 +323,8 @@ input[type="number"] {
       radial-gradient(circle at 5% 15%, oklch(0.96 0.035 25 / 70%), transparent 45%),
       radial-gradient(circle at 95% 85%, oklch(0.95 0.03 35 / 60%), transparent 55%),
       linear-gradient(185deg, var(--os-canvas) 0%, var(--os-canvas-secondary) 100%);
-    background-attachment: fixed;
+    background-repeat: no-repeat;
+    background-size: cover;
   }
 
   .dark .os-canvas {
@@ -331,7 +332,15 @@ input[type="number"] {
       radial-gradient(ellipse 90% 60% at 50% -15%, oklch(0.28 0.09 25 / 40%), transparent 75%),
       radial-gradient(circle at 95% 95%, oklch(0.22 0.07 25 / 30%), transparent 55%),
       linear-gradient(185deg, oklch(0.14 0.015 60) 0%, oklch(0.17 0.018 60) 100%);
-    background-attachment: fixed;
+    background-repeat: no-repeat;
+    background-size: cover;
+  }
+
+  /* Hardware-accelerated GPU compositing for floating glass surfaces */
+  .os-glass,
+  .os-glass-strong,
+  .os-toolbar {
+    transform: translateZ(0);
   }
 
   .os-glass {
