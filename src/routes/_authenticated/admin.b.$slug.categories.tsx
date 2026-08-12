@@ -22,6 +22,7 @@ import { uploadPublicMedia } from "@/lib/r2-upload";
 import { useRealtimeInvalidate } from "@/hooks/use-realtime-invalidate";
 import { CategoriesCommandHeader } from "@/components/categories/CategoriesCommandHeader";
 import { CategoriesWorkQueue } from "@/components/categories/CategoriesWorkQueue";
+import { CropUploadButton } from "@/components/crop-upload-button";
 
 export const Route = createFileRoute("/_authenticated/admin/b/$slug/categories")({
   component: CategoriesPage,
@@ -195,7 +196,6 @@ function CategoryDialog({
   });
   const [uploading, setUploading] = useState(false);
   const [uploadingIcon, setUploadingIcon] = useState(false);
-  const fileInput = useRef<HTMLInputElement>(null);
   const iconInput = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -211,7 +211,7 @@ function CategoryDialog({
     });
   }, [category]);
 
-  const upload = async (file: File) => {
+  const upload = async (file: Blob) => {
     try {
       setUploading(true);
       const url = await uploadPublicMedia(brandId, file, "category");
@@ -330,22 +330,22 @@ function CategoryDialog({
                 onChange={(e) => setForm({ ...form, image_url: e.target.value })}
                 placeholder="https://..."
               />
-              <input
-                ref={fileInput}
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={(e) => e.target.files?.[0] && upload(e.target.files[0])}
-              />
-              <Button
-                type="button"
-                variant="outline"
+              <CropUploadButton
+                onCrop={upload}
+                aspect={1}
+                outputWidth={1200}
+                outputHeight={1200}
                 size="icon"
-                onClick={() => fileInput.current?.click()}
-                disabled={uploading}
+                busy={uploading}
+                title={isAr ? "ضبط صورة القسم" : "Frame category image"}
+                description={
+                  isAr
+                    ? "حرّك وكبّر الصورة داخل الإطار المربع."
+                    : "Reposition and zoom for a clean square category image."
+                }
               >
                 <Upload className="h-4 w-4" />
-              </Button>
+              </CropUploadButton>
             </div>
           </div>
         </div>

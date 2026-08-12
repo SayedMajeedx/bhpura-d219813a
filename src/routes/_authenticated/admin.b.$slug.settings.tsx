@@ -2820,6 +2820,9 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
   const router = useRouter();
   const [saving, setSaving] = useState(false);
   const [uploadingFont, setUploadingFont] = useState<null | "en" | "ar">(null);
+  const [promoCropSrc, setPromoCropSrc] = useState<string | null>(null);
+  const [promoCropIndex, setPromoCropIndex] = useState<number | null>(null);
+  const [uploadingPromo, setUploadingPromo] = useState(false);
   const [settingsTab, setSettingsTab] = useState<"general" | "theme" | "content" | "promotions">(
     "theme",
   );
@@ -3086,6 +3089,7 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
 
   const uploadPromoImage = async (index: number, file: File) => {
     try {
+      setUploadingPromo(true);
       const url = await uploadPublicMedia(brandId, file, "hero");
       updatePromoCard(index, { image_url: url });
       toast.success(
@@ -3093,7 +3097,33 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
       );
     } catch (error: any) {
       toast.error(error.message ?? "Upload failed");
+    } finally {
+      setUploadingPromo(false);
     }
+  };
+
+  const choosePromoImage = (index: number, file: File) => {
+    if (!file.type.startsWith("image/")) {
+      toast.error(isAr ? "يرجى اختيار ملف صورة" : "Please choose an image file");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      setPromoCropIndex(index);
+      setPromoCropSrc(String(reader.result));
+    };
+    reader.onerror = () => toast.error(isAr ? "تعذر قراءة الصورة" : "Could not read image");
+    reader.readAsDataURL(file);
+  };
+
+  const confirmPromoCrop = async (blob: Blob) => {
+    if (promoCropIndex == null) return;
+    await uploadPromoImage(
+      promoCropIndex,
+      new File([blob], `promotion-${promoCropIndex + 1}.jpg`, { type: "image/jpeg" }),
+    );
+    setPromoCropSrc(null);
+    setPromoCropIndex(null);
   };
 
   if (!state) {
@@ -4035,9 +4065,12 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
                     type="file"
                     accept="image/*"
                     className="hidden"
-                    onChange={(e) =>
-                      e.target.files?.[0] && uploadPromoImage(index, e.target.files[0])
-                    }
+                    disabled={uploadingPromo}
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      e.currentTarget.value = "";
+                      if (file) choosePromoImage(index, file);
+                    }}
                   />
                 </label>
               </div>
@@ -4059,6 +4092,27 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
           ))}
         </div>
       </div>
+
+      <ImageCropperDialog
+        open={Boolean(promoCropSrc)}
+        imageSrc={promoCropSrc}
+        aspect={2}
+        outputWidth={1200}
+        outputHeight={600}
+        busy={uploadingPromo}
+        heroPreview
+        title={isAr ? "ضبط صورة البنر" : "Frame promotion banner"}
+        description={
+          isAr
+            ? "اسحب وكبّر الصورة حتى تظهر بأفضل شكل داخل مساحة البنر بنسبة 2:1."
+            : "Reposition and zoom for a precise 2:1 banner crop. The result is optimized to 1200 × 600 px."
+        }
+        onCancel={() => {
+          setPromoCropSrc(null);
+          setPromoCropIndex(null);
+        }}
+        onConfirm={confirmPromoCrop}
+      />
 
       <div className={settingsTab === "theme" ? "space-y-3" : "hidden"}>
         <h3 className="font-medium text-sm">{isAr ? "الطباعة" : "Typography"}</h3>

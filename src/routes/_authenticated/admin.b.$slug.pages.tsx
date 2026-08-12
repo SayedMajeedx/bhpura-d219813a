@@ -48,6 +48,7 @@ import {
 
 import { PagesCommandHeader } from "@/components/pages/PagesCommandHeader";
 import { PagesScopeSwitcher, type PagesScope } from "@/components/pages/PagesScopeSwitcher";
+import { CropUploadButton } from "@/components/crop-upload-button";
 
 export const Route = createFileRoute("/_authenticated/admin/b/$slug/pages")({
   component: PagesAndPolicies,
@@ -126,7 +127,6 @@ function PagesAndPolicies() {
   const [uploadingIconIdx, setUploadingIconIdx] = useState<number | null>(null);
   const [openPages, setOpenPages] = useState<string[]>([]);
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
-  const fileInputs = useRef<Array<HTMLInputElement | null>>([]);
   const iconInputs = useRef<Array<HTMLInputElement | null>>([]);
 
   useEffect(() => {
@@ -195,7 +195,7 @@ function PagesAndPolicies() {
     );
   };
 
-  const onPickImage = async (index: number, file: File) => {
+  const onPickImage = async (index: number, file: Blob) => {
     try {
       setUploadingIdx(index);
       const url = await uploadPublicMedia(brandId, file, "page");
@@ -763,25 +763,14 @@ function PagesAndPolicies() {
                           </Select>
                         </div>
                         <div className="mt-3 flex flex-wrap items-center gap-3">
-                          <input
-                            ref={(element) => {
-                              fileInputs.current[index] = element;
-                            }}
-                            type="file"
-                            accept="image/*"
-                            className="hidden"
-                            onChange={(event) => {
-                              const file = event.target.files?.[0];
-                              if (file) onPickImage(index, file);
-                              event.target.value = "";
-                            }}
-                          />
-                          <Button
-                            type="button"
-                            variant="outline"
+                          <CropUploadButton
+                            onCrop={(blob) => onPickImage(index, blob)}
+                            aspect={page.image_position === "top" ? 16 / 9 : 4 / 3}
+                            outputWidth={page.image_position === "top" ? 1600 : 1200}
+                            outputHeight={900}
                             size="sm"
-                            onClick={() => fileInputs.current[index]?.click()}
-                            disabled={uploadingIdx === index}
+                            busy={uploadingIdx === index}
+                            title={editorLanguage === "ar" ? "ضبط صورة الصفحة" : "Frame page image"}
                           >
                             <Upload className="h-4 w-4" />
                             {uploadingIdx === index
@@ -791,7 +780,7 @@ function PagesAndPolicies() {
                               : editorLanguage === "ar"
                                 ? "رفع صورة"
                                 : "Upload image"}
-                          </Button>
+                          </CropUploadButton>
                           {page.image_url ? (
                             <div className="flex items-center gap-2 rounded-lg border p-2">
                               <img
