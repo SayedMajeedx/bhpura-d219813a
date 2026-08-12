@@ -471,7 +471,7 @@ export default function InvoicePreview({
                 const legacy = !detailed ? formatDeliveryAddress(order.customers, invoiceLang) : [];
                 if (!detailed && legacy.length === 0) return null;
                 return (
-                  <div className="mt-3 pt-3 border-t border-neutral-200">
+                  <div className="mt-3 pt-3 border-t border-border">
                     <p
                       className={`text-xs mb-1 ${isRTL ? "" : "uppercase tracking-wider"}`}
                       style={{ opacity: 0.6, letterSpacing: isRTL ? "normal" : undefined }}
@@ -525,7 +525,7 @@ export default function InvoicePreview({
                         : "Delivery"}
                 </p>
                 {order.fulfillment_method === "digital" && (
-                  <div className="mt-2 rounded-md border border-neutral-200 p-3">
+                  <div className="mt-2 rounded-md border border-border p-3">
                     <p
                       className={`text-xs ${isRTL ? "" : "uppercase tracking-wider"}`}
                       style={{ opacity: 0.6, letterSpacing: isRTL ? "normal" : undefined }}
@@ -568,7 +568,7 @@ export default function InvoicePreview({
               </thead>
               <tbody>
                 {items.map((it, i) => (
-                  <tr key={i} className="border-b border-neutral-200 align-top">
+                  <tr key={i} className="border-b border-border align-top">
                     <td className="p-3 text-start">
                       {(() => {
                         const raw = (it.description || "—")
@@ -742,7 +742,7 @@ export default function InvoicePreview({
 
           {settings.invoice_show_notes !== false && (order.notes || settings.footer_note) && (
             <div
-              className="mt-10 pt-6 border-t border-neutral-200 text-sm space-y-2"
+              className="mt-10 pt-6 border-t border-border text-sm space-y-2"
               style={{ opacity: 0.85 }}
             >
               {order.notes && (

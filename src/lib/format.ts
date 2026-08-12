@@ -1,3 +1,5 @@
+import { getOrderStatusLabel } from "@/lib/status-labels";
+
 export function westernNumeralLocale(locale = "en-BH"): string {
   try {
     return new Intl.Locale(locale, { numberingSystem: "latn" }).toString();
@@ -69,30 +71,7 @@ export function formatOrderStatus(
     }
   }
 
-  switch (s) {
-    case "draft":
-      return lang === "ar" ? "مسودة" : "Draft";
-    case "pending":
-      return lang === "ar" ? "قيد الانتظار" : "Pending";
-    case "unpaid":
-      return lang === "ar" ? "غير مدفوع" : "Unpaid";
-    case "needs_packing":
-      return lang === "ar" ? "يحتاج للتجهيز" : "Needs Packing";
-    case "confirmed":
-      return lang === "ar" ? "مؤكد" : "Confirmed";
-    case "paid":
-      return lang === "ar" ? "مدفوع" : "Paid";
-    case "completed":
-      return lang === "ar" ? "مكتمل" : "Completed";
-    case "cancelled":
-      return lang === "ar" ? "ملغى" : "Cancelled";
-    case "pending_verification":
-      return lang === "ar" ? "في انتظار التحقق" : "Pending Verification";
-    case "archived_historical":
-      return lang === "ar" ? "أرشيف تاريخي" : "Archived Historical";
-    default:
-      return status;
-  }
+  return getOrderStatusLabel(status, lang);
 }
 
 /** Format a size value with an optional unit, translating known units to Arabic. */
