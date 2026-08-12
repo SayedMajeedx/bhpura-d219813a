@@ -321,14 +321,14 @@ function ExpensesPage() {
     },
   });
 
-  // ── COGS: fetch orders in the active date range and join variant cost_price ──
+  // ── COGS: use the immutable unit-cost snapshot captured on each order item ──
   const cogsQ = useQuery({
     queryKey: ["cogs", brandId, activeRange.from, activeRange.to],
     queryFn: async () => {
       let q2 = (supabase as any)
         .from("orders")
         .select(
-          "id, invoice_number, created_at, currency, total, payment_method, order_items(id, description, quantity, unit_price, line_total, variant_id, product_variants:variant_id(cost_price))",
+          "id, invoice_number, created_at, currency, total, payment_method, order_items(id, description, quantity, unit_price, unit_cost, line_total, variant_id)",
         )
         .eq("brand_id", brandId)
         .in("status", ["confirmed", "paid", "shipped", "completed"])
@@ -359,7 +359,7 @@ function ExpensesPage() {
     let grandTotal = 0;
     for (const order of rows) {
       for (const item of order.order_items ?? []) {
-        const cost = Number((item as any).product_variants?.cost_price ?? 0);
+        const cost = Number((item as any).unit_cost ?? 0);
         const itemTotal = cost * Number(item.quantity);
         grandTotal += itemTotal;
         lines.push(
@@ -466,7 +466,7 @@ function ExpensesPage() {
     let sum = 0;
     (cogsQ.data ?? []).forEach((order) => {
       (order.order_items ?? []).forEach((item) => {
-        const cost = Number((item as any).product_variants?.cost_price ?? 0);
+        const cost = Number((item as any).unit_cost ?? 0);
         sum += cost * Number(item.quantity);
       });
     });
@@ -1288,9 +1288,9 @@ type CogItem = {
   description: string;
   quantity: number;
   unit_price: number;
+  unit_cost: number | null;
   line_total: number;
   variant_id: string | null;
-  product_variants?: { cost_price: number } | null;
 };
 type CogOrder = {
   id: string;
@@ -1327,7 +1327,7 @@ function CogsSection({
     const ordersWithCogs = orders
       .map((order) => {
         const items = (order.order_items ?? []).map((item) => {
-          const cost = Number(item.product_variants?.cost_price ?? 0);
+          const cost = Number(item.unit_cost ?? 0);
           const itemCogs = cost * Number(item.quantity);
           return { ...item, cost, itemCogs };
         });

@@ -1308,6 +1308,7 @@ export type Database = {
           quantity: number;
           selected_variant: Json | null;
           unit_price: number;
+          unit_cost: number | null;
           user_id: string;
           variant_id: string | null;
         };
@@ -1327,6 +1328,7 @@ export type Database = {
           quantity?: number;
           selected_variant?: Json | null;
           unit_price?: number;
+          unit_cost?: number | null;
           user_id: string;
           variant_id?: string | null;
         };
@@ -1346,6 +1348,7 @@ export type Database = {
           quantity?: number;
           selected_variant?: Json | null;
           unit_price?: number;
+          unit_cost?: number | null;
           user_id?: string;
           variant_id?: string | null;
         };
@@ -1907,6 +1910,7 @@ export type Database = {
       products: {
         Row: {
           base_price: number | null;
+          cost_price: number;
           brand_id: string;
           category: string | null;
           created_at: string;
@@ -1942,6 +1946,7 @@ export type Database = {
         };
         Insert: {
           base_price?: number | null;
+          cost_price?: number;
           brand_id: string;
           category?: string | null;
           created_at?: string;
@@ -1977,6 +1982,7 @@ export type Database = {
         };
         Update: {
           base_price?: number | null;
+          cost_price?: number;
           brand_id?: string;
           category?: string | null;
           created_at?: string;

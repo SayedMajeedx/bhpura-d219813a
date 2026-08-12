@@ -510,9 +510,7 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
 
   // Compute prices for matching variants
   const matchingPrices = useMemo(() => {
-    return matchingVariants.map(
-      (v) => basePrice + Number(v.selling_price || 0) + selectedAddOnPrice,
-    );
+    return matchingVariants.map((v) => Number(v.selling_price || basePrice) + selectedAddOnPrice);
   }, [matchingVariants, basePrice, selectedAddOnPrice]);
 
   if (isLoading && !product) {
@@ -554,7 +552,7 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
 
   // Final displayPrice (use the unique matched variant, or fallback to minMatchingPrice)
   const displayPrice = matchedVariant
-    ? basePrice + Number(matchedVariant.selling_price || 0) + selectedAddOnPrice
+    ? Number(matchedVariant.selling_price || basePrice) + selectedAddOnPrice
     : minMatchingPrice;
 
   const maxStock = variant?.stock_main ?? 0;
@@ -679,8 +677,10 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
       : t("السعر عند الطلب", "Price on request");
 
   // Calculate original price only when displaying a single price
-  const variantPriceDelta = variant ? Number(variant.selling_price || 0) : 0;
-  const variantOriginalDelta = variant ? Number(variant.original_price || 0) : 0;
+  const variantPriceDelta = variant ? Number(variant.selling_price || basePrice) - basePrice : 0;
+  const variantOriginalDelta = variant
+    ? Number(variant.original_price || basePrice) - basePrice
+    : 0;
   const productOriginalPrice = Number((product as any).original_price || 0);
 
   const originalPrice =

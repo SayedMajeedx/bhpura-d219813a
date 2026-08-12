@@ -138,6 +138,7 @@ type Product = {
   media: MediaItem[];
   custom_fields: CustomField[] | null;
   base_price?: number | null;
+  cost_price?: number | null;
   variant_label_size_ar?: string | null;
   variant_label_size_en?: string | null;
   variant_label_color_ar?: string | null;
@@ -2209,6 +2210,7 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
     description_en: product?.description_en ?? product?.description ?? "",
     category: product?.category ?? "",
     base_price: product?.base_price ? String(product.base_price) : "0",
+    cost_price: product?.cost_price ? String(product.cost_price) : "0",
     image_url: product?.image_url ?? "",
     is_active: product?.is_active ?? true,
     featured_trending: product?.featured_trending ?? false,
@@ -2225,7 +2227,7 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
     variant_label_fabric_en: product?.variant_label_fabric_en ?? "",
   };
   const [form, setForm] = useState(initialForm);
-  const [errors, setErrors] = useState<{ name?: string; price?: string }>({});
+  const [errors, setErrors] = useState<{ name?: string; price?: string; cost?: string }>({});
   const [uploading, setUploading] = useState(false);
   const [cropSrc, setCropSrc] = useState<string | null>(null);
   const [pendingVideo, setPendingVideo] = useState<File | null>(null);
@@ -2254,6 +2256,7 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
       description_en: product?.description_en ?? product?.description ?? "",
       category: product?.category ?? "",
       base_price: product?.base_price ? String(product.base_price) : "0",
+      cost_price: product?.cost_price ? String(product.cost_price) : "0",
       image_url: product?.image_url ?? "",
       is_active: product?.is_active ?? true,
       featured_trending: product?.featured_trending ?? false,
@@ -2343,7 +2346,7 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
     const nameEn = form.name_en.trim();
     const basePrice = form.base_price.trim();
 
-    const newErrors: { name?: string; price?: string } = {};
+    const newErrors: { name?: string; price?: string; cost?: string } = {};
 
     if (!nameAr && !nameEn) {
       newErrors.name = isAr
@@ -2355,6 +2358,9 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
       newErrors.price = isAr
         ? "يجب إدخال سعر صحيح أكبر من أو يساوي الصفر"
         : "A valid price greater than or equal to 0 is required";
+    }
+    if (!form.cost_price.trim() || isNaN(Number(form.cost_price)) || Number(form.cost_price) < 0) {
+      newErrors.cost = isAr ? "أدخل تكلفة صحيحة" : "Enter a valid non-negative cost";
     }
 
     if (Object.keys(newErrors).length > 0) {
@@ -2382,6 +2388,7 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
         description_en: form.description_en.trim() || null,
         category: form.category,
         base_price: form.base_price ? Number(form.base_price) : 0,
+        cost_price: form.cost_price ? Number(form.cost_price) : 0,
         image_url: form.image_url,
         is_active: form.is_active,
         featured_trending: form.featured_trending,
@@ -2397,6 +2404,20 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
       };
       const { error } = await supabase.from("products").update(patch).eq("id", product.id);
       if (error) return toast.error(error.message);
+      const { error: variantDefaultsError } = await (supabase.from("product_variants") as any)
+        .update({ cost_price: patch.cost_price })
+        .eq("product_id", product.id);
+      if (variantDefaultsError) return toast.error(variantDefaultsError.message);
+      const { error: inheritedPriceError } = await (supabase.from("product_variants") as any)
+        .update({ selling_price: patch.base_price, original_price: null })
+        .eq("product_id", product.id)
+        .is("original_price", null);
+      if (inheritedPriceError) return toast.error(inheritedPriceError.message);
+      const { error: saleOriginalError } = await (supabase.from("product_variants") as any)
+        .update({ original_price: patch.base_price })
+        .eq("product_id", product.id)
+        .not("original_price", "is", null);
+      if (saleOriginalError) return toast.error(saleOriginalError.message);
     } else {
       const payload = {
         user_id: user.id,
@@ -2409,6 +2430,7 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
         description_en: form.description_en.trim() || null,
         category: form.category,
         base_price: form.base_price ? Number(form.base_price) : 0,
+        cost_price: form.cost_price ? Number(form.cost_price) : 0,
         image_url: form.image_url,
         is_active: form.is_active,
         featured_trending: form.featured_trending,
@@ -2584,10 +2606,30 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
               ) : (
                 <p className="text-xs text-muted-foreground mt-1.5">
                   {isAr
-                    ? "السعر الرئيسي للمنتج. عند إضافة خيارات/متغيرات، يمكنك إدخال المبلغ الإضافي (+Amount) وسيتم جمعه تلقائياً."
-                    : "The primary base price of the product. When adding variants, you can set an upcharge (+Amount) which will be added automatically."}
+                    ? "السعر العادي للمنتج، ويُورّث تلقائياً لكل متغير جديد."
+                    : "The product's regular price, inherited automatically by every new variant."}
                 </p>
               )}
+            </div>
+            <div>
+              <Label className="text-xs font-bold text-muted-foreground">
+                {isAr ? "تكلفة الوحدة (د.ب)" : "Unit Cost (BHD)"}
+              </Label>
+              <Input
+                type="number"
+                step="0.001"
+                min="0"
+                className={`mt-1 h-10.5 rounded-lg ${errors.cost ? "border-destructive" : ""}`}
+                placeholder="0.000"
+                value={form.cost_price}
+                onChange={(e) => setForm({ ...form, cost_price: e.target.value })}
+              />
+              {errors.cost && <p className="mt-1 text-xs text-destructive">{errors.cost}</p>}
+              <p className="mt-1.5 text-xs text-muted-foreground">
+                {isAr
+                  ? "تُورّث للمتغيرات وتُحتسب ضمن تكلفة البضاعة المباعة عند البيع، وليست مصروفاً فورياً."
+                  : "Inherited by variants and recognized as COGS when sold; it is not an immediate expense."}
+              </p>
             </div>
             <div>
               <Label className="text-xs font-bold text-muted-foreground">
@@ -3286,11 +3328,13 @@ const makeEan13 = (used: Set<string>) => {
 
 function BulkVariantDialog({
   productId,
+  product,
   variants,
   canViewFinancials,
   onChanged,
 }: {
   productId: string;
+  product?: Product;
   variants: Variant[];
   canViewFinancials: boolean;
   onChanged: () => void;
@@ -3304,8 +3348,8 @@ function BulkVariantDialog({
     colors: [],
     fabric: "",
     size_unit: "",
-    cost_price: 0,
-    selling_price: 0,
+    cost_price: Number(product?.cost_price ?? 0),
+    selling_price: Number(product?.base_price ?? 0),
     stock_main: 0,
     stock_incubator: 0,
   };
@@ -3433,8 +3477,12 @@ function BulkVariantDialog({
           fabric: row.fabric || null,
           sku: row.sku.trim(),
           barcode: row.barcode.trim(),
-          cost_price: canViewFinancials ? row.cost_price : 0,
+          cost_price: canViewFinancials ? Number(product?.cost_price ?? row.cost_price) : 0,
           selling_price: row.selling_price,
+          original_price:
+            row.selling_price < Number(product?.base_price ?? 0)
+              ? Number(product?.base_price ?? 0)
+              : null,
           stock_main: row.stock_main,
           stock_incubator: row.stock_incubator,
         })),
@@ -3835,12 +3883,14 @@ function PremiumCurrencyInput({
   onBlur,
   className = "",
   placeholder = "0.000",
+  disabled = false,
 }: {
   value: string;
   onChange: (val: string) => void;
   onBlur?: (e: React.FocusEvent<HTMLInputElement>) => void;
   className?: string;
   placeholder?: string;
+  disabled?: boolean;
 }) {
   return (
     <div
@@ -3855,6 +3905,7 @@ function PremiumCurrencyInput({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         onBlur={onBlur}
+        disabled={disabled}
       />
       <span className="absolute end-2.5 text-[9px] font-black text-muted-foreground/60 pointer-events-none uppercase tracking-tight">
         BHD
@@ -3905,18 +3956,22 @@ function VariantDesktopRow({
   product?: Product;
 }) {
   const [costVal, setCostVal] = useState(String(v.cost_price));
-  const [sellingVal, setSellingVal] = useState(String(v.selling_price));
+  const [sellingVal, setSellingVal] = useState(
+    Number(v.original_price || 0) > Number(v.selling_price || 0) ? String(v.selling_price) : "",
+  );
 
   useEffect(() => {
     setCostVal(String(v.cost_price));
   }, [v.cost_price]);
 
   useEffect(() => {
-    setSellingVal(String(v.selling_price));
-  }, [v.selling_price]);
+    setSellingVal(
+      Number(v.original_price || 0) > Number(v.selling_price || 0) ? String(v.selling_price) : "",
+    );
+  }, [v.original_price, v.selling_price]);
 
   const costNum = Number(costVal) || 0;
-  const sellingNum = Number(sellingVal) || 0;
+  const sellingNum = sellingVal ? Number(sellingVal) : Number(product?.base_price ?? 0);
   const currentMargin = sellingNum > 0 ? ((sellingNum - costNum) / sellingNum) * 100 : 0;
 
   // Local state for combined attributes inline editor
@@ -4165,6 +4220,7 @@ function VariantDesktopRow({
             value={costVal}
             onChange={setCostVal}
             onBlur={(e) => update(v, { cost_price: Number(e.target.value) })}
+            disabled
           />
         </td>
       )}
@@ -4174,7 +4230,14 @@ function VariantDesktopRow({
         <PremiumCurrencyInput
           value={sellingVal}
           onChange={setSellingVal}
-          onBlur={(e) => update(v, { selling_price: Number(e.target.value) })}
+          onBlur={(e) =>
+            update(v, {
+              selling_price: e.target.value
+                ? Number(e.target.value)
+                : Number(product?.base_price ?? 0),
+            })
+          }
+          placeholder={String(product?.base_price ?? "0.000")}
         />
       </td>
 
@@ -4184,12 +4247,9 @@ function VariantDesktopRow({
           type="number"
           step="0.001"
           min="0"
-          className="w-full h-9 px-2 text-center bg-transparent hover:bg-muted/30 focus:bg-background border border-transparent hover:border-input focus:border-input rounded-lg outline-none font-medium text-xs max-w-[100px]"
-          defaultValue={v.original_price ?? ""}
-          placeholder="—"
-          onBlur={(e) =>
-            update(v, { original_price: e.target.value ? Number(e.target.value) : null })
-          }
+          className="w-full h-9 px-2 text-center bg-muted/40 border border-transparent rounded-lg font-medium text-xs max-w-[100px] disabled:opacity-100"
+          value={product?.base_price ?? 0}
+          disabled
         />
       </td>
 
@@ -4305,6 +4365,7 @@ function VariantMobileCard({
   incLabel,
   isSelected,
   onToggleSelect,
+  product,
 }: {
   v: Variant;
   canViewFinancials: boolean;
@@ -4320,20 +4381,25 @@ function VariantMobileCard({
   incLabel: string;
   isSelected: boolean;
   onToggleSelect: () => void;
+  product?: Product;
 }) {
   const [costVal, setCostVal] = useState(String(v.cost_price));
-  const [sellingVal, setSellingVal] = useState(String(v.selling_price));
+  const [sellingVal, setSellingVal] = useState(
+    Number(v.original_price || 0) > Number(v.selling_price || 0) ? String(v.selling_price) : "",
+  );
 
   useEffect(() => {
     setCostVal(String(v.cost_price));
   }, [v.cost_price]);
 
   useEffect(() => {
-    setSellingVal(String(v.selling_price));
-  }, [v.selling_price]);
+    setSellingVal(
+      Number(v.original_price || 0) > Number(v.selling_price || 0) ? String(v.selling_price) : "",
+    );
+  }, [v.original_price, v.selling_price]);
 
   const costNum = Number(costVal) || 0;
-  const sellingNum = Number(sellingVal) || 0;
+  const sellingNum = sellingVal ? Number(sellingVal) : Number(product?.base_price ?? 0);
   const currentMargin = sellingNum > 0 ? ((sellingNum - costNum) / sellingNum) * 100 : 0;
 
   return (
@@ -4425,7 +4491,7 @@ function VariantMobileCard({
           </span>
         </summary>
         <div className="grid grid-cols-2 gap-3 border-t border-border/50 p-3">
-          {/* Cost & Price Delta */}
+          {/* Inherited cost and optional sale price */}
           {canViewFinancials && (
             <div>
               <Label className="text-[10px] font-black uppercase text-muted-foreground/85">
@@ -4437,25 +4503,33 @@ function VariantMobileCard({
                   onChange={setCostVal}
                   onBlur={(e) => update(v, { cost_price: Number(e.target.value) })}
                   className="h-10 rounded-xl text-xs"
+                  disabled
                 />
               </div>
             </div>
           )}
           <div>
             <Label className="text-[10px] font-black uppercase text-muted-foreground/85">
-              {isAr ? "سعر إضافي (+ د.ب)" : "Price Delta (+ BHD)"}
+              {isAr ? "سعر التخفيض" : "Sale Price"}
             </Label>
             <div className="mt-1">
               <PremiumCurrencyInput
                 value={sellingVal}
                 onChange={setSellingVal}
-                onBlur={(e) => update(v, { selling_price: Number(e.target.value) })}
+                onBlur={(e) =>
+                  update(v, {
+                    selling_price: e.target.value
+                      ? Number(e.target.value)
+                      : Number(product?.base_price ?? 0),
+                  })
+                }
                 className="h-10 rounded-xl text-xs"
+                placeholder={String(product?.base_price ?? "0.000")}
               />
             </div>
           </div>
 
-          {/* Dynamic Image Picker & Original Delta */}
+          {/* Dynamic image picker and regular price */}
           <div>
             <Label className="text-[10px] font-black uppercase text-muted-foreground/85">
               {isAr ? "صورة المتغير" : "Variant Image"}
@@ -4471,18 +4545,15 @@ function VariantMobileCard({
           </div>
           <div>
             <Label className="text-[10px] font-black uppercase text-muted-foreground/85">
-              {isAr ? "السعر الأصلي الإضافي" : "Original Delta"}
+              {isAr ? "السعر العادي" : "Regular Price"}
             </Label>
             <input
               type="number"
               step="0.001"
               min="0"
-              className="mt-1 h-9 w-full rounded-lg border border-input bg-background px-3 text-xs font-semibold outline-none focus:ring-1 focus:ring-primary"
-              defaultValue={v.original_price ?? ""}
-              placeholder="—"
-              onBlur={(e) =>
-                update(v, { original_price: e.target.value ? Number(e.target.value) : null })
-              }
+              className="mt-1 h-9 w-full rounded-lg border border-input bg-muted/40 px-3 text-xs font-semibold disabled:opacity-100"
+              value={product?.base_price ?? 0}
+              disabled
             />
           </div>
 
@@ -4590,8 +4661,8 @@ function VariantList({
     fabric: "",
     sku: "",
     barcode: "",
-    cost_price: "0",
-    selling_price: "0",
+    cost_price: String(product?.cost_price ?? 0),
+    selling_price: "",
     original_price: "",
     stock_main: "0",
     stock_incubator: "0",
@@ -4647,9 +4718,14 @@ function VariantList({
       fabric: row.fabric || null,
       sku: row.sku || null,
       barcode: row.barcode.trim() || null,
-      cost_price: Number(row.cost_price),
-      selling_price: Number(row.selling_price),
-      original_price: row.original_price ? Number(row.original_price) : null,
+      cost_price: Number(product?.cost_price ?? 0),
+      selling_price: row.selling_price
+        ? Number(row.selling_price)
+        : Number(product?.base_price ?? 0),
+      original_price:
+        row.selling_price && Number(row.selling_price) < Number(product?.base_price ?? 0)
+          ? Number(product?.base_price ?? 0)
+          : null,
       stock_main: Number(row.stock_main),
       stock_incubator: Number(row.stock_incubator),
       image_url: row.image_url || null,
@@ -4672,7 +4748,14 @@ function VariantList({
       );
       return;
     }
-    const { error } = await (supabase.from("product_variants") as any).update(patch).eq("id", v.id);
+    const normalizedPatch = { ...patch };
+    if (typeof patch.selling_price === "number") {
+      const regularPrice = Number(product?.base_price ?? 0);
+      normalizedPatch.original_price = patch.selling_price < regularPrice ? regularPrice : null;
+    }
+    const { error } = await (supabase.from("product_variants") as any)
+      .update(normalizedPatch)
+      .eq("id", v.id);
     if (error) toast.error(error.message);
     else onChanged();
   };
@@ -4857,6 +4940,7 @@ function VariantList({
             incLabel={incLabel}
             isSelected={selectedIds.has(v.id)}
             onToggleSelect={() => toggleSelect(v.id)}
+            product={product}
           />
         ))}
 
@@ -4958,7 +5042,7 @@ function VariantList({
               )}
               <div>
                 <Label className="text-[10px] font-bold text-muted-foreground uppercase">
-                  {isAr ? "سعر إضافي (+ د.ب)" : "Price Delta (+ BHD)"}
+                  {isAr ? "سعر التخفيض (اختياري)" : "Sale Price (optional)"}
                 </Label>
                 <Input
                   type="number"
@@ -4970,16 +5054,15 @@ function VariantList({
               </div>
               <div>
                 <Label className="text-[10px] font-bold text-muted-foreground uppercase">
-                  {isAr ? "السعر الأصلي الإضافي" : "Original Delta"}
+                  {isAr ? "السعر العادي" : "Regular Price"}
                 </Label>
                 <Input
                   type="number"
                   step="0.001"
                   min="0"
                   className="mt-1 h-9 rounded-md text-xs"
-                  value={row.original_price}
-                  placeholder="—"
-                  onChange={(e) => setRow({ ...row, original_price: e.target.value })}
+                  value={product?.base_price ?? 0}
+                  disabled
                 />
               </div>
               <div>
@@ -5153,10 +5236,10 @@ function VariantList({
                   </th>
                 )}
                 <th className="px-2 py-3 text-center font-black text-[10px]">
-                  {isAr ? "سعر إضافي" : "Price Delta"}
+                  {isAr ? "سعر التخفيض" : "Sale Price"}
                 </th>
                 <th className="px-2 py-3 text-center font-black text-[10px]">
-                  {isAr ? "السعر الأصلي" : "Original Delta"}
+                  {isAr ? "السعر العادي" : "Regular Price"}
                 </th>
                 {canViewFinancials && (
                   <th className="px-2 py-3 text-center font-black text-[10px]">
@@ -5339,9 +5422,8 @@ function VariantList({
                       type="number"
                       step="0.001"
                       min="0"
-                      value={row.original_price}
-                      placeholder="—"
-                      onChange={(e) => setRow({ ...row, original_price: e.target.value })}
+                      value={product?.base_price ?? 0}
+                      disabled
                     />
                   </td>
 
@@ -5423,6 +5505,7 @@ function VariantList({
           )}
           <BulkVariantDialog
             productId={productId}
+            product={product}
             variants={variants}
             canViewFinancials={canViewFinancials}
             onChanged={onChanged}
