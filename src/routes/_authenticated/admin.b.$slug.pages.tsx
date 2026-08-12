@@ -112,7 +112,9 @@ function PagesAndPolicies() {
     queryFn: async () => {
       const { data: settings, error } = await supabase
         .from("business_settings")
-        .select("pages, whatsapp_enabled, whatsapp_number, socials")
+        .select(
+          "pages, whatsapp_enabled, whatsapp_number, socials, footer_company_title_en, footer_company_title_ar, footer_help_title_en, footer_help_title_ar",
+        )
         .eq("brand_id", brandId)
         .maybeSingle();
       if (error) throw error;
@@ -124,6 +126,10 @@ function PagesAndPolicies() {
   const [socials, setSocials] = useState<Social[]>([]);
   const [waEnabled, setWaEnabled] = useState(false);
   const [waNumber, setWaNumber] = useState("");
+  const [companyTitleEn, setCompanyTitleEn] = useState("Company");
+  const [companyTitleAr, setCompanyTitleAr] = useState("الشركة");
+  const [helpTitleEn, setHelpTitleEn] = useState("Help");
+  const [helpTitleAr, setHelpTitleAr] = useState("المساعدة");
   const [saving, setSaving] = useState(false);
   const [uploadingIdx, setUploadingIdx] = useState<number | null>(null);
   const [uploadingIconIdx, setUploadingIconIdx] = useState<number | null>(null);
@@ -158,6 +164,10 @@ function PagesAndPolicies() {
     );
     setWaEnabled(Boolean(data.whatsapp_enabled));
     setWaNumber(data.whatsapp_number ?? "");
+    setCompanyTitleEn(data.footer_company_title_en ?? "Company");
+    setCompanyTitleAr(data.footer_company_title_ar ?? "الشركة");
+    setHelpTitleEn(data.footer_help_title_en ?? "Help");
+    setHelpTitleAr(data.footer_help_title_ar ?? "المساعدة");
   }, [data]);
 
   const updatePage = (index: number, patch: Partial<PageSlot>) => {
@@ -254,6 +264,10 @@ function PagesAndPolicies() {
         socials: cleanedSocials,
         whatsapp_enabled: waEnabled,
         whatsapp_number: number || null,
+        footer_company_title_en: companyTitleEn.trim() || null,
+        footer_company_title_ar: companyTitleAr.trim() || null,
+        footer_help_title_en: helpTitleEn.trim() || null,
+        footer_help_title_ar: helpTitleAr.trim() || null,
       })
       .eq("brand_id", brandId);
     setSaving(false);
@@ -455,6 +469,65 @@ function PagesAndPolicies() {
 
       {activeScope === "pages" && (
         <section className="space-y-4">
+          <Card className="space-y-4 overflow-hidden rounded-2xl border-border/60 bg-card/40 p-4 shadow-md backdrop-blur-sm">
+            <div>
+              <h3 className="text-base font-bold">
+                {isAr ? "عناوين مجموعات رابط التذييل" : "Footer accordion group headings"}
+              </h3>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {isAr
+                  ? "خصص المسميات الرئيسية لمجموعات القوائم (مثل: الشركة والمساعدة) في أسفل المتجر."
+                  : "Customize the heading titles for your accordion groups in the storefront footer."}
+              </p>
+            </div>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div>
+                <Label className="text-xs font-semibold text-muted-foreground mb-1 block">
+                  {isAr ? "مجموعة 1 (عن المتجر/الشركة) — بالعربية" : "Group A Title (Arabic)"}
+                </Label>
+                <Input
+                  value={companyTitleAr}
+                  onChange={(e) => setCompanyTitleAr(e.target.value)}
+                  placeholder="الشركة"
+                  dir="rtl"
+                />
+              </div>
+              <div>
+                <Label className="text-xs font-semibold text-muted-foreground mb-1 block">
+                  {isAr ? "مجموعة 1 (عن المتجر/الشركة) — English" : "Group A Title (English)"}
+                </Label>
+                <Input
+                  value={companyTitleEn}
+                  onChange={(e) => setCompanyTitleEn(e.target.value)}
+                  placeholder="Company"
+                  dir="ltr"
+                />
+              </div>
+              <div>
+                <Label className="text-xs font-semibold text-muted-foreground mb-1 block">
+                  {isAr ? "مجموعة 2 (المساعدة/السياسات) — بالعربية" : "Group B Title (Arabic)"}
+                </Label>
+                <Input
+                  value={helpTitleAr}
+                  onChange={(e) => setHelpTitleAr(e.target.value)}
+                  placeholder="المساعدة"
+                  dir="rtl"
+                />
+              </div>
+              <div>
+                <Label className="text-xs font-semibold text-muted-foreground mb-1 block">
+                  {isAr ? "مجموعة 2 (المساعدة/السياسات) — English" : "Group B Title (English)"}
+                </Label>
+                <Input
+                  value={helpTitleEn}
+                  onChange={(e) => setHelpTitleEn(e.target.value)}
+                  placeholder="Help"
+                  dir="ltr"
+                />
+              </div>
+            </div>
+          </Card>
+
           <div className="flex items-center justify-between gap-3">
             <div>
               <h2 className="font-display text-xl font-bold">

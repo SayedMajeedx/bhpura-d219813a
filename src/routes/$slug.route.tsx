@@ -141,6 +141,10 @@ export const Route = createFileRoute("/$slug")({
       header_fg: s?.header_fg ?? null,
       footer_bg: s?.footer_bg ?? null,
       footer_fg: s?.footer_fg ?? null,
+      footer_company_title_en: s?.footer_company_title_en ?? null,
+      footer_company_title_ar: s?.footer_company_title_ar ?? null,
+      footer_help_title_en: s?.footer_help_title_en ?? null,
+      footer_help_title_ar: s?.footer_help_title_ar ?? null,
       heading_color: s?.heading_color ?? null,
       link_color: s?.link_color ?? null,
       btn_primary_bg: s?.btn_primary_bg ?? null,
@@ -2003,10 +2007,15 @@ function StorefrontFooter() {
   const helpPages = pageLinks.filter((p) => p.group === "help");
   const socials = settings.socials ?? [];
 
-  const waUrl =
-    settings.whatsapp_enabled && settings.whatsapp_number
-      ? `https://wa.me/${settings.whatsapp_number.replace(/[^0-9]/g, "")}`
-      : null;
+  const companyTitle =
+    (isAr ? settings.footer_company_title_ar : settings.footer_company_title_en) ||
+    (isAr ? settings.footer_company_title_en : settings.footer_company_title_ar) ||
+    (isAr ? "الشركة" : "Company");
+
+  const helpTitle =
+    (isAr ? settings.footer_help_title_ar : settings.footer_help_title_en) ||
+    (isAr ? settings.footer_help_title_en : settings.footer_help_title_ar) ||
+    (isAr ? "المساعدة" : "Help");
 
   return (
     <footer
@@ -2130,7 +2139,7 @@ function StorefrontFooter() {
                   style={{ color: "var(--sf-footer-fg)" }}
                   aria-expanded={openCompany}
                 >
-                  <span>{t("الشركة", "Company")}</span>
+                  <span>{companyTitle}</span>
                   <ChevronDown
                     className={`h-4 w-4 transition-transform duration-200 ${
                       openCompany ? "rotate-180" : ""
@@ -2169,7 +2178,7 @@ function StorefrontFooter() {
                   style={{ color: "var(--sf-footer-fg)" }}
                   aria-expanded={openHelp}
                 >
-                  <span>{t("المساعدة", "Help")}</span>
+                  <span>{helpTitle}</span>
                   <ChevronDown
                     className={`h-4 w-4 transition-transform duration-200 ${
                       openHelp ? "rotate-180" : ""
@@ -2200,7 +2209,7 @@ function StorefrontFooter() {
           </div>
 
           {/* Section 3: Social Icons Row */}
-          {(socials.length > 0 || waUrl) && (
+          {socials.length > 0 && (
             <div className="flex flex-wrap justify-center items-center gap-3 py-1">
               {socials.map((s, i) => (
                 <a
@@ -2215,18 +2224,6 @@ function StorefrontFooter() {
                   <StorefrontSocialIcon platform={s.name} />
                 </a>
               ))}
-              {waUrl && (
-                <a
-                  href={waUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label="WhatsApp"
-                  className="h-11 w-11 rounded-full border border-emerald-500/30 bg-emerald-500/10 flex items-center justify-center hover:bg-emerald-500/20 transition-all active:scale-95"
-                  style={{ color: "var(--sf-footer-fg)" }}
-                >
-                  <StorefrontSocialIcon platform="whatsapp" />
-                </a>
-              )}
             </div>
           )}
 

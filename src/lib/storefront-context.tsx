@@ -105,6 +105,10 @@ export type PublicSettings = {
   header_fg: string | null;
   footer_bg: string | null;
   footer_fg: string | null;
+  footer_company_title_en?: string | null;
+  footer_company_title_ar?: string | null;
+  footer_help_title_en?: string | null;
+  footer_help_title_ar?: string | null;
   heading_color: string | null;
   link_color: string | null;
   btn_primary_bg: string | null;
