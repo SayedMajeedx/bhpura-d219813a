@@ -2,10 +2,10 @@
 
 /**
  * Pre-Compression Helper Script for Boutq Storefront & Admin Media
- * 
+ *
  * Usage:
  *   node scripts/compress-video.js <input-file> [output-dir]
- * 
+ *
  * Generates dual optimized renditions:
  * 1. WebM (VP9 codec, ~600k bitrate, muted for hero loops / compressed audio for content)
  * 2. MP4 (H.264, CRF 28, faststart for streaming)
@@ -60,10 +60,16 @@ try {
 }
 
 console.log(`[1/2] Generating WebM (VP9)...`);
-execSync(`ffmpeg -i "${inputFile}" -an -vf "scale=1280:-2" -c:v libvpx-vp9 -b:v 600k -y "${webmOutput}"`, { stdio: "inherit" });
+execSync(
+  `ffmpeg -i "${inputFile}" -an -vf "scale=1280:-2" -c:v libvpx-vp9 -b:v 600k -y "${webmOutput}"`,
+  { stdio: "inherit" },
+);
 
 console.log(`[2/2] Generating MP4 (H.264 FastStart)...`);
-execSync(`ffmpeg -i "${inputFile}" -an -vf "scale=1280:-2" -c:v libx264 -crf 28 -preset slow -movflags +faststart -y "${mp4Output}"`, { stdio: "inherit" });
+execSync(
+  `ffmpeg -i "${inputFile}" -an -vf "scale=1280:-2" -c:v libx264 -crf 28 -preset slow -movflags +faststart -y "${mp4Output}"`,
+  { stdio: "inherit" },
+);
 
 console.log(`\nCompression complete!`);
 console.log(`WebM: ${webmOutput}`);

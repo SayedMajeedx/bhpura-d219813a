@@ -3,7 +3,10 @@ import { ResponsiveImage } from "@/components/responsive-media";
 
 export type VideoVariant = "hero" | "content" | "modal";
 
-export interface AppVideoProps extends Omit<VideoHTMLAttributes<HTMLVideoElement>, "src" | "poster"> {
+export interface AppVideoProps extends Omit<
+  VideoHTMLAttributes<HTMLVideoElement>,
+  "src" | "poster"
+> {
   src?: string | null;
   webmSrc?: string | null;
   mp4Src?: string | null;

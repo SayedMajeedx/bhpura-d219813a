@@ -566,10 +566,7 @@ async function handleDelete(
   if (error) {
     // Fallback: If auth user deletion failed (e.g. mock seed ID or corrupted GoTrue metadata),
     // attempt to cleanly remove the profile record from public.profiles directly.
-    const { error: profileDeleteError } = await supabase
-      .from("profiles")
-      .delete()
-      .eq("id", userId);
+    const { error: profileDeleteError } = await supabase.from("profiles").delete().eq("id", userId);
 
     if (profileDeleteError) {
       return new Response(JSON.stringify({ error: error.message }), {

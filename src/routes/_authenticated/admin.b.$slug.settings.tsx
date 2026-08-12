@@ -1434,7 +1434,12 @@ function BrandHeroCard({
     const raw = data.hero_media as any;
     const legacy = Array.isArray(raw) ? raw : [];
     setState({
-      background: raw && typeof raw === 'object' && !Array.isArray(raw) ? (raw.background !== undefined ? raw.background : null) : (legacy[0] ?? null),
+      background:
+        raw && typeof raw === "object" && !Array.isArray(raw)
+          ? raw.background !== undefined
+            ? raw.background
+            : null
+          : (legacy[0] ?? null),
       slides:
         raw && !Array.isArray(raw) && Array.isArray(raw.slides)
           ? raw.slides.slice(0, 5).map((slide: any) => ({
@@ -1476,7 +1481,10 @@ function BrandHeroCard({
     const { error } = await supabase
       .from("brands")
       .update({
-        hero_media: { background: nextState.background, slides: nextState.slides.slice(0, 5) } as any,
+        hero_media: {
+          background: nextState.background,
+          slides: nextState.slides.slice(0, 5),
+        } as any,
         primary_color: nextState.primary_color,
         about_ar: nextState.about_ar,
         about_en: nextState.about_en,
@@ -1499,7 +1507,9 @@ function BrandHeroCard({
     try {
       setUploading(true);
       const url = await uploadPublicMedia(brandId, file, "hero");
-      const isVid = file.type.startsWith("video") || /\.(mp4|webm|mov|m4v|mkv)$/i.test((file as File).name ?? "");
+      const isVid =
+        file.type.startsWith("video") ||
+        /\.(mp4|webm|mov|m4v|mkv)$/i.test((file as File).name ?? "");
       const type: "image" | "video" = isVid ? "video" : "image";
       const nextBg = { type, url };
       const nextState: HeroState = state
@@ -1512,7 +1522,7 @@ function BrandHeroCard({
         toast.success(
           isAr
             ? "تم رفع خلفية الواجهة وحفظها مباشرةً في المتجر!"
-            : "Hero background uploaded & auto-saved live!"
+            : "Hero background uploaded & auto-saved live!",
         );
       }
     } catch (e: any) {
@@ -1533,7 +1543,8 @@ function BrandHeroCard({
   };
 
   const chooseBackgroundMedia = async (file: File) => {
-    const isImg = file.type.startsWith("image/") || /\.(jpg|jpeg|png|webp|gif|avif)$/i.test(file.name);
+    const isImg =
+      file.type.startsWith("image/") || /\.(jpg|jpeg|png|webp|gif|avif)$/i.test(file.name);
     const isVid = file.type.startsWith("video/") || /\.(mp4|webm|mov|m4v|mkv)$/i.test(file.name);
 
     if (isImg) {
@@ -1563,7 +1574,9 @@ function BrandHeroCard({
   const uploadSlideMedia = async (file: Blob, index: number, language: "en" | "ar" = "en") => {
     try {
       setUploading(true);
-      const isVid = file.type.startsWith("video") || /\.(mp4|webm|mov|m4v|mkv)$/i.test((file as File).name ?? "");
+      const isVid =
+        file.type.startsWith("video") ||
+        /\.(mp4|webm|mov|m4v|mkv)$/i.test((file as File).name ?? "");
       const type: "image" | "video" = isVid ? "video" : "image";
       const mediaField = language === "ar" ? "media_url_ar" : "media_url_en";
       const url = await uploadPublicMedia(brandId, file, "hero");
@@ -1571,18 +1584,18 @@ function BrandHeroCard({
         language === "ar"
           ? { media_stream_uid_ar: "", media_iframe_url_ar: "", media_poster_url_ar: "" }
           : { media_stream_uid_en: "", media_iframe_url_en: "", media_poster_url_en: "" };
-      
+
       if (!state) return;
       const nextSlides = state.slides.map((slide, slideIndex) =>
-        slideIndex === index
-          ? { ...slide, type, [mediaField]: url, ...streamPatch }
-          : slide,
+        slideIndex === index ? { ...slide, type, [mediaField]: url, ...streamPatch } : slide,
       );
       const nextState = { ...state, slides: nextSlides };
       setState(nextState);
       const saved = await persistHeroState(nextState);
       if (saved) {
-        toast.success(isAr ? "تم رفع الشريحة وحفظها مباشرةً!" : "Slide media uploaded & auto-saved!");
+        toast.success(
+          isAr ? "تم رفع الشريحة وحفظها مباشرةً!" : "Slide media uploaded & auto-saved!",
+        );
       }
     } catch (error: any) {
       toast.error(error.message ?? "Upload failed");
