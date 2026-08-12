@@ -586,7 +586,9 @@ function PagesAndPolicies() {
                                 {isAr ? "الشركة (عن المتجر، التواصل)" : "Company (About, Contact)"}
                               </SelectItem>
                               <SelectItem value="help">
-                                {isAr ? "المساعدة (الشروط، المقاسات، التوصيل)" : "Help (Policies, FAQs, Shipping)"}
+                                {isAr
+                                  ? "المساعدة (الشروط، المقاسات، التوصيل)"
+                                  : "Help (Policies, FAQs, Shipping)"}
                               </SelectItem>
                             </SelectContent>
                           </Select>
