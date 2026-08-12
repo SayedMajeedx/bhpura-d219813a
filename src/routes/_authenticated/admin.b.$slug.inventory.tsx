@@ -3678,14 +3678,12 @@ function BulkVariantDialog({
                       {canViewFinancials && (
                         <td className="p-1">
                           <Input
-                            className="h-8 w-24"
+                            className="h-8 w-24 bg-muted/50 text-muted-foreground disabled:cursor-not-allowed disabled:opacity-100"
                             type="number"
                             min="0"
                             step="0.01"
                             value={row.cost_price}
-                            onChange={(e) =>
-                              patchRow(index, { cost_price: Number(e.target.value) })
-                            }
+                            disabled
                           />
                         </td>
                       )}
@@ -3901,7 +3899,7 @@ function PremiumCurrencyInput({
         type="number"
         step="0.001"
         placeholder={placeholder}
-        className={`w-full h-9.5 pl-2.5 pr-8 text-center font-mono font-bold bg-background border border-input rounded-xl outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary text-xs shadow-2xs transition-all [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none ${className}`}
+        className={`w-full h-9.5 pl-2.5 pr-8 text-center font-mono font-bold bg-background border border-input rounded-xl outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary text-xs shadow-2xs transition-all disabled:cursor-not-allowed disabled:bg-muted/50 disabled:text-muted-foreground disabled:opacity-100 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none ${className}`}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         onBlur={onBlur}
@@ -5044,9 +5042,9 @@ function VariantList({
                   <Input
                     type="number"
                     step="0.001"
-                    className="mt-1 h-9 rounded-md text-xs font-bold"
+                    className="mt-1 h-9 rounded-md bg-muted/50 text-xs font-bold text-muted-foreground disabled:cursor-not-allowed disabled:opacity-100"
                     value={row.cost_price}
-                    onChange={(e) => setRow({ ...row, cost_price: e.target.value })}
+                    disabled
                   />
                 </div>
               )}
@@ -5396,11 +5394,11 @@ function VariantList({
                     <td className="px-2 py-3 text-center">
                       <div className="relative inline-flex items-center w-full max-w-[100px] shrink-0">
                         <Input
-                          className="h-8 w-full pl-2 pr-7 text-center text-xs font-bold"
+                          className="h-8 w-full bg-muted/50 pl-2 pr-7 text-center text-xs font-bold text-muted-foreground disabled:cursor-not-allowed disabled:opacity-100"
                           type="number"
                           step="0.001"
                           value={row.cost_price}
-                          onChange={(e) => setRow({ ...row, cost_price: e.target.value })}
+                          disabled
                         />
                         <span className="absolute right-2 text-[8px] font-black text-muted-foreground/50 pointer-events-none uppercase">
                           BHD
