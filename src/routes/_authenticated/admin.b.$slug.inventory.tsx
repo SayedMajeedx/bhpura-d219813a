@@ -4000,6 +4000,7 @@ function PremiumCurrencyInput({
         className={`w-full h-9.5 pl-2.5 pr-8 text-center font-mono font-bold bg-background border border-input rounded-xl outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary text-xs shadow-2xs transition-all disabled:cursor-not-allowed disabled:bg-muted/50 disabled:text-muted-foreground disabled:opacity-100 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none ${className}`}
         value={value}
         onChange={(e) => onChange(e.target.value)}
+        onFocus={(e) => e.currentTarget.select()}
         onBlur={onBlur}
         disabled={disabled}
       />
@@ -4069,6 +4070,27 @@ function VariantDesktopRow({
   const costNum = Number(costVal) || 0;
   const sellingNum = sellingVal ? Number(sellingVal) : Number(product?.base_price ?? 0);
   const currentMargin = sellingNum > 0 ? ((sellingNum - costNum) / sellingNum) * 100 : 0;
+
+  const commitSalePrice = (rawValue: string) => {
+    const regularPrice = Number(product?.base_price ?? 0);
+    if (!rawValue) {
+      update(v, { selling_price: regularPrice });
+      return;
+    }
+    const salePrice = Number(rawValue);
+    if (!Number.isFinite(salePrice) || salePrice < 0 || salePrice >= regularPrice) {
+      setSellingVal(
+        Number(v.original_price || 0) > Number(v.selling_price || 0) ? String(v.selling_price) : "",
+      );
+      toast.error(
+        isAr
+          ? "يجب أن يكون سعر التخفيض أقل من السعر الأساسي."
+          : "Sale price must be lower than the regular price.",
+      );
+      return;
+    }
+    update(v, { selling_price: salePrice });
+  };
 
   // Local state for combined attributes inline editor
   const [isEditingAttrs, setIsEditingAttrs] = useState(false);
@@ -4326,13 +4348,7 @@ function VariantDesktopRow({
         <PremiumCurrencyInput
           value={sellingVal}
           onChange={setSellingVal}
-          onBlur={(e) =>
-            update(v, {
-              selling_price: e.target.value
-                ? Number(e.target.value)
-                : Number(product?.base_price ?? 0),
-            })
-          }
+          onBlur={(e) => commitSalePrice(e.target.value)}
           placeholder={String(product?.base_price ?? "0.000")}
         />
       </td>
@@ -4498,6 +4514,27 @@ function VariantMobileCard({
   const sellingNum = sellingVal ? Number(sellingVal) : Number(product?.base_price ?? 0);
   const currentMargin = sellingNum > 0 ? ((sellingNum - costNum) / sellingNum) * 100 : 0;
 
+  const commitSalePrice = (rawValue: string) => {
+    const regularPrice = Number(product?.base_price ?? 0);
+    if (!rawValue) {
+      update(v, { selling_price: regularPrice });
+      return;
+    }
+    const salePrice = Number(rawValue);
+    if (!Number.isFinite(salePrice) || salePrice < 0 || salePrice >= regularPrice) {
+      setSellingVal(
+        Number(v.original_price || 0) > Number(v.selling_price || 0) ? String(v.selling_price) : "",
+      );
+      toast.error(
+        isAr
+          ? "يجب أن يكون سعر التخفيض أقل من السعر الأساسي."
+          : "Sale price must be lower than the regular price.",
+      );
+      return;
+    }
+    update(v, { selling_price: salePrice });
+  };
+
   return (
     <div
       className={`rounded-xl border p-4 space-y-3.5 shadow-sm transition-all bg-background ${isSelected ? "border-primary bg-primary/5/10" : "border-border"}`}
@@ -4612,13 +4649,7 @@ function VariantMobileCard({
               <PremiumCurrencyInput
                 value={sellingVal}
                 onChange={setSellingVal}
-                onBlur={(e) =>
-                  update(v, {
-                    selling_price: e.target.value
-                      ? Number(e.target.value)
-                      : Number(product?.base_price ?? 0),
-                  })
-                }
+                onBlur={(e) => commitSalePrice(e.target.value)}
                 className="h-10 rounded-xl text-xs"
                 placeholder={String(product?.base_price ?? "0.000")}
               />
