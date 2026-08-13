@@ -157,6 +157,22 @@ type HomePromoCard = {
   background_color: string;
   text_color: string;
 };
+
+type EditorialSectionKey = "best" | "sale" | "trending";
+type EditorialSectionConfig = {
+  enabled: boolean;
+  banner_image_url: string;
+  background_color: string;
+  background_image_url: string;
+};
+type HomepageEditorialSections = Record<EditorialSectionKey, EditorialSectionConfig>;
+
+const EMPTY_EDITORIAL_SECTION: EditorialSectionConfig = {
+  enabled: true,
+  banner_image_url: "",
+  background_color: "",
+  background_image_url: "",
+};
 const EMPTY_PROMO_CARD: HomePromoCard = {
   title_en: "",
   title_ar: "",
@@ -2827,6 +2843,7 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
   const [uploadingSecondaryBanner, setUploadingSecondaryBanner] = useState<
     "trending" | "category" | null
   >(null);
+  const [uploadingEditorialAsset, setUploadingEditorialAsset] = useState<string | null>(null);
   const [settingsTab, setSettingsTab] = useState<"general" | "theme" | "content" | "promotions">(
     "theme",
   );
@@ -2881,6 +2898,7 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
     menu_show_orders: boolean;
     menu_show_pages: boolean;
     home_promo_cards: HomePromoCard[];
+    homepage_editorial_sections: HomepageEditorialSections;
     show_new_arrivals: boolean;
     show_best_sellers: boolean;
     new_arrivals_title_en: string | null;
@@ -2987,6 +3005,22 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
           ...EMPTY_PROMO_CARD,
           ...((Array.isArray(data.home_promo_cards) ? data.home_promo_cards[index] : null) ?? {}),
         })),
+        homepage_editorial_sections: (["best", "sale", "trending"] as const).reduce(
+          (sections, key) => {
+            const stored = data.homepage_editorial_sections?.[key] ?? {};
+            sections[key] = {
+              ...EMPTY_EDITORIAL_SECTION,
+              ...stored,
+              enabled: stored.enabled ?? (key === "best" ? (data.show_best_sellers ?? true) : true),
+              banner_image_url:
+                stored.banner_image_url ||
+                (key === "trending" ? data.trending_banner_background_url : "") ||
+                "",
+            };
+            return sections;
+          },
+          {} as HomepageEditorialSections,
+        ),
         show_new_arrivals: data.show_new_arrivals ?? true,
         show_best_sellers: data.show_best_sellers ?? true,
         new_arrivals_title_en: data.new_arrivals_title_en ?? null,
@@ -3045,6 +3079,7 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
       "secondary_banner_parallax_breakpoint",
       "trending_banner_background_url",
       "category_banner_background_url",
+      "homepage_editorial_sections",
       "storefront_loader_text_en",
       "storefront_loader_text_ar",
     ];
@@ -3172,6 +3207,43 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
       toast.error(error.message ?? "Banner upload failed");
     } finally {
       setUploadingSecondaryBanner(null);
+    }
+  };
+
+  const updateEditorialSection = (
+    key: EditorialSectionKey,
+    patch: Partial<EditorialSectionConfig>,
+  ) =>
+    setState((current) =>
+      current
+        ? {
+            ...current,
+            homepage_editorial_sections: {
+              ...current.homepage_editorial_sections,
+              [key]: { ...current.homepage_editorial_sections[key], ...patch },
+            },
+          }
+        : current,
+    );
+
+  const uploadEditorialAsset = async (
+    key: EditorialSectionKey,
+    field: "banner_image_url" | "background_image_url",
+    blob: Blob,
+  ) => {
+    const uploadKey = `${key}-${field}`;
+    try {
+      setUploadingEditorialAsset(uploadKey);
+      const file = new File([blob], `${uploadKey}.jpg`, { type: "image/jpeg" });
+      const url = await uploadPublicMedia(brandId, file, "hero");
+      updateEditorialSection(key, { [field]: url });
+      toast.success(
+        isAr ? "تم رفع صورة القسم — احفظ التغييرات" : "Section image uploaded — remember to save",
+      );
+    } catch (error: any) {
+      toast.error(error.message ?? "Section image upload failed");
+    } finally {
+      setUploadingEditorialAsset(null);
     }
   };
 
@@ -3322,7 +3394,7 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
             <p className="mt-1 text-xs text-muted-foreground">
               {isAr
                 ? "حركة تمرير خفيفة للافتة الرائج الآن ولافتات فواصل التصنيفات فقط."
-                : "Subtle scroll movement for the Trending now and category divider banners only."}
+                : "Subtle scroll movement for configured editorial and category divider banners."}
             </p>
           </div>
           <Switch
@@ -3335,11 +3407,6 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
         <div className="grid grid-cols-1 gap-4 border-t border-border pt-4 lg:grid-cols-2">
           {(
             [
-              {
-                key: "trending_banner_background_url",
-                target: "trending",
-                title: isAr ? "خلفية لافتة الرائج الآن" : "Trending banner background",
-              },
               {
                 key: "category_banner_background_url",
                 target: "category",
@@ -4141,13 +4208,6 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
               onCheckedChange={(checked) => setState({ ...state, show_new_arrivals: checked })}
             />
           </div>
-          <div className="flex items-center justify-between gap-3 rounded-md border p-3">
-            <Label>{isAr ? "إظهار الأكثر مبيعاً" : "Show Best sellers"}</Label>
-            <Switch
-              checked={state.show_best_sellers}
-              onCheckedChange={(checked) => setState({ ...state, show_best_sellers: checked })}
-            />
-          </div>
           <div dir={contentLanguage === "ar" ? "rtl" : "ltr"}>
             <Label>{contentLanguage === "ar" ? "عنوان وصل حديثاً" : "New arrivals title"}</Label>
             <Input
@@ -4192,6 +4252,150 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
             settingsTab === "promotions" ? "grid grid-cols-1 gap-4 lg:grid-cols-2" : "hidden"
           }
         >
+          <div className="space-y-4 lg:col-span-2">
+            <div>
+              <h3 className="font-medium text-sm">
+                {isAr ? "أقسام الصفحة التحريرية" : "Editorial homepage sections"}
+              </h3>
+              <p className="mt-1 text-xs text-muted-foreground">
+                {isAr
+                  ? "خصص اللافتة وخلفية منطقة المنتجات لكل قسم بعرض كامل."
+                  : "Customize the full-bleed banner and product-area background for each section."}
+              </p>
+            </div>
+            <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
+              {(
+                [
+                  ["best", isAr ? "الأكثر مبيعاً" : "Best sellers"],
+                  ["sale", isAr ? "تنزيلات" : "Sale"],
+                  ["trending", isAr ? "الرائج الآن" : "Trending now"],
+                ] as const
+              ).map(([key, label]) => {
+                const config = state.homepage_editorial_sections[key];
+                return (
+                  <div key={key} className="space-y-4 rounded-xl border border-border p-4">
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <h4 className="font-medium">{label}</h4>
+                        <p className="text-xs text-muted-foreground">
+                          {isAr
+                            ? "يُخفى تلقائياً عند عدم وجود منتجات"
+                            : "Automatically hidden when empty"}
+                        </p>
+                      </div>
+                      <Switch
+                        checked={config.enabled}
+                        onCheckedChange={(enabled) => updateEditorialSection(key, { enabled })}
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label>{isAr ? "صورة اللافتة" : "Banner image"}</Label>
+                      <div className="relative aspect-[2/1] overflow-hidden rounded-xl bg-muted">
+                        {config.banner_image_url ? (
+                          <ResponsiveImage
+                            src={config.banner_image_url}
+                            preset="hero"
+                            sizes="420px"
+                            alt=""
+                            className="h-full w-full object-cover"
+                          />
+                        ) : (
+                          <div className="flex h-full items-center justify-center text-xs text-muted-foreground">
+                            {isAr ? "لا توجد صورة" : "No banner image"}
+                          </div>
+                        )}
+                        {config.banner_image_url && (
+                          <Button
+                            type="button"
+                            variant="secondary"
+                            size="icon"
+                            className="absolute end-2 top-2"
+                            aria-label={isAr ? "إزالة صورة اللافتة" : "Remove banner image"}
+                            onClick={() => updateEditorialSection(key, { banner_image_url: "" })}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </div>
+                      <CropUploadButton
+                        aspect={2}
+                        outputWidth={1600}
+                        outputHeight={800}
+                        heroPreview
+                        className="w-full"
+                        busy={uploadingEditorialAsset === `${key}-banner_image_url`}
+                        onCrop={(blob) => uploadEditorialAsset(key, "banner_image_url", blob)}
+                      >
+                        <Upload className="me-2 h-4 w-4" />
+                        {config.banner_image_url
+                          ? isAr
+                            ? "استبدال اللافتة"
+                            : "Replace banner"
+                          : isAr
+                            ? "رفع لافتة"
+                            : "Upload banner"}
+                      </CropUploadButton>
+                    </div>
+
+                    <ColorField
+                      label={isAr ? "لون خلفية المنتجات" : "Product-area background color"}
+                      value={config.background_color || null}
+                      onChange={(background_color) =>
+                        updateEditorialSection(key, { background_color: background_color || "" })
+                      }
+                    />
+
+                    <div className="space-y-2">
+                      <Label>
+                        {isAr ? "صورة خلفية المنتجات" : "Product-area background image"}
+                      </Label>
+                      {config.background_image_url && (
+                        <div className="relative aspect-[3/1] overflow-hidden rounded-xl bg-muted">
+                          <ResponsiveImage
+                            src={config.background_image_url}
+                            preset="content"
+                            sizes="420px"
+                            alt=""
+                            className="h-full w-full object-cover"
+                          />
+                          <Button
+                            type="button"
+                            variant="secondary"
+                            size="icon"
+                            className="absolute end-2 top-2"
+                            aria-label={isAr ? "إزالة صورة الخلفية" : "Remove background image"}
+                            onClick={() =>
+                              updateEditorialSection(key, { background_image_url: "" })
+                            }
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      )}
+                      <CropUploadButton
+                        aspect={3}
+                        outputWidth={1800}
+                        outputHeight={600}
+                        className="w-full"
+                        busy={uploadingEditorialAsset === `${key}-background_image_url`}
+                        onCrop={(blob) => uploadEditorialAsset(key, "background_image_url", blob)}
+                      >
+                        <Upload className="me-2 h-4 w-4" />
+                        {config.background_image_url
+                          ? isAr
+                            ? "استبدال الخلفية"
+                            : "Replace background"
+                          : isAr
+                            ? "رفع خلفية"
+                            : "Upload background"}
+                      </CropUploadButton>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
           {state.home_promo_cards.map((card, index) => (
             <div key={index} className="space-y-3 rounded-xl border p-4">
               <div className="flex items-center justify-between">

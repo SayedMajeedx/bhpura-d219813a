@@ -484,6 +484,7 @@ export type Database = {
           hero_title_en: string | null;
           hero_title_size: number;
           home_promo_cards: Json;
+          homepage_editorial_sections: Json;
           invoice_secondary_color: string | null;
           invoice_show_business_details: boolean;
           invoice_show_customer_contact: boolean;
@@ -603,6 +604,7 @@ export type Database = {
           hero_title_en?: string | null;
           hero_title_size?: number;
           home_promo_cards?: Json;
+          homepage_editorial_sections?: Json;
           invoice_secondary_color?: string | null;
           invoice_show_business_details?: boolean;
           invoice_show_customer_contact?: boolean;
@@ -722,6 +724,7 @@ export type Database = {
           hero_title_en?: string | null;
           hero_title_size?: number;
           home_promo_cards?: Json;
+          homepage_editorial_sections?: Json;
           invoice_secondary_color?: string | null;
           invoice_show_business_details?: boolean;
           invoice_show_customer_contact?: boolean;
@@ -2327,6 +2330,7 @@ export type Database = {
           hero_title_en: string | null;
           hero_title_size: number | null;
           home_promo_cards: Json | null;
+          homepage_editorial_sections: Json | null;
           link_color: string | null;
           logo_align: string | null;
           logo_size: number | null;

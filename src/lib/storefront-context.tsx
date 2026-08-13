@@ -24,6 +24,18 @@ export type HomePromoCard = {
   background_color: string;
   text_color: string;
 };
+
+export type EditorialSectionConfig = {
+  enabled: boolean;
+  banner_image_url: string;
+  background_color: string;
+  background_image_url: string;
+};
+
+export type HomepageEditorialSections = Record<
+  "best" | "sale" | "trending",
+  EditorialSectionConfig
+>;
 export type HeroMediaItem = { type: "image" | "video"; url: string };
 export type HeroContentSlide = {
   id: string;
@@ -147,6 +159,7 @@ export type PublicSettings = {
   menu_show_orders: boolean;
   menu_show_pages: boolean;
   home_promo_cards: HomePromoCard[];
+  homepage_editorial_sections: HomepageEditorialSections;
   show_new_arrivals: boolean;
   show_best_sellers: boolean;
   new_arrivals_title_en: string | null;

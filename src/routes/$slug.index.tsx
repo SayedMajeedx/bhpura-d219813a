@@ -292,22 +292,19 @@ function StoreHome() {
   return (
     <div>
       <HeroBanner />
-      <section className="mx-auto max-w-7xl px-4 sm:px-6 py-6 sm:py-8">
+      <section className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8">
         <PromoCards />
-        {!activeCat && (
-          <div className="space-y-8 sm:space-y-12">
-            <MerchandisingSection kind="new" products={newest} />
-            <MerchandisingSection kind="best" products={bestSellers} />
-            <MerchandisingSection kind="sale" products={saleProducts} />
-            <MerchandisingSection kind="trending" products={trending} bestSellerIds={bestIdsKeys} />
-          </div>
-        )}
-
-        <div
-          ref={productsSectionRef}
-          id="products-section"
-          className={`scroll-mt-20 pt-6 sm:pt-8 ${!activeCat ? "border-t border-border" : ""}`}
-        >
+        {!activeCat && <MerchandisingSection kind="new" products={newest} />}
+      </section>
+      {!activeCat && (
+        <div>
+          <MerchandisingSection kind="best" products={bestSellers} />
+          <MerchandisingSection kind="sale" products={saleProducts} />
+          <MerchandisingSection kind="trending" products={trending} bestSellerIds={bestIdsKeys} />
+        </div>
+      )}
+      <section className="mx-auto max-w-7xl px-4 pb-8 sm:px-6 sm:pb-12">
+        <div ref={productsSectionRef} id="products-section" className="scroll-mt-20 pt-8 sm:pt-12">
           <SectionHeading
             title={activeCat ? undefined : null}
             fallbackAr="كل المنتجات"
@@ -438,8 +435,9 @@ function MerchandisingSection({
 }) {
   const { settings, lang } = useStorefront();
   if (kind === "new" && !settings.show_new_arrivals) return null;
-  if (kind === "best" && (!settings.show_best_sellers || !products.length)) return null;
-  if ((kind === "sale" || kind === "trending") && !products.length) return null;
+  const editorial = kind === "new" ? null : settings.homepage_editorial_sections[kind];
+  if (editorial && !editorial.enabled) return null;
+  if (!products.length) return null;
 
   const title =
     kind === "new"
@@ -460,21 +458,63 @@ function MerchandisingSection({
           ? ["تنزيلات", "Sale"]
           : ["الرائج الآن", "Trending now"];
 
+  const productGrid = (
+    <div
+      dir={lang === "ar" ? "rtl" : "ltr"}
+      className="flex overflow-x-auto flex-nowrap gap-4 pb-4 md:grid md:grid-cols-3 md:gap-6 md:overflow-visible md:pb-0 lg:grid-cols-4"
+    >
+      {products.map((product) => (
+        <ProductCard
+          key={`${kind}-${product.id}`}
+          product={product}
+          className="min-w-[240px] w-[72vw] flex-shrink-0 snap-start sm:w-[45vw] md:w-auto md:min-w-0 md:shrink"
+          badge={
+            kind === "trending"
+              ? bestSellerIds.has(product.id)
+                ? "best"
+                : "trending"
+              : kind === "best"
+                ? "best"
+                : undefined
+          }
+        />
+      ))}
+    </div>
+  );
+
+  if (!editorial) {
+    return (
+      <section className="py-4 sm:py-6">
+        <SectionHeading title={title} fallbackAr={label[0]} fallbackEn={label[1]} />
+        {productGrid}
+      </section>
+    );
+  }
+
+  const sectionStyle = {
+    backgroundColor: editorial.background_color || "var(--sf-background)",
+    backgroundImage: editorial.background_image_url
+      ? `url(${JSON.stringify(editorial.background_image_url)})`
+      : undefined,
+    backgroundPosition: "center",
+    backgroundSize: "cover",
+  };
+
   return (
-    <section className="py-4 sm:py-6 border-t border-border">
-      {kind === "trending" && settings.trending_banner_background_url ? (
+    <section className="w-full overflow-hidden" style={sectionStyle}>
+      {editorial.banner_image_url ? (
         <SecondaryBannerParallax
           enabled={settings.secondary_banner_parallax_enabled}
           mobileEnabled={settings.secondary_banner_parallax_mobile_enabled}
           desktopBreakpoint={settings.secondary_banner_parallax_breakpoint}
-          className="mb-6 min-h-[clamp(12rem,24vw,20rem)] rounded-xl"
+          className="min-h-[clamp(14rem,30vw,24rem)] rounded-none"
           backgroundClassName="bg-muted"
           background={
             <>
               <ResponsiveImage
-                src={settings.trending_banner_background_url}
+                src={editorial.banner_image_url}
                 preset="hero"
-                sizes="(min-width: 1280px) 1280px, 100vw"
+                sizes="100vw"
                 alt=""
                 loading="lazy"
                 className="h-full w-full object-cover"
@@ -483,36 +523,23 @@ function MerchandisingSection({
             </>
           }
         >
-          <div className="flex min-h-[clamp(12rem,24vw,20rem)] items-end px-6 py-8 sm:px-10 sm:py-10">
-            <h2 className="font-display text-3xl font-semibold text-primary-foreground sm:text-5xl">
+          <div className="mx-auto flex min-h-[clamp(14rem,30vw,24rem)] max-w-7xl items-end px-4 py-10 sm:px-6 sm:py-14">
+            <h2 className="font-display text-4xl font-semibold text-primary-foreground sm:text-6xl">
               {lang === "ar" ? label[0] : label[1]}
             </h2>
           </div>
         </SecondaryBannerParallax>
       ) : (
-        <SectionHeading title={title} fallbackAr={label[0]} fallbackEn={label[1]} />
+        <div className="mx-auto max-w-7xl px-4 pt-10 sm:px-6 sm:pt-14">
+          <h2
+            className="font-display text-3xl font-semibold"
+            style={{ color: "var(--sf-heading)" }}
+          >
+            {title || (lang === "ar" ? label[0] : label[1])}
+          </h2>
+        </div>
       )}
-      <div
-        dir={lang === "ar" ? "rtl" : "ltr"}
-        className="flex overflow-x-auto flex-nowrap md:grid md:grid-cols-3 lg:grid-cols-4 gap-4 px-4 md:px-0 md:gap-6 scrollbar-none pb-4 md:pb-0 snap-x snap-mandatory"
-      >
-        {products.map((product) => (
-          <ProductCard
-            key={`${kind}-${product.id}`}
-            product={product}
-            className="flex-shrink-0 w-[72vw] sm:w-[45vw] md:w-[28vw] min-w-[240px] snap-start md:w-auto md:shrink md:snap-align-none"
-            badge={
-              kind === "trending"
-                ? bestSellerIds.has(product.id)
-                  ? "best"
-                  : "trending"
-                : kind === "best"
-                  ? "best"
-                  : undefined
-            }
-          />
-        ))}
-      </div>
+      <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 sm:py-14">{productGrid}</div>
     </section>
   );
 }

@@ -16,13 +16,13 @@ describe("secondary banner parallax guardrails", () => {
     expect(migration).toContain("bs.category_banner_background_url");
   });
 
-  it("is scoped to trending and category banners, not hero or product components", () => {
+  it("is scoped to editorial and category banners, not hero or product components", () => {
     const home = read("src/routes/$slug.index.tsx");
     const category = read("src/routes/$slug.$category.tsx");
     const hero = home.slice(home.indexOf("function HeroBanner"));
-    expect(home).toContain('kind === "trending"');
+    expect(home).toContain("settings.homepage_editorial_sections[kind]");
     expect(category).toContain("<SecondaryBannerParallax");
-    expect(home).toContain("settings.trending_banner_background_url");
+    expect(home).toContain("editorial.banner_image_url");
     expect(category).toContain("settings.category_banner_background_url");
     expect(hero).not.toContain("<SecondaryBannerParallax");
     expect(read("src/components/storefront/product-card.tsx")).not.toContain(

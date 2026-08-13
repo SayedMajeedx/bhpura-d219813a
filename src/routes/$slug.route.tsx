@@ -95,6 +95,19 @@ export const Route = createFileRoute("/$slug")({
     const normalizedSocials = rawSocials
       .map((x: any) => ({ name: String(x?.name ?? "").trim(), url: String(x?.url ?? "").trim() }))
       .filter((x: { name: string; url: string }) => x.name && x.url);
+    const rawEditorialSections =
+      s?.homepage_editorial_sections && typeof s.homepage_editorial_sections === "object"
+        ? s.homepage_editorial_sections
+        : {};
+    const editorialSection = (key: "best" | "sale" | "trending", enabled: boolean) => ({
+      enabled: rawEditorialSections[key]?.enabled ?? enabled,
+      banner_image_url:
+        rawEditorialSections[key]?.banner_image_url ??
+        (key === "trending" ? s?.trending_banner_background_url : null) ??
+        "",
+      background_color: rawEditorialSections[key]?.background_color ?? "",
+      background_image_url: rawEditorialSections[key]?.background_image_url ?? "",
+    });
     const safeSettings: PublicSettings = {
       brand_id: brand.id,
       business_name: s?.business_name ?? brand.name_en,
@@ -182,6 +195,11 @@ export const Route = createFileRoute("/$slug")({
       menu_show_orders: s?.menu_show_orders ?? true,
       menu_show_pages: s?.menu_show_pages ?? true,
       home_promo_cards: Array.isArray(s?.home_promo_cards) ? s.home_promo_cards.slice(0, 4) : [],
+      homepage_editorial_sections: {
+        best: editorialSection("best", s?.show_best_sellers ?? true),
+        sale: editorialSection("sale", true),
+        trending: editorialSection("trending", true),
+      },
       show_new_arrivals: s?.show_new_arrivals ?? true,
       show_best_sellers: s?.show_best_sellers ?? true,
       new_arrivals_title_en: s?.new_arrivals_title_en ?? null,
