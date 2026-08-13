@@ -462,13 +462,26 @@ function MerchandisingSection({
 
   return (
     <section className="py-4 sm:py-6 border-t border-border">
-      {kind === "trending" && settings.secondary_banner_parallax_enabled ? (
+      {kind === "trending" && settings.trending_banner_background_url ? (
         <SecondaryBannerParallax
           enabled={settings.secondary_banner_parallax_enabled}
           mobileEnabled={settings.secondary_banner_parallax_mobile_enabled}
           desktopBreakpoint={settings.secondary_banner_parallax_breakpoint}
           className="mb-4 rounded-xl sm:mb-6"
           backgroundClassName="bg-muted"
+          background={
+            <>
+              <ResponsiveImage
+                src={settings.trending_banner_background_url}
+                preset="hero"
+                sizes="(min-width: 1280px) 1280px, 100vw"
+                alt=""
+                loading="lazy"
+                className="h-full w-full object-cover"
+              />
+              <div className="absolute inset-0 bg-background/60" />
+            </>
+          }
         >
           <div className="px-4 pt-4">
             <SectionHeading title={title} fallbackAr={label[0]} fallbackEn={label[1]} />

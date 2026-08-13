@@ -99,6 +99,8 @@ export type PublicSettings = {
   secondary_banner_parallax_enabled: boolean;
   secondary_banner_parallax_mobile_enabled: boolean;
   secondary_banner_parallax_breakpoint: number;
+  trending_banner_background_url: string | null;
+  category_banner_background_url: string | null;
   hero_title_en: string | null;
   hero_title_ar: string | null;
   hero_title_size: number;

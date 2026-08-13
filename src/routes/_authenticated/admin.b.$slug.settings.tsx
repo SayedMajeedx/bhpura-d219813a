@@ -32,6 +32,7 @@ import { SupportAccessCard } from "@/components/support-access-card";
 import { META_DESCRIPTION_LIMIT, META_TITLE_LIMIT, sanitizeMetaText } from "@/lib/seo";
 import { ImageCropperDialog } from "@/components/image-cropper-dialog";
 import { OptimizedVideo, ResponsiveImage } from "@/components/responsive-media";
+import { CropUploadButton } from "@/components/crop-upload-button";
 
 import { SettingsCommandHeader } from "@/components/settings/SettingsCommandHeader";
 import {
@@ -2823,6 +2824,9 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
   const [promoCropSrc, setPromoCropSrc] = useState<string | null>(null);
   const [promoCropIndex, setPromoCropIndex] = useState<number | null>(null);
   const [uploadingPromo, setUploadingPromo] = useState(false);
+  const [uploadingSecondaryBanner, setUploadingSecondaryBanner] = useState<
+    "trending" | "category" | null
+  >(null);
   const [settingsTab, setSettingsTab] = useState<"general" | "theme" | "content" | "promotions">(
     "theme",
   );
@@ -2846,6 +2850,8 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
     secondary_banner_parallax_enabled: boolean;
     secondary_banner_parallax_mobile_enabled: boolean;
     secondary_banner_parallax_breakpoint: number;
+    trending_banner_background_url: string | null;
+    category_banner_background_url: string | null;
     hero_title_en: string | null;
     hero_title_ar: string | null;
     hero_title_size: number;
@@ -2947,6 +2953,8 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
         secondary_banner_parallax_breakpoint: Number(
           data.secondary_banner_parallax_breakpoint ?? 768,
         ),
+        trending_banner_background_url: data.trending_banner_background_url ?? null,
+        category_banner_background_url: data.category_banner_background_url ?? null,
         hero_title_en: data.hero_title_en ?? null,
         hero_title_ar: data.hero_title_ar ?? null,
         hero_title_size: Number(data.hero_title_size ?? 48),
@@ -3035,6 +3043,8 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
       "secondary_banner_parallax_enabled",
       "secondary_banner_parallax_mobile_enabled",
       "secondary_banner_parallax_breakpoint",
+      "trending_banner_background_url",
+      "category_banner_background_url",
       "storefront_loader_text_en",
       "storefront_loader_text_ar",
     ];
@@ -3136,6 +3146,33 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
     );
     setPromoCropSrc(null);
     setPromoCropIndex(null);
+  };
+
+  const uploadSecondaryBanner = async (target: "trending" | "category", blob: Blob) => {
+    try {
+      setUploadingSecondaryBanner(target);
+      const file = new File([blob], `${target}-secondary-banner.jpg`, { type: "image/jpeg" });
+      const url = await uploadPublicMedia(brandId, file, "hero");
+      setState((current) =>
+        current
+          ? {
+              ...current,
+              [target === "trending"
+                ? "trending_banner_background_url"
+                : "category_banner_background_url"]: url,
+            }
+          : current,
+      );
+      toast.success(
+        isAr
+          ? "تم رفع خلفية اللافتة — احفظ التغييرات"
+          : "Banner background uploaded — remember to save",
+      );
+    } catch (error: any) {
+      toast.error(error.message ?? "Banner upload failed");
+    } finally {
+      setUploadingSecondaryBanner(null);
+    }
   };
 
   if (!state) {
@@ -3294,6 +3331,86 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
               setState({ ...state, secondary_banner_parallax_enabled: checked })
             }
           />
+        </div>
+        <div className="grid grid-cols-1 gap-4 border-t border-border pt-4 lg:grid-cols-2">
+          {(
+            [
+              {
+                key: "trending_banner_background_url",
+                target: "trending",
+                title: isAr ? "خلفية لافتة الرائج الآن" : "Trending banner background",
+              },
+              {
+                key: "category_banner_background_url",
+                target: "category",
+                title: isAr ? "خلفية لافتات التصنيفات" : "Category banner background",
+              },
+            ] as const
+          ).map(({ key, target, title }) => {
+            const imageUrl = state[key];
+            return (
+              <div key={key} className="space-y-3 rounded-xl border border-border p-3">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <Label>{title}</Label>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      {isAr ? "صورة عريضة محسّنة بنسبة 2:1" : "Optimized wide image · 2:1 ratio"}
+                    </p>
+                  </div>
+                  {imageUrl && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      aria-label={isAr ? "إزالة الخلفية" : "Remove background"}
+                      onClick={() => setState({ ...state, [key]: null })}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
+                <div className="relative aspect-[2/1] overflow-hidden rounded-xl border border-border bg-muted">
+                  {imageUrl ? (
+                    <ResponsiveImage
+                      src={imageUrl}
+                      preset="hero"
+                      sizes="(min-width: 1024px) 50vw, 100vw"
+                      alt=""
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <div className="flex h-full items-center justify-center text-xs text-muted-foreground">
+                      {isAr ? "لا توجد خلفية" : "No background selected"}
+                    </div>
+                  )}
+                </div>
+                <CropUploadButton
+                  aspect={2}
+                  outputWidth={1600}
+                  outputHeight={800}
+                  heroPreview
+                  busy={uploadingSecondaryBanner === target}
+                  className="w-full"
+                  title={isAr ? "ضبط خلفية اللافتة" : "Frame banner background"}
+                  description={
+                    isAr
+                      ? "اضبط موضع الصورة مع مساحة إضافية آمنة لحركة التمرير."
+                      : "Position the image with safe visual room for the scroll movement."
+                  }
+                  onCrop={(blob) => uploadSecondaryBanner(target, blob)}
+                >
+                  <Upload className="me-2 h-4 w-4" />
+                  {imageUrl
+                    ? isAr
+                      ? "استبدال الخلفية"
+                      : "Replace background"
+                    : isAr
+                      ? "رفع خلفية"
+                      : "Upload background"}
+                </CropUploadButton>
+              </div>
+            );
+          })}
         </div>
         {state.secondary_banner_parallax_enabled && (
           <div className="grid grid-cols-1 gap-4 border-t border-border pt-4 sm:grid-cols-2">

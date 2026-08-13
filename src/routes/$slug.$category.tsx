@@ -440,7 +440,10 @@ function CategoryPage() {
   return (
     <main>
       <SecondaryBannerParallax
-        enabled={settings.secondary_banner_parallax_enabled}
+        enabled={
+          settings.secondary_banner_parallax_enabled &&
+          Boolean(settings.category_banner_background_url)
+        }
         mobileEnabled={settings.secondary_banner_parallax_mobile_enabled}
         desktopBreakpoint={settings.secondary_banner_parallax_breakpoint}
         className="border-b"
@@ -448,6 +451,21 @@ function CategoryPage() {
         backgroundStyle={{
           backgroundColor: "var(--sf-header-bg)",
         }}
+        background={
+          settings.category_banner_background_url ? (
+            <>
+              <ResponsiveImage
+                src={settings.category_banner_background_url}
+                preset="hero"
+                sizes="100vw"
+                alt=""
+                loading="lazy"
+                className="h-full w-full object-cover"
+              />
+              <div className="absolute inset-0 bg-background/60" />
+            </>
+          ) : undefined
+        }
       >
         <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-12">
           {breadcrumbs ? (

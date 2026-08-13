@@ -6,9 +6,14 @@ const read = (path: string) => readFileSync(resolve(process.cwd(), path), "utf8"
 
 describe("secondary banner parallax guardrails", () => {
   it("defaults the per-store feature off and exposes it through public settings", () => {
-    const migration = read("supabase/migrations/20260813160000_add_secondary_banner_parallax.sql");
-    expect(migration).toContain("secondary_banner_parallax_enabled boolean NOT NULL DEFAULT false");
+    const route = read("src/routes/$slug.route.tsx");
+    const migration = read(
+      "supabase/migrations/20260813173000_add_secondary_banner_backgrounds.sql",
+    );
+    expect(route).toContain("secondary_banner_parallax_enabled ?? false");
     expect(migration).toContain("bs.secondary_banner_parallax_enabled");
+    expect(migration).toContain("bs.trending_banner_background_url");
+    expect(migration).toContain("bs.category_banner_background_url");
   });
 
   it("is scoped to trending and category banners, not hero or product components", () => {
@@ -17,6 +22,8 @@ describe("secondary banner parallax guardrails", () => {
     const hero = home.slice(home.indexOf("function HeroBanner"));
     expect(home).toContain('kind === "trending"');
     expect(category).toContain("<SecondaryBannerParallax");
+    expect(home).toContain("settings.trending_banner_background_url");
+    expect(category).toContain("settings.category_banner_background_url");
     expect(hero).not.toContain("<SecondaryBannerParallax");
     expect(read("src/components/storefront/product-card.tsx")).not.toContain(
       "SecondaryBannerParallax",

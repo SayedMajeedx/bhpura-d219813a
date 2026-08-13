@@ -8,6 +8,7 @@ type SecondaryBannerParallaxProps = {
   style?: CSSProperties;
   backgroundClassName?: string;
   backgroundStyle?: CSSProperties;
+  background?: ReactNode;
   children: ReactNode;
 };
 
@@ -15,8 +16,15 @@ export function SecondaryBannerParallax({ enabled, ...props }: SecondaryBannerPa
   // Keep the disabled path completely inert: no effect hooks, observer, listener, or timeline node.
   if (!enabled) {
     return (
-      <div className={props.className} style={{ ...props.backgroundStyle, ...props.style }}>
-        {props.children}
+      <div className={`relative overflow-hidden ${props.className ?? ""}`} style={props.style}>
+        <div
+          aria-hidden="true"
+          className={`absolute inset-0 ${props.backgroundClassName ?? ""}`}
+          style={props.backgroundStyle}
+        >
+          {props.background}
+        </div>
+        <div className="relative z-10">{props.children}</div>
       </div>
     );
   }
@@ -30,6 +38,7 @@ function ActiveSecondaryBannerParallax({
   style,
   backgroundClassName = "",
   backgroundStyle,
+  background,
   children,
 }: Omit<SecondaryBannerParallaxProps, "enabled">) {
   const rootRef = useRef<HTMLDivElement>(null);
@@ -103,7 +112,9 @@ function ActiveSecondaryBannerParallax({
         aria-hidden="true"
         className={`secondary-banner-parallax__background absolute inset-[-2rem] ${backgroundClassName}`}
         style={backgroundStyle}
-      />
+      >
+        {background}
+      </div>
       <div ref={foregroundRef} className="secondary-banner-parallax__foreground relative z-10">
         {children}
       </div>

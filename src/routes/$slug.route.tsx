@@ -109,6 +109,8 @@ export const Route = createFileRoute("/$slug")({
       secondary_banner_parallax_enabled: s?.secondary_banner_parallax_enabled ?? false,
       secondary_banner_parallax_mobile_enabled: s?.secondary_banner_parallax_mobile_enabled ?? true,
       secondary_banner_parallax_breakpoint: Number(s?.secondary_banner_parallax_breakpoint ?? 768),
+      trending_banner_background_url: s?.trending_banner_background_url ?? null,
+      category_banner_background_url: s?.category_banner_background_url ?? null,
       text_color: s?.storefront_text_color ?? "#111111",
       background_color: s?.storefront_background_color ?? "#ffffff",
       cod_enabled: s?.cod_enabled ?? true,
