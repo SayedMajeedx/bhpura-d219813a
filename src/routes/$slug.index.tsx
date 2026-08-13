@@ -9,6 +9,7 @@ import { ChevronDown, ChevronLeft, ChevronRight, FileText, Grid2X2, Heart } from
 import { OptimizedVideo, ResponsiveImage } from "@/components/responsive-media";
 import { ProductCard } from "@/components/storefront/product-card";
 import { ProductGrid } from "@/components/storefront/product-grid";
+import { SecondaryBannerParallax } from "@/components/storefront/secondary-banner-parallax";
 import {
   fetchStorefrontPageData,
   fetchBestSellerRows,
@@ -461,7 +462,21 @@ function MerchandisingSection({
 
   return (
     <section className="py-4 sm:py-6 border-t border-border">
-      <SectionHeading title={title} fallbackAr={label[0]} fallbackEn={label[1]} />
+      {kind === "trending" && settings.secondary_banner_parallax_enabled ? (
+        <SecondaryBannerParallax
+          enabled={settings.secondary_banner_parallax_enabled}
+          mobileEnabled={settings.secondary_banner_parallax_mobile_enabled}
+          desktopBreakpoint={settings.secondary_banner_parallax_breakpoint}
+          className="mb-4 rounded-xl sm:mb-6"
+          backgroundClassName="bg-muted"
+        >
+          <div className="px-4 pt-4">
+            <SectionHeading title={title} fallbackAr={label[0]} fallbackEn={label[1]} />
+          </div>
+        </SecondaryBannerParallax>
+      ) : (
+        <SectionHeading title={title} fallbackAr={label[0]} fallbackEn={label[1]} />
+      )}
       <div
         dir={lang === "ar" ? "rtl" : "ltr"}
         className="flex overflow-x-auto flex-nowrap md:grid md:grid-cols-3 lg:grid-cols-4 gap-4 px-4 md:px-0 md:gap-6 scrollbar-none pb-4 md:pb-0 snap-x snap-mandatory"

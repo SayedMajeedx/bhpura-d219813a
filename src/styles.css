@@ -470,3 +470,42 @@ input[type="number"] {
     border-color: currentColor !important;
   }
 }
+
+/* Opt-in secondary banners only. The component is not mounted when the store toggle is off. */
+@supports (animation-timeline: scroll()) {
+  .secondary-banner-parallax[data-parallax-active="true"] .secondary-banner-parallax__background {
+    animation: secondary-banner-background-drift linear both;
+    animation-timeline: scroll(root block);
+  }
+
+  .secondary-banner-parallax[data-parallax-active="true"] .secondary-banner-parallax__foreground {
+    animation: secondary-banner-foreground-drift linear both;
+    animation-timeline: scroll(root block);
+  }
+
+  @keyframes secondary-banner-background-drift {
+    from {
+      transform: translate3d(0, -2rem, 0);
+    }
+    to {
+      transform: translate3d(0, 2rem, 0);
+    }
+  }
+
+  @keyframes secondary-banner-foreground-drift {
+    from {
+      transform: translate3d(0, 0.5rem, 0);
+    }
+    to {
+      transform: translate3d(0, -0.5rem, 0);
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .secondary-banner-parallax__background,
+  .secondary-banner-parallax__foreground {
+    animation: none !important;
+    transform: none !important;
+  }
+}

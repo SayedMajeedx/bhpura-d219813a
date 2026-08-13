@@ -96,6 +96,9 @@ export type PublicSettings = {
   storefront_radius?: string | null;
   header_glass?: boolean | null;
   badge_accent?: string | null;
+  secondary_banner_parallax_enabled: boolean;
+  secondary_banner_parallax_mobile_enabled: boolean;
+  secondary_banner_parallax_breakpoint: number;
   hero_title_en: string | null;
   hero_title_ar: string | null;
   hero_title_size: number;

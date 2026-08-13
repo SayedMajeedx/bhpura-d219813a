@@ -10,6 +10,7 @@ import { StorefrontPageContent } from "@/routes/$slug.page.$idx";
 import { faviconType } from "@/lib/favicon";
 import { ResponsiveImage } from "@/components/responsive-media";
 import { Button } from "@/components/ui/button";
+import { SecondaryBannerParallax } from "@/components/storefront/secondary-banner-parallax";
 
 function getDescendantCategories(catId: string, categories: any[]): any[] {
   const descendants: any[] = [];
@@ -438,9 +439,15 @@ function CategoryPage() {
 
   return (
     <main>
-      <section
+      <SecondaryBannerParallax
+        enabled={settings.secondary_banner_parallax_enabled}
+        mobileEnabled={settings.secondary_banner_parallax_mobile_enabled}
+        desktopBreakpoint={settings.secondary_banner_parallax_breakpoint}
         className="border-b"
-        style={{ backgroundColor: "var(--sf-header-bg)", color: "var(--sf-header-fg)" }}
+        style={{ color: "var(--sf-header-fg)" }}
+        backgroundStyle={{
+          backgroundColor: "var(--sf-header-bg)",
+        }}
       >
         <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-12">
           {breadcrumbs ? (
@@ -569,7 +576,7 @@ function CategoryPage() {
             )}
           </div>
         </div>
-      </section>
+      </SecondaryBannerParallax>
 
       <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6">
         <div className="mb-6 flex justify-end">

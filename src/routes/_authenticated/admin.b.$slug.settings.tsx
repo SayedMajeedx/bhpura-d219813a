@@ -2843,6 +2843,9 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
     storefront_radius: string;
     header_glass: boolean;
     badge_accent: string;
+    secondary_banner_parallax_enabled: boolean;
+    secondary_banner_parallax_mobile_enabled: boolean;
+    secondary_banner_parallax_breakpoint: number;
     hero_title_en: string | null;
     hero_title_ar: string | null;
     hero_title_size: number;
@@ -2938,6 +2941,12 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
           (typeof window !== "undefined" && localStorage.getItem("boutq_badge_accent")) ||
           data.badge_accent ||
           "maroon",
+        secondary_banner_parallax_enabled: data.secondary_banner_parallax_enabled ?? false,
+        secondary_banner_parallax_mobile_enabled:
+          data.secondary_banner_parallax_mobile_enabled ?? true,
+        secondary_banner_parallax_breakpoint: Number(
+          data.secondary_banner_parallax_breakpoint ?? 768,
+        ),
         hero_title_en: data.hero_title_en ?? null,
         hero_title_ar: data.hero_title_ar ?? null,
         hero_title_size: Number(data.hero_title_size ?? 48),
@@ -3023,6 +3032,9 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
       "storefront_radius",
       "header_glass",
       "badge_accent",
+      "secondary_banner_parallax_enabled",
+      "secondary_banner_parallax_mobile_enabled",
+      "secondary_banner_parallax_breakpoint",
       "storefront_loader_text_en",
       "storefront_loader_text_ar",
     ];
@@ -3258,6 +3270,72 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
         <div className="pt-3">
           <BrandHeroCard brandId={brandId} onSaveRef={heroSaveRef} />
         </div>
+      </div>
+
+      <div
+        className={
+          settingsTab === "theme" ? "space-y-4 rounded-xl border border-border p-4" : "hidden"
+        }
+      >
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            <h3 className="font-medium text-sm">
+              {isAr ? "حركة لافتات الأقسام الثانوية" : "Secondary banner parallax"}
+            </h3>
+            <p className="mt-1 text-xs text-muted-foreground">
+              {isAr
+                ? "حركة تمرير خفيفة للافتة الرائج الآن ولافتات فواصل التصنيفات فقط."
+                : "Subtle scroll movement for the Trending now and category divider banners only."}
+            </p>
+          </div>
+          <Switch
+            checked={state.secondary_banner_parallax_enabled}
+            onCheckedChange={(checked) =>
+              setState({ ...state, secondary_banner_parallax_enabled: checked })
+            }
+          />
+        </div>
+        {state.secondary_banner_parallax_enabled && (
+          <div className="grid grid-cols-1 gap-4 border-t border-border pt-4 sm:grid-cols-2">
+            <div className="flex items-center justify-between gap-4 rounded-md border border-border p-3">
+              <div>
+                <Label>{isAr ? "تفعيلها على الجوال" : "Enable on mobile"}</Label>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {isAr
+                    ? "عند إيقافه تصبح اللافتات ثابتة تحت نقطة التوقف."
+                    : "When off, banners stay static below the breakpoint."}
+                </p>
+              </div>
+              <Switch
+                checked={state.secondary_banner_parallax_mobile_enabled}
+                onCheckedChange={(checked) =>
+                  setState({ ...state, secondary_banner_parallax_mobile_enabled: checked })
+                }
+              />
+            </div>
+            <div>
+              <Label htmlFor="secondary-banner-parallax-breakpoint">
+                {isAr ? "نقطة توقف سطح المكتب (بكسل)" : "Desktop breakpoint (px)"}
+              </Label>
+              <Input
+                id="secondary-banner-parallax-breakpoint"
+                type="number"
+                min={320}
+                max={1920}
+                value={state.secondary_banner_parallax_breakpoint}
+                onChange={(event) =>
+                  setState({
+                    ...state,
+                    secondary_banner_parallax_breakpoint: Math.max(
+                      320,
+                      Math.min(1920, Number(event.target.value) || 768),
+                    ),
+                  })
+                }
+              />
+            </div>
+          </div>
+        )}
       </div>
 
       <div
