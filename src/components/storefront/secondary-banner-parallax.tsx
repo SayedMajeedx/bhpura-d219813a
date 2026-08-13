@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 
-const DESKTOP_MOTION_RATIO = 0.14;
-const MOBILE_MOTION_RATIO = 0.075;
-const DESKTOP_FOREGROUND_RATIO = -0.025;
-const MOBILE_FOREGROUND_RATIO = -0.01;
+const DESKTOP_MAX_OFFSET_PX = 84;
+const MOBILE_MAX_OFFSET_PX = 42;
+const PARALLAX_SCALE = 1.08;
+const MOTION_SMOOTHING = 0.18;
 const MIN_COVERAGE_GUARD_PX = 32;
 
 type ParallaxEntry = {
@@ -12,6 +12,7 @@ type ParallaxEntry = {
   foreground: HTMLDivElement;
   documentTop: number;
   height: number;
+  currentOffset: number;
 };
 
 const activeEntries = new Set<ParallaxEntry>();
@@ -24,8 +25,7 @@ function measureEntry(entry: ParallaxEntry) {
   entry.height = rect.height;
 
   const mobile = window.matchMedia("(max-width: 768px)").matches;
-  const ratio = mobile ? MOBILE_MOTION_RATIO : DESKTOP_MOTION_RATIO;
-  const maximumOffset = ((window.innerHeight + rect.height) * ratio) / 2;
+  const maximumOffset = mobile ? MOBILE_MAX_OFFSET_PX : DESKTOP_MAX_OFFSET_PX;
   entry.root.style.setProperty(
     "--secondary-banner-parallax-overscan",
     `${Math.ceil(maximumOffset + MIN_COVERAGE_GUARD_PX)}px`,
@@ -37,17 +37,29 @@ function renderActiveEntries() {
   const viewportHeight = window.innerHeight;
   const scrollY = window.scrollY;
   const mobile = window.matchMedia("(max-width: 768px)").matches;
-  const backgroundRatio = mobile ? MOBILE_MOTION_RATIO : DESKTOP_MOTION_RATIO;
-  const foregroundRatio = mobile ? MOBILE_FOREGROUND_RATIO : DESKTOP_FOREGROUND_RATIO;
+  const maximumOffset = mobile ? MOBILE_MAX_OFFSET_PX : DESKTOP_MAX_OFFSET_PX;
+  let needsAnotherFrame = false;
 
   activeEntries.forEach((entry) => {
-    const viewportTop = entry.documentTop - scrollY;
-    const travel = viewportHeight + entry.height;
-    const progress = Math.max(0, Math.min(1, (viewportHeight - viewportTop) / travel));
-    const centered = progress - 0.5;
-    entry.background.style.transform = `translate3d(0, ${centered * travel * backgroundRatio}px, 0)`;
-    entry.foreground.style.transform = `translate3d(0, ${centered * travel * foregroundRatio}px, 0)`;
+    const bannerCenter = entry.documentTop - scrollY + entry.height / 2;
+    const viewportCenter = viewportHeight / 2;
+    const centerDistance = viewportCenter - bannerCenter;
+    const normalizedDistance = Math.max(-1, Math.min(1, centerDistance / (viewportHeight * 0.58)));
+    const targetOffset = normalizedDistance * maximumOffset;
+    const delta = targetOffset - entry.currentOffset;
+    entry.currentOffset += delta * MOTION_SMOOTHING;
+
+    if (Math.abs(delta) < 0.1) {
+      entry.currentOffset = targetOffset;
+    } else {
+      needsAnotherFrame = true;
+    }
+
+    entry.background.style.transform = `translate3d(0, ${entry.currentOffset}px, 0) scale(${PARALLAX_SCALE})`;
+    entry.foreground.style.transform = "none";
   });
+
+  if (needsAnotherFrame) scheduleParallaxFrame();
 }
 
 function scheduleParallaxFrame() {
@@ -186,7 +198,14 @@ function ActiveSecondaryBannerParallax({
     background.style.animation = "none";
     foreground.style.animation = "none";
 
-    const entry: ParallaxEntry = { root, background, foreground, documentTop: 0, height: 0 };
+    const entry: ParallaxEntry = {
+      root,
+      background,
+      foreground,
+      documentTop: 0,
+      height: 0,
+      currentOffset: 0,
+    };
     const unregister = registerParallaxEntry(entry);
     const resizeObserver = new ResizeObserver(() => {
       measureEntry(entry);

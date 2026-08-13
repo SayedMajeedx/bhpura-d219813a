@@ -46,8 +46,12 @@ describe("secondary banner parallax guardrails", () => {
     expect(component).toContain("requestAnimationFrame(renderActiveEntries)");
     expect(component).toContain('addEventListener("scroll", scheduleParallaxFrame');
     expect(component).toContain('background.style.animation = "none"');
-    expect(component).toContain("DESKTOP_MOTION_RATIO = 0.14");
-    expect(component).toContain("MOBILE_MOTION_RATIO = 0.075");
+    expect(component).toContain("DESKTOP_MAX_OFFSET_PX = 84");
+    expect(component).toContain("MOBILE_MAX_OFFSET_PX = 42");
+    expect(component).toContain("PARALLAX_SCALE = 1.08");
+    expect(component).toContain("MOTION_SMOOTHING = 0.18");
+    expect(component).toContain('entry.foreground.style.transform = "none"');
+    expect(component).toContain("centerDistance / (viewportHeight * 0.58)");
     expect(component).toContain("MIN_COVERAGE_GUARD_PX = 32");
     expect(component).toContain("--secondary-banner-parallax-overscan");
     expect(component).not.toContain("inset-[-6rem]");

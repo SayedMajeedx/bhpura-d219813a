@@ -472,6 +472,17 @@ input[type="number"] {
 }
 
 /* Opt-in secondary banners only. The component is not mounted when the store toggle is off. */
+.secondary-banner-parallax[data-parallax-active="true"][data-parallax-driver="raf"]
+  .secondary-banner-parallax__background {
+  backface-visibility: hidden;
+  transform-origin: center;
+  will-change: transform;
+}
+
+.secondary-banner-parallax[data-parallax-driver="raf"] .secondary-banner-parallax__foreground {
+  transform: none !important;
+}
+
 @supports (animation-timeline: view()) {
   .secondary-banner-parallax[data-parallax-active="true"][data-parallax-driver="css"]
     .secondary-banner-parallax__background {
