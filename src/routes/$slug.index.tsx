@@ -469,22 +469,20 @@ function MerchandisingSection({
           desktopBreakpoint={settings.secondary_banner_parallax_breakpoint}
           className="mb-6 min-h-[clamp(12rem,24vw,20rem)] rounded-xl"
           backgroundClassName="bg-muted"
+          overlayClassName="bg-primary/25"
           background={
-            <>
-              <ResponsiveImage
-                src={settings.trending_banner_background_url}
-                preset="hero"
-                sizes="(min-width: 1280px) 1280px, 100vw"
-                alt=""
-                loading="lazy"
-                className="h-full w-full object-cover"
-              />
-              <div className="absolute inset-0 bg-primary/45" />
-            </>
+            <ResponsiveImage
+              src={settings.trending_banner_background_url}
+              preset="hero"
+              sizes="(min-width: 1280px) 1280px, 100vw"
+              alt=""
+              loading="lazy"
+              className="h-full w-full object-cover"
+            />
           }
         >
           <div className="flex min-h-[clamp(12rem,24vw,20rem)] items-end px-6 py-8 sm:px-10 sm:py-10">
-            <h2 className="font-display text-3xl font-semibold text-primary-foreground sm:text-5xl">
+            <h2 className="banner-title font-display text-3xl font-semibold text-primary-foreground sm:text-5xl">
               {lang === "ar" ? label[0] : label[1]}
             </h2>
           </div>

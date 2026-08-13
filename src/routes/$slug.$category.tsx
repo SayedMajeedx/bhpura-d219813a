@@ -451,19 +451,17 @@ function CategoryPage() {
         backgroundStyle={{
           backgroundColor: "var(--sf-header-bg)",
         }}
+        overlayClassName={settings.category_banner_background_url ? "bg-primary/25" : ""}
         background={
           settings.category_banner_background_url ? (
-            <>
-              <ResponsiveImage
-                src={settings.category_banner_background_url}
-                preset="hero"
-                sizes="100vw"
-                alt=""
-                loading="lazy"
-                className="h-full w-full object-cover"
-              />
-              <div className="absolute inset-0 bg-primary/50" />
-            </>
+            <ResponsiveImage
+              src={settings.category_banner_background_url}
+              preset="hero"
+              sizes="100vw"
+              alt=""
+              loading="lazy"
+              className="h-full w-full object-cover"
+            />
           ) : undefined
         }
       >
@@ -516,7 +514,10 @@ function CategoryPage() {
                 <p className="text-xs uppercase tracking-[0.2em] opacity-60">
                   {t("القسم", "Category")}
                 </p>
-                <h1 className="mt-1 font-display text-3xl sm:text-5xl" style={{ color: "inherit" }}>
+                <h1
+                  className="banner-title mt-1 font-display text-3xl sm:text-5xl"
+                  style={{ color: "inherit" }}
+                >
                   {title}
                 </h1>
               </div>
