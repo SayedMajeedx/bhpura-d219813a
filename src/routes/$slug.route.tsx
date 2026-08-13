@@ -2024,7 +2024,7 @@ function StorefrontFooter() {
 
   return (
     <footer
-      className="border-t mt-8 sm:mt-10 py-5 sm:py-6"
+      className="border-t py-5 sm:py-6"
       style={{
         borderColor: "rgba(255,255,255,0.12)",
         backgroundColor: "var(--sf-footer-bg)",

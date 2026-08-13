@@ -40,4 +40,11 @@ describe("storefront performance guardrails", () => {
     expect(home).toContain("style={{ backgroundColor: productsAreaBackground }}");
     expect(home).toContain('className="w-full pb-8 sm:pb-12"');
   });
+
+  it("keeps the footer flush with the storefront content", () => {
+    const shell = read("src/routes/$slug.route.tsx");
+
+    expect(shell).toContain('className="border-t py-5 sm:py-6"');
+    expect(shell).not.toContain('className="border-t mt-8 sm:mt-10 py-5 sm:py-6"');
+  });
 });
