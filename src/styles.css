@@ -473,38 +473,35 @@ input[type="number"] {
 
 /* Opt-in secondary banners only. The component is not mounted when the store toggle is off. */
 @supports (animation-timeline: view()) {
-  .secondary-banner-parallax {
-    view-timeline-name: --secondary-banner-viewport;
-    view-timeline-axis: block;
-  }
-
   .secondary-banner-parallax[data-parallax-active="true"] .secondary-banner-parallax__background {
     animation: secondary-banner-background-drift linear both;
-    animation-timeline: --secondary-banner-viewport;
+    animation-timeline: view(block);
     animation-range: entry 0% exit 100%;
+    will-change: transform;
   }
 
   .secondary-banner-parallax[data-parallax-active="true"] .secondary-banner-parallax__foreground {
     animation: secondary-banner-foreground-drift linear both;
-    animation-timeline: --secondary-banner-viewport;
+    animation-timeline: view(block);
     animation-range: entry 0% exit 100%;
+    will-change: transform;
   }
 
   @keyframes secondary-banner-background-drift {
     from {
-      transform: translate3d(0, -18vh, 0);
+      transform: translate3d(0, -7%, 0);
     }
     to {
-      transform: translate3d(0, 18vh, 0);
+      transform: translate3d(0, 7%, 0);
     }
   }
 
   @keyframes secondary-banner-foreground-drift {
     from {
-      transform: translate3d(0, 4vh, 0);
+      transform: translate3d(0, 1.5%, 0);
     }
     to {
-      transform: translate3d(0, -4vh, 0);
+      transform: translate3d(0, -1.5%, 0);
     }
   }
 }

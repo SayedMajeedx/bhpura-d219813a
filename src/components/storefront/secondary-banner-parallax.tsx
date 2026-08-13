@@ -78,11 +78,11 @@ function ActiveSecondaryBannerParallax({
     const render = () => {
       frame = 0;
       const rect = root.getBoundingClientRect();
-      const travel = window.innerHeight + rect.height;
-      const progress = Math.max(0, Math.min(1, (window.innerHeight - rect.top) / travel));
+      const scrollRange = window.innerHeight + rect.height;
+      const progress = Math.max(0, Math.min(1, (window.innerHeight - rect.top) / scrollRange));
       const centered = progress - 0.5;
-      background.style.transform = `translate3d(0, ${centered * travel * 0.35}px, 0)`;
-      foreground.style.transform = `translate3d(0, ${centered * travel * -0.08}px, 0)`;
+      background.style.transform = `translate3d(0, ${centered * rect.height * 0.14}px, 0)`;
+      foreground.style.transform = `translate3d(0, ${centered * rect.height * -0.03}px, 0)`;
     };
     const schedule = () => {
       if (!frame) frame = window.requestAnimationFrame(render);
@@ -110,7 +110,7 @@ function ActiveSecondaryBannerParallax({
       <div
         ref={backgroundRef}
         aria-hidden="true"
-        className={`secondary-banner-parallax__background absolute inset-x-[-2rem] inset-y-[-20vh] ${backgroundClassName}`}
+        className={`secondary-banner-parallax__background absolute inset-x-0 inset-y-[-15%] ${backgroundClassName}`}
         style={backgroundStyle}
       >
         {background}
