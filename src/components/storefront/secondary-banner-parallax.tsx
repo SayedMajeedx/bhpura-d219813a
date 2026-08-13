@@ -67,7 +67,7 @@ function ActiveSecondaryBannerParallax({
 
   useEffect(() => {
     if (!nearViewport || typeof window === "undefined") return;
-    if (window.CSS?.supports?.("animation-timeline: scroll()")) return;
+    if (window.CSS?.supports?.("animation-timeline: view()")) return;
 
     const root = rootRef.current;
     const background = backgroundRef.current;
@@ -81,7 +81,7 @@ function ActiveSecondaryBannerParallax({
       const travel = window.innerHeight + rect.height;
       const progress = Math.max(0, Math.min(1, (window.innerHeight - rect.top) / travel));
       const centered = progress - 0.5;
-      background.style.transform = `translate3d(0, ${centered * 64}px, 0)`;
+      background.style.transform = `translate3d(0, ${centered * 96}px, 0)`;
       foreground.style.transform = `translate3d(0, ${centered * -16}px, 0)`;
     };
     const schedule = () => {
