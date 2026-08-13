@@ -446,8 +446,8 @@ function CategoryPage() {
         }
         mobileEnabled={settings.secondary_banner_parallax_mobile_enabled}
         desktopBreakpoint={settings.secondary_banner_parallax_breakpoint}
-        className="border-b"
-        style={{ color: "var(--sf-header-fg)" }}
+        className="min-h-[clamp(16rem,32vw,24rem)] border-b"
+        style={{ color: "var(--color-primary-foreground)" }}
         backgroundStyle={{
           backgroundColor: "var(--sf-header-bg)",
         }}
@@ -462,12 +462,12 @@ function CategoryPage() {
                 loading="lazy"
                 className="h-full w-full object-cover"
               />
-              <div className="absolute inset-0 bg-background/60" />
+              <div className="absolute inset-0 bg-primary/50" />
             </>
           ) : undefined
         }
       >
-        <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-12">
+        <div className="mx-auto min-h-[clamp(16rem,32vw,24rem)] max-w-7xl px-4 py-12 sm:px-6 sm:py-16">
           {breadcrumbs ? (
             <nav className="mb-5 flex flex-wrap items-center gap-1.5 text-xs font-semibold opacity-70">
               {breadcrumbs.map((crumb, idx) => {
@@ -516,10 +516,7 @@ function CategoryPage() {
                 <p className="text-xs uppercase tracking-[0.2em] opacity-60">
                   {t("القسم", "Category")}
                 </p>
-                <h1
-                  className="mt-1 font-display text-3xl sm:text-5xl"
-                  style={{ color: "var(--sf-heading)" }}
-                >
+                <h1 className="mt-1 font-display text-3xl sm:text-5xl" style={{ color: "inherit" }}>
                   {title}
                 </h1>
               </div>

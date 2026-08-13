@@ -472,32 +472,39 @@ input[type="number"] {
 }
 
 /* Opt-in secondary banners only. The component is not mounted when the store toggle is off. */
-@supports (animation-timeline: scroll()) {
+@supports (animation-timeline: view()) {
+  .secondary-banner-parallax {
+    view-timeline-name: --secondary-banner-viewport;
+    view-timeline-axis: block;
+  }
+
   .secondary-banner-parallax[data-parallax-active="true"] .secondary-banner-parallax__background {
     animation: secondary-banner-background-drift linear both;
-    animation-timeline: scroll(root block);
+    animation-timeline: --secondary-banner-viewport;
+    animation-range: entry 0% exit 100%;
   }
 
   .secondary-banner-parallax[data-parallax-active="true"] .secondary-banner-parallax__foreground {
     animation: secondary-banner-foreground-drift linear both;
-    animation-timeline: scroll(root block);
+    animation-timeline: --secondary-banner-viewport;
+    animation-range: entry 0% exit 100%;
   }
 
   @keyframes secondary-banner-background-drift {
     from {
-      transform: translate3d(0, -2rem, 0);
+      transform: translate3d(0, -18vh, 0);
     }
     to {
-      transform: translate3d(0, 2rem, 0);
+      transform: translate3d(0, 18vh, 0);
     }
   }
 
   @keyframes secondary-banner-foreground-drift {
     from {
-      transform: translate3d(0, 0.5rem, 0);
+      transform: translate3d(0, 4vh, 0);
     }
     to {
-      transform: translate3d(0, -0.5rem, 0);
+      transform: translate3d(0, -4vh, 0);
     }
   }
 }
