@@ -265,8 +265,9 @@ html.lang-ar .font-display {
   .storefront-shell,
   .storefront-shell * {
     font-family: var(--type-body, var(--sf-font)) !important;
+    font-style: var(--type-body-style, normal);
     font-optical-sizing: var(--type-optical-sizing, auto);
-    font-variation-settings: var(--type-variation, normal);
+    font-variation-settings: var(--type-body-variation, normal);
   }
 
   .storefront-shell :where(input, textarea, select, button)::placeholder {
@@ -276,6 +277,8 @@ html.lang-ar .font-display {
   .storefront-shell
     :is(h1, h2, h3, .font-display, .font-heading, .font-hero, .hero-title, .section-title) {
     font-family: var(--type-display, var(--type-body, var(--sf-font))) !important;
+    font-style: var(--type-display-style, normal);
+    font-variation-settings: var(--type-display-variation, normal);
     font-weight: var(--type-heading-weight, 600) !important;
     line-height: var(--type-heading-leading, 1.15) !important;
     letter-spacing: var(--type-tracking, 0) !important;
@@ -299,12 +302,15 @@ html.lang-ar .font-display {
   .admin-typography,
   .admin-typography * {
     font-family: var(--type-body, var(--font-ui)) !important;
+    font-style: var(--type-body-style, normal);
     font-optical-sizing: var(--type-optical-sizing, auto);
-    font-variation-settings: var(--type-variation, normal);
+    font-variation-settings: var(--type-body-variation, normal);
   }
 
   .admin-typography :is(h1, h2, h3, .font-display, .font-heading) {
     font-family: var(--type-display, var(--type-body, var(--font-heading))) !important;
+    font-style: var(--type-display-style, normal);
+    font-variation-settings: var(--type-display-variation, normal);
     font-weight: var(--type-heading-weight, 600) !important;
     line-height: var(--type-heading-leading, 1.2) !important;
     letter-spacing: var(--type-tracking, 0) !important;

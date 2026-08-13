@@ -37,6 +37,7 @@ import {
   customFontFaces,
   defaultAdminTypography,
   defaultStorefrontTypography,
+  fontCapabilities,
   normalizeTypography,
   type TypographyConfig,
 } from "@/lib/typography";
@@ -147,7 +148,7 @@ const FONT_PRESETS = [
   "Custom (uploaded)",
 ];
 
-const STOREFRONT_EN_FONTS = ["Inter", "Arial", "Georgia", "Times New Roman"];
+const STOREFRONT_EN_FONTS = ["Plus Jakarta Sans", "Inter", "Arial", "Georgia", "Times New Roman"];
 type HomePromoCard = {
   title_en: string;
   title_ar: string;
@@ -185,6 +186,7 @@ const EMPTY_PROMO_CARD: HomePromoCard = {
   text_color: "#ffffff",
 };
 const STOREFRONT_AR_FONTS = [
+  "Readex Pro",
   "Tajawal",
   "29LT Bukra",
   "29LT Zarid Display",
@@ -206,6 +208,26 @@ function TypographyAdvancedControls({
   namespace: "Storefront" | "Admin";
 }) {
   const previewLanguage = isAr ? "ar" : "en";
+  const bodyCapabilitySet = (["en", "ar"] as const).map((language) =>
+    fontCapabilities(config.body[language]),
+  );
+  const displayCapabilitySet = (["en", "ar"] as const).map((language) =>
+    fontCapabilities(config.display[language]),
+  );
+  const bodyCapabilities = fontCapabilities(config.body[previewLanguage]);
+  const displayCapabilities = fontCapabilities(config.display[previewLanguage]);
+  const bodyWeightRange = {
+    min: Math.max(...bodyCapabilitySet.map((item) => item.weight.min)),
+    max: Math.min(...bodyCapabilitySet.map((item) => item.weight.max)),
+  };
+  const displayWeightRange = {
+    min: Math.max(...displayCapabilitySet.map((item) => item.weight.min)),
+    max: Math.min(...displayCapabilitySet.map((item) => item.weight.max)),
+  };
+  const allCapabilities = [...bodyCapabilitySet, ...displayCapabilitySet];
+  const hasHexp = allCapabilities.some((item) => item.hexp);
+  const hasItalic = allCapabilities.some((item) => item.italic);
+  const hasGenericAxes = allCapabilities.some((item) => item.genericAxes);
   const previewFaces = customFontFaces(config, previewLanguage)
     .replaceAll("BoutqBodyCustom", `${namespace}TypographyPreviewBody`)
     .replaceAll("BoutqDisplayCustom", `${namespace}TypographyPreviewDisplay`);
@@ -280,15 +302,16 @@ function TypographyAdvancedControls({
                 </Label>
                 <Select
                   value={config[role][language].family}
-                  onValueChange={(family) =>
-                    onChange({
+                  onValueChange={(family) => {
+                    const nextConfig: TypographyConfig = {
                       ...config,
                       [role]: {
                         ...config[role],
                         [language]: { family, url: null },
                       },
-                    })
-                  }
+                    };
+                    onChange(normalizeTypography(nextConfig, nextConfig));
+                  }}
                 >
                   <SelectTrigger>
                     <SelectValue />
@@ -326,18 +349,18 @@ function TypographyAdvancedControls({
         {range(
           isAr ? "سُمك النصوص" : "Body weight",
           "bodyWeight",
-          100,
-          900,
-          50,
+          bodyWeightRange.min,
+          bodyWeightRange.max,
+          10,
           (value) => String(value),
           isAr ? "درجة سماكة النصوص العادية والأزرار." : "Thickness of body copy and controls.",
         )}
         {range(
           isAr ? "سُمك العناوين" : "Heading weight",
           "headingWeight",
-          100,
-          900,
-          50,
+          displayWeightRange.min,
+          displayWeightRange.max,
+          10,
           (value) => String(value),
           isAr ? "درجة سماكة عناوين الأقسام والبنرات." : "Thickness of headings and banner titles.",
         )}
@@ -386,68 +409,121 @@ function TypographyAdvancedControls({
             : "Tightens or loosens the space between characters.",
         )}
       </div>
-      <div className="grid gap-4 sm:grid-cols-3">
-        {(["width", "slant", "opticalSize"] as const).map((axis) => {
-          const limits =
-            axis === "width" ? [75, 125, 1] : axis === "slant" ? [-12, 0, 1] : [8, 72, 1];
-          const axisCopy = {
-            width: {
-              label: isAr ? "عرض الحروف" : "Character width",
-              technical: "wdth",
-              help: isAr ? "يجعل شكل الحروف أضيق أو أعرض." : "Makes letterforms narrower or wider.",
-              value: `${config.axes.width}%`,
-            },
-            slant: {
-              label: isAr ? "ميلان الحروف" : "Character slant",
-              technical: "slnt",
-              help: isAr
-                ? "يميل الحروف تدريجيًا عند دعم الخط."
-                : "Gradually slants letters when supported.",
-              value: `${config.axes.slant}°`,
-            },
-            opticalSize: {
-              label: isAr ? "الضبط البصري للحجم" : "Optical size tuning",
-              technical: "opsz",
-              help: isAr
-                ? "يضبط تفاصيل الخط لتناسب حجم العرض."
-                : "Tunes font details for its display size.",
-              value: `${config.axes.opticalSize}px`,
-            },
-          }[axis];
-          return (
-            <div
-              key={axis}
-              className="space-y-2 rounded-lg border border-border/50 bg-background/60 p-3"
-            >
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <Label className="text-sm font-medium">{axisCopy.label}</Label>
-                  <p className="mt-0.5 text-[11px] leading-relaxed text-muted-foreground">
-                    {axisCopy.help} <span dir="ltr">({axisCopy.technical})</span>
-                  </p>
+      {hasGenericAxes && (
+        <div className="grid gap-4 sm:grid-cols-3">
+          {(["width", "slant", "opticalSize"] as const).map((axis) => {
+            const limits =
+              axis === "width" ? [75, 125, 1] : axis === "slant" ? [-12, 0, 1] : [8, 72, 1];
+            const axisCopy = {
+              width: {
+                label: isAr ? "عرض الحروف" : "Character width",
+                technical: "wdth",
+                help: isAr
+                  ? "يجعل شكل الحروف أضيق أو أعرض."
+                  : "Makes letterforms narrower or wider.",
+                value: `${config.axes.width}%`,
+              },
+              slant: {
+                label: isAr ? "ميلان الحروف" : "Character slant",
+                technical: "slnt",
+                help: isAr
+                  ? "يميل الحروف تدريجيًا عند دعم الخط."
+                  : "Gradually slants letters when supported.",
+                value: `${config.axes.slant}°`,
+              },
+              opticalSize: {
+                label: isAr ? "الضبط البصري للحجم" : "Optical size tuning",
+                technical: "opsz",
+                help: isAr
+                  ? "يضبط تفاصيل الخط لتناسب حجم العرض."
+                  : "Tunes font details for its display size.",
+                value: `${config.axes.opticalSize}px`,
+              },
+            }[axis];
+            return (
+              <div
+                key={axis}
+                className="space-y-2 rounded-lg border border-border/50 bg-background/60 p-3"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <Label className="text-sm font-medium">{axisCopy.label}</Label>
+                    <p className="mt-0.5 text-[11px] leading-relaxed text-muted-foreground">
+                      {axisCopy.help} <span dir="ltr">({axisCopy.technical})</span>
+                    </p>
+                  </div>
+                  <span className="rounded-md bg-muted px-2 py-1 text-xs font-semibold tabular-nums text-foreground">
+                    {axisCopy.value}
+                  </span>
                 </div>
-                <span className="rounded-md bg-muted px-2 py-1 text-xs font-semibold tabular-nums text-foreground">
-                  {axisCopy.value}
-                </span>
+                <input
+                  className="w-full accent-primary"
+                  type="range"
+                  min={limits[0]}
+                  max={limits[1]}
+                  step={limits[2]}
+                  value={config.axes[axis]}
+                  onChange={(event) =>
+                    onChange({
+                      ...config,
+                      axes: { ...config.axes, [axis]: Number(event.target.value) },
+                    })
+                  }
+                />
               </div>
-              <input
-                className="w-full accent-primary"
-                type="range"
-                min={limits[0]}
-                max={limits[1]}
-                step={limits[2]}
-                value={config.axes[axis]}
-                onChange={(event) =>
-                  onChange({
-                    ...config,
-                    axes: { ...config.axes, [axis]: Number(event.target.value) },
-                  })
-                }
-              />
+            );
+          })}
+        </div>
+      )}
+      {hasHexp && (
+        <div className="space-y-2 rounded-lg border border-border/50 bg-background/60 p-3">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <Label className="text-sm font-medium">
+                {isAr ? "اتساع بنية الحروف العربية" : "Arabic letterform expansion"}
+              </Label>
+              <p className="mt-0.5 text-[11px] leading-relaxed text-muted-foreground">
+                {isAr
+                  ? "محور Readex Pro الحقيقي (HEXP): يوسّع بنية الحروف تدريجيًا مع الحفاظ على وضوح القراءة."
+                  : "Readex Pro's native HEXP axis expands letterforms while preserving readability."}
+              </p>
             </div>
-          );
-        })}
-      </div>
+            <span className="rounded-md bg-muted px-2 py-1 text-xs font-semibold tabular-nums">
+              {config.axes.hexp}%
+            </span>
+          </div>
+          <input
+            className="w-full accent-primary"
+            type="range"
+            min={0}
+            max={100}
+            step={1}
+            value={config.axes.hexp}
+            onChange={(event) =>
+              onChange({
+                ...config,
+                axes: { ...config.axes, hexp: Number(event.target.value) },
+              })
+            }
+          />
+        </div>
+      )}
+      {hasItalic && (
+        <div className="flex items-center justify-between gap-4 rounded-lg border border-border/60 p-3">
+          <div>
+            <Label>{isAr ? "النمط المائل الحقيقي" : "True italic style"}</Label>
+            <p className="mt-1 text-[11px] text-muted-foreground">
+              {isAr
+                ? "يستخدم ملف Plus Jakarta Sans Italic الأصلي، وليس إمالة صناعية من المتصفح."
+                : "Uses the native Plus Jakarta Sans Italic variable font, not synthetic slanting."}
+            </p>
+          </div>
+          <Switch
+            checked={config.axes.italic}
+            onCheckedChange={(italic) => onChange({ ...config, axes: { ...config.axes, italic } })}
+          />
+        </div>
+      )}
       <div className="flex items-center justify-between gap-4 rounded-lg border border-border/60 p-3">
         <div>
           <Label>{isAr ? "تحسين وضوح الخط تلقائيًا" : "Automatic optical optimization"}</Label>
@@ -471,7 +547,12 @@ function TypographyAdvancedControls({
           fontWeight: config.bodyWeight,
           lineHeight: config.bodyLineHeight,
           letterSpacing: `${config.letterSpacing}em`,
-          fontVariationSettings: `'wdth' ${config.axes.width}, 'slnt' ${config.axes.slant}, 'opsz' ${config.axes.opticalSize}`,
+          fontStyle: config.axes.italic && bodyCapabilities.italic ? "italic" : "normal",
+          fontVariationSettings: bodyCapabilities.hexp
+            ? `'HEXP' ${config.axes.hexp}`
+            : bodyCapabilities.genericAxes
+              ? `'wdth' ${config.axes.width}, 'slnt' ${config.axes.slant}, 'opsz' ${config.axes.opticalSize}`
+              : "normal",
         }}
       >
         <div
@@ -482,6 +563,12 @@ function TypographyAdvancedControls({
               : config.display[previewLanguage].family,
             fontWeight: config.headingWeight,
             lineHeight: config.headingLineHeight,
+            fontStyle: config.axes.italic && displayCapabilities.italic ? "italic" : "normal",
+            fontVariationSettings: displayCapabilities.hexp
+              ? `'HEXP' ${config.axes.hexp}`
+              : displayCapabilities.genericAxes
+                ? `'wdth' ${config.axes.width}, 'slnt' ${config.axes.slant}, 'opsz' ${config.axes.opticalSize}`
+                : "normal",
           }}
         >
           {isAr ? "هوية طباعية راقية" : "Refined typographic identity"}
