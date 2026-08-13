@@ -100,13 +100,6 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "twitter:image", content: "https://boutq.store/og-placeholder.png" },
     ],
     links: [
-      { rel: "preconnect", href: "https://fonts.googleapis.com" },
-      { rel: "dns-prefetch", href: "https://fonts.googleapis.com" },
-      { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
-      {
-        rel: "stylesheet",
-        href: "https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&family=Inter:wght@400;500;600;700&display=swap&subset=arabic,latin",
-      },
       { rel: "preconnect", href: "https://media.boutq.store", crossOrigin: "anonymous" },
       { rel: "dns-prefetch", href: "https://media.boutq.store" },
       { rel: "stylesheet", href: appCss },

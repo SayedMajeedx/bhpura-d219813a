@@ -58,7 +58,7 @@ export function ProductCard({
     settings.global_sale_badges_enabled &&
     product.show_sale_badge !== false
   ) {
-    badgeStyle = "bg-destructive/15 text-destructive border-destructive/25";
+    badgeStyle = "bg-primary text-primary-foreground border-primary";
     badgeLabel = isAr ? `وفر ${discountPercent}%` : `Sale ${discountPercent}% off`;
   } else if (badge === "best") {
     badgeStyle = "bg-secondary text-secondary-foreground border-border";

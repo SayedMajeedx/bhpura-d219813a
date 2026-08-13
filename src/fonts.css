@@ -1,6 +1,22 @@
 /* Self-Hosted Storefront Typography Architecture */
 
 @font-face {
+  font-family: "Tajawal";
+  src: url("/fonts/arabic-font.woff2") format("woff2");
+  font-weight: 400 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Inter";
+  src: url("/fonts/english-font.woff2") format("woff2");
+  font-weight: 400 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
   font-family: "29LT Bukra";
   src: url("/fonts/bukramed.woff2") format("woff2");
   font-weight: 500;

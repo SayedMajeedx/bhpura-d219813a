@@ -256,20 +256,6 @@ export const Route = createFileRoute("/$slug")({
       b.meta_description || `Shop ${b.name_en}${b.name_ar ? " / " + b.name_ar : ""} online.`;
     const img = settings?.logo_url || b.logo_url || "https://boutq.store/og-placeholder.png";
     const favicon = resolveBrandFavicon(settings?.favicon_url, settings?.logo_url ?? b.logo_url);
-    const heroBg = b.hero_media?.background;
-    const firstSlide = b.hero_media?.slides?.[0];
-    let lcpImageUrl: string | null = null;
-
-    if (heroBg?.url && heroBg.type !== "video") {
-      lcpImageUrl = cloudflareImageUrl(heroBg.url, 640);
-    } else if (firstSlide && firstSlide.type === "image") {
-      const slideMediaUrl =
-        (firstSlide.media_url || firstSlide.media_url_ar || firstSlide.media_url_en) ?? "";
-      if (slideMediaUrl) {
-        lcpImageUrl = cloudflareImageUrl(slideMediaUrl, 640);
-      }
-    }
-
     const links: Array<Record<string, any>> = [
       {
         rel: "icon",
@@ -277,16 +263,6 @@ export const Route = createFileRoute("/$slug")({
         ...(faviconType(favicon) ? { type: faviconType(favicon) } : {}),
       },
     ];
-
-    if (lcpImageUrl) {
-      links.push({
-        rel: "preload",
-        as: "image",
-        href: lcpImageUrl,
-        fetchpriority: "high",
-        fetchPriority: "high",
-      });
-    }
 
     return {
       meta: [

@@ -333,6 +333,7 @@ function PromoCards() {
   const cards = settings.home_promo_cards.filter(
     (card) => card && (card.image_url || card.title_en || card.title_ar),
   );
+  const firstImageIndex = cards.findIndex((card) => Boolean(card.image_url));
   if (!cards.length) return null;
   return (
     <div className="mb-6 grid grid-cols-1 gap-3 sm:mb-8 sm:grid-cols-2 sm:gap-4">
@@ -347,7 +348,7 @@ function PromoCards() {
           <StorefrontLink
             key={index}
             href={card.href || "#products"}
-            aria-label={title || (lang === "ar" ? "عرض خاص" : "Special offer")}
+            aria-label={title || subtitle ? undefined : lang === "ar" ? "عرض خاص" : "Special offer"}
             className="group relative aspect-[2/1] overflow-hidden rounded-2xl border shadow-sm sm:aspect-auto sm:h-[216px]"
             style={{
               backgroundColor: card.background_color || "#f4f4f4",
@@ -359,10 +360,11 @@ function PromoCards() {
                 src={card.image_url}
                 preset="content"
                 sizes="(min-width: 640px) 50vw, 100vw"
-                alt={title || (lang === "ar" ? "بطاقة ترويجية" : "Promo card")}
+                alt=""
                 className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                loading="lazy"
-                decoding="async"
+                fetchPriority={index === firstImageIndex ? "high" : "auto"}
+                loading={index === firstImageIndex ? "eager" : "lazy"}
+                decoding={index === firstImageIndex ? "sync" : "async"}
               />
             )}
             <div className="absolute inset-0 bg-gradient-to-r from-black/65 via-black/30 to-transparent" />
@@ -546,6 +548,7 @@ function MerchandisingSection({
 
 function HeroBanner() {
   const { brand, settings, lang } = useStorefront();
+  const prioritizeHero = !settings.home_promo_cards.some((card) => Boolean(card?.image_url));
   const background = brand.hero_media?.background;
   const slides = brand.hero_media?.slides?.length
     ? brand.hero_media.slides
@@ -583,7 +586,7 @@ function HeroBanner() {
               alt=""
               className="h-full w-full object-cover"
               decoding="async"
-              fetchPriority="high"
+              fetchPriority={prioritizeHero ? "high" : "auto"}
               loading="eager"
             />
           )}
@@ -611,6 +614,7 @@ function HeroContentCarousel({
   slides: import("@/lib/storefront-context").HeroContentSlide[];
 }) {
   const { settings, lang } = useStorefront();
+  const prioritizeHero = !settings.home_promo_cards.some((card) => Boolean(card?.image_url));
   const [idx, setIdx] = useState(0);
   const touchStartX = useRef<number | null>(null);
   const blockedClick = useRef(false);
@@ -693,16 +697,22 @@ function HeroContentCarousel({
                   <StorefrontLink
                     href={slide.button_href || "#products"}
                     className="group relative block h-full w-full overflow-hidden rounded-2xl"
-                    aria-label={title || (lang === "ar" ? "عرض المنتجات" : "View products")}
+                    aria-label={
+                      title || body || button
+                        ? undefined
+                        : lang === "ar"
+                          ? "عرض المنتجات"
+                          : "View products"
+                    }
                   >
                     <ResponsiveImage
                       src={mediaUrl}
                       preset="hero"
                       sizes="100vw"
-                      alt={title || (lang === "ar" ? "صورة العرض الرئيسي" : "Hero banner image")}
+                      alt=""
                       className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                      fetchPriority={idx === 0 ? "high" : "auto"}
-                      loading={idx === 0 ? "eager" : "lazy"}
+                      fetchPriority={prioritizeHero && slideIndex === 0 ? "high" : "auto"}
+                      loading={slideIndex === 0 ? "eager" : "lazy"}
                     />
                     {/* Directional Legibility Gradient Overlay */}
                     <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/35 to-transparent pointer-events-none" />
