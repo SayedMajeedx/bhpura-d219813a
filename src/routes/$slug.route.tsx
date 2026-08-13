@@ -19,6 +19,12 @@ import {
   type PublicSettings,
   readableOn,
 } from "@/lib/storefront-context";
+import {
+  customFontFaces,
+  defaultStorefrontTypography,
+  normalizeTypography,
+  typographyVariables,
+} from "@/lib/typography";
 import { useQueryClient } from "@tanstack/react-query";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -108,6 +114,18 @@ export const Route = createFileRoute("/$slug")({
       background_color: rawEditorialSections[key]?.background_color ?? "",
       background_image_url: rawEditorialSections[key]?.background_image_url ?? "",
     });
+    const legacyTypography = defaultStorefrontTypography();
+    legacyTypography.body.en = {
+      family: s?.storefront_font_en ?? "Inter",
+      url: s?.storefront_font_en_url ?? null,
+    };
+    legacyTypography.body.ar = {
+      family: s?.storefront_font_ar ?? "Tajawal",
+      url: s?.storefront_font_ar_url ?? null,
+    };
+    legacyTypography.display.en = legacyTypography.body.en;
+    legacyTypography.display.ar = legacyTypography.body.ar;
+    const storefrontTypography = normalizeTypography(s?.storefront_typography, legacyTypography);
     const safeSettings: PublicSettings = {
       brand_id: brand.id,
       business_name: s?.business_name ?? brand.name_en,
@@ -161,6 +179,7 @@ export const Route = createFileRoute("/$slug")({
       storefront_font_ar: s?.storefront_font_ar ?? "Tajawal",
       storefront_font_en_url: s?.storefront_font_en_url ?? null,
       storefront_font_ar_url: s?.storefront_font_ar_url ?? null,
+      storefront_typography: storefrontTypography,
       hero_title_en: s?.hero_title_en ?? null,
       hero_title_ar: s?.hero_title_ar ?? null,
       hero_title_size: Number(s?.hero_title_size ?? 48),
@@ -355,38 +374,15 @@ function StoreShell() {
     settings.cart_drawer_checkout_fg ?? readableOn(cartDrawerCheckoutBg, btnCheckoutFg);
   const headingColor = settings.heading_color ?? primary;
   const linkColor = settings.link_color ?? primary;
-  const storefrontFont = lang === "ar" ? settings.storefront_font_ar : settings.storefront_font_en;
-  const storefrontFontUrl =
-    lang === "ar" ? settings.storefront_font_ar_url : settings.storefront_font_en_url;
-  const storefrontFontFamily = storefrontFontUrl ? "StorefrontCustomFont" : storefrontFont;
+  const typographyLanguage = lang === "ar" ? "ar" : "en";
+  const typographyVars = typographyVariables(settings.storefront_typography, typographyLanguage);
+  const typographyFaces = customFontFaces(settings.storefront_typography, typographyLanguage);
 
   useEffect(() => {
     // Clean up refresh tokens stored by the retired client-only pseudo-passkey flow.
     localStorage.removeItem(`passkey_token_${brand.slug}`);
     localStorage.removeItem(`passkey_registered_${brand.slug}`);
   }, [brand.slug]);
-
-  useEffect(() => {
-    if (storefrontFontUrl || !storefrontFont) return;
-    const globallyLoaded = new Set([
-      "Inter",
-      "Cormorant Garamond",
-      "Tajawal",
-      "Cairo",
-      "29LT Bukra",
-      "29LT Zarid Display",
-      "29LT Kaff",
-      "29LT Azer",
-    ]);
-    if (globallyLoaded.has(storefrontFont)) return;
-    const id = `storefront-font-${storefrontFont.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`;
-    if (document.getElementById(id)) return;
-    const link = document.createElement("link");
-    link.id = id;
-    link.rel = "stylesheet";
-    link.href = `https://fonts.googleapis.com/css2?family=${encodeURIComponent(storefrontFont).replace(/%20/g, "+")}:wght@400;500;600;700&display=swap`;
-    document.head.appendChild(link);
-  }, [storefrontFont, storefrontFontUrl]);
 
   const [localRadius, setLocalRadius] = useState<string | null>(null);
   const [localGlass, setLocalGlass] = useState<boolean | null>(null);
@@ -457,16 +453,15 @@ function StoreShell() {
           ["--sf-cart-checkout-fg" as any]: cartDrawerCheckoutFg,
           ["--sf-heading" as any]: headingColor,
           ["--sf-link" as any]: linkColor,
-          ["--sf-font" as any]: `"${storefrontFontFamily}", sans-serif`,
-          ["--font-sans" as any]: `"${storefrontFontFamily}", sans-serif`,
-          ["--font-display" as any]: `"${storefrontFontFamily}", sans-serif`,
-          fontFamily: `"${storefrontFontFamily}", sans-serif`,
+          ...typographyVars,
+          ["--sf-font" as any]: typographyVars["--type-body"],
+          ["--font-sans" as any]: typographyVars["--type-body"],
+          ["--font-display" as any]: typographyVars["--type-display"],
+          fontFamily: typographyVars["--type-body"],
         } as React.CSSProperties
       }
     >
-      {storefrontFontUrl && (
-        <style>{`@font-face { font-family: 'StorefrontCustomFont'; src: url('${storefrontFontUrl}'); font-display: swap; }`}</style>
-      )}
+      {typographyFaces && <style>{typographyFaces}</style>}
       <div
         className={`sticky top-0 z-40 ${isGlass ? "backdrop-blur-md" : ""}`}
         style={{

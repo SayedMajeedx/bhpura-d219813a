@@ -16,6 +16,12 @@ import { OsAppWindow } from "@/components/os/os-app-window";
 import { OsMobileNavigation } from "@/components/os/os-mobile-navigation";
 import { OsRecentHistoryBar } from "@/components/os/os-recent-history-bar";
 import { cn } from "@/lib/utils";
+import {
+  customFontFaces,
+  defaultAdminTypography,
+  normalizeTypography,
+  typographyVariables,
+} from "@/lib/typography";
 
 type BrandRow = {
   id: string;
@@ -236,6 +242,23 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const activeBrand = isPlatformMode
     ? undefined
     : (routeBrand ?? (profileBrandMatchesRoute ? profile?.brand : undefined));
+  const adminTypographyQuery = useQuery({
+    queryKey: ["admin-typography", activeBrand?.id],
+    queryFn: async () => {
+      const { data, error } = await (supabase.from("business_settings") as any)
+        .select("admin_typography")
+        .eq("brand_id", activeBrand!.id)
+        .maybeSingle();
+      if (error) throw error;
+      return data?.admin_typography;
+    },
+    enabled: Boolean(activeBrand?.id) && !isPlatformMode,
+    staleTime: 5 * 60_000,
+  });
+  const adminTypography = normalizeTypography(adminTypographyQuery.data, defaultAdminTypography());
+  const adminTypographyLanguage = lang === "ar" ? "ar" : "en";
+  const adminTypographyVars = typographyVariables(adminTypography, adminTypographyLanguage);
+  const adminFontFaces = customFontFaces(adminTypography, adminTypographyLanguage);
   const brandLabel =
     (lang === "ar" ? activeBrand?.name_ar : activeBrand?.name_en) ??
     activeBrand?.name_en ??
@@ -318,7 +341,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const isImpersonating = isSuperAdmin && urlSlug !== null && hasImpersonationToken;
 
   return (
-    <div className="h-screen flex flex-col os-canvas overflow-hidden select-none">
+    <div
+      className="admin-typography h-screen flex flex-col os-canvas overflow-hidden select-none"
+      style={adminTypographyVars as React.CSSProperties}
+    >
+      {adminFontFaces && <style>{adminFontFaces}</style>}
       {/* Impersonation Warning Banner */}
       {isImpersonating && (
         <div className="no-print bg-gradient-to-r from-red-600 via-rose-600 to-amber-600 text-white px-6 py-2 text-center text-xs font-semibold flex flex-col sm:flex-row items-center justify-between gap-4 border-b border-red-700/40 shrink-0 shadow-md z-50 animate-in fade-in slide-in-from-top duration-300">

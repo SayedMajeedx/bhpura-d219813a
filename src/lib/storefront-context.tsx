@@ -105,6 +105,7 @@ export type PublicSettings = {
   storefront_font_ar: string;
   storefront_font_en_url: string | null;
   storefront_font_ar_url: string | null;
+  storefront_typography: import("@/lib/typography").TypographyConfig;
   storefront_radius?: string | null;
   header_glass?: boolean | null;
   badge_accent?: string | null;

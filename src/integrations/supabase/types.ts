@@ -529,6 +529,8 @@ export type Database = {
           storefront_font_ar: string;
           storefront_font_ar_url: string | null;
           storefront_font_en: string;
+          storefront_typography: Json;
+          admin_typography: Json;
           storefront_font_en_url: string | null;
           storefront_text_color: string | null;
           text_color: string;
@@ -649,6 +651,8 @@ export type Database = {
           storefront_font_ar?: string;
           storefront_font_ar_url?: string | null;
           storefront_font_en?: string;
+          storefront_typography?: Json;
+          admin_typography?: Json;
           storefront_font_en_url?: string | null;
           storefront_text_color?: string | null;
           text_color?: string;
@@ -769,6 +773,8 @@ export type Database = {
           storefront_font_ar?: string;
           storefront_font_ar_url?: string | null;
           storefront_font_en?: string;
+          storefront_typography?: Json;
+          admin_typography?: Json;
           storefront_font_en_url?: string | null;
           storefront_text_color?: string | null;
           text_color?: string;
@@ -2360,6 +2366,7 @@ export type Database = {
           storefront_font_ar: string | null;
           storefront_font_ar_url: string | null;
           storefront_font_en: string | null;
+          storefront_typography: Json | null;
           storefront_font_en_url: string | null;
           storefront_text_color: string | null;
           text_color: string | null;

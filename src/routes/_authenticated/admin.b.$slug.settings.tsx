@@ -33,6 +33,12 @@ import { META_DESCRIPTION_LIMIT, META_TITLE_LIMIT, sanitizeMetaText } from "@/li
 import { ImageCropperDialog } from "@/components/image-cropper-dialog";
 import { OptimizedVideo, ResponsiveImage } from "@/components/responsive-media";
 import { CropUploadButton } from "@/components/crop-upload-button";
+import {
+  defaultAdminTypography,
+  defaultStorefrontTypography,
+  normalizeTypography,
+  type TypographyConfig,
+} from "@/lib/typography";
 
 import { SettingsCommandHeader } from "@/components/settings/SettingsCommandHeader";
 import {
@@ -140,13 +146,7 @@ const FONT_PRESETS = [
   "Custom (uploaded)",
 ];
 
-const STOREFRONT_EN_FONTS = [
-  "Inter",
-  "Poppins",
-  "Montserrat",
-  "Playfair Display",
-  "Cormorant Garamond",
-];
+const STOREFRONT_EN_FONTS = ["Inter", "Arial", "Georgia", "Times New Roman"];
 type HomePromoCard = {
   title_en: string;
   title_ar: string;
@@ -183,7 +183,184 @@ const EMPTY_PROMO_CARD: HomePromoCard = {
   background_color: "#f4f4f4",
   text_color: "#ffffff",
 };
-const STOREFRONT_AR_FONTS = ["Tajawal", "Cairo", "Noto Sans Arabic", "Noto Kufi Arabic"];
+const STOREFRONT_AR_FONTS = [
+  "Tajawal",
+  "29LT Bukra",
+  "29LT Zarid Display",
+  "29LT Kaff",
+  "29LT Azer",
+];
+
+function TypographyAdvancedControls({
+  title,
+  config,
+  onChange,
+  isAr,
+}: {
+  title: string;
+  config: TypographyConfig;
+  onChange: (config: TypographyConfig) => void;
+  isAr: boolean;
+}) {
+  const setNumber = (key: keyof TypographyConfig, value: number) =>
+    onChange({ ...config, [key]: value });
+  const range = (
+    label: string,
+    key:
+      | "bodyWeight"
+      | "headingWeight"
+      | "scale"
+      | "bodyLineHeight"
+      | "headingLineHeight"
+      | "letterSpacing",
+    min: number,
+    max: number,
+    step: number,
+  ) => (
+    <div className="space-y-1.5">
+      <div className="flex justify-between gap-3 text-xs">
+        <Label>{label}</Label>
+        <span className="tabular-nums text-muted-foreground">{config[key]}</span>
+      </div>
+      <input
+        className="w-full accent-primary"
+        type="range"
+        min={min}
+        max={max}
+        step={step}
+        value={config[key]}
+        onChange={(event) => setNumber(key, Number(event.target.value))}
+      />
+    </div>
+  );
+
+  return (
+    <div className="space-y-4 rounded-xl border border-border/70 bg-background/40 p-4">
+      <div>
+        <h4 className="text-sm font-semibold">{title}</h4>
+        <p className="mt-1 text-xs text-muted-foreground">
+          {isAr
+            ? "نظام أدوار متكامل للنصوص والعناوين مع محاور الخطوط المتغيرة."
+            : "Role-based body and display typography with variable-font axes."}
+        </p>
+      </div>
+      <div className="grid gap-4 sm:grid-cols-2">
+        {(["body", "display"] as const).flatMap((role) =>
+          (["en", "ar"] as const).map((language) => {
+            const fonts = language === "ar" ? STOREFRONT_AR_FONTS : STOREFRONT_EN_FONTS;
+            return (
+              <div key={`${role}-${language}`} className="space-y-2">
+                <Label>
+                  {isAr
+                    ? `${role === "body" ? "خط النص" : "خط العناوين"} ${language === "ar" ? "العربي" : "الإنجليزي"}`
+                    : `${language === "ar" ? "Arabic" : "English"} ${role} font`}
+                </Label>
+                <Select
+                  value={config[role][language].family}
+                  onValueChange={(family) =>
+                    onChange({
+                      ...config,
+                      [role]: {
+                        ...config[role],
+                        [language]: { family, url: null },
+                      },
+                    })
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {fonts.map((font) => (
+                      <SelectItem key={font} value={font}>
+                        <span style={{ fontFamily: font }}>{font}</span>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            );
+          }),
+        )}
+      </div>
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {range(isAr ? "وزن النص" : "Body weight", "bodyWeight", 100, 900, 50)}
+        {range(isAr ? "وزن العناوين" : "Heading weight", "headingWeight", 100, 900, 50)}
+        {range(isAr ? "مقياس الخط" : "Type scale", "scale", 0.85, 1.25, 0.01)}
+        {range(isAr ? "تباعد أسطر النص" : "Body leading", "bodyLineHeight", 1.2, 2, 0.05)}
+        {range(
+          isAr ? "تباعد أسطر العناوين" : "Heading leading",
+          "headingLineHeight",
+          0.9,
+          1.6,
+          0.05,
+        )}
+        {range(isAr ? "تباعد الأحرف" : "Letter spacing", "letterSpacing", -0.08, 0.2, 0.01)}
+      </div>
+      <div className="grid gap-4 sm:grid-cols-3">
+        {(["width", "slant", "opticalSize"] as const).map((axis) => {
+          const limits =
+            axis === "width" ? [75, 125, 1] : axis === "slant" ? [-12, 0, 1] : [8, 72, 1];
+          return (
+            <div key={axis} className="space-y-1.5">
+              <div className="flex justify-between text-xs">
+                <Label>{axis === "width" ? "wdth" : axis === "slant" ? "slnt" : "opsz"}</Label>
+                <span className="tabular-nums text-muted-foreground">{config.axes[axis]}</span>
+              </div>
+              <input
+                className="w-full accent-primary"
+                type="range"
+                min={limits[0]}
+                max={limits[1]}
+                step={limits[2]}
+                value={config.axes[axis]}
+                onChange={(event) =>
+                  onChange({
+                    ...config,
+                    axes: { ...config.axes, [axis]: Number(event.target.value) },
+                  })
+                }
+              />
+            </div>
+          );
+        })}
+      </div>
+      <div className="flex items-center justify-between rounded-lg border border-border/60 p-3">
+        <Label>{isAr ? "التحجيم البصري التلقائي" : "Automatic optical sizing"}</Label>
+        <Switch
+          checked={config.opticalSizing}
+          onCheckedChange={(opticalSizing) => onChange({ ...config, opticalSizing })}
+        />
+      </div>
+      <div
+        className="rounded-xl border border-dashed border-border p-5"
+        style={{
+          fontFamily: config.body[isAr ? "ar" : "en"].family,
+          fontWeight: config.bodyWeight,
+          lineHeight: config.bodyLineHeight,
+          letterSpacing: `${config.letterSpacing}em`,
+          fontVariationSettings: `'wdth' ${config.axes.width}, 'slnt' ${config.axes.slant}, 'opsz' ${config.axes.opticalSize}`,
+        }}
+      >
+        <div
+          className="text-2xl"
+          style={{
+            fontFamily: config.display[isAr ? "ar" : "en"].family,
+            fontWeight: config.headingWeight,
+            lineHeight: config.headingLineHeight,
+          }}
+        >
+          {isAr ? "هوية طباعية راقية" : "Refined typographic identity"}
+        </div>
+        <p className="mt-2 text-sm">
+          {isAr
+            ? "معاينة فورية للنصوص والعناوين قبل حفظ التغييرات."
+            : "Live body and display preview before publishing changes."}
+        </p>
+      </div>
+    </div>
+  );
+}
 
 const LEGACY_SETTINGS_NAMES = new Set(["My Abaya Boutique", "متجر عباياتي", ""]);
 
@@ -2861,6 +3038,8 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
     storefront_font_ar: string;
     storefront_font_en_url: string | null;
     storefront_font_ar_url: string | null;
+    storefront_typography: TypographyConfig;
+    admin_typography: TypographyConfig;
     storefront_radius: string;
     header_glass: boolean;
     badge_accent: string;
@@ -2953,6 +3132,24 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
         storefront_font_ar: data.storefront_font_ar ?? "Tajawal",
         storefront_font_en_url: data.storefront_font_en_url ?? null,
         storefront_font_ar_url: data.storefront_font_ar_url ?? null,
+        storefront_typography: normalizeTypography(
+          data.storefront_typography,
+          (() => {
+            const defaults = defaultStorefrontTypography();
+            defaults.body.en = {
+              family: data.storefront_font_en ?? "Inter",
+              url: data.storefront_font_en_url ?? null,
+            };
+            defaults.body.ar = {
+              family: data.storefront_font_ar ?? "Tajawal",
+              url: data.storefront_font_ar_url ?? null,
+            };
+            defaults.display.en = defaults.body.en;
+            defaults.display.ar = defaults.body.ar;
+            return defaults;
+          })(),
+        ),
+        admin_typography: normalizeTypography(data.admin_typography, defaultAdminTypography()),
         storefront_radius:
           (typeof window !== "undefined" && localStorage.getItem("boutq_storefront_radius")) ||
           data.storefront_radius ||
@@ -3080,6 +3277,8 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
       "trending_banner_background_url",
       "category_banner_background_url",
       "homepage_editorial_sections",
+      "storefront_typography",
+      "admin_typography",
       "storefront_loader_text_en",
       "storefront_loader_text_ar",
     ];
@@ -3121,6 +3320,23 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
           ? {
               ...current,
               [language === "en" ? "storefront_font_en_url" : "storefront_font_ar_url"]: url,
+              storefront_typography: {
+                ...current.storefront_typography,
+                body: {
+                  ...current.storefront_typography.body,
+                  [language]: {
+                    ...current.storefront_typography.body[language],
+                    url,
+                  },
+                },
+                display: {
+                  ...current.storefront_typography.display,
+                  [language]: {
+                    ...current.storefront_typography.display[language],
+                    url,
+                  },
+                },
+              },
             }
           : current,
       );
@@ -3848,7 +4064,19 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
             <Label>{isAr ? "الخط الإنجليزي" : "English font"}</Label>
             <Select
               value={state.storefront_font_en}
-              onValueChange={(value) => setState({ ...state, storefront_font_en: value })}
+              onValueChange={(value) =>
+                setState({
+                  ...state,
+                  storefront_font_en: value,
+                  storefront_typography: {
+                    ...state.storefront_typography,
+                    body: {
+                      ...state.storefront_typography.body,
+                      en: { family: value, url: null },
+                    },
+                  },
+                })
+              }
             >
               <SelectTrigger>
                 <SelectValue />
@@ -3896,7 +4124,19 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
                   type="button"
                   variant="ghost"
                   size="sm"
-                  onClick={() => setState({ ...state, storefront_font_en_url: null })}
+                  onClick={() =>
+                    setState({
+                      ...state,
+                      storefront_font_en_url: null,
+                      storefront_typography: {
+                        ...state.storefront_typography,
+                        body: {
+                          ...state.storefront_typography.body,
+                          en: { ...state.storefront_typography.body.en, url: null },
+                        },
+                      },
+                    })
+                  }
                 >
                   {isAr ? "إزالة" : "Remove"}
                 </Button>
@@ -3907,7 +4147,19 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
             <Label>{isAr ? "الخط العربي" : "Arabic font"}</Label>
             <Select
               value={state.storefront_font_ar}
-              onValueChange={(value) => setState({ ...state, storefront_font_ar: value })}
+              onValueChange={(value) =>
+                setState({
+                  ...state,
+                  storefront_font_ar: value,
+                  storefront_typography: {
+                    ...state.storefront_typography,
+                    body: {
+                      ...state.storefront_typography.body,
+                      ar: { family: value, url: null },
+                    },
+                  },
+                })
+              }
             >
               <SelectTrigger>
                 <SelectValue />
@@ -3955,13 +4207,59 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
                   type="button"
                   variant="ghost"
                   size="sm"
-                  onClick={() => setState({ ...state, storefront_font_ar_url: null })}
+                  onClick={() =>
+                    setState({
+                      ...state,
+                      storefront_font_ar_url: null,
+                      storefront_typography: {
+                        ...state.storefront_typography,
+                        body: {
+                          ...state.storefront_typography.body,
+                          ar: { ...state.storefront_typography.body.ar, url: null },
+                        },
+                      },
+                    })
+                  }
                 >
                   {isAr ? "إزالة" : "Remove"}
                 </Button>
               )}
             </div>
           </div>
+        </div>
+        <TypographyAdvancedControls
+          title={isAr ? "نظام خطوط واجهة المتجر" : "Storefront typography system"}
+          config={state.storefront_typography}
+          onChange={(storefront_typography) => setState({ ...state, storefront_typography })}
+          isAr={isAr}
+        />
+        <div className="space-y-3 rounded-xl border border-primary/20 bg-primary/5 p-4">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h3 className="text-sm font-semibold">
+                {isAr ? "خطوط لوحة الإدارة" : "Admin workspace typography"}
+              </h3>
+              <p className="mt-1 text-xs text-muted-foreground">
+                {isAr
+                  ? "تُطبّق على فريق هذا المتجر فقط، ولا تغيّر مساحة السوبرأدمن."
+                  : "Applies only to this store's team; the platform workspace stays neutral."}
+              </p>
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setState({ ...state, admin_typography: state.storefront_typography })}
+            >
+              {isAr ? "نسخ إعدادات المتجر" : "Copy storefront system"}
+            </Button>
+          </div>
+          <TypographyAdvancedControls
+            title={isAr ? "نظام خطوط لوحة الإدارة" : "Admin typography system"}
+            config={state.admin_typography}
+            onChange={(admin_typography) => setState({ ...state, admin_typography })}
+            isAr={isAr}
+          />
         </div>
       </div>
 

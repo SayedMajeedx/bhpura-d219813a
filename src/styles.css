@@ -261,13 +261,68 @@ html.lang-ar .font-display {
 
 /* The chosen brand font is a storefront-wide setting. Keep this scoped to the
    storefront so admin and printable invoice typography remain independent. */
-.storefront-shell,
-.storefront-shell * {
-  font-family: var(--sf-font) !important;
-}
+@layer base {
+  .storefront-shell,
+  .storefront-shell * {
+    font-family: var(--type-body, var(--sf-font)) !important;
+    font-optical-sizing: var(--type-optical-sizing, auto);
+    font-variation-settings: var(--type-variation, normal);
+  }
 
-.storefront-shell :where(input, textarea, select, button)::placeholder {
-  font-family: var(--sf-font) !important;
+  .storefront-shell :where(input, textarea, select, button)::placeholder {
+    font-family: var(--type-body, var(--sf-font)) !important;
+  }
+
+  .storefront-shell
+    :is(h1, h2, h3, .font-display, .font-heading, .font-hero, .hero-title, .section-title) {
+    font-family: var(--type-display, var(--type-body, var(--sf-font))) !important;
+    font-weight: var(--type-heading-weight, 600) !important;
+    line-height: var(--type-heading-leading, 1.15) !important;
+    letter-spacing: var(--type-tracking, 0) !important;
+  }
+
+  .storefront-shell {
+    --text-xs: calc(0.75rem * var(--type-scale, 1));
+    --text-sm: calc(0.875rem * var(--type-scale, 1));
+    --text-base: calc(1rem * var(--type-scale, 1));
+    --text-lg: calc(1.125rem * var(--type-scale, 1));
+    --text-xl: calc(1.25rem * var(--type-scale, 1));
+    --text-2xl: calc(1.5rem * var(--type-scale, 1));
+    --text-3xl: calc(1.875rem * var(--type-scale, 1));
+    --text-4xl: calc(2.25rem * var(--type-scale, 1));
+    --text-5xl: calc(3rem * var(--type-scale, 1));
+    font-weight: var(--type-body-weight, 400);
+    line-height: var(--type-body-leading, 1.6);
+    letter-spacing: var(--type-tracking, 0);
+  }
+
+  .admin-typography,
+  .admin-typography * {
+    font-family: var(--type-body, var(--font-ui)) !important;
+    font-optical-sizing: var(--type-optical-sizing, auto);
+    font-variation-settings: var(--type-variation, normal);
+  }
+
+  .admin-typography :is(h1, h2, h3, .font-display, .font-heading) {
+    font-family: var(--type-display, var(--type-body, var(--font-heading))) !important;
+    font-weight: var(--type-heading-weight, 600) !important;
+    line-height: var(--type-heading-leading, 1.2) !important;
+    letter-spacing: var(--type-tracking, 0) !important;
+  }
+
+  .admin-typography {
+    --text-xs: calc(0.75rem * var(--type-scale, 1));
+    --text-sm: calc(0.875rem * var(--type-scale, 1));
+    --text-base: calc(1rem * var(--type-scale, 1));
+    --text-lg: calc(1.125rem * var(--type-scale, 1));
+    --text-xl: calc(1.25rem * var(--type-scale, 1));
+    --text-2xl: calc(1.5rem * var(--type-scale, 1));
+    --text-3xl: calc(1.875rem * var(--type-scale, 1));
+    --text-4xl: calc(2.25rem * var(--type-scale, 1));
+    font-weight: var(--type-body-weight, 400);
+    line-height: var(--type-body-leading, 1.5);
+    letter-spacing: var(--type-tracking, 0);
+  }
 }
 
 /* Hide default browser spinner arrows on number inputs */
