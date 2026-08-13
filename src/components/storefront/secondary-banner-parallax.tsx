@@ -67,12 +67,16 @@ function ActiveSecondaryBannerParallax({
 
   useEffect(() => {
     if (!nearViewport || typeof window === "undefined") return;
-    if (window.CSS?.supports?.("animation-timeline: view()")) return;
 
     const root = rootRef.current;
     const background = backgroundRef.current;
     const foreground = foregroundRef.current;
     if (!root || !background || !foreground) return;
+
+    // Some engines expose scroll-timeline support but pin nested view animations to one frame.
+    // Drive the already-lazy active banner with the deterministic RAF path in that case.
+    background.style.animation = "none";
+    foreground.style.animation = "none";
 
     let frame = 0;
     const render = () => {
@@ -81,8 +85,8 @@ function ActiveSecondaryBannerParallax({
       const travel = window.innerHeight + rect.height;
       const progress = Math.max(0, Math.min(1, (window.innerHeight - rect.top) / travel));
       const centered = progress - 0.5;
-      background.style.transform = `translate3d(0, ${centered * 96}px, 0)`;
-      foreground.style.transform = `translate3d(0, ${centered * -16}px, 0)`;
+      background.style.transform = `translate3d(0, ${centered * travel * 0.15}px, 0)`;
+      foreground.style.transform = `translate3d(0, ${centered * travel * -0.03}px, 0)`;
     };
     const schedule = () => {
       if (!frame) frame = window.requestAnimationFrame(render);
@@ -95,6 +99,8 @@ function ActiveSecondaryBannerParallax({
       window.removeEventListener("scroll", schedule);
       window.removeEventListener("resize", schedule);
       if (frame) window.cancelAnimationFrame(frame);
+      background.style.animation = "";
+      foreground.style.animation = "";
       background.style.transform = "";
       foreground.style.transform = "";
     };
@@ -110,7 +116,7 @@ function ActiveSecondaryBannerParallax({
       <div
         ref={backgroundRef}
         aria-hidden="true"
-        className={`secondary-banner-parallax__background absolute inset-[-2rem] ${backgroundClassName}`}
+        className={`secondary-banner-parallax__background absolute inset-[-6rem] ${backgroundClassName}`}
         style={backgroundStyle}
       >
         {background}

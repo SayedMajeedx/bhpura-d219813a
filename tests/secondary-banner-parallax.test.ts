@@ -45,6 +45,8 @@ describe("secondary banner parallax guardrails", () => {
     expect(component).toContain("IntersectionObserver");
     expect(component).toContain("requestAnimationFrame(render)");
     expect(component).toContain('addEventListener("scroll", schedule');
+    expect(component).toContain('background.style.animation = "none"');
+    expect(component).toContain("centered * travel * 0.15");
     expect(component).not.toContain("background-attachment");
   });
 });
