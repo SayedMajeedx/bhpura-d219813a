@@ -33,7 +33,7 @@ describe("secondary banner parallax guardrails", () => {
     );
   });
 
-  it("uses scroll timelines, a throttled fallback, and a reduced-motion kill switch", () => {
+  it("uses one throttled controller, safe coverage, and a reduced-motion kill switch", () => {
     const component = read("src/components/storefront/secondary-banner-parallax.tsx");
     const styles = read("src/styles.css");
     expect(styles).toContain("animation-timeline: view(block)");
@@ -43,10 +43,14 @@ describe("secondary banner parallax guardrails", () => {
     expect(styles).toContain("translate3d(0, -3rem, 0)");
     expect(styles).toContain("prefers-reduced-motion: reduce");
     expect(component).toContain("IntersectionObserver");
-    expect(component).toContain("requestAnimationFrame(render)");
-    expect(component).toContain('addEventListener("scroll", schedule');
+    expect(component).toContain("requestAnimationFrame(renderActiveEntries)");
+    expect(component).toContain('addEventListener("scroll", scheduleParallaxFrame');
     expect(component).toContain('background.style.animation = "none"');
-    expect(component).toContain("centered * travel * 0.15");
+    expect(component).toContain("DESKTOP_MOTION_RATIO = 0.14");
+    expect(component).toContain("MOBILE_MOTION_RATIO = 0.075");
+    expect(component).toContain("MIN_COVERAGE_GUARD_PX = 32");
+    expect(component).toContain("--secondary-banner-parallax-overscan");
+    expect(component).not.toContain("inset-[-6rem]");
     expect(component).not.toContain("background-attachment");
   });
 });

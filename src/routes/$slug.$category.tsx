@@ -462,7 +462,7 @@ function CategoryPage() {
                 loading="lazy"
                 className="h-full w-full object-cover"
               />
-              <div className="absolute inset-0 bg-primary/50" />
+              <div className="absolute inset-0 bg-gradient-to-t from-primary/75 via-primary/30 to-primary/10" />
             </>
           ) : undefined
         }

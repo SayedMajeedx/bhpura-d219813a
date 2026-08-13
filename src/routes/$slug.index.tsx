@@ -519,12 +519,12 @@ function MerchandisingSection({
                 loading="lazy"
                 className="h-full w-full object-cover"
               />
-              <div className="absolute inset-0 bg-primary/45" />
+              <div className="absolute inset-0 bg-gradient-to-t from-primary/75 via-primary/30 to-primary/10" />
             </>
           }
         >
           <div className="mx-auto flex min-h-[clamp(14rem,30vw,24rem)] max-w-7xl items-end px-4 py-10 sm:px-6 sm:py-14">
-            <h2 className="font-display text-4xl font-semibold text-primary-foreground sm:text-6xl">
+            <h2 className="max-w-[18ch] font-display text-[clamp(2rem,5vw,4rem)] font-semibold leading-[1.05] tracking-tight text-primary-foreground">
               {lang === "ar" ? label[0] : label[1]}
             </h2>
           </div>

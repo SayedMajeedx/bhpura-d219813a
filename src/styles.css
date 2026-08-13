@@ -473,7 +473,8 @@ input[type="number"] {
 
 /* Opt-in secondary banners only. The component is not mounted when the store toggle is off. */
 @supports (animation-timeline: view()) {
-  .secondary-banner-parallax[data-parallax-active="true"] .secondary-banner-parallax__background {
+  .secondary-banner-parallax[data-parallax-active="true"][data-parallax-driver="css"]
+    .secondary-banner-parallax__background {
     animation-name: secondary-banner-background-drift;
     animation-duration: auto;
     animation-timing-function: linear;
@@ -484,7 +485,8 @@ input[type="number"] {
     will-change: transform;
   }
 
-  .secondary-banner-parallax[data-parallax-active="true"] .secondary-banner-parallax__foreground {
+  .secondary-banner-parallax[data-parallax-active="true"][data-parallax-driver="css"]
+    .secondary-banner-parallax__foreground {
     animation-name: secondary-banner-foreground-drift;
     animation-duration: auto;
     animation-timing-function: linear;

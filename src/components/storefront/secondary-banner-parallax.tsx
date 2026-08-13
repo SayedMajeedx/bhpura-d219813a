@@ -1,5 +1,95 @@
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 
+const DESKTOP_MOTION_RATIO = 0.14;
+const MOBILE_MOTION_RATIO = 0.075;
+const DESKTOP_FOREGROUND_RATIO = -0.025;
+const MOBILE_FOREGROUND_RATIO = -0.01;
+const MIN_COVERAGE_GUARD_PX = 32;
+
+type ParallaxEntry = {
+  root: HTMLDivElement;
+  background: HTMLDivElement;
+  foreground: HTMLDivElement;
+  documentTop: number;
+  height: number;
+};
+
+const activeEntries = new Set<ParallaxEntry>();
+let parallaxFrame = 0;
+let controllerListening = false;
+
+function measureEntry(entry: ParallaxEntry) {
+  const rect = entry.root.getBoundingClientRect();
+  entry.documentTop = rect.top + window.scrollY;
+  entry.height = rect.height;
+
+  const mobile = window.matchMedia("(max-width: 768px)").matches;
+  const ratio = mobile ? MOBILE_MOTION_RATIO : DESKTOP_MOTION_RATIO;
+  const maximumOffset = ((window.innerHeight + rect.height) * ratio) / 2;
+  entry.root.style.setProperty(
+    "--secondary-banner-parallax-overscan",
+    `${Math.ceil(maximumOffset + MIN_COVERAGE_GUARD_PX)}px`,
+  );
+}
+
+function renderActiveEntries() {
+  parallaxFrame = 0;
+  const viewportHeight = window.innerHeight;
+  const scrollY = window.scrollY;
+  const mobile = window.matchMedia("(max-width: 768px)").matches;
+  const backgroundRatio = mobile ? MOBILE_MOTION_RATIO : DESKTOP_MOTION_RATIO;
+  const foregroundRatio = mobile ? MOBILE_FOREGROUND_RATIO : DESKTOP_FOREGROUND_RATIO;
+
+  activeEntries.forEach((entry) => {
+    const viewportTop = entry.documentTop - scrollY;
+    const travel = viewportHeight + entry.height;
+    const progress = Math.max(0, Math.min(1, (viewportHeight - viewportTop) / travel));
+    const centered = progress - 0.5;
+    entry.background.style.transform = `translate3d(0, ${centered * travel * backgroundRatio}px, 0)`;
+    entry.foreground.style.transform = `translate3d(0, ${centered * travel * foregroundRatio}px, 0)`;
+  });
+}
+
+function scheduleParallaxFrame() {
+  if (!parallaxFrame) parallaxFrame = window.requestAnimationFrame(renderActiveEntries);
+}
+
+function refreshActiveEntries() {
+  activeEntries.forEach(measureEntry);
+  scheduleParallaxFrame();
+}
+
+function startController() {
+  if (controllerListening) return;
+  controllerListening = true;
+  window.addEventListener("scroll", scheduleParallaxFrame, { passive: true });
+  window.addEventListener("resize", refreshActiveEntries, { passive: true });
+}
+
+function stopControllerIfIdle() {
+  if (activeEntries.size || !controllerListening) return;
+  controllerListening = false;
+  window.removeEventListener("scroll", scheduleParallaxFrame);
+  window.removeEventListener("resize", refreshActiveEntries);
+  if (parallaxFrame) window.cancelAnimationFrame(parallaxFrame);
+  parallaxFrame = 0;
+}
+
+function registerParallaxEntry(entry: ParallaxEntry) {
+  measureEntry(entry);
+  activeEntries.add(entry);
+  startController();
+  scheduleParallaxFrame();
+
+  return () => {
+    activeEntries.delete(entry);
+    entry.root.style.removeProperty("--secondary-banner-parallax-overscan");
+    entry.background.style.transform = "";
+    entry.foreground.style.transform = "";
+    stopControllerIfIdle();
+  };
+}
+
 type SecondaryBannerParallaxProps = {
   enabled: boolean;
   mobileEnabled?: boolean;
@@ -45,6 +135,7 @@ function ActiveSecondaryBannerParallax({
   const backgroundRef = useRef<HTMLDivElement>(null);
   const foregroundRef = useRef<HTMLDivElement>(null);
   const [nearViewport, setNearViewport] = useState(false);
+  const [motionAllowed, setMotionAllowed] = useState(false);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -53,7 +144,24 @@ function ActiveSecondaryBannerParallax({
     const viewportAllowed = mobileEnabled
       ? null
       : window.matchMedia(`(min-width: ${desktopBreakpoint}px)`);
-    if (reducedMotion.matches || viewportAllowed?.matches === false) return;
+
+    const syncMotionPreference = () => {
+      const allowed = !reducedMotion.matches && viewportAllowed?.matches !== false;
+      setMotionAllowed(allowed);
+      if (!allowed) setNearViewport(false);
+    };
+
+    syncMotionPreference();
+    reducedMotion.addEventListener("change", syncMotionPreference);
+    viewportAllowed?.addEventListener("change", syncMotionPreference);
+    return () => {
+      reducedMotion.removeEventListener("change", syncMotionPreference);
+      viewportAllowed?.removeEventListener("change", syncMotionPreference);
+    };
+  }, [desktopBreakpoint, mobileEnabled]);
+
+  useEffect(() => {
+    if (!motionAllowed) return;
 
     const root = rootRef.current;
     if (!root) return;
@@ -63,7 +171,7 @@ function ActiveSecondaryBannerParallax({
     });
     observer.observe(root);
     return () => observer.disconnect();
-  }, [desktopBreakpoint, mobileEnabled]);
+  }, [motionAllowed]);
 
   useEffect(() => {
     if (!nearViewport || typeof window === "undefined") return;
@@ -73,36 +181,24 @@ function ActiveSecondaryBannerParallax({
     const foreground = foregroundRef.current;
     if (!root || !background || !foreground) return;
 
-    // Some engines expose scroll-timeline support but pin nested view animations to one frame.
-    // Drive the already-lazy active banner with the deterministic RAF path in that case.
+    // Production Chromium can report view-timeline support while pinning nested animations to
+    // one frame. The shared RAF controller is the verified deterministic driver for this path.
     background.style.animation = "none";
     foreground.style.animation = "none";
 
-    let frame = 0;
-    const render = () => {
-      frame = 0;
-      const rect = root.getBoundingClientRect();
-      const travel = window.innerHeight + rect.height;
-      const progress = Math.max(0, Math.min(1, (window.innerHeight - rect.top) / travel));
-      const centered = progress - 0.5;
-      background.style.transform = `translate3d(0, ${centered * travel * 0.15}px, 0)`;
-      foreground.style.transform = `translate3d(0, ${centered * travel * -0.03}px, 0)`;
-    };
-    const schedule = () => {
-      if (!frame) frame = window.requestAnimationFrame(render);
-    };
+    const entry: ParallaxEntry = { root, background, foreground, documentTop: 0, height: 0 };
+    const unregister = registerParallaxEntry(entry);
+    const resizeObserver = new ResizeObserver(() => {
+      measureEntry(entry);
+      scheduleParallaxFrame();
+    });
+    resizeObserver.observe(root);
 
-    render();
-    window.addEventListener("scroll", schedule, { passive: true });
-    window.addEventListener("resize", schedule, { passive: true });
     return () => {
-      window.removeEventListener("scroll", schedule);
-      window.removeEventListener("resize", schedule);
-      if (frame) window.cancelAnimationFrame(frame);
+      resizeObserver.disconnect();
+      unregister();
       background.style.animation = "";
       foreground.style.animation = "";
-      background.style.transform = "";
-      foreground.style.transform = "";
     };
   }, [nearViewport]);
 
@@ -111,13 +207,17 @@ function ActiveSecondaryBannerParallax({
       ref={rootRef}
       className={`secondary-banner-parallax relative overflow-hidden ${className}`}
       data-parallax-active={nearViewport ? "true" : undefined}
+      data-parallax-driver="raf"
       style={style}
     >
       <div
         ref={backgroundRef}
         aria-hidden="true"
-        className={`secondary-banner-parallax__background absolute inset-[-6rem] ${backgroundClassName}`}
-        style={backgroundStyle}
+        className={`secondary-banner-parallax__background absolute inset-x-0 ${backgroundClassName}`}
+        style={{
+          insetBlock: "calc(-1 * var(--secondary-banner-parallax-overscan, 6rem))",
+          ...backgroundStyle,
+        }}
       >
         {background}
       </div>
