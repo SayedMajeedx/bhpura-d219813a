@@ -40,6 +40,21 @@ describe("typography management", () => {
     expect(faces).toContain("font-display:swap");
   });
 
+  it("promotes legacy uploads to selectable custom font sources", () => {
+    const defaults = defaultStorefrontTypography();
+    defaults.body.en = {
+      family: "Georgia",
+      url: "https://media.boutq.store/legacy-font.woff2",
+    };
+
+    const config = normalizeTypography({}, defaults);
+
+    expect(config.body.en).toEqual({
+      family: "Custom — English",
+      url: "https://media.boutq.store/legacy-font.woff2",
+    });
+  });
+
   it("persists storefront and admin typography independently", () => {
     const migration = readFileSync(
       resolve(

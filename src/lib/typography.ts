@@ -80,17 +80,22 @@ export function normalizeTypography(input: unknown, defaults: TypographyConfig):
   const raw = input && typeof input === "object" ? (input as Partial<TypographyConfig>) : {};
   const source = (role: "body" | "display", language: TypographyLanguage): FontSource => {
     const candidate = raw[role]?.[language];
+    const candidateUrl =
+      candidate && Object.prototype.hasOwnProperty.call(candidate, "url")
+        ? candidate.url
+        : defaults[role][language].url;
+    const url =
+      typeof candidateUrl === "string" && /^https:\/\//i.test(candidateUrl) ? candidateUrl : null;
+    const requestedFamily =
+      typeof candidate?.family === "string" && candidate.family.trim()
+        ? candidate.family.trim().slice(0, 100)
+        : defaults[role][language].family;
     return {
-      family: canonicalFamily(
-        typeof candidate?.family === "string" && candidate.family.trim()
-          ? candidate.family.trim().slice(0, 100)
-          : defaults[role][language].family,
-        language,
-      ),
-      url:
-        typeof candidate?.url === "string" && /^https:\/\//i.test(candidate.url)
-          ? candidate.url
-          : null,
+      family:
+        url && !requestedFamily.startsWith("Custom —")
+          ? `Custom — ${language === "ar" ? "Arabic" : "English"}`
+          : canonicalFamily(requestedFamily, language),
+      url,
     };
   };
 

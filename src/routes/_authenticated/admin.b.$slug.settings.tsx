@@ -34,6 +34,7 @@ import { ImageCropperDialog } from "@/components/image-cropper-dialog";
 import { OptimizedVideo, ResponsiveImage } from "@/components/responsive-media";
 import { CropUploadButton } from "@/components/crop-upload-button";
 import {
+  customFontFaces,
   defaultAdminTypography,
   defaultStorefrontTypography,
   normalizeTypography,
@@ -196,12 +197,18 @@ function TypographyAdvancedControls({
   config,
   onChange,
   isAr,
+  namespace,
 }: {
   title: string;
   config: TypographyConfig;
   onChange: (config: TypographyConfig) => void;
   isAr: boolean;
+  namespace: "Storefront" | "Admin";
 }) {
+  const previewLanguage = isAr ? "ar" : "en";
+  const previewFaces = customFontFaces(config, previewLanguage)
+    .replaceAll("BoutqBodyCustom", `${namespace}TypographyPreviewBody`)
+    .replaceAll("BoutqDisplayCustom", `${namespace}TypographyPreviewDisplay`);
   const setNumber = (key: keyof TypographyConfig, value: number) =>
     onChange({ ...config, [key]: value });
   const range = (
@@ -236,6 +243,7 @@ function TypographyAdvancedControls({
 
   return (
     <div className="space-y-4 rounded-xl border border-border/70 bg-background/40 p-4">
+      {previewFaces && <style>{previewFaces}</style>}
       <div>
         <h4 className="text-sm font-semibold">{title}</h4>
         <p className="mt-1 text-xs text-muted-foreground">
@@ -248,6 +256,12 @@ function TypographyAdvancedControls({
         {(["body", "display"] as const).flatMap((role) =>
           (["en", "ar"] as const).map((language) => {
             const fonts = language === "ar" ? STOREFRONT_AR_FONTS : STOREFRONT_EN_FONTS;
+            const selectedSource = config[role][language];
+            const availableFonts = selectedSource.url
+              ? [selectedSource.family, ...fonts.filter((font) => font !== selectedSource.family)]
+              : fonts.includes(selectedSource.family)
+                ? fonts
+                : [selectedSource.family, ...fonts];
             return (
               <div key={`${role}-${language}`} className="space-y-2">
                 <Label>
@@ -271,9 +285,25 @@ function TypographyAdvancedControls({
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {fonts.map((font) => (
+                    {availableFonts.map((font) => (
                       <SelectItem key={font} value={font}>
-                        <span style={{ fontFamily: font }}>{font}</span>
+                        <span
+                          style={{
+                            fontFamily:
+                              selectedSource.url && font === selectedSource.family
+                                ? role === "body"
+                                  ? `${namespace}TypographyPreviewBody`
+                                  : `${namespace}TypographyPreviewDisplay`
+                                : font,
+                          }}
+                        >
+                          {font}
+                          {selectedSource.url && font === selectedSource.family
+                            ? isAr
+                              ? " — مرفوع"
+                              : " — uploaded"
+                            : ""}
+                        </span>
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -335,7 +365,9 @@ function TypographyAdvancedControls({
       <div
         className="rounded-xl border border-dashed border-border p-5"
         style={{
-          fontFamily: config.body[isAr ? "ar" : "en"].family,
+          fontFamily: config.body[previewLanguage].url
+            ? `${namespace}TypographyPreviewBody`
+            : config.body[previewLanguage].family,
           fontWeight: config.bodyWeight,
           lineHeight: config.bodyLineHeight,
           letterSpacing: `${config.letterSpacing}em`,
@@ -345,7 +377,9 @@ function TypographyAdvancedControls({
         <div
           className="text-2xl"
           style={{
-            fontFamily: config.display[isAr ? "ar" : "en"].family,
+            fontFamily: config.display[previewLanguage].url
+              ? `${namespace}TypographyPreviewDisplay`
+              : config.display[previewLanguage].family,
             fontWeight: config.headingWeight,
             lineHeight: config.headingLineHeight,
           }}
@@ -3128,8 +3162,16 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
         show_hero_title: data.show_hero_title ?? true,
         show_hero_about: data.show_hero_about ?? true,
         show_footer_name: data.show_footer_name ?? true,
-        storefront_font_en: data.storefront_font_en ?? "Inter",
-        storefront_font_ar: data.storefront_font_ar ?? "Tajawal",
+        storefront_font_en: data.storefront_font_en_url
+          ? data.storefront_font_en?.startsWith("Custom —")
+            ? data.storefront_font_en
+            : "Custom — English"
+          : (data.storefront_font_en ?? "Inter"),
+        storefront_font_ar: data.storefront_font_ar_url
+          ? data.storefront_font_ar?.startsWith("Custom —")
+            ? data.storefront_font_ar
+            : "Custom — Arabic"
+          : (data.storefront_font_ar ?? "Tajawal"),
         storefront_font_en_url: data.storefront_font_en_url ?? null,
         storefront_font_ar_url: data.storefront_font_ar_url ?? null,
         storefront_typography: normalizeTypography(
@@ -3315,24 +3357,30 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
     try {
       setUploadingFont(language);
       const url = await uploadPublicMedia(brandId, file, "font");
+      const cleanName = file.name
+        .replace(/\.[^.]+$/, "")
+        .replace(/[_-]+/g, " ")
+        .trim();
+      const customFamily = `Custom — ${cleanName || (language === "ar" ? "Arabic" : "English")}`;
       setState((current) =>
         current
           ? {
               ...current,
+              [language === "en" ? "storefront_font_en" : "storefront_font_ar"]: customFamily,
               [language === "en" ? "storefront_font_en_url" : "storefront_font_ar_url"]: url,
               storefront_typography: {
                 ...current.storefront_typography,
                 body: {
                   ...current.storefront_typography.body,
                   [language]: {
-                    ...current.storefront_typography.body[language],
+                    family: customFamily,
                     url,
                   },
                 },
                 display: {
                   ...current.storefront_typography.display,
                   [language]: {
-                    ...current.storefront_typography.display[language],
+                    family: customFamily,
                     url,
                   },
                 },
@@ -3346,6 +3394,30 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
     } finally {
       setUploadingFont(null);
     }
+  };
+
+  const removeStorefrontFont = (language: "en" | "ar") => {
+    const fallbackFamily = language === "ar" ? "Tajawal" : "Inter";
+    setState((current) =>
+      current
+        ? {
+            ...current,
+            [language === "en" ? "storefront_font_en" : "storefront_font_ar"]: fallbackFamily,
+            [language === "en" ? "storefront_font_en_url" : "storefront_font_ar_url"]: null,
+            storefront_typography: {
+              ...current.storefront_typography,
+              body: {
+                ...current.storefront_typography.body,
+                [language]: { family: fallbackFamily, url: null },
+              },
+              display: {
+                ...current.storefront_typography.display,
+                [language]: { family: fallbackFamily, url: null },
+              },
+            },
+          }
+        : current,
+    );
   };
 
   const updatePromoCard = (index: number, patch: Partial<HomePromoCard>) =>
@@ -4068,6 +4140,7 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
                 setState({
                   ...state,
                   storefront_font_en: value,
+                  storefront_font_en_url: null,
                   storefront_typography: {
                     ...state.storefront_typography,
                     body: {
@@ -4082,9 +4155,30 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {STOREFRONT_EN_FONTS.map((font) => (
+                {(state.storefront_font_en_url ||
+                !STOREFRONT_EN_FONTS.includes(state.storefront_font_en)
+                  ? [
+                      state.storefront_font_en,
+                      ...STOREFRONT_EN_FONTS.filter((font) => font !== state.storefront_font_en),
+                    ]
+                  : STOREFRONT_EN_FONTS
+                ).map((font) => (
                   <SelectItem key={font} value={font}>
-                    <span style={{ fontFamily: font }}>{font}</span>
+                    <span
+                      style={{
+                        fontFamily:
+                          state.storefront_font_en_url && font === state.storefront_font_en
+                            ? "StorefrontTypographyPreviewBody"
+                            : font,
+                      }}
+                    >
+                      {font}
+                      {state.storefront_font_en_url && font === state.storefront_font_en
+                        ? isAr
+                          ? " — مرفوع"
+                          : " — uploaded"
+                        : ""}
+                    </span>
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -4124,19 +4218,7 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
                   type="button"
                   variant="ghost"
                   size="sm"
-                  onClick={() =>
-                    setState({
-                      ...state,
-                      storefront_font_en_url: null,
-                      storefront_typography: {
-                        ...state.storefront_typography,
-                        body: {
-                          ...state.storefront_typography.body,
-                          en: { ...state.storefront_typography.body.en, url: null },
-                        },
-                      },
-                    })
-                  }
+                  onClick={() => removeStorefrontFont("en")}
                 >
                   {isAr ? "إزالة" : "Remove"}
                 </Button>
@@ -4151,6 +4233,7 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
                 setState({
                   ...state,
                   storefront_font_ar: value,
+                  storefront_font_ar_url: null,
                   storefront_typography: {
                     ...state.storefront_typography,
                     body: {
@@ -4165,9 +4248,30 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {STOREFRONT_AR_FONTS.map((font) => (
+                {(state.storefront_font_ar_url ||
+                !STOREFRONT_AR_FONTS.includes(state.storefront_font_ar)
+                  ? [
+                      state.storefront_font_ar,
+                      ...STOREFRONT_AR_FONTS.filter((font) => font !== state.storefront_font_ar),
+                    ]
+                  : STOREFRONT_AR_FONTS
+                ).map((font) => (
                   <SelectItem key={font} value={font}>
-                    <span style={{ fontFamily: font }}>{font}</span>
+                    <span
+                      style={{
+                        fontFamily:
+                          state.storefront_font_ar_url && font === state.storefront_font_ar
+                            ? "StorefrontTypographyPreviewBody"
+                            : font,
+                      }}
+                    >
+                      {font}
+                      {state.storefront_font_ar_url && font === state.storefront_font_ar
+                        ? isAr
+                          ? " — مرفوع"
+                          : " — uploaded"
+                        : ""}
+                    </span>
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -4207,19 +4311,7 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
                   type="button"
                   variant="ghost"
                   size="sm"
-                  onClick={() =>
-                    setState({
-                      ...state,
-                      storefront_font_ar_url: null,
-                      storefront_typography: {
-                        ...state.storefront_typography,
-                        body: {
-                          ...state.storefront_typography.body,
-                          ar: { ...state.storefront_typography.body.ar, url: null },
-                        },
-                      },
-                    })
-                  }
+                  onClick={() => removeStorefrontFont("ar")}
                 >
                   {isAr ? "إزالة" : "Remove"}
                 </Button>
@@ -4232,6 +4324,7 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
           config={state.storefront_typography}
           onChange={(storefront_typography) => setState({ ...state, storefront_typography })}
           isAr={isAr}
+          namespace="Storefront"
         />
         <div className="space-y-3 rounded-xl border border-primary/20 bg-primary/5 p-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
@@ -4259,6 +4352,7 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
             config={state.admin_typography}
             onChange={(admin_typography) => setState({ ...state, admin_typography })}
             isAr={isAr}
+            namespace="Admin"
           />
         </div>
       </div>
