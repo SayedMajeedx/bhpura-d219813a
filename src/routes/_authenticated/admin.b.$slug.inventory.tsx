@@ -3446,16 +3446,20 @@ function BulkVariantDialog({
     if (!plan.base_sku.trim())
       return toast.error(isAr ? "أدخل رمز المنتج الأساسي" : "Enter a base SKU");
     const basePrice = Number(product?.base_price ?? 0);
-    const salePrice = salePriceText.trim() === "" ? null : Number(salePriceText);
+    const enteredSalePrice = salePriceText.trim() === "" ? null : Number(salePriceText);
     if (
-      salePrice !== null &&
-      (!Number.isFinite(salePrice) || salePrice < 0 || salePrice >= basePrice)
+      enteredSalePrice !== null &&
+      (!Number.isFinite(enteredSalePrice) || enteredSalePrice < 0 || enteredSalePrice > basePrice)
     )
       return toast.error(
         isAr
-          ? "يجب أن يكون سعر التخفيض أقل من السعر الأساسي، أو اتركه فارغاً."
-          : "Sale price must be lower than the regular price, or leave it blank.",
+          ? "لا يمكن أن يكون سعر التخفيض أعلى من السعر الأساسي."
+          : "Sale price cannot be higher than the regular price.",
       );
+    const salePrice =
+      enteredSalePrice !== null && enteredSalePrice > 0 && enteredSalePrice < basePrice
+        ? enteredSalePrice
+        : null;
     const usedBarcodes = new Set(variants.map((v) => v.barcode).filter(Boolean) as string[]);
     const sizeAxis = sizes.length ? sizes : [""];
     const colorAxis = colors.length ? colors : [""];
@@ -3499,7 +3503,7 @@ function BulkVariantDialog({
         (row.sale_price !== "" &&
           (!Number.isFinite(Number(row.sale_price)) ||
             Number(row.sale_price) < 0 ||
-            Number(row.sale_price) >= Number(product?.base_price ?? 0))) ||
+            Number(row.sale_price) > Number(product?.base_price ?? 0))) ||
         row.cost_price < 0 ||
         !Number.isInteger(row.stock_main) ||
         row.stock_main < 0 ||
@@ -3534,8 +3538,13 @@ function BulkVariantDialog({
           barcode: row.barcode.trim(),
           cost_price: Number(product?.cost_price ?? 0),
           selling_price:
-            row.sale_price === "" ? Number(product?.base_price ?? 0) : Number(row.sale_price),
-          original_price: row.sale_price !== "" ? Number(product?.base_price ?? 0) : null,
+            Number(row.sale_price) > 0 && Number(row.sale_price) < Number(product?.base_price ?? 0)
+              ? Number(row.sale_price)
+              : Number(product?.base_price ?? 0),
+          original_price:
+            Number(row.sale_price) > 0 && Number(row.sale_price) < Number(product?.base_price ?? 0)
+              ? Number(product?.base_price ?? 0)
+              : null,
           stock_main: row.stock_main,
           stock_incubator: row.stock_incubator,
         })),
@@ -3697,7 +3706,7 @@ function BulkVariantDialog({
               type="number"
               min="0"
               step="0.01"
-              max={Math.max(0, Number(product?.base_price ?? 0) - 0.001)}
+              max={Math.max(0, Number(product?.base_price ?? 0))}
               placeholder={
                 isAr
                   ? `الأساسي ${Number(product?.base_price ?? 0)}`
@@ -3706,6 +3715,11 @@ function BulkVariantDialog({
               value={salePriceText}
               onChange={(e) => setSalePriceText(e.target.value)}
             />
+            <p className="mt-1 text-[10px] text-muted-foreground">
+              {isAr
+                ? "اتركه فارغاً أو أدخل 0 أو السعر الأساسي لإزالة التخفيض."
+                : "Leave blank, enter 0, or use the regular price to remove the sale."}
+            </p>
           </div>
           <div>
             <Label>{isAr ? "مخزون الرئيسي" : "Main stock"}</Label>
@@ -3980,6 +3994,8 @@ function PremiumCurrencyInput({
   className = "",
   placeholder = "0.000",
   disabled = false,
+  onClear,
+  clearLabel = "Remove sale",
 }: {
   value: string;
   onChange: (val: string) => void;
@@ -3987,6 +4003,8 @@ function PremiumCurrencyInput({
   className?: string;
   placeholder?: string;
   disabled?: boolean;
+  onClear?: () => void;
+  clearLabel?: string;
 }) {
   return (
     <div
@@ -3997,13 +4015,25 @@ function PremiumCurrencyInput({
         type="number"
         step="0.001"
         placeholder={placeholder}
-        className={`w-full h-9.5 pl-2.5 pr-8 text-center font-mono font-bold bg-background border border-input rounded-xl outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary text-xs shadow-2xs transition-all disabled:cursor-not-allowed disabled:bg-muted/50 disabled:text-muted-foreground disabled:opacity-100 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none ${className}`}
+        className={`w-full h-9.5 ${onClear && value ? "pl-7" : "pl-2.5"} pr-8 text-center font-mono font-bold bg-background border border-input rounded-xl outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary text-xs shadow-2xs transition-all disabled:cursor-not-allowed disabled:bg-muted/50 disabled:text-muted-foreground disabled:opacity-100 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none ${className}`}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         onFocus={(e) => e.currentTarget.select()}
         onBlur={onBlur}
         disabled={disabled}
       />
+      {onClear && value && !disabled && (
+        <button
+          type="button"
+          className="absolute start-2 rounded-full p-0.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+          title={clearLabel}
+          aria-label={clearLabel}
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={onClear}
+        >
+          <X className="h-3.5 w-3.5" />
+        </button>
+      )}
       <span className="absolute end-2.5 text-[9px] font-black text-muted-foreground/60 pointer-events-none uppercase tracking-tight">
         BHD
       </span>
@@ -4073,19 +4103,20 @@ function VariantDesktopRow({
 
   const commitSalePrice = (rawValue: string) => {
     const regularPrice = Number(product?.base_price ?? 0);
-    if (!rawValue) {
+    const salePrice = rawValue === "" ? 0 : Number(rawValue);
+    if (rawValue === "" || salePrice === 0 || salePrice === regularPrice) {
+      setSellingVal("");
       update(v, { selling_price: regularPrice });
       return;
     }
-    const salePrice = Number(rawValue);
-    if (!Number.isFinite(salePrice) || salePrice < 0 || salePrice >= regularPrice) {
+    if (!Number.isFinite(salePrice) || salePrice < 0 || salePrice > regularPrice) {
       setSellingVal(
         Number(v.original_price || 0) > Number(v.selling_price || 0) ? String(v.selling_price) : "",
       );
       toast.error(
         isAr
-          ? "يجب أن يكون سعر التخفيض أقل من السعر الأساسي."
-          : "Sale price must be lower than the regular price.",
+          ? "لا يمكن أن يكون سعر التخفيض أعلى من السعر الأساسي. امسح الحقل لإزالة التخفيض."
+          : "Sale price cannot exceed the regular price. Clear the field to remove the sale.",
       );
       return;
     }
@@ -4349,6 +4380,8 @@ function VariantDesktopRow({
           value={sellingVal}
           onChange={setSellingVal}
           onBlur={(e) => commitSalePrice(e.target.value)}
+          onClear={() => commitSalePrice("")}
+          clearLabel={isAr ? "إزالة التخفيض" : "Remove sale"}
           placeholder={String(product?.base_price ?? "0.000")}
         />
       </td>
@@ -4516,19 +4549,20 @@ function VariantMobileCard({
 
   const commitSalePrice = (rawValue: string) => {
     const regularPrice = Number(product?.base_price ?? 0);
-    if (!rawValue) {
+    const salePrice = rawValue === "" ? 0 : Number(rawValue);
+    if (rawValue === "" || salePrice === 0 || salePrice === regularPrice) {
+      setSellingVal("");
       update(v, { selling_price: regularPrice });
       return;
     }
-    const salePrice = Number(rawValue);
-    if (!Number.isFinite(salePrice) || salePrice < 0 || salePrice >= regularPrice) {
+    if (!Number.isFinite(salePrice) || salePrice < 0 || salePrice > regularPrice) {
       setSellingVal(
         Number(v.original_price || 0) > Number(v.selling_price || 0) ? String(v.selling_price) : "",
       );
       toast.error(
         isAr
-          ? "يجب أن يكون سعر التخفيض أقل من السعر الأساسي."
-          : "Sale price must be lower than the regular price.",
+          ? "لا يمكن أن يكون سعر التخفيض أعلى من السعر الأساسي. امسح الحقل لإزالة التخفيض."
+          : "Sale price cannot exceed the regular price. Clear the field to remove the sale.",
       );
       return;
     }
@@ -4650,6 +4684,8 @@ function VariantMobileCard({
                 value={sellingVal}
                 onChange={setSellingVal}
                 onBlur={(e) => commitSalePrice(e.target.value)}
+                onClear={() => commitSalePrice("")}
+                clearLabel={isAr ? "إزالة التخفيض" : "Remove sale"}
                 className="h-10 rounded-xl text-xs"
                 placeholder={String(product?.base_price ?? "0.000")}
               />
