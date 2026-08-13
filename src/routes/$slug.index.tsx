@@ -80,7 +80,7 @@ type CategoryRow = {
 };
 
 function StoreHome() {
-  const { brand } = useStorefront();
+  const { brand, settings } = useStorefront();
   const loaderData = Route.useLoaderData();
   const [activeCategorySlugs, setActiveCategorySlugs] = useState<string[]>([]);
   const activeCat = activeCategorySlugs[0] || null;
@@ -261,6 +261,21 @@ function StoreHome() {
     return new Set<string>((bestSellerRows ?? []).map((row: any) => String(row.product_id)));
   }, [bestSellerRows]);
 
+  const trailingBackgroundColor = (
+    [
+      ["trending", trending],
+      ["sale", saleProducts],
+      ["best", bestSellers],
+    ] as const
+  ).find(
+    ([kind, sectionProducts]) =>
+      settings.homepage_editorial_sections[kind].enabled && sectionProducts.length > 0,
+  )?.[0];
+  const productsAreaBackground = trailingBackgroundColor
+    ? settings.homepage_editorial_sections[trailingBackgroundColor].background_color ||
+      "var(--sf-background)"
+    : "var(--sf-background)";
+
   // Loading state with premium skeleton carousels/grids
   if (isLoading) {
     return (
@@ -303,8 +318,12 @@ function StoreHome() {
           <MerchandisingSection kind="trending" products={trending} bestSellerIds={bestIdsKeys} />
         </div>
       )}
-      <section className="mx-auto max-w-7xl px-4 pb-8 sm:px-6 sm:pb-12">
-        <div ref={productsSectionRef} id="products-section" className="scroll-mt-20 pt-8 sm:pt-12">
+      <section className="w-full pb-8 sm:pb-12" style={{ backgroundColor: productsAreaBackground }}>
+        <div
+          ref={productsSectionRef}
+          id="products-section"
+          className="mx-auto max-w-7xl scroll-mt-20 px-4 pt-8 sm:px-6 sm:pt-12"
+        >
           <SectionHeading
             title={activeCat ? undefined : null}
             fallbackAr="كل المنتجات"

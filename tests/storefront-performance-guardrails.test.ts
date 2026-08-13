@@ -32,4 +32,12 @@ describe("storefront performance guardrails", () => {
     expect(fonts).toContain('font-family: "Inter"');
     expect(headers).toContain("max-age=31536000, immutable");
   });
+
+  it("continues the final editorial color through the products area", () => {
+    const home = read("src/routes/$slug.index.tsx");
+
+    expect(home).toContain("productsAreaBackground");
+    expect(home).toContain("style={{ backgroundColor: productsAreaBackground }}");
+    expect(home).toContain('className="w-full pb-8 sm:pb-12"');
+  });
 });
