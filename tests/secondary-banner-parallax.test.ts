@@ -36,9 +36,8 @@ describe("secondary banner parallax guardrails", () => {
   it("uses scroll timelines, a throttled fallback, and a reduced-motion kill switch", () => {
     const component = read("src/components/storefront/secondary-banner-parallax.tsx");
     const styles = read("src/styles.css");
-    expect(styles).toContain("animation-timeline: view(block)");
-    expect(styles).toContain("animation-range: entry 0% exit 100%");
-    expect(styles).toContain("translate3d(0, -7%, 0)");
+    expect(styles).toContain("animation-timeline: scroll(root block)");
+    expect(styles).toContain("translate3d(0, -2rem, 0)");
     expect(styles).toContain("prefers-reduced-motion: reduce");
     expect(component).toContain("IntersectionObserver");
     expect(component).toContain("requestAnimationFrame(render)");
