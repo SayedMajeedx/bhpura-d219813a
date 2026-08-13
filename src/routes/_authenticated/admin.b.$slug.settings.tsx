@@ -223,11 +223,20 @@ function TypographyAdvancedControls({
     min: number,
     max: number,
     step: number,
+    formatValue: (value: number) => string = String,
+    help?: string,
   ) => (
-    <div className="space-y-1.5">
-      <div className="flex justify-between gap-3 text-xs">
-        <Label>{label}</Label>
-        <span className="tabular-nums text-muted-foreground">{config[key]}</span>
+    <div className="space-y-2 rounded-lg border border-border/50 bg-background/60 p-3">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <Label className="text-sm font-medium">{label}</Label>
+          {help && (
+            <p className="mt-0.5 text-[11px] leading-relaxed text-muted-foreground">{help}</p>
+          )}
+        </div>
+        <span className="rounded-md bg-muted px-2 py-1 text-xs font-semibold tabular-nums text-foreground">
+          {formatValue(config[key])}
+        </span>
       </div>
       <input
         className="w-full accent-primary"
@@ -314,28 +323,112 @@ function TypographyAdvancedControls({
         )}
       </div>
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {range(isAr ? "وزن النص" : "Body weight", "bodyWeight", 100, 900, 50)}
-        {range(isAr ? "وزن العناوين" : "Heading weight", "headingWeight", 100, 900, 50)}
-        {range(isAr ? "مقياس الخط" : "Type scale", "scale", 0.85, 1.25, 0.01)}
-        {range(isAr ? "تباعد أسطر النص" : "Body leading", "bodyLineHeight", 1.2, 2, 0.05)}
         {range(
-          isAr ? "تباعد أسطر العناوين" : "Heading leading",
+          isAr ? "سُمك النصوص" : "Body weight",
+          "bodyWeight",
+          100,
+          900,
+          50,
+          (value) => String(value),
+          isAr ? "درجة سماكة النصوص العادية والأزرار." : "Thickness of body copy and controls.",
+        )}
+        {range(
+          isAr ? "سُمك العناوين" : "Heading weight",
+          "headingWeight",
+          100,
+          900,
+          50,
+          (value) => String(value),
+          isAr ? "درجة سماكة عناوين الأقسام والبنرات." : "Thickness of headings and banner titles.",
+        )}
+        {range(
+          isAr ? "الحجم العام للخطوط" : "Overall type size",
+          "scale",
+          0.85,
+          1.25,
+          0.01,
+          (value) => `${Math.round(value * 100)}%`,
+          isAr
+            ? "يكبّر أو يصغّر جميع أحجام الخطوط بنسب متوازنة."
+            : "Scales all type sizes proportionally.",
+        )}
+        {range(
+          isAr ? "المسافة بين أسطر النص" : "Body line spacing",
+          "bodyLineHeight",
+          1.2,
+          2,
+          0.05,
+          (value) => `${value}×`,
+          isAr
+            ? "مساحة التنفس بين أسطر الفقرات والنصوص."
+            : "Breathing room between lines of body copy.",
+        )}
+        {range(
+          isAr ? "المسافة بين أسطر العناوين" : "Heading line spacing",
           "headingLineHeight",
           0.9,
           1.6,
           0.05,
+          (value) => `${value}×`,
+          isAr
+            ? "المسافة الرأسية للعناوين متعددة الأسطر."
+            : "Vertical spacing for multi-line headings.",
         )}
-        {range(isAr ? "تباعد الأحرف" : "Letter spacing", "letterSpacing", -0.08, 0.2, 0.01)}
+        {range(
+          isAr ? "المسافة بين الحروف" : "Letter spacing",
+          "letterSpacing",
+          -0.08,
+          0.2,
+          0.01,
+          (value) => `${value > 0 ? "+" : ""}${value}em`,
+          isAr
+            ? "تقريب الحروف أو إبعادها عن بعضها."
+            : "Tightens or loosens the space between characters.",
+        )}
       </div>
       <div className="grid gap-4 sm:grid-cols-3">
         {(["width", "slant", "opticalSize"] as const).map((axis) => {
           const limits =
             axis === "width" ? [75, 125, 1] : axis === "slant" ? [-12, 0, 1] : [8, 72, 1];
+          const axisCopy = {
+            width: {
+              label: isAr ? "عرض الحروف" : "Character width",
+              technical: "wdth",
+              help: isAr ? "يجعل شكل الحروف أضيق أو أعرض." : "Makes letterforms narrower or wider.",
+              value: `${config.axes.width}%`,
+            },
+            slant: {
+              label: isAr ? "ميلان الحروف" : "Character slant",
+              technical: "slnt",
+              help: isAr
+                ? "يميل الحروف تدريجيًا عند دعم الخط."
+                : "Gradually slants letters when supported.",
+              value: `${config.axes.slant}°`,
+            },
+            opticalSize: {
+              label: isAr ? "الضبط البصري للحجم" : "Optical size tuning",
+              technical: "opsz",
+              help: isAr
+                ? "يضبط تفاصيل الخط لتناسب حجم العرض."
+                : "Tunes font details for its display size.",
+              value: `${config.axes.opticalSize}px`,
+            },
+          }[axis];
           return (
-            <div key={axis} className="space-y-1.5">
-              <div className="flex justify-between text-xs">
-                <Label>{axis === "width" ? "wdth" : axis === "slant" ? "slnt" : "opsz"}</Label>
-                <span className="tabular-nums text-muted-foreground">{config.axes[axis]}</span>
+            <div
+              key={axis}
+              className="space-y-2 rounded-lg border border-border/50 bg-background/60 p-3"
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <Label className="text-sm font-medium">{axisCopy.label}</Label>
+                  <p className="mt-0.5 text-[11px] leading-relaxed text-muted-foreground">
+                    {axisCopy.help} <span dir="ltr">({axisCopy.technical})</span>
+                  </p>
+                </div>
+                <span className="rounded-md bg-muted px-2 py-1 text-xs font-semibold tabular-nums text-foreground">
+                  {axisCopy.value}
+                </span>
               </div>
               <input
                 className="w-full accent-primary"
@@ -355,8 +448,15 @@ function TypographyAdvancedControls({
           );
         })}
       </div>
-      <div className="flex items-center justify-between rounded-lg border border-border/60 p-3">
-        <Label>{isAr ? "التحجيم البصري التلقائي" : "Automatic optical sizing"}</Label>
+      <div className="flex items-center justify-between gap-4 rounded-lg border border-border/60 p-3">
+        <div>
+          <Label>{isAr ? "تحسين وضوح الخط تلقائيًا" : "Automatic optical optimization"}</Label>
+          <p className="mt-1 text-[11px] text-muted-foreground">
+            {isAr
+              ? "يُحسّن تفاصيل الخط بحسب حجمه تلقائيًا عند دعم الخط لهذه الميزة."
+              : "Optimizes font details for each size when the font supports it."}
+          </p>
+        </div>
         <Switch
           checked={config.opticalSizing}
           onCheckedChange={(opticalSizing) => onChange({ ...config, opticalSizing })}
