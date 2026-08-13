@@ -26,6 +26,17 @@ describe("homepage editorial sections", () => {
     expect(home).not.toContain('className="w-full overflow-hidden border');
   });
 
+  it("joins the promo cards to the first visible editorial background with balanced spacing", () => {
+    const home = read("src/routes/$slug.index.tsx");
+    expect(home).toContain("const leadingEditorialKind");
+    expect(home).toContain("style={{ backgroundColor: promoAreaBackground }}");
+    expect(home).toContain('className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8"');
+    expect(home).toContain('className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4"');
+    expect(home).not.toContain(
+      'className="mb-6 grid grid-cols-1 gap-3 sm:mb-8 sm:grid-cols-2 sm:gap-4"',
+    );
+  });
+
   it("keeps the hero, navigation, footer, and product cards outside the editorial wrapper", () => {
     const home = read("src/routes/$slug.index.tsx");
     const editorialStart = home.indexOf("function MerchandisingSection");

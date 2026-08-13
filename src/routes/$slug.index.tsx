@@ -275,6 +275,21 @@ function StoreHome() {
     ? settings.homepage_editorial_sections[trailingBackgroundColor].background_color ||
       "var(--sf-background)"
     : "var(--sf-background)";
+  const leadingEditorialKind = (
+    [
+      ["best", bestSellers],
+      ["sale", saleProducts],
+      ["trending", trending],
+    ] as const
+  ).find(
+    ([kind, sectionProducts]) =>
+      settings.homepage_editorial_sections[kind].enabled && sectionProducts.length > 0,
+  )?.[0];
+  const promoAreaBackground =
+    !activeCat && leadingEditorialKind
+      ? settings.homepage_editorial_sections[leadingEditorialKind].background_color ||
+        "var(--sf-background)"
+      : "var(--sf-background)";
 
   // Loading state with premium skeleton carousels/grids
   if (isLoading) {
@@ -307,9 +322,11 @@ function StoreHome() {
   return (
     <div>
       <HeroBanner />
-      <section className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8">
-        <PromoCards />
-        {!activeCat && <MerchandisingSection kind="new" products={newest} />}
+      <section className="w-full" style={{ backgroundColor: promoAreaBackground }}>
+        <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8">
+          <PromoCards />
+          {!activeCat && <MerchandisingSection kind="new" products={newest} />}
+        </div>
       </section>
       {!activeCat && (
         <div>
@@ -355,7 +372,7 @@ function PromoCards() {
   const firstImageIndex = cards.findIndex((card) => Boolean(card.image_url));
   if (!cards.length) return null;
   return (
-    <div className="mb-6 grid grid-cols-1 gap-3 sm:mb-8 sm:grid-cols-2 sm:gap-4">
+    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
       {cards.map((card, index) => {
         const title =
           lang === "ar" ? card.title_ar || card.title_en : card.title_en || card.title_ar;
