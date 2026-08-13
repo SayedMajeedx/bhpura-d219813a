@@ -2200,9 +2200,7 @@ function BrandHeroCard({
       <ImageCropperDialog
         open={Boolean(cropSrc)}
         imageSrc={cropSrc}
-        aspect={16 / 9}
-        outputWidth={1920}
-        outputHeight={1080}
+        preset="hero"
         heroPreview
         busy={uploading}
         onCancel={() => {
@@ -2214,9 +2212,7 @@ function BrandHeroCard({
       <ImageCropperDialog
         open={Boolean(backgroundCropSrc)}
         imageSrc={backgroundCropSrc}
-        aspect={16 / 9}
-        outputWidth={1920}
-        outputHeight={1080}
+        preset="hero"
         heroPreview
         busy={uploading}
         title={isAr ? "تجهيز خلفية الواجهة" : "Frame your hero background"}
@@ -3927,9 +3923,7 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
                   )}
                 </div>
                 <CropUploadButton
-                  aspect={2}
-                  outputWidth={1600}
-                  outputHeight={800}
+                  preset="editorialBanner"
                   heroPreview
                   busy={uploadingSecondaryBanner === target}
                   className="w-full"
@@ -4773,8 +4767,8 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
           </h3>
           <p className="mt-1 text-xs text-muted-foreground">
             {isAr
-              ? "خصص أربع بطاقات ترويجية وروابطها. مقاس التصميم الموصى به: 1200 × 600 بكسل (نسبة 2:1)."
-              : "Customize four promotional cards and their destinations. Recommended artwork: 1200 × 600 px (2:1 ratio)."}
+              ? "خصص أربع بطاقات ترويجية وروابطها. المقاس النهائي: 1600 × 800 بكسل (نسبة 2:1)."
+              : "Customize four promotional cards and their destinations. Final crop: 1600 × 800 px (2:1 ratio)."}
           </p>
         </div>
         <div
@@ -4898,9 +4892,7 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
                         )}
                       </div>
                       <CropUploadButton
-                        aspect={2}
-                        outputWidth={1600}
-                        outputHeight={800}
+                        preset="editorialBanner"
                         heroPreview
                         className="w-full"
                         busy={uploadingEditorialAsset === `${key}-banner_image_url`}
@@ -4953,9 +4945,7 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
                         </div>
                       )}
                       <CropUploadButton
-                        aspect={3}
-                        outputWidth={1800}
-                        outputHeight={600}
+                        preset="editorialBackground"
                         className="w-full"
                         busy={uploadingEditorialAsset === `${key}-background_image_url`}
                         onCrop={(blob) => uploadEditorialAsset(key, "background_image_url", blob)}
@@ -4982,7 +4972,7 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
                   <h4 className="font-medium">
                     {isAr ? `بنر ترويجي ${index + 1}` : `Promotion Banner ${index + 1}`}
                   </h4>
-                  <p className="text-[11px] text-muted-foreground">1200 × 600 px</p>
+                  <p className="text-[11px] text-muted-foreground">1600 × 800 px · 2:1</p>
                 </div>
                 {card.image_url && (
                   <img
@@ -5074,16 +5064,14 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
       <ImageCropperDialog
         open={Boolean(promoCropSrc)}
         imageSrc={promoCropSrc}
-        aspect={2}
-        outputWidth={1200}
-        outputHeight={600}
+        preset="promotionBanner"
         busy={uploadingPromo}
         heroPreview
         title={isAr ? "ضبط صورة البنر" : "Frame promotion banner"}
         description={
           isAr
             ? "اسحب وكبّر الصورة حتى تظهر بأفضل شكل داخل مساحة البنر بنسبة 2:1."
-            : "Reposition and zoom for a precise 2:1 banner crop. The result is optimized to 1200 × 600 px."
+            : "Reposition and zoom for a precise 2:1 banner crop. The storefront uses this exact ratio at every viewport size."
         }
         onCancel={() => {
           setPromoCropSrc(null);

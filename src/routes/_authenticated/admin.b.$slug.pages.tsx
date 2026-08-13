@@ -879,9 +879,7 @@ function PagesAndPolicies() {
                         <div className="mt-3 flex flex-wrap items-center gap-3">
                           <CropUploadButton
                             onCrop={(blob) => onPickImage(index, blob)}
-                            aspect={page.image_position === "top" ? 16 / 9 : 4 / 3}
-                            outputWidth={page.image_position === "top" ? 1600 : 1200}
-                            outputHeight={900}
+                            preset={page.image_position === "top" ? "pageBanner" : "pageInline"}
                             size="sm"
                             busy={uploadingIdx === index}
                             title={editorLanguage === "ar" ? "ضبط صورة الصفحة" : "Frame page image"}

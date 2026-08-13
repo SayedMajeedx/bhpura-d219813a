@@ -332,9 +332,7 @@ function CategoryDialog({
               />
               <CropUploadButton
                 onCrop={upload}
-                aspect={1}
-                outputWidth={1200}
-                outputHeight={1200}
+                preset="categoryCover"
                 size="icon"
                 busy={uploading}
                 title={isAr ? "ضبط صورة القسم" : "Frame category image"}

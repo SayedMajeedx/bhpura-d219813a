@@ -385,7 +385,7 @@ function PromoCards() {
             key={index}
             href={card.href || "#products"}
             aria-label={title || subtitle ? undefined : lang === "ar" ? "عرض خاص" : "Special offer"}
-            className="group relative aspect-[2/1] overflow-hidden rounded-2xl border shadow-sm sm:aspect-auto sm:h-[216px]"
+            className="group relative aspect-[2/1] overflow-hidden rounded-2xl border shadow-sm"
             style={{
               backgroundColor: card.background_color || "#f4f4f4",
               color: card.text_color || "#ffffff",

@@ -4,12 +4,14 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { ImageCropperDialog } from "@/components/image-cropper-dialog";
 import { useI18n } from "@/lib/i18n";
+import type { ImageCropPresetKey } from "@/lib/image-crop-presets";
 
 type Props = {
   onCrop: (blob: Blob) => void | Promise<void>;
-  aspect: number;
-  outputWidth: number;
-  outputHeight: number;
+  preset?: ImageCropPresetKey;
+  aspect?: number;
+  outputWidth?: number;
+  outputHeight?: number;
   busy?: boolean;
   children?: ReactNode;
   className?: string;
@@ -25,6 +27,7 @@ const MAX_SOURCE_BYTES = 30 * 1024 * 1024;
 
 export function CropUploadButton({
   onCrop,
+  preset,
   aspect,
   outputWidth,
   outputHeight,
@@ -101,6 +104,7 @@ export function CropUploadButton({
       <ImageCropperDialog
         open={Boolean(source)}
         imageSrc={source}
+        preset={preset}
         aspect={aspect}
         outputWidth={outputWidth}
         outputHeight={outputHeight}

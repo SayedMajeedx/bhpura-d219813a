@@ -3309,6 +3309,20 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
           {t("common.save")}
         </Button>
       </div>
+      <ImageCropperDialog
+        open={Boolean(cropSrc)}
+        imageSrc={cropSrc}
+        preset="productPortrait"
+        busy={uploading}
+        title={isAr ? "ضبط صورة المنتج" : "Frame product image"}
+        description={
+          isAr
+            ? "اضبط الصورة ضمن النسبة العمودية نفسها المستخدمة في بطاقات وصفحة المنتج."
+            : "Frame the image in the same portrait ratio used by product cards and product pages."
+        }
+        onCancel={() => setCropSrc(null)}
+        onConfirm={handleCropConfirmed}
+      />
     </DialogContent>
   );
 }
@@ -3902,9 +3916,7 @@ function VariantImageUploader({ brandId, imageUrl, onChange, isAr }: VariantImag
           <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center gap-1 transition-opacity">
             <CropUploadButton
               onCrop={handleUpload}
-              aspect={3 / 4}
-              outputWidth={900}
-              outputHeight={1200}
+              preset="productPortrait"
               busy={uploading}
               size="icon"
               variant="ghost"
@@ -3929,9 +3941,7 @@ function VariantImageUploader({ brandId, imageUrl, onChange, isAr }: VariantImag
       ) : (
         <CropUploadButton
           onCrop={handleUpload}
-          aspect={3 / 4}
-          outputWidth={900}
-          outputHeight={1200}
+          preset="productPortrait"
           busy={uploading}
           size="icon"
           variant="ghost"

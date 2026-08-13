@@ -10,12 +10,15 @@ import {
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Crop, Loader2, Minus, Plus, RotateCcw } from "lucide-react";
+import { toast } from "sonner";
 import { useI18n } from "@/lib/i18n";
+import { getImageCropPreset, type ImageCropPresetKey } from "@/lib/image-crop-presets";
 
 type Props = {
   open: boolean;
   imageSrc: string | null;
-  /** width / height ratio — defaults to 3/4 to match storefront product cards */
+  preset?: ImageCropPresetKey;
+  /** width / height ratio — use a preset for production upload surfaces. */
   aspect?: number;
   onCancel: () => void;
   onConfirm: (blob: Blob) => void | Promise<void>;
@@ -27,7 +30,7 @@ type Props = {
   description?: string;
 };
 
-async function getCroppedBlob(
+export async function getCroppedBlob(
   imageSrc: string,
   area: Area,
   outputWidth?: number,
@@ -45,6 +48,8 @@ async function getCroppedBlob(
   canvas.height = outputHeight ?? Math.round(area.height);
   const ctx = canvas.getContext("2d");
   if (!ctx) throw new Error("Canvas unsupported");
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = "high";
   ctx.drawImage(image, area.x, area.y, area.width, area.height, 0, 0, canvas.width, canvas.height);
   return await new Promise<Blob>((resolve, reject) => {
     canvas.toBlob(
@@ -58,7 +63,8 @@ async function getCroppedBlob(
 export function ImageCropperDialog({
   open,
   imageSrc,
-  aspect = 3 / 4,
+  preset,
+  aspect: aspectOverride,
   onCancel,
   onConfirm,
   busy,
@@ -75,6 +81,13 @@ export function ImageCropperDialog({
   const [area, setArea] = useState<Area | null>(null);
   const [processing, setProcessing] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const cropPreset = preset ? getImageCropPreset(preset) : null;
+  const aspect = cropPreset?.aspect ?? aspectOverride ?? 3 / 4;
+  const resolvedOutputWidth = cropPreset?.outputWidth ?? outputWidth;
+  const resolvedOutputHeight = cropPreset?.outputHeight ?? outputHeight;
+  const previewAspects = cropPreset?.previewAspects ?? [
+    { labelEn: "Final crop", labelAr: "القص النهائي", aspect },
+  ];
 
   useEffect(() => {
     if (!open) return;
@@ -132,8 +145,14 @@ export function ImageCropperDialog({
     if (!imageSrc || !area) return;
     try {
       setProcessing(true);
-      const blob = await getCroppedBlob(imageSrc, area, outputWidth, outputHeight);
+      const blob = await getCroppedBlob(imageSrc, area, resolvedOutputWidth, resolvedOutputHeight);
       await onConfirm(blob);
+    } catch {
+      toast.error(
+        isAr
+          ? "تعذّر تجهيز الصورة. جرّب صورة JPEG أو PNG أو WebP أخرى."
+          : "We couldn't prepare this image. Try another JPEG, PNG, or WebP file.",
+      );
     } finally {
       setProcessing(false);
     }
@@ -189,12 +208,12 @@ export function ImageCropperDialog({
             <span className="pointer-events-none absolute bottom-3 start-3 rounded-full bg-black/65 px-3 py-1 text-[11px] font-medium text-white backdrop-blur">
               {isAr ? "اسحب لتغيير الموضع" : "Drag to reposition"}
             </span>
-            {outputWidth && outputHeight && (
+            {resolvedOutputWidth && resolvedOutputHeight && (
               <span
                 className="pointer-events-none absolute bottom-3 end-3 rounded-full bg-black/65 px-3 py-1 font-mono text-[11px] text-white backdrop-blur"
                 dir="ltr"
               >
-                {outputWidth} × {outputHeight}
+                {resolvedOutputWidth} × {resolvedOutputHeight}
               </span>
             )}
           </div>
@@ -264,31 +283,34 @@ export function ImageCropperDialog({
                   ⌄
                 </span>
               </summary>
-              <div className="px-3 pb-3">
-                <div
-                  className="relative mx-auto w-full max-w-xl overflow-hidden rounded-md border bg-muted"
-                  style={{ aspectRatio: String(aspect) }}
-                >
-                  {previewUrl ? (
-                    <img
-                      src={previewUrl}
-                      alt={isAr ? "معاينة الصورة المقصوصة" : "Cropped storefront preview"}
-                      className="absolute inset-0 h-full w-full object-cover"
-                    />
-                  ) : (
-                    <div className="absolute inset-0 grid place-items-center">
-                      <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+              <div className="grid gap-3 px-3 pb-3 sm:grid-cols-3">
+                {previewAspects.map((preview) => (
+                  <div key={preview.labelEn} className="space-y-1.5">
+                    <p className="text-xs text-muted-foreground">
+                      {isAr ? preview.labelAr : preview.labelEn}
+                    </p>
+                    <div
+                      className="relative mx-auto w-full overflow-hidden rounded-md border bg-muted"
+                      style={{ aspectRatio: String(preview.aspect) }}
+                    >
+                      {previewUrl ? (
+                        <img
+                          src={previewUrl}
+                          alt={
+                            isAr
+                              ? `معاينة الصورة على ${preview.labelAr}`
+                              : `${preview.labelEn} crop preview`
+                          }
+                          className="absolute inset-0 h-full w-full object-cover"
+                        />
+                      ) : (
+                        <div className="absolute inset-0 grid place-items-center">
+                          <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                        </div>
+                      )}
                     </div>
-                  )}
-                  <div className="pointer-events-none absolute inset-x-3 bottom-3 flex items-end justify-between text-white mix-blend-difference">
-                    <span className="grid h-9 w-9 place-items-center text-3xl font-extralight leading-none">
-                      ‹
-                    </span>
-                    <span className="grid h-9 w-9 place-items-center text-3xl font-extralight leading-none">
-                      ›
-                    </span>
                   </div>
-                </div>
+                ))}
               </div>
             </details>
           )}
