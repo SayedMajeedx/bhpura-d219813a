@@ -471,53 +471,48 @@ input[type="number"] {
   }
 }
 
-.luxury-parallax-container {
-  position: relative;
-  isolation: isolate;
-  width: 100%;
-  overflow: hidden !important;
-  contain: paint;
-  transform: translateZ(0);
-}
+/* Opt-in secondary banners only. The component is not mounted when the store toggle is off. */
+@supports (animation-timeline: view()) {
+  .secondary-banner-parallax {
+    view-timeline-name: --secondary-banner-viewport;
+    view-timeline-axis: block;
+  }
 
-.luxury-parallax-bg {
-  position: absolute;
-  z-index: 0;
-  top: -10%;
-  left: 0;
-  width: 100%;
-  height: 120%;
-  overflow: hidden;
-  background-position: center;
-  background-size: cover;
-  will-change: transform;
-  transform: translate3d(0, 0, 0);
-  backface-visibility: hidden;
-}
+  .secondary-banner-parallax[data-parallax-active="true"] .secondary-banner-parallax__background {
+    animation: secondary-banner-background-drift linear both;
+    animation-timeline: --secondary-banner-viewport;
+    animation-range: entry 0% exit 100%;
+  }
 
-.luxury-parallax-overlay {
-  position: absolute;
-  z-index: 1;
-  inset: 0;
-  pointer-events: none;
-}
+  .secondary-banner-parallax[data-parallax-active="true"] .secondary-banner-parallax__foreground {
+    animation: secondary-banner-foreground-drift linear both;
+    animation-timeline: --secondary-banner-viewport;
+    animation-range: entry 0% exit 100%;
+  }
 
-.luxury-parallax-content {
-  position: relative;
-  z-index: 2;
-  height: 100%;
-}
+  @keyframes secondary-banner-background-drift {
+    from {
+      transform: translate3d(0, -18vh, 0);
+    }
+    to {
+      transform: translate3d(0, 18vh, 0);
+    }
+  }
 
-@media (max-width: 768px), (pointer: coarse) {
-  .luxury-parallax-bg {
-    top: -5%;
-    height: 110%;
+  @keyframes secondary-banner-foreground-drift {
+    from {
+      transform: translate3d(0, 4vh, 0);
+    }
+    to {
+      transform: translate3d(0, -4vh, 0);
+    }
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .luxury-parallax-bg {
+  .secondary-banner-parallax__background,
+  .secondary-banner-parallax__foreground {
+    animation: none !important;
     transform: none !important;
-    will-change: auto;
   }
 }

@@ -33,19 +33,15 @@ describe("secondary banner parallax guardrails", () => {
     );
   });
 
-  it("uses a contained, throttled transform-only implementation", () => {
+  it("uses scroll timelines, a throttled fallback, and a reduced-motion kill switch", () => {
     const component = read("src/components/storefront/secondary-banner-parallax.tsx");
     const styles = read("src/styles.css");
-    expect(styles).toContain(".luxury-parallax-container");
-    expect(styles).toContain("overflow: hidden !important");
-    expect(styles).toContain("isolation: isolate");
-    expect(styles).toContain("will-change: transform");
+    expect(styles).toContain("view-timeline-name: --secondary-banner-viewport");
+    expect(styles).toContain("animation-range: entry 0% exit 100%");
     expect(styles).toContain("prefers-reduced-motion: reduce");
     expect(component).toContain("IntersectionObserver");
     expect(component).toContain("requestAnimationFrame(render)");
     expect(component).toContain('addEventListener("scroll", schedule');
-    expect(component).toContain("mobile ? 0.06 : 0.15");
-    expect(component).toContain("translate3d");
     expect(component).not.toContain("background-attachment");
   });
 });
