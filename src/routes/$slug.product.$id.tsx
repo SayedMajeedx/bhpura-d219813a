@@ -1159,7 +1159,7 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
                       <select
                         value={val}
                         onChange={(e) => set(e.target.value)}
-                        className="w-full h-11 rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                        className="w-full h-11 rounded-md border border-input bg-background px-3 text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                       >
                         <option value="">{t("اختر...", "Select...")}</option>
                         {(f.options ?? []).map((o) => (
@@ -1256,7 +1256,7 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
                             ? "اكتب التفاصيل أو النص المطلوب هنا..."
                             : "Type the required text or details here..."
                         }
-                        className="w-full h-11 rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                        className="w-full h-11 rounded-md border border-input bg-background px-3 text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                       />
                     )}
                   </div>
@@ -1340,7 +1340,10 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
               <div className="text-[10px] uppercase tracking-wider text-muted-foreground truncate">
                 {variant
                   ? [
-                      formatSizeWithUnit(variant.size, variant.size_unit, lang),
+                      (showSizeModeToggle && sizeMode === "custom") ||
+                      (!hasReadySizes && hasCustomFields)
+                        ? t("تفصيل", "Custom Sizing")
+                        : formatSizeWithUnit(variant.size, variant.size_unit, lang),
                       variant.color,
                       variant.fabric,
                     ]
