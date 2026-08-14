@@ -28,6 +28,12 @@ type Props = {
   heroPreview?: boolean;
   title?: string;
   description?: string;
+  /** Optional live overlay title (e.g. section title like "الأكثر مبيعاً") */
+  overlayTitle?: string;
+  /** Optional live overlay subtitle */
+  overlaySubtitle?: string;
+  /** Whether to render live dark gradient overlay */
+  overlayGradient?: boolean;
 };
 
 export async function getCroppedBlob(
@@ -77,6 +83,9 @@ export function ImageCropperDialog({
   heroPreview = false,
   title,
   description,
+  overlayTitle,
+  overlaySubtitle,
+  overlayGradient = false,
 }: Props) {
   const { lang } = useI18n();
   const isAr = lang === "ar";
@@ -209,12 +218,25 @@ export function ImageCropperDialog({
                 showGrid
               />
             )}
-            <span className="pointer-events-none absolute bottom-3 start-3 rounded-full bg-black/65 px-3 py-1 text-[11px] font-medium text-white backdrop-blur">
+            {overlayGradient && (
+              <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/75 via-black/30 to-black/10 z-10" />
+            )}
+            {overlayTitle && (
+              <div className="pointer-events-none absolute bottom-12 start-4 z-20 max-w-[20ch]">
+                <h3 className="font-display text-xl sm:text-2xl font-bold text-white drop-shadow-md">
+                  {overlayTitle}
+                </h3>
+                {overlaySubtitle && (
+                  <p className="text-xs text-white/80 mt-0.5">{overlaySubtitle}</p>
+                )}
+              </div>
+            )}
+            <span className="pointer-events-none absolute bottom-3 start-3 z-30 rounded-full bg-black/65 px-3 py-1 text-[11px] font-medium text-white backdrop-blur">
               {isAr ? "اسحب لتغيير الموضع" : "Drag to reposition"}
             </span>
             {resolvedOutputWidth && resolvedOutputHeight && (
               <span
-                className="pointer-events-none absolute bottom-3 end-3 rounded-full bg-black/65 px-3 py-1 font-mono text-[11px] text-white backdrop-blur"
+                className="pointer-events-none absolute bottom-3 end-3 z-30 rounded-full bg-black/65 px-3 py-1 font-mono text-[11px] text-white backdrop-blur"
                 dir="ltr"
               >
                 {resolvedOutputWidth} × {resolvedOutputHeight}
@@ -298,15 +320,32 @@ export function ImageCropperDialog({
                       style={{ aspectRatio: String(preview.aspect) }}
                     >
                       {previewUrl ? (
-                        <img
-                          src={previewUrl}
-                          alt={
-                            isAr
-                              ? `معاينة الصورة على ${preview.labelAr}`
-                              : `${preview.labelEn} crop preview`
-                          }
-                          className="absolute inset-0 h-full w-full object-cover"
-                        />
+                        <>
+                          <img
+                            src={previewUrl}
+                            alt={
+                              isAr
+                                ? `معاينة الصورة على ${preview.labelAr}`
+                                : `${preview.labelEn} crop preview`
+                            }
+                            className="absolute inset-0 h-full w-full object-cover"
+                          />
+                          {overlayGradient && (
+                            <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-black/10" />
+                          )}
+                          {overlayTitle && (
+                            <div className="pointer-events-none absolute inset-0 flex flex-col justify-end p-2.5">
+                              <h4 className="font-display text-xs font-bold text-white drop-shadow line-clamp-1">
+                                {overlayTitle}
+                              </h4>
+                              {overlaySubtitle && (
+                                <p className="text-[10px] text-white/80 line-clamp-1">
+                                  {overlaySubtitle}
+                                </p>
+                              )}
+                            </div>
+                          )}
+                        </>
                       ) : (
                         <div className="absolute inset-0 grid place-items-center">
                           <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />

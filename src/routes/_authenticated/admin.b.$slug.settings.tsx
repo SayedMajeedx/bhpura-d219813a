@@ -4857,15 +4857,23 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
 
                     <div className="space-y-2">
                       <Label>{isAr ? "صورة اللافتة" : "Banner image"}</Label>
-                      <div className="relative aspect-[2/1] overflow-hidden rounded-xl bg-muted">
+                      <div className="relative aspect-[21/9] overflow-hidden rounded-xl bg-muted shadow-sm">
                         {config.banner_image_url ? (
-                          <ResponsiveImage
-                            src={config.banner_image_url}
-                            preset="hero"
-                            sizes="420px"
-                            alt=""
-                            className="h-full w-full object-cover"
-                          />
+                          <>
+                            <ResponsiveImage
+                              src={config.banner_image_url}
+                              preset="hero"
+                              sizes="420px"
+                              alt=""
+                              className="h-full w-full object-cover"
+                            />
+                            <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent z-10" />
+                            <div className="pointer-events-none absolute bottom-3 start-3 z-20">
+                              <h4 className="font-display text-sm font-bold text-white drop-shadow">
+                                {label}
+                              </h4>
+                            </div>
+                          </>
                         ) : (
                           <div className="flex h-full items-center justify-center text-xs text-muted-foreground">
                             {isAr ? "لا توجد صورة" : "No banner image"}
@@ -4876,7 +4884,7 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
                             type="button"
                             variant="secondary"
                             size="icon"
-                            className="absolute end-2 top-2"
+                            className="absolute end-2 top-2 z-30"
                             aria-label={isAr ? "إزالة صورة اللافتة" : "Remove banner image"}
                             onClick={() => updateEditorialSection(key, { banner_image_url: "" })}
                           >
@@ -4887,6 +4895,8 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
                       <CropUploadButton
                         preset="editorialBanner"
                         heroPreview
+                        overlayTitle={label}
+                        overlayGradient
                         className="w-full"
                         busy={uploadingEditorialAsset === `${key}-banner_image_url`}
                         onCrop={(blob) => uploadEditorialAsset(key, "banner_image_url", blob)}

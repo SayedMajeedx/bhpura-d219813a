@@ -21,6 +21,9 @@ type Props = {
   description?: string;
   heroPreview?: boolean;
   accept?: string;
+  overlayTitle?: string;
+  overlaySubtitle?: string;
+  overlayGradient?: boolean;
 };
 
 const MAX_SOURCE_BYTES = 30 * 1024 * 1024;
@@ -40,6 +43,9 @@ export function CropUploadButton({
   description,
   heroPreview,
   accept = "image/jpeg,image/png,image/webp,image/avif",
+  overlayTitle,
+  overlaySubtitle,
+  overlayGradient,
 }: Props) {
   const { lang } = useI18n();
   const isAr = lang === "ar";
@@ -112,6 +118,9 @@ export function CropUploadButton({
         title={title}
         description={description}
         heroPreview={heroPreview}
+        overlayTitle={overlayTitle}
+        overlaySubtitle={overlaySubtitle}
+        overlayGradient={overlayGradient}
         onCancel={close}
         onConfirm={async (blob) => {
           await onCrop(blob);

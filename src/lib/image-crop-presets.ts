@@ -45,13 +45,17 @@ export const IMAGE_CROP_PRESETS: Record<ImageCropPresetKey, ImageCropPreset> = {
     ],
   },
   editorialBanner: {
-    aspect: 2,
-    outputWidth: 1600,
-    outputHeight: 800,
+    aspect: 1920 / 820,
+    outputWidth: 1920,
+    outputHeight: 820,
     previewAspects: [
-      { labelEn: "Wide screen", labelAr: "شاشة عريضة", aspect: 4 },
-      { labelEn: "Tablet", labelAr: "الجهاز اللوحي", aspect: 2 },
-      { labelEn: "Mobile", labelAr: "الهاتف", aspect: 4 / 3 },
+      {
+        labelEn: "Desktop Wide (21:9)",
+        labelAr: "شاشة الشاشات العريضة (21:9)",
+        aspect: 1920 / 820,
+      },
+      { labelEn: "Tablet (16:9)", labelAr: "الجهاز اللوحي (16:9)", aspect: 16 / 9 },
+      { labelEn: "Mobile (4:3)", labelAr: "الهاتف (4:3)", aspect: 4 / 3 },
     ],
   },
   editorialBackground: {
