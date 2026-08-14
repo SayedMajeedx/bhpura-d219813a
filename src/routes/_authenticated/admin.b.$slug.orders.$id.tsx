@@ -1452,6 +1452,10 @@ function OrderDetail() {
       if (nowDeducting) {
         for (const it of items) {
           if (!it.variant_id) continue;
+          const isCustom =
+            (it.custom_field_values && it.custom_field_values.length > 0) ||
+            (it.selected_variant?.size && String(it.selected_variant.size).includes("تفصيل"));
+          if (isCustom) continue;
           wantByV.set(it.variant_id, (wantByV.get(it.variant_id) ?? 0) + Number(it.quantity));
         }
       }
@@ -2886,12 +2890,17 @@ function OrderDetail() {
                             </span>
                           ) : (
                             <span className="text-[11px] text-muted-foreground">
-                              {variant
-                                ? `${variant.size || ""} ${variant.color || ""}`.trim() ||
-                                  (isAr ? "خيار" : "Variant")
-                                : isAr
-                                  ? "بند مخصص"
-                                  : "Custom Line"}
+                              {(it.custom_field_values && it.custom_field_values.length > 0) ||
+                              String(it.selected_variant?.size ?? "").includes("تفصيل")
+                                ? isAr
+                                  ? "تفصيل خاص"
+                                  : "Custom Tailoring"
+                                : variant
+                                  ? `${variant.size || ""} ${variant.color || ""}`.trim() ||
+                                    (isAr ? "خيار" : "Variant")
+                                  : isAr
+                                    ? "بند مخصص"
+                                    : "Custom Line"}
                             </span>
                           )}
                         </div>
@@ -3074,9 +3083,16 @@ function OrderDetail() {
                           </div>
                           {it.selected_variant && (
                             <div className="flex flex-wrap gap-x-3 gap-y-1">
-                              {it.selected_variant.size && (
+                              {((it.custom_field_values && it.custom_field_values.length > 0) ||
+                                it.selected_variant?.size) && (
                                 <span>
-                                  <b>{isAr ? "المقاس" : "Size"}:</b> {it.selected_variant.size}
+                                  <b>{isAr ? "المقاس" : "Size"}:</b>{" "}
+                                  {(it.custom_field_values && it.custom_field_values.length > 0) ||
+                                  String(it.selected_variant?.size ?? "").includes("تفصيل")
+                                    ? isAr
+                                      ? "تفصيل / قياسات خاصة"
+                                      : "Custom Tailoring"
+                                    : it.selected_variant?.size}
                                 </span>
                               )}
                               {it.selected_variant.color && (
