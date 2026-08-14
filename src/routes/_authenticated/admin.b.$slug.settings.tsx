@@ -4867,9 +4867,8 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
                               alt=""
                               className="h-full w-full object-cover"
                             />
-                            <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent z-10" />
                             <div className="pointer-events-none absolute bottom-3 start-3 z-20">
-                              <h4 className="font-display text-sm font-bold text-white drop-shadow">
+                              <h4 className="font-display text-sm font-bold text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]">
                                 {label}
                               </h4>
                             </div>
@@ -4896,7 +4895,6 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
                         preset="editorialBanner"
                         heroPreview
                         overlayTitle={label}
-                        overlayGradient
                         className="w-full"
                         busy={uploadingEditorialAsset === `${key}-banner_image_url`}
                         onCrop={(blob) => uploadEditorialAsset(key, "banner_image_url", blob)}
