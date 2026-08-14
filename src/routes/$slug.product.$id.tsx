@@ -24,6 +24,8 @@ import {
   Loader2,
   Ruler,
   Scissors,
+  Sparkles,
+  Check,
 } from "lucide-react";
 import { toast } from "sonner";
 import { trackStorefrontEvent } from "@/lib/storefront-analytics";
@@ -500,6 +502,38 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
     });
   }, [brand.slug, product?.id]);
 
+  const { data: customizationOptions = [] } = useQuery({
+    queryKey: ["customization-options", brand.id],
+    enabled: Boolean(brand.id),
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("customization_options")
+        .select("*")
+        .eq("brand_id", brand.id)
+        .order("name");
+      if (error) return [];
+      return data ?? [];
+    },
+    staleTime: 5 * 60_000,
+  });
+
+  const applicableAddons = useMemo(() => {
+    if (!product?.id || !customizationOptions.length) return [];
+    return customizationOptions.filter((c: any) => {
+      const pIds = c.product_ids;
+      if (!pIds || !Array.isArray(pIds) || pIds.length === 0) return true;
+      return pIds.includes(product.id);
+    });
+  }, [product?.id, customizationOptions]);
+
+  const [selectedAddonIds, setSelectedAddonIds] = useState<string[]>([]);
+
+  const toggleAddon = (id: string) => {
+    setSelectedAddonIds((prev) =>
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id],
+    );
+  };
+
   const selectedAddOnPrice = useMemo(() => {
     let total = 0;
     for (const f of customFields) {
@@ -508,8 +542,14 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
         total += parsePriceDelta(val);
       }
     }
+    for (const addonId of selectedAddonIds) {
+      const opt = applicableAddons.find((a: any) => a.id === addonId);
+      if (opt) {
+        total += Number(opt.price_delta || 0);
+      }
+    }
     return total;
-  }, [customFields, cfValues]);
+  }, [customFields, cfValues, selectedAddonIds, applicableAddons]);
 
   const basePrice = Number(product?.base_price || 0);
 
@@ -664,6 +704,19 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
         };
       })
       .filter((v) => v.value.length > 0);
+
+    const chosenAddons = applicableAddons.filter((a: any) => selectedAddonIds.includes(a.id));
+    for (const addon of chosenAddons) {
+      const delta = Number(addon.price_delta || 0);
+      custom.push({
+        key: `addon_${addon.id}`,
+        label_ar: addon.name,
+        label_en: addon.name,
+        value: delta > 0 ? `+ ${formatPrice(delta, currency, lang)}` : t("مجاني", "Free"),
+        type: "select",
+        price_delta: delta,
+      });
+    }
 
     const fileField = activeCustomFields.find((f) => f.type === "file");
     const file_url = fileField ? (cfValues[fileField.key] ?? "").trim() : "";
@@ -1109,6 +1162,57 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
                     </div>
                   </div>
                 )}
+            </div>
+          )}
+
+          {applicableAddons.length > 0 && (
+            <div className="mb-6 space-y-3 rounded-xl border bg-card p-4 shadow-sm">
+              <div className="flex items-center gap-2 text-sm font-semibold">
+                <Sparkles className="h-4 w-4 text-primary" />
+                <span>
+                  {t("الإضافات والتخصيصات المتاحة", "Available Add-ons & Customizations")}
+                </span>
+              </div>
+              <div className="grid gap-2">
+                {applicableAddons.map((addon: any) => {
+                  const isSelected = selectedAddonIds.includes(addon.id);
+                  const delta = Number(addon.price_delta || 0);
+                  return (
+                    <button
+                      key={addon.id}
+                      type="button"
+                      onClick={() => toggleAddon(addon.id)}
+                      className={`flex items-center justify-between gap-3 rounded-lg border p-3 text-start transition-all ${
+                        isSelected
+                          ? "border-primary bg-primary/5 text-primary font-medium ring-1 ring-primary"
+                          : "border-border hover:border-muted-foreground/40 bg-background"
+                      }`}
+                    >
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <div
+                          className={`flex h-5 w-5 shrink-0 items-center justify-center rounded border transition-colors ${
+                            isSelected
+                              ? "bg-primary border-primary text-primary-foreground"
+                              : "border-muted-foreground/40"
+                          }`}
+                        >
+                          {isSelected && <Check className="h-3.5 w-3.5 stroke-[3]" />}
+                        </div>
+                        <span className="text-sm truncate">{addon.name}</span>
+                      </div>
+                      {delta > 0 ? (
+                        <span className="shrink-0 text-xs font-semibold dir-ltr">
+                          + {formatPrice(delta, currency, lang)}
+                        </span>
+                      ) : (
+                        <span className="shrink-0 text-xs text-muted-foreground font-medium">
+                          {t("مجاني", "Free")}
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           )}
 
