@@ -49,9 +49,9 @@ export function StorefrontPageContent({
         <ResponsiveImage
           src={page.image_url}
           alt={title ?? ""}
-          preset="content"
+          preset="hero"
           sizes="(min-width: 1024px) 960px, 100vw"
-          className="mb-8 h-auto max-h-[350px] w-full rounded-xl object-cover"
+          className="mb-8 aspect-video w-full rounded-2xl object-cover shadow-sm"
         />
       )}
       {title && (

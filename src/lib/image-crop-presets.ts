@@ -6,7 +6,8 @@ export type ImageCropPresetKey =
   | "categoryCover"
   | "productPortrait"
   | "pageBanner"
-  | "pageInline";
+  | "pageInline"
+  | "logo";
 
 export type ImageCropPreset = {
   aspect: number;
@@ -38,6 +39,10 @@ export const IMAGE_CROP_PRESETS: Record<ImageCropPresetKey, ImageCropPreset> = {
     aspect: 2,
     outputWidth: 1600,
     outputHeight: 800,
+    previewAspects: [
+      { labelEn: "Banner card (2:1)", labelAr: "بطاقة البنر (2:1)", aspect: 2 },
+      { labelEn: "Mobile view", labelAr: "عرض الهاتف", aspect: 16 / 9 },
+    ],
   },
   editorialBanner: {
     aspect: 2,
@@ -58,21 +63,42 @@ export const IMAGE_CROP_PRESETS: Record<ImageCropPresetKey, ImageCropPreset> = {
     aspect: 1,
     outputWidth: 1200,
     outputHeight: 1200,
+    previewAspects: [
+      { labelEn: "Square cover (1:1)", labelAr: "غلاف مربع (1:1)", aspect: 1 },
+      { labelEn: "Menu badge", labelAr: "أيقونة القائمة", aspect: 1 },
+    ],
   },
   productPortrait: {
     aspect: 3 / 4,
     outputWidth: 1200,
     outputHeight: 1600,
+    previewAspects: [
+      { labelEn: "Product Card (3:4)", labelAr: "بطاقة المنتج (3:4)", aspect: 3 / 4 },
+      { labelEn: "Detail Gallery (3:4)", labelAr: "معرض التفاصيل (3:4)", aspect: 3 / 4 },
+    ],
   },
   pageBanner: {
     aspect: 16 / 9,
     outputWidth: 1600,
     outputHeight: 900,
+    previewAspects: [
+      { labelEn: "Page Banner (16:9)", labelAr: "لافتة الصفحة (16:9)", aspect: 16 / 9 },
+      { labelEn: "Header Fit", labelAr: "شريط العنوان", aspect: 21 / 9 },
+    ],
   },
   pageInline: {
     aspect: 4 / 3,
     outputWidth: 1200,
     outputHeight: 900,
+  },
+  logo: {
+    aspect: 1,
+    outputWidth: 1200,
+    outputHeight: 1200,
+    previewAspects: [
+      { labelEn: "Square Logo (1:1)", labelAr: "شعار مربع (1:1)", aspect: 1 },
+      { labelEn: "Header Badge", labelAr: "شريط الهيدر", aspect: 1 },
+    ],
   },
 };
 

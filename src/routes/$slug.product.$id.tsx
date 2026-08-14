@@ -516,7 +516,7 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
   if (isLoading && !product) {
     return (
       <div className="mx-auto max-w-6xl px-4 sm:px-6 py-8 grid md:grid-cols-2 gap-8">
-        <Skeleton className="aspect-square rounded-xl" />
+        <Skeleton className="aspect-[3/4] rounded-xl" />
         <div className="space-y-3">
           <Skeleton className="h-8 w-2/3" />
           <Skeleton className="h-6 w-1/3" />
@@ -700,7 +700,7 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
     <div className="mx-auto max-w-6xl px-4 sm:px-6 py-3 sm:py-10 pb-28 md:pb-10">
       <div className="grid md:grid-cols-2 gap-4 sm:gap-8">
         <div>
-          <div className="relative aspect-square bg-muted rounded-2xl overflow-hidden">
+          <div className="relative aspect-[3/4] bg-muted rounded-2xl overflow-hidden">
             {variant?.image_url ? (
               <ResponsiveImage
                 src={variant.image_url}

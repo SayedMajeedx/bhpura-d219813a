@@ -394,7 +394,7 @@ function PromoCards() {
             {card.image_url && (
               <ResponsiveImage
                 src={card.image_url}
-                preset="content"
+                preset="hero"
                 sizes="(min-width: 640px) 50vw, 100vw"
                 alt=""
                 className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"

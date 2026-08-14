@@ -43,9 +43,13 @@ export async function getCroppedBlob(
     img.onerror = reject;
     img.src = imageSrc;
   });
+  const sourceAspect = area.width > 0 && area.height > 0 ? area.width / area.height : 1;
+  const canvasWidth = outputWidth ?? Math.round(area.width);
+  const canvasHeight = outputHeight ?? Math.round(canvasWidth / sourceAspect);
+
   const canvas = document.createElement("canvas");
-  canvas.width = outputWidth ?? Math.round(area.width);
-  canvas.height = outputHeight ?? Math.round(area.height);
+  canvas.width = Math.max(1, Math.round(canvasWidth));
+  canvas.height = Math.max(1, Math.round(canvasHeight));
   const ctx = canvas.getContext("2d");
   if (!ctx) throw new Error("Canvas unsupported");
   ctx.imageSmoothingEnabled = true;
@@ -86,7 +90,7 @@ export function ImageCropperDialog({
   const resolvedOutputWidth = cropPreset?.outputWidth ?? outputWidth;
   const resolvedOutputHeight = cropPreset?.outputHeight ?? outputHeight;
   const previewAspects = cropPreset?.previewAspects ?? [
-    { labelEn: "Final crop", labelAr: "القص النهائي", aspect },
+    { labelEn: "Storefront wrapper preview", labelAr: "معاينة إطار الواجهة", aspect },
   ];
 
   useEffect(() => {
@@ -97,7 +101,7 @@ export function ImageCropperDialog({
   }, [imageSrc, open]);
 
   useEffect(() => {
-    if (!heroPreview || !open || !imageSrc || !area) {
+    if (!open || !imageSrc || !area) {
       setPreviewUrl((current) => {
         if (current) URL.revokeObjectURL(current);
         return null;
@@ -130,7 +134,7 @@ export function ImageCropperDialog({
       disposed = true;
       window.clearTimeout(timer);
     };
-  }, [area, aspect, heroPreview, imageSrc, open]);
+  }, [area, aspect, imageSrc, open]);
 
   useEffect(
     () => () => {
@@ -272,10 +276,10 @@ export function ImageCropperDialog({
             </div>
           </div>
 
-          {heroPreview && imageSrc && (
-            <details className="group rounded-xl border bg-background">
-              <summary className="flex cursor-pointer list-none items-center justify-between px-3 py-2 text-sm font-medium [&::-webkit-details-marker]:hidden">
-                <span>{isAr ? "معاينة الواجهة" : "Storefront preview"}</span>
+          {imageSrc && (
+            <details className="group rounded-xl border bg-background" open>
+              <summary className="flex cursor-pointer list-none items-center justify-between px-3.5 py-2.5 text-sm font-semibold [&::-webkit-details-marker]:hidden">
+                <span>{isAr ? "معاينة المظهر في الواجهة" : "Live Storefront Wrapper Preview"}</span>
                 <span
                   aria-hidden="true"
                   className="text-muted-foreground transition-transform group-open:rotate-180"
@@ -283,14 +287,14 @@ export function ImageCropperDialog({
                   ⌄
                 </span>
               </summary>
-              <div className="grid gap-3 px-3 pb-3 sm:grid-cols-3">
+              <div className="grid gap-3 px-3.5 pb-3.5 sm:grid-cols-2 md:grid-cols-3">
                 {previewAspects.map((preview) => (
                   <div key={preview.labelEn} className="space-y-1.5">
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-xs font-medium text-muted-foreground">
                       {isAr ? preview.labelAr : preview.labelEn}
                     </p>
                     <div
-                      className="relative mx-auto w-full overflow-hidden rounded-md border bg-muted"
+                      className="relative mx-auto w-full overflow-hidden rounded-xl border bg-muted shadow-sm"
                       style={{ aspectRatio: String(preview.aspect) }}
                     >
                       {previewUrl ? (

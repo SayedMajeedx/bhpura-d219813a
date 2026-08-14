@@ -718,7 +718,7 @@ function Settings() {
     }
   };
 
-  const handleUpload = async (file: File, kind: "logo" | "favicon" | "font") => {
+  const handleUpload = async (file: File | Blob, kind: "logo" | "favicon" | "font") => {
     try {
       setUploading(kind);
       const url = await uploadPublicMedia(brandId, file, kind);
@@ -865,23 +865,16 @@ function Settings() {
                     placeholder="https://..."
                     onChange={(e) => setF({ ...f, logo_url: e.target.value })}
                   />
-                  <input
-                    ref={logoInput}
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={(e) => e.target.files?.[0] && handleUpload(e.target.files[0], "logo")}
-                  />
-                  <Button
-                    type="button"
-                    variant="outline"
+                  <CropUploadButton
+                    onCrop={(blob) => handleUpload(blob, "logo")}
+                    preset="logo"
+                    busy={uploading === "logo"}
                     size="icon"
-                    aria-label={lang === "ar" ? "رفع شعار المتجر" : "Upload store logo"}
-                    onClick={() => logoInput.current?.click()}
-                    disabled={uploading === "logo"}
+                    variant="outline"
+                    title={lang === "ar" ? "ضبط وضغط شعار المتجر" : "Frame and crop store logo"}
                   >
                     <Upload className="h-4 w-4" />
-                  </Button>
+                  </CropUploadButton>
                 </div>
               </div>
               <div>
