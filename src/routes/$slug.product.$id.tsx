@@ -742,10 +742,10 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
       : 0;
 
   return (
-    <div className="mx-auto max-w-6xl px-4 sm:px-6 py-3 sm:py-10 pb-28 md:pb-10">
-      <div className="grid md:grid-cols-2 gap-4 sm:gap-8">
-        <div>
-          <div className="relative aspect-[3/4] bg-muted rounded-2xl overflow-hidden shadow-sm border border-border/40">
+    <div className="mx-auto max-w-5xl px-4 sm:px-6 py-3 sm:py-8 pb-28 md:pb-10">
+      <div className="grid md:grid-cols-12 gap-6 lg:gap-10 items-start">
+        <div className="md:col-span-5 max-w-[420px] mx-auto md:max-w-none w-full">
+          <div className="relative aspect-[3/4] max-h-[500px] bg-muted rounded-2xl overflow-hidden shadow-sm border border-border/40 mx-auto w-full">
             {media.length > 0 ? (
               <>
                 {media[mediaIdx % media.length].type === "video" ? (
@@ -854,7 +854,7 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
           )}
         </div>
 
-        <div>
+        <div className="md:col-span-7">
           <div className="mb-1 flex items-start justify-between gap-3 sm:mb-2">
             <h1 className="font-display text-2xl sm:text-3xl">{displayName}</h1>
             <Button
