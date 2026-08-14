@@ -200,7 +200,7 @@ export type CustomFieldValue = {
 
 export type CartItem = {
   cart_line_id: string;
-  variant_id: string;
+  variant_id: string | null;
   product_id: string;
   name: string;
   name_ar?: string | null;

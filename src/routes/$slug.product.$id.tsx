@@ -675,7 +675,7 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
 
     addToCart({
       cart_line_id: "",
-      variant_id: targetVariant?.id || "",
+      variant_id: targetVariant?.id ?? null,
       product_id: product.id,
       name: displayName,
       name_ar: product.name_ar,

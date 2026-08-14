@@ -446,7 +446,7 @@ function Checkout() {
     if (!code) return toast.error(t("أدخل رمز الخصم", "Enter a promo code"));
     setCheckingPromo(true);
     const promoItems = cart.map((item) => ({
-      variant_id: item.variant_id,
+      variant_id: item.variant_id && item.variant_id.trim() ? item.variant_id : null,
       line_total: Number((item.price * item.qty).toFixed(3)),
     }));
     const { data, error } = await supabase.rpc("validate_promo_code" as any, {
@@ -614,7 +614,7 @@ function Checkout() {
             save_to_profile: Boolean(session?.user && saveToProfile),
           },
           p_items: cart.map((c) => ({
-            variant_id: c.variant_id,
+            variant_id: c.variant_id && c.variant_id.trim() ? c.variant_id : null,
             quantity: c.qty,
             selected_variant: {
               size: c.size,
