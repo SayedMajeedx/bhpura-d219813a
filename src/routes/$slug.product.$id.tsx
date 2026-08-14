@@ -339,6 +339,17 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
       .slice(0, 8);
   }, [bestSellerRows, product?.id, recommendationCatalog, relatedIds]);
 
+  const variants = useMemo<Variant[]>(() => {
+    const list = product?.product_variants ?? [];
+    return [...list].sort((a, b) => {
+      const [an, al] = variantSortKey(a);
+      const [bn, bl] = variantSortKey(b);
+      if (an !== bn) return an - bn;
+      return al.localeCompare(bl, undefined, { numeric: true, sensitivity: "base" });
+    });
+  }, [product]);
+  const variant = variantId ? variants.find((v) => v.id === variantId) : null;
+
   const media = useMemo(() => {
     if (!product) return [];
     const arr = Array.isArray(product.media)
@@ -350,21 +361,22 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
           poster_url?: string;
         }>)
       : [];
-    if (arr.length > 0) return arr;
-    if (product.image_url) return [{ type: "image" as const, url: product.image_url }];
-    return [];
-  }, [product]);
+    const list = [...arr];
+    if (product.image_url && !list.some((m) => m.url === product.image_url)) {
+      list.unshift({ type: "image" as const, url: product.image_url });
+    }
+    if (variant?.image_url && !list.some((m) => m.url === variant.image_url)) {
+      list.unshift({ type: "image" as const, url: variant.image_url });
+    }
+    return list;
+  }, [product, variant?.image_url]);
 
-  const variants = useMemo<Variant[]>(() => {
-    const list = product?.product_variants ?? [];
-    return [...list].sort((a, b) => {
-      const [an, al] = variantSortKey(a);
-      const [bn, bl] = variantSortKey(b);
-      if (an !== bn) return an - bn;
-      return al.localeCompare(bl, undefined, { numeric: true, sensitivity: "base" });
-    });
-  }, [product]);
-  const variant = variantId ? variants.find((v) => v.id === variantId) : null;
+  useEffect(() => {
+    if (variant?.image_url) {
+      const idx = media.findIndex((m) => m.url === variant.image_url);
+      if (idx !== -1) setMediaIdx(idx);
+    }
+  }, [variant?.image_url, media]);
 
   const uniqueColors = useMemo(() => {
     const colors = variants.map((v) => v.color).filter(Boolean) as string[];
@@ -733,30 +745,32 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
     <div className="mx-auto max-w-6xl px-4 sm:px-6 py-3 sm:py-10 pb-28 md:pb-10">
       <div className="grid md:grid-cols-2 gap-4 sm:gap-8">
         <div>
-          <div className="relative aspect-[3/4] bg-muted rounded-2xl overflow-hidden">
-            {variant?.image_url ? (
-              <ResponsiveImage
-                src={variant.image_url}
-                preset="product"
-                sizes="(min-width: 1024px) 55vw, 100vw"
-                alt={displayName}
-                className="w-full h-full object-cover"
-                fetchPriority="high"
-                loading="eager"
-              />
-            ) : media.length > 0 ? (
+          <div className="relative aspect-[3/4] bg-muted rounded-2xl overflow-hidden shadow-sm border border-border/40">
+            {media.length > 0 ? (
               <>
-                {media[mediaIdx].type === "video" ? (
+                {media[mediaIdx % media.length].type === "video" ? (
                   <OptimizedVideo
-                    src={media[mediaIdx].stream_iframe_url ? undefined : media[mediaIdx].url}
-                    streamIframeUrl={media[mediaIdx].stream_iframe_url}
-                    poster={media[mediaIdx].poster_url ?? media[mediaIdx].url}
-                    className="h-full w-full bg-black object-contain"
-                    wrapperClassName="h-full w-full overflow-hidden bg-black"
+                    src={
+                      media[mediaIdx % media.length].stream_iframe_url
+                        ? undefined
+                        : media[mediaIdx % media.length].url
+                    }
+                    streamIframeUrl={media[mediaIdx % media.length].stream_iframe_url}
+                    poster={
+                      media[mediaIdx % media.length].poster_url ??
+                      media[mediaIdx % media.length].url
+                    }
+                    className="h-full w-full object-cover"
+                    wrapperClassName="h-full w-full overflow-hidden bg-black/90"
+                    autoPlay
+                    loop
+                    muted
+                    playsInline
+                    controls
                   />
                 ) : (
                   <ResponsiveImage
-                    src={media[mediaIdx].url}
+                    src={media[mediaIdx % media.length].url}
                     preset="product"
                     sizes="(min-width: 1024px) 55vw, 100vw"
                     alt={displayName}
@@ -772,34 +786,24 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
                       variant="ghost"
                       size="icon"
                       onClick={() => setMediaIdx((i) => (i - 1 + media.length) % media.length)}
-                      className="absolute top-1/2 left-2 -translate-y-1/2 h-11 w-11 bg-white/80 rounded-full shadow hover:bg-white"
-                      aria-label="previous"
+                      className="absolute top-1/2 left-3 -translate-y-1/2 h-11 w-11 bg-background/90 hover:bg-background text-foreground rounded-full shadow-md border border-border/50 transition-transform active:scale-95 z-20"
+                      aria-label="Previous media"
                     >
-                      <ChevronLeft className="h-4 w-4" />
+                      <ChevronLeft className="h-5 w-5" />
                     </Button>
                     <Button
                       type="button"
                       variant="ghost"
                       size="icon"
                       onClick={() => setMediaIdx((i) => (i + 1) % media.length)}
-                      className="absolute top-1/2 right-2 -translate-y-1/2 h-11 w-11 bg-white/80 rounded-full shadow hover:bg-white"
-                      aria-label="next"
+                      className="absolute top-1/2 right-3 -translate-y-1/2 h-11 w-11 bg-background/90 hover:bg-background text-foreground rounded-full shadow-md border border-border/50 transition-transform active:scale-95 z-20"
+                      aria-label="Next media"
                     >
-                      <ChevronRight className="h-4 w-4" />
+                      <ChevronRight className="h-5 w-5" />
                     </Button>
                   </>
                 )}
               </>
-            ) : product.image_url ? (
-              <ResponsiveImage
-                src={product.image_url}
-                preset="product"
-                sizes="(min-width: 1024px) 55vw, 100vw"
-                alt={displayName}
-                className="w-full h-full object-cover"
-                fetchPriority="high"
-                loading="eager"
-              />
             ) : (
               <div className="w-full h-full grid place-items-center text-muted-foreground">
                 {t("لا توجد صورة", "No image")}
@@ -807,32 +811,44 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
             )}
           </div>
           {media.length > 1 && (
-            <div className="mt-3 flex gap-2 overflow-x-auto">
+            <div className="mt-3 flex gap-2.5 overflow-x-auto pb-2 scrollbar-thin">
               {media.map((m, i) => (
-                <Button
+                <button
                   key={i}
                   type="button"
-                  variant="ghost"
                   onClick={() => setMediaIdx(i)}
-                  className={`h-16 w-16 p-0 rounded-lg overflow-hidden shrink-0 border-2 ${
-                    i === mediaIdx ? "border-current" : "border-transparent"
+                  className={`relative h-18 w-18 rounded-xl overflow-hidden shrink-0 border-2 transition-all ${
+                    i === mediaIdx % media.length
+                      ? "ring-2 ring-primary border-primary shadow-sm opacity-100"
+                      : "border-border/60 hover:border-primary/50 opacity-75 hover:opacity-100"
                   }`}
-                  style={i === mediaIdx ? { borderColor: primary } : undefined}
+                  style={i === mediaIdx % media.length ? { borderColor: primary } : undefined}
                 >
                   {m.type === "video" ? (
-                    <div className="w-full h-full bg-black grid place-items-center text-white text-[10px]">
-                      ▶
+                    <div className="relative w-full h-full bg-black/90 flex items-center justify-center">
+                      {m.poster_url || m.url ? (
+                        <img
+                          src={m.poster_url || m.url}
+                          alt=""
+                          className="w-full h-full object-cover opacity-60"
+                        />
+                      ) : null}
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+                        <div className="h-6 w-6 rounded-full bg-white/90 text-black flex items-center justify-center text-[10px] font-bold shadow-md">
+                          ▶
+                        </div>
+                      </div>
                     </div>
                   ) : (
                     <ResponsiveImage
                       src={m.url}
                       preset="thumb"
                       sizes="80px"
-                      alt=""
+                      alt={displayName}
                       className="w-full h-full object-cover"
                     />
                   )}
-                </Button>
+                </button>
               ))}
             </div>
           )}
