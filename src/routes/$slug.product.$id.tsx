@@ -1355,11 +1355,40 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
                         type={f.type === "number" ? "number" : "text"}
                         value={val}
                         onChange={(e) => set(e.target.value)}
-                        placeholder={
-                          lang === "ar"
-                            ? "اكتب التفاصيل أو النص المطلوب هنا..."
-                            : "Type the required text or details here..."
-                        }
+                        placeholder={(() => {
+                          if (lang === "ar") {
+                            if ((f as any).placeholder_ar) return (f as any).placeholder_ar;
+                            if ((f as any).placeholder) return (f as any).placeholder;
+                          } else {
+                            if ((f as any).placeholder_en) return (f as any).placeholder_en;
+                            if ((f as any).placeholder) return (f as any).placeholder;
+                          }
+                          const lStr = (
+                            (lang === "ar" ? f.label_ar || f.label_en : f.label_en || f.label_ar) ||
+                            f.key ||
+                            ""
+                          ).toLowerCase();
+                          if (lStr.includes("length") || lStr.includes("طول")) {
+                            return lang === "ar" ? "مثال: 56 (بالإنش)" : "e.g. 56 (in inches)";
+                          }
+                          if (lStr.includes("bust") || lStr.includes("صدر")) {
+                            return lang === "ar" ? "مثال: 22 (بالإنش)" : "e.g. 22 (in inches)";
+                          }
+                          if (lStr.includes("sleeve") || lStr.includes("كم")) {
+                            return lang === "ar" ? "مثال: 28 (بالإنش)" : "e.g. 28 (in inches)";
+                          }
+                          if (lStr.includes("shoulder") || lStr.includes("كتف")) {
+                            return lang === "ar" ? "مثال: 15 (بالإنش)" : "e.g. 15 (in inches)";
+                          }
+                          if (/waist|hips|height|size|measurement|خصر|ورك|قياس|مقاس/.test(lStr)) {
+                            return lang === "ar"
+                              ? "أدخل القياس بالإنش (مثال: 56)"
+                              : "Enter measurement in inches (e.g. 56)";
+                          }
+                          return lang === "ar"
+                            ? "أدخل التفاصيل المطلوبة..."
+                            : "Type required details here...";
+                        })()}
                         className="w-full h-11 rounded-md border border-input bg-background px-3 text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                       />
                     )}
