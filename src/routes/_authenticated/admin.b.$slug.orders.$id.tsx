@@ -3148,24 +3148,30 @@ function OrderDetail() {
                       <div>
                         <Label className="text-xs">{t("orderDetail.customizations")}</Label>
                         <div className="flex flex-wrap gap-2 mt-1">
-                          {(customQ.data ?? []).map((c: any) => {
-                            const active = it.customizations.some((x) => x.name === c.name);
-                            return (
-                              <button
-                                key={c.id}
-                                type="button"
-                                onClick={() =>
-                                  toggleCustom(idx, {
-                                    name: c.name,
-                                    price_delta: Number(c.price_delta),
-                                  })
-                                }
-                                className={`text-xs px-2 py-1 rounded-full border ${active ? "bg-primary text-primary-foreground border-primary" : "border-border hover:bg-secondary"}`}
-                              >
-                                {c.name} +{formatMoney(c.price_delta, currency)}
-                              </button>
-                            );
-                          })}
+                          {(customQ.data ?? [])
+                            .filter((c: any) => {
+                              const pIds = Array.isArray(c.product_ids) ? c.product_ids : [];
+                              if (pIds.length === 0) return true;
+                              return it.product_id ? pIds.includes(it.product_id) : true;
+                            })
+                            .map((c: any) => {
+                              const active = it.customizations.some((x) => x.name === c.name);
+                              return (
+                                <button
+                                  key={c.id}
+                                  type="button"
+                                  onClick={() =>
+                                    toggleCustom(idx, {
+                                      name: c.name,
+                                      price_delta: Number(c.price_delta),
+                                    })
+                                  }
+                                  className={`text-xs px-2 py-1 rounded-full border ${active ? "bg-primary text-primary-foreground border-primary" : "border-border hover:bg-secondary"}`}
+                                >
+                                  {c.name} +{formatMoney(c.price_delta, currency)}
+                                </button>
+                              );
+                            })}
                           {(customQ.data ?? []).length === 0 && (
                             <span className="text-xs text-muted-foreground">
                               {t("orderDetail.addonsHint")}

@@ -1,4 +1,4 @@
-﻿export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[];
+export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[];
 
 export type Database = {
   // Allows to automatically instantiate createClient with right options
@@ -1014,6 +1014,7 @@ export type Database = {
           id: string;
           name: string;
           price_delta: number;
+          product_ids: string[] | null;
           user_id: string;
         };
         Insert: {
@@ -1022,6 +1023,7 @@ export type Database = {
           id?: string;
           name: string;
           price_delta?: number;
+          product_ids?: string[] | null;
           user_id: string;
         };
         Update: {
@@ -1030,6 +1032,7 @@ export type Database = {
           id?: string;
           name?: string;
           price_delta?: number;
+          product_ids?: string[] | null;
           user_id?: string;
         };
         Relationships: [
