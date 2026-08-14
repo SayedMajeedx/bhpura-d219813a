@@ -1103,8 +1103,8 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
                   <Scissors className="h-4 w-4 shrink-0" />
                   <span>
                     {t(
-                      "أدخلي قياسات التفصيل الخاصة بكِ أدناه بدقة:",
-                      "Enter your custom tailoring measurements below:",
+                      "يرجى إدخال قياسات التفصيل أدناه بدقة:",
+                      "Please enter your custom tailoring measurements below accurately:",
                     )}
                   </span>
                 </div>
