@@ -22,6 +22,8 @@ import {
   Upload,
   X,
   Loader2,
+  Ruler,
+  Scissors,
 } from "lucide-react";
 import { toast } from "sonner";
 import { trackStorefrontEvent } from "@/lib/storefront-analytics";
@@ -184,6 +186,7 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
   const [selectedColor, setSelectedColor] = useState<string | null>(null);
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
   const [selectedFabric, setSelectedFabric] = useState<string | null>(null);
+  const [sizeMode, setSizeMode] = useState<"ready" | "custom">("ready");
   const [uploadingField, setUploadingField] = useState<Record<string, boolean>>({});
   const optionsRef = useRef<HTMLDivElement | null>(null);
 
@@ -579,16 +582,37 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
     optionsRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
   };
 
+  const hasReadySizes = uniqueSizes.length > 0 || hasVariants;
+  const hasCustomFields = customFields.length > 0;
+  const showSizeModeToggle = hasReadySizes && hasCustomFields;
+
   const validate = (): string | null => {
-    if (hasVariants && !variant) {
-      return t("يرجى اختيار مقاس/خيار أولاً", "Please select a size or option first");
-    }
-    if (variant && variant.stock_main <= 0) {
-      return t("هذا الخيار غير متوفر حالياً", "This option is out of stock");
-    }
-    for (const f of customFields) {
-      if (f.required && !(cfValues[f.key] ?? "").trim()) {
-        return t(`الحقل مطلوب: ${cfLabel(f)}`, `Required field: ${cfLabel(f)}`);
+    if (showSizeModeToggle) {
+      if (sizeMode === "ready") {
+        if (hasVariants && !variant) {
+          return t("يرجى اختيار مقاس جاهز أولاً", "Please select a ready size first");
+        }
+        if (variant && variant.stock_main <= 0) {
+          return t("هذا المقاس غير متوفر حالياً", "This size is out of stock");
+        }
+      } else {
+        for (const f of customFields) {
+          if (f.required && !(cfValues[f.key] ?? "").trim()) {
+            return t(`الحقل مطلوب: ${cfLabel(f)}`, `Required field: ${cfLabel(f)}`);
+          }
+        }
+      }
+    } else {
+      if (hasVariants && !variant) {
+        return t("يرجى اختيار مقاس/خيار أولاً", "Please select a size or option first");
+      }
+      if (variant && variant.stock_main <= 0) {
+        return t("هذا الخيار غير متوفر حالياً", "This option is out of stock");
+      }
+      for (const f of customFields) {
+        if (f.required && !(cfValues[f.key] ?? "").trim()) {
+          return t(`الحقل مطلوب: ${cfLabel(f)}`, `Required field: ${cfLabel(f)}`);
+        }
       }
     }
     return null;
@@ -602,7 +626,9 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
       scrollToOptions();
       return;
     }
-    if (!variant) {
+    const targetVariant =
+      variant || (showSizeModeToggle && sizeMode === "custom" ? variants[0] : null);
+    if (!targetVariant && hasVariants && (!showSizeModeToggle || sizeMode === "ready")) {
       const msg = t("يرجى اختيار خيار أولاً", "Please select an option first");
       setErrorMsg(msg);
       toast.error(msg);
@@ -610,7 +636,9 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
       return;
     }
     setErrorMsg(null);
-    const custom = customFields
+
+    const activeCustomFields = showSizeModeToggle && sizeMode === "ready" ? [] : customFields;
+    const custom = activeCustomFields
       .map((f) => {
         const val = (cfValues[f.key] ?? "").trim();
         const price_delta = parsePriceDelta(val);
@@ -625,9 +653,9 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
       })
       .filter((v) => v.value.length > 0);
 
-    const fileField = customFields.find((f) => f.type === "file");
+    const fileField = activeCustomFields.find((f) => f.type === "file");
     const file_url = fileField ? (cfValues[fileField.key] ?? "").trim() : "";
-    const textField = customFields.find((f) => f.type === "text");
+    const textField = activeCustomFields.find((f) => f.type === "text");
     const custom_text = textField ? (cfValues[textField.key] ?? "").trim() : "";
 
     const selected_customizations = {
@@ -640,25 +668,30 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
       file_url,
     };
 
+    const effectiveSize =
+      showSizeModeToggle && sizeMode === "custom"
+        ? t("تفصيل / قياسات خاصة", "Custom Tailoring")
+        : targetVariant?.size || null;
+
     addToCart({
       cart_line_id: "",
-      variant_id: variant!.id,
+      variant_id: targetVariant?.id || "",
       product_id: product.id,
       name: displayName,
       name_ar: product.name_ar,
       name_en: product.name_en,
       image:
-        variant?.image_url ||
+        targetVariant?.image_url ||
         media.find((m) => m.type === "image")?.url ||
         product.image_url ||
         null,
       price: displayPrice,
       original_price: originalPriceWithAddons > displayPrice ? originalPriceWithAddons : null,
-      size: variant!.size,
-      color: variant!.color,
-      fabric: variant!.fabric,
+      size: effectiveSize,
+      color: targetVariant?.color || null,
+      fabric: targetVariant?.fabric || null,
       qty,
-      max_stock: variant!.stock_main,
+      max_stock: targetVariant?.stock_main ?? 999,
       custom_fields: custom,
       selected_customizations,
     } as any);
@@ -843,8 +876,46 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
             </p>
           )}
 
-          {hasVariants && (
+          {(hasVariants || customFields.length > 0) && (
             <div ref={optionsRef} className="mb-6 space-y-4 scroll-mt-24">
+              {showSizeModeToggle && (
+                <div className="rounded-xl border bg-muted/30 p-2">
+                  <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 px-1">
+                    {t("طريقة اختيار المقاس", "Sizing Method")}
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Button
+                      type="button"
+                      variant={sizeMode === "ready" ? "default" : "outline"}
+                      onClick={() => {
+                        setSizeMode("ready");
+                        setErrorMsg(null);
+                      }}
+                      className={`h-11 rounded-lg font-semibold flex items-center justify-center gap-2 ${
+                        sizeMode === "ready" ? "shadow-sm" : ""
+                      }`}
+                    >
+                      <Ruler className="h-4 w-4" />
+                      <span>{t("مقاس جاهز", "Ready Size")}</span>
+                    </Button>
+                    <Button
+                      type="button"
+                      variant={sizeMode === "custom" ? "default" : "outline"}
+                      onClick={() => {
+                        setSizeMode("custom");
+                        setErrorMsg(null);
+                      }}
+                      className={`h-11 rounded-lg font-semibold flex items-center justify-center gap-2 ${
+                        sizeMode === "custom" ? "shadow-sm" : ""
+                      }`}
+                    >
+                      <Scissors className="h-4 w-4" />
+                      <span>{t("مقاس تفصيل", "Custom Tailoring")}</span>
+                    </Button>
+                  </div>
+                </div>
+              )}
+
               {/* 🔵 Circular Color Swatches */}
               {uniqueColors.length > 0 && (
                 <div>
@@ -908,7 +979,7 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
               )}
 
               {/* 📏 Size Selection Pills */}
-              {uniqueSizes.length > 0 && (
+              {uniqueSizes.length > 0 && (!showSizeModeToggle || sizeMode === "ready") && (
                 <div>
                   <div className="text-sm font-semibold mb-2">
                     {(lang === "ar"
@@ -986,7 +1057,9 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
               {/* Fallback general buttons if no properties could be isolated */}
               {uniqueColors.length === 0 &&
                 uniqueSizes.length === 0 &&
-                uniqueFabrics.length === 0 && (
+                uniqueFabrics.length === 0 &&
+                hasVariants &&
+                (!showSizeModeToggle || sizeMode === "ready") && (
                   <div>
                     <div className="text-sm font-medium mb-2">{t("الخيارات", "Options")}</div>
                     <div className="flex flex-wrap gap-2">
@@ -1023,8 +1096,19 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
             </div>
           )}
 
-          {customFields.length > 0 && (
-            <div className="mb-4 space-y-4">
+          {customFields.length > 0 && (!showSizeModeToggle || sizeMode === "custom") && (
+            <div className="mb-6 space-y-4 rounded-xl border bg-card p-4 shadow-sm">
+              {showSizeModeToggle && sizeMode === "custom" && (
+                <div className="rounded-lg bg-primary/10 border border-primary/20 p-3 text-xs font-medium text-primary flex items-center gap-2 mb-2">
+                  <Scissors className="h-4 w-4 shrink-0" />
+                  <span>
+                    {t(
+                      "أدخلي قياسات التفصيل الخاصة بكِ أدناه بدقة:",
+                      "Enter your custom tailoring measurements below:",
+                    )}
+                  </span>
+                </div>
+              )}
               {customFields.map((f) => {
                 const label = cfLabel(f);
                 const val = cfValues[f.key] ?? "";
