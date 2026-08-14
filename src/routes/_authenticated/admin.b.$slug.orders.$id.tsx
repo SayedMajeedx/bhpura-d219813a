@@ -2452,14 +2452,16 @@ function OrderDetail() {
                         : "Delivery";
                 return (
                   <div className="mt-5 overflow-hidden rounded-xl border bg-muted/20 text-start shadow-sm">
-                    <div className="flex flex-col gap-3 border-b bg-muted/50 px-4 py-3 sm:flex-row sm:items-end sm:justify-between">
+                    <div className="flex flex-col gap-2.5 border-b bg-muted/50 px-4 py-3">
                       <div>
-                        <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                          {lang === "ar" ? "طريقة التسليم" : "Fulfillment"}
+                        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                          {lang === "ar" ? "طريقة التسليم" : "FULFILLMENT"}
                         </p>
-                        <p className="text-lg font-semibold">{title}</p>
+                        <p className="text-base font-semibold leading-tight text-foreground mt-0.5">
+                          {title}
+                        </p>
                       </div>
-                      <div className="w-full sm:w-64">
+                      <div className="w-full">
                         <Label className="sr-only">
                           {lang === "ar" ? "طريقة التسليم" : "Fulfillment method"}
                         </Label>
@@ -2900,13 +2902,23 @@ function OrderDetail() {
                           <Label>{t("orderDetail.fromInventory")}</Label>
                           <Select
                             value={it.variant_id ?? "custom"}
-                            onValueChange={(v) => v !== "custom" && pickVariant(idx, v)}
+                            onValueChange={(v) => {
+                              if (v === "custom") {
+                                updateItem(idx, { variant_id: null });
+                              } else {
+                                pickVariant(idx, v);
+                              }
+                            }}
                           >
                             <SelectTrigger>
                               <SelectValue placeholder={t("orderDetail.pickVariant")} />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="custom">{t("orderDetail.customLine")}</SelectItem>
+                              <SelectItem value="custom">
+                                {isAr
+                                  ? "تفصيل خاص / بدون مخزون جاهز"
+                                  : "Custom Tailoring / No Ready Stock"}
+                              </SelectItem>
                               {(variantsQ.data ?? []).map((v: any) => {
                                 const p = productsQ.data?.find((x: any) => x.id === v.product_id);
                                 if (!p) return null;
@@ -3000,44 +3012,58 @@ function OrderDetail() {
                         </div>
                       </div>
 
-                      {it.variant_id && (
-                        <div>
-                          <Label className="text-xs">
-                            {isAr ? "خصم المخزون من" : "Deduct Stock From"}
-                          </Label>
-                          <div className="flex flex-wrap gap-2 mt-1">
-                            {(
-                              [
-                                {
-                                  key: "main",
-                                  en: `Direct Sales · Main (${mainStock})`,
-                                  ar: `الرئيسي (${mainStock})`,
-                                },
-                                {
-                                  key: "incubator",
-                                  en: `Incubator (${incStock})`,
-                                  ar: `الحاضنة (${incStock})`,
-                                },
-                              ] as const
-                            ).map((opt) => {
-                              const active = it.location === opt.key;
-                              return (
-                                <button
-                                  key={opt.key}
-                                  type="button"
-                                  onClick={() => updateItem(idx, { location: opt.key })}
-                                  className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${
-                                    active
-                                      ? "bg-primary text-primary-foreground border-primary"
-                                      : "border-border hover:bg-secondary"
-                                  }`}
-                                >
-                                  {isAr ? opt.ar : opt.en}
-                                </button>
-                              );
-                            })}
-                          </div>
+                      {!it.variant_id ||
+                      (it.selected_variant?.size &&
+                        String(it.selected_variant.size).includes("تفصيل")) ||
+                      (it.custom_field_values && it.custom_field_values.length > 0) ? (
+                        <div className="rounded-md border border-primary/20 bg-primary/5 p-2 text-xs font-medium text-primary flex items-center gap-1.5">
+                          <span>
+                            ✂️{" "}
+                            {isAr
+                              ? "طلب تفصيل خاص (ينفّذ بعد الطلب - لا يخصم من المخزون الجاهز)"
+                              : "Custom Tailoring (Made-To-Order · No Ready Inventory Deduction)"}
+                          </span>
                         </div>
+                      ) : (
+                        it.variant_id && (
+                          <div>
+                            <Label className="text-xs">
+                              {isAr ? "خصم المخزون من" : "Deduct Stock From"}
+                            </Label>
+                            <div className="flex flex-wrap gap-2 mt-1">
+                              {(
+                                [
+                                  {
+                                    key: "main",
+                                    en: `Direct Sales · Main (${mainStock})`,
+                                    ar: `الرئيسي (${mainStock})`,
+                                  },
+                                  {
+                                    key: "incubator",
+                                    en: `Incubator (${incStock})`,
+                                    ar: `الحاضنة (${incStock})`,
+                                  },
+                                ] as const
+                              ).map((opt) => {
+                                const active = it.location === opt.key;
+                                return (
+                                  <button
+                                    key={opt.key}
+                                    type="button"
+                                    onClick={() => updateItem(idx, { location: opt.key })}
+                                    className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${
+                                      active
+                                        ? "bg-primary text-primary-foreground border-primary"
+                                        : "border-border hover:bg-secondary"
+                                    }`}
+                                  >
+                                    {isAr ? opt.ar : opt.en}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        )
                       )}
 
                       {(it.selected_variant ||

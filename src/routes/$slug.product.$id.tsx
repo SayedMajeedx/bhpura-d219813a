@@ -626,9 +626,9 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
       scrollToOptions();
       return;
     }
-    const targetVariant =
-      variant || (showSizeModeToggle && sizeMode === "custom" ? variants[0] : null);
-    if (!targetVariant && hasVariants && (!showSizeModeToggle || sizeMode === "ready")) {
+    const isCustomTailoring = showSizeModeToggle && sizeMode === "custom";
+    const targetVariant = isCustomTailoring ? null : variant;
+    if (!targetVariant && hasVariants && !isCustomTailoring) {
       const msg = t("يرجى اختيار خيار أولاً", "Please select an option first");
       setErrorMsg(msg);
       toast.error(msg);
