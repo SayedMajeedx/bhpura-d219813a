@@ -173,7 +173,7 @@ const en: Dict = {
   "settings.shippingTitle": "Shipping & Fulfillment",
   "settings.shippingSubtitle": "Control the storefront fulfillment options shown to shoppers.",
   "settings.deliveryEnabled": "Enable delivery",
-  "settings.pickupEnabled": "Enable pickup from branch",
+  "settings.pickupEnabled": "Enable pickup",
   "settings.deliveryFee": "Delivery fee",
   "settings.deliveryFeeHint": "Applied to storefront orders when the shopper chooses delivery.",
 
@@ -188,7 +188,7 @@ const en: Dict = {
 
   "fulfillment.title": "Fulfillment method",
   "fulfillment.delivery": "Delivery",
-  "fulfillment.pickup": "Pickup from branch",
+  "fulfillment.pickup": "Pickup",
   "fulfillment.deliveryFee": "Delivery fee",
   "fulfillment.free": "Free",
 
@@ -529,7 +529,7 @@ const ar: Dict = {
   "settings.shippingTitle": "الشحن والاستلام",
   "settings.shippingSubtitle": "تحكم بخيارات الاستلام المعروضة للعملاء في المتجر.",
   "settings.deliveryEnabled": "تفعيل التوصيل",
-  "settings.pickupEnabled": "تفعيل الاستلام من الفرع",
+  "settings.pickupEnabled": "تفعيل الاستلام",
   "settings.deliveryFee": "رسوم التوصيل",
   "settings.deliveryFeeHint": "تُضاف على طلبات المتجر عندما يختار العميل التوصيل.",
 
@@ -544,7 +544,7 @@ const ar: Dict = {
 
   "fulfillment.title": "طريقة التسليم",
   "fulfillment.delivery": "توصيل",
-  "fulfillment.pickup": "استلام من الفرع",
+  "fulfillment.pickup": "استلام",
   "fulfillment.deliveryFee": "رسوم التوصيل",
   "fulfillment.free": "مجانًا",
 

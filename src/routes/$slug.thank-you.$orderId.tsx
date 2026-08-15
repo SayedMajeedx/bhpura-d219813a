@@ -94,8 +94,8 @@ function ThankYou() {
                 )
             : isPickup
               ? t(
-                  "تم استلام طلبكم وسيتم التواصل معكم فور تجهيز الطلب للاستلام من الفرع.",
-                  "We received your order and will contact you as soon as it is ready for pickup from the branch.",
+                  "تم استلام طلبكم وسيتم التواصل معكم فور تجهيز الطلب للاستلام.",
+                  "We received your order and will contact you as soon as it is ready for pickup.",
                 )
               : t(
                   "تم استلام طلبك وسيتم التواصل معك قريباً لتأكيد التوصيل.",

@@ -529,8 +529,8 @@ export default function InvoicePreview({
                           : "Digital delivery"
                         : order.fulfillment_method === "pickup"
                           ? isRTL
-                            ? "استلام من الفرع"
-                            : "Pickup from branch"
+                            ? "استلام"
+                            : "Pickup"
                           : isRTL
                             ? "توصيل للمنزل"
                             : "Home delivery"}

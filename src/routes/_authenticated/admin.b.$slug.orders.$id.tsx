@@ -2691,8 +2691,8 @@ function OrderDetail() {
                       : "Digital delivery"
                     : method === "pickup"
                       ? lang === "ar"
-                        ? "استلام من الفرع"
-                        : "Pickup from branch"
+                        ? "استلام"
+                        : "Pickup"
                       : lang === "ar"
                         ? "توصيل"
                         : "Delivery";
@@ -2737,7 +2737,7 @@ function OrderDetail() {
                           <SelectContent>
                             {(pickupEnabled || method === "pickup") && (
                               <SelectItem value="pickup">
-                                {lang === "ar" ? "استلام من الفرع" : "Pickup from Branch"}
+                                {lang === "ar" ? "استلام" : "Pickup"}
                               </SelectItem>
                             )}
                             {(deliveryEnabled || method === "delivery") && (

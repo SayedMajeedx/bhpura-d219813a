@@ -303,8 +303,8 @@ function Checkout() {
     if (settings.pickup_enabled)
       opts.push({
         id: "pickup",
-        ar: "استلام من الفرع",
-        en: "Pickup from branch",
+        ar: "استلام",
+        en: "Pickup",
         icon: Store,
         fee: 0,
       });

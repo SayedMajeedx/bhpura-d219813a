@@ -134,7 +134,7 @@ export function OrderQuickViewModal({
               <p className="text-muted-foreground leading-snug">
                 {order.shipping_address ||
                   order.address ||
-                  (isAr ? "استلام من الفرع / بدون عنوان" : "Pickup / No address")}
+                  (isAr ? "استلام / بدون عنوان" : "Pickup / No address")}
               </p>
             </div>
           </div>

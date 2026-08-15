@@ -134,7 +134,7 @@ export const ORDER_STATUS_MAP: Record<string, StatusDefinition> = {
 
 export const FULFILLMENT_METHOD_MAP: Record<string, StatusDefinition> = {
   delivery: { ar: "توصيل للمنزل", en: "Home Delivery" },
-  pickup: { ar: "استلام من المحل", en: "Store Pickup" },
+  pickup: { ar: "استلام", en: "Pickup" },
   digital: { ar: "منتج رقمي", en: "Digital Delivery" },
 };
 

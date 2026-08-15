@@ -5240,7 +5240,7 @@ function BranchesCard({ brandId }: { brandId: string }) {
         </h3>
         <p className="text-sm text-muted-foreground">
           {isAr
-            ? "تظهر الفروع النشطة للعميل عند اختيار الاستلام من الفرع."
+            ? "تظهر الفروع النشطة للعميل عند اختيار الاستلام."
             : "Active branches appear at checkout when customer selects Pickup."}
         </p>
       </div>
