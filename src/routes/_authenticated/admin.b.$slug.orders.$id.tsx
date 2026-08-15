@@ -587,29 +587,33 @@ function OrderDetail() {
     if (!initialSnapshotRef.current || !order) return false;
     const snap = initialSnapshotRef.current;
 
-    const currentOrderMin = {
-      notes: order.notes ?? "",
-      delivery_notes: order.delivery_notes ?? "",
-      customer_id: order.customer_id ?? null,
-      shipping_address_id: order.shipping_address_id ?? null,
-      payment_status: order.payment_status,
-      fulfillment_status: order.fulfillment_status,
-      status: order.status,
-      payment_method: order.payment_method ?? null,
-      discount: Number(order.discount ?? 0),
-      shipping: Number(order.shipping ?? 0),
-      tax_rate: Number(order.tax_rate ?? 0),
-      advance_paid: Number(order.advance_paid ?? 0),
-      order_date: order.order_date,
-    };
+    const normalizeOrderMin = (o: any) => ({
+      id: o?.id ?? null,
+      notes: o?.notes ?? "",
+      delivery_notes: o?.delivery_notes ?? "",
+      customer_id: o?.customer_id ?? null,
+      shipping_address_id: o?.shipping_address_id ?? null,
+      payment_status: o?.payment_status ?? "unpaid",
+      fulfillment_status: o?.fulfillment_status ?? "ON_HOLD",
+      status: o?.status ?? "draft",
+      payment_method: o?.payment_method ?? null,
+      discount: Number(o?.discount ?? 0),
+      shipping: Number(o?.shipping ?? 0),
+      tax_rate: Number(o?.tax_rate ?? 0),
+      advance_paid: Number(o?.advance_paid ?? 0),
+      order_date: o?.order_date ?? "",
+    });
 
-    const orderChanged = JSON.stringify(currentOrderMin) !== JSON.stringify(snap.order);
+    const currentOrderMin = normalizeOrderMin(order);
+    const snapOrderMin = normalizeOrderMin(snap.order);
+
+    const orderChanged = JSON.stringify(currentOrderMin) !== JSON.stringify(snapOrderMin);
 
     const simplifyItem = (it: Item) => ({
       id: it.id,
-      product_id: it.product_id,
-      variant_id: it.variant_id,
-      quantity: it.quantity,
+      product_id: it.product_id ?? null,
+      variant_id: it.variant_id ?? null,
+      quantity: Number(it.quantity),
       unit_price: Number(it.unit_price),
       line_total: Number(it.line_total),
       customizations: it.customizations ?? [],
