@@ -143,6 +143,8 @@ export function getOrderWorkflow(order: OrderWorkflowInput): OrderWorkflow {
       } else if (fulfillment === "sent_to_tailor") {
         nextAction = "receive_from_tailor";
       } else if (fulfillment === "received_from_tailor") {
+        nextAction = "start_packing";
+      } else if (fulfillment === "packing") {
         nextAction = fulfillmentMethod === "pickup" ? "mark_ready_pickup" : "mark_shipped";
       } else if (fulfillment === "ready_for_pickup") {
         nextAction = isCod || outstanding > 0 ? "collect_and_hand_over" : "hand_over_pickup";

@@ -4045,14 +4045,14 @@ function OrderDetail() {
                         <SelectItem value="ON_HOLD">
                           {lang === "ar" ? "قيد الانتظار" : "On Hold"}
                         </SelectItem>
-                        <SelectItem value="PACKING">
-                          {lang === "ar" ? "قيد التعبئة والتغليف" : "Packing"}
-                        </SelectItem>
                         <SelectItem value="SENT_TO_TAILOR">
                           {lang === "ar" ? "تم الإرسال للخياط" : "Sent to Tailor"}
                         </SelectItem>
                         <SelectItem value="RECEIVED_FROM_TAILOR">
                           {lang === "ar" ? "تم الاستلام من الخياط" : "Received from Tailor"}
+                        </SelectItem>
+                        <SelectItem value="PACKING">
+                          {lang === "ar" ? "قيد التعبئة والتغليف" : "Packing"}
                         </SelectItem>
                         <SelectItem value="READY_FOR_PICKUP">
                           {lang === "ar" ? "جاهز للاستلام" : "Ready for Pickup"}

@@ -86,7 +86,16 @@ describe("Ready Stock vs Tailoring Order Workflow", () => {
       fulfillment_method: "delivery",
     };
     const wf3 = getOrderWorkflow(receivedOrder);
-    expect(wf3.nextAction).toBe("mark_shipped");
+    expect(wf3.nextAction).toBe("start_packing");
+
+    const packingTailoringOrder = {
+      status: "packing",
+      fulfillment_status: "PACKING",
+      order_type: "tailoring" as const,
+      fulfillment_method: "delivery",
+    };
+    const wf4 = getOrderWorkflow(packingTailoringOrder);
+    expect(wf4.nextAction).toBe("mark_shipped");
   });
 
   it("returns correct next actions for ready stock workflow", () => {
