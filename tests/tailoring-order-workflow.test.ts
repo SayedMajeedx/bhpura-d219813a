@@ -125,6 +125,6 @@ describe("Ready Stock vs Tailoring Order Workflow", () => {
     expect(getInvoiceStatusLabel("ready_for_pickup", "ar")).toBe("جاهز للاستلام");
     expect(getInvoiceStatusLabel("shipped", "ar")).toBe("تم الشحن");
     expect(getInvoiceStatusLabel("completed", "ar")).toBe("مكتمل");
-    expect(getInvoiceStatusLabel("cancelled", "ar")).toBe("ملغى");
+    expect(getInvoiceStatusLabel("cancelled", "ar")).toBe("ملغي");
   });
 });

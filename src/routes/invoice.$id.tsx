@@ -324,7 +324,7 @@ function PublicInvoice() {
                 </p>
                 <p className="text-xs" style={{ opacity: 0.7 }}>
                   {L.status}:{" "}
-                  {getInvoiceStatusLabel(order.status || order.fulfillment_status, lang)}
+                  {getInvoiceStatusLabel(order.fulfillment_status || order.status, lang)}
                 </p>
                 {order.payment_method && (
                   <p className="text-xs" style={{ opacity: 0.7 }}>
@@ -334,7 +334,7 @@ function PublicInvoice() {
                 {order.fulfillment_status && (
                   <p className="text-xs" style={{ opacity: 0.7 }}>
                     {isRTL ? "حالة التجهيز والشحن" : "Fulfillment Status"}:{" "}
-                    {getFulfillmentLabel(order.fulfillment_status, lang)}
+                    {getInvoiceStatusLabel(order.fulfillment_status, lang)}
                   </p>
                 )}
               </div>
@@ -422,7 +422,7 @@ function PublicInvoice() {
                       {isRTL ? "حالة التجهيز والشحن" : "Fulfillment & Shipping Status"}
                     </p>
                     <p className="font-semibold">
-                      {getFulfillmentLabel(order.fulfillment_status, lang)}
+                      {getInvoiceStatusLabel(order.fulfillment_status, lang)}
                     </p>
                   </div>
                 </div>

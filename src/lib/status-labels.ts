@@ -158,6 +158,8 @@ export function getInvoiceStatusLabel(
 
   switch (s) {
     case "pending":
+    case "on_hold":
+    case "unassigned":
     case "draft":
     case "unpaid":
     case "pending_verification":
@@ -175,14 +177,16 @@ export function getInvoiceStatusLabel(
     case "shipped":
     case "assigned":
     case "out_for_delivery":
-      return lang === "ar" ? "تم الشحن" : "Shipped / Out for Delivery";
+    case "ready_for_delivery":
+      return lang === "ar" ? "تم الشحن" : "Shipped";
     case "completed":
     case "delivered":
+    case "picked_up":
     case "paid":
       return lang === "ar" ? "مكتمل" : "Completed";
     case "cancelled":
     case "canceled":
-      return lang === "ar" ? "ملغى" : "Cancelled";
+      return lang === "ar" ? "ملغي" : "Cancelled";
     default:
       return getOrderStatusLabel(status, lang);
   }
