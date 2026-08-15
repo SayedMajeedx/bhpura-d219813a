@@ -11,7 +11,7 @@ export const getPublicInvoice = createServerFn({ method: "GET" })
     const { data: order, error } = await (supabaseAdmin.from("orders") as any)
       .select(
         `
-        id, invoice_number, order_date, created_at, status, payment_method, payment_status,
+        id, invoice_number, order_date, created_at, status, fulfillment_status, payment_method, payment_status,
         currency, notes, fulfillment_method, subtotal, discount, promo_code, tax_amount,
         tax_rate, shipping, total, advance_paid, shipping_address_id, delivery_address_snapshot, user_id, brand_id,
         customer_name_snapshot, customer_email_snapshot, customer_phone_snapshot,
