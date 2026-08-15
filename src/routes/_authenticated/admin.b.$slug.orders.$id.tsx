@@ -3492,7 +3492,32 @@ function OrderDetail() {
                   <div className="sm:col-span-2 lg:col-span-1">
                     <Label>{t("orderDetail.paymentMethod")}</Label>
                     <Select
-                      value={order.payment_method ?? "none"}
+                      disabled={isReadOnly}
+                      value={(() => {
+                        if (!order.payment_method) return "none";
+                        const pm = String(order.payment_method).trim().toLowerCase();
+                        if (["cod", "cash_on_delivery", "cash on delivery"].includes(pm))
+                          return "cod";
+                        if (["benefit", "benefitpay", "benefit_pay"].includes(pm)) return "benefit";
+                        if (["bank_transfer", "bank transfer", "transfer"].includes(pm))
+                          return "bank_transfer";
+                        if (
+                          [
+                            "card",
+                            "tap",
+                            "creimax",
+                            "credit",
+                            "credit_card",
+                            "debit_card",
+                          ].includes(pm)
+                        )
+                          return "card";
+                        if (["apple_pay", "applepay", "apple pay"].includes(pm)) return "apple_pay";
+                        if (["google_pay", "googlepay", "google pay"].includes(pm))
+                          return "google_pay";
+                        if (["cash", "cash_payment"].includes(pm)) return "cash";
+                        return pm;
+                      })()}
                       onValueChange={(payment_method) =>
                         setOrder({
                           ...order,
