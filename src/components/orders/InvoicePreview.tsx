@@ -401,29 +401,27 @@ export default function InvoicePreview({
               >
                 {(isRTL ? settings.invoice_title_ar : settings.invoice_title_en) || L.invoice}
               </h2>
-              <p className="text-lg mt-1">
-                {L.invoiceNumber}: {num(order.invoice_number)}
-              </p>
-              <p className="text-xs mt-2" style={{ opacity: 0.7 }}>
+              <div className="flex items-center justify-end gap-2 flex-wrap mt-1">
+                <p className="text-base sm:text-lg font-bold">
+                  {L.invoiceNumber}: {num(order.invoice_number)}
+                </p>
+                <span
+                  className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold"
+                  style={{ backgroundColor: `${color}18`, color, border: `1px solid ${color}35` }}
+                >
+                  {getInvoiceStatusLabel(order.fulfillment_status || order.status, invoiceLang)}
+                </span>
+              </div>
+              <p className="text-xs mt-2" style={{ opacity: 0.75 }}>
                 {L.date}:{" "}
                 {formatDate(
                   order.created_at ?? order.order_date,
                   isRTL ? "ar-BH-u-nu-latn" : "en-BH",
                 )}
               </p>
-              <p className="text-xs" style={{ opacity: 0.7 }}>
-                {L.status}:{" "}
-                {getInvoiceStatusLabel(order.fulfillment_status || order.status, invoiceLang)}
-              </p>
               {order.payment_method && (
-                <p className="text-xs" style={{ opacity: 0.7 }}>
+                <p className="text-xs" style={{ opacity: 0.75 }}>
                   {L.paymentMethod}: {tPayment(order.payment_method, invoiceLang)}
-                </p>
-              )}
-              {order.fulfillment_status && (
-                <p className="text-xs" style={{ opacity: 0.7 }}>
-                  {isRTL ? "حالة التجهيز والشحن" : "Fulfillment Status"}:{" "}
-                  {getInvoiceStatusLabel(order.fulfillment_status, invoiceLang)}
                 </p>
               )}
               {getPaymentGatewayReference(order) && (
@@ -431,7 +429,7 @@ export default function InvoicePreview({
                   className="text-[10px] mt-1 break-all"
                   style={{
                     opacity: 0.5,
-                    maxWidth: "160px",
+                    maxWidth: "180px",
                     marginLeft: isRTL ? "0" : "auto",
                     marginRight: isRTL ? "auto" : "0",
                   }}
@@ -509,54 +507,35 @@ export default function InvoicePreview({
           )}
 
           {settings.invoice_show_fulfillment !== false &&
-            (order.fulfillment_method || order.branch_id || order.fulfillment_status) && (
+            (order.fulfillment_method || order.branch_id) && (
               <div
                 className="mb-6 rounded-lg p-4 text-sm"
                 style={{ textAlign: "start", backgroundColor: secondary }}
               >
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <p
-                      className={`text-xs mb-1 ${isRTL ? "" : "uppercase tracking-wider"}`}
-                      style={{ opacity: 0.6, letterSpacing: isRTL ? "normal" : undefined }}
-                    >
-                      {isRTL ? "طريقة التسليم" : "Fulfillment Method"}
-                    </p>
-                    <p className="font-semibold">
-                      {order.fulfillment_method === "digital"
+                <div>
+                  <p
+                    className={`text-xs mb-1 ${isRTL ? "" : "uppercase tracking-wider"}`}
+                    style={{ opacity: 0.6, letterSpacing: isRTL ? "normal" : undefined }}
+                  >
+                    {isRTL ? "طريقة التسليم" : "Fulfillment Method"}
+                  </p>
+                  <p className="font-semibold text-base">
+                    {order.fulfillment_method === "digital"
+                      ? isRTL
+                        ? "تسليم رقمي"
+                        : "Digital delivery"
+                      : order.fulfillment_method === "pickup"
                         ? isRTL
-                          ? "تسليم رقمي"
-                          : "Digital delivery"
-                        : order.fulfillment_method === "pickup"
-                          ? isRTL
-                            ? "استلام"
-                            : "Pickup"
-                          : isRTL
-                            ? "توصيل للمنزل"
-                            : "Home delivery"}
-                    </p>
-                  </div>
-                  <div>
-                    <p
-                      className={`text-xs mb-1 ${isRTL ? "" : "uppercase tracking-wider"}`}
-                      style={{ opacity: 0.6, letterSpacing: isRTL ? "normal" : undefined }}
-                    >
-                      {isRTL ? "حالة التجهيز والشحن" : "Fulfillment & Shipping Status"}
-                    </p>
-                    <p className="font-semibold">
-                      {getInvoiceStatusLabel(order.fulfillment_status, invoiceLang)}
-                    </p>
-                  </div>
+                          ? "استلام"
+                          : "Pickup"
+                        : isRTL
+                          ? "توصيل للمنزل"
+                          : "Home delivery"}
+                  </p>
                 </div>
                 {order.fulfillment_method === "digital" && (
-                  <div className="mt-3 rounded-md border border-border p-3">
-                    <p
-                      className={`text-xs ${isRTL ? "" : "uppercase tracking-wider"}`}
-                      style={{ opacity: 0.6, letterSpacing: isRTL ? "normal" : undefined }}
-                    >
-                      {isRTL ? "قناة التسليم الرقمي" : "Digital delivery channel"}
-                    </p>
-                    <p className="font-medium">
+                  <div className="mt-2 text-xs" style={{ opacity: 0.85 }}>
+                    <p>
                       {order.digital_delivery_channel === "whatsapp"
                         ? isRTL
                           ? "واتساب"
@@ -564,14 +543,12 @@ export default function InvoicePreview({
                         : isRTL
                           ? "البريد الإلكتروني"
                           : "Email"}
-                    </p>
-                    <p className="mt-1 break-all" dir="ltr">
-                      {order.digital_delivery_contact || "—"}
+                      : <span dir="ltr">{order.digital_delivery_contact || "—"}</span>
                     </p>
                   </div>
                 )}
                 {order.branch_id && (
-                  <div className="mt-2">
+                  <div className="mt-1 text-xs text-muted-foreground">
                     <InvoiceBranchName
                       brandId={order.brand_id}
                       branchId={order.branch_id}
@@ -597,17 +574,47 @@ export default function InvoicePreview({
                   <tr key={i} className="border-b border-border align-top">
                     <td className="p-3 text-start">
                       {(() => {
-                        const raw = (it.description || "—")
+                        const rawDesc = it.description || "—";
+                        const lines = rawDesc
                           .split(/\r?\n/)
                           .map((s) => s.trim())
                           .filter(Boolean);
-                        const [head, ...rest] = raw.length ? raw : ["—"];
+                        const primaryTitle = lines[0] || "—";
+                        const secondaryParts = lines.slice(1);
+
+                        // If primary title contains ' - ' e.g. "فستان داخلي مع كم - اسود - 55"
+                        const hyphenParts = primaryTitle
+                          .split(/\s+[-–—]\s+/)
+                          .map((s) => s.trim())
+                          .filter(Boolean);
+                        let title = primaryTitle;
+                        let inlineDetails: string | null = null;
+
+                        if (hyphenParts.length > 1) {
+                          title = hyphenParts[0];
+                          inlineDetails = hyphenParts
+                            .slice(1)
+                            .map((p) => (/^\d+$/.test(p) ? (isRTL ? `مقاس ${p}` : `Size ${p}`) : p))
+                            .join(" · ");
+                        }
+
                         return (
                           <>
-                            <p className="font-medium">{head}</p>
-                            {rest.length > 0 && (
-                              <div className="text-xs mt-0.5 leading-snug" style={{ opacity: 0.7 }}>
-                                {rest.map((line, li) => (
+                            <p className="font-semibold">{title}</p>
+                            {inlineDetails && (
+                              <p
+                                className="text-xs mt-0.5 font-normal text-muted-foreground"
+                                style={{ opacity: 0.85 }}
+                              >
+                                {inlineDetails}
+                              </p>
+                            )}
+                            {secondaryParts.length > 0 && (
+                              <div
+                                className="text-xs mt-0.5 leading-snug"
+                                style={{ opacity: 0.75 }}
+                              >
+                                {secondaryParts.map((line, li) => (
                                   <div key={li}>{line}</div>
                                 ))}
                               </div>
@@ -630,10 +637,10 @@ export default function InvoicePreview({
                           it.selected_variant.fabric) && (
                           <p className="mt-1 text-xs" style={{ opacity: 0.75 }}>
                             {[
-                              it.selected_variant.size &&
-                                `${isRTL ? "المقاس" : "Size"}: ${it.selected_variant.size}`,
                               it.selected_variant.color &&
                                 `${isRTL ? "اللون" : "Color"}: ${it.selected_variant.color}`,
+                              it.selected_variant.size &&
+                                `${isRTL ? "المقاس" : "Size"}: ${it.selected_variant.size}`,
                               it.selected_variant.fabric &&
                                 `${isRTL ? "القماش" : "Fabric"}: ${it.selected_variant.fabric}`,
                             ]
@@ -693,12 +700,18 @@ export default function InvoicePreview({
             style={{ justifyContent: isRTL ? "flex-start" : "flex-end", direction: "ltr" }}
           >
             <div
-              className="pdf-totals-block w-72 text-sm space-y-1"
+              className="pdf-totals-block w-72 text-sm space-y-1.5"
               style={{ direction: isRTL ? "rtl" : "ltr" }}
             >
               <div className="flex justify-between">
                 <span style={{ opacity: 0.75 }}>{L.subtotal}</span>
                 <span>{money(order.subtotal)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span style={{ opacity: 0.75 }}>
+                  {L.vat} ({num(order.tax_rate ?? 0)}%)
+                </span>
+                <span>{money(order.tax_amount ?? 0)}</span>
               </div>
               {Number(order.discount) > 0 && (
                 <div className="flex justify-between gap-4">
@@ -709,14 +722,6 @@ export default function InvoicePreview({
                   <span>− {money(order.discount)}</span>
                 </div>
               )}
-              {Number(order.tax_rate) > 0 && (
-                <div className="flex justify-between">
-                  <span style={{ opacity: 0.75 }}>
-                    {L.vat} ({num(order.tax_rate)}%)
-                  </span>
-                  <span>{money(order.tax_amount)}</span>
-                </div>
-              )}
               {Number(order.shipping) > 0 && (
                 <div className="flex justify-between">
                   <span style={{ opacity: 0.75 }}>{L.shipping}</span>
@@ -724,14 +729,14 @@ export default function InvoicePreview({
                 </div>
               )}
               <div
-                className="flex justify-between items-center pt-2 border-t-2"
-                style={{ borderColor: color }}
+                className="flex justify-between items-center py-2 px-2.5 rounded-lg mt-2 font-bold"
+                style={{ backgroundColor: `${color}15`, border: `1.5px solid ${color}40` }}
               >
-                <span className="font-display text-lg" style={{ color }}>
+                <span className="font-display text-base sm:text-lg" style={{ color }}>
                   {invoiceLang === "ar" ? "المبلغ الإجمالي" : "Total Amount"}
                 </span>
                 <div className="flex items-center gap-2">
-                  <span className="font-display text-lg" style={{ color }}>
+                  <span className="font-display text-lg sm:text-xl" style={{ color }}>
                     {money(order.total)}
                   </span>
                   {paymentBadge && (
@@ -766,9 +771,9 @@ export default function InvoicePreview({
             </div>
           </div>
 
-          {settings.invoice_show_notes !== false && (order.notes || settings.footer_note) && (
+          {settings.invoice_show_notes !== false && (
             <div
-              className="mt-10 pt-6 border-t border-border text-sm space-y-2"
+              className="mt-10 pt-6 border-t border-border text-xs sm:text-sm space-y-3"
               style={{ opacity: 0.85 }}
             >
               {order.notes && (
@@ -777,8 +782,21 @@ export default function InvoicePreview({
                   {order.notes}
                 </p>
               )}
-              {settings.footer_note && <p className="italic">{settings.footer_note}</p>}
-              <p className="italic">
+              {settings.footer_note ? (
+                <p className="italic">{settings.footer_note}</p>
+              ) : (
+                <div className="space-y-1 rounded-md bg-muted/30 p-3 text-xs leading-relaxed text-muted-foreground">
+                  <p className="font-semibold text-foreground">
+                    {isRTL ? "الشروط والأحكام" : "Terms & Conditions"}
+                  </p>
+                  <p>
+                    {isRTL
+                      ? "فترة الاستبدال والاسترجاع خلال 3 أيام من تاريخ الاستلام. القطع المفصلة خصيصاً غير قابلة للاسترجاع بعد البدء في التفصيل."
+                      : "Exchange and return policy valid within 3 days of receipt. Custom-tailored products are non-refundable once tailoring has commenced."}
+                  </p>
+                </div>
+              )}
+              <p className="italic font-medium pt-1">
                 {L.warmRegards},<br />
                 {brandFor(invoiceLang, settings.business_name)}
               </p>

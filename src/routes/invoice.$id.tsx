@@ -316,25 +316,23 @@ function PublicInvoice() {
                 >
                   {invoiceTitle}
                 </h1>
-                <p className="text-sm sm:text-base mt-1">
-                  {L.number}: {order.invoice_number}
-                </p>
-                <p className="text-xs mt-2" style={{ opacity: 0.7 }}>
+                <div className="flex items-center justify-end gap-2 flex-wrap mt-1">
+                  <p className="text-sm sm:text-base font-bold">
+                    {L.number}: {order.invoice_number}
+                  </p>
+                  <span
+                    className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold"
+                    style={{ backgroundColor: `${color}18`, color, border: `1px solid ${color}35` }}
+                  >
+                    {getInvoiceStatusLabel(order.fulfillment_status || order.status, lang)}
+                  </span>
+                </div>
+                <p className="text-xs mt-2" style={{ opacity: 0.75 }}>
                   {L.date}: {formatDate(order.created_at ?? order.order_date, locale)}
                 </p>
-                <p className="text-xs" style={{ opacity: 0.7 }}>
-                  {L.status}:{" "}
-                  {getInvoiceStatusLabel(order.fulfillment_status || order.status, lang)}
-                </p>
                 {order.payment_method && (
-                  <p className="text-xs" style={{ opacity: 0.7 }}>
+                  <p className="text-xs" style={{ opacity: 0.75 }}>
                     {L.payment}: {PAY[order.payment_method]?.[lang] ?? order.payment_method}
-                  </p>
-                )}
-                {order.fulfillment_status && (
-                  <p className="text-xs" style={{ opacity: 0.7 }}>
-                    {isRTL ? "حالة التجهيز والشحن" : "Fulfillment Status"}:{" "}
-                    {getInvoiceStatusLabel(order.fulfillment_status, lang)}
                   </p>
                 )}
               </div>
@@ -392,48 +390,35 @@ function PublicInvoice() {
                 className="mb-8 rounded-lg p-4 text-sm"
                 style={{ backgroundColor: secondaryColor, textAlign: "start" }}
               >
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <p
-                      className={`text-xs mb-1 ${isRTL ? "" : "uppercase tracking-wider"}`}
-                      style={{ opacity: 0.6, letterSpacing: isRTL ? "normal" : undefined }}
-                    >
-                      {isRTL ? "طريقة التسليم" : "Fulfillment Method"}
-                    </p>
-                    <p className="font-semibold">
-                      {order.fulfillment_method === "digital"
+                <div>
+                  <p
+                    className={`text-xs mb-1 ${isRTL ? "" : "uppercase tracking-wider"}`}
+                    style={{ opacity: 0.6, letterSpacing: isRTL ? "normal" : undefined }}
+                  >
+                    {isRTL ? "طريقة التسليم" : "Fulfillment Method"}
+                  </p>
+                  <p className="font-semibold text-base">
+                    {order.fulfillment_method === "digital"
+                      ? isRTL
+                        ? "تسليم رقمي"
+                        : "Digital delivery"
+                      : order.fulfillment_method === "pickup"
                         ? isRTL
-                          ? "تسليم رقمي"
-                          : "Digital delivery"
-                        : order.fulfillment_method === "pickup"
-                          ? isRTL
-                            ? "استلام"
-                            : "Pickup"
-                          : isRTL
-                            ? "توصيل للمنزل"
-                            : "Home delivery"}
-                    </p>
-                  </div>
-                  <div>
-                    <p
-                      className={`text-xs mb-1 ${isRTL ? "" : "uppercase tracking-wider"}`}
-                      style={{ opacity: 0.6, letterSpacing: isRTL ? "normal" : undefined }}
-                    >
-                      {isRTL ? "حالة التجهيز والشحن" : "Fulfillment & Shipping Status"}
-                    </p>
-                    <p className="font-semibold">
-                      {getInvoiceStatusLabel(order.fulfillment_status, lang)}
-                    </p>
-                  </div>
+                          ? "استلام"
+                          : "Pickup"
+                        : isRTL
+                          ? "توصيل للمنزل"
+                          : "Home delivery"}
+                  </p>
                 </div>
                 {order.fulfillment_method === "digital" && (
-                  <p dir="ltr" className="mt-2 break-all">
+                  <p dir="ltr" className="mt-2 text-xs opacity-85 break-all">
                     {order.digital_delivery_channel === "whatsapp" ? "WhatsApp" : "Email"}:{" "}
                     {order.digital_delivery_contact}
                   </p>
                 )}
                 {order.fulfillment_method === "pickup" && branch && (
-                  <p className="mt-2" style={{ opacity: 0.8 }}>
+                  <p className="mt-1 text-xs text-neutral-600 dark:text-neutral-400">
                     {isRTL ? branch.name_ar || branch.name_en : branch.name_en || branch.name_ar}
                     {(
                       isRTL
@@ -445,7 +430,7 @@ function PublicInvoice() {
                   </p>
                 )}
                 {order.fulfillment_method === "delivery" && (addrLine || legacyRegion) && (
-                  <p className="mt-2" style={{ opacity: 0.8 }}>
+                  <p className="mt-1 text-xs text-neutral-600 dark:text-neutral-400">
                     {addrLine || legacyRegion}
                   </p>
                 )}
@@ -463,70 +448,103 @@ function PublicInvoice() {
                   </tr>
                 </thead>
                 <tbody>
-                  {items.map((it: any, i: number) => (
-                    <tr key={i} className="border-b border-neutral-200 align-top">
-                      <td className="p-3">
-                        {it.products?.name || it.product_variants ? (
+                  {items.map((it: any, i: number) => {
+                    const rawDesc = it.products?.name || it.description || "—";
+                    const lines = rawDesc
+                      .split(/\r?\n/)
+                      .map((s: string) => s.trim())
+                      .filter(Boolean);
+                    const primaryTitle = lines[0] || "—";
+                    const secondaryParts = lines.slice(1);
+
+                    const hyphenParts = primaryTitle
+                      .split(/\s+[-–—]\s+/)
+                      .map((s: string) => s.trim())
+                      .filter(Boolean);
+                    let title = primaryTitle;
+                    let inlineDetails: string | null = null;
+
+                    if (hyphenParts.length > 1) {
+                      title = hyphenParts[0];
+                      inlineDetails = hyphenParts
+                        .slice(1)
+                        .map((p: string) =>
+                          /^\d+$/.test(p) ? (isRTL ? `مقاس ${p}` : `Size ${p}`) : p,
+                        )
+                        .join(" · ");
+                    }
+
+                    return (
+                      <tr key={i} className="border-b border-neutral-200 align-top">
+                        <td className="p-3">
                           <div className="space-y-0.5">
-                            <p className="font-medium">
-                              {it.products?.name || it.description || "—"}
-                            </p>
-                            {it.product_variants?.size && (
-                              <p className="text-xs" style={{ opacity: 0.75 }}>
-                                {L.size}: {it.product_variants.size}
+                            <p className="font-semibold text-foreground">{title}</p>
+                            {inlineDetails && (
+                              <p className="text-xs text-muted-foreground opacity-85">
+                                {inlineDetails}
                               </p>
                             )}
+                            {secondaryParts.length > 0 && (
+                              <div className="text-xs text-muted-foreground opacity-75">
+                                {secondaryParts.map((l: string, li: number) => (
+                                  <div key={li}>{l}</div>
+                                ))}
+                              </div>
+                            )}
                             {it.product_variants?.color && (
-                              <p className="text-xs" style={{ opacity: 0.75 }}>
+                              <p className="text-xs text-muted-foreground opacity-75">
                                 {L.color}: {it.product_variants.color}
                               </p>
                             )}
-                          </div>
-                        ) : (
-                          <p className="font-medium">{it.description || "—"}</p>
-                        )}
-                        {(it.customizations ?? []).length > 0 && (
-                          <ul className="mt-1 text-xs space-y-0.5" style={{ opacity: 0.75 }}>
-                            {it.customizations.map((c: any, ci: number) => (
-                              <li key={ci}>
-                                + {c.name} ({money(c.price_delta)})
-                              </li>
-                            ))}
-                          </ul>
-                        )}
-                        {(it.custom_field_values ?? []).length > 0 && (
-                          <div className="mt-1 text-xs space-y-0.5" style={{ opacity: 0.75 }}>
-                            {it.custom_field_values.map((field: any, fi: number) => (
-                              <p key={fi}>
-                                {(isRTL
-                                  ? field.label_ar || field.label_en
-                                  : field.label_en || field.label_ar) || field.key}
-                                : {field.value}
+                            {it.product_variants?.size && (
+                              <p className="text-xs text-muted-foreground opacity-75">
+                                {L.size}: {it.product_variants.size}
                               </p>
-                            ))}
+                            )}
                           </div>
-                        )}
-                      </td>
-                      <td className="p-3 text-end">{it.quantity}</td>
-                      <td className="p-3 text-end whitespace-nowrap">
-                        {Number(it.original_price ?? 0) > Number(it.unit_price) ? (
-                          <span className="inline-flex flex-col items-end leading-tight">
-                            <span className="text-xs line-through" style={{ opacity: 0.6 }}>
-                              {money(Number(it.original_price) + Number(it.customization_total))}
+                          {(it.customizations ?? []).length > 0 && (
+                            <ul className="mt-1 text-xs space-y-0.5" style={{ opacity: 0.75 }}>
+                              {it.customizations.map((c: any, ci: number) => (
+                                <li key={ci}>
+                                  + {c.name} ({money(c.price_delta)})
+                                </li>
+                              ))}
+                            </ul>
+                          )}
+                          {(it.custom_field_values ?? []).length > 0 && (
+                            <div className="mt-1 text-xs space-y-0.5" style={{ opacity: 0.75 }}>
+                              {it.custom_field_values.map((field: any, fi: number) => (
+                                <p key={fi}>
+                                  {(isRTL
+                                    ? field.label_ar || field.label_en
+                                    : field.label_en || field.label_ar) || field.key}
+                                  : {field.value}
+                                </p>
+                              ))}
+                            </div>
+                          )}
+                        </td>
+                        <td className="p-3 text-end">{it.quantity}</td>
+                        <td className="p-3 text-end whitespace-nowrap">
+                          {Number(it.original_price ?? 0) > Number(it.unit_price) ? (
+                            <span className="inline-flex flex-col items-end leading-tight">
+                              <span className="text-xs line-through" style={{ opacity: 0.6 }}>
+                                {money(Number(it.original_price) + Number(it.customization_total))}
+                              </span>
+                              <span>
+                                {money(Number(it.unit_price) + Number(it.customization_total))}
+                              </span>
                             </span>
-                            <span>
-                              {money(Number(it.unit_price) + Number(it.customization_total))}
-                            </span>
-                          </span>
-                        ) : (
-                          money(Number(it.unit_price) + Number(it.customization_total))
-                        )}
-                      </td>
-                      <td className="p-3 text-end whitespace-nowrap font-medium">
-                        {money(it.line_total)}
-                      </td>
-                    </tr>
-                  ))}
+                          ) : (
+                            money(Number(it.unit_price) + Number(it.customization_total))
+                          )}
+                        </td>
+                        <td className="p-3 text-end whitespace-nowrap font-medium">
+                          {money(it.line_total)}
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
@@ -537,12 +555,18 @@ function PublicInvoice() {
               style={{ justifyContent: isRTL ? "flex-start" : "flex-end", direction: "ltr" }}
             >
               <div
-                className="pdf-totals-block w-full sm:w-72 text-sm space-y-1"
+                className="pdf-totals-block w-full sm:w-72 text-sm space-y-1.5"
                 style={{ direction: isRTL ? "rtl" : "ltr" }}
               >
                 <div className="flex justify-between">
                   <span style={{ opacity: 0.75 }}>{L.subtotal}</span>
                   <span>{money(order.subtotal)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span style={{ opacity: 0.75 }}>
+                    {L.vat} ({order.tax_rate ?? 0}%)
+                  </span>
+                  <span>{money(order.tax_amount ?? 0)}</span>
                 </div>
                 {Number(order.discount) > 0 && (
                   <div className="flex justify-between gap-4">
@@ -551,14 +575,6 @@ function PublicInvoice() {
                       {order.promo_code ? ` (Promo: ${order.promo_code})` : ""}
                     </span>
                     <span>− {money(order.discount)}</span>
-                  </div>
-                )}
-                {Number(order.tax_rate) > 0 && (
-                  <div className="flex justify-between">
-                    <span style={{ opacity: 0.75 }}>
-                      {L.vat} ({order.tax_rate}%)
-                    </span>
-                    <span>{money(order.tax_amount)}</span>
                   </div>
                 )}
                 {Number(order.shipping) > 0 && (
@@ -579,14 +595,14 @@ function PublicInvoice() {
                   return (
                     <>
                       <div
-                        className="flex justify-between items-center pt-2 border-t-2"
-                        style={{ borderColor: color }}
+                        className="flex justify-between items-center py-2 px-2.5 rounded-lg mt-2 font-bold"
+                        style={{ backgroundColor: `${color}15`, border: `1.5px solid ${color}40` }}
                       >
-                        <span className="text-lg" style={{ color }}>
+                        <span className="text-base sm:text-lg" style={{ color }}>
                           {lang === "ar" ? "المبلغ الإجمالي" : "Total Amount"}
                         </span>
                         <div className="flex items-center gap-2">
-                          <span className="text-lg" style={{ color }}>
+                          <span className="text-lg sm:text-xl" style={{ color }}>
                             {money(order.total)}
                           </span>
                           <span
@@ -620,9 +636,9 @@ function PublicInvoice() {
               </div>
             </div>
 
-            {showNotes && (order.notes || settings?.footer_note) && (
+            {showNotes && (
               <div
-                className="mt-8 pt-6 border-t border-neutral-200 text-sm space-y-2"
+                className="mt-8 pt-6 border-t border-neutral-200 text-xs sm:text-sm space-y-3"
                 style={{ opacity: 0.85 }}
               >
                 {order.notes && (
@@ -631,7 +647,20 @@ function PublicInvoice() {
                     {order.notes}
                   </p>
                 )}
-                {settings?.footer_note && <p className="italic">{settings.footer_note}</p>}
+                {settings?.footer_note ? (
+                  <p className="italic">{settings.footer_note}</p>
+                ) : (
+                  <div className="space-y-1 rounded-md bg-neutral-100 dark:bg-neutral-800 p-3 text-xs leading-relaxed text-neutral-600 dark:text-neutral-400">
+                    <p className="font-semibold text-neutral-900 dark:text-neutral-100">
+                      {isRTL ? "الشروط والأحكام" : "Terms & Conditions"}
+                    </p>
+                    <p>
+                      {isRTL
+                        ? "فترة الاستبدال والاسترجاع خلال 3 أيام من تاريخ الاستلام. القطع المفصلة خصيصاً غير قابلة للاسترجاع بعد البدء في التفصيل."
+                        : "Exchange and return policy valid within 3 days of receipt. Custom-tailored products are non-refundable once tailoring has commenced."}
+                    </p>
+                  </div>
+                )}
               </div>
             )}
           </div>
