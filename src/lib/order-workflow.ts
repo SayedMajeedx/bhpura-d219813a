@@ -1,5 +1,5 @@
 import { resolvePaymentStatus, type PaymentBadge } from "./payment-status";
-import { type OrderType } from "./order-type-detector";
+import { detectOrderType, type OrderType } from "./order-type-detector";
 
 export type OrderWorkflowInput = {
   status?: string | null;
@@ -11,6 +11,8 @@ export type OrderWorkflowInput = {
   advance_paid?: number | string | null;
   paid_amount?: number | string | null;
   order_type?: OrderType | string | null;
+  order_items?: any[] | null;
+  items?: any[] | null;
 };
 
 export type FulfillmentStage =
@@ -119,8 +121,13 @@ export function getOrderWorkflow(order: OrderWorkflowInput): OrderWorkflow {
   const fulfillment = getFulfillmentStage(order);
   const method = normalize(order.payment_method);
   const fulfillmentMethod = normalize(order.fulfillment_method) || "delivery";
-  const orderType = normalize(order.order_type);
-  const isTailoring = orderType === "tailoring" || orderType === "mixed";
+  const items = order.order_items ?? order.items ?? [];
+  const detectedType = detectOrderType(items, order.order_type);
+  const isTailoring =
+    detectedType === "tailoring" ||
+    detectedType === "mixed" ||
+    fulfillment === "sent_to_tailor" ||
+    fulfillment === "received_from_tailor";
 
   const isCod = ["cod", "cash", "cash_on_delivery", "cash on delivery"].includes(method);
   const isManualBenefit = ["benefit", "benefitpay", "benefit_pay", "bank_transfer"].includes(

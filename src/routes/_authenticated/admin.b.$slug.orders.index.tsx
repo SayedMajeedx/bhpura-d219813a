@@ -190,16 +190,34 @@ const getFulfillmentBadgeDetails = (
   fulfillmentMethod?: string | null,
 ) => {
   const s = String(status || "ON_HOLD").toUpperCase();
+  if (s === "SENT_TO_TAILOR") {
+    return {
+      label: lang === "ar" ? "تم الإرسال للخياط" : "Sent to Tailor",
+      classes: "bg-purple-100 text-purple-900 border border-purple-300/80 font-semibold shadow-2xs",
+    };
+  }
+  if (s === "RECEIVED_FROM_TAILOR") {
+    return {
+      label: lang === "ar" ? "تم الاستلام من الخياط" : "Received from Tailor",
+      classes: "bg-teal-100 text-teal-900 border border-teal-300/80 font-semibold shadow-2xs",
+    };
+  }
+  if (s === "PACKING") {
+    return {
+      label: lang === "ar" ? "قيد التعبئة والتغليف" : "Packing",
+      classes: "bg-amber-100 text-amber-900 border border-amber-300/80 font-semibold shadow-2xs",
+    };
+  }
   if (s === "NEEDS_PACKING") {
     return {
       label: lang === "ar" ? "بحاجة للتعبئة" : "Needs Packing",
-      classes: "bg-amber-100 text-amber-900 border border-amber-300/80 font-semibold shadow-xs",
+      classes: "bg-amber-100 text-amber-900 border border-amber-300/80 font-semibold shadow-2xs",
     };
   }
   if (s === "READY_FOR_PICKUP") {
     return {
       label: lang === "ar" ? "جاهز للاستلام" : "Ready for Pickup",
-      classes: "bg-indigo-100 text-indigo-900 border border-indigo-300/80 font-semibold shadow-xs",
+      classes: "bg-indigo-100 text-indigo-900 border border-indigo-300/80 font-semibold shadow-2xs",
     };
   }
   if (["SHIPPED", "ASSIGNED", "OUT_FOR_DELIVERY", "READY_FOR_DELIVERY"].includes(s)) {
@@ -212,7 +230,7 @@ const getFulfillmentBadgeDetails = (
           : lang === "ar"
             ? "خرج للتوصيل"
             : "Out for Delivery",
-      classes: "bg-sky-100 text-sky-900 border border-sky-300/80 font-semibold shadow-xs",
+      classes: "bg-sky-100 text-sky-900 border border-sky-300/80 font-semibold shadow-2xs",
     };
   }
   if (s === "COMPLETED" || s === "DELIVERED") {
@@ -226,7 +244,7 @@ const getFulfillmentBadgeDetails = (
           ? "تم التوصيل"
           : "Delivered",
       classes:
-        "bg-emerald-100 text-emerald-900 border border-emerald-300/80 font-semibold shadow-xs",
+        "bg-emerald-100 text-emerald-900 border border-emerald-300/80 font-semibold shadow-2xs",
     };
   }
   if (["CANCELLED", "DELIVERY_FAILED", "FAILED", "RETURNED"].includes(s)) {
@@ -243,13 +261,13 @@ const getFulfillmentBadgeDetails = (
             : lang === "ar"
               ? "ملغي"
               : "Cancelled",
-      classes: "bg-rose-100 text-rose-900 border border-rose-300/80 font-semibold shadow-xs",
+      classes: "bg-rose-100 text-rose-900 border border-rose-300/80 font-semibold shadow-2xs",
     };
   }
   // ON_HOLD / default
   return {
     label: lang === "ar" ? "قيد الانتظار" : "On Hold",
-    classes: "bg-slate-200 text-slate-800 border border-border font-semibold shadow-xs",
+    classes: "bg-slate-200 text-slate-800 border border-border font-semibold shadow-2xs",
   };
 };
 
