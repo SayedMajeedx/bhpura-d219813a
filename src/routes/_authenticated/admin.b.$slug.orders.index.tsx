@@ -1029,6 +1029,163 @@ function OrdersList() {
       );
     }
 
+    if (workflow.nextAction === "send_to_tailor") {
+      return (
+        <Button
+          size="sm"
+          className="h-8 text-xs px-3 bg-purple-600 hover:bg-purple-700 text-white font-semibold shadow-2xs transition-all dark:bg-purple-700 dark:hover:bg-purple-800"
+          disabled={updatingOrderId !== null}
+          onClick={(e) => {
+            e.stopPropagation();
+            handleStatusUpdate(
+              { fulfillment_status: "SENT_TO_TAILOR" },
+              lang === "ar" ? "تم الإرسال للخياط بنجاح!" : "Order sent to tailor!",
+            );
+          }}
+        >
+          {isUpdating ? (
+            <Loader2 className="animate-spin h-3.5 w-3.5" />
+          ) : lang === "ar" ? (
+            "إرسال للخياط"
+          ) : (
+            "Send to Tailor"
+          )}
+        </Button>
+      );
+    }
+
+    if (workflow.nextAction === "receive_from_tailor") {
+      return (
+        <Button
+          size="sm"
+          className="h-8 text-xs px-3 bg-teal-600 hover:bg-teal-700 text-white font-semibold shadow-2xs transition-all dark:bg-teal-700 dark:hover:bg-teal-800"
+          disabled={updatingOrderId !== null}
+          onClick={(e) => {
+            e.stopPropagation();
+            handleStatusUpdate(
+              { fulfillment_status: "RECEIVED_FROM_TAILOR" },
+              lang === "ar" ? "تم استلام الطلب من الخياط بنجاح!" : "Received from tailor!",
+            );
+          }}
+        >
+          {isUpdating ? (
+            <Loader2 className="animate-spin h-3.5 w-3.5" />
+          ) : lang === "ar" ? (
+            "استلام من الخياط"
+          ) : (
+            "Receive from Tailor"
+          )}
+        </Button>
+      );
+    }
+
+    if (workflow.nextAction === "start_packing") {
+      return (
+        <Button
+          size="sm"
+          className="h-8 text-xs px-3 bg-amber-600 hover:bg-amber-700 text-white font-semibold shadow-2xs transition-all dark:bg-amber-700 dark:hover:bg-amber-800"
+          disabled={updatingOrderId !== null}
+          onClick={(e) => {
+            e.stopPropagation();
+            if (isPickup) {
+              handleStatusUpdate(
+                { fulfillment_status: "PACKING" },
+                lang === "ar" ? "جارٍ التجهيز والتغليف!" : "Packing started!",
+              );
+            } else {
+              setSelectedFulfillOrder(o);
+              setSelectedCourierId(o.assigned_to ?? "unassigned");
+              setFulfillNotes(o.delivery_notes ?? "");
+              setIsFulfillModalOpen(true);
+            }
+          }}
+        >
+          {isUpdating ? (
+            <Loader2 className="animate-spin h-3.5 w-3.5" />
+          ) : lang === "ar" ? (
+            "تجهيز الطلب"
+          ) : (
+            "Prepare Order"
+          )}
+        </Button>
+      );
+    }
+
+    if (workflow.nextAction === "mark_ready_pickup") {
+      return (
+        <Button
+          size="sm"
+          className="h-8 text-xs px-3 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold shadow-2xs transition-all dark:bg-indigo-700 dark:hover:bg-indigo-800"
+          disabled={updatingOrderId !== null}
+          onClick={(e) => {
+            e.stopPropagation();
+            handleStatusUpdate(
+              { fulfillment_status: "READY_FOR_PICKUP" },
+              lang === "ar" ? "تم تحديد الطلب كجاهز للاستلام!" : "Marked ready for pickup!",
+            );
+          }}
+        >
+          {isUpdating ? (
+            <Loader2 className="animate-spin h-3.5 w-3.5" />
+          ) : lang === "ar" ? (
+            "جاهز للاستلام"
+          ) : (
+            "Mark Ready"
+          )}
+        </Button>
+      );
+    }
+
+    if (workflow.nextAction === "mark_shipped") {
+      return (
+        <Button
+          size="sm"
+          className="h-8 text-xs px-3 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold shadow-2xs transition-all"
+          disabled={updatingOrderId !== null}
+          onClick={(e) => {
+            e.stopPropagation();
+            setSelectedFulfillOrder(o);
+            setSelectedCourierId(o.assigned_to ?? "unassigned");
+            setFulfillNotes(o.delivery_notes ?? "");
+            setIsFulfillModalOpen(true);
+          }}
+        >
+          {isUpdating ? (
+            <Loader2 className="animate-spin h-3.5 w-3.5" />
+          ) : lang === "ar" ? (
+            "تحديث الشحن"
+          ) : (
+            "Fulfill / Ship"
+          )}
+        </Button>
+      );
+    }
+
+    if (workflow.nextAction === "mark_completed") {
+      return (
+        <Button
+          size="sm"
+          className="h-8 text-xs px-3 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold shadow-2xs transition-all dark:bg-emerald-700 dark:hover:bg-emerald-800"
+          disabled={updatingOrderId !== null}
+          onClick={(e) => {
+            e.stopPropagation();
+            handleStatusUpdate(
+              { fulfillment_status: "COMPLETED" },
+              lang === "ar" ? "تم إتمام الطلب بنجاح!" : "Order completed!",
+            );
+          }}
+        >
+          {isUpdating ? (
+            <Loader2 className="animate-spin h-3.5 w-3.5" />
+          ) : lang === "ar" ? (
+            "إتمام الطلب"
+          ) : (
+            "Complete Order"
+          )}
+        </Button>
+      );
+    }
+
     if (isPickup) {
       // B. STORE PICKUP WORKFLOW
 
