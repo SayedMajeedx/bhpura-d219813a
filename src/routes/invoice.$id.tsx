@@ -541,10 +541,18 @@ function PublicInvoice() {
                       borderBottom: `1px solid ${dividerColor}`,
                     }}
                   >
-                    <th className="text-start p-3">{L.desc}</th>
-                    <th className="text-end p-3 w-16">{L.qty}</th>
-                    <th className="text-end p-3 w-24">{L.unit}</th>
-                    <th className="text-end p-3 w-28">{L.total}</th>
+                    <th className="text-start p-3" style={{ color: tableHeaderFg }}>
+                      {L.desc}
+                    </th>
+                    <th className="text-end p-3 w-16" style={{ color: tableHeaderFg }}>
+                      {L.qty}
+                    </th>
+                    <th className="text-end p-3 w-24" style={{ color: tableHeaderFg }}>
+                      {L.unit}
+                    </th>
+                    <th className="text-end p-3 w-28" style={{ color: tableHeaderFg }}>
+                      {L.total}
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
