@@ -1357,22 +1357,22 @@ function CustomerDialog({ customer, onSaved }: { customer: Customer | null; onSa
     }
 
     if (!customer) {
-      if (
-        !initialAddr.region.trim() ||
-        !initialAddr.block.trim() ||
-        !initialAddr.road.trim() ||
-        !initialAddr.house.trim()
-      ) {
-        return toast.error(t("customers.requiredError"));
-      }
-      const composedAddress = [
-        initialAddr.block && `Block ${initialAddr.block}`,
-        initialAddr.road && `Road ${initialAddr.road}`,
-        initialAddr.house && `House ${initialAddr.house}`,
-        initialAddr.flat && `Flat ${initialAddr.flat}`,
-      ]
-        .filter(Boolean)
-        .join(" · ");
+      const hasAddr = Boolean(
+        initialAddr.region.trim() ||
+        initialAddr.block.trim() ||
+        initialAddr.road.trim() ||
+        initialAddr.house.trim(),
+      );
+      const composedAddress = hasAddr
+        ? [
+            initialAddr.block && `Block ${initialAddr.block}`,
+            initialAddr.road && `Road ${initialAddr.road}`,
+            initialAddr.house && `House ${initialAddr.house}`,
+            initialAddr.flat && `Flat ${initialAddr.flat}`,
+          ]
+            .filter(Boolean)
+            .join(" · ")
+        : null;
       const { data: created, error } = await (supabase.from("customers") as any)
         .insert({
           name: f.name.trim(),
@@ -1380,30 +1380,33 @@ function CustomerDialog({ customer, onSaved }: { customer: Customer | null; onSa
           email: normalizedEmail || null,
           notes: f.notes,
           brand_id: brand.id,
-          region: initialAddr.region,
-          block: initialAddr.block,
-          road: initialAddr.road,
-          house: initialAddr.house,
-          flat: initialAddr.flat || null,
-          city: initialAddr.region,
+          region: initialAddr.region.trim() || null,
+          block: initialAddr.block.trim() || null,
+          road: initialAddr.road.trim() || null,
+          house: initialAddr.house.trim() || null,
+          flat: initialAddr.flat.trim() || null,
+          city: initialAddr.region.trim() || null,
           address: composedAddress,
           user_id: user.id,
         })
         .select("id")
         .single();
       if (error || !created) return toast.error(error?.message ?? "Failed");
-      const { error: aerr } = await (supabase.from("customer_addresses") as any).insert({
-        user_id: user.id,
-        customer_id: created.id,
-        label: initialAddr.label || "Primary",
-        region: initialAddr.region,
-        block: initialAddr.block,
-        road: initialAddr.road,
-        house: initialAddr.house,
-        flat: initialAddr.flat || null,
-        is_default: true,
-      });
-      if (aerr) return toast.error(aerr.message);
+
+      if (hasAddr) {
+        const { error: aerr } = await (supabase.from("customer_addresses") as any).insert({
+          user_id: user.id,
+          customer_id: created.id,
+          label: initialAddr.label || "Primary",
+          region: initialAddr.region.trim() || null,
+          block: initialAddr.block.trim() || null,
+          road: initialAddr.road.trim() || null,
+          house: initialAddr.house.trim() || null,
+          flat: initialAddr.flat.trim() || null,
+          is_default: true,
+        });
+        if (aerr) return toast.error(aerr.message);
+      }
     } else {
       const { error } = await supabase
         .from("customers")
