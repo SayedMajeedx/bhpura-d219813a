@@ -10,7 +10,7 @@ import {
 } from "@/lib/order-customer-snapshot";
 import { getPaymentGatewayReference } from "@/lib/payment-reference";
 import { getReadableTextColor } from "@/lib/color-utils";
-import { getInvoiceStatusLabel } from "@/lib/status-labels";
+import { getInvoiceStatusLabel, getFulfillmentLabel } from "@/lib/status-labels";
 
 type SavedAddress = {
   id?: string;
@@ -420,6 +420,12 @@ export default function InvoicePreview({
                   {L.paymentMethod}: {tPayment(order.payment_method, invoiceLang)}
                 </p>
               )}
+              {order.fulfillment_status && (
+                <p className="text-xs" style={{ opacity: 0.7 }}>
+                  {isRTL ? "حالة التجهيز والشحن" : "Fulfillment Status"}:{" "}
+                  {getFulfillmentLabel(order.fulfillment_status, invoiceLang)}
+                </p>
+              )}
               {getPaymentGatewayReference(order) && (
                 <p
                   className="text-[10px] mt-1 break-all"
@@ -503,32 +509,47 @@ export default function InvoicePreview({
           )}
 
           {settings.invoice_show_fulfillment !== false &&
-            (order.fulfillment_method || order.branch_id) && (
+            (order.fulfillment_method || order.branch_id || order.fulfillment_status) && (
               <div
                 className="mb-6 rounded-lg p-4 text-sm"
                 style={{ textAlign: "start", backgroundColor: secondary }}
               >
-                <p
-                  className={`text-xs mb-1 ${isRTL ? "" : "uppercase tracking-wider"}`}
-                  style={{ opacity: 0.6, letterSpacing: isRTL ? "normal" : undefined }}
-                >
-                  {isRTL ? "طريقة التسليم" : "Fulfillment"}
-                </p>
-                <p>
-                  {order.fulfillment_method === "digital"
-                    ? isRTL
-                      ? "تسليم رقمي"
-                      : "Digital delivery"
-                    : order.fulfillment_method === "pickup"
-                      ? isRTL
-                        ? "استلام من الفرع"
-                        : "Pickup from branch"
-                      : isRTL
-                        ? "توصيل"
-                        : "Delivery"}
-                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <p
+                      className={`text-xs mb-1 ${isRTL ? "" : "uppercase tracking-wider"}`}
+                      style={{ opacity: 0.6, letterSpacing: isRTL ? "normal" : undefined }}
+                    >
+                      {isRTL ? "طريقة التسليم" : "Fulfillment Method"}
+                    </p>
+                    <p className="font-semibold">
+                      {order.fulfillment_method === "digital"
+                        ? isRTL
+                          ? "تسليم رقمي"
+                          : "Digital delivery"
+                        : order.fulfillment_method === "pickup"
+                          ? isRTL
+                            ? "استلام من الفرع"
+                            : "Pickup from branch"
+                          : isRTL
+                            ? "توصيل للمنزل"
+                            : "Home delivery"}
+                    </p>
+                  </div>
+                  <div>
+                    <p
+                      className={`text-xs mb-1 ${isRTL ? "" : "uppercase tracking-wider"}`}
+                      style={{ opacity: 0.6, letterSpacing: isRTL ? "normal" : undefined }}
+                    >
+                      {isRTL ? "حالة التجهيز والشحن" : "Fulfillment & Shipping Status"}
+                    </p>
+                    <p className="font-semibold">
+                      {getFulfillmentLabel(order.fulfillment_status, invoiceLang)}
+                    </p>
+                  </div>
+                </div>
                 {order.fulfillment_method === "digital" && (
-                  <div className="mt-2 rounded-md border border-border p-3">
+                  <div className="mt-3 rounded-md border border-border p-3">
                     <p
                       className={`text-xs ${isRTL ? "" : "uppercase tracking-wider"}`}
                       style={{ opacity: 0.6, letterSpacing: isRTL ? "normal" : undefined }}
@@ -550,11 +571,13 @@ export default function InvoicePreview({
                   </div>
                 )}
                 {order.branch_id && (
-                  <InvoiceBranchName
-                    brandId={order.brand_id}
-                    branchId={order.branch_id}
-                    isRTL={isRTL}
-                  />
+                  <div className="mt-2">
+                    <InvoiceBranchName
+                      brandId={order.brand_id}
+                      branchId={order.branch_id}
+                      isRTL={isRTL}
+                    />
+                  </div>
                 )}
               </div>
             )}

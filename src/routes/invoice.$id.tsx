@@ -8,7 +8,7 @@ import {
   PAYMENT_BADGE_CLASSES,
   PAYMENT_BADGE_LABEL,
 } from "@/lib/payment-status";
-import { getInvoiceStatusLabel } from "@/lib/status-labels";
+import { getInvoiceStatusLabel, getFulfillmentLabel } from "@/lib/status-labels";
 import {
   getOrderCustomerEmail,
   getOrderCustomerName,
@@ -331,6 +331,12 @@ function PublicInvoice() {
                     {L.payment}: {PAY[order.payment_method]?.[lang] ?? order.payment_method}
                   </p>
                 )}
+                {order.fulfillment_status && (
+                  <p className="text-xs" style={{ opacity: 0.7 }}>
+                    {isRTL ? "حالة التجهيز والشحن" : "Fulfillment Status"}:{" "}
+                    {getFulfillmentLabel(order.fulfillment_status, lang)}
+                  </p>
+                )}
               </div>
             </div>
 
@@ -386,33 +392,48 @@ function PublicInvoice() {
                 className="mb-8 rounded-lg p-4 text-sm"
                 style={{ backgroundColor: secondaryColor, textAlign: "start" }}
               >
-                <p
-                  className={`text-xs mb-1 ${isRTL ? "" : "uppercase tracking-wider"}`}
-                  style={{ opacity: 0.6, letterSpacing: isRTL ? "normal" : undefined }}
-                >
-                  {isRTL ? "طريقة التسليم" : "Fulfillment"}
-                </p>
-                <p className="font-semibold">
-                  {order.fulfillment_method === "digital"
-                    ? isRTL
-                      ? "تسليم رقمي"
-                      : "Digital delivery"
-                    : order.fulfillment_method === "pickup"
-                      ? isRTL
-                        ? "استلام من الفرع"
-                        : "Pickup from branch"
-                      : isRTL
-                        ? "توصيل"
-                        : "Delivery"}
-                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <p
+                      className={`text-xs mb-1 ${isRTL ? "" : "uppercase tracking-wider"}`}
+                      style={{ opacity: 0.6, letterSpacing: isRTL ? "normal" : undefined }}
+                    >
+                      {isRTL ? "طريقة التسليم" : "Fulfillment Method"}
+                    </p>
+                    <p className="font-semibold">
+                      {order.fulfillment_method === "digital"
+                        ? isRTL
+                          ? "تسليم رقمي"
+                          : "Digital delivery"
+                        : order.fulfillment_method === "pickup"
+                          ? isRTL
+                            ? "استلام من الفرع"
+                            : "Pickup from branch"
+                          : isRTL
+                            ? "توصيل للمنزل"
+                            : "Home delivery"}
+                    </p>
+                  </div>
+                  <div>
+                    <p
+                      className={`text-xs mb-1 ${isRTL ? "" : "uppercase tracking-wider"}`}
+                      style={{ opacity: 0.6, letterSpacing: isRTL ? "normal" : undefined }}
+                    >
+                      {isRTL ? "حالة التجهيز والشحن" : "Fulfillment & Shipping Status"}
+                    </p>
+                    <p className="font-semibold">
+                      {getFulfillmentLabel(order.fulfillment_status, lang)}
+                    </p>
+                  </div>
+                </div>
                 {order.fulfillment_method === "digital" && (
-                  <p dir="ltr" className="mt-1 break-all">
+                  <p dir="ltr" className="mt-2 break-all">
                     {order.digital_delivery_channel === "whatsapp" ? "WhatsApp" : "Email"}:{" "}
                     {order.digital_delivery_contact}
                   </p>
                 )}
                 {order.fulfillment_method === "pickup" && branch && (
-                  <p className="mt-1" style={{ opacity: 0.8 }}>
+                  <p className="mt-2" style={{ opacity: 0.8 }}>
                     {isRTL ? branch.name_ar || branch.name_en : branch.name_en || branch.name_ar}
                     {(
                       isRTL
@@ -424,7 +445,7 @@ function PublicInvoice() {
                   </p>
                 )}
                 {order.fulfillment_method === "delivery" && (addrLine || legacyRegion) && (
-                  <p className="mt-1" style={{ opacity: 0.8 }}>
+                  <p className="mt-2" style={{ opacity: 0.8 }}>
                     {addrLine || legacyRegion}
                   </p>
                 )}
