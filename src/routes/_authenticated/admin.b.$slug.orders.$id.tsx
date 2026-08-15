@@ -810,7 +810,12 @@ function OrderDetail() {
   useEffect(() => {
     if (orderQ.data) {
       // Prevent background query revalidations from overwriting unsaved local edits
-      if (initialSnapshotRef.current && isDirty) return;
+      if (
+        initialSnapshotRef.current &&
+        (initialSnapshotRef.current.order as any)?.id === id &&
+        isDirty
+      )
+        return;
 
       setOrder(orderQ.data);
       const loadedItems = (orderQ.data.order_items ?? []).map((i: any) => ({
@@ -894,8 +899,15 @@ function OrderDetail() {
     }
   }, [orderQ.data, brandId, id, isBlankDraft, isDirty, lang]);
 
+  const prevIdRef = useRef(id);
   useEffect(() => {
-    setHasSavedDraft(false);
+    if (prevIdRef.current !== id) {
+      prevIdRef.current = id;
+      initialSnapshotRef.current = null;
+      setOrder(null);
+      setItems([]);
+      setHasSavedDraft(false);
+    }
   }, [id]);
 
   // Auto-save unsaved draft state to localStorage
@@ -1329,6 +1341,9 @@ function OrderDetail() {
       localStorage.removeItem(`boutq_draft_${brandId}_new`);
       await supabase.rpc("sync_order_stock", { p_order_id: created.id });
       toast.success(lang === "ar" ? "تم إنشاء الطلب بنجاح" : "Order created successfully");
+      initialSnapshotRef.current = null;
+      setOrder(null);
+      setItems([]);
       router.navigate({ to: "/admin/b/$slug/orders/$id", params: { slug, id: created.id } });
       return;
     }
