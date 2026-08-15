@@ -2062,14 +2062,22 @@ function OrderDetail() {
           className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold shadow-md transition-transform hover:scale-[1.02] active:scale-95"
           onClick={async () => {
             try {
+              const updatePayload: Record<string, any> = {
+                fulfillment_status: "COMPLETED",
+                status: "completed",
+                delivered_at: new Date().toISOString(),
+                updated_at: new Date().toISOString(),
+              };
+              if (
+                workflow.nextAction === "collect_and_deliver" ||
+                workflow.nextAction === "collect_and_hand_over" ||
+                order.payment_method === "cod"
+              ) {
+                updatePayload.payment_status = "paid";
+              }
               const { error } = await supabase
                 .from("orders")
-                .update({
-                  fulfillment_status: "COMPLETED",
-                  status: "completed",
-                  delivered_at: new Date().toISOString(),
-                  updated_at: new Date().toISOString(),
-                } as any)
+                .update(updatePayload as any)
                 .eq("id", order.id);
               if (error) throw error;
               toast.success(
