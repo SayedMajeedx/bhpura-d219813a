@@ -318,11 +318,17 @@ export default function SendInvoiceDialog({
         <DialogTrigger asChild>
           {asMenuItem ? (
             <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-              <Send className="h-4 w-4 mr-2" /> {t("orderDetail.sendInvoiceWa")}
+              <Send className="h-4 w-4 me-2" /> {t("orderDetail.sendInvoiceWa")}
             </DropdownMenuItem>
           ) : (
-            <Button variant="outline">
-              <Send className="h-4 w-4 mr-2" /> {t("orderDetail.sendInvoiceWa")}
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-9 px-2.5 sm:px-3 text-xs font-semibold shrink-0"
+            >
+              <Send className="h-4 w-4 me-1.5" />
+              <span className="hidden sm:inline">{t("orderDetail.sendInvoiceWa")}</span>
+              <span className="inline sm:hidden">{lang === "ar" ? "واتساب" : "WhatsApp"}</span>
             </Button>
           )}
         </DialogTrigger>

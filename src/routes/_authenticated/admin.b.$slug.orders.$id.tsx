@@ -2258,23 +2258,23 @@ function OrderDetail() {
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex items-center gap-1.5 shrink-0 ms-auto">
           {(isCreationMode || isDirty) && (
             <Button
               type="button"
               onClick={save}
               disabled={saving}
-              className="h-9 px-4 text-xs font-bold gap-2 shadow-sm bg-primary text-primary-foreground hover:bg-primary/90 rounded-xl"
+              className="h-9 px-3 text-xs font-bold gap-1.5 shadow-sm bg-primary text-primary-foreground hover:bg-primary/90 rounded-xl shrink-0"
             >
               {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
               <span>
                 {isCreationMode
                   ? lang === "ar"
-                    ? "إنشاء وحفظ الطلب"
-                    : "Create & Save Order"
+                    ? "إنشاء وحفظ"
+                    : "Create & save"
                   : lang === "ar"
-                    ? "حفظ التغييرات"
-                    : "Save Changes"}
+                    ? "حفظ"
+                    : "Save"}
               </span>
             </Button>
           )}
@@ -2285,7 +2285,7 @@ function OrderDetail() {
               <div className="hidden sm:block">{renderTopPrimaryAction()}</div>
 
               {/* Consolidated Actions */}
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5 shrink-0">
                 <SendInvoiceDialog
                   order={order}
                   totals={totals}
