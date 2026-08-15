@@ -176,9 +176,30 @@ function PublicInvoice() {
       ? statusUnpaidColor
       : statusProgressColor;
 
-  const tableHeaderBg = (settings as any)?.invoice_table_header_bg || "#f8fafc";
-  const tableHeaderFg = (settings as any)?.invoice_table_header_fg || "#0f172a";
-  const dividerColor = (settings as any)?.invoice_divider_color || "#e2e8f0";
+  const isDarkInvoice = getReadableTextColor(bgColor) === "#ffffff";
+  const darkTextForSurface = isDarkInvoice
+    ? bgColor.startsWith("#")
+      ? bgColor
+      : "#4a1526"
+    : "#0f172a";
+
+  const rawTableBg = (settings as any)?.invoice_table_header_bg;
+  const tableHeaderBg = rawTableBg || (isDarkInvoice ? `${color}25` : "#f8fafc");
+  const customTableFg = (settings as any)?.invoice_table_header_fg;
+  const tableHeaderFg =
+    customTableFg &&
+    getReadableTextColor(tableHeaderBg, darkTextForSurface, textColor) === darkTextForSurface
+      ? getReadableTextColor(tableHeaderBg) === "#ffffff"
+        ? "#ffffff"
+        : darkTextForSurface
+      : customTableFg || getReadableTextColor(tableHeaderBg, darkTextForSurface, textColor);
+
+  const dividerColor =
+    (settings as any)?.invoice_divider_color || (isDarkInvoice ? `${textColor}20` : "#e2e8f0");
+
+  const surfaceCardTextColor = getReadableTextColor(secondaryColor, darkTextForSurface, textColor);
+  const badgeBg = secondaryColor || `${statusBadgeColor}25`;
+  const badgeTextColor = getReadableTextColor(badgeBg, darkTextForSurface, statusBadgeColor);
 
   const money = (n: number) => formatMoney(Number(n || 0), currency, locale);
 
@@ -351,11 +372,11 @@ function PublicInvoice() {
                     {L.number}: {order.invoice_number}
                   </p>
                   <span
-                    className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold"
+                    className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold"
                     style={{
-                      backgroundColor: `${statusBadgeColor}18`,
-                      color: statusBadgeColor,
-                      border: `1px solid ${statusBadgeColor}35`,
+                      backgroundColor: badgeBg,
+                      color: badgeTextColor,
+                      border: `1px solid ${badgeTextColor}40`,
                     }}
                   >
                     {getInvoiceStatusLabel(rawStatus, lang)}
@@ -365,36 +386,40 @@ function PublicInvoice() {
                   {L.date}: {formatDate(order.created_at ?? order.order_date, locale)}
                 </p>
                 {order.payment_method && (
-                  <p className="text-xs" style={{ opacity: 0.75 }}>
+                  <p className="text-xs mt-0.5" style={{ opacity: 0.75 }}>
                     {L.payment}: {PAY[order.payment_method]?.[lang] ?? order.payment_method}
                   </p>
                 )}
               </div>
             </div>
 
-            {order.customers && (
-              <div className="mb-8" style={{ textAlign: "start" }}>
+            {showContact && (
+              <div
+                className="pdf-contact-block mb-8 pb-6 text-sm"
+                style={{
+                  borderBottom: `1px solid ${dividerColor}`,
+                  textAlign: "start",
+                }}
+              >
                 <p
-                  className={`text-xs mb-1 ${isRTL ? "" : "uppercase tracking-wider"}`}
+                  className={`text-xs mb-1 font-semibold ${isRTL ? "" : "uppercase tracking-wider"}`}
                   style={{ opacity: 0.6, letterSpacing: isRTL ? "normal" : undefined }}
                 >
                   {L.billTo}
                 </p>
-                <p className="font-medium">{getOrderCustomerName(order)}</p>
-                {showContact && getOrderCustomerPhone(order) && (
+                <p className="font-bold text-base">
+                  {order.customers?.name || order.customer_name || "—"}
+                </p>
+                {order.customers?.phone && (
                   <p
                     dir="ltr"
-                    className="text-sm"
-                    style={{
-                      opacity: 0.75,
-                      unicodeBidi: "isolate",
-                      textAlign: isRTL ? "right" : "left",
-                    }}
+                    className="text-sm mt-0.5"
+                    style={{ opacity: 0.75, textAlign: isRTL ? "right" : "left" }}
                   >
-                    {getOrderCustomerPhone(order)}
+                    {order.customers.phone}
                   </p>
                 )}
-                {showContact && getOrderCustomerEmail(order) && (
+                {getOrderCustomerEmail(order) && (
                   <p
                     dir="ltr"
                     className="text-sm"
@@ -403,23 +428,30 @@ function PublicInvoice() {
                     {getOrderCustomerEmail(order)}
                   </p>
                 )}
-                {!showFulfillment && (addrLine || legacyRegion) && (
-                  <div className="mt-3 pt-3 border-t border-neutral-200">
-                    <p
-                      className={`text-xs mb-1 ${isRTL ? "" : "uppercase tracking-wider"}`}
-                      style={{ opacity: 0.6, letterSpacing: isRTL ? "normal" : undefined }}
-                    >
-                      {L.delivery}
-                    </p>
-                    <p className="text-sm" style={{ opacity: 0.85 }}>
-                      {addrLine || legacyRegion}
-                    </p>
-                  </div>
-                )}
+                {(() => {
+                  const detailed = shippingAddress
+                    ? formatAddressDetailed(shippingAddress as StructuredAddress, lang)
+                    : "";
+                  const addr = detailed || legacyRegion;
+                  if (!addr) return null;
+                  return (
+                    <div className="mt-3 pt-3" style={{ borderTop: `1px solid ${dividerColor}` }}>
+                      <p
+                        className={`text-xs mb-1 ${isRTL ? "" : "uppercase tracking-wider"}`}
+                        style={{ opacity: 0.6, letterSpacing: isRTL ? "normal" : undefined }}
+                      >
+                        {isRTL ? "عنوان التوصيل" : "Delivery address"}
+                      </p>
+                      <p className="text-sm leading-relaxed" style={{ opacity: 0.85 }}>
+                        {addr}
+                      </p>
+                    </div>
+                  );
+                })()}
               </div>
             )}
 
-            {showFulfillment && (
+            {showFulfillment && (order.fulfillment_method || order.branch_id) && (
               <div
                 className="mb-8 rounded-lg p-4 text-sm"
                 style={{ backgroundColor: secondaryColor, textAlign: "start" }}
@@ -427,11 +459,15 @@ function PublicInvoice() {
                 <div>
                   <p
                     className={`text-xs mb-1 ${isRTL ? "" : "uppercase tracking-wider"}`}
-                    style={{ opacity: 0.6, letterSpacing: isRTL ? "normal" : undefined }}
+                    style={{
+                      color: surfaceCardTextColor,
+                      opacity: 0.7,
+                      letterSpacing: isRTL ? "normal" : undefined,
+                    }}
                   >
                     {isRTL ? "طريقة التسليم" : "Fulfillment Method"}
                   </p>
-                  <p className="font-semibold text-base">
+                  <p className="font-bold text-base" style={{ color: surfaceCardTextColor }}>
                     {order.fulfillment_method === "digital"
                       ? isRTL
                         ? "تسليم رقمي"
@@ -446,13 +482,20 @@ function PublicInvoice() {
                   </p>
                 </div>
                 {order.fulfillment_method === "digital" && (
-                  <p dir="ltr" className="mt-2 text-xs opacity-85 break-all">
+                  <p
+                    dir="ltr"
+                    className="mt-2 text-xs break-all"
+                    style={{ color: surfaceCardTextColor, opacity: 0.85 }}
+                  >
                     {order.digital_delivery_channel === "whatsapp" ? "WhatsApp" : "Email"}:{" "}
                     {order.digital_delivery_contact}
                   </p>
                 )}
                 {order.fulfillment_method === "pickup" && branch && (
-                  <p className="mt-1 text-xs text-neutral-600 dark:text-neutral-400">
+                  <p
+                    className="mt-1 text-xs"
+                    style={{ color: surfaceCardTextColor, opacity: 0.85 }}
+                  >
                     {isRTL ? branch.name_ar || branch.name_en : branch.name_en || branch.name_ar}
                     {(
                       isRTL
@@ -464,7 +507,10 @@ function PublicInvoice() {
                   </p>
                 )}
                 {order.fulfillment_method === "delivery" && (addrLine || legacyRegion) && (
-                  <p className="mt-1 text-xs text-neutral-600 dark:text-neutral-400">
+                  <p
+                    className="mt-1 text-xs"
+                    style={{ color: surfaceCardTextColor, opacity: 0.85 }}
+                  >
                     {addrLine || legacyRegion}
                   </p>
                 )}
@@ -522,32 +568,37 @@ function PublicInvoice() {
                       >
                         <td className="p-3">
                           <div className="space-y-0.5">
-                            <p className="font-semibold text-foreground">{title}</p>
+                            <p className="font-semibold" style={{ color: textColor }}>
+                              {title}
+                            </p>
                             {inlineDetails && (
-                              <p className="text-xs text-muted-foreground opacity-85">
+                              <p className="text-xs" style={{ color: textColor, opacity: 0.82 }}>
                                 {inlineDetails}
                               </p>
                             )}
                             {secondaryParts.length > 0 && (
-                              <div className="text-xs text-muted-foreground opacity-75">
+                              <div className="text-xs" style={{ color: textColor, opacity: 0.75 }}>
                                 {secondaryParts.map((l: string, li: number) => (
                                   <div key={li}>{l}</div>
                                 ))}
                               </div>
                             )}
                             {it.product_variants?.color && (
-                              <p className="text-xs text-muted-foreground opacity-75">
+                              <p className="text-xs" style={{ color: textColor, opacity: 0.75 }}>
                                 {L.color}: {it.product_variants.color}
                               </p>
                             )}
                             {it.product_variants?.size && (
-                              <p className="text-xs text-muted-foreground opacity-75">
+                              <p className="text-xs" style={{ color: textColor, opacity: 0.75 }}>
                                 {L.size}: {it.product_variants.size}
                               </p>
                             )}
                           </div>
                           {(it.customizations ?? []).length > 0 && (
-                            <ul className="mt-1 text-xs space-y-0.5" style={{ opacity: 0.75 }}>
+                            <ul
+                              className="mt-1 text-xs space-y-0.5"
+                              style={{ color: textColor, opacity: 0.75 }}
+                            >
                               {it.customizations.map((c: any, ci: number) => (
                                 <li key={ci}>
                                   + {c.name} ({money(c.price_delta)})
@@ -556,7 +607,10 @@ function PublicInvoice() {
                             </ul>
                           )}
                           {(it.custom_field_values ?? []).length > 0 && (
-                            <div className="mt-1 text-xs space-y-0.5" style={{ opacity: 0.75 }}>
+                            <div
+                              className="mt-1 text-xs space-y-0.5"
+                              style={{ color: textColor, opacity: 0.75 }}
+                            >
                               {it.custom_field_values.map((field: any, fi: number) => (
                                 <p key={fi}>
                                   {(isRTL
@@ -568,8 +622,10 @@ function PublicInvoice() {
                             </div>
                           )}
                         </td>
-                        <td className="p-3 text-end">{it.quantity}</td>
-                        <td className="p-3 text-end whitespace-nowrap">
+                        <td className="p-3 text-end" style={{ color: textColor }}>
+                          {it.quantity}
+                        </td>
+                        <td className="p-3 text-end whitespace-nowrap" style={{ color: textColor }}>
                           {Number(it.original_price ?? 0) > Number(it.unit_price) ? (
                             <span className="inline-flex flex-col items-end leading-tight">
                               <span className="text-xs line-through" style={{ opacity: 0.6 }}>
@@ -583,7 +639,10 @@ function PublicInvoice() {
                             money(Number(it.unit_price) + Number(it.customization_total))
                           )}
                         </td>
-                        <td className="p-3 text-end whitespace-nowrap font-medium">
+                        <td
+                          className="p-3 text-end whitespace-nowrap font-semibold"
+                          style={{ color: textColor }}
+                        >
                           {money(it.line_total)}
                         </td>
                       </tr>
@@ -640,18 +699,32 @@ function PublicInvoice() {
                     <>
                       <div
                         className="flex justify-between items-center py-2 px-2.5 rounded-lg mt-2 font-bold"
-                        style={{ backgroundColor: `${color}15`, border: `1.5px solid ${color}40` }}
+                        style={{
+                          backgroundColor: secondaryColor,
+                          border: `1.5px solid ${color}40`,
+                        }}
                       >
-                        <span className="text-base sm:text-lg" style={{ color }}>
+                        <span
+                          className="text-base sm:text-lg"
+                          style={{ color: surfaceCardTextColor }}
+                        >
                           {lang === "ar" ? "المبلغ الإجمالي" : "Total Amount"}
                         </span>
                         <div className="flex items-center gap-2">
-                          <span className="text-lg sm:text-xl" style={{ color }}>
+                          <span
+                            className="text-lg sm:text-xl"
+                            style={{ color: surfaceCardTextColor }}
+                          >
                             {money(order.total)}
                           </span>
                           <span
-                            className={`text-[10px] px-2 py-0.5 rounded-full border ${isRTL ? "" : "uppercase tracking-wider"} ${PAYMENT_BADGE_CLASSES[badge]}`}
-                            style={{ letterSpacing: isRTL ? "normal" : undefined }}
+                            className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${isRTL ? "" : "uppercase tracking-wider"}`}
+                            style={{
+                              backgroundColor: badgeBg,
+                              color: badgeTextColor,
+                              border: `1px solid ${badgeTextColor}40`,
+                              letterSpacing: isRTL ? "normal" : undefined,
+                            }}
                           >
                             {PAYMENT_BADGE_LABEL[badge][lang]}
                           </span>
@@ -682,23 +755,28 @@ function PublicInvoice() {
 
             {showNotes && (
               <div
-                className="mt-8 pt-6 border-t border-neutral-200 text-xs sm:text-sm space-y-3"
-                style={{ opacity: 0.85 }}
+                className="mt-8 pt-6 text-xs sm:text-sm space-y-3"
+                style={{ borderTop: `1px solid ${dividerColor}` }}
               >
                 {order.notes && (
-                  <p>
+                  <p style={{ color: textColor, opacity: 0.85 }}>
                     <strong>{L.notes}: </strong>
                     {order.notes}
                   </p>
                 )}
                 {settings?.footer_note ? (
-                  <p className="italic">{settings.footer_note}</p>
+                  <p className="italic" style={{ color: textColor, opacity: 0.85 }}>
+                    {settings.footer_note}
+                  </p>
                 ) : (
-                  <div className="space-y-1 rounded-md bg-neutral-100 dark:bg-neutral-800 p-3 text-xs leading-relaxed text-neutral-600 dark:text-neutral-400">
-                    <p className="font-semibold text-neutral-900 dark:text-neutral-100">
+                  <div
+                    className="space-y-1 rounded-md p-3 text-xs leading-relaxed"
+                    style={{ backgroundColor: secondaryColor }}
+                  >
+                    <p className="font-semibold" style={{ color: surfaceCardTextColor }}>
                       {isRTL ? "الشروط والأحكام" : "Terms & Conditions"}
                     </p>
-                    <p>
+                    <p style={{ color: surfaceCardTextColor, opacity: 0.88 }}>
                       {isRTL
                         ? "فترة الاستبدال والاسترجاع خلال 3 أيام من تاريخ الاستلام. القطع المفصلة خصيصاً غير قابلة للاسترجاع بعد البدء في التفصيل."
                         : "Exchange and return policy valid within 3 days of receipt. Custom-tailored products are non-refundable once tailoring has commenced."}

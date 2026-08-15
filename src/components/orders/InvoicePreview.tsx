@@ -282,9 +282,26 @@ export default function InvoicePreview({
       ? statusUnpaidColor
       : statusProgressColor;
 
-  const tableHeaderBg = (settings as any).invoice_table_header_bg || "#f8fafc";
-  const tableHeaderFg = (settings as any).invoice_table_header_fg || "#0f172a";
-  const dividerColor = (settings as any).invoice_divider_color || "#e2e8f0";
+  const isDarkInvoice = getReadableTextColor(bg) === "#ffffff";
+  const darkTextForSurface = isDarkInvoice ? (bg.startsWith("#") ? bg : "#4a1526") : "#0f172a";
+
+  const rawTableBg = (settings as any).invoice_table_header_bg;
+  const tableHeaderBg = rawTableBg || (isDarkInvoice ? `${color}25` : "#f8fafc");
+  const customTableFg = (settings as any).invoice_table_header_fg;
+  const tableHeaderFg =
+    customTableFg &&
+    getReadableTextColor(tableHeaderBg, darkTextForSurface, text) === darkTextForSurface
+      ? getReadableTextColor(tableHeaderBg) === "#ffffff"
+        ? "#ffffff"
+        : darkTextForSurface
+      : customTableFg || getReadableTextColor(tableHeaderBg, darkTextForSurface, text);
+
+  const dividerColor =
+    (settings as any).invoice_divider_color || (isDarkInvoice ? `${text}20` : "#e2e8f0");
+
+  const surfaceCardTextColor = getReadableTextColor(secondary, darkTextForSurface, text);
+  const badgeBg = secondary || `${statusBadgeColor}25`;
+  const badgeTextColor = getReadableTextColor(badgeBg, darkTextForSurface, statusBadgeColor);
 
   return (
     <div className="space-y-2">
@@ -435,11 +452,11 @@ export default function InvoicePreview({
                   {L.invoiceNumber}: {num(order.invoice_number)}
                 </p>
                 <span
-                  className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold"
+                  className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold"
                   style={{
-                    backgroundColor: `${statusBadgeColor}18`,
-                    color: statusBadgeColor,
-                    border: `1px solid ${statusBadgeColor}35`,
+                    backgroundColor: badgeBg,
+                    color: badgeTextColor,
+                    border: `1px solid ${badgeTextColor}40`,
                   }}
                 >
                   {getInvoiceStatusLabel(rawStatus, invoiceLang)}
@@ -548,11 +565,15 @@ export default function InvoicePreview({
                 <div>
                   <p
                     className={`text-xs mb-1 ${isRTL ? "" : "uppercase tracking-wider"}`}
-                    style={{ opacity: 0.6, letterSpacing: isRTL ? "normal" : undefined }}
+                    style={{
+                      color: surfaceCardTextColor,
+                      opacity: 0.7,
+                      letterSpacing: isRTL ? "normal" : undefined,
+                    }}
                   >
                     {isRTL ? "طريقة التسليم" : "Fulfillment Method"}
                   </p>
-                  <p className="font-semibold text-base">
+                  <p className="font-bold text-base" style={{ color: surfaceCardTextColor }}>
                     {order.fulfillment_method === "digital"
                       ? isRTL
                         ? "تسليم رقمي"
@@ -567,7 +588,10 @@ export default function InvoicePreview({
                   </p>
                 </div>
                 {order.fulfillment_method === "digital" && (
-                  <div className="mt-2 text-xs" style={{ opacity: 0.85 }}>
+                  <div
+                    className="mt-2 text-xs"
+                    style={{ color: surfaceCardTextColor, opacity: 0.85 }}
+                  >
                     <p>
                       {order.digital_delivery_channel === "whatsapp"
                         ? isRTL
@@ -581,7 +605,10 @@ export default function InvoicePreview({
                   </div>
                 )}
                 {order.branch_id && (
-                  <div className="mt-1 text-xs text-muted-foreground">
+                  <div
+                    className="mt-1 text-xs font-medium"
+                    style={{ color: surfaceCardTextColor, opacity: 0.85 }}
+                  >
                     <InvoiceBranchName
                       brandId={order.brand_id}
                       branchId={order.branch_id}
@@ -643,11 +670,13 @@ export default function InvoicePreview({
 
                         return (
                           <>
-                            <p className="font-semibold">{title}</p>
+                            <p className="font-semibold" style={{ color: text }}>
+                              {title}
+                            </p>
                             {inlineDetails && (
                               <p
-                                className="text-xs mt-0.5 font-normal text-muted-foreground"
-                                style={{ opacity: 0.85 }}
+                                className="text-xs mt-0.5 font-normal"
+                                style={{ color: text, opacity: 0.85 }}
                               >
                                 {inlineDetails}
                               </p>
@@ -655,7 +684,7 @@ export default function InvoicePreview({
                             {secondaryParts.length > 0 && (
                               <div
                                 className="text-xs mt-0.5 leading-snug"
-                                style={{ opacity: 0.75 }}
+                                style={{ color: text, opacity: 0.75 }}
                               >
                                 {secondaryParts.map((line, li) => (
                                   <div key={li}>{line}</div>
@@ -716,8 +745,10 @@ export default function InvoicePreview({
                         </ul>
                       )}
                     </td>
-                    <td className="p-3 text-end">{num(it.quantity)}</td>
-                    <td className="p-3 text-end whitespace-nowrap">
+                    <td className="p-3 text-end" style={{ color: text }}>
+                      {num(it.quantity)}
+                    </td>
+                    <td className="p-3 text-end whitespace-nowrap" style={{ color: text }}>
                       {Number(it.original_price ?? 0) > Number(it.unit_price) ? (
                         <span className="inline-flex flex-col items-end leading-tight">
                           <span className="text-xs line-through" style={{ opacity: 0.6 }}>
@@ -729,7 +760,10 @@ export default function InvoicePreview({
                         money(it.unit_price + it.customization_total)
                       )}
                     </td>
-                    <td className="p-3 font-medium text-end whitespace-nowrap">
+                    <td
+                      className="p-3 font-semibold text-end whitespace-nowrap"
+                      style={{ color: text }}
+                    >
                       {money(it.line_total)}
                     </td>
                   </tr>
@@ -773,19 +807,30 @@ export default function InvoicePreview({
               )}
               <div
                 className="flex justify-between items-center py-2 px-2.5 rounded-lg mt-2 font-bold"
-                style={{ backgroundColor: `${color}15`, border: `1.5px solid ${color}40` }}
+                style={{ backgroundColor: secondary, border: `1.5px solid ${color}40` }}
               >
-                <span className="font-display text-base sm:text-lg" style={{ color }}>
+                <span
+                  className="font-display text-base sm:text-lg"
+                  style={{ color: surfaceCardTextColor }}
+                >
                   {invoiceLang === "ar" ? "المبلغ الإجمالي" : "Total Amount"}
                 </span>
                 <div className="flex items-center gap-2">
-                  <span className="font-display text-lg sm:text-xl" style={{ color }}>
+                  <span
+                    className="font-display text-lg sm:text-xl"
+                    style={{ color: surfaceCardTextColor }}
+                  >
                     {money(order.total)}
                   </span>
                   {paymentBadge && (
                     <span
-                      className={`text-[10px] px-2 py-0.5 rounded-full border ${isRTL ? "" : "uppercase tracking-wider"} ${PAYMENT_BADGE_CLASSES[paymentBadge]}`}
-                      style={{ letterSpacing: isRTL ? "normal" : undefined }}
+                      className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${isRTL ? "" : "uppercase tracking-wider"}`}
+                      style={{
+                        backgroundColor: badgeBg,
+                        color: badgeTextColor,
+                        border: `1px solid ${badgeTextColor}40`,
+                        letterSpacing: isRTL ? "normal" : undefined,
+                      }}
                     >
                       {PAYMENT_BADGE_LABEL[paymentBadge][invoiceLang]}
                     </span>
@@ -816,30 +861,35 @@ export default function InvoicePreview({
 
           {settings.invoice_show_notes !== false && (
             <div
-              className="mt-10 pt-6 border-t border-border text-xs sm:text-sm space-y-3"
-              style={{ opacity: 0.85 }}
+              className="mt-10 pt-6 text-xs sm:text-sm space-y-3"
+              style={{ borderTop: `1px solid ${dividerColor}` }}
             >
               {order.notes && (
-                <p>
+                <p style={{ color: text, opacity: 0.85 }}>
                   <strong>{L.notes}: </strong>
                   {order.notes}
                 </p>
               )}
               {settings.footer_note ? (
-                <p className="italic">{settings.footer_note}</p>
+                <p className="italic" style={{ color: text, opacity: 0.85 }}>
+                  {settings.footer_note}
+                </p>
               ) : (
-                <div className="space-y-1 rounded-md bg-muted/30 p-3 text-xs leading-relaxed text-muted-foreground">
-                  <p className="font-semibold text-foreground">
+                <div
+                  className="space-y-1 rounded-md p-3 text-xs leading-relaxed"
+                  style={{ backgroundColor: secondary }}
+                >
+                  <p className="font-semibold" style={{ color: surfaceCardTextColor }}>
                     {isRTL ? "الشروط والأحكام" : "Terms & Conditions"}
                   </p>
-                  <p>
+                  <p style={{ color: surfaceCardTextColor, opacity: 0.88 }}>
                     {isRTL
                       ? "فترة الاستبدال والاسترجاع خلال 3 أيام من تاريخ الاستلام. القطع المفصلة خصيصاً غير قابلة للاسترجاع بعد البدء في التفصيل."
                       : "Exchange and return policy valid within 3 days of receipt. Custom-tailored products are non-refundable once tailoring has commenced."}
                   </p>
                 </div>
               )}
-              <p className="italic font-medium pt-1">
+              <p className="italic font-medium pt-1" style={{ color: text, opacity: 0.85 }}>
                 {L.warmRegards},<br />
                 {brandFor(invoiceLang, settings.business_name)}
               </p>
