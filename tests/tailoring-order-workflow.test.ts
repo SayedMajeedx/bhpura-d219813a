@@ -10,6 +10,7 @@ import { getInvoiceStatusLabel } from "../src/lib/status-labels";
 describe("Ready Stock vs Tailoring Order Workflow", () => {
   it("detects ready stock item correctly", () => {
     const item = {
+      variant_id: "v-123",
       size: "M",
       color: "Black",
       custom_fields: [],
@@ -17,8 +18,18 @@ describe("Ready Stock vs Tailoring Order Workflow", () => {
     expect(isTailoringItem(item)).toBe(false);
   });
 
+  it("detects tailoring item by null variant_id (custom line item)", () => {
+    const item = {
+      variant_id: null,
+      description: "فستان داخلي - بيج - مقاس 54",
+      customizations: [{ name: "Include Inner Dress" }],
+    };
+    expect(isTailoringItem(item)).toBe(true);
+  });
+
   it("detects tailoring item by custom fields or measurements", () => {
     const item = {
+      variant_id: "v-123",
       size: "M",
       custom_fields: [{ label: "Length (الطول)", value: "56" }],
     };
@@ -27,6 +38,7 @@ describe("Ready Stock vs Tailoring Order Workflow", () => {
 
   it("detects tailoring item by keyword in size or notes", () => {
     const item = {
+      variant_id: "v-123",
       size: "مقاس خاص (تفصيل)",
       custom_fields: [],
     };
@@ -34,13 +46,19 @@ describe("Ready Stock vs Tailoring Order Workflow", () => {
   });
 
   it("classifies order as ready_stock, tailoring, or mixed", () => {
-    const readyItems = [{ size: "S" }, { size: "L" }];
+    const readyItems = [
+      { variant_id: "v-1", size: "S" },
+      { variant_id: "v-2", size: "L" },
+    ];
     expect(detectOrderType(readyItems)).toBe("ready_stock");
 
-    const tailorItems = [{ size: "Standard", custom_fields: [{ label: "Chest", value: "38" }] }];
+    const tailorItems = [{ variant_id: null, description: "تفصيل خاص / بدون مخزون جاهز" }];
     expect(detectOrderType(tailorItems)).toBe("tailoring");
 
-    const mixedItems = [{ size: "S" }, { size: "M", is_tailoring: true }];
+    const mixedItems = [
+      { variant_id: "v-1", size: "S" },
+      { variant_id: null, description: "تفصيل" },
+    ];
     expect(detectOrderType(mixedItems)).toBe("mixed");
   });
 

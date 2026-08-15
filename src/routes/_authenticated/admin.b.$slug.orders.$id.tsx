@@ -1765,7 +1765,8 @@ function OrderDetail() {
 
   const renderTopPrimaryAction = () => {
     if (isCreationMode || !order) return null;
-    const workflow = getOrderWorkflow(order);
+    const computedOrderType = detectOrderType(items, order?.order_type);
+    const workflow = getOrderWorkflow({ ...order, order_type: computedOrderType });
 
     if (workflow.nextAction === "send_to_tailor") {
       return (

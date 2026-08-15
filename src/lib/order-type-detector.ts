@@ -9,13 +9,19 @@
 export type OrderType = "ready_stock" | "tailoring" | "mixed";
 
 export interface OrderItemForTypeDetection {
+  variant_id?: string | null;
   product_id?: string | null;
   product_name?: string | null;
+  title?: string | null;
+  description?: string | null;
+  variant_title?: string | null;
   size?: string | null;
   color?: string | null;
   fabric?: string | null;
   custom_fields?: Array<{ label?: string; value?: string; [key: string]: any }> | null;
   custom_field_values?: Array<{ label?: string; value?: string; [key: string]: any }> | null;
+  customizations?: Array<{ name?: string; price?: number; [key: string]: any }> | null;
+  selected_variant?: { size?: string | null; [key: string]: any } | null;
   notes?: string | null;
   is_tailoring?: boolean | null;
   item_type?: string | null;
@@ -24,6 +30,9 @@ export interface OrderItemForTypeDetection {
 export function isTailoringItem(item: OrderItemForTypeDetection): boolean {
   if (item.is_tailoring === true) return true;
   if (item.item_type?.toLowerCase() === "tailoring") return true;
+
+  // Custom item explicitly created without a variant (variant_id === null or "custom")
+  if (item.variant_id === null || item.variant_id === "custom") return true;
 
   // Check custom fields or measurements
   const fields = item.custom_fields ?? item.custom_field_values ?? [];
@@ -34,12 +43,37 @@ export function isTailoringItem(item: OrderItemForTypeDetection): boolean {
     if (hasFilledValue) return true;
   }
 
-  // Check size string or notes for tailoring keywords
-  const sizeText = (item.size ?? "").toLowerCase();
-  const notesText = (item.notes ?? "").toLowerCase();
-  const keywords = ["تفصيل", "tailor", "custom", "مخصص", "مقاس خاص", "حسب الطلب", "made-to-order"];
+  // Check item level customizations (e.g. Include Inner Dress, modifications)
+  if (Array.isArray(item.customizations) && item.customizations.length > 0) {
+    return true;
+  }
 
-  if (keywords.some((kw) => sizeText.includes(kw) || notesText.includes(kw))) {
+  // Check size, notes, description, product/variant names for tailoring keywords
+  const sizeText = (item.size ?? item.selected_variant?.size ?? "").toLowerCase();
+  const notesText = (item.notes ?? "").toLowerCase();
+  const descText = (
+    item.description ??
+    item.title ??
+    item.product_name ??
+    item.variant_title ??
+    ""
+  ).toLowerCase();
+
+  const keywords = [
+    "تفصيل",
+    "تفصيل خاص",
+    "بدون مخزون",
+    "tailor",
+    "custom",
+    "مخصص",
+    "مقاس خاص",
+    "حسب الطلب",
+    "made-to-order",
+  ];
+
+  if (
+    keywords.some((kw) => sizeText.includes(kw) || notesText.includes(kw) || descText.includes(kw))
+  ) {
     return true;
   }
 
