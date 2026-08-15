@@ -126,6 +126,13 @@ type Settings = {
   invoice_show_notes: boolean;
   invoice_title_en: string | null;
   invoice_title_ar: string | null;
+  invoice_arabic_font_family?: string | null;
+  invoice_status_paid_color?: string | null;
+  invoice_status_unpaid_color?: string | null;
+  invoice_status_progress_color?: string | null;
+  invoice_table_header_bg?: string | null;
+  invoice_table_header_fg?: string | null;
+  invoice_divider_color?: string | null;
   storefront_radius?: string | null;
 };
 
@@ -146,6 +153,17 @@ const FONT_PRESETS = [
   "Arial",
   "Helvetica",
   "Custom (uploaded)",
+];
+
+const ARABIC_FONT_PRESETS = [
+  "Cairo",
+  "Tajawal",
+  "Alexandria",
+  "Amiri",
+  "Noto Sans Arabic",
+  "IBM Plex Sans Arabic",
+  "Almarai",
+  "Changa",
 ];
 
 const STOREFRONT_EN_FONTS = ["Plus Jakarta Sans", "Inter", "Arial", "Georgia", "Times New Roman"];
@@ -706,6 +724,13 @@ function Settings() {
           invoice_show_notes: f.invoice_show_notes,
           invoice_title_en: f.invoice_title_en,
           invoice_title_ar: f.invoice_title_ar,
+          invoice_arabic_font_family: f.invoice_arabic_font_family,
+          invoice_status_paid_color: f.invoice_status_paid_color,
+          invoice_status_unpaid_color: f.invoice_status_unpaid_color,
+          invoice_status_progress_color: f.invoice_status_progress_color,
+          invoice_table_header_bg: f.invoice_table_header_bg,
+          invoice_table_header_fg: f.invoice_table_header_fg,
+          invoice_divider_color: f.invoice_divider_color,
         })
         .eq("brand_id", brandId);
       if (error) toast.error(error.message);
@@ -1202,8 +1227,26 @@ function Settings() {
                   />
                 </div>
                 <div>
+                  <Label>{lang === "ar" ? "خط الفاتورة بالعربية" : "Arabic font family"}</Label>
+                  <Select
+                    value={f.invoice_arabic_font_family ?? "Cairo"}
+                    onValueChange={(val) => setF({ ...f, invoice_arabic_font_family: val })}
+                  >
+                    <SelectTrigger className="mt-1">
+                      <SelectValue placeholder="Cairo" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {ARABIC_FONT_PRESETS.map((font) => (
+                        <SelectItem key={font} value={font}>
+                          {font}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
                   <Label>{lang === "ar" ? "اللون الثانوي" : "Secondary color"}</Label>
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 mt-1">
                     <input
                       type="color"
                       value={f.invoice_secondary_color ?? "#f5f5f5"}
@@ -1217,6 +1260,168 @@ function Settings() {
                         setF({ ...f, invoice_secondary_color: e.target.value || null })
                       }
                     />
+                  </div>
+                </div>
+              </div>
+
+              {/* Status Pill Colors */}
+              <div className="border-t border-border pt-4 space-y-3">
+                <div>
+                  <h4 className="text-sm font-semibold">
+                    {lang === "ar" ? "ألوان شارات الحالة" : "Status Badge Colors"}
+                  </h4>
+                  <p className="text-xs text-muted-foreground">
+                    {lang === "ar"
+                      ? "تحديد ألوان مستقلة لشارات الحالة (مدفوع، غير مدفوع، قيد التنفيذ/التفصيل)."
+                      : "Define independent colors for paid, unpaid, and in-progress status badges."}
+                  </p>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div>
+                    <Label className="text-xs">
+                      {lang === "ar" ? "مدفوع / مكتمل" : "Paid / Completed"}
+                    </Label>
+                    <div className="flex gap-2 mt-1">
+                      <input
+                        type="color"
+                        value={f.invoice_status_paid_color ?? "#16a34a"}
+                        onChange={(e) => setF({ ...f, invoice_status_paid_color: e.target.value })}
+                        className="h-8 w-10 rounded border"
+                      />
+                      <Input
+                        className="h-8 text-xs font-mono"
+                        value={f.invoice_status_paid_color ?? "#16a34a"}
+                        placeholder="#16a34a"
+                        onChange={(e) =>
+                          setF({ ...f, invoice_status_paid_color: e.target.value || null })
+                        }
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <Label className="text-xs">
+                      {lang === "ar" ? "غير مدفوع / ملغى" : "Unpaid / Pending"}
+                    </Label>
+                    <div className="flex gap-2 mt-1">
+                      <input
+                        type="color"
+                        value={f.invoice_status_unpaid_color ?? "#dc2626"}
+                        onChange={(e) =>
+                          setF({ ...f, invoice_status_unpaid_color: e.target.value })
+                        }
+                        className="h-8 w-10 rounded border"
+                      />
+                      <Input
+                        className="h-8 text-xs font-mono"
+                        value={f.invoice_status_unpaid_color ?? "#dc2626"}
+                        placeholder="#dc2626"
+                        onChange={(e) =>
+                          setF({ ...f, invoice_status_unpaid_color: e.target.value || null })
+                        }
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <Label className="text-xs">
+                      {lang === "ar" ? "قيد التنفيذ / جاري التفصيل" : "In Progress / Tailoring"}
+                    </Label>
+                    <div className="flex gap-2 mt-1">
+                      <input
+                        type="color"
+                        value={f.invoice_status_progress_color ?? "#d97706"}
+                        onChange={(e) =>
+                          setF({ ...f, invoice_status_progress_color: e.target.value })
+                        }
+                        className="h-8 w-10 rounded border"
+                      />
+                      <Input
+                        className="h-8 text-xs font-mono"
+                        value={f.invoice_status_progress_color ?? "#d97706"}
+                        placeholder="#d97706"
+                        onChange={(e) =>
+                          setF({ ...f, invoice_status_progress_color: e.target.value || null })
+                        }
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Table & Divider Colors */}
+              <div className="border-t border-border pt-4 space-y-3">
+                <div>
+                  <h4 className="text-sm font-semibold">
+                    {lang === "ar" ? "ألوان الجدول والفاصل" : "Table Header & Divider Colors"}
+                  </h4>
+                  <p className="text-xs text-muted-foreground">
+                    {lang === "ar"
+                      ? "التحكم خلفية ترويسة جدول المنتجات وخطوط التقسيم."
+                      : "Customize item table header background, text color, and section line dividers."}
+                  </p>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div>
+                    <Label className="text-xs">
+                      {lang === "ar" ? "خلفية ترويسة الجدول" : "Table Header BG"}
+                    </Label>
+                    <div className="flex gap-2 mt-1">
+                      <input
+                        type="color"
+                        value={f.invoice_table_header_bg ?? "#f8fafc"}
+                        onChange={(e) => setF({ ...f, invoice_table_header_bg: e.target.value })}
+                        className="h-8 w-10 rounded border"
+                      />
+                      <Input
+                        className="h-8 text-xs font-mono"
+                        value={f.invoice_table_header_bg ?? "#f8fafc"}
+                        placeholder="#f8fafc"
+                        onChange={(e) =>
+                          setF({ ...f, invoice_table_header_bg: e.target.value || null })
+                        }
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <Label className="text-xs">
+                      {lang === "ar" ? "نص ترويسة الجدول" : "Table Header Text"}
+                    </Label>
+                    <div className="flex gap-2 mt-1">
+                      <input
+                        type="color"
+                        value={f.invoice_table_header_fg ?? "#0f172a"}
+                        onChange={(e) => setF({ ...f, invoice_table_header_fg: e.target.value })}
+                        className="h-8 w-10 rounded border"
+                      />
+                      <Input
+                        className="h-8 text-xs font-mono"
+                        value={f.invoice_table_header_fg ?? "#0f172a"}
+                        placeholder="#0f172a"
+                        onChange={(e) =>
+                          setF({ ...f, invoice_table_header_fg: e.target.value || null })
+                        }
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <Label className="text-xs">
+                      {lang === "ar" ? "لون خطوط الفاصل" : "Divider Line Color"}
+                    </Label>
+                    <div className="flex gap-2 mt-1">
+                      <input
+                        type="color"
+                        value={f.invoice_divider_color ?? "#e2e8f0"}
+                        onChange={(e) => setF({ ...f, invoice_divider_color: e.target.value })}
+                        className="h-8 w-10 rounded border"
+                      />
+                      <Input
+                        className="h-8 text-xs font-mono"
+                        value={f.invoice_divider_color ?? "#e2e8f0"}
+                        placeholder="#e2e8f0"
+                        onChange={(e) =>
+                          setF({ ...f, invoice_divider_color: e.target.value || null })
+                        }
+                      />
+                    </div>
                   </div>
                 </div>
               </div>

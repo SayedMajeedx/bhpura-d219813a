@@ -156,6 +156,30 @@ function PublicInvoice() {
     (isRTL ? settings?.invoice_title_ar : settings?.invoice_title_en) || L.invoice;
   const items = order.order_items ?? [];
 
+  const arabicFont = (settings as any)?.invoice_arabic_font_family || "Cairo";
+  const rawStatus = order.fulfillment_status || order.status;
+  const isPaidStatus =
+    order.payment_status === "paid" || rawStatus === "delivered" || rawStatus === "completed";
+  const isUnpaidStatus =
+    order.payment_status === "unpaid" ||
+    rawStatus === "cancelled" ||
+    rawStatus === "payment_pending";
+
+  const statusPaidColor = (settings as any)?.invoice_status_paid_color || "#16a34a";
+  const statusUnpaidColor = (settings as any)?.invoice_status_unpaid_color || "#dc2626";
+  const statusProgressColor =
+    (settings as any)?.invoice_status_progress_color || color || "#d97706";
+
+  const statusBadgeColor = isPaidStatus
+    ? statusPaidColor
+    : isUnpaidStatus
+      ? statusUnpaidColor
+      : statusProgressColor;
+
+  const tableHeaderBg = (settings as any)?.invoice_table_header_bg || "#f8fafc";
+  const tableHeaderFg = (settings as any)?.invoice_table_header_fg || "#0f172a";
+  const dividerColor = (settings as any)?.invoice_divider_color || "#e2e8f0";
+
   const money = (n: number) => formatMoney(Number(n || 0), currency, locale);
 
   const addrLine = shippingAddress
@@ -255,12 +279,18 @@ function PublicInvoice() {
             fontFamily: settings?.font_url
               ? `'PublicInvoiceCustom', sans-serif`
               : isRTL
-                ? `'Tajawal','Cairo',sans-serif`
+                ? `"${arabicFont}", 'Tajawal', 'Cairo', sans-serif`
                 : `"${settings?.font_family || "Cormorant Garamond"}", serif`,
           }}
         >
           {settings?.font_url && (
             <style>{`@font-face{font-family:'PublicInvoiceCustom';src:url('${settings.font_url}');font-display:swap}`}</style>
+          )}
+          {isRTL && (
+            <link
+              rel="stylesheet"
+              href={`https://fonts.googleapis.com/css2?family=${encodeURIComponent(arabicFont).replace(/%20/g, "+")}:wght@400;500;600;700&display=swap`}
+            />
           )}
           <div className="pdf-invoice-body p-5 sm:p-10">
             {/* Brand block always on the doc-start side (LTR=left, RTL=right);
@@ -322,9 +352,13 @@ function PublicInvoice() {
                   </p>
                   <span
                     className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold"
-                    style={{ backgroundColor: `${color}18`, color, border: `1px solid ${color}35` }}
+                    style={{
+                      backgroundColor: `${statusBadgeColor}18`,
+                      color: statusBadgeColor,
+                      border: `1px solid ${statusBadgeColor}35`,
+                    }}
                   >
-                    {getInvoiceStatusLabel(order.fulfillment_status || order.status, lang)}
+                    {getInvoiceStatusLabel(rawStatus, lang)}
                   </span>
                 </div>
                 <p className="text-xs mt-2" style={{ opacity: 0.75 }}>
@@ -440,7 +474,13 @@ function PublicInvoice() {
             <div className="pdf-table-wrap -mx-2 sm:mx-0 overflow-x-auto">
               <table className="pdf-line-items w-full min-w-[440px] text-sm mb-6">
                 <thead>
-                  <tr style={{ backgroundColor: color, color: getReadableTextColor(color) }}>
+                  <tr
+                    style={{
+                      backgroundColor: tableHeaderBg,
+                      color: tableHeaderFg,
+                      borderBottom: `1px solid ${dividerColor}`,
+                    }}
+                  >
                     <th className="text-start p-3">{L.desc}</th>
                     <th className="text-end p-3 w-16">{L.qty}</th>
                     <th className="text-end p-3 w-24">{L.unit}</th>
@@ -475,7 +515,11 @@ function PublicInvoice() {
                     }
 
                     return (
-                      <tr key={i} className="border-b border-neutral-200 align-top">
+                      <tr
+                        key={i}
+                        className="border-b align-top"
+                        style={{ borderBottomColor: dividerColor }}
+                      >
                         <td className="p-3">
                           <div className="space-y-0.5">
                             <p className="font-semibold text-foreground">{title}</p>

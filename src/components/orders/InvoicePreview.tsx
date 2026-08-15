@@ -257,11 +257,34 @@ export default function InvoicePreview({
   };
   const num = (n: number | string) => (isRTL ? toArabicDigits(String(n)) : String(n));
 
+  const arabicFont = (settings as any).invoice_arabic_font_family || "Cairo";
   const family = isRTL
-    ? `"Tajawal", "Cairo", sans-serif`
+    ? `"${arabicFont}", "Tajawal", "Cairo", sans-serif`
     : settings.font_family === "Custom (uploaded)"
       ? "'InvoiceCustomFont', sans-serif"
       : `"${settings.font_family || "Cormorant Garamond"}", serif`;
+
+  const rawStatus = order.fulfillment_status || order.status;
+  const isPaidStatus =
+    order.payment_status === "paid" || rawStatus === "delivered" || rawStatus === "completed";
+  const isUnpaidStatus =
+    order.payment_status === "unpaid" ||
+    rawStatus === "cancelled" ||
+    rawStatus === "payment_pending";
+
+  const statusPaidColor = (settings as any).invoice_status_paid_color || "#16a34a";
+  const statusUnpaidColor = (settings as any).invoice_status_unpaid_color || "#dc2626";
+  const statusProgressColor = (settings as any).invoice_status_progress_color || color || "#d97706";
+
+  const statusBadgeColor = isPaidStatus
+    ? statusPaidColor
+    : isUnpaidStatus
+      ? statusUnpaidColor
+      : statusProgressColor;
+
+  const tableHeaderBg = (settings as any).invoice_table_header_bg || "#f8fafc";
+  const tableHeaderFg = (settings as any).invoice_table_header_fg || "#0f172a";
+  const dividerColor = (settings as any).invoice_divider_color || "#e2e8f0";
 
   return (
     <div className="space-y-2">
@@ -302,6 +325,12 @@ export default function InvoicePreview({
       >
         {settings.font_url && !isRTL && (
           <style>{`@font-face { font-family: 'InvoiceCustomFont'; src: url('${settings.font_url}'); font-display: swap; }`}</style>
+        )}
+        {isRTL && (
+          <link
+            rel="stylesheet"
+            href={`https://fonts.googleapis.com/css2?family=${encodeURIComponent(arabicFont).replace(/%20/g, "+")}:wght@400;500;600;700&display=swap`}
+          />
         )}
         <div
           className="pdf-invoice-body p-4 sm:p-8 md:p-10 print:p-10 relative"
@@ -407,9 +436,13 @@ export default function InvoicePreview({
                 </p>
                 <span
                   className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold"
-                  style={{ backgroundColor: `${color}18`, color, border: `1px solid ${color}35` }}
+                  style={{
+                    backgroundColor: `${statusBadgeColor}18`,
+                    color: statusBadgeColor,
+                    border: `1px solid ${statusBadgeColor}35`,
+                  }}
                 >
-                  {getInvoiceStatusLabel(order.fulfillment_status || order.status, invoiceLang)}
+                  {getInvoiceStatusLabel(rawStatus, invoiceLang)}
                 </span>
               </div>
               <p className="text-xs mt-2" style={{ opacity: 0.75 }}>
@@ -562,7 +595,13 @@ export default function InvoicePreview({
           <div className="pdf-table-wrap -mx-4 sm:mx-0 overflow-x-auto print:overflow-visible print:mx-0">
             <table className="pdf-line-items w-full min-w-[520px] text-sm mb-6">
               <thead>
-                <tr style={{ backgroundColor: color, color: getReadableTextColor(color) }}>
+                <tr
+                  style={{
+                    backgroundColor: tableHeaderBg,
+                    color: tableHeaderFg,
+                    borderBottom: `1px solid ${dividerColor}`,
+                  }}
+                >
                   <th className="text-start p-3">{L.description}</th>
                   <th className="text-end p-3 w-16">{L.qty}</th>
                   <th className="text-end p-3 w-28">{L.unit}</th>
@@ -571,7 +610,11 @@ export default function InvoicePreview({
               </thead>
               <tbody>
                 {items.map((it, i) => (
-                  <tr key={i} className="border-b border-border align-top">
+                  <tr
+                    key={i}
+                    className="border-b align-top"
+                    style={{ borderBottomColor: dividerColor }}
+                  >
                     <td className="p-3 text-start">
                       {(() => {
                         const rawDesc = it.description || "—";
