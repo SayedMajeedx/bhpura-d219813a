@@ -165,7 +165,7 @@ export function OsMobileNavigation({
           <SheetContent
             side={lang === "ar" ? "right" : "left"}
             hideDefaultClose
-            className="w-[85vw] sm:w-80 max-w-xs border-s border-border/80 p-0 flex flex-col bg-card dark:bg-slate-950 text-foreground shadow-2xl overflow-hidden z-50"
+            className="w-[85vw] sm:w-80 max-w-xs border-s border-border/80 p-0 flex flex-col bg-card dark:bg-slate-950 text-foreground shadow-2xl overflow-hidden z-50 admin-mobile-fast-transition"
           >
             {/* Ambient liquid background blur blobs */}
             <div className="absolute -top-16 -right-16 w-56 h-56 rounded-full bg-primary/20 blur-3xl pointer-events-none animate-pulse" />

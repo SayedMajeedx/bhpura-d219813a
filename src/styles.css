@@ -331,6 +331,78 @@ html.lang-ar .font-display {
   }
 }
 
+/* Smart Adaptive Mobile Typography System
+   Prevents harsh, heavy bold ink-bleed on high-DPI mobile screens,
+   automatically softening weights on mobile while preserving full hierarchy on desktop. */
+@media (max-width: 640px) {
+  /* Automatically soften 700+ bold weights to clean 600 semibold on mobile viewports */
+  .font-bold,
+  .font-extrabold,
+  .font-black,
+  b,
+  strong {
+    font-weight: 600 !important;
+  }
+
+  /* Soften heading weights for supreme mobile legibility */
+  .admin-typography :is(h1, h2, h3, .font-display, .font-heading) {
+    font-weight: 600 !important;
+  }
+
+  /* High performance text rendering */
+  body,
+  .admin-typography,
+  .admin-typography * {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+}
+
+/* Explicit Utility Classes for Smart Adaptive Font Weights */
+.font-smart-bold {
+  font-weight: 600;
+}
+@media (min-width: 641px) {
+  .font-smart-bold {
+    font-weight: 700;
+  }
+}
+
+.font-smart-semibold {
+  font-weight: 500;
+}
+@media (min-width: 641px) {
+  .font-smart-semibold {
+    font-weight: 600;
+  }
+}
+
+.font-smart-heading {
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+@media (min-width: 641px) {
+  .font-smart-heading {
+    font-weight: 700;
+  }
+}
+
+/* Mobile Performance & GPU Compositing Acceleration */
+@media (max-width: 768px) {
+  .admin-mobile-fast-scroll {
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+    overscroll-behavior-y: contain;
+  }
+
+  .admin-mobile-fast-transition {
+    will-change: transform, opacity;
+    transform: translateZ(0);
+    backface-visibility: hidden;
+  }
+}
+
 /* Hide default browser spinner arrows on number inputs */
 input::-webkit-outer-spin-button,
 input::-webkit-inner-spin-button {
