@@ -16,6 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { getInvoiceStatusLabel } from "@/lib/status-labels";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import {
@@ -89,90 +90,46 @@ function statusMeta(
   fulfillmentStatus: string | null,
   isAr: boolean,
 ) {
-  const s = status.toLowerCase();
-  const pay = String(paymentStatus || "unpaid").toLowerCase();
-  const ful = String(fulfillmentStatus || "ON_HOLD").toUpperCase();
+  const s = String(status || "").toLowerCase();
+  const ful = String(fulfillmentStatus || "").toUpperCase();
 
-  // If order is cancelled, return Cancelled directly
-  if (s === "cancelled") {
+  if (s === "cancelled" || ful === "CANCELLED") {
     return {
-      label: isAr ? "ملغى" : "Cancelled",
+      label: isAr ? "ملغي" : "Cancelled",
       tone: "bg-red-50 text-red-800 dark:bg-rose-950/30 dark:text-rose-400 border border-rose-200/50",
     };
   }
 
-  // Decoupled status mappings:
-  if (ful === "READY_FOR_PICKUP") {
-    return {
-      label: isAr ? "جاهز للاستلام" : "Ready for Pickup",
-      tone: "bg-indigo-50 text-indigo-800 dark:bg-indigo-950/30 dark:text-indigo-400 border border-indigo-200/50",
-    };
-  }
-  if (ful === "SHIPPED") {
-    return {
-      label: isAr ? "خرج للتوصيل" : "Out for Delivery",
-      tone: "bg-sky-50 text-sky-800 dark:bg-sky-950/30 dark:text-sky-400 border border-sky-200/50",
-    };
-  }
-  if (ful === "COMPLETED" || s === "completed") {
-    return {
-      label: isAr ? "مكتمل" : "Completed",
-      tone: "bg-emerald-50 text-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-400 border border-emerald-200/50",
-    };
-  }
-  if (pay === "paid" && ful === "NEEDS_PACKING") {
-    return {
-      label: isAr ? "جاري تجهيز الطلب" : "Preparing Order",
-      tone: "bg-blue-50 text-blue-800 dark:bg-blue-950/30 dark:text-blue-400 border border-blue-200/50",
-    };
-  }
-  if (pay === "unpaid" && (ful === "ON_HOLD" || ful === "NEEDS_PACKING")) {
-    return {
-      label: isAr ? "جاري معالجة الدفع" : "Processing Payment",
-      tone: "bg-amber-50 text-amber-800 dark:bg-amber-950/30 dark:text-amber-400 border border-amber-200/50",
-    };
+  const effectiveStatus = ful || status;
+  const label = getInvoiceStatusLabel(effectiveStatus, isAr ? "ar" : "en");
+
+  let tone =
+    "bg-neutral-100 text-neutral-800 dark:bg-neutral-850 dark:text-neutral-300 border border-border";
+  if (ful === "SENT_TO_TAILOR") {
+    tone =
+      "bg-purple-50 text-purple-800 dark:bg-purple-950/30 dark:text-purple-400 border border-purple-200/50";
+  } else if (ful === "RECEIVED_FROM_TAILOR" || ful === "NEEDS_PACKING" || ful === "PACKING") {
+    tone =
+      "bg-blue-50 text-blue-800 dark:bg-blue-950/30 dark:text-blue-400 border border-blue-200/50";
+  } else if (ful === "READY_FOR_PICKUP") {
+    tone =
+      "bg-indigo-50 text-indigo-800 dark:bg-indigo-950/30 dark:text-indigo-400 border border-indigo-200/50";
+  } else if (
+    ful === "SHIPPED" ||
+    ful === "ASSIGNED" ||
+    ful === "OUT_FOR_DELIVERY" ||
+    s === "shipped"
+  ) {
+    tone = "bg-sky-50 text-sky-800 dark:bg-sky-950/30 dark:text-sky-400 border border-sky-200/50";
+  } else if (ful === "COMPLETED" || ful === "DELIVERED" || s === "completed") {
+    tone =
+      "bg-emerald-50 text-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-400 border border-emerald-200/50";
+  } else {
+    tone =
+      "bg-amber-50 text-amber-800 dark:bg-amber-950/30 dark:text-amber-400 border border-amber-200/50";
   }
 
-  // Fallback map
-  const map: Record<string, { ar: string; en: string; tone: string }> = {
-    pending: {
-      ar: "جاري معالجة الدفع",
-      en: "Processing Payment",
-      tone: "bg-amber-50 text-amber-800 dark:bg-amber-950/30 dark:text-amber-400 border border-amber-200/50",
-    },
-    confirmed: {
-      ar: "مؤكد",
-      en: "Confirmed",
-      tone: "bg-blue-50 text-blue-800 dark:bg-blue-950/30 dark:text-blue-400 border border-blue-200/50",
-    },
-    paid: {
-      ar: "مدفوع",
-      en: "Paid",
-      tone: "bg-emerald-50 text-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-400 border border-emerald-200/50",
-    },
-    shipped: {
-      ar: "خرج للتوصيل",
-      en: "Out for Delivery",
-      tone: "bg-sky-50 text-sky-800 dark:bg-sky-950/30 dark:text-sky-400 border border-sky-200/50",
-    },
-    completed: {
-      ar: "مكتمل",
-      en: "Completed",
-      tone: "bg-emerald-50 text-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-400 border border-emerald-200/50",
-    },
-    cancelled: {
-      ar: "ملغى",
-      en: "Cancelled",
-      tone: "bg-red-50 text-red-800 dark:bg-red-950/30 dark:text-red-400 border border-red-200/50",
-    },
-    refunded: {
-      ar: "مرتجع",
-      en: "Refunded",
-      tone: "bg-neutral-100 text-neutral-800 dark:bg-neutral-850 dark:text-neutral-300 border border-border",
-    },
-  };
-  const m = map[s] ?? { ar: status, en: status, tone: "bg-neutral-100 text-neutral-800 border" };
-  return { label: isAr ? m.ar : m.en, tone: m.tone };
+  return { label, tone };
 }
 
 function getInitials(name: string) {
@@ -210,11 +167,19 @@ function OrderTimelineTracker({
   let activeIndex = 0;
   if (currentStatus === "cancelled" || currentStatus === "refunded") {
     activeIndex = -1;
-  } else if (ful === "COMPLETED" || currentStatus === "completed") {
+  } else if (ful === "COMPLETED" || ful === "DELIVERED" || currentStatus === "completed") {
     activeIndex = 3;
-  } else if (ful === "SHIPPED") {
+  } else if (
+    ful === "SHIPPED" ||
+    ful === "ASSIGNED" ||
+    ful === "OUT_FOR_DELIVERY" ||
+    currentStatus === "shipped"
+  ) {
     activeIndex = 2;
   } else if (
+    ful === "SENT_TO_TAILOR" ||
+    ful === "RECEIVED_FROM_TAILOR" ||
+    ful === "PACKING" ||
     ful === "NEEDS_PACKING" ||
     ful === "READY_FOR_PICKUP" ||
     currentStatus === "confirmed" ||
@@ -300,7 +265,7 @@ function AccountPage() {
       const { data, error } = await supabase
         .from("orders")
         .select(
-          "id, invoice_number, order_date, status, total, currency, order_items(id, description, quantity, unit_price)",
+          "id, invoice_number, order_date, status, payment_status, fulfillment_status, total, currency, order_items(id, description, quantity, unit_price)",
         )
         .eq("customer_id", customer!.id)
         .order("created_at", { ascending: false })
