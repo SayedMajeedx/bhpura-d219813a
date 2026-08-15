@@ -2281,8 +2281,8 @@ function OrderDetail() {
 
           {!isCreationMode && (
             <>
-              {/* Primary Next Workflow Quick Action (e.g. Approve Payment, Hand Over, Pack & Ship) */}
-              {renderTopPrimaryAction()}
+              {/* Primary Next Workflow Quick Action (e.g. Approve Payment, Hand Over, Pack & Ship) - hidden on mobile to avoid duplicate CTA */}
+              <div className="hidden sm:block">{renderTopPrimaryAction()}</div>
 
               {/* Consolidated Actions */}
               <div className="flex items-center gap-2">
@@ -2409,9 +2409,9 @@ function OrderDetail() {
         </section>
       )}
 
-      {/* Sticky Section Navigation Bar */}
+      {/* Section Navigation Bar */}
       {!isCreationMode && (
-        <div className="no-print sticky top-0 z-30 mb-3 flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-border/80 bg-background/95 p-1.5 shadow-sm backdrop-blur select-none sm:mb-6 sm:rounded-xl">
+        <div className="no-print mb-3 flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-border/80 bg-card/90 p-1.5 shadow-sm select-none sm:mb-6 sm:rounded-xl">
           <div className="grid grid-cols-4 gap-1 w-full sm:w-auto sm:flex sm:items-center sm:gap-2">
             <button
               type="button"
@@ -2419,7 +2419,7 @@ function OrderDetail() {
               className={cn(
                 "min-h-11 justify-center rounded-xl px-1.5 py-1.5 text-[10px] font-bold transition-colors flex flex-col sm:flex-row items-center gap-1 sm:px-3.5 sm:text-xs sm:whitespace-nowrap touch-manipulation",
                 activeSection === "sec-overview"
-                  ? "bg-primary text-primary-foreground shadow-xs"
+                  ? "bg-foreground text-background font-bold shadow-2xs"
                   : "hover:bg-muted text-muted-foreground",
               )}
             >
@@ -2432,7 +2432,7 @@ function OrderDetail() {
               className={cn(
                 "min-h-11 justify-center rounded-xl px-1.5 py-1.5 text-[10px] font-bold transition-colors flex flex-col sm:flex-row items-center gap-1 sm:px-3.5 sm:text-xs sm:whitespace-nowrap touch-manipulation",
                 activeSection === "sec-items"
-                  ? "bg-primary text-primary-foreground shadow-xs"
+                  ? "bg-foreground text-background font-bold shadow-2xs"
                   : "hover:bg-muted text-muted-foreground",
               )}
             >
@@ -2445,7 +2445,7 @@ function OrderDetail() {
               className={cn(
                 "min-h-11 justify-center rounded-xl px-1.5 py-1.5 text-[10px] font-bold transition-colors flex flex-col sm:flex-row items-center gap-1 sm:px-3.5 sm:text-xs sm:whitespace-nowrap touch-manipulation",
                 activeSection === "sec-invoice"
-                  ? "bg-primary text-primary-foreground shadow-xs"
+                  ? "bg-foreground text-background font-bold shadow-2xs"
                   : "hover:bg-muted text-muted-foreground",
               )}
             >
@@ -2458,7 +2458,7 @@ function OrderDetail() {
               className={cn(
                 "min-h-11 justify-center rounded-xl px-1.5 py-1.5 text-[10px] font-bold transition-colors flex flex-col sm:flex-row items-center gap-1 sm:px-3.5 sm:text-xs sm:whitespace-nowrap touch-manipulation",
                 activeSection === "sec-activity"
-                  ? "bg-primary text-primary-foreground shadow-xs"
+                  ? "bg-foreground text-background font-bold shadow-2xs"
                   : "hover:bg-muted text-muted-foreground",
               )}
             >
@@ -2470,37 +2470,31 @@ function OrderDetail() {
           {/* Left Side: Dynamic Save Button & Unsaved Notation */}
           {!isReadOnly && (
             <div className="flex items-center gap-2.5 ms-auto sm:ms-0 px-1 py-0.5">
-              {isDirty && (
-                <span className="text-xs font-semibold text-amber-600 dark:text-amber-400 animate-fade-in hidden md:inline">
-                  {lang === "ar" ? "توجد تغييرات غير محفوظة على الطلب" : "Unsaved changes detected"}
+              {isDirty ? (
+                <>
+                  <span className="text-xs font-semibold text-amber-600 dark:text-amber-400 animate-fade-in hidden md:inline">
+                    {lang === "ar" ? "توجد تغييرات غير محفوظة" : "Unsaved changes"}
+                  </span>
+                  <Button
+                    onClick={save}
+                    disabled={saving}
+                    size="sm"
+                    className="shadow-xs font-bold h-9 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white shadow-md ring-2 ring-emerald-500/30"
+                  >
+                    {saving ? (
+                      <Loader2 className="h-4 w-4 me-1.5 animate-spin" />
+                    ) : (
+                      <Save className="h-4 w-4 me-1.5" />
+                    )}
+                    {lang === "ar" ? "حفظ التغييرات" : "Save Changes"}
+                  </Button>
+                </>
+              ) : (
+                <span className="text-xs text-muted-foreground font-medium flex items-center gap-1.5 px-2 py-1 bg-muted/40 rounded-lg">
+                  <Check className="h-3.5 w-3.5 text-emerald-600" />
+                  {lang === "ar" ? "محفوظ" : "Saved"}
                 </span>
               )}
-              <Button
-                onClick={save}
-                disabled={saving}
-                size="sm"
-                className={cn(
-                  "shadow-xs font-bold h-9 px-4 transition-all rounded-xl",
-                  isDirty
-                    ? "bg-emerald-600 hover:bg-emerald-700 text-white shadow-md ring-2 ring-emerald-500/30"
-                    : "bg-primary text-primary-foreground hover:bg-primary/90",
-                )}
-              >
-                {saving ? (
-                  <Loader2 className="h-4 w-4 me-1.5 animate-spin" />
-                ) : isDirty ? (
-                  <Save className="h-4 w-4 me-1.5" />
-                ) : (
-                  <Check className="h-4 w-4 me-1.5" />
-                )}
-                {isDirty
-                  ? lang === "ar"
-                    ? "حفظ التغييرات"
-                    : "Save Changes"
-                  : lang === "ar"
-                    ? "محفوظ"
-                    : "Saved"}
-              </Button>
             </div>
           )}
         </div>
