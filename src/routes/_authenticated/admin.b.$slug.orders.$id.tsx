@@ -3379,40 +3379,50 @@ function OrderDetail() {
                         </div>
                       )}
 
-                      <div>
-                        <Label className="text-xs">{t("orderDetail.customizations")}</Label>
-                        <div className="flex flex-wrap gap-2 mt-1">
-                          {(customQ.data ?? [])
-                            .filter((c: any) => {
+                      {Boolean(it.product_id) && (
+                        <div>
+                          <Label className="text-xs">{t("orderDetail.customizations")}</Label>
+                          <div className="flex flex-wrap gap-2 mt-1">
+                            {(customQ.data ?? [])
+                              .filter((c: any) => {
+                                const pIds = Array.isArray(c.product_ids) ? c.product_ids : [];
+                                if (pIds.length === 0) return true;
+                                return pIds.includes(it.product_id);
+                              })
+                              .map((c: any) => {
+                                const active = it.customizations.some((x) => x.name === c.name);
+                                return (
+                                  <button
+                                    key={c.id}
+                                    type="button"
+                                    onClick={() =>
+                                      toggleCustom(idx, {
+                                        name: c.name,
+                                        price_delta: Number(c.price_delta),
+                                      })
+                                    }
+                                    className={`text-xs px-2 py-1 rounded-full border ${
+                                      active
+                                        ? "bg-primary text-primary-foreground border-primary"
+                                        : "border-border hover:bg-secondary"
+                                    }`}
+                                  >
+                                    {c.name} +{formatMoney(c.price_delta, currency)}
+                                  </button>
+                                );
+                              })}
+                            {(customQ.data ?? []).filter((c: any) => {
                               const pIds = Array.isArray(c.product_ids) ? c.product_ids : [];
                               if (pIds.length === 0) return true;
-                              return it.product_id ? pIds.includes(it.product_id) : true;
-                            })
-                            .map((c: any) => {
-                              const active = it.customizations.some((x) => x.name === c.name);
-                              return (
-                                <button
-                                  key={c.id}
-                                  type="button"
-                                  onClick={() =>
-                                    toggleCustom(idx, {
-                                      name: c.name,
-                                      price_delta: Number(c.price_delta),
-                                    })
-                                  }
-                                  className={`text-xs px-2 py-1 rounded-full border ${active ? "bg-primary text-primary-foreground border-primary" : "border-border hover:bg-secondary"}`}
-                                >
-                                  {c.name} +{formatMoney(c.price_delta, currency)}
-                                </button>
-                              );
-                            })}
-                          {(customQ.data ?? []).length === 0 && (
-                            <span className="text-xs text-muted-foreground">
-                              {t("orderDetail.addonsHint")}
-                            </span>
-                          )}
+                              return pIds.includes(it.product_id);
+                            }).length === 0 && (
+                              <span className="text-xs text-muted-foreground">
+                                {t("orderDetail.addonsHint")}
+                              </span>
+                            )}
+                          </div>
                         </div>
-                      </div>
+                      )}
                       <div className="flex items-center justify-between pt-2 border-t border-border">
                         <span className="text-sm text-muted-foreground">
                           {t("orderDetail.lineTotal")}
@@ -3977,9 +3987,15 @@ function OrderDetail() {
                     </div>
 
                     <Select
-                      value={order.fulfillment_status ?? "ON_HOLD"}
+                      value={String(order.fulfillment_status ?? "ON_HOLD").toUpperCase()}
                       onValueChange={(v) => {
-                        const blocksFulfillment = ["SHIPPED", "NEEDS_PACKING"].includes(v);
+                        const blocksFulfillment = [
+                          "SHIPPED",
+                          "NEEDS_PACKING",
+                          "PACKING",
+                          "SENT_TO_TAILOR",
+                          "RECEIVED_FROM_TAILOR",
+                        ].includes(v);
                         if (blocksFulfillment && isUnpaid && !isCod && !adminOverrideChecked) {
                           toast.error(
                             lang === "ar"
@@ -3998,8 +4014,14 @@ function OrderDetail() {
                         <SelectItem value="ON_HOLD">
                           {lang === "ar" ? "قيد الانتظار" : "On Hold"}
                         </SelectItem>
-                        <SelectItem value="NEEDS_PACKING">
-                          {lang === "ar" ? "بحاجة للتعبئة" : "Needs Packing"}
+                        <SelectItem value="PACKING">
+                          {lang === "ar" ? "قيد التعبئة والتغليف" : "Packing"}
+                        </SelectItem>
+                        <SelectItem value="SENT_TO_TAILOR">
+                          {lang === "ar" ? "تم الإرسال للخياط" : "Sent to Tailor"}
+                        </SelectItem>
+                        <SelectItem value="RECEIVED_FROM_TAILOR">
+                          {lang === "ar" ? "تم الاستلام من الخياط" : "Received from Tailor"}
                         </SelectItem>
                         <SelectItem value="READY_FOR_PICKUP">
                           {lang === "ar" ? "جاهز للاستلام" : "Ready for Pickup"}

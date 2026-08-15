@@ -150,8 +150,14 @@ export const OrdersToolbar: React.FC<OrdersToolbarProps> = ({
                   <SelectContent>
                     <SelectItem value="all">{isAr ? "الكل" : "All"}</SelectItem>
                     <SelectItem value="on_hold">{isAr ? "قيد الانتظار" : "On Hold"}</SelectItem>
-                    <SelectItem value="needs_packing">
-                      {isAr ? "بحاجة للتعبئة" : "Needs Packing"}
+                    <SelectItem value="packing">
+                      {isAr ? "قيد التعبئة والتغليف" : "Packing"}
+                    </SelectItem>
+                    <SelectItem value="sent_to_tailor">
+                      {isAr ? "تم الإرسال للخياط" : "Sent to Tailor"}
+                    </SelectItem>
+                    <SelectItem value="received_from_tailor">
+                      {isAr ? "تم الاستلام من الخياط" : "Received from Tailor"}
                     </SelectItem>
                     <SelectItem value="ready_for_pickup">
                       {isAr ? "جاهز للاستلام" : "Ready for Pickup"}
@@ -257,8 +263,14 @@ export const OrdersToolbar: React.FC<OrdersToolbarProps> = ({
                     <SelectContent>
                       <SelectItem value="all">{isAr ? "الكل" : "All"}</SelectItem>
                       <SelectItem value="on_hold">{isAr ? "قيد الانتظار" : "On Hold"}</SelectItem>
-                      <SelectItem value="needs_packing">
-                        {isAr ? "بحاجة للتعبئة" : "Needs Packing"}
+                      <SelectItem value="packing">
+                        {isAr ? "قيد التعبئة والتغليف" : "Packing"}
+                      </SelectItem>
+                      <SelectItem value="sent_to_tailor">
+                        {isAr ? "تم الإرسال للخياط" : "Sent to Tailor"}
+                      </SelectItem>
+                      <SelectItem value="received_from_tailor">
+                        {isAr ? "تم الاستلام من الخياط" : "Received from Tailor"}
                       </SelectItem>
                       <SelectItem value="ready_for_pickup">
                         {isAr ? "جاهز للاستلام" : "Ready for Pickup"}
