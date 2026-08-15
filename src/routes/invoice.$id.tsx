@@ -8,6 +8,7 @@ import {
   PAYMENT_BADGE_CLASSES,
   PAYMENT_BADGE_LABEL,
 } from "@/lib/payment-status";
+import { getInvoiceStatusLabel } from "@/lib/status-labels";
 import {
   getOrderCustomerEmail,
   getOrderCustomerName,
@@ -323,16 +324,7 @@ function PublicInvoice() {
                 </p>
                 <p className="text-xs" style={{ opacity: 0.7 }}>
                   {L.status}:{" "}
-                  {
-                    PAYMENT_BADGE_LABEL[
-                      resolvePaymentStatus(
-                        order.payment_status,
-                        order.status,
-                        Number(order.total_amount || order.total || 0),
-                        Number(order.advance_paid || 0),
-                      )
-                    ][lang]
-                  }
+                  {getInvoiceStatusLabel(order.status || order.fulfillment_status, lang)}
                 </p>
                 {order.payment_method && (
                   <p className="text-xs" style={{ opacity: 0.7 }}>

@@ -10,6 +10,7 @@ import {
 } from "@/lib/order-customer-snapshot";
 import { getPaymentGatewayReference } from "@/lib/payment-reference";
 import { getReadableTextColor } from "@/lib/color-utils";
+import { getInvoiceStatusLabel } from "@/lib/status-labels";
 
 type SavedAddress = {
   id?: string;
@@ -411,7 +412,8 @@ export default function InvoicePreview({
                 )}
               </p>
               <p className="text-xs" style={{ opacity: 0.7 }}>
-                {L.status}: {PAYMENT_BADGE_LABEL[paymentBadge ?? "unpaid"][invoiceLang]}
+                {L.status}:{" "}
+                {getInvoiceStatusLabel(order.status || order.fulfillment_status, invoiceLang)}
               </p>
               {order.payment_method && (
                 <p className="text-xs" style={{ opacity: 0.7 }}>

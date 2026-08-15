@@ -46,6 +46,10 @@ import {
   Package,
   CreditCard,
   MapPin,
+  Scissors,
+  PackageCheck,
+  Box,
+  Store,
 } from "lucide-react";
 import {
   Dialog,
@@ -100,6 +104,7 @@ import { useProfile } from "@/lib/profile-context";
 import { getBenefitReceiptViewUrl, rejectBenefitReceipt } from "@/lib/benefit-receipt.functions";
 import { DeliveryAddressCard } from "@/components/delivery-address-card";
 import { getOrderWorkflow } from "@/lib/order-workflow";
+import { detectOrderType, getOrderTypeLabel } from "@/lib/order-type-detector";
 import {
   getFulfillmentLabel,
   getOrderStatusLabel,
@@ -1214,7 +1219,14 @@ function OrderDetail() {
     updateItem(idx, { customizations: newCust });
   };
 
-  const DEDUCTING = new Set(["confirmed", "paid", "shipped", "completed"]);
+  const DEDUCTING = new Set([
+    "confirmed",
+    "paid",
+    "shipped",
+    "completed",
+    "packing",
+    "ready_for_pickup",
+  ]);
 
   const save = async () => {
     if (isReadOnly) return;
@@ -1755,6 +1767,205 @@ function OrderDetail() {
     if (isCreationMode || !order) return null;
     const workflow = getOrderWorkflow(order);
 
+    if (workflow.nextAction === "send_to_tailor") {
+      return (
+        <Button
+          className="bg-purple-600 hover:bg-purple-700 text-white font-bold shadow-md transition-transform hover:scale-[1.02] active:scale-95"
+          onClick={async () => {
+            try {
+              const { error } = await supabase
+                .from("orders")
+                .update({
+                  status: "sent_to_tailor",
+                  fulfillment_status: "SENT_TO_TAILOR",
+                  updated_at: new Date().toISOString(),
+                } as any)
+                .eq("id", order.id);
+              if (error) throw error;
+              toast.success(
+                lang === "ar" ? "تم تحويل الطلب للخياط وتحديث الحالة" : "Sent to tailor",
+              );
+              await orderQ.refetch();
+              qc.invalidateQueries({ queryKey: ["orders"] });
+            } catch (err: any) {
+              toast.error(
+                err?.message || (lang === "ar" ? "تعذر تحديث الحالة" : "Unable to update status"),
+              );
+            }
+          }}
+        >
+          <Scissors className="h-4 w-4 me-1.5" />
+          {lang === "ar" ? "إرسال للخياط" : "Send to Tailor"}
+        </Button>
+      );
+    }
+
+    if (workflow.nextAction === "receive_from_tailor") {
+      return (
+        <Button
+          className="bg-teal-600 hover:bg-teal-700 text-white font-bold shadow-md transition-transform hover:scale-[1.02] active:scale-95"
+          onClick={async () => {
+            try {
+              const { error } = await supabase
+                .from("orders")
+                .update({
+                  status: "received_from_tailor",
+                  fulfillment_status: "RECEIVED_FROM_TAILOR",
+                  updated_at: new Date().toISOString(),
+                } as any)
+                .eq("id", order.id);
+              if (error) throw error;
+              toast.success(
+                lang === "ar" ? "تم استلام الطلب من الخياط وتجهيزه" : "Received from tailor",
+              );
+              await orderQ.refetch();
+              qc.invalidateQueries({ queryKey: ["orders"] });
+            } catch (err: any) {
+              toast.error(
+                err?.message || (lang === "ar" ? "تعذر تحديث الحالة" : "Unable to update status"),
+              );
+            }
+          }}
+        >
+          <PackageCheck className="h-4 w-4 me-1.5" />
+          {lang === "ar" ? "استلام من الخياط" : "Receive from Tailor"}
+        </Button>
+      );
+    }
+
+    if (workflow.nextAction === "start_packing") {
+      return (
+        <Button
+          className="bg-amber-600 hover:bg-amber-700 text-white font-bold shadow-md transition-transform hover:scale-[1.02] active:scale-95"
+          onClick={async () => {
+            try {
+              const { error } = await supabase
+                .from("orders")
+                .update({
+                  status: "packing",
+                  fulfillment_status: "PACKING",
+                  updated_at: new Date().toISOString(),
+                } as any)
+                .eq("id", order.id);
+              if (error) throw error;
+              toast.success(
+                lang === "ar" ? "بدء تعبئة وتغليف الطلب الجاهز" : "Start packing order",
+              );
+              await orderQ.refetch();
+              qc.invalidateQueries({ queryKey: ["orders"] });
+            } catch (err: any) {
+              toast.error(
+                err?.message || (lang === "ar" ? "تعذر تحديث الحالة" : "Unable to update status"),
+              );
+            }
+          }}
+        >
+          <Box className="h-4 w-4 me-1.5" />
+          {lang === "ar" ? "بدء التعبئة والتغليف" : "Start Packing"}
+        </Button>
+      );
+    }
+
+    if (workflow.nextAction === "mark_ready_pickup") {
+      return (
+        <Button
+          className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold shadow-md transition-transform hover:scale-[1.02] active:scale-95"
+          onClick={async () => {
+            try {
+              const { error } = await supabase
+                .from("orders")
+                .update({
+                  status: "ready_for_pickup",
+                  fulfillment_status: "READY_FOR_PICKUP",
+                  updated_at: new Date().toISOString(),
+                } as any)
+                .eq("id", order.id);
+              if (error) throw error;
+              toast.success(
+                lang === "ar" ? "تم تجهيز الطلب للاستلام في المحل" : "Marked ready for pickup",
+              );
+              await orderQ.refetch();
+              qc.invalidateQueries({ queryKey: ["orders"] });
+            } catch (err: any) {
+              toast.error(
+                err?.message || (lang === "ar" ? "تعذر تحديث الحالة" : "Unable to update status"),
+              );
+            }
+          }}
+        >
+          <Store className="h-4 w-4 me-1.5" />
+          {lang === "ar" ? "جاهز للاستلام" : "Mark Ready for Pickup"}
+        </Button>
+      );
+    }
+
+    if (workflow.nextAction === "mark_shipped") {
+      return (
+        <Button
+          className="bg-sky-600 hover:bg-sky-700 text-white font-bold shadow-md transition-transform hover:scale-[1.02] active:scale-95"
+          onClick={async () => {
+            try {
+              const { error } = await supabase
+                .from("orders")
+                .update({
+                  status: "shipped",
+                  fulfillment_status: "SHIPPED",
+                  updated_at: new Date().toISOString(),
+                } as any)
+                .eq("id", order.id);
+              if (error) throw error;
+              toast.success(
+                lang === "ar" ? "تم شحن الطلب وتسليمه للمندوب" : "Marked shipped / in transit",
+              );
+              await orderQ.refetch();
+              qc.invalidateQueries({ queryKey: ["orders"] });
+            } catch (err: any) {
+              toast.error(
+                err?.message || (lang === "ar" ? "تعذر تحديث الحالة" : "Unable to update status"),
+              );
+            }
+          }}
+        >
+          <Truck className="h-4 w-4 me-1.5" />
+          {lang === "ar" ? "تم الشحن" : "Mark Shipped"}
+        </Button>
+      );
+    }
+
+    if (workflow.nextAction === "mark_completed") {
+      return (
+        <Button
+          className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold shadow-md transition-transform hover:scale-[1.02] active:scale-95"
+          onClick={async () => {
+            try {
+              const { error } = await supabase
+                .from("orders")
+                .update({
+                  status: "completed",
+                  fulfillment_status: "COMPLETED",
+                  delivered_at: new Date().toISOString(),
+                  updated_at: new Date().toISOString(),
+                } as any)
+                .eq("id", order.id);
+              if (error) throw error;
+              toast.success(
+                lang === "ar" ? "تم تسليم الطلب وإتمامه بنجاح" : "Order completed successfully",
+              );
+              await orderQ.refetch();
+              qc.invalidateQueries({ queryKey: ["orders"] });
+            } catch (err: any) {
+              toast.error(
+                err?.message || (lang === "ar" ? "تعذر إكمال التسليم" : "Unable to complete order"),
+              );
+            }
+          }}
+        >
+          <CheckCircle2 className="h-4 w-4 me-1.5" />
+          {lang === "ar" ? "إكمال التسليم" : "Complete Order"}
+        </Button>
+      );
+    }
+
     if (workflow.nextAction === "pack_and_ship") {
       return (
         <Button
@@ -2015,12 +2226,19 @@ function OrderDetail() {
             <span className="hidden sm:inline">{t("orderDetail.back")}</span>
           </button>
           <div className="min-w-0">
-            <h1 className="truncate text-base sm:text-2xl font-display font-bold tracking-tight">
-              {isCreationMode
-                ? lang === "ar"
-                  ? "طلب جديد"
-                  : "New order"
-                : `${lang === "ar" ? "الطلب" : "Order"} #${order.invoice_number ?? order.id}`}
+            <h1 className="truncate text-base sm:text-2xl font-display font-bold tracking-tight flex items-center gap-2 flex-wrap">
+              <span>
+                {isCreationMode
+                  ? lang === "ar"
+                    ? "طلب جديد"
+                    : "New order"
+                  : `${lang === "ar" ? "الطلب" : "Order"} #${order.invoice_number ?? order.id}`}
+              </span>
+              {!isCreationMode && (
+                <span className="inline-flex items-center rounded-full bg-primary/10 text-primary px-2.5 py-0.5 text-xs font-semibold border border-primary/20">
+                  {getOrderTypeLabel(detectOrderType(items, order?.order_type), lang)}
+                </span>
+              )}
             </h1>
           </div>
         </div>

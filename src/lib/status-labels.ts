@@ -18,6 +18,24 @@ export const FULFILLMENT_STATUS_MAP: Record<string, StatusDefinition> = {
     badgeClasses:
       "bg-amber-100 text-amber-900 border-amber-300 dark:bg-amber-950/40 dark:text-amber-300",
   },
+  PACKING: {
+    ar: "قيد التعبئة والتغليف",
+    en: "Packing",
+    badgeClasses:
+      "bg-amber-100 text-amber-900 border-amber-300 dark:bg-amber-950/40 dark:text-amber-300",
+  },
+  SENT_TO_TAILOR: {
+    ar: "تم الإرسال للخياط",
+    en: "Sent to Tailor",
+    badgeClasses:
+      "bg-purple-100 text-purple-900 border-purple-300 dark:bg-purple-950/40 dark:text-purple-300",
+  },
+  RECEIVED_FROM_TAILOR: {
+    ar: "تم الاستلام من الخياط",
+    en: "Received from Tailor",
+    badgeClasses:
+      "bg-teal-100 text-teal-900 border-teal-300 dark:bg-teal-950/40 dark:text-teal-300",
+  },
   ASSIGNED: {
     ar: "تم التعيين للمندوب (بانتظار البيك اب)",
     en: "Assigned (Awaiting Pickup)",
@@ -25,8 +43,8 @@ export const FULFILLMENT_STATUS_MAP: Record<string, StatusDefinition> = {
       "bg-indigo-100 text-indigo-900 border-indigo-300 dark:bg-indigo-950/40 dark:text-indigo-300",
   },
   SHIPPED: {
-    ar: "خرج للتوصيل",
-    en: "Out for Delivery",
+    ar: "تم الشحن",
+    en: "Shipped",
     badgeClasses: "bg-sky-100 text-sky-900 border-sky-300 dark:bg-sky-950/40 dark:text-sky-300",
   },
   OUT_FOR_DELIVERY: {
@@ -52,7 +70,7 @@ export const FULFILLMENT_STATUS_MAP: Record<string, StatusDefinition> = {
       "bg-emerald-100 text-emerald-900 border-emerald-300 dark:bg-emerald-950/40 dark:text-emerald-300",
   },
   COMPLETED: {
-    ar: "تم التوصيل",
+    ar: "مكتمل",
     en: "Completed",
     badgeClasses:
       "bg-emerald-100 text-emerald-900 border-emerald-300 dark:bg-emerald-950/40 dark:text-emerald-300",
@@ -96,6 +114,12 @@ export const FULFILLMENT_STATUS_MAP: Record<string, StatusDefinition> = {
 };
 
 export const ORDER_STATUS_MAP: Record<string, StatusDefinition> = {
+  pending: { ar: "قيد الانتظار", en: "Pending" },
+  packing: { ar: "قيد التعبئة والتغليف", en: "Packing" },
+  sent_to_tailor: { ar: "تم الإرسال للخياط", en: "Sent to Tailor" },
+  received_from_tailor: { ar: "تم الاستلام من الخياط", en: "Received from Tailor" },
+  ready_for_pickup: { ar: "جاهز للاستلام", en: "Ready for Pickup" },
+  shipped: { ar: "تم الشحن", en: "Shipped" },
   draft: { ar: "مسودة", en: "Draft" },
   confirmed: { ar: "مؤكد", en: "Confirmed" },
   paid: { ar: "مدفوع بالكامل", en: "Paid" },
@@ -113,6 +137,56 @@ export const FULFILLMENT_METHOD_MAP: Record<string, StatusDefinition> = {
   pickup: { ar: "استلام من المحل", en: "Store Pickup" },
   digital: { ar: "منتج رقمي", en: "Digital Delivery" },
 };
+
+/**
+ * Returns customer-facing Invoice Status label based on the user's specification table (Column C):
+ * - Pending -> قيد الانتظار
+ * - Packing -> قيد التجهيز والتغليف
+ * - Sent_To_Tailor -> قيد التفصيل بكل حب
+ * - Received_From_Tailor -> قيد التجهيز والتغليف
+ * - Ready_For_Pickup -> جاهز للاستلام
+ * - Shipped -> تم الشحن
+ * - Completed -> مكتمل
+ * - Cancelled -> ملغي
+ */
+export function getInvoiceStatusLabel(
+  status: string | null | undefined,
+  lang: Lang = "ar",
+): string {
+  if (!status) return lang === "ar" ? "قيد الانتظار" : "Pending";
+  const s = String(status).trim().toLowerCase();
+
+  switch (s) {
+    case "pending":
+    case "draft":
+    case "unpaid":
+    case "pending_verification":
+      return lang === "ar" ? "قيد الانتظار" : "Pending";
+    case "packing":
+    case "needs_packing":
+      return lang === "ar" ? "قيد التجهيز والتغليف" : "Under Preparation & Packaging";
+    case "sent_to_tailor":
+      return lang === "ar" ? "قيد التفصيل بكل حب" : "Tailoring with Love";
+    case "received_from_tailor":
+      return lang === "ar" ? "قيد التجهيز والتغليف" : "Under Preparation & Packaging";
+    case "ready_for_pickup":
+    case "ready":
+      return lang === "ar" ? "جاهز للاستلام" : "Ready for Pickup";
+    case "shipped":
+    case "assigned":
+    case "out_for_delivery":
+      return lang === "ar" ? "تم الشحن" : "Shipped / Out for Delivery";
+    case "completed":
+    case "delivered":
+    case "paid":
+      return lang === "ar" ? "مكتمل" : "Completed";
+    case "cancelled":
+    case "canceled":
+      return lang === "ar" ? "ملغى" : "Cancelled";
+    default:
+      return getOrderStatusLabel(status, lang);
+  }
+}
 
 /**
  * Returns localized label for fulfillment status with fallback handling.
@@ -166,14 +240,11 @@ export function sanitizeActivityLogMessage(message: string, lang: Lang = "ar"): 
   return message
     .replace(/\bconfirmed\b/gi, "مؤكد")
     .replace(/\bcompleted\b/gi, "مكتمل")
-    .replace(/\bshipped\b/gi, "خرج للتوصيل")
-    .replace(/\bneeds_packing\b/gi, "بحاجة للتعبئة")
-    .replace(/\bNEEDS_PACKING\b/g, "بحاجة للتعبئة")
-    .replace(/\bASSIGNED\b/g, "تم التعيين للمندوب")
-    .replace(/\bSHIPPED\b/g, "خرج للتوصيل")
-    .replace(/\bDELIVERED\b/g, "تم التوصيل")
-    .replace(/\bCOMPLETED\b/g, "تم التوصيل")
-    .replace(/\bON_HOLD\b/g, "قيد الانتظار")
+    .replace(/\bshipped\b/gi, "تم الشحن")
+    .replace(/\bsent_to_tailor\b/gi, "تم الإرسال للخياط")
+    .replace(/\breceived_from_tailor\b/gi, "تم الاستلام من الخياط")
+    .replace(/\bpacking\b/gi, "قيد التعبئة والتغليف")
+    .replace(/\bneeds_packing\b/gi, "قيد التعبئة والتغليف")
     .replace(/\bREADY_FOR_PICKUP\b/g, "جاهز للاستلام")
     .replace(/\bCANCELLED\b/gi, "ملغى")
     .replace(/\bpaid\b/gi, "مدفوع")

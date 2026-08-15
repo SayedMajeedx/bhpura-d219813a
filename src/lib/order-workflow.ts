@@ -1,4 +1,5 @@
 import { resolvePaymentStatus, type PaymentBadge } from "./payment-status";
+import { type OrderType } from "./order-type-detector";
 
 export type OrderWorkflowInput = {
   status?: string | null;
@@ -9,11 +10,16 @@ export type OrderWorkflowInput = {
   total?: number | string | null;
   advance_paid?: number | string | null;
   paid_amount?: number | string | null;
+  order_type?: OrderType | string | null;
 };
 
 export type FulfillmentStage =
+  | "pending"
   | "on_hold"
   | "needs_packing"
+  | "packing"
+  | "sent_to_tailor"
+  | "received_from_tailor"
   | "assigned"
   | "ready_for_pickup"
   | "out_for_delivery"
@@ -24,6 +30,12 @@ export type FulfillmentStage =
 
 export type OrderNextAction =
   | "validate_payment"
+  | "start_packing"
+  | "send_to_tailor"
+  | "receive_from_tailor"
+  | "mark_ready_pickup"
+  | "mark_shipped"
+  | "mark_completed"
   | "prepare_pickup"
   | "pack_and_ship"
   | "confirm_pickup"
@@ -70,26 +82,46 @@ export function getFulfillmentStage(order: OrderWorkflowInput): FulfillmentStage
   ) {
     return "cancelled";
   }
-  if (fulfillment === "returned") return "returned";
-  if (["delivery_failed", "failed"].includes(fulfillment)) return "failed";
-  if (["shipped", "out_for_delivery", "ready_for_delivery"].includes(fulfillment)) {
+  if (fulfillment === "returned" || status === "returned") return "returned";
+  if (["delivery_failed", "failed"].includes(fulfillment) || status === "failed") return "failed";
+
+  if (
+    ["shipped", "out_for_delivery", "ready_for_delivery"].includes(fulfillment) ||
+    status === "shipped"
+  ) {
     return "out_for_delivery";
   }
   if (fulfillment === "assigned") {
     return "assigned";
   }
-  if (fulfillment === "ready_for_pickup") return "ready_for_pickup";
-  if (fulfillment === "needs_packing") return "needs_packing";
-  return "on_hold";
+  if (fulfillment === "ready_for_pickup" || status === "ready_for_pickup") {
+    return "ready_for_pickup";
+  }
+  if (fulfillment === "sent_to_tailor" || status === "sent_to_tailor") {
+    return "sent_to_tailor";
+  }
+  if (fulfillment === "received_from_tailor" || status === "received_from_tailor") {
+    return "received_from_tailor";
+  }
+  if (fulfillment === "packing" || status === "packing" || fulfillment === "needs_packing") {
+    return "packing";
+  }
+  return "pending";
 }
 
 export function getOrderWorkflow(order: OrderWorkflowInput): OrderWorkflow {
   const total = Number(order.total ?? 0);
-  const paid = Number(order.advance_paid ?? order.paid_amount ?? 0);
+  const rawPaid = Number(order.advance_paid ?? order.paid_amount ?? 0);
+  const pStatus = normalize(order.payment_status);
+  const paid = pStatus === "paid" ? Math.max(total, rawPaid) : rawPaid;
+
   const payment = resolvePaymentStatus(order.payment_status, order.status, total, paid);
   const fulfillment = getFulfillmentStage(order);
   const method = normalize(order.payment_method);
   const fulfillmentMethod = normalize(order.fulfillment_method) || "delivery";
+  const orderType = normalize(order.order_type);
+  const isTailoring = orderType === "tailoring" || orderType === "mixed";
+
   const isCod = ["cod", "cash", "cash_on_delivery", "cash on delivery"].includes(method);
   const isManualBenefit = ["benefit", "benefitpay", "benefit_pay", "bank_transfer"].includes(
     method,
@@ -105,32 +137,47 @@ export function getOrderWorkflow(order: OrderWorkflowInput): OrderWorkflow {
       nextAction = "resolve_delivery_failure";
     } else if (isManualBenefit && payment !== "paid") {
       nextAction = "validate_payment";
-    } else if (fulfillmentMethod === "pickup") {
-      if (["on_hold", "needs_packing"].includes(fulfillment) && (payment === "paid" || isCod)) {
-        nextAction = "prepare_pickup";
+    } else if (isTailoring) {
+      if (["pending", "on_hold", "needs_packing"].includes(fulfillment)) {
+        nextAction = "send_to_tailor";
+      } else if (fulfillment === "sent_to_tailor") {
+        nextAction = "receive_from_tailor";
+      } else if (fulfillment === "received_from_tailor") {
+        nextAction = fulfillmentMethod === "pickup" ? "mark_ready_pickup" : "mark_shipped";
       } else if (fulfillment === "ready_for_pickup") {
-        nextAction =
-          payment === "paid" || outstanding <= 0 ? "hand_over_pickup" : "collect_and_hand_over";
+        nextAction = isCod || outstanding > 0 ? "collect_and_hand_over" : "hand_over_pickup";
+      } else if (fulfillment === "out_for_delivery" || fulfillment === "assigned") {
+        nextAction = isCod || outstanding > 0 ? "collect_and_deliver" : "mark_completed";
       }
-    } else if (fulfillmentMethod === "digital") {
-      if (payment === "paid") nextAction = "deliver_digital";
-    } else if (
-      ["on_hold", "needs_packing"].includes(fulfillment) &&
-      (payment === "paid" || isCod)
-    ) {
-      nextAction = "pack_and_ship";
-    } else if (fulfillment === "assigned") {
-      nextAction = "confirm_pickup";
-    } else if (fulfillment === "out_for_delivery") {
-      nextAction =
-        payment === "paid" || outstanding <= 0 ? "mark_delivered" : "collect_and_deliver";
-    } else if (!method) {
-      nextAction = "review_order";
+    } else {
+      // Ready Stock
+      if (fulfillmentMethod === "pickup") {
+        if (["pending", "on_hold", "needs_packing"].includes(fulfillment)) {
+          nextAction = "prepare_pickup";
+        } else if (fulfillment === "packing") {
+          nextAction = "mark_ready_pickup";
+        } else if (fulfillment === "ready_for_pickup") {
+          nextAction = isCod || outstanding > 0 ? "collect_and_hand_over" : "hand_over_pickup";
+        }
+      } else if (fulfillmentMethod === "digital") {
+        if (payment === "paid") nextAction = "deliver_digital";
+      } else {
+        // Delivery
+        if (["pending", "on_hold", "needs_packing"].includes(fulfillment)) {
+          nextAction = isCod ? "pack_and_ship" : "start_packing";
+        } else if (fulfillment === "packing") {
+          nextAction = "mark_shipped";
+        } else if (fulfillment === "assigned") {
+          nextAction = "confirm_pickup";
+        } else if (fulfillment === "out_for_delivery") {
+          nextAction = isCod || outstanding > 0 ? "collect_and_deliver" : "mark_delivered";
+        } else if (!method) {
+          nextAction = "review_order";
+        }
+      }
     }
   }
 
-  // COD is intentionally excluded: payment is expected at pickup/delivery and
-  // its current operational action is preparation or handover, not "wait".
   const awaitingPayment = !terminal && !isCod && payment !== "paid";
 
   return {
