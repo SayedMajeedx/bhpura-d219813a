@@ -9,6 +9,7 @@ import {
   getOrderCustomerEmail,
 } from "@/lib/order-customer-snapshot";
 import { getPaymentGatewayReference } from "@/lib/payment-reference";
+import { getReadableTextColor } from "@/lib/color-utils";
 
 type SavedAddress = {
   id?: string;
@@ -559,7 +560,7 @@ export default function InvoicePreview({
           <div className="pdf-table-wrap -mx-4 sm:mx-0 overflow-x-auto print:overflow-visible print:mx-0">
             <table className="pdf-line-items w-full min-w-[520px] text-sm mb-6">
               <thead>
-                <tr style={{ backgroundColor: color, color: "#ffffff" }}>
+                <tr style={{ backgroundColor: color, color: getReadableTextColor(color) }}>
                   <th className="text-start p-3">{L.description}</th>
                   <th className="text-end p-3 w-16">{L.qty}</th>
                   <th className="text-end p-3 w-28">{L.unit}</th>

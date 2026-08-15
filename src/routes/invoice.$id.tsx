@@ -14,6 +14,8 @@ import {
   getOrderCustomerPhone,
 } from "@/lib/order-customer-snapshot";
 
+import { getReadableTextColor } from "@/lib/color-utils";
+
 export const Route = createFileRoute("/invoice/$id")({
   ssr: false,
   loader: async ({ params }) => {
@@ -226,8 +228,12 @@ function PublicInvoice() {
                   alert((err as Error)?.message ?? "PDF download failed");
                 }
               }}
-              className="px-3 py-2 text-xs rounded-md font-semibold text-white hover:opacity-90"
-              style={{ backgroundColor: color }}
+              className="px-3.5 py-2 text-xs rounded-md font-semibold hover:opacity-90 transition-all shadow-xs"
+              style={{
+                backgroundColor: color,
+                color: getReadableTextColor(color),
+                border: `1px solid ${getReadableTextColor(color) === "#0f172a" ? "rgba(0,0,0,0.18)" : "transparent"}`,
+              }}
             >
               {L.print}
             </button>
@@ -436,7 +442,7 @@ function PublicInvoice() {
             <div className="pdf-table-wrap -mx-2 sm:mx-0 overflow-x-auto">
               <table className="pdf-line-items w-full min-w-[440px] text-sm mb-6">
                 <thead>
-                  <tr style={{ backgroundColor: color, color: "#ffffff" }}>
+                  <tr style={{ backgroundColor: color, color: getReadableTextColor(color) }}>
                     <th className="text-start p-3">{L.desc}</th>
                     <th className="text-end p-3 w-16">{L.qty}</th>
                     <th className="text-end p-3 w-24">{L.unit}</th>
