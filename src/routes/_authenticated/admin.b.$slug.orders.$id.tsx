@@ -864,6 +864,7 @@ function OrderDetail() {
 
       initialSnapshotRef.current = {
         order: {
+          id: orderQ.data.id,
           notes: orderQ.data.notes ?? "",
           delivery_notes: orderQ.data.delivery_notes ?? "",
           customer_id: orderQ.data.customer_id ?? null,
@@ -1542,6 +1543,7 @@ function OrderDetail() {
 
     initialSnapshotRef.current = {
       order: {
+        id: freshOrder.id,
         notes: freshOrder.notes ?? "",
         delivery_notes: freshOrder.delivery_notes ?? "",
         customer_id: freshOrder.customer_id ?? null,
