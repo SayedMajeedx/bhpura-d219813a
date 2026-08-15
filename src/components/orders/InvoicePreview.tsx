@@ -313,8 +313,8 @@ export default function InvoicePreview({
     (settings as any).invoice_divider_color || (isDarkInvoice ? `${text}20` : "#e2e8f0");
 
   const surfaceCardTextColor = getReadableTextColor(secondary, darkTextForSurface, text);
-  const badgeBg = secondary || `${statusBadgeColor}25`;
-  const badgeTextColor = getReadableTextColor(badgeBg, darkTextForSurface, statusBadgeColor);
+  const badgeBg = statusBadgeColor;
+  const badgeTextColor = getReadableTextColor(badgeBg, darkTextForSurface, "#ffffff");
 
   return (
     <div className="space-y-2">

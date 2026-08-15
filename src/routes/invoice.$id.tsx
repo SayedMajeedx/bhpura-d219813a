@@ -211,8 +211,8 @@ function PublicInvoice() {
     (settings as any)?.invoice_divider_color || (isDarkInvoice ? `${textColor}20` : "#e2e8f0");
 
   const surfaceCardTextColor = getReadableTextColor(secondaryColor, darkTextForSurface, textColor);
-  const badgeBg = secondaryColor || `${statusBadgeColor}25`;
-  const badgeTextColor = getReadableTextColor(badgeBg, darkTextForSurface, statusBadgeColor);
+  const badgeBg = statusBadgeColor;
+  const badgeTextColor = getReadableTextColor(badgeBg, darkTextForSurface, "#ffffff");
 
   const money = (n: number) => formatMoney(Number(n || 0), currency, locale);
 
