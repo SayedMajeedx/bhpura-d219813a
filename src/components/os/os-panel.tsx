@@ -31,15 +31,11 @@ export const OsPanel = React.forwardRef<HTMLDivElement, OsPanelProps>(
         {...props}
       >
         {header && (
-          <div className="border-b border-[var(--os-border)] px-5 py-4 bg-muted/20 backdrop-blur-sm">
-            {header}
-          </div>
+          <div className="border-b border-[var(--os-border)] px-5 py-4 bg-card/90">{header}</div>
         )}
         <div className="flex-1 p-5 sm:p-6">{children}</div>
         {footer && (
-          <div className="border-t border-[var(--os-border)] px-5 py-3.5 bg-muted/10 backdrop-blur-sm">
-            {footer}
-          </div>
+          <div className="border-t border-[var(--os-border)] px-5 py-3.5 bg-card/80">{footer}</div>
         )}
       </OsSurface>
     );

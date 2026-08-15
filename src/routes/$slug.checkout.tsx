@@ -955,6 +955,11 @@ function Checkout() {
             <Textarea
               id="checkout-notes"
               name="notes"
+              className="min-h-[90px] rounded-xl shadow-2xs resize-y"
+              placeholder={t(
+                "أي ملاحظات خاصة بالطلب أو التوصيل...",
+                "Any special instructions for order or delivery...",
+              )}
               value={form.notes}
               onChange={(e) => setForm({ ...form, notes: e.target.value })}
             />

@@ -10,6 +10,7 @@ import {
 } from "@/lib/storefront-context";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useState, useMemo, useRef, useEffect } from "react";
 import { formatSizeWithUnit } from "@/lib/format";
@@ -1437,7 +1438,7 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
                         )}
                       </div>
                     ) : (
-                      <input
+                      <Input
                         type={f.type === "number" ? "number" : "text"}
                         value={val}
                         onChange={(e) => set(e.target.value)}
@@ -1475,7 +1476,7 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
                             ? "أدخل التفاصيل المطلوبة..."
                             : "Type required details here...";
                         })()}
-                        className="w-full h-11 rounded-md border border-input bg-background px-3 text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                        className="w-full h-11 rounded-xl shadow-2xs"
                       />
                     )}
                   </div>
