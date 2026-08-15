@@ -185,14 +185,27 @@ function PublicInvoice() {
 
   const rawTableBg = (settings as any)?.invoice_table_header_bg;
   const tableHeaderBg = rawTableBg || (isDarkInvoice ? `${color}25` : "#f8fafc");
+
+  const effectiveTableBg = rawTableBg || (isDarkInvoice ? bgColor : "#f8fafc");
+  const isTableBgDark = getReadableTextColor(effectiveTableBg) === "#ffffff";
+  const lightTextForTable = isDarkInvoice ? textColor || "#ffffff" : "#ffffff";
+  const darkTextForTable = darkTextForSurface;
+
   const customTableFg = (settings as any)?.invoice_table_header_fg;
-  const tableHeaderFg =
-    customTableFg &&
-    getReadableTextColor(tableHeaderBg, darkTextForSurface, textColor) === darkTextForSurface
-      ? getReadableTextColor(tableHeaderBg) === "#ffffff"
-        ? "#ffffff"
-        : darkTextForSurface
-      : customTableFg || getReadableTextColor(tableHeaderBg, darkTextForSurface, textColor);
+  let tableHeaderFg: string;
+
+  if (customTableFg) {
+    const customFgIsDark = getReadableTextColor(customTableFg) === "#0f172a";
+    if (isTableBgDark && customFgIsDark) {
+      tableHeaderFg = lightTextForTable;
+    } else if (!isTableBgDark && !customFgIsDark) {
+      tableHeaderFg = darkTextForTable;
+    } else {
+      tableHeaderFg = customTableFg;
+    }
+  } else {
+    tableHeaderFg = isTableBgDark ? lightTextForTable : darkTextForTable;
+  }
 
   const dividerColor =
     (settings as any)?.invoice_divider_color || (isDarkInvoice ? `${textColor}20` : "#e2e8f0");
@@ -429,6 +442,7 @@ function PublicInvoice() {
                   </p>
                 )}
                 {(() => {
+                  if (order.fulfillment_method === "pickup") return null;
                   const detailed = shippingAddress
                     ? formatAddressDetailed(shippingAddress as StructuredAddress, lang)
                     : "";

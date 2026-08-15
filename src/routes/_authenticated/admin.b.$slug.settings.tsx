@@ -1367,14 +1367,14 @@ function Settings() {
                     <div className="flex gap-2 mt-1">
                       <input
                         type="color"
-                        value={f.invoice_table_header_bg ?? "#f8fafc"}
+                        value={f.invoice_table_header_bg || "#f8fafc"}
                         onChange={(e) => setF({ ...f, invoice_table_header_bg: e.target.value })}
-                        className="h-8 w-10 rounded border"
+                        className="h-8 w-10 rounded border cursor-pointer"
                       />
                       <Input
                         className="h-8 text-xs font-mono"
-                        value={f.invoice_table_header_bg ?? "#f8fafc"}
-                        placeholder="#f8fafc"
+                        value={f.invoice_table_header_bg ?? ""}
+                        placeholder="Auto (Smart Tint)"
                         onChange={(e) =>
                           setF({ ...f, invoice_table_header_bg: e.target.value || null })
                         }
@@ -1388,14 +1388,14 @@ function Settings() {
                     <div className="flex gap-2 mt-1">
                       <input
                         type="color"
-                        value={f.invoice_table_header_fg ?? "#0f172a"}
+                        value={f.invoice_table_header_fg || "#ffffff"}
                         onChange={(e) => setF({ ...f, invoice_table_header_fg: e.target.value })}
-                        className="h-8 w-10 rounded border"
+                        className="h-8 w-10 rounded border cursor-pointer"
                       />
                       <Input
                         className="h-8 text-xs font-mono"
-                        value={f.invoice_table_header_fg ?? "#0f172a"}
-                        placeholder="#0f172a"
+                        value={f.invoice_table_header_fg ?? ""}
+                        placeholder="Auto (Smart Contrast)"
                         onChange={(e) =>
                           setF({ ...f, invoice_table_header_fg: e.target.value || null })
                         }

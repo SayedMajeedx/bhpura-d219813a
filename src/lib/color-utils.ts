@@ -10,7 +10,9 @@ export function getReadableTextColor(
 ): string {
   if (!hexColor) return lightFallback;
   let hex = hexColor.trim().replace(/^#/, "");
-  if (hex.length === 3) {
+  if (hex.length === 8) {
+    hex = hex.substring(0, 6);
+  } else if (hex.length === 3) {
     hex = hex
       .split("")
       .map((c) => c + c)
