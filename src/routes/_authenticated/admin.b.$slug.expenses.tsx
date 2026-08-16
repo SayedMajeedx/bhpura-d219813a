@@ -192,6 +192,7 @@ type Expense = {
   amount: number;
   currency: string;
   expense_date: string;
+  expense_type?: "opex" | "cogs" | string | null;
   notes: string | null;
   store_name?: string | null;
   receipt_time?: string | null;
