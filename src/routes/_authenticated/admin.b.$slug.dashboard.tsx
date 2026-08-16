@@ -76,6 +76,9 @@ function Dashboard() {
         }
       );
     },
+    refetchInterval: 5_000,
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
   });
 
   const currency = businessSettings.data?.currency ?? "BHD";
@@ -91,6 +94,9 @@ function Dashboard() {
       if (error) throw error;
       return data ?? [];
     },
+    refetchInterval: 5_000,
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
   });
 
   // 3. Fetch all variants
@@ -106,6 +112,9 @@ function Dashboard() {
       if (error) throw error;
       return data ?? [];
     },
+    refetchInterval: 5_000,
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
   });
 
   // 4. Fetch all customers
@@ -119,8 +128,9 @@ function Dashboard() {
       if (error) throw error;
       return data ?? [];
     },
-    refetchInterval: 30_000,
+    refetchInterval: 5_000,
     refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
   });
 
   // 5. Fetch all orders (and order items)
@@ -130,13 +140,16 @@ function Dashboard() {
       const { data, error } = await supabase
         .from("orders")
         .select(
-          "id, invoice_number, created_at, currency, total, status, payment_status, customer_id, customer_name_snapshot, customer_email_snapshot, customer_phone_snapshot, customers(name), payment_method, order_items(id, variant_id, quantity, unit_price, line_total)",
+          "id, invoice_number, created_at, currency, total, status, payment_status, customer_id, customer_name_snapshot, customer_email_snapshot, customer_phone_snapshot, customers(name), payment_method, order_items(id, variant_id, quantity, unit_price, unit_cost, line_total)",
         )
         .eq("brand_id", brandId)
         .order("created_at", { ascending: false });
       if (error) throw error;
       return (data as any[]) ?? [];
     },
+    refetchInterval: 5_000,
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
   });
 
   // 6. Fetch recent 5 orders for operational feed
@@ -154,8 +167,9 @@ function Dashboard() {
       if (error) throw error;
       return (data as any[]) ?? [];
     },
-    refetchInterval: 30_000,
+    refetchInterval: 5_000,
     refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
   });
 
   // 7. Fetch all manual expenses
@@ -169,6 +183,9 @@ function Dashboard() {
       if (error) throw error;
       return data ?? [];
     },
+    refetchInterval: 5_000,
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
   });
 
   useRealtimeInvalidate(
@@ -228,8 +245,11 @@ function Dashboard() {
     let cogs = 0;
     orders.forEach((order) => {
       (order.order_items ?? []).forEach((item: any) => {
-        const cost = variantCostMap.get(item.variant_id) ?? 0;
-        cogs += cost * Number(item.quantity || 0);
+        const itemCost =
+          item.unit_cost != null && !isNaN(Number(item.unit_cost))
+            ? Number(item.unit_cost)
+            : (variantCostMap.get(item.variant_id) ?? 0);
+        cogs += itemCost * Number(item.quantity || 0);
       });
     });
 

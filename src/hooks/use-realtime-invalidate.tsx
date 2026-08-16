@@ -24,17 +24,21 @@ export function useRealtimeInvalidate(subs: Sub[], channelName: string) {
           event: "*",
           schema: "public",
           table: s.table,
-          ...(s.brandId ? { filter: `brand_id=eq.${s.brandId}` } : {}),
         },
-        () => {
-          qc.invalidateQueries({ queryKey: s.queryKey });
+        (payload: any) => {
+          if (s.brandId) {
+            const newBrand = payload?.new?.brand_id;
+            const oldBrand = payload?.old?.brand_id;
+            if (newBrand && newBrand !== s.brandId) return;
+            if (oldBrand && oldBrand !== s.brandId) return;
+          }
+          qc.invalidateQueries({ queryKey: s.queryKey, refetchType: "all" });
         },
       );
     }
-    channel.subscribe((status, err) => {
+    channel.subscribe((status) => {
       if (status === "CHANNEL_ERROR") {
         // Silently handle channel errors as Supabase handles reconnects automatically
-        // with exponential backoff
       }
     });
     return () => {
