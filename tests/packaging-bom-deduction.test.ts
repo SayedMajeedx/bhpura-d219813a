@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { calculateProductPackagingCost } from "@/lib/bom-calculator";
+import { calculateProductPackagingCost } from "../src/lib/bom-calculator";
 
 describe("Packaging BOM & Inventory Logic Audit", () => {
   it("calculates packaging unit cost from BOM items correctly (e.g. 1 Big Bag @ 0.388 + 1 Card @ 0.121 + 1 Plastic Bag @ 0.062 = 0.571 BHD)", () => {
