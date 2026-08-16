@@ -58,17 +58,17 @@ export function calculateIncomeStatement(
     });
   });
 
-  const totalCogs = productCogs + packagingBomCogs;
-  const grossProfit = netRevenue - totalCogs;
+  const totalOrderCogs = productCogs + packagingBomCogs;
+  const grossProfit = netRevenue - totalOrderCogs;
   const grossMarginPercent = netRevenue > 0 ? (grossProfit / netRevenue) * 100 : 0;
 
-  let operatingExpenses = 0; // OpEx
-  let directProductionExpenses = 0; // Direct COGS expenses
+  let operatingExpenses = 0; // Fixed OpEx (Rent, Salaries, Marketing, Utilities)
+  let packagingInventoryPurchases = 0; // Bulk packaging purchases (Asset addition, NOT period expense)
 
   expenses.forEach((e) => {
     const amt = Number(e.amount || 0);
     if (e.expense_type === "cogs") {
-      directProductionExpenses += amt;
+      packagingInventoryPurchases += amt;
     } else {
       operatingExpenses += amt;
     }
@@ -85,8 +85,8 @@ export function calculateIncomeStatement(
     }
   });
 
-  const aggregateTotalCogs = totalCogs + directProductionExpenses;
-  const netOperatingProfit = netRevenue - aggregateTotalCogs - operatingExpenses - paymentProcessingFees;
+  // Net Operating Profit = Revenue - Total Order COGS - OpEx - Gateway Fees
+  const netOperatingProfit = netRevenue - totalOrderCogs - operatingExpenses - paymentProcessingFees;
   const netProfitMarginPercent = netRevenue > 0 ? (netOperatingProfit / netRevenue) * 100 : 0;
 
   return {
@@ -95,7 +95,7 @@ export function calculateIncomeStatement(
     netRevenue: Number(netRevenue.toFixed(3)),
     productCogs: Number(productCogs.toFixed(3)),
     packagingBomCogs: Number(packagingBomCogs.toFixed(3)),
-    totalCogs: Number(aggregateTotalCogs.toFixed(3)),
+    totalCogs: Number(totalOrderCogs.toFixed(3)),
     grossProfit: Number(grossProfit.toFixed(3)),
     grossMarginPercent: Number(grossMarginPercent.toFixed(1)),
     operatingExpenses: Number(operatingExpenses.toFixed(3)),

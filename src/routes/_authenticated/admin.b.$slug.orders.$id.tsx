@@ -4231,6 +4231,56 @@ function OrderDetail() {
                     </>
                   )}
                 </div>
+
+                {/* Direct Order COGS Breakdown Badge */}
+                {(() => {
+                  const productCogsTotal = items.reduce((sum, it: any) => {
+                    const qty = Number(it.quantity || 1);
+                    const unitCost = Number(it.unit_cost || 0);
+                    return sum + unitCost * qty;
+                  }, 0);
+
+                  const packagingCogsTotal = items.reduce((sum, it: any) => {
+                    const qty = Number(it.quantity || 1);
+                    const pkgCost = Number(it.packaging_cost || 0);
+                    return sum + pkgCost * qty;
+                  }, 0);
+
+                  const orderTotalCogs = productCogsTotal + packagingCogsTotal;
+                  const orderNetProfit = totals.total - orderTotalCogs;
+
+                  return (
+                    <div className="mt-3 rounded-xl border border-primary/20 bg-primary/5 p-3.5 space-y-2 text-xs">
+                      <div className="flex items-center justify-between font-bold text-foreground">
+                        <span className="flex items-center gap-1.5">
+                          <Package className="h-4 w-4 text-primary shrink-0" />
+                          <span>{isAr ? "تكاليف الإنتاج والتغليف المباشرة للطلب (Order COGS)" : "Direct Order COGS Breakdown"}</span>
+                        </span>
+                        <span className="font-mono text-sm font-extrabold text-primary">
+                          {formatMoney(orderTotalCogs, currency)}
+                        </span>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-2 font-mono text-[11px] pt-1.5 border-t border-border/40 text-muted-foreground">
+                        <div>
+                          <span>{isAr ? "تكلفة المنتجات:" : "Product Cost:"} </span>
+                          <strong className="text-foreground">{formatMoney(productCogsTotal, currency)}</strong>
+                        </div>
+                        <div>
+                          <span>{isAr ? "تكلفة مواد التغليف:" : "Packaging Cost:"} </span>
+                          <strong className="text-foreground">{formatMoney(packagingCogsTotal, currency)}</strong>
+                        </div>
+                      </div>
+
+                      <div className="flex justify-between items-center text-xs font-extrabold text-emerald-600 dark:text-emerald-400 pt-1.5 border-t border-border/40">
+                        <span>{isAr ? "صافي ربح هذا الطلب المباشر:" : "Order Net Gross Profit:"}</span>
+                        <span className="font-mono text-sm font-extrabold">
+                          {formatMoney(orderNetProfit, currency)}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })()}
               </Card>
             </div>
           </div>

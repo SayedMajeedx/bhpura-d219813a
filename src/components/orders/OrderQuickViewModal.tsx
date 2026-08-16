@@ -304,69 +304,117 @@ export function OrderQuickViewModal({
 
             const codRemaining = Math.max(0, netTotal - advancePaid);
 
-            return (
-              <div className="rounded-xl border border-border/60 p-4 space-y-2 bg-card/80 text-xs shadow-2xs">
-                <h4 className="text-[11px] uppercase tracking-wider font-bold text-muted-foreground border-b border-border/40 pb-2">
-                  {isAr ? "تفاصيل الحساب المالي للفاتورة" : "Financial Price Breakdown"}
-                </h4>
+            const productCogsTotal = items.reduce((sum: number, it: any) => {
+              const qty = it.quantity || it.qty || 1;
+              const unitCost = Number(it.unit_cost || 0);
+              return sum + unitCost * qty;
+            }, 0);
 
-                <div className="space-y-1.5 font-mono text-muted-foreground">
-                  <div className="flex justify-between items-center">
-                    <span>{isAr ? "مجموع المنتجات (Subtotal):" : "Items Subtotal:"}</span>
-                    <span className="font-bold text-foreground">
-                      {formatMoney(subtotal, currency, lang)}
+            const packagingCogsTotal = items.reduce((sum: number, it: any) => {
+              const qty = it.quantity || it.qty || 1;
+              const pkgCost = Number(it.packaging_cost || 0);
+              return sum + pkgCost * qty;
+            }, 0);
+
+            const orderTotalCogs = productCogsTotal + packagingCogsTotal;
+            const orderNetProfit = netTotal - orderTotalCogs;
+
+            return (
+              <div className="space-y-3">
+                <div className="rounded-xl border border-border/60 p-4 space-y-2 bg-card/80 text-xs shadow-2xs">
+                  <h4 className="text-[11px] uppercase tracking-wider font-bold text-muted-foreground border-b border-border/40 pb-2">
+                    {isAr ? "تفاصيل الحساب المالي للفاتورة" : "Financial Price Breakdown"}
+                  </h4>
+
+                  <div className="space-y-1.5 font-mono text-muted-foreground">
+                    <div className="flex justify-between items-center">
+                      <span>{isAr ? "مجموع المنتجات (Subtotal):" : "Items Subtotal:"}</span>
+                      <span className="font-bold text-foreground">
+                        {formatMoney(subtotal, currency, lang)}
+                      </span>
+                    </div>
+
+                    {discount > 0 && (
+                      <div className="flex justify-between items-center text-emerald-600 dark:text-emerald-400">
+                        <span>{isAr ? "الخصم المستقطع (Discount):" : "Discount Applied:"}</span>
+                        <span className="font-bold">-{formatMoney(discount, currency, lang)}</span>
+                      </div>
+                    )}
+
+                    {shipping > 0 && (
+                      <div className="flex justify-between items-center text-indigo-600 dark:text-indigo-400">
+                        <span>
+                          {isAr ? "رسوم الشحن والتوصيل (Delivery Fee):" : "Shipping & Delivery Fee:"}
+                        </span>
+                        <span className="font-bold">+{formatMoney(shipping, currency, lang)}</span>
+                      </div>
+                    )}
+
+                    {tax > 0 && (
+                      <div className="flex justify-between items-center text-amber-600 dark:text-amber-400">
+                        <span>{isAr ? "ضريبة القيمة المضافة (VAT):" : "VAT / Tax:"}</span>
+                        <span className="font-bold">+{formatMoney(tax, currency, lang)}</span>
+                      </div>
+                    )}
+
+                    {advancePaid > 0 && (
+                      <div className="flex justify-between items-center text-emerald-600 dark:text-emerald-400 pt-1 border-t border-border/40">
+                        <span>
+                          {isAr ? "الدفعة المقدمة (Deposit Paid):" : "Advance Paid / Deposit:"}
+                        </span>
+                        <span className="font-bold">-{formatMoney(advancePaid, currency, lang)}</span>
+                      </div>
+                    )}
+
+                    {advancePaid > 0 && codRemaining > 0 && (
+                      <div className="flex justify-between items-center text-amber-600 dark:text-amber-400 font-bold bg-amber-500/10 p-1.5 rounded-lg border border-amber-500/20">
+                        <span>
+                          {isAr
+                            ? "المتبقي للتحصيل عند التسليم (COD Balance):"
+                            : "Remaining COD Balance:"}
+                        </span>
+                        <span>{formatMoney(codRemaining, currency, lang)}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex justify-between items-center text-sm font-extrabold pt-2 border-t border-border/60 text-foreground">
+                    <span>{isAr ? "إجمالي الفاتورة النهائي:" : "Final Net Total:"}</span>
+                    <span className="text-base text-primary font-mono font-extrabold">
+                      {formatMoney(netTotal, currency, lang)}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Direct Order COGS Breakdown Badge */}
+                <div className="rounded-xl border border-primary/20 bg-primary/5 p-3.5 space-y-2 text-xs">
+                  <div className="flex items-center justify-between font-bold text-foreground">
+                    <span className="flex items-center gap-1.5">
+                      <Package className="h-4 w-4 text-primary shrink-0" />
+                      <span>{isAr ? "تكاليف الإنتاج والتغليف المباشرة للطلب (Order COGS)" : "Direct Order COGS Breakdown"}</span>
+                    </span>
+                    <span className="font-mono text-sm font-extrabold text-primary">
+                      {formatMoney(orderTotalCogs, currency, lang)}
                     </span>
                   </div>
 
-                  {discount > 0 && (
-                    <div className="flex justify-between items-center text-emerald-600 dark:text-emerald-400">
-                      <span>{isAr ? "الخصم المستقطع (Discount):" : "Discount Applied:"}</span>
-                      <span className="font-bold">-{formatMoney(discount, currency, lang)}</span>
+                  <div className="grid grid-cols-2 gap-2 font-mono text-[11px] pt-1.5 border-t border-border/40 text-muted-foreground">
+                    <div>
+                      <span>{isAr ? "تكلفة المنتجات:" : "Product Cost:"} </span>
+                      <strong className="text-foreground">{formatMoney(productCogsTotal, currency, lang)}</strong>
                     </div>
-                  )}
-
-                  {shipping > 0 && (
-                    <div className="flex justify-between items-center text-indigo-600 dark:text-indigo-400">
-                      <span>
-                        {isAr ? "رسوم الشحن والتوصيل (Delivery Fee):" : "Shipping & Delivery Fee:"}
-                      </span>
-                      <span className="font-bold">+{formatMoney(shipping, currency, lang)}</span>
+                    <div>
+                      <span>{isAr ? "تكلفة مواد التغليف:" : "Packaging Cost:"} </span>
+                      <strong className="text-foreground">{formatMoney(packagingCogsTotal, currency, lang)}</strong>
                     </div>
-                  )}
+                  </div>
 
-                  {tax > 0 && (
-                    <div className="flex justify-between items-center text-amber-600 dark:text-amber-400">
-                      <span>{isAr ? "ضريبة القيمة المضافة (VAT):" : "VAT / Tax:"}</span>
-                      <span className="font-bold">+{formatMoney(tax, currency, lang)}</span>
-                    </div>
-                  )}
-
-                  {advancePaid > 0 && (
-                    <div className="flex justify-between items-center text-emerald-600 dark:text-emerald-400 pt-1 border-t border-border/40">
-                      <span>
-                        {isAr ? "الدفعة المقدمة (Deposit Paid):" : "Advance Paid / Deposit:"}
-                      </span>
-                      <span className="font-bold">-{formatMoney(advancePaid, currency, lang)}</span>
-                    </div>
-                  )}
-
-                  {advancePaid > 0 && codRemaining > 0 && (
-                    <div className="flex justify-between items-center text-amber-600 dark:text-amber-400 font-bold bg-amber-500/10 p-1.5 rounded-lg border border-amber-500/20">
-                      <span>
-                        {isAr
-                          ? "المتبقي للتحصيل عند التسليم (COD Balance):"
-                          : "Remaining COD Balance:"}
-                      </span>
-                      <span>{formatMoney(codRemaining, currency, lang)}</span>
-                    </div>
-                  )}
-                </div>
-
-                <div className="flex justify-between items-center text-sm font-extrabold pt-2 border-t border-border/60 text-foreground">
-                  <span>{isAr ? "إجمالي الفاتورة النهائي:" : "Final Net Total:"}</span>
-                  <span className="text-base text-primary font-mono font-extrabold">
-                    {formatMoney(netTotal, currency, lang)}
-                  </span>
+                  <div className="flex justify-between items-center text-xs font-extrabold text-emerald-600 dark:text-emerald-400 pt-1.5 border-t border-border/40">
+                    <span>{isAr ? "صافي ربح هذا الطلب المباشر:" : "Order Net Gross Profit:"}</span>
+                    <span className="font-mono text-sm font-extrabold">
+                      {formatMoney(orderNetProfit, currency, lang)}
+                    </span>
+                  </div>
                 </div>
               </div>
             );

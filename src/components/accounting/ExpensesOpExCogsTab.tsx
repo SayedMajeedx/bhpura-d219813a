@@ -230,7 +230,7 @@ export function ExpensesOpExCogsTab() {
       {/* Overview Metric Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card className="p-4 border-border/80 bg-card flex flex-col justify-between">
-          <span className="text-xs font-bold text-muted-foreground block">{isAr ? "إجمالي المصاريف" : "Total Expenses"}</span>
+          <span className="text-xs font-bold text-muted-foreground block">{isAr ? "إجمالي المصاريف والمشتريات المسجلة" : "Total Logged Purchases & Expenses"}</span>
           <span className="text-xl font-extrabold text-foreground mt-1">
             {formatMoney(totalCogsAmount + totalOpexAmount, "BHD")}
           </span>
@@ -238,19 +238,22 @@ export function ExpensesOpExCogsTab() {
 
         <Card className="p-4 border-border/80 bg-card flex flex-col justify-between">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-muted-foreground">{isAr ? "مصاريف إنتاج مباشرة (Direct COGS)" : "Direct COGS"}</span>
+            <span className="text-xs font-bold text-muted-foreground">{isAr ? "مشتريات مخزون التغليف والمواد (Asset)" : "Packaging Inventory Asset"}</span>
             <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20 text-[10px]">
-              COGS
+              {isAr ? "أصل / مخزون" : "Asset COGS"}
             </Badge>
           </div>
           <span className="text-xl font-extrabold text-primary mt-1">
             {formatMoney(totalCogsAmount, "BHD")}
           </span>
+          <p className="text-[10px] text-muted-foreground mt-1">
+            {isAr ? "تضاف إلى أصول المخزون وتستقطع تكلفة القطعة منها عند إتمام كل طلب" : "Added to inventory asset & deducted per fulfilled order unit cost"}
+          </p>
         </Card>
 
         <Card className="p-4 border-border/80 bg-card flex flex-col justify-between">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-muted-foreground">{isAr ? "مصاريف تشغيلية (OpEx / Overhead)" : "OpEx Overhead"}</span>
+            <span className="text-xs font-bold text-muted-foreground">{isAr ? "مصاريف تشغيلية ثابتة (Monthly OpEx)" : "Fixed OpEx Overhead"}</span>
             <Badge variant="outline" className="bg-muted text-muted-foreground text-[10px]">
               OpEx
             </Badge>
@@ -258,6 +261,9 @@ export function ExpensesOpExCogsTab() {
           <span className="text-xl font-extrabold text-foreground mt-1">
             {formatMoney(totalOpexAmount, "BHD")}
           </span>
+          <p className="text-[10px] text-muted-foreground mt-1">
+            {isAr ? "تستقطع من صافي ربح المتجر الإجمالي للفترة" : "Deducted at the overall store financial level"}
+          </p>
         </Card>
       </div>
 

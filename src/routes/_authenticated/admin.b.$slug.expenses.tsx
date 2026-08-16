@@ -470,15 +470,23 @@ function ExpensesPage() {
     return (cogsQ.data ?? []).reduce((s, o) => s + Number(o.total || 0), 0);
   }, [cogsQ.data]);
 
-  const totalCogs = useMemo(() => {
-    let sum = 0;
+  const { productCogs, packagingBomCogs, totalCogs } = useMemo(() => {
+    let prod = 0;
+    let pkg = 0;
     (cogsQ.data ?? []).forEach((order) => {
       (order.order_items ?? []).forEach((item) => {
-        const cost = Number((item as any).unit_cost ?? 0);
-        sum += cost * Number(item.quantity);
+        const pCost = Number((item as any).unit_cost ?? 0);
+        const bCost = Number((item as any).packaging_cost ?? 0);
+        const qty = Number(item.quantity ?? 1);
+        prod += pCost * qty;
+        pkg += bCost * qty;
       });
     });
-    return sum;
+    return {
+      productCogs: prod,
+      packagingBomCogs: pkg,
+      totalCogs: prod + pkg,
+    };
   }, [cogsQ.data]);
 
   const cardFeePercent = Number((settingsQ.data as any)?.card_processing_fee ?? 0);
@@ -497,7 +505,14 @@ function ExpensesPage() {
     return sum;
   }, [cogsQ.data, cardFeePercent, benefitFeePercent]);
 
-  const totalOpex = total + paymentProcessingFees;
+  // Separate OpEx from Bulk COGS Inventory purchases
+  const manualOpexExpenses = useMemo(() => {
+    return (rawExpenses ?? [])
+      .filter((e) => (e.expense_type || "opex") === "opex")
+      .reduce((sum, e) => sum + Number(e.amount || 0), 0);
+  }, [rawExpenses]);
+
+  const totalOpex = manualOpexExpenses + paymentProcessingFees;
   const netProfit = totalRevenue - (totalCogs + totalOpex);
   const marginPercentage = totalRevenue > 0 ? (netProfit / totalRevenue) * 100 : 0;
 
@@ -530,7 +545,7 @@ function ExpensesPage() {
         currency={currency}
         totalRevenue={totalRevenue}
         totalCogs={totalCogs}
-        manualOpex={total}
+        manualOpex={manualOpexExpenses}
         processingFees={paymentProcessingFees}
         netProfit={netProfit}
         marginPercentage={marginPercentage}
