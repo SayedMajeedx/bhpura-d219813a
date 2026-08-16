@@ -48,13 +48,18 @@ export function calculateIncomeStatement(
   let packagingBomCogs = 0;
 
   confirmedOrders.forEach((order) => {
+    const isFulfilled = ["fulfilled", "delivered", "completed", "shipped"].includes(
+      String(order.fulfillment_status || order.status || "").toLowerCase(),
+    );
     (order.order_items ?? []).forEach((item: any) => {
       const qty = Number(item.quantity || 0);
       const unitCost = Number(item.unit_cost || 0);
       const packagingCost = Number(item.packaging_cost || 0);
 
       productCogs += unitCost * qty;
-      packagingBomCogs += packagingCost * qty;
+      if (isFulfilled) {
+        packagingBomCogs += packagingCost * qty;
+      }
     });
   });
 

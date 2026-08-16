@@ -242,16 +242,28 @@ function Dashboard() {
 
     const revenue = orders.reduce((sum, o) => sum + Number(o.total || 0), 0);
 
-    let cogs = 0;
+    let productCogs = 0;
+    let packagingBomCogs = 0;
     orders.forEach((order) => {
+      const isFulfilled = ["fulfilled", "delivered", "completed", "shipped"].includes(
+        String(order.fulfillment_status || order.status || "").toLowerCase(),
+      );
       (order.order_items ?? []).forEach((item: any) => {
         const itemCost =
           item.unit_cost != null && !isNaN(Number(item.unit_cost))
             ? Number(item.unit_cost)
             : (variantCostMap.get(item.variant_id) ?? 0);
-        cogs += itemCost * Number(item.quantity || 0);
+        const pkgCost = Number(item.packaging_cost || 0);
+        const qty = Number(item.quantity || 0);
+
+        productCogs += itemCost * qty;
+        if (isFulfilled) {
+          packagingBomCogs += pkgCost * qty;
+        }
       });
     });
+
+    const cogs = productCogs + packagingBomCogs;
 
     const cardFeePercent = Number((businessSettings.data as any)?.card_processing_fee ?? 0);
     const benefitFeePercent = Number((businessSettings.data as any)?.benefit_processing_fee ?? 0);
@@ -266,9 +278,12 @@ function Dashboard() {
       }
     });
 
-    const opex =
-      expenses.reduce((sum, e) => sum + Number(e.amount || 0), 0) + paymentProcessingFees;
+    // OpEx excludes bulk packaging asset purchases (expense_type === 'cogs')
+    const manualOpex = expenses
+      .filter((e: any) => (e.expense_type || "opex") === "opex")
+      .reduce((sum, e) => sum + Number(e.amount || 0), 0);
 
+    const opex = manualOpex + paymentProcessingFees;
     const totalExpenses = cogs + opex;
     const netProfit = revenue - totalExpenses;
     const grossMarginPercent = revenue > 0 ? ((revenue - cogs) / revenue) * 100 : 0;

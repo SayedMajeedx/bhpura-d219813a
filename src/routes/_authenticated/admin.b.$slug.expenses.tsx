@@ -337,7 +337,7 @@ function ExpensesPage() {
       let q2 = (supabase as any)
         .from("orders")
         .select(
-          "id, invoice_number, created_at, currency, total, payment_method, order_items(id, description, quantity, unit_price, unit_cost, line_total, variant_id)",
+          "id, invoice_number, created_at, currency, total, payment_method, status, fulfillment_status, order_items(id, description, quantity, unit_price, unit_cost, line_total, variant_id)",
         )
         .eq("brand_id", brandId)
         .in("status", ["confirmed", "paid", "shipped", "completed"])
@@ -475,12 +475,17 @@ function ExpensesPage() {
     let prod = 0;
     let pkg = 0;
     (cogsQ.data ?? []).forEach((order) => {
+      const isFulfilled = ["fulfilled", "delivered", "completed", "shipped"].includes(
+        String(order.fulfillment_status || order.status || "").toLowerCase(),
+      );
       (order.order_items ?? []).forEach((item) => {
         const pCost = Number((item as any).unit_cost ?? 0);
         const bCost = Number((item as any).packaging_cost ?? 0);
         const qty = Number(item.quantity ?? 1);
         prod += pCost * qty;
-        pkg += bCost * qty;
+        if (isFulfilled) {
+          pkg += bCost * qty;
+        }
       });
     });
     return {
@@ -1370,6 +1375,8 @@ type CogOrder = {
   currency: string;
   total: number;
   payment_method: string | null;
+  status?: string | null;
+  fulfillment_status?: string | null;
   order_items: CogItem[];
 };
 

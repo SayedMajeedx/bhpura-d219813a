@@ -4241,11 +4241,17 @@ function OrderDetail() {
                     return sum + unitCost * qty;
                   }, 0);
 
-                  const packagingCogsTotal = items.reduce((sum, it: any) => {
-                    const qty = Number(it.quantity || 1);
-                    const pkgCost = Number(it.packaging_cost || 0);
-                    return sum + pkgCost * qty;
-                  }, 0);
+                  const isFulfilled = ["fulfilled", "delivered", "completed", "shipped"].includes(
+                    String(order.fulfillment_status || order.status || "").toLowerCase(),
+                  );
+
+                  const packagingCogsTotal = isFulfilled
+                    ? items.reduce((sum, it: any) => {
+                        const qty = Number(it.quantity || 1);
+                        const pkgCost = Number(it.packaging_cost || 0);
+                        return sum + pkgCost * qty;
+                      }, 0)
+                    : 0;
 
                   const orderTotalCogs = productCogsTotal + packagingCogsTotal;
                   const orderNetProfit = totals.total - orderTotalCogs;

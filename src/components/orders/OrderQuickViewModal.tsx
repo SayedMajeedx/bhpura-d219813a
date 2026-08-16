@@ -310,11 +310,17 @@ export function OrderQuickViewModal({
               return sum + unitCost * qty;
             }, 0);
 
-            const packagingCogsTotal = items.reduce((sum: number, it: any) => {
-              const qty = it.quantity || it.qty || 1;
-              const pkgCost = Number(it.packaging_cost || 0);
-              return sum + pkgCost * qty;
-            }, 0);
+            const isFulfilled = ["fulfilled", "delivered", "completed", "shipped"].includes(
+              String(order.fulfillment_status || order.status || "").toLowerCase(),
+            );
+
+            const packagingCogsTotal = isFulfilled
+              ? items.reduce((sum: number, it: any) => {
+                  const qty = it.quantity || it.qty || 1;
+                  const pkgCost = Number(it.packaging_cost || 0);
+                  return sum + pkgCost * qty;
+                }, 0)
+              : 0;
 
             const orderTotalCogs = productCogsTotal + packagingCogsTotal;
             const orderNetProfit = netTotal - orderTotalCogs;
