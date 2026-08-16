@@ -35,13 +35,13 @@ export function derivePaymentStatus(
 }
 
 export const PAYMENT_BADGE_CLASSES: Record<PaymentBadge, string> = {
-  paid: "bg-emerald-100 text-emerald-900 border border-emerald-300/80 font-semibold dark:bg-emerald-950 dark:text-emerald-200",
+  paid: "bg-emerald-50 text-emerald-800 border-emerald-200 font-bold dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800/80",
   partial:
-    "bg-blue-100 text-blue-900 border border-blue-300/80 font-semibold dark:bg-blue-950 dark:text-blue-200",
+    "bg-amber-50 text-amber-800 border-amber-300 font-bold dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800/80",
   unpaid:
-    "bg-rose-100 text-rose-900 border border-rose-300/80 font-semibold dark:bg-rose-950 dark:text-rose-200",
+    "bg-rose-50 text-rose-700 border-rose-200 font-bold dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800/80",
   refunded:
-    "bg-slate-200 text-slate-800 border border-border font-semibold dark:bg-neutral-800 dark:text-neutral-200",
+    "bg-purple-50 text-purple-800 border-purple-200 font-bold dark:bg-purple-950/40 dark:text-purple-300 dark:border-purple-800/80",
 };
 
 export const PAYMENT_BADGE_KEY: Record<PaymentBadge, string> = {
@@ -57,3 +57,22 @@ export const PAYMENT_BADGE_LABEL: Record<PaymentBadge, { en: string; ar: string 
   unpaid: { en: "Unpaid", ar: "غير مدفوع" },
   refunded: { en: "Refunded", ar: "مسترجع" },
 };
+
+export function formatPaymentBadgeDetail(
+  badge: PaymentBadge,
+  total: number,
+  advance: number,
+  currency: string = "BHD",
+  lang: "en" | "ar" = "en",
+): string {
+  const isAr = lang === "ar";
+  const baseLabel = PAYMENT_BADGE_LABEL[badge]?.[lang] || badge;
+  if (badge === "partial" && advance > 0) {
+    const due = Math.max(0, total - advance);
+    if (isAr) {
+      return `${baseLabel} (مدفوع ${advance.toFixed(3)} ${currency} / متبقي ${due.toFixed(3)} ${currency})`;
+    }
+    return `${baseLabel} (Paid ${currency} ${advance.toFixed(3)} / Due ${currency} ${due.toFixed(3)})`;
+  }
+  return baseLabel;
+}

@@ -10,6 +10,7 @@ import {
   MoreHorizontal,
   Loader2,
   Lock,
+  ChevronDown,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -22,7 +23,11 @@ import {
 import { formatDate } from "@/lib/format";
 import { getOrderTypeLabel, detectOrderType } from "@/lib/order-type-detector";
 import { getFulfillmentLabel } from "@/lib/status-labels";
-import { PAYMENT_BADGE_CLASSES, type PaymentBadge } from "@/lib/payment-status";
+import {
+  PAYMENT_BADGE_CLASSES,
+  formatPaymentBadgeDetail,
+  type PaymentBadge,
+} from "@/lib/payment-status";
 import { cn } from "@/lib/utils";
 
 interface OrderUnifiedHeaderProps {
@@ -41,6 +46,7 @@ interface OrderUnifiedHeaderProps {
   onPrintReceipt: () => void;
   onPrintA4: () => void;
   onCopyLink: () => void;
+  onOpenPaymentModal?: () => void;
   renderPrimaryAction: () => React.ReactNode;
   children?: React.ReactNode;
 }
@@ -61,6 +67,7 @@ export const OrderUnifiedHeader: React.FC<OrderUnifiedHeaderProps> = ({
   onPrintReceipt,
   onPrintA4,
   onCopyLink,
+  onOpenPaymentModal,
   renderPrimaryAction,
   children,
 }) => {
@@ -118,14 +125,27 @@ export const OrderUnifiedHeader: React.FC<OrderUnifiedHeaderProps> = ({
           {/* Micro-Pills Status Group */}
           {!isCreationMode && (
             <div className="flex items-center gap-1.5 flex-wrap ms-1 sm:ms-3 border-s border-border/60 ps-2.5 sm:ps-3">
-              <span
+              <button
+                type="button"
+                onClick={onOpenPaymentModal}
+                disabled={!onOpenPaymentModal}
+                title={isAr ? "انقر لإدارة حالة وسجل الدفع" : "Click to manage payment lifecycle"}
                 className={cn(
-                  "rounded-full border px-2.5 py-0.5 text-[11px] font-bold tracking-tight",
+                  "inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-[11px] font-bold tracking-tight transition-all hover:opacity-90 touch-manipulation focus-visible:ring-2 focus-visible:ring-ring",
                   PAYMENT_BADGE_CLASSES[paymentBadge],
                 )}
               >
-                {paymentBadge}
-              </span>
+                <span>
+                  {formatPaymentBadgeDetail(
+                    paymentBadge,
+                    Number(order?.total_amount ?? 0),
+                    Number(order?.advance_paid ?? 0),
+                    order?.currency || "BHD",
+                    lang,
+                  )}
+                </span>
+                <ChevronDown className="h-3 w-3 opacity-70 shrink-0" />
+              </button>
 
               <span className="rounded-full border border-border/80 bg-muted/60 px-2.5 py-0.5 text-[11px] font-bold text-foreground">
                 {getFulfillmentLabel(order.fulfillment_status, lang)}

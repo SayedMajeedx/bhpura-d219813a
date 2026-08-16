@@ -95,7 +95,8 @@ import {
   PAYMENT_BADGE_VALUES,
   type PaymentBadge,
 } from "@/lib/payment-status";
-import { logActivityBatch } from "@/lib/activity-log";
+import { logActivity, logActivityBatch } from "@/lib/activity-log";
+import { ManagePaymentModal } from "@/components/orders/ManagePaymentModal";
 import { ActivityLogList } from "@/components/activity-log-list";
 import { BarcodeScanner } from "@/components/barcode-scanner";
 import { PhoneInput } from "@/components/phone-input";
@@ -117,6 +118,7 @@ import { OrderStickyBottomBar } from "@/components/orders/OrderStickyBottomBar";
 import { OrderItemsWorkflowCard } from "@/components/orders/OrderItemsWorkflowCard";
 import { OrderFinancialLedgerCard } from "@/components/orders/OrderFinancialLedgerCard";
 import { OrderMetaSidePanel } from "@/components/orders/OrderMetaSidePanel";
+import { Pencil } from "lucide-react";
 
 function formatDeliveryAddress(
   c:
@@ -1100,6 +1102,59 @@ function OrderDetail() {
     [order?.payment_status, order?.status, totals.total, totals.advancePaid],
   );
 
+  const [managePaymentOpen, setManagePaymentOpen] = useState(false);
+  const [isEditingFees, setIsEditingFees] = useState(false);
+
+  const handleSavePaymentDetails = async (updatedFields: {
+    payment_status: PaymentBadge;
+    payment_method: string;
+    advance_paid: number;
+    payment_reference?: string;
+  }) => {
+    if (!order) return;
+    const oldStatus = order.payment_status;
+    const oldMethod = order.payment_method;
+    const oldAdvance = order.advance_paid;
+
+    const nextOrder = {
+      ...order,
+      payment_status: updatedFields.payment_status,
+      payment_method: updatedFields.payment_method,
+      advance_paid: updatedFields.advance_paid,
+      payment_reference: updatedFields.payment_reference || order.payment_reference,
+    };
+    setOrder(nextOrder);
+
+    // If order is saved in DB, persist change immediately
+    if (order.id && !order.id.startsWith("draft_")) {
+      const { error } = await supabase
+        .from("orders")
+        .update({
+          payment_status: updatedFields.payment_status,
+          payment_method: updatedFields.payment_method,
+          advance_paid: updatedFields.advance_paid,
+          payment_reference: updatedFields.payment_reference || order.payment_reference,
+        } as any)
+        .eq("id", order.id);
+
+      if (error) {
+        toast.error(error.message);
+        return;
+      }
+
+      // Log Activity Entry
+      await logActivity({
+        action: "payment_update",
+        order_id: order.id,
+        en: `Updated payment status to ${updatedFields.payment_status.toUpperCase()} (${updatedFields.payment_method.toUpperCase()}), Advance: BHD ${updatedFields.advance_paid.toFixed(3)}`,
+        ar: `تحديث حالة الدفع إلى ${updatedFields.payment_status} (${updatedFields.payment_method})، المبلغ المستلم: ${updatedFields.advance_paid.toFixed(3)} د.ب`,
+        metadata: { oldStatus, oldMethod, oldAdvance, ...updatedFields },
+      });
+
+      qc.invalidateQueries({ queryKey: ["activity_logs"] });
+    }
+  };
+
   const [scannerOpen, setScannerOpen] = useState(false);
   const [cameraStreamPromise, setCameraStreamPromise] = useState<Promise<MediaStream> | null>(null);
   const cameraStreamRef = useRef<MediaStream | null>(null);
@@ -1798,8 +1853,15 @@ function OrderDetail() {
               toast.success(
                 lang === "ar" ? "تم تحويل الطلب للخياط وتحديث الحالة" : "Sent to tailor",
               );
+              await logActivity({
+                action: "status_change",
+                order_id: order.id,
+                en: "Sent order to tailor for customization/stitching",
+                ar: "تحويل الطلب إلى الخياط للتفصيل والتفصيل الخياطي",
+              });
               await orderQ.refetch();
               qc.invalidateQueries({ queryKey: ["orders"] });
+              qc.invalidateQueries({ queryKey: ["activity_logs"] });
             } catch (err: any) {
               toast.error(
                 err?.message || (lang === "ar" ? "تعذر تحديث الحالة" : "Unable to update status"),
@@ -1831,8 +1893,15 @@ function OrderDetail() {
               toast.success(
                 lang === "ar" ? "تم استلام الطلب من الخياط وتجهيزه" : "Received from tailor",
               );
+              await logActivity({
+                action: "status_change",
+                order_id: order.id,
+                en: "Received customized order from tailor",
+                ar: "تم استلام الطلب الجاهز من الخياط",
+              });
               await orderQ.refetch();
               qc.invalidateQueries({ queryKey: ["orders"] });
+              qc.invalidateQueries({ queryKey: ["activity_logs"] });
             } catch (err: any) {
               toast.error(
                 err?.message || (lang === "ar" ? "تعذر تحديث الحالة" : "Unable to update status"),
@@ -1864,8 +1933,15 @@ function OrderDetail() {
               toast.success(
                 lang === "ar" ? "بدء تعبئة وتغليف الطلب الجاهز" : "Start packing order",
               );
+              await logActivity({
+                action: "status_change",
+                order_id: order.id,
+                en: "Started packing order items",
+                ar: "بدء تعبئة وتغليف منتجات الطلب",
+              });
               await orderQ.refetch();
               qc.invalidateQueries({ queryKey: ["orders"] });
+              qc.invalidateQueries({ queryKey: ["activity_logs"] });
             } catch (err: any) {
               toast.error(
                 err?.message || (lang === "ar" ? "تعذر تحديث الحالة" : "Unable to update status"),
@@ -1897,8 +1973,15 @@ function OrderDetail() {
               toast.success(
                 lang === "ar" ? "تم تجهيز الطلب للاستلام في المحل" : "Marked ready for pickup",
               );
+              await logActivity({
+                action: "status_change",
+                order_id: order.id,
+                en: "Marked order ready for in-store pickup",
+                ar: "تجهيز الطلب للاستلام من الفرع/المحل",
+              });
               await orderQ.refetch();
               qc.invalidateQueries({ queryKey: ["orders"] });
+              qc.invalidateQueries({ queryKey: ["activity_logs"] });
             } catch (err: any) {
               toast.error(
                 err?.message || (lang === "ar" ? "تعذر تحديث الحالة" : "Unable to update status"),
@@ -1930,8 +2013,15 @@ function OrderDetail() {
               toast.success(
                 lang === "ar" ? "تم شحن الطلب وتسليمه للمندوب" : "Marked shipped / in transit",
               );
+              await logActivity({
+                action: "status_change",
+                order_id: order.id,
+                en: "Marked order shipped / handed to courier",
+                ar: "تم تسليم الطلب لشركة الشحن/المندوب",
+              });
               await orderQ.refetch();
               qc.invalidateQueries({ queryKey: ["orders"] });
+              qc.invalidateQueries({ queryKey: ["activity_logs"] });
             } catch (err: any) {
               toast.error(
                 err?.message || (lang === "ar" ? "تعذر تحديث الحالة" : "Unable to update status"),
@@ -1964,8 +2054,15 @@ function OrderDetail() {
               toast.success(
                 lang === "ar" ? "تم تسليم الطلب وإتمامه بنجاح" : "Order completed successfully",
               );
+              await logActivity({
+                action: "status_change",
+                order_id: order.id,
+                en: "Completed order delivery",
+                ar: "تم إكمال وتسليم الطلب بنجاح",
+              });
               await orderQ.refetch();
               qc.invalidateQueries({ queryKey: ["orders"] });
+              qc.invalidateQueries({ queryKey: ["activity_logs"] });
             } catch (err: any) {
               toast.error(
                 err?.message || (lang === "ar" ? "تعذر إكمال التسليم" : "Unable to complete order"),
@@ -2246,6 +2343,7 @@ function OrderDetail() {
         onPrintReceipt={printReceipt}
         onPrintA4={handlePrintA4}
         onCopyLink={copyLink}
+        onOpenPaymentModal={() => setManagePaymentOpen(true)}
         renderPrimaryAction={renderTopPrimaryAction}
       >
         {!isCreationMode && (
@@ -2257,6 +2355,21 @@ function OrderDetail() {
           />
         )}
       </OrderUnifiedHeader>
+
+      {/* Payment Lifecycle Modal */}
+      <ManagePaymentModal
+        open={managePaymentOpen}
+        onOpenChange={setManagePaymentOpen}
+        lang={lang}
+        currency={currency}
+        order={order}
+        totals={{
+          total: totals.total,
+          advancePaid: totals.advancePaid,
+          balanceDue: totals.remaining,
+        }}
+        onSavePayment={handleSavePaymentDetails}
+      />
 
       {/* 2. Mobile Quick Action Bar (<768px) */}
       {!isCreationMode && (
@@ -3381,489 +3494,444 @@ function OrderDetail() {
               />
             </Card>
 
+            <div className="lg:hidden">
+              <Label>{t("orderDetail.notes")}</Label>
+              <Textarea
+                value={order.notes ?? ""}
+                onChange={(e) => setOrder({ ...order, notes: e.target.value })}
+                rows={5}
+              />
+            </div>
             <Card className="overflow-hidden border border-border/60 shadow-xs rounded-2xl bg-card p-4 space-y-4">
-              <div className="space-y-3">
-                <div className="flex items-center justify-between border-b border-border/60 pb-2">
-                  <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                    {lang === "ar" ? "بيانات الطلب والدفع" : "Order & Payment Info"}
-                  </span>
-                </div>
-                <div className="grid grid-cols-2 gap-3 text-sm">
-                  <div>
-                    <span className="text-xs text-muted-foreground block mb-0.5">
-                      {t("orderDetail.orderDate")}
-                    </span>
-                    <p className="font-semibold text-foreground">
-                      {formatDate(order.order_date, lang === "ar" ? "ar-BH" : "en-BH")}
-                    </p>
-                  </div>
-                  <div>
-                    <span className="text-xs text-muted-foreground block mb-0.5">
-                      {t("orderDetail.paymentMethod")}
-                    </span>
-                    <p className="font-semibold text-foreground">
-                      {tPayment(order.payment_method, lang) ||
-                        (lang === "ar" ? "غير محدد" : "Not specified")}
-                    </p>
-                  </div>
-                </div>
-              </div>
-              {isAdmin && getPaymentGatewayReference(order) && (
-                <div className="rounded-xl border border-border/60 bg-card p-4 space-y-3 mt-4">
-                  <div className="flex items-center justify-between border-b pb-2">
+              {order.payment_method === "benefit" && order.benefit_receipt_key && (
+                <div className="rounded-xl border-2 border-amber-300 bg-amber-50 p-4 text-amber-950">
+                  <div className="mb-3 flex items-center justify-between gap-3">
                     <div className="flex items-center gap-2">
-                      <Lock className="h-4 w-4 text-primary" />
-                      <span className="font-semibold text-sm">
-                        {lang === "ar" ? "تفاصيل بوابة الدفع" : "Payment Gateway Details"}
+                      <ImageIcon className="h-5 w-5" />
+                      <span className="font-semibold">
+                        {lang === "ar" ? "إيصال تحويل بنفت" : "Benefit transfer receipt"}
                       </span>
                     </div>
+                    <span
+                      className={`rounded-full px-2 py-1 text-xs font-semibold ${order.payment_status === "paid" ? "bg-emerald-100 text-emerald-800" : "bg-amber-200 text-amber-900"}`}
+                    >
+                      {order.payment_status === "paid"
+                        ? lang === "ar"
+                          ? "تم التحقق"
+                          : "Verified"
+                        : lang === "ar"
+                          ? "بانتظار التحقق"
+                          : "Pending verification"}
+                    </span>
                   </div>
-                  <div className="grid grid-cols-2 gap-4 text-xs font-mono">
-                    <div>
-                      <span className="text-muted-foreground block mb-1">Reference ID:</span>
-                      <div className="flex items-center gap-2">
-                        <span className="truncate">{getPaymentGatewayReference(order)}</span>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          className="h-6 w-6"
-                          onClick={() => {
-                            navigator.clipboard.writeText(getPaymentGatewayReference(order)!);
-                            toast.success(lang === "ar" ? "تم النسخ" : "Copied Reference");
-                          }}
-                        >
-                          <Copy className="h-3 w-3" />
-                        </Button>
-                      </div>
+                  {receiptViewQ.isLoading ? (
+                    <div className="flex h-52 items-center justify-center rounded-lg border bg-white">
+                      <Loader2 className="h-6 w-6 animate-spin" />
                     </div>
-                    <div>
-                      <span className="text-muted-foreground block mb-1">Gateway Status:</span>
-                      <span>{order.gateway_status || "N/A"}</span>
+                  ) : receiptViewQ.data?.url ? (
+                    <a
+                      href={receiptViewQ.data.url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="block overflow-hidden rounded-lg border bg-white"
+                    >
+                      <img
+                        src={receiptViewQ.data.url}
+                        alt="Benefit payment receipt"
+                        className="h-52 w-full object-contain"
+                      />
+                    </a>
+                  ) : (
+                    <div className="rounded-lg border bg-white p-5 text-center text-sm text-muted-foreground">
+                      {order.benefit_receipt_deleted_at
+                        ? lang === "ar"
+                          ? "تم حذف صورة الإيصال حسب سياسة الاحتفاظ."
+                          : "Receipt image removed under the retention policy."
+                        : lang === "ar"
+                          ? "تعذر تحميل صورة الإيصال الخاصة."
+                          : "The private receipt could not be loaded."}
                     </div>
-                    {order.gateway_verified_at && (
-                      <div className="col-span-2">
-                        <span className="text-muted-foreground block mb-1">Last Verified:</span>
-                        <span>
-                          {new Date(order.gateway_verified_at).toLocaleString(
-                            lang === "ar" ? "ar-BH-u-nu-latn" : "en-BH",
-                          )}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-              <div className="lg:hidden">
-                <Label>{t("orderDetail.notes")}</Label>
-                <Textarea
-                  value={order.notes ?? ""}
-                  onChange={(e) => setOrder({ ...order, notes: e.target.value })}
-                  rows={5}
-                />
-              </div>
-              <div className="space-y-3">
-                {order.payment_method === "benefit" && order.benefit_receipt_key && (
-                  <div className="rounded-xl border-2 border-amber-300 bg-amber-50 p-4 text-amber-950">
-                    <div className="mb-3 flex items-center justify-between gap-3">
-                      <div className="flex items-center gap-2">
-                        <ImageIcon className="h-5 w-5" />
-                        <span className="font-semibold">
-                          {lang === "ar" ? "إيصال تحويل بنفت" : "Benefit transfer receipt"}
-                        </span>
-                      </div>
-                      <span
-                        className={`rounded-full px-2 py-1 text-xs font-semibold ${order.payment_status === "paid" ? "bg-emerald-100 text-emerald-800" : "bg-amber-200 text-amber-900"}`}
+                  )}
+                  {order.payment_status !== "paid" && (
+                    <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
+                      <Button
+                        type="button"
+                        className="bg-emerald-700 text-white hover:bg-emerald-800"
+                        onClick={approveBenefitPayment}
+                        disabled={approvingBenefit || rejectingBenefit}
                       >
-                        {order.payment_status === "paid"
-                          ? lang === "ar"
-                            ? "تم التحقق"
-                            : "Verified"
-                          : lang === "ar"
-                            ? "بانتظار التحقق"
-                            : "Pending verification"}
-                      </span>
-                    </div>
-                    {receiptViewQ.isLoading ? (
-                      <div className="flex h-52 items-center justify-center rounded-lg border bg-white">
-                        <Loader2 className="h-6 w-6 animate-spin" />
-                      </div>
-                    ) : receiptViewQ.data?.url ? (
-                      <a
-                        href={receiptViewQ.data.url}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="block overflow-hidden rounded-lg border bg-white"
+                        {approvingBenefit ? (
+                          <Loader2 className="me-2 h-4 w-4 animate-spin" />
+                        ) : (
+                          <CheckCircle2 className="me-2 h-4 w-4" />
+                        )}
+                        {lang === "ar" ? "اعتماد الدفع" : "Approve Payment"}
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        onClick={() => setRejectReasonOpen(true)}
+                        disabled={approvingBenefit || rejectingBenefit}
                       >
-                        <img
-                          src={receiptViewQ.data.url}
-                          alt="Benefit payment receipt"
-                          className="h-52 w-full object-contain"
+                        {rejectingBenefit && <Loader2 className="me-2 h-4 w-4 animate-spin" />}
+                        {lang === "ar" ? "رفض الإيصال" : "Reject Receipt"}
+                      </Button>
+                    </div>
+                  )}
+                  <Dialog
+                    open={rejectReasonOpen}
+                    onOpenChange={(open) => {
+                      setRejectReasonOpen(open);
+                      if (!open) setRejectReason("");
+                    }}
+                  >
+                    <DialogContent className="max-w-md">
+                      <DialogHeader>
+                        <DialogTitle>
+                          {lang === "ar" ? "رفض إيصال بنفت باي" : "Reject BenefitPay receipt"}
+                        </DialogTitle>
+                        <DialogDescription>
+                          {lang === "ar"
+                            ? "سيُرسل سبب الرفض للعميل، وستُحذف صورة الإيصال الخاصة فوراً."
+                            : "The reason will be emailed to the customer and the private receipt image will be deleted immediately."}
+                        </DialogDescription>
+                      </DialogHeader>
+                      <div className="space-y-2">
+                        <Label htmlFor="benefit-rejection-reason">
+                          {lang === "ar" ? "سبب الرفض" : "Rejection reason"}
+                        </Label>
+                        <Textarea
+                          id="benefit-rejection-reason"
+                          value={rejectReason}
+                          onChange={(event) => setRejectReason(event.target.value)}
+                          maxLength={500}
+                          dir={lang === "ar" ? "rtl" : "ltr"}
+                          placeholder={
+                            lang === "ar"
+                              ? "مثال: الإيصال غير واضح أو لا يطابق مبلغ الطلب"
+                              : "For example: receipt is unclear or does not match the order amount"
+                          }
                         />
-                      </a>
-                    ) : (
-                      <div className="rounded-lg border bg-white p-5 text-center text-sm text-muted-foreground">
-                        {order.benefit_receipt_deleted_at
-                          ? lang === "ar"
-                            ? "تم حذف صورة الإيصال حسب سياسة الاحتفاظ."
-                            : "Receipt image removed under the retention policy."
-                          : lang === "ar"
-                            ? "تعذر تحميل صورة الإيصال الخاصة."
-                            : "The private receipt could not be loaded."}
+                        <p className="text-xs text-muted-foreground">
+                          {rejectReason.trim().length}/500
+                        </p>
                       </div>
-                    )}
-                    {order.payment_status !== "paid" && (
-                      <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
+                      <DialogFooter>
                         <Button
                           type="button"
-                          className="bg-emerald-700 text-white hover:bg-emerald-800"
-                          onClick={approveBenefitPayment}
-                          disabled={approvingBenefit || rejectingBenefit}
+                          variant="outline"
+                          onClick={() => setRejectReasonOpen(false)}
                         >
-                          {approvingBenefit ? (
-                            <Loader2 className="me-2 h-4 w-4 animate-spin" />
-                          ) : (
-                            <CheckCircle2 className="me-2 h-4 w-4" />
-                          )}
-                          {lang === "ar" ? "اعتماد الدفع" : "Approve Payment"}
+                          {lang === "ar" ? "إلغاء" : "Cancel"}
                         </Button>
                         <Button
                           type="button"
                           variant="destructive"
-                          onClick={() => setRejectReasonOpen(true)}
-                          disabled={approvingBenefit || rejectingBenefit}
+                          onClick={rejectBenefitPayment}
+                          disabled={rejectingBenefit || rejectReason.trim().length < 3}
                         >
                           {rejectingBenefit && <Loader2 className="me-2 h-4 w-4 animate-spin" />}
-                          {lang === "ar" ? "رفض الإيصال" : "Reject Receipt"}
+                          {lang === "ar"
+                            ? "رفض الإيصال وإرسال السبب"
+                            : "Reject and notify customer"}
+                        </Button>
+                      </DialogFooter>
+                    </DialogContent>
+                  </Dialog>
+                </div>
+              )}
+              {/* Consolidated Financial Card Header with Toggle Button */}
+              <div className="flex items-center justify-between border-b border-border/60 pb-2.5">
+                <div className="flex items-center gap-2">
+                  <CreditCard className="h-4 w-4 text-primary" />
+                  <span className="text-xs font-bold uppercase tracking-wider text-foreground">
+                    {lang === "ar" ? "الملخص المالي والرسوم" : "Financial Summary & Ledger"}
+                  </span>
+                </div>
+                {!isReadOnly && (
+                  <Button
+                    type="button"
+                    variant={isEditingFees ? "secondary" : "outline"}
+                    size="sm"
+                    onClick={() => setIsEditingFees(!isEditingFees)}
+                    className="h-7 px-2.5 text-xs font-bold rounded-xl gap-1.5 border-border/80"
+                  >
+                    <Pencil className="h-3 w-3" />
+                    <span>
+                      {isEditingFees
+                        ? lang === "ar"
+                          ? "إغلاق التعديل"
+                          : "Done Editing"
+                        : lang === "ar"
+                          ? "تعديل الرسوم والخصم"
+                          : "Edit Fees & Discounts"}
+                    </span>
+                  </Button>
+                )}
+              </div>
+
+              {/* Integrated Order & Payment Channel Summary Strip */}
+              <div className="grid grid-cols-2 gap-2 rounded-xl bg-muted/40 p-2.5 text-xs">
+                <div>
+                  <span className="text-[11px] text-muted-foreground block font-medium">
+                    {t("orderDetail.orderDate")}
+                  </span>
+                  <span className="font-bold text-foreground">
+                    {formatDate(order.order_date, lang === "ar" ? "ar-BH" : "en-BH")}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-[11px] text-muted-foreground block font-medium">
+                    {t("orderDetail.paymentMethod")}
+                  </span>
+                  <span className="font-bold text-foreground">
+                    {tPayment(order.payment_method, lang) ||
+                      (lang === "ar" ? "غير محدد" : "Not specified")}
+                  </span>
+                </div>
+                {getPaymentGatewayReference(order) && (
+                  <div className="col-span-2 border-t border-border/40 pt-1.5 flex items-center justify-between font-mono text-[11px]">
+                    <span className="text-muted-foreground">Gateway Ref:</span>
+                    <span className="font-bold text-foreground truncate max-w-[200px]">
+                      {getPaymentGatewayReference(order)}
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              {/* Collapsible Fee & Discount Edit Inputs */}
+              {isEditingFees && (
+                <div className="space-y-3 rounded-xl border border-primary/20 bg-primary/5 p-3 animate-fade-in">
+                  <div className="rounded-lg border bg-background p-2.5 space-y-2">
+                    <Label className="text-xs font-bold">
+                      {lang === "ar" ? "تطبيق رمز خصم" : "Apply Promo Code"}
+                    </Label>
+                    {appliedPromo ? (
+                      <div className="flex items-center justify-between gap-3 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-emerald-900 text-xs font-medium">
+                        <div className="flex min-w-0 items-center gap-2">
+                          <Tag className="h-3.5 w-3.5 shrink-0" />
+                          <span className="truncate font-mono font-bold">{appliedPromo.code}</span>
+                          <span>− {formatMoney(appliedPromo.amount, currency)}</span>
+                        </div>
+                        <Button
+                          type="button"
+                          size="icon"
+                          variant="ghost"
+                          className="h-6 w-6 shrink-0"
+                          onClick={removeAdminPromo}
+                          disabled={isReadOnly}
+                        >
+                          <X className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="flex gap-2">
+                        <Input
+                          value={promoInput}
+                          onChange={(event) => setPromoInput(event.target.value.toUpperCase())}
+                          onKeyDown={(event) => {
+                            if (event.key === "Enter") {
+                              event.preventDefault();
+                              void applyAdminPromo();
+                            }
+                          }}
+                          placeholder="EID20"
+                          className="uppercase h-8 text-xs font-mono"
+                          disabled={isReadOnly || checkingPromo}
+                        />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={applyAdminPromo}
+                          disabled={isReadOnly || checkingPromo}
+                          className="h-8 text-xs font-bold"
+                        >
+                          {checkingPromo && <Loader2 className="me-1 h-3.5 w-3.5 animate-spin" />}
+                          {lang === "ar" ? "تطبيق" : "Apply"}
                         </Button>
                       </div>
                     )}
-                    <Dialog
-                      open={rejectReasonOpen}
-                      onOpenChange={(open) => {
-                        setRejectReasonOpen(open);
-                        if (!open) setRejectReason("");
-                      }}
-                    >
-                      <DialogContent className="max-w-md">
-                        <DialogHeader>
-                          <DialogTitle>
-                            {lang === "ar" ? "رفض إيصال بنفت باي" : "Reject BenefitPay receipt"}
-                          </DialogTitle>
-                          <DialogDescription>
-                            {lang === "ar"
-                              ? "سيُرسل سبب الرفض للعميل، وستُحذف صورة الإيصال الخاصة فوراً."
-                              : "The reason will be emailed to the customer and the private receipt image will be deleted immediately."}
-                          </DialogDescription>
-                        </DialogHeader>
-                        <div className="space-y-2">
-                          <Label htmlFor="benefit-rejection-reason">
-                            {lang === "ar" ? "سبب الرفض" : "Rejection reason"}
-                          </Label>
-                          <Textarea
-                            id="benefit-rejection-reason"
-                            value={rejectReason}
-                            onChange={(event) => setRejectReason(event.target.value)}
-                            maxLength={500}
-                            dir={lang === "ar" ? "rtl" : "ltr"}
-                            placeholder={
-                              lang === "ar"
-                                ? "مثال: الإيصال غير واضح أو لا يطابق مبلغ الطلب"
-                                : "For example: receipt is unclear or does not match the order amount"
-                            }
-                          />
-                          <p className="text-xs text-muted-foreground">
-                            {rejectReason.trim().length}/500
-                          </p>
-                        </div>
-                        <DialogFooter>
-                          <Button
-                            type="button"
-                            variant="outline"
-                            onClick={() => setRejectReasonOpen(false)}
-                          >
-                            {lang === "ar" ? "إلغاء" : "Cancel"}
-                          </Button>
-                          <Button
-                            type="button"
-                            variant="destructive"
-                            onClick={rejectBenefitPayment}
-                            disabled={rejectingBenefit || rejectReason.trim().length < 3}
-                          >
-                            {rejectingBenefit && <Loader2 className="me-2 h-4 w-4 animate-spin" />}
-                            {lang === "ar"
-                              ? "رفض الإيصال وإرسال السبب"
-                              : "Reject and notify customer"}
-                          </Button>
-                        </DialogFooter>
-                      </DialogContent>
-                    </Dialog>
                   </div>
-                )}
-                <div className="rounded-lg border bg-muted/20 p-3 space-y-2">
-                  <Label>{lang === "ar" ? "تطبيق رمز خصم" : "Apply Promo Code"}</Label>
-                  {appliedPromo ? (
-                    <div className="flex items-center justify-between gap-3 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-emerald-900">
-                      <div className="flex min-w-0 items-center gap-2">
-                        <Tag className="h-4 w-4 shrink-0" />
-                        <span className="truncate font-mono font-semibold">
-                          {appliedPromo.code}
-                        </span>
-                        <span className="text-xs">
-                          − {formatMoney(appliedPromo.amount, currency)}
-                        </span>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                    <div>
+                      <div className="flex items-center justify-between mb-1 text-xs">
+                        <Label className="text-xs font-bold">{t("orderDetail.discount")}</Label>
+                        {!appliedPromo && !isReadOnly && (
+                          <div className="flex items-center rounded-md border p-0.5 text-[10px] bg-background">
+                            <button
+                              type="button"
+                              className={cn(
+                                "px-1.5 py-0.5 rounded font-bold transition-colors",
+                                discountMode === "fixed"
+                                  ? "bg-primary text-primary-foreground shadow-2xs"
+                                  : "text-muted-foreground",
+                              )}
+                              onClick={() => setDiscountMode("fixed")}
+                            >
+                              {currency}
+                            </button>
+                            <button
+                              type="button"
+                              className={cn(
+                                "px-1.5 py-0.5 rounded font-bold transition-colors",
+                                discountMode === "percent"
+                                  ? "bg-primary text-primary-foreground shadow-2xs"
+                                  : "text-muted-foreground",
+                              )}
+                              onClick={() => {
+                                setDiscountMode("percent");
+                                if (totals.subtotal > 0 && order.discount > 0) {
+                                  const pct = (order.discount / totals.subtotal) * 100;
+                                  setDiscountPercentInput(pct.toFixed(1));
+                                }
+                              }}
+                            >
+                              %
+                            </button>
+                          </div>
+                        )}
                       </div>
-                      <Button
-                        type="button"
-                        size="icon"
-                        variant="ghost"
-                        className="h-7 w-7 shrink-0"
-                        onClick={removeAdminPromo}
-                        disabled={isReadOnly}
-                        aria-label={lang === "ar" ? "إزالة رمز الخصم" : "Remove promo code"}
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
+                      {discountMode === "percent" && !appliedPromo ? (
+                        <div className="relative">
+                          <Input
+                            type="number"
+                            step="0.1"
+                            min="0"
+                            max="100"
+                            placeholder="10"
+                            value={discountPercentInput}
+                            disabled={isReadOnly}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              setDiscountPercentInput(val);
+                              const pct = Number(val) || 0;
+                              const calculated = Number(((totals.subtotal * pct) / 100).toFixed(3));
+                              setOrder({ ...order, discount: calculated });
+                            }}
+                            className="h-8 text-xs font-mono"
+                          />
+                          <span className="absolute right-2.5 top-2 text-xs text-muted-foreground font-bold">
+                            %
+                          </span>
+                        </div>
+                      ) : (
+                        <Input
+                          type="number"
+                          step="0.001"
+                          value={order.discount}
+                          disabled={isReadOnly || !!appliedPromo}
+                          onChange={(e) => setOrder({ ...order, discount: Number(e.target.value) })}
+                          className="h-8 text-xs font-mono"
+                        />
+                      )}
                     </div>
-                  ) : (
-                    <div className="flex gap-2">
+
+                    <div>
+                      <Label className="text-xs font-bold mb-1 block">
+                        {t("orderDetail.shipping")}
+                      </Label>
                       <Input
-                        value={promoInput}
-                        onChange={(event) => setPromoInput(event.target.value.toUpperCase())}
-                        onKeyDown={(event) => {
-                          if (event.key === "Enter") {
-                            event.preventDefault();
-                            void applyAdminPromo();
-                          }
-                        }}
-                        placeholder="EID20"
-                        className="uppercase"
-                        disabled={isReadOnly || checkingPromo}
+                        type="number"
+                        step="0.01"
+                        value={order.shipping}
+                        onChange={(e) => setOrder({ ...order, shipping: Number(e.target.value) })}
+                        className="h-8 text-xs font-mono"
                       />
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={applyAdminPromo}
-                        disabled={isReadOnly || checkingPromo}
-                      >
-                        {checkingPromo && <Loader2 className="me-2 h-4 w-4 animate-spin" />}
-                        {lang === "ar" ? "تطبيق" : "Apply"}
-                      </Button>
                     </div>
-                  )}
-                  <p className="text-xs text-muted-foreground">
-                    {lang === "ar"
-                      ? "يتم التحقق من أهلية العميل والمنتجات والحد الأقصى تلقائياً."
-                      : "Customer eligibility, sale exclusions, and discount caps are checked automatically."}
-                  </p>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <div className="flex items-center justify-between mb-1">
-                      <Label>{t("orderDetail.discount")}</Label>
-                      {!appliedPromo && !isReadOnly && (
-                        <div className="flex items-center rounded-md border p-0.5 text-xs bg-muted/40">
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                    <div>
+                      <div className="flex items-center justify-between mb-1 text-xs">
+                        <Label className="text-xs font-bold">{t("orderDetail.taxRate")}</Label>
+                        {!isReadOnly && (
                           <button
                             type="button"
-                            className={cn(
-                              "px-2 py-0.5 rounded font-semibold transition-colors",
-                              discountMode === "fixed"
-                                ? "bg-background text-foreground shadow-xs"
-                                : "text-muted-foreground hover:text-foreground",
-                            )}
-                            onClick={() => setDiscountMode("fixed")}
-                          >
-                            {currency}
-                          </button>
-                          <button
-                            type="button"
-                            className={cn(
-                              "px-2 py-0.5 rounded font-semibold transition-colors",
-                              discountMode === "percent"
-                                ? "bg-background text-foreground shadow-xs"
-                                : "text-muted-foreground hover:text-foreground",
-                            )}
+                            className="text-[10px] text-primary font-bold hover:underline"
                             onClick={() => {
-                              setDiscountMode("percent");
-                              if (totals.subtotal > 0 && order.discount > 0) {
-                                const pct = (order.discount / totals.subtotal) * 100;
-                                setDiscountPercentInput(pct.toFixed(1));
+                              if (Number(order.tax_rate) > 0) {
+                                setLastNonZeroTaxRate(Number(order.tax_rate));
+                                setOrder({ ...order, tax_rate: 0 });
+                              } else {
+                                setOrder({ ...order, tax_rate: lastNonZeroTaxRate || 10 });
                               }
                             }}
                           >
-                            %
+                            {Number(order.tax_rate) === 0 ? "Exempt (0%)" : "Tax Exempt?"}
                           </button>
-                        </div>
-                      )}
-                    </div>
-                    {discountMode === "percent" && !appliedPromo ? (
-                      <div className="relative">
-                        <Input
-                          type="number"
-                          step="0.1"
-                          min="0"
-                          max="100"
-                          placeholder="10"
-                          value={discountPercentInput}
-                          disabled={isReadOnly}
-                          onChange={(e) => {
-                            const val = e.target.value;
-                            setDiscountPercentInput(val);
-                            const pct = Number(val) || 0;
-                            const calculated = Number(((totals.subtotal * pct) / 100).toFixed(3));
-                            setOrder({ ...order, discount: calculated });
-                          }}
-                        />
-                        <span className="absolute right-3 top-2.5 text-xs text-muted-foreground font-bold">
-                          %
-                        </span>
+                        )}
                       </div>
-                    ) : (
                       <Input
                         type="number"
-                        step="0.001"
-                        value={order.discount}
-                        disabled={isReadOnly || !!appliedPromo}
-                        onChange={(e) => setOrder({ ...order, discount: Number(e.target.value) })}
+                        step="0.01"
+                        value={order.tax_rate}
+                        onChange={(e) => setOrder({ ...order, tax_rate: Number(e.target.value) })}
+                        className="h-8 text-xs font-mono"
                       />
-                    )}
-                    {appliedPromo && (
-                      <p className="mt-1 text-xs text-muted-foreground">
-                        {lang === "ar"
-                          ? "تم تثبيت الخصم بواسطة رمز الخصم."
-                          : "Locked to the validated promo amount."}
-                      </p>
-                    )}
-                  </div>
-                  <div>
-                    <Label>{t("orderDetail.shipping")}</Label>
-                    <Input
-                      type="number"
-                      step="0.01"
-                      value={order.shipping}
-                      onChange={(e) => setOrder({ ...order, shipping: Number(e.target.value) })}
-                    />
+                    </div>
+
+                    <div>
+                      <Label className="text-xs font-bold mb-1 block">
+                        {t("orderDetail.advancePaid")}
+                      </Label>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        min={0}
+                        value={order.advance_paid ?? 0}
+                        onChange={(e) =>
+                          setOrder({ ...order, advance_paid: Number(e.target.value) })
+                        }
+                        className="h-8 text-xs font-mono font-bold text-foreground"
+                      />
+                    </div>
                   </div>
                 </div>
-                <div>
-                  <div className="flex items-center justify-between mb-1">
-                    <Label>{t("orderDetail.taxRate")}</Label>
-                    {!isReadOnly && (
-                      <Button
-                        type="button"
-                        variant={Number(order.tax_rate) === 0 ? "secondary" : "outline"}
-                        size="sm"
-                        className="h-6 px-2 text-[11px] font-semibold"
-                        onClick={() => {
-                          if (Number(order.tax_rate) > 0) {
-                            setLastNonZeroTaxRate(Number(order.tax_rate));
-                            setOrder({ ...order, tax_rate: 0 });
-                          } else {
-                            setOrder({ ...order, tax_rate: lastNonZeroTaxRate || 10 });
-                          }
-                        }}
-                      >
-                        {Number(order.tax_rate) === 0
-                          ? lang === "ar"
-                            ? "✓ معفي من الضريبة"
-                            : "✓ Tax Exempt"
-                          : lang === "ar"
-                            ? "إعفاء ضريبي (0%)"
-                            : "Set Tax Exempt (0%)"}
-                      </Button>
-                    )}
-                  </div>
-                  <Input
-                    type="number"
-                    step="0.01"
-                    value={order.tax_rate}
-                    onChange={(e) => setOrder({ ...order, tax_rate: Number(e.target.value) })}
-                  />
-                  {Number(order.tax_rate) === 0 && (
-                    <p className="mt-1 text-xs text-emerald-700 dark:text-emerald-400 font-medium">
-                      {lang === "ar"
-                        ? "🛡️ الطلب معفي من قيمة الضريبة المضافة (0%)"
-                        : "🛡️ Order is exempt from VAT (0%)"}
-                    </p>
-                  )}
-                </div>
-                <div>
-                  <Label>{t("orderDetail.advancePaid")}</Label>
-                  <Input
-                    type="number"
-                    step="0.01"
-                    min={0}
-                    value={order.advance_paid ?? 0}
-                    onChange={(e) => setOrder({ ...order, advance_paid: Number(e.target.value) })}
-                  />
-                </div>
-                {/* Read-Only Status Micro-Summary */}
-                <div className="space-y-2 border-t border-border/60 pt-3">
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="text-muted-foreground font-medium">
-                      {t("orderDetail.paymentStatus")}
+              )}
+              <div className="space-y-1 border-t border-border pt-3 text-sm">
+                <Row
+                  label={t("orderDetail.subtotal")}
+                  value={formatMoney(totals.subtotal, currency)}
+                />
+                <Row
+                  label={`${t("orderDetail.discount")}${order.promo_code ? ` (Promo: ${order.promo_code})` : ""}`}
+                  value={`− ${formatMoney(totals.discount, currency)}`}
+                />
+                <Row
+                  label={`${t("orderDetail.vat")} (${order.tax_rate}%)`}
+                  value={formatMoney(totals.taxAmount, currency)}
+                />
+                <Row
+                  label={t("orderDetail.shipping")}
+                  value={formatMoney(totals.shipping, currency)}
+                />
+                <div className="flex justify-between items-center pt-2 border-t border-border">
+                  <span className="font-display text-lg">{t("orderDetail.total")}</span>
+                  <div className="flex items-center gap-2">
+                    <span className="font-display text-lg">
+                      {formatMoney(totals.total, currency)}
                     </span>
                     <span
-                      className={cn(
-                        "px-2 py-0.5 rounded-full font-bold text-[11px]",
-                        PAYMENT_BADGE_CLASSES[paymentBadge],
-                      )}
+                      className={`text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full border ${PAYMENT_BADGE_CLASSES[paymentBadge]}`}
                     >
                       {t(`payStatus.${paymentBadge}`)}
                     </span>
                   </div>
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="text-muted-foreground font-medium">
-                      {lang === "ar" ? "حالة التجهيز" : "Fulfillment Status"}
-                    </span>
-                    <span className="px-2 py-0.5 rounded-full border border-border/80 bg-muted/60 font-bold text-[11px] text-foreground">
-                      {getFulfillmentLabel(order.fulfillment_status, lang)}
-                    </span>
-                  </div>
                 </div>
-                <div className="space-y-1 border-t border-border pt-3 text-sm">
-                  <Row
-                    label={t("orderDetail.subtotal")}
-                    value={formatMoney(totals.subtotal, currency)}
-                  />
-                  <Row
-                    label={`${t("orderDetail.discount")}${order.promo_code ? ` (Promo: ${order.promo_code})` : ""}`}
-                    value={`− ${formatMoney(totals.discount, currency)}`}
-                  />
-                  <Row
-                    label={`${t("orderDetail.vat")} (${order.tax_rate}%)`}
-                    value={formatMoney(totals.taxAmount, currency)}
-                  />
-                  <Row
-                    label={t("orderDetail.shipping")}
-                    value={formatMoney(totals.shipping, currency)}
-                  />
-                  <div className="flex justify-between items-center pt-2 border-t border-border">
-                    <span className="font-display text-lg">{t("orderDetail.total")}</span>
-                    <div className="flex items-center gap-2">
-                      <span className="font-display text-lg">
-                        {formatMoney(totals.total, currency)}
-                      </span>
-                      <span
-                        className={`text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full border ${PAYMENT_BADGE_CLASSES[paymentBadge]}`}
-                      >
-                        {t(`payStatus.${paymentBadge}`)}
-                      </span>
+                {totals.advancePaid > 0 && (
+                  <>
+                    <Row
+                      label={t("orderDetail.advancePaid")}
+                      value={`− ${formatMoney(totals.advancePaid, currency)}`}
+                    />
+                    <div className="flex justify-between pt-1 font-medium">
+                      <span>{t("orderDetail.remaining")}</span>
+                      <span>{formatMoney(totals.remaining, currency)}</span>
                     </div>
-                  </div>
-                  {totals.advancePaid > 0 && (
-                    <>
-                      <Row
-                        label={t("orderDetail.advancePaid")}
-                        value={`− ${formatMoney(totals.advancePaid, currency)}`}
-                      />
-                      <div className="flex justify-between pt-1 font-medium">
-                        <span>{t("orderDetail.remaining")}</span>
-                        <span>{formatMoney(totals.remaining, currency)}</span>
-                      </div>
-                    </>
-                  )}
-                </div>
+                  </>
+                )}
               </div>
             </Card>
           </div>
