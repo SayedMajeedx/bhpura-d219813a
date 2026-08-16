@@ -41,7 +41,7 @@ export const OrderStickyBottomBar: React.FC<OrderStickyBottomBarProps> = ({
 
   return (
     <div
-      className="no-print fixed bottom-0 inset-x-0 z-40 flex items-center gap-2 border-t border-border/80 bg-card/95 p-3 shadow-xl backdrop-blur-md sm:hidden"
+      className="no-print fixed bottom-14 inset-x-0 z-50 flex items-center gap-2 border-t border-border/80 bg-card/95 p-3 shadow-2xl backdrop-blur-md sm:hidden"
       aria-label={isAr ? "إجراءات رئيسية سريعة" : "Primary Action Thumb Zone"}
     >
       {/* Primary CTA Slot (Takes Full Available Width) */}

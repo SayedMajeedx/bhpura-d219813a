@@ -2563,7 +2563,7 @@ function OrderDetail() {
       {/* Editor - hidden on print */}
       <fieldset
         disabled={isReadOnly}
-        className="no-print m-0 min-w-0 border-0 p-0 disabled:opacity-80"
+        className="no-print m-0 min-w-0 border-0 p-0 pb-36 sm:pb-12 disabled:opacity-80"
       >
         <div className="mb-6 grid grid-cols-1 items-start gap-3 sm:gap-6 lg:grid-cols-3">
           {/* RIGHT COLUMN (35% width) - Customer, Address & Workflow Controls */}
@@ -3216,28 +3216,35 @@ function OrderDetail() {
                         </div>
                         <Button
                           type="button"
-                          variant={editingItems[idx] ? "secondary" : "outline"}
+                          variant="outline"
                           size="sm"
-                          className="h-8 text-xs font-semibold gap-1.5 shrink-0 rounded-lg border border-border/80"
-                          onClick={() =>
-                            setEditingItems((prev) => ({ ...prev, [idx]: !prev[idx] }))
-                          }
+                          className="h-8 text-xs font-semibold gap-1.5 shrink-0 rounded-lg border border-border/80 touch-manipulation"
+                          onClick={() => setEditingItemSheetIdx(idx)}
                         >
-                          {editingItems[idx] ? (
-                            <>
-                              <Check className="h-3.5 w-3.5 text-emerald-600" />
-                              <span>{isAr ? "حفظ" : "Done"}</span>
-                            </>
-                          ) : (
-                            <>
-                              <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
-                              <span>{isAr ? "تعديل البند" : "Edit Item"}</span>
-                            </>
-                          )}
+                          <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
+                          <span>{isAr ? "تعديل البند" : "Edit Item"}</span>
                         </Button>
                       </div>
 
-                      <div className="grid grid-cols-1 sm:grid-cols-12 gap-3">
+                      {/* Mobile Read-Only Compact Summary Row (< 640px) */}
+                      <div className="flex sm:hidden items-center justify-between gap-2 pt-1 pb-0.5">
+                        <div className="flex items-center gap-1.5 text-xs font-semibold">
+                          <span className="bg-muted/80 text-foreground px-2.5 py-1 rounded-md border border-border/60">
+                            {it.quantity} × {formatMoney(it.unit_price, currency)}
+                          </span>
+                        </div>
+                        <div className="text-end">
+                          <span className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider block">
+                            {isAr ? "المجموع" : "Total"}
+                          </span>
+                          <span className="font-extrabold text-sm text-foreground">
+                            {formatMoney(it.line_total, currency)}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Desktop Full Inline Input Grid (>= 640px) */}
+                      <div className="hidden sm:grid sm:grid-cols-12 gap-3">
                         <div className="sm:col-span-4">
                           <Label>{t("orderDetail.fromInventory")}</Label>
                           <Select
