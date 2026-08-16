@@ -2376,7 +2376,7 @@ function OrderDetail() {
   return (
     <>
       <div
-        className="mx-auto max-w-[1500px] space-y-3 p-1 pb-[140px] sm:space-y-4 sm:p-2 sm:pb-32 md:pb-28 lg:pb-16 animate-fade-in"
+        className="mx-auto max-w-[1500px] space-y-3 p-1 pb-24 sm:space-y-4 sm:p-2 sm:pb-12 md:pb-12 lg:pb-8 animate-fade-in"
         dir={lang === "ar" ? "rtl" : "ltr"}
       >
         {/* 1. Unified Status Header */}
@@ -2564,7 +2564,7 @@ function OrderDetail() {
         {/* Editor - hidden on print */}
         <fieldset
           disabled={isReadOnly}
-          className="no-print m-0 min-w-0 border-0 p-0 pb-[120px] sm:pb-12 disabled:opacity-80"
+          className="no-print m-0 min-w-0 border-0 p-0 disabled:opacity-80"
         >
           <div className="mb-6 grid grid-cols-1 items-start gap-3 sm:gap-6 lg:grid-cols-3">
             {/* RIGHT COLUMN (35% width) - Customer, Address & Workflow Controls */}

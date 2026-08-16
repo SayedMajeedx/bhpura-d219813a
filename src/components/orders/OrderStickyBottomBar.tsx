@@ -1,4 +1,5 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { Save, Loader2, MoreHorizontal, Phone, Receipt, Printer, Copy, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -38,11 +39,18 @@ export const OrderStickyBottomBar: React.FC<OrderStickyBottomBarProps> = ({
 }) => {
   const isAr = lang === "ar";
   const cleanPhone = (customerPhone || "").replace(/[^\d]/g, "");
+  const [mounted, setMounted] = useState(false);
 
-  return (
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) return null;
+
+  const content = (
     <div
-      className="no-print fixed bottom-[64px] inset-x-0 z-50 flex items-center gap-2 border-t border-border/80 bg-background/95 px-4 py-3 shadow-2xl backdrop-blur-md sm:hidden"
-      style={{ bottom: "64px" }}
+      className="no-print fixed bottom-[56px] inset-x-0 z-50 flex items-center gap-2 border-t border-border/80 bg-background/95 px-4 py-3 shadow-2xl backdrop-blur-md sm:hidden"
+      style={{ bottom: "56px" }}
       aria-label={isAr ? "إجراءات رئيسية سريعة" : "Primary Action Thumb Zone"}
     >
       {/* Primary CTA Slot (Takes Full Available Width) */}
@@ -157,4 +165,6 @@ export const OrderStickyBottomBar: React.FC<OrderStickyBottomBarProps> = ({
       )}
     </div>
   );
+
+  return createPortal(content, document.body);
 };
