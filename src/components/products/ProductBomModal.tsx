@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Package, Plus, Trash2, Box, Info } from "lucide-react";
 import { formatMoney } from "@/lib/format";
+import { toast } from "sonner";
 
 interface ProductBomModalProps {
   open: boolean;
@@ -130,18 +131,20 @@ export function ProductBomModal({
     setIsSaving(true);
     try {
       // 1. Update direct packaging cost on product
-      await (supabase as any)
+      const { error: pErr } = await (supabase as any)
         .from("products")
         .update({ direct_packaging_cost: directCost } as any)
         .eq("id", productId)
         .eq("brand_id", brandId);
+      if (pErr) throw pErr;
 
       // 2. Delete existing BOM items for product
-      await (supabase as any)
+      const { error: dErr } = await (supabase as any)
         .from("product_bom_items")
         .delete()
         .eq("product_id", productId)
         .eq("brand_id", brandId);
+      if (dErr) throw dErr;
 
       // 3. Insert new BOM items
       if (selectedMaterials.length > 0) {
@@ -151,16 +154,19 @@ export function ProductBomModal({
           packaging_material_id: sm.packaging_material_id,
           quantity_per_unit: sm.quantity_per_unit,
         }));
-        await (supabase as any).from("product_bom_items").insert(rowsToInsert as any);
+        const { error: iErr } = await (supabase as any).from("product_bom_items").insert(rowsToInsert as any);
+        if (iErr) throw iErr;
       }
 
+      toast.success(isAr ? "تم حفظ تكاليف التغليف بنجاح" : "BOM packaging saved successfully");
       qc.invalidateQueries({ queryKey: ["dashboard-products", brandId] });
       qc.invalidateQueries({ queryKey: ["product-bom-items", productId] });
 
       onSaved?.();
       onOpenChange(false);
-    } catch (err) {
+    } catch (err: any) {
       console.error("Failed to save BOM packaging", err);
+      toast.error(err.message || (isAr ? "خطأ في حفظ تكاليف التغليف" : "Failed to save BOM packaging"));
     } finally {
       setIsSaving(false);
     }

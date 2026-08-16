@@ -136,10 +136,12 @@ export function ExpensesOpExCogsTab() {
   const handleDelete = async (id: string) => {
     if (!confirm(isAr ? "هل أنت تأكد من حذف هذا المصروف؟" : "Delete this expense?")) return;
     try {
-      await supabase.from("expenses").delete().eq("id", id).eq("brand_id", brandId);
+      const { error } = await supabase.from("expenses").delete().eq("id", id).eq("brand_id", brandId);
+      if (error) throw error;
       toast.success(isAr ? "تم الحذف بنجاح" : "Expense deleted");
       qc.invalidateQueries({ queryKey: ["dashboard-expenses-full", brandId] });
       qc.invalidateQueries({ queryKey: ["dashboard-expenses", brandId] });
+      qc.invalidateQueries({ queryKey: ["expenses", brandId] });
     } catch (err: any) {
       toast.error(err.message || "Failed to delete");
     }
@@ -153,10 +155,14 @@ export function ExpensesOpExCogsTab() {
 
     setIsSaving(true);
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+
       const payload: any = {
         brand_id: brandId,
-        description,
-        amount,
+        user_id: user?.id || null,
+        description: description.trim(),
+        amount: Number(amount) || 0,
+        currency: "BHD",
         category,
         expense_type: expenseType,
         quantity: expenseType === "cogs" ? Math.max(1, quantity) : 1,
@@ -169,24 +175,27 @@ export function ExpensesOpExCogsTab() {
       };
 
       if (editingExpense) {
-        await (supabase as any).from("expenses").update(payload).eq("id", editingExpense.id).eq("brand_id", brandId);
+        const { error } = await (supabase as any).from("expenses").update(payload).eq("id", editingExpense.id).eq("brand_id", brandId);
+        if (error) throw error;
         toast.success(isAr ? "تم تعديل المصروف بنجاح" : "Expense updated");
       } else {
-        await (supabase as any).from("expenses").insert(payload);
+        const { error } = await (supabase as any).from("expenses").insert(payload);
+        if (error) throw error;
         toast.success(isAr ? "تم إضافة المصروف بنجاح" : "Expense added");
       }
 
-
-
       qc.invalidateQueries({ queryKey: ["dashboard-expenses-full", brandId] });
       qc.invalidateQueries({ queryKey: ["dashboard-expenses", brandId] });
+      qc.invalidateQueries({ queryKey: ["expenses", brandId] });
       setModalOpen(false);
     } catch (err: any) {
+      console.error("Expense save error:", err);
       toast.error(err.message || "Error saving expense");
     } finally {
       setIsSaving(false);
     }
   };
+
 
   return (
     <div className="space-y-6">
@@ -336,14 +345,14 @@ export function ExpensesOpExCogsTab() {
 
       {/* Add / Edit Expense Dialog */}
       <Dialog open={modalOpen} onOpenChange={setModalOpen}>
-        <DialogContent className="max-w-md rounded-xl border border-border bg-card p-6 shadow-2xl">
-          <DialogHeader>
+        <DialogContent className="max-w-lg w-[95vw] max-h-[85vh] sm:max-h-[90vh] flex flex-col rounded-2xl border border-border bg-card p-0 shadow-2xl overflow-hidden">
+          <DialogHeader className="p-5 pb-3 border-b border-border/60 shrink-0">
             <DialogTitle className="text-base font-bold text-foreground">
               {editingExpense ? (isAr ? "تعديل المصروف" : "Edit Expense") : isAr ? "تسجيل مصروف جديد" : "Record New Expense"}
             </DialogTitle>
           </DialogHeader>
 
-          <div className="space-y-4 py-2 text-xs">
+          <div className="flex-1 overflow-y-auto p-5 space-y-4 text-xs">
             {/* Expense Classification Toggle */}
             <div className="space-y-1.5">
               <Label className="text-xs font-semibold">{isAr ? "نوع المصروف (تصنيف القوائم المالية)" : "Expense Type"}</Label>
@@ -517,11 +526,11 @@ export function ExpensesOpExCogsTab() {
             </div>
           </div>
 
-          <DialogFooter className="gap-2 pt-2">
+          <DialogFooter className="p-4 pt-3 border-t border-border/60 shrink-0 bg-muted/20 gap-2 flex-row justify-end">
             <Button variant="outline" onClick={() => setModalOpen(false)} className="h-9 text-xs">
               {isAr ? "إلغاء" : "Cancel"}
             </Button>
-            <Button onClick={handleSave} disabled={isSaving} className="h-9 text-xs font-bold">
+            <Button onClick={handleSave} disabled={isSaving} className="h-9 text-xs font-bold min-w-[100px]">
               {isSaving ? (isAr ? "جاري الحفظ..." : "Saving...") : isAr ? "حفظ المصروف" : "Save Expense"}
             </Button>
           </DialogFooter>

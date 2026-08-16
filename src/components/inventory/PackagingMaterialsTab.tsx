@@ -84,7 +84,8 @@ export function PackagingMaterialsTab() {
   const handleDelete = async (id: string) => {
     if (!confirm(isAr ? "هل أنت تأكد من حذف مادة التغليف هذه؟" : "Delete this packaging material?")) return;
     try {
-      await (supabase as any).from("packaging_materials").delete().eq("id", id).eq("brand_id", brandId);
+      const { error } = await (supabase as any).from("packaging_materials").delete().eq("id", id).eq("brand_id", brandId);
+      if (error) throw error;
       toast.success(isAr ? "تمت الحذف بنجاح" : "Material deleted");
       qc.invalidateQueries({ queryKey: ["packaging-materials", brandId] });
     } catch (err: any) {
@@ -101,7 +102,7 @@ export function PackagingMaterialsTab() {
     setIsSaving(true);
     try {
       if (editingItem) {
-        await (supabase as any)
+        const { error } = await (supabase as any)
           .from("packaging_materials")
           .update({
             name,
@@ -113,9 +114,10 @@ export function PackagingMaterialsTab() {
           } as any)
           .eq("id", editingItem.id)
           .eq("brand_id", brandId);
+        if (error) throw error;
         toast.success(isAr ? "تم التحديث بنجاح" : "Updated successfully");
       } else {
-        await (supabase as any).from("packaging_materials").insert({
+        const { error } = await (supabase as any).from("packaging_materials").insert({
           brand_id: brandId,
           name,
           name_ar: nameAr,
@@ -124,6 +126,7 @@ export function PackagingMaterialsTab() {
           unit_cost: unitCost,
           reorder_level: reorderLevel,
         } as any);
+        if (error) throw error;
         toast.success(isAr ? "تمت الإضافة بنجاح" : "Added successfully");
       }
 

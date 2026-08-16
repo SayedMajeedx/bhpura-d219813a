@@ -101,13 +101,14 @@ export function VendorsPurchaseOrdersTab() {
 
     setIsSaving(true);
     try {
-      await (supabase as any).from("vendors").insert({
+      const { error } = await (supabase as any).from("vendors").insert({
         brand_id: brandId,
         name: vendorName,
         contact_person: vendorContact,
         phone: vendorPhone,
         email: vendorEmail,
       } as any);
+      if (error) throw error;
 
       toast.success(isAr ? "تم إضافة المورد بنجاح" : "Vendor added");
       qc.invalidateQueries({ queryKey: ["vendors-full", brandId] });
@@ -132,7 +133,7 @@ export function VendorsPurchaseOrdersTab() {
 
     setIsSaving(true);
     try {
-      await (supabase as any).from("purchase_orders").insert({
+      const { error } = await (supabase as any).from("purchase_orders").insert({
         brand_id: brandId,
         po_number: poNumber,
         vendor_id: selectedVendorId,
@@ -140,6 +141,7 @@ export function VendorsPurchaseOrdersTab() {
         paid_amount: poPaidAmount,
         status: poPaidAmount >= poTotalAmount ? "received" : "ordered",
       } as any);
+      if (error) throw error;
 
       toast.success(isAr ? "تم إنشاء أمر الشراء بنجاح" : "Purchase order created");
       qc.invalidateQueries({ queryKey: ["purchase-orders", brandId] });
@@ -159,7 +161,7 @@ export function VendorsPurchaseOrdersTab() {
       const total = Number(po.total_amount || 0);
       const newPaid = Math.min(total, currentPaid + addPaidAmt);
 
-      await (supabase as any)
+      const { error } = await (supabase as any)
         .from("purchase_orders")
         .update({
           paid_amount: newPaid,
@@ -167,7 +169,7 @@ export function VendorsPurchaseOrdersTab() {
         } as any)
         .eq("id", po.id)
         .eq("brand_id", brandId);
-
+      if (error) throw error;
 
       toast.success(isAr ? "تم تسجيل الدفعة بنجاح" : "Payment recorded");
       qc.invalidateQueries({ queryKey: ["purchase-orders", brandId] });
