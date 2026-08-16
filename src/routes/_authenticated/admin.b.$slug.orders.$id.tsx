@@ -1501,6 +1501,8 @@ function OrderDetail() {
           orig.variant_id !== item.variant_id ||
           Number(orig.quantity) !== Number(item.quantity) ||
           Number(orig.unit_price) !== Number(item.unit_price) ||
+          (orig.unit_cost == null ? null : Number(orig.unit_cost)) !==
+            (item.unit_cost == null ? null : Number(item.unit_cost)) ||
           orig.description !== item.description ||
           (orig.location === "incubator" ? "incubator" : "main") !== item.location ||
           JSON.stringify(orig.customizations ?? []) !== JSON.stringify(item.customizations ?? [])
