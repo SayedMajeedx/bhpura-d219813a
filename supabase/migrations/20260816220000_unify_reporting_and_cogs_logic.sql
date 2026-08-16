@@ -1,6 +1,67 @@
 -- Migration: Unify Reporting, COGS, and OpEx Logic across Dashboard, Reports, and Accounting
 -- Created At: 2026-08-16
 
+CREATE OR REPLACE FUNCTION public.reporting_brand_id(p_brand_slug text DEFAULT NULL)
+RETURNS uuid
+LANGUAGE plpgsql
+VOLATILE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_profile public.profiles%ROWTYPE;
+  v_brand_id uuid;
+BEGIN
+  SELECT * INTO v_profile FROM public.profiles WHERE id = auth.uid();
+  
+  -- Guard: If user is authenticated, ensure profile exists and is active
+  IF auth.uid() IS NOT NULL THEN
+    IF v_profile.id IS NULL OR lower(COALESCE(v_profile.status, 'active')) NOT IN ('active', 'approved') THEN
+      RAISE EXCEPTION 'FORBIDDEN';
+    END IF;
+    IF NOT public.has_permission('view_financials') THEN
+      RAISE EXCEPTION 'Denied: view_financials permission required';
+    END IF;
+  END IF;
+
+  -- 1. If p_brand_slug is provided, look up brand by slug
+  IF NULLIF(btrim(p_brand_slug), '') IS NOT NULL THEN
+    SELECT id INTO v_brand_id
+    FROM public.brands
+    WHERE lower(slug) = lower(btrim(p_brand_slug))
+      AND is_active = true
+    LIMIT 1;
+  END IF;
+
+  -- 2. If no brand slug provided or not found by slug, fallback to user's assigned brand_id
+  IF v_brand_id IS NULL AND v_profile.brand_id IS NOT NULL THEN
+    v_brand_id := v_profile.brand_id;
+  END IF;
+
+  -- 3. Fallback: single active store brand if v_brand_id still null
+  IF v_brand_id IS NULL THEN
+    SELECT id INTO v_brand_id
+    FROM public.brands
+    WHERE is_active = true
+    ORDER BY created_at ASC
+    LIMIT 1;
+  END IF;
+
+  -- Verify access if authenticated user
+  IF auth.uid() IS NOT NULL AND v_brand_id IS NOT NULL THEN
+    IF v_profile.role <> 'super_admin' AND NOT public.can_access_brand(v_brand_id) THEN
+      RAISE EXCEPTION 'BRAND_NOT_FOUND_OR_FORBIDDEN';
+    END IF;
+  END IF;
+
+  IF v_brand_id IS NULL THEN
+    RAISE EXCEPTION 'BRAND_NOT_FOUND_OR_FORBIDDEN';
+  END IF;
+
+  RETURN v_brand_id;
+END;
+$$;
+
 CREATE OR REPLACE FUNCTION public.rpc_reporting_overview(
   p_start_date timestamptz,
   p_end_date timestamptz,
@@ -53,11 +114,12 @@ BEGIN
   ),
   cogs_data AS (
     SELECT o.currency,
-      round(sum(oi.quantity * (COALESCE(oi.unit_cost, 0) + CASE WHEN lower(COALESCE(o.fulfillment_status, o.status, '')) IN ('fulfilled', 'delivered', 'completed', 'shipped') THEN COALESCE(oi.packaging_cost, 0) ELSE 0 END))::numeric, 3) AS known_cogs,
+      round(sum(oi.quantity * (COALESCE(oi.unit_cost, 0) + CASE WHEN lower(COALESCE(o.fulfillment_status, o.status, '')) IN ('fulfilled', 'delivered', 'completed', 'shipped') THEN COALESCE(p.direct_packaging_cost, 0) ELSE 0 END))::numeric, 3) AS known_cogs,
       count(oi.id) FILTER (WHERE oi.unit_cost IS NULL) AS missing_cost_count,
       round((sum(oi.line_total) FILTER (WHERE oi.unit_cost IS NULL))::numeric, 3) AS missing_cost_value
     FROM qualifying_paid o
     JOIN public.order_items oi ON oi.order_id = o.id AND oi.brand_id = v_brand_id
+    LEFT JOIN public.products p ON p.id = oi.product_id
     GROUP BY o.currency
   ),
   expenses_data AS (
