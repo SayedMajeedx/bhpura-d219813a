@@ -72,16 +72,23 @@ export async function fetchReportingOverview(
     }
     throw error;
   }
-  const { data: feeRows, error: feeError } = await (supabase as any).rpc(
-    "rpc_reporting_processing_fees",
-    {
-      p_start_date: range.from.toISOString(),
-      p_end_date: range.to.toISOString(),
-      p_include_historical: includeHistorical,
-      p_brand_slug: brandSlug || null,
-    },
-  );
-  if (feeError) throw feeError;
+  let feeRows: any[] = [];
+  try {
+    const { data: res, error: feeError } = await (supabase as any).rpc(
+      "rpc_reporting_processing_fees",
+      {
+        p_start_date: range.from.toISOString(),
+        p_end_date: range.to.toISOString(),
+        p_include_historical: includeHistorical,
+        p_brand_slug: brandSlug || null,
+      },
+    );
+    if (!feeError && Array.isArray(res)) {
+      feeRows = res;
+    }
+  } catch (e) {
+    console.warn("rpc_reporting_processing_fees soft error:", e);
+  }
   const feesByCurrency = new Map(
     (Array.isArray(feeRows) ? feeRows : []).map((row: any) => [
       row.currency,

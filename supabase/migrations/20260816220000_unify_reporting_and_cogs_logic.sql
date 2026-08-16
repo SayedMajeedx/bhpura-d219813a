@@ -157,3 +157,31 @@ BEGIN
   RETURN v_result;
 END;
 $$;
+
+CREATE OR REPLACE FUNCTION public.rpc_reporting_processing_fees(
+  p_start_date timestamptz,
+  p_end_date timestamptz,
+  p_include_historical boolean DEFAULT false,
+  p_brand_slug text DEFAULT NULL
+) RETURNS jsonb
+LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public
+AS $$
+  SELECT COALESCE(jsonb_agg(to_jsonb(result) ORDER BY result.currency), '[]'::jsonb)
+  FROM (
+    SELECT o.currency,
+      COALESCE(SUM(CASE
+        WHEN lower(COALESCE(o.payment_method, '')) = 'card'
+          THEN o.total * COALESCE(bs.card_processing_fee, 0) / 100
+        WHEN lower(COALESCE(o.payment_method, '')) IN ('benefit', 'benefitpay', 'benefit_pay')
+          THEN o.total * COALESCE(bs.benefit_processing_fee, 0) / 100
+        ELSE 0 END), 0)::numeric AS processing_fees
+    FROM public.orders o
+    LEFT JOIN public.business_settings bs ON bs.brand_id = o.brand_id
+    WHERE o.brand_id = public.reporting_brand_id(p_brand_slug)
+      AND o.created_at >= p_start_date AND o.created_at < p_end_date
+      AND lower(COALESCE(o.status, '')) IN ('confirmed', 'paid', 'shipped', 'completed')
+      AND lower(COALESCE(o.status, '')) NOT IN ('cancelled', 'canceled', 'draft', 'pending_verification', 'benefit_rejected')
+      AND (p_include_historical OR lower(COALESCE(o.status, '')) <> 'archived_historical')
+    GROUP BY o.currency
+  ) result;
+$$;

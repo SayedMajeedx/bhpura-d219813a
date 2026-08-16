@@ -178,7 +178,7 @@ function Dashboard() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("expenses")
-        .select("amount, expense_date")
+        .select("*")
         .eq("brand_id", brandId);
       if (error) throw error;
       return data ?? [];
