@@ -3582,26 +3582,24 @@ function OrderDetail() {
                           </div>
                         </div>
 
-                        {/* Mobile Slide-Up Bottom Sheet for Line Item Editing */}
-                        <Sheet
+                        {/* Centered Modal Dialog for Web Desktop View (min-width: 768px) */}
+                        <Dialog
                           open={editingItemSheetIdx === idx}
                           onOpenChange={(open) => setEditingItemSheetIdx(open ? idx : null)}
                         >
-                          <SheetContent
-                            side="bottom"
-                            className="rounded-t-2xl max-h-[85vh] overflow-y-auto p-4 font-sans border-t border-border/80 shadow-2xl space-y-4"
-                          >
-                            <SheetHeader className="text-start pb-3 border-b border-border/60">
-                              <SheetTitle className="text-base font-extrabold">
-                                {isAr ? "تعديل تفاصيل البند" : "Edit Item Details"}
-                              </SheetTitle>
-                              <SheetDescription className="text-xs text-muted-foreground truncate">
+                          <DialogContent className="sm:max-w-[560px] w-[95vw] rounded-2xl p-6 font-sans border border-border/80 bg-card shadow-2xl space-y-5">
+                            <DialogHeader className="text-start pb-3 border-b border-border/60 pe-8 ps-0 space-y-1">
+                              <DialogTitle className="text-lg font-extrabold text-foreground flex items-center gap-2">
+                                <Pencil className="h-4.5 w-4.5 text-primary shrink-0" />
+                                <span>{isAr ? "تعديل المنتج" : "Edit Product"}</span>
+                              </DialogTitle>
+                              <DialogDescription className="text-xs text-muted-foreground truncate">
                                 {it.description ||
                                   (product?.name ?? (isAr ? "منتج مخصص" : "Custom Item"))}
-                              </SheetDescription>
-                            </SheetHeader>
+                              </DialogDescription>
+                            </DialogHeader>
 
-                            <div className="space-y-4 py-2">
+                            <div className="space-y-4 py-1">
                               {/* Inventory Variant Picker */}
                               <div>
                                 <Label className="text-xs font-semibold">
@@ -3617,7 +3615,7 @@ function OrderDetail() {
                                     }
                                   }}
                                 >
-                                  <SelectTrigger className="mt-1 h-10 rounded-xl">
+                                  <SelectTrigger className="mt-1.5 h-10 rounded-xl">
                                     <SelectValue placeholder={t("orderDetail.pickVariant")} />
                                   </SelectTrigger>
                                   <SelectContent>
@@ -3652,17 +3650,17 @@ function OrderDetail() {
                                   rows={2}
                                   value={it.description}
                                   onChange={(e) => updateItem(idx, { description: e.target.value })}
-                                  className="mt-1 text-xs rounded-xl"
+                                  className="mt-1.5 text-xs rounded-xl resize-none"
                                 />
                               </div>
 
                               {/* Quantity, Unit Price & Product Cost (COGS) */}
-                              <div className="grid grid-cols-2 gap-3">
+                              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                                 <div>
                                   <Label className="text-xs font-semibold">
                                     {t("orderDetail.qty")}
                                   </Label>
-                                  <div className="flex items-center rounded-xl border border-border bg-background overflow-hidden h-10 mt-1">
+                                  <div className="flex items-center rounded-xl border border-border bg-background overflow-hidden h-10 mt-1.5">
                                     <Button
                                       type="button"
                                       variant="ghost"
@@ -3714,11 +3712,11 @@ function OrderDetail() {
                                     onChange={(e) =>
                                       updateItem(idx, { unit_price: Number(e.target.value) })
                                     }
-                                    className="mt-1 h-10 text-sm font-bold rounded-xl"
+                                    className="mt-1.5 h-10 text-sm font-bold rounded-xl"
                                   />
                                 </div>
 
-                                <div className="col-span-2">
+                                <div>
                                   <Label className="text-xs font-semibold">
                                     {isAr ? "تكلفة المنتج (COGS)" : "Product Cost (COGS)"}
                                   </Label>
@@ -3733,21 +3731,31 @@ function OrderDetail() {
                                           e.target.value === "" ? null : Number(e.target.value),
                                       })
                                     }
-                                    className="mt-1 h-10 text-sm rounded-xl"
+                                    className="mt-1.5 h-10 text-sm rounded-xl"
                                   />
                                 </div>
                               </div>
+                            </div>
 
+                            <DialogFooter className="flex flex-row justify-end items-center gap-2.5 pt-3 border-t border-border/60">
                               <Button
                                 type="button"
-                                className="w-full h-11 font-bold rounded-xl bg-primary text-primary-foreground mt-3 shadow-md"
+                                variant="outline"
+                                className="h-10 px-4 rounded-xl text-xs font-semibold"
                                 onClick={() => setEditingItemSheetIdx(null)}
                               >
-                                {isAr ? "تم وحفظ التعديلات" : "Done"}
+                                {isAr ? "إلغاء" : "Cancel"}
                               </Button>
-                            </div>
-                          </SheetContent>
-                        </Sheet>
+                              <Button
+                                type="button"
+                                className="h-10 px-5 font-bold text-xs rounded-xl bg-primary text-primary-foreground shadow-md hover:bg-primary/90"
+                                onClick={() => setEditingItemSheetIdx(null)}
+                              >
+                                {isAr ? "حفظ التعديلات" : "Save Changes"}
+                              </Button>
+                            </DialogFooter>
+                          </DialogContent>
+                        </Dialog>
                       </div>
                     );
                   })}
