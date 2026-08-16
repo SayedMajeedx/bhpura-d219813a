@@ -1118,7 +1118,7 @@ function ReceiptReviewDialog({
             </h3>
             <Button variant="outline" size="sm" onClick={addItem}>
               <Plus className="h-3.5 w-3.5 me-1" />
-              {lang === "ar" ? "إضافة بند" : "Add item"}
+              {lang === "ar" ? "إضافة منتج / خدمة" : "Add Product / Service"}
             </Button>
           </div>
 

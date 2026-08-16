@@ -206,6 +206,7 @@ type Item = {
   description: string;
   quantity: number;
   unit_price: number;
+  unit_cost?: number | null;
   original_price?: number | null;
   customizations: { name: string; price_delta: number }[];
   customization_total: number;
@@ -630,6 +631,7 @@ function OrderDetail() {
       variant_id: it.variant_id ?? null,
       quantity: Number(it.quantity),
       unit_price: Number(it.unit_price),
+      unit_cost: it.unit_cost == null ? null : Number(it.unit_cost),
       line_total: Number(it.line_total),
       customizations: it.customizations ?? [],
     });
@@ -808,6 +810,7 @@ function OrderDetail() {
         description: variantTitle || "Custom Item",
         quantity: 1,
         unit_price: price,
+        unit_cost: (variant as any).cost_price == null ? null : Number((variant as any).cost_price),
         original_price: price,
         customizations: [],
         customization_total: 0,
@@ -849,6 +852,7 @@ function OrderDetail() {
         description: i.description,
         quantity: i.quantity,
         unit_price: Number(i.unit_price),
+        unit_cost: i.unit_cost == null ? null : Number(i.unit_cost),
         original_price: i.original_price == null ? null : Number(i.original_price),
         customizations: i.customizations ?? [],
         customization_total: Number(i.customization_total),
@@ -1181,6 +1185,7 @@ function OrderDetail() {
         description: "",
         quantity: 1,
         unit_price: 0,
+        unit_cost: null,
         original_price: null,
         customizations: [],
         customization_total: 0,
@@ -1236,6 +1241,7 @@ function OrderDetail() {
       description: lines.filter(Boolean).join("\n"),
       quantity: 1,
       unit_price: Number(v.selling_price ?? 0),
+      unit_cost: (v as any).cost_price == null ? null : Number((v as any).cost_price),
       original_price: (v as any).original_price == null ? null : Number((v as any).original_price),
       customizations: [],
       customization_total: 0,
@@ -1282,6 +1288,7 @@ function OrderDetail() {
       variant_id: v.id,
       description: lines.join("\n"),
       unit_price: Number(v.selling_price),
+      unit_cost: (v as any).cost_price == null ? null : Number((v as any).cost_price),
       original_price: (v as any).original_price == null ? null : Number((v as any).original_price),
     });
   };
@@ -1413,6 +1420,7 @@ function OrderDetail() {
             description: item.description,
             quantity: item.quantity,
             unit_price: item.unit_price,
+            unit_cost: item.unit_cost == null ? null : Number(item.unit_cost),
             original_price: item.original_price ?? null,
             customizations: item.customizations,
             customization_total: item.customization_total,
@@ -1515,6 +1523,7 @@ function OrderDetail() {
             description: i.description,
             quantity: i.quantity,
             unit_price: i.unit_price,
+            unit_cost: i.unit_cost == null ? null : Number(i.unit_cost),
             original_price: i.original_price ?? null,
             customizations: i.customizations,
             customization_total: i.customization_total,
@@ -1606,6 +1615,7 @@ function OrderDetail() {
       description: i.description,
       quantity: i.quantity,
       unit_price: Number(i.unit_price),
+      unit_cost: i.unit_cost == null ? null : Number(i.unit_cost),
       original_price: i.original_price == null ? null : Number(i.original_price),
       customizations: i.customizations ?? [],
       customization_total: Number(i.customization_total),
@@ -3252,7 +3262,7 @@ function OrderDetail() {
 
                         {/* Desktop Full Inline Input Grid (>= 640px) */}
                         <div className="hidden sm:grid sm:grid-cols-12 gap-3">
-                          <div className="sm:col-span-4">
+                          <div className="sm:col-span-3">
                             <Label>{t("orderDetail.fromInventory")}</Label>
                             <Select
                               value={it.variant_id ?? "custom"}
@@ -3646,7 +3656,7 @@ function OrderDetail() {
                                 />
                               </div>
 
-                              {/* Quantity & Unit Price */}
+                              {/* Quantity, Unit Price & Product Cost (COGS) */}
                               <div className="grid grid-cols-2 gap-3">
                                 <div>
                                   <Label className="text-xs font-semibold">
@@ -3705,6 +3715,25 @@ function OrderDetail() {
                                       updateItem(idx, { unit_price: Number(e.target.value) })
                                     }
                                     className="mt-1 h-10 text-sm font-bold rounded-xl"
+                                  />
+                                </div>
+
+                                <div className="col-span-2">
+                                  <Label className="text-xs font-semibold">
+                                    {isAr ? "تكلفة المنتج (COGS)" : "Product Cost (COGS)"}
+                                  </Label>
+                                  <Input
+                                    type="number"
+                                    step="0.001"
+                                    placeholder="0.000"
+                                    value={it.unit_cost ?? ""}
+                                    onChange={(e) =>
+                                      updateItem(idx, {
+                                        unit_cost:
+                                          e.target.value === "" ? null : Number(e.target.value),
+                                      })
+                                    }
+                                    className="mt-1 h-10 text-sm rounded-xl"
                                   />
                                 </div>
                               </div>
