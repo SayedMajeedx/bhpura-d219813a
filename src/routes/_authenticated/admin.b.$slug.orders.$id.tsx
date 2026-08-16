@@ -111,6 +111,12 @@ import {
   getFulfillmentMethodLabel,
   FULFILLMENT_STATUS_MAP,
 } from "@/lib/status-labels";
+import { OrderUnifiedHeader } from "@/components/orders/OrderUnifiedHeader";
+import { OrderMobileQuickActions } from "@/components/orders/OrderMobileQuickActions";
+import { OrderStickyBottomBar } from "@/components/orders/OrderStickyBottomBar";
+import { OrderItemsWorkflowCard } from "@/components/orders/OrderItemsWorkflowCard";
+import { OrderFinancialLedgerCard } from "@/components/orders/OrderFinancialLedgerCard";
+import { OrderMetaSidePanel } from "@/components/orders/OrderMetaSidePanel";
 
 function formatDeliveryAddress(
   c:
@@ -2223,137 +2229,51 @@ function OrderDetail() {
       className="mx-auto max-w-[1500px] space-y-3 p-1 pb-32 sm:space-y-4 sm:p-2 sm:pb-32 md:pb-28 lg:pb-16 animate-fade-in"
       dir={lang === "ar" ? "rtl" : "ltr"}
     >
-      <div className="no-print mb-2 flex items-center justify-between gap-2.5 rounded-2xl border border-border/60 bg-card/70 px-3 py-2.5 shadow-sm backdrop-blur sm:mb-4 sm:rounded-none sm:border-0 sm:bg-transparent sm:px-0 sm:py-0 sm:shadow-none">
-        <div className="flex items-center gap-2 min-w-0">
-          <button
-            type="button"
-            onClick={(e) => {
-              e.preventDefault();
-              if (window.history.length > 2) {
-                router.history.back();
-              } else {
-                router.navigate({ to: `/admin/b/${slug}/orders` });
-              }
-            }}
-            className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1.5 shrink-0 transition-colors"
-          >
-            <ArrowLeft className="h-4 w-4 rtl:rotate-180" />{" "}
-            <span className="hidden sm:inline">{t("orderDetail.back")}</span>
-          </button>
-          <div className="min-w-0">
-            <h1 className="truncate text-base sm:text-2xl font-display font-bold tracking-tight flex items-center gap-2 flex-wrap">
-              <span>
-                {isCreationMode
-                  ? lang === "ar"
-                    ? "طلب جديد"
-                    : "New order"
-                  : `${lang === "ar" ? "الطلب" : "Order"} #${order.invoice_number ?? order.id}`}
-              </span>
-              {!isCreationMode && (
-                <span className="inline-flex items-center rounded-full bg-primary/10 text-primary px-2.5 py-0.5 text-xs font-semibold border border-primary/20">
-                  {getOrderTypeLabel(detectOrderType(items, order?.order_type), lang)}
-                </span>
-              )}
-            </h1>
-          </div>
-        </div>
+      {/* 1. Unified Status Header */}
+      <OrderUnifiedHeader
+        lang={lang}
+        slug={slug}
+        order={order}
+        items={items}
+        isCreationMode={isCreationMode}
+        isReadOnly={isReadOnly}
+        isAdmin={isAdmin}
+        isDirty={isDirty}
+        saving={saving}
+        paymentBadge={paymentBadge}
+        onSave={save}
+        onUnlock={() => setEditingUnlocked(true)}
+        onPrintReceipt={printReceipt}
+        onPrintA4={handlePrintA4}
+        onCopyLink={copyLink}
+        renderPrimaryAction={renderTopPrimaryAction}
+      >
+        {!isCreationMode && (
+          <SendInvoiceDialog
+            order={order}
+            totals={totals}
+            settings={settingsQ.data}
+            currency={currency}
+          />
+        )}
+      </OrderUnifiedHeader>
 
-        <div className="flex items-center gap-1.5 shrink-0 ms-auto">
-          {(isCreationMode || isDirty) && (
-            <Button
-              type="button"
-              onClick={save}
-              disabled={saving}
-              className="h-9 px-3 text-xs font-bold gap-1.5 shadow-sm bg-primary text-primary-foreground hover:bg-primary/90 rounded-xl shrink-0"
-            >
-              {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-              <span>
-                {isCreationMode
-                  ? lang === "ar"
-                    ? "إنشاء وحفظ"
-                    : "Create & save"
-                  : lang === "ar"
-                    ? "حفظ"
-                    : "Save"}
-              </span>
-            </Button>
-          )}
-
-          {!isCreationMode && (
-            <>
-              {/* Primary Next Workflow Quick Action (e.g. Approve Payment, Hand Over, Pack & Ship) - hidden on mobile to avoid duplicate CTA */}
-              <div className="hidden sm:block">{renderTopPrimaryAction()}</div>
-
-              {/* Consolidated Actions */}
-              <div className="flex items-center gap-1.5 shrink-0">
-                <SendInvoiceDialog
-                  order={order}
-                  totals={totals}
-                  settings={settingsQ.data}
-                  currency={currency}
-                />
-
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="h-9 px-3 text-xs font-semibold shadow-2xs hover:bg-accent gap-1.5"
-                    >
-                      <MoreHorizontal className="h-4 w-4 text-muted-foreground" />
-                      <span className="hidden sm:inline">{lang === "ar" ? "المزيد" : "More"}</span>
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-52">
-                    {order.public_invoice_token && (
-                      <DropdownMenuItem onClick={copyLink}>
-                        <LinkIcon className="h-4 w-4 me-2 text-muted-foreground" />
-                        <span>{t("orders.copyLink")}</span>
-                      </DropdownMenuItem>
-                    )}
-                    <ResendConfirmationEmailButton
-                      order={order}
-                      lang={lang}
-                      asMenuItem
-                      onDone={() => qc.invalidateQueries({ queryKey: ["order", id] })}
-                    />
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={printReceipt}>
-                      <Receipt className="h-4 w-4 me-2 text-muted-foreground" />
-                      <span>{t("orders.printReceipt")}</span>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={handlePrintA4}>
-                      <Printer className="h-4 w-4 me-2 text-muted-foreground" />
-                      <span>{t("orders.printA4")}</span>
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
-            </>
-          )}
-
-          {/* Lock / Unlock when order is closed */}
-          {isReadOnly && isAdmin && (
-            <Button
-              variant="default"
-              size="sm"
-              onClick={() => setEditingUnlocked(true)}
-              className="shadow-sm font-semibold bg-primary hover:bg-primary/90"
-            >
-              <Unlock className="h-4 w-4 me-1.5" />
-              {lang === "ar" ? "فتح للتعديل" : "Unlock for editing"}
-            </Button>
-          )}
-        </div>
-      </div>
-
-      {isReadOnly && (
-        <div className="no-print mb-4 flex items-center gap-2 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-          <Lock className="h-4 w-4 shrink-0" />
-          {lang === "ar"
-            ? "هذا طلب مغلق. الحقول مقفلة لحماية السجل التاريخي."
-            : "This order is closed. Fields are locked to protect its history."}
-        </div>
+      {/* 2. Mobile Quick Action Bar (<768px) */}
+      {!isCreationMode && (
+        <OrderMobileQuickActions
+          lang={lang}
+          customerPhone={getOrderCustomerPhone(order)}
+          onPrintReceipt={printReceipt}
+          onCopyLink={copyLink}
+          sendInvoiceDialogTrigger={
+            <SendInvoiceDialog
+              order={order}
+              totals={totals}
+              settings={settingsQ.data}
+              currency={currency}
+            />
+          }
+        />
       )}
 
       {!isCreationMode && (
@@ -4540,6 +4460,17 @@ function OrderDetail() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* 5. Mobile Thumb-Zone Sticky Bottom Bar (<768px) */}
+      <OrderStickyBottomBar
+        lang={lang}
+        primaryAction={renderTopPrimaryAction()}
+        isDirty={isDirty}
+        isCreationMode={isCreationMode}
+        saving={saving}
+        onSave={save}
+        onMoreClick={() => setMobileActionsOpen(true)}
+      />
     </div>
   );
 }
