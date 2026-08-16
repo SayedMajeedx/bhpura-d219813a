@@ -22,6 +22,7 @@ import {
   Plus,
   Minus,
   Check,
+  Pencil,
   Trash2,
   Copy,
   Printer,
@@ -118,7 +119,6 @@ import { OrderStickyBottomBar } from "@/components/orders/OrderStickyBottomBar";
 import { OrderItemsWorkflowCard } from "@/components/orders/OrderItemsWorkflowCard";
 import { OrderFinancialLedgerCard } from "@/components/orders/OrderFinancialLedgerCard";
 import { OrderMetaSidePanel } from "@/components/orders/OrderMetaSidePanel";
-import { Pencil } from "lucide-react";
 
 function formatDeliveryAddress(
   c:
@@ -1104,6 +1104,7 @@ function OrderDetail() {
 
   const [managePaymentOpen, setManagePaymentOpen] = useState(false);
   const [isEditingFees, setIsEditingFees] = useState(false);
+  const [editingItems, setEditingItems] = useState<Record<number, boolean>>({});
 
   const handleSavePaymentDetails = async (updatedFields: {
     payment_status: PaymentBadge;
@@ -3222,6 +3223,27 @@ function OrderDetail() {
                             </span>
                           )}
                         </div>
+                        <Button
+                          type="button"
+                          variant={editingItems[idx] ? "secondary" : "outline"}
+                          size="sm"
+                          className="h-8 text-xs font-semibold gap-1.5 shrink-0 rounded-lg border border-border/80"
+                          onClick={() =>
+                            setEditingItems((prev) => ({ ...prev, [idx]: !prev[idx] }))
+                          }
+                        >
+                          {editingItems[idx] ? (
+                            <>
+                              <Check className="h-3.5 w-3.5 text-emerald-600" />
+                              <span>{isAr ? "حفظ" : "Done"}</span>
+                            </>
+                          ) : (
+                            <>
+                              <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
+                              <span>{isAr ? "تعديل البند" : "Edit Item"}</span>
+                            </>
+                          )}
+                        </Button>
                       </div>
 
                       <div className="grid grid-cols-1 sm:grid-cols-12 gap-3">
@@ -3261,13 +3283,22 @@ function OrderDetail() {
                           </Select>
                         </div>
                         <div className="sm:col-span-3">
-                          <Label>{t("orderDetail.description")}</Label>
-                          <Textarea
-                            rows={3}
-                            value={it.description}
-                            onChange={(e) => updateItem(idx, { description: e.target.value })}
-                            className="text-sm leading-snug"
-                          />
+                          <Label className="text-xs text-muted-foreground mb-1 block">
+                            {t("orderDetail.description")}
+                          </Label>
+                          {editingItems[idx] ? (
+                            <Textarea
+                              rows={2}
+                              value={it.description}
+                              onChange={(e) => updateItem(idx, { description: e.target.value })}
+                              className="text-sm leading-snug"
+                            />
+                          ) : (
+                            <div className="text-xs font-medium text-foreground bg-muted/20 border border-border/60 rounded-lg p-2.5 min-h-[42px] flex items-center">
+                              {it.description ||
+                                (isAr ? "لا يوجد وصف إضافي" : "No additional description")}
+                            </div>
+                          )}
                         </div>
                         <div className="sm:col-span-2">
                           <Label>{t("orderDetail.qty")}</Label>
@@ -3310,15 +3341,23 @@ function OrderDetail() {
                           </div>
                         </div>
                         <div className="sm:col-span-3">
-                          <Label>{t("orderDetail.unitPrice")}</Label>
-                          <Input
-                            type="number"
-                            step="0.001"
-                            value={it.unit_price}
-                            onChange={(e) =>
-                              updateItem(idx, { unit_price: Number(e.target.value) })
-                            }
-                          />
+                          <Label className="text-xs text-muted-foreground mb-1 block">
+                            {t("orderDetail.unitPrice")}
+                          </Label>
+                          {editingItems[idx] ? (
+                            <Input
+                              type="number"
+                              step="0.001"
+                              value={it.unit_price}
+                              onChange={(e) =>
+                                updateItem(idx, { unit_price: Number(e.target.value) })
+                              }
+                            />
+                          ) : (
+                            <div className="text-xs font-bold text-foreground bg-muted/20 border border-border/60 rounded-lg p-2.5 min-h-[42px] flex items-center">
+                              {formatMoney(it.unit_price, currency)}
+                            </div>
+                          )}
                           {Number(it.original_price ?? (variant as any)?.original_price ?? 0) >
                             Number(it.unit_price) && (
                             <p className="mt-1 text-xs text-muted-foreground">
@@ -3724,10 +3763,21 @@ function OrderDetail() {
                   </span>
                 </div>
                 <div>
-                  <span className="text-[11px] text-muted-foreground block font-medium">
-                    {t("orderDetail.paymentMethod")}
-                  </span>
-                  <span className="font-bold text-foreground">
+                  <div className="flex items-center justify-between gap-1">
+                    <span className="text-[11px] text-muted-foreground block font-medium">
+                      {t("orderDetail.paymentMethod")}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setManagePaymentOpen(true)}
+                      className="inline-flex items-center gap-1 text-[11px] font-semibold text-primary hover:underline focus-visible:outline-none cursor-pointer"
+                      title={lang === "ar" ? "تعديل طريقة الدفع" : "Edit payment method"}
+                    >
+                      <Pencil className="h-2.5 w-2.5 shrink-0" />
+                      <span>{lang === "ar" ? "تغيير" : "Edit"}</span>
+                    </button>
+                  </div>
+                  <span className="font-bold text-foreground block mt-0.5">
                     {tPayment(order.payment_method, lang) ||
                       (lang === "ar" ? "غير محدد" : "Not specified")}
                   </span>
