@@ -98,6 +98,9 @@ import { InventoryToolbar } from "@/components/inventory/InventoryToolbar";
 import { InventoryWorkQueue } from "@/components/inventory/InventoryWorkQueue";
 import { InventoryMobileCard } from "@/components/inventory/InventoryMobileCard";
 import { BulkSelectionToolbar } from "@/components/bulk-selection-toolbar";
+import { PackagingMaterialsTab } from "@/components/inventory/PackagingMaterialsTab";
+import { ProductBomModal } from "@/components/products/ProductBomModal";
+
 import { ListPagination } from "@/components/list-pagination";
 
 /** Common measurement units the admin can pick from for a "size" variant. */
@@ -218,7 +221,8 @@ function Inventory() {
   const qc = useQueryClient();
   const brand = useBrand();
   const brandId = brand.id;
-  const [tab, setTab] = useState<"products" | "customizations">("products");
+  const [tab, setTab] = useState<"products" | "customizations" | "packaging">("products");
+
   const [productToDelete, setProductToDelete] = useState<string | null>(null);
 
   useRealtimeInvalidate(
@@ -312,7 +316,7 @@ function Inventory() {
         </div>
       </div>
 
-      <div className="flex p-1.5 gap-1.5 bg-muted/40 rounded-xl border border-border/40 backdrop-blur-sm max-w-md mb-6">
+      <div className="flex p-1.5 gap-1.5 bg-muted/40 rounded-xl border border-border/40 backdrop-blur-sm max-w-lg mb-6">
         <button
           className={`flex-1 rounded-lg py-2 px-3 text-sm font-semibold transition-all duration-200 ${tab === "products" ? "bg-background shadow-md text-foreground" : "text-muted-foreground hover:bg-background/20"}`}
           onClick={() => setTab("products")}
@@ -324,6 +328,12 @@ function Inventory() {
           onClick={() => setTab("customizations")}
         >
           {t("inventory.customizations")}
+        </button>
+        <button
+          className={`flex-1 rounded-lg py-2 px-3 text-sm font-semibold transition-all duration-200 ${tab === "packaging" ? "bg-background shadow-md text-foreground" : "text-muted-foreground hover:bg-background/20"}`}
+          onClick={() => setTab("packaging")}
+        >
+          مواد التغليف (BOM)
         </button>
       </div>
 
@@ -339,6 +349,8 @@ function Inventory() {
           }}
           salesHistory={salesHistory.data ?? []}
         />
+      ) : tab === "packaging" ? (
+        <PackagingMaterialsTab />
       ) : (
         <CustomizationsSection
           brandId={brandId}
@@ -347,6 +359,7 @@ function Inventory() {
           onChanged={() => qc.invalidateQueries({ queryKey: ["customizations"] })}
         />
       )}
+
 
       <div className="mt-8">
         <ActivityLogList scope="inventory" brandId={brandId} />
@@ -1837,6 +1850,8 @@ function ProductsSection({
         activeTab={scopeFilter}
         onTabChange={(tabId) => setScopeFilter(tabId as any)}
       />
+
+
 
       {/* 3. Compact Command Toolbar */}
       <InventoryToolbar

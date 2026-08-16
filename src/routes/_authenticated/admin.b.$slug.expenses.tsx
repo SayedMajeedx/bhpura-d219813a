@@ -71,6 +71,12 @@ import { ExpensesToolbar } from "@/components/expenses/ExpensesToolbar";
 import { ExpensesWorkQueue } from "@/components/expenses/ExpensesWorkQueue";
 import { ExpenseMobileCard } from "@/components/expenses/ExpenseMobileCard";
 
+import { ExpensesOpExCogsTab } from "@/components/accounting/ExpensesOpExCogsTab";
+import { CashFlowLiquidityTab } from "@/components/accounting/CashFlowLiquidityTab";
+import { VendorsPurchaseOrdersTab } from "@/components/accounting/VendorsPurchaseOrdersTab";
+import { FinancialReportsTab } from "@/components/accounting/FinancialReportsTab";
+
+
 const MAX_SCANNER_REQUEST_BYTES = 2_500_000;
 
 function fileToDataUrl(file: Blob): Promise<string> {
@@ -263,7 +269,9 @@ function ExpensesPage() {
   const [datePreset, setDatePreset] = useState<DatePreset>("month");
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
+  const [mainTab, setMainTab] = useState<"opex_cogs" | "cash_flow" | "vendors_pos" | "reports">("opex_cogs");
   const initialMonth = useMemo(() => presetRange("month"), []);
+
   const [customRange, setCustomRange] = useState(initialMonth);
   const fileRef = useRef<HTMLInputElement | null>(null);
   const scanFn = useServerFn(scanReceipt);
@@ -527,6 +535,53 @@ function ExpensesPage() {
         netProfit={netProfit}
         marginPercentage={marginPercentage}
       />
+
+      {/* Financial & Accounting Hub Navigation Tabs */}
+      <div className="flex items-center gap-2 overflow-x-auto border-b border-border pb-2 pt-1">
+        <Button
+          variant={mainTab === "opex_cogs" ? "default" : "ghost"}
+          size="sm"
+          onClick={() => setMainTab("opex_cogs")}
+          className="h-9 text-xs font-bold gap-1.5 shrink-0"
+        >
+          <Receipt className="h-4 w-4" />
+          {lang === "ar" ? "المصاريف والتشغيل (OpEx vs COGS)" : "Expenses & OpEx"}
+        </Button>
+        <Button
+          variant={mainTab === "cash_flow" ? "default" : "ghost"}
+          size="sm"
+          onClick={() => setMainTab("cash_flow")}
+          className="h-9 text-xs font-bold gap-1.5 shrink-0"
+        >
+          <Wallet className="h-4 w-4" />
+          {lang === "ar" ? "التدفقات النقدية والحسابات" : "Cash Flow & Liquidity"}
+        </Button>
+        <Button
+          variant={mainTab === "vendors_pos" ? "default" : "ghost"}
+          size="sm"
+          onClick={() => setMainTab("vendors_pos")}
+          className="h-9 text-xs font-bold gap-1.5 shrink-0"
+        >
+          <Receipt className="h-4 w-4" />
+          {lang === "ar" ? "الموردين وأوامر الشراء (POs)" : "Vendors & POs"}
+        </Button>
+        <Button
+          variant={mainTab === "reports" ? "default" : "ghost"}
+          size="sm"
+          onClick={() => setMainTab("reports")}
+          className="h-9 text-xs font-bold gap-1.5 shrink-0"
+        >
+          <FileText className="h-4 w-4" />
+          {lang === "ar" ? "التقارير المالية والدفاتر (P&L)" : "Financial Statements"}
+        </Button>
+      </div>
+
+      {/* Tab Views */}
+      {mainTab === "opex_cogs" && <ExpensesOpExCogsTab />}
+      {mainTab === "cash_flow" && <CashFlowLiquidityTab />}
+      {mainTab === "vendors_pos" && <VendorsPurchaseOrdersTab />}
+      {mainTab === "reports" && <FinancialReportsTab />}
+
 
       {/* 3. Toolbar */}
       <ExpensesToolbar
