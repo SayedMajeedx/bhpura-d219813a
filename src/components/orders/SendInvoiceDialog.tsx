@@ -52,7 +52,26 @@ function brandFor(lang: "en" | "ar", stored?: string | null) {
 }
 
 function renderTemplate(str: string, vars: Record<string, string>) {
-  return str.replace(/\{\{\s*(\w+)\s*\}\}/g, (_, k) => vars[k] ?? "");
+  if (!str) return "";
+  return str.replace(/\{\{\s*([^}]+)\s*\}\}/g, (fullMatch, keyRaw) => {
+    const key = keyRaw.trim();
+    const lowerKey = key.toLowerCase();
+
+    if (vars[key] !== undefined && vars[key] !== null) return vars[key];
+    if (vars[lowerKey] !== undefined && vars[lowerKey] !== null) return vars[lowerKey];
+
+    if (
+      lowerKey === "invoice_link" ||
+      lowerKey === "invoice_url" ||
+      lowerKey === "invoicelink" ||
+      lowerKey === "invoiceurl" ||
+      lowerKey === "dynamic invoice link"
+    ) {
+      return vars.invoice_link ?? "";
+    }
+
+    return vars[key] ?? vars[lowerKey] ?? fullMatch;
+  });
 }
 
 function defaultBody() {
@@ -63,6 +82,7 @@ Thank you for your order with {{business_name}}. Please find your invoice detail
 Invoice #: {{invoice_number}}
 Date: {{date}}
 Total: {{total}}
+Invoice Link: {{invoice_link}}
 
 Please let us know if you have any questions.
 
@@ -132,7 +152,8 @@ export function ManageTemplatesDialog({
           <DialogDescription>
             Use placeholders like <code>{"{{customer_name}}"}</code>,{" "}
             <code>{"{{business_name}}"}</code>, <code>{"{{invoice_number}}"}</code>,{" "}
-            <code>{"{{date}}"}</code>, <code>{"{{total}}"}</code>, <code>{"{{notes}}"}</code>.
+            <code>{"{{date}}"}</code>, <code>{"{{total}}"}</code>, <code>{"{{invoice_link}}"}</code>
+            , <code>{"{{notes}}"}</code>.
           </DialogDescription>
         </DialogHeader>
 
@@ -252,19 +273,27 @@ export default function SendInvoiceDialog({
   const [manageOpen, setManageOpen] = useState(false);
   const qc = useQueryClient();
 
-  const vars = useMemo(
-    () => ({
-      customer_name: getOrderCustomerName(order) || "there",
-      customer_email: getOrderCustomerEmail(order),
-      customer_phone: getOrderCustomerPhone(order),
-      business_name: brandFor("en", settings?.business_name),
+  const vars = useMemo(() => {
+    const origin = typeof window !== "undefined" ? window.location.origin : "";
+    const token = order?.public_invoice_token || order?.id || "";
+    const invoiceLink = token ? `${origin}/invoice/${token}` : "";
+
+    return {
+      customer_name: getOrderCustomerName(order) || (lang === "ar" ? "عميلنا العزيز" : "there"),
+      customer_email: getOrderCustomerEmail(order) || "",
+      customer_phone: getOrderCustomerPhone(order) || "",
+      business_name: brandFor(lang === "ar" ? "ar" : "en", settings?.business_name),
       invoice_number: String(order?.invoice_number ?? ""),
-      date: formatDate(order?.created_at ?? order?.order_date, "en-BH"),
-      total: formatMoney(totals.total, currency),
+      date: formatDate(order?.created_at ?? order?.order_date, lang === "ar" ? "ar-BH" : "en-BH"),
+      total: formatMoney(totals?.total ?? order?.total ?? 0, currency),
       notes: order?.notes ?? "",
-    }),
-    [order, totals, settings, currency],
-  );
+      invoice_link: invoiceLink,
+      invoice_url: invoiceLink,
+      invoiceLink: invoiceLink,
+      invoiceUrl: invoiceLink,
+      "Dynamic Invoice Link": invoiceLink,
+    };
+  }, [order, totals, settings, currency, lang]);
 
   const brand = useBrand();
   const brandId = brand.id;
@@ -303,11 +332,21 @@ export default function SendInvoiceDialog({
     const digits = (phone || "").replace(/[^\d]/g, "");
     if (!digits)
       return toast.error(
-        "This customer has no phone on file — add it in Customers or type one here (with country code)",
+        lang === "ar"
+          ? "لا يوجد رقم هاتف للعميل — يرجى إضافة رقم الهاتف مع رمز الدولة"
+          : "This customer has no phone on file — add it in Customers or type one here (with country code)",
       );
     const origin = typeof window !== "undefined" ? window.location.origin : "";
-    const invoiceLink = `${origin}/invoice/${order.public_invoice_token}`;
-    const finalMessage = message.replace(/\{\{\s*Dynamic Invoice Link\s*\}\}/g, invoiceLink);
+    const token = order?.public_invoice_token || order?.id || "";
+    const invoiceLink = token ? `${origin}/invoice/${token}` : "";
+
+    let finalMessage = message;
+    if (invoiceLink) {
+      finalMessage = finalMessage.replace(
+        /\{\{\s*(invoice_link|invoice_url|invoiceLink|invoiceUrl|Dynamic Invoice Link)\s*\}\}/gi,
+        invoiceLink,
+      );
+    }
     const url = `https://wa.me/${digits}?text=${encodeURIComponent(finalMessage)}`;
     window.open(url, "_blank", "noopener,noreferrer");
   };
