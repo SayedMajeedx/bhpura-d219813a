@@ -4234,6 +4234,7 @@ function OrderDetail() {
 
                 {/* Direct Order COGS Breakdown Badge */}
                 {(() => {
+                  const isAr = lang === "ar";
                   const productCogsTotal = items.reduce((sum, it: any) => {
                     const qty = Number(it.quantity || 1);
                     const unitCost = Number(it.unit_cost || 0);

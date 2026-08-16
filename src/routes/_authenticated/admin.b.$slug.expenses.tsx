@@ -507,10 +507,10 @@ function ExpensesPage() {
 
   // Separate OpEx from Bulk COGS Inventory purchases
   const manualOpexExpenses = useMemo(() => {
-    return (rawExpenses ?? [])
+    return (list ?? [])
       .filter((e) => (e.expense_type || "opex") === "opex")
       .reduce((sum, e) => sum + Number(e.amount || 0), 0);
-  }, [rawExpenses]);
+  }, [list]);
 
   const totalOpex = manualOpexExpenses + paymentProcessingFees;
   const netProfit = totalRevenue - (totalCogs + totalOpex);
