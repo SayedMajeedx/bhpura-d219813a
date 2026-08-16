@@ -312,8 +312,8 @@ export const OrderUnifiedHeader: React.FC<OrderUnifiedHeaderProps> = ({
           )}
         </div>
 
-        {/* Right: Actions */}
-        <div className="flex items-center gap-2 shrink-0 ms-auto">
+        {/* Right: Desktop Actions (Mobile uses sticky bottom action bar) */}
+        <div className="hidden sm:flex items-center gap-2 shrink-0 ms-auto">
           {/* Custom dialog triggers like SendInvoiceDialog */}
           {children}
 

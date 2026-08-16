@@ -62,6 +62,13 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+} from "@/components/ui/sheet";
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -1105,6 +1112,8 @@ function OrderDetail() {
   const [managePaymentOpen, setManagePaymentOpen] = useState(false);
   const [isEditingFees, setIsEditingFees] = useState(false);
   const [editingItems, setEditingItems] = useState<Record<number, boolean>>({});
+  const [mobileTab, setMobileTab] = useState<"items" | "customer" | "activity">("items");
+  const [editingItemSheetIdx, setEditingItemSheetIdx] = useState<number | null>(null);
 
   const handleSavePaymentDetails = async (updatedFields: {
     payment_status: PaymentBadge;
@@ -2415,86 +2424,60 @@ function OrderDetail() {
         onSavePayment={handleSavePaymentDetails}
       />
 
-      {/* 2. Mobile Quick Action Bar (<768px) */}
+      {/* Mobile Segmented Control Tab Bar (< 768px) */}
       {!isCreationMode && (
-        <OrderMobileQuickActions
-          lang={lang}
-          customerPhone={getOrderCustomerPhone(order)}
-          onPrintReceipt={printReceipt}
-          onCopyLink={copyLink}
-          sendInvoiceDialogTrigger={
-            <SendInvoiceDialog
-              order={order}
-              totals={totals}
-              settings={settingsQ.data}
-              currency={currency}
-            />
-          }
-        />
+        <div className="no-print sm:hidden my-3 grid grid-cols-3 gap-1 rounded-2xl bg-muted/60 p-1.5 border border-border/70 select-none shadow-2xs">
+          <button
+            type="button"
+            onClick={() => setMobileTab("items")}
+            className={cn(
+              "flex items-center justify-center gap-1.5 py-2 px-2 rounded-xl text-xs font-extrabold transition-all touch-manipulation min-h-10",
+              mobileTab === "items"
+                ? "bg-card text-foreground shadow-xs border border-border/80 font-bold"
+                : "text-muted-foreground hover:text-foreground",
+            )}
+          >
+            <Package className="h-4 w-4 shrink-0" />
+            <span>{lang === "ar" ? "المنتجات" : "Items"}</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setMobileTab("customer")}
+            className={cn(
+              "flex items-center justify-center gap-1.5 py-2 px-2 rounded-xl text-xs font-extrabold transition-all touch-manipulation min-h-10",
+              mobileTab === "customer"
+                ? "bg-card text-foreground shadow-xs border border-border/80 font-bold"
+                : "text-muted-foreground hover:text-foreground",
+            )}
+          >
+            <UserRound className="h-4 w-4 shrink-0" />
+            <span>{lang === "ar" ? "العميل والتوصيل" : "Customer"}</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setMobileTab("activity")}
+            className={cn(
+              "flex items-center justify-center gap-1.5 py-2 px-2 rounded-xl text-xs font-extrabold transition-all touch-manipulation min-h-10",
+              mobileTab === "activity"
+                ? "bg-card text-foreground shadow-xs border border-border/80 font-bold"
+                : "text-muted-foreground hover:text-foreground",
+            )}
+          >
+            <Receipt className="h-4 w-4 shrink-0" />
+            <span>{lang === "ar" ? "النشاط" : "Activity"}</span>
+          </button>
+        </div>
       )}
 
+      {/* Desktop Section Navigation Bar (≥ 768px) */}
       {!isCreationMode && (
-        <section
-          className="no-print overflow-hidden rounded-2xl border border-border/60 bg-gradient-to-br from-card via-card to-primary/[0.04] p-4 shadow-sm sm:hidden"
-          aria-label={lang === "ar" ? "ملخص الطلب" : "Order summary"}
-        >
-          <div className="flex items-start justify-between gap-3">
-            <div className="min-w-0">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-                {lang === "ar" ? "الإجمالي" : "Order total"}
-              </p>
-              <p className="mt-1 font-display text-2xl font-extrabold tracking-tight">
-                {formatMoney(totals.total, currency)}
-              </p>
-            </div>
-            <div className="flex max-w-[55%] flex-wrap justify-end gap-1.5">
-              <span
-                className={cn(
-                  "rounded-full border px-2.5 py-1 text-[11px] font-bold",
-                  PAYMENT_BADGE_CLASSES[paymentBadge],
-                )}
-              >
-                {t(`payStatus.${paymentBadge}`)}
-              </span>
-              <span className="rounded-full border border-border/70 bg-background/80 px-2.5 py-1 text-[11px] font-bold text-foreground">
-                {getFulfillmentLabel(order.fulfillment_status, lang)}
-              </span>
-            </div>
-          </div>
-
-          <div className="mt-4 grid grid-cols-2 gap-2 border-t border-border/60 pt-3">
-            <div className="min-w-0 rounded-xl bg-background/60 p-2.5">
-              <div className="flex items-center gap-1.5 text-[11px] font-semibold text-muted-foreground">
-                <UserRound className="h-3.5 w-3.5" />
-                {lang === "ar" ? "العميل" : "Customer"}
-              </div>
-              <p className="mt-1 truncate text-sm font-bold">
-                {getOrderCustomerName(order) || (lang === "ar" ? "عميل زائر" : "Guest customer")}
-              </p>
-            </div>
-            <div className="min-w-0 rounded-xl bg-background/60 p-2.5">
-              <div className="flex items-center gap-1.5 text-[11px] font-semibold text-muted-foreground">
-                <MapPin className="h-3.5 w-3.5" />
-                {lang === "ar" ? "التنفيذ" : "Fulfillment"}
-              </div>
-              <p className="mt-1 truncate text-sm font-bold">
-                {getFulfillmentMethodLabel(order.fulfillment_method, lang)}
-              </p>
-            </div>
-          </div>
-          {renderMobileActionBar()}
-        </section>
-      )}
-
-      {/* Section Navigation Bar */}
-      {!isCreationMode && (
-        <div className="no-print mb-3 flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-border/80 bg-card/90 p-1.5 shadow-sm select-none sm:mb-6 sm:rounded-xl">
-          <div className="grid grid-cols-4 gap-1 w-full sm:w-auto sm:flex sm:items-center sm:gap-2">
+        <div className="no-print mb-3 hidden sm:flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-border/80 bg-card/90 p-1.5 shadow-sm select-none sm:mb-6 sm:rounded-xl">
+          <div className="flex items-center gap-2">
             <button
               type="button"
               onClick={() => scrollToSection("sec-overview")}
               className={cn(
-                "min-h-11 justify-center rounded-xl px-1.5 py-1.5 text-[10px] font-bold transition-colors flex flex-col sm:flex-row items-center gap-1 sm:px-3.5 sm:text-xs sm:whitespace-nowrap touch-manipulation",
+                "min-h-11 justify-center rounded-xl px-3.5 py-1.5 text-xs font-bold transition-colors flex items-center gap-1.5 whitespace-nowrap touch-manipulation",
                 activeSection === "sec-overview"
                   ? "bg-foreground text-background font-bold shadow-2xs"
                   : "hover:bg-muted text-muted-foreground",
@@ -2507,7 +2490,7 @@ function OrderDetail() {
               type="button"
               onClick={() => scrollToSection("sec-items")}
               className={cn(
-                "min-h-11 justify-center rounded-xl px-1.5 py-1.5 text-[10px] font-bold transition-colors flex flex-col sm:flex-row items-center gap-1 sm:px-3.5 sm:text-xs sm:whitespace-nowrap touch-manipulation",
+                "min-h-11 justify-center rounded-xl px-3.5 py-1.5 text-xs font-bold transition-colors flex items-center gap-1.5 whitespace-nowrap touch-manipulation",
                 activeSection === "sec-items"
                   ? "bg-foreground text-background font-bold shadow-2xs"
                   : "hover:bg-muted text-muted-foreground",
@@ -2520,7 +2503,7 @@ function OrderDetail() {
               type="button"
               onClick={() => scrollToSection("sec-invoice")}
               className={cn(
-                "min-h-11 justify-center rounded-xl px-1.5 py-1.5 text-[10px] font-bold transition-colors flex flex-col sm:flex-row items-center gap-1 sm:px-3.5 sm:text-xs sm:whitespace-nowrap touch-manipulation",
+                "min-h-11 justify-center rounded-xl px-3.5 py-1.5 text-xs font-bold transition-colors flex items-center gap-1.5 whitespace-nowrap touch-manipulation",
                 activeSection === "sec-invoice"
                   ? "bg-foreground text-background font-bold shadow-2xs"
                   : "hover:bg-muted text-muted-foreground",
@@ -2533,7 +2516,7 @@ function OrderDetail() {
               type="button"
               onClick={() => scrollToSection("sec-activity")}
               className={cn(
-                "min-h-11 justify-center rounded-xl px-1.5 py-1.5 text-[10px] font-bold transition-colors flex flex-col sm:flex-row items-center gap-1 sm:px-3.5 sm:text-xs sm:whitespace-nowrap touch-manipulation",
+                "min-h-11 justify-center rounded-xl px-3.5 py-1.5 text-xs font-bold transition-colors flex items-center gap-1.5 whitespace-nowrap touch-manipulation",
                 activeSection === "sec-activity"
                   ? "bg-foreground text-background font-bold shadow-2xs"
                   : "hover:bg-muted text-muted-foreground",
@@ -2546,10 +2529,10 @@ function OrderDetail() {
 
           {/* Left Side: Dynamic Save Button & Unsaved Notation */}
           {!isReadOnly && (
-            <div className="flex items-center gap-2.5 ms-auto sm:ms-0 px-1 py-0.5">
+            <div className="flex items-center gap-2.5 px-1 py-0.5">
               {isDirty ? (
                 <>
-                  <span className="text-xs font-semibold text-amber-600 dark:text-amber-400 animate-fade-in hidden md:inline">
+                  <span className="text-xs font-semibold text-amber-600 dark:text-amber-400 animate-fade-in inline">
                     {lang === "ar" ? "توجد تغييرات غير محفوظة" : "Unsaved changes"}
                   </span>
                   <Button
@@ -2584,7 +2567,12 @@ function OrderDetail() {
       >
         <div className="mb-6 grid grid-cols-1 items-start gap-3 sm:gap-6 lg:grid-cols-3">
           {/* RIGHT COLUMN (35% width) - Customer, Address & Workflow Controls */}
-          <div className="space-y-3 sm:space-y-6 lg:col-span-1">
+          <div
+            className={cn(
+              "space-y-3 sm:space-y-6 lg:col-span-1",
+              mobileTab !== "customer" && "hidden sm:block",
+            )}
+          >
             <Card
               id="sec-overview"
               className="scroll-mt-24 overflow-hidden rounded-2xl border border-border/60 bg-card/60 p-4 shadow-sm backdrop-blur-sm sm:bg-card/40 sm:p-6 sm:shadow-lg"
@@ -3113,7 +3101,10 @@ function OrderDetail() {
           <div className="space-y-3 sm:space-y-6 lg:col-span-2">
             <Card
               id="sec-items"
-              className="scroll-mt-24 overflow-hidden rounded-2xl border border-border/60 bg-card/60 p-4 shadow-sm backdrop-blur-sm sm:bg-card/40 sm:p-6 sm:shadow-lg"
+              className={cn(
+                "scroll-mt-24 overflow-hidden rounded-2xl border border-border/60 bg-card/60 p-4 shadow-sm backdrop-blur-sm sm:bg-card/40 sm:p-6 sm:shadow-lg",
+                mobileTab !== "items" && "hidden sm:block",
+              )}
             >
               <div className="flex items-center justify-between mb-4 gap-2 flex-wrap">
                 <h3 className="font-display text-lg">{t("orderDetail.lineItems")}</h3>
@@ -3564,6 +3555,154 @@ function OrderDetail() {
                           </Button>
                         </div>
                       </div>
+
+                      {/* Mobile Slide-Up Bottom Sheet for Line Item Editing */}
+                      <Sheet
+                        open={editingItemSheetIdx === idx}
+                        onOpenChange={(open) => setEditingItemSheetIdx(open ? idx : null)}
+                      >
+                        <SheetContent
+                          side="bottom"
+                          className="rounded-t-2xl max-h-[85vh] overflow-y-auto p-4 font-sans border-t border-border/80 shadow-2xl space-y-4"
+                        >
+                          <SheetHeader className="text-start pb-3 border-b border-border/60">
+                            <SheetTitle className="text-base font-extrabold">
+                              {isAr ? "تعديل تفاصيل البند" : "Edit Item Details"}
+                            </SheetTitle>
+                            <SheetDescription className="text-xs text-muted-foreground truncate">
+                              {it.description ||
+                                (product?.name ?? (isAr ? "منتج مخصص" : "Custom Item"))}
+                            </SheetDescription>
+                          </SheetHeader>
+
+                          <div className="space-y-4 py-2">
+                            {/* Inventory Variant Picker */}
+                            <div>
+                              <Label className="text-xs font-semibold">
+                                {t("orderDetail.fromInventory")}
+                              </Label>
+                              <Select
+                                value={it.variant_id ?? "custom"}
+                                onValueChange={(v) => {
+                                  if (v === "custom") {
+                                    updateItem(idx, { variant_id: null });
+                                  } else {
+                                    pickVariant(idx, v);
+                                  }
+                                }}
+                              >
+                                <SelectTrigger className="mt-1 h-10 rounded-xl">
+                                  <SelectValue placeholder={t("orderDetail.pickVariant")} />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="custom">
+                                    {isAr
+                                      ? "تفصيل خاص / بدون مخزون جاهز"
+                                      : "Custom Tailoring / No Ready Stock"}
+                                  </SelectItem>
+                                  {(variantsQ.data ?? []).map((v: any) => {
+                                    const p = productsQ.data?.find(
+                                      (x: any) => x.id === v.product_id,
+                                    );
+                                    if (!p) return null;
+                                    return (
+                                      <SelectItem key={v.id} value={v.id}>
+                                        {p.name} {v.size ? `· ${v.size}` : ""}{" "}
+                                        {v.color ? `· ${v.color}` : ""} —{" "}
+                                        {formatMoney(v.selling_price, currency)}
+                                      </SelectItem>
+                                    );
+                                  })}
+                                </SelectContent>
+                              </Select>
+                            </div>
+
+                            {/* Description */}
+                            <div>
+                              <Label className="text-xs font-semibold">
+                                {t("orderDetail.description")}
+                              </Label>
+                              <Textarea
+                                rows={2}
+                                value={it.description}
+                                onChange={(e) => updateItem(idx, { description: e.target.value })}
+                                className="mt-1 text-xs rounded-xl"
+                              />
+                            </div>
+
+                            {/* Quantity & Unit Price */}
+                            <div className="grid grid-cols-2 gap-3">
+                              <div>
+                                <Label className="text-xs font-semibold">
+                                  {t("orderDetail.qty")}
+                                </Label>
+                                <div className="flex items-center rounded-xl border border-border bg-background overflow-hidden h-10 mt-1">
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-10 w-10 shrink-0"
+                                    onClick={() =>
+                                      updateItem(idx, {
+                                        quantity: Math.max(1, Number(it.quantity || 1) - 1),
+                                      })
+                                    }
+                                  >
+                                    <Minus className="h-4 w-4" />
+                                  </Button>
+                                  <Input
+                                    type="number"
+                                    min={1}
+                                    value={it.quantity}
+                                    onChange={(e) =>
+                                      updateItem(idx, {
+                                        quantity: Math.max(1, Number(e.target.value)),
+                                      })
+                                    }
+                                    className="h-10 border-0 text-center font-bold text-sm bg-transparent"
+                                  />
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-10 w-10 shrink-0"
+                                    onClick={() =>
+                                      updateItem(idx, {
+                                        quantity: Number(it.quantity || 1) + 1,
+                                      })
+                                    }
+                                  >
+                                    <Plus className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              </div>
+
+                              <div>
+                                <Label className="text-xs font-semibold">
+                                  {t("orderDetail.unitPrice")}
+                                </Label>
+                                <Input
+                                  type="number"
+                                  step="0.001"
+                                  value={it.unit_price}
+                                  onChange={(e) =>
+                                    updateItem(idx, { unit_price: Number(e.target.value) })
+                                  }
+                                  className="mt-1 h-10 text-sm font-bold rounded-xl"
+                                />
+                              </div>
+                            </div>
+
+                            <Button
+                              type="button"
+                              className="w-full h-11 font-bold rounded-xl bg-primary text-primary-foreground mt-3 shadow-md"
+                              onClick={() => setEditingItemSheetIdx(null)}
+                            >
+                              {isAr ? "تم وحفظ التعديلات" : "Done"}
+                            </Button>
+                          </div>
+                        </SheetContent>
+                      </Sheet>
                     </div>
                   );
                 })}
@@ -3584,7 +3723,12 @@ function OrderDetail() {
                 rows={5}
               />
             </div>
-            <Card className="overflow-hidden border border-border/60 shadow-xs rounded-2xl bg-card p-4 space-y-4">
+            <Card
+              className={cn(
+                "overflow-hidden border border-border/60 shadow-xs rounded-2xl bg-card p-4 space-y-4",
+                mobileTab !== "items" && "hidden sm:block",
+              )}
+            >
               {order.payment_method === "benefit" && order.benefit_receipt_key && (
                 <div className="rounded-xl border-2 border-amber-300 bg-amber-50 p-4 text-amber-950">
                   <div className="mb-3 flex items-center justify-between gap-3">
@@ -4032,7 +4176,10 @@ function OrderDetail() {
       </fieldset>
 
       {/* Invoice Preview Section Anchor */}
-      <div id="sec-invoice" className="scroll-mt-24">
+      <div
+        id="sec-invoice"
+        className={cn("scroll-mt-24", mobileTab !== "activity" && "hidden sm:block")}
+      >
         <div className="no-print mb-4 rounded-xl border bg-card">
           <button
             type="button"
@@ -4077,7 +4224,10 @@ function OrderDetail() {
       {/* Activity Trail Section Anchor */}
       <div
         id="sec-activity"
-        className="no-print mx-auto max-w-6xl scroll-mt-24 px-1 pb-4 sm:p-6 lg:p-8"
+        className={cn(
+          "no-print mx-auto max-w-6xl scroll-mt-24 px-1 pb-4 sm:p-6 lg:p-8",
+          mobileTab !== "activity" && "hidden sm:block",
+        )}
       >
         <details className="group overflow-hidden rounded-2xl border border-border/60 bg-card/60 shadow-sm sm:hidden">
           <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between px-4 py-3 text-sm font-bold marker:content-none">
@@ -4438,8 +4588,21 @@ function OrderDetail() {
         isDirty={isDirty}
         isCreationMode={isCreationMode}
         saving={saving}
+        customerPhone={getOrderCustomerPhone(order)}
         onSave={save}
-        onMoreClick={() => setMobileActionsOpen(true)}
+        onPrintReceipt={printReceipt}
+        onPrintA4={handlePrintA4}
+        onCopyLink={copyLink}
+        sendInvoiceDialogTrigger={
+          !isCreationMode ? (
+            <SendInvoiceDialog
+              order={order}
+              totals={totals}
+              settings={settingsQ.data}
+              currency={currency}
+            />
+          ) : null
+        }
       />
     </div>
   );
