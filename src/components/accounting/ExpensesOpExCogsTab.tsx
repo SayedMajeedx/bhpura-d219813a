@@ -175,11 +175,39 @@ export function ExpensesOpExCogsTab() {
       };
 
       if (editingExpense) {
-        const { error } = await (supabase as any).from("expenses").update(payload).eq("id", editingExpense.id).eq("brand_id", brandId);
+        let { error } = await (supabase as any).from("expenses").update(payload).eq("id", editingExpense.id).eq("brand_id", brandId);
+        if (error && (error.message?.includes("schema cache") || error.message?.includes("column"))) {
+          // Schema cache fallback retry
+          const fallbackPayload = {
+            brand_id: brandId,
+            user_id: user?.id || null,
+            description: description.trim(),
+            amount: Number(amount) || 0,
+            currency: "BHD",
+            category,
+            expense_date: expenseDate,
+          };
+          const res = await (supabase as any).from("expenses").update(fallbackPayload).eq("id", editingExpense.id).eq("brand_id", brandId);
+          error = res.error;
+        }
         if (error) throw error;
         toast.success(isAr ? "تم تعديل المصروف بنجاح" : "Expense updated");
       } else {
-        const { error } = await (supabase as any).from("expenses").insert(payload);
+        let { error } = await (supabase as any).from("expenses").insert(payload);
+        if (error && (error.message?.includes("schema cache") || error.message?.includes("column"))) {
+          // Schema cache fallback retry
+          const fallbackPayload = {
+            brand_id: brandId,
+            user_id: user?.id || null,
+            description: description.trim(),
+            amount: Number(amount) || 0,
+            currency: "BHD",
+            category,
+            expense_date: expenseDate,
+          };
+          const res = await (supabase as any).from("expenses").insert(fallbackPayload);
+          error = res.error;
+        }
         if (error) throw error;
         toast.success(isAr ? "تم إضافة المصروف بنجاح" : "Expense added");
       }
