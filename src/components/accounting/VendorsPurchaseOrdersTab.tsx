@@ -321,7 +321,7 @@ export function VendorsPurchaseOrdersTab() {
 
       {/* Add Vendor Dialog */}
       <Dialog open={vendorModalOpen} onOpenChange={setVendorModalOpen}>
-        <DialogContent className="max-w-md rounded-xl border border-border bg-card p-6 shadow-2xl">
+        <DialogContent dir={isAr ? "rtl" : "ltr"} className="max-w-md rounded-xl border border-border bg-card p-6 shadow-2xl">
           <DialogHeader>
             <DialogTitle className="text-base font-bold text-foreground">{isAr ? "إضافة مورد جديد" : "Add Vendor"}</DialogTitle>
           </DialogHeader>
@@ -356,7 +356,7 @@ export function VendorsPurchaseOrdersTab() {
 
       {/* Create PO Dialog */}
       <Dialog open={poModalOpen} onOpenChange={setPoModalOpen}>
-        <DialogContent className="max-w-md rounded-xl border border-border bg-card p-6 shadow-2xl">
+        <DialogContent dir={isAr ? "rtl" : "ltr"} className="max-w-md rounded-xl border border-border bg-card p-6 shadow-2xl">
           <DialogHeader>
             <DialogTitle className="text-base font-bold text-foreground">{isAr ? "إنشاء أمر شراء جديد (PO)" : "Create Purchase Order"}</DialogTitle>
           </DialogHeader>

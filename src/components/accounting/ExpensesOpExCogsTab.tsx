@@ -345,9 +345,9 @@ export function ExpensesOpExCogsTab() {
 
       {/* Add / Edit Expense Dialog */}
       <Dialog open={modalOpen} onOpenChange={setModalOpen}>
-        <DialogContent className="max-w-lg w-[95vw] max-h-[85vh] sm:max-h-[90vh] flex flex-col rounded-2xl border border-border bg-card p-0 shadow-2xl overflow-hidden">
-          <DialogHeader className="p-5 pb-3 border-b border-border/60 shrink-0">
-            <DialogTitle className="text-base font-bold text-foreground">
+        <DialogContent dir={isAr ? "rtl" : "ltr"} className="max-w-lg w-[95vw] max-h-[85vh] sm:max-h-[90vh] flex flex-col rounded-2xl border border-border bg-card p-0 shadow-2xl overflow-hidden">
+          <DialogHeader className="p-5 pb-3 pe-12 ps-5 border-b border-border/60 shrink-0 text-start">
+            <DialogTitle className="text-base font-bold text-foreground text-start">
               {editingExpense ? (isAr ? "تعديل المصروف" : "Edit Expense") : isAr ? "تسجيل مصروف جديد" : "Record New Expense"}
             </DialogTitle>
           </DialogHeader>
