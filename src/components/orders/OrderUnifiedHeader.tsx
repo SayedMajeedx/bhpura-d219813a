@@ -11,6 +11,15 @@ import {
   Loader2,
   Lock,
   ChevronDown,
+  Check,
+  Scissors,
+  PackageCheck,
+  Box,
+  Store,
+  Truck,
+  CheckCircle2,
+  Clock,
+  XCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -22,7 +31,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { formatDate } from "@/lib/format";
 import { getOrderTypeLabel, detectOrderType } from "@/lib/order-type-detector";
-import { getFulfillmentLabel } from "@/lib/status-labels";
+import { getFulfillmentLabel, getFulfillmentBadgeClasses } from "@/lib/status-labels";
 import {
   PAYMENT_BADGE_CLASSES,
   formatPaymentBadgeDetail,
@@ -47,6 +56,7 @@ interface OrderUnifiedHeaderProps {
   onPrintA4: () => void;
   onCopyLink: () => void;
   onOpenPaymentModal?: () => void;
+  onUpdateOrderStatus?: (status: string, fulfillmentStatus: string) => Promise<void> | void;
   renderPrimaryAction: () => React.ReactNode;
   children?: React.ReactNode;
 }
@@ -68,6 +78,7 @@ export const OrderUnifiedHeader: React.FC<OrderUnifiedHeaderProps> = ({
   onPrintA4,
   onCopyLink,
   onOpenPaymentModal,
+  onUpdateOrderStatus,
   renderPrimaryAction,
   children,
 }) => {
@@ -147,9 +158,156 @@ export const OrderUnifiedHeader: React.FC<OrderUnifiedHeaderProps> = ({
                 <ChevronDown className="h-3 w-3 opacity-70 shrink-0" />
               </button>
 
-              <span className="rounded-full border border-border/80 bg-muted/60 px-2.5 py-0.5 text-[11px] font-bold text-foreground">
-                {getFulfillmentLabel(order.fulfillment_status, lang)}
-              </span>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    type="button"
+                    disabled={!onUpdateOrderStatus}
+                    title={
+                      isAr
+                        ? "انقر لتغير حالة الطلب والتنفيذ"
+                        : "Click to change order fulfillment status"
+                    }
+                    className={cn(
+                      "inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-[11px] font-bold tracking-tight transition-all hover:opacity-90 touch-manipulation focus-visible:ring-2 focus-visible:ring-ring cursor-pointer disabled:cursor-default",
+                      getFulfillmentBadgeClasses(order?.fulfillment_status),
+                    )}
+                  >
+                    <span>{getFulfillmentLabel(order?.fulfillment_status, lang)}</span>
+                    <ChevronDown className="h-3 w-3 opacity-70 shrink-0" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align={isAr ? "start" : "end"} className="w-56 font-sans">
+                  <div className="px-2 py-1.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                    {isAr ? "تغيير حالة الطلب والتنفيذ" : "Change Fulfillment Status"}
+                  </div>
+                  <DropdownMenuSeparator />
+
+                  <DropdownMenuItem
+                    onClick={() => onUpdateOrderStatus?.("sent_to_tailor", "SENT_TO_TAILOR")}
+                    className="cursor-pointer flex items-center justify-between"
+                  >
+                    <div className="flex items-center gap-2">
+                      <Scissors className="h-4 w-4 text-purple-600 shrink-0" />
+                      <span className="font-medium text-xs">
+                        {isAr ? "تم الإرسال للخياط" : "Send to Tailor"}
+                      </span>
+                    </div>
+                    {order?.fulfillment_status === "SENT_TO_TAILOR" && (
+                      <Check className="h-3.5 w-3.5 text-primary" />
+                    )}
+                  </DropdownMenuItem>
+
+                  <DropdownMenuItem
+                    onClick={() =>
+                      onUpdateOrderStatus?.("received_from_tailor", "RECEIVED_FROM_TAILOR")
+                    }
+                    className="cursor-pointer flex items-center justify-between"
+                  >
+                    <div className="flex items-center gap-2">
+                      <PackageCheck className="h-4 w-4 text-teal-600 shrink-0" />
+                      <span className="font-medium text-xs">
+                        {isAr ? "تم الاستلام من الخياط" : "Receive from Tailor"}
+                      </span>
+                    </div>
+                    {order?.fulfillment_status === "RECEIVED_FROM_TAILOR" && (
+                      <Check className="h-3.5 w-3.5 text-primary" />
+                    )}
+                  </DropdownMenuItem>
+
+                  <DropdownMenuItem
+                    onClick={() => onUpdateOrderStatus?.("packing", "PACKING")}
+                    className="cursor-pointer flex items-center justify-between"
+                  >
+                    <div className="flex items-center gap-2">
+                      <Box className="h-4 w-4 text-amber-600 shrink-0" />
+                      <span className="font-medium text-xs">
+                        {isAr ? "بدء التعبئة والتغليف" : "Start Packing"}
+                      </span>
+                    </div>
+                    {order?.fulfillment_status === "PACKING" && (
+                      <Check className="h-3.5 w-3.5 text-primary" />
+                    )}
+                  </DropdownMenuItem>
+
+                  <DropdownMenuItem
+                    onClick={() => onUpdateOrderStatus?.("ready_for_pickup", "READY_FOR_PICKUP")}
+                    className="cursor-pointer flex items-center justify-between"
+                  >
+                    <div className="flex items-center gap-2">
+                      <Store className="h-4 w-4 text-indigo-600 shrink-0" />
+                      <span className="font-medium text-xs">
+                        {isAr ? "جاهز للاستلام (المحل)" : "Ready for Pickup"}
+                      </span>
+                    </div>
+                    {order?.fulfillment_status === "READY_FOR_PICKUP" && (
+                      <Check className="h-3.5 w-3.5 text-primary" />
+                    )}
+                  </DropdownMenuItem>
+
+                  <DropdownMenuItem
+                    onClick={() => onUpdateOrderStatus?.("shipped", "SHIPPED")}
+                    className="cursor-pointer flex items-center justify-between"
+                  >
+                    <div className="flex items-center gap-2">
+                      <Truck className="h-4 w-4 text-sky-600 shrink-0" />
+                      <span className="font-medium text-xs">
+                        {isAr ? "تم الشحن والتسليم للمندوب" : "Mark Shipped"}
+                      </span>
+                    </div>
+                    {order?.fulfillment_status === "SHIPPED" && (
+                      <Check className="h-3.5 w-3.5 text-primary" />
+                    )}
+                  </DropdownMenuItem>
+
+                  <DropdownMenuItem
+                    onClick={() => onUpdateOrderStatus?.("completed", "COMPLETED")}
+                    className="cursor-pointer flex items-center justify-between"
+                  >
+                    <div className="flex items-center gap-2">
+                      <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
+                      <span className="font-medium text-xs">
+                        {isAr ? "إكمال وتسليم الطلب" : "Complete Order"}
+                      </span>
+                    </div>
+                    {order?.fulfillment_status === "COMPLETED" && (
+                      <Check className="h-3.5 w-3.5 text-primary" />
+                    )}
+                  </DropdownMenuItem>
+
+                  <DropdownMenuSeparator />
+
+                  <DropdownMenuItem
+                    onClick={() => onUpdateOrderStatus?.("pending", "ON_HOLD")}
+                    className="cursor-pointer flex items-center justify-between"
+                  >
+                    <div className="flex items-center gap-2">
+                      <Clock className="h-4 w-4 text-slate-500 shrink-0" />
+                      <span className="font-medium text-xs">
+                        {isAr ? "قيد الانتظار" : "On Hold / Pending"}
+                      </span>
+                    </div>
+                    {order?.fulfillment_status === "ON_HOLD" && (
+                      <Check className="h-3.5 w-3.5 text-primary" />
+                    )}
+                  </DropdownMenuItem>
+
+                  <DropdownMenuItem
+                    onClick={() => onUpdateOrderStatus?.("cancelled", "CANCELLED")}
+                    className="cursor-pointer flex items-center justify-between text-destructive focus:text-destructive"
+                  >
+                    <div className="flex items-center gap-2">
+                      <XCircle className="h-4 w-4 text-destructive shrink-0" />
+                      <span className="font-medium text-xs">
+                        {isAr ? "إلغاء الطلب" : "Cancel Order"}
+                      </span>
+                    </div>
+                    {order?.fulfillment_status === "CANCELLED" && (
+                      <Check className="h-3.5 w-3.5 text-destructive" />
+                    )}
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           )}
         </div>

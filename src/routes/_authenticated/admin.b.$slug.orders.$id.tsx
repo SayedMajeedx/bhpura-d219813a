@@ -2321,6 +2321,48 @@ function OrderDetail() {
     </div>
   );
 
+  const handleDirectOrderStatusChange = async (newStatus: string, newFulfillmentStatus: string) => {
+    if (!order) return;
+    try {
+      const updatePayload: any = {
+        status: newStatus,
+        fulfillment_status: newFulfillmentStatus,
+        updated_at: new Date().toISOString(),
+      };
+      if (newStatus === "completed") {
+        updatePayload.delivered_at = new Date().toISOString();
+      }
+
+      const { error } = await supabase.from("orders").update(updatePayload).eq("id", order.id);
+
+      if (error) throw error;
+
+      const labelAr = getFulfillmentLabel(newFulfillmentStatus, "ar");
+      const labelEn = getFulfillmentLabel(newFulfillmentStatus, "en");
+
+      toast.success(
+        lang === "ar"
+          ? `تم تحديث حالة الطلب إلى "${labelAr}"`
+          : `Updated order status to "${labelEn}"`,
+      );
+
+      await logActivity({
+        action: "status_change",
+        order_id: order.id,
+        en: `Updated order status to "${labelEn}"`,
+        ar: `تحديث حالة الطلب إلى "${labelAr}"`,
+      });
+
+      await orderQ.refetch();
+      qc.invalidateQueries({ queryKey: ["orders"] });
+      qc.invalidateQueries({ queryKey: ["activity_logs"] });
+    } catch (err: any) {
+      toast.error(
+        err?.message || (lang === "ar" ? "تعذر تحديث حالة الطلب" : "Unable to update order status"),
+      );
+    }
+  };
+
   return (
     <div
       className="mx-auto max-w-[1500px] space-y-3 p-1 pb-32 sm:space-y-4 sm:p-2 sm:pb-32 md:pb-28 lg:pb-16 animate-fade-in"
@@ -2344,6 +2386,7 @@ function OrderDetail() {
         onPrintA4={handlePrintA4}
         onCopyLink={copyLink}
         onOpenPaymentModal={() => setManagePaymentOpen(true)}
+        onUpdateOrderStatus={handleDirectOrderStatusChange}
         renderPrimaryAction={renderTopPrimaryAction}
       >
         {!isCreationMode && (

@@ -206,6 +206,17 @@ export function getFulfillmentLabel(status: string | null | undefined, lang: Lan
 }
 
 /**
+ * Returns badge utility classes for fulfillment/workflow status with color mapping.
+ */
+export function getFulfillmentBadgeClasses(status: string | null | undefined): string {
+  if (!status)
+    return "bg-slate-100 text-slate-800 border-slate-300 dark:bg-slate-800 dark:text-slate-200";
+  const normalized = String(status).trim().toUpperCase();
+  const def = FULFILLMENT_STATUS_MAP[normalized];
+  return def?.badgeClasses || "bg-muted text-foreground border-border";
+}
+
+/**
  * Returns localized label for order status with fallback handling.
  */
 export function getOrderStatusLabel(status: string | null | undefined, lang: Lang = "ar"): string {
