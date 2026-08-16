@@ -20,15 +20,17 @@ type LogInput = {
   product_id?: string | null;
   variant_id?: string | null;
   metadata?: Record<string, any>;
+  brand_id?: string | null;
 };
 
 export async function logActivity(input: LogInput) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return;
+  
   await (supabase.from("activity_logs") as any).insert({
-    user_id: user.id,
+    user_id: user?.id ?? null,
+    brand_id: input.brand_id ?? null,
     order_id: input.order_id ?? null,
     product_id: input.product_id ?? null,
     variant_id: input.variant_id ?? null,
@@ -44,10 +46,11 @@ export async function logActivityBatch(inputs: LogInput[]) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) return;
+
   await (supabase.from("activity_logs") as any).insert(
     inputs.map((i) => ({
-      user_id: user.id,
+      user_id: user?.id ?? null,
+      brand_id: i.brand_id ?? null,
       order_id: i.order_id ?? null,
       product_id: i.product_id ?? null,
       variant_id: i.variant_id ?? null,
