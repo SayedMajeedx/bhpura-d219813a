@@ -3239,7 +3239,7 @@ function OrderDetail() {
                             onClick={() => setEditingItemSheetIdx(idx)}
                           >
                             <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
-                            <span>{isAr ? "تعديل البند" : "Edit Item"}</span>
+                            <span>{isAr ? "تعديل المنتج" : "Product / Edit"}</span>
                           </Button>
                         </div>
 
