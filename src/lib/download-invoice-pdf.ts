@@ -40,6 +40,13 @@ export async function downloadInvoicePdf(element: HTMLElement | null, filename: 
       box-sizing: border-box !important;
       -webkit-print-color-adjust: exact !important;
       print-color-adjust: exact !important;
+      box-shadow: none !important;
+      text-shadow: none !important;
+      filter: none !important;
+      -webkit-filter: none !important;
+      -webkit-font-smoothing: antialiased !important;
+      -moz-osx-font-smoothing: grayscale !important;
+      text-rendering: optimizeLegibility !important;
     }
     .pdf-render-root[dir="rtl"],
     .pdf-render-root[dir="rtl"] * {
@@ -169,7 +176,7 @@ export async function downloadInvoicePdf(element: HTMLElement | null, filename: 
     );
 
     const canvas = await html2canvas(clone, {
-      scale: 2,
+      scale: 4, // Ultra-high resolution scale factor for 300+ DPI razor-sharp vector text rendering
       useCORS: true,
       backgroundColor: "#ffffff",
       logging: false,
@@ -200,20 +207,24 @@ export async function downloadInvoicePdf(element: HTMLElement | null, filename: 
       const pageCanvas = document.createElement("canvas");
       pageCanvas.width = canvas.width;
       pageCanvas.height = sliceHeight;
-      const ctx = pageCanvas.getContext("2d");
+      const ctx = pageCanvas.getContext("2d", { alpha: false });
       if (!ctx) throw new Error("Unable to prepare invoice PDF page");
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = "high";
       ctx.fillStyle = "#ffffff";
       ctx.fillRect(0, 0, pageCanvas.width, pageCanvas.height);
       ctx.drawImage(canvas, 0, sourceY, canvas.width, sliceHeight, 0, 0, canvas.width, sliceHeight);
       if (pageIndex > 0) pdf.addPage();
       const sliceHeightMm = sliceHeight / pxPerMm;
       pdf.addImage(
-        pageCanvas.toDataURL("image/jpeg", 0.94),
-        "JPEG",
+        pageCanvas.toDataURL("image/png"),
+        "PNG",
         margin,
         margin,
         contentW,
         sliceHeightMm,
+        undefined,
+        "FAST",
       );
       sourceY += sliceHeight;
       pageIndex += 1;
