@@ -47,11 +47,16 @@ export function ExpensesOpExCogsTab() {
   const [amount, setAmount] = useState<number>(0);
   const [category, setCategory] = useState("Operations");
   const [expenseType, setExpenseType] = useState<"cogs" | "opex">("opex");
+  const [quantity, setQuantity] = useState<number>(100);
+  const [unitType, setUnitType] = useState<string>("أكياس");
   const [isRecurring, setIsRecurring] = useState(false);
   const [recurrencePeriod, setRecurrencePeriod] = useState<"monthly" | "yearly">("monthly");
   const [vendorId, setVendorId] = useState<string>("");
   const [expenseDate, setExpenseDate] = useState<string>(new Date().toISOString().split("T")[0]);
   const [isSaving, setIsSaving] = useState(false);
+
+  const calculatedUnitCost =
+    expenseType === "cogs" && quantity > 0 ? amount / quantity : 0;
 
   // Fetch expenses
   const expensesQ = useQuery({
@@ -102,8 +107,10 @@ export function ExpensesOpExCogsTab() {
     setEditingExpense(null);
     setDescription("");
     setAmount(0);
-    setCategory("Operations");
+    setCategory("Packaging");
     setExpenseType("opex");
+    setQuantity(100);
+    setUnitType(isAr ? "أكياس" : "Bags");
     setIsRecurring(false);
     setRecurrencePeriod("monthly");
     setVendorId("");
@@ -117,6 +124,8 @@ export function ExpensesOpExCogsTab() {
     setAmount(Number(item.amount || 0));
     setCategory(item.category || "Operations");
     setExpenseType(item.expense_type === "cogs" ? "cogs" : "opex");
+    setQuantity(Number(item.quantity || 100));
+    setUnitType(item.unit_type || (isAr ? "أكياس" : "Bags"));
     setIsRecurring(Boolean(item.is_recurring));
     setRecurrencePeriod(item.recurrence_period || "monthly");
     setVendorId(item.vendor_id || "");
@@ -150,6 +159,9 @@ export function ExpensesOpExCogsTab() {
         amount,
         category,
         expense_type: expenseType,
+        quantity: expenseType === "cogs" ? Math.max(1, quantity) : 1,
+        unit_type: expenseType === "cogs" ? unitType : "pcs",
+        unit_cost: expenseType === "cogs" ? calculatedUnitCost : amount,
         is_recurring: isRecurring,
         recurrence_period: recurrencePeriod,
         vendor_id: vendorId || null,
@@ -163,6 +175,7 @@ export function ExpensesOpExCogsTab() {
         await (supabase as any).from("expenses").insert(payload);
         toast.success(isAr ? "تم إضافة المصروف بنجاح" : "Expense added");
       }
+
 
 
       qc.invalidateQueries({ queryKey: ["dashboard-expenses-full", brandId] });
@@ -282,6 +295,14 @@ export function ExpensesOpExCogsTab() {
                       <span>{formatDate(exp.expense_date)}</span>
                       <span>•</span>
                       <span>{exp.category}</span>
+                      {isCogs && exp.quantity > 0 && exp.unit_cost > 0 && (
+                        <>
+                          <span>•</span>
+                          <span className="font-semibold text-primary">
+                            {exp.quantity} {exp.unit_type || (isAr ? "قطع" : "pcs")} ({formatMoney(exp.unit_cost, "BHD")}/{exp.unit_type || (isAr ? "قطعة" : "unit")})
+                          </span>
+                        </>
+                      )}
                       {vendorName && (
                         <>
                           <span>•</span>
@@ -349,21 +370,21 @@ export function ExpensesOpExCogsTab() {
               <Input
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                placeholder={isAr ? "مثال: إيجار الحاضنة / أكياس تغليف / إعلانات" : "e.g. Incubator Monthly Fee"}
+                placeholder={isAr ? "مثال: أكياس تغليف مخملية / بطاقات شكر" : "e.g. Premium Velvet Bags"}
                 className="h-9 text-xs"
               />
             </div>
 
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
-                <Label className="text-xs font-semibold">{isAr ? "المبلغ (BHD)" : "Amount (BHD)"}</Label>
+                <Label className="text-xs font-semibold">{isAr ? "المبلغ الإجمالي (BHD)" : "Total Amount (BHD)"}</Label>
                 <Input
                   type="number"
                   step="0.001"
                   min="0"
                   value={amount}
                   onChange={(e) => setAmount(parseFloat(e.target.value) || 0)}
-                  className="h-9 text-xs"
+                  className="h-9 text-xs font-mono font-bold"
                 />
               </div>
 
@@ -378,6 +399,60 @@ export function ExpensesOpExCogsTab() {
               </div>
             </div>
 
+            {/* Dynamic COGS Fields: Quantity & Unit Type */}
+            {expenseType === "cogs" && (
+              <div className="rounded-lg border border-primary/30 bg-primary/5 p-3 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-xs text-primary flex items-center gap-1.5">
+                    <Sparkles className="h-3.5 w-3.5 text-primary" />
+                    {isAr ? "تفاصيل حساب تكلفة القطعة المباشرة" : "Unit Cost Breakdown"}
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <Label className="text-[11px] font-semibold">{isAr ? "الكمية / Quantity" : "Quantity"}</Label>
+                    <Input
+                      type="number"
+                      min="1"
+                      value={quantity}
+                      onChange={(e) => setQuantity(parseInt(e.target.value) || 1)}
+                      className="h-8 text-xs font-mono bg-background"
+                      placeholder="e.g. 100"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label className="text-[11px] font-semibold">{isAr ? "الوحدة / Unit Type" : "Unit Type"}</Label>
+                    <select
+                      value={unitType}
+                      onChange={(e) => setUnitType(e.target.value)}
+                      className="h-8 text-xs w-full rounded-md border border-input bg-background px-2"
+                    >
+                      <option value="أكياس">{isAr ? "أكياس (Bags)" : "Bags"}</option>
+                      <option value="بطاقات">{isAr ? "بطاقات (Cards)" : "Cards"}</option>
+                      <option value="علب">{isAr ? "علب (Boxes)" : "Boxes"}</option>
+                      <option value="قطع">{isAr ? "قطع (Pieces)" : "Pieces"}</option>
+                      <option value="كيلو">{isAr ? "كيلو (Kg)" : "Kg"}</option>
+                      <option value="وحدات">{isAr ? "وحدات (Units)" : "Units"}</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Dynamic Calculation Live Display Badge */}
+                <div className="rounded-md border border-primary/20 bg-background/80 p-2 flex items-center justify-between text-xs">
+                  <span className="text-muted-foreground text-[11px] font-medium">
+                    {isAr ? "تكلفة القطعة الواحدة الحسابية:" : "Calculated Unit Cost:"}
+                  </span>
+                  <Badge variant="outline" className="border-primary/40 bg-primary/10 text-primary font-bold text-xs py-0.5 px-2.5">
+                    {isAr
+                      ? `تكلفة القطعة الواحدة: ${formatMoney(calculatedUnitCost, "BHD")}`
+                      : `Unit Cost: ${formatMoney(calculatedUnitCost, "BHD")}`}
+                  </Badge>
+                </div>
+              </div>
+            )}
+
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label className="text-xs font-semibold">{isAr ? "التصنيف" : "Category"}</Label>
@@ -386,9 +461,9 @@ export function ExpensesOpExCogsTab() {
                   onChange={(e) => setCategory(e.target.value)}
                   className="h-9 text-xs w-full rounded-md border border-input bg-background px-2"
                 >
+                  <option value="Packaging">{isAr ? "تغليف ومواد" : "Packaging"}</option>
                   <option value="Operations">{isAr ? "تشغيل ومرافق" : "Operations"}</option>
                   <option value="Rent">{isAr ? "إيجار وحاضنة" : "Rent & Incubator"}</option>
-                  <option value="Packaging">{isAr ? "تغليف ومواد" : "Packaging"}</option>
                   <option value="Marketing">{isAr ? "تسويق وإعلانات" : "Marketing"}</option>
                   <option value="Salaries">{isAr ? "رواتب وأجور" : "Salaries"}</option>
                   <option value="Other">{isAr ? "أخرى" : "Other"}</option>
@@ -455,3 +530,4 @@ export function ExpensesOpExCogsTab() {
     </div>
   );
 }
+

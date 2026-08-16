@@ -43,7 +43,11 @@ ADD COLUMN IF NOT EXISTS expense_type TEXT DEFAULT 'opex', -- 'cogs' or 'opex'
 ADD COLUMN IF NOT EXISTS is_recurring BOOLEAN DEFAULT FALSE,
 ADD COLUMN IF NOT EXISTS recurrence_period TEXT DEFAULT 'monthly', -- 'monthly' or 'yearly'
 ADD COLUMN IF NOT EXISTS next_recurrence_date DATE,
-ADD COLUMN IF NOT EXISTS vendor_id UUID REFERENCES public.vendors(id) ON DELETE SET NULL;
+ADD COLUMN IF NOT EXISTS vendor_id UUID REFERENCES public.vendors(id) ON DELETE SET NULL,
+ADD COLUMN IF NOT EXISTS quantity INTEGER DEFAULT 1,
+ADD COLUMN IF NOT EXISTS unit_type TEXT DEFAULT 'pcs',
+ADD COLUMN IF NOT EXISTS unit_cost NUMERIC(10,3) DEFAULT 0.000;
+
 
 -- 3. Cash Flow, Liquidity & Reconciliation
 CREATE TABLE IF NOT EXISTS public.cash_flow_accounts (
