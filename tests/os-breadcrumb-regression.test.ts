@@ -19,4 +19,10 @@ describe("OS menu breadcrumbs", () => {
     expect(shell).toContain('new: { ar: "طلب جديد", en: "New order" }');
     expect(menu).toContain("{brandLabel}");
   });
+
+  it("resolves dynamic order numbers and customer names instead of raw UUIDs", () => {
+    expect(shell).toContain("breadcrumb-order-number");
+    expect(shell).toContain("breadcrumb-customer-name");
+    expect(shell).toContain('`${lang === "ar" ? "الطلب" : "Order"} #${invoiceNum}`');
+  });
 });

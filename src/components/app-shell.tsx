@@ -2,7 +2,7 @@ import { useRouterState, useNavigate, useParams, useRouter } from "@tanstack/rea
 import { LogOut, Shield, Store, Search } from "lucide-react";
 import { SpotlightCommandPalette } from "@/components/spotlight-command-palette";
 import { useState, useEffect, useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { useI18n } from "@/lib/i18n";
@@ -265,12 +265,55 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     activeSlug ??
     (isPlatformMode ? (lang === "ar" ? "إدارة منصة بوتيك" : "Boutq Platform") : t("app.title"));
 
+  const queryClient = useQueryClient();
+
   const activeNavItem = navItems.find((item) => {
     const targetPath = item.to.replace("$slug", item.params?.slug ?? "");
     return pathname.startsWith(targetPath);
   });
 
   const currentPageLabel = activeNavItem?.[lang === "ar" ? "labelAr" : "labelEn"];
+
+  const trailingPath = activeNavItem
+    ? pathname.slice(activeNavItem.to.replace("$slug", activeNavItem.params?.slug ?? "").length)
+    : "";
+  const trailingSegment = trailingPath.split("/").filter(Boolean)[0];
+
+  const isOrderRoute = Boolean(
+    activeNavItem?.to.includes("/orders") && trailingSegment && trailingSegment !== "new",
+  );
+
+  const orderNumberQuery = useQuery({
+    queryKey: ["breadcrumb-order-number", trailingSegment],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("orders")
+        .select("invoice_number, id")
+        .eq("id", trailingSegment!)
+        .maybeSingle();
+      return data;
+    },
+    enabled: isOrderRoute,
+    staleTime: 5 * 60_000,
+  });
+
+  const isCustomerRoute = Boolean(
+    activeNavItem?.to.includes("/customers") && trailingSegment && trailingSegment !== "new",
+  );
+
+  const customerBreadcrumbQuery = useQuery({
+    queryKey: ["breadcrumb-customer-name", trailingSegment],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("customers")
+        .select("name, id")
+        .eq("id", trailingSegment!)
+        .maybeSingle();
+      return data;
+    },
+    enabled: isCustomerRoute,
+    staleTime: 5 * 60_000,
+  });
 
   const breadcrumbs = useMemo(() => {
     const homeLabel = "Boutq OS";
@@ -290,10 +333,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       });
     }
 
-    const trailingPath = activeNavItem
-      ? pathname.slice(activeNavItem.to.replace("$slug", activeNavItem.params?.slug ?? "").length)
-      : "";
-    const trailingSegment = trailingPath.split("/").filter(Boolean)[0];
     if (trailingSegment) {
       const labels: Record<string, { ar: string; en: string }> = {
         sales: { ar: "المبيعات", en: "Sales" },
@@ -303,12 +342,53 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         new: { ar: "طلب جديد", en: "New order" },
       };
       const translated = labels[trailingSegment];
-      items.push({
-        label: translated ? translated[lang] : decodeURIComponent(trailingSegment),
-      });
+      if (translated) {
+        items.push({
+          label: translated[lang],
+        });
+      } else if (isOrderRoute) {
+        const cachedOrder =
+          (queryClient.getQueryData(["order", trailingSegment, "office"]) as any) ||
+          (queryClient.getQueryData(["order", trailingSegment, "assigned-courier"]) as any) ||
+          (queryClient.getQueryData(["order", trailingSegment]) as any);
+        const invoiceNum = orderNumberQuery.data?.invoice_number ?? cachedOrder?.invoice_number;
+        const orderLabel = invoiceNum
+          ? `${lang === "ar" ? "الطلب" : "Order"} #${invoiceNum}`
+          : `${lang === "ar" ? "الطلب" : "Order"} #${trailingSegment.slice(0, 8)}`;
+        items.push({
+          label: orderLabel,
+        });
+      } else if (isCustomerRoute) {
+        const cachedCustomer = queryClient.getQueryData([
+          "customer-profile",
+          trailingSegment,
+          activeBrand?.id,
+        ]) as any;
+        const customerName = customerBreadcrumbQuery.data?.name ?? cachedCustomer?.name;
+        items.push({
+          label: customerName || decodeURIComponent(trailingSegment.slice(0, 8)),
+        });
+      } else {
+        items.push({
+          label: decodeURIComponent(trailingSegment),
+        });
+      }
     }
     return items;
-  }, [activeNavItem, activeSlug, currentPageLabel, lang, pathname]);
+  }, [
+    activeBrand?.id,
+    activeNavItem,
+    activeSlug,
+    currentPageLabel,
+    customerBreadcrumbQuery.data?.name,
+    isCustomerRoute,
+    isOrderRoute,
+    lang,
+    orderNumberQuery.data?.invoice_number,
+    pathname,
+    queryClient,
+    trailingSegment,
+  ]);
 
   // SECURITY: fail closed.
   if (!isLoading && !profile) {
