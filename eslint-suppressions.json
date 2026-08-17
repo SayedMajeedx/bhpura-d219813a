@@ -37,7 +37,7 @@
   },
   "src/lib/impersonation.functions.ts": {
     "no-empty": {
-      "count": 2
+      "count": 1
     }
   },
   "src/lib/instagram-ai-importer.ts": {

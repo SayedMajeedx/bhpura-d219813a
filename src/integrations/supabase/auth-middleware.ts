@@ -409,24 +409,42 @@ export async function getGeminiCredentials(
   }
 
   if (resolvedBrandId) {
-    // Secrets are decrypted only for the server-side service role. They are
-    // never exposed through an authenticated browser RPC or a direct table read.
-    try {
-      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-      const { data, error: adminIntErr } = await (supabaseAdmin.rpc as any)(
-        "get_integration_credential_secret",
-        { p_brand_id: resolvedBrandId, p_provider: "gemini" },
-      );
-      const integration = data?.[0];
-      if (!adminIntErr && integration?.api_key) {
-        apiKey = integration.api_key;
-        model = integration.base_url?.trim() || undefined;
-        traces.push(`[Vault] Gemini credential loaded server-side`);
-      } else if (adminIntErr) {
-        traces.push(`[Vault] credential lookup error: ${adminIntErr.message}`);
+    // Security check: verify that the caller is authorized for resolvedBrandId
+    const isSuperAdmin = profile?.role === "super_admin";
+    let isAuthorized = isSuperAdmin || profile?.brand_id === resolvedBrandId;
+    if (!isAuthorized) {
+      try {
+        const { data: hasAccess } = await (supabase.rpc as any)("can_access_brand", {
+          _brand_id: resolvedBrandId,
+        });
+        if (hasAccess === true) isAuthorized = true;
+      } catch (authzErr: any) {
+        traces.push(`[Authz Check] error: ${authzErr.message}`);
       }
-    } catch (adminEx: any) {
-      traces.push(`[Vault] credential lookup exception: ${adminEx.message}`);
+    }
+
+    if (!isAuthorized) {
+      traces.push(`[Forbidden] Caller ${userId} is not authorized for brand ${resolvedBrandId}`);
+    } else {
+      // Secrets are decrypted only for authorized brand operators via server-side service role.
+      // They are never exposed through an authenticated browser RPC or a direct table read.
+      try {
+        const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+        const { data, error: adminIntErr } = await (supabaseAdmin.rpc as any)(
+          "get_integration_credential_secret",
+          { p_brand_id: resolvedBrandId, p_provider: "gemini" },
+        );
+        const integration = data?.[0];
+        if (!adminIntErr && integration?.api_key) {
+          apiKey = integration.api_key;
+          model = integration.base_url?.trim() || undefined;
+          traces.push(`[Vault] Gemini credential loaded server-side`);
+        } else if (adminIntErr) {
+          traces.push(`[Vault] credential lookup error: ${adminIntErr.message}`);
+        }
+      } catch (adminEx: any) {
+        traces.push(`[Vault] credential lookup exception: ${adminEx.message}`);
+      }
     }
   } else {
     traces.push(`[Error] Could not resolve brand_id from profile or referer`);

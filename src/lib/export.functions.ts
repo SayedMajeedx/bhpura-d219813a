@@ -1,5 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
-import { supabase } from "@/integrations/supabase/client";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import writeXlsxFile from "write-excel-file/node";
 
 type ExportParams = {
@@ -41,12 +41,13 @@ const sanitizeData = (data: any[]) => {
 };
 
 export const generateExportData = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .validator((params: ExportParams) => params)
-  .handler(async ({ data: params }) => {
+  .handler(async ({ data: params, context }) => {
     const { reportType, from, to, tz, format } = params;
 
     // Fetch data from Supabase using the secured RPC
-    const { data: rawData, error } = await (supabase as any).rpc("rpc_reporting_export", {
+    const { data: rawData, error } = await (context.supabase as any).rpc("rpc_reporting_export", {
       p_report_type: reportType,
       p_start_date: from,
       p_end_date: to,

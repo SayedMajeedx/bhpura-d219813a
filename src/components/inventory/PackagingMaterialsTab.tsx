@@ -82,9 +82,14 @@ export function PackagingMaterialsTab() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm(isAr ? "هل أنت تأكد من حذف مادة التغليف هذه؟" : "Delete this packaging material?")) return;
+    if (!confirm(isAr ? "هل أنت تأكد من حذف مادة التغليف هذه؟" : "Delete this packaging material?"))
+      return;
     try {
-      const { error } = await (supabase as any).from("packaging_materials").delete().eq("id", id).eq("brand_id", brandId);
+      const { error } = await (supabase as any)
+        .from("packaging_materials")
+        .delete()
+        .eq("id", id)
+        .eq("brand_id", brandId);
       if (error) throw error;
       toast.success(isAr ? "تمت الحذف بنجاح" : "Material deleted");
       qc.invalidateQueries({ queryKey: ["packaging-materials", brandId] });
@@ -130,7 +135,6 @@ export function PackagingMaterialsTab() {
         toast.success(isAr ? "تمت الإضافة بنجاح" : "Added successfully");
       }
 
-
       qc.invalidateQueries({ queryKey: ["packaging-materials", brandId] });
       setOpenModal(false);
     } catch (err: any) {
@@ -147,7 +151,9 @@ export function PackagingMaterialsTab() {
         <div>
           <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
             <Box className="h-5 w-5 text-primary" />
-            {isAr ? "إدارة مواد التغليف والعلب (BOM Packaging)" : "Packaging Materials & Packaging Stock"}
+            {isAr
+              ? "إدارة مواد التغليف والعلب (BOM Packaging)"
+              : "Packaging Materials & Packaging Stock"}
           </h2>
           <p className="text-xs text-muted-foreground mt-0.5">
             {isAr
@@ -206,7 +212,10 @@ export function PackagingMaterialsTab() {
             const isLowStock = item.stock_quantity <= (item.reorder_level || 10);
 
             return (
-              <Card key={item.id} className="p-4 flex flex-col justify-between space-y-3 border-border">
+              <Card
+                key={item.id}
+                className="p-4 flex flex-col justify-between space-y-3 border-border"
+              >
                 <div className="space-y-2">
                   <div className="flex items-start justify-between gap-2">
                     <div>
@@ -214,7 +223,9 @@ export function PackagingMaterialsTab() {
                         {isAr ? item.name_ar || item.name : item.name}
                       </h3>
                       {item.sku && (
-                        <span className="text-[11px] font-mono text-muted-foreground">SKU: {item.sku}</span>
+                        <span className="text-[11px] font-mono text-muted-foreground">
+                          SKU: {item.sku}
+                        </span>
                       )}
                     </div>
                     {isLowStock && (
@@ -227,12 +238,20 @@ export function PackagingMaterialsTab() {
 
                   <div className="grid grid-cols-2 gap-2 rounded-lg bg-muted/40 p-2.5 text-xs">
                     <div>
-                      <span className="text-[11px] text-muted-foreground block">{isAr ? "المخزون المتوفر" : "In Stock"}</span>
-                      <span className="font-extrabold text-foreground text-sm">{item.stock_quantity} unit</span>
+                      <span className="text-[11px] text-muted-foreground block">
+                        {isAr ? "المخزون المتوفر" : "In Stock"}
+                      </span>
+                      <span className="font-extrabold text-foreground text-sm">
+                        {item.stock_quantity} unit
+                      </span>
                     </div>
                     <div>
-                      <span className="text-[11px] text-muted-foreground block">{isAr ? "تكلفة الوحدة" : "Unit Cost"}</span>
-                      <span className="font-extrabold text-primary text-sm">{formatMoney(item.unit_cost, "BHD")}</span>
+                      <span className="text-[11px] text-muted-foreground block">
+                        {isAr ? "تكلفة الوحدة" : "Unit Cost"}
+                      </span>
+                      <span className="font-extrabold text-primary text-sm">
+                        {formatMoney(item.unit_cost, "BHD")}
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -269,14 +288,20 @@ export function PackagingMaterialsTab() {
           <DialogHeader>
             <DialogTitle className="text-base font-bold text-foreground">
               {editingItem
-                ? isAr ? "تعديل مادة التغليف" : "Edit Packaging Material"
-                : isAr ? "إضافة مادة تغليف جديدة" : "Add Packaging Material"}
+                ? isAr
+                  ? "تعديل مادة التغليف"
+                  : "Edit Packaging Material"
+                : isAr
+                  ? "إضافة مادة تغليف جديدة"
+                  : "Add Packaging Material"}
             </DialogTitle>
           </DialogHeader>
 
           <div className="space-y-4 py-2 text-xs">
             <div className="space-y-1.5">
-              <Label className="text-xs font-semibold">{isAr ? "اسم مادة التغليف (English)" : "Material Name (English)"}</Label>
+              <Label className="text-xs font-semibold">
+                {isAr ? "اسم مادة التغليف (English)" : "Material Name (English)"}
+              </Label>
               <Input
                 value={name}
                 onChange={(e) => setName(e.target.value)}
@@ -286,7 +311,9 @@ export function PackagingMaterialsTab() {
             </div>
 
             <div className="space-y-1.5">
-              <Label className="text-xs font-semibold">{isAr ? "الاسم بالعربية" : "Arabic Name"}</Label>
+              <Label className="text-xs font-semibold">
+                {isAr ? "الاسم بالعربية" : "Arabic Name"}
+              </Label>
               <Input
                 value={nameAr}
                 onChange={(e) => setNameAr(e.target.value)}
@@ -297,7 +324,9 @@ export function PackagingMaterialsTab() {
 
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
-                <Label className="text-xs font-semibold">{isAr ? "رمز المادة (SKU)" : "SKU / Code"}</Label>
+                <Label className="text-xs font-semibold">
+                  {isAr ? "رمز المادة (SKU)" : "SKU / Code"}
+                </Label>
                 <Input
                   value={sku}
                   onChange={(e) => setSku(e.target.value)}
@@ -307,7 +336,9 @@ export function PackagingMaterialsTab() {
               </div>
 
               <div className="space-y-1.5">
-                <Label className="text-xs font-semibold">{isAr ? "تكلفة الوحدة (BHD)" : "Unit Cost (BHD)"}</Label>
+                <Label className="text-xs font-semibold">
+                  {isAr ? "تكلفة الوحدة (BHD)" : "Unit Cost (BHD)"}
+                </Label>
                 <Input
                   type="number"
                   step="0.001"
@@ -321,7 +352,9 @@ export function PackagingMaterialsTab() {
 
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
-                <Label className="text-xs font-semibold">{isAr ? "الكمية المتوفرة" : "Stock Quantity"}</Label>
+                <Label className="text-xs font-semibold">
+                  {isAr ? "الكمية المتوفرة" : "Stock Quantity"}
+                </Label>
                 <Input
                   type="number"
                   min="0"
@@ -332,7 +365,9 @@ export function PackagingMaterialsTab() {
               </div>
 
               <div className="space-y-1.5">
-                <Label className="text-xs font-semibold">{isAr ? "حد التنبيه (Low Stock)" : "Reorder Level"}</Label>
+                <Label className="text-xs font-semibold">
+                  {isAr ? "حد التنبيه (Low Stock)" : "Reorder Level"}
+                </Label>
                 <Input
                   type="number"
                   min="0"

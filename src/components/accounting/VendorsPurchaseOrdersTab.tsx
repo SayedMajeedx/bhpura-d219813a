@@ -127,7 +127,9 @@ export function VendorsPurchaseOrdersTab() {
 
   const handleSavePO = async () => {
     if (!selectedVendorId || poTotalAmount <= 0) {
-      toast.error(isAr ? "يرجى اختيار المورد وإدخال إجمالي أمر الشراء" : "Please select vendor & enter total");
+      toast.error(
+        isAr ? "يرجى اختيار المورد وإدخال إجمالي أمر الشراء" : "Please select vendor & enter total",
+      );
       return;
     }
 
@@ -183,18 +185,29 @@ export function VendorsPurchaseOrdersTab() {
       {/* Accounts Payable Metric Card */}
       <Card className="p-4 border-border bg-card flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <span className="text-xs font-bold text-muted-foreground block">{isAr ? "التزامات الموردين والديون (Accounts Payable)" : "Total Accounts Payable"}</span>
+          <span className="text-xs font-bold text-muted-foreground block">
+            {isAr ? "التزامات الموردين والديون (Accounts Payable)" : "Total Accounts Payable"}
+          </span>
           <span className="text-xl font-extrabold text-amber-500 mt-1 block">
             {formatMoney(totalAccountsPayable, "BHD")}
           </span>
         </div>
 
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={() => setVendorModalOpen(true)} className="h-8 text-xs font-bold gap-1">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setVendorModalOpen(true)}
+            className="h-8 text-xs font-bold gap-1"
+          >
             <Building2 className="h-3.5 w-3.5" />
             {isAr ? "إضافة مورد جديد" : "Add Vendor"}
           </Button>
-          <Button size="sm" onClick={() => setPoModalOpen(true)} className="h-8 text-xs font-bold gap-1">
+          <Button
+            size="sm"
+            onClick={() => setPoModalOpen(true)}
+            className="h-8 text-xs font-bold gap-1"
+          >
             <Plus className="h-3.5 w-3.5" />
             {isAr ? "أمر شراء جديد (PO)" : "New Purchase Order"}
           </Button>
@@ -240,28 +253,53 @@ export function VendorsPurchaseOrdersTab() {
                   <div className="flex items-start justify-between gap-2">
                     <div>
                       <div className="flex items-center gap-2">
-                        <span className="font-extrabold text-sm text-foreground">{po.po_number}</span>
-                        <Badge variant="outline" className={`text-[10px] ${isFullyPaid ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20" : "bg-amber-500/10 text-amber-600 border-amber-500/20"}`}>
-                          {isFullyPaid ? (isAr ? "مسدد بالكامل" : "Paid") : isAr ? "دفع جزئي / آجل" : "Partial Payment"}
+                        <span className="font-extrabold text-sm text-foreground">
+                          {po.po_number}
+                        </span>
+                        <Badge
+                          variant="outline"
+                          className={`text-[10px] ${isFullyPaid ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20" : "bg-amber-500/10 text-amber-600 border-amber-500/20"}`}
+                        >
+                          {isFullyPaid
+                            ? isAr
+                              ? "مسدد بالكامل"
+                              : "Paid"
+                            : isAr
+                              ? "دفع جزئي / آجل"
+                              : "Partial Payment"}
                         </Badge>
                       </div>
                       <span className="text-xs text-muted-foreground block mt-0.5">
-                        {isAr ? "المورد:" : "Vendor:"} <strong className="text-foreground">{(po.vendors as any)?.name || "N/A"}</strong> • {formatDate(po.created_at)}
+                        {isAr ? "المورد:" : "Vendor:"}{" "}
+                        <strong className="text-foreground">
+                          {(po.vendors as any)?.name || "N/A"}
+                        </strong>{" "}
+                        • {formatDate(po.created_at)}
                       </span>
                     </div>
 
                     <div className="text-right">
-                      <span className="text-xs text-muted-foreground block">{isAr ? "الإجمالي:" : "Total:"}</span>
-                      <span className="font-extrabold text-sm text-foreground">{formatMoney(total, "BHD")}</span>
+                      <span className="text-xs text-muted-foreground block">
+                        {isAr ? "الإجمالي:" : "Total:"}
+                      </span>
+                      <span className="font-extrabold text-sm text-foreground">
+                        {formatMoney(total, "BHD")}
+                      </span>
                     </div>
                   </div>
 
                   {/* Payment Progress Bar */}
                   <div className="rounded-lg bg-muted/40 p-2.5 space-y-2">
                     <div className="flex items-center justify-between text-xs">
-                      <span>{isAr ? `المدفوع: ${formatMoney(paid, "BHD")}` : `Paid: ${formatMoney(paid, "BHD")}`}</span>
+                      <span>
+                        {isAr
+                          ? `المدفوع: ${formatMoney(paid, "BHD")}`
+                          : `Paid: ${formatMoney(paid, "BHD")}`}
+                      </span>
                       <span className="font-bold text-amber-500">
-                        {isAr ? `المتبقي: ${formatMoney(remaining, "BHD")}` : `Remaining: ${formatMoney(remaining, "BHD")}`}
+                        {isAr
+                          ? `المتبقي: ${formatMoney(remaining, "BHD")}`
+                          : `Remaining: ${formatMoney(remaining, "BHD")}`}
                       </span>
                     </div>
 
@@ -271,7 +309,11 @@ export function VendorsPurchaseOrdersTab() {
                           size="sm"
                           variant="outline"
                           onClick={() => {
-                            const amtStr = prompt(isAr ? "أدخل مبلغ الدفعة الإضافية (BHD):" : "Enter payment amount (BHD):");
+                            const amtStr = prompt(
+                              isAr
+                                ? "أدخل مبلغ الدفعة الإضافية (BHD):"
+                                : "Enter payment amount (BHD):",
+                            );
                             if (amtStr) handleRecordPartialPayment(po, parseFloat(amtStr) || 0);
                           }}
                           className="h-7 text-xs font-bold text-primary"
@@ -286,93 +328,143 @@ export function VendorsPurchaseOrdersTab() {
             })}
           </div>
         )
+      ) : /* Vendors List */
+      vendors.length === 0 ? (
+        <Card className="p-8 text-center text-xs text-muted-foreground">
+          {isAr ? "لا يوجد موردين مسجلين بعد." : "No vendors registered yet."}
+        </Card>
       ) : (
-        /* Vendors List */
-        vendors.length === 0 ? (
-          <Card className="p-8 text-center text-xs text-muted-foreground">
-            {isAr ? "لا يوجد موردين مسجلين بعد." : "No vendors registered yet."}
-          </Card>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {vendors.map((v) => (
-              <Card key={v.id} className="p-4 border-border space-y-2">
-                <h3 className="font-bold text-sm text-foreground flex items-center gap-1.5">
-                  <Building2 className="h-4 w-4 text-primary" />
-                  {v.name}
-                </h3>
-                {v.contact_person && <p className="text-xs text-muted-foreground">{v.contact_person}</p>}
-                {v.phone && (
-                  <p className="text-xs text-muted-foreground flex items-center gap-1">
-                    <Phone className="h-3 w-3" />
-                    {v.phone}
-                  </p>
-                )}
-                {v.email && (
-                  <p className="text-xs text-muted-foreground flex items-center gap-1">
-                    <Mail className="h-3 w-3" />
-                    {v.email}
-                  </p>
-                )}
-              </Card>
-            ))}
-          </div>
-        )
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {vendors.map((v) => (
+            <Card key={v.id} className="p-4 border-border space-y-2">
+              <h3 className="font-bold text-sm text-foreground flex items-center gap-1.5">
+                <Building2 className="h-4 w-4 text-primary" />
+                {v.name}
+              </h3>
+              {v.contact_person && (
+                <p className="text-xs text-muted-foreground">{v.contact_person}</p>
+              )}
+              {v.phone && (
+                <p className="text-xs text-muted-foreground flex items-center gap-1">
+                  <Phone className="h-3 w-3" />
+                  {v.phone}
+                </p>
+              )}
+              {v.email && (
+                <p className="text-xs text-muted-foreground flex items-center gap-1">
+                  <Mail className="h-3 w-3" />
+                  {v.email}
+                </p>
+              )}
+            </Card>
+          ))}
+        </div>
       )}
 
       {/* Add Vendor Dialog */}
       <Dialog open={vendorModalOpen} onOpenChange={setVendorModalOpen}>
-        <DialogContent dir={isAr ? "rtl" : "ltr"} className="max-w-md rounded-xl border border-border bg-card p-6 shadow-2xl">
+        <DialogContent
+          dir={isAr ? "rtl" : "ltr"}
+          className="max-w-md rounded-xl border border-border bg-card p-6 shadow-2xl"
+        >
           <DialogHeader>
-            <DialogTitle className="text-base font-bold text-foreground">{isAr ? "إضافة مورد جديد" : "Add Vendor"}</DialogTitle>
+            <DialogTitle className="text-base font-bold text-foreground">
+              {isAr ? "إضافة مورد جديد" : "Add Vendor"}
+            </DialogTitle>
           </DialogHeader>
 
           <div className="space-y-3 py-2 text-xs">
             <div className="space-y-1">
               <Label>{isAr ? "اسم الشركة / المورد" : "Vendor Name"}</Label>
-              <Input value={vendorName} onChange={(e) => setVendorName(e.target.value)} placeholder="e.g. Gulf Packaging Co." className="h-9 text-xs" />
+              <Input
+                value={vendorName}
+                onChange={(e) => setVendorName(e.target.value)}
+                placeholder="e.g. Gulf Packaging Co."
+                className="h-9 text-xs"
+              />
             </div>
             <div className="space-y-1">
               <Label>{isAr ? "اسم المسؤول" : "Contact Person"}</Label>
-              <Input value={vendorContact} onChange={(e) => setVendorContact(e.target.value)} placeholder="e.g. Ahmed Ali" className="h-9 text-xs" />
+              <Input
+                value={vendorContact}
+                onChange={(e) => setVendorContact(e.target.value)}
+                placeholder="e.g. Ahmed Ali"
+                className="h-9 text-xs"
+              />
             </div>
             <div className="grid grid-cols-2 gap-2">
               <div className="space-y-1">
                 <Label>{isAr ? "رقم الهاتف" : "Phone"}</Label>
-                <Input value={vendorPhone} onChange={(e) => setVendorPhone(e.target.value)} className="h-9 text-xs" />
+                <Input
+                  value={vendorPhone}
+                  onChange={(e) => setVendorPhone(e.target.value)}
+                  className="h-9 text-xs"
+                />
               </div>
               <div className="space-y-1">
                 <Label>{isAr ? "البريد الإلكتروني" : "Email"}</Label>
-                <Input value={vendorEmail} onChange={(e) => setVendorEmail(e.target.value)} className="h-9 text-xs" />
+                <Input
+                  value={vendorEmail}
+                  onChange={(e) => setVendorEmail(e.target.value)}
+                  className="h-9 text-xs"
+                />
               </div>
             </div>
           </div>
 
           <DialogFooter className="gap-2">
-            <Button variant="outline" onClick={() => setVendorModalOpen(false)} className="h-9 text-xs">{isAr ? "إلغاء" : "Cancel"}</Button>
-            <Button onClick={handleSaveVendor} disabled={isSaving} className="h-9 text-xs font-bold">{isAr ? "حفظ المورد" : "Save Vendor"}</Button>
+            <Button
+              variant="outline"
+              onClick={() => setVendorModalOpen(false)}
+              className="h-9 text-xs"
+            >
+              {isAr ? "إلغاء" : "Cancel"}
+            </Button>
+            <Button
+              onClick={handleSaveVendor}
+              disabled={isSaving}
+              className="h-9 text-xs font-bold"
+            >
+              {isAr ? "حفظ المورد" : "Save Vendor"}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
       {/* Create PO Dialog */}
       <Dialog open={poModalOpen} onOpenChange={setPoModalOpen}>
-        <DialogContent dir={isAr ? "rtl" : "ltr"} className="max-w-md rounded-xl border border-border bg-card p-6 shadow-2xl">
+        <DialogContent
+          dir={isAr ? "rtl" : "ltr"}
+          className="max-w-md rounded-xl border border-border bg-card p-6 shadow-2xl"
+        >
           <DialogHeader>
-            <DialogTitle className="text-base font-bold text-foreground">{isAr ? "إنشاء أمر شراء جديد (PO)" : "Create Purchase Order"}</DialogTitle>
+            <DialogTitle className="text-base font-bold text-foreground">
+              {isAr ? "إنشاء أمر شراء جديد (PO)" : "Create Purchase Order"}
+            </DialogTitle>
           </DialogHeader>
 
           <div className="space-y-3 py-2 text-xs">
             <div className="grid grid-cols-2 gap-2">
               <div className="space-y-1">
                 <Label>{isAr ? "رقم أمر الشراء" : "PO Number"}</Label>
-                <Input value={poNumber} onChange={(e) => setPoNumber(e.target.value)} className="h-9 text-xs font-mono" />
+                <Input
+                  value={poNumber}
+                  onChange={(e) => setPoNumber(e.target.value)}
+                  className="h-9 text-xs font-mono"
+                />
               </div>
               <div className="space-y-1">
                 <Label>{isAr ? "المورد" : "Vendor"}</Label>
-                <select value={selectedVendorId} onChange={(e) => setSelectedVendorId(e.target.value)} className="h-9 text-xs w-full rounded-md border border-input bg-background px-2">
+                <select
+                  value={selectedVendorId}
+                  onChange={(e) => setSelectedVendorId(e.target.value)}
+                  className="h-9 text-xs w-full rounded-md border border-input bg-background px-2"
+                >
                   <option value="">{isAr ? "-- اختر المورد --" : "-- Select Vendor --"}</option>
                   {vendors.map((v) => (
-                    <option key={v.id} value={v.id}>{v.name}</option>
+                    <option key={v.id} value={v.id}>
+                      {v.name}
+                    </option>
                   ))}
                 </select>
               </div>
@@ -381,18 +473,36 @@ export function VendorsPurchaseOrdersTab() {
             <div className="grid grid-cols-2 gap-2">
               <div className="space-y-1">
                 <Label>{isAr ? "الإجمالي الكلي (BHD)" : "Total Amount (BHD)"}</Label>
-                <Input type="number" step="0.001" min="0" value={poTotalAmount} onChange={(e) => setPoTotalAmount(parseFloat(e.target.value) || 0)} className="h-9 text-xs font-mono" />
+                <Input
+                  type="number"
+                  step="0.001"
+                  min="0"
+                  value={poTotalAmount}
+                  onChange={(e) => setPoTotalAmount(parseFloat(e.target.value) || 0)}
+                  className="h-9 text-xs font-mono"
+                />
               </div>
               <div className="space-y-1">
                 <Label>{isAr ? "الدفعة الأولى المقدمة (BHD)" : "Down Payment (BHD)"}</Label>
-                <Input type="number" step="0.001" min="0" value={poPaidAmount} onChange={(e) => setPoPaidAmount(parseFloat(e.target.value) || 0)} className="h-9 text-xs font-mono" />
+                <Input
+                  type="number"
+                  step="0.001"
+                  min="0"
+                  value={poPaidAmount}
+                  onChange={(e) => setPoPaidAmount(parseFloat(e.target.value) || 0)}
+                  className="h-9 text-xs font-mono"
+                />
               </div>
             </div>
           </div>
 
           <DialogFooter className="gap-2">
-            <Button variant="outline" onClick={() => setPoModalOpen(false)} className="h-9 text-xs">{isAr ? "إلغاء" : "Cancel"}</Button>
-            <Button onClick={handleSavePO} disabled={isSaving} className="h-9 text-xs font-bold">{isAr ? "إنشاء أمر الشراء" : "Create PO"}</Button>
+            <Button variant="outline" onClick={() => setPoModalOpen(false)} className="h-9 text-xs">
+              {isAr ? "إلغاء" : "Cancel"}
+            </Button>
+            <Button onClick={handleSavePO} disabled={isSaving} className="h-9 text-xs font-bold">
+              {isAr ? "إنشاء أمر الشراء" : "Create PO"}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

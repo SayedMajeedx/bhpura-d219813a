@@ -21,10 +21,10 @@ export interface ProductBomItem {
 }
 
 /**
-  * Calculate total packaging cost for a product/variant:
-  * Sum of (packaging_material.unit_cost * bom_item.quantity_per_unit)
-  * plus product.direct_packaging_cost as fallback/addon.
-  */
+ * Calculate total packaging cost for a product/variant:
+ * Sum of (packaging_material.unit_cost * bom_item.quantity_per_unit)
+ * plus product.direct_packaging_cost as fallback/addon.
+ */
 export function calculateProductPackagingCost(
   directPackagingCost: number | null | undefined,
   bomItems: ProductBomItem[] = [],
@@ -39,8 +39,8 @@ export function calculateProductPackagingCost(
 }
 
 /**
-  * Automatically deduct packaging stock when an order is completed.
-  */
+ * Automatically deduct packaging stock when an order is completed.
+ */
 export async function deductOrderPackagingStock(
   brandId: string,
   productId: string,
@@ -72,7 +72,6 @@ export async function deductOrderPackagingStock(
         .eq("id", mat.id)
         .eq("brand_id", brandId);
     }
-
 
     return { success: true };
   } catch (err: any) {

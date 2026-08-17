@@ -51,16 +51,16 @@ export const startImpersonationSession = createServerFn({ method: "POST" })
       throw new Error("Access Denied: Store owner has disabled technical support access.");
     }
 
-    // Generate session cookie token
-    const tokenPayload = {
+    // Generate cryptographically signed session cookie token
+    const { signImpersonationPayload, writeImpersonationCookie } =
+      await import("./impersonation-cookies.server");
+    const tokenStr = await signImpersonationPayload({
       operatorId: userId,
       targetTenantId: brand.id,
       issuedAt: Date.now(),
-    };
-    const tokenStr = Buffer.from(JSON.stringify(tokenPayload)).toString("base64");
+    });
 
     // Set cookie in response using isolated server-only module
-    const { writeImpersonationCookie } = await import("./impersonation-cookies.server");
     await writeImpersonationCookie(tokenStr);
 
     // Write immutable audit log
@@ -213,19 +213,15 @@ export const validateImpersonationSession = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .validator((raw: unknown) => ValidateSessionInput.parse(raw))
   .handler(async ({ data }) => {
-    const { readImpersonationCookie } = await import("./impersonation-cookies.server");
+    const { readImpersonationCookie, verifyImpersonationToken } =
+      await import("./impersonation-cookies.server");
     const cookieVal = await readImpersonationCookie();
     if (!cookieVal) return { valid: false };
 
-    try {
-      const payload = JSON.parse(Buffer.from(cookieVal, "base64").toString("utf-8"));
-      if (
-        payload.targetTenantId === data.brandId &&
-        payload.issuedAt > Date.now() - 1000 * 60 * 60 * 24
-      ) {
-        return { valid: true };
-      }
-    } catch {}
+    const payload = await verifyImpersonationToken(cookieVal);
+    if (payload && payload.targetTenantId === data.brandId) {
+      return { valid: true };
+    }
 
     return { valid: false };
   });

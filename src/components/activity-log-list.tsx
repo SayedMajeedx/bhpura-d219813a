@@ -84,13 +84,7 @@ export function ActivityLogList({
         </div>
         <div className="flex items-center gap-1.5 text-muted-foreground text-xs font-medium">
           <span>
-            {isOpen
-              ? lang === "ar"
-                ? "إخفاء"
-                : "Hide"
-              : lang === "ar"
-                ? "عرض"
-                : "Show"}
+            {isOpen ? (lang === "ar" ? "إخفاء" : "Hide") : lang === "ar" ? "عرض" : "Show"}
           </span>
           {isOpen ? (
             <ChevronUp className="h-4 w-4 shrink-0 transition-transform" />

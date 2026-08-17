@@ -4261,7 +4261,11 @@ function OrderDetail() {
                       <div className="flex items-center justify-between font-bold text-foreground">
                         <span className="flex items-center gap-1.5">
                           <Package className="h-4 w-4 text-primary shrink-0" />
-                          <span>{isAr ? "تكاليف الإنتاج والتغليف المباشرة للطلب (Order COGS)" : "Direct Order COGS Breakdown"}</span>
+                          <span>
+                            {isAr
+                              ? "تكاليف الإنتاج والتغليف المباشرة للطلب (Order COGS)"
+                              : "Direct Order COGS Breakdown"}
+                          </span>
                         </span>
                         <span className="font-mono text-sm font-extrabold text-primary">
                           {formatMoney(orderTotalCogs, currency)}
@@ -4271,16 +4275,22 @@ function OrderDetail() {
                       <div className="grid grid-cols-2 gap-2 font-mono text-[11px] pt-1.5 border-t border-border/40 text-muted-foreground">
                         <div>
                           <span>{isAr ? "تكلفة المنتجات:" : "Product Cost:"} </span>
-                          <strong className="text-foreground">{formatMoney(productCogsTotal, currency)}</strong>
+                          <strong className="text-foreground">
+                            {formatMoney(productCogsTotal, currency)}
+                          </strong>
                         </div>
                         <div>
                           <span>{isAr ? "تكلفة مواد التغليف:" : "Packaging Cost:"} </span>
-                          <strong className="text-foreground">{formatMoney(packagingCogsTotal, currency)}</strong>
+                          <strong className="text-foreground">
+                            {formatMoney(packagingCogsTotal, currency)}
+                          </strong>
                         </div>
                       </div>
 
                       <div className="flex justify-between items-center text-xs font-extrabold text-emerald-600 dark:text-emerald-400 pt-1.5 border-t border-border/40">
-                        <span>{isAr ? "صافي ربح هذا الطلب المباشر:" : "Order Net Gross Profit:"}</span>
+                        <span>
+                          {isAr ? "صافي ربح هذا الطلب المباشر:" : "Order Net Gross Profit:"}
+                        </span>
                         <span className="font-mono text-sm font-extrabold">
                           {formatMoney(orderNetProfit, currency)}
                         </span>

@@ -62,7 +62,7 @@ describe("Packaging BOM & Inventory Logic Audit", () => {
 
   it("attaches packaging BOM cost (0.571 BHD) to order COGS upon fulfillment/delivery", () => {
     const isFulfilled = true;
-    const productCost = 5.000;
+    const productCost = 5.0;
     const packagingBomUnitCost = 0.571;
     const finalOrderUnitCogs = productCost + (isFulfilled ? packagingBomUnitCost : 0);
 

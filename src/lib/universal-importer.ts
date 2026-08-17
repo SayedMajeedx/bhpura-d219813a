@@ -1,6 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { PutObjectCommand } from "@aws-sdk/client-s3";
 import { r2Client } from "@/lib/r2-upload.functions";
 import { z } from "zod";
 
@@ -123,15 +122,15 @@ export const importProductCatalog = createServerFn({ method: "POST" })
                 const { client, bucket, publicBaseUrl } = r2Client();
                 const key = `brands/${data.brandId}/product/${crypto.randomUUID()}.${ext}`;
 
-                await client.send(
-                  new PutObjectCommand({
+                await client.send({
+                  input: {
                     Bucket: bucket,
                     Key: key,
                     ContentType: contentType,
                     Body: buffer,
                     CacheControl: "public, max-age=31536000, immutable",
-                  }),
-                );
+                  },
+                });
 
                 finalImageUrl = `${publicBaseUrl}/${key}`;
                 mediaArray.push({ type: "image", url: finalImageUrl });

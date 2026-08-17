@@ -350,7 +350,9 @@ export function OrderQuickViewModal({
                     {shipping > 0 && (
                       <div className="flex justify-between items-center text-indigo-600 dark:text-indigo-400">
                         <span>
-                          {isAr ? "رسوم الشحن والتوصيل (Delivery Fee):" : "Shipping & Delivery Fee:"}
+                          {isAr
+                            ? "رسوم الشحن والتوصيل (Delivery Fee):"
+                            : "Shipping & Delivery Fee:"}
                         </span>
                         <span className="font-bold">+{formatMoney(shipping, currency, lang)}</span>
                       </div>
@@ -368,7 +370,9 @@ export function OrderQuickViewModal({
                         <span>
                           {isAr ? "الدفعة المقدمة (Deposit Paid):" : "Advance Paid / Deposit:"}
                         </span>
-                        <span className="font-bold">-{formatMoney(advancePaid, currency, lang)}</span>
+                        <span className="font-bold">
+                          -{formatMoney(advancePaid, currency, lang)}
+                        </span>
                       </div>
                     )}
 
@@ -397,7 +401,11 @@ export function OrderQuickViewModal({
                   <div className="flex items-center justify-between font-bold text-foreground">
                     <span className="flex items-center gap-1.5">
                       <Package className="h-4 w-4 text-primary shrink-0" />
-                      <span>{isAr ? "تكاليف الإنتاج والتغليف المباشرة للطلب (Order COGS)" : "Direct Order COGS Breakdown"}</span>
+                      <span>
+                        {isAr
+                          ? "تكاليف الإنتاج والتغليف المباشرة للطلب (Order COGS)"
+                          : "Direct Order COGS Breakdown"}
+                      </span>
                     </span>
                     <span className="font-mono text-sm font-extrabold text-primary">
                       {formatMoney(orderTotalCogs, currency, lang)}
@@ -407,11 +415,15 @@ export function OrderQuickViewModal({
                   <div className="grid grid-cols-2 gap-2 font-mono text-[11px] pt-1.5 border-t border-border/40 text-muted-foreground">
                     <div>
                       <span>{isAr ? "تكلفة المنتجات:" : "Product Cost:"} </span>
-                      <strong className="text-foreground">{formatMoney(productCogsTotal, currency, lang)}</strong>
+                      <strong className="text-foreground">
+                        {formatMoney(productCogsTotal, currency, lang)}
+                      </strong>
                     </div>
                     <div>
                       <span>{isAr ? "تكلفة مواد التغليف:" : "Packaging Cost:"} </span>
-                      <strong className="text-foreground">{formatMoney(packagingCogsTotal, currency, lang)}</strong>
+                      <strong className="text-foreground">
+                        {formatMoney(packagingCogsTotal, currency, lang)}
+                      </strong>
                     </div>
                   </div>
 

@@ -4,7 +4,8 @@ export const Route = createFileRoute("/api/cron/cleanup-benefit-receipts")({
   server: {
     handlers: {
       GET: async ({ request }) => {
-        const cronSecret = process.env.CRON_SECRET?.trim();
+        const { getEnvVariableAsync } = await import("@/integrations/supabase/auth-middleware");
+        const cronSecret = (await getEnvVariableAsync("CRON_SECRET"))?.trim();
         const authorization = request.headers.get("authorization") ?? "";
         const { constantTimeSecretEqual } = await import("@/lib/security.server");
         if (

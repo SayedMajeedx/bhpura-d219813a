@@ -1,7 +1,7 @@
-import { GetObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import { AwsClient } from "aws4fetch";
 
-// Cache of S3Client instances to prevent memory leaks and ensure idempotency
-const s3ClientsCache = new Map<string, S3Client>();
+// Cache of AwsClient instances to prevent memory leaks and ensure idempotency
+const awsClientsCache = new Map<string, AwsClient>();
 
 function sanitizeValue(val: string | undefined): string | undefined {
   if (!val) return undefined;
@@ -11,33 +11,18 @@ function sanitizeValue(val: string | undefined): string | undefined {
     .trim();
 }
 
-function getCachedS3Client(
-  accountId: string,
-  accessKeyId: string,
-  secretAccessKey: string,
-): S3Client {
-  const cacheKey = `${accountId}:${accessKeyId}`;
-  let client = s3ClientsCache.get(cacheKey);
+function getCachedAwsClient(accessKeyId: string, secretAccessKey: string): AwsClient {
+  const cacheKey = `${accessKeyId}:${secretAccessKey}`;
+  let client = awsClientsCache.get(cacheKey);
 
   if (!client) {
-    const endpoint = `https://${accountId}.r2.cloudflarestorage.com`;
-    try {
-      new URL(endpoint); // Validates format before passing to S3Client
-    } catch (err: any) {
-      throw new Error(
-        `Generated R2 endpoint URL "${endpoint}" is invalid: ${err.message} (accountId length: ${accountId.length})`,
-      );
-    }
-
-    client = new S3Client({
+    client = new AwsClient({
+      accessKeyId,
+      secretAccessKey,
       region: "auto",
-      endpoint,
-      credentials: {
-        accessKeyId,
-        secretAccessKey,
-      },
+      service: "s3",
     });
-    s3ClientsCache.set(cacheKey, client);
+    awsClientsCache.set(cacheKey, client);
   }
 
   return client;
@@ -118,40 +103,40 @@ export async function handleR2Stream(
 
   try {
     const config = await getR2Config(isPrivate);
-    const client = getCachedS3Client(config.accountId, config.accessKeyId, config.secretAccessKey);
+    const client = getCachedAwsClient(config.accessKeyId, config.secretAccessKey);
+    const endpoint = `https://${config.accountId}.r2.cloudflarestorage.com`;
+    const url = `${endpoint}/${encodeURIComponent(config.bucket)}/${key}`;
 
-    const command = new GetObjectCommand({
-      Bucket: config.bucket, // Plain text string bucket name
-      Key: key,
-    });
-
-    const response = await client.send(command);
-    if (!response.Body) {
-      return new Response("Not Found", { status: 404 });
+    const r2Res = await client.fetch(url, { method: "GET" });
+    if (!r2Res.ok) {
+      if (r2Res.status === 404) {
+        return new Response("Object Not Found", { status: 404 });
+      }
+      return new Response(`Streamer Error: ${r2Res.statusText}`, { status: r2Res.status });
     }
 
     const headers = new Headers();
-    if (response.ContentType) {
-      headers.set("Content-Type", response.ContentType);
+    const contentType = r2Res.headers.get("content-type");
+    if (contentType) {
+      headers.set("Content-Type", contentType);
     }
-    if (response.CacheControl) {
-      headers.set("Cache-Control", response.CacheControl);
+    const cacheControl = r2Res.headers.get("cache-control");
+    if (cacheControl) {
+      headers.set("Cache-Control", cacheControl);
     } else {
       headers.set("Cache-Control", "public, max-age=31536000, immutable");
     }
-    if (response.ContentLength) {
-      headers.set("Content-Length", response.ContentLength.toString());
+    const contentLength = r2Res.headers.get("content-length");
+    if (contentLength) {
+      headers.set("Content-Length", contentLength);
     }
 
-    return new Response(response.Body as any, {
+    return new Response(r2Res.body, {
       status: 200,
       headers,
     });
   } catch (error: any) {
     console.error(`Error streaming R2 asset for key "${key}":`, error);
-    if (error.name === "NoSuchKey" || error.$metadata?.httpStatusCode === 404) {
-      return new Response("Object Not Found", { status: 404 });
-    }
     return new Response(`Streamer Error: ${error.message}`, { status: 500 });
   }
 }
@@ -161,40 +146,40 @@ export async function handlePlatformR2Stream(filename: string): Promise<Response
 
   try {
     const config = await getR2Config(false); // platform files are in public bucket
-    const client = getCachedS3Client(config.accountId, config.accessKeyId, config.secretAccessKey);
+    const client = getCachedAwsClient(config.accessKeyId, config.secretAccessKey);
+    const endpoint = `https://${config.accountId}.r2.cloudflarestorage.com`;
+    const url = `${endpoint}/${encodeURIComponent(config.bucket)}/${key}`;
 
-    const command = new GetObjectCommand({
-      Bucket: config.bucket,
-      Key: key,
-    });
-
-    const response = await client.send(command);
-    if (!response.Body) {
-      return new Response("Not Found", { status: 404 });
+    const r2Res = await client.fetch(url, { method: "GET" });
+    if (!r2Res.ok) {
+      if (r2Res.status === 404) {
+        return new Response("Object Not Found", { status: 404 });
+      }
+      return new Response(`Streamer Error: ${r2Res.statusText}`, { status: r2Res.status });
     }
 
     const headers = new Headers();
-    if (response.ContentType) {
-      headers.set("Content-Type", response.ContentType);
+    const contentType = r2Res.headers.get("content-type");
+    if (contentType) {
+      headers.set("Content-Type", contentType);
     }
-    if (response.CacheControl) {
-      headers.set("Cache-Control", response.CacheControl);
+    const cacheControl = r2Res.headers.get("cache-control");
+    if (cacheControl) {
+      headers.set("Cache-Control", cacheControl);
     } else {
       headers.set("Cache-Control", "public, max-age=31536000, immutable");
     }
-    if (response.ContentLength) {
-      headers.set("Content-Length", response.ContentLength.toString());
+    const contentLength = r2Res.headers.get("content-length");
+    if (contentLength) {
+      headers.set("Content-Length", contentLength);
     }
 
-    return new Response(response.Body as any, {
+    return new Response(r2Res.body, {
       status: 200,
       headers,
     });
   } catch (error: any) {
     console.error(`Error streaming platform asset for key "${key}":`, error);
-    if (error.name === "NoSuchKey" || error.$metadata?.httpStatusCode === 404) {
-      return new Response("Object Not Found", { status: 404 });
-    }
     return new Response(`Streamer Error: ${error.message}`, { status: 500 });
   }
 }

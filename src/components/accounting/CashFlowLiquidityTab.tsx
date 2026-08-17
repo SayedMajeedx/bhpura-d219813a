@@ -60,7 +60,9 @@ export function CashFlowLiquidityTab() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("orders")
-        .select("id, invoice_number, created_at, total, status, payment_status, payment_method, reconciliation_status, customer_name_snapshot, customers(name)")
+        .select(
+          "id, invoice_number, created_at, total, status, payment_status, payment_method, reconciliation_status, customer_name_snapshot, customers(name)",
+        )
         .eq("brand_id", brandId)
         .order("created_at", { ascending: false })
         .limit(20);
@@ -85,10 +87,12 @@ export function CashFlowLiquidityTab() {
     name_en: "Bank Account",
   };
 
-
   const totalLiquidity = Number(cashBoxAcc.balance || 0) + Number(bankAcc.balance || 0);
 
-  const handleUpdateReconciliation = async (orderId: string, nextStatus: "reconciled" | "pending" | "unreconciled") => {
+  const handleUpdateReconciliation = async (
+    orderId: string,
+    nextStatus: "reconciled" | "pending" | "unreconciled",
+  ) => {
     try {
       await supabase
         .from("orders")
@@ -135,7 +139,6 @@ export function CashFlowLiquidityTab() {
         notes: transferNotes || "إيداع نقدي من الصندوق إلى الحساب البنكي",
       } as any);
 
-
       toast.success(isAr ? "تم تحويل السيولة النقدية بنجاح" : "Funds transferred successfully");
       qc.invalidateQueries({ queryKey: ["cash-flow-accounts", brandId] });
       setTransferModalOpen(false);
@@ -159,7 +162,10 @@ export function CashFlowLiquidityTab() {
               <Wallet className="h-4 w-4 text-amber-500" />
               {isAr ? "الصندوق النقدي (Cash Box)" : "Cash Box Balance"}
             </span>
-            <Badge variant="outline" className="bg-amber-500/10 text-amber-600 border-amber-500/20 text-[10px]">
+            <Badge
+              variant="outline"
+              className="bg-amber-500/10 text-amber-600 border-amber-500/20 text-[10px]"
+            >
               Cash
             </Badge>
           </div>
@@ -175,7 +181,10 @@ export function CashFlowLiquidityTab() {
               <Building className="h-4 w-4 text-emerald-500" />
               {isAr ? "الحساب البنكي / BENEFIT" : "Bank / BENEFIT Balance"}
             </span>
-            <Badge variant="outline" className="bg-emerald-500/10 text-emerald-600 border-emerald-500/20 text-[10px]">
+            <Badge
+              variant="outline"
+              className="bg-emerald-500/10 text-emerald-600 border-emerald-500/20 text-[10px]"
+            >
               Bank / BENEFIT
             </Badge>
           </div>
@@ -187,7 +196,9 @@ export function CashFlowLiquidityTab() {
         {/* Total Liquidity & Transfer Button */}
         <Card className="p-4 border-border/80 bg-primary/5 flex flex-col justify-between">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-primary">{isAr ? "إجمالي السيولة المتاحة" : "Total Liquidity"}</span>
+            <span className="text-xs font-bold text-primary">
+              {isAr ? "إجمالي السيولة المتاحة" : "Total Liquidity"}
+            </span>
             <Button
               size="sm"
               onClick={() => setTransferModalOpen(true)}
@@ -209,7 +220,9 @@ export function CashFlowLiquidityTab() {
           <div>
             <h3 className="font-bold text-sm text-foreground flex items-center gap-2">
               <ShieldCheck className="h-4 w-4 text-primary" />
-              {isAr ? "تسوية التحويلات والمبيعات النقدية (Reconciliation)" : "Payment Reconciliation"}
+              {isAr
+                ? "تسوية التحويلات والمبيعات النقدية (Reconciliation)"
+                : "Payment Reconciliation"}
             </h3>
             <p className="text-xs text-muted-foreground mt-0.5">
               {isAr
@@ -226,19 +239,26 @@ export function CashFlowLiquidityTab() {
         ) : (
           <div className="space-y-2">
             {orders.map((o) => {
-              const customerName = (o.customers as any)?.name || o.customer_name_snapshot || "Guest";
+              const customerName =
+                (o.customers as any)?.name || o.customer_name_snapshot || "Guest";
               const recStatus = o.reconciliation_status || "unreconciled";
 
               return (
                 <Card key={o.id} className="p-3 border-border flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div className="p-2 rounded-lg bg-muted text-muted-foreground">
-                      {o.payment_method === "cash" ? <Wallet className="h-4 w-4" /> : <Building className="h-4 w-4" />}
+                      {o.payment_method === "cash" ? (
+                        <Wallet className="h-4 w-4" />
+                      ) : (
+                        <Building className="h-4 w-4" />
+                      )}
                     </div>
 
                     <div>
                       <div className="flex items-center gap-2">
-                        <span className="font-bold text-xs text-foreground">#{o.invoice_number}</span>
+                        <span className="font-bold text-xs text-foreground">
+                          #{o.invoice_number}
+                        </span>
                         <span className="text-xs text-muted-foreground">• {customerName}</span>
                       </div>
                       <div className="flex items-center gap-2 text-[11px] text-muted-foreground mt-0.5">
@@ -250,7 +270,9 @@ export function CashFlowLiquidityTab() {
                   </div>
 
                   <div className="flex items-center gap-3">
-                    <span className="font-extrabold text-xs text-foreground">{formatMoney(o.total, "BHD")}</span>
+                    <span className="font-extrabold text-xs text-foreground">
+                      {formatMoney(o.total, "BHD")}
+                    </span>
 
                     {/* Status Pill Switcher */}
                     {recStatus === "reconciled" ? (
@@ -294,12 +316,18 @@ export function CashFlowLiquidityTab() {
 
           <div className="space-y-4 py-2 text-xs">
             <div className="rounded-lg border border-border bg-muted/40 p-3 space-y-1">
-              <span className="text-[11px] text-muted-foreground block">{isAr ? "رصيد الصندوق المتاح:" : "Cash Box Balance:"}</span>
-              <span className="font-bold text-sm text-foreground">{formatMoney(cashBoxAcc.balance || 0, "BHD")}</span>
+              <span className="text-[11px] text-muted-foreground block">
+                {isAr ? "رصيد الصندوق المتاح:" : "Cash Box Balance:"}
+              </span>
+              <span className="font-bold text-sm text-foreground">
+                {formatMoney(cashBoxAcc.balance || 0, "BHD")}
+              </span>
             </div>
 
             <div className="space-y-1.5">
-              <Label className="text-xs font-semibold">{isAr ? "المبلغ المراد تحويله وإيداعه بالبنك (BHD)" : "Transfer Amount (BHD)"}</Label>
+              <Label className="text-xs font-semibold">
+                {isAr ? "المبلغ المراد تحويله وإيداعه بالبنك (BHD)" : "Transfer Amount (BHD)"}
+              </Label>
               <Input
                 type="number"
                 step="0.001"
@@ -322,11 +350,25 @@ export function CashFlowLiquidityTab() {
           </div>
 
           <DialogFooter className="gap-2 pt-2">
-            <Button variant="outline" onClick={() => setTransferModalOpen(false)} className="h-9 text-xs">
+            <Button
+              variant="outline"
+              onClick={() => setTransferModalOpen(false)}
+              className="h-9 text-xs"
+            >
               {isAr ? "إلغاء" : "Cancel"}
             </Button>
-            <Button onClick={handleTransferFunds} disabled={isSubmitting} className="h-9 text-xs font-bold">
-              {isSubmitting ? (isAr ? "جاري التحويل..." : "Transferring...") : isAr ? "تأكيد التحويل" : "Confirm Transfer"}
+            <Button
+              onClick={handleTransferFunds}
+              disabled={isSubmitting}
+              className="h-9 text-xs font-bold"
+            >
+              {isSubmitting
+                ? isAr
+                  ? "جاري التحويل..."
+                  : "Transferring..."
+                : isAr
+                  ? "تأكيد التحويل"
+                  : "Confirm Transfer"}
             </Button>
           </DialogFooter>
         </DialogContent>

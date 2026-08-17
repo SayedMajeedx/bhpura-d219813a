@@ -91,7 +91,8 @@ export function calculateIncomeStatement(
   });
 
   // Net Operating Profit = Revenue - Total Order COGS - OpEx - Gateway Fees
-  const netOperatingProfit = netRevenue - totalOrderCogs - operatingExpenses - paymentProcessingFees;
+  const netOperatingProfit =
+    netRevenue - totalOrderCogs - operatingExpenses - paymentProcessingFees;
   const netProfitMarginPercent = netRevenue > 0 ? (netOperatingProfit / netRevenue) * 100 : 0;
 
   return {
@@ -208,7 +209,6 @@ export async function postDoubleEntryJournal(
         { entry_id: entry.id, account_id: creditAcc.id, debit: 0, credit: amount },
       ] as any);
     }
-
 
     return { success: true };
   } catch (err: any) {

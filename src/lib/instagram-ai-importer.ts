@@ -1,6 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth, getGeminiCredentials } from "@/integrations/supabase/auth-middleware";
-import { PutObjectCommand } from "@aws-sdk/client-s3";
 import { r2Client } from "@/lib/r2-upload.functions";
 import { z } from "zod";
 
@@ -295,15 +294,15 @@ async function rehostSingleImage(brandId: string, imageUrl: string): Promise<str
     const { client, bucket, publicBaseUrl } = r2Client();
     const key = `brands/${brandId}/product/${crypto.randomUUID()}.${ext}`;
 
-    await client.send(
-      new PutObjectCommand({
+    await client.send({
+      input: {
         Bucket: bucket,
         Key: key,
         ContentType: contentType,
         Body: buffer,
         CacheControl: "public, max-age=31536000, immutable",
-      }),
-    );
+      },
+    });
 
     return `${publicBaseUrl}/${key}`;
   } catch (err) {

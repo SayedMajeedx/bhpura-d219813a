@@ -360,7 +360,6 @@ function Inventory() {
         />
       )}
 
-
       <div className="mt-8">
         <ActivityLogList scope="inventory" brandId={brandId} />
       </div>
@@ -1850,8 +1849,6 @@ function ProductsSection({
         activeTab={scopeFilter}
         onTabChange={(tabId) => setScopeFilter(tabId as any)}
       />
-
-
 
       {/* 3. Compact Command Toolbar */}
       <InventoryToolbar

@@ -3,7 +3,13 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useBrand } from "@/lib/brand-context";
 import { useI18n, useT } from "@/lib/i18n";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -154,7 +160,9 @@ export function ProductBomModal({
           packaging_material_id: sm.packaging_material_id,
           quantity_per_unit: sm.quantity_per_unit,
         }));
-        const { error: iErr } = await (supabase as any).from("product_bom_items").insert(rowsToInsert as any);
+        const { error: iErr } = await (supabase as any)
+          .from("product_bom_items")
+          .insert(rowsToInsert as any);
         if (iErr) throw iErr;
       }
 
@@ -166,7 +174,9 @@ export function ProductBomModal({
       onOpenChange(false);
     } catch (err: any) {
       console.error("Failed to save BOM packaging", err);
-      toast.error(err.message || (isAr ? "خطأ في حفظ تكاليف التغليف" : "Failed to save BOM packaging"));
+      toast.error(
+        err.message || (isAr ? "خطأ في حفظ تكاليف التغليف" : "Failed to save BOM packaging"),
+      );
     } finally {
       setIsSaving(false);
     }
@@ -191,7 +201,9 @@ export function ProductBomModal({
           {/* Direct Packaging Cost Fallback */}
           <div className="rounded-lg border border-border/60 bg-muted/30 p-3.5 space-y-2">
             <Label className="text-xs font-semibold text-foreground flex items-center justify-between">
-              <span>{isAr ? "تكلفة التغليف المباشرة (إدخال يدوي)" : "Direct Packaging Cost (Manual)"}</span>
+              <span>
+                {isAr ? "تكلفة التغليف المباشرة (إدخال يدوي)" : "Direct Packaging Cost (Manual)"}
+              </span>
               <span className="text-[11px] text-muted-foreground">BHD</span>
             </Label>
             <Input
@@ -261,7 +273,8 @@ export function ProductBomModal({
                       >
                         {materials.map((m) => (
                           <option key={m.id} value={m.id}>
-                            {isAr ? m.name_ar || m.name : m.name} ({formatMoney(m.unit_cost, "BHD")})
+                            {isAr ? m.name_ar || m.name : m.name} ({formatMoney(m.unit_cost, "BHD")}
+                            )
                           </option>
                         ))}
                       </select>
@@ -312,7 +325,13 @@ export function ProductBomModal({
             {isAr ? "إلغاء" : "Cancel"}
           </Button>
           <Button onClick={handleSave} disabled={isSaving} className="h-9 text-xs font-bold">
-            {isSaving ? (isAr ? "جاري الحفظ..." : "Saving...") : isAr ? "حفظ التغييرات" : "Save Changes"}
+            {isSaving
+              ? isAr
+                ? "جاري الحفظ..."
+                : "Saving..."
+              : isAr
+                ? "حفظ التغييرات"
+                : "Save Changes"}
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -27,7 +27,7 @@ export async function logActivity(input: LogInput) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  
+
   await (supabase.from("activity_logs") as any).insert({
     user_id: user?.id ?? null,
     brand_id: input.brand_id ?? null,

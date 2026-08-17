@@ -176,10 +176,7 @@ function Dashboard() {
   const expensesQ = useQuery({
     queryKey: ["dashboard-expenses", brandId],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("expenses")
-        .select("*")
-        .eq("brand_id", brandId);
+      const { data, error } = await supabase.from("expenses").select("*").eq("brand_id", brandId);
       if (error) throw error;
       return data ?? [];
     },

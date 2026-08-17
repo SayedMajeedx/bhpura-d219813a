@@ -76,7 +76,6 @@ import { CashFlowLiquidityTab } from "@/components/accounting/CashFlowLiquidityT
 import { VendorsPurchaseOrdersTab } from "@/components/accounting/VendorsPurchaseOrdersTab";
 import { FinancialReportsTab } from "@/components/accounting/FinancialReportsTab";
 
-
 const MAX_SCANNER_REQUEST_BYTES = 2_500_000;
 
 function fileToDataUrl(file: Blob): Promise<string> {
@@ -270,7 +269,9 @@ function ExpensesPage() {
   const [datePreset, setDatePreset] = useState<DatePreset>("month");
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
-  const [mainTab, setMainTab] = useState<"opex_cogs" | "cash_flow" | "vendors_pos" | "reports">("opex_cogs");
+  const [mainTab, setMainTab] = useState<"opex_cogs" | "cash_flow" | "vendors_pos" | "reports">(
+    "opex_cogs",
+  );
   const initialMonth = useMemo(() => presetRange("month"), []);
 
   const [customRange, setCustomRange] = useState(initialMonth);
@@ -602,7 +603,6 @@ function ExpensesPage() {
       {mainTab === "cash_flow" && <CashFlowLiquidityTab />}
       {mainTab === "vendors_pos" && <VendorsPurchaseOrdersTab />}
       {mainTab === "reports" && <FinancialReportsTab />}
-
 
       {/* 3. Toolbar */}
       <ExpensesToolbar
