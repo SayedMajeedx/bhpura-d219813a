@@ -136,8 +136,8 @@ export function ProductGrid({
           mobileCols === "1" ? "grid-cols-1" : "grid-cols-2"
         } md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6`}
       >
-        {products.map((p) => (
-          <ProductCard key={p.id} product={p} />
+        {products.map((p, i) => (
+          <ProductCard key={p.id} product={p} index={i} />
         ))}
       </div>
     </div>

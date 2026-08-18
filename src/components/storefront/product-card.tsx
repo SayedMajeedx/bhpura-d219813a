@@ -10,10 +10,12 @@ import { Button } from "@/components/ui/button";
 export function ProductCard({
   product,
   badge,
+  index,
   className,
 }: {
   product: ProductRow;
   badge?: "trending" | "best";
+  index?: number;
   className?: string;
 }) {
   const { brand, currency, lang, t, isWishlisted, toggleWishlist, settings } = useStorefront();
@@ -68,8 +70,13 @@ export function ProductCard({
     badgeLabel = isAr ? "رائج" : "Trending";
   }
 
+  const staggerClass =
+    typeof index === "number"
+      ? `storefront-fade-in-up stagger-${(index % 8) + 1}`
+      : "storefront-fade-in-up";
+
   return (
-    <div className={`group relative ${className || "w-full"}`}>
+    <div className={`group relative ${staggerClass} ${className || "w-full"}`}>
       <Button
         type="button"
         variant="ghost"
@@ -80,7 +87,7 @@ export function ProductCard({
             ? t("إزالة من المفضلة", "Remove from wishlist")
             : t("إضافة إلى المفضلة", "Add to wishlist")
         }
-        className="absolute end-2.5 top-2.5 z-20 h-11 w-11 rounded-full bg-background/95 text-foreground shadow-sm border border-border transition-[transform,colors] duration-200 hover:scale-105 active:scale-95 hover:bg-background hover:text-destructive"
+        className="absolute end-2.5 top-2.5 z-20 h-11 w-11 rounded-full bg-background/95 text-foreground shadow-sm border border-border transition-[transform,colors] duration-200 hover:scale-110 active:scale-90 hover:bg-background hover:text-destructive"
       >
         <Heart
           className={`h-4 w-4 transition-colors duration-200 ${wished ? "fill-destructive text-destructive" : ""}`}
@@ -91,7 +98,7 @@ export function ProductCard({
         to="/$slug/product/$id"
         params={{ slug: brand.slug, id: product.id }}
         preload="intent"
-        className="block"
+        className="block transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-1 sm:hover:-translate-y-1.5"
         onClick={() => {
           void (supabase.rpc as any)("record_storefront_product_engagement", {
             p_brand_slug: brand.slug,
@@ -118,7 +125,7 @@ export function ProductCard({
               sizes="(min-width: 1024px) 25vw, (min-width: 768px) 33vw, 50vw"
               // [TECH ADVISOR #1]: Real informational product photos MUST have dynamic/descriptive alt text
               alt={displayName}
-              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+              className="w-full h-full object-cover group-hover:scale-[1.04] transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]"
               loading="lazy"
               decoding="async"
               quality={76}

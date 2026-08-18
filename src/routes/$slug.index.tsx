@@ -757,7 +757,11 @@ function HeroContentCarousel({
                       >
                         {settings.show_hero_title && title && (
                           <h1
-                            className="mb-1 font-semibold leading-tight drop-shadow-sm sm:mb-2"
+                            className={`mb-1 font-semibold leading-tight drop-shadow-sm sm:mb-2 transition-[transform,opacity] duration-500 delay-75 ease-out ${
+                              slideIndex === idx
+                                ? "translate-y-0 opacity-100"
+                                : "translate-y-2.5 opacity-0"
+                            }`}
                             style={{
                               fontSize: `clamp(1.25rem, 5vw, ${settings.hero_title_size}px)`,
                               fontFamily: "var(--sf-font)",
@@ -767,12 +771,24 @@ function HeroContentCarousel({
                           </h1>
                         )}
                         {settings.show_hero_about && body && (
-                          <p className="mb-3 max-w-lg line-clamp-2 text-xs leading-relaxed text-white/90 drop-shadow-sm sm:mb-4 sm:line-clamp-3 sm:text-sm">
+                          <p
+                            className={`mb-3 max-w-lg line-clamp-2 text-xs leading-relaxed text-white/90 drop-shadow-sm sm:mb-4 sm:line-clamp-3 sm:text-sm transition-[transform,opacity] duration-500 delay-150 ease-out ${
+                              slideIndex === idx
+                                ? "translate-y-0 opacity-100"
+                                : "translate-y-2.5 opacity-0"
+                            }`}
+                          >
                             {body}
                           </p>
                         )}
                         {button && (
-                          <div>
+                          <div
+                            className={`transition-[transform,opacity] duration-500 delay-[225ms] ease-out ${
+                              slideIndex === idx
+                                ? "translate-y-0 opacity-100"
+                                : "translate-y-2.5 opacity-0"
+                            }`}
+                          >
                             <span className="inline-flex items-center rounded-full bg-primary text-primary-foreground px-4 py-2 text-xs font-semibold shadow-md transition-transform duration-200 group-hover:scale-105 sm:px-6 sm:py-2.5 sm:text-sm focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
                               {button}
                             </span>
@@ -813,7 +829,11 @@ function HeroContentCarousel({
                       >
                         {settings.show_hero_title && title && (
                           <h1
-                            className="mb-1 font-semibold leading-tight drop-shadow-sm sm:mb-2"
+                            className={`mb-1 font-semibold leading-tight drop-shadow-sm sm:mb-2 transition-[transform,opacity] duration-500 delay-75 ease-out ${
+                              slideIndex === idx
+                                ? "translate-y-0 opacity-100"
+                                : "translate-y-2.5 opacity-0"
+                            }`}
                             style={{
                               fontSize: `clamp(1.25rem, 5vw, ${settings.hero_title_size}px)`,
                               fontFamily: "var(--sf-font)",
@@ -823,12 +843,24 @@ function HeroContentCarousel({
                           </h1>
                         )}
                         {settings.show_hero_about && body && (
-                          <p className="mb-3 max-w-lg line-clamp-2 text-xs leading-relaxed text-white/90 drop-shadow-sm sm:mb-4 sm:line-clamp-3 sm:text-sm">
+                          <p
+                            className={`mb-3 max-w-lg line-clamp-2 text-xs leading-relaxed text-white/90 drop-shadow-sm sm:mb-4 sm:line-clamp-3 sm:text-sm transition-[transform,opacity] duration-500 delay-150 ease-out ${
+                              slideIndex === idx
+                                ? "translate-y-0 opacity-100"
+                                : "translate-y-2.5 opacity-0"
+                            }`}
+                          >
                             {body}
                           </p>
                         )}
                         {button && (
-                          <div>
+                          <div
+                            className={`transition-[transform,opacity] duration-500 delay-[225ms] ease-out ${
+                              slideIndex === idx
+                                ? "translate-y-0 opacity-100"
+                                : "translate-y-2.5 opacity-0"
+                            }`}
+                          >
                             <span className="inline-flex items-center rounded-full bg-primary text-primary-foreground px-4 py-2 text-xs font-semibold shadow-md transition-transform duration-200 group-hover:scale-105 sm:px-6 sm:py-2.5 sm:text-sm focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
                               {button}
                             </span>
