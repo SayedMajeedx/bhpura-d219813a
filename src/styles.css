@@ -468,13 +468,7 @@ input[type="number"] {
     background-size: cover;
   }
 
-  /* Hardware-accelerated GPU compositing for floating glass surfaces */
-  .os-glass,
-  .os-glass-strong,
-  .os-toolbar {
-    transform: translateZ(0);
-  }
-
+  /* Optimized GPU compositing for floating glass surfaces */
   .os-glass {
     background-color: var(--os-glass);
     backdrop-filter: blur(20px) saturate(180%);

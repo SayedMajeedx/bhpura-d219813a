@@ -80,10 +80,10 @@ export function ProductCard({
             ? t("إزالة من المفضلة", "Remove from wishlist")
             : t("إضافة إلى المفضلة", "Add to wishlist")
         }
-        className="absolute end-2.5 top-2.5 z-20 h-11 w-11 rounded-full bg-background/85 backdrop-blur-[4px] text-foreground shadow-sm border border-border transition-all duration-300 hover:scale-105 active:scale-95 hover:bg-background hover:text-destructive"
+        className="absolute end-2.5 top-2.5 z-20 h-11 w-11 rounded-full bg-background/95 text-foreground shadow-sm border border-border transition-[transform,colors] duration-200 hover:scale-105 active:scale-95 hover:bg-background hover:text-destructive"
       >
         <Heart
-          className={`h-4 w-4 transition-colors duration-300 ${wished ? "fill-destructive text-destructive" : ""}`}
+          className={`h-4 w-4 transition-colors duration-200 ${wished ? "fill-destructive text-destructive" : ""}`}
         />
       </Button>
 
@@ -103,7 +103,7 @@ export function ProductCard({
         <div className="aspect-[3/4] rounded-xl overflow-hidden bg-muted relative">
           {badgeLabel && (
             <span
-              className={`absolute start-2.5 top-2.5 z-10 rounded-md border px-2.5 py-1 text-[10px] font-medium backdrop-blur-[2px] shadow-sm select-none ${badgeStyle} ${
+              className={`absolute start-2.5 top-2.5 z-10 rounded-md border px-2.5 py-1 text-[10px] font-medium shadow-sm select-none ${badgeStyle} ${
                 isAr ? "font-display leading-none" : "tracking-widest uppercase"
               }`}
             >

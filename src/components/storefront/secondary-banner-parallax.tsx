@@ -26,10 +26,12 @@ function measureEntry(entry: ParallaxEntry) {
 
   const mobile = window.matchMedia("(max-width: 768px)").matches;
   const maximumOffset = mobile ? MOBILE_MAX_OFFSET_PX : DESKTOP_MAX_OFFSET_PX;
-  entry.root.style.setProperty(
-    "--secondary-banner-parallax-overscan",
-    `${Math.ceil(maximumOffset + MIN_COVERAGE_GUARD_PX)}px`,
-  );
+  const targetOverscan = `${Math.ceil(maximumOffset + MIN_COVERAGE_GUARD_PX)}px`;
+  if (
+    entry.root.style.getPropertyValue("--secondary-banner-parallax-overscan") !== targetOverscan
+  ) {
+    entry.root.style.setProperty("--secondary-banner-parallax-overscan", targetOverscan);
+  }
 }
 
 function renderActiveEntries() {
@@ -67,7 +69,29 @@ function scheduleParallaxFrame() {
 }
 
 function refreshActiveEntries() {
-  activeEntries.forEach(measureEntry);
+  const currentScrollY = window.scrollY;
+  const isMobile = window.matchMedia("(max-width: 768px)").matches;
+  const maxOffset = isMobile ? MOBILE_MAX_OFFSET_PX : DESKTOP_MAX_OFFSET_PX;
+  const targetOverscan = `${Math.ceil(maxOffset + MIN_COVERAGE_GUARD_PX)}px`;
+
+  // Phase 1: Pure Reads (prevents layout thrashing across multiple elements)
+  const measurements: Array<{ entry: ParallaxEntry; top: number; height: number }> = [];
+  activeEntries.forEach((entry) => {
+    const rect = entry.root.getBoundingClientRect();
+    measurements.push({ entry, top: rect.top + currentScrollY, height: rect.height });
+  });
+
+  // Phase 2: Batched State & Style Updates
+  measurements.forEach(({ entry, top, height }) => {
+    entry.documentTop = top;
+    entry.height = height;
+    if (
+      entry.root.style.getPropertyValue("--secondary-banner-parallax-overscan") !== targetOverscan
+    ) {
+      entry.root.style.setProperty("--secondary-banner-parallax-overscan", targetOverscan);
+    }
+  });
+
   scheduleParallaxFrame();
 }
 

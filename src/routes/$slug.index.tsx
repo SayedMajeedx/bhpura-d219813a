@@ -680,7 +680,7 @@ function HeroContentCarousel({
   }
 
   return (
-    <div className="relative isolate w-[88%] max-w-xl overflow-hidden rounded-2xl bg-transparent shadow-lg [clip-path:inset(0_round_1rem)] [transform:translateZ(0)] sm:w-full">
+    <div className="relative isolate w-[88%] max-w-xl overflow-hidden rounded-2xl bg-transparent shadow-lg [clip-path:inset(0_round_1rem)] sm:w-full">
       <div
         dir="ltr"
         className="grid items-stretch overflow-hidden rounded-2xl [clip-path:inset(0_round_1rem)] touch-pan-y"
@@ -723,7 +723,7 @@ function HeroContentCarousel({
               dir={lang === "ar" ? "rtl" : "ltr"}
               aria-hidden={slideIndex !== idx}
               inert={slideIndex !== idx ? true : undefined}
-              className={`col-start-1 row-start-1 aspect-video min-w-0 overflow-hidden rounded-2xl transition-[opacity,transform,filter] duration-[680ms] ease-[cubic-bezier(0.22,1,0.36,1)] [backface-visibility:hidden] [clip-path:inset(0_round_1rem)] will-change-[opacity,transform] sm:duration-[720ms] ${slideIndex === idx ? "z-10 pointer-events-auto translate-y-0 scale-100 opacity-100 blur-0" : "z-0 pointer-events-none translate-y-1 scale-[0.992] opacity-0 blur-[1px]"}`}
+              className={`col-start-1 row-start-1 aspect-video min-w-0 overflow-hidden rounded-2xl transition-[opacity,transform] duration-[500ms] ease-[cubic-bezier(0.22,1,0.36,1)] [backface-visibility:hidden] [clip-path:inset(0_round_1rem)] sm:duration-[600ms] ${slideIndex === idx ? "z-10 pointer-events-auto translate-y-0 scale-100 opacity-100" : "z-0 pointer-events-none translate-y-1 scale-[0.992] opacity-0"}`}
             >
               {slide.type === "image" && mediaUrl ? (
                 <div className="relative h-full w-full overflow-hidden rounded-2xl sm:h-[320px]">
@@ -840,7 +840,7 @@ function HeroContentCarousel({
                 </div>
               ) : (
                 <div
-                  className="flex h-full flex-col justify-center overflow-hidden rounded-2xl bg-card/90 text-card-foreground p-5 pb-12 backdrop-blur-md shadow-xl border border-border/40 sm:h-[320px] sm:p-8 sm:pb-20"
+                  className="flex h-full flex-col justify-center overflow-hidden rounded-2xl bg-card text-card-foreground p-5 pb-12 shadow-xl border border-border/40 sm:h-[320px] sm:p-8 sm:pb-20"
                   style={{ textAlign: settings.hero_title_align }}
                 >
                   {settings.show_hero_title && title && (
