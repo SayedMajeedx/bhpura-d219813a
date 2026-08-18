@@ -623,6 +623,27 @@ input[type="number"] {
   .stagger-8 {
     animation-delay: 320ms;
   }
+
+  /* GPU-Composited Shimmer Loader for OS Tables & Skeletons */
+  @keyframes osShimmer {
+    0% {
+      background-position: -200% 0;
+    }
+    100% {
+      background-position: 200% 0;
+    }
+  }
+
+  .os-shimmer {
+    background: linear-gradient(
+      90deg,
+      var(--muted) 0%,
+      color-mix(in oklch, var(--muted) 65%, var(--background) 35%) 50%,
+      var(--muted) 100%
+    );
+    background-size: 200% 100%;
+    animation: osShimmer 1.8s ease-in-out infinite;
+  }
 }
 
 /* Accessibility & Environmental Fallbacks */
@@ -639,7 +660,8 @@ input[type="number"] {
   .os-interactive:hover,
   .storefront-card-interactive,
   .storefront-card-interactive:hover,
-  .storefront-fade-in-up {
+  .storefront-fade-in-up,
+  .os-shimmer {
     animation: none !important;
     transition: none !important;
     transform: none !important;

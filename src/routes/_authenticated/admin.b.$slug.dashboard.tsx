@@ -76,9 +76,8 @@ function Dashboard() {
         }
       );
     },
-    refetchInterval: 5_000,
-    refetchOnWindowFocus: true,
-    refetchOnReconnect: true,
+    staleTime: 60_000,
+    refetchOnWindowFocus: false,
   });
 
   const currency = businessSettings.data?.currency ?? "BHD";
@@ -94,9 +93,8 @@ function Dashboard() {
       if (error) throw error;
       return data ?? [];
     },
-    refetchInterval: 5_000,
-    refetchOnWindowFocus: true,
-    refetchOnReconnect: true,
+    staleTime: 60_000,
+    refetchOnWindowFocus: false,
   });
 
   // 3. Fetch all variants
@@ -112,9 +110,8 @@ function Dashboard() {
       if (error) throw error;
       return data ?? [];
     },
-    refetchInterval: 5_000,
-    refetchOnWindowFocus: true,
-    refetchOnReconnect: true,
+    staleTime: 60_000,
+    refetchOnWindowFocus: false,
   });
 
   // 4. Fetch all customers
@@ -128,9 +125,8 @@ function Dashboard() {
       if (error) throw error;
       return data ?? [];
     },
-    refetchInterval: 5_000,
-    refetchOnWindowFocus: true,
-    refetchOnReconnect: true,
+    staleTime: 60_000,
+    refetchOnWindowFocus: false,
   });
 
   // 5. Fetch all orders (and order items)
@@ -147,9 +143,8 @@ function Dashboard() {
       if (error) throw error;
       return (data as any[]) ?? [];
     },
-    refetchInterval: 5_000,
-    refetchOnWindowFocus: true,
-    refetchOnReconnect: true,
+    staleTime: 60_000,
+    refetchOnWindowFocus: false,
   });
 
   // 6. Fetch recent 5 orders for operational feed
@@ -167,9 +162,8 @@ function Dashboard() {
       if (error) throw error;
       return (data as any[]) ?? [];
     },
-    refetchInterval: 5_000,
-    refetchOnWindowFocus: true,
-    refetchOnReconnect: true,
+    staleTime: 60_000,
+    refetchOnWindowFocus: false,
   });
 
   // 7. Fetch all manual expenses
@@ -180,9 +174,8 @@ function Dashboard() {
       if (error) throw error;
       return data ?? [];
     },
-    refetchInterval: 5_000,
-    refetchOnWindowFocus: true,
-    refetchOnReconnect: true,
+    staleTime: 60_000,
+    refetchOnWindowFocus: false,
   });
 
   useRealtimeInvalidate(

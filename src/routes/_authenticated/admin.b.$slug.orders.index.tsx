@@ -67,7 +67,7 @@ import { matchesPaymentMethodFilter, type PaymentMethodFilter } from "@/lib/paym
 import { useBrand } from "@/lib/brand-context";
 import { useProfile } from "@/lib/profile-context";
 import { useRealtimeInvalidate } from "@/hooks/use-realtime-invalidate";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useDeferredValue } from "react";
 import { getNavFilterContext, saveNavFilterContext } from "@/lib/os-productivity";
 import {
   AlertDialog,
@@ -676,6 +676,7 @@ function OrdersList() {
     // Realtime can briefly disconnect on a courier's mobile device. A small
     // interval makes order state changes reliably appear in every workspace.
     refetchInterval: isCourier ? 10_000 : 30_000,
+    staleTime: 30_000,
     refetchOnWindowFocus: true,
     queryFn: async () => {
       let query: any = supabase
@@ -700,7 +701,8 @@ function OrdersList() {
   };
 
   const orders = useMemo(() => ordersQ.data ?? [], [ordersQ.data]);
-  const normalizedSearch = search.trim().toLowerCase();
+  const deferredSearch = useDeferredValue(search);
+  const normalizedSearch = deferredSearch.trim().toLowerCase();
 
   // Premium Quick Tabs counts in real time
   const tabCounts = useMemo(() => {

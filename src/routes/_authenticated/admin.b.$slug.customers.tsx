@@ -1,6 +1,6 @@
 import { createFileRoute, Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useDeferredValue } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { importCustomerDatabase } from "@/lib/customer-importer";
 import { Button } from "@/components/ui/button";
@@ -875,6 +875,8 @@ function CustomersPage() {
 
   const { data } = useQuery({
     queryKey: ["customers", brandId],
+    staleTime: 30_000,
+    refetchOnWindowFocus: false,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("customers")
@@ -888,6 +890,8 @@ function CustomersPage() {
 
   const addressesQ = useQuery({
     queryKey: ["customer_addresses", brandId],
+    staleTime: 30_000,
+    refetchOnWindowFocus: false,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("customer_addresses")
@@ -904,6 +908,8 @@ function CustomersPage() {
 
   const businessName = useQuery({
     queryKey: ["business-name", brandId],
+    staleTime: 30_000,
+    refetchOnWindowFocus: false,
     queryFn: async () => {
       const { data } = await supabase
         .from("business_settings")
@@ -917,6 +923,8 @@ function CustomersPage() {
 
   const ordersQ = useQuery({
     queryKey: ["customer-orders", brandId],
+    staleTime: 30_000,
+    refetchOnWindowFocus: false,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("orders")
@@ -955,7 +963,8 @@ function CustomersPage() {
     return counts;
   }, [data, customerCrmStats]);
 
-  const normalizedSearch = search.trim().toLowerCase();
+  const deferredSearch = useDeferredValue(search);
+  const normalizedSearch = deferredSearch.trim().toLowerCase();
   const filteredCustomers = (data ?? []).filter((customer) => {
     const defaultAddress = defaultByCustomer.get(customer.id);
     const customerRegion = defaultAddress?.region || customer.region || customer.city || "";

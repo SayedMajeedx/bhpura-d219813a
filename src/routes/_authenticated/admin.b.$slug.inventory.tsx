@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useRef, useState, useMemo, useCallback } from "react";
+import { useEffect, useRef, useState, useMemo, useCallback, useDeferredValue } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { importProductCatalog } from "@/lib/universal-importer";
 import {
@@ -236,6 +236,8 @@ function Inventory() {
 
   const products = useQuery({
     queryKey: ["products", brandId],
+    staleTime: 30_000,
+    refetchOnWindowFocus: false,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("products")
@@ -253,6 +255,8 @@ function Inventory() {
 
   const variants = useQuery({
     queryKey: ["variants", brandId],
+    staleTime: 30_000,
+    refetchOnWindowFocus: false,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("product_variants")
@@ -266,6 +270,8 @@ function Inventory() {
 
   const customizations = useQuery({
     queryKey: ["customizations", brandId],
+    staleTime: 30_000,
+    refetchOnWindowFocus: false,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("customization_options")
@@ -279,6 +285,8 @@ function Inventory() {
 
   const businessName = useQuery({
     queryKey: ["business-name", brandId],
+    staleTime: 30_000,
+    refetchOnWindowFocus: false,
     queryFn: async () => {
       const { data } = await supabase
         .from("business_settings")
@@ -291,6 +299,8 @@ function Inventory() {
 
   const salesHistory = useQuery({
     queryKey: ["inventory-sales-past45", brandId],
+    staleTime: 30_000,
+    refetchOnWindowFocus: false,
     queryFn: async () => {
       const past45Days = new Date();
       past45Days.setDate(past45Days.getDate() - 45);
@@ -1539,7 +1549,8 @@ function ProductsSection({
         ),
     [variants],
   );
-  const normalizedSearch = search.trim().toLowerCase();
+  const deferredSearch = useDeferredValue(search);
+  const normalizedSearch = deferredSearch.trim().toLowerCase();
   const filteredProducts = products.filter((product) => {
     const productVariants = variants.filter((variant) => variant.product_id === product.id);
     const searchable = [

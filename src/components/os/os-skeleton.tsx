@@ -5,7 +5,11 @@ export interface OsSkeletonProps extends React.HTMLAttributes<HTMLDivElement> {
   variant?: "text" | "card" | "avatar" | "button" | "panel";
 }
 
-export function OsSkeleton({ variant = "text", className, ...props }: OsSkeletonProps) {
+export const OsSkeleton = React.memo(function OsSkeleton({
+  variant = "text",
+  className,
+  ...props
+}: OsSkeletonProps) {
   const variantClasses = {
     text: "h-4 w-full rounded-md",
     card: "h-32 w-full rounded-2xl",
@@ -17,11 +21,11 @@ export function OsSkeleton({ variant = "text", className, ...props }: OsSkeleton
   return (
     <div
       className={cn(
-        "animate-pulse bg-muted/60 dark:bg-muted/40 os-hairline",
+        "os-shimmer bg-muted/60 dark:bg-muted/40 os-hairline",
         variantClasses[variant],
         className,
       )}
       {...props}
     />
   );
-}
+});

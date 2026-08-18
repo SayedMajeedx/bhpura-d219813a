@@ -1,3 +1,4 @@
+import React from "react";
 import { ExternalLink, ReceiptText, Calendar, User, CreditCard } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { Card } from "@/components/ui/card";
@@ -28,7 +29,7 @@ interface DashboardActivityQueueProps {
   locale: string;
 }
 
-export function DashboardActivityQueue({
+export const DashboardActivityQueue = React.memo(function DashboardActivityQueue({
   lang,
   slug,
   orders,
@@ -171,4 +172,4 @@ export function DashboardActivityQueue({
       </div>
     </div>
   );
-}
+});
