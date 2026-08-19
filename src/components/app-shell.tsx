@@ -422,7 +422,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div
-      className="admin-typography h-screen flex flex-col os-canvas overflow-hidden select-none"
+      className="admin-typography h-screen h-[100dvh] max-h-[100dvh] flex flex-col os-canvas overflow-hidden select-none"
       style={adminTypographyVars as React.CSSProperties}
     >
       {adminFontFaces && <style>{adminFontFaces}</style>}

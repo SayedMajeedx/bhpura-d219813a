@@ -537,6 +537,10 @@ input[type="number"] {
   }
 
   /* Sleek, quiet, and unobtrusive Boutq OS scrollbar */
+  .os-scrollbar {
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-y: contain;
+  }
   .os-scrollbar::-webkit-scrollbar {
     width: 5px;
     height: 5px;
