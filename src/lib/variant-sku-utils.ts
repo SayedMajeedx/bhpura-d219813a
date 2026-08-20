@@ -219,18 +219,37 @@ export const SIZING_PRESETS = [
 ];
 
 /**
- * Normalizes and splits a string list of variant values (comma, newline, or slash separated)
+ * Normalizes and splits a string list of variant values (comma, newline, slash, or space separated if numeric/letters)
  */
 export function splitVariantValues(value: string): string[] {
   if (!value) return [];
-  return [
-    ...new Set(
-      value
-        .split(/[\n,，/\\|،]+/)
-        .map((item) => item.trim())
-        .filter((item) => item.length > 0),
-    ),
-  ];
+  const text = value.trim();
+
+  // If text contains standard delimiters (, ; / \ | \n ،)
+  if (/[\n,，/\\|،;]+/.test(text)) {
+    return [
+      ...new Set(
+        text
+          .split(/[\n,，/\\|،;]+/)
+          .map((item) => item.trim())
+          .filter((item) => item.length > 0),
+      ),
+    ];
+  }
+
+  // If text is a space-separated series of numbers or letter sizes (e.g. "50 52 54 56" or "S M L XL")
+  const spaceItems = text.split(/\s+/).filter(Boolean);
+  const isAllNumbers =
+    spaceItems.length > 1 && spaceItems.every((item) => /^\d{1,3}(?:\.\d+)?$/.test(item));
+  const isAllLetters =
+    spaceItems.length > 1 &&
+    spaceItems.every((item) => /^(?:XXS|XS|S|M|L|XL|XXL|2XL|3XL|4XL|5XL|OS)$/i.test(item));
+
+  if (isAllNumbers || isAllLetters) {
+    return [...new Set(spaceItems)];
+  }
+
+  return [text];
 }
 
 /**
@@ -304,12 +323,13 @@ export function makeEan13(used: Set<string>): string {
 }
 
 /**
- * Expands a numeric or alphanumeric size range.
+ * Expands a numeric or alphanumeric size range or extracts discrete space/comma-separated numbers.
  * Examples:
  * - "50 إلى 60 زوجي" or "50-60 even" -> ["50", "52", "54", "56", "58", "60"]
  * - "S to XL" -> ["S", "M", "L", "XL"]
  * - "1 to 5" -> ["1", "2", "3", "4", "5"]
  * - "36-41" -> ["36", "37", "38", "39", "40", "41"]
+ * - "58 56 55 58" -> ["50", "55", "56", "58"] (or ["58", "56", "55"])
  */
 export function expandSizeRange(raw: string): string[] {
   const text = raw.trim();

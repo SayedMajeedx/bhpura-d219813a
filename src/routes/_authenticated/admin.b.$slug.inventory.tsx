@@ -3493,6 +3493,7 @@ function BulkVariantDialog({
     selling_price: Number(product?.base_price ?? 0),
     stock_main: 0,
     stock_incubator: 0,
+    size_stock_map: {},
   };
   const [open, setOpen] = useState(false);
   const [prompt, setPrompt] = useState("");
@@ -3545,11 +3546,31 @@ function BulkVariantDialog({
         },
       });
       applyPlan(result);
-      toast.success(
-        isAr
-          ? `تم استخراج ${result.sizes.length || 0} مقاس و ${result.colors.length || 0} لون بنجاح`
-          : `Extracted ${result.sizes.length || 0} sizes and ${result.colors.length || 0} colors`,
-      );
+      const sizeCount = result.sizes.length || 0;
+      const colorCount = result.colors.length || 0;
+      let toastMsg = "";
+      if (isAr) {
+        if (sizeCount > 0 && colorCount > 0) {
+          toastMsg = `تم استخراج ${sizeCount} مقاس و ${colorCount} لون بنجاح`;
+        } else if (sizeCount > 0) {
+          toastMsg = `تم استخراج ${sizeCount} مقاس بنجاح`;
+        } else if (colorCount > 0) {
+          toastMsg = `تم استخراج ${colorCount} ألوان بنجاح`;
+        } else {
+          toastMsg = "تم تحليل البيانات بنجاح";
+        }
+      } else {
+        if (sizeCount > 0 && colorCount > 0) {
+          toastMsg = `Extracted ${sizeCount} sizes and ${colorCount} colors`;
+        } else if (sizeCount > 0) {
+          toastMsg = `Extracted ${sizeCount} sizes`;
+        } else if (colorCount > 0) {
+          toastMsg = `Extracted ${colorCount} colors`;
+        } else {
+          toastMsg = "Data extracted successfully";
+        }
+      }
+      toast.success(toastMsg);
     } catch (error) {
       const message = error instanceof Error ? error.message : "";
       toast.error(
@@ -3607,8 +3628,14 @@ function BulkVariantDialog({
         const baseSkuFormatted = plan.base_sku.trim().toUpperCase();
         const sku = `${baseSkuFormatted}${tokens ? `-${tokens}` : ""}`;
 
+        const sizeSpecificStock =
+          size && plan.size_stock_map && plan.size_stock_map[size] !== undefined
+            ? plan.size_stock_map[size]
+            : plan.stock_main;
+
         return {
           ...plan,
+          stock_main: sizeSpecificStock,
           cost_price: Number(product?.cost_price ?? 0),
           selling_price: salePrice ?? basePrice,
           sale_price: salePrice === null ? "" : String(salePrice),

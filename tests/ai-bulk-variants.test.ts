@@ -158,6 +158,16 @@ describe("Offline Heuristic & NLP Prompt Parser", () => {
     expect(result.selling_price).toBe(45);
     expect(result.cost_price).toBe(18);
   });
+
+  it("accurately parses discrete Arabic sizes and per-size stock overrides (user prompt)", () => {
+    const prompt = "كود s79 قياسات 58 56 55 58 قطعة وحدة لكل قياس و 4 قطع لسايز 50";
+    const result = extractVariantsHeuristically(prompt, "ar");
+
+    expect(result.base_sku).toBe("S79");
+    expect(result.sizes).toEqual(["50", "55", "56", "58"]);
+    expect(result.stock_main).toBe(1);
+    expect(result.size_stock_map).toEqual({ "50": 4 });
+  });
 });
 
 describe("Sizing Quick Presets", () => {

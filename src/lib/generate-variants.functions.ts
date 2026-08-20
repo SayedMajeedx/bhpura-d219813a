@@ -22,6 +22,7 @@ const ParsedVariantPlan = z.object({
   selling_price: z.number().min(0).max(1_000_000).default(0),
   stock_main: z.number().int().min(0).max(1_000_000).default(0),
   stock_incubator: z.number().int().min(0).max(1_000_000).default(0),
+  size_stock_map: z.record(z.string(), z.number().int().min(0)).optional().default({}),
 });
 
 const RESPONSE_SCHEMA = {
@@ -37,6 +38,10 @@ const RESPONSE_SCHEMA = {
     selling_price: { type: "number", minimum: 0 },
     stock_main: { type: "integer", minimum: 0 },
     stock_incubator: { type: "integer", minimum: 0 },
+    size_stock_map: {
+      type: "object",
+      additionalProperties: { type: "integer", minimum: 0 },
+    },
   },
   required: [
     "base_sku",
@@ -72,7 +77,6 @@ export function extractVariantsHeuristically(
   },
 ): VariantGenerationPlan {
   const cleanPrompt = prompt.trim();
-  const lowerPrompt = cleanPrompt.toLowerCase();
 
   // 1. SKU Extraction
   let baseSku = context?.base_sku?.trim() || "";
@@ -112,19 +116,38 @@ export function extractVariantsHeuristically(
     }
   }
 
-  // If no abaya sizes detected yet, check for explicit size clause
-  if (sizes.length === 0) {
-    const sizeClause = cleanPrompt.match(
-      /(?:المقاسات|مقاسات|مقاس|sizes?|size)[\s:]*([^\n\r,;.،]+(?:[،,][^\n\r,;.،]+)*)/i,
-    );
-    if (sizeClause) {
-      sizes = expandSizeRange(sizeClause[1]);
-    } else {
-      // General range expansion
-      const generalRange = expandSizeRange(cleanPrompt);
-      if (generalRange.length > 1) {
-        sizes = generalRange;
+  // Extract sizes from size keywords (e.g. قياسات 58 56 55 58, مقاسات 52، 54, المقاسات من 1 إلى 4, sizes S M L XL)
+  const sizeKeywordMatches = Array.from(
+    cleanPrompt.matchAll(
+      /(?:المقاسات|مقاسات|مقاس|القياسات|قياسات|قياس|السايزات|سايزات|سايز|الأحجام|الاحجام|أحجام|احجام|حجم|sizes?|size)[\s:]*([^\n\r,;.،!]+?)(?=(?:قطعة|حبة|حبات|قطع|اللون|الألوان|الالوان|لون|ألوان|سعر|تكلفة|كود|مخزون|خامة|stock|price|color|fabric|و\s*\d+\s*(?:قطع|حبة|قطعة)|[،,;.!]|$))/gi,
+    ),
+  );
+
+  for (const match of sizeKeywordMatches) {
+    const rawChunk = match[1].trim();
+    if (!rawChunk) continue;
+    const tokens = expandSizeRange(rawChunk);
+    tokens.forEach((t) => {
+      const cleanT = t.trim().toUpperCase();
+      if (
+        /^\d{1,3}$/.test(cleanT) ||
+        /^(?:XXS|XS|S|M|L|XL|XXL|2XL|3XL|4XL|5XL|OS)$/i.test(cleanT)
+      ) {
+        if (!sizes.includes(cleanT)) sizes.push(cleanT);
       }
+    });
+  }
+
+  // Also extract single size mentions across the prompt (e.g. "لسايز 50", "لمقاس 52", "سايز 54", "size 56")
+  const singleSizeMatches = Array.from(
+    cleanPrompt.matchAll(
+      /(?:لسايز|لمقاس|لقياس|لـ\s*سايز|لـ\s*مقاس|سايز|مقاس)\s*(\d{1,3}|[A-Za-z]{1,4})\b/gi,
+    ),
+  );
+  for (const m of singleSizeMatches) {
+    const val = m[1].toUpperCase();
+    if (/^\d{1,3}$/.test(val) || /^(?:XXS|XS|S|M|L|XL|XXL|2XL|3XL|4XL|5XL)$/i.test(val)) {
+      if (!sizes.includes(val)) sizes.push(val);
     }
   }
 
@@ -134,6 +157,12 @@ export function extractVariantsHeuristically(
     /(?:free\s*size|one\s*size|مقاس\s*موحد|فري\s*سايز)/i.test(cleanPrompt)
   ) {
     sizes = [language === "ar" ? "مقاس موحد" : "Free Size"];
+  }
+
+  // Sort numeric sizes if all sizes are numbers (e.g. ["50", "55", "56", "58"])
+  const areAllNumeric = sizes.length > 0 && sizes.every((s) => /^\d+$/.test(s));
+  if (areAllNumeric) {
+    sizes.sort((a, b) => parseInt(a, 10) - parseInt(b, 10));
   }
 
   // 3. Colors Extraction
@@ -156,7 +185,6 @@ export function extractVariantsHeuristically(
       : `(?:^|[\\s,،_\\-/:])(?:and\\s+)?(${escaped})(?=[\\s,،_\\-/:.]|$)`;
     const regex = new RegExp(pattern, "i");
     if (regex.test(searchCorpus)) {
-      // Keep capitalized representation
       const displayColor =
         language === "ar" ? color : color.charAt(0).toUpperCase() + color.slice(1);
       if (!detectedColors.includes(displayColor)) {
@@ -202,7 +230,6 @@ export function extractVariantsHeuristically(
   let sellingPrice = Number(context?.base_price ?? 0);
   let costPrice = Number(context?.cost_price ?? 0);
 
-  // Look for selling price: "السعر 25", "priced at 15", "سعر 20 د.ب", "25 BHD"
   const priceMatch =
     cleanPrompt.match(/(?:السعر|سعر\s*البيع|سعر|price|priced\s*at)[\s:]*([0-9]+(?:\.[0-9]+)?)/i) ||
     cleanPrompt.match(/([0-9]+(?:\.[0-9]+)?)\s*(?:د\.ب|بحريني|bd|bhd|sar|ر\.س|kwd|aed)/i);
@@ -211,7 +238,6 @@ export function extractVariantsHeuristically(
     if (!isNaN(val) && val > 0) sellingPrice = val;
   }
 
-  // Look for sale/discount price if entered
   const saleMatch = cleanPrompt.match(
     /(?:تخفيض|خصم|سعر\s*التخفيض|sale\s*price|discount|sale)[\s:]*([0-9]+(?:\.[0-9]+)?)/i,
   );
@@ -222,7 +248,6 @@ export function extractVariantsHeuristically(
     }
   }
 
-  // Look for cost price
   const costMatch = cleanPrompt.match(
     /(?:التكلفة|تكلفة|سعر\s*التكلفة|cost|cost\s*price)[\s:]*([0-9]+(?:\.[0-9]+)?)/i,
   );
@@ -231,20 +256,55 @@ export function extractVariantsHeuristically(
     if (!isNaN(val) && val >= 0) costPrice = val;
   }
 
-  // 6. Stock Extraction
+  // 6. Stock Extraction & Per-Size Breakdown
   let stockMain = 0;
   let stockIncubator = 0;
+  const sizeStockMap: Record<string, number> = {};
 
-  const stockAllMatch =
+  // Check specific per-size stock overrides (e.g. "4 قطع لسايز 50", "4 حبات لمقاس 50", "2 for size 52", "10 pcs for size L")
+  const specificSizeStockMatches = Array.from(
+    cleanPrompt.matchAll(
+      /(?:^|[\s,،_/\-:])(\d+)\s*(?:حبات|حبة|قطع|قطعة|pcs|pieces)?\s*(?:لسايز|لمقاس|لقياس|لـ\s*سايز|لـ\s*مقاس|for\s*size|for)\s*(\d{1,3}|[A-Za-z]{1,4})\b/gi,
+    ),
+  );
+  for (const m of specificSizeStockMatches) {
+    const qty = parseInt(m[1], 10);
+    const sz = m[2].toUpperCase();
+    if (!isNaN(qty) && qty >= 0) {
+      sizeStockMap[sz] = qty;
+      if (!sizes.includes(sz)) sizes.push(sz);
+    }
+  }
+
+  // Reverse pattern (e.g. "سايز 50 عدد 4" or "مقاس 50 4 قطع")
+  const reverseSizeStockMatches = Array.from(
+    cleanPrompt.matchAll(
+      /(?:^|[\s,،_/\-:])(?:سايز|مقاس|size)\s*(\d{1,3}|[A-Za-z]{1,4})\s*(?:عدد|كمية|stock|qty|:)?\s*(\d+)\s*(?:حبات|حبة|قطع|قطعة|pcs|pieces)/gi,
+    ),
+  );
+  for (const m of reverseSizeStockMatches) {
+    const sz = m[1].toUpperCase();
+    const qty = parseInt(m[2], 10);
+    if (!isNaN(qty) && qty >= 0) {
+      sizeStockMap[sz] = qty;
+      if (!sizes.includes(sz)) sizes.push(sz);
+    }
+  }
+
+  // Universal / default stock per size (e.g. "قطعة وحدة لكل قياس", "قطعة واحدة لكل مقاس", "1 pc each", "1 لكل", "5 حبات من كل مقاس")
+  const universalStockMatch =
     cleanPrompt.match(
-      /(?:المخزون|مخزون|الكمية|كمية|stock|quantity|qty)[\s:]*([0-9]+)(?:\s*(?:حبات|حبة|قطع|قطعة|pcs|pieces))?\s*(?:لكل|من\s*كل|per)/i,
-    ) || cleanPrompt.match(/([0-9]+)\s*(?:من\s*كل|لكل\s*مقاس|لكل\s*لون|per\s*variant|each)/i);
+      /(?:قطعة\s*(?:وحدة|واحدة)|حبة\s*(?:وحدة|واحدة)|(\d+)\s*(?:حبات|حبة|قطع|قطعة|pcs|pieces)?)\s*(?:لكل\s*(?:قياس|مقاس|سايز|لون|قطعة)|من\s*كل\s*(?:قياس|مقاس|سايز|لون)|each|per\s*(?:size|variant|piece))/i,
+    ) || cleanPrompt.match(/(\d+)\s*(?:من\s*كل|لكل\s*مقاس|لكل\s*لون|per\s*variant|each)/i);
 
-  if (stockAllMatch) {
-    const val = parseInt(stockAllMatch[1], 10);
-    if (!isNaN(val) && val >= 0) stockMain = val;
+  if (universalStockMatch) {
+    if (/قطعة\s*(?:وحدة|واحدة)|حبة\s*(?:وحدة|واحدة)/i.test(universalStockMatch[0])) {
+      stockMain = 1;
+    } else if (universalStockMatch[1]) {
+      const val = parseInt(universalStockMatch[1], 10);
+      if (!isNaN(val) && val >= 0) stockMain = val;
+    }
   } else {
-    // Check main vs incubator specific stock
     const mainMatch = cleanPrompt.match(/(?:رئيسي|الرئيسي|main)[\s:]*([0-9]+)/i);
     if (mainMatch) stockMain = parseInt(mainMatch[1], 10) || 0;
 
@@ -267,6 +327,7 @@ export function extractVariantsHeuristically(
     selling_price: sellingPrice,
     stock_main: stockMain,
     stock_incubator: stockIncubator,
+    size_stock_map: sizeStockMap,
   };
 }
 
@@ -317,19 +378,21 @@ export const parseVariantPrompt = createServerFn({ method: "POST" })
     const systemPrompt = [
       "You are a world-class e-commerce and fashion inventory variant generator specialized in GCC (Gulf) boutiques, luxury fashion, abayas, kaftans, fragrances, and apparel.",
       "Extract structured variant plans with 100% precision from merchant descriptions in Arabic or English.",
-      "CRITICAL SIZING EXPANSIONS:",
+      "CRITICAL SIZING & QUANTITY RULES:",
+      "- If discrete sizes are listed (e.g. 'قياسات 58 56 55 58', 'مقاسات 50 52 54', 'sizes S M L'), extract all unique size tokens: ['50', '52', '54'] or ['55', '56', '58'].",
       "- If Abaya sizes are described as a range (e.g. '50 to 60', 'من 50 إلى 60 زوجي', '52-60'), expand into inclusive even numbers: ['50', '52', '54', '56', '58', '60']. Default size_unit for abayas is 'inch'.",
       "- If apparel letter sizes are described as ranges (e.g. 'XS to 2XL', 'S إلى XL'), expand into standard apparel letter sequences: ['XS', 'S', 'M', 'L', 'XL', '2XL'].",
       "- If numbered sizes (e.g. '1 to 5', 'من 1 إلى 4'), expand into inclusive list ['1', '2', '3', '4', '5'].",
       "- If shoe sizes (e.g. '36 to 41', '36-41'), expand into ['36', '37', '38', '39', '40', '41'].",
       "- If 'Free size' or 'مقاس موحد', return ['Free Size'] or ['مقاس موحد'].",
+      "- Extract default stock: 'قطعة وحدة لكل قياس' / '1 pc each' -> stock_main = 1.",
+      "- If specific sizes have custom quantities (e.g. 'و 4 قطع لسايز 50', '2 pcs for size L'), add to size_stock_map: {'50': 4} or {'L': 2} and ensure that size is in sizes list.",
       "COLORS & FABRICS:",
       "- Extract Arabic colors in Arabic (كحلي, عنابي, زيتي, بيج, سكري, أسود, رمادي, خردلي, موف, تيفاني, etc.) and English in English (Navy, Burgundy, Olive, Beige, Off-White, Black, Grey, Mustard, Mauve, Tiffany).",
       "- Extract luxury fabrics (كريب ملكي, حرير مغسول, كتان طبيعي, شيفون, قطن, مخمل, ساتان, صوف, Silk, Linen, Crepe, Cotton, Velvet).",
       "PRICES & CODES:",
-      "- Extract base_sku (alphanumeric code or SKU prefix like NP24, AB-10, DRS-01).",
+      "- Extract base_sku (alphanumeric code or SKU prefix like NP24, AB-10, S79, DRS-01).",
       "- Extract selling_price and cost_price numbers accurately ignoring currency strings (BHD, SAR, KWD, AED, د.ب, ر.س).",
-      "- Extract stock_main and stock_incubator. If stated 'X for each', allocate X to stock_main.",
       "Return ONLY valid JSON matching the schema.",
     ].join("\n");
 
@@ -420,6 +483,7 @@ export const parseVariantPrompt = createServerFn({ method: "POST" })
         selling_price:
           parsed.selling_price > 0 ? parsed.selling_price : Number(data.base_price ?? 0),
         cost_price: parsed.cost_price > 0 ? parsed.cost_price : Number(data.cost_price ?? 0),
+        size_stock_map: parsed.size_stock_map || {},
       };
     } catch (err: any) {
       console.warn(
