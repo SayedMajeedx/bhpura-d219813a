@@ -144,7 +144,7 @@ export const InventoryWorkQueue: React.FC<InventoryWorkQueueProps> = ({
                 const pVariants = variantsByProduct[product.id] || [];
                 const totalStock = pVariants.reduce(
                   (acc: number, v: any) =>
-                    acc + Number(v.stock || v.stock_main || 0) + Number(v.stock_incubator || 0),
+                    acc + Number(v.stock_main ?? 0) + Number(v.stock_incubator ?? 0),
                   0,
                 );
                 const minPrice =

@@ -3743,6 +3743,7 @@ function BulkVariantDialog({
               : null,
           stock_main: row.stock_main,
           stock_incubator: row.stock_incubator,
+          stock: Number(row.stock_main || 0) + Number(row.stock_incubator || 0),
         })),
       );
       if (error) throw error;
@@ -5240,6 +5241,7 @@ function VariantList({
           : null,
       stock_main: Number(row.stock_main),
       stock_incubator: Number(row.stock_incubator),
+      stock: Number(row.stock_main || 0) + Number(row.stock_incubator || 0),
       image_url: row.image_url || null,
     });
     if (error) return toast.error(error.message);
@@ -5279,10 +5281,21 @@ function VariantList({
       );
       return;
     }
-    const normalizedPatch = { ...patch };
+    const normalizedPatch: any = { ...patch };
     if (typeof patch.selling_price === "number") {
       const regularPrice = Number(product?.base_price ?? 0);
       normalizedPatch.original_price = patch.selling_price < regularPrice ? regularPrice : null;
+    }
+    if (patch.stock_main !== undefined || patch.stock_incubator !== undefined) {
+      const mainStock =
+        patch.stock_main !== undefined ? Number(patch.stock_main) : Number(v.stock_main ?? 0);
+      const incStock =
+        patch.stock_incubator !== undefined
+          ? Number(patch.stock_incubator)
+          : Number(v.stock_incubator ?? 0);
+      normalizedPatch.stock_main = mainStock;
+      normalizedPatch.stock_incubator = incStock;
+      normalizedPatch.stock = mainStock + incStock;
     }
     const { error } = await (supabase.from("product_variants") as any)
       .update(normalizedPatch)
@@ -5366,12 +5379,16 @@ function VariantList({
 
   const bulkAddStock = async (amount: number) => {
     const selectedVariants = variants.filter((v) => selectedIds.has(v.id));
-    const promises = selectedVariants.map((v) =>
-      supabase
-        .from("product_variants")
-        .update({ stock_main: Math.max(0, (v.stock_main ?? 0) + amount) })
-        .eq("id", v.id),
-    );
+    const promises = selectedVariants.map((v) => {
+      const newMain = Math.max(0, (v.stock_main ?? 0) + amount);
+      const inc = v.stock_incubator ?? 0;
+      return (supabase.from("product_variants") as any)
+        .update({
+          stock_main: newMain,
+          stock: newMain + inc,
+        })
+        .eq("id", v.id);
+    });
     const results = await Promise.all(promises);
     const hasError = results.some((r) => r.error);
     if (hasError) toast.error(isAr ? "فشل تحديث المخزون" : "Failed to update some stock entries");
