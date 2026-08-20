@@ -14,9 +14,20 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Package, Plus, Pencil, Trash2, Box, AlertTriangle, Search } from "lucide-react";
+import {
+  Package,
+  Plus,
+  Pencil,
+  Trash2,
+  Box,
+  AlertTriangle,
+  Search,
+  RefreshCw,
+  Sparkles,
+} from "lucide-react";
 import { formatMoney } from "@/lib/format";
 import { toast } from "sonner";
+import { syncPackagingExpensesToInventory } from "@/lib/packaging-sync";
 
 export function PackagingMaterialsTab() {
   const { lang } = useI18n();
@@ -28,6 +39,7 @@ export function PackagingMaterialsTab() {
   const [search, setSearch] = useState("");
   const [modalOpen, setOpenModal] = useState(false);
   const [editingItem, setEditingItem] = useState<any | null>(null);
+  const [isSyncing, setIsSyncing] = useState(false);
 
   const [name, setName] = useState("");
   const [nameAr, setNameAr] = useState("");
@@ -40,13 +52,25 @@ export function PackagingMaterialsTab() {
   const materialsQ = useQuery({
     queryKey: ["packaging-materials", brandId],
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
+      const { data: initial, error } = await (supabase as any)
         .from("packaging_materials")
         .select("*")
         .eq("brand_id", brandId)
         .order("created_at", { ascending: false });
       if (error) throw error;
-      return (data ?? []) as any[];
+
+      let list = (initial ?? []) as any[];
+      // If no packaging materials are registered, auto-sync from packaging expenses seamlessly
+      if (list.length === 0) {
+        await syncPackagingExpensesToInventory(supabase, brandId);
+        const { data: refreshed } = await (supabase as any)
+          .from("packaging_materials")
+          .select("*")
+          .eq("brand_id", brandId)
+          .order("created_at", { ascending: false });
+        list = (refreshed ?? []) as any[];
+      }
+      return list;
     },
   });
 
@@ -58,6 +82,31 @@ export function PackagingMaterialsTab() {
       (m.sku && m.sku.toLowerCase().includes(q))
     );
   });
+
+  const handleSyncFromExpenses = async () => {
+    setIsSyncing(true);
+    try {
+      const res = await syncPackagingExpensesToInventory(supabase, brandId);
+      qc.invalidateQueries({ queryKey: ["packaging-materials", brandId] });
+      if (res.syncedCount > 0) {
+        toast.success(
+          isAr
+            ? `تمت مزامنة وتحديث ${res.syncedCount} من مواد التغليف من شاشة المصاريف بنجاح`
+            : `Synced and updated ${res.syncedCount} packaging materials from expenses`,
+        );
+      } else {
+        toast.info(
+          isAr
+            ? "جميع مواد التغليف المسجلة في المصاريف متطابقة ومحدثة بالمخزون"
+            : "All packaging materials are up to date with expenses",
+        );
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Sync failed");
+    } finally {
+      setIsSyncing(false);
+    }
+  };
 
   const handleOpenAdd = () => {
     setEditingItem(null);
@@ -162,10 +211,34 @@ export function PackagingMaterialsTab() {
           </p>
         </div>
 
-        <Button onClick={handleOpenAdd} className="gap-1.5 h-9 text-xs font-bold">
-          <Plus className="h-4 w-4" />
-          {isAr ? "إضافة مادة تغليف جديدة" : "Add Packaging Material"}
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            onClick={handleSyncFromExpenses}
+            variant="outline"
+            disabled={isSyncing}
+            className="gap-1.5 h-9 text-xs font-semibold"
+          >
+            <RefreshCw className={`h-3.5 w-3.5 ${isSyncing ? "animate-spin" : ""}`} />
+            {isAr ? "مزامنة من المصاريف" : "Sync from Expenses"}
+          </Button>
+
+          <Button onClick={handleOpenAdd} className="gap-1.5 h-9 text-xs font-bold">
+            <Plus className="h-4 w-4" />
+            {isAr ? "إضافة مادة تغليف جديدة" : "Add Packaging Material"}
+          </Button>
+        </div>
+      </div>
+
+      {/* Auto-Sync Banner */}
+      <div className="rounded-lg border border-primary/20 bg-primary/5 px-3.5 py-2.5 flex items-center justify-between gap-3 text-xs">
+        <div className="flex items-center gap-2 text-primary font-medium">
+          <Sparkles className="h-4 w-4 shrink-0" />
+          <span>
+            {isAr
+              ? "الربط التلقائي مفعل: فواتير مواد التغليف المسجلة في شاشة المصاريف تنتقل وتُحدث هنا تلقائياً."
+              : "Auto-Sync Active: Packaging expenses entered under Expenses are automatically tracked and updated here."}
+          </span>
+        </div>
       </div>
 
       {/* Search & Stats */}

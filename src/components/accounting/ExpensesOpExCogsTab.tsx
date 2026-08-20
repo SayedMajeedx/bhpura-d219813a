@@ -31,6 +31,7 @@ import {
 } from "lucide-react";
 import { formatMoney, formatDate } from "@/lib/format";
 import { toast } from "sonner";
+import { syncSingleExpenseToPackagingMaterial } from "@/lib/packaging-sync";
 
 export function ExpensesOpExCogsTab() {
   const { lang } = useI18n();
@@ -232,9 +233,13 @@ export function ExpensesOpExCogsTab() {
         toast.success(isAr ? "تم إضافة المصروف بنجاح" : "Expense added");
       }
 
+      // Seamlessly mirror packaging / COGS material to packaging_materials inventory
+      void syncSingleExpenseToPackagingMaterial(supabase, brandId, payload).catch(() => undefined);
+
       qc.invalidateQueries({ queryKey: ["dashboard-expenses-full", brandId] });
       qc.invalidateQueries({ queryKey: ["dashboard-expenses", brandId] });
       qc.invalidateQueries({ queryKey: ["expenses", brandId] });
+      qc.invalidateQueries({ queryKey: ["packaging-materials", brandId] });
       setModalOpen(false);
     } catch (err: any) {
       console.error("Expense save error:", err);
