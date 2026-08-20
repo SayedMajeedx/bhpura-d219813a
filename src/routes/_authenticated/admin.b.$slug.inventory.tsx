@@ -88,6 +88,12 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { parseVariantPrompt, type VariantGenerationPlan } from "@/lib/generate-variants.functions";
+import {
+  formatSkuToken,
+  makeEan13,
+  splitVariantValues,
+  SIZING_PRESETS,
+} from "@/lib/variant-sku-utils";
 import { OptimizedVideo, ResponsiveImage } from "@/components/responsive-media";
 import { InventoryCommandHeader } from "@/components/inventory/InventoryCommandHeader";
 import {
@@ -3460,37 +3466,6 @@ type BulkVariantRow = {
   stock_incubator: number;
 };
 
-const splitVariantValues = (value: string) => [
-  ...new Set(
-    value
-      .split(/[\n,，]+/)
-      .map((item) => item.trim())
-      .filter(Boolean),
-  ),
-];
-const skuPart = (value: string) =>
-  value
-    .normalize("NFKD")
-    .replace(/[^\p{L}\p{N}]+/gu, "-")
-    .replace(/^-|-$/g, "")
-    .toUpperCase();
-const makeEan13 = (used: Set<string>) => {
-  for (let attempt = 0; attempt < 20; attempt += 1) {
-    const bytes = new Uint32Array(2);
-    crypto.getRandomValues(bytes);
-    const body = `29${String(bytes[0]).padStart(10, "0").slice(-10)}`;
-    const sum = body
-      .split("")
-      .reduce((total, digit, index) => total + Number(digit) * (index % 2 === 0 ? 1 : 3), 0);
-    const code = `${body}${(10 - (sum % 10)) % 10}`;
-    if (!used.has(code)) {
-      used.add(code);
-      return code;
-    }
-  }
-  throw new Error("BARCODE_GENERATION_FAILED");
-};
-
 function BulkVariantDialog({
   productId,
   product,
@@ -3507,8 +3482,9 @@ function BulkVariantDialog({
   const { lang } = useI18n();
   const isAr = lang === "ar";
   const brand = useBrand();
+  const existingSku = variants.find((v) => v.sku)?.sku || "";
   const blank: VariantGenerationPlan = {
-    base_sku: "",
+    base_sku: existingSku,
     sizes: [],
     colors: [],
     fabric: "",
@@ -3528,6 +3504,11 @@ function BulkVariantDialog({
   const [parsing, setParsing] = useState(false);
   const [saving, setSaving] = useState(false);
 
+  // Batch action state
+  const [batchMainStock, setBatchMainStock] = useState<string>("");
+  const [batchIncubatorStock, setBatchIncubatorStock] = useState<string>("");
+  const [batchSalePrice, setBatchSalePrice] = useState<string>("");
+
   const applyPlan = (next: VariantGenerationPlan) => {
     setPlan(next);
     setSalePriceText(
@@ -3539,35 +3520,52 @@ function BulkVariantDialog({
     setColorsText(next.colors.join(", "));
     setRows([]);
   };
+
+  const applyPreset = (preset: (typeof SIZING_PRESETS)[number]) => {
+    setSizesText(preset.sizes.join(", "));
+    if (preset.unit) {
+      setPlan((prev) => ({ ...prev, size_unit: preset.unit }));
+    }
+  };
+
   const parseWithAi = async () => {
-    if (prompt.trim().length < 3)
+    if (prompt.trim().length < 2)
       return toast.error(isAr ? "اكتب وصفاً للمتغيرات أولاً" : "Describe the variants first");
     setParsing(true);
     try {
-      applyPlan(await parseVariantPrompt({ data: { prompt, language: isAr ? "ar" : "en" } }));
+      const productTitle = product?.name_ar || product?.name_en || product?.name || "";
+      const result = await parseVariantPrompt({
+        data: {
+          prompt,
+          language: isAr ? "ar" : "en",
+          product_title: productTitle,
+          base_sku: plan.base_sku || existingSku,
+          base_price: Number(product?.base_price ?? 0),
+          cost_price: Number(product?.cost_price ?? 0),
+        },
+      });
+      applyPlan(result);
+      toast.success(
+        isAr
+          ? `تم استخراج ${result.sizes.length || 0} مقاس و ${result.colors.length || 0} لون بنجاح`
+          : `Extracted ${result.sizes.length || 0} sizes and ${result.colors.length || 0} colors`,
+      );
     } catch (error) {
       const message = error instanceof Error ? error.message : "";
       toast.error(
         message.includes("RATE_LIMITED")
           ? isAr
-            ? "تم بلوغ حد الاستخدام، استخدم الإنشاء اليدوي مؤقتاً"
-            : "AI limit reached; use the manual builder for now"
-          : message.includes("QUOTA_CONFIGURATION_ERROR")
-            ? isAr
-              ? "يلزم تطبيق تحديث قاعدة البيانات الخاص بمنشئ المتغيرات"
-              : "The variant-generator database update still needs to be applied"
-            : message.includes("GEMINI_AUTH_FAILED")
-              ? isAr
-                ? "مفتاح Gemini غير صالح أو غير متاح"
-                : "The Gemini API key is invalid or unavailable"
-              : isAr
-                ? "تعذر فهم الطلب. يمكنك إدخال القيم يدوياً."
-                : "Could not parse the request. You can enter the values manually.",
+            ? "تم استخدام المحلل السريع بدون انتظار"
+            : "Quick analyzer used seamlessly"
+          : isAr
+            ? "تعذر فهم الطلب بالكامل. يمكنك مراجعة الحقول وإكمالها يدوياً."
+            : "Could not fully parse request. You can edit the fields manually.",
       );
     } finally {
       setParsing(false);
     }
   };
+
   const buildPreview = () => {
     const sizes = splitVariantValues(sizesText);
     const colors = splitVariantValues(colorsText);
@@ -3578,6 +3576,7 @@ function BulkVariantDialog({
       );
     if (!plan.base_sku.trim())
       return toast.error(isAr ? "أدخل رمز المنتج الأساسي" : "Enter a base SKU");
+
     const basePrice = Number(product?.base_price ?? 0);
     const enteredSalePrice = salePriceText.trim() === "" ? null : Number(salePriceText);
     if (
@@ -3589,16 +3588,25 @@ function BulkVariantDialog({
           ? "لا يمكن أن يكون سعر التخفيض أعلى من السعر الأساسي."
           : "Sale price cannot be higher than the regular price.",
       );
+
     const salePrice =
       enteredSalePrice !== null && enteredSalePrice > 0 && enteredSalePrice < basePrice
         ? enteredSalePrice
         : null;
+
     const usedBarcodes = new Set(variants.map((v) => v.barcode).filter(Boolean) as string[]);
     const sizeAxis = sizes.length ? sizes : [""];
     const colorAxis = colors.length ? colors : [""];
+
     const generated = sizeAxis.flatMap((size) =>
       colorAxis.map((color) => {
-        const suffix = [color, size].map(skuPart).filter(Boolean).join("-");
+        const tokens = [color ? formatSkuToken(color) : "", size ? formatSkuToken(size) : ""]
+          .filter(Boolean)
+          .join("-");
+
+        const baseSkuFormatted = plan.base_sku.trim().toUpperCase();
+        const sku = `${baseSkuFormatted}${tokens ? `-${tokens}` : ""}`;
+
         return {
           ...plan,
           cost_price: Number(product?.cost_price ?? 0),
@@ -3607,15 +3615,43 @@ function BulkVariantDialog({
           size,
           color,
           size_unit: plan.size_unit,
-          sku: `${skuPart(plan.base_sku)}${suffix ? `-${suffix}` : ""}`,
+          sku,
           barcode: makeEan13(usedBarcodes),
         } as BulkVariantRow;
       }),
     );
     setRows(generated);
   };
+
   const patchRow = (index: number, patch: Partial<BulkVariantRow>) =>
     setRows((current) => current.map((row, i) => (i === index ? { ...row, ...patch } : row)));
+
+  const applyBatchMainStock = () => {
+    const val = parseInt(batchMainStock, 10);
+    if (isNaN(val) || val < 0) return;
+    setRows((current) => current.map((row) => ({ ...row, stock_main: val })));
+    setBatchMainStock("");
+  };
+
+  const applyBatchIncubatorStock = () => {
+    const val = parseInt(batchIncubatorStock, 10);
+    if (isNaN(val) || val < 0) return;
+    setRows((current) => current.map((row) => ({ ...row, stock_incubator: val })));
+    setBatchIncubatorStock("");
+  };
+
+  const applyBatchSalePrice = () => {
+    const val = Number(batchSalePrice);
+    const basePrice = Number(product?.base_price ?? 0);
+    if (isNaN(val) || val < 0 || val > basePrice) {
+      toast.error(isAr ? "سعر التخفيض غير صالح" : "Invalid sale price");
+      return;
+    }
+    const formatted = val > 0 && val < basePrice ? String(val) : "";
+    setRows((current) => current.map((row) => ({ ...row, sale_price: formatted })));
+    setBatchSalePrice("");
+  };
+
   const saveAll = async () => {
     const existingSkus = new Set(variants.map((v) => v.sku?.trim().toUpperCase()).filter(Boolean));
     const existingBarcodes = new Set(
@@ -3729,7 +3765,12 @@ function BulkVariantDialog({
       onOpenChange={(nextOpen) => {
         setOpen(nextOpen);
         if (nextOpen) {
-          setPlan(blank);
+          setPlan({
+            ...blank,
+            base_sku: existingSku,
+            cost_price: Number(product?.cost_price ?? 0),
+            selling_price: Number(product?.base_price ?? 0),
+          });
           setSalePriceText("");
           setSizesText("");
           setColorsText("");
@@ -3745,60 +3786,110 @@ function BulkVariantDialog({
       </DialogTrigger>
       <DialogContent className="max-h-[90vh] max-w-6xl overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{isAr ? "منشئ متغيرات المنتج" : "Product variant builder"}</DialogTitle>
+          <DialogTitle>
+            {isAr ? "منشئ متغيرات المنتج الذكي" : "Smart Product Variant Builder"}
+          </DialogTitle>
         </DialogHeader>
+
+        {/* AI & NLP PROMPT BOX */}
         <div className="rounded-lg border bg-secondary/30 p-4 space-y-3">
-          <Label>
-            {isAr
-              ? "صف المتغيرات بالعربية أو الإنجليزية"
-              : "Describe variants in English or Arabic"}
-          </Label>
+          <div className="flex items-center justify-between">
+            <Label className="font-semibold">
+              {isAr
+                ? "صف المتغيرات بالعربية أو الإنجليزية (الذكاء الاصطناعي)"
+                : "Describe variants in English or Arabic (AI Parser)"}
+            </Label>
+            <span className="text-[11px] text-muted-foreground">
+              {isAr
+                ? "يدعم مقاسات العبايات، الملابس، الألوان، الأسعار، والمخزون"
+                : "Supports Abayas, Apparel, Shoes, Colors, Prices & Stock"}
+            </span>
+          </div>
           <textarea
-            className="min-h-24 w-full rounded-md border border-input bg-background p-3 text-sm"
+            className="min-h-20 w-full rounded-md border border-input bg-background p-3 text-sm focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
             placeholder={
               isAr
-                ? "مثال: كود NP24، الألوان أسود وأخضر وأبيض، المقاسات من 1 إلى 5، السعر 15 د.ب"
-                : "Example: code NP24, black, green and white, sizes 1 to 5, priced at BHD 15"
+                ? "مثال: كود NP24، الألوان كحلي وعنابي وبيج، مقاسات العبايات من 52 إلى 60 زوجي، خامة كريب ملكي، السعر 25 د.ب والتخفيض 19 د.ب، المخزون 5 لكل مقاس"
+                : "Example: code DRS-01, colors Black, Olive and Burgundy, sizes S to XL, Fabric Linen, price 25 BHD, sale 19, stock 5 per variant"
             }
           />
-          <Button type="button" onClick={parseWithAi} disabled={parsing}>
-            {parsing
-              ? isAr
-                ? "جاري التحليل..."
-                : "Parsing..."
-              : isAr
-                ? "تحليل بالذكاء الاصطناعي"
-                : "Parse with AI"}
-          </Button>
-          <p className="text-xs text-muted-foreground">
-            {isAr
-              ? "الذكاء الاصطناعي يعبئ الحقول فقط. لن يتم حفظ شيء قبل المراجعة والتأكيد."
-              : "AI only fills the fields. Nothing is saved until you review and confirm."}
-          </p>
+          <div className="flex items-center justify-between gap-2 flex-wrap">
+            <Button type="button" onClick={parseWithAi} disabled={parsing}>
+              {parsing ? (
+                <>
+                  <Wand2 className="me-2 h-4 w-4 animate-spin" />
+                  {isAr ? "جاري التحليل..." : "Parsing..."}
+                </>
+              ) : (
+                <>
+                  <Wand2 className="me-2 h-4 w-4" />
+                  {isAr ? "تحليل فوري بالذكاء الاصطناعي" : "Instant AI / NLP Parse"}
+                </>
+              )}
+            </Button>
+            <p className="text-xs text-muted-foreground">
+              {isAr
+                ? "الذكاء الاصطناعي يعبئ الحقول للمراجعة. لن يتم حفظ شيء قبل المعاينة والتأكيد."
+                : "AI fills fields for review. Nothing is saved until you preview and confirm."}
+            </p>
+          </div>
         </div>
+
+        {/* QUICK SIZING PRESET PILLS */}
+        <div className="space-y-1.5">
+          <Label className="text-xs text-muted-foreground">
+            {isAr ? "قوالب مقاسات جاهزة بنقرة واحدة:" : "1-Click Sizing Quick Presets:"}
+          </Label>
+          <div className="flex items-center gap-1.5 flex-wrap">
+            {SIZING_PRESETS.map((preset) => (
+              <Button
+                key={preset.id}
+                type="button"
+                variant="outline"
+                size="sm"
+                className="h-7 text-xs px-2.5 bg-background hover:bg-secondary"
+                onClick={() => applyPreset(preset)}
+              >
+                {isAr ? preset.labelAr : preset.labelEn}
+              </Button>
+            ))}
+          </div>
+        </div>
+
+        {/* STRUCTURED VARIANT PLAN FIELDS */}
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <div>
             <Label>{isAr ? "رمز المنتج الأساسي" : "Base SKU"}</Label>
             <Input
               value={plan.base_sku}
               onChange={(e) => setPlan({ ...plan, base_sku: e.target.value })}
+              placeholder={existingSku || "e.g. DRS-01"}
             />
           </div>
           <div>
             <Label>{isAr ? "المقاسات (بفاصلة)" : "Sizes (comma separated)"}</Label>
-            <Input value={sizesText} onChange={(e) => setSizesText(e.target.value)} />
+            <Input
+              value={sizesText}
+              onChange={(e) => setSizesText(e.target.value)}
+              placeholder={isAr ? "52, 54, 56, 58, 60" : "S, M, L, XL"}
+            />
           </div>
           <div>
             <Label>{isAr ? "الألوان (بفاصلة)" : "Colors (comma separated)"}</Label>
-            <Input value={colorsText} onChange={(e) => setColorsText(e.target.value)} />
+            <Input
+              value={colorsText}
+              onChange={(e) => setColorsText(e.target.value)}
+              placeholder={isAr ? "كحلي, عنابي, بيج" : "Black, Navy, Olive"}
+            />
           </div>
           <div>
             <Label>{isAr ? "الخامة" : "Fabric"}</Label>
             <Input
               value={plan.fabric}
               onChange={(e) => setPlan({ ...plan, fabric: e.target.value })}
+              placeholder={isAr ? "كريب ملكي / حرير" : "Silk / Linen / Crepe"}
             />
           </div>
           <div>
@@ -3873,20 +3964,111 @@ function BulkVariantDialog({
             />
           </div>
         </div>
-        <Button type="button" variant="secondary" onClick={buildPreview}>
-          <Boxes className="me-2 h-4 w-4" />
-          {isAr ? "إنشاء المعاينة" : "Build preview"}
-        </Button>
+
+        <div className="flex items-center gap-2">
+          <Button type="button" variant="secondary" onClick={buildPreview}>
+            <Boxes className="me-2 h-4 w-4" />
+            {isAr ? "إنشاء المعاينة وتوليد الباركود" : "Build Preview & Barcodes"}
+          </Button>
+          {rows.length > 0 && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="text-muted-foreground"
+              onClick={() => setRows([])}
+            >
+              {isAr ? "مسح المعاينة" : "Clear preview"}
+            </Button>
+          )}
+        </div>
+
+        {/* PREVIEW TABLE WITH BATCH POWER TOOLS */}
         {rows.length > 0 && (
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <Label>
-                {isAr ? `معاينة ${rows.length} متغير` : `Preview ${rows.length} variants`}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <Label className="font-semibold">
+                {isAr
+                  ? `معاينة ${rows.length} متغير جاهز للحفظ`
+                  : `Preview ${rows.length} variants ready to save`}
               </Label>
               <span className="text-xs text-muted-foreground">
-                {isAr ? "يمكن تعديل كل قيمة" : "Every value is editable"}
+                {isAr
+                  ? "تم توليد رموز SKU وباركود EAN-13 متوافقة مع الطابعات"
+                  : "Generated printer-safe SKUs and unique EAN-13 barcodes"}
               </span>
             </div>
+
+            {/* BATCH QUICK FILL TOOLBAR */}
+            <div className="rounded-md border bg-muted/40 p-2.5 flex items-center gap-4 flex-wrap text-xs">
+              <span className="font-semibold text-muted-foreground">
+                {isAr ? "تعديل جماعي:" : "Batch edit:"}
+              </span>
+              <div className="flex items-center gap-1.5">
+                <span>{isAr ? "الرئيسي:" : "Main:"}</span>
+                <Input
+                  className="h-7 w-16 text-xs"
+                  type="number"
+                  min="0"
+                  placeholder="0"
+                  value={batchMainStock}
+                  onChange={(e) => setBatchMainStock(e.target.value)}
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="h-7 px-2 text-xs"
+                  onClick={applyBatchMainStock}
+                >
+                  {isAr ? "تطبيق للكل" : "Apply all"}
+                </Button>
+              </div>
+
+              <div className="flex items-center gap-1.5">
+                <span>{isAr ? "الحاضنة:" : "Incubator:"}</span>
+                <Input
+                  className="h-7 w-16 text-xs"
+                  type="number"
+                  min="0"
+                  placeholder="0"
+                  value={batchIncubatorStock}
+                  onChange={(e) => setBatchIncubatorStock(e.target.value)}
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="h-7 px-2 text-xs"
+                  onClick={applyBatchIncubatorStock}
+                >
+                  {isAr ? "تطبيق للكل" : "Apply all"}
+                </Button>
+              </div>
+
+              <div className="flex items-center gap-1.5">
+                <span>{isAr ? "التخفيض:" : "Sale:"}</span>
+                <Input
+                  className="h-7 w-20 text-xs"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  placeholder={String(product?.base_price ?? 0)}
+                  value={batchSalePrice}
+                  onChange={(e) => setBatchSalePrice(e.target.value)}
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="h-7 px-2 text-xs"
+                  onClick={applyBatchSalePrice}
+                >
+                  {isAr ? "تطبيق للكل" : "Apply all"}
+                </Button>
+              </div>
+            </div>
+
             <div className="overflow-x-auto rounded-lg border">
               <table className="w-full min-w-[1000px] text-sm">
                 <thead className="bg-secondary">
@@ -3896,14 +4078,14 @@ function BulkVariantDialog({
                       isAr ? "اللون" : "Color",
                       isAr ? "الخامة" : "Fabric",
                       "SKU",
-                      isAr ? "الباركود" : "Barcode",
+                      isAr ? "الباركود (EAN-13)" : "Barcode (EAN-13)",
                       ...(canViewFinancials ? [isAr ? "التكلفة" : "Cost"] : []),
                       isAr ? "سعر التخفيض" : "Sale price",
                       isAr ? "الرئيسي" : "Main",
                       isAr ? "الحاضنة" : "Incubator",
                       "",
                     ].map((label) => (
-                      <th key={label} className="p-2 text-start">
+                      <th key={label} className="p-2 text-start font-semibold">
                         {label}
                       </th>
                     ))}
@@ -3911,7 +4093,7 @@ function BulkVariantDialog({
                 </thead>
                 <tbody>
                   {rows.map((row, index) => (
-                    <tr key={`${index}-${row.barcode}`} className="border-t">
+                    <tr key={`${index}-${row.barcode}`} className="border-t hover:bg-muted/30">
                       {(["size", "color", "fabric", "sku", "barcode"] as const).map((field) => (
                         <td key={field} className="p-1">
                           <Input
@@ -3983,6 +4165,7 @@ function BulkVariantDialog({
             </div>
           </div>
         )}
+
         <DialogFooter>
           <Button variant="ghost" onClick={() => setOpen(false)}>
             {isAr ? "إلغاء" : "Cancel"}

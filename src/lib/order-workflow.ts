@@ -134,8 +134,13 @@ export function getOrderWorkflow(order: OrderWorkflowInput): OrderWorkflow {
     method,
   );
   const terminal =
-    ["completed", "cancelled", "returned"].includes(fulfillment) || payment === "refunded";
+    ["completed", "delivered", "picked_up", "cancelled", "returned"].includes(fulfillment) ||
+    payment === "refunded";
   const outstanding = Math.max(0, Number((total - paid).toFixed(3)));
+
+  // If the order is already marked as paid or has 0 outstanding balance, no cash collection is required
+  const isFullyPaid = payment === "paid" || (total > 0 && outstanding <= 0);
+  const requiresCollection = !isFullyPaid && (isCod || outstanding > 0);
 
   let nextAction: OrderNextAction = "none";
 
@@ -154,9 +159,9 @@ export function getOrderWorkflow(order: OrderWorkflowInput): OrderWorkflow {
       } else if (fulfillment === "packing") {
         nextAction = fulfillmentMethod === "pickup" ? "mark_ready_pickup" : "mark_shipped";
       } else if (fulfillment === "ready_for_pickup") {
-        nextAction = isCod || outstanding > 0 ? "collect_and_hand_over" : "hand_over_pickup";
+        nextAction = requiresCollection ? "collect_and_hand_over" : "hand_over_pickup";
       } else if (fulfillment === "out_for_delivery" || fulfillment === "assigned") {
-        nextAction = isCod || outstanding > 0 ? "collect_and_deliver" : "mark_completed";
+        nextAction = requiresCollection ? "collect_and_deliver" : "mark_completed";
       }
     } else {
       // Ready Stock
@@ -166,20 +171,20 @@ export function getOrderWorkflow(order: OrderWorkflowInput): OrderWorkflow {
         } else if (fulfillment === "packing") {
           nextAction = "mark_ready_pickup";
         } else if (fulfillment === "ready_for_pickup") {
-          nextAction = isCod || outstanding > 0 ? "collect_and_hand_over" : "hand_over_pickup";
+          nextAction = requiresCollection ? "collect_and_hand_over" : "hand_over_pickup";
         }
       } else if (fulfillmentMethod === "digital") {
         if (payment === "paid") nextAction = "deliver_digital";
       } else {
         // Delivery
         if (["pending", "on_hold", "needs_packing"].includes(fulfillment)) {
-          nextAction = isCod ? "pack_and_ship" : "start_packing";
+          nextAction = isCod && !isFullyPaid ? "pack_and_ship" : "start_packing";
         } else if (fulfillment === "packing") {
           nextAction = "mark_shipped";
         } else if (fulfillment === "assigned") {
           nextAction = "confirm_pickup";
         } else if (fulfillment === "out_for_delivery") {
-          nextAction = isCod || outstanding > 0 ? "collect_and_deliver" : "mark_delivered";
+          nextAction = requiresCollection ? "collect_and_deliver" : "mark_delivered";
         } else if (!method) {
           nextAction = "review_order";
         }

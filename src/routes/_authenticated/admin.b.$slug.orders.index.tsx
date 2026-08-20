@@ -1238,8 +1238,8 @@ function OrdersList() {
         );
       }
 
-      // 2. Card Pickup Preparation
-      if (workflow.nextAction === "prepare_pickup" && isPaid) {
+      // 2. Card / Paid Pickup Preparation
+      if (workflow.nextAction === "prepare_pickup" && (isPaid || !isCod)) {
         return (
           <Button
             size="sm"
@@ -1264,8 +1264,8 @@ function OrdersList() {
         );
       }
 
-      // 3. Pay at Store Preparation
-      if (workflow.nextAction === "prepare_pickup" && isCod) {
+      // 3. Pay at Store Preparation (Unpaid COD)
+      if (workflow.nextAction === "prepare_pickup" && isCod && !isPaid) {
         return (
           <Button
             size="sm"
@@ -1299,6 +1299,7 @@ function OrdersList() {
           const totalAmt = Number(o.total || 0);
           const paidAmt = Number(o.paid_amount ?? o.advance_paid ?? 0);
           const remainingBal = Math.max(0, totalAmt - paidAmt);
+          const isPartial = paidAmt > 0 && remainingBal > 0;
           return (
             <Button
               size="sm"
@@ -1314,7 +1315,13 @@ function OrdersList() {
               {isUpdating ? (
                 <Loader2 className="h-3.5 w-3.5 animate-spin" />
               ) : lang === "ar" ? (
-                "تحصيل وتسليم"
+                isPartial ? (
+                  "تحصيل المتبقي وتسليم"
+                ) : (
+                  "تحصيل وتسليم"
+                )
+              ) : isPartial ? (
+                "Collect Balance & Hand Over"
               ) : (
                 "Collect & Hand Over"
               )}
@@ -1329,17 +1336,19 @@ function OrdersList() {
               onClick={(e) => {
                 e.stopPropagation();
                 handleStatusUpdate(
-                  { fulfillment_status: "COMPLETED" },
-                  lang === "ar" ? "تم تسليم الطلب بالكامل!" : "Handover completed!",
+                  { fulfillment_status: "COMPLETED", status: "completed" },
+                  lang === "ar"
+                    ? "تم تسليم الطلب للعميل بالكامل!"
+                    : "Order handed over to customer!",
                 );
               }}
             >
               {isUpdating ? (
                 <Loader2 className="animate-spin h-3.5 w-3.5" />
               ) : lang === "ar" ? (
-                "إتمام التسليم"
+                "تسليم للعميل"
               ) : (
-                "Complete Handover"
+                "Hand Over"
               )}
             </Button>
           );

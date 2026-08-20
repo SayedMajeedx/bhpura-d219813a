@@ -58,6 +58,46 @@ describe("getOrderWorkflow", () => {
     ).toBe("collect_and_deliver");
   });
 
+  it("does not request collection if COD order has already been marked as paid", () => {
+    // Order #1090 scenario: marked as paid by agent / customer paid upfront
+    const paidPickupOrder = getOrderWorkflow(
+      order({
+        payment_method: "cash_on_delivery",
+        payment_status: "paid",
+        fulfillment_method: "pickup",
+        fulfillment_status: "READY_FOR_PICKUP",
+      }),
+    );
+    expect(paidPickupOrder.nextAction).toBe("hand_over_pickup");
+    expect(paidPickupOrder.outstanding).toBe(0);
+
+    const paidDeliveryOrder = getOrderWorkflow(
+      order({
+        payment_method: "cash_on_delivery",
+        payment_status: "paid",
+        fulfillment_method: "delivery",
+        fulfillment_status: "OUT_FOR_DELIVERY",
+      }),
+    );
+    expect(paidDeliveryOrder.nextAction).toBe("mark_delivered");
+    expect(paidDeliveryOrder.outstanding).toBe(0);
+  });
+
+  it("correctly requires collection for partially paid orders", () => {
+    const partialOrder = getOrderWorkflow(
+      order({
+        total: 20,
+        advance_paid: 8,
+        payment_method: "cod",
+        payment_status: "partially_paid",
+        fulfillment_method: "pickup",
+        fulfillment_status: "READY_FOR_PICKUP",
+      }),
+    );
+    expect(partialOrder.nextAction).toBe("collect_and_hand_over");
+    expect(partialOrder.outstanding).toBe(12);
+  });
+
   it("never flags terminal orders even if stale payment fields remain", () => {
     for (const fulfillment_status of ["COMPLETED", "DELIVERED", "CANCELLED", "RETURNED"]) {
       const result = getOrderWorkflow(order({ fulfillment_status }));
