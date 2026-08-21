@@ -1,5 +1,5 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useBrand } from "@/lib/brand-context";
@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { ListPagination } from "@/components/list-pagination";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Dialog,
@@ -23,6 +24,7 @@ import {
   Building2,
   CircleDollarSign,
   Package,
+  Pencil,
   Plus,
   RefreshCw,
   RotateCcw,
@@ -62,6 +64,7 @@ type Incubator = {
   name: string;
   contact_name: string | null;
   phone: string | null;
+  email: string | null;
   commission_type: "percentage" | "fixed";
   commission_value: number;
   settlement_day: number | null;
@@ -139,11 +142,17 @@ function IncubatorsPage() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [dialog, setDialog] = useState<
-    "incubator" | "transfer" | "sale" | "payment" | "return" | null
+    "incubator" | "edit_incubator" | "transfer" | "sale" | "payment" | "return" | null
   >(null);
   const [activeItem, setActiveItem] = useState<StockItem | null>(null);
   const [busy, setBusy] = useState(false);
   const [syncing, setSyncing] = useState(false);
+  const [stockPage, setStockPage] = useState(1);
+  const [stockPageSize, setStockPageSize] = useState(10);
+  const [salesPage, setSalesPage] = useState(1);
+  const [salesPageSize, setSalesPageSize] = useState(10);
+  const [paymentsPage, setPaymentsPage] = useState(1);
+  const [paymentsPageSize, setPaymentsPageSize] = useState(10);
   const locale = isAr ? "ar-BH" : "en-BH";
   const money = (amount: number, currency = "BHD") => formatMoney(amount, currency, locale);
 
@@ -250,6 +259,21 @@ function IncubatorsPage() {
           .includes(needle),
     );
   });
+  const pagedStock = filteredStock.slice(
+    (stockPage - 1) * stockPageSize,
+    stockPage * stockPageSize,
+  );
+  const pagedSales = sales.slice((salesPage - 1) * salesPageSize, salesPage * salesPageSize);
+  const pagedPayments = payments.slice(
+    (paymentsPage - 1) * paymentsPageSize,
+    paymentsPage * paymentsPageSize,
+  );
+
+  useEffect(() => setStockPage(1), [currentId, search]);
+  useEffect(() => {
+    setSalesPage(1);
+    setPaymentsPage(1);
+  }, [currentId]);
 
   async function invalidateData() {
     await Promise.all([
@@ -299,12 +323,29 @@ function IncubatorsPage() {
           name: String(values.name).trim(),
           contact_name: String(values.contact_name || "").trim() || null,
           phone: String(values.phone || "").trim() || null,
+          email: String(values.email || "").trim() || null,
           commission_type: values.commission_type,
           commission_value: Number(values.commission_value || 0),
           settlement_day: values.settlement_day ? Number(values.settlement_day) : null,
           currency: "BHD",
           notes: String(values.notes || "").trim() || null,
         });
+      } else if (dialog === "edit_incubator" && currentId) {
+        result = await db
+          .from("incubators")
+          .update({
+            name: String(values.name).trim(),
+            contact_name: String(values.contact_name || "").trim() || null,
+            phone: String(values.phone || "").trim() || null,
+            email: String(values.email || "").trim() || null,
+            commission_type: values.commission_type,
+            commission_value: Number(values.commission_value || 0),
+            settlement_day: values.settlement_day ? Number(values.settlement_day) : null,
+            notes: String(values.notes || "").trim() || null,
+            is_active: values.is_active === "true",
+          })
+          .eq("id", currentId)
+          .eq("brand_id", brand.id);
       } else if (dialog === "transfer") {
         result = await db.rpc("transfer_stock_to_incubator", {
           p_incubator_id: currentId,
@@ -399,12 +440,12 @@ function IncubatorsPage() {
         </div>
       </header>
 
-      <div className="grid gap-4 lg:grid-cols-[280px_minmax(0,1fr)]">
-        <Card className="h-fit border-border p-3">
+      <div className="space-y-4">
+        <Card className="border-border p-3">
           <p className="mb-2 px-1 text-xs font-bold text-muted-foreground">
             {isAr ? "الحاضنات" : "INCUBATORS"}
           </p>
-          <div className="space-y-2">
+          <div className="flex gap-2 overflow-x-auto pb-1">
             {incubators.map((item) => {
               const itemStock = allStock.filter((row) => row.incubator_id === item.id);
               const units = itemStock.reduce((sum, row) => sum + Number(row.quantity), 0);
@@ -415,7 +456,7 @@ function IncubatorsPage() {
                 <Button
                   key={item.id}
                   variant={currentId === item.id ? "secondary" : "ghost"}
-                  className="h-auto w-full justify-between px-3 py-3"
+                  className="h-auto min-w-56 flex-1 justify-between px-3 py-3 sm:max-w-80"
                   onClick={() => setSelectedId(item.id)}
                 >
                   <span className="min-w-0 text-start">
@@ -450,6 +491,10 @@ function IncubatorsPage() {
                   </p>
                 </div>
                 <div className="flex flex-wrap gap-2">
+                  <Button variant="outline" onClick={() => setDialog("edit_incubator")}>
+                    <Pencil className="me-2 h-4 w-4" />
+                    {isAr ? "تعديل الحاضنة" : "Edit incubator"}
+                  </Button>
                   <Button
                     variant="outline"
                     onClick={() => setDialog("payment")}
@@ -523,7 +568,7 @@ function IncubatorsPage() {
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-border">
-                        {filteredStock.map((item) => {
+                        {pagedStock.map((item) => {
                           const v = item.product_variants;
                           return (
                             <tr key={item.id}>
@@ -583,10 +628,23 @@ function IncubatorsPage() {
                       </tbody>
                     </table>
                   </div>
+                  <ListPagination
+                    lang={lang}
+                    entityAr="قطعة"
+                    entityEn="Items"
+                    totalItems={filteredStock.length}
+                    page={stockPage}
+                    pageSize={stockPageSize}
+                    onPageChange={setStockPage}
+                    onPageSizeChange={(size) => {
+                      setStockPageSize(size);
+                      setStockPage(1);
+                    }}
+                  />
                 </TabsContent>
                 <TabsContent value="sales">
                   <DataTable
-                    rows={sales.map((sale) => ({
+                    rows={pagedSales.map((sale) => ({
                       id: sale.id,
                       primary:
                         (isAr
@@ -613,10 +671,25 @@ function IncubatorsPage() {
                     }))}
                     empty={isAr ? "لا توجد مبيعات مسجلة" : "No recorded sales"}
                   />
+                  <div className="mt-3">
+                    <ListPagination
+                      lang={lang}
+                      entityAr="عملية بيع"
+                      entityEn="Sales"
+                      totalItems={sales.length}
+                      page={salesPage}
+                      pageSize={salesPageSize}
+                      onPageChange={setSalesPage}
+                      onPageSizeChange={(size) => {
+                        setSalesPageSize(size);
+                        setSalesPage(1);
+                      }}
+                    />
+                  </div>
                 </TabsContent>
                 <TabsContent value="payments">
                   <DataTable
-                    rows={payments.map((payment) => ({
+                    rows={pagedPayments.map((payment) => ({
                       id: payment.id,
                       primary:
                         payment.reference || payment.payment_method || (isAr ? "دفعة" : "Payment"),
@@ -628,6 +701,21 @@ function IncubatorsPage() {
                     }))}
                     empty={isAr ? "لا توجد دفعات مسجلة" : "No recorded payments"}
                   />
+                  <div className="mt-3">
+                    <ListPagination
+                      lang={lang}
+                      entityAr="دفعة"
+                      entityEn="Payments"
+                      totalItems={payments.length}
+                      page={paymentsPage}
+                      pageSize={paymentsPageSize}
+                      onPageChange={setPaymentsPage}
+                      onPageSizeChange={(size) => {
+                        setPaymentsPageSize(size);
+                        setPaymentsPage(1);
+                      }}
+                    />
+                  </div>
                 </TabsContent>
               </Tabs>
             </>
@@ -726,7 +814,7 @@ function OperationDialog({
   locale,
   onSubmit,
 }: {
-  dialog: "incubator" | "transfer" | "sale" | "payment" | "return" | null;
+  dialog: "incubator" | "edit_incubator" | "transfer" | "sale" | "payment" | "return" | null;
   setDialog: (value: null) => void;
   current: Incubator | null;
   activeItem: StockItem | null;
@@ -742,21 +830,25 @@ function OperationDialog({
       ? isAr
         ? "إضافة حاضنة"
         : "Add incubator"
-      : dialog === "transfer"
+      : dialog === "edit_incubator"
         ? isAr
-          ? "تحويل بضاعة للحاضنة"
-          : "Transfer stock"
-        : dialog === "sale"
+          ? "تعديل بيانات الحاضنة"
+          : "Edit incubator details"
+        : dialog === "transfer"
           ? isAr
-            ? "تسجيل قطعة مباعة"
-            : "Record sale"
-          : dialog === "return"
+            ? "تحويل بضاعة للحاضنة"
+            : "Transfer stock"
+          : dialog === "sale"
             ? isAr
-              ? "إرجاع للمخزون الرئيسي"
-              : "Return to main stock"
-            : isAr
-              ? "تسجيل دفعة"
-              : "Record payment";
+              ? "تسجيل قطعة مباعة"
+              : "Record sale"
+            : dialog === "return"
+              ? isAr
+                ? "إرجاع للمخزون الرئيسي"
+                : "Return to main stock"
+              : isAr
+                ? "تسجيل دفعة"
+                : "Record payment";
   const itemName =
     (isAr
       ? activeItem?.product_variants?.products?.name_ar
@@ -776,22 +868,68 @@ function OperationDialog({
             onSubmit(event.currentTarget);
           }}
         >
-          {dialog === "incubator" && (
+          {(dialog === "incubator" || dialog === "edit_incubator") && (
             <>
-              <Field label={isAr ? "اسم الحاضنة" : "Name"} name="name" required />
+              <Field
+                label={isAr ? "اسم الحاضنة" : "Name"}
+                name="name"
+                defaultValue={dialog === "edit_incubator" ? current?.name || "" : ""}
+                required
+              />
               <div className="grid gap-4 sm:grid-cols-2">
-                <Field label={isAr ? "اسم المسؤول" : "Contact"} name="contact_name" />
-                <Field label={isAr ? "الهاتف" : "Phone"} name="phone" />
+                <Field
+                  label={isAr ? "اسم المسؤول" : "Contact"}
+                  name="contact_name"
+                  defaultValue={dialog === "edit_incubator" ? current?.contact_name || "" : ""}
+                />
+                <Field
+                  label={isAr ? "الهاتف" : "Phone"}
+                  name="phone"
+                  type="tel"
+                  defaultValue={dialog === "edit_incubator" ? current?.phone || "" : ""}
+                />
               </div>
-              <CommissionFields isAr={isAr} />
+              <Field
+                label={isAr ? "البريد الإلكتروني" : "Email"}
+                name="email"
+                type="email"
+                defaultValue={dialog === "edit_incubator" ? current?.email || "" : ""}
+              />
+              <CommissionFields
+                isAr={isAr}
+                current={dialog === "edit_incubator" ? current : null}
+              />
               <Field
                 label={isAr ? "يوم التسوية الشهري" : "Settlement day"}
                 name="settlement_day"
                 type="number"
                 min="1"
                 max="31"
+                defaultValue={
+                  dialog === "edit_incubator" && current?.settlement_day
+                    ? String(current.settlement_day)
+                    : ""
+                }
               />
-              <Field label={isAr ? "ملاحظات" : "Notes"} name="notes" textarea />
+              {dialog === "edit_incubator" && (
+                <div>
+                  <Label>{isAr ? "الحالة" : "Status"}</Label>
+                  <select
+                    name="is_active"
+                    defaultValue={String(current?.is_active ?? true)}
+                    className="mt-2 h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+                  >
+                    <option value="true">{isAr ? "نشطة" : "Active"}</option>
+                    <option value="false">{isAr ? "موقوفة" : "Inactive"}</option>
+                  </select>
+                </div>
+              )}
+              <Field
+                label={isAr ? "ملاحظات" : "Notes"}
+                name="notes"
+                defaultValue={dialog === "edit_incubator" ? current?.notes || "" : ""}
+                textarea
+              />
             </>
           )}
           {dialog === "transfer" && (
