@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useBrand } from "@/lib/brand-context";
+import { useRealtimeInvalidate } from "@/hooks/use-realtime-invalidate";
 import { useI18n } from "@/lib/i18n";
 import { formatMoney } from "@/lib/format";
 import { Button } from "@/components/ui/button";
@@ -142,7 +143,7 @@ function IncubatorsPage() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [dialog, setDialog] = useState<
-    "incubator" | "edit_incubator" | "transfer" | "sale" | "payment" | "return" | null
+    "incubator" | "edit_incubator" | "edit_item" | "transfer" | "sale" | "payment" | "return" | null
   >(null);
   const [activeItem, setActiveItem] = useState<StockItem | null>(null);
   const [busy, setBusy] = useState(false);
@@ -155,6 +156,33 @@ function IncubatorsPage() {
   const [paymentsPageSize, setPaymentsPageSize] = useState(10);
   const locale = isAr ? "ar-BH" : "en-BH";
   const money = (amount: number, currency = "BHD") => formatMoney(amount, currency, locale);
+
+  useRealtimeInvalidate(
+    [
+      { table: "incubators", brandId: brand.id, queryKey: ["incubators", brand.id] },
+      {
+        table: "incubator_inventory",
+        brandId: brand.id,
+        queryKey: ["incubator_inventory", brand.id],
+      },
+      {
+        table: "incubator_sales",
+        brandId: brand.id,
+        queryKey: ["incubator_sales", brand.id],
+      },
+      {
+        table: "incubator_payments",
+        brandId: brand.id,
+        queryKey: ["incubator_payments", brand.id],
+      },
+      {
+        table: "product_variants",
+        brandId: brand.id,
+        queryKey: ["incubator_product_options", brand.id],
+      },
+    ],
+    `incubators-${brand.id}`,
+  );
 
   const incubatorsQ = useQuery({
     queryKey: ["incubators", brand.id],
@@ -346,6 +374,14 @@ function IncubatorsPage() {
           })
           .eq("id", currentId)
           .eq("brand_id", brand.id);
+      } else if (dialog === "edit_item" && activeItem) {
+        result = await db.rpc("update_incubator_inventory_item", {
+          p_inventory_id: activeItem.id,
+          p_external_code: String(values.external_code || "").trim(),
+          p_consignment_price: Number(values.price),
+          p_commission_type: values.commission_type,
+          p_commission_value: Number(values.commission_value || 0),
+        });
       } else if (dialog === "transfer") {
         result = await db.rpc("transfer_stock_to_incubator", {
           p_incubator_id: currentId,
@@ -595,6 +631,17 @@ function IncubatorsPage() {
                                     variant="outline"
                                     onClick={() => {
                                       setActiveItem(item);
+                                      setDialog("edit_item");
+                                    }}
+                                  >
+                                    <Pencil className="me-1 h-3.5 w-3.5" />
+                                    {isAr ? "تعديل" : "Edit"}
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => {
+                                      setActiveItem(item);
                                       setDialog("return");
                                     }}
                                   >
@@ -814,7 +861,15 @@ function OperationDialog({
   locale,
   onSubmit,
 }: {
-  dialog: "incubator" | "edit_incubator" | "transfer" | "sale" | "payment" | "return" | null;
+  dialog:
+    | "incubator"
+    | "edit_incubator"
+    | "edit_item"
+    | "transfer"
+    | "sale"
+    | "payment"
+    | "return"
+    | null;
   setDialog: (value: null) => void;
   current: Incubator | null;
   activeItem: StockItem | null;
@@ -834,21 +889,25 @@ function OperationDialog({
         ? isAr
           ? "تعديل بيانات الحاضنة"
           : "Edit incubator details"
-        : dialog === "transfer"
+        : dialog === "edit_item"
           ? isAr
-            ? "تحويل بضاعة للحاضنة"
-            : "Transfer stock"
-          : dialog === "sale"
+            ? "تعديل كود وشروط القطعة"
+            : "Edit item code and terms"
+          : dialog === "transfer"
             ? isAr
-              ? "تسجيل قطعة مباعة"
-              : "Record sale"
-            : dialog === "return"
+              ? "تحويل بضاعة للحاضنة"
+              : "Transfer stock"
+            : dialog === "sale"
               ? isAr
-                ? "إرجاع للمخزون الرئيسي"
-                : "Return to main stock"
-              : isAr
-                ? "تسجيل دفعة"
-                : "Record payment";
+                ? "تسجيل قطعة مباعة"
+                : "Record sale"
+              : dialog === "return"
+                ? isAr
+                  ? "إرجاع للمخزون الرئيسي"
+                  : "Return to main stock"
+                : isAr
+                  ? "تسجيل دفعة"
+                  : "Record payment";
   const itemName =
     (isAr
       ? activeItem?.product_variants?.products?.name_ar
@@ -971,6 +1030,56 @@ function OperationDialog({
               />
               <CommissionFields isAr={isAr} current={current} />
               <Field label={isAr ? "ملاحظات التسليم" : "Transfer notes"} name="notes" textarea />
+            </>
+          )}
+          {dialog === "edit_item" && activeItem && (
+            <>
+              <p className="rounded-md bg-muted p-3 text-sm font-bold">
+                {itemName} ·{" "}
+                {activeItem.product_variants?.sku || activeItem.product_variants?.barcode}
+              </p>
+              <Field
+                label={isAr ? "كود الحاضنة" : "Incubator code"}
+                name="external_code"
+                defaultValue={activeItem.external_code || ""}
+                autoComplete="off"
+              />
+              <Field
+                label={isAr ? "سعر البيع المتفق" : "Consignment price"}
+                name="price"
+                type="number"
+                min="0"
+                step="0.001"
+                defaultValue={String(activeItem.consignment_price)}
+                required
+              />
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <Label>{isAr ? "نوع العمولة" : "Commission type"}</Label>
+                  <select
+                    name="commission_type"
+                    defaultValue={activeItem.commission_type}
+                    className="mt-2 h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+                  >
+                    <option value="percentage">{isAr ? "نسبة مئوية" : "Percentage"}</option>
+                    <option value="fixed">{isAr ? "مبلغ ثابت لكل قطعة" : "Fixed per unit"}</option>
+                  </select>
+                </div>
+                <Field
+                  label={isAr ? "قيمة العمولة" : "Commission value"}
+                  name="commission_value"
+                  type="number"
+                  min="0"
+                  step="0.001"
+                  defaultValue={String(activeItem.commission_value)}
+                  required
+                />
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {isAr
+                  ? "سيظهر الكود الجديد فورًا في البحث وقائمة البضاعة، ويُستخدم السعر والعمولة في المبيعات الجديدة فقط."
+                  : "The new code appears immediately in search and stock lists. Price and commission apply to new sales only."}
+              </p>
             </>
           )}
           {dialog === "sale" && (
