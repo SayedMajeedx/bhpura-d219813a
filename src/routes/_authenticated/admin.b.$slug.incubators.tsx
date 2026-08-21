@@ -1,5 +1,5 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useBrand } from "@/lib/brand-context";
@@ -340,6 +340,18 @@ function IncubatorsPage() {
     }
   }
 
+  async function saveExternalCode(item: StockItem, externalCode: string) {
+    const { error } = await db.rpc("update_incubator_inventory_item", {
+      p_inventory_id: item.id,
+      p_external_code: externalCode.trim(),
+      p_consignment_price: Number(item.consignment_price),
+      p_commission_type: item.commission_type,
+      p_commission_value: Number(item.commission_value),
+    });
+    if (error) throw error;
+    await qc.invalidateQueries({ queryKey: ["incubator_inventory", brand.id] });
+  }
+
   async function submit(form: HTMLFormElement) {
     const values = Object.fromEntries(new FormData(form));
     setBusy(true);
@@ -619,7 +631,13 @@ function IncubatorsPage() {
                               <td className="p-3 font-mono text-xs">
                                 {v?.sku || v?.barcode || "—"}
                               </td>
-                              <td className="p-3 font-mono text-xs">{item.external_code || "—"}</td>
+                              <td className="p-2">
+                                <InlineCodeEditor
+                                  value={item.external_code || ""}
+                                  isAr={isAr}
+                                  onSave={(value) => saveExternalCode(item, value)}
+                                />
+                              </td>
                               <td className="p-3 text-center font-bold">{item.quantity}</td>
                               <td className="p-3 text-end">
                                 {money(item.quantity * item.consignment_price, current.currency)}
@@ -635,7 +653,7 @@ function IncubatorsPage() {
                                     }}
                                   >
                                     <Pencil className="me-1 h-3.5 w-3.5" />
-                                    {isAr ? "تعديل" : "Edit"}
+                                    {isAr ? "الشروط" : "Terms"}
                                   </Button>
                                   <Button
                                     size="sm"
@@ -816,6 +834,88 @@ function Metric({
         {value}
       </p>
     </Card>
+  );
+}
+
+function InlineCodeEditor({
+  value,
+  isAr,
+  onSave,
+}: {
+  value: string;
+  isAr: boolean;
+  onSave: (value: string) => Promise<void>;
+}) {
+  const [draft, setDraft] = useState(value);
+  const [saving, setSaving] = useState(false);
+  const committed = useRef(value);
+  const skipNextBlur = useRef(false);
+
+  useEffect(() => {
+    if (!saving) {
+      committed.current = value;
+      setDraft(value);
+    }
+  }, [value, saving]);
+
+  async function save() {
+    if (skipNextBlur.current) {
+      skipNextBlur.current = false;
+      return;
+    }
+    const next = draft.trim();
+    if (next === committed.current || saving) return;
+    const previous = committed.current;
+    committed.current = next;
+    setSaving(true);
+    try {
+      await onSave(next);
+      toast.success(isAr ? "تم حفظ كود الحاضنة" : "Incubator code saved");
+    } catch (error: any) {
+      committed.current = previous;
+      setDraft(previous);
+      const duplicate = error?.code === "23505" || String(error?.message).includes("external_code");
+      toast.error(
+        duplicate
+          ? isAr
+            ? "هذا الكود مستخدم لقطعة أخرى في نفس الحاضنة"
+            : "This code is already used by another item in this incubator"
+          : error?.message || (isAr ? "تعذر حفظ الكود" : "Could not save code"),
+      );
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div className="relative min-w-32">
+      <Input
+        value={draft}
+        onChange={(event) => setDraft(event.target.value)}
+        onBlur={save}
+        onKeyDown={(event) => {
+          if (event.key === "Enter") {
+            event.preventDefault();
+            event.currentTarget.blur();
+          }
+          if (event.key === "Escape") {
+            skipNextBlur.current = true;
+            setDraft(committed.current);
+            event.currentTarget.blur();
+          }
+        }}
+        placeholder={isAr ? "أدخل الكود" : "Enter code"}
+        aria-label={isAr ? "كود الحاضنة" : "Incubator code"}
+        dir="ltr"
+        disabled={saving}
+        className="h-9 bg-background font-mono text-xs"
+      />
+      {saving && (
+        <span className="absolute end-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">
+          {isAr ? "حفظ..." : "Saving..."}
+        </span>
+      )}
+    </div>
   );
 }
 
