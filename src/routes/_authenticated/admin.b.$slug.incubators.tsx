@@ -143,6 +143,9 @@ function IncubatorsPage() {
   >(null);
   const [activeItem, setActiveItem] = useState<StockItem | null>(null);
   const [busy, setBusy] = useState(false);
+  const [syncing, setSyncing] = useState(false);
+  const locale = isAr ? "ar-BH" : "en-BH";
+  const money = (amount: number, currency = "BHD") => formatMoney(amount, currency, locale);
 
   const incubatorsQ = useQuery({
     queryKey: ["incubators", brand.id],
@@ -248,7 +251,7 @@ function IncubatorsPage() {
     );
   });
 
-  async function refresh() {
+  async function invalidateData() {
     await Promise.all([
       qc.invalidateQueries({ queryKey: ["incubators", brand.id] }),
       qc.invalidateQueries({ queryKey: ["incubator_inventory", brand.id] }),
@@ -257,6 +260,32 @@ function IncubatorsPage() {
       qc.invalidateQueries({ queryKey: ["incubator_product_options", brand.id] }),
       qc.invalidateQueries({ queryKey: ["products", brand.id] }),
     ]);
+  }
+
+  async function refreshPrices() {
+    if (!currentId) return;
+    setSyncing(true);
+    try {
+      const { data, error } = await db.rpc("sync_incubator_inventory_prices", {
+        p_incubator_id: currentId,
+      });
+      if (error) throw error;
+      await invalidateData();
+      const count = Number(data ?? 0);
+      toast.success(
+        isAr
+          ? count > 0
+            ? `تم تحديث أسعار ${count} من المنتجات`
+            : "الأسعار محدثة مسبقًا"
+          : count > 0
+            ? `${count} product prices updated`
+            : "Prices are already up to date",
+      );
+    } catch (error: any) {
+      toast.error(error?.message || (isAr ? "تعذرت مزامنة الأسعار" : "Could not sync prices"));
+    } finally {
+      setSyncing(false);
+    }
   }
 
   async function submit(form: HTMLFormElement) {
@@ -316,7 +345,7 @@ function IncubatorsPage() {
       toast.success(isAr ? "تم حفظ العملية وتحديث المخزون" : "Saved and inventory updated");
       setDialog(null);
       setActiveItem(null);
-      await refresh();
+      await invalidateData();
     } catch (error: any) {
       const messages: Record<string, string> = {
         INSUFFICIENT_MAIN_STOCK: "الكمية في المخزون الرئيسي غير كافية",
@@ -335,7 +364,7 @@ function IncubatorsPage() {
 
   const loading = incubatorsQ.isLoading || inventoryQ.isLoading || salesQ.isLoading;
   return (
-    <div className="space-y-4 pb-8">
+    <div className="space-y-4 pb-8" dir={isAr ? "rtl" : "ltr"}>
       <header className="flex flex-col gap-3 rounded-xl border border-border bg-card p-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-primary/20 bg-primary/10 text-primary">
@@ -356,10 +385,12 @@ function IncubatorsPage() {
           <Button
             variant="outline"
             size="icon"
-            onClick={refresh}
+            onClick={refreshPrices}
+            disabled={syncing || !currentId}
             aria-label={isAr ? "تحديث" : "Refresh"}
+            title={isAr ? "مزامنة الأسعار مع المخزون" : "Sync prices with inventory"}
           >
-            <RefreshCw className="h-4 w-4" />
+            <RefreshCw className={`h-4 w-4 ${syncing ? "animate-spin" : ""}`} />
           </Button>
           <Button onClick={() => setDialog("incubator")}>
             <Plus className="me-2 h-4 w-4" />
@@ -394,7 +425,7 @@ function IncubatorsPage() {
                     </span>
                   </span>
                   <span className="text-xs font-bold text-primary">
-                    {formatMoney(due, item.currency)}
+                    {money(due, item.currency)}
                   </span>
                 </Button>
               );
@@ -442,17 +473,17 @@ function IncubatorsPage() {
                 <Metric
                   icon={ShoppingBag}
                   label={isAr ? "قيمة البضاعة المتبقية" : "Remaining stock value"}
-                  value={formatMoney(summary.stockValue, current.currency)}
+                  value={money(summary.stockValue, current.currency)}
                 />
                 <Metric
                   icon={CircleDollarSign}
                   label={isAr ? "إجمالي المبيعات" : "Gross sales"}
-                  value={formatMoney(summary.gross, current.currency)}
+                  value={money(summary.gross, current.currency)}
                 />
                 <Metric
                   icon={Wallet}
                   label={isAr ? "المبلغ المستحق" : "Amount due"}
-                  value={formatMoney(summary.due, current.currency)}
+                  value={money(summary.due, current.currency)}
                   highlight
                 />
               </div>
@@ -510,10 +541,7 @@ function IncubatorsPage() {
                               <td className="p-3 font-mono text-xs">{item.external_code || "—"}</td>
                               <td className="p-3 text-center font-bold">{item.quantity}</td>
                               <td className="p-3 text-end">
-                                {formatMoney(
-                                  item.quantity * item.consignment_price,
-                                  current.currency,
-                                )}
+                                {money(item.quantity * item.consignment_price, current.currency)}
                               </td>
                               <td className="p-3">
                                 <div className="flex justify-end gap-2">
@@ -569,7 +597,7 @@ function IncubatorsPage() {
                       secondary: new Date(sale.sold_at).toLocaleDateString(
                         isAr ? "ar-BH" : "en-BH",
                       ),
-                      amount: formatMoney(sale.net_due, current.currency),
+                      amount: money(sale.net_due, current.currency),
                       badge:
                         sale.status === "reversed"
                           ? isAr
@@ -595,7 +623,7 @@ function IncubatorsPage() {
                       secondary: new Date(payment.payment_date).toLocaleDateString(
                         isAr ? "ar-BH" : "en-BH",
                       ),
-                      amount: formatMoney(payment.amount, current.currency),
+                      amount: money(payment.amount, current.currency),
                       badge: isAr ? "مستلمة" : "Received",
                     }))}
                     empty={isAr ? "لا توجد دفعات مسجلة" : "No recorded payments"}
@@ -625,6 +653,7 @@ function IncubatorsPage() {
         busy={busy}
         isAr={isAr}
         due={summary.due}
+        locale={locale}
         onSubmit={submit}
       />
     </div>
@@ -694,6 +723,7 @@ function OperationDialog({
   busy,
   isAr,
   due,
+  locale,
   onSubmit,
 }: {
   dialog: "incubator" | "transfer" | "sale" | "payment" | "return" | null;
@@ -704,6 +734,7 @@ function OperationDialog({
   busy: boolean;
   isAr: boolean;
   due: number;
+  locale: string;
   onSubmit: (form: HTMLFormElement) => void;
 }) {
   const title =
@@ -734,7 +765,7 @@ function OperationDialog({
     "";
   return (
     <Dialog open={dialog !== null} onOpenChange={(open) => !open && setDialog(null)}>
-      <DialogContent className="max-w-lg">
+      <DialogContent className="max-w-lg" dir={isAr ? "rtl" : "ltr"}>
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
         </DialogHeader>
@@ -861,7 +892,9 @@ function OperationDialog({
             <>
               <p className="rounded-md bg-muted p-3 text-sm">
                 {isAr ? "المستحق حاليًا" : "Currently due"}:{" "}
-                <b className="text-primary">{formatMoney(due, current?.currency || "BHD")}</b>
+                <b className="text-primary">
+                  {formatMoney(due, current?.currency || "BHD", locale)}
+                </b>
               </p>
               <div className="grid gap-4 sm:grid-cols-2">
                 <Field
