@@ -13,6 +13,7 @@ import {
   BadgePercent,
   Mail,
   BarChart,
+  Building2,
   type LucideIcon,
 } from "lucide-react";
 
@@ -111,6 +112,16 @@ export function getAdminNavItems({
       labelEn: "Inventory",
       labelAr: t("nav.inventory"),
       icon: Package,
+      permission: "manage_inventory",
+      section: "operations",
+    },
+    {
+      id: "incubators",
+      to: "/admin/b/$slug/incubators",
+      params: { slug: activeSlug },
+      labelEn: "Incubators & Consignment",
+      labelAr: lang === "ar" ? "الحاضنات والعُهد" : "Incubators & Consignment",
+      icon: Building2,
       permission: "manage_inventory",
       section: "operations",
     },

@@ -56,6 +56,7 @@ import { Route as AuthenticatedAdminBSlugCustomersRouteImport } from './routes/_
 import { Route as AuthenticatedAdminBSlugDashboardRouteImport } from './routes/_authenticated/admin.b.$slug.dashboard'
 import { Route as AuthenticatedAdminBSlugDiscountsRouteImport } from './routes/_authenticated/admin.b.$slug.discounts'
 import { Route as AuthenticatedAdminBSlugExpensesRouteImport } from './routes/_authenticated/admin.b.$slug.expenses'
+import { Route as AuthenticatedAdminBSlugIncubatorsRouteImport } from './routes/_authenticated/admin.b.$slug.incubators'
 import { Route as AuthenticatedAdminBSlugIntegrationsRouteImport } from './routes/_authenticated/admin.b.$slug.integrations'
 import { Route as AuthenticatedAdminBSlugInventoryRouteImport } from './routes/_authenticated/admin.b.$slug.inventory'
 import { Route as AuthenticatedAdminBSlugPagesRouteImport } from './routes/_authenticated/admin.b.$slug.pages'
@@ -326,6 +327,12 @@ const AuthenticatedAdminBSlugExpensesRoute =
     path: '/expenses',
     getParentRoute: () => AuthenticatedAdminBSlugRouteRoute,
   } as any)
+const AuthenticatedAdminBSlugIncubatorsRoute =
+  AuthenticatedAdminBSlugIncubatorsRouteImport.update({
+    id: '/incubators',
+    path: '/incubators',
+    getParentRoute: () => AuthenticatedAdminBSlugRouteRoute,
+  } as any)
 const AuthenticatedAdminBSlugIntegrationsRoute =
   AuthenticatedAdminBSlugIntegrationsRouteImport.update({
     id: '/integrations',
@@ -458,6 +465,7 @@ export interface FileRoutesByFullPath {
   '/admin/b/$slug/dashboard': typeof AuthenticatedAdminBSlugDashboardRoute
   '/admin/b/$slug/discounts': typeof AuthenticatedAdminBSlugDiscountsRoute
   '/admin/b/$slug/expenses': typeof AuthenticatedAdminBSlugExpensesRoute
+  '/admin/b/$slug/incubators': typeof AuthenticatedAdminBSlugIncubatorsRoute
   '/admin/b/$slug/integrations': typeof AuthenticatedAdminBSlugIntegrationsRoute
   '/admin/b/$slug/inventory': typeof AuthenticatedAdminBSlugInventoryRoute
   '/admin/b/$slug/pages': typeof AuthenticatedAdminBSlugPagesRoute
@@ -518,6 +526,7 @@ export interface FileRoutesByTo {
   '/admin/b/$slug/dashboard': typeof AuthenticatedAdminBSlugDashboardRoute
   '/admin/b/$slug/discounts': typeof AuthenticatedAdminBSlugDiscountsRoute
   '/admin/b/$slug/expenses': typeof AuthenticatedAdminBSlugExpensesRoute
+  '/admin/b/$slug/incubators': typeof AuthenticatedAdminBSlugIncubatorsRoute
   '/admin/b/$slug/integrations': typeof AuthenticatedAdminBSlugIntegrationsRoute
   '/admin/b/$slug/inventory': typeof AuthenticatedAdminBSlugInventoryRoute
   '/admin/b/$slug/pages': typeof AuthenticatedAdminBSlugPagesRoute
@@ -581,6 +590,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/b/$slug/dashboard': typeof AuthenticatedAdminBSlugDashboardRoute
   '/_authenticated/admin/b/$slug/discounts': typeof AuthenticatedAdminBSlugDiscountsRoute
   '/_authenticated/admin/b/$slug/expenses': typeof AuthenticatedAdminBSlugExpensesRoute
+  '/_authenticated/admin/b/$slug/incubators': typeof AuthenticatedAdminBSlugIncubatorsRoute
   '/_authenticated/admin/b/$slug/integrations': typeof AuthenticatedAdminBSlugIntegrationsRoute
   '/_authenticated/admin/b/$slug/inventory': typeof AuthenticatedAdminBSlugInventoryRoute
   '/_authenticated/admin/b/$slug/pages': typeof AuthenticatedAdminBSlugPagesRoute
@@ -645,6 +655,7 @@ export interface FileRouteTypes {
     | '/admin/b/$slug/dashboard'
     | '/admin/b/$slug/discounts'
     | '/admin/b/$slug/expenses'
+    | '/admin/b/$slug/incubators'
     | '/admin/b/$slug/integrations'
     | '/admin/b/$slug/inventory'
     | '/admin/b/$slug/pages'
@@ -705,6 +716,7 @@ export interface FileRouteTypes {
     | '/admin/b/$slug/dashboard'
     | '/admin/b/$slug/discounts'
     | '/admin/b/$slug/expenses'
+    | '/admin/b/$slug/incubators'
     | '/admin/b/$slug/integrations'
     | '/admin/b/$slug/inventory'
     | '/admin/b/$slug/pages'
@@ -767,6 +779,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/b/$slug/dashboard'
     | '/_authenticated/admin/b/$slug/discounts'
     | '/_authenticated/admin/b/$slug/expenses'
+    | '/_authenticated/admin/b/$slug/incubators'
     | '/_authenticated/admin/b/$slug/integrations'
     | '/_authenticated/admin/b/$slug/inventory'
     | '/_authenticated/admin/b/$slug/pages'
@@ -1132,6 +1145,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminBSlugExpensesRouteImport
       parentRoute: typeof AuthenticatedAdminBSlugRouteRoute
     }
+    '/_authenticated/admin/b/$slug/incubators': {
+      id: '/_authenticated/admin/b/$slug/incubators'
+      path: '/incubators'
+      fullPath: '/admin/b/$slug/incubators'
+      preLoaderRoute: typeof AuthenticatedAdminBSlugIncubatorsRouteImport
+      parentRoute: typeof AuthenticatedAdminBSlugRouteRoute
+    }
     '/_authenticated/admin/b/$slug/integrations': {
       id: '/_authenticated/admin/b/$slug/integrations'
       path: '/integrations'
@@ -1317,6 +1337,7 @@ interface AuthenticatedAdminBSlugRouteRouteChildren {
   AuthenticatedAdminBSlugDashboardRoute: typeof AuthenticatedAdminBSlugDashboardRoute
   AuthenticatedAdminBSlugDiscountsRoute: typeof AuthenticatedAdminBSlugDiscountsRoute
   AuthenticatedAdminBSlugExpensesRoute: typeof AuthenticatedAdminBSlugExpensesRoute
+  AuthenticatedAdminBSlugIncubatorsRoute: typeof AuthenticatedAdminBSlugIncubatorsRoute
   AuthenticatedAdminBSlugIntegrationsRoute: typeof AuthenticatedAdminBSlugIntegrationsRoute
   AuthenticatedAdminBSlugInventoryRoute: typeof AuthenticatedAdminBSlugInventoryRoute
   AuthenticatedAdminBSlugPagesRoute: typeof AuthenticatedAdminBSlugPagesRoute
@@ -1342,6 +1363,8 @@ const AuthenticatedAdminBSlugRouteRouteChildren: AuthenticatedAdminBSlugRouteRou
     AuthenticatedAdminBSlugDiscountsRoute:
       AuthenticatedAdminBSlugDiscountsRoute,
     AuthenticatedAdminBSlugExpensesRoute: AuthenticatedAdminBSlugExpensesRoute,
+    AuthenticatedAdminBSlugIncubatorsRoute:
+      AuthenticatedAdminBSlugIncubatorsRoute,
     AuthenticatedAdminBSlugIntegrationsRoute:
       AuthenticatedAdminBSlugIntegrationsRoute,
     AuthenticatedAdminBSlugInventoryRoute:
