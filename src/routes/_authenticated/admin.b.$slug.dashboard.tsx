@@ -32,6 +32,7 @@ import { useBrand } from "@/lib/brand-context";
 import { useRealtimeInvalidate } from "@/hooks/use-realtime-invalidate";
 import { useMemo, useEffect, useState } from "react";
 import { getOrderCustomerName } from "@/lib/order-customer-snapshot";
+import { getOrderWorkflow } from "@/lib/order-workflow";
 import { OsStatusPill } from "@/components/os/os-status-pill";
 
 import { DashboardCommandHeader } from "@/components/dashboard/DashboardCommandHeader";
@@ -241,9 +242,8 @@ function Dashboard() {
   const actionNeededOrders = useMemo(() => {
     return (ordersQ.data ?? [])
       .filter((o) => {
-        const isUnpaid = o.payment_status === "unpaid" || o.payment_status === "pending";
-        const isPendingFulfillment = o.status === "confirmed" || o.status === "needs_packing";
-        return isUnpaid || isPendingFulfillment;
+        const wf = getOrderWorkflow(o);
+        return wf.needsAttention && !wf.terminal;
       })
       .slice(0, 5);
   }, [ordersQ.data]);
