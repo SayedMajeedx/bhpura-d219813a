@@ -13,7 +13,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Package, Plus, Trash2, Box, Info } from "lucide-react";
+import { Package, Plus, Trash2, Box, Info, Sparkles } from "lucide-react";
 import { formatMoney } from "@/lib/format";
 import { toast } from "sonner";
 
@@ -43,16 +43,12 @@ export function ProductBomModal({
 
   const [directCost, setDirectCost] = useState<number>(initialDirectCost || 0);
   const [selectedMaterials, setSelectedMaterials] = useState<
-    Array<{ packaging_material_id: string; quantity_per_unit: number }>
+    { packaging_material_id: string; quantity_per_unit: number }[]
   >([]);
   const [isSaving, setIsSaving] = useState(false);
 
-  useEffect(() => {
-    setDirectCost(initialDirectCost || 0);
-  }, [initialDirectCost, open]);
-
-  // Fetch available packaging materials
-  const materialsQ = useQuery({
+  // Fetch brand packaging materials
+  const { data: materials = [], isLoading: isLoadingMaterials } = useQuery({
     queryKey: ["packaging-materials", brandId],
     queryFn: async () => {
       const { data, error } = await (supabase as any)
@@ -61,45 +57,54 @@ export function ProductBomModal({
         .eq("brand_id", brandId)
         .order("name", { ascending: true });
       if (error) throw error;
-      return (data ?? []) as any[];
+      return data || [];
     },
-    enabled: open,
+    enabled: !!brandId && open,
   });
 
-  // Fetch current BOM items for this product
-  const bomQ = useQuery({
+  // Fetch current product BOM items
+  const { data: currentBom = [], isLoading: isLoadingBom } = useQuery({
     queryKey: ["product-bom-items", productId],
     queryFn: async () => {
-      if (!productId) return [];
       const { data, error } = await (supabase as any)
         .from("product_bom_items")
         .select("packaging_material_id, quantity_per_unit")
         .eq("product_id", productId)
         .eq("brand_id", brandId);
       if (error) throw error;
-      return (data ?? []) as any[];
+      return data || [];
     },
-    enabled: open && !!productId,
+    enabled: !!productId && !!brandId && open,
   });
 
+  // Load existing BOM on modal open
   useEffect(() => {
-    if (bomQ.data) {
-      setSelectedMaterials(
-        bomQ.data.map((item: any) => ({
-          packaging_material_id: item.packaging_material_id,
-          quantity_per_unit: Number(item.quantity_per_unit || 1),
-        })),
-      );
+    if (open) {
+      setDirectCost(initialDirectCost || 0);
+      if (currentBom.length > 0) {
+        setSelectedMaterials(
+          currentBom.map((item: any) => ({
+            packaging_material_id: item.packaging_material_id,
+            quantity_per_unit: Number(item.quantity_per_unit || 1),
+          })),
+        );
+      } else {
+        setSelectedMaterials([]);
+      }
     }
-  }, [bomQ.data]);
-
-  const materials: any[] = materialsQ.data ?? [];
+  }, [open, currentBom, initialDirectCost]);
 
   const handleAddMaterialRow = () => {
     if (materials.length === 0) return;
+    // Pick first material that is not yet selected
+    const unselected = materials.find(
+      (m: any) => !selectedMaterials.some((sm) => sm.packaging_material_id === m.id),
+    );
+    const materialToAdd = unselected || materials[0];
+
     setSelectedMaterials((prev) => [
       ...prev,
-      { packaging_material_id: materials[0].id, quantity_per_unit: 1 },
+      { packaging_material_id: materialToAdd.id, quantity_per_unit: 1 },
     ]);
   };
 
@@ -107,36 +112,36 @@ export function ProductBomModal({
     setSelectedMaterials((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const handleMaterialChange = (index: number, matId: string) => {
-    setSelectedMaterials((prev) => {
-      const next = [...prev];
-      next[index].packaging_material_id = matId;
-      return next;
-    });
+  const handleMaterialChange = (index: number, newMaterialId: string) => {
+    setSelectedMaterials((prev) =>
+      prev.map((item, i) =>
+        i === index ? { ...item, packaging_material_id: newMaterialId } : item,
+      ),
+    );
   };
 
-  const handleQtyChange = (index: number, qty: number) => {
-    setSelectedMaterials((prev) => {
-      const next = [...prev];
-      next[index].quantity_per_unit = Math.max(1, qty);
-      return next;
-    });
+  const handleQtyChange = (index: number, newQty: number) => {
+    setSelectedMaterials((prev) =>
+      prev.map((item, i) =>
+        i === index ? { ...item, quantity_per_unit: Math.max(1, newQty) } : item,
+      ),
+    );
   };
 
   // Calculate live total packaging cost
-  const bomCostTotal = selectedMaterials.reduce((sum, item) => {
-    const mat = materials.find((m) => m.id === item.packaging_material_id);
+  const totalBOMCost = selectedMaterials.reduce((acc, curr) => {
+    const mat = materials.find((m: any) => m.id === curr.packaging_material_id);
     const unitCost = Number(mat?.unit_cost || 0);
-    return sum + unitCost * item.quantity_per_unit;
+    return acc + unitCost * curr.quantity_per_unit;
   }, 0);
 
-  const totalCalculatedPackagingCost = directCost + bomCostTotal;
+  const totalCalculatedPackagingCost = directCost + totalBOMCost;
 
   const handleSave = async () => {
-    if (!productId) return;
+    if (!productId || !brandId) return;
     setIsSaving(true);
     try {
-      // 1. Update direct packaging cost on product
+      // 1. Update direct_packaging_cost on product
       const { error: pErr } = await (supabase as any)
         .from("products")
         .update({ direct_packaging_cost: directCost } as any)
@@ -168,7 +173,9 @@ export function ProductBomModal({
 
       toast.success(isAr ? "تم حفظ تكاليف التغليف بنجاح" : "BOM packaging saved successfully");
       qc.invalidateQueries({ queryKey: ["dashboard-products", brandId] });
+      qc.invalidateQueries({ queryKey: ["products", brandId] });
       qc.invalidateQueries({ queryKey: ["product-bom-items", productId] });
+      qc.invalidateQueries({ queryKey: ["product-bom-items-all", brandId] });
 
       onSaved?.();
       onOpenChange(false);
@@ -176,6 +183,70 @@ export function ProductBomModal({
       console.error("Failed to save BOM packaging", err);
       toast.error(
         err.message || (isAr ? "خطأ في حفظ تكاليف التغليف" : "Failed to save BOM packaging"),
+      );
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleApplyToAllProducts = async () => {
+    if (!brandId) return;
+    setIsSaving(true);
+    try {
+      // 1. Fetch all product IDs for this brand
+      const { data: allProducts, error: pFetchErr } = await (supabase as any)
+        .from("products")
+        .select("id")
+        .eq("brand_id", brandId);
+      if (pFetchErr) throw pFetchErr;
+
+      const pIds = (allProducts ?? []).map((p: any) => p.id);
+      if (pIds.length === 0) return;
+
+      // 2. Update direct_packaging_cost on all products
+      await (supabase as any)
+        .from("products")
+        .update({ direct_packaging_cost: directCost } as any)
+        .eq("brand_id", brandId);
+
+      // 3. Delete existing BOM items for all products of this brand
+      await (supabase as any).from("product_bom_items").delete().eq("brand_id", brandId);
+
+      // 4. Insert new BOM items for all products
+      if (selectedMaterials.length > 0) {
+        const rowsToInsert: any[] = [];
+        for (const pid of pIds) {
+          for (const sm of selectedMaterials) {
+            rowsToInsert.push({
+              brand_id: brandId,
+              product_id: pid,
+              packaging_material_id: sm.packaging_material_id,
+              quantity_per_unit: sm.quantity_per_unit,
+            });
+          }
+        }
+        const { error: iErr } = await (supabase as any)
+          .from("product_bom_items")
+          .insert(rowsToInsert as any);
+        if (iErr) throw iErr;
+      }
+
+      toast.success(
+        isAr
+          ? "تم تطبيق مواد التغليف على جميع منتجات المتجر بنجاح"
+          : "Packaging BOM applied to all products successfully",
+      );
+      qc.invalidateQueries({ queryKey: ["dashboard-products", brandId] });
+      qc.invalidateQueries({ queryKey: ["products", brandId] });
+      qc.invalidateQueries({ queryKey: ["product-bom-items"] });
+      qc.invalidateQueries({ queryKey: ["product-bom-items-all", brandId] });
+
+      onSaved?.();
+      onOpenChange(false);
+    } catch (err: any) {
+      console.error("Failed to apply BOM to all products", err);
+      toast.error(
+        err.message || (isAr ? "خطأ في تطبيق التغليف على المنتجات" : "Failed to apply BOM to all"),
       );
     } finally {
       setIsSaving(false);
@@ -258,7 +329,7 @@ export function ProductBomModal({
             ) : (
               <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
                 {selectedMaterials.map((item, index) => {
-                  const mat = materials.find((m) => m.id === item.packaging_material_id);
+                  const mat = materials.find((m: any) => m.id === item.packaging_material_id);
                   const matCost = Number(mat?.unit_cost || 0);
 
                   return (
@@ -271,7 +342,7 @@ export function ProductBomModal({
                         onChange={(e) => handleMaterialChange(index, e.target.value)}
                         className="flex-1 h-8 text-xs rounded-md border border-input bg-background px-2"
                       >
-                        {materials.map((m) => (
+                        {materials.map((m: any) => (
                           <option key={m.id} value={m.id}>
                             {isAr ? m.name_ar || m.name : m.name} ({formatMoney(m.unit_cost, "BHD")}
                             )
@@ -320,19 +391,32 @@ export function ProductBomModal({
           </div>
         </div>
 
-        <DialogFooter className="gap-2 sm:gap-0 pt-2">
-          <Button variant="outline" onClick={() => onOpenChange(false)} className="h-9 text-xs">
-            {isAr ? "إلغاء" : "Cancel"}
+        <DialogFooter className="flex flex-col sm:flex-row gap-2 pt-2 justify-between items-center w-full">
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={handleApplyToAllProducts}
+            disabled={isSaving}
+            className="w-full sm:w-auto h-9 text-xs font-semibold gap-1.5"
+          >
+            <Sparkles className="h-3.5 w-3.5 text-primary" />
+            {isAr ? "تطبيق على جميع منتجات المتجر" : "Apply to All Products"}
           </Button>
-          <Button onClick={handleSave} disabled={isSaving} className="h-9 text-xs font-bold">
-            {isSaving
-              ? isAr
-                ? "جاري الحفظ..."
-                : "Saving..."
-              : isAr
-                ? "حفظ التغييرات"
-                : "Save Changes"}
-          </Button>
+
+          <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+            <Button variant="outline" onClick={() => onOpenChange(false)} className="h-9 text-xs">
+              {isAr ? "إلغاء" : "Cancel"}
+            </Button>
+            <Button onClick={handleSave} disabled={isSaving} className="h-9 text-xs font-bold">
+              {isSaving
+                ? isAr
+                  ? "جاري الحفظ..."
+                  : "Saving..."
+                : isAr
+                  ? "حفظ لهذا المنتج"
+                  : "Save for Product"}
+            </Button>
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>

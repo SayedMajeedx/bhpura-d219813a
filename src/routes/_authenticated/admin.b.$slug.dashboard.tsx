@@ -25,6 +25,7 @@ import {
 } from "lucide-react";
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip } from "recharts";
 import { formatDate, formatMoney } from "@/lib/format";
+import { getItemPackagingCost } from "@/lib/bom-calculator";
 import { useI18n, useT } from "@/lib/i18n";
 import { useProfile } from "@/lib/profile-context";
 import { useBrand } from "@/lib/brand-context";
@@ -86,12 +87,12 @@ function Dashboard() {
   const productsQ = useQuery({
     queryKey: ["dashboard-products", brandId],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from("products")
-        .select("id, name, name_ar, name_en, category, is_active")
+        .select("id, name, name_ar, name_en, category, is_active, direct_packaging_cost")
         .eq("brand_id", brandId);
       if (error) throw error;
-      return data ?? [];
+      return (data ?? []) as any[];
     },
     staleTime: 60_000,
     refetchOnWindowFocus: false,
@@ -109,6 +110,34 @@ function Dashboard() {
         .eq("brand_id", brandId);
       if (error) throw error;
       return data ?? [];
+    },
+    staleTime: 60_000,
+    refetchOnWindowFocus: false,
+  });
+
+  const bomItemsQ = useQuery({
+    queryKey: ["product-bom-items-all", brandId],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from("product_bom_items")
+        .select("product_id, packaging_material_id, quantity_per_unit")
+        .eq("brand_id", brandId);
+      if (error) return [];
+      return (data ?? []) as any[];
+    },
+    staleTime: 60_000,
+    refetchOnWindowFocus: false,
+  });
+
+  const packagingMaterialsQ = useQuery({
+    queryKey: ["packaging-materials", brandId],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from("packaging_materials")
+        .select("*")
+        .eq("brand_id", brandId);
+      if (error) return [];
+      return (data ?? []) as any[];
     },
     staleTime: 60_000,
     refetchOnWindowFocus: false,
@@ -136,7 +165,7 @@ function Dashboard() {
       const { data, error } = await supabase
         .from("orders")
         .select(
-          "id, invoice_number, created_at, currency, total, status, payment_status, customer_id, customer_name_snapshot, customer_email_snapshot, customer_phone_snapshot, customers(name), payment_method, order_items(id, variant_id, quantity, unit_price, unit_cost, line_total)",
+          "id, invoice_number, created_at, currency, total, status, fulfillment_status, payment_status, customer_id, customer_name_snapshot, customer_email_snapshot, customer_phone_snapshot, customers(name), payment_method, order_items(id, description, product_id, variant_id, quantity, unit_price, unit_cost, line_total)",
         )
         .eq("brand_id", brandId)
         .order("created_at", { ascending: false });
@@ -234,6 +263,10 @@ function Dashboard() {
 
     let productCogs = 0;
     let packagingBomCogs = 0;
+    const prods = productsQ.data ?? [];
+    const boms = bomItemsQ.data ?? [];
+    const mats = packagingMaterialsQ.data ?? [];
+
     orders.forEach((order) => {
       const isFulfilled = ["fulfilled", "delivered", "completed", "shipped"].includes(
         String(order.fulfillment_status || order.status || "").toLowerCase(),
@@ -243,11 +276,11 @@ function Dashboard() {
           item.unit_cost != null && !isNaN(Number(item.unit_cost))
             ? Number(item.unit_cost)
             : (variantCostMap.get(item.variant_id) ?? 0);
-        const pkgCost = Number(item.packaging_cost || 0);
         const qty = Number(item.quantity || 0);
 
         productCogs += itemCost * qty;
         if (isFulfilled) {
+          const pkgCost = getItemPackagingCost(item, prods, variants, boms, mats);
           packagingBomCogs += pkgCost * qty;
         }
       });
@@ -359,7 +392,16 @@ function Dashboard() {
       aovDeltaPct,
       dailyChartSeries,
     };
-  }, [validRevenueOrders, expensesQ.data, variantsQ.data, businessSettings.data, locale]);
+  }, [
+    validRevenueOrders,
+    expensesQ.data,
+    variantsQ.data,
+    productsQ.data,
+    bomItemsQ.data,
+    packagingMaterialsQ.data,
+    businessSettings.data,
+    locale,
+  ]);
 
   // CRM segmentation distribution
   const crmStats = useMemo(() => {

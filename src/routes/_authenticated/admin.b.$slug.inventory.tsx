@@ -1473,6 +1473,7 @@ function ProductsSection({
   const brand = useBrand();
   const brandId = brand.id;
   const [editing, setEditing] = useState<Product | null>(null);
+  const [bomTargetProduct, setBomTargetProduct] = useState<Product | null>(null);
   const [open, setOpen] = useState(false);
   const [dialogSession, setDialogSession] = useState(0);
   const [search, setSearch] = useState("");
@@ -1988,6 +1989,7 @@ function ProductsSection({
             if (labels.length > 0) printLabels(labels);
             else toast.error(isAr ? "لا يوجد باركود لهذا المنتج" : "No barcode for this product");
           }}
+          onConfigureBom={(prod) => setBomTargetProduct(prod)}
           renderVariantList={(prod) => (
             <VariantList
               productId={prod.id}
@@ -2051,7 +2053,7 @@ function ProductsSection({
                   : "Deleting..."
                 : isAr
                   ? "تأكيد الحذف"
-                  : "Confirm delete"}
+                  : "Confirm Delete"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -2106,6 +2108,19 @@ function ProductsSection({
           }}
         />
       </Dialog>
+
+      {bomTargetProduct && (
+        <ProductBomModal
+          open={!!bomTargetProduct}
+          onOpenChange={(open) => {
+            if (!open) setBomTargetProduct(null);
+          }}
+          productId={bomTargetProduct.id}
+          productName={bomTargetProduct.name}
+          directPackagingCost={Number((bomTargetProduct as any).direct_packaging_cost || 0)}
+          onSaved={onChanged}
+        />
+      )}
     </div>
   );
 }

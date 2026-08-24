@@ -9,6 +9,7 @@ import {
   AlertTriangle,
   ChevronDown,
   ChevronUp,
+  Box,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -38,6 +39,7 @@ interface InventoryWorkQueueProps {
   onEdit: (product: any) => void;
   onDelete: (productId: string) => void;
   onPrintLabel: (product: any) => void;
+  onConfigureBom?: (product: any) => void;
   renderVariantList?: (product: any) => React.ReactNode;
   selectedProductIds?: ReadonlySet<string>;
   onToggleProduct?: (productId: string) => void;
@@ -53,6 +55,7 @@ export const InventoryWorkQueue: React.FC<InventoryWorkQueueProps> = ({
   onEdit,
   onDelete,
   onPrintLabel,
+  onConfigureBom,
   renderVariantList,
   selectedProductIds = new Set<string>(),
   onToggleProduct = () => undefined,
@@ -295,6 +298,12 @@ export const InventoryWorkQueue: React.FC<InventoryWorkQueueProps> = ({
                               <Printer className="h-3.5 w-3.5 me-2" />
                               {isAr ? "طباعة الباركوّد" : "Print Barcode"}
                             </DropdownMenuItem>
+                            {onConfigureBom && (
+                              <DropdownMenuItem onClick={() => onConfigureBom(product)}>
+                                <Box className="h-3.5 w-3.5 me-2 text-primary" />
+                                {isAr ? "تكاليف ومواد التغليف (BOM)" : "Packaging Materials (BOM)"}
+                              </DropdownMenuItem>
+                            )}
                             <DropdownMenuItem
                               onSelect={() => setPendingDelete(product)}
                               className="text-rose-600 focus:text-rose-600"

@@ -115,6 +115,11 @@ import { DeliveryAddressCard } from "@/components/delivery-address-card";
 import { getOrderWorkflow } from "@/lib/order-workflow";
 import { detectOrderType, getOrderTypeLabel } from "@/lib/order-type-detector";
 import {
+  calculateOrderPackagingCogs,
+  deductOrderPackagingStock,
+  matchProductForItem,
+} from "@/lib/bom-calculator";
+import {
   getFulfillmentLabel,
   getOrderStatusLabel,
   getFulfillmentMethodLabel,
@@ -364,6 +369,30 @@ function OrderDetail() {
     enabled: !isCourier,
     queryFn: async () =>
       (await supabase.from("product_variants").select("*").eq("brand_id", brandId)).data ?? [],
+  });
+  const bomItemsQ = useQuery({
+    queryKey: ["product-bom-items-all", brandId],
+    enabled: !isCourier,
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from("product_bom_items")
+        .select("product_id, packaging_material_id, quantity_per_unit")
+        .eq("brand_id", brandId);
+      if (error) return [];
+      return (data ?? []) as any[];
+    },
+  });
+  const packagingMaterialsQ = useQuery({
+    queryKey: ["packaging-materials", brandId],
+    enabled: !isCourier,
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from("packaging_materials")
+        .select("*")
+        .eq("brand_id", brandId);
+      if (error) return [];
+      return (data ?? []) as any[];
+    },
   });
   const customersQ = useQuery({
     queryKey: ["customers", brandId],
@@ -4245,13 +4274,14 @@ function OrderDetail() {
                     String(order.fulfillment_status || order.status || "").toLowerCase(),
                   );
 
-                  const packagingCogsTotal = isFulfilled
-                    ? items.reduce((sum, it: any) => {
-                        const qty = Number(it.quantity || 1);
-                        const pkgCost = Number(it.packaging_cost || 0);
-                        return sum + pkgCost * qty;
-                      }, 0)
-                    : 0;
+                  const packagingCogsTotal = calculateOrderPackagingCogs(
+                    items,
+                    isFulfilled,
+                    productsQ.data ?? [],
+                    variantsQ.data ?? [],
+                    bomItemsQ.data ?? [],
+                    packagingMaterialsQ.data ?? [],
+                  );
 
                   const orderTotalCogs = productCogsTotal + packagingCogsTotal;
                   const orderNetProfit = totals.total - orderTotalCogs;

@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
+import { getItemPackagingCost } from "@/lib/bom-calculator";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -332,6 +333,39 @@ function ExpensesPage() {
     },
   });
 
+  const productsQ = useQuery({
+    queryKey: ["products", brandId],
+    queryFn: async () =>
+      (await supabase.from("products").select("*").eq("brand_id", brandId)).data ?? [],
+  });
+  const variantsQ = useQuery({
+    queryKey: ["variants", brandId],
+    queryFn: async () =>
+      (await supabase.from("product_variants").select("*").eq("brand_id", brandId)).data ?? [],
+  });
+  const bomItemsQ = useQuery({
+    queryKey: ["product-bom-items-all", brandId],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from("product_bom_items")
+        .select("product_id, packaging_material_id, quantity_per_unit")
+        .eq("brand_id", brandId);
+      if (error) return [];
+      return (data ?? []) as any[];
+    },
+  });
+  const packagingMaterialsQ = useQuery({
+    queryKey: ["packaging-materials", brandId],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from("packaging_materials")
+        .select("*")
+        .eq("brand_id", brandId);
+      if (error) return [];
+      return (data ?? []) as any[];
+    },
+  });
+
   // ── COGS: use the immutable unit-cost snapshot captured on each order item ──
   const cogsQ = useQuery({
     queryKey: ["cogs", brandId, activeRange.from, activeRange.to],
@@ -339,7 +373,7 @@ function ExpensesPage() {
       let q2 = (supabase as any)
         .from("orders")
         .select(
-          "id, invoice_number, created_at, currency, total, payment_method, status, fulfillment_status, order_items(id, description, quantity, unit_price, unit_cost, line_total, variant_id)",
+          "id, invoice_number, created_at, currency, total, payment_method, status, fulfillment_status, order_items(id, description, quantity, unit_price, unit_cost, line_total, variant_id, product_id)",
         )
         .eq("brand_id", brandId)
         .in("status", ["confirmed", "paid", "shipped", "completed"])
@@ -476,26 +510,31 @@ function ExpensesPage() {
   const { productCogs, packagingBomCogs, totalCogs } = useMemo(() => {
     let prod = 0;
     let pkg = 0;
+    const prods = productsQ.data ?? [];
+    const vars = variantsQ.data ?? [];
+    const boms = bomItemsQ.data ?? [];
+    const mats = packagingMaterialsQ.data ?? [];
+
     (cogsQ.data ?? []).forEach((order) => {
       const isFulfilled = ["fulfilled", "delivered", "completed", "shipped"].includes(
         String(order.fulfillment_status || order.status || "").toLowerCase(),
       );
       (order.order_items ?? []).forEach((item) => {
         const pCost = Number((item as any).unit_cost ?? 0);
-        const bCost = Number((item as any).packaging_cost ?? 0);
         const qty = Number(item.quantity ?? 1);
         prod += pCost * qty;
         if (isFulfilled) {
+          const bCost = getItemPackagingCost(item, prods, vars, boms, mats);
           pkg += bCost * qty;
         }
       });
     });
     return {
-      productCogs: prod,
-      packagingBomCogs: pkg,
-      totalCogs: prod + pkg,
+      productCogs: Number(prod.toFixed(3)),
+      packagingBomCogs: Number(pkg.toFixed(3)),
+      totalCogs: Number((prod + pkg).toFixed(3)),
     };
-  }, [cogsQ.data]);
+  }, [cogsQ.data, productsQ.data, variantsQ.data, bomItemsQ.data, packagingMaterialsQ.data]);
 
   const cardFeePercent = Number((settingsQ.data as any)?.card_processing_fee ?? 0);
   const benefitFeePercent = Number((settingsQ.data as any)?.benefit_processing_fee ?? 0);
