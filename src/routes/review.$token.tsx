@@ -216,10 +216,20 @@ function PageShell({ review, children }: { review: PublicReview; children: React
     <main dir="rtl" className="min-h-screen bg-muted/40 px-4 py-8 sm:py-12">
       <div className="mx-auto max-w-lg space-y-4">
         {review.brand_logo_url ? (
-          <img
-            src={review.brand_logo_url}
-            alt={review.brand_name}
-            className="mx-auto h-14 max-w-40 object-contain"
+          <div
+            role="img"
+            aria-label={review.brand_name}
+            className="mx-auto h-14 w-40 bg-[#330a0a]"
+            style={{
+              WebkitMaskImage: `url("${review.brand_logo_url}")`,
+              maskImage: `url("${review.brand_logo_url}")`,
+              WebkitMaskPosition: "center",
+              maskPosition: "center",
+              WebkitMaskRepeat: "no-repeat",
+              maskRepeat: "no-repeat",
+              WebkitMaskSize: "contain",
+              maskSize: "contain",
+            }}
           />
         ) : (
           <p className="text-center font-heading text-xl font-bold">{review.brand_name}</p>
