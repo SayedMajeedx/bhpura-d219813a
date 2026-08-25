@@ -108,7 +108,7 @@ function ReportsOverview() {
           )}
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
             <KpiCard
-              title={lang === "ar" ? "قيمة الطلبات المدفوعة" : "Paid order value"}
+              title={lang === "ar" ? "قيمة المبيعات المكتملة" : "Completed sales value"}
               value={money(data.paid_order_value)}
               icon={<Banknote />}
               description={lang === "ar" ? "الإيراد المحصل" : "Revenue collected"}
@@ -121,7 +121,7 @@ function ReportsOverview() {
               description={lang === "ar" ? "بعد الخصومات" : "After discounts"}
             />
             <KpiCard
-              title={lang === "ar" ? "الطلبات المدفوعة" : "Paid orders"}
+              title={lang === "ar" ? "عمليات البيع المكتملة" : "Completed sales"}
               value={Number(data.paid_order_count || 0)}
               icon={<PackageCheck />}
               accent="blue"
@@ -152,8 +152,8 @@ function ReportsOverview() {
               accent="amber"
               description={
                 lang === "ar"
-                  ? `يدوية ${money(data.manual_expenses)} + رسوم ${money(data.processing_fees)}`
-                  : `Manual ${money(data.manual_expenses)} + fees ${money(data.processing_fees)}`
+                  ? `يدوية ${money(data.manual_expenses)} + رسوم ${money(data.processing_fees)} + عمولات ${money(data.incubator_commissions)}`
+                  : `Manual ${money(data.manual_expenses)} + fees ${money(data.processing_fees)} + commissions ${money(data.incubator_commissions)}`
               }
             />
           </div>
@@ -163,6 +163,18 @@ function ReportsOverview() {
               rows={[
                 [lang === "ar" ? "المبالغ الجزئية" : "Partial amounts", money(data.partial_amount)],
                 [lang === "ar" ? "المبالغ المستردة" : "Refunded total", money(data.refunded_total)],
+                [
+                  lang === "ar" ? "مبيعات الحاضنات" : "Incubator sales",
+                  money(data.incubator_sales),
+                ],
+                [
+                  lang === "ar" ? "عمولات الحاضنات" : "Incubator commissions",
+                  money(data.incubator_commissions),
+                ],
+                [
+                  lang === "ar" ? "مستحقات الحاضنات" : "Incubator receivables",
+                  money(data.incubator_receivables),
+                ],
                 [
                   lang === "ar" ? "طلبات مجانية مكتملة" : "Free completed orders",
                   Number(data.free_completed_order_count || 0),

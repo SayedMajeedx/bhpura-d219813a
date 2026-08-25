@@ -210,6 +210,31 @@ function Dashboard() {
     refetchOnWindowFocus: false,
   });
 
+  const incubatorSalesQ = useQuery({
+    queryKey: ["dashboard-incubator-sales", brandId],
+    queryFn: async () => {
+      const end = new Date();
+      const start = new Date(end);
+      start.setDate(start.getDate() - 60);
+      const { data, error } = await (supabase as any).rpc("rpc_reporting_incubator_sales", {
+        p_start_date: start.toISOString(),
+        p_end_date: end.toISOString(),
+        p_tz: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        p_interval: "day",
+        p_brand_slug: slug,
+      });
+      if (error) throw error;
+      return ((data?.timeseries ?? []) as any[]).map((row) => ({
+        ...row,
+        sold_at: row.time_bucket,
+        gross_amount: row.gross_amount,
+        quantity: row.sale_count,
+      }));
+    },
+    staleTime: 60_000,
+    refetchOnWindowFocus: false,
+  });
+
   useRealtimeInvalidate(
     [
       { table: "orders", brandId, queryKey: ["dashboard-orders-with-items", brandId] },
@@ -231,7 +256,8 @@ function Dashboard() {
     customersQ.isLoading ||
     ordersQ.isLoading ||
     recentOrdersQ.isLoading ||
-    expensesQ.isLoading;
+    expensesQ.isLoading ||
+    incubatorSalesQ.isLoading;
 
   // Filter confirmed/completed orders for revenue reporting
   const validRevenueOrders = useMemo(() => {
@@ -282,6 +308,15 @@ function Dashboard() {
         timestamp <= now.getTime()
       );
     });
+    const allIncubatorSales = incubatorSalesQ.data ?? [];
+    const incubatorSales = allIncubatorSales.filter((sale: any) => {
+      const timestamp = Date.parse(sale.sold_at);
+      return (
+        Number.isFinite(timestamp) &&
+        timestamp >= currentStart.getTime() &&
+        timestamp <= now.getTime()
+      );
+    });
     const variants = variantsQ.data ?? [];
 
     const variantCostMap = new Map<string, number>();
@@ -289,7 +324,12 @@ function Dashboard() {
       variantCostMap.set(v.id, Number(v.cost_price || 0));
     });
 
-    const revenue = orders.reduce((sum, o) => sum + Number(o.total || 0), 0);
+    const orderRevenue = orders.reduce((sum, o) => sum + Number(o.total || 0), 0);
+    const incubatorRevenue = incubatorSales.reduce(
+      (sum: number, sale: any) => sum + Number(sale.gross_amount || 0),
+      0,
+    );
+    const revenue = orderRevenue + incubatorRevenue;
 
     let productCogs = 0;
     let packagingBomCogs = 0;
@@ -316,7 +356,12 @@ function Dashboard() {
       });
     });
 
-    const cogs = productCogs + packagingBomCogs;
+    const incubatorCogs = incubatorSales.reduce(
+      (sum: number, sale: any) =>
+        sum + Number(sale.product_cost_snapshot || 0) + Number(sale.packaging_cost_snapshot || 0),
+      0,
+    );
+    const cogs = productCogs + packagingBomCogs + incubatorCogs;
 
     const cardFeePercent = Number((businessSettings.data as any)?.card_processing_fee ?? 0);
     const benefitFeePercent = Number((businessSettings.data as any)?.benefit_processing_fee ?? 0);
@@ -336,7 +381,11 @@ function Dashboard() {
       .filter((e: any) => (e.expense_type || "opex") === "opex")
       .reduce((sum, e) => sum + Number(e.amount || 0), 0);
 
-    const opex = manualOpex + paymentProcessingFees;
+    const incubatorCommissions = incubatorSales.reduce(
+      (sum: number, sale: any) => sum + Number(sale.commission_amount || 0),
+      0,
+    );
+    const opex = manualOpex + paymentProcessingFees + incubatorCommissions;
     const totalExpenses = cogs + opex;
     const netProfit = revenue - totalExpenses;
     const grossMarginPercent = revenue > 0 ? ((revenue - cogs) / revenue) * 100 : 0;
@@ -354,16 +403,35 @@ function Dashboard() {
     });
 
     const revenueCurrent = current30Orders.reduce((sum, o) => sum + Number(o.total || 0), 0);
-    const revenuePrior = prior30Orders.reduce((sum, o) => sum + Number(o.total || 0), 0);
+    const currentIncubatorRevenue = incubatorRevenue;
+    const priorIncubatorSales = allIncubatorSales.filter((sale: any) => {
+      const timestamp = Date.parse(sale.sold_at);
+      return (
+        Number.isFinite(timestamp) &&
+        timestamp >= priorStart.getTime() &&
+        timestamp < currentStart.getTime()
+      );
+    });
+    const revenueWithIncubators = revenueCurrent + currentIncubatorRevenue;
+    const revenuePrior =
+      prior30Orders.reduce((sum, o) => sum + Number(o.total || 0), 0) +
+      priorIncubatorSales.reduce(
+        (sum: number, sale: any) => sum + Number(sale.gross_amount || 0),
+        0,
+      );
     const revenueDeltaPct =
       revenuePrior > 0
-        ? ((revenueCurrent - revenuePrior) / revenuePrior) * 100
-        : revenueCurrent > 0
+        ? ((revenueWithIncubators - revenuePrior) / revenuePrior) * 100
+        : revenueWithIncubators > 0
           ? 100
           : 0;
 
-    const ordersCurrent = current30Orders.length;
-    const ordersPrior = prior30Orders.length;
+    const ordersCurrent =
+      current30Orders.length +
+      incubatorSales.reduce((sum: number, sale: any) => sum + Number(sale.quantity || 0), 0);
+    const ordersPrior =
+      prior30Orders.length +
+      priorIncubatorSales.reduce((sum: number, sale: any) => sum + Number(sale.quantity || 0), 0);
     const ordersDeltaPct =
       ordersPrior > 0
         ? ((ordersCurrent - ordersPrior) / ordersPrior) * 100
@@ -371,7 +439,7 @@ function Dashboard() {
           ? 100
           : 0;
 
-    const aovCurrent = ordersCurrent > 0 ? revenueCurrent / ordersCurrent : 0;
+    const aovCurrent = ordersCurrent > 0 ? revenueWithIncubators / ordersCurrent : 0;
     const aovPrior = ordersPrior > 0 ? revenuePrior / ordersPrior : 0;
     const aovDeltaPct =
       aovPrior > 0 ? ((aovCurrent - aovPrior) / aovPrior) * 100 : aovCurrent > 0 ? 100 : 0;
@@ -397,6 +465,16 @@ function Dashboard() {
         item.orders += 1;
       }
     });
+    incubatorSales.forEach((sale: any) => {
+      const d = new Date(sale.sold_at);
+      if (isNaN(d.getTime())) return;
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+      const item = chartDataMap.get(key);
+      if (item) {
+        item.sales += Number(sale.gross_amount || 0);
+        item.orders += Number(sale.quantity || 0);
+      }
+    });
 
     const dailyChartSeries = Array.from(chartDataMap.values());
 
@@ -407,7 +485,7 @@ function Dashboard() {
       totalExpenses,
       netProfit,
       grossMarginPercent,
-      revenueCurrent,
+      revenueCurrent: revenueWithIncubators,
       revenueDeltaPct,
       ordersCurrent,
       ordersDeltaPct,
@@ -418,6 +496,7 @@ function Dashboard() {
   }, [
     validRevenueOrders,
     expensesQ.data,
+    incubatorSalesQ.data,
     variantsQ.data,
     productsQ.data,
     bomItemsQ.data,
@@ -659,7 +738,7 @@ function Dashboard() {
         ]
       : []),
     {
-      label: isAr ? "إجمالي الطلبات المؤكدة" : "Total Confirmed Orders",
+      label: isAr ? "إجمالي عمليات البيع" : "Total Sales Transactions",
       value: `${financials.ordersCurrent}`,
       subValue: isAr ? "خلال الثلاثين يومًا الماضية" : "Over the last 30 days",
       deltaPct: financials.ordersDeltaPct,
@@ -815,7 +894,7 @@ function Dashboard() {
                                     {formatMoney(Number(data.sales), currency, locale)}
                                   </p>
                                   <p className="text-muted-foreground text-[11px]">
-                                    {data.orders} {isAr ? "طلبات مؤكدة" : "confirmed orders"}
+                                    {data.orders} {isAr ? "عمليات بيع" : "sales transactions"}
                                   </p>
                                 </div>
                               );
@@ -1048,7 +1127,7 @@ function Dashboard() {
                                 {formatMoney(Number(data.sales), currency, locale)}
                               </p>
                               <p className="text-muted-foreground text-[11px]">
-                                {data.orders} {isAr ? "طلبات مؤكدة" : "confirmed orders"}
+                                {data.orders} {isAr ? "عمليات بيع" : "sales transactions"}
                               </p>
                             </div>
                           );

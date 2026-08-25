@@ -120,7 +120,7 @@ function ReportsSales() {
               accent="emerald"
             />
             <KpiCard
-              title={lang === "ar" ? "الطلبات المدفوعة" : "Paid orders"}
+              title={lang === "ar" ? "عمليات البيع" : "Sales transactions"}
               value={orderCount}
               icon={<CreditCard />}
               accent="blue"

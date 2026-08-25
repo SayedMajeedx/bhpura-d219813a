@@ -73,6 +73,8 @@ type Incubator = {
   currency: string;
   notes: string | null;
   is_active: boolean;
+  packaging_policy: "incubator" | "our_bom" | "fixed";
+  fixed_packaging_cost: number;
 };
 
 type StockItem = {
@@ -380,6 +382,8 @@ function IncubatorsPage() {
           commission_type: values.commission_type,
           commission_value: Number(values.commission_value || 0),
           settlement_day: values.settlement_day ? Number(values.settlement_day) : null,
+          packaging_policy: values.packaging_policy,
+          fixed_packaging_cost: Number(values.fixed_packaging_cost || 0),
           currency: "BHD",
           notes: String(values.notes || "").trim() || null,
         });
@@ -394,6 +398,8 @@ function IncubatorsPage() {
             commission_type: values.commission_type,
             commission_value: Number(values.commission_value || 0),
             settlement_day: values.settlement_day ? Number(values.settlement_day) : null,
+            packaging_policy: values.packaging_policy,
+            fixed_packaging_cost: Number(values.fixed_packaging_cost || 0),
             notes: String(values.notes || "").trim() || null,
             is_active: values.is_active === "true",
           })
@@ -550,6 +556,19 @@ function IncubatorsPage() {
                     {[current.contact_name, current.phone].filter(Boolean).join(" · ") ||
                       (isAr ? "لا توجد بيانات تواصل" : "No contact details")}
                   </p>
+                  <Badge variant="outline" className="mt-2">
+                    {current.packaging_policy === "our_bom"
+                      ? isAr
+                        ? "التغليف من مخزوننا"
+                        : "Our BOM packaging"
+                      : current.packaging_policy === "fixed"
+                        ? isAr
+                          ? `تغليف ثابت: ${money(current.fixed_packaging_cost, current.currency)}`
+                          : `Fixed packaging: ${money(current.fixed_packaging_cost, current.currency)}`
+                        : isAr
+                          ? "التغليف على الحاضنة"
+                          : "Incubator-provided packaging"}
+                  </Badge>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   <Button variant="outline" onClick={() => setDialog("edit_incubator")}>
@@ -1086,6 +1105,45 @@ function OperationDialog({
                 isAr={isAr}
                 current={dialog === "edit_incubator" ? current : null}
               />
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <Label>{isAr ? "سياسة التغليف" : "Packaging policy"}</Label>
+                  <select
+                    name="packaging_policy"
+                    defaultValue={
+                      dialog === "edit_incubator"
+                        ? current?.packaging_policy || "incubator"
+                        : "incubator"
+                    }
+                    className="mt-2 h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+                  >
+                    <option value="incubator">
+                      {isAr ? "تغليف الحاضنة — بلا تكلفة علينا" : "Incubator packaging — no cost"}
+                    </option>
+                    <option value="our_bom">
+                      {isAr ? "تغليفنا — احتساب وخصم BOM" : "Our packaging — use BOM"}
+                    </option>
+                    <option value="fixed">
+                      {isAr ? "تكلفة تغليف ثابتة لكل قطعة" : "Fixed packaging cost per unit"}
+                    </option>
+                  </select>
+                </div>
+                <Field
+                  label={isAr ? "تكلفة التغليف الثابتة" : "Fixed packaging cost"}
+                  name="fixed_packaging_cost"
+                  type="number"
+                  min="0"
+                  step="0.001"
+                  defaultValue={
+                    dialog === "edit_incubator" ? String(current?.fixed_packaging_cost || 0) : "0"
+                  }
+                />
+              </div>
+              <p className="text-xs leading-5 text-muted-foreground">
+                {isAr
+                  ? "يُحفظ اختيار التغليف وتكلفته داخل كل عملية بيع؛ تغيير الإعداد لاحقًا لا يغيّر أرباح المبيعات السابقة."
+                  : "Packaging choice and cost are snapshotted per sale; future setting changes never rewrite historical profit."}
+              </p>
               <Field
                 label={isAr ? "يوم التسوية الشهري" : "Settlement day"}
                 name="settlement_day"

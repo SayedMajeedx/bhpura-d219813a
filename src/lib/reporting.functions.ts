@@ -7,6 +7,26 @@ export type DateRange = {
 
 export type ReportInterval = "day" | "week" | "month" | "year";
 
+async function fetchIncubatorReporting(
+  range: DateRange,
+  tz: string,
+  brandSlug?: string,
+  interval: ReportInterval = "day",
+) {
+  const { data, error } = await (supabase as any).rpc("rpc_reporting_incubator_sales", {
+    p_start_date: range.from.toISOString(),
+    p_end_date: range.to.toISOString(),
+    p_tz: tz,
+    p_interval: interval,
+    p_brand_slug: brandSlug || null,
+  });
+  if (error) {
+    if (error.code === "PGRST202") return { summary: [], timeseries: [], products: [] };
+    throw error;
+  }
+  return data || { summary: [], timeseries: [], products: [] };
+}
+
 // Overview metrics
 export async function fetchReportingOverview(
   range: DateRange,
@@ -72,6 +92,16 @@ export async function fetchReportingOverview(
     }
     throw error;
   }
+  const incubator = await fetchIncubatorReporting(range, tz, brandSlug);
+  const incubatorByCurrency = new Map(
+    (incubator.summary || []).map((row: any) => [row.currency, row]),
+  );
+  const baseRows = Array.isArray(data) ? data : [];
+  for (const row of incubator.summary || []) {
+    if (!baseRows.some((base: any) => base.currency === row.currency)) {
+      baseRows.push({ currency: row.currency });
+    }
+  }
   let feeRows: any[] = [];
   try {
     const { data: res, error: feeError } = await (supabase as any).rpc(
@@ -95,14 +125,25 @@ export async function fetchReportingOverview(
       Number(row.processing_fees || 0),
     ]),
   );
-  return (Array.isArray(data) ? data : []).map((row: any) => {
+  return baseRows.map((row: any) => {
+    const consignment: any = incubatorByCurrency.get(row.currency) || {};
     const processingFees = feesByCurrency.get(row.currency) ?? 0;
     const manualExpenses = Number(row.expenses || 0);
+    const incubatorCommissions = Number(consignment.commission_amount || 0);
     return {
       ...row,
+      paid_order_value: Number(row.paid_order_value || 0) + Number(consignment.gross_amount || 0),
+      gross_merch_sales: Number(row.gross_merch_sales || 0) + Number(consignment.gross_amount || 0),
+      net_merch_sales: Number(row.net_merch_sales || 0) + Number(consignment.gross_amount || 0),
+      paid_order_count: Number(row.paid_order_count || 0) + Number(consignment.sale_count || 0),
+      known_cogs: Number(row.known_cogs || 0) + Number(consignment.cogs || 0),
       manual_expenses: manualExpenses,
       processing_fees: processingFees,
-      expenses: manualExpenses + processingFees,
+      incubator_commissions: incubatorCommissions,
+      incubator_sales: Number(consignment.gross_amount || 0),
+      incubator_receivables: Number(consignment.receivables || 0),
+      incubator_collected: Number(consignment.collected || 0),
+      expenses: manualExpenses + processingFees + incubatorCommissions,
     };
   });
 }
@@ -124,7 +165,53 @@ export async function fetchReportingSales(
     p_brand_slug: brandSlug || null,
   });
   if (error) throw error;
-  return data;
+  const incubator = await fetchIncubatorReporting(range, tz, brandSlug, interval);
+  const result = data || { timeseries: [], payment: [], fulfillment: [] };
+  const series = [...(result.timeseries || [])];
+  for (const row of incubator.timeseries || []) {
+    const existing = series.find(
+      (item: any) =>
+        item.currency === row.currency &&
+        new Date(item.time_bucket).getTime() === new Date(row.time_bucket).getTime(),
+    );
+    if (existing) {
+      existing.pov = Number(existing.pov || 0) + Number(row.gross_amount || 0);
+      existing.net_merch = Number(existing.net_merch || 0) + Number(row.gross_amount || 0);
+      existing.paid_order_count =
+        Number(existing.paid_order_count || 0) + Number(row.sale_count || 0);
+    } else {
+      series.push({
+        time_bucket: row.time_bucket,
+        currency: row.currency,
+        pov: row.gross_amount,
+        net_merch: row.gross_amount,
+        paid_order_count: row.sale_count,
+      });
+    }
+  }
+  const summary = incubator.summary || [];
+  return {
+    ...result,
+    timeseries: series,
+    payment: [
+      ...(result.payment || []),
+      ...summary.map((row: any) => ({
+        payment_method: "incubator_receivable",
+        currency: row.currency,
+        order_count: row.sale_count,
+        pov: row.gross_amount,
+      })),
+    ],
+    fulfillment: [
+      ...(result.fulfillment || []),
+      ...summary.map((row: any) => ({
+        fulfillment_method: "incubator",
+        currency: row.currency,
+        order_count: row.sale_count,
+        pov: row.gross_amount,
+      })),
+    ],
+  };
 }
 
 // Products & Inventory metrics
@@ -148,7 +235,31 @@ export async function fetchReportingProducts(
     p_brand_slug: brandSlug || null,
   });
   if (error) throw error;
-  return data;
+  const incubator = await fetchIncubatorReporting(range, tz, brandSlug);
+  const rows = [...(data || [])];
+  for (const sale of incubator.products || []) {
+    const existing = rows.find(
+      (row: any) => row.variant_id === sale.variant_id && row.currency === sale.currency,
+    );
+    if (existing) {
+      existing.units_sold = Number(existing.units_sold || 0) + Number(sale.units_sold || 0);
+      existing.net_merch_sales =
+        Number(existing.net_merch_sales || 0) + Number(sale.net_merch_sales || 0);
+      existing.known_cogs = Number(existing.known_cogs || 0) + Number(sale.known_cogs || 0);
+    } else {
+      rows.push({
+        ...sale,
+        is_missing_cost: false,
+        is_out_of_stock: Number(sale.current_stock || 0) <= 0,
+        is_low_stock: Number(sale.current_stock || 0) > 0 && Number(sale.current_stock || 0) <= 5,
+      });
+    }
+  }
+  return rows.sort((a: any, b: any) =>
+    sortBy === "net_merch_desc"
+      ? Number(b.net_merch_sales || 0) - Number(a.net_merch_sales || 0)
+      : Number(b.units_sold || 0) - Number(a.units_sold || 0),
+  );
 }
 
 // Customers metrics
