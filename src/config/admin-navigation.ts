@@ -14,6 +14,7 @@ import {
   Mail,
   BarChart,
   Building2,
+  MessageSquareHeart,
   type LucideIcon,
 } from "lucide-react";
 
@@ -102,6 +103,16 @@ export function getAdminNavItems({
       labelEn: "Customers",
       labelAr: t("nav.customers"),
       icon: Users,
+      permission: "manage_customers",
+      section: "operations",
+    },
+    {
+      id: "reviews",
+      to: "/admin/b/$slug/reviews",
+      params: { slug: activeSlug },
+      labelEn: "Customer Reviews",
+      labelAr: lang === "ar" ? "تقييمات العملاء" : "Customer Reviews",
+      icon: MessageSquareHeart,
       permission: "manage_customers",
       section: "operations",
     },
