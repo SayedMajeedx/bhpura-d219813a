@@ -34,6 +34,7 @@ import {
   Wallet,
 } from "lucide-react";
 import { toast } from "sonner";
+import { BatchIncubatorTransferModal } from "@/components/incubators/BatchIncubatorTransferModal";
 
 export const Route = createFileRoute("/_authenticated/admin/b/$slug/incubators")({
   beforeLoad: async ({ context: { queryClient }, params }) => {
@@ -251,6 +252,18 @@ function IncubatorsPage() {
         .order("sku");
       if (error) throw error;
       return (data ?? []) as ProductOption[];
+    },
+  });
+  const allBrandProductsQ = useQuery({
+    queryKey: ["brand_products_for_incubator", brand.id],
+    queryFn: async () => {
+      const { data, error } = await db
+        .from("products")
+        .select("id, name, name_ar, base_price, category")
+        .eq("brand_id", brand.id)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return (data ?? []) as any[];
     },
   });
 
@@ -809,6 +822,18 @@ function IncubatorsPage() {
         locale={locale}
         onSubmit={submit}
       />
+
+      <BatchIncubatorTransferModal
+        open={dialog === "transfer"}
+        onOpenChange={(open) => {
+          if (!open) setDialog(null);
+        }}
+        targetProducts={allBrandProductsQ.data ?? []}
+        initialIncubatorId={currentId}
+        onSuccess={async () => {
+          await invalidateData();
+        }}
+      />
     </div>
   );
 }
@@ -1015,7 +1040,10 @@ function OperationDialog({
     activeItem?.product_variants?.products?.name ||
     "";
   return (
-    <Dialog open={dialog !== null} onOpenChange={(open) => !open && setDialog(null)}>
+    <Dialog
+      open={dialog !== null && dialog !== "transfer"}
+      onOpenChange={(open) => !open && setDialog(null)}
+    >
       <DialogContent className="max-w-lg" dir={isAr ? "rtl" : "ltr"}>
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>

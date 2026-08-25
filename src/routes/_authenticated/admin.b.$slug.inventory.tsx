@@ -106,6 +106,7 @@ import { InventoryMobileCard } from "@/components/inventory/InventoryMobileCard"
 import { BulkSelectionToolbar } from "@/components/bulk-selection-toolbar";
 import { PackagingMaterialsTab } from "@/components/inventory/PackagingMaterialsTab";
 import { ProductBomModal } from "@/components/products/ProductBomModal";
+import { BatchIncubatorTransferModal } from "@/components/incubators/BatchIncubatorTransferModal";
 
 import { ListPagination } from "@/components/list-pagination";
 
@@ -1484,6 +1485,8 @@ function ProductsSection({
   const [selectedProductIds, setSelectedProductIds] = useState<Set<string>>(new Set());
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
   const [bulkDeleting, setBulkDeleting] = useState(false);
+  const [incubatorTransferModalOpen, setIncubatorTransferModalOpen] = useState(false);
+  const [incubatorTransferProducts, setIncubatorTransferProducts] = useState<Product[]>([]);
   const [pageSize, setPageSize] = useState(10);
   const [page, setPage] = useState(1);
 
@@ -1902,6 +1905,13 @@ function ProductsSection({
         }
         onDeselectAll={() => setSelectedProductIds(new Set())}
         onDeleteSelected={() => setBulkDeleteOpen(true)}
+        onTransferToIncubator={() => {
+          const selectedProds = products.filter((p) => selectedProductIds.has(p.id));
+          if (selectedProds.length > 0) {
+            setIncubatorTransferProducts(selectedProds);
+            setIncubatorTransferModalOpen(true);
+          }
+        }}
       />
 
       {/* 4. Mobile Purpose-Built Product Cards */}
@@ -1942,6 +1952,10 @@ function ProductsSection({
                 if (labels.length > 0) printLabels(labels);
                 else
                   toast.error(isAr ? "لا يوجد باركود لهذا المنتج" : "No barcode for this product");
+              }}
+              onTransferToIncubator={(prod) => {
+                setIncubatorTransferProducts([prod]);
+                setIncubatorTransferModalOpen(true);
               }}
               renderVariantList={(prod) => (
                 <VariantList
@@ -1990,6 +2004,10 @@ function ProductsSection({
             else toast.error(isAr ? "لا يوجد باركود لهذا المنتج" : "No barcode for this product");
           }}
           onConfigureBom={(prod) => setBomTargetProduct(prod)}
+          onTransferToIncubator={(prod) => {
+            setIncubatorTransferProducts([prod]);
+            setIncubatorTransferModalOpen(true);
+          }}
           renderVariantList={(prod) => (
             <VariantList
               productId={prod.id}
@@ -2119,6 +2137,19 @@ function ProductsSection({
           productName={bomTargetProduct.name}
           directPackagingCost={Number((bomTargetProduct as any).direct_packaging_cost || 0)}
           onSaved={onChanged}
+        />
+      )}
+
+      {incubatorTransferModalOpen && (
+        <BatchIncubatorTransferModal
+          open={incubatorTransferModalOpen}
+          onOpenChange={setIncubatorTransferModalOpen}
+          targetProducts={incubatorTransferProducts}
+          variantsByProduct={variantsByProduct}
+          onSuccess={() => {
+            setSelectedProductIds(new Set());
+            void onChanged();
+          }}
         />
       )}
     </div>

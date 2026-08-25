@@ -8,6 +8,7 @@ import {
   MoreVertical,
   ChevronDown,
   ChevronUp,
+  Building2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -37,6 +38,7 @@ interface InventoryMobileCardProps {
   onEdit: (product: any) => void;
   onDelete: (productId: string) => void;
   onPrintLabel: (product: any) => void;
+  onTransferToIncubator?: (product: any) => void;
   renderVariantList?: (product: any) => React.ReactNode;
   selected?: boolean;
   onToggleSelected?: (productId: string) => void;
@@ -51,6 +53,7 @@ export const InventoryMobileCard: React.FC<InventoryMobileCardProps> = ({
   onEdit,
   onDelete,
   onPrintLabel,
+  onTransferToIncubator,
   renderVariantList,
   selected = false,
   onToggleSelected = () => undefined,
@@ -171,6 +174,12 @@ export const InventoryMobileCard: React.FC<InventoryMobileCardProps> = ({
                   <Printer className="h-3.5 w-3.5 me-2" />
                   {isAr ? "طباعة الباركوّد" : "Print Barcode"}
                 </DropdownMenuItem>
+                {onTransferToIncubator && (
+                  <DropdownMenuItem onClick={() => onTransferToIncubator(product)}>
+                    <Building2 className="h-3.5 w-3.5 me-2 text-primary" />
+                    {isAr ? "تحويل إلى حاضنة..." : "Transfer to Incubator..."}
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuItem
                   onSelect={() => setDeleteOpen(true)}
                   className="text-rose-600 focus:text-rose-600"

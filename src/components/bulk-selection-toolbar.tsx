@@ -1,4 +1,4 @@
-import { CheckSquare, Square, Trash2 } from "lucide-react";
+import { Building2, CheckSquare, Square, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 type BulkSelectionToolbarProps = {
@@ -11,6 +11,7 @@ type BulkSelectionToolbarProps = {
   onSelectAll: () => void;
   onDeselectAll: () => void;
   onDeleteSelected: () => void;
+  onTransferToIncubator?: () => void;
 };
 
 export function BulkSelectionToolbar({
@@ -23,6 +24,7 @@ export function BulkSelectionToolbar({
   onSelectAll,
   onDeselectAll,
   onDeleteSelected,
+  onTransferToIncubator,
 }: BulkSelectionToolbarProps) {
   const isAr = lang === "ar";
   return (
@@ -56,6 +58,21 @@ export function BulkSelectionToolbar({
           <Square className="h-4 w-4" />
           {isAr ? "إلغاء تحديد الكل" : "Deselect all"}
         </Button>
+        {selectedCount > 0 && onTransferToIncubator && (
+          <Button
+            type="button"
+            variant="default"
+            size="sm"
+            disabled={disabled}
+            onClick={onTransferToIncubator}
+            className="h-9 gap-1.5 text-xs bg-primary text-primary-foreground hover:bg-primary/90"
+          >
+            <Building2 className="h-4 w-4" />
+            {isAr
+              ? `تحويل إلى حاضنة (${selectedCount})`
+              : `Transfer to incubator (${selectedCount})`}
+          </Button>
+        )}
         {selectedCount > 0 && (
           <Button
             type="button"

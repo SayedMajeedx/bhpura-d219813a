@@ -10,6 +10,7 @@ import {
   ChevronDown,
   ChevronUp,
   Box,
+  Building2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -40,6 +41,7 @@ interface InventoryWorkQueueProps {
   onDelete: (productId: string) => void;
   onPrintLabel: (product: any) => void;
   onConfigureBom?: (product: any) => void;
+  onTransferToIncubator?: (product: any) => void;
   renderVariantList?: (product: any) => React.ReactNode;
   selectedProductIds?: ReadonlySet<string>;
   onToggleProduct?: (productId: string) => void;
@@ -56,6 +58,7 @@ export const InventoryWorkQueue: React.FC<InventoryWorkQueueProps> = ({
   onDelete,
   onPrintLabel,
   onConfigureBom,
+  onTransferToIncubator,
   renderVariantList,
   selectedProductIds = new Set<string>(),
   onToggleProduct = () => undefined,
@@ -302,6 +305,12 @@ export const InventoryWorkQueue: React.FC<InventoryWorkQueueProps> = ({
                               <DropdownMenuItem onClick={() => onConfigureBom(product)}>
                                 <Box className="h-3.5 w-3.5 me-2 text-primary" />
                                 {isAr ? "تكاليف ومواد التغليف (BOM)" : "Packaging Materials (BOM)"}
+                              </DropdownMenuItem>
+                            )}
+                            {onTransferToIncubator && (
+                              <DropdownMenuItem onClick={() => onTransferToIncubator(product)}>
+                                <Building2 className="h-3.5 w-3.5 me-2 text-primary" />
+                                {isAr ? "تحويل إلى حاضنة..." : "Transfer to Incubator..."}
                               </DropdownMenuItem>
                             )}
                             <DropdownMenuItem
