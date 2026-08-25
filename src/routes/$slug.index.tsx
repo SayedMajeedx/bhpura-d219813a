@@ -183,7 +183,11 @@ function StoreHome() {
     );
     const bestSellersList = list
       .filter((p) => bestIds.has(p.id))
-      .sort((a, b) => ((bestIds.get(a.id) as number) ?? 99) - ((bestIds.get(b.id) as number) ?? 99))
+      .sort(
+        (a, b) =>
+          Number(hasAvailableStock(b)) - Number(hasAvailableStock(a)) ||
+          ((bestIds.get(a.id) as number) ?? 99) - ((bestIds.get(b.id) as number) ?? 99),
+      )
       .slice(0, 8);
 
     // 3. Sale (where original_price > selling_price)
@@ -203,6 +207,7 @@ function StoreHome() {
       .filter((p) => trendingIds.has(p.id))
       .sort(
         (a, b) =>
+          Number(hasAvailableStock(b)) - Number(hasAvailableStock(a)) ||
           ((trendingIds.get(a.id) as number) ?? 99) - ((trendingIds.get(b.id) as number) ?? 99),
       )
       .slice(0, 8);
@@ -234,7 +239,9 @@ function StoreHome() {
         return list
           .filter((p) => bestIds.has(p.id))
           .sort(
-            (a, b) => ((bestIds.get(a.id) as number) ?? 99) - ((bestIds.get(b.id) as number) ?? 99),
+            (a, b) =>
+              Number(hasAvailableStock(b)) - Number(hasAvailableStock(a)) ||
+              ((bestIds.get(a.id) as number) ?? 99) - ((bestIds.get(b.id) as number) ?? 99),
           );
       }
       if (isSale) {

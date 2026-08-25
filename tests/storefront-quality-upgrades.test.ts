@@ -25,6 +25,7 @@ describe("storefront quality upgrades", () => {
     const category = read("src/routes/$slug.$category.tsx");
     expect(home).toContain("function availableFirst");
     expect(home).toContain("hasAvailableStock(b.product)");
+    expect(home).toContain("Number(hasAvailableStock(b)) - Number(hasAvailableStock(a))");
     expect(category).toContain("Number(hasAvailableStock(b)) - Number(hasAvailableStock(a))");
   });
 
