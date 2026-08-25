@@ -235,9 +235,15 @@ function Dashboard() {
 
   // Filter confirmed/completed orders for revenue reporting
   const validRevenueOrders = useMemo(() => {
-    return (ordersQ.data ?? []).filter((o) =>
-      ["confirmed", "paid", "shipped", "completed"].includes(o.status),
-    );
+    return (ordersQ.data ?? []).filter((o) => {
+      const status = String(o.status || "").toLowerCase();
+      const fulfillment = String(o.fulfillment_status || "").toLowerCase();
+      return (
+        String(o.payment_status || "").toLowerCase() === "paid" &&
+        !["cancelled", "canceled", "refunded", "archived_historical"].includes(status) &&
+        !["cancelled", "canceled", "refunded"].includes(fulfillment)
+      );
+    });
   }, [ordersQ.data]);
 
   // Operational Actionable Orders (Orders needing triage/action)
@@ -252,8 +258,30 @@ function Dashboard() {
 
   // Financial intelligence aggregations
   const financials = useMemo(() => {
-    const orders = validRevenueOrders;
-    const expenses = expensesQ.data ?? [];
+    const allOrders = validRevenueOrders;
+    const now = new Date();
+    const currentStart = new Date(now);
+    currentStart.setDate(currentStart.getDate() - 29);
+    currentStart.setHours(0, 0, 0, 0);
+    const priorStart = new Date(currentStart);
+    priorStart.setDate(priorStart.getDate() - 30);
+    const orders = allOrders.filter((o) => {
+      const timestamp = Date.parse(o.created_at);
+      return (
+        Number.isFinite(timestamp) &&
+        timestamp >= currentStart.getTime() &&
+        timestamp <= now.getTime()
+      );
+    });
+    const expenses = (expensesQ.data ?? []).filter((expense: any) => {
+      const rawDate = expense.expense_date || expense.created_at;
+      const timestamp = rawDate ? Date.parse(rawDate) : NaN;
+      return (
+        Number.isFinite(timestamp) &&
+        timestamp >= currentStart.getTime() &&
+        timestamp <= now.getTime()
+      );
+    });
     const variants = variantsQ.data ?? [];
 
     const variantCostMap = new Map<string, number>();
@@ -314,23 +342,15 @@ function Dashboard() {
     const grossMarginPercent = revenue > 0 ? ((revenue - cogs) / revenue) * 100 : 0;
 
     // Period Comparison Deltas (Current 30 Days vs Prior 30 Days)
-    const nowMs = new Date().getTime();
-    const thirtyDaysMs = 30 * 24 * 60 * 60 * 1000;
-    const sixtyDaysMs = 60 * 24 * 60 * 60 * 1000;
-
-    const current30Orders = orders.filter((o) => {
-      if (!o.created_at) return false;
-      const d = new Date(o.created_at);
-      if (isNaN(d.getTime())) return false;
-      return nowMs - d.getTime() <= thirtyDaysMs;
-    });
-
-    const prior30Orders = orders.filter((o) => {
-      if (!o.created_at) return false;
-      const d = new Date(o.created_at);
-      if (isNaN(d.getTime())) return false;
-      const diff = nowMs - d.getTime();
-      return diff > thirtyDaysMs && diff <= sixtyDaysMs;
+    const nowMs = now.getTime();
+    const current30Orders = orders;
+    const prior30Orders = allOrders.filter((o) => {
+      const timestamp = Date.parse(o.created_at);
+      return (
+        Number.isFinite(timestamp) &&
+        timestamp >= priorStart.getTime() &&
+        timestamp < currentStart.getTime()
+      );
     });
 
     const revenueCurrent = current30Orders.reduce((sum, o) => sum + Number(o.total || 0), 0);
@@ -359,8 +379,9 @@ function Dashboard() {
     // 30-Day Daily Sales Time Series Chart Data
     const chartDataMap = new Map<string, { date: string; sales: number; orders: number }>();
     for (let i = 29; i >= 0; i--) {
-      const d = new Date(nowMs - i * 24 * 60 * 60 * 1000);
-      const key = d.toISOString().split("T")[0];
+      const d = new Date(currentStart);
+      d.setDate(currentStart.getDate() + (29 - i));
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
       const label = d.toLocaleDateString(locale, { day: "numeric", month: "short" });
       chartDataMap.set(key, { date: label, sales: 0, orders: 0 });
     }
@@ -369,7 +390,7 @@ function Dashboard() {
       if (!o.created_at) return;
       const d = new Date(o.created_at);
       if (isNaN(d.getTime())) return;
-      const key = d.toISOString().split("T")[0];
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
       if (chartDataMap.has(key)) {
         const item = chartDataMap.get(key)!;
         item.sales += Number(o.total || 0);

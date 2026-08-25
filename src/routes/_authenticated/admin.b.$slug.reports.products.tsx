@@ -40,7 +40,7 @@ function ReportsProducts() {
   const { slug } = Route.useParams();
 
   const [date, setDate] = useState<DateRange | undefined>({
-    from: subDays(startOfDay(new Date()), 30),
+    from: subDays(startOfDay(new Date()), 29),
     to: endOfDay(new Date()),
   });
 
@@ -55,6 +55,7 @@ function ReportsProducts() {
   } = useQuery({
     queryKey: [
       "reports-products",
+      slug,
       date?.from?.toISOString(),
       date?.to?.toISOString(),
       timezone,

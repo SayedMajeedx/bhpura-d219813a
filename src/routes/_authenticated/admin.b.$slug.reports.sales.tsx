@@ -39,7 +39,7 @@ function ReportsSales() {
   const { lang } = useI18n();
   const { slug } = Route.useParams();
   const [date, setDate] = useState<DateRange | undefined>({
-    from: subDays(startOfDay(new Date()), 30),
+    from: subDays(startOfDay(new Date()), 29),
     to: endOfDay(new Date()),
   });
   const [interval, setInterval] = useState<ReportInterval>("day");
@@ -49,6 +49,7 @@ function ReportsSales() {
   const query = useQuery({
     queryKey: [
       "reports-sales",
+      slug,
       date?.from?.toISOString(),
       date?.to?.toISOString(),
       interval,
@@ -232,7 +233,7 @@ function ReportsSales() {
             <BreakdownCard
               title={lang === "ar" ? "طرق الدفع" : "Payment methods"}
               icon={<CreditCard />}
-              rows={(query.data as any)?.payment_methods}
+              rows={(query.data as any)?.payment}
               keyName="payment_method"
               currency={currency}
               lang={lang}
@@ -240,7 +241,7 @@ function ReportsSales() {
             <BreakdownCard
               title={lang === "ar" ? "طرق الاستلام" : "Fulfillment methods"}
               icon={<Truck />}
-              rows={(query.data as any)?.fulfillment_methods}
+              rows={(query.data as any)?.fulfillment}
               keyName="fulfillment_method"
               currency={currency}
               lang={lang}

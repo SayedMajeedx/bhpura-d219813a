@@ -33,7 +33,7 @@ function ReportsOverview() {
   const { lang } = useI18n();
   const { slug } = Route.useParams();
   const [date, setDate] = useState<DateRange | undefined>({
-    from: subDays(startOfDay(new Date()), 30),
+    from: subDays(startOfDay(new Date()), 29),
     to: endOfDay(new Date()),
   });
   const [includeHistorical, setIncludeHistorical] = useState(false);
@@ -41,6 +41,7 @@ function ReportsOverview() {
   const query = useQuery({
     queryKey: [
       "reports-overview",
+      slug,
       date?.from?.toISOString(),
       date?.to?.toISOString(),
       timezone,
