@@ -83,10 +83,12 @@ export async function fetchStorefrontSearch(brandId: string, term: string) {
 }
 
 export async function fetchProductDetail(brandId: string, targetId: string) {
+  const publicFields =
+    "id, category, name, name_ar, name_en, description, description_ar, description_en, image_url, media, custom_fields, base_price, product_variants(id, size, size_unit, color, fabric, selling_price, original_price, stock_main, image_url)";
   const fullFields =
     "id, category, name, name_ar, name_en, description, description_ar, description_en, image_url, media, custom_fields, base_price, original_price, variant_label_size_ar, variant_label_size_en, variant_label_color_ar, variant_label_color_en, variant_label_fabric_ar, variant_label_fabric_en, product_variants(id, size, size_unit, color, fabric, selling_price, original_price, stock_main, image_url)";
 
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("products")
     .select(fullFields)
     .eq("id", targetId)
@@ -95,6 +97,17 @@ export async function fetchProductDetail(brandId: string, targetId: string) {
     .maybeSingle();
 
   if (data) return data;
+
+  if (error) {
+    const { data: fallbackData } = await supabase
+      .from("products")
+      .select(publicFields)
+      .eq("id", targetId)
+      .eq("brand_id", brandId)
+      .eq("is_active", true)
+      .maybeSingle();
+    if (fallbackData) return fallbackData;
+  }
 
   const { data: slugData } = await supabase
     .from("products")

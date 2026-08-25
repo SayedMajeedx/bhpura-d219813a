@@ -12,9 +12,12 @@ describe("storefront quality upgrades", () => {
 
   it("publishes product-specific social and canonical metadata", () => {
     const route = read("src/routes/$slug.product.$id.tsx");
+    const queries = read("src/lib/storefront-queries.ts");
     expect(route).toContain('property: "og:type", content: "product"');
     expect(route).toContain('name: "twitter:title", content: title');
     expect(route).toContain('rel: "canonical"');
+    expect(queries).toContain("if (error)");
+    expect(queries).toContain("publicFields");
   });
 
   it("prioritizes available inventory in storefront lists", () => {
