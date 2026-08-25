@@ -69,6 +69,21 @@ export type ProductRow = {
   }>;
 };
 
+export function hasAvailableStock(product: ProductRow): boolean {
+  return product.product_variants.some((variant) => Number(variant.stock_main || 0) > 0);
+}
+
+function availableFirst(products: ProductRow[]): ProductRow[] {
+  return products
+    .map((product, index) => ({ product, index }))
+    .sort(
+      (a, b) =>
+        Number(hasAvailableStock(b.product)) - Number(hasAvailableStock(a.product)) ||
+        a.index - b.index,
+    )
+    .map(({ product }) => product);
+}
+
 type CategoryRow = {
   id: string;
   name_en: string;
@@ -157,7 +172,7 @@ function StoreHome() {
 
   // Directly map merchandising sections with NO deduplication logic
   const { newest, bestSellers, saleProducts, trending } = useMemo(() => {
-    const list = products ?? [];
+    const list = availableFirst(products ?? []);
 
     // 1. New Arrivals
     const newestList = list.slice(0, 8);
@@ -201,7 +216,7 @@ function StoreHome() {
   }, [products, bestSellerRows, trendingRows]);
 
   const filtered = useMemo(() => {
-    const list = products ?? [];
+    const list = availableFirst(products ?? []);
     if (activeCategorySlugs.length > 0) {
       const activeCatSlug = activeCategorySlugs[0];
       const catSlug = activeCatSlug.toLowerCase().replace(/\s+/g, "-");

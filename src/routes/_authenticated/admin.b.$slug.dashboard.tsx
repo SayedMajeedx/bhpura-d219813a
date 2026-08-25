@@ -92,7 +92,9 @@ function Dashboard() {
     queryFn: async () => {
       const { data, error } = await (supabase as any)
         .from("products")
-        .select("id, name, name_ar, name_en, category, is_active, direct_packaging_cost")
+        .select(
+          "id, name, name_ar, name_en, category, image_url, media, is_active, direct_packaging_cost",
+        )
         .eq("brand_id", brandId);
       if (error) throw error;
       return (data ?? []) as any[];
@@ -636,6 +638,21 @@ function Dashboard() {
       }
     });
 
+    const availableWithoutImages = products
+      .filter((product) => {
+        if (!product.is_active || (productStockMap.get(product.id) ?? 0) <= 0) return false;
+        const media = Array.isArray(product.media) ? product.media : [];
+        const hasMedia = media.some((item: any) =>
+          typeof item === "string" ? Boolean(item.trim()) : Boolean(item?.url || item?.src),
+        );
+        return !product.image_url && !hasMedia;
+      })
+      .map((product) => ({
+        id: product.id,
+        name: lang === "ar" ? product.name_ar || product.name : product.name_en || product.name,
+        stock: productStockMap.get(product.id) ?? 0,
+      }));
+
     const lowStockVariants: Array<{
       id: string;
       name: string;
@@ -681,6 +698,7 @@ function Dashboard() {
       deadStockCount,
       lowStockCount,
       lowStockVariants: lowStockVariants.sort((a, b) => a.daysLeft - b.daysLeft).slice(0, 5),
+      availableWithoutImages,
     };
   }, [productsQ.data, variantsQ.data, validRevenueOrders, lang]);
 
@@ -1038,6 +1056,32 @@ function Dashboard() {
                   {isAr ? "المخزون ←" : "Inventory →"}
                 </Link>
               </div>
+
+              {inventoryIntel.availableWithoutImages.length > 0 && (
+                <div className="space-y-2 rounded-xl border border-rose-500/25 bg-rose-500/10 p-3">
+                  <div className="flex items-center gap-2 text-xs font-bold text-rose-700 dark:text-rose-300">
+                    <AlertCircle className="h-4 w-4" />
+                    <span>
+                      {isAr
+                        ? `${inventoryIntel.availableWithoutImages.length} منتجات متوفرة بلا صور`
+                        : `${inventoryIntel.availableWithoutImages.length} available products have no images`}
+                    </span>
+                  </div>
+                  {inventoryIntel.availableWithoutImages.slice(0, 3).map((product) => (
+                    <Link
+                      key={product.id}
+                      to="/admin/b/$slug/inventory"
+                      params={{ slug }}
+                      className="flex items-center justify-between gap-2 rounded-lg bg-background/70 px-2.5 py-2 text-xs hover:bg-background"
+                    >
+                      <span className="truncate font-semibold">{product.name}</span>
+                      <span className="shrink-0 text-[10px] text-muted-foreground">
+                        {product.stock} {isAr ? "متوفر" : "in stock"}
+                      </span>
+                    </Link>
+                  ))}
+                </div>
+              )}
 
               {inventoryIntel.lowStockVariants.length === 0 ? (
                 <div className="p-6 text-center text-xs text-muted-foreground bg-secondary/10 rounded-xl border border-dashed border-border space-y-1 my-auto">

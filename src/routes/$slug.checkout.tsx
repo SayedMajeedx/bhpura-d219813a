@@ -128,6 +128,7 @@ function Checkout() {
   const [selectedAddressId, setSelectedAddressId] = useState<string>("");
   const [saveToProfile, setSaveToProfile] = useState(false);
   const [whatsappOrderUpdates, setWhatsappOrderUpdates] = useState(false);
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
 
   const [showAccountPopup, setShowAccountPopup] = useState<{
     show: boolean;
@@ -539,11 +540,20 @@ function Checkout() {
       return;
     }
     const customerEmail = form.email.trim();
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(customerEmail)) {
+    if (customerEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(customerEmail)) {
       toast.error(
         t(
           "يرجى إدخال بريد إلكتروني صحيح لتصلك تحديثات الطلب",
           "Enter a valid email address to receive order updates",
+        ),
+      );
+      return;
+    }
+    if (!acceptedTerms) {
+      toast.error(
+        t(
+          "يرجى الموافقة على الشروط والأحكام وسياسة الخصوصية",
+          "Please accept the terms and conditions and privacy policy",
         ),
       );
       return;
@@ -932,15 +942,11 @@ function Checkout() {
             </div>
             <div className="sm:col-span-2">
               <Label htmlFor="checkout-email">
-                {t("البريد الإلكتروني", "Email")}
-                <span className="text-destructive font-bold ms-1" aria-hidden="true">
-                  *
-                </span>
+                {t("البريد الإلكتروني (اختياري)", "Email (optional)")}
               </Label>
               <Input
                 id="checkout-email"
                 name="email"
-                required
                 type="email"
                 autoComplete="email"
                 className="h-11"
@@ -1548,40 +1554,57 @@ function Checkout() {
           <div className="space-y-2 max-h-72 overflow-auto">
             {cart.map((c) => (
               <div key={c.cart_line_id} className="flex justify-between gap-3 text-sm">
-                <div className="min-w-0 me-2">
-                  <div className="truncate">
-                    {c.name} × {c.qty}
+                <div className="flex min-w-0 flex-1 items-start gap-3 me-2">
+                  <div className="h-14 w-14 shrink-0 overflow-hidden rounded-lg border bg-muted/30">
+                    {c.image ? (
+                      <ResponsiveImage
+                        src={c.image}
+                        alt={c.name}
+                        preset="thumb"
+                        sizes="56px"
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      <div className="flex h-full items-center justify-center px-1 text-center text-[9px] text-muted-foreground">
+                        {t("لا توجد صورة", "No image")}
+                      </div>
+                    )}
                   </div>
-                  {[c.size, c.color, c.fabric].filter(Boolean).length > 0 && (
-                    <div className="truncate text-xs text-muted-foreground">
-                      {[c.size, c.color, c.fabric].filter(Boolean).join(" · ")}
+                  <div className="min-w-0">
+                    <div className="truncate">
+                      {c.name} × {c.qty}
                     </div>
-                  )}
-                  {(c.custom_fields ?? []).map((field) => (
-                    <div
-                      key={field.key}
-                      className="text-xs text-muted-foreground break-words flex flex-wrap items-center gap-1"
-                    >
-                      <span>
-                        {lang === "ar"
-                          ? field.label_ar || field.label_en || field.key
-                          : field.label_en || field.label_ar || field.key}
-                        :
-                      </span>
-                      {field.value.startsWith("http") ? (
-                        <a
-                          href={field.value}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="text-primary hover:underline font-semibold inline-flex items-center gap-0.5"
-                        >
-                          📎 {lang === "ar" ? "عرض الملف" : "View File"}
-                        </a>
-                      ) : (
-                        <span>{field.value}</span>
-                      )}
-                    </div>
-                  ))}
+                    {[c.size, c.color, c.fabric].filter(Boolean).length > 0 && (
+                      <div className="truncate text-xs text-muted-foreground">
+                        {[c.size, c.color, c.fabric].filter(Boolean).join(" · ")}
+                      </div>
+                    )}
+                    {(c.custom_fields ?? []).map((field) => (
+                      <div
+                        key={field.key}
+                        className="text-xs text-muted-foreground break-words flex flex-wrap items-center gap-1"
+                      >
+                        <span>
+                          {lang === "ar"
+                            ? field.label_ar || field.label_en || field.key
+                            : field.label_en || field.label_ar || field.key}
+                          :
+                        </span>
+                        {field.value.startsWith("http") ? (
+                          <a
+                            href={field.value}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="text-primary hover:underline font-semibold inline-flex items-center gap-0.5"
+                          >
+                            📎 {lang === "ar" ? "عرض الملف" : "View File"}
+                          </a>
+                        ) : (
+                          <span>{field.value}</span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
                 </div>
                 <span className="flex flex-col items-end">
                   <span>{formatPrice(c.price * c.qty, currency, lang)}</span>
@@ -1599,6 +1622,20 @@ function Checkout() {
               <span className="text-muted-foreground">{t("المجموع الفرعي", "Subtotal")}</span>
               <span>{formatPrice(cartTotal, currency, lang)}</span>
             </div>
+            {fulfillment === "delivery" && (
+              <div className="flex justify-between gap-3">
+                <span className="text-muted-foreground">
+                  {t("التوصيل المتوقع", "Estimated delivery")}
+                </span>
+                <span>{t("خلال 1–3 أيام عمل", "Within 1–3 business days")}</span>
+              </div>
+            )}
+            {fulfillment === "pickup" && (
+              <div className="flex justify-between gap-3">
+                <span className="text-muted-foreground">{t("موعد الاستلام", "Pickup timing")}</span>
+                <span>{t("بعد إشعار جاهزية الطلب", "After your ready notification")}</span>
+              </div>
+            )}
             <div className="flex justify-between">
               <span className="text-muted-foreground">{t("رسوم التوصيل", "Delivery fee")}</span>
               <span>
@@ -1648,12 +1685,34 @@ function Checkout() {
               {formatPrice(grandTotal, currency, lang)}
             </span>
           </div>
+          <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-border/70 bg-muted/20 p-3">
+            <Checkbox
+              className="mt-0.5"
+              checked={acceptedTerms}
+              onCheckedChange={(checked) => setAcceptedTerms(checked === true)}
+            />
+            <span className="text-xs leading-relaxed text-muted-foreground">
+              {t("أوافق على", "I agree to the")}{" "}
+              <Link
+                to="/$slug/$category"
+                params={{ slug: brand.slug, category: "terms-conditions" }}
+                className="font-semibold text-foreground underline underline-offset-2"
+              >
+                {t("الشروط والأحكام", "terms and conditions")}
+              </Link>{" "}
+              {t(
+                "وسياسة الخصوصية المعروضة ضمن خيارات الخصوصية.",
+                "and the privacy policy available in Privacy Preferences.",
+              )}
+            </span>
+          </label>
           <Button
             className="w-full h-12 bg-primary text-primary-foreground rounded-lg"
             disabled={
               submitting ||
               availableMethods.length === 0 ||
               fulfillmentOptions.length === 0 ||
+              !acceptedTerms ||
               (method === "benefit" && !benefitReceipt)
             }
             onClick={submit}
@@ -1681,6 +1740,7 @@ function Checkout() {
               submitting ||
               availableMethods.length === 0 ||
               fulfillmentOptions.length === 0 ||
+              !acceptedTerms ||
               (method === "benefit" && !benefitReceipt)
             }
             onClick={submit}

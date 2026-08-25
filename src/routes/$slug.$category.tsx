@@ -2,7 +2,7 @@ import { createFileRoute, Link, notFound, useNavigate } from "@tanstack/react-ro
 import { useQuery } from "@tanstack/react-query";
 import { publicSupabase as supabase } from "@/integrations/supabase/client";
 import { useStorefront } from "@/lib/storefront-context";
-import { type ProductRow } from "@/routes/$slug.index";
+import { hasAvailableStock, type ProductRow } from "@/routes/$slug.index";
 import { ProductGrid } from "@/components/storefront/product-grid";
 import { ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
 import { useMemo, useState, useEffect } from "react";
@@ -378,15 +378,17 @@ function CategoryPage() {
           .filter((value) => value >= 0),
         Number.MAX_SAFE_INTEGER,
       );
-    return rows.sort((a, b) =>
-      sort === "old"
+    return rows.sort((a, b) => {
+      const availability = Number(hasAvailableStock(b)) - Number(hasAvailableStock(a));
+      if (availability !== 0) return availability;
+      return sort === "old"
         ? new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
         : sort === "price-low"
           ? price(a) - price(b)
           : sort === "price-high"
             ? price(b) - price(a)
-            : new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
-    );
+            : new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+    });
   }, [productsQuery.data, selectedSubCategorySlugs, sort, smartKind, categoriesQuery.data]);
 
   const breadcrumbs = useMemo(() => {

@@ -52,6 +52,44 @@ export const Route = createFileRoute("/$slug/product/$id")({
 
     return { product: product as any, recommendationCatalog, bestSellerRows };
   },
+  head: ({ loaderData, params }) => {
+    const product = loaderData?.product as Product | null | undefined;
+    if (!product) return { meta: [{ title: "Product not found" }] };
+
+    const name = product.name_ar || product.name_en || product.name;
+    const description = (
+      product.description_ar ||
+      product.description_en ||
+      product.description ||
+      name
+    )
+      .replace(/\s+/g, " ")
+      .trim()
+      .slice(0, 160);
+    const title = `${name} | ${params.slug.toUpperCase()}`;
+    const image = product.image_url || undefined;
+
+    return {
+      meta: [
+        { title },
+        { name: "description", content: description },
+        { property: "og:title", content: title },
+        { property: "og:description", content: description },
+        { property: "og:type", content: "product" },
+        ...(image ? [{ property: "og:image", content: image }] : []),
+        { name: "twitter:card", content: image ? "summary_large_image" : "summary" },
+        { name: "twitter:title", content: title },
+        { name: "twitter:description", content: description },
+        ...(image ? [{ name: "twitter:image", content: image }] : []),
+      ],
+      links: [
+        {
+          rel: "canonical",
+          href: `https://boutq.store/${params.slug}/product/${params.id}`,
+        },
+      ],
+    };
+  },
   component: ProductDetail,
 });
 
