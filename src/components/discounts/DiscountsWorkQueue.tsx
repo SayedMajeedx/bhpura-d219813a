@@ -23,6 +23,7 @@ type Promo = {
   minimum_order_amount: number | null;
   maximum_discount_amount: number | null;
   first_time_customers_only: boolean;
+  returning_customers_only: boolean;
   exclude_sale_items: boolean;
   usage_limit_per_customer: number | null;
   is_active: boolean;
@@ -179,9 +180,15 @@ export function DiscountsWorkQueue({
                             ✨ {isAr ? "للعملاء الجدد فقط" : "First-time buyers only"}
                           </span>
                         )}
+                        {p.returning_customers_only && (
+                          <span className="rounded-full bg-blue-500/10 px-2 py-0.5 text-[10px] font-medium text-blue-700 dark:text-blue-300">
+                            ↩ {isAr ? "لعملاء سابقين فقط" : "Returning buyers only"}
+                          </span>
+                        )}
                         {!p.minimum_order_amount &&
                           !p.maximum_discount_amount &&
-                          !p.first_time_customers_only && (
+                          !p.first_time_customers_only &&
+                          !p.returning_customers_only && (
                             <span className="text-muted-foreground/60">—</span>
                           )}
                       </div>

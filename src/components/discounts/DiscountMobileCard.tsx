@@ -13,6 +13,7 @@ type Promo = {
   minimum_order_amount: number | null;
   maximum_discount_amount: number | null;
   first_time_customers_only: boolean;
+  returning_customers_only: boolean;
   exclude_sale_items: boolean;
   usage_limit_per_customer: number | null;
   is_active: boolean;

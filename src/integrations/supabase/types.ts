@@ -2123,6 +2123,7 @@ export type Database = {
           exclude_low_margin: boolean;
           exclude_sale_items: boolean;
           first_time_customers_only: boolean;
+          returning_customers_only: boolean;
           id: string;
           is_active: boolean;
           margin_threshold: number;
@@ -2143,6 +2144,7 @@ export type Database = {
           exclude_low_margin?: boolean;
           exclude_sale_items?: boolean;
           first_time_customers_only?: boolean;
+          returning_customers_only?: boolean;
           id?: string;
           is_active?: boolean;
           margin_threshold?: number;
@@ -2163,6 +2165,7 @@ export type Database = {
           exclude_low_margin?: boolean;
           exclude_sale_items?: boolean;
           first_time_customers_only?: boolean;
+          returning_customers_only?: boolean;
           id?: string;
           is_active?: boolean;
           margin_threshold?: number;

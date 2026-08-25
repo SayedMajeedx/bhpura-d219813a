@@ -480,6 +480,13 @@ function Checkout() {
             "This promo code is restricted to first-time customers only.",
           ),
         );
+      if (result?.reason === "PREVIOUS_ORDER_REQUIRED")
+        return toast.error(
+          t(
+            "رمز الخصم هذا مخصص للعملاء الذين لديهم طلب سابق فقط.",
+            "This promo code is only available to customers with a previous order.",
+          ),
+        );
       if (result?.reason === "AUTH_REQUIRED")
         return toast.error(t("سجّل الدخول لاستخدام هذا الرمز.", "Sign in to use this promo code."));
       if (result?.reason === "USAGE_LIMIT_REACHED")
@@ -773,6 +780,14 @@ function Checkout() {
           t(
             "لقد وصلت إلى الحد المسموح لاستخدام هذا الرمز.",
             "You have reached this code's usage limit.",
+          ),
+        );
+      } else if (msg.includes("PROMO_PREVIOUS_ORDER_REQUIRED")) {
+        setAppliedPromo(null);
+        toast.error(
+          t(
+            "رمز الخصم هذا مخصص للعملاء الذين لديهم طلب سابق فقط.",
+            "This promo code is only available to customers with a previous order.",
           ),
         );
       } else if (msg.includes("PROMO_NO_ELIGIBLE_ITEMS")) {

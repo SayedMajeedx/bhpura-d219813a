@@ -1063,6 +1063,10 @@ function OrderDetail() {
         return lang === "ar"
           ? "رمز الخصم هذا مخصص للعملاء الجدد فقط."
           : "This promo code is restricted to first-time customers only.";
+      case "PREVIOUS_ORDER_REQUIRED":
+        return lang === "ar"
+          ? "رمز الخصم هذا مخصص للعملاء الذين لديهم طلب سابق فقط."
+          : "This promo code is only available to customers with a previous order.";
       case "MINIMUM_NOT_MET":
         return lang === "ar"
           ? `يتطلب رمز الخصم هذا حداً أدنى للشراء بقيمة ${formatMoney(Number(result.minimum_order_amount), "BHD")}.`

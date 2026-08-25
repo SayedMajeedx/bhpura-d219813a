@@ -54,6 +54,7 @@ type Promo = {
   minimum_order_amount: number | null;
   maximum_discount_amount: number | null;
   first_time_customers_only: boolean;
+  returning_customers_only: boolean;
   exclude_sale_items: boolean;
   usage_limit_per_customer: number | null;
   is_active: boolean;
@@ -74,6 +75,7 @@ const EMPTY: PromoForm = {
   minimum_order_amount: null,
   maximum_discount_amount: null,
   first_time_customers_only: false,
+  returning_customers_only: false,
   exclude_sale_items: false,
   usage_limit_per_customer: null,
   is_active: true,
@@ -149,7 +151,7 @@ function DiscountCodes() {
       const { data, error } = await supabase
         .from("promo_codes")
         .select(
-          "id,brand_id,code,discount_type,discount_value,minimum_order_amount,maximum_discount_amount,first_time_customers_only,exclude_sale_items,usage_limit_per_customer,is_active,created_at,exclude_low_margin,margin_threshold,start_date,end_date,max_redemptions",
+          "id,brand_id,code,discount_type,discount_value,minimum_order_amount,maximum_discount_amount,first_time_customers_only,returning_customers_only,exclude_sale_items,usage_limit_per_customer,is_active,created_at,exclude_low_margin,margin_threshold,start_date,end_date,max_redemptions",
         )
         .eq("brand_id", brand.id)
         .order("created_at", { ascending: false });
@@ -240,6 +242,7 @@ function DiscountCodes() {
       minimum_order_amount: p.minimum_order_amount,
       maximum_discount_amount: p.maximum_discount_amount,
       first_time_customers_only: p.first_time_customers_only,
+      returning_customers_only: p.returning_customers_only,
       exclude_sale_items: p.exclude_sale_items,
       usage_limit_per_customer: p.usage_limit_per_customer,
       is_active: p.is_active,
@@ -744,7 +747,30 @@ function DiscountCodes() {
                   </Label>
                   <Switch
                     checked={form.first_time_customers_only}
-                    onCheckedChange={(v) => setForm({ ...form, first_time_customers_only: v })}
+                    onCheckedChange={(v) =>
+                      setForm({
+                        ...form,
+                        first_time_customers_only: v,
+                        returning_customers_only: v ? false : form.returning_customers_only,
+                      })
+                    }
+                  />
+                </div>
+                <div className="flex items-center justify-between gap-4">
+                  <Label className="font-normal text-xs text-muted-foreground">
+                    {ar
+                      ? "للعملاء الذين لديهم طلب سابق فقط"
+                      : "Returning customers with a prior order only"}
+                  </Label>
+                  <Switch
+                    checked={form.returning_customers_only}
+                    onCheckedChange={(v) =>
+                      setForm({
+                        ...form,
+                        returning_customers_only: v,
+                        first_time_customers_only: v ? false : form.first_time_customers_only,
+                      })
+                    }
                   />
                 </div>
                 <div className="flex items-center justify-between gap-4">
