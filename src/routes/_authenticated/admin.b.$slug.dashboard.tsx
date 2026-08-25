@@ -41,6 +41,7 @@ import {
   type DashboardViewScope,
 } from "@/components/dashboard/DashboardScopeSwitcher";
 import { DashboardActivityQueue } from "@/components/dashboard/DashboardActivityQueue";
+import { ReviewRequestQueue } from "@/components/dashboard/ReviewRequestQueue";
 
 export const Route = createFileRoute("/_authenticated/admin/b/$slug/dashboard")({
   component: Dashboard,
@@ -654,6 +655,12 @@ function Dashboard() {
         slug={slug}
         brandName={(isAr ? brand.name_ar : brand.name_en) || brand.name_en || brand.slug}
         orderCount={financials.ordersCurrent}
+      />
+
+      <ReviewRequestQueue
+        brandId={brandId}
+        brandName={(isAr ? brand.name_ar : brand.name_en) || brand.name_en || brand.slug}
+        isAr={isAr}
       />
 
       {/* 2. Scope Switcher Toolbar */}
