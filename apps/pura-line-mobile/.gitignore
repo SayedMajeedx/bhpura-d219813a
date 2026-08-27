@@ -4,3 +4,4 @@ android/
 builds/
 *.jks
 *.keystore
+.signing/

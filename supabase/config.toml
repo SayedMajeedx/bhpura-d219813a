@@ -7,3 +7,9 @@ verify_jwt = false
 
 [functions.send-mobile-push]
 verify_jwt = true
+
+[functions.provision-white-label-app]
+verify_jwt = true
+
+[functions.white-label-build-api]
+verify_jwt = false

@@ -17,10 +17,17 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { WebView } from "react-native-webview";
 import type { WebViewNavigation } from "react-native-webview/lib/WebViewTypes";
-import { loadPushState, registerForPush, savePushState, type PushState } from "../lib/notifications";
+import {
+  loadPushState,
+  registerForPush,
+  savePushState,
+  type PushState,
+} from "../lib/notifications";
 
-const STORE_URL = "https://pura.boutq.store";
-const BRAND = "#330A0A";
+const STORE_URL = process.env.EXPO_PUBLIC_STOREFRONT_URL || "https://pura.boutq.store";
+const BRAND = process.env.EXPO_PUBLIC_BRAND_COLOR || "#330A0A";
+const APP_NAME = process.env.EXPO_PUBLIC_APP_NAME || "Pura Line";
+const BRAND_SLUG = process.env.EXPO_PUBLIC_BRAND_SLUG || "pura";
 const BRAND_CARD = "rgba(253, 231, 201, 0.08)";
 const BRAND_BORDER = "rgba(253, 231, 201, 0.16)";
 const GOLD = "#FDE7C9";
@@ -83,9 +90,11 @@ export function PuraWebShell() {
       orders: state.orders,
       marketing: state.marketing,
       platform: Platform.OS,
+      brandSlug: BRAND_SLUG,
+      tokenProvider: Platform.OS === "ios" ? "apns" : "fcm",
     });
     web.current?.injectJavaScript(
-      `window.dispatchEvent(new CustomEvent('pura:native-push',{detail:${detail}}));true;`,
+      `window.dispatchEvent(new CustomEvent('boutq-store:native-push',{detail:${detail}}));true;`,
     );
   }, []);
 
@@ -204,7 +213,7 @@ export function PuraWebShell() {
       {failed || offline ? (
         <View style={styles.overlay}>
           <Text style={styles.title}>
-            {offline ? "لا يوجد اتصال بالإنترنت" : "تعذر فتح متجر Pura Line"}
+            {offline ? "لا يوجد اتصال بالإنترنت" : `تعذر فتح متجر ${APP_NAME}`}
           </Text>
           <Text style={styles.message}>تحقق من الاتصال ثم حاول مرة ثانية.</Text>
           <Pressable
@@ -231,7 +240,7 @@ export function PuraWebShell() {
 
           <View style={styles.sheetHeader}>
             <Text style={styles.sheetTitle}>إعدادات الإشعارات</Text>
-            <Text style={styles.sheetSubtitle}>تخصيص التنبيهات الخاصة بمتجر Pura Line</Text>
+            <Text style={styles.sheetSubtitle}>تخصيص التنبيهات الخاصة بمتجر {APP_NAME}</Text>
           </View>
 
           <View style={styles.cardContainer}>

@@ -1,0 +1,71 @@
+name: White-Label Android Factory
+
+on:
+  repository_dispatch:
+    types: [white-label-build]
+  workflow_dispatch:
+    inputs:
+      build_id:
+        description: White-label build UUID
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  android:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      WHITE_LABEL_BUILD_ID: ${{ github.event.client_payload.build_id || inputs.build_id }}
+      WHITE_LABEL_BUILD_TOKEN: ${{ github.event.client_payload.build_token }}
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: actions/setup-node@39370e3970a6d050c480ffad4ff0ed4d3fdee5af
+        with:
+          node-version: 20
+          cache: npm
+      - uses: actions/setup-java@7a445ee88d4e23b52c33c8778039df0bc55c76f2
+        with:
+          distribution: temurin
+          java-version: "17"
+      - name: Install factory dependencies
+        run: npm ci
+      - name: Install mobile dependencies
+        working-directory: apps/pura-line-mobile
+        run: npm ci --legacy-peer-deps
+      - name: Materialize tenant application
+        run: node scripts/white-label/prepare-build.mjs
+      - name: Generate Android project
+        working-directory: apps/pura-line-mobile
+        run: npx expo prebuild --platform android --clean --no-install
+      - name: Restore signing key
+        working-directory: apps/pura-line-mobile/android/app
+        env:
+          KEYSTORE_B64: ${{ secrets.WHITE_LABEL_ANDROID_KEYSTORE_B64 }}
+        run: test -n "$KEYSTORE_B64" && printf '%s' "$KEYSTORE_B64" | base64 --decode > boutq-white-label.jks
+      - name: Configure release signing
+        working-directory: apps/pura-line-mobile/android
+        env:
+          STORE_PASSWORD: ${{ secrets.WHITE_LABEL_ANDROID_STORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.WHITE_LABEL_ANDROID_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.WHITE_LABEL_ANDROID_KEY_PASSWORD }}
+        run: |
+          printf '\nBOUTQ_UPLOAD_STORE_FILE=boutq-white-label.jks\nBOUTQ_UPLOAD_KEY_ALIAS=%s\nBOUTQ_UPLOAD_STORE_PASSWORD=%s\nBOUTQ_UPLOAD_KEY_PASSWORD=%s\n' "$KEY_ALIAS" "$STORE_PASSWORD" "$KEY_PASSWORD" >> gradle.properties
+          node ../../../scripts/white-label/configure-signing.mjs
+      - name: Build signed APK
+        working-directory: apps/pura-line-mobile/android
+        run: ./gradlew assembleRelease --no-daemon -PreactNativeArchitectures=arm64-v8a
+      - name: Upload APK
+        uses: actions/upload-artifact@b4b15b8c7c6ac21ea08fcf65892d2ee8f75cf882
+        with:
+          name: white-label-${{ env.WHITE_LABEL_BUILD_ID }}
+          path: apps/pura-line-mobile/android/app/build/outputs/apk/release/app-release.apk
+          retention-days: 30
+      - name: Record build result
+        if: always()
+        env:
+          BUILD_OUTCOME: ${{ job.status }}
+          BUILD_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          GITHUB_RUN_ID: ${{ github.run_id }}
+        run: node scripts/white-label/complete-build.mjs

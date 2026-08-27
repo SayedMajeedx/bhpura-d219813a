@@ -37,6 +37,7 @@ import {
   Loader2,
   CalendarRange,
   Shield,
+  Smartphone,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useI18n, useT } from "@/lib/i18n";
@@ -50,6 +51,7 @@ import {
   approveSubscriptionSaaS,
   rejectSubscriptionSaaS,
 } from "@/lib/saas-subscription.functions";
+import { WhiteLabelAppsPanel } from "@/components/super-admin/WhiteLabelAppsPanel";
 
 export const Route = createFileRoute("/_authenticated/admin/brands")({
   beforeLoad: async () => {
@@ -317,7 +319,7 @@ function BrandsPage() {
 
       {/* Interactive Tabs Layout */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-2 max-w-md h-11 mb-6 bg-muted/60 p-1">
+        <TabsList className="grid w-full grid-cols-3 max-w-2xl h-11 mb-6 bg-muted/60 p-1">
           <TabsTrigger value="all-stores" className="h-9 font-medium text-xs">
             {lang === "ar" ? "المحلات المتاحة" : "All Shops"} ({brands.length})
           </TabsTrigger>
@@ -328,6 +330,10 @@ function BrandsPage() {
                 {pendingApprovals.length}
               </span>
             )}
+          </TabsTrigger>
+          <TabsTrigger value="mobile-apps" className="h-9 font-medium text-xs gap-1.5">
+            <Smartphone className="h-3.5 w-3.5" />
+            {lang === "ar" ? "تطبيقات البراندات" : "Brand Apps"}
           </TabsTrigger>
         </TabsList>
 
@@ -489,6 +495,10 @@ function BrandsPage() {
               ))}
             </div>
           )}
+        </TabsContent>
+
+        <TabsContent value="mobile-apps" className="space-y-4">
+          <WhiteLabelAppsPanel brands={brands} isAr={lang === "ar"} />
         </TabsContent>
 
         {/* TAB CONTENT: Subscription Receipt Approvals Queue */}
@@ -670,6 +680,7 @@ function NewBrandDialog({ onSaved }: { onSaved: () => void }) {
   const { lang } = useI18n();
   const [form, setForm] = useState({ slug: "", name_en: "", name_ar: "", logo_url: "" });
   const [planType, setPlanType] = useState<"annual" | "trial">("annual");
+  const [createMobileApp, setCreateMobileApp] = useState(true);
   const [saving, setSaving] = useState(false);
 
   const submit = async () => {
@@ -728,6 +739,19 @@ function NewBrandDialog({ onSaved }: { onSaved: () => void }) {
 
         if (brandUpdateErr) {
           console.error("Failed to set custom plan on newly deployed brand:", brandUpdateErr);
+        }
+        if (createMobileApp) {
+          const { data: appResult, error: appError } = await supabase.functions.invoke(
+            "provision-white-label-app",
+            { body: { brand_id: brandRow.id, rebuild: false } },
+          );
+          if (appError || appResult?.error) {
+            toast.warning(
+              lang === "ar"
+                ? "تم إنشاء المتجر، لكن تجهيز التطبيق يحتاج مراجعة من تبويب تطبيقات البراندات."
+                : "Store created; app provisioning needs attention in Brand Apps.",
+            );
+          }
         }
       }
 
@@ -816,6 +840,19 @@ function NewBrandDialog({ onSaved }: { onSaved: () => void }) {
               {lang === "ar" ? "تجربة 3 أيام" : "3-Day Free Trial"}
             </button>
           </div>
+        </div>
+        <div className="flex items-center justify-between gap-4 rounded-xl border border-primary/20 bg-primary/[0.025] p-3.5">
+          <div>
+            <Label className="font-bold">
+              {lang === "ar" ? "إنشاء تطبيق White‑Label" : "Create White‑Label app"}
+            </Label>
+            <p className="mt-1 text-xs text-muted-foreground">
+              {lang === "ar"
+                ? "يجهز Firebase وتطبيق أندرويد مستقل تلقائياً من إعدادات البراند."
+                : "Automatically prepares Firebase and an independent Android app from brand settings."}
+            </p>
+          </div>
+          <Switch checked={createMobileApp} onCheckedChange={setCreateMobileApp} />
         </div>
       </div>
       <DialogFooter>
