@@ -35,6 +35,7 @@ import {
   Sparkles,
   CreditCard,
   Truck,
+  MessageCircle,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useT, useI18n } from "@/lib/i18n";
@@ -219,6 +220,10 @@ function IntegrationsPage() {
         />
       </Dialog>
 
+      {(categoryScope === "all" || categoryScope === "email_ai") && (
+        <NabdaOtpPilotCard isAr={isAr} />
+      )}
+
       {categoryScope === "pixels" ? (
         <AnalyticsTrackingCard brandId={brandId} isAr={isAr} />
       ) : (
@@ -397,6 +402,148 @@ function IntegrationsPage() {
         </>
       )}
     </div>
+  );
+}
+
+type NabdaPilotResponse = {
+  ok?: boolean;
+  enabled?: boolean;
+  error?: string;
+};
+
+function NabdaOtpPilotCard({ isAr }: { isAr: boolean }) {
+  const [phone, setPhone] = useState("");
+  const [code, setCode] = useState("");
+  const [enabled, setEnabled] = useState<boolean | null>(null);
+  const [busy, setBusy] = useState<"status" | "send" | "verify" | null>(null);
+
+  const request = async (action: "status" | "send" | "verify") => {
+    setBusy(action);
+    try {
+      const { data } = await supabase.auth.getSession();
+      const token = data.session?.access_token;
+      if (!token) throw new Error(isAr ? "انتهت الجلسة، سجل الدخول مرة أخرى" : "Session expired");
+      const response = await fetch("/api/admin/nabda-otp", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ action, phone, code }),
+      });
+      const result = (await response.json()) as NabdaPilotResponse;
+      setEnabled(Boolean(result.enabled));
+      if (action === "status") return;
+      if (!response.ok || !result.ok) throw new Error(result.error || "Nabda request failed");
+      if (action === "send") {
+        toast.success(isAr ? "تم إرسال رمز التجربة عبر واتساب" : "Test OTP sent on WhatsApp");
+      } else if (action === "verify") {
+        toast.success(isAr ? "تم التحقق من الرمز بنجاح" : "OTP verified successfully");
+      }
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : isAr ? "تعذر الاتصال" : "Request failed",
+      );
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  useEffect(() => {
+    void request("status");
+    // Check only when the pilot card mounts.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  return (
+    <Card className="overflow-hidden rounded-2xl border border-emerald-500/30 bg-emerald-500/5 p-4 shadow-md sm:p-5">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div className="flex gap-3">
+          <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-2.5">
+            <MessageCircle className="h-5 w-5 text-emerald-600" aria-hidden="true" />
+          </div>
+          <div>
+            <div className="flex flex-wrap items-center gap-2">
+              <h2 className="font-display text-lg font-bold">
+                {isAr ? "تجربة Nabda OTP" : "Nabda OTP pilot"}
+              </h2>
+              <span
+                className={`rounded-full border px-2 py-0.5 text-xs font-semibold ${
+                  enabled
+                    ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-700"
+                    : "border-slate-500/20 bg-slate-500/10 text-slate-500"
+                }`}
+              >
+                {enabled === null
+                  ? isAr
+                    ? "جارٍ الفحص"
+                    : "Checking"
+                  : enabled
+                    ? isAr
+                      ? "Pilot مفعّل"
+                      : "Pilot enabled"
+                    : isAr
+                      ? "متوقف"
+                      : "Off"}
+              </span>
+            </div>
+            <p className="mt-1 text-sm text-muted-foreground">
+              {isAr
+                ? "اختبار إرسال وتحقق فقط. إيقاف المفتاح يعيد النظام فوراً للوضع الحالي ولا يؤثر على wa.me."
+                : "Send/verify test only. The kill switch restores the current flow and never changes wa.me."}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-4 grid gap-3 sm:grid-cols-[1fr_auto]">
+        <Input
+          dir="ltr"
+          inputMode="tel"
+          value={phone}
+          onChange={(event) => setPhone(event.target.value)}
+          placeholder={isAr ? "رقم بحريني: 3xxxxxxx" : "Bahrain number: 3xxxxxxx"}
+          aria-label={isAr ? "رقم واتساب للتجربة" : "Pilot WhatsApp number"}
+        />
+        <Button
+          type="button"
+          onClick={() => void request("send")}
+          disabled={!enabled || busy !== null || !phone.trim()}
+          className="min-h-11"
+        >
+          {busy === "send"
+            ? isAr
+              ? "جارٍ الإرسال..."
+              : "Sending..."
+            : isAr
+              ? "إرسال OTP"
+              : "Send OTP"}
+        </Button>
+      </div>
+      <div className="mt-3 grid gap-3 sm:grid-cols-[1fr_auto]">
+        <Input
+          dir="ltr"
+          inputMode="numeric"
+          maxLength={6}
+          value={code}
+          onChange={(event) => setCode(event.target.value.replace(/\D/g, "").slice(0, 6))}
+          placeholder={isAr ? "الرمز من 6 أرقام" : "6-digit code"}
+          aria-label={isAr ? "رمز التحقق" : "Verification code"}
+        />
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => void request("verify")}
+          disabled={!enabled || busy !== null || code.length !== 6 || !phone.trim()}
+          className="min-h-11"
+        >
+          {busy === "verify"
+            ? isAr
+              ? "جارٍ التحقق..."
+              : "Verifying..."
+            : isAr
+              ? "تحقق"
+              : "Verify"}
+        </Button>
+      </div>
+    </Card>
   );
 }
 

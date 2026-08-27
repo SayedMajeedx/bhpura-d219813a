@@ -41,6 +41,7 @@ import { Route as AuthenticatedAdminInventoryRouteImport } from './routes/_authe
 import { Route as AuthenticatedAdminOrdersRouteImport } from './routes/_authenticated/admin.orders'
 import { Route as AuthenticatedAdminSettingsRouteImport } from './routes/_authenticated/admin.settings'
 import { Route as AuthenticatedAdminTeamRouteImport } from './routes/_authenticated/admin.team'
+import { Route as ApiAdminNabdaOtpRouteImport } from './routes/api.admin.nabda-otp'
 import { Route as ApiCronCleanupBenefitReceiptsRouteImport } from './routes/api.cron.cleanup-benefit-receipts'
 import { Route as ApiOrdersStatusRouteImport } from './routes/api.orders.status'
 import { Route as AuthenticatedAdminBSlugRouteRouteImport } from './routes/_authenticated/admin.b.$slug.route'
@@ -239,6 +240,11 @@ const AuthenticatedAdminTeamRoute = AuthenticatedAdminTeamRouteImport.update({
   id: '/team',
   path: '/team',
   getParentRoute: () => AuthenticatedAdminRoute,
+} as any)
+const ApiAdminNabdaOtpRoute = ApiAdminNabdaOtpRouteImport.update({
+  id: '/api/admin/nabda-otp',
+  path: '/api/admin/nabda-otp',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const ApiCronCleanupBenefitReceiptsRoute =
   ApiCronCleanupBenefitReceiptsRouteImport.update({
@@ -462,6 +468,7 @@ export interface FileRoutesByFullPath {
   '/admin/orders': typeof AuthenticatedAdminOrdersRoute
   '/admin/settings': typeof AuthenticatedAdminSettingsRoute
   '/admin/team': typeof AuthenticatedAdminTeamRoute
+  '/api/admin/nabda-otp': typeof ApiAdminNabdaOtpRoute
   '/api/cron/cleanup-benefit-receipts': typeof ApiCronCleanupBenefitReceiptsRoute
   '/api/orders/status': typeof ApiOrdersStatusRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
@@ -525,6 +532,7 @@ export interface FileRoutesByTo {
   '/admin/orders': typeof AuthenticatedAdminOrdersRoute
   '/admin/settings': typeof AuthenticatedAdminSettingsRoute
   '/admin/team': typeof AuthenticatedAdminTeamRoute
+  '/api/admin/nabda-otp': typeof ApiAdminNabdaOtpRoute
   '/api/cron/cleanup-benefit-receipts': typeof ApiCronCleanupBenefitReceiptsRoute
   '/api/orders/status': typeof ApiOrdersStatusRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
@@ -591,6 +599,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/orders': typeof AuthenticatedAdminOrdersRoute
   '/_authenticated/admin/settings': typeof AuthenticatedAdminSettingsRoute
   '/_authenticated/admin/team': typeof AuthenticatedAdminTeamRoute
+  '/api/admin/nabda-otp': typeof ApiAdminNabdaOtpRoute
   '/api/cron/cleanup-benefit-receipts': typeof ApiCronCleanupBenefitReceiptsRoute
   '/api/orders/status': typeof ApiOrdersStatusRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
@@ -658,6 +667,7 @@ export interface FileRouteTypes {
     | '/admin/orders'
     | '/admin/settings'
     | '/admin/team'
+    | '/api/admin/nabda-otp'
     | '/api/cron/cleanup-benefit-receipts'
     | '/api/orders/status'
     | '/admin/'
@@ -721,6 +731,7 @@ export interface FileRouteTypes {
     | '/admin/orders'
     | '/admin/settings'
     | '/admin/team'
+    | '/api/admin/nabda-otp'
     | '/api/cron/cleanup-benefit-receipts'
     | '/api/orders/status'
     | '/admin'
@@ -786,6 +797,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/orders'
     | '/_authenticated/admin/settings'
     | '/_authenticated/admin/team'
+    | '/api/admin/nabda-otp'
     | '/api/cron/cleanup-benefit-receipts'
     | '/api/orders/status'
     | '/_authenticated/admin/'
@@ -832,6 +844,7 @@ export interface RootRouteChildren {
   InvoiceIdRoute: typeof InvoiceIdRoute
   PlatformFilenameRoute: typeof PlatformFilenameRoute
   ReviewTokenRoute: typeof ReviewTokenRoute
+  ApiAdminNabdaOtpRoute: typeof ApiAdminNabdaOtpRoute
   ApiCronCleanupBenefitReceiptsRoute: typeof ApiCronCleanupBenefitReceiptsRoute
   ApiOrdersStatusRoute: typeof ApiOrdersStatusRoute
   ApiPublicPaymentsCreateTapChargeRoute: typeof ApiPublicPaymentsCreateTapChargeRoute
@@ -1065,6 +1078,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin/team'
       preLoaderRoute: typeof AuthenticatedAdminTeamRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/api/admin/nabda-otp': {
+      id: '/api/admin/nabda-otp'
+      path: '/api/admin/nabda-otp'
+      fullPath: '/api/admin/nabda-otp'
+      preLoaderRoute: typeof ApiAdminNabdaOtpRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/api/cron/cleanup-benefit-receipts': {
       id: '/api/cron/cleanup-benefit-receipts'
@@ -1482,6 +1502,7 @@ const rootRouteChildren: RootRouteChildren = {
   InvoiceIdRoute: InvoiceIdRoute,
   PlatformFilenameRoute: PlatformFilenameRoute,
   ReviewTokenRoute: ReviewTokenRoute,
+  ApiAdminNabdaOtpRoute: ApiAdminNabdaOtpRoute,
   ApiCronCleanupBenefitReceiptsRoute: ApiCronCleanupBenefitReceiptsRoute,
   ApiOrdersStatusRoute: ApiOrdersStatusRoute,
   ApiPublicPaymentsCreateTapChargeRoute: ApiPublicPaymentsCreateTapChargeRoute,
