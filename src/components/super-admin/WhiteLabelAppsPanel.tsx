@@ -1,5 +1,15 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Download, Loader2, RefreshCw, Rocket, Smartphone } from "lucide-react";
+import {
+  CheckCircle2,
+  Download,
+  ExternalLink,
+  History,
+  Loader2,
+  RefreshCw,
+  Rocket,
+  Smartphone,
+  XCircle,
+} from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -26,7 +36,23 @@ type AppRow = {
   version_name: string;
   version_code: number;
   latest_apk_url: string | null;
+  latest_build_id: string | null;
   updated_at: string;
+};
+type BuildRow = {
+  id: string;
+  app_id: string;
+  version_name: string;
+  version_code: number;
+  status: string;
+  provider_run_url: string | null;
+  apk_url: string | null;
+  apk_sha256: string | null;
+  apk_size_bytes: number | null;
+  error_message: string | null;
+  validation_results: Record<string, boolean> | null;
+  completed_at: string | null;
+  created_at: string;
 };
 
 const statusTone: Record<string, string> = {
@@ -54,6 +80,18 @@ export function WhiteLabelAppsPanel({ brands, isAr }: { brands: BrandSummary[]; 
     },
     refetchInterval: 15000,
   });
+  const builds = useQuery({
+    queryKey: ["white-label-app-builds"],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from("white_label_app_builds_public")
+        .select("*")
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return (data ?? []) as BuildRow[];
+    },
+    refetchInterval: 15000,
+  });
   const byBrand = new Map((apps.data ?? []).map((app) => [app.brand_id, app]));
   const provision = async (brand: BrandSummary, rebuild: boolean) => {
     setWorking(brand.id);
@@ -72,6 +110,17 @@ export function WhiteLabelAppsPanel({ brands, isAr }: { brands: BrandSummary[]; 
           ? "بدأ بناء التطبيق تلقائياً"
           : "App build started automatically",
     );
+    void qc.invalidateQueries({ queryKey: ["white-label-apps"] });
+    void qc.invalidateQueries({ queryKey: ["white-label-app-builds"] });
+  };
+  const activateBuild = async (buildId: string) => {
+    setWorking(buildId);
+    const { error } = await (supabase as any).rpc("activate_white_label_build", {
+      p_build_id: buildId,
+    });
+    setWorking(null);
+    if (error) return toast.error(error.message);
+    toast.success(isAr ? "تم اعتماد هذا الإصدار للتنزيل" : "Release activated for download");
     void qc.invalidateQueries({ queryKey: ["white-label-apps"] });
   };
   return (
@@ -96,6 +145,9 @@ export function WhiteLabelAppsPanel({ brands, isAr }: { brands: BrandSummary[]; 
           const app = byBrand.get(brand.id);
           const busy =
             working === brand.id || app?.status === "provisioning" || app?.status === "building";
+          const appBuilds = app
+            ? (builds.data ?? []).filter((build) => build.app_id === app.id)
+            : [];
           return (
             <Card key={brand.id} className="p-5">
               <div className="flex items-center gap-3">
@@ -164,13 +216,92 @@ export function WhiteLabelAppsPanel({ brands, isAr }: { brands: BrandSummary[]; 
                       : "Create app"}
                 </Button>
                 {app?.latest_apk_url && (
-                  <Button variant="outline" asChild>
-                    <a href={app.latest_apk_url} target="_blank" rel="noreferrer">
+                  <Button variant="outline" className="gap-2" asChild>
+                    <a href={app.latest_apk_url} download>
                       <Download className="h-4 w-4" />
+                      <span className="sr-only">{isAr ? "تحميل APK" : "Download APK"}</span>
                     </a>
                   </Button>
                 )}
               </div>
+              {app && appBuilds.length > 0 && (
+                <details className="group mt-4 rounded-xl border bg-muted/20">
+                  <summary className="flex cursor-pointer list-none items-center gap-2 p-3 text-sm font-bold">
+                    <History className="h-4 w-4 text-primary" />
+                    {isAr ? "سجل الإصدارات" : "Release history"}
+                    <Badge variant="secondary" className="ms-auto">
+                      {appBuilds.length}
+                    </Badge>
+                  </summary>
+                  <div className="space-y-2 border-t p-3">
+                    {appBuilds.map((build) => {
+                      const succeeded = build.status === "succeeded";
+                      return (
+                        <div key={build.id} className="rounded-lg border bg-background p-3 text-xs">
+                          <div className="flex items-center gap-2">
+                            {succeeded ? (
+                              <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                            ) : build.status === "failed" ? (
+                              <XCircle className="h-4 w-4 text-rose-600" />
+                            ) : (
+                              <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
+                            )}
+                            <span className="font-bold" dir="ltr">
+                              v{build.version_name} ({build.version_code})
+                            </span>
+                            <span className="ms-auto text-muted-foreground">
+                              {new Date(build.completed_at || build.created_at).toLocaleString(
+                                isAr ? "ar-BH" : "en-BH",
+                              )}
+                            </span>
+                          </div>
+                          {build.apk_size_bytes ? (
+                            <p className="mt-2 text-muted-foreground">
+                              {(build.apk_size_bytes / 1024 / 1024).toFixed(1)} MB · SHA-256{" "}
+                              {build.apk_sha256?.slice(0, 12)}…
+                            </p>
+                          ) : null}
+                          {build.error_message ? (
+                            <p className="mt-2 text-rose-600">{build.error_message}</p>
+                          ) : null}
+                          <div className="mt-2 flex gap-2">
+                            {build.apk_url && (
+                              <Button size="sm" variant="outline" className="h-8 gap-1" asChild>
+                                <a href={build.apk_url} download>
+                                  <Download className="h-3.5 w-3.5" />
+                                  {isAr ? "تحميل" : "Download"}
+                                </a>
+                              </Button>
+                            )}
+                            {build.provider_run_url && (
+                              <Button size="sm" variant="ghost" className="h-8 gap-1" asChild>
+                                <a href={build.provider_run_url} target="_blank" rel="noreferrer">
+                                  <ExternalLink className="h-3.5 w-3.5" />
+                                  GitHub
+                                </a>
+                              </Button>
+                            )}
+                            {succeeded && build.id !== app.latest_build_id && (
+                              <Button
+                                size="sm"
+                                variant="secondary"
+                                className="h-8"
+                                disabled={working === build.id}
+                                onClick={() => activateBuild(build.id)}
+                              >
+                                {working === build.id && (
+                                  <Loader2 className="me-1 h-3.5 w-3.5 animate-spin" />
+                                )}
+                                {isAr ? "اعتماد هذا الإصدار" : "Activate release"}
+                              </Button>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </details>
+              )}
             </Card>
           );
         })}

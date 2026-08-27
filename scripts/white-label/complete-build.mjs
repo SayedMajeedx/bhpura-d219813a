@@ -7,6 +7,10 @@ const api =
   process.env.WHITE_LABEL_BUILD_API ||
   "https://ikciahnuqhemvnyfvbyp.supabase.co/functions/v1/white-label-build-api";
 if (!buildId || !buildToken) throw new Error("Build callback environment is incomplete");
+let upload = null;
+try {
+  upload = JSON.parse(await fs.readFile(".white-label-upload.json", "utf8"));
+} catch {}
 const response = await fetch(api, {
   method: "POST",
   headers: { "content-type": "application/json" },
@@ -17,6 +21,10 @@ const response = await fetch(api, {
     outcome: process.env.BUILD_OUTCOME || "failed",
     run_url: process.env.BUILD_RUN_URL || null,
     run_id: process.env.GITHUB_RUN_ID || null,
+    apk_url: upload?.apk_url || null,
+    apk_object_key: upload?.object_key || null,
+    apk_sha256: upload?.sha256 || null,
+    apk_size_bytes: upload?.size || null,
   }),
 });
 if (!response.ok)

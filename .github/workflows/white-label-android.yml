@@ -19,10 +19,14 @@ jobs:
         with:
           node-version: 20
           cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            apps/pura-line-mobile/package-lock.json
       - uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3
         with:
           distribution: temurin
           java-version: "17"
+          cache: gradle
       - name: Install factory dependencies
         run: npm ci
       - name: Install mobile dependencies
@@ -49,12 +53,20 @@ jobs:
           node ../../../scripts/white-label/configure-signing.mjs
       - name: Build signed APK
         working-directory: apps/pura-line-mobile/android
-        run: ./gradlew assembleRelease --no-daemon -PreactNativeArchitectures=arm64-v8a
+        run: ./gradlew assembleRelease bundleRelease --no-daemon -PreactNativeArchitectures=arm64-v8a
+      - name: Verify and store APK permanently
+        run: node scripts/white-label/upload-apk.mjs
       - name: Upload APK
         uses: actions/upload-artifact@b4b15b8c7c6ac21ea08fcf65892d2ee8f75cf882
         with:
           name: white-label-${{ env.WHITE_LABEL_BUILD_ID }}
           path: apps/pura-line-mobile/android/app/build/outputs/apk/release/app-release.apk
+          retention-days: 30
+      - name: Upload Play Store bundle
+        uses: actions/upload-artifact@b4b15b8c7c6ac21ea08fcf65892d2ee8f75cf882
+        with:
+          name: white-label-aab-${{ env.WHITE_LABEL_BUILD_ID }}
+          path: apps/pura-line-mobile/android/app/build/outputs/bundle/release/app-release.aab
           retention-days: 30
       - name: Record build result
         if: always()

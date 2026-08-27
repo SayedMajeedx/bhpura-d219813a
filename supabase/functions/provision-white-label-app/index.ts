@@ -115,6 +115,8 @@ function androidPackage(slug: string) {
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
   if (req.method !== "POST") return json({ error: "method_not_allowed" }, 405);
+  let trackedAppId: string | null = null;
+  let trackedBuildId: string | null = null;
   try {
     const jwt = req.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
     if (!jwt) return json({ error: "unauthorized" }, 401);
@@ -152,6 +154,22 @@ Deno.serve(async (req) => {
       .select("id,version_code")
       .eq("brand_id", brand.id)
       .maybeSingle();
+    if (existing) {
+      const { data: activeBuild } = await service
+        .from("white_label_app_builds")
+        .select("id")
+        .eq("app_id", existing.id)
+        .in("status", ["queued", "building"])
+        .maybeSingle();
+      if (activeBuild) return json({ error: "build_already_in_progress" }, 409);
+      const fifteenMinutesAgo = new Date(Date.now() - 15 * 60 * 1000).toISOString();
+      const { count } = await service
+        .from("white_label_app_builds")
+        .select("id", { count: "exact", head: true })
+        .eq("app_id", existing.id)
+        .gte("created_at", fifteenMinutesAgo);
+      if ((count ?? 0) >= 3) return json({ error: "build_rate_limit_reached" }, 429);
+    }
     const nextVersion =
       existing && body.rebuild === true ? existing.version_code + 1 : (existing?.version_code ?? 1);
     const identity = {
@@ -168,12 +186,17 @@ Deno.serve(async (req) => {
       last_error: null,
       updated_at: new Date().toISOString(),
     };
+    if (!/^https:\/\/[a-z0-9.-]+(?::\d+)?(?:\/.*)?$/i.test(storefrontUrl))
+      return json({ error: "invalid_storefront_url" }, 422);
+    if (!identity.icon_url || !/^https:\/\//i.test(identity.icon_url))
+      return json({ error: "brand_icon_required" }, 422);
     const { data: app, error: upsertError } = await service
       .from("white_label_apps")
       .upsert(identity, { onConflict: "brand_id" })
       .select("*")
       .single();
     if (upsertError) throw upsertError;
+    trackedAppId = app.id;
     const rawAccount = Deno.env.get("FIREBASE_SERVICE_ACCOUNT_JSON");
     if (!rawAccount) throw new Error("FIREBASE_SERVICE_ACCOUNT_JSON_NOT_CONFIGURED");
     const firebase = await provisionFirebase(packageName, appName, JSON.parse(rawAccount));
@@ -209,6 +232,7 @@ Deno.serve(async (req) => {
       .select("id")
       .single();
     if (buildError) throw buildError;
+    trackedBuildId = build.id;
     await service.from("white_label_apps").update({ latest_build_id: build.id }).eq("id", app.id);
     const githubToken = Deno.env.get("WHITE_LABEL_GITHUB_TOKEN");
     const repository =
@@ -245,12 +269,32 @@ Deno.serve(async (req) => {
       requires_github_connection: !dispatched,
     });
   } catch (cause) {
+    const failedAt = new Date().toISOString();
+    const message = cause instanceof Error ? cause.message : "provision_failed";
+    if (trackedBuildId) {
+      await service
+        .from("white_label_app_builds")
+        .update({
+          status: "failed",
+          error_message: message,
+          completed_at: failedAt,
+          build_token_hash: null,
+          build_token_expires_at: null,
+        })
+        .eq("id", trackedBuildId);
+    }
+    if (trackedAppId) {
+      await service
+        .from("white_label_apps")
+        .update({ status: "failed", last_error: message, updated_at: failedAt })
+        .eq("id", trackedAppId);
+    }
     console.error(
       JSON.stringify({
         event: "white_label_provision_failed",
-        message: cause instanceof Error ? cause.message : String(cause),
+        message,
       }),
     );
-    return json({ error: cause instanceof Error ? cause.message : "provision_failed" }, 500);
+    return json({ error: message }, 500);
   }
 });

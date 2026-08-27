@@ -78,14 +78,42 @@ Deno.serve(async (req) => {
       const succeeded = body.outcome === "success";
       const completed = new Date().toISOString();
       const runUrl = typeof body.run_url === "string" ? body.run_url : null;
+      const apkUrl =
+        succeeded &&
+        typeof body.apk_url === "string" &&
+        /^https:\/\/(media\.)?boutq\.store\/app-builds\//.test(body.apk_url)
+          ? body.apk_url
+          : null;
+      const apkObjectKey =
+        apkUrl &&
+        typeof body.apk_object_key === "string" &&
+        /^app-builds\/[0-9a-f-]{36}\/[0-9]+\/[0-9a-f-]{36}\.apk$/i.test(body.apk_object_key)
+          ? body.apk_object_key
+          : null;
+      const apkSha256 =
+        apkUrl && typeof body.apk_sha256 === "string" && /^[0-9a-f]{64}$/i.test(body.apk_sha256)
+          ? body.apk_sha256.toLowerCase()
+          : null;
+      const apkSize = Number(body.apk_size_bytes);
+      const artifactReady = succeeded && apkUrl && apkObjectKey && apkSha256 && apkSize > 0;
       await service
         .from("white_label_app_builds")
         .update({
-          status: succeeded ? "succeeded" : "failed",
+          status: artifactReady ? "succeeded" : "failed",
           provider_run_id: String(body.run_id || "") || null,
           provider_run_url: runUrl,
-          apk_url: succeeded ? runUrl : null,
-          error_message: succeeded ? null : "GitHub Actions build failed",
+          apk_url: artifactReady ? apkUrl : null,
+          apk_object_key: artifactReady ? apkObjectKey : null,
+          apk_sha256: artifactReady ? apkSha256 : null,
+          apk_size_bytes: artifactReady ? apkSize : null,
+          validation_results: artifactReady
+            ? { archive_signature: true, checksum_verified: true, permanent_storage: true }
+            : {},
+          error_message: artifactReady
+            ? null
+            : succeeded
+              ? "APK permanent storage validation failed"
+              : "GitHub Actions build failed",
           completed_at: completed,
           build_token_hash: null,
           build_token_expires_at: null,
@@ -94,9 +122,13 @@ Deno.serve(async (req) => {
       await service
         .from("white_label_apps")
         .update({
-          status: succeeded ? "ready" : "failed",
-          latest_apk_url: succeeded ? runUrl : null,
-          last_error: succeeded ? null : "GitHub Actions build failed",
+          status: artifactReady ? "ready" : "failed",
+          latest_apk_url: artifactReady ? apkUrl : null,
+          last_error: artifactReady
+            ? null
+            : succeeded
+              ? "APK permanent storage validation failed"
+              : "GitHub Actions build failed",
           updated_at: completed,
         })
         .eq("id", build.app_id);

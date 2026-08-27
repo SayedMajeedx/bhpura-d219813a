@@ -128,10 +128,16 @@ export default {
         return withSecurityHeaders(await handleMetaWhatsAppWebhook(request, env, ctx));
       }
 
+      if (url.pathname === "/api/internal/white-label-builds/upload") {
+        const { handleWhiteLabelApkUpload } = await import("./lib/white-label-builds.server");
+        return withSecurityHeaders(await handleWhiteLabelApkUpload(request, env));
+      }
+
       if (
         url.hostname === "media.boutq.store" ||
         url.hostname.endsWith(".media.boutq.store") ||
-        url.pathname.startsWith("/brands/")
+        url.pathname.startsWith("/brands/") ||
+        url.pathname.startsWith("/app-builds/")
       ) {
         return await handleR2MediaRequest(request, env);
       }

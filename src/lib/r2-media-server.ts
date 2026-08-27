@@ -16,6 +16,7 @@ const MIME_TYPES: Record<string, string> = {
   ttf: "font/ttf",
   otf: "font/otf",
   pdf: "application/pdf",
+  apk: "application/vnd.android.package-archive",
 };
 
 function getMimeType(key: string, contentTypeFromR2?: string | null): string {
@@ -76,7 +77,7 @@ export async function handleR2MediaRequest(
   const url = new URL(request.url);
   const key = url.pathname.replace(/^\/+/, "");
 
-  if (!key || !key.startsWith("brands/")) {
+  if (!key || (!key.startsWith("brands/") && !key.startsWith("app-builds/"))) {
     return new Response("Not Found", { status: 404 });
   }
 
@@ -91,6 +92,7 @@ export async function handleR2MediaRequest(
         headers.set("Content-Type", mime);
         headers.set("Content-Length", String(object.size));
         if (object.httpEtag) headers.set("ETag", object.httpEtag);
+        if (key.endsWith(".apk")) headers.set("Content-Disposition", "attachment");
 
         if (request.method === "HEAD") {
           return new Response(null, { status: 200, headers });
@@ -152,6 +154,7 @@ export async function handleR2MediaRequest(
 
       const etag = r2Res.headers.get("etag");
       if (etag) responseHeaders.set("ETag", etag);
+      if (key.endsWith(".apk")) responseHeaders.set("Content-Disposition", "attachment");
 
       if (request.method === "HEAD") {
         return new Response(null, { status: 200, headers: responseHeaders });
