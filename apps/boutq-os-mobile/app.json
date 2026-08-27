@@ -1,0 +1,45 @@
+{
+  "expo": {
+    "name": "Boutq OS",
+    "slug": "boutq-os",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/images/boutq-os-icon.png",
+    "scheme": "boutqos",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "icon": "./assets/images/boutq-os-icon.png",
+      "bundleIdentifier": "com.boutq.os",
+      "supportsTablet": true
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#330A0A",
+        "foregroundImage": "./assets/images/boutq-os-icon.png"
+      },
+      "predictiveBackGestureEnabled": false,
+      "package": "com.boutq.os"
+    },
+    "web": {
+      "output": "static",
+      "favicon": "./assets/images/boutq-os-icon.png"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#330A0A",
+          "android": {
+            "image": "./assets/images/boutq-os-icon.png",
+            "imageWidth": 120
+          }
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true,
+      "reactCompiler": true
+    }
+  }
+}
