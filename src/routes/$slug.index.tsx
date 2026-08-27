@@ -64,13 +64,16 @@ export type ProductRow = {
     selling_price: number;
     original_price: number | null;
     stock_main: number;
+    stock_incubator?: number;
     size: string | null;
     color: string | null;
   }>;
 };
 
 export function hasAvailableStock(product: ProductRow): boolean {
-  return product.product_variants.some((variant) => Number(variant.stock_main || 0) > 0);
+  return product.product_variants.some(
+    (variant) => (Number(variant.stock_main || 0) + Number(variant.stock_incubator || 0)) > 0,
+  );
 }
 
 function availableFirst(products: ProductRow[]): ProductRow[] {

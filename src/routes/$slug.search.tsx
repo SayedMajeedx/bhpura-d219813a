@@ -29,6 +29,7 @@ type ProductRow = {
     selling_price: number;
     original_price: number | null;
     stock_main: number;
+    stock_incubator?: number;
   }>;
 };
 

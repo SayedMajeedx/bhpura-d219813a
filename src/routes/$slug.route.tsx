@@ -45,6 +45,7 @@ import {
   FileText,
   LogIn,
   Heart,
+  Bell,
   Grid2X2,
   ChevronDown,
   Sparkles,
@@ -537,6 +538,7 @@ function StoreHeader() {
   const logoSize = settings.logo_size || 40;
   const isDarkHeader = isColorDark(settings.header_bg);
   const [mounted, setMounted] = useState(false);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
   useEffect(() => {
     setMounted(true);
   }, []);
@@ -645,6 +647,30 @@ function StoreHeader() {
             )}
 
             <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="relative min-h-11 min-w-11 gap-1 bg-transparent hover:bg-white/10 active:bg-white/20 text-inherit border-0 shadow-none focus-visible:ring-1 focus-visible:ring-white/30"
+              style={{ color: "var(--sf-header-fg)" }}
+              onClick={() => {
+                if (
+                  typeof window !== "undefined" &&
+                  (window as any).ReactNativeWebView?.postMessage
+                ) {
+                  (window as any).ReactNativeWebView.postMessage(
+                    JSON.stringify({ type: "OPEN_NOTIFICATIONS" }),
+                  );
+                } else {
+                  setNotificationsOpen(true);
+                }
+              }}
+              aria-label={t("الإشعارات", "Notifications")}
+            >
+              <Bell className="h-5 w-5" />
+              <span className="hidden sm:inline">{t("الإشعارات", "Notifications")}</span>
+            </Button>
+
+            <Button
               asChild
               variant="ghost"
               size="sm"
@@ -708,6 +734,43 @@ function StoreHeader() {
           </div>
         </div>
       </div>
+
+      <Dialog open={notificationsOpen} onOpenChange={setNotificationsOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Bell className="h-5 w-5 text-primary" />
+              {t("إشعارات المتجر", "Store Notifications")}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-3">
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              {t(
+                "استقبل تنبيهات مباشرة وفورية عند توفر عروض جديدة وتحديثات طلباتك.",
+                "Receive direct instant notifications about new promotions and your order status.",
+              )}
+            </p>
+            <div className="flex justify-end gap-2 pt-2">
+              <Button variant="outline" size="sm" onClick={() => setNotificationsOpen(false)}>
+                {t("إغلاق", "Close")}
+              </Button>
+              <Button
+                size="sm"
+                onClick={async () => {
+                  if (typeof window !== "undefined" && "Notification" in window) {
+                    try {
+                      await Notification.requestPermission();
+                    } catch {}
+                  }
+                  setNotificationsOpen(false);
+                }}
+              >
+                {t("تفعيل الإشعارات", "Enable Notifications")}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </header>
   );
 }

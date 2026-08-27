@@ -2,7 +2,18 @@ import NetInfo from "@react-native-community/netinfo";
 import * as Notifications from "expo-notifications";
 import * as WebBrowser from "expo-web-browser";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ActivityIndicator, BackHandler, Linking, Modal, Platform, Pressable, StyleSheet, Switch, Text, View } from "react-native";
+import {
+  ActivityIndicator,
+  BackHandler,
+  Linking,
+  Modal,
+  Platform,
+  Pressable,
+  StyleSheet,
+  Switch,
+  Text,
+  View,
+} from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { WebView } from "react-native-webview";
 import type { WebViewNavigation } from "react-native-webview/lib/WebViewTypes";
@@ -10,9 +21,12 @@ import { loadPushState, registerForPush, savePushState, type PushState } from ".
 
 const STORE_URL = "https://pura.boutq.store";
 const BRAND = "#330A0A";
-const GOLD = "#fde7c9";
+const BRAND_CARD = "rgba(253, 231, 201, 0.08)";
+const BRAND_BORDER = "rgba(253, 231, 201, 0.16)";
+const GOLD = "#FDE7C9";
+const GOLD_MUTED = "#D4BC9B";
 
-const INJECTED_HEADER_BELL = `
+const INJECTED_VIEWPORT_LOCK = `
 (function() {
   function applyViewportLock() {
     var lockStyle = document.getElementById('pura-viewport-lock');
@@ -24,39 +38,14 @@ const INJECTED_HEADER_BELL = `
     }
   }
 
-  function injectBell() {
-    applyViewportLock();
-    if (document.getElementById('pura-native-bell-btn')) return;
-    var actions = document.querySelector('header .flex.items-center.gap-1, header .flex.items-center.gap-2, header .flex.items-center.shrink-0');
-    if (!actions) return;
-
-    var btn = document.createElement('button');
-    btn.id = 'pura-native-bell-btn';
-    btn.type = 'button';
-    btn.setAttribute('aria-label', 'إعدادات الإشعارات');
-    btn.className = 'inline-flex items-center justify-center whitespace-nowrap rounded-lg font-medium cursor-pointer transition-[transform,colors,box-shadow] duration-150 active:scale-[0.97] focus-visible:outline-none h-8 px-2 text-xs min-h-11 min-w-11 gap-1 bg-transparent hover:bg-white/10 active:bg-white/20 text-inherit border-0 shadow-none';
-    btn.style.color = 'inherit';
-    btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-bell h-5 w-5" style="width:20px;height:20px;"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"></path><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"></path></svg><span class="hidden sm:inline">الإشعارات</span>';
-    
-    btn.onclick = function(e) {
-      e.preventDefault();
-      e.stopPropagation();
-      if (window.ReactNativeWebView && window.ReactNativeWebView.postMessage) {
-        window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'OPEN_NOTIFICATIONS' }));
-      }
-    };
-    
-    actions.insertBefore(btn, actions.firstChild);
-  }
-
-  injectBell();
-  if (!window.__puraBellInjected) {
-    window.__puraBellInjected = true;
+  applyViewportLock();
+  if (!window.__puraLockInjected) {
+    window.__puraLockInjected = true;
     if (window.MutationObserver) {
-      var observer = new MutationObserver(injectBell);
+      var observer = new MutationObserver(applyViewportLock);
       observer.observe(document.body || document.documentElement, { childList: true, subtree: true });
     }
-    window.addEventListener('popstate', injectBell);
+    window.addEventListener('popstate', applyViewportLock);
   }
   true;
 })();
@@ -64,8 +53,15 @@ const INJECTED_HEADER_BELL = `
 
 function trusted(raw: string) {
   if (raw === "about:blank") return true;
-  try { const url = new URL(raw); return url.protocol === "https:" && (url.hostname === "boutq.store" || url.hostname.endsWith(".boutq.store")); }
-  catch { return false; }
+  try {
+    const url = new URL(raw);
+    return (
+      url.protocol === "https:" &&
+      (url.hostname === "boutq.store" || url.hostname.endsWith(".boutq.store"))
+    );
+  } catch {
+    return false;
+  }
 }
 
 export function PuraWebShell() {
@@ -81,26 +77,45 @@ export function PuraWebShell() {
 
   const syncPush = useCallback((state: PushState) => {
     if (!state.token) return;
-    const detail = JSON.stringify({ token: state.token, enabled: state.enabled, orders: state.orders, marketing: state.marketing, platform: Platform.OS });
-    web.current?.injectJavaScript(`window.dispatchEvent(new CustomEvent('pura:native-push',{detail:${detail}}));true;`);
+    const detail = JSON.stringify({
+      token: state.token,
+      enabled: state.enabled,
+      orders: state.orders,
+      marketing: state.marketing,
+      platform: Platform.OS,
+    });
+    web.current?.injectJavaScript(
+      `window.dispatchEvent(new CustomEvent('pura:native-push',{detail:${detail}}));true;`,
+    );
   }, []);
 
   useEffect(() => {
-    void loadPushState().then(async (state) => { const next = await registerForPush(state); setPush(next); });
-    return NetInfo.addEventListener((state) => { setConnected(state.isConnected); if (state.isConnected) setFailed(false); });
+    void loadPushState().then(async (state) => {
+      const next = await registerForPush(state);
+      setPush(next);
+    });
+    return NetInfo.addEventListener((state) => {
+      setConnected(state.isConnected);
+      if (state.isConnected) setFailed(false);
+    });
   }, []);
 
   useEffect(() => {
     const response = Notifications.addNotificationResponseReceivedListener((event) => {
       const url = event.notification.request.content.data?.url;
-      if (typeof url === "string" && trusted(url)) web.current?.injectJavaScript(`window.location.href=${JSON.stringify(url)};true;`);
+      if (typeof url === "string" && trusted(url))
+        web.current?.injectJavaScript(`window.location.href=${JSON.stringify(url)};true;`);
     });
     return () => response.remove();
   }, []);
 
   useEffect(() => {
     if (Platform.OS !== "android") return;
-    const back = BackHandler.addEventListener("hardwareBackPress", () => { if (!canGoBack) return false; web.current?.goBack(); return true; });
+    const back = BackHandler.addEventListener("hardwareBackPress", () => {
+      if (!canGoBack) return false;
+      web.current?.goBack();
+      return true;
+    });
     return () => back.remove();
   }, [canGoBack]);
 
@@ -108,7 +123,9 @@ export function PuraWebShell() {
     if (!push) return;
     let next = { ...push, ...patch };
     if (next.enabled && !next.token) next = await registerForPush(next);
-    await savePushState(next); setPush(next); syncPush(next);
+    await savePushState(next);
+    setPush(next);
+    syncPush(next);
   };
 
   const openExternal = async (url: string) => {
@@ -120,25 +137,40 @@ export function PuraWebShell() {
   return (
     <View style={[styles.root, { paddingTop: insets.top }]}>
       <WebView
-        key={reloadKey} ref={web} source={{ uri: STORE_URL }} style={styles.web}
-        injectedJavaScript={INJECTED_HEADER_BELL}
-        originWhitelist={["https://*", "about:blank"]} javaScriptEnabled domStorageEnabled
-        sharedCookiesEnabled thirdPartyCookiesEnabled pullToRefreshEnabled={Platform.OS === "android"}
+        key={reloadKey}
+        ref={web}
+        source={{ uri: STORE_URL }}
+        style={styles.web}
+        injectedJavaScript={INJECTED_VIEWPORT_LOCK}
+        originWhitelist={["https://*", "about:blank"]}
+        javaScriptEnabled
+        domStorageEnabled
+        sharedCookiesEnabled
+        thirdPartyCookiesEnabled
+        pullToRefreshEnabled={Platform.OS === "android"}
         showsHorizontalScrollIndicator={false}
         scalesPageToFit={false}
         overScrollMode="never"
-        allowsBackForwardNavigationGestures setSupportMultipleWindows={false}
+        allowsBackForwardNavigationGestures
+        setSupportMultipleWindows={false}
         applicationNameForUserAgent="PuraLineApp/1.0"
-        onShouldStartLoadWithRequest={(request: WebViewNavigation) => { if (trusted(request.url)) return true; void openExternal(request.url); return false; }}
+        onShouldStartLoadWithRequest={(request: WebViewNavigation) => {
+          if (trusted(request.url)) return true;
+          void openExternal(request.url);
+          return false;
+        }}
         onNavigationStateChange={(state) => {
           setCanGoBack(state.canGoBack);
-          web.current?.injectJavaScript(INJECTED_HEADER_BELL);
+          web.current?.injectJavaScript(INJECTED_VIEWPORT_LOCK);
         }}
-        onLoadStart={() => { setFailed(false); setProgress(0.05); }}
+        onLoadStart={() => {
+          setFailed(false);
+          setProgress(0.05);
+        }}
         onLoadProgress={({ nativeEvent }) => setProgress(nativeEvent.progress)}
         onLoadEnd={() => {
           setProgress(1);
-          web.current?.injectJavaScript(INJECTED_HEADER_BELL);
+          web.current?.injectJavaScript(INJECTED_VIEWPORT_LOCK);
           if (push) syncPush(push);
         }}
         onMessage={(event) => {
@@ -150,69 +182,120 @@ export function PuraWebShell() {
           } catch {}
         }}
         onError={() => setFailed(true)}
-        onHttpError={({ nativeEvent }) => { if (nativeEvent.statusCode >= 500) setFailed(true); }}
+        onHttpError={({ nativeEvent }) => {
+          if (nativeEvent.statusCode >= 500) setFailed(true);
+        }}
         onContentProcessDidTerminate={() => web.current?.reload()}
-        onRenderProcessGone={() => { setReloadKey((v) => v + 1); return true; }}
+        onRenderProcessGone={() => {
+          setReloadKey((v) => v + 1);
+          return true;
+        }}
       />
       {!failed && !offline && progress > 0 && progress < 1 ? (
-        <View style={styles.progress}><View style={[styles.progressFill, { width: `${Math.max(5, progress * 100)}%` }]} /></View>
+        <View style={styles.progress}>
+          <View style={[styles.progressFill, { width: `${Math.max(5, progress * 100)}%` }]} />
+        </View>
       ) : null}
       {progress === 0 && !failed && !offline ? (
-        <View style={styles.overlay}><ActivityIndicator size="large" color={GOLD} /></View>
+        <View style={styles.overlay}>
+          <ActivityIndicator size="large" color={GOLD} />
+        </View>
       ) : null}
       {failed || offline ? (
         <View style={styles.overlay}>
-          <Text style={styles.title}>{offline ? "لا يوجد اتصال بالإنترنت" : "تعذر فتح متجر Pura Line"}</Text>
+          <Text style={styles.title}>
+            {offline ? "لا يوجد اتصال بالإنترنت" : "تعذر فتح متجر Pura Line"}
+          </Text>
           <Text style={styles.message}>تحقق من الاتصال ثم حاول مرة ثانية.</Text>
-          <Pressable style={styles.button} onPress={() => { setFailed(false); setProgress(0); setReloadKey((v) => v + 1); }}>
-            <Text style={styles.buttonText}>إعادة المحاولة</Text>
+          <Pressable
+            style={styles.retryButton}
+            onPress={() => {
+              setFailed(false);
+              setProgress(0);
+              setReloadKey((v) => v + 1);
+            }}
+          >
+            <Text style={styles.retryButtonText}>إعادة المحاولة</Text>
           </Pressable>
         </View>
       ) : null}
-      <Modal visible={settings} transparent animationType="slide" onRequestClose={() => setSettings(false)}>
+      <Modal
+        visible={settings}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setSettings(false)}
+      >
         <Pressable style={styles.scrim} onPress={() => setSettings(false)} />
-        <View style={[styles.sheet, { paddingBottom: Math.max(24, insets.bottom + 16) }]}>
-          <Text style={styles.sheetTitle}>إشعارات Pura Line</Text>
-          <View style={styles.row}>
-            <View>
-              <Text style={styles.rowTitle}>تشغيل الإشعارات</Text>
-              <Text style={styles.rowHint}>السماح للتطبيق باستقبال التنبيهات</Text>
-            </View>
-            <Switch
-              value={push?.enabled ?? false}
-              onValueChange={(value) => void updatePush({ enabled: value })}
-              trackColor={{ true: GOLD, false: "#502020" }}
-              thumbColor={push?.enabled ? BRAND : "#8E7575"}
-            />
+        <View style={[styles.sheet, { paddingBottom: Math.max(28, insets.bottom + 16) }]}>
+          <View style={styles.sheetHandle} />
+
+          <View style={styles.sheetHeader}>
+            <Text style={styles.sheetTitle}>إعدادات الإشعارات</Text>
+            <Text style={styles.sheetSubtitle}>تخصيص التنبيهات الخاصة بمتجر Pura Line</Text>
           </View>
-          <View style={styles.row}>
-            <View>
-              <Text style={styles.rowTitle}>تحديثات طلباتي</Text>
-              <Text style={styles.rowHint}>الدفع والتجهيز والتوصيل والاستلام</Text>
+
+          <View style={styles.cardContainer}>
+            {/* Toggle 1: All Notifications */}
+            <View style={styles.row}>
+              <View style={styles.textColumn}>
+                <Text style={styles.rowTitle}>تفعيل الإشعارات</Text>
+                <Text style={styles.rowHint}>السماح للتطبيق باستقبال التنبيهات المباشرة</Text>
+              </View>
+              <Switch
+                value={push?.enabled ?? false}
+                onValueChange={(value) => void updatePush({ enabled: value })}
+                trackColor={{ true: GOLD, false: "#4A1C1C" }}
+                thumbColor={push?.enabled ? "#FFFFFF" : "#A69292"}
+                ios_backgroundColor="#4A1C1C"
+              />
             </View>
-            <Switch
-              disabled={!push?.enabled}
-              value={push?.orders ?? true}
-              onValueChange={(value) => void updatePush({ orders: value })}
-              trackColor={{ true: GOLD, false: "#502020" }}
-              thumbColor={push?.orders ? BRAND : "#8E7575"}
-            />
-          </View>
-          <View style={styles.row}>
-            <View>
-              <Text style={styles.rowTitle}>العروض والأخبار</Text>
-              <Text style={styles.rowHint}>يمكن إيقافها في أي وقت</Text>
+
+            {/* Toggle 2: Order Status */}
+            <View style={styles.row}>
+              <View style={styles.textColumn}>
+                <Text style={[styles.rowTitle, !push?.enabled && styles.disabledText]}>
+                  تحديثات طلباتي
+                </Text>
+                <Text style={[styles.rowHint, !push?.enabled && styles.disabledHint]}>
+                  تنبيهات الدفع، التجهيز، الشحن والتسليم
+                </Text>
+              </View>
+              <Switch
+                disabled={!push?.enabled}
+                value={push?.orders ?? true}
+                onValueChange={(value) => void updatePush({ orders: value })}
+                trackColor={{ true: GOLD, false: "#4A1C1C" }}
+                thumbColor={push?.orders && push?.enabled ? "#FFFFFF" : "#A69292"}
+                ios_backgroundColor="#4A1C1C"
+              />
             </View>
-            <Switch
-              disabled={!push?.enabled}
-              value={push?.marketing ?? false}
-              onValueChange={(value) => void updatePush({ marketing: value })}
-              trackColor={{ true: GOLD, false: "#502020" }}
-              thumbColor={push?.marketing ? BRAND : "#8E7575"}
-            />
+
+            {/* Toggle 3: Offers & News */}
+            <View style={[styles.row, styles.lastRow]}>
+              <View style={styles.textColumn}>
+                <Text style={[styles.rowTitle, !push?.enabled && styles.disabledText]}>
+                  العروض والمنتجات الحصرية
+                </Text>
+                <Text style={[styles.rowHint, !push?.enabled && styles.disabledHint]}>
+                  إشعارك فور إطلاق الكولكشن والتخفيضات
+                </Text>
+              </View>
+              <Switch
+                disabled={!push?.enabled}
+                value={push?.marketing ?? false}
+                onValueChange={(value) => void updatePush({ marketing: value })}
+                trackColor={{ true: GOLD, false: "#4A1C1C" }}
+                thumbColor={push?.marketing && push?.enabled ? "#FFFFFF" : "#A69292"}
+                ios_backgroundColor="#4A1C1C"
+              />
+            </View>
           </View>
-          <Pressable style={styles.button} onPress={() => setSettings(false)}>
-            <Text style={styles.buttonText}>تم</Text>
+
+          <Pressable
+            style={({ pressed }) => [styles.doneButton, pressed && styles.doneButtonPressed]}
+            onPress={() => setSettings(false)}
+          >
+            <Text style={styles.doneButtonText}>تم وحفظ</Text>
           </Pressable>
         </View>
       </Modal>
@@ -223,32 +306,136 @@ export function PuraWebShell() {
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: BRAND },
   web: { flex: 1, backgroundColor: "#FFF9F7" },
-  progress: { position: "absolute", top: 0, left: 0, right: 0, height: 3, backgroundColor: "rgba(253, 231, 201, 0.2)" },
+  progress: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 3,
+    backgroundColor: "rgba(253, 231, 201, 0.2)",
+  },
   progressFill: { height: 3, backgroundColor: GOLD },
-  overlay: { ...StyleSheet.absoluteFillObject, backgroundColor: BRAND, alignItems: "center", justifyContent: "center", padding: 28 },
+  overlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: BRAND,
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 28,
+  },
   title: { color: GOLD, fontSize: 21, fontWeight: "800", textAlign: "center" },
   message: { color: "#D1BCA6", fontSize: 15, marginTop: 9, textAlign: "center" },
-  button: { backgroundColor: GOLD, borderRadius: 14, minWidth: 150, alignItems: "center", paddingVertical: 13, paddingHorizontal: 24, marginTop: 22 },
-  buttonText: { color: BRAND, fontWeight: "800", fontSize: 16 },
-  scrim: { flex: 1, backgroundColor: "rgba(0,0,0,0.6)" },
+  retryButton: {
+    backgroundColor: GOLD,
+    borderRadius: 14,
+    minWidth: 150,
+    alignItems: "center",
+    paddingVertical: 13,
+    paddingHorizontal: 24,
+    marginTop: 22,
+  },
+  retryButtonText: { color: BRAND, fontWeight: "800", fontSize: 16 },
+  scrim: { flex: 1, backgroundColor: "rgba(0,0,0,0.65)" },
   sheet: {
     backgroundColor: BRAND,
-    borderTopLeftRadius: 26,
-    borderTopRightRadius: 26,
-    padding: 22,
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    paddingHorizontal: 20,
+    paddingTop: 12,
     borderTopWidth: 1,
-    borderColor: "rgba(253, 231, 201, 0.2)"
+    borderColor: BRAND_BORDER,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.35,
+    shadowRadius: 12,
+    elevation: 20,
   },
-  sheetTitle: { color: GOLD, fontSize: 21, fontWeight: "900", textAlign: "right", marginBottom: 14 },
+  sheetHandle: {
+    width: 44,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: "rgba(253, 231, 201, 0.35)",
+    alignSelf: "center",
+    marginBottom: 16,
+  },
+  sheetHeader: {
+    marginBottom: 18,
+    alignItems: "flex-end",
+  },
+  sheetTitle: {
+    color: GOLD,
+    fontSize: 20,
+    fontWeight: "900",
+    textAlign: "right",
+  },
+  sheetSubtitle: {
+    color: GOLD_MUTED,
+    fontSize: 13,
+    marginTop: 4,
+    textAlign: "right",
+  },
+  cardContainer: {
+    backgroundColor: BRAND_CARD,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: BRAND_BORDER,
+    paddingHorizontal: 16,
+    paddingVertical: 4,
+  },
   row: {
-    minHeight: 72,
+    minHeight: 74,
     flexDirection: "row-reverse",
     justifyContent: "space-between",
     alignItems: "center",
     borderBottomWidth: 1,
-    borderBottomColor: "rgba(253, 231, 201, 0.15)",
-    gap: 14
+    borderBottomColor: BRAND_BORDER,
+    gap: 12,
   },
-  rowTitle: { color: GOLD, fontSize: 16, fontWeight: "800", textAlign: "right" },
-  rowHint: { color: "#C8B49E", fontSize: 12, marginTop: 3, textAlign: "right" },
+  lastRow: {
+    borderBottomWidth: 0,
+  },
+  textColumn: {
+    flex: 1,
+    paddingRight: 4,
+  },
+  rowTitle: {
+    color: GOLD,
+    fontSize: 15,
+    fontWeight: "800",
+    textAlign: "right",
+  },
+  rowHint: {
+    color: GOLD_MUTED,
+    fontSize: 12,
+    marginTop: 3,
+    textAlign: "right",
+    lineHeight: 17,
+  },
+  disabledText: {
+    color: "rgba(253, 231, 201, 0.4)",
+  },
+  disabledHint: {
+    color: "rgba(212, 188, 155, 0.3)",
+  },
+  doneButton: {
+    backgroundColor: GOLD,
+    borderRadius: 16,
+    height: 50,
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 20,
+    shadowColor: GOLD,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.25,
+    shadowRadius: 6,
+    elevation: 4,
+  },
+  doneButtonPressed: {
+    opacity: 0.85,
+    transform: [{ scale: 0.99 }],
+  },
+  doneButtonText: {
+    color: BRAND,
+    fontWeight: "900",
+    fontSize: 16,
+  },
 });

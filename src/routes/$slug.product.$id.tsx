@@ -102,6 +102,7 @@ type Variant = {
   selling_price: number;
   original_price: number | null;
   stock_main: number;
+  stock_incubator?: number;
   image_url?: string | null;
 };
 
@@ -150,6 +151,7 @@ type RecommendationProduct = {
     selling_price: number;
     original_price: number | null;
     stock_main: number;
+    stock_incubator?: number;
   }>;
 };
 
@@ -530,7 +532,11 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
           const fabricMatch = !selectedFabric || v.fabric === selectedFabric;
           return colorMatch && sizeMatch && fabricMatch;
         });
-        acc[col] = matching.length === 0 || matching.every((v) => (v.stock_main ?? 0) <= 0);
+        acc[col] =
+          matching.length === 0 ||
+          matching.every(
+            (v) => (Number(v.stock_main ?? 0) + Number(v.stock_incubator ?? 0)) <= 0,
+          );
         return acc;
       },
       {} as Record<string, boolean>,
@@ -546,7 +552,11 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
           const fabricMatch = !selectedFabric || v.fabric === selectedFabric;
           return colorMatch && sizeMatch && fabricMatch;
         });
-        acc[sz] = matching.length === 0 || matching.every((v) => (v.stock_main ?? 0) <= 0);
+        acc[sz] =
+          matching.length === 0 ||
+          matching.every(
+            (v) => (Number(v.stock_main ?? 0) + Number(v.stock_incubator ?? 0)) <= 0,
+          );
         return acc;
       },
       {} as Record<string, boolean>,
@@ -562,7 +572,11 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
           const sizeMatch = !selectedSize || v.size === selectedSize;
           return colorMatch && sizeMatch && fabricMatch;
         });
-        acc[fb] = matching.length === 0 || matching.every((v) => (v.stock_main ?? 0) <= 0);
+        acc[fb] =
+          matching.length === 0 ||
+          matching.every(
+            (v) => (Number(v.stock_main ?? 0) + Number(v.stock_incubator ?? 0)) <= 0,
+          );
         return acc;
       },
       {} as Record<string, boolean>,
@@ -735,7 +749,7 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
     ? Number(matchedVariant.selling_price || basePrice) + selectedAddOnPrice
     : minMatchingPrice;
 
-  const maxStock = variant?.stock_main ?? 0;
+  const maxStock = (Number(variant?.stock_main ?? 0) + Number(variant?.stock_incubator ?? 0));
   const selectedVariantOutOfStock = Boolean(variant && maxStock <= 0);
 
   const displayName = pickName(lang, product);
@@ -769,7 +783,7 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
         if (hasVariants && !variant) {
           return t("يرجى اختيار مقاس جاهز أولاً", "Please select a ready size first");
         }
-        if (variant && variant.stock_main <= 0) {
+        if (variant && (Number(variant.stock_main || 0) + Number(variant.stock_incubator || 0)) <= 0) {
           return t("هذا المقاس غير متوفر حالياً", "This size is out of stock");
         }
       } else {
@@ -783,7 +797,7 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
       if (hasVariants && !variant) {
         return t("يرجى اختيار مقاس/خيار أولاً", "Please select a size or option first");
       }
-      if (variant && variant.stock_main <= 0) {
+      if (variant && (Number(variant.stock_main || 0) + Number(variant.stock_incubator || 0)) <= 0) {
         return t("هذا الخيار غير متوفر حالياً", "This option is out of stock");
       }
       for (const f of customFields) {
@@ -881,7 +895,9 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
       color: targetVariant?.color || null,
       fabric: targetVariant?.fabric || null,
       qty,
-      max_stock: targetVariant?.stock_main ?? 999,
+      max_stock:
+        (Number(targetVariant?.stock_main ?? 0) + Number(targetVariant?.stock_incubator ?? 0)) ||
+        999,
       custom_fields: custom,
       selected_customizations,
     } as any);
@@ -1160,7 +1176,7 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
                           ) : (
                             <span className="h-7 w-7 rounded-full border bg-muted flex items-center justify-center text-[10px] font-bold uppercase truncate shadow-inner relative overflow-hidden">
                               {color.slice(0, 2)}
-                              {oos && (
+                              {(isColorOutOfStock[color] || (Number(variants.filter(v => v.color === color).reduce((acc, v) => acc + Number(v.stock_main || 0) + Number(v.stock_incubator || 0), 0)) <= 0)) && (
                                 <span className="absolute inset-0 w-full h-[2px] bg-destructive/80 rotate-45 origin-center top-1/2 -translate-y-1/2" />
                               )}
                             </span>
@@ -1186,7 +1202,7 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
                   <div className="flex flex-wrap gap-2">
                     {uniqueSizes.map((sz) => {
                       const active = selectedSize === sz;
-                      const oos = isSizeOutOfStock[sz];
+                      const oos = isSizeOutOfStock[sz] || (Number(variants.filter(v => v.size === sz).reduce((acc, v) => acc + Number(v.stock_main || 0) + Number(v.stock_incubator || 0), 0)) <= 0);
                       return (
                         <Button
                           key={sz}
@@ -1224,7 +1240,7 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
                   <div className="flex flex-wrap gap-2">
                     {uniqueFabrics.map((fb) => {
                       const active = selectedFabric === fb;
-                      const oos = isFabricOutOfStock[fb];
+                      const oos = isFabricOutOfStock[fb] || (Number(variants.filter(v => v.fabric === fb).reduce((acc, v) => acc + Number(v.stock_main || 0) + Number(v.stock_incubator || 0), 0)) <= 0);
                       return (
                         <Button
                           key={fb}
@@ -1258,7 +1274,7 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
                     <div className="text-sm font-medium mb-2">{t("الخيارات", "Options")}</div>
                     <div className="flex flex-wrap gap-2">
                       {variants.map((v) => {
-                        const oos = v.stock_main <= 0;
+                        const oos = (Number(v.stock_main || 0) + Number(v.stock_incubator || 0)) <= 0;
                         const active = v.id === variantId;
                         const label =
                           [formatSizeWithUnit(v.size, v.size_unit, lang), v.color, v.fabric]

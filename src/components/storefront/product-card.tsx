@@ -40,7 +40,10 @@ export function ProductCard({
   const discountPercent = discountedVariant
     ? Math.round((1 - discountedVariant.selling_price / originalPrice) * 100)
     : 0;
-  const totalStock = product.product_variants.reduce((s, v) => s + (v.stock_main || 0), 0);
+  const totalStock = product.product_variants.reduce(
+    (s, v) => s + (Number(v.stock_main || 0) + Number(v.stock_incubator || 0)),
+    0,
+  );
   const oos = totalStock <= 0;
 
   const media = Array.isArray(product.media)
