@@ -3,13 +3,13 @@ import path from "node:path";
 import sharp from "sharp";
 
 const root = process.cwd();
-const buildId = process.env.WHITE_LABEL_BUILD_ID;
-const buildToken = process.env.WHITE_LABEL_BUILD_TOKEN;
+const event = JSON.parse(await fs.readFile(process.env.GITHUB_EVENT_PATH, "utf8"));
+const buildId = event?.client_payload?.build_id;
+const buildToken = event?.client_payload?.build_token;
 const api =
   process.env.WHITE_LABEL_BUILD_API ||
   "https://ikciahnuqhemvnyfvbyp.supabase.co/functions/v1/white-label-build-api";
-if (!buildId || !buildToken)
-  throw new Error("WHITE_LABEL_BUILD_ID and WHITE_LABEL_BUILD_TOKEN are required");
+if (!buildId || !buildToken) throw new Error("Scoped build credentials are required");
 const configResponse = await fetch(api, {
   method: "POST",
   headers: { "content-type": "application/json" },

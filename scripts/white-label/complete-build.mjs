@@ -1,5 +1,8 @@
-const buildId = process.env.WHITE_LABEL_BUILD_ID;
-const buildToken = process.env.WHITE_LABEL_BUILD_TOKEN;
+import fs from "node:fs/promises";
+
+const event = JSON.parse(await fs.readFile(process.env.GITHUB_EVENT_PATH, "utf8"));
+const buildId = event?.client_payload?.build_id;
+const buildToken = event?.client_payload?.build_token;
 const api =
   process.env.WHITE_LABEL_BUILD_API ||
   "https://ikciahnuqhemvnyfvbyp.supabase.co/functions/v1/white-label-build-api";
