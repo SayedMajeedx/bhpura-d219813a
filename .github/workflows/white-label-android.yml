@@ -61,6 +61,12 @@ jobs:
       - name: Build signed APK
         working-directory: apps/pura-line-mobile/android
         run: ./gradlew assembleRelease bundleRelease --no-daemon -PreactNativeArchitectures=arm64-v8a
+      - name: Verify Android signature
+        working-directory: apps/pura-line-mobile/android
+        run: |
+          APKSIGNER="$(find "$ANDROID_HOME/build-tools" -type f -name apksigner | sort -V | tail -n 1)"
+          test -x "$APKSIGNER"
+          "$APKSIGNER" verify --verbose --print-certs app/build/outputs/apk/release/app-release.apk
       - name: Verify and store APK permanently
         run: node scripts/white-label/upload-apk.mjs
       - name: Upload APK

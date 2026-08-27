@@ -107,7 +107,12 @@ Deno.serve(async (req) => {
           apk_sha256: artifactReady ? apkSha256 : null,
           apk_size_bytes: artifactReady ? apkSize : null,
           validation_results: artifactReady
-            ? { archive_signature: true, checksum_verified: true, permanent_storage: true }
+            ? {
+                archive_signature: true,
+                android_signature: true,
+                checksum_verified: true,
+                permanent_storage: true,
+              }
             : {},
           error_message: artifactReady
             ? null
