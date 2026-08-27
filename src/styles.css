@@ -160,8 +160,19 @@
 @layer base {
   * {
     border-color: var(--color-border);
+    box-sizing: border-box;
+  }
+  html {
+    overflow-x: hidden;
+    max-width: 100vw;
+    width: 100%;
+    -webkit-text-size-adjust: 100%;
   }
   body {
+    overflow-x: hidden;
+    max-width: 100vw;
+    width: 100%;
+    position: relative;
     background-color: var(--color-background);
     color: var(--color-foreground);
     font-family: var(--font-ui);
@@ -284,6 +295,9 @@ html.lang-ar .font-display {
   }
 
   .storefront-shell {
+    width: 100%;
+    max-width: 100vw;
+    overflow-x: clip;
     --text-xs: calc(0.75rem * var(--type-scale, 1));
     --text-sm: calc(0.875rem * var(--type-scale, 1));
     --text-base: calc(1rem * var(--type-scale, 1));

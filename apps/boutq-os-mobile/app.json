@@ -7,18 +7,36 @@
     "icon": "./assets/images/boutq-os-icon.png",
     "scheme": "boutqos",
     "userInterfaceStyle": "light",
+    "newArchEnabled": false,
     "ios": {
       "icon": "./assets/images/boutq-os-icon.png",
       "bundleIdentifier": "com.boutq.os",
-      "supportsTablet": true
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSFaceIDUsageDescription": "استخدام Face ID لحماية الدخول إلى Boutq OS.",
+        "NSCameraUsageDescription": "استخدام الكاميرا لمسح باركود المنتجات.",
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
+      "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
         "backgroundColor": "#330A0A",
         "foregroundImage": "./assets/images/boutq-os-icon.png"
       },
       "predictiveBackGestureEnabled": false,
-      "package": "com.boutq.os"
+      "package": "com.boutq.os",
+      "versionCode": 2,
+      "permissions": [
+        "CAMERA",
+        "USE_BIOMETRIC",
+        "USE_FINGERPRINT",
+        "POST_NOTIFICATIONS",
+        "android.permission.USE_BIOMETRIC",
+        "android.permission.USE_FINGERPRINT",
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO"
+      ]
     },
     "web": {
       "output": "static",
@@ -26,6 +44,14 @@
     },
     "plugins": [
       "expo-router",
+      "expo-local-authentication",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "السماح لـ Boutq OS باستخدام الكاميرا لمسح باركود المنتجات.",
+          "barcodeScannerEnabled": true
+        }
+      ],
       [
         "expo-splash-screen",
         {
@@ -35,11 +61,26 @@
             "imageWidth": 120
           }
         }
+      ],
+      "expo-secure-store"
+      ,
+      [
+        "expo-notifications",
+        {
+          "color": "#330A0A",
+          "defaultChannel": "boutq-updates"
+        }
       ]
     ],
     "experiments": {
-      "typedRoutes": true,
       "reactCompiler": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "8636dd37-fc96-4e5f-ab23-1f87f306c33b"
+      }
+    },
+    "owner": "sayedmajeedx"
   }
 }

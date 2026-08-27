@@ -4,3 +4,6 @@ project_id = "ikciahnuqhemvnyfvbyp"
 # supports opaque sb_publishable keys plus one-time guest email tokens.
 [functions.send-order-email]
 verify_jwt = false
+
+[functions.send-mobile-push]
+verify_jwt = true

@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-labelledby="title desc">
+  <title id="title">Pura maroon P favicon</title>
+  <desc id="desc">A deep maroon textured circle with a fine, high-contrast white serif letter P.</desc>
+  <defs>
+    <radialGradient id="maroon" cx="38%" cy="31%" r="78%">
+      <stop offset="0" stop-color="#4a1617"/>
+      <stop offset="0.47" stop-color="#421113"/>
+      <stop offset="0.78" stop-color="#351012"/>
+      <stop offset="1" stop-color="#26090c"/>
+    </radialGradient>
+    <filter id="texture" x="-10%" y="-10%" width="120%" height="120%">
+      <feTurbulence type="fractalNoise" baseFrequency=".018 .026" numOctaves="3" seed="24" result="noise"/>
+      <feColorMatrix in="noise" type="saturate" values="0" result="mono"/>
+      <feBlend in="SourceGraphic" in2="mono" mode="soft-light"/>
+    </filter>
+    <clipPath id="disc"><circle cx="128" cy="128" r="120"/></clipPath>
+  </defs>
+
+  <circle cx="128" cy="128" r="120" fill="url(#maroon)"/>
+  <g clip-path="url(#disc)" opacity=".19" filter="url(#texture)">
+    <rect width="256" height="256" fill="#641f20"/>
+  </g>
+  <circle cx="128" cy="128" r="119.25" fill="none" stroke="#190609" stroke-width="1.5" opacity=".72"/>
+
+  <!-- Exact P outline extracted from the supplied original PURA vector artwork. -->
+  <path transform="translate(73.2 29.13) scale(.33023)" fill="#fde7c9" fill-rule="nonzero"
+        d="M 192.371094 60.183594 C 216.722656 60.183594 238.859375 66.050781 258.785156 77.769531 C 278.730469 89.5 294.671875 105.328125 306.621094 125.273438 C 318.589844 145.199219 324.578125 167.585938 324.578125 192.433594 C 324.578125 216.351562 318.589844 238.28125 306.621094 258.226562 C 294.671875 278.148438 278.730469 294.089844 258.785156 306.058594 C 238.859375 318.007812 216.722656 323.976562 192.371094 323.976562 L 78.414062 323.976562 L 78.414062 462.515625 C 78.414062 479.875 79.457031 493.238281 81.558594 502.613281 C 83.679688 511.996094 85.789062 518.328125 87.886719 521.605469 C 90.007812 524.894531 91.074219 526.53125 91.074219 526.53125 L 37.613281 526.53125 C 37.613281 526.53125 38.78125 524.894531 41.128906 521.605469 C 43.46875 518.328125 45.929688 511.996094 48.496094 502.613281 C 51.082031 493.238281 52.386719 479.875 52.386719 462.515625 L 52.386719 124.199219 C 52.386719 99.351562 50.273438 82.695312 46.054688 74.253906 C 41.832031 65.8125 39.019531 61.125 37.613281 60.183594 Z M 181.820312 62.996094 L 78.414062 62.996094 L 78.414062 321.164062 L 181.820312 321.164062 C 205.242188 321.164062 225.734375 315.070312 243.308594 302.875 C 260.90625 290.6875 274.507812 274.734375 284.109375 255.039062 C 293.730469 235.34375 298.550781 214.476562 298.550781 192.433594 C 298.550781 169.457031 293.730469 148.238281 284.109375 128.792969 C 274.507812 109.320312 260.90625 93.484375 243.308594 81.289062 C 225.734375 69.101562 205.242188 62.996094 181.820312 62.996094 Z"/>
+</svg>

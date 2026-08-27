@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "813372622460",
+    "project_id": "boutqstore",
+    "storage_bucket": "boutqstore.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:813372622460:android:169f31936d1cdfbae8abf9",
+        "android_client_info": {
+          "package_name": "com.boutq.os"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDs9lPcQCgbp5C9F_-M4N1ucoPaEL8bMaQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

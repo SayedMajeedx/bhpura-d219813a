@@ -28,6 +28,7 @@ import {
 import { toast } from "sonner";
 import { useT, useI18n } from "@/lib/i18n";
 import { useBrand } from "@/lib/brand-context";
+import { CustomerPushCenter } from "@/components/communications/CustomerPushCenter";
 
 export const Route = createFileRoute("/_authenticated/admin/b/$slug/communications")({
   component: CommunicationsPage,
@@ -89,6 +90,8 @@ function CommunicationsPage() {
           onResetAdding={() => setAddingRecipient(false)}
         />
       )}
+
+      {activeScope === "push" && <CustomerPushCenter brandId={brandId} isAr={isAr} />}
 
       {activeScope === "logs" && <EmailActivityCard brandId={brandId} isAr={isAr} />}
     </div>

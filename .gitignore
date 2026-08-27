@@ -47,3 +47,11 @@ scratch/
 .wrangler-local/
 NUL
 
+# Local Tools & Mobile Build Artifacts
+.local-tools/
+.expo/
+*.apk
+apps/**/android/
+apps/**/builds/
+apps/**/node_modules/
+

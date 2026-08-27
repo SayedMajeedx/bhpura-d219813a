@@ -1,10 +1,10 @@
 # Boutq OS Mobile
 
-Native Expo 55 application for Boutq administrators, staff, and couriers. It uses the existing Supabase authentication, tenant isolation, and row-level security policies.
+Expo application for Boutq administrators. The production admin website is the single source of truth: the app renders its responsive interface and therefore uses the same authentication, permissions, data, and business logic as the browser version.
 
 ## Local run
 
-1. Copy `.env.example` to `.env` and add the public Supabase URL and publishable key.
+1. Copy `.env.example` to `.env`. `EXPO_PUBLIC_BOUTQ_ADMIN_URL` is optional and defaults to `https://boutq.store/admin`.
 2. Run `npm install`.
 3. Run `npm start`, then scan the QR code with Expo Go.
 
@@ -24,4 +24,4 @@ After signing in with `eas login`, run `eas init` once to link the Expo project.
 - `eas build --profile preview --platform android`
 - `eas build --profile production --platform all`
 
-The first release contains login, tenant selection, dashboard summaries, orders, order details, and a WhatsApp customer action. Push notifications, barcode scanning, and protected status updates are planned as native follow-ups.
+The app keeps trusted `boutq.store` pages inside its secure web view, opens WhatsApp and other external links in the appropriate app, supports Android back navigation and pull-to-refresh, and provides a native offline/retry state.

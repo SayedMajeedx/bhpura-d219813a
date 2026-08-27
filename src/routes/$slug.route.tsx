@@ -429,7 +429,7 @@ function StoreShell() {
   return (
     <div
       dir={lang === "ar" ? "rtl" : "ltr"}
-      className="storefront-shell min-h-screen flex flex-col"
+      className="storefront-shell min-h-screen flex flex-col w-full max-w-full overflow-x-clip"
       style={
         {
           backgroundColor: settings.background_color,

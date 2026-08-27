@@ -1,0 +1,51 @@
+{
+  "expo": {
+    "name": "Pura Line",
+    "slug": "pura-line",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/pura-line-icon.png",
+    "scheme": "puraline",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": false,
+    "android": {
+      "googleServicesFile": "./google-services.json",
+      "package": "com.puraline.store",
+      "versionCode": 1,
+      "predictiveBackGestureEnabled": false,
+      "adaptiveIcon": {
+        "backgroundColor": "#330A0A",
+        "foregroundImage": "./assets/pura-line-icon.png"
+      },
+      "permissions": [
+        "POST_NOTIFICATIONS"
+      ]
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#330A0A",
+          "image": "./assets/pura-line-logo.png",
+          "imageWidth": 320,
+          "resizeMode": "contain"
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "color": "#330A0A",
+          "defaultChannel": "pura-orders"
+        }
+      ]
+    ],
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "8271744e-aac8-43b5-942b-c10e6d7d9e02"
+      }
+    },
+    "owner": "sayedmajeedx"
+  }
+}

@@ -152,6 +152,43 @@ function RootComponent() {
       markTabAlive();
     })();
   }, []);
+  useEffect(() => {
+    const handleNativePush = async (event: Event) => {
+      const detail = (event as CustomEvent).detail;
+      if (!detail?.token) return;
+      const { supabase } = await import("@/integrations/supabase/client");
+      await supabase.rpc("register_mobile_push_device" as never, {
+        p_token: detail.token,
+        p_enabled: detail.enabled !== false,
+        p_platform: detail.platform === "ios" ? "ios" : "android",
+        p_device_name: navigator.userAgent.slice(0, 180),
+        p_preferences: detail.preferences ?? {},
+      } as never);
+    };
+    window.addEventListener("boutq:native-push", handleNativePush);
+    return () => window.removeEventListener("boutq:native-push", handleNativePush);
+  }, []);
+  useEffect(() => {
+    const handleCustomerNativePush = async (event: Event) => {
+      const detail = (event as CustomEvent).detail;
+      if (!detail?.token) return;
+      const { supabase } = await import("@/integrations/supabase/client");
+      // This intentionally succeeds only after the storefront customer has
+      // authenticated and has a Pura customer membership. The native shell
+      // repeats the event after each navigation, including immediately after login.
+      await supabase.rpc("register_customer_push_device" as never, {
+        p_brand_slug: "pura",
+        p_token: detail.token,
+        p_enabled: detail.enabled !== false,
+        p_order_updates: detail.orders !== false,
+        p_marketing: detail.marketing === true,
+        p_platform: detail.platform === "ios" ? "ios" : "android",
+        p_device_name: navigator.userAgent.slice(0, 180),
+      } as never);
+    };
+    window.addEventListener("pura:native-push", handleCustomerNativePush);
+    return () => window.removeEventListener("pura:native-push", handleCustomerNativePush);
+  }, []);
   return (
     <QueryClientProvider client={queryClient}>
       <I18nProvider>

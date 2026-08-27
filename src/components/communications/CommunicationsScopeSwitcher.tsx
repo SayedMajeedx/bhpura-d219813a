@@ -1,7 +1,7 @@
-import { ShieldAlert, Mail } from "lucide-react";
+import { ShieldAlert, Mail, BellRing } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-export type CommunicationsScope = "recipients" | "logs";
+export type CommunicationsScope = "recipients" | "push" | "logs";
 
 interface CommunicationsScopeSwitcherProps {
   lang: "ar" | "en";
@@ -26,6 +26,12 @@ export function CommunicationsScopeSwitcher({
     badge?: number;
   }[] = [
     {
+      id: "push",
+      icon: BellRing,
+      labelAr: "إشعارات تطبيق العملاء",
+      labelEn: "Customer App Push",
+    },
+    {
       id: "recipients",
       icon: ShieldAlert,
       labelAr: "مستلمو تنبيهات الإدارة",
@@ -41,7 +47,7 @@ export function CommunicationsScopeSwitcher({
   ];
 
   return (
-    <div className="grid grid-cols-2 gap-1.5 rounded-2xl border border-border/60 bg-muted/40 p-1 sm:flex sm:items-center">
+    <div className="grid grid-cols-3 gap-1.5 rounded-2xl border border-border/60 bg-muted/40 p-1 sm:flex sm:items-center">
       {scopes.map((s) => {
         const Icon = s.icon;
         const isActive = activeScope === s.id;
