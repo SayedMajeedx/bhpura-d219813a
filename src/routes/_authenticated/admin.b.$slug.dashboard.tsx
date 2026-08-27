@@ -188,7 +188,7 @@ function Dashboard() {
       const { data, error } = await supabase
         .from("orders")
         .select(
-          "id, invoice_number, created_at, currency, total, status, payment_status, customer_name_snapshot, customer_email_snapshot, customer_phone_snapshot, customers(name)",
+          "id, invoice_number, created_at, currency, total, status, fulfillment_status, fulfillment_method, payment_status, customer_name_snapshot, customer_email_snapshot, customer_phone_snapshot, customers(name)",
         )
         .eq("brand_id", brandId)
         .order("created_at", { ascending: false })
