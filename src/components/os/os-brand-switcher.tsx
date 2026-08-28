@@ -1,7 +1,9 @@
 import * as React from "react";
-import { Link, useNavigate } from "@tanstack/react-router";
+import { Link } from "@tanstack/react-router";
 import { Crown, Store, Clock as ClockIcon, Settings } from "lucide-react";
+import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { startImpersonationSession } from "@/lib/impersonation.functions";
 import {
   Select,
   SelectContent,
@@ -33,7 +35,42 @@ export function OsBrandSwitcher({
   pathname,
   collapsed = false,
 }: OsBrandSwitcherProps) {
-  const navigate = useNavigate();
+  const [switching, setSwitching] = React.useState(false);
+
+  const handleBrandChange = async (targetSlug: string) => {
+    if (targetSlug === activeSlug) return;
+    const targetBrand = brands.find((b) => b.slug === targetSlug);
+    if (!targetBrand) return;
+
+    setSwitching(true);
+    const toastId = toast.loading(
+      lang === "ar"
+        ? "جاري تفعيل جلسة محاكاة المتجر..."
+        : "Initializing impersonation session...",
+    );
+    try {
+      const res = await startImpersonationSession({ data: { targetTenantId: targetBrand.id } });
+      if (res && "token" in res && res.token) {
+        document.cookie = `boutq_impersonation_token=${res.token}; path=/; max-age=${60 * 60 * 24}; samesite=lax${window.location.protocol === "https:" ? "; secure" : ""}`;
+      }
+      toast.success(
+        lang === "ar"
+          ? "تم تحويل جلسة المحاكاة بنجاح"
+          : "Impersonation session updated successfully",
+        { id: toastId },
+      );
+      window.location.href = `/admin/b/${targetSlug}/dashboard`;
+    } catch (err: any) {
+      console.error(err);
+      toast.error(
+        lang === "ar"
+          ? "تعذر تبديل المتجر. يرجى التحقق من صلاحية الوصول."
+          : "Unable to switch store. Please verify access permissions.",
+        { id: toastId },
+      );
+      setSwitching(false);
+    }
+  };
 
   if (collapsed) {
     return (
@@ -58,7 +95,8 @@ export function OsBrandSwitcher({
       {activeSlug && (
         <Select
           value={activeSlug}
-          onValueChange={(v) => navigate({ to: "/admin/b/$slug/dashboard", params: { slug: v } })}
+          disabled={switching}
+          onValueChange={handleBrandChange}
         >
           <SelectTrigger className="h-8 text-xs bg-background/80">
             <SelectValue placeholder={lang === "ar" ? "اختر علامة" : "Select a brand"} />

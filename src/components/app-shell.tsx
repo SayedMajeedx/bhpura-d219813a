@@ -489,6 +489,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           navItems={navItems}
           pathname={pathname}
           lang={lang}
+          isSuperAdmin={isSuperAdmin}
           onSetLang={setLang}
           onSignOut={signOut}
           mobileOpen={mobileOpen}

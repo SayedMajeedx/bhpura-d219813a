@@ -406,7 +406,7 @@ const ar: Dict = {
   "auth.resetLinkSent": "تم إرسال بريد الاستعادة. تحقق من صندوق الوارد.",
   "auth.backToSignIn": "← العودة لتسجيل الدخول",
   "auth.resetTitle": "تعيين كلمة مرور جديدة",
-  "auth.resetSubtitle": "اختر كلمة مرور قوية لم تستخدميها من قبل.",
+  "auth.resetSubtitle": "اختر كلمة مرور قوية لم تستخدمها من قبل.",
   "auth.newPassword": "كلمة المرور الجديدة",
   "auth.confirmPassword": "تأكيد كلمة المرور الجديدة",
   "auth.updatePassword": "تحديث كلمة المرور",

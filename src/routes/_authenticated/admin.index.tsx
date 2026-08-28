@@ -26,6 +26,12 @@ export const Route = createFileRoute("/_authenticated/admin/")({
     const isFixedSuperAdmin = email === "majeed@hotmail.it" || email === "majeed@hotmail.com";
     const isSuperAdmin = isFixedSuperAdmin || profile?.role === "super_admin";
 
+    // Super admin workspace is strictly platform tenant management (/admin/brands).
+    // Super admins can only access a specific merchant's dashboard via explicit impersonation sessions.
+    if (isSuperAdmin) {
+      throw redirect({ to: "/admin/brands" });
+    }
+
     if (profile?.brand_id) {
       const { data: brand } = await supabase
         .from("brands")
@@ -38,10 +44,6 @@ export const Route = createFileRoute("/_authenticated/admin/")({
           params: { slug: brand.slug },
         });
       }
-    }
-
-    if (isSuperAdmin) {
-      throw redirect({ to: "/admin/brands" });
     }
 
     const { data: fallback } = await supabase.from("brands").select("slug").limit(1).maybeSingle();

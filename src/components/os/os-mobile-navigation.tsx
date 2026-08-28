@@ -10,6 +10,9 @@ import {
   Grid,
   X,
   ShieldCheck,
+  Store,
+  Clock as ClockIcon,
+  Settings,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetClose } from "@/components/ui/sheet";
@@ -24,6 +27,7 @@ export interface OsMobileNavigationProps {
   navItems: AdminNavItemConfig[];
   pathname: string;
   lang: "en" | "ar";
+  isSuperAdmin?: boolean;
   onSetLang: (lang: "en" | "ar") => void;
   onSignOut: () => void;
   mobileOpen: boolean;
@@ -37,6 +41,7 @@ export function OsMobileNavigation({
   navItems,
   pathname,
   lang,
+  isSuperAdmin = false,
   onSetLang,
   onSignOut,
   mobileOpen,
@@ -44,9 +49,43 @@ export function OsMobileNavigation({
 }: OsMobileNavigationProps) {
   const navigate = useNavigate();
 
-  // Pick top 4 items for quick mobile tabs + "More" item
+  // Pick top items for quick mobile tabs + "More" item
   const primaryTabItems: OsMobileTabItem[] = React.useMemo(() => {
-    if (!activeSlug) return [];
+    if (!activeSlug) {
+      if (isSuperAdmin) {
+        return [
+          {
+            id: "brands",
+            icon: Store,
+            label: lang === "ar" ? "المتاجر" : "Brands",
+            active: pathname === "/admin/brands",
+            onClick: () => navigate({ to: "/admin/brands" }),
+          },
+          {
+            id: "requests",
+            icon: ClockIcon,
+            label: lang === "ar" ? "الطلبات" : "Requests",
+            active: pathname === "/admin/super/requests",
+            onClick: () => navigate({ to: "/admin/super/requests" }),
+          },
+          {
+            id: "settings",
+            icon: Settings,
+            label: lang === "ar" ? "الإعدادات" : "Settings",
+            active: pathname === "/admin/super/settings",
+            onClick: () => navigate({ to: "/admin/super/settings" }),
+          },
+          {
+            id: "more",
+            icon: Grid,
+            label: lang === "ar" ? "المزيد" : "More",
+            active: mobileOpen,
+            onClick: () => onOpenChangeMobile(!mobileOpen),
+          },
+        ];
+      }
+      return [];
+    }
 
     const homeItem = navItems.find((i) => i.id === "dashboard") ?? {
       id: "dashboard",
@@ -115,10 +154,45 @@ export function OsMobileNavigation({
     ];
 
     return items;
-  }, [activeSlug, navItems, pathname, lang, navigate, mobileOpen, onOpenChangeMobile]);
+  }, [activeSlug, isSuperAdmin, navItems, pathname, lang, navigate, mobileOpen, onOpenChangeMobile]);
 
   // Organize navigation items into iOS Control Center Groups
   const navGroups = React.useMemo(() => {
+    if (!activeSlug && isSuperAdmin) {
+      return [
+        {
+          id: "super_admin",
+          title: lang === "ar" ? "إدارة المنصة" : "Platform Management",
+          items: [
+            {
+              id: "brands",
+              to: "/admin/brands",
+              labelEn: "Manage Brands & Tenants",
+              labelAr: "إدارة العلامات والمتاجر",
+              icon: Store,
+              section: "overview" as const,
+            },
+            {
+              id: "requests",
+              to: "/admin/super/requests",
+              labelEn: "Tenant Requests",
+              labelAr: "طلبات الانضمام والاشتراكات",
+              icon: ClockIcon,
+              section: "overview" as const,
+            },
+            {
+              id: "settings",
+              to: "/admin/super/settings",
+              labelEn: "Platform Settings",
+              labelAr: "إعدادات المنصة",
+              icon: Settings,
+              section: "overview" as const,
+            },
+          ],
+        },
+      ];
+    }
+
     const coreIds = new Set(["dashboard", "reports", "orders", "customers", "inventory"]);
     const growthIds = new Set(["categories", "campaigns", "discounts", "pages"]);
 
@@ -143,7 +217,7 @@ export function OsMobileNavigation({
         items: ops,
       },
     ];
-  }, [navItems, lang]);
+  }, [activeSlug, isSuperAdmin, navItems, lang]);
 
   return (
     <>
@@ -340,7 +414,7 @@ export function OsMobileNavigation({
       </div>
 
       {/* Mobile Bottom Tab Bar */}
-      {activeSlug && <OsMobileTabBar items={primaryTabItems} />}
+      {(activeSlug || isSuperAdmin) && <OsMobileTabBar items={primaryTabItems} />}
     </>
   );
 }

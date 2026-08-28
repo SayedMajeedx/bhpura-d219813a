@@ -129,7 +129,7 @@ export const Route = createFileRoute("/_authenticated/admin/b/$slug")({
       throw redirect({ to: "/admin" });
     }
 
-    if (isSuperAdmin && !belongsToBrand) {
+    if (isSuperAdmin) {
       const accessEnabled = brand.support_access_enabled !== false;
       if (!accessEnabled) {
         throw redirect({ to: "/admin/brands" });
