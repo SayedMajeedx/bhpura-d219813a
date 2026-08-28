@@ -51,7 +51,7 @@ describe("Phase 7C responsive growth and content workspaces", () => {
       <PagesScopeSwitcher lang="en" activeScope="pages" onScopeChange={vi.fn()} pageCount={5} />,
     );
 
-    expect((communications.firstElementChild as HTMLElement).className).toContain("grid-cols-2");
+    expect((communications.firstElementChild as HTMLElement).className).toContain("grid-cols-3");
     expect((pages.firstElementChild as HTMLElement).className).toContain("grid-cols-2");
     expect(screen.getByRole("button", { name: /Outbound Email Logs/ })).toBeDefined();
     expect(screen.getByRole("button", { name: /Social Links & WhatsApp Widget/ })).toBeDefined();

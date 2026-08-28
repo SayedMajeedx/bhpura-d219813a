@@ -33,10 +33,12 @@ import {
   MessageCircle,
   FileText,
   Sparkles,
+  Fingerprint,
 } from "lucide-react";
 import { BAHRAIN_REGIONS, regionLabel } from "@/lib/bahrain-regions";
 import { DeliveryAddressCard } from "@/components/delivery-address-card";
 import { PhoneInput } from "@/components/phone-input";
+import { PasskeySettings } from "@/components/passkey-settings";
 
 export const Route = createFileRoute("/$slug/account")({
   component: AccountPage,
@@ -442,32 +444,41 @@ function AccountPage() {
             defaultValue="orders"
             className="w-full rounded-2xl border bg-card/40 backdrop-blur-md p-4 shadow-xs sm:p-6 border-border/70"
           >
-            <TabsList className="grid w-full grid-cols-3 h-auto rounded-xl p-1 bg-muted/40 border border-border/40 mb-6">
+            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 h-auto rounded-xl p-1 bg-muted/40 border border-border/40 mb-6 gap-1">
               <TabsTrigger
                 value="orders"
-                className="gap-2 py-2.5 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-xs transition-all"
+                className="gap-2 py-2.5 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-xs transition-all text-xs"
               >
                 <PackageSearch className="h-4 w-4 text-primary" />
-                <span className="hidden sm:inline font-semibold text-xs">
+                <span className="font-semibold text-xs">
                   {t("طلباتي", "My orders")}
                 </span>
               </TabsTrigger>
               <TabsTrigger
                 value="profile"
-                className="gap-2 py-2.5 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-xs transition-all"
+                className="gap-2 py-2.5 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-xs transition-all text-xs"
               >
                 <UserIcon className="h-4 w-4 text-primary" />
-                <span className="hidden sm:inline font-semibold text-xs">
+                <span className="font-semibold text-xs">
                   {t("البيانات الشخصية", "Profile")}
                 </span>
               </TabsTrigger>
               <TabsTrigger
                 value="addresses"
-                className="gap-2 py-2.5 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-xs transition-all"
+                className="gap-2 py-2.5 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-xs transition-all text-xs"
               >
                 <MapPin className="h-4 w-4 text-primary" />
-                <span className="hidden sm:inline font-semibold text-xs">
+                <span className="font-semibold text-xs">
                   {t("عناوين الشحن", "Addresses")}
+                </span>
+              </TabsTrigger>
+              <TabsTrigger
+                value="security"
+                className="gap-2 py-2.5 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-xs transition-all text-xs"
+              >
+                <Fingerprint className="h-4 w-4 text-primary" />
+                <span className="font-semibold text-xs">
+                  {t("الأمان والبصمة", "Passkeys")}
                 </span>
               </TabsTrigger>
             </TabsList>
@@ -495,6 +506,10 @@ function AccountPage() {
                 customer={customer}
                 loadingCustomer={loadingCustomer}
               />
+            </TabsContent>
+
+            <TabsContent value="security" className="mt-0 focus-visible:outline-none">
+              <PasskeySettings />
             </TabsContent>
           </Tabs>
         </div>
