@@ -362,7 +362,7 @@ function OnboardPage() {
 
     setUploading(true);
     const toastId = toast.loading(
-      lang === "ar" ? "جاري تفعيل قناة التحميل المشفرة..." : "Preparing secure R2 upload tunnel...",
+      lang === "ar" ? "جاري تجهيز رفع الإيصال..." : "Preparing secure receipt upload...",
     );
 
     try {
@@ -376,7 +376,7 @@ function OnboardPage() {
 
       toast.loading(
         lang === "ar"
-          ? "جاري تشفير وحفظ لقطة الشاشة في R2 الخصوصي..."
+          ? "جاري رفع إيصال الدفع..."
           : "Encrypting and storing receipt screenshot in Private R2 Bucket...",
         { id: toastId },
       );
@@ -393,7 +393,7 @@ function OnboardPage() {
       setReceiptKey(objectKey);
       toast.success(
         lang === "ar"
-          ? "تم رفع إيصال الدفع وتشفيره بنجاح!"
+          ? "تم رفع إيصال الدفع بنجاح."
           : "Payment receipt uploaded and encrypted securely!",
         { id: toastId },
       );
@@ -466,7 +466,7 @@ function OnboardPage() {
 
       toast.success(
         lang === "ar"
-          ? "تم تسجيل طلبك! بانتظار التفعيل اليدوي..."
+          ? "وصلنا طلبك بنجاح، وبنتواصل معك قريباً."
           : "Request Received - Waiting for Manual Activation",
         { id: toastId },
       );
@@ -558,7 +558,7 @@ function OnboardPage() {
 
       toast.success(
         lang === "ar"
-          ? "تم إرسال طلب تفعيل متجرك بنجاح! طلبك الآن قيد التدقيق وسيتم تفعيله يدوياً."
+          ? "وصلنا طلب تفعيل متجرك بنجاح، وبنراجع الدفع ونتواصل معك قريباً."
           : "Request Received - Waiting for Manual Activation",
         { id: toastId, duration: 6000 },
       );
@@ -605,14 +605,14 @@ function OnboardPage() {
 
           <h1 className="text-2xl md:text-3xl font-display font-medium tracking-tight mb-3">
             {lang === "ar"
-              ? "تم استلام الطلب - بانتظار التفعيل"
+              ? "تم استلام طلبك"
               : "Request Received - Waiting for Manual Activation"}
           </h1>
 
           <p className="text-zinc-400 text-sm leading-relaxed mb-6 text-center">
             {lang === "ar" ? (
               <>
-                لقد تم إرسال طلب تفعيل مساحة متجرك الفاخرة{" "}
+                تم إرسال طلب تفعيل متجرك{" "}
                 <bdi dir="ltr" className="inline-block">
                   &quot;{submittedSubdomain}.boutq.store&quot;
                 </bdi>{" "}
@@ -633,19 +633,19 @@ function OnboardPage() {
               <div className="text-xs text-zinc-400 leading-relaxed">
                 <p className="font-semibold text-zinc-200 mb-1">
                   {lang === "ar"
-                    ? "ما الخطوات التالية لتفعيل متجرك؟"
+                    ? "شنو الخطوة التالية؟"
                     : "What is the deployment procedure?"}
                 </p>
                 {isTrialSuccess ? (
                   <p>
                     {lang === "ar"
-                      ? "سنقوم بتهيئة نسختك التجريبية وتفعيل الرابط فورياً. تواصل مع الدعم عبر الواتساب لتسريع العملية."
+                      ? "بنجهز متجرك ونرسل لك رابط الدخول على الواتساب بمجرد ما يكون جاهز."
                       : "A superadmin is currently reviewing your trial request. Once approved, your temporary 3-day workspace will be spun up. Message support on WhatsApp to fast-track approval."}
                   </p>
                 ) : (
                   <p>
                     {lang === "ar"
-                      ? "سنقوم بمراجعة لقطة شاشة تأكيد عملية السداد المرفقة. سيتم تهيئة وتوفير مساحتك الفاخرة يدوياً وتزويدك بروابط الدخول والتحكم الكامل في غضون ساعتين كحد أقصى."
+                      ? "بنراجع إيصال الدفع، وبعدها بنرسل لك رابط المتجر وبيانات الدخول على الواتساب."
                       : "An administrator will verify your uploaded BenefitPay transfer reference screenshot. Once approved, your official brand platform and manager dashboards will be manually deployed within 2 hours."}
                   </p>
                 )}
@@ -680,7 +680,7 @@ function OnboardPage() {
               className="inline-flex h-10 items-center justify-center rounded-md bg-emerald-600 hover:bg-emerald-500 px-6 text-sm font-semibold text-white shadow transition-colors gap-2"
             >
               <PhoneCall className="h-4 w-4" />
-              {lang === "ar" ? "تواصل مع الإدارة بالواتساب" : "Contact Superadmin Support"}
+              {lang === "ar" ? "تواصل معنا على الواتساب" : "Contact us on WhatsApp"}
             </a>
           </div>
         </Card>
@@ -847,12 +847,12 @@ function OnboardPage() {
           </div>
           <h2 className="text-4xl sm:text-5xl lg:text-6xl font-display font-medium leading-[1.12] tracking-[-0.035em]">
             {lang === "ar"
-              ? "متجرك، عملياتك، ونموّك. في منصة واحدة."
+              ? "كل اللي يحتاجه متجرك، في مكان واحد."
               : "Your store, operations, and growth. One platform."}
           </h2>
           <p className="max-w-lg text-sm leading-7 text-zinc-300 sm:text-base">
             {lang === "ar"
-              ? "Boutq OS يجمع المتجر الإلكتروني، الطلبات، المخزون، العملاء، التقارير والتسويق في تجربة صُممت للعلامات التي تطمح للنمو."
+              ? "أنشئ متجرك، تابع طلباتك ومخزونك، واعرف مبيعاتك بسهولة من لوحة تحكم واحدة."
               : "Boutq OS brings storefront, orders, inventory, customers, analytics and marketing into one experience built for ambitious brands."}
           </p>
           <div className="flex flex-wrap gap-3">
@@ -865,8 +865,8 @@ function OnboardPage() {
             </button>
           </div>
           <div className="flex flex-wrap gap-x-6 gap-y-2 pt-2 text-[11px] text-zinc-400">
-            <span className="flex items-center gap-1.5"><ShieldCheck className="h-4 w-4 text-emerald-400" />{lang === "ar" ? "حماية مؤسسية" : "Enterprise security"}</span>
-            <span className="flex items-center gap-1.5"><Zap className="h-4 w-4 text-amber-300" />{lang === "ar" ? "إطلاق سريع" : "Fast launch"}</span>
+            <span className="flex items-center gap-1.5"><ShieldCheck className="h-4 w-4 text-emerald-400" />{lang === "ar" ? "بياناتك محفوظة" : "Enterprise security"}</span>
+            <span className="flex items-center gap-1.5"><Zap className="h-4 w-4 text-amber-300" />{lang === "ar" ? "متجرك جاهز بسرعة" : "Fast launch"}</span>
             <span className="flex items-center gap-1.5"><CheckCircle2 className="h-4 w-4 text-sky-300" />{lang === "ar" ? "دعم مباشر" : "Direct support"}</span>
           </div>
         </div>
@@ -875,7 +875,7 @@ function OnboardPage() {
         <div className="relative z-10 text-[11px] text-zinc-500 flex items-center gap-1.5 mt-auto">
           <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
           <span>
-            {lang === "ar" ? "بنية سحابية فائقة الأمان" : "RLS-Secured Enterprise Deployment Stack"}
+            {lang === "ar" ? "تجربة آمنة وسريعة" : "Secure, reliable cloud platform"}
           </span>
         </div>
       </div>
@@ -927,10 +927,10 @@ function OnboardPage() {
         <div className="mx-auto mb-14 max-w-3xl text-center">
           <div className="mb-4 flex flex-col items-center gap-4">
             <span className="rounded-full border border-primary/15 bg-primary/[0.045] px-3 py-1 text-[10px] font-bold tracking-[0.16em] text-primary">
-              {lang === "ar" ? "ابدأ رحلتك مع BOUTQ" : "START YOUR BOUTQ JOURNEY"}
+              {lang === "ar" ? "خلنا نبدأ" : "START YOUR BOUTQ JOURNEY"}
             </span>
             <h1 className="text-3xl md:text-5xl font-display font-semibold text-foreground tracking-[-0.035em]">
-              {lang === "ar" ? "اختر البداية التي تناسب طموحك" : "Choose the start that fits your ambition"}
+              {lang === "ar" ? "اختر الطريقة المناسبة لبدء متجرك" : "Choose the start that fits your ambition"}
             </h1>
             <Button
               variant="outline"
@@ -943,7 +943,7 @@ function OnboardPage() {
           </div>
           <p className="mx-auto max-w-2xl text-sm text-muted-foreground leading-7">
             {lang === "ar"
-              ? `ابدأ بتجربة مجانية لمدة ${trialDays} يوماً، أو فعّل باقتك مباشرة. الأسعار والمزايا ومدة التجربة متزامنة دائماً مع إعدادات Boutq OS.`
+              ? `جرّب Boutq مجاناً لمدة ${trialDays} يوماً، أو اختر باقتك وابدأ متجرك مباشرة.`
               : `Start with a ${trialDays}-day free trial or activate your plan immediately. Pricing, features and trial duration stay synchronized with Boutq OS.`}
           </p>
         </div>
@@ -955,15 +955,15 @@ function OnboardPage() {
               <div className="mb-1 flex items-center gap-2 text-primary">
                 <Sparkles className="h-4 w-4" />
                 <span className="text-[10px] font-bold uppercase tracking-[0.18em]">
-                  {lang === "ar" ? "باقات مرتبطة مباشرة بالمنصة" : "Live platform catalog"}
+                  {lang === "ar" ? "باقات Boutq" : "Boutq plans"}
                 </span>
               </div>
               <h2 id="plans-heading" className="font-display text-2xl font-semibold">
-                {lang === "ar" ? "اختر القوة المناسبة لنمو متجرك" : "Choose the right foundation for growth"}
+                {lang === "ar" ? "اختر الباقة المناسبة لك" : "Choose the right foundation for growth"}
               </h2>
               <p className="mt-1 max-w-2xl text-xs leading-relaxed text-muted-foreground">
                 {lang === "ar"
-                  ? "الأسعار والمزايا أدناه منشورة مباشرة من كتالوج Boutq OS، وأي باقة مخفية أو معطلة لن تظهر هنا."
+                  ? "شوف تفاصيل كل باقة واختر اللي يناسب حجم متجرك واحتياجك."
                   : "Pricing and capabilities are published directly from Boutq OS. Hidden or retired plans never appear here."}
               </p>
             </div>
@@ -1043,7 +1043,7 @@ function OnboardPage() {
                         {lang === "ar" ? plan.name_ar : plan.name_en}
                       </h3>
                       <p className="mt-1 min-h-9 text-xs leading-relaxed text-muted-foreground">
-                        {(lang === "ar" ? plan.description_ar : plan.description_en) || "Boutq OS"}
+                        {lang === "ar" ? `كل ما تحتاجه لإدارة متجرك، مع ${plan.features.length} مزايا أساسية.` : ((plan.description_en as string) || "Everything you need to run your store.")}
                       </p>
                     </div>
                     <div className="my-5 flex items-end gap-1 border-y border-border/60 py-4">
@@ -1077,7 +1077,7 @@ function OnboardPage() {
                     <div className={`mt-5 rounded-xl py-2.5 text-center text-xs font-bold ${active ? "bg-primary text-primary-foreground" : "bg-muted text-foreground group-hover:bg-primary/10 group-hover:text-primary"}`}>
                       {!availableForInterval
                         ? lang === "ar"
-                          ? "غير متاحة لهذه الدورة"
+                          ? "غير متوفرة حالياً"
                           : "Unavailable for this interval"
                         : active
                           ? lang === "ar"
@@ -1196,7 +1196,7 @@ function OnboardPage() {
                   <Check className="h-4 w-4 text-primary shrink-0" />
                   <span>
                     {lang === "ar"
-                      ? "وصول كامل للوحة التحكم والمبيعات"
+                      ? "استخدم لوحة التحكم وتابع مبيعاتك"
                       : "Full admin dashboard & revenue reporting"}
                   </span>
                 </div>
@@ -1204,7 +1204,7 @@ function OnboardPage() {
                   <Check className="h-4 w-4 text-primary shrink-0" />
                   <span>
                     {lang === "ar"
-                      ? "معاينة حية للمتجر التجريبي الخاص بك"
+                      ? "شاهد متجرك مثل ما راح يشوفه عملاؤك"
                       : "Live customer-facing storefront preview"}
                   </span>
                 </div>
@@ -1212,7 +1212,7 @@ function OnboardPage() {
                   <Check className="h-4 w-4 text-primary shrink-0" />
                   <span>
                     {lang === "ar"
-                      ? "تفعيل وإعداد عبر الواتساب فوراً"
+                      ? "نساعدك في الإعداد عن طريق الواتساب"
                       : "Instant concierge setup via WhatsApp"}
                   </span>
                 </div>
@@ -1334,7 +1334,7 @@ function OnboardPage() {
                           <Check className="h-3 w-3 text-emerald-500" />
                           <span className="text-emerald-500 font-semibold">
                             {lang === "ar"
-                              ? "الرابط متوفر وصالح للاستخدام!"
+                              ? "ممتاز، هذا الرابط متوفر."
                               : "Subdomain handle is available!"}
                           </span>
                         </>
@@ -1343,7 +1343,7 @@ function OnboardPage() {
                           <span className="h-1.5 w-1.5 rounded-full bg-rose-500 inline-block" />
                           <span className="text-rose-500 font-semibold">
                             {lang === "ar"
-                              ? "الرابط محجوز مسبقاً!"
+                              ? "هذا الرابط مستخدم، جرّب اسماً آخر."
                               : "This subdomain is already taken."}
                           </span>
                         </>
@@ -1421,7 +1421,7 @@ function OnboardPage() {
               <div className="flex">
                 <div className="mb-2.5 inline-flex items-center gap-1.5 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-emerald-600">
                   {lang === "ar"
-                    ? "✓ الباقة والسعر متزامنان مع كتالوج Boutq OS"
+                    ? "✓ السعر والمزايا موضحة قبل تأكيد طلبك"
                     : "✓ LIVE SYNC WITH BOUTQ OS CATALOG"}
                 </div>
               </div>
@@ -1434,14 +1434,14 @@ function OnboardPage() {
                         ? selectedPlan.name_ar
                         : selectedPlan.name_en
                       : lang === "ar"
-                        ? "اختر باقة من الكتالوج"
+                        ? "اختر باقة للمتابعة"
                         : "Choose a published plan"}
                   </CardTitle>
                   <CardDescription className="text-xs text-muted-foreground mt-1">
                     {selectedPlan
-                      ? (lang === "ar" ? selectedPlan.description_ar : selectedPlan.description_en)
+                      ? (lang === "ar" ? `باقة متكاملة تشمل ${selectedPlan.features.length} مزايا تساعدك في إدارة متجرك.` : selectedPlan.description_en)
                       : lang === "ar"
-                        ? "اختر إحدى الباقات المتاحة أعلاه للمتابعة."
+                        ? "اختر الباقة المناسبة من الأعلى عشان تكمل."
                         : "Select one of the live plans above to continue."}
                   </CardDescription>
                 </div>
@@ -1469,7 +1469,7 @@ function OnboardPage() {
             <details className="group/features border-b border-primary/10 bg-primary/5">
               <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-6 py-3 text-xs font-semibold text-primary transition-colors hover:bg-primary/10 [&::-webkit-details-marker]:hidden">
                 <span>
-                  {lang === "ar" ? "مميزات الباقة المختارة" : "Selected plan capabilities"}
+                  {lang === "ar" ? "المزايا اللي تحصل عليها" : "Selected plan capabilities"}
                 </span>
                 <ChevronDown className="h-4 w-4 shrink-0 transition-transform group-open/features:rotate-180" />
               </summary>
@@ -1750,7 +1750,7 @@ function OnboardPage() {
                         <>
                           <Loader2 className="h-4 w-4 animate-spin text-primary" />
                           <span className="text-xs">
-                            {lang === "ar" ? "جاري تشفير الرفع..." : "Encrypting R2 upload..."}
+                            {lang === "ar" ? "جاري رفع الإيصال..." : "Uploading receipt..."}
                           </span>
                         </>
                       ) : receiptKey ? (
@@ -1780,7 +1780,7 @@ function OnboardPage() {
                   <Info className="h-4 w-4 text-zinc-400 shrink-0 mt-0.5" />
                   <p className="leading-normal">
                     {lang === "ar"
-                      ? "سيتم تثبيت الباقة وإصدارها والسعر الظاهر لحظة إرسال الطلب، لحماية عرضك حتى موعد المراجعة."
+                      ? "السعر الظاهر هو السعر اللي راح نعتمده لطلبك، حتى لو تغيّر سعر الباقة بعدين."
                       : "Your selected plan version and displayed price are locked when the request is submitted, protecting the quoted offer during review."}
                   </p>
                 </div>
@@ -1805,7 +1805,7 @@ function OnboardPage() {
                   }
                 >
                   <Building2 className="h-4 w-4" />
-                  {lang === "ar" ? "إرسال طلب التفعيل الرسمي" : "Submit Registration & Pay"}
+                  {lang === "ar" ? "إرسال طلب تفعيل المتجر" : "Submit Registration & Pay"}
                 </Button>
               </form>
             </CardContent>
@@ -1831,13 +1831,13 @@ function OnboardPage() {
             <div className="border-b border-black/[0.06] bg-white px-6 py-7 sm:px-9">
               <div className="mb-3 inline-flex items-center gap-2 text-[10px] font-bold tracking-[0.16em] text-primary">
                 <ShieldCheck className="h-4 w-4" />
-                {lang === "ar" ? "معلومات مباشرة من كتالوج BOUTQ OS" : "LIVE FROM THE BOUTQ OS CATALOG"}
+                {lang === "ar" ? "تفاصيل الباقة" : "PLAN DETAILS"}
               </div>
               <h3 className="pe-12 font-display text-2xl font-semibold tracking-tight sm:text-3xl">
-                {lang === "ar" ? "ما الذي تتضمنه باقتك؟" : "What is included in your plan?"}
+                {lang === "ar" ? "شنو تحصل عليه مع باقتك؟" : "What is included in your plan?"}
               </h3>
               <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
-                {lang === "ar" ? "نعرض فقط المزايا والحدود المنشورة فعلياً من الأدمن، لذلك تبقى هذه المعلومات مطابقة لباقتك دائماً." : "Only capabilities and limits published by the admin are shown, so this view always matches your plan."}
+                {lang === "ar" ? "هذي أهم المزايا والحدود الموجودة في الباقة اللي اخترتها." : "These are the capabilities and limits included in your selected plan."}
               </p>
             </div>
             <div className="max-h-[58vh] overflow-y-auto p-6 sm:p-9">
