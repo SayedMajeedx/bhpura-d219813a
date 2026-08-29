@@ -13,6 +13,7 @@ import {
   Store,
   Clock as ClockIcon,
   Settings,
+  Activity,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetClose } from "@/components/ui/sheet";
@@ -154,7 +155,16 @@ export function OsMobileNavigation({
     ];
 
     return items;
-  }, [activeSlug, isSuperAdmin, navItems, pathname, lang, navigate, mobileOpen, onOpenChangeMobile]);
+  }, [
+    activeSlug,
+    isSuperAdmin,
+    navItems,
+    pathname,
+    lang,
+    navigate,
+    mobileOpen,
+    onOpenChangeMobile,
+  ]);
 
   // Organize navigation items into iOS Control Center Groups
   const navGroups = React.useMemo(() => {
@@ -178,6 +188,14 @@ export function OsMobileNavigation({
               labelEn: "Tenant Requests",
               labelAr: "طلبات الانضمام والاشتراكات",
               icon: ClockIcon,
+              section: "overview" as const,
+            },
+            {
+              id: "health",
+              to: "/admin/super/health",
+              labelEn: "System Health",
+              labelAr: "صحة النظام",
+              icon: Activity,
               section: "overview" as const,
             },
             {

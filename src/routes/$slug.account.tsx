@@ -34,11 +34,18 @@ import {
   FileText,
   Sparkles,
   Fingerprint,
+  RotateCcw,
+  Wallet,
+  CircleDollarSign,
+  CheckCircle2,
 } from "lucide-react";
 import { BAHRAIN_REGIONS, regionLabel } from "@/lib/bahrain-regions";
 import { DeliveryAddressCard } from "@/components/delivery-address-card";
 import { PhoneInput } from "@/components/phone-input";
 import { PasskeySettings } from "@/components/passkey-settings";
+import { CustomerReturnRequestModal } from "@/components/storefront/CustomerReturnRequestModal";
+import { getCustomerStoreCreditBalance } from "@/lib/returns.functions";
+import { RETURN_STATUS_CONFIG, type ReturnStatus } from "@/lib/returns.types";
 
 export const Route = createFileRoute("/$slug/account")({
   component: AccountPage,
@@ -294,6 +301,49 @@ function AccountPage() {
     },
   });
 
+  const { data: storeCredit = 0 } = useQuery({
+    queryKey: ["storefront-account-store-credit", brand.id, customer?.id],
+    enabled: !!brand.id && !!customer?.id,
+    queryFn: async () => {
+      return getCustomerStoreCreditBalance(brand.id, customer!.id);
+    },
+  });
+
+  const { data: customerReturns = [], isLoading: loadingReturns, refetch: refetchReturns } = useQuery({
+    queryKey: ["storefront-account-returns", brand.id, customer?.id],
+    enabled: !!brand.id && !!customer?.id,
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from("return_requests")
+        .select(`
+          id,
+          return_number,
+          status,
+          type,
+          created_at,
+          net_refund_amount,
+          reason,
+          order:orders (
+            invoice_number,
+            total
+          ),
+          items:return_items (
+            id,
+            quantity,
+            unit_price,
+            product:products (name_ar, name_en)
+          )
+        `)
+        .eq("brand_id", brand.id)
+        .eq("customer_id", customer!.id)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return (data as any[]) || [];
+    },
+  });
+
+  const [returnModalOrder, setReturnModalOrder] = useState<any>(null);
+
   const totalSpent = useMemo(() => {
     return (orders ?? []).reduce((sum, o) => sum + Number(o.total || 0), 0);
   }, [orders]);
@@ -389,6 +439,19 @@ function AccountPage() {
               <Award className="w-3.5 h-3.5" />
               {loyaltyTier.label}
             </div>
+
+            {/* Store Credit Wallet Pill if Available */}
+            {Number(storeCredit) > 0 && (
+              <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-center">
+                <span className="text-[10px] uppercase font-bold tracking-wider text-emerald-700 dark:text-emerald-300 block flex items-center justify-center gap-1">
+                  <Wallet className="h-3 w-3" />
+                  {t("رصيد المتجر (المحفظة)", "Store Credit")}
+                </span>
+                <span className="text-sm font-bold font-mono text-emerald-600 dark:text-emerald-400 mt-0.5 block">
+                  {formatPrice(storeCredit, currency, lang)}
+                </span>
+              </div>
+            )}
           </div>
 
           <hr className="border-border/50" />
@@ -419,13 +482,13 @@ function AccountPage() {
             </div>
             <div className="px-1">
               <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">
-                {t("العناوين", "Addresses")}
+                {t("المرتجعات", "Returns")}
               </p>
               <p
                 className="text-xs font-bold mt-1 text-foreground"
                 style={{ color: "var(--sf-heading)" }}
               >
-                {addresses?.length ?? 0}
+                {customerReturns?.length ?? 0}
               </p>
             </div>
           </div>
@@ -444,10 +507,10 @@ function AccountPage() {
             defaultValue="orders"
             className="w-full rounded-2xl border bg-card/40 backdrop-blur-md p-4 shadow-xs sm:p-6 border-border/70"
           >
-            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 h-auto rounded-xl p-1 bg-muted/40 border border-border/40 mb-6 gap-1">
+            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-5 h-auto rounded-xl p-1 bg-muted/40 border border-border/40 mb-6 gap-1">
               <TabsTrigger
                 value="orders"
-                className="gap-2 py-2.5 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-xs transition-all text-xs"
+                className="gap-1.5 py-2.5 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-xs transition-all text-xs"
               >
                 <PackageSearch className="h-4 w-4 text-primary" />
                 <span className="font-semibold text-xs">
@@ -455,30 +518,44 @@ function AccountPage() {
                 </span>
               </TabsTrigger>
               <TabsTrigger
+                value="returns"
+                className="gap-1.5 py-2.5 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-xs transition-all text-xs"
+              >
+                <RotateCcw className="h-4 w-4 text-primary" />
+                <span className="font-semibold text-xs">
+                  {t("المرتجعات", "Returns")}
+                </span>
+                {customerReturns.length > 0 && (
+                  <span className="text-[10px] font-mono font-bold bg-primary/20 text-primary px-1.5 py-0.2 rounded-full">
+                    {customerReturns.length}
+                  </span>
+                )}
+              </TabsTrigger>
+              <TabsTrigger
                 value="profile"
-                className="gap-2 py-2.5 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-xs transition-all text-xs"
+                className="gap-1.5 py-2.5 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-xs transition-all text-xs"
               >
                 <UserIcon className="h-4 w-4 text-primary" />
                 <span className="font-semibold text-xs">
-                  {t("البيانات الشخصية", "Profile")}
+                  {t("البيانات", "Profile")}
                 </span>
               </TabsTrigger>
               <TabsTrigger
                 value="addresses"
-                className="gap-2 py-2.5 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-xs transition-all text-xs"
+                className="gap-1.5 py-2.5 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-xs transition-all text-xs"
               >
                 <MapPin className="h-4 w-4 text-primary" />
                 <span className="font-semibold text-xs">
-                  {t("عناوين الشحن", "Addresses")}
+                  {t("العناوين", "Addresses")}
                 </span>
               </TabsTrigger>
               <TabsTrigger
                 value="security"
-                className="gap-2 py-2.5 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-xs transition-all text-xs"
+                className="gap-1.5 py-2.5 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-xs transition-all text-xs"
               >
                 <Fingerprint className="h-4 w-4 text-primary" />
                 <span className="font-semibold text-xs">
-                  {t("الأمان والبصمة", "Passkeys")}
+                  {t("الأمان", "Security")}
                 </span>
               </TabsTrigger>
             </TabsList>
@@ -490,6 +567,17 @@ function AccountPage() {
                 lang={lang}
                 orders={orders}
                 isLoading={loadingOrders}
+                onRequestReturn={(order) => setReturnModalOrder(order)}
+              />
+            </TabsContent>
+
+            <TabsContent value="returns" className="mt-0 focus-visible:outline-none">
+              <CustomerReturnsSection
+                currency={currency}
+                isAr={isAr}
+                lang={lang}
+                returns={customerReturns}
+                isLoading={loadingReturns}
               />
             </TabsContent>
 
@@ -514,6 +602,20 @@ function AccountPage() {
           </Tabs>
         </div>
       </div>
+
+      {/* Customer Return Request Modal */}
+      {returnModalOrder && (
+        <CustomerReturnRequestModal
+          open={!!returnModalOrder}
+          onOpenChange={(open) => !open && setReturnModalOrder(null)}
+          order={returnModalOrder}
+          brandId={brand.id}
+          isAr={isAr}
+          onSuccess={() => {
+            refetchReturns();
+          }}
+        />
+      )}
     </section>
   );
 }
@@ -567,12 +669,14 @@ function OrdersSection({
   lang,
   orders,
   isLoading,
+  onRequestReturn,
 }: {
   currency: string;
   isAr: boolean;
   lang: "ar" | "en";
   orders?: OrderRow[];
   isLoading: boolean;
+  onRequestReturn?: (order: OrderRow) => void;
 }) {
   const { t, settings } = useStorefront();
   const [expandedOrder, setExpandedOrder] = useState<Record<string, boolean>>({});
@@ -734,7 +838,7 @@ function OrdersSection({
 
             {/* Actions Bar Footer */}
             <div className="mt-4 pt-4 border-t border-border/40 flex flex-wrap gap-2 items-center justify-between">
-              <div className="flex gap-2">
+              <div className="flex gap-2 flex-wrap">
                 <Button
                   variant="outline"
                   size="sm"
@@ -743,6 +847,16 @@ function OrdersSection({
                 >
                   <FileText className="h-3.5 w-3.5" />
                   {t("رابط الفاتورة", "Invoice Link")}
+                </Button>
+
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-xs h-8 px-3 font-semibold gap-1 text-primary hover:bg-primary/10 border-primary/30"
+                  onClick={() => onRequestReturn?.(o)}
+                >
+                  <RotateCcw className="h-3.5 w-3.5" />
+                  {t("طلب إرجاع / استبدال", "Return / Exchange")}
                 </Button>
               </div>
 
@@ -758,6 +872,127 @@ function OrdersSection({
                 </Button>
               )}
             </div>
+          </Card>
+        );
+      })}
+    </div>
+  );
+}
+
+/* ---------- Customer Returns Section ---------- */
+
+function CustomerReturnsSection({
+  currency,
+  isAr,
+  lang,
+  returns,
+  isLoading,
+}: {
+  currency: string;
+  isAr: boolean;
+  lang: "ar" | "en";
+  returns?: any[];
+  isLoading: boolean;
+}) {
+  const { t } = useStorefront();
+
+  if (isLoading) {
+    return (
+      <div className="flex justify-center py-12">
+        <Loader2 className="h-6 w-6 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (!returns || returns.length === 0) {
+    return (
+      <OsEmptyState
+        icon={RotateCcw}
+        title={t("لا توجد طلبات إرجاع سابقة", "No return requests")}
+        description={t(
+          "لم تقم بتقديم أي طلبات إرجاع أو استبدال حتى الآن. يمكنك تقديم طلب إرجاع من تبويب طلباتي لأي طلب مؤهل.",
+          "You haven't requested any returns or exchanges yet.",
+        )}
+      />
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      {returns.map((r) => {
+        const statusCfg = RETURN_STATUS_CONFIG[r.status as ReturnStatus] || RETURN_STATUS_CONFIG.new;
+        const date = new Date(r.created_at).toLocaleDateString(isAr ? "ar-BH-u-nu-latn" : "en-BH", {
+          year: "numeric",
+          month: "short",
+          day: "numeric",
+        });
+
+        return (
+          <Card
+            key={r.id}
+            className="p-5 border border-border/70 rounded-xl bg-card space-y-3"
+          >
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <span className="font-mono font-bold text-sm text-foreground">
+                    {r.return_number}
+                  </span>
+                  <span
+                    className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold border ${statusCfg.badgeClass}`}
+                  >
+                    {isAr ? statusCfg.labelAr : statusCfg.labelEn}
+                  </span>
+                  <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold bg-muted text-foreground border border-border">
+                    {r.type === "exchange"
+                      ? isAr
+                        ? "استبدال"
+                        : "Exchange"
+                      : isAr
+                        ? "إرجاع واسترداد"
+                        : "Return"}
+                  </span>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  {isAr ? "مرتبط بالفاتورة:" : "Linked to Invoice:"} #{r.order?.invoice_number || "---"} • {date}
+                </p>
+              </div>
+
+              <div className="text-right">
+                <span className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground block">
+                  {isAr ? "صافي الاسترداد" : "Net Refund"}
+                </span>
+                <span className="text-base font-bold font-mono text-emerald-600 dark:text-emerald-400">
+                  {formatPrice(Number(r.net_refund_amount || 0), currency, lang)}
+                </span>
+              </div>
+            </div>
+
+            <div className="p-3 rounded-lg bg-muted/30 border border-border/40 text-xs text-muted-foreground">
+              <span className="font-semibold text-foreground">{isAr ? "السبب:" : "Reason:"} </span>
+              {r.reason}
+            </div>
+
+            {r.items && r.items.length > 0 && (
+              <div className="pt-2 border-t border-border/40 space-y-1 text-xs">
+                <span className="text-[11px] font-semibold text-muted-foreground">
+                  {isAr ? "المنتجات المطلوب إرجاعها:" : "Returned items:"}
+                </span>
+                <ul className="divide-y divide-border/30">
+                  {r.items.map((it: any) => (
+                    <li key={it.id} className="py-1.5 flex justify-between items-center">
+                      <span className="font-medium text-foreground">
+                        {it.product?.name_ar || it.product?.name_en || "Item"}{" "}
+                        <span className="font-mono text-muted-foreground">× {it.quantity}</span>
+                      </span>
+                      <span className="font-mono text-muted-foreground">
+                        {formatPrice(Number(it.unit_price) * it.quantity, currency, lang)}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </Card>
         );
       })}

@@ -3,6 +3,13 @@ import "./lib/error-capture";
 import handler from "@tanstack/react-start/server-entry";
 import { consumeLastCapturedError } from "./lib/error-capture";
 import { renderErrorPage } from "./lib/error-page";
+import {
+  checkProductionReadiness,
+  createCorrelationId,
+  logOperationalEvent,
+  pruneHealthEvents,
+  runObservedTask,
+} from "./lib/observability.server";
 import { handleR2MediaRequest } from "./lib/r2-media-server";
 
 const SECURITY_HEADERS = {
@@ -60,12 +67,13 @@ function withPerformanceCacheHeaders(request: Request, response: Response): Resp
   return response;
 }
 
-function withSecurityHeaders(response: Response): Response {
+function withSecurityHeaders(response: Response, correlationId?: string): Response {
   if (response.status === 101) return response;
   const headers = new Headers(response.headers);
   for (const [name, value] of Object.entries(SECURITY_HEADERS)) {
     headers.set(name, value);
   }
+  if (correlationId) headers.set("X-Request-ID", correlationId);
   return new Response(response.body, {
     status: response.status,
     statusText: response.statusText,
@@ -79,42 +87,41 @@ async function runScheduledTasks(cron: string, env: Cloudflare.Env): Promise<voi
   };
   g.__CLOUDFLARE_ENV__ = env;
 
-  // Payment reconciliation runs first so an unrelated messaging outage cannot
-  // delay authoritative Tap status checks or keep inventory reserved forever.
-  try {
+  const correlationId = createCorrelationId();
+
+  // Every task is isolated: one provider outage must never prevent the other
+  // recovery loops from running.
+  await runObservedTask(env, "tap_payment_reconciliation", correlationId, async () => {
     const { reconcileAbandonedTapPayments } =
       await import("./lib/tap-payment-reconciliation.server");
-    const tapResult = await reconcileAbandonedTapPayments();
-    console.log(
-      JSON.stringify({ event: "tap_payment_reconciliation_complete", cron, ...tapResult }),
-    );
-  } catch (error) {
-    console.error(
-      JSON.stringify({
-        event: "tap_payment_reconciliation_failed",
-        cron,
-        error: error instanceof Error ? error.message : String(error),
-      }),
-    );
-  }
+    return { cron, ...(await reconcileAbandonedTapPayments()) };
+  });
 
-  const { retryOrderEmailOutbox } = await import("./lib/order-email-outbox.server");
-  const emailResult = await retryOrderEmailOutbox(env);
-  console.log(JSON.stringify({ event: "order_email_retry_complete", cron, ...emailResult }));
+  await runObservedTask(env, "order_email_retry", correlationId, async () => {
+    const { retryOrderEmailOutbox } = await import("./lib/order-email-outbox.server");
+    return { cron, ...(await retryOrderEmailOutbox(env)) };
+  });
 
-  const { retryWhatsAppOutbox } = await import("./lib/meta-whatsapp.server");
-  const whatsappResult = await retryWhatsAppOutbox(env);
-  console.log(JSON.stringify({ event: "whatsapp_retry_complete", cron, ...whatsappResult }));
+  await runObservedTask(env, "whatsapp_retry", correlationId, async () => {
+    const { retryWhatsAppOutbox } = await import("./lib/meta-whatsapp.server");
+    return { cron, ...(await retryWhatsAppOutbox(env)) };
+  });
 
   if (cron === "17 2 * * *") {
-    const { cleanupBenefitReceipts } = await import("./lib/benefit-receipt-cleanup.server");
-    const cleanupResult = await cleanupBenefitReceipts();
-    console.log(JSON.stringify({ event: "benefit_receipt_cleanup_complete", ...cleanupResult }));
+    await runObservedTask(env, "benefit_receipt_cleanup", correlationId, async () => {
+      const { cleanupBenefitReceipts } = await import("./lib/benefit-receipt-cleanup.server");
+      return { cron, ...(await cleanupBenefitReceipts()) };
+    });
+    await runObservedTask(env, "health_event_retention", correlationId, async () => ({
+      cron,
+      ...(await pruneHealthEvents(env)),
+    }));
   }
 }
 
 export default {
   async fetch(request: Request, env: Cloudflare.Env, ctx: ExecutionContext) {
+    const correlationId = createCorrelationId(request);
     try {
       // Synchronously bind Cloudflare env variables for global layout dehydration
       const g = globalThis as typeof globalThis & {
@@ -123,14 +130,41 @@ export default {
       g.__CLOUDFLARE_ENV__ = env;
 
       const url = new URL(request.url);
+      if (url.pathname === "/api/health/live") {
+        return withSecurityHeaders(
+          Response.json(
+            { status: "healthy", service: "boutq-web", timestamp: new Date().toISOString() },
+            { headers: { "Cache-Control": "no-store" } },
+          ),
+          correlationId,
+        );
+      }
+
+      if (url.pathname === "/api/health/ready") {
+        const readiness = await checkProductionReadiness(env);
+        return withSecurityHeaders(
+          Response.json(
+            { ...readiness, service: "boutq-web", timestamp: new Date().toISOString() },
+            {
+              status: readiness.status === "healthy" ? 200 : 503,
+              headers: { "Cache-Control": "no-store" },
+            },
+          ),
+          correlationId,
+        );
+      }
+
       if (url.pathname === "/api/public/webhooks/meta-whatsapp") {
         const { handleMetaWhatsAppWebhook } = await import("./lib/meta-whatsapp.server");
-        return withSecurityHeaders(await handleMetaWhatsAppWebhook(request, env, ctx));
+        return withSecurityHeaders(
+          await handleMetaWhatsAppWebhook(request, env, ctx),
+          correlationId,
+        );
       }
 
       if (url.pathname === "/api/internal/white-label-builds/upload") {
         const { handleWhiteLabelApkUpload } = await import("./lib/white-label-builds.server");
-        return withSecurityHeaders(await handleWhiteLabelApkUpload(request, env));
+        return withSecurityHeaders(await handleWhiteLabelApkUpload(request, env), correlationId);
       }
 
       if (
@@ -145,15 +179,21 @@ export default {
       const response = await handler.fetch(request);
       return withPerformanceCacheHeaders(
         request,
-        withSecurityHeaders(await normalizeCatastrophicSsrResponse(response)),
+        withSecurityHeaders(await normalizeCatastrophicSsrResponse(response), correlationId),
       );
     } catch (error) {
-      console.error(error);
+      logOperationalEvent("error", "request_failed", {
+        correlationId,
+        method: request.method,
+        path: new URL(request.url).pathname,
+        error,
+      });
       return withSecurityHeaders(
         new Response(renderErrorPage(), {
           status: 500,
           headers: { "content-type": "text/html; charset=utf-8" },
         }),
+        correlationId,
       );
     }
   },

@@ -480,11 +480,47 @@ function ProductImporterModal({
   });
   const [progress, setProgress] = useState("");
   const [successCount, setSuccessCount] = useState(0);
+  const [skippedCount, setSkippedCount] = useState(0);
+  const [failedCount, setFailedCount] = useState(0);
+  const [importIssues, setImportIssues] = useState<
+    Array<{ row: number; code: string; name: string }>
+  >([]);
+  const [importSessionId, setImportSessionId] = useState(() => crypto.randomUUID());
   const [totalCount, setTotalCount] = useState(0);
   const { lang } = useI18n();
   const isAr = lang === "ar";
+  const importHistoryQuery = useQuery({
+    queryKey: ["product-import-history", brandId],
+    enabled: isOpen,
+    queryFn: async () => {
+      const { data, error } = await (supabase.from("import_runs" as never) as any)
+        .select(
+          "id,session_id,source,status,total_count,success_count,skipped_count,failed_count,created_at",
+        )
+        .eq("brand_id", brandId)
+        .eq("entity_type", "products")
+        .order("created_at", { ascending: false })
+        .limit(30);
+      if (error) throw error;
+      const sessions = new Map<string, any>();
+      for (const row of data ?? []) {
+        const existing = sessions.get(row.session_id);
+        const current = existing ?? { ...row };
+        if (existing) {
+          current.total_count += row.total_count;
+          current.success_count += row.success_count;
+          current.skipped_count += row.skipped_count;
+          current.failed_count += row.failed_count;
+          if (row.status === "failed" || row.status === "partial") current.status = row.status;
+        }
+        sessions.set(row.session_id, current);
+      }
+      return [...sessions.values()].slice(0, 5);
+    },
+  });
 
   const handleOpen = () => {
+    setImportSessionId(crypto.randomUUID());
     setIsOpen(true);
     setStep("preset");
   };
@@ -492,6 +528,10 @@ function ProductImporterModal({
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error(isAr ? "الحد الأقصى لحجم الملف 10 ميجابايت." : "Maximum file size is 10 MB.");
+      return;
+    }
 
     const reader = new FileReader();
     reader.onload = (event) => {
@@ -503,6 +543,10 @@ function ProductImporterModal({
             ? "ملف الـ CSV فارغ أو يحتوي على صف الرأس فقط."
             : "CSV file is empty or only contains the header row.",
         );
+        return;
+      }
+      if (rows.length > 5_001) {
+        toast.error(isAr ? "الحد الأقصى 5,000 صف لكل ملف." : "Maximum 5,000 rows per file.");
         return;
       }
 
@@ -525,13 +569,9 @@ function ProductImporterModal({
 
       setMappings(newMappings);
 
-      // If any mapping is missing or preset is custom, ask the user to confirm/adjust
-      const allMapped = Object.values(newMappings).every((idx) => idx !== -1);
-      if (allMapped && preset !== "custom") {
-        startImport(rows.slice(1), newMappings, fileHeaders);
-      } else {
-        setStep("mapper");
-      }
+      // A professional import always requires an explicit preview/confirmation,
+      // even when a platform preset maps every column successfully.
+      setStep("mapper");
     };
     reader.readAsText(file);
   };
@@ -544,6 +584,10 @@ function ProductImporterModal({
     setStep("importing");
     setProgress(isAr ? "بدء استيراد الكتالوج..." : "Starting product catalog import...");
     setTotalCount(dataRows.length);
+    setSuccessCount(0);
+    setSkippedCount(0);
+    setFailedCount(0);
+    setImportIssues([]);
 
     const findHeaderIdx = (names: string[]) => {
       return headersList.findIndex((h) =>
@@ -558,6 +602,8 @@ function ProductImporterModal({
         let imageVal: string | null = null;
         let stockVal = 10;
         let skuVal = `SKU-${crypto.randomUUID().slice(0, 8).toUpperCase()}`;
+        let sizeVal: string | null = null;
+        let colorVal: string | null = null;
 
         if (preset === "shopify") {
           const titleIdx = findHeaderIdx(["title"]);
@@ -565,6 +611,27 @@ function ProductImporterModal({
           const imageIdx = findHeaderIdx(["image src", "image url", "image_src", "image"]);
           const stockIdx = findHeaderIdx(["variant inventory qty", "inventory qty", "stock"]);
           const skuIdx = findHeaderIdx(["variant sku", "sku"]);
+          const option1NameIdx = findHeaderIdx(["option1 name"]);
+          const option1ValueIdx = findHeaderIdx(["option1 value"]);
+          const option2NameIdx = findHeaderIdx(["option2 name"]);
+          const option2ValueIdx = findHeaderIdx(["option2 value"]);
+
+          const options = [
+            [option1NameIdx, option1ValueIdx],
+            [option2NameIdx, option2ValueIdx],
+          ] as const;
+          for (const [nameIndex, valueIndex] of options) {
+            if (nameIndex === -1 || valueIndex === -1 || !row[valueIndex]) continue;
+            const optionName = row[nameIndex]?.toLowerCase() || "";
+            if (optionName.includes("size") || optionName.includes("مقاس"))
+              sizeVal = row[valueIndex];
+            else if (
+              optionName.includes("color") ||
+              optionName.includes("colour") ||
+              optionName.includes("لون")
+            )
+              colorVal = row[valueIndex];
+          }
 
           nameVal = titleIdx !== -1 ? row[titleIdx] : "";
           priceVal =
@@ -649,12 +716,8 @@ function ProductImporterModal({
               : 10;
         }
 
-        if (!nameVal) {
-          nameVal = isAr ? "منتج مستورد بدون اسم" : "Unnamed Imported Product";
-        }
-
         return {
-          name: nameVal,
+          name: nameVal.trim(),
           name_ar: isAr ? nameVal : null,
           name_en: isAr ? null : nameVal,
           description: isAr ? "تم الاستيراد بنجاح" : "Imported product details",
@@ -665,9 +728,9 @@ function ProductImporterModal({
           is_active: true,
           variants: [
             {
-              size: null,
+              size: sizeVal,
               size_unit: null,
-              color: null,
+              color: colorVal,
               fabric: null,
               sku: skuVal,
               barcode: null,
@@ -680,29 +743,71 @@ function ProductImporterModal({
         };
       });
 
+      // Shopify exports one row per variant. Consolidate rows by Handle so a
+      // product with five variants is imported as one product, not five products.
+      let consolidatedPayload = productsPayload;
+      if (preset === "shopify") {
+        const handleIdx = findHeaderIdx(["handle"]);
+        const groups = new Map<string, (typeof productsPayload)[number]>();
+        dataRows.forEach((row, index) => {
+          const product = productsPayload[index];
+          const key = (handleIdx !== -1 ? row[handleIdx] : product.name).trim().toLowerCase();
+          const existing = groups.get(key);
+          if (!existing) groups.set(key, product);
+          else {
+            existing.variants.push(...product.variants);
+            if (!existing.image_url && product.image_url) existing.image_url = product.image_url;
+            if (!existing.name && product.name) {
+              existing.name = product.name;
+              existing.name_ar = product.name_ar;
+              existing.name_en = product.name_en;
+            }
+          }
+        });
+        consolidatedPayload = [...groups.values()];
+      }
+
+      consolidatedPayload = consolidatedPayload.filter((product) => {
+        const valid =
+          product.name.trim().length > 0 &&
+          product.variants.every(
+            (variant) => Number.isFinite(variant.selling_price) && variant.selling_price >= 0,
+          );
+        if (!valid) setFailedCount((count) => count + 1);
+        return valid;
+      });
+      setTotalCount(consolidatedPayload.length);
+
       // Split into batches of 10 to provide elegant live feedback to the merchant!
       const batchSize = 10;
       let totalSuccess = 0;
 
-      for (let i = 0; i < productsPayload.length; i += batchSize) {
-        const chunk = productsPayload.slice(i, i + batchSize);
+      for (let i = 0; i < consolidatedPayload.length; i += batchSize) {
+        const chunk = consolidatedPayload.slice(i, i + batchSize);
         setProgress(
           isAr
-            ? `جاري نقل ${i} من أصل ${productsPayload.length} منتج...`
-            : `Migrated ${i} / ${productsPayload.length} products...`,
+            ? `جاري نقل ${i} من أصل ${consolidatedPayload.length} منتج...`
+            : `Migrated ${i} / ${consolidatedPayload.length} products...`,
         );
 
         const result = await importProductCatalog({
           data: {
             brandId,
+            importSessionId,
+            batchIndex: Math.floor(i / batchSize),
+            source: preset,
             products: chunk,
           },
         });
         totalSuccess += result.successCount;
+        setSkippedCount((count) => count + result.skippedCount);
+        setFailedCount((count) => count + result.failedCount);
+        setImportIssues((issues) => [...issues, ...result.issues].slice(0, 100));
         setSuccessCount(totalSuccess);
       }
 
       setStep("success");
+      await importHistoryQuery.refetch();
       onComplete();
     } catch (err) {
       console.error(err);
@@ -754,13 +859,13 @@ function ProductImporterModal({
                   {
                     id: "salla",
                     name: "Salla (سلة)",
-                    desc: "سلة إكسل / CSV",
+                    desc: "تصدير سلة بصيغة CSV",
                     color: "hover:border-green-500/30",
                   },
                   {
                     id: "zid",
                     name: "Zid (زد)",
-                    desc: "زد إكسل / CSV",
+                    desc: "تصدير زد بصيغة CSV",
                     color: "hover:border-purple-500/30",
                   },
                   {
@@ -809,6 +914,36 @@ function ProductImporterModal({
                   />
                 </label>
               </div>
+
+              {(importHistoryQuery.data?.length ?? 0) > 0 && (
+                <div className="space-y-2 border-t border-border/60 pt-4">
+                  <p className="text-xs font-semibold">
+                    {isAr ? "آخر عمليات الاستيراد" : "Recent imports"}
+                  </p>
+                  {importHistoryQuery.data!.map((run: any) => (
+                    <div
+                      key={run.session_id}
+                      className="flex items-center justify-between rounded-lg bg-muted/40 px-3 py-2 text-[11px]"
+                    >
+                      <div>
+                        <span className="font-semibold uppercase">{run.source}</span>
+                        <span className="ms-2 text-muted-foreground">
+                          {new Date(run.created_at).toLocaleString(isAr ? "ar-BH" : "en-BH")}
+                        </span>
+                      </div>
+                      <div className="flex gap-2">
+                        <span className="text-emerald-600">✓ {run.success_count}</span>
+                        {run.skipped_count > 0 && (
+                          <span className="text-amber-600">↷ {run.skipped_count}</span>
+                        )}
+                        {run.failed_count > 0 && (
+                          <span className="text-rose-600">× {run.failed_count}</span>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 
@@ -860,6 +995,42 @@ function ProductImporterModal({
                     </Select>
                   </div>
                 ))}
+              </div>
+
+              <div className="rounded-xl border border-border/70 bg-muted/20 p-3">
+                <div className="mb-2 flex items-center justify-between text-xs font-semibold">
+                  <span>{isAr ? "معاينة البيانات" : "Data preview"}</span>
+                  <span className="text-muted-foreground">
+                    {parsedRows.length} {isAr ? "صف" : "rows"}
+                  </span>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full min-w-[420px] text-[11px]">
+                    <thead>
+                      <tr className="border-b">
+                        {headers.slice(0, 5).map((header) => (
+                          <th key={header} className="p-2 text-start font-semibold">
+                            {header}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {parsedRows.slice(0, 5).map((row, rowIndex) => (
+                        <tr key={rowIndex} className="border-b last:border-0">
+                          {headers.slice(0, 5).map((_, columnIndex) => (
+                            <td
+                              key={columnIndex}
+                              className="max-w-40 truncate p-2 text-muted-foreground"
+                            >
+                              {row[columnIndex] || "—"}
+                            </td>
+                          ))}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </div>
 
               <div className="pt-4 border-t border-zinc-100 dark:border-zinc-800 flex justify-end">
@@ -921,9 +1092,16 @@ function ProductImporterModal({
                 </h3>
                 <p className="text-xs text-muted-foreground leading-relaxed max-w-sm">
                   {isAr
-                    ? `تم استيراد ${successCount} منتجاً بالكامل، وإعادة استضافة جميع الصور على خوادم Cloudflare R2 فائقة السرعة بنجاح!`
-                    : `Successfully imported ${successCount} products, and re-hosted all CDN images onto our premium ultra-fast Cloudflare R2 bucket!`}
+                    ? `تم استيراد ${successCount} منتج، وتخطي ${skippedCount} مكرر، وتعذر ${failedCount}.`
+                    : `Imported ${successCount} products, skipped ${skippedCount} duplicates, and ${failedCount} failed.`}
                 </p>
+                {importIssues.length > 0 && (
+                  <p className="text-[11px] text-amber-600">
+                    {isAr
+                      ? "يمكن مراجعة العناصر المتخطاة وتصحيح الملف ثم إعادة المحاولة بأمان."
+                      : "Review skipped items, correct the file, and safely retry."}
+                  </p>
+                )}
               </div>
               <Button
                 onClick={() => setIsOpen(false)}

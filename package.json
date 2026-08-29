@@ -15,7 +15,8 @@
     "format:check": "prettier --check .",
     "check": "npm run typecheck && npm run lint && npm run format:check && npm run test",
     "test": "vitest run",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "db:migrations:check": "node scripts/database/check-migration-integrity.mjs"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1085.0",

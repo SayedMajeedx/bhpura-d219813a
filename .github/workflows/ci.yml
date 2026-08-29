@@ -108,6 +108,9 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
+      - name: Validate migration history integrity
+        run: node scripts/database/check-migration-integrity.mjs
+
       - name: Apply & Validate Migrations Against Local Postgres
         env:
           PGPASSWORD: postgres

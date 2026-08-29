@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 const migration = readFileSync(
-  "supabase/migrations/20260825193000_returning_customer_promo_eligibility.sql",
+  "supabase/migrations/20260825193500_returning_customer_promo_eligibility.sql",
   "utf8",
 );
 const editor = readFileSync("src/routes/_authenticated/admin.b.$slug.discounts.tsx", "utf8");

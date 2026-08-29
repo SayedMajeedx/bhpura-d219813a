@@ -1,6 +1,6 @@
 import * as React from "react";
 import { Link } from "@tanstack/react-router";
-import { Crown, Store, Clock as ClockIcon, Settings } from "lucide-react";
+import { Activity, Crown, Store, Clock as ClockIcon, Settings } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { startImpersonationSession } from "@/lib/impersonation.functions";
@@ -44,9 +44,7 @@ export function OsBrandSwitcher({
 
     setSwitching(true);
     const toastId = toast.loading(
-      lang === "ar"
-        ? "جاري تفعيل جلسة محاكاة المتجر..."
-        : "Initializing impersonation session...",
+      lang === "ar" ? "جاري تفعيل جلسة محاكاة المتجر..." : "Initializing impersonation session...",
     );
     try {
       const res = await startImpersonationSession({ data: { targetTenantId: targetBrand.id } });
@@ -93,11 +91,7 @@ export function OsBrandSwitcher({
       </div>
 
       {activeSlug && (
-        <Select
-          value={activeSlug}
-          disabled={switching}
-          onValueChange={handleBrandChange}
-        >
+        <Select value={activeSlug} disabled={switching} onValueChange={handleBrandChange}>
           <SelectTrigger className="h-8 text-xs bg-background/80">
             <SelectValue placeholder={lang === "ar" ? "اختر علامة" : "Select a brand"} />
           </SelectTrigger>
@@ -136,6 +130,18 @@ export function OsBrandSwitcher({
         >
           <ClockIcon className="h-3.5 w-3.5" />
           {lang === "ar" ? "طلبات التسجيل" : "Tenant Requests"}
+        </Link>
+        <Link
+          to="/admin/super/health"
+          className={cn(
+            "flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors",
+            pathname === "/admin/super/health"
+              ? "bg-primary text-primary-foreground font-semibold shadow-xs"
+              : "hover:bg-muted/80 text-muted-foreground hover:text-foreground",
+          )}
+        >
+          <Activity className="h-3.5 w-3.5" />
+          {lang === "ar" ? "صحة النظام" : "System health"}
         </Link>
         <Link
           to="/admin/super/settings"

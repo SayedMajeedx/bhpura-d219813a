@@ -28,6 +28,7 @@ import {
   Store,
   Languages,
   Search,
+  RotateCcw,
 } from "lucide-react";
 
 export function SpotlightCommandPalette({
@@ -129,6 +130,11 @@ export function SpotlightCommandPalette({
       label: isAr ? "الطلبات والفواتير" : "Orders & Invoices",
       icon: ReceiptText,
       to: "/admin/b/$slug/orders",
+    },
+    {
+      label: isAr ? "المرتجعات والاستبدال" : "Returns & Exchanges",
+      icon: RotateCcw,
+      to: "/admin/b/$slug/returns",
     },
     {
       label: isAr ? "إدارة المخزون والمنتجات" : "Products & Inventory",

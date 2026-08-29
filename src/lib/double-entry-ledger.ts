@@ -35,14 +35,17 @@ export function calculateIncomeStatement(
   expenses: any[],
   cardFeePercent: number = 0,
   benefitFeePercent: number = 0,
+  returns: any[] = [],
 ): IncomeStatementData {
   const confirmedOrders = orders.filter((o) =>
     ["confirmed", "paid", "shipped", "completed"].includes(o.status),
   );
 
   const grossRevenue = confirmedOrders.reduce((sum, o) => sum + Number(o.total || 0), 0);
-  const returnsDiscounts = 0; // Reserved for refunds
-  const netRevenue = grossRevenue - returnsDiscounts;
+  const returnsDiscounts = returns
+    .filter((r) => r.refund_status === "processed" || r.status === "refunded")
+    .reduce((sum, r) => sum + Number(r.net_refund_amount || 0), 0);
+  const netRevenue = Math.max(0, grossRevenue - returnsDiscounts);
 
   let productCogs = 0;
   let packagingBomCogs = 0;

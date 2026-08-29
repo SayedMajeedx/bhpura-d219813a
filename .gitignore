@@ -46,6 +46,7 @@ scratch/
 .tmp-*
 .wrangler-local/
 NUL
+.recovery/
 
 # Local Tools & Mobile Build Artifacts
 .local-tools/

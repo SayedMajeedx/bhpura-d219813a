@@ -45,6 +45,7 @@ import { Route as ApiAdminNabdaOtpRouteImport } from './routes/api.admin.nabda-o
 import { Route as ApiCronCleanupBenefitReceiptsRouteImport } from './routes/api.cron.cleanup-benefit-receipts'
 import { Route as ApiOrdersStatusRouteImport } from './routes/api.orders.status'
 import { Route as AuthenticatedAdminBSlugRouteRouteImport } from './routes/_authenticated/admin.b.$slug.route'
+import { Route as AuthenticatedAdminSuperHealthRouteImport } from './routes/_authenticated/admin.super.health'
 import { Route as AuthenticatedAdminSuperRequestsRouteImport } from './routes/_authenticated/admin.super.requests'
 import { Route as AuthenticatedAdminSuperSettingsRouteImport } from './routes/_authenticated/admin.super.settings'
 import { Route as ApiPublicPaymentsCreateTapChargeRouteImport } from './routes/api.public.payments.create-tap-charge'
@@ -74,6 +75,8 @@ import { Route as AuthenticatedAdminBSlugReportsCustomersRouteImport } from './r
 import { Route as AuthenticatedAdminBSlugReportsExportRouteImport } from './routes/_authenticated/admin.b.$slug.reports.export'
 import { Route as AuthenticatedAdminBSlugReportsProductsRouteImport } from './routes/_authenticated/admin.b.$slug.reports.products'
 import { Route as AuthenticatedAdminBSlugReportsSalesRouteImport } from './routes/_authenticated/admin.b.$slug.reports.sales'
+import { Route as AuthenticatedAdminBSlugReturnsIndexRouteImport } from './routes/_authenticated/admin.b.$slug.returns.index'
+import { Route as AuthenticatedAdminBSlugReturnsIdRouteImport } from './routes/_authenticated/admin.b.$slug.returns.$id'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -263,6 +266,12 @@ const AuthenticatedAdminBSlugRouteRoute =
     path: '/b/$slug',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
+const AuthenticatedAdminSuperHealthRoute =
+  AuthenticatedAdminSuperHealthRouteImport.update({
+    id: '/super/health',
+    path: '/super/health',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
 const AuthenticatedAdminSuperRequestsRoute =
   AuthenticatedAdminSuperRequestsRouteImport.update({
     id: '/super/requests',
@@ -436,6 +445,18 @@ const AuthenticatedAdminBSlugReportsSalesRoute =
     path: '/sales',
     getParentRoute: () => AuthenticatedAdminBSlugReportsRoute,
   } as any)
+const AuthenticatedAdminBSlugReturnsIndexRoute =
+  AuthenticatedAdminBSlugReturnsIndexRouteImport.update({
+    id: '/returns/',
+    path: '/returns/',
+    getParentRoute: () => AuthenticatedAdminBSlugRouteRoute,
+  } as any)
+const AuthenticatedAdminBSlugReturnsIdRoute =
+  AuthenticatedAdminBSlugReturnsIdRouteImport.update({
+    id: '/returns/$id',
+    path: '/returns/$id',
+    getParentRoute: () => AuthenticatedAdminBSlugRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -473,6 +494,7 @@ export interface FileRoutesByFullPath {
   '/api/orders/status': typeof ApiOrdersStatusRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
   '/admin/b/$slug': typeof AuthenticatedAdminBSlugRouteRouteWithChildren
+  '/admin/super/health': typeof AuthenticatedAdminSuperHealthRoute
   '/admin/super/requests': typeof AuthenticatedAdminSuperRequestsRoute
   '/admin/super/settings': typeof AuthenticatedAdminSuperSettingsRoute
   '/api/public/payments/create-tap-charge': typeof ApiPublicPaymentsCreateTapChargeRoute
@@ -500,8 +522,10 @@ export interface FileRoutesByFullPath {
   '/admin/b/$slug/reports/export': typeof AuthenticatedAdminBSlugReportsExportRoute
   '/admin/b/$slug/reports/products': typeof AuthenticatedAdminBSlugReportsProductsRoute
   '/admin/b/$slug/reports/sales': typeof AuthenticatedAdminBSlugReportsSalesRoute
+  '/admin/b/$slug/returns/$id': typeof AuthenticatedAdminBSlugReturnsIdRoute
   '/admin/b/$slug/orders/': typeof AuthenticatedAdminBSlugOrdersIndexRoute
   '/admin/b/$slug/reports/': typeof AuthenticatedAdminBSlugReportsIndexRoute
+  '/admin/b/$slug/returns/': typeof AuthenticatedAdminBSlugReturnsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -537,6 +561,7 @@ export interface FileRoutesByTo {
   '/api/orders/status': typeof ApiOrdersStatusRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
   '/admin/b/$slug': typeof AuthenticatedAdminBSlugRouteRouteWithChildren
+  '/admin/super/health': typeof AuthenticatedAdminSuperHealthRoute
   '/admin/super/requests': typeof AuthenticatedAdminSuperRequestsRoute
   '/admin/super/settings': typeof AuthenticatedAdminSuperSettingsRoute
   '/api/public/payments/create-tap-charge': typeof ApiPublicPaymentsCreateTapChargeRoute
@@ -563,8 +588,10 @@ export interface FileRoutesByTo {
   '/admin/b/$slug/reports/export': typeof AuthenticatedAdminBSlugReportsExportRoute
   '/admin/b/$slug/reports/products': typeof AuthenticatedAdminBSlugReportsProductsRoute
   '/admin/b/$slug/reports/sales': typeof AuthenticatedAdminBSlugReportsSalesRoute
+  '/admin/b/$slug/returns/$id': typeof AuthenticatedAdminBSlugReturnsIdRoute
   '/admin/b/$slug/orders': typeof AuthenticatedAdminBSlugOrdersIndexRoute
   '/admin/b/$slug/reports': typeof AuthenticatedAdminBSlugReportsIndexRoute
+  '/admin/b/$slug/returns': typeof AuthenticatedAdminBSlugReturnsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -604,6 +631,7 @@ export interface FileRoutesById {
   '/api/orders/status': typeof ApiOrdersStatusRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
   '/_authenticated/admin/b/$slug': typeof AuthenticatedAdminBSlugRouteRouteWithChildren
+  '/_authenticated/admin/super/health': typeof AuthenticatedAdminSuperHealthRoute
   '/_authenticated/admin/super/requests': typeof AuthenticatedAdminSuperRequestsRoute
   '/_authenticated/admin/super/settings': typeof AuthenticatedAdminSuperSettingsRoute
   '/api/public/payments/create-tap-charge': typeof ApiPublicPaymentsCreateTapChargeRoute
@@ -631,8 +659,10 @@ export interface FileRoutesById {
   '/_authenticated/admin/b/$slug/reports/export': typeof AuthenticatedAdminBSlugReportsExportRoute
   '/_authenticated/admin/b/$slug/reports/products': typeof AuthenticatedAdminBSlugReportsProductsRoute
   '/_authenticated/admin/b/$slug/reports/sales': typeof AuthenticatedAdminBSlugReportsSalesRoute
+  '/_authenticated/admin/b/$slug/returns/$id': typeof AuthenticatedAdminBSlugReturnsIdRoute
   '/_authenticated/admin/b/$slug/orders/': typeof AuthenticatedAdminBSlugOrdersIndexRoute
   '/_authenticated/admin/b/$slug/reports/': typeof AuthenticatedAdminBSlugReportsIndexRoute
+  '/_authenticated/admin/b/$slug/returns/': typeof AuthenticatedAdminBSlugReturnsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -672,6 +702,7 @@ export interface FileRouteTypes {
     | '/api/orders/status'
     | '/admin/'
     | '/admin/b/$slug'
+    | '/admin/super/health'
     | '/admin/super/requests'
     | '/admin/super/settings'
     | '/api/public/payments/create-tap-charge'
@@ -699,8 +730,10 @@ export interface FileRouteTypes {
     | '/admin/b/$slug/reports/export'
     | '/admin/b/$slug/reports/products'
     | '/admin/b/$slug/reports/sales'
+    | '/admin/b/$slug/returns/$id'
     | '/admin/b/$slug/orders/'
     | '/admin/b/$slug/reports/'
+    | '/admin/b/$slug/returns/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -736,6 +769,7 @@ export interface FileRouteTypes {
     | '/api/orders/status'
     | '/admin'
     | '/admin/b/$slug'
+    | '/admin/super/health'
     | '/admin/super/requests'
     | '/admin/super/settings'
     | '/api/public/payments/create-tap-charge'
@@ -762,8 +796,10 @@ export interface FileRouteTypes {
     | '/admin/b/$slug/reports/export'
     | '/admin/b/$slug/reports/products'
     | '/admin/b/$slug/reports/sales'
+    | '/admin/b/$slug/returns/$id'
     | '/admin/b/$slug/orders'
     | '/admin/b/$slug/reports'
+    | '/admin/b/$slug/returns'
   id:
     | '__root__'
     | '/'
@@ -802,6 +838,7 @@ export interface FileRouteTypes {
     | '/api/orders/status'
     | '/_authenticated/admin/'
     | '/_authenticated/admin/b/$slug'
+    | '/_authenticated/admin/super/health'
     | '/_authenticated/admin/super/requests'
     | '/_authenticated/admin/super/settings'
     | '/api/public/payments/create-tap-charge'
@@ -829,8 +866,10 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/b/$slug/reports/export'
     | '/_authenticated/admin/b/$slug/reports/products'
     | '/_authenticated/admin/b/$slug/reports/sales'
+    | '/_authenticated/admin/b/$slug/returns/$id'
     | '/_authenticated/admin/b/$slug/orders/'
     | '/_authenticated/admin/b/$slug/reports/'
+    | '/_authenticated/admin/b/$slug/returns/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -1107,6 +1146,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminBSlugRouteRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
+    '/_authenticated/admin/super/health': {
+      id: '/_authenticated/admin/super/health'
+      path: '/super/health'
+      fullPath: '/admin/super/health'
+      preLoaderRoute: typeof AuthenticatedAdminSuperHealthRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
     '/_authenticated/admin/super/requests': {
       id: '/_authenticated/admin/super/requests'
       path: '/super/requests'
@@ -1310,6 +1356,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminBSlugReportsSalesRouteImport
       parentRoute: typeof AuthenticatedAdminBSlugReportsRoute
     }
+    '/_authenticated/admin/b/$slug/returns/': {
+      id: '/_authenticated/admin/b/$slug/returns/'
+      path: '/returns'
+      fullPath: '/admin/b/$slug/returns/'
+      preLoaderRoute: typeof AuthenticatedAdminBSlugReturnsIndexRouteImport
+      parentRoute: typeof AuthenticatedAdminBSlugRouteRoute
+    }
+    '/_authenticated/admin/b/$slug/returns/$id': {
+      id: '/_authenticated/admin/b/$slug/returns/$id'
+      path: '/returns/$id'
+      fullPath: '/admin/b/$slug/returns/$id'
+      preLoaderRoute: typeof AuthenticatedAdminBSlugReturnsIdRouteImport
+      parentRoute: typeof AuthenticatedAdminBSlugRouteRoute
+    }
   }
 }
 
@@ -1406,7 +1466,9 @@ interface AuthenticatedAdminBSlugRouteRouteChildren {
   AuthenticatedAdminBSlugSettingsRoute: typeof AuthenticatedAdminBSlugSettingsRoute
   AuthenticatedAdminBSlugTeamRoute: typeof AuthenticatedAdminBSlugTeamRoute
   AuthenticatedAdminBSlugOrdersIdRoute: typeof AuthenticatedAdminBSlugOrdersIdRoute
+  AuthenticatedAdminBSlugReturnsIdRoute: typeof AuthenticatedAdminBSlugReturnsIdRoute
   AuthenticatedAdminBSlugOrdersIndexRoute: typeof AuthenticatedAdminBSlugOrdersIndexRoute
+  AuthenticatedAdminBSlugReturnsIndexRoute: typeof AuthenticatedAdminBSlugReturnsIndexRoute
 }
 
 const AuthenticatedAdminBSlugRouteRouteChildren: AuthenticatedAdminBSlugRouteRouteChildren =
@@ -1437,8 +1499,12 @@ const AuthenticatedAdminBSlugRouteRouteChildren: AuthenticatedAdminBSlugRouteRou
     AuthenticatedAdminBSlugSettingsRoute: AuthenticatedAdminBSlugSettingsRoute,
     AuthenticatedAdminBSlugTeamRoute: AuthenticatedAdminBSlugTeamRoute,
     AuthenticatedAdminBSlugOrdersIdRoute: AuthenticatedAdminBSlugOrdersIdRoute,
+    AuthenticatedAdminBSlugReturnsIdRoute:
+      AuthenticatedAdminBSlugReturnsIdRoute,
     AuthenticatedAdminBSlugOrdersIndexRoute:
       AuthenticatedAdminBSlugOrdersIndexRoute,
+    AuthenticatedAdminBSlugReturnsIndexRoute:
+      AuthenticatedAdminBSlugReturnsIndexRoute,
   }
 
 const AuthenticatedAdminBSlugRouteRouteWithChildren =
@@ -1457,6 +1523,7 @@ interface AuthenticatedAdminRouteChildren {
   AuthenticatedAdminTeamRoute: typeof AuthenticatedAdminTeamRoute
   AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
   AuthenticatedAdminBSlugRouteRoute: typeof AuthenticatedAdminBSlugRouteRouteWithChildren
+  AuthenticatedAdminSuperHealthRoute: typeof AuthenticatedAdminSuperHealthRoute
   AuthenticatedAdminSuperRequestsRoute: typeof AuthenticatedAdminSuperRequestsRoute
   AuthenticatedAdminSuperSettingsRoute: typeof AuthenticatedAdminSuperSettingsRoute
 }
@@ -1473,6 +1540,7 @@ const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
   AuthenticatedAdminIndexRoute: AuthenticatedAdminIndexRoute,
   AuthenticatedAdminBSlugRouteRoute:
     AuthenticatedAdminBSlugRouteRouteWithChildren,
+  AuthenticatedAdminSuperHealthRoute: AuthenticatedAdminSuperHealthRoute,
   AuthenticatedAdminSuperRequestsRoute: AuthenticatedAdminSuperRequestsRoute,
   AuthenticatedAdminSuperSettingsRoute: AuthenticatedAdminSuperSettingsRoute,
 }

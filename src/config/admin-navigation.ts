@@ -15,6 +15,7 @@ import {
   BarChart,
   Building2,
   MessageSquareHeart,
+  RotateCcw,
   type LucideIcon,
 } from "lucide-react";
 
@@ -93,6 +94,16 @@ export function getAdminNavItems({
       labelEn: "Orders & Invoices",
       labelAr: lang === "ar" ? "الطلبات والفواتير" : "Orders & Invoices",
       icon: ReceiptText,
+      permission: "manage_orders",
+      section: "operations",
+    },
+    {
+      id: "returns",
+      to: "/admin/b/$slug/returns",
+      params: { slug: activeSlug },
+      labelEn: "Returns & Exchanges",
+      labelAr: lang === "ar" ? "المرتجعات والاستبدال" : "Returns & Exchanges",
+      icon: RotateCcw,
       permission: "manage_orders",
       section: "operations",
     },
