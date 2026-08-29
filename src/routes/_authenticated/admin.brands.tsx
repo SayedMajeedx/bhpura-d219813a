@@ -97,6 +97,35 @@ type Brand = {
   support_access_enabled: boolean;
 };
 
+const USER_MANAGEMENT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/user-management`;
+const SUPABASE_PUBLIC_KEY =
+  import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+async function provisionBrandWithOwner(payload: Record<string, unknown>) {
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+  if (!session) throw new Error("No active session");
+  const url = new URL(USER_MANAGEMENT_URL);
+  url.searchParams.set("action", "provision-brand");
+  const response = await fetch(url.toString(), {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${session.access_token}`,
+      ...(SUPABASE_PUBLIC_KEY ? { apikey: SUPABASE_PUBLIC_KEY } : {}),
+    },
+    body: JSON.stringify(payload),
+  });
+  const result = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(result.error || `Request failed (${response.status})`);
+  return result as {
+    brand_id: string;
+    linked_existing_identity: boolean;
+    trial_days: number | null;
+  };
+}
+
 function BrandsPage() {
   const t = useT();
   const { lang } = useI18n();
@@ -679,6 +708,7 @@ function BrandsPage() {
 function NewBrandDialog({ onSaved }: { onSaved: () => void }) {
   const { lang } = useI18n();
   const [form, setForm] = useState({ slug: "", name_en: "", name_ar: "", logo_url: "" });
+  const [owner, setOwner] = useState({ name: "", email: "", phone: "", password: "" });
   const [planType, setPlanType] = useState<"annual" | "trial">("annual");
   const [createMobileApp, setCreateMobileApp] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -693,57 +723,29 @@ function NewBrandDialog({ onSaved }: { onSaved: () => void }) {
       toast.error(lang === "ar" ? "الاسم بالإنجليزية مطلوب" : "English name is required");
       return;
     }
+    if (!owner.name.trim() || !owner.email.trim()) {
+      toast.error(
+        lang === "ar" ? "اسم مدير البراند وبريده الإلكتروني مطلوبان" : "Owner name and email are required",
+      );
+      return;
+    }
     setSaving(true);
     try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-
-      // Deploying tenant using RPC for instant, correct seeding!
-      const { error } = await supabase.rpc("create_tenant_with_defaults" as any, {
-        p_slug: slug,
-        p_name_en: form.name_en.trim(),
-        p_name_ar: form.name_ar.trim() || null,
-        p_primary_color: "#800020",
-        p_owner_id: user?.id ?? "00000000-0000-0000-0000-000000000000",
-        p_owner_email: user?.email ?? "super_admin@pura.bh",
-        p_owner_name: "Super Admin Deployment",
+      const provisioned = await provisionBrandWithOwner({
+        slug,
+        name_en: form.name_en.trim(),
+        name_ar: form.name_ar.trim() || null,
+        owner_name: owner.name.trim(),
+        owner_email: owner.email.trim(),
+        owner_phone: owner.phone.trim() || null,
+        owner_password: owner.password,
+        plan_type: planType,
       });
 
-      if (error) throw error;
-
-      // Update plan_type and trial_ends_at on the newly created brand row
-      const trialEndsAt =
-        planType === "trial" ? new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString() : null;
-      const isOwnerProject = slug === "pura";
-      const annualExpiresAt = new Date();
-      annualExpiresAt.setFullYear(annualExpiresAt.getFullYear() + 1);
-      const { data: brandRow } = await supabase
-        .from("brands")
-        .select("id")
-        .eq("slug", slug)
-        .maybeSingle();
-
-      if (brandRow) {
-        const { error: brandUpdateErr } = await supabase
-          .from("brands")
-          .update({
-            plan_type: isOwnerProject ? "lifetime" : planType,
-            trial_ends_at: trialEndsAt,
-            subscription_status: "active",
-            subscription_expires_at:
-              isOwnerProject || planType === "trial" ? null : annualExpiresAt.toISOString(),
-            updated_at: new Date().toISOString(),
-          })
-          .eq("id", brandRow.id);
-
-        if (brandUpdateErr) {
-          console.error("Failed to set custom plan on newly deployed brand:", brandUpdateErr);
-        }
-        if (createMobileApp) {
+      if (createMobileApp) {
           const { data: appResult, error: appError } = await supabase.functions.invoke(
             "provision-white-label-app",
-            { body: { brand_id: brandRow.id, rebuild: false } },
+            { body: { brand_id: provisioned.brand_id, rebuild: false } },
           );
           if (appError || appResult?.error) {
             toast.warning(
@@ -752,11 +754,16 @@ function NewBrandDialog({ onSaved }: { onSaved: () => void }) {
                 : "Store created; app provisioning needs attention in Brand Apps.",
             );
           }
-        }
       }
 
       toast.success(
-        lang === "ar" ? "تم تهيئة المتجر وإطلاقه بنجاح!" : "Tenant database provisioned and live!",
+        provisioned.linked_existing_identity
+          ? lang === "ar"
+            ? "تم إنشاء البراند وربط حساب المدير الموجود بنجاح"
+            : "Brand created and existing owner account linked successfully"
+          : lang === "ar"
+            ? "تم إنشاء البراند وحساب المدير بنجاح"
+            : "Brand and owner account created successfully",
       );
       onSaved();
     } catch (err: any) {
@@ -767,7 +774,7 @@ function NewBrandDialog({ onSaved }: { onSaved: () => void }) {
   };
 
   return (
-    <DialogContent className="max-w-md bg-background/95 backdrop-blur-md border border-border/60 text-foreground p-6 rounded-2xl shadow-xl">
+    <DialogContent className="max-h-[90vh] max-w-lg overflow-y-auto bg-background/95 backdrop-blur-md border border-border/60 text-foreground p-6 rounded-2xl shadow-xl">
       <DialogHeader>
         <DialogTitle className="font-display font-bold text-lg">
           {lang === "ar" ? "علامة تجارية جديدة" : "New Brand"}
@@ -813,6 +820,67 @@ function NewBrandDialog({ onSaved }: { onSaved: () => void }) {
               ? "يُكتب يدويًا ولا يُشتق من الاسم. سيظهر في /admin/b/{المعرّف} و /{المعرّف}."
               : "Typed manually — never auto-generated from the name. Used in /admin/b/{slug} and /{slug}."}
           </p>
+        </div>
+        <div className="rounded-2xl border border-primary/15 bg-primary/[0.025] p-4">
+          <div className="mb-4 flex items-start gap-3">
+            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-primary/10">
+              <Shield className="h-4 w-4 text-primary" />
+            </span>
+            <div>
+              <h3 className="text-sm font-bold">
+                {lang === "ar" ? "مدير البراند" : "Brand administrator"}
+              </h3>
+              <p className="mt-1 text-xs leading-5 text-muted-foreground">
+                {lang === "ar"
+                  ? "هذا الحساب راح يكون المالك الأول للبراند ويقدر يدخل لوحة التحكم ويدير المتجر."
+                  : "This account becomes the brand's first owner and can access its admin dashboard."}
+              </p>
+            </div>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="sm:col-span-2">
+              <Label>{lang === "ar" ? "اسم المدير" : "Administrator name"}</Label>
+              <Input
+                value={owner.name}
+                onChange={(e) => setOwner({ ...owner, name: e.target.value })}
+                placeholder={lang === "ar" ? "الاسم الكامل" : "Full name"}
+              />
+            </div>
+            <div>
+              <Label>{lang === "ar" ? "البريد الإلكتروني" : "Email address"}</Label>
+              <Input
+                type="email"
+                value={owner.email}
+                onChange={(e) => setOwner({ ...owner, email: e.target.value })}
+                placeholder="owner@example.com"
+                autoComplete="off"
+              />
+            </div>
+            <div>
+              <Label>{lang === "ar" ? "رقم الهاتف" : "Phone number"}</Label>
+              <Input
+                value={owner.phone}
+                onChange={(e) => setOwner({ ...owner, phone: e.target.value })}
+                placeholder="39955508"
+                autoComplete="off"
+              />
+            </div>
+            <div className="sm:col-span-2">
+              <Label>{lang === "ar" ? "كلمة مرور مؤقتة" : "Temporary password"}</Label>
+              <Input
+                type="password"
+                value={owner.password}
+                onChange={(e) => setOwner({ ...owner, password: e.target.value })}
+                placeholder={lang === "ar" ? "مطلوبة للحساب الجديد فقط (8 أحرف على الأقل)" : "New accounts only (minimum 8 characters)"}
+                autoComplete="new-password"
+              />
+              <p className="mt-1.5 text-[11px] leading-5 text-muted-foreground">
+                {lang === "ar"
+                  ? "إذا البريد مرتبط بحساب موجود، راح نربطه بدون تغيير كلمة مروره."
+                  : "If the email already has an account, it will be linked without changing its password."}
+              </p>
+            </div>
+          </div>
         </div>
         <div>
           <Label>{lang === "ar" ? "باقة تفعيل المتجر" : "Deployment Access Plan"}</Label>

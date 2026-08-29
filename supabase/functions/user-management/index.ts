@@ -126,6 +126,17 @@ Deno.serve(async (req: Request) => {
         return await handleCreate(supabase, body, callerCtx);
       }
 
+      case "provision-brand": {
+        if (!callerCtx.isSuperAdmin) {
+          return new Response(JSON.stringify({ error: "Only a super admin can provision brands" }), {
+            status: 403,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+        const body = await req.json();
+        return await handleProvisionBrand(supabase, body);
+      }
+
       case "update": {
         const body = await req.json();
         return await handleUpdate(supabase, body, callerCtx);
@@ -185,6 +196,158 @@ async function handleList(
     : (profiles ?? []).filter((profile: any) => profile.role !== "super_admin");
   return new Response(JSON.stringify({ profiles: visibleProfiles }), {
     status: 200,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
+}
+
+async function handleProvisionBrand(supabase: any, body: any) {
+  const slug = String(body.slug ?? "").trim().toLowerCase();
+  const nameEn = String(body.name_en ?? "").trim();
+  const nameAr = String(body.name_ar ?? "").trim() || null;
+  const ownerEmail = String(body.owner_email ?? "").trim().toLowerCase();
+  const ownerName = String(body.owner_name ?? "").trim();
+  const ownerPhone = String(body.owner_phone ?? "").trim() || null;
+  const ownerPassword = String(body.owner_password ?? "");
+  const planType = body.plan_type === "trial" ? "trial" : "annual";
+
+  if (!/^[a-z0-9](?:[a-z0-9-]{0,30}[a-z0-9])?$/.test(slug)) {
+    return jsonError("Invalid brand slug", 400);
+  }
+  if (!nameEn || !ownerEmail || !ownerName) {
+    return jsonError("Brand name, owner name, and owner email are required", 400);
+  }
+
+  const existingAuthUser = await findAuthUserByEmail(supabase, ownerEmail);
+  let ownerId = existingAuthUser?.id as string | undefined;
+  let createdAuthUser = false;
+  let previousProfile: any = null;
+  let brandId: string | null = null;
+
+  try {
+    if (ownerId) {
+      const { data: profile, error } = await supabase
+        .from("profiles")
+        .select("id,email,name,phone,role,status,brand_id")
+        .eq("id", ownerId)
+        .maybeSingle();
+      if (error) throw error;
+      previousProfile = profile;
+      const available = !profile || (profile.brand_id === null && profile.role === "staff");
+      if (!available) return jsonError("This email already manages another team or brand", 409);
+    } else {
+      if (ownerPassword.length < 8) {
+        return jsonError("A temporary password of at least 8 characters is required", 400);
+      }
+      const { data, error } = await supabase.auth.admin.createUser({
+        email: ownerEmail,
+        password: ownerPassword,
+        email_confirm: true,
+        user_metadata: { name: ownerName },
+      });
+      if (error) return jsonError(error.message, 400);
+      ownerId = data.user?.id;
+      createdAuthUser = true;
+    }
+    if (!ownerId) throw new Error("Owner identity was not created");
+
+    // The provisioning RPC requires an existing profile. Keep it unassigned
+    // until the brand is created, then promote it to the brand's first admin.
+    const { error: provisionalProfileError } = await supabase.from("profiles").upsert(
+      {
+        id: ownerId,
+        email: ownerEmail,
+        name: ownerName,
+        phone: ownerPhone,
+        role: "staff",
+        status: "active",
+        brand_id: null,
+      },
+      { onConflict: "id" },
+    );
+    if (provisionalProfileError) throw provisionalProfileError;
+
+    const { data: provisionedBrandId, error: provisionError } = await supabase.rpc(
+      "create_tenant_with_defaults",
+      {
+        p_slug: slug,
+        p_name_en: nameEn,
+        p_name_ar: nameAr,
+        p_primary_color: "#800020",
+        p_owner_id: ownerId,
+        p_business_type: String(body.business_type ?? "Fashion"),
+      },
+    );
+    if (provisionError) throw provisionError;
+    brandId = provisionedBrandId;
+
+    let trialDays = 14;
+    if (planType === "trial") {
+      const { data: trialPlan } = await supabase
+        .from("saas_plans")
+        .select("trial_days")
+        .eq("code", "trial")
+        .eq("is_active", true)
+        .maybeSingle();
+      trialDays = Math.max(1, Number(trialPlan?.trial_days || 14));
+    }
+    const annualExpiry = new Date();
+    annualExpiry.setFullYear(annualExpiry.getFullYear() + 1);
+    const { error: brandUpdateError } = await supabase
+      .from("brands")
+      .update({
+        plan_type: planType,
+        trial_ends_at:
+          planType === "trial"
+            ? new Date(Date.now() + trialDays * 24 * 60 * 60 * 1000).toISOString()
+            : null,
+        subscription_status: "active",
+        subscription_expires_at: planType === "annual" ? annualExpiry.toISOString() : null,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", brandId);
+    if (brandUpdateError) throw brandUpdateError;
+
+    const { error: ownerProfileError } = await supabase
+      .from("profiles")
+      .update({
+        email: ownerEmail,
+        name: ownerName,
+        phone: ownerPhone,
+        role: "brand_admin",
+        status: "active",
+        brand_id: brandId,
+      })
+      .eq("id", ownerId);
+    if (ownerProfileError) throw ownerProfileError;
+
+    return new Response(
+      JSON.stringify({
+        success: true,
+        brand_id: brandId,
+        owner_id: ownerId,
+        linked_existing_identity: !createdAuthUser,
+        trial_days: planType === "trial" ? trialDays : null,
+      }),
+      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+    );
+  } catch (error: any) {
+    if (brandId) await supabase.from("brands").delete().eq("id", brandId);
+    if (createdAuthUser && ownerId) {
+      await supabase.auth.admin.deleteUser(ownerId).catch(() => undefined);
+    } else if (ownerId) {
+      if (previousProfile) {
+        await supabase.from("profiles").upsert(previousProfile, { onConflict: "id" });
+      } else {
+        await supabase.from("profiles").delete().eq("id", ownerId);
+      }
+    }
+    return jsonError(error?.message || "Brand provisioning failed", 500);
+  }
+}
+
+function jsonError(message: string, status: number) {
+  return new Response(JSON.stringify({ error: message }), {
+    status,
     headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
 }
@@ -374,7 +537,7 @@ async function handleUpdate(
 
   const { data: target, error: targetError } = await supabase
     .from("profiles")
-    .select("role, email, brand_id")
+    .select("role, email, brand_id, status")
     .eq("id", userId)
     .maybeSingle();
 
@@ -386,6 +549,23 @@ async function handleUpdate(
   }
 
   const targetIsSuperAdmin = target.role === "super_admin";
+
+  if (
+    target.role === "brand_admin" &&
+    target.brand_id &&
+    target.status === "active" &&
+    ((role !== undefined && role !== "brand_admin") || status === "inactive")
+  ) {
+    const { count } = await supabase
+      .from("profiles")
+      .select("id", { count: "exact", head: true })
+      .eq("brand_id", target.brand_id)
+      .eq("role", "brand_admin")
+      .eq("status", "active");
+    if ((count ?? 0) <= 1) {
+      return jsonError("A brand must keep at least one active brand admin", 409);
+    }
+  }
 
   if (targetIsSuperAdmin && !ctx.isSuperAdmin) {
     return new Response(JSON.stringify({ error: "Only a super admin can modify a super admin" }), {
@@ -507,7 +687,7 @@ async function handleDelete(
 
   const { data: target, error: targetError } = await supabase
     .from("profiles")
-    .select("role, email, brand_id")
+    .select("role, email, brand_id, status")
     .eq("id", userId)
     .maybeSingle();
 
@@ -523,6 +703,17 @@ async function handleDelete(
       status: 403,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
+  }
+  if (target.role === "brand_admin" && target.brand_id && target.status === "active") {
+    const { count } = await supabase
+      .from("profiles")
+      .select("id", { count: "exact", head: true })
+      .eq("brand_id", target.brand_id)
+      .eq("role", "brand_admin")
+      .eq("status", "active");
+    if ((count ?? 0) <= 1) {
+      return jsonError("A brand must keep at least one active brand admin", 409);
+    }
   }
   if (!ctx.isSuperAdmin && (!ctx.callerBrandId || target.brand_id !== ctx.callerBrandId)) {
     return new Response(JSON.stringify({ error: "You can only delete users in your own brand" }), {
