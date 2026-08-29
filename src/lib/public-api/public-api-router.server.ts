@@ -9,6 +9,11 @@ import {
   isValidIdempotencyKey,
 } from "./public-api-idempotency";
 import { dispatchBrandWebhookEvent } from "../webhooks/webhook-dispatcher.server";
+import {
+  hasFeature,
+  checkEntitlement,
+  consumeBrandUsage,
+} from "../saas-billing/entitlements-engine.server";
 import type { ApiScope } from "./public-api.types";
 
 const db = supabaseAdmin as any;
@@ -153,7 +158,19 @@ export async function handlePublicApiV1Request(
     return hasRequiredScope(authContext.scopes, scope);
   };
 
-  // 3. Sliding Window Rate Limiting
+  // 3. SaaS Plan Entitlement Verification
+  const isApiFeatureEnabled = await hasFeature(db, authContext.brandId, "api.enabled");
+  if (!isApiFeatureEnabled) {
+    return errorResponse(
+      "forbidden_plan_entitlement",
+      "Public REST API access is not enabled on your brand's subscription plan. Please upgrade to a Pro or Enterprise plan.",
+      403,
+      { required_feature: "api.enabled" },
+      requestId,
+    );
+  }
+
+  // 4. Sliding Window Rate Limiting (Per-Minute)
   const rateLimitResult = checkRateLimit(
     authContext.apiKeyId,
     authContext.rateLimitPerMinute,
@@ -178,6 +195,38 @@ export async function handlePublicApiV1Request(
       },
     );
   }
+
+  // 5. Monthly Usage Metering & Quotas
+  const entCheck = await checkEntitlement(db, authContext.brandId, "api.monthly_requests", 1);
+  if (!entCheck.allowed) {
+    return errorResponse(
+      "monthly_quota_exceeded",
+      `Monthly API request limit of ${entCheck.limit_value} requests has been exceeded for your current billing cycle.`,
+      429,
+      {
+        metric: "api.monthly_requests",
+        current_usage: entCheck.current_usage,
+        limit: entCheck.limit_value,
+      },
+      requestId,
+      rateLimitHeaders,
+    );
+  }
+
+  // Consume 1 request in the meter asynchronously
+  void consumeBrandUsage(
+    db,
+    authContext.brandId,
+    "api.monthly_requests",
+    1,
+    `req_${requestId}`,
+    {
+      path,
+      method,
+      request_id: requestId,
+      api_key_id: authContext.apiKeyId,
+    },
+  );
 
   // 4. Parse Request Body with 2MB limit
   let rawBodyText = "";

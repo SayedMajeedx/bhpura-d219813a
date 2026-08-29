@@ -11,6 +11,7 @@ import {
   setSubscriptionRenewalDecision,
   submitSubscriptionReceipt,
 } from "@/lib/saas-subscription.functions";
+import { BrandSubscriptionHub } from "@/components/subscription/BrandSubscriptionHub";
 import {
   AlertCircle,
   CalendarRange,
@@ -100,11 +101,11 @@ export function SubscriptionCard({ brand }: SubscriptionCardProps) {
             : "Non-renewal recorded. Your store remains active until the subscription ends.",
         { id: toastId },
       );
-    } catch {
-      toast.error(
-        isAr ? "تعذر حفظ القرار. حاول مرة أخرى." : "Unable to save the decision. Try again.",
-        { id: toastId },
-      );
+    } catch (error) {
+      console.error(error);
+      toast.error(isAr ? "تعذر حفظ القرار، حاول ثانية." : "Failed to save decision.", {
+        id: toastId,
+      });
     } finally {
       setSavingDecision(false);
     }
@@ -113,38 +114,56 @@ export function SubscriptionCard({ brand }: SubscriptionCardProps) {
   const handleUploadReceipt = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
-    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
-      toast.error(isAr ? "ارفع صورة JPEG أو PNG أو WEBP" : "Upload a JPEG, PNG, or WEBP image");
+
+    if (!file.type.startsWith("image/")) {
+      toast.error(isAr ? "يرجى رفع صورة الإيصال فقط." : "Please upload an image receipt only.");
       return;
     }
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error(isAr ? "الحد الأقصى 5MB" : "Maximum file size is 5MB");
+
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error(isAr ? "حجم الصورة يجب ألا يتجاوز 10 ميغابايت." : "Image must not exceed 10MB.");
       return;
     }
+
     setUploading(true);
-    const toastId = toast.loading(
-      isAr ? "جاري رفع إيصال التجديد..." : "Uploading renewal receipt...",
-    );
+    const toastId = toast.loading(isAr ? "جاري رفع الإيصال وتأمينه..." : "Uploading receipt securely...");
+
     try {
-      const { objectKey, uploadUrl } = await getSubscriptionReceiptUploadUrl({
-        data: { brandId: brand.id, contentType: file.type as any, size: file.size },
+      const upload = await getSubscriptionReceiptUploadUrl({
+        data: {
+          brandId: brand.id,
+          fileName: file.name,
+          contentType: file.type,
+          fileSize: file.size,
+        },
       });
-      const response = await fetch(uploadUrl, {
+
+      const putRes = await fetch(upload.uploadUrl, {
         method: "PUT",
         headers: { "Content-Type": file.type },
         body: file,
       });
-      if (!response.ok) throw new Error("RECEIPT_UPLOAD_FAILED");
-      await submitSubscriptionReceipt({ data: { brandId: brand.id, objectKey } });
+
+      if (!putRes.ok) {
+        throw new Error("Failed to upload image directly to storage");
+      }
+
+      await submitSubscriptionReceipt({
+        data: {
+          brandId: brand.id,
+          objectKey: upload.objectKey,
+        },
+      });
+
       toast.success(
         isAr
-          ? "تم إرسال الإيصال. التجديد ينتظر موافقة السوبر أدمن."
-          : "Receipt submitted. Renewal is pending super-admin approval.",
+          ? "تم رفع الإيصال بنجاح وإرساله إلى الإدارة للمراجعة وتأكيد التجديد."
+          : "Receipt uploaded and submitted for super-admin verification.",
         { id: toastId },
       );
-      window.setTimeout(() => window.location.reload(), 1000);
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "RECEIPT_SUBMISSION_FAILED", {
+      console.error(error);
+      toast.error(isAr ? "فشل رفع الإيصال، حاول مجدداً." : "Failed to upload receipt.", {
         id: toastId,
       });
     } finally {
@@ -153,261 +172,115 @@ export function SubscriptionCard({ brand }: SubscriptionCardProps) {
     }
   };
 
-  const statusBadge = isPermanent ? (
-    <Badge className="gap-1 bg-emerald-600 text-white">
-      <ShieldCheck className="h-3.5 w-3.5" />
-      {isAr ? "مشروع دائم" : "Permanent project"}
-    </Badge>
-  ) : pending ? (
-    <Badge className="gap-1 bg-amber-500 text-white">
-      <Clock className="h-3.5 w-3.5" />
-      {isAr ? "بانتظار اعتماد الدفع" : "Payment approval pending"}
-    </Badge>
-  ) : expired ? (
-    <Badge variant="destructive" className="gap-1">
-      <AlertCircle className="h-3.5 w-3.5" />
-      {isAr ? "منتهي" : "Expired"}
-    </Badge>
-  ) : (
-    <Badge className="gap-1 bg-emerald-600 text-white">
-      <Check className="h-3.5 w-3.5" />
-      {isTrial ? (isAr ? "تجريبي" : "Trial") : isAr ? "سنوي نشط" : "Active annual"}
-    </Badge>
-  );
-
   return (
-    <div className="space-y-6">
-      <Card className="overflow-hidden border-border/60 shadow-lg">
-        <CardHeader>
-          <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
-            <div>
-              <CardTitle>
-                {isAr ? "اشتراك المنصة السحابي" : "Cloud platform subscription"}
-              </CardTitle>
-              <CardDescription>
-                {isPermanent
-                  ? isAr
-                    ? "Pura مشروع المالك ولا يخضع للتجديد."
-                    : "Pura is the owner project and does not expire."
-                  : isAr
-                    ? "الاشتراك سنوي من تاريخ التفعيل، والتجديد يحتاج اعتماد السوبر أدمن."
-                    : "Annual from activation; renewals require super-admin approval."}
-              </CardDescription>
-            </div>
-            {statusBadge}
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-4 rounded-xl border border-border/50 bg-muted/20 p-5 md:grid-cols-3">
-            <div>
-              <p className="text-[10px] font-bold uppercase text-muted-foreground">
-                {isAr ? "نوع الترخيص" : "License"}
-              </p>
-              <p className="mt-1 text-sm font-semibold">
-                {isPermanent
-                  ? isAr
-                    ? "دائم"
-                    : "Permanent"
-                  : isTrial
-                    ? isAr
-                      ? "تجربة 3 أيام"
-                      : "3-day trial"
-                    : isAr
-                      ? "اشتراك سنوي"
-                      : "Annual subscription"}
-              </p>
-            </div>
-            <div>
-              <p className="text-[10px] font-bold uppercase text-muted-foreground">
-                {isAr ? "المدة المتبقية" : "Time remaining"}
-              </p>
-              <p className="mt-1 flex items-center gap-1.5 text-sm font-semibold">
-                <CalendarRange className="h-4 w-4 text-muted-foreground" />
-                {isPermanent
-                  ? isAr
-                    ? "لا ينتهي"
-                    : "No expiry"
-                  : expired
-                    ? isAr
-                      ? "انتهى الاشتراك"
-                      : "Subscription expired"
-                    : isAr
-                      ? `${daysLeft} يوم متبقٍ`
-                      : `${daysLeft} days left`}
-              </p>
-              {expiresAt && !isPermanent && (
-                <p className="mt-1 text-[11px] text-muted-foreground">
-                  {isAr ? "ينتهي في" : "Expires"}:{" "}
-                  {new Date(expiresAt).toLocaleDateString(isAr ? "ar-BH-u-nu-latn" : "en-GB")}
-                </p>
-              )}
-            </div>
-            <div>
-              <p className="text-[10px] font-bold uppercase text-muted-foreground">
-                {isAr ? "نطاق المتجر" : "Store domain"}
-              </p>
-              <p className="mt-1 font-mono text-sm font-semibold text-primary">
-                {brand.slug}.boutq.store
-              </p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+    <div className="space-y-8">
+      {/* 1. Main SaaS Entitlements, Live Quotas & Versioned Subscriptions Hub */}
+      <BrandSubscriptionHub brandId={brand.id} brandSlug={brand.slug} />
 
+      {/* 2. BenefitPay Renewal & Receipt Upload Card */}
       {renewalWindowOpen && (
-        <Card className="overflow-hidden border-amber-300/70 bg-amber-50/40 shadow-lg dark:bg-amber-950/10">
+        <Card className="overflow-hidden border-border/80 shadow-md rounded-2xl">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <Clock className="h-5 w-5 text-amber-600" />
-              {expired
-                ? isAr
-                  ? "انتهى اشتراكك السنوي"
-                  : "Your annual subscription has expired"
-                : isAr
-                  ? `باقي ${daysLeft} ${daysLeft === 1 ? "يوم" : "يوماً"} على انتهاء الاشتراك`
-                  : `${daysLeft} ${daysLeft === 1 ? "day" : "days"} until subscription expiry`}
-            </CardTitle>
-            <CardDescription>
-              {isAr
-                ? "اختر قرارك قبل انتهاء المدة. سيظهر القرار مباشرةً للسوبر أدمن."
-                : "Choose before the term ends. Your decision is immediately visible to the super admin."}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {!renewalIntent ? (
-              <div className="grid gap-3 sm:grid-cols-2">
-                <Button
-                  type="button"
-                  className="h-12 bg-emerald-600 text-white hover:bg-emerald-700"
-                  disabled={savingDecision}
-                  onClick={() => void saveRenewalDecision("renew")}
-                >
-                  <RefreshCw className="me-2 h-4 w-4" />
-                  {isAr ? "نعم، أريد التجديد" : "Yes, I want to renew"}
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="h-12 border-rose-300 text-rose-700 hover:bg-rose-50"
-                  disabled={savingDecision}
-                  onClick={() => void saveRenewalDecision("cancel")}
-                >
-                  <XCircle className="me-2 h-4 w-4" />
-                  {isAr ? "لا، لن أجدد" : "No, do not renew"}
-                </Button>
-              </div>
-            ) : (
-              <div className="flex flex-col gap-3 rounded-xl border bg-background/80 p-4 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                  <p className="font-semibold">
-                    {renewalIntent === "renew"
-                      ? isAr
-                        ? "تم تسجيل رغبتك بالتجديد"
-                        : "Renewal requested"
-                      : isAr
-                        ? "تم تسجيل قرار عدم التجديد"
-                        : "Non-renewal recorded"}
-                  </p>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    {renewalIntent === "renew"
-                      ? isAr
-                        ? "أكمل الدفع أدناه وارفع الإيصال للمراجعة."
-                        : "Complete payment below and upload the receipt for review."
-                      : isAr
-                        ? "سيظل المتجر فعالاً حتى تاريخ الانتهاء، ويمكنك تغيير القرار قبل ذلك."
-                        : "The store stays active until expiry; you may change this decision before then."}
-                  </p>
-                </div>
-                {renewalIntent === "cancel" && (
-                  <Button
-                    type="button"
-                    disabled={savingDecision}
-                    onClick={() => void saveRenewalDecision("renew")}
-                  >
-                    {isAr ? "غيّرت رأيي، أريد التجديد" : "I changed my mind—renew"}
-                  </Button>
-                )}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      )}
-
-      {renewalWindowOpen && renewalIntent === "renew" && (
-        <Card className="overflow-hidden border-border/60 shadow-lg">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-lg">
+            <CardTitle className="flex items-center gap-2 text-base font-bold">
               <CreditCard className="h-5 w-5 text-primary" />
-              {isAr ? "دفع وتجديد الاشتراك السنوي" : "Annual subscription payment"}
+              <span>{isAr ? "دفع وتجديد الاشتراك عبر BenefitPay" : "BenefitPay Manual Renewal & Transfer"}</span>
             </CardTitle>
-            <CardDescription>
+            <CardDescription className="text-xs">
               {isAr
                 ? `قيمة التجديد ${settings.price.toFixed(3)} د.ب. ادفع عبر بنفت ثم ارفع الإيصال للمراجعة.`
-                : `Renewal is BHD ${settings.price.toFixed(3)}. Pay via Benefit, then upload the receipt for review.`}
+                : `Renewal is BHD ${settings.price.toFixed(3)}. Pay via BenefitPay, then upload the receipt for verification.`}
             </CardDescription>
           </CardHeader>
-          <CardContent className="grid gap-5 md:grid-cols-[220px_1fr]">
-            <div className="rounded-xl border border-border/60 bg-background p-4 text-center">
-              {settings.qrUrl ? (
-                <img
-                  src={settings.qrUrl}
-                  alt="BenefitPay QR"
-                  className="mx-auto aspect-square w-44 object-contain"
-                />
-              ) : (
-                <div className="mx-auto grid aspect-square w-44 place-items-center rounded-lg bg-muted text-muted-foreground">
-                  <QrCode className="h-14 w-14" />
-                </div>
-              )}
-              <p className="mt-2 text-xs font-semibold">{settings.merchantName}</p>
+          <CardContent className="space-y-4">
+            <div className="flex flex-wrap items-center gap-3">
+              <p className="text-xs text-muted-foreground">
+                {isAr ? "القرار بالنسبة للتجديد:" : "Renewal Decision:"}
+              </p>
+              <Button
+                type="button"
+                variant={renewalIntent === "renew" ? "default" : "outline"}
+                size="sm"
+                disabled={savingDecision}
+                onClick={() => saveRenewalDecision("renew")}
+              >
+                {isAr ? "نعم، أريد التجديد" : "Yes, Renew"}
+              </Button>
+              <Button
+                type="button"
+                variant={renewalIntent === "cancel" ? "destructive" : "outline"}
+                size="sm"
+                disabled={savingDecision}
+                onClick={() => saveRenewalDecision("cancel")}
+              >
+                {isAr ? "لا، لن أجدد" : "No, Do not Renew"}
+              </Button>
             </div>
-            <div className="space-y-4">
-              <div className="rounded-xl border border-border/60 p-4">
-                <p className="text-xs font-semibold text-muted-foreground">IBAN</p>
-                <div className="mt-2 flex items-center justify-between gap-3">
-                  <code dir="ltr" className="break-all text-sm font-bold">
-                    {settings.iban}
-                  </code>
-                  <Button type="button" variant="outline" size="sm" onClick={() => void copyIban()}>
-                    <Copy className="me-1 h-4 w-4" /> {isAr ? "نسخ" : "Copy"}
-                  </Button>
+
+            {renewalIntent === "renew" && (
+              <div className="grid gap-5 md:grid-cols-[220px_1fr] pt-2 border-t border-border/50">
+                <div className="rounded-xl border border-border/60 bg-background p-4 text-center">
+                  {settings.qrUrl ? (
+                    <img
+                      src={settings.qrUrl}
+                      alt="BenefitPay QR"
+                      className="mx-auto aspect-square w-40 object-contain rounded-lg"
+                    />
+                  ) : (
+                    <div className="mx-auto grid aspect-square w-40 place-items-center rounded-lg bg-muted text-muted-foreground">
+                      <QrCode className="h-12 w-12" />
+                    </div>
+                  )}
+                  <p className="mt-2 text-xs font-bold">{settings.merchantName}</p>
+                </div>
+                <div className="space-y-4">
+                  <div className="rounded-xl border border-border/60 p-3.5 bg-muted/20">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">IBAN</p>
+                    <div className="mt-1 flex items-center justify-between gap-3">
+                      <code dir="ltr" className="break-all text-xs font-bold font-mono">
+                        {settings.iban}
+                      </code>
+                      <Button type="button" variant="outline" size="sm" onClick={() => void copyIban()} className="h-8 text-xs font-bold">
+                        <Copy className="me-1 h-3.5 w-3.5" /> {isAr ? "نسخ" : "Copy"}
+                      </Button>
+                    </div>
+                  </div>
+                  <label className="flex min-h-24 cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-primary/30 bg-primary/5 p-4 text-center hover:bg-primary/10 transition-colors">
+                    {uploading ? (
+                      <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                    ) : (
+                      <UploadCloud className="h-6 w-6 text-primary" />
+                    )}
+                    <span className="mt-2 text-xs font-semibold">
+                      {uploading
+                        ? isAr
+                          ? "جاري الرفع..."
+                          : "Uploading..."
+                        : pending
+                          ? isAr
+                            ? "استبدال إيصال الدفع"
+                            : "Replace payment receipt"
+                          : isAr
+                            ? "رفع إيصال دفع التجديد"
+                            : "Upload renewal receipt"}
+                    </span>
+                    <input
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp"
+                      className="hidden"
+                      disabled={uploading}
+                      onChange={handleUploadReceipt}
+                    />
+                  </label>
+                  {pending && (
+                    <p className="rounded-lg border border-amber-300/50 bg-amber-500/10 p-3 text-xs text-amber-800 dark:text-amber-200">
+                      {isAr
+                        ? "تم استلام الإيصال. سيتجدد تاريخ الاشتراك فور اعتماد السوبر أدمن للطلب."
+                        : "Receipt received. Subscription renewals apply once approved by the administrator."}
+                    </p>
+                  )}
                 </div>
               </div>
-              <label className="flex min-h-24 cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-primary/30 bg-primary/5 p-4 text-center hover:bg-primary/10">
-                {uploading ? (
-                  <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                ) : (
-                  <UploadCloud className="h-6 w-6 text-primary" />
-                )}
-                <span className="mt-2 text-xs font-semibold">
-                  {uploading
-                    ? isAr
-                      ? "جاري الرفع..."
-                      : "Uploading..."
-                    : pending
-                      ? isAr
-                        ? "استبدال إيصال الدفع"
-                        : "Replace payment receipt"
-                      : isAr
-                        ? "رفع إيصال دفع التجديد"
-                        : "Upload renewal receipt"}
-                </span>
-                <input
-                  type="file"
-                  accept="image/jpeg,image/png,image/webp"
-                  className="hidden"
-                  disabled={uploading}
-                  onChange={handleUploadReceipt}
-                />
-              </label>
-              {pending && (
-                <p className="rounded-lg border border-amber-300/50 bg-amber-50 p-3 text-xs text-amber-800">
-                  {isAr
-                    ? "تم استلام الإيصال. لن يتجدد تاريخ الاشتراك إلا بعد مراجعة السوبر أدمن والموافقة."
-                    : "Receipt received. The expiry date changes only after super-admin review and approval."}
-                </p>
-              )}
-            </div>
+            )}
           </CardContent>
         </Card>
       )}
