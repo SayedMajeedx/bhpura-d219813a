@@ -12,6 +12,7 @@ import { SUPER_ADMIN_EMAIL } from "@/lib/profile-context";
 import {
   approveTenantRequest,
   rejectTenantRequest,
+  getPublicOnboardingPlans,
 } from "@/lib/onboarding.functions";
 import { getSubscriptionReceiptViewUrl } from "@/lib/saas-subscription.functions";
 import {
@@ -71,6 +72,17 @@ type TenantRequest = {
   payment_verified: boolean;
   benefit_receipt_url: string | null;
   business_type?: string;
+  selected_plan_id?: string | null;
+  selected_plan_version_id?: string | null;
+  billing_interval?: "monthly" | "annual" | "trial" | null;
+  quoted_price?: number | null;
+  quoted_currency?: string | null;
+  selected_plan_snapshot?: {
+    code?: string;
+    name_ar?: string;
+    name_en?: string;
+    version_number?: number;
+  } | null;
   created_at: string;
 };
 
@@ -86,7 +98,8 @@ function SuperRequestsPage() {
 
   // Approval Dialog States
   const [approvingRequest, setApprovingRequest] = useState<TenantRequest | null>(null);
-  const [selectedPlan, setSelectedPlan] = useState<"annual" | "trial">("annual");
+  const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
+  const [selectedBillingInterval, setSelectedBillingInterval] = useState<"monthly" | "annual">("annual");
   const [deploying, setDeploying] = useState(false);
 
   // Queries
@@ -102,6 +115,10 @@ function SuperRequestsPage() {
       if (error) throw error;
       return data as TenantRequest[];
     },
+  });
+  const publicPlansQuery = useQuery({
+    queryKey: ["public-onboarding-plans", "admin"],
+    queryFn: () => getPublicOnboardingPlans(),
   });
 
   const getFriendlyErrorMessage = (err: any): string => {
@@ -149,8 +166,11 @@ function SuperRequestsPage() {
   // Action: Open Approval Dialog Configuration
   const handleApprove = (request: TenantRequest) => {
     setApprovingRequest(request);
-    // Pre-select plan based on initial request type
-    setSelectedPlan(request.request_type === "trial" ? "trial" : "annual");
+    const paidPlans = (publicPlansQuery.data ?? []).filter((plan: any) => plan.code !== "trial");
+    setSelectedPlanId(request.selected_plan_id || paidPlans[0]?.id || null);
+    setSelectedBillingInterval(
+      request.billing_interval === "monthly" ? "monthly" : "annual",
+    );
   };
 
   // Action: Approve & Mark Deployed on Confirmed dialog
@@ -164,11 +184,19 @@ function SuperRequestsPage() {
     );
 
     try {
+      const selectedCatalogPlan = (publicPlansQuery.data ?? []).find(
+        (plan: any) => plan.id === selectedPlanId,
+      ) as any;
       await approveTenantRequest({
-        data: {
-          requestId: approvingRequest.id,
-          planType: selectedPlan,
-        },
+        data:
+          approvingRequest.request_type === "trial"
+            ? { requestId: approvingRequest.id, billingInterval: "trial" }
+            : {
+                requestId: approvingRequest.id,
+                planId: selectedCatalogPlan?.id,
+                planVersionId: selectedCatalogPlan?.version?.id,
+                billingInterval: selectedBillingInterval,
+              },
       });
       toast.success(
         lang === "ar"
@@ -352,10 +380,16 @@ function SuperRequestsPage() {
                                   ? lang === "ar"
                                     ? "تجربة 3 أيام"
                                     : "3-Day Trial"
-                                  : lang === "ar"
-                                    ? "متجر مدفوع"
-                                    : "Official Paid"}
+                                  : (lang === "ar"
+                                      ? request.selected_plan_snapshot?.name_ar
+                                      : request.selected_plan_snapshot?.name_en) ||
+                                    (lang === "ar" ? "متجر مدفوع" : "Official Paid")}
                               </Badge>
+                              {request.quoted_price != null && request.request_type === "paid" && (
+                                <p className="mt-1 text-[10px] font-semibold text-muted-foreground">
+                                  {request.quoted_price} {request.quoted_currency || "BHD"} · {request.billing_interval === "monthly" ? (lang === "ar" ? "شهري" : "monthly") : (lang === "ar" ? "سنوي" : "annual")}
+                                </p>
+                              )}
                             </td>
 
                             <td className="p-4">
@@ -487,63 +521,36 @@ function SuperRequestsPage() {
                 {lang === "ar" ? "اختر باقة تفعيل العميل" : "Select Deployment Access Plan"}
               </Label>
 
-              <div className="grid grid-cols-1 gap-3">
-                <button
-                  type="button"
-                  onClick={() => setSelectedPlan("annual")}
-                  className={`p-4 rounded-lg border cursor-pointer text-left transition-all duration-150 flex flex-col justify-between ${
-                    selectedPlan === "annual"
-                      ? "border-primary dark:border-primary bg-primary/[0.02] ring-1 ring-primary"
-                      : "border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 bg-background"
-                  }`}
-                >
-                  <div className="flex items-center justify-between mb-1 w-full">
-                    <span className="font-semibold text-sm text-foreground flex items-center gap-1.5">
-                      <Crown className="h-4 w-4 text-amber-500 shrink-0" />
-                      {lang === "ar" ? "اشتراك سنوي" : "Annual Subscription"}
-                    </span>
-                    <Badge
-                      variant="outline"
-                      className="bg-emerald-500/10 text-emerald-500 border-none font-semibold text-[10px]"
-                    >
-                      {lang === "ar" ? "55 د.ب" : "55 BHD model"}
-                    </Badge>
+              {approvingRequest?.request_type === "trial" ? (
+                <div className="rounded-xl border border-rose-500/20 bg-rose-500/5 p-4">
+                  <div className="flex items-center gap-2 font-semibold">
+                    <ClockIcon className="h-4 w-4 text-rose-500" />
+                    {lang === "ar" ? "نسخة تجريبية 3 أيام" : "3-Day Free Trial"}
                   </div>
-                  <p className="text-xs text-muted-foreground leading-relaxed">
-                    {lang === "ar"
-                      ? "تفعيل لمدة سنة من تاريخ الموافقة، ويُجدد بعد اعتماد إيصال الدفع."
-                      : "One year from approval, renewable after payment receipt verification."}
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {lang === "ar" ? "سيتم ربط المتجر تلقائياً بإصدار التجربة الحالي." : "The workspace will use the current trial plan version."}
                   </p>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setSelectedPlan("trial")}
-                  className={`p-4 rounded-lg border cursor-pointer text-left transition-all duration-150 flex flex-col justify-between ${
-                    selectedPlan === "trial"
-                      ? "border-primary dark:border-primary bg-primary/[0.02] ring-1 ring-primary"
-                      : "border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 bg-background"
-                  }`}
-                >
-                  <div className="flex items-center justify-between mb-1 w-full">
-                    <span className="font-semibold text-sm text-foreground flex items-center gap-1.5">
-                      <ClockIcon className="h-4 w-4 text-rose-500 shrink-0" />
-                      {lang === "ar" ? "نسخة تجريبية 3 أيام" : "3-Day Free Trial"}
-                    </span>
-                    <Badge
-                      variant="outline"
-                      className="bg-rose-500/10 text-rose-500 border-none font-semibold text-[10px]"
-                    >
-                      {lang === "ar" ? "وصول مؤقت" : "Temporary"}
-                    </Badge>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <div className="flex rounded-lg border bg-muted/40 p-1">
+                    {(["monthly", "annual"] as const).map((interval) => (
+                      <button key={interval} type="button" onClick={() => setSelectedBillingInterval(interval)} className={`flex-1 rounded-md py-2 text-xs font-semibold ${selectedBillingInterval === interval ? "bg-background text-primary shadow-sm" : "text-muted-foreground"}`}>
+                        {interval === "monthly" ? (lang === "ar" ? "شهري" : "Monthly") : (lang === "ar" ? "سنوي" : "Annual")}
+                      </button>
+                    ))}
                   </div>
-                  <p className="text-xs text-muted-foreground leading-relaxed">
-                    {lang === "ar"
-                      ? "تفعيل متجر مجاني تجريبي مؤقت ينتهي تلقائياً بعد 3 أيام."
-                      : "Temporary access. Sets brand to trial status with trial_ends_at set to 3 days from now."}
-                  </p>
-                </button>
-              </div>
+                  {(publicPlansQuery.data ?? []).filter((plan: any) => plan.code !== "trial").map((plan: any) => (
+                    <button key={plan.id} type="button" onClick={() => setSelectedPlanId(plan.id)} className={`w-full rounded-xl border p-4 text-start transition-all ${selectedPlanId === plan.id ? "border-primary bg-primary/[0.03] ring-1 ring-primary" : "border-border"}`}>
+                      <div className="flex items-center justify-between gap-3">
+                        <span className="flex items-center gap-2 text-sm font-semibold"><Crown className="h-4 w-4 text-amber-500" />{lang === "ar" ? plan.name_ar : plan.name_en}</span>
+                        <Badge variant="outline" className="text-[10px]">{selectedBillingInterval === "monthly" ? plan.version.price_monthly : plan.version.price_annual} {plan.version.currency}</Badge>
+                      </div>
+                      <p className="mt-1 text-xs text-muted-foreground">v{plan.version.version_number} · {plan.code}</p>
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
 
@@ -558,7 +565,7 @@ function SuperRequestsPage() {
             </Button>
             <Button
               onClick={executeApproval}
-              disabled={deploying}
+              disabled={deploying || (approvingRequest?.request_type === "paid" && !selectedPlanId)}
               className="text-xs h-9 bg-emerald-600 hover:bg-emerald-500 text-white gap-1.5 shadow-sm transition-all duration-200 hover:shadow hover:scale-[1.01] active:scale-95"
             >
               {deploying ? (

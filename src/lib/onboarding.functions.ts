@@ -25,6 +25,9 @@ const CreateRequestInput = z.object({
   email: z.string().email(),
   desiredSubdomain: z.string().min(2),
   requestType: z.enum(["trial", "paid"]),
+  selectedPlanId: z.string().uuid().optional(),
+  selectedPlanVersionId: z.string().uuid().optional(),
+  billingInterval: z.enum(["monthly", "annual", "trial"]).optional(),
   benefitReceiptUrl: z.string().optional(),
   businessType: z.string().optional(),
   turnstileToken: z.string().min(1).max(2048),
@@ -47,7 +50,9 @@ async function requireValidTurnstile(token: string) {
 
 const AdminActionInput = z.object({
   requestId: z.string().uuid(),
-  planType: z.enum(["annual", "trial", "lifetime"]).optional(),
+  planId: z.string().uuid().optional(),
+  planVersionId: z.string().uuid().optional(),
+  billingInterval: z.enum(["monthly", "annual", "trial"]).optional(),
 });
 
 const UpdatePriceInput = z.object({
@@ -110,7 +115,46 @@ export const createTenantRequest = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     await requireValidTurnstile(data.turnstileToken);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { error } = await supabaseAdmin.from("tenant_requests").insert({
+    let selectedPlan: any = null;
+    let selectedVersion: any = null;
+    let billingInterval = data.requestType === "trial" ? "trial" : data.billingInterval;
+    if (data.requestType === "paid" && billingInterval !== "monthly" && billingInterval !== "annual") {
+      throw new Error("INVALID_BILLING_INTERVAL");
+    }
+
+    if (data.selectedPlanId || data.selectedPlanVersionId) {
+      if (!data.selectedPlanId || !data.selectedPlanVersionId || !billingInterval) {
+        throw new Error("INVALID_PLAN_SELECTION");
+      }
+      const { data: plan } = await (supabaseAdmin.from("saas_plans" as never) as any)
+        .select("id,code,name_ar,name_en,is_active,is_public,trial_days")
+        .eq("id", data.selectedPlanId)
+        .eq("is_active", true)
+        .eq("is_public", true)
+        .maybeSingle();
+      const { data: version } = await (supabaseAdmin.from("saas_plan_versions" as never) as any)
+        .select("id,plan_id,version_number,currency,price_monthly,price_annual,is_current")
+        .eq("id", data.selectedPlanVersionId)
+        .eq("plan_id", data.selectedPlanId)
+        .eq("is_current", true)
+        .lte("effective_from", new Date().toISOString())
+        .or(`effective_until.is.null,effective_until.gt.${new Date().toISOString()}`)
+        .maybeSingle();
+      if (!plan || !version) throw new Error("PLAN_NOT_AVAILABLE");
+      selectedPlan = plan;
+      selectedVersion = version;
+    } else if (data.requestType === "paid") {
+      throw new Error("PLAN_SELECTION_REQUIRED");
+    }
+
+    const quotedPrice = selectedVersion
+      ? billingInterval === "monthly"
+        ? Number(selectedVersion.price_monthly)
+        : billingInterval === "annual"
+          ? Number(selectedVersion.price_annual)
+          : 0
+      : 0;
+    const { error } = await (supabaseAdmin.from("tenant_requests") as any).insert({
       full_name: data.fullName,
       email: data.email,
       contact_number: data.contactNumber,
@@ -120,6 +164,19 @@ export const createTenantRequest = createServerFn({ method: "POST" })
       benefit_receipt_url: data.benefitReceiptUrl || null,
       payment_verified: false,
       business_type: data.businessType || null,
+      selected_plan_id: selectedPlan?.id ?? null,
+      selected_plan_version_id: selectedVersion?.id ?? null,
+      billing_interval: billingInterval ?? null,
+      quoted_price: quotedPrice,
+      quoted_currency: selectedVersion?.currency ?? "BHD",
+      selected_plan_snapshot: selectedPlan
+        ? {
+            code: selectedPlan.code,
+            name_ar: selectedPlan.name_ar,
+            name_en: selectedPlan.name_en,
+            version_number: selectedVersion.version_number,
+          }
+        : null,
     });
 
     if (error) {
@@ -129,6 +186,54 @@ export const createTenantRequest = createServerFn({ method: "POST" })
 
     return { success: true };
   });
+
+// Public catalog used by onboarding. Only active, public plans and their current
+// immutable versions are returned, so the super-admin catalog remains authoritative.
+export const getPublicOnboardingPlans = createServerFn({ method: "GET" }).handler(async () => {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const now = new Date().toISOString();
+  const { data: plans, error } = await (supabaseAdmin.from("saas_plans" as never) as any)
+    .select("id,code,name_en,name_ar,description_en,description_ar,sort_order,trial_days,badge_color")
+    .eq("is_active", true)
+    .eq("is_public", true)
+    .order("sort_order", { ascending: true });
+  if (error) throw new Error("PUBLIC_PLAN_CATALOG_UNAVAILABLE");
+
+  const result = [];
+  for (const plan of plans ?? []) {
+    const { data: version } = await (supabaseAdmin.from("saas_plan_versions" as never) as any)
+      .select("id,version_number,currency,price_monthly,price_annual,effective_from,effective_until")
+      .eq("plan_id", plan.id)
+      .eq("is_current", true)
+      .lte("effective_from", now)
+      .or(`effective_until.is.null,effective_until.gt.${now}`)
+      .maybeSingle();
+    if (!version) continue;
+    const { data: allocations } = await (supabaseAdmin.from("saas_plan_features" as never) as any)
+      .select("feature_key,boolean_value,numeric_value")
+      .eq("plan_version_id", version.id);
+    const featureKeys = (allocations ?? [])
+      .filter((item: any) => item.boolean_value !== false && item.numeric_value !== 0)
+      .map((item: any) => item.feature_key);
+    const { data: features } = featureKeys.length
+      ? await (supabaseAdmin.from("saas_features" as never) as any)
+          .select("key,name_en,name_ar,unit,sort_order")
+          .in("key", featureKeys)
+          .order("sort_order", { ascending: true })
+      : { data: [] };
+    const featureMap = new Map<string, any>(
+      (features ?? []).map((feature: any) => [feature.key, feature]),
+    );
+    result.push({
+      ...plan,
+      version,
+      features: (allocations ?? [])
+        .filter((item: any) => featureMap.has(item.feature_key))
+        .map((item: any) => ({ ...featureMap.get(item.feature_key), ...item })),
+    });
+  }
+  return result;
+});
 
 // 3. Dynamic pricing retrieval server function (reading from system_settings)
 export const getOnboardingPrice = createServerFn({ method: "GET" }).handler(async () => {
@@ -282,6 +387,42 @@ export const approveTenantRequest = createServerFn({ method: "POST" })
 
     if (fetchError || !request) throw new Error("REQUEST_NOT_FOUND");
 
+    let resolvedPlanId = data.planId || (request as any).selected_plan_id || null;
+    let resolvedPlanVersionId =
+      data.planVersionId || (request as any).selected_plan_version_id || null;
+    const resolvedInterval =
+      data.billingInterval ||
+      (request as any).billing_interval ||
+      (request.request_type === "trial" ? "trial" : "annual");
+
+    if (!resolvedPlanId && request.request_type === "trial") {
+      const { data: trialPlan } = await (context.supabase.from("saas_plans" as never) as any)
+        .select("id")
+        .eq("code", "trial")
+        .eq("is_active", true)
+        .maybeSingle();
+      resolvedPlanId = trialPlan?.id ?? null;
+    }
+    if (resolvedPlanId && !resolvedPlanVersionId) {
+      const { data: currentVersion } = await (
+        context.supabase.from("saas_plan_versions" as never) as any
+      )
+        .select("id")
+        .eq("plan_id", resolvedPlanId)
+        .eq("is_current", true)
+        .maybeSingle();
+      resolvedPlanVersionId = currentVersion?.id ?? null;
+    }
+    if (!resolvedPlanId || !resolvedPlanVersionId) throw new Error("PLAN_SELECTION_REQUIRED");
+    const { data: validatedVersion } = await (
+      context.supabase.from("saas_plan_versions" as never) as any
+    )
+      .select("id,plan_id")
+      .eq("id", resolvedPlanVersionId)
+      .eq("plan_id", resolvedPlanId)
+      .maybeSingle();
+    if (!validatedVersion) throw new Error("SELECTED_PLAN_VERSION_NOT_FOUND");
+
     // Update status to 'approved' and payment_verified to true
     const { error } = await context.supabase
       .from("tenant_requests")
@@ -327,6 +468,31 @@ export const approveTenantRequest = createServerFn({ method: "POST" })
 
       if (brandUpdateErr) {
         console.error("Failed to update brand plan details upon request approval:", brandUpdateErr);
+      }
+
+      if (resolvedPlanId && resolvedPlanVersionId) {
+        const periodEnd =
+          resolvedInterval === "trial"
+            ? trialEndsAt
+            : resolvedInterval === "monthly"
+              ? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+              : new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString();
+        const { error: subscriptionError } = await (context.supabase.from("brand_subscriptions" as never) as any)
+          .upsert(
+            {
+              brand_id: brandRow.id,
+              plan_id: resolvedPlanId,
+              plan_version_id: resolvedPlanVersionId,
+              billing_interval: resolvedInterval,
+              status: resolvedInterval === "trial" ? "trialing" : "active",
+              current_period_start: new Date().toISOString(),
+              current_period_end: periodEnd,
+              trial_ends_at: resolvedInterval === "trial" ? trialEndsAt : null,
+              updated_at: new Date().toISOString(),
+            },
+            { onConflict: "brand_id" },
+          );
+        if (subscriptionError) throw new Error("SUBSCRIPTION_ACTIVATION_FAILED");
       }
     }
 

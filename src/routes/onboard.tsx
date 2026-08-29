@@ -35,6 +35,7 @@ import {
   getOnboardingReceiptUploadUrl,
   createTenantRequest,
   getOnboardingPrice,
+  getPublicOnboardingPlans,
 } from "@/lib/onboarding.functions";
 import { TurnstileWidget } from "@/components/TurnstileWidget";
 
@@ -50,6 +51,10 @@ function OnboardPage() {
   const [showFeaturesModal, setShowFeaturesModal] = useState(false);
   const [copiedIban, setCopiedIban] = useState(false);
   const [activeOnboardTab, setActiveOnboardTab] = useState<"trial" | "paid">("trial");
+  const [publicPlans, setPublicPlans] = useState<any[]>([]);
+  const [plansLoading, setPlansLoading] = useState(true);
+  const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
+  const [billingInterval, setBillingInterval] = useState<"monthly" | "annual">("annual");
 
   const notifications = [
     {
@@ -136,7 +141,43 @@ function OnboardPage() {
     void loadDynamicSettings();
   }, []);
 
-  const displayPrice = discountPrice !== null ? `${discountPrice} BHD` : `${basePrice} BHD`;
+  useEffect(() => {
+    async function loadPublicPlans() {
+      try {
+        const plans = await getPublicOnboardingPlans();
+        const paidPlans = (plans ?? []).filter(
+          (plan: any) =>
+            plan.code !== "trial" &&
+            (Number(plan.version?.price_monthly || 0) > 0 ||
+              Number(plan.version?.price_annual || 0) > 0),
+        );
+        setPublicPlans(paidPlans);
+        setSelectedPlanId((current) => current || paidPlans[0]?.id || null);
+      } catch (error) {
+        console.error("Failed to load public SaaS catalog", error);
+        toast.error(
+          lang === "ar"
+            ? "تعذر تحميل الباقات حالياً. يرجى إعادة المحاولة."
+            : "Plans are temporarily unavailable. Please retry.",
+        );
+      } finally {
+        setPlansLoading(false);
+      }
+    }
+    void loadPublicPlans();
+  }, [lang]);
+
+  const selectedPlan = publicPlans.find((plan) => plan.id === selectedPlanId) ?? null;
+  const selectedPrice = selectedPlan
+    ? Number(
+        billingInterval === "monthly"
+          ? selectedPlan.version.price_monthly
+          : selectedPlan.version.price_annual,
+      )
+    : discountPrice !== null
+      ? discountPrice
+      : basePrice;
+  const displayPrice = `${selectedPrice} ${selectedPlan?.version?.currency || "BHD"}`;
 
   // Form Fields - Isolated for Trial or Official Packages
   const [trialFullName, setTrialFullName] = useState("");
@@ -423,6 +464,13 @@ function OnboardPage() {
       return;
     }
 
+    if (!selectedPlan) {
+      toast.error(
+        lang === "ar" ? "يرجى اختيار باقة متاحة أولاً." : "Please select an available plan first.",
+      );
+      return;
+    }
+
     if (officialSubdomainAvailable === false) {
       toast.error(
         lang === "ar" ? "رابط المتجر هذا محجوز مسبقاً." : "This store subdomain is already taken.",
@@ -463,6 +511,9 @@ function OnboardPage() {
           email: officialEmail,
           desiredSubdomain: officialSubdomain,
           requestType: "paid",
+          selectedPlanId: selectedPlan.id,
+          selectedPlanVersionId: selectedPlan.version.id,
+          billingInterval,
           benefitReceiptUrl: receiptKey,
           businessType: officialBusinessType,
           turnstileToken: paidSubmitTurnstileToken,
@@ -835,6 +886,139 @@ function OnboardPage() {
           </p>
         </div>
 
+        {/* Live SaaS catalog: sourced from the current public versions managed by Super Admin. */}
+        <section className="mb-10 space-y-5" aria-labelledby="plans-heading">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <div className="mb-1 flex items-center gap-2 text-primary">
+                <Sparkles className="h-4 w-4" />
+                <span className="text-[10px] font-bold uppercase tracking-[0.18em]">
+                  {lang === "ar" ? "باقات مرتبطة مباشرة بالمنصة" : "Live platform catalog"}
+                </span>
+              </div>
+              <h2 id="plans-heading" className="font-display text-2xl font-semibold">
+                {lang === "ar" ? "اختر القوة المناسبة لنمو متجرك" : "Choose the right foundation for growth"}
+              </h2>
+              <p className="mt-1 max-w-2xl text-xs leading-relaxed text-muted-foreground">
+                {lang === "ar"
+                  ? "الأسعار والمزايا أدناه منشورة مباشرة من كتالوج Boutq OS، وأي باقة مخفية أو معطلة لن تظهر هنا."
+                  : "Pricing and capabilities are published directly from Boutq OS. Hidden or retired plans never appear here."}
+              </p>
+            </div>
+            <div className="inline-flex self-start rounded-xl border border-border bg-muted/40 p-1 shadow-sm">
+              {(["monthly", "annual"] as const).map((interval) => (
+                <button
+                  key={interval}
+                  type="button"
+                  onClick={() => setBillingInterval(interval)}
+                  className={`rounded-lg px-4 py-2 text-xs font-semibold transition-all ${
+                    billingInterval === interval
+                      ? "bg-background text-primary shadow-sm"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {interval === "monthly"
+                    ? lang === "ar"
+                      ? "شهري"
+                      : "Monthly"
+                    : lang === "ar"
+                      ? "سنوي"
+                      : "Annual"}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {plansLoading ? (
+            <div className="grid gap-4 md:grid-cols-3">
+              {[0, 1, 2].map((item) => (
+                <div key={item} className="h-64 animate-pulse rounded-2xl border bg-muted/40" />
+              ))}
+            </div>
+          ) : publicPlans.length === 0 ? (
+            <div className="rounded-2xl border border-amber-500/25 bg-amber-500/5 p-6 text-center text-sm text-amber-700 dark:text-amber-300">
+              {lang === "ar"
+                ? "لا توجد باقات منشورة حالياً. تواصل معنا وسنساعدك في اختيار الحل المناسب."
+                : "No plans are currently published. Contact us and we will tailor the right setup."}
+            </div>
+          ) : (
+            <div className={`grid gap-4 ${publicPlans.length === 1 ? "max-w-xl" : "md:grid-cols-2 xl:grid-cols-3"}`}>
+              {publicPlans.map((plan) => {
+                const active = selectedPlanId === plan.id;
+                const price = Number(
+                  billingInterval === "monthly"
+                    ? plan.version.price_monthly
+                    : plan.version.price_annual,
+                );
+                const monthlyEquivalent = Number(plan.version.price_annual) / 12;
+                return (
+                  <button
+                    type="button"
+                    key={plan.id}
+                    onClick={() => {
+                      setSelectedPlanId(plan.id);
+                      setActiveOnboardTab("paid");
+                    }}
+                    className={`group relative overflow-hidden rounded-2xl border p-5 text-start transition-all duration-200 ${
+                      active
+                        ? "border-primary bg-primary/[0.035] shadow-xl shadow-primary/10 ring-1 ring-primary"
+                        : "border-border bg-card/70 shadow-sm hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-lg"
+                    }`}
+                  >
+                    {active && (
+                      <span className="absolute end-4 top-4 rounded-full bg-primary px-2.5 py-1 text-[9px] font-bold text-primary-foreground">
+                        {lang === "ar" ? "اختيارك" : "SELECTED"}
+                      </span>
+                    )}
+                    <div className="pe-16">
+                      <p className="text-[10px] font-bold uppercase tracking-widest text-primary">
+                        {plan.code}
+                      </p>
+                      <h3 className="mt-1 font-display text-xl font-semibold">
+                        {lang === "ar" ? plan.name_ar : plan.name_en}
+                      </h3>
+                      <p className="mt-1 min-h-9 text-xs leading-relaxed text-muted-foreground">
+                        {(lang === "ar" ? plan.description_ar : plan.description_en) || "Boutq OS"}
+                      </p>
+                    </div>
+                    <div className="my-5 flex items-end gap-1 border-y border-border/60 py-4">
+                      <span className="font-display text-3xl font-bold text-foreground">{price}</span>
+                      <span className="pb-1 text-xs text-muted-foreground">
+                        {plan.version.currency} / {billingInterval === "monthly" ? (lang === "ar" ? "شهر" : "mo") : (lang === "ar" ? "سنة" : "yr")}
+                      </span>
+                    </div>
+                    {billingInterval === "annual" && monthlyEquivalent > 0 && (
+                      <p className="-mt-3 mb-4 text-[10px] font-medium text-emerald-600">
+                        {lang === "ar"
+                          ? `يعادل ${monthlyEquivalent.toFixed(0)} د.ب شهرياً`
+                          : `Equivalent to ${monthlyEquivalent.toFixed(0)} BHD/month`}
+                      </p>
+                    )}
+                    <div className="space-y-2.5">
+                      {plan.features.slice(0, 6).map((feature: any) => (
+                        <div key={feature.key} className="flex items-center gap-2 text-xs text-muted-foreground">
+                          <span className="grid h-5 w-5 shrink-0 place-items-center rounded-full bg-emerald-500/10">
+                            <Check className="h-3 w-3 text-emerald-600" />
+                          </span>
+                          <span>{lang === "ar" ? feature.name_ar : feature.name_en}</span>
+                          {feature.numeric_value != null && feature.numeric_value !== 0 && (
+                            <strong className="ms-auto text-foreground">
+                              {feature.numeric_value === -1 ? "∞" : feature.numeric_value.toLocaleString()}
+                            </strong>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                    <div className={`mt-5 rounded-xl py-2.5 text-center text-xs font-bold ${active ? "bg-primary text-primary-foreground" : "bg-muted text-foreground group-hover:bg-primary/10 group-hover:text-primary"}`}>
+                      {active ? (lang === "ar" ? "تم اختيار الباقة" : "Plan selected") : (lang === "ar" ? "اختر هذه الباقة" : "Choose this plan")}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </section>
+
         {/* Mobile Live Activity Dashboard Banner (Brings the visual showcase premium feel to small screens) */}
         <div className="lg:hidden bg-zinc-950 text-white border border-primary/30 rounded-2xl p-4 mb-6 shadow-lg shadow-rose-950/5 flex flex-col gap-3.5 relative overflow-hidden select-none">
           {/* Background glow orb */}
@@ -917,8 +1101,8 @@ function OnboardPage() {
                   </CardTitle>
                   <CardDescription className="text-xs text-muted-foreground mt-1 leading-relaxed">
                     {lang === "ar"
-                      ? "جرّب ميزات منصة Boutq مجاناً لمدة 3 أيام • ترقية في أي وقت لباقة التأسيس بـ 49 د.ب/سنوياً."
-                      : "Test all features free for 3 days • Upgrade anytime to the 49 BHD/year Founder Plan."}
+                      ? "جرّب منصة Boutq لمدة 3 أيام، ثم اختر أي باقة منشورة من الكتالوج عند الترقية."
+                      : "Try Boutq for 3 days, then upgrade to any plan currently published in the catalog."}
                   </CardDescription>
                 </div>
                 <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded font-semibold tracking-wider">
@@ -1159,45 +1343,49 @@ function OnboardPage() {
             </div>
 
             <CardHeader className="border-b border-zinc-50 dark:border-zinc-900 pb-5">
-              {/* Scarcity Founder Offer Badge */}
               <div className="flex">
-                <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-rose-500/10 text-rose-500 text-[9px] font-bold uppercase tracking-wider mb-2.5 animate-pulse border border-rose-500/20">
+                <div className="mb-2.5 inline-flex items-center gap-1.5 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-emerald-600">
                   {lang === "ar"
-                    ? "🔥 عرض الإطلاق التأسيسي: ٤٩ د.ب/سنوياً (لأول متجرين فقط)"
-                    : "🔥 Founder's Launch Offer: 49 BHD/year (First 2 Stores Only)"}
+                    ? "✓ الباقة والسعر متزامنان مع كتالوج Boutq OS"
+                    : "✓ LIVE SYNC WITH BOUTQ OS CATALOG"}
                 </div>
               </div>
 
               <div className="flex justify-between items-start gap-4">
                 <div>
                   <CardTitle className="text-lg font-display font-medium text-zinc-900 dark:text-zinc-100">
-                    {lang === "ar" ? "تفعيل المتجر الفاخر الرسمي" : "Official Store Activation"}
+                    {selectedPlan
+                      ? lang === "ar"
+                        ? selectedPlan.name_ar
+                        : selectedPlan.name_en
+                      : lang === "ar"
+                        ? "اختر باقة من الكتالوج"
+                        : "Choose a published plan"}
                   </CardTitle>
                   <CardDescription className="text-xs text-muted-foreground mt-1">
-                    {lang === "ar"
-                      ? "إصدار سنوي مرخص فوري ومدعوم بالكامل."
-                      : "Activate your annual whitelabel boutique brand platform."}
+                    {selectedPlan
+                      ? (lang === "ar" ? selectedPlan.description_ar : selectedPlan.description_en)
+                      : lang === "ar"
+                        ? "اختر إحدى الباقات المتاحة أعلاه للمتابعة."
+                        : "Select one of the live plans above to continue."}
                   </CardDescription>
                 </div>
                 <div className="text-right">
-                  {loadingPrice ? (
+                  {plansLoading ? (
                     <Loader2 className="h-4 w-4 animate-spin ml-auto text-primary" />
-                  ) : discountPrice !== null ? (
-                    <div className="flex flex-col items-end">
-                      <span className="text-xs text-muted-foreground line-through font-mono">
-                        {basePrice} {lang === "ar" ? "د.ب / سنوي" : "BHD / year"}
-                      </span>
-                      <span className="text-lg font-bold font-display text-emerald-500 animate-pulse">
-                        {discountPrice} {lang === "ar" ? "د.ب / سنوي" : "BHD / year"}
-                      </span>
-                    </div>
                   ) : (
                     <span className="text-lg font-bold font-display text-primary block">
-                      {basePrice} {lang === "ar" ? "د.ب / سنوي" : "BHD / year"}
+                      {displayPrice}
                     </span>
                   )}
                   <span className="text-[9px] text-muted-foreground font-semibold uppercase tracking-wider block mt-0.5">
-                    {lang === "ar" ? "اشتراك سنوي" : "ANNUAL SUBSCRIPTION"}
+                    {billingInterval === "annual"
+                      ? lang === "ar"
+                        ? "اشتراك سنوي"
+                        : "ANNUAL SUBSCRIPTION"
+                      : lang === "ar"
+                        ? "اشتراك شهري"
+                        : "MONTHLY SUBSCRIPTION"}
                   </span>
                 </div>
               </div>
@@ -1206,43 +1394,22 @@ function OnboardPage() {
             <details className="group/features border-b border-primary/10 bg-primary/5">
               <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-6 py-3 text-xs font-semibold text-primary transition-colors hover:bg-primary/10 [&::-webkit-details-marker]:hidden">
                 <span>
-                  {lang === "ar" ? "عرض مميزات الاشتراك السنوي" : "View annual plan features"}
+                  {lang === "ar" ? "مميزات الباقة المختارة" : "Selected plan capabilities"}
                 </span>
                 <ChevronDown className="h-4 w-4 shrink-0 transition-transform group-open/features:rotate-180" />
               </summary>
               <div className="space-y-2.5 border-t border-primary/10 px-6 py-4 text-xs select-none">
-                <div className="flex items-center gap-2.5 text-primary font-semibold">
-                  <Check className="h-4 w-4 shrink-0 text-primary" />
-                  <span>
-                    {lang === "ar"
-                      ? "يتم الدفع سنوياً • يشمل نطاق فرعي، واستضافة، وبنفت بي وتحديثات برمجية."
-                      : "Billed annually • Includes wildcard domain, hosting, BenefitPay integration & tech updates."}
-                  </span>
-                </div>
-                <div className="flex items-center gap-2.5 text-muted-foreground">
-                  <Check className="h-4 w-4 shrink-0 text-emerald-500" />
-                  <span>
-                    {lang === "ar"
-                      ? "رابط مخصص ونطاق فرعي رسمي"
-                      : "Official custom subdomain handle"}
-                  </span>
-                </div>
-                <div className="flex items-center gap-2.5 text-muted-foreground">
-                  <Check className="h-4 w-4 shrink-0 text-emerald-500" />
-                  <span>
-                    {lang === "ar"
-                      ? "ضمان صيانة ودعم فني متواصل لـ 6 أشهر"
-                      : "6 Months guaranteed technical support"}
-                  </span>
-                </div>
-                <div className="flex items-center gap-2.5 text-muted-foreground">
-                  <Check className="h-4 w-4 shrink-0 text-emerald-500" />
-                  <span>
-                    {lang === "ar"
-                      ? "الاستضافة والتحديثات مشمولة طوال سنة الاشتراك"
-                      : "Hosting and platform updates included for the subscription year"}
-                  </span>
-                </div>
+                {(selectedPlan?.features ?? []).slice(0, 8).map((feature: any) => (
+                  <div key={feature.key} className="flex items-center gap-2.5 text-muted-foreground">
+                    <Check className="h-4 w-4 shrink-0 text-emerald-500" />
+                    <span>{lang === "ar" ? feature.name_ar : feature.name_en}</span>
+                    {feature.numeric_value != null && feature.numeric_value !== 0 && (
+                      <strong className="ms-auto text-foreground">
+                        {feature.numeric_value === -1 ? "∞" : feature.numeric_value.toLocaleString()}
+                      </strong>
+                    )}
+                  </div>
+                ))}
               </div>
             </details>
 
@@ -1538,8 +1705,8 @@ function OnboardPage() {
                   <Info className="h-4 w-4 text-zinc-400 shrink-0 mt-0.5" />
                   <p className="leading-normal">
                     {lang === "ar"
-                      ? "يشمل 6 أشهر من الدعم الفني المضمون. أي طلبات لميزات مخصصة في المستقبل سيتم تسعيرها عند الطلب."
-                      : "6 months guaranteed technical support included. Future custom feature requests will be quoted on-demand."}
+                      ? "سيتم تثبيت الباقة وإصدارها والسعر الظاهر لحظة إرسال الطلب، لحماية عرضك حتى موعد المراجعة."
+                      : "Your selected plan version and displayed price are locked when the request is submitted, protecting the quoted offer during review."}
                   </p>
                 </div>
 

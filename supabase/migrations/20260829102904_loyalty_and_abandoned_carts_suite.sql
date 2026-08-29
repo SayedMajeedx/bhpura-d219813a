@@ -1,5 +1,5 @@
 -- ============================================================================
--- Migration: 20260829140000_loyalty_and_abandoned_carts_suite.sql
+-- Migration: 20260829102904_loyalty_and_abandoned_carts_suite.sql
 -- Description: Multi-tenant Loyalty & Rewards Program and Abandoned Carts Recovery Suite
 -- ============================================================================
 

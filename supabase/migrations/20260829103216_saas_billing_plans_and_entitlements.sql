@@ -1,6 +1,6 @@
 -- ==============================================================================
 -- BOUTQ OS: SAAS BILLING, VERSIONED PLANS, ENTITLEMENTS & USAGE METERING
--- Migration: 20260829180000_saas_billing_plans_and_entitlements.sql
+-- Migration: 20260829103216_saas_billing_plans_and_entitlements.sql
 -- ==============================================================================
 
 -- 1. SAAS PLANS CATALOG

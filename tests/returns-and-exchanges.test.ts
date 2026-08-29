@@ -208,7 +208,7 @@ describe("Returns & Exchanges Suite - Core Business Logic & Financial Integrity"
 
   describe("6. Migration Schema & Multi-Tenant RLS Security", () => {
     const migrationSql = readFileSync(
-      "supabase/migrations/20260829120000_returns_and_exchanges_suite.sql",
+      "supabase/migrations/20260829102831_returns_and_exchanges_suite.sql",
       "utf8",
     );
 
