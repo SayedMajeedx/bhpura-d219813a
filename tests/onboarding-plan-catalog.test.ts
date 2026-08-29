@@ -34,4 +34,14 @@ describe("onboarding SaaS catalog contract", () => {
     expect(page).toContain("selectedPlanVersionId: selectedPlan.version.id");
     expect(migration).toContain('billing_interval IN (\'monthly\',\'annual\',\'trial\')');
   });
+
+  it("sources the free-trial duration from the super-admin plan configuration", () => {
+    expect(onboarding).toContain("getOnboardingTrialDays");
+    expect(onboarding).toContain('.eq("code", "trial")');
+    expect(page).toContain("getOnboardingTrialDays");
+    expect(page).toContain("setTrialDays(configuredTrialDays)");
+    expect(onboarding).toContain("resolvedTrialDays * 24 * 60 * 60 * 1000");
+    expect(page).not.toContain("3-Day Free Trial");
+    expect(page).not.toContain("3 أيام");
+  });
 });

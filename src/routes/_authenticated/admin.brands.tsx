@@ -837,7 +837,7 @@ function NewBrandDialog({ onSaved }: { onSaved: () => void }) {
                   : "border-zinc-200 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-900"
               }`}
             >
-              {lang === "ar" ? "تجربة 3 أيام" : "3-Day Free Trial"}
+              {lang === "ar" ? "تجربة مجانية" : "Free Trial"}
             </button>
           </div>
         </div>

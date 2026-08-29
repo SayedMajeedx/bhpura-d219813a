@@ -399,8 +399,8 @@ function SuperRequestsPage() {
                               >
                                 {request.request_type === "trial"
                                   ? lang === "ar"
-                                    ? "تجربة 3 أيام"
-                                    : "3-Day Trial"
+                                    ? "تجربة مجانية"
+                                    : "Free Trial"
                                   : (lang === "ar"
                                       ? request.selected_plan_snapshot?.name_ar
                                       : request.selected_plan_snapshot?.name_en) ||
@@ -546,7 +546,7 @@ function SuperRequestsPage() {
                 <div className="rounded-xl border border-rose-500/20 bg-rose-500/5 p-4">
                   <div className="flex items-center gap-2 font-semibold">
                     <ClockIcon className="h-4 w-4 text-rose-500" />
-                    {lang === "ar" ? "نسخة تجريبية 3 أيام" : "3-Day Free Trial"}
+                    {lang === "ar" ? "نسخة تجريبية" : "Free Trial"}
                   </div>
                   <p className="mt-1 text-xs text-muted-foreground">
                     {lang === "ar" ? "سيتم ربط المتجر تلقائياً بإصدار التجربة الحالي." : "The workspace will use the current trial plan version."}

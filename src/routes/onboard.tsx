@@ -39,6 +39,7 @@ import {
   createTenantRequest,
   getOnboardingPrice,
   getPublicOnboardingPlans,
+  getOnboardingTrialDays,
 } from "@/lib/onboarding.functions";
 import { TurnstileWidget } from "@/components/TurnstileWidget";
 
@@ -58,6 +59,7 @@ function OnboardPage() {
   const [plansLoading, setPlansLoading] = useState(true);
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
   const [billingInterval, setBillingInterval] = useState<"monthly" | "annual">("annual");
+  const [trialDays, setTrialDays] = useState(14);
 
   const notifications = [
     {
@@ -147,7 +149,11 @@ function OnboardPage() {
   useEffect(() => {
     async function loadPublicPlans() {
       try {
-        const plans = await getPublicOnboardingPlans();
+        const [plans, configuredTrialDays] = await Promise.all([
+          getPublicOnboardingPlans(),
+          getOnboardingTrialDays(),
+        ]);
+        setTrialDays(configuredTrialDays);
         const paidPlans = (plans ?? []).filter(
           (plan: any) =>
             plan.code !== "trial" &&
@@ -406,7 +412,7 @@ function OnboardPage() {
     }
   };
 
-  // Submission Flow - CARD A: 3-Day Free Trial
+  // Submission Flow - CARD A: admin-configured free trial
   const handleRegisterTrial = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!trialFullName || !trialContactNumber || !trialEmail || !trialSubdomain) {
@@ -452,8 +458,8 @@ function OnboardPage() {
 
       const waMessage =
         lang === "ar"
-          ? `مرحباً دعم بوتيك (Boutq)! لقد أرسلت للتو طلب تفعيل باقة الـ 3 أيام المجانية لمتجري باسم: "${trialFullName}" والرابط المطلوب: "${trialSubdomain}.boutq.store". البريد الإلكتروني: ${trialEmail}.`
-          : `Hello Boutq Support! I just submitted a request for a 3-Day Free Trial workspace. Owner: "${trialFullName}", Desired subdomain: "${trialSubdomain}.boutq.store", Contact: ${trialContactNumber}, Email: ${trialEmail}.`;
+          ? `مرحباً دعم بوتيك (Boutq)! لقد أرسلت للتو طلب تفعيل التجربة المجانية لمدة ${trialDays} يوماً لمتجري باسم: "${trialFullName}" والرابط المطلوب: "${trialSubdomain}.boutq.store". البريد الإلكتروني: ${trialEmail}.`
+          : `Hello Boutq Support! I just submitted a ${trialDays}-day free trial request. Owner: "${trialFullName}", Desired subdomain: "${trialSubdomain}.boutq.store", Contact: ${trialContactNumber}, Email: ${trialEmail}.`;
 
       const encodedMessage = encodeURIComponent(waMessage);
       const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodedMessage}`;
@@ -937,8 +943,8 @@ function OnboardPage() {
           </div>
           <p className="mx-auto max-w-2xl text-sm text-muted-foreground leading-7">
             {lang === "ar"
-              ? "نحن نوفر خيارين مخصصين لبدء تجارتك. سواء كنت ترغب بتجربة المنصة لـ 3 أيام مجاناً، أو الحصول على رخصة المتجر المتكاملة مع الدعم الفني، بادر بتعبئة بياناتك وبدء مغامرتك فورياً."
-              : "We provide two options to fit your boutique expansion. Start with our 3-day complimentary test drive via our WhatsApp concierge or launch your permanent brand portal immediately."}
+              ? `ابدأ بتجربة مجانية لمدة ${trialDays} يوماً، أو فعّل باقتك مباشرة. الأسعار والمزايا ومدة التجربة متزامنة دائماً مع إعدادات Boutq OS.`
+              : `Start with a ${trialDays}-day free trial or activate your plan immediately. Pricing, features and trial duration stay synchronized with Boutq OS.`}
           </p>
         </div>
 
@@ -1088,8 +1094,8 @@ function OnboardPage() {
           )}
         </section>
 
-        {/* Mobile Live Activity Dashboard Banner (Brings the visual showcase premium feel to small screens) */}
-        <div className="lg:hidden bg-zinc-950 text-white border border-primary/30 rounded-2xl p-4 mb-6 shadow-lg shadow-rose-950/5 flex flex-col gap-3.5 relative overflow-hidden select-none">
+        {/* Compact live proof for small screens */}
+        <div className="hidden bg-zinc-950 text-white border border-primary/30 rounded-2xl p-4 mb-6 shadow-lg shadow-rose-950/5 flex-col gap-3.5 relative overflow-hidden select-none">
           {/* Background glow orb */}
           <div className="absolute -top-12 -right-12 w-24 h-24 rounded-full bg-primary/10 blur-xl animate-pulse-soft" />
 
@@ -1126,23 +1132,23 @@ function OnboardPage() {
           </div>
         </div>
 
-        {/* Mobile Tabbed Toggle (Hidden on desktop to avoid unnecessary space) */}
-        <div className="flex lg:hidden bg-zinc-100/80 dark:bg-zinc-900/80 border border-border p-1 rounded-xl mb-6 select-none relative z-10">
+        {/* One clear decision at a time keeps the application concise. */}
+        <div className="mx-auto mb-7 flex w-full max-w-3xl rounded-2xl border border-black/[0.06] bg-white p-1.5 shadow-sm select-none relative z-10">
           <button
             onClick={() => setActiveOnboardTab("trial")}
-            className={`flex-1 py-2 text-center text-xs font-semibold rounded-lg transition-all ${
+            className={`flex-1 px-3 py-3 text-center text-xs font-semibold rounded-xl transition-all sm:text-sm ${
               activeOnboardTab === "trial"
-                ? "bg-white dark:bg-zinc-800 text-primary shadow-sm font-bold"
+                ? "bg-[#330a0a] text-white shadow-md font-bold"
                 : "text-muted-foreground hover:text-foreground"
             }`}
           >
-            {lang === "ar" ? "تجربة مجانية (3 أيام)" : "3-Day Free Trial"}
+            {lang === "ar" ? `تجربة مجانية (${trialDays} يوماً)` : `${trialDays}-Day Free Trial`}
           </button>
           <button
             onClick={() => setActiveOnboardTab("paid")}
-            className={`flex-1 py-2 text-center text-xs font-semibold rounded-lg transition-all ${
+            className={`flex-1 px-3 py-3 text-center text-xs font-semibold rounded-xl transition-all sm:text-sm ${
               activeOnboardTab === "paid"
-                ? "bg-white dark:bg-zinc-800 text-primary shadow-sm font-bold"
+                ? "bg-[#330a0a] text-white shadow-md font-bold"
                 : "text-muted-foreground hover:text-foreground"
             }`}
           >
@@ -1151,11 +1157,11 @@ function OnboardPage() {
         </div>
 
         {/* Dual Card responsive Grid */}
-        <div className="grid grid-cols-1 items-start lg:grid-cols-2 gap-7 mb-12">
-          {/* CARD A: 3-Day Free Trial */}
+        <div className="mx-auto grid w-full max-w-3xl grid-cols-1 items-start gap-7 mb-12">
+          {/* CARD A: admin-configured free trial */}
           <Card
             className={`rounded-[28px] border-black/[0.07] bg-white shadow-[0_18px_60px_rgba(51,10,10,0.07)] flex-col relative overflow-hidden group ${
-              activeOnboardTab === "trial" ? "flex" : "hidden lg:flex"
+              activeOnboardTab === "trial" ? "flex" : "hidden"
             }`}
           >
             <div className="absolute top-0 right-0 p-4 opacity-[0.02] select-none pointer-events-none">
@@ -1166,12 +1172,12 @@ function OnboardPage() {
               <div className="flex justify-between items-start gap-4">
                 <div>
                   <CardTitle className="text-lg font-display font-medium text-zinc-900 dark:text-zinc-100">
-                    {lang === "ar" ? "تجربة مجانية لمدة 3 أيام" : "3-Day Free Trial"}
+                    {lang === "ar" ? `تجربة مجانية لمدة ${trialDays} يوماً` : `${trialDays}-Day Free Trial`}
                   </CardTitle>
                   <CardDescription className="text-xs text-muted-foreground mt-1 leading-relaxed">
                     {lang === "ar"
-                      ? "جرّب منصة Boutq لمدة 3 أيام، ثم اختر أي باقة منشورة من الكتالوج عند الترقية."
-                      : "Try Boutq for 3 days, then upgrade to any plan currently published in the catalog."}
+                      ? `اختبر المتجر ولوحة الإدارة لمدة ${trialDays} يوماً، ثم اختر الباقة المناسبة عند الترقية.`
+                      : `Explore the storefront and admin workspace for ${trialDays} days, then choose your plan when you upgrade.`}
                   </CardDescription>
                 </div>
                 <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded font-semibold tracking-wider">
@@ -1393,8 +1399,8 @@ function OnboardPage() {
                   }
                 >
                   {lang === "ar"
-                    ? "إرسال طلب تجربة الـ 3 أيام"
-                    : "Submit Request & Start 3-Day Trial"}
+                    ? `ابدأ تجربتك المجانية لمدة ${trialDays} يوماً`
+                    : `Start Your ${trialDays}-Day Free Trial`}
                   <ChevronRight className="h-4 w-4" />
                 </Button>
               </form>
@@ -1404,7 +1410,7 @@ function OnboardPage() {
           {/* CARD B: Official Paid Registration */}
           <Card
             className={`rounded-[28px] border-primary/20 bg-white shadow-[0_18px_60px_rgba(51,10,10,0.09)] flex-col relative overflow-hidden group ring-1 ring-primary/30 ${
-              activeOnboardTab === "paid" ? "flex" : "hidden lg:flex"
+              activeOnboardTab === "paid" ? "flex" : "hidden"
             }`}
           >
             <div className="absolute top-0 right-0 p-4 opacity-[0.02] select-none pointer-events-none">
@@ -1815,190 +1821,56 @@ function OnboardPage() {
         </div>
       </main>
 
-      {/* Dynamic Features Transparency Modal */}
+      {/* Catalog-driven feature sheet: no marketing claims are hardcoded here. */}
       {showFeaturesModal && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-md z-50 flex items-center justify-center p-4 overflow-y-auto animate-in fade-in duration-200">
-          <div
-            dir={lang === "ar" ? "rtl" : "ltr"}
-            className="bg-zinc-950/95 border border-border rounded-3xl p-5 md:p-8 max-w-4xl w-full max-h-[90vh] md:max-h-[85vh] lg:max-h-none overflow-y-auto shadow-2xl relative animate-in fade-in zoom-in-95 duration-200 text-white select-none"
-          >
-            {/* Close Button */}
-            <button
-              onClick={() => setShowFeaturesModal(false)}
-              className={`absolute top-4 md:top-6 text-zinc-400 hover:text-white bg-zinc-900 hover:bg-zinc-800 h-8 w-8 rounded-full flex items-center justify-center transition-all z-10 ${
-                lang === "ar" ? "left-4 md:left-6" : "right-4 md:right-6"
-              }`}
-            >
+        <div className="fixed inset-0 z-50 grid place-items-center overflow-y-auto bg-[#120b0d]/70 p-4 backdrop-blur-xl animate-in fade-in duration-200">
+          <div dir={lang === "ar" ? "rtl" : "ltr"} className="relative w-full max-w-3xl overflow-hidden rounded-[32px] border border-black/[0.07] bg-[#fbfaf8] shadow-[0_32px_100px_rgba(0,0,0,.35)] animate-in fade-in zoom-in-95 duration-200">
+            <button onClick={() => setShowFeaturesModal(false)} aria-label={lang === "ar" ? "إغلاق" : "Close"} className={`absolute top-5 z-10 grid h-10 w-10 place-items-center rounded-full border border-black/[0.06] bg-white text-zinc-500 shadow-sm transition hover:text-primary ${lang === "ar" ? "left-5" : "right-5"}`}>
               ✕
             </button>
-
-            {/* Header */}
-            <div
-              className={`mb-6 flex items-center gap-3 border-b border-border pb-4 ${
-                lang === "ar" ? "pl-10" : "pr-10"
-              }`}
-            >
-              <Store className="h-6 w-6 text-primary shrink-0" />
-              <div>
-                <h3 className="text-lg md:text-xl font-display font-medium">
-                  {lang === "ar"
-                    ? "المميزات الفاخرة لمنصة Boutq"
-                    : "Premium Features of the Boutq Platform"}
-                </h3>
-                <p className="text-xs text-zinc-400 mt-0.5">
-                  {lang === "ar"
-                    ? "تفاصيل الشفافية الفنية والميزات المتوفرة في الكود البرمجي"
-                    : "Full technical transparency of features ready in our codebase"}
-                </p>
+            <div className="border-b border-black/[0.06] bg-white px-6 py-7 sm:px-9">
+              <div className="mb-3 inline-flex items-center gap-2 text-[10px] font-bold tracking-[0.16em] text-primary">
+                <ShieldCheck className="h-4 w-4" />
+                {lang === "ar" ? "معلومات مباشرة من كتالوج BOUTQ OS" : "LIVE FROM THE BOUTQ OS CATALOG"}
               </div>
+              <h3 className="pe-12 font-display text-2xl font-semibold tracking-tight sm:text-3xl">
+                {lang === "ar" ? "ما الذي تتضمنه باقتك؟" : "What is included in your plan?"}
+              </h3>
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
+                {lang === "ar" ? "نعرض فقط المزايا والحدود المنشورة فعلياً من الأدمن، لذلك تبقى هذه المعلومات مطابقة لباقتك دائماً." : "Only capabilities and limits published by the admin are shown, so this view always matches your plan."}
+              </p>
             </div>
-
-            {/* Features Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Category 1: Storefront */}
-              <div className="bg-zinc-900/40 border border-border rounded-2xl p-5 space-y-3">
-                <h4 className="text-xs font-bold text-primary uppercase tracking-wider flex items-center gap-2">
-                  <Sparkles className="h-4 w-4" />
-                  {lang === "ar" ? "واجهة المتجر والتصميم" : "Storefront & UI"}
-                </h4>
-                <ul className="space-y-2 text-xs text-zinc-300">
-                  <li className="flex gap-2">
-                    <span className="text-emerald-500 font-bold">•</span>
-                    <span>
-                      {lang === "ar"
-                        ? "روابط فرعية مخصصة فاخرة (اسم_متجرك.boutq.store)"
-                        : "Sleek custom subdomain handles (yourname.boutq.store)"}
-                    </span>
-                  </li>
-                  <li className="flex gap-2">
-                    <span className="text-emerald-500 font-bold">•</span>
-                    <span>
-                      {lang === "ar"
-                        ? "تصميم محمول فاخر متجاوب ومريح لنظر المشتري"
-                        : "Couture mobile-first layout optimized for luxury catalog browsing"}
-                    </span>
-                  </li>
-                  <li className="flex gap-2">
-                    <span className="text-emerald-500 font-bold">•</span>
-                    <span>
-                      {lang === "ar"
-                        ? "دعم كامل للغات المتعددة وعرض عملات متعددة (BHD, SAR, AED)"
-                        : "Automatic localized languages (AR/EN) and multi-currency displays"}
-                    </span>
-                  </li>
-                </ul>
-              </div>
-
-              {/* Category 2: Payments */}
-              <div className="bg-zinc-900/40 border border-border rounded-2xl p-5 space-y-3">
-                <h4 className="text-xs font-bold text-primary uppercase tracking-wider flex items-center gap-2">
-                  <CheckCircle2 className="h-4 w-4" />
-                  {lang === "ar" ? "المدفوعات والطلبات" : "Payments & Orders"}
-                </h4>
-                <ul className="space-y-2 text-xs text-zinc-300">
-                  <li className="flex gap-2">
-                    <span className="text-emerald-500 font-bold">•</span>
-                    <span>
-                      {lang === "ar"
-                        ? "ربط فوري لرمز الاستجابة السريع لمحفظة BenefitPay"
-                        : "Seamless custom QR image uploads for local BenefitPay transfers"}
-                    </span>
-                  </li>
-                  <li className="flex gap-2">
-                    <span className="text-emerald-500 font-bold">•</span>
-                    <span>
-                      {lang === "ar"
-                        ? "خيارات دفع مرنة تشمل الدفع عند الاستلام (COD)"
-                        : "Cash on Delivery checkout parameters integrated out-of-the-box"}
-                    </span>
-                  </li>
-                  <li className="flex gap-2">
-                    <span className="text-emerald-500 font-bold">•</span>
-                    <span>
-                      {lang === "ar"
-                        ? "إرسال تفاصيل فواتير الطلبات فوراً لواتساب المتجر بنقرة واحدة"
-                        : "Instant order detail generation dispatched directly to owner's WhatsApp"}
-                    </span>
-                  </li>
-                </ul>
-              </div>
-
-              {/* Category 3: Dashboard */}
-              <div className="bg-zinc-900/40 border border-border rounded-2xl p-5 space-y-3">
-                <h4 className="text-xs font-bold text-primary uppercase tracking-wider flex items-center gap-2">
-                  <Store className="h-4 w-4" />
-                  {lang === "ar" ? "لوحة التحكم والإدارة" : "Dashboard & Management"}
-                </h4>
-                <ul className="space-y-2 text-xs text-zinc-300">
-                  <li className="flex gap-2">
-                    <span className="text-emerald-500 font-bold">•</span>
-                    <span>
-                      {lang === "ar"
-                        ? "كتالوج إدارة المنتجات وتتبع كميات المخزون المتعددة"
-                        : "Dynamic product variants, size grids, and inventory stock control"}
-                    </span>
-                  </li>
-                  <li className="flex gap-2">
-                    <span className="text-emerald-500 font-bold">•</span>
-                    <span>
-                      {lang === "ar"
-                        ? "سجل تتبع النفقات والمصروفات اليومية للتشغيل"
-                        : "Operational expense tracking and real-time dashboard analytics"}
-                    </span>
-                  </li>
-                  <li className="flex gap-2">
-                    <span className="text-emerald-500 font-bold">•</span>
-                    <span>
-                      {lang === "ar"
-                        ? "نظام أمان متطور وصلاحيات مخصصة لأعضاء الفريق"
-                        : "Advanced RLS data isolating, secure passwordless logins & staff keys"}
-                    </span>
-                  </li>
-                </ul>
-              </div>
-
-              {/* Category 4: Support */}
-              <div className="bg-zinc-900/40 border border-border rounded-2xl p-5 space-y-3">
-                <h4 className="text-xs font-bold text-primary uppercase tracking-wider flex items-center gap-2">
-                  <Building2 className="h-4 w-4" />
-                  {lang === "ar" ? "الدعم والبنية التحتية" : "Support & Infrastructure"}
-                </h4>
-                <ul className="space-y-2 text-xs text-zinc-300">
-                  <li className="flex gap-2">
-                    <span className="text-emerald-500 font-bold">•</span>
-                    <span>
-                      {lang === "ar"
-                        ? "ضمان فني متكامل وصيانة خلو الأخطاء لـ 6 أشهر"
-                        : "6 Months comprehensive technical bug fixes and support"}
-                    </span>
-                  </li>
-                  <li className="flex gap-2">
-                    <span className="text-emerald-500 font-bold">•</span>
-                    <span>
-                      {lang === "ar"
-                        ? "استضافة صور سريعة مشفرة بالكامل عبر Cloudflare R2"
-                        : "Secure localized imagery content cached over Cloudflare R2"}
-                    </span>
-                  </li>
-                  <li className="flex gap-2">
-                    <span className="text-emerald-500 font-bold">•</span>
-                    <span>
-                      {lang === "ar"
-                        ? "اشتراك سنوي يشمل الاستضافة والصيانة البرمجية"
-                        : "Annual subscription including hosting and platform maintenance"}
-                    </span>
-                  </li>
-                </ul>
-              </div>
+            <div className="max-h-[58vh] overflow-y-auto p-6 sm:p-9">
+              {selectedPlan ? (
+                <>
+                  <div className="mb-6 flex flex-col gap-3 rounded-2xl bg-[#330a0a] p-5 text-white sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                      <p className="text-[10px] font-bold tracking-[0.18em] text-rose-200">{selectedPlan.code}</p>
+                      <h4 className="mt-1 text-xl font-semibold">{lang === "ar" ? selectedPlan.name_ar : selectedPlan.name_en}</h4>
+                    </div>
+                    <div className="text-start sm:text-end">
+                      <strong className="text-2xl">{selectedPrice}</strong>
+                      <span className="ms-1 text-xs text-rose-100">{selectedPlan.version.currency} / {billingInterval === "annual" ? (lang === "ar" ? "سنة" : "year") : (lang === "ar" ? "شهر" : "month")}</span>
+                    </div>
+                  </div>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    {selectedPlan.features.map((feature: any) => (
+                      <div key={feature.key} className="flex items-center gap-3 rounded-2xl border border-black/[0.06] bg-white p-4 shadow-sm">
+                        <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-emerald-50"><Check className="h-4 w-4 text-emerald-600" /></span>
+                        <span className="text-sm text-zinc-700">{lang === "ar" ? feature.name_ar : feature.name_en}</span>
+                        {feature.numeric_value != null && feature.numeric_value !== 0 && <strong className="ms-auto text-sm text-[#330a0a]">{feature.numeric_value === -1 ? "∞" : feature.numeric_value.toLocaleString()}</strong>}
+                      </div>
+                    ))}
+                  </div>
+                </>
+              ) : (
+                <div className="py-10 text-center text-sm text-muted-foreground">{lang === "ar" ? "اختر باقة لعرض تفاصيلها." : "Choose a plan to see its details."}</div>
+              )}
             </div>
-
-            {/* Footer Action */}
-            <div className="mt-6 flex justify-end gap-3 border-t border-border pt-4">
-              <Button
-                onClick={() => setShowFeaturesModal(false)}
-                className="bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-semibold rounded-xl px-5 h-10"
-              >
-                {lang === "ar" ? "حسناً، فهمت" : "Got it, thanks"}
+            <div className="flex items-center justify-between gap-4 border-t border-black/[0.06] bg-white px-6 py-5 sm:px-9">
+              <span className="text-[11px] text-muted-foreground">{lang === "ar" ? `التجربة المجانية: ${trialDays} يوماً` : `Free trial: ${trialDays} days`}</span>
+              <Button onClick={() => setShowFeaturesModal(false)} className="h-10 rounded-full bg-[#330a0a] px-6 text-xs font-semibold text-white hover:bg-[#4a1111]">
+                {lang === "ar" ? "العودة لاختيار الباقة" : "Back to plans"}
               </Button>
             </div>
           </div>

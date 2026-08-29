@@ -238,6 +238,20 @@ export const getPublicOnboardingPlans = createServerFn({ method: "GET" }).handle
   return result;
 });
 
+// Trial duration is managed by Super Admin and must never be duplicated in the
+// public experience. Keep this separate from the public paid-plan catalog because
+// the trial plan is intentionally allowed to remain hidden from paid pricing.
+export const getOnboardingTrialDays = createServerFn({ method: "GET" }).handler(async () => {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data, error } = await (supabaseAdmin.from("saas_plans" as never) as any)
+    .select("trial_days")
+    .eq("code", "trial")
+    .eq("is_active", true)
+    .maybeSingle();
+  if (error) throw new Error("TRIAL_CONFIGURATION_UNAVAILABLE");
+  return Math.max(1, Number(data?.trial_days || 14));
+});
+
 // 3. Dynamic pricing retrieval server function (reading from system_settings)
 export const getOnboardingPrice = createServerFn({ method: "GET" }).handler(async () => {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -417,6 +431,16 @@ export const approveTenantRequest = createServerFn({ method: "POST" })
       resolvedPlanVersionId = currentVersion?.id ?? null;
     }
     if (!resolvedPlanId || !resolvedPlanVersionId) throw new Error("PLAN_SELECTION_REQUIRED");
+    let resolvedTrialDays = 14;
+    if (request.request_type === "trial") {
+      const { data: trialConfiguration } = await (
+        context.supabase.from("saas_plans" as never) as any
+      )
+        .select("trial_days")
+        .eq("id", resolvedPlanId)
+        .single();
+      resolvedTrialDays = Math.max(1, Number(trialConfiguration?.trial_days || 14));
+    }
     const { data: validatedVersion } = await (
       context.supabase.from("saas_plan_versions" as never) as any
     )
@@ -452,7 +476,7 @@ export const approveTenantRequest = createServerFn({ method: "POST" })
     const approvedPlanType = request.request_type === "trial" ? "trial" : "annual";
     const trialEndsAt =
       approvedPlanType === "trial"
-        ? new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString()
+        ? new Date(Date.now() + resolvedTrialDays * 24 * 60 * 60 * 1000).toISOString()
         : null;
 
     // Since database triggers create the brand row, let's query it and update it
