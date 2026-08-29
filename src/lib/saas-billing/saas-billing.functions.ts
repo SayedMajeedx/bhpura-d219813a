@@ -38,9 +38,12 @@ async function requireBrandAccess(context: any, brandId: string) {
     const { data: isSuperAdmin } = await db.rpc("is_super_admin");
     if (!isSuperAdmin) {
       try {
-        const { getImpersonationSession } = await import("@/lib/impersonation.server");
-        const imp = await getImpersonationSession();
-        if (imp && imp.targetBrandId === brandId) {
+        const { readImpersonationCookie, verifyImpersonationToken } = await import(
+          "@/lib/impersonation-cookies.server"
+        );
+        const token = await readImpersonationCookie();
+        const payload = await verifyImpersonationToken(token);
+        if (payload && payload.targetTenantId === brandId) {
           return;
         }
       } catch {}
