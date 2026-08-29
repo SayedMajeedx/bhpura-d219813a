@@ -215,8 +215,275 @@ export const createPlanVersion = createServerFn({ method: "POST" })
   });
 
 /**
- * 3. List all Add-ons
+ * 2b. Update Plan Status (Toggle Active Status / Deactivate / Cancel, or Toggle Public Visibility / Hide)
  */
+const UpdatePlanStatusInput = z.object({
+  planId: z.string().uuid(),
+  isActive: z.boolean().optional(),
+  isPublic: z.boolean().optional(),
+});
+
+export const updatePlanStatus = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .validator((raw: unknown) => UpdatePlanStatusInput.parse(raw))
+  .handler(async ({ data, context }) => {
+    await requireSuperAdmin(context);
+    const db = context.supabase as any;
+
+    const updatePayload: Record<string, any> = {
+      updated_at: new Date().toISOString(),
+    };
+    if (data.isActive !== undefined) updatePayload.is_active = data.isActive;
+    if (data.isPublic !== undefined) updatePayload.is_public = data.isPublic;
+
+    const { data: updatedPlan, error } = await db
+      .from("saas_plans")
+      .update(updatePayload)
+      .eq("id", data.planId)
+      .select()
+      .single();
+
+    if (error || !updatedPlan) {
+      throw error || new Error("FAILED_TO_UPDATE_PLAN_STATUS");
+    }
+
+    await db.from("saas_audit_logs").insert({
+      actor_id: context.userId || null,
+      actor_email: context.claims?.email || null,
+      action: "plan.status_updated",
+      target_type: "plan",
+      target_id: data.planId,
+      changes: updatePayload,
+    });
+
+    return { plan: updatedPlan as SaaSPlan };
+  });
+
+/**
+ * 2c. Update Plan Metadata Details (Names, Descriptions, Badge Color, Trial Days, Sort Order)
+ */
+const UpdatePlanDetailsInput = z.object({
+  planId: z.string().uuid(),
+  nameAr: z.string().min(1),
+  nameEn: z.string().min(1),
+  descriptionAr: z.string().nullable().optional(),
+  descriptionEn: z.string().nullable().optional(),
+  badgeColor: z.string().nullable().optional(),
+  sortOrder: z.number().optional(),
+  trialDays: z.number().min(0).optional(),
+});
+
+export const updatePlanDetails = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .validator((raw: unknown) => UpdatePlanDetailsInput.parse(raw))
+  .handler(async ({ data, context }) => {
+    await requireSuperAdmin(context);
+    const db = context.supabase as any;
+
+    const { data: updatedPlan, error } = await db
+      .from("saas_plans")
+      .update({
+        name_ar: data.nameAr.trim(),
+        name_en: data.nameEn.trim(),
+        description_ar: data.descriptionAr?.trim() || null,
+        description_en: data.descriptionEn?.trim() || null,
+        badge_color: data.badgeColor || null,
+        sort_order: data.sortOrder ?? 0,
+        trial_days: data.trialDays ?? 0,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", data.planId)
+      .select()
+      .single();
+
+    if (error || !updatedPlan) {
+      throw error || new Error("FAILED_TO_UPDATE_PLAN_DETAILS");
+    }
+
+    await db.from("saas_audit_logs").insert({
+      actor_id: context.userId || null,
+      actor_email: context.claims?.email || null,
+      action: "plan.details_updated",
+      target_type: "plan",
+      target_id: data.planId,
+      changes: data,
+    });
+
+    return { plan: updatedPlan as SaaSPlan };
+  });
+
+/**
+ * 2d. Create a New Custom SaaS Plan with Initial Version (v1)
+ */
+const CreateCustomPlanInput = z.object({
+  code: z
+    .string()
+    .min(2)
+    .max(40)
+    .regex(/^[a-z0-9_]+$/, "Code must contain only lowercase letters, numbers, and underscores"),
+  nameAr: z.string().min(1),
+  nameEn: z.string().min(1),
+  descriptionAr: z.string().nullable().optional(),
+  descriptionEn: z.string().nullable().optional(),
+  badgeColor: z.string().nullable().optional(),
+  isPublic: z.boolean().default(true),
+  isActive: z.boolean().default(true),
+  sortOrder: z.number().default(0),
+  trialDays: z.number().default(0),
+  priceMonthly: z.number().min(0),
+  priceAnnual: z.number().min(0),
+  features: z.array(
+    z.object({
+      featureKey: z.string(),
+      booleanValue: z.boolean().nullable(),
+      numericValue: z.number().nullable(),
+    }),
+  ),
+});
+
+export const createCustomPlan = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .validator((raw: unknown) => CreateCustomPlanInput.parse(raw))
+  .handler(async ({ data, context }) => {
+    await requireSuperAdmin(context);
+    const db = context.supabase as any;
+
+    // 1. Check if plan code already exists
+    const { data: existing } = await db
+      .from("saas_plans")
+      .select("id")
+      .eq("code", data.code)
+      .maybeSingle();
+
+    if (existing) {
+      throw new Error(`PLAN_CODE_ALREADY_EXISTS: Plan code '${data.code}' is already in use.`);
+    }
+
+    // 2. Insert new plan
+    const { data: newPlan, error: planErr } = await db
+      .from("saas_plans")
+      .insert({
+        code: data.code,
+        name_ar: data.nameAr.trim(),
+        name_en: data.nameEn.trim(),
+        description_ar: data.descriptionAr?.trim() || null,
+        description_en: data.descriptionEn?.trim() || null,
+        badge_color: data.badgeColor || "bg-primary/10 text-primary",
+        is_public: data.isPublic,
+        is_active: data.isActive,
+        sort_order: data.sortOrder,
+        trial_days: data.trialDays,
+      })
+      .select()
+      .single();
+
+    if (planErr || !newPlan) {
+      throw planErr || new Error("FAILED_TO_CREATE_SAAS_PLAN");
+    }
+
+    // 3. Insert initial version v1
+    const { data: newVer, error: verErr } = await db
+      .from("saas_plan_versions")
+      .insert({
+        plan_id: newPlan.id,
+        version_number: 1,
+        price_monthly: data.priceMonthly,
+        price_annual: data.priceAnnual,
+        currency: "BHD",
+        is_current: true,
+        effective_from: new Date().toISOString(),
+        change_summary: "Initial launch release",
+        created_by: context.userId || null,
+      })
+      .select()
+      .single();
+
+    if (verErr || !newVer) {
+      throw verErr || new Error("FAILED_TO_CREATE_PLAN_VERSION_V1");
+    }
+
+    // 4. Insert feature allocations
+    const featureInserts = data.features.map((f) => ({
+      plan_version_id: newVer.id,
+      feature_key: f.featureKey,
+      boolean_value: f.booleanValue,
+      numeric_value: f.numericValue,
+      is_unlimited: f.numericValue === -1,
+    }));
+
+    if (featureInserts.length > 0) {
+      const { error: featInsertErr } = await db
+        .from("saas_plan_features")
+        .insert(featureInserts);
+
+      if (featInsertErr) throw featInsertErr;
+    }
+
+    // 5. Audit log
+    await db.from("saas_audit_logs").insert({
+      actor_id: context.userId || null,
+      actor_email: context.claims?.email || null,
+      action: "plan.created",
+      target_type: "plan",
+      target_id: newPlan.id,
+      changes: {
+        code: data.code,
+        name_ar: data.nameAr,
+        name_en: data.nameEn,
+        price_monthly: data.priceMonthly,
+        price_annual: data.priceAnnual,
+      },
+    });
+
+    return { plan: newPlan as SaaSPlan, version: newVer as SaaSPlanVersion };
+  });
+
+/**
+ * 2e. Delete SaaS Plan (Only permitted if plan has 0 active subscribers)
+ */
+const DeletePlanInput = z.object({
+  planId: z.string().uuid(),
+});
+
+export const deletePlan = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .validator((raw: unknown) => DeletePlanInput.parse(raw))
+  .handler(async ({ data, context }) => {
+    await requireSuperAdmin(context);
+    const db = context.supabase as any;
+
+    // Check subscribers count
+    const { count, error: countErr } = await db
+      .from("brand_subscriptions")
+      .select("id", { count: "exact", head: true })
+      .eq("plan_id", data.planId);
+
+    if (countErr) throw countErr;
+
+    if (count && count > 0) {
+      throw new Error(
+        `CANNOT_DELETE_ACTIVE_PLAN: Plan has ${count} registered subscriber(s). Please deactivate or hide the plan instead to preserve grandfathered merchant access.`,
+      );
+    }
+
+    // Delete plan (cascades to versions and features in db)
+    const { error: delErr } = await db
+      .from("saas_plans")
+      .delete()
+      .eq("id", data.planId);
+
+    if (delErr) throw delErr;
+
+    await db.from("saas_audit_logs").insert({
+      actor_id: context.userId || null,
+      actor_email: context.claims?.email || null,
+      action: "plan.deleted",
+      target_type: "plan",
+      target_id: data.planId,
+    });
+
+    return { success: true };
+  });
 export const listAddons = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {

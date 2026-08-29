@@ -8,7 +8,8 @@ export type SaaSPlanCode =
   | "pro"
   | "enterprise"
   | "trial"
-  | "lifetime_founder";
+  | "lifetime_founder"
+  | (string & {});
 
 export type SaaSPlan = {
   id: string;

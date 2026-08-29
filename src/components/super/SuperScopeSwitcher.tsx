@@ -1,7 +1,7 @@
 import { Clock, DollarSign, Layers, PackagePlus, ShieldAlert } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-export type SuperScope = "requests" | "pricing" | "plans" | "addons" | "overrides";
+export type SuperScope = "requests" | "plans" | "addons" | "overrides";
 
 interface SuperScopeSwitcherProps {
   lang: "ar" | "en";
@@ -31,12 +31,6 @@ export function SuperScopeSwitcher({
       labelAr: "طلبات الانضمام المعلقة",
       labelEn: "Pending Requests",
       badge: pendingCount,
-    },
-    {
-      id: "pricing",
-      icon: DollarSign,
-      labelAr: "تسعير التسجيل والعروض",
-      labelEn: "Registration Pricing",
     },
     {
       id: "plans",

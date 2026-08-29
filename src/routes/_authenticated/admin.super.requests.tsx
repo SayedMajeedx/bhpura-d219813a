@@ -1,20 +1,17 @@
 import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { useI18n } from "@/lib/i18n";
 import { SUPER_ADMIN_EMAIL } from "@/lib/profile-context";
 import {
   approveTenantRequest,
   rejectTenantRequest,
-  getOnboardingPrice,
-  updateRegistrationPrice,
 } from "@/lib/onboarding.functions";
 import { getSubscriptionReceiptViewUrl } from "@/lib/saas-subscription.functions";
 import {
@@ -23,13 +20,8 @@ import {
   CheckCircle2,
   XCircle,
   Loader2,
-  DollarSign,
-  RefreshCw,
   ExternalLink,
   Building2,
-  Tag,
-  Percent,
-  Settings,
   Sparkles,
   User,
   Mail,
@@ -87,10 +79,6 @@ function SuperRequestsPage() {
   const qc = useQueryClient();
   const [activeScope, setActiveScope] = useState<SuperScope>("requests");
 
-  // Onboarding price states
-  const [priceInput, setPriceInput] = useState("");
-  const [savingPrice, setSavingPrice] = useState(false);
-
   // Modal receipt viewer states
   const [selectedReceiptKey, setSelectedReceiptKey] = useState<string | null>(null);
   const [receiptLoading, setReceiptLoading] = useState(false);
@@ -116,21 +104,6 @@ function SuperRequestsPage() {
     },
   });
 
-  const priceQuery = useQuery({
-    queryKey: ["onboarding-price"],
-    queryFn: async () => {
-      return await getOnboardingPrice();
-    },
-  });
-
-  // Keep input in sync with live dynamic price
-  useEffect(() => {
-    if (priceQuery.data) {
-      setPriceInput(priceQuery.data);
-    }
-  }, [priceQuery.data]);
-
-  // Handle Save Price Changes
   const getFriendlyErrorMessage = (err: any): string => {
     if (!err) return "An unexpected error occurred.";
     const message = err.message || String(err);
@@ -150,42 +123,6 @@ function SuperRequestsPage() {
       // ignore
     }
     return message;
-  };
-
-  const handleSavePrice = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!priceInput.trim()) return;
-
-    setSavingPrice(true);
-    const toastId = toast.loading(
-      lang === "ar" ? "جاري حفظ وتعميم السعر الجديد..." : "Broadcasting custom price change...",
-    );
-
-    try {
-      await updateRegistrationPrice({ data: { newPrice: priceInput.trim() } });
-      toast.success(
-        lang === "ar"
-          ? "تم تعميم السعر والتخفيض الجديد فورياً!"
-          : "Onboarding discount override published live!",
-        { id: toastId },
-      );
-      void qc.invalidateQueries({ queryKey: ["onboarding-price"] });
-    } catch (err: any) {
-      console.error(err);
-      toast.error(getFriendlyErrorMessage(err) || "Failed to update dynamic price.", {
-        id: toastId,
-      });
-    } finally {
-      setSavingPrice(false);
-    }
-  };
-
-  // Helper calculation presets (inline percentages)
-  const applyPresetDiscount = (percent: number) => {
-    // Extract numerical digits from baseline
-    const baseline = 55;
-    const discounted = Math.round(baseline * (1 - percent / 100));
-    setPriceInput(`${discounted} BHD`);
   };
 
   // View private R2 payment screenshot receipt
@@ -303,160 +240,55 @@ function SuperRequestsPage() {
       ) : activeScope === "overrides" ? (
         <SuperOverridesManager />
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Left Column: Admin Live Pricing Control Panel */}
-          <div className="space-y-6">
-            <Card className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm relative">
-              <div className="absolute top-0 right-0 p-4 opacity-5 select-none pointer-events-none text-primary">
-                <Percent className="h-24 w-24" />
-              </div>
-              <CardHeader className="pb-3 border-b border-border/60">
-                <CardTitle className="text-sm font-semibold flex items-center gap-1.5">
-                  <Settings className="h-4.5 w-4.5 text-primary" />
-                  <span>
-                    {lang === "ar" ? "متحكم أسعار التسجيل" : "Live Onboarding Price overrides"}
-                  </span>
-                </CardTitle>
-                <CardDescription className="text-xs">
-                  {lang === "ar"
-                    ? "تعديل وتخفيض رسوم تفعيل المتاجر الرسمية التي تظهر للزوار فوراً."
-                    : "Override baseline platform fees shown on Card B with inline override settings."}
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="pt-5 space-y-4">
-                <form onSubmit={handleSavePrice} className="space-y-4">
-                  <div className="space-y-1.5">
-                    <Label
-                      htmlFor="overridden-price"
-                      className="text-xs font-bold uppercase tracking-wider text-muted-foreground"
-                    >
-                      {lang === "ar" ? "رسوم التفعيل المعروضة حالياً" : "Active Registration Fee"}
-                    </Label>
-                    <div className="relative">
-                      <DollarSign className="absolute left-3 top-2.5 h-4.5 w-4.5 text-muted-foreground" />
-                      <Input
-                        id="overridden-price"
-                        value={priceInput}
-                        onChange={(e) => setPriceInput(e.target.value)}
-                        placeholder="55 BHD"
-                        className="pl-9 font-mono font-bold text-sm h-9"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground block">
-                      {lang === "ar" ? "خصومات ترويجية سريعة" : "Quick Promotional discounts"}
+        <div className="w-full space-y-4">
+          <Card className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm">
+            <CardHeader className="pb-3 border-b border-border/60">
+              <div className="flex justify-between items-center">
+                <div>
+                  <CardTitle className="text-sm font-semibold flex items-center gap-1.5">
+                    <ClockIcon className="h-4.5 w-4.5 text-primary" />
+                    <span>
+                      {lang === "ar" ? "قائمة الانتظار النشطة" : "Active Registration Waiting list"}
                     </span>
-                    <div className="grid grid-cols-2 gap-2">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="xs"
-                        onClick={() => applyPresetDiscount(10)}
-                        className="text-xs gap-1 py-1 h-8 shadow-sm transition-all duration-200 hover:shadow hover:scale-[1.01] active:scale-95"
-                      >
-                        <Tag className="h-3 w-3" />
-                        <span>{lang === "ar" ? "خصم 10٪ (49 د.ب)" : "-10% Off (49 BHD)"}</span>
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="xs"
-                        onClick={() => applyPresetDiscount(20)}
-                        className="text-xs gap-1 py-1 h-8 shadow-sm transition-all duration-200 hover:shadow hover:scale-[1.01] active:scale-95"
-                      >
-                        <Tag className="h-3 w-3" />
-                        <span>{lang === "ar" ? "خصم 20٪ (44 د.ب)" : "-20% Off (44 BHD)"}</span>
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="xs"
-                        onClick={() => setPriceInput("45 BHD")}
-                        className="text-xs py-1 h-8 shadow-sm transition-all duration-200 hover:shadow hover:scale-[1.01] active:scale-95"
-                      >
-                        {lang === "ar" ? "تعديل لـ 45 د.ب" : "Set 45 BHD"}
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="xs"
-                        onClick={() => setPriceInput("55 BHD")}
-                        className="text-xs py-1 h-8 shadow-sm transition-all duration-200 hover:shadow hover:scale-[1.01] active:scale-95"
-                      >
-                        {lang === "ar" ? "السعر الأصلي (55 د.ب)" : "Reset 55 BHD"}
-                      </Button>
-                    </div>
-                  </div>
-
-                  <Button
-                    type="submit"
-                    disabled={savingPrice || !priceInput}
-                    className="w-full h-9 text-xs font-semibold gap-1.5 shadow-sm transition-all duration-200 hover:shadow hover:scale-[1.01] active:scale-95"
-                  >
-                    {savingPrice ? (
-                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    ) : (
-                      <CheckCircle2 className="h-3.5 w-3.5" />
-                    )}
-                    <span>{lang === "ar" ? "حفظ وتعميم السعر" : "Save dynamic fee override"}</span>
-                  </Button>
-                </form>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Right Columns: Main Tenant Requests Queue Table */}
-          <div className="lg:col-span-2 space-y-4">
-            <Card className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm">
-              <CardHeader className="pb-3 border-b border-border/60">
-                <div className="flex justify-between items-center">
-                  <div>
-                    <CardTitle className="text-sm font-semibold flex items-center gap-1.5">
-                      <ClockIcon className="h-4.5 w-4.5 text-primary" />
-                      <span>
-                        {lang === "ar" ? "قائمة الانتظار النشطة" : "Active Registration Waiting list"}
-                      </span>
-                    </CardTitle>
-                    <CardDescription className="text-xs">
-                      {lang === "ar"
-                        ? "طلبات تهيئة المتاجر المكتملة بانتظار التأكيد."
-                        : "Manual tenant activations waiting super-admin approval."}
-                    </CardDescription>
-                  </div>
-                  <Badge variant="outline" className="font-mono text-xs">
-                    {requestsQuery.data?.length ?? 0} {lang === "ar" ? "طلب معلق" : "Pending"}
-                  </Badge>
+                  </CardTitle>
+                  <CardDescription className="text-xs">
+                    {lang === "ar"
+                      ? "طلبات تهيئة المتاجر المكتملة بانتظار التأكيد ونشر المساحة."
+                      : "Manual tenant activations waiting super-admin approval."}
+                  </CardDescription>
                 </div>
-              </CardHeader>
-              <CardContent className="p-0">
-                {requestsQuery.isLoading ? (
-                  <div className="p-12 text-center text-muted-foreground flex flex-col items-center justify-center gap-2">
-                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                    <span className="text-sm">
-                      {lang === "ar"
-                        ? "جاري سحب طلبات التفعيل المعلقة..."
-                        : "Loading pending tenant requests..."}
-                    </span>
-                  </div>
-                ) : !requestsQuery.data || requestsQuery.data.length === 0 ? (
-                  <div className="p-16 text-center text-muted-foreground space-y-3">
-                    <CheckCircle2 className="h-12 w-12 text-emerald-500 mx-auto animate-bounce" />
-                    <p className="text-sm font-medium text-foreground">
-                      {lang === "ar"
-                        ? "قائمة الانتظار فارغة بالكامل!"
-                        : "All tenant requests processed!"}
-                    </p>
-                    <p className="text-xs">
-                      {lang === "ar"
-                        ? "لا توجد طلبات تهيئة معلقة في الوقت الراهن."
-                        : "No pending manual activations are currently in the queue."}
-                    </p>
-                  </div>
-                ) : (
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
+                <Badge variant="outline" className="font-mono text-xs">
+                  {requestsQuery.data?.length ?? 0} {lang === "ar" ? "طلب معلق" : "Pending"}
+                </Badge>
+              </div>
+            </CardHeader>
+            <CardContent className="p-0">
+              {requestsQuery.isLoading ? (
+                <div className="p-12 text-center text-muted-foreground flex flex-col items-center justify-center gap-2">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                  <span className="text-sm">
+                    {lang === "ar"
+                      ? "جاري سحب طلبات التفعيل المعلقة..."
+                      : "Loading pending tenant requests..."}
+                  </span>
+                </div>
+              ) : !requestsQuery.data || requestsQuery.data.length === 0 ? (
+                <div className="p-16 text-center text-muted-foreground space-y-3">
+                  <CheckCircle2 className="h-12 w-12 text-emerald-500 mx-auto animate-bounce" />
+                  <p className="text-sm font-medium text-foreground">
+                    {lang === "ar"
+                      ? "قائمة الانتظار فارغة بالكامل!"
+                      : "All tenant requests processed!"}
+                  </p>
+                  <p className="text-xs max-w-sm mx-auto">
+                    {lang === "ar"
+                      ? "جميع طلبات الانضمام تم تفعيلها أو معالجتها بنجاح. ستظهر أي طلبات تسجيل جديدة هنا فور وصولها."
+                      : "Great job! All pending brand registrations are fully vetted and verified."}
+                  </p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
                       <thead>
                         <tr className="bg-muted/40 text-muted-foreground text-xs uppercase border-b border-border/60">
                           <th className="p-4 text-left font-semibold">
@@ -617,7 +449,6 @@ function SuperRequestsPage() {
                 )}
               </CardContent>
             </Card>
-          </div>
         </div>
       )}
 

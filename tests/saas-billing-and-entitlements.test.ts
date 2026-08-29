@@ -153,4 +153,49 @@ describe("SaaS Billing & Entitlements Engine", () => {
     expect(evaluated["products.limit"]).toBeDefined();
     expect(evaluated["products.limit"].limit_value).toBe(50);
   });
+
+  describe("SaaS Plan Lifecycle & Catalog Rules", () => {
+    const mockCatalog = [
+      { id: "p1", code: "starter", is_active: true, is_public: true, subscribers: 5 },
+      { id: "p2", code: "growth", is_active: true, is_public: true, subscribers: 12 },
+      { id: "p3", code: "lifetime_founder", is_active: true, is_public: false, subscribers: 3 },
+      { id: "p4", code: "legacy_free", is_active: false, is_public: false, subscribers: 2 },
+      { id: "p5", code: "test_draft", is_active: false, is_public: false, subscribers: 0 },
+    ];
+
+    it("filters catalog correctly into active, hidden, and inactive scopes", () => {
+      const activeAndPublic = mockCatalog.filter((p) => p.is_active && p.is_public);
+      const hidden = mockCatalog.filter((p) => p.is_active && !p.is_public);
+      const inactive = mockCatalog.filter((p) => !p.is_active);
+
+      expect(activeAndPublic.map((p) => p.code)).toEqual(["starter", "growth"]);
+      expect(hidden.map((p) => p.code)).toEqual(["lifetime_founder"]);
+      expect(inactive.map((p) => p.code)).toEqual(["legacy_free", "test_draft"]);
+    });
+
+    it("prevents deleting plans that have active subscribers", () => {
+      const canDeletePlan = (plan: (typeof mockCatalog)[0]) => {
+        if (plan.subscribers > 0) {
+          throw new Error(`Cannot delete plan ${plan.code}: ${plan.subscribers} active subscriber(s) found.`);
+        }
+        return true;
+      };
+
+      // p1 has 5 subscribers -> throws
+      expect(() => canDeletePlan(mockCatalog[0])).toThrowError(/5 active subscriber\(s\)/);
+
+      // p5 has 0 subscribers -> passes
+      expect(canDeletePlan(mockCatalog[4])).toBe(true);
+    });
+
+    it("properly identifies when a plan should be excluded from storefront registration", () => {
+      const isAvailableForNewRegistration = (plan: (typeof mockCatalog)[0]) => {
+        return plan.is_active && plan.is_public;
+      };
+
+      expect(isAvailableForNewRegistration(mockCatalog[0])).toBe(true); // starter
+      expect(isAvailableForNewRegistration(mockCatalog[2])).toBe(false); // hidden founder
+      expect(isAvailableForNewRegistration(mockCatalog[3])).toBe(false); // legacy deactivated
+    });
+  });
 });
