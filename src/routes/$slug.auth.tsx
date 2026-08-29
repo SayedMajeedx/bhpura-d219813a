@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useId, useState } from "react";
-import { Loader2, LogIn, MailCheck, User, TrendingUp, Fingerprint } from "lucide-react";
+import { Loader2, LogIn, MailCheck, User, Fingerprint } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useStorefront } from "@/lib/storefront-context";
@@ -96,8 +96,8 @@ function StorefrontAuth() {
         setTab("signup");
         toast.error(
           t(
-            "لا يوجد حساب بهذا المعرف في هذا المتجر. اختر «إنشاء حساب» للتسجيل لدى هذا المتجر.",
-            "This credential is not registered with this store. Choose Create account to register here.",
+            "لا يوجد حساب مسجل بهذه البصمة، يرجى اختيار «إنشاء حساب» للتسجيل.",
+            "No account found with this passkey. Please choose «Create account» to register.",
           ),
           { duration: 7000 },
         );
@@ -144,8 +144,8 @@ function StorefrontAuth() {
       console.error("Membership activation failed", error);
       toast.error(
         t(
-          "تعذر إنشاء حسابك في هذا المتجر. حاول مرة أخرى.",
-          "Could not create your account for this store. Please try again.",
+          "تعذر تفعيل الحساب، يرجى المحاولة مرة أخرى.",
+          "Could not activate your account. Please try again.",
         ),
       );
       return false;
@@ -156,7 +156,7 @@ function StorefrontAuth() {
 
   const signIn = async () => {
     if (!form.email || !form.password)
-      return toast.error(t("البريد وكلمة المرور مطلوبان", "Email and password are required"));
+      return toast.error(t("البريد الإلكتروني وكلمة المرور مطلوبان", "Email and password are required"));
     setWorking(true);
     const { error } = await supabase.auth.signInWithPassword({
       email: form.email.trim().toLowerCase(),
@@ -177,8 +177,8 @@ function StorefrontAuth() {
       setTab("signup");
       toast.error(
         t(
-          "لا يوجد حساب بهذا البريد في هذا المتجر. اختر «إنشاء حساب» للتسجيل لدى هذا المتجر.",
-          "This email is not registered with this store. Choose Create account to register here.",
+          "لا يوجد حساب مسجل بهذا البريد، يمكنك إنشاء حسابك الجديد الآن.",
+          "No account found with this email. You can create your account now.",
         ),
         { duration: 7000 },
       );
@@ -192,21 +192,18 @@ function StorefrontAuth() {
 
   const signUp = async () => {
     if (!form.email || (!session && !form.password))
-      return toast.error(t("البريد وكلمة المرور مطلوبان", "Email and password are required"));
+      return toast.error(t("البريد الإلكتروني وكلمة المرور مطلوبان", "Email and password are required"));
     setWorking(true);
 
-    // An existing authenticated identity must still explicitly choose Create account.
     if (session?.user) {
       const activated = await activateMembership();
       setWorking(false);
       if (!activated) return;
-      toast.success(t("تم إنشاء حسابك في هذا المتجر!", "Your account for this store is ready!"));
+      toast.success(t("تم تفعيل حسابك بنجاح!", "Your account has been activated!"));
       performRedirect();
       return;
     }
 
-    // Correct credentials for an existing platform identity allow that person
-    // to explicitly register with this otherwise unrelated brand.
     const existingLogin = await supabase.auth.signInWithPassword({
       email: form.email.trim().toLowerCase(),
       password: form.password,
@@ -215,7 +212,7 @@ function StorefrontAuth() {
       const activated = await activateMembership();
       setWorking(false);
       if (!activated) return;
-      toast.success(t("تم إنشاء حسابك في هذا المتجر!", "Your account for this store is ready!"));
+      toast.success(t("تم تفعيل حسابك بنجاح!", "Your account has been activated!"));
       performRedirect();
       return;
     }
@@ -243,8 +240,8 @@ function StorefrontAuth() {
       setWorking(false);
       toast.error(
         t(
-          "هذا البريد لديه حساب Boutq بالفعل. أدخل كلمة المرور الحالية الصحيحة للتسجيل في هذا المتجر.",
-          "This email already has a Boutq login. Enter its correct existing password to register with this store.",
+          "البريد مسجل مسبقاً، أدخل كلمة المرور لتسجيل الدخول.",
+          "This email is already registered. Please enter your password to sign in.",
         ),
         { duration: 8000 },
       );
@@ -253,7 +250,7 @@ function StorefrontAuth() {
     if (!data.session) {
       setWorking(false);
       setPendingVerification(form.email.trim());
-      toast.success(t("تحقق من بريدك لتأكيد الحساب.", "Check your email to verify your account."), {
+      toast.success(t("تحقق من بريدك الإلكتروني لتأكيد الحساب.", "Check your email to verify your account."), {
         duration: 8000,
       });
       return;
@@ -261,103 +258,69 @@ function StorefrontAuth() {
     const activated = await activateMembership();
     setWorking(false);
     if (!activated) return;
-    toast.success(t("تم إنشاء الحساب!", "Account created!"));
+    toast.success(t("تم إنشاء حسابك بنجاح!", "Account created successfully!"));
     performRedirect();
   };
 
   if (session && membershipLoading)
     return (
-      <div className="grid min-h-[45vh] place-items-center">
-        <Loader2 className="h-7 w-7 animate-spin" />
+      <div className="grid min-h-[50vh] place-items-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
+
+  const storeName = (lang === "ar" ? brand.name_ar || brand.name_en : brand.name_en || brand.name_ar) || "";
 
   return (
     <div
       dir={lang === "ar" ? "rtl" : "ltr"}
-      className="min-h-[85vh] w-full flex flex-col items-center justify-center relative bg-zinc-950 text-white px-4 py-8 overflow-hidden selection:bg-primary selection:text-primary-foreground rounded-3xl my-4"
+      className="min-h-[75vh] w-full flex flex-col items-center justify-center px-4 py-8 sm:py-12 relative"
     >
-      {/* Dynamic Tech-Boutique Moving Luxury Gradients */}
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,var(--os-accent-glow),transparent_60%)] z-0" />
-      <div className="absolute inset-0 bg-[linear-gradient(to_bottom,transparent,rgba(9,9,11,0.95))] z-0" />
-      <div className="absolute top-[20%] right-[-5%] w-80 h-80 rounded-full bg-rose-500/10 blur-3xl pointer-events-none animate-pulse" />
-      <div className="absolute bottom-[20%] left-[-5%] w-96 h-96 rounded-full bg-primary/15 blur-3xl pointer-events-none" />
+      {/* Background ambient lighting */}
+      <div className="absolute inset-0 bg-gradient-to-b from-primary/[0.03] via-transparent to-primary/[0.02] pointer-events-none" />
 
-      {/* Subtle Grid Pattern Overlay */}
-      <div className="absolute inset-0 bg-[radial-gradient(#ffffff0d_1px,transparent_1px)] [background-size:20px_20px] pointer-events-none z-0" />
-
-      {/* Floating Tech-Boutique Apparel Canvas Elements in Background */}
-      <div className="absolute inset-0 pointer-events-none z-0 overflow-hidden hidden lg:block opacity-35">
-        <div className="absolute top-[18%] left-10 bg-zinc-900/90 border border-emerald-500/30 backdrop-blur-md px-4 py-2.5 rounded-2xl shadow-xl flex items-center gap-3">
-          <div className="h-2 w-2 rounded-full bg-emerald-400 animate-ping" />
-          <div className="text-xs font-semibold text-zinc-200">
-            {lang === "ar" ? "عميل جديد • حجز فستان مخمل" : "New Customer • Velvet Dress Order"}
-          </div>
-          <span className="text-xs font-bold text-emerald-400">280.000 BHD</span>
-        </div>
-
-        <div className="absolute bottom-[18%] right-10 bg-zinc-900/85 border border-border backdrop-blur-md p-4 rounded-2xl shadow-xl w-60">
-          <div className="flex justify-between items-center mb-2">
-            <span className="text-[10px] text-zinc-400 font-bold tracking-wider uppercase flex items-center gap-1">
-              <TrendingUp className="h-3 w-3 text-primary" />
-              {lang === "ar" ? "أداء المتجر" : "STORE ANALYTICS"}
-            </span>
-            <span className="text-[9px] bg-emerald-500/10 text-emerald-400 font-bold border border-emerald-500/20 px-2 py-0.5 rounded-full">
-              ACTIVE
-            </span>
-          </div>
-          <div className="text-xl font-bold font-mono text-zinc-100">100% PRIVATE</div>
-        </div>
-      </div>
-
-      {/* Center Auth Card Container */}
-      <div className="w-full max-w-md relative z-10 space-y-6">
-        <Card className="space-y-5 p-6 sm:p-8 backdrop-blur-xl bg-zinc-900/85 border border-border shadow-2xl rounded-3xl relative overflow-hidden text-white">
-          {/* Top Sheen */}
-          <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/30 to-transparent pointer-events-none" />
-
-          <div className="text-center">
-            <div
-              className="mx-auto mb-3.5 grid h-14 w-14 place-items-center rounded-2xl shadow-sm border border-zinc-800 backdrop-blur-md transition-transform hover:scale-105"
-              style={{
-                backgroundColor: `${settings.primary_color}25`,
-              }}
-            >
-              <User className="h-7 w-7 text-primary" />
+      {/* Main Container */}
+      <div className="w-full max-w-md relative z-10">
+        <Card className="space-y-6 p-6 sm:p-8 bg-card border-border shadow-xl rounded-2xl sm:rounded-3xl text-card-foreground">
+          {/* Header */}
+          <div className="text-center space-y-2">
+            <div className="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-primary/10 text-primary border border-primary/20 shadow-xs transition-transform hover:scale-105">
+              <User className="h-7 w-7" />
             </div>
-            <h1 className="font-display text-2xl font-bold tracking-tight text-white">
-              {t("حسابك في", "Your account at")}{" "}
-              <span className="text-primary">
-                {lang === "ar" ? brand.name_ar || brand.name_en : brand.name_en}
-              </span>
-            </h1>
-            <p className="mt-1.5 text-xs sm:text-sm text-zinc-300 leading-relaxed font-medium">
-              {t(
-                "كل متجر مستقل، وسجلك وطلباتك خاصة بهذا المتجر فقط.",
-                "Each store is independent; your profile and orders remain private to this store.",
-              )}
-            </p>
+            <div>
+              <h1 className="font-display text-xl sm:text-2xl font-bold tracking-tight text-foreground">
+                {t("مرحباً بك في", "Welcome to")}{" "}
+                <span className="text-primary">{storeName}</span>
+              </h1>
+              <p className="mt-1 text-xs sm:text-sm text-muted-foreground leading-relaxed">
+                {t(
+                  "سجّل دخولك لمتابعة طلباتك، حفظ عناوينك، وتجربة تسوق أسرع وأسهل.",
+                  "Sign in to track your orders, manage your addresses, and enjoy seamless shopping.",
+                )}
+              </p>
+            </div>
           </div>
 
+          {/* Email Verification Alert */}
           {pendingVerification && (
             <div
-              className="flex items-start gap-3 rounded-2xl border bg-zinc-950/80 backdrop-blur-md p-4 text-zinc-200 shadow-xs border-zinc-800"
+              className="flex items-start gap-3 rounded-xl border border-primary/20 bg-primary/5 p-4 text-foreground shadow-xs"
               role="status"
             >
               <MailCheck className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
               <div className="space-y-1 text-sm">
-                <div className="font-bold text-primary">
+                <div className="font-semibold text-primary">
                   {t("تحقق من بريدك الإلكتروني", "Check your email")}
                 </div>
-                <p className="text-xs text-zinc-300">
-                  {t("أرسلنا رابط التفعيل إلى", "We sent a verification link to")}{" "}
-                  <b className="text-white">{pendingVerification}</b>.
+                <p className="text-xs text-muted-foreground">
+                  {t("أرسلنا رابط التحقق إلى", "We sent a verification link to")}{" "}
+                  <b className="text-foreground">{pendingVerification}</b>.
                 </p>
                 <Button
                   type="button"
                   variant="link"
                   size="sm"
-                  className="h-auto p-0 text-xs font-bold text-primary hover:text-white underline"
+                  className="h-auto p-0 text-xs font-semibold text-primary hover:underline"
                   onClick={() => {
                     setPendingVerification(null);
                     setTab("signin");
@@ -369,15 +332,16 @@ function StorefrontAuth() {
             </div>
           )}
 
-          {/* Fast SSO / Biometric Sign-In Methods */}
+          {/* Fast SSO / Biometrics */}
           <div className="space-y-2.5">
             <Button
               type="button"
-              className="h-12 w-full gap-3 font-semibold text-zinc-200 border border-zinc-800 bg-zinc-950/80 backdrop-blur-md shadow-xs hover:bg-zinc-800/80 active:scale-[0.99] rounded-2xl transition-all duration-200"
+              variant="outline"
+              className="h-11 w-full gap-3 font-medium text-foreground border-border hover:bg-muted/60 active:scale-[0.99] rounded-xl transition-all shadow-xs"
               onClick={signInWithGoogle}
               disabled={working || passkeyLoading}
             >
-              <svg className="h-5 w-5 shrink-0" viewBox="0 0 24 24">
+              <svg className="h-4 w-4 shrink-0" viewBox="0 0 24 24">
                 <path
                   fill="#4285F4"
                   d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
@@ -395,49 +359,53 @@ function StorefrontAuth() {
                   d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
                 />
               </svg>
-              {t("متابعة باستخدام Google", "Continue with Google")}
+              <span>{t("المتابعة باستخدام Google", "Continue with Google")}</span>
             </Button>
 
             {passkeySupported && (
               <Button
                 type="button"
-                className="h-12 w-full gap-3 font-semibold text-zinc-200 border border-zinc-800 bg-zinc-950/80 backdrop-blur-md shadow-xs hover:bg-zinc-800/80 active:scale-[0.99] rounded-2xl transition-all duration-200"
+                variant="outline"
+                className="h-11 w-full gap-3 font-medium text-foreground border-border hover:bg-muted/60 active:scale-[0.99] rounded-xl transition-all shadow-xs"
                 onClick={() => void signInWithPasskey()}
                 disabled={working || passkeyLoading}
               >
                 {passkeyLoading ? (
-                  <Loader2 className="h-5 w-5 animate-spin text-primary" />
+                  <Loader2 className="h-4 w-4 animate-spin text-primary" />
                 ) : (
-                  <Fingerprint className="h-5 w-5 text-primary shrink-0" />
+                  <Fingerprint className="h-4 w-4 text-primary shrink-0" />
                 )}
-                {t("الدخول بالبصمة / Face ID", "Sign in with Passkey / Biometrics")}
+                <span>{t("تسجيل الدخول بالبصمة / Face ID", "Sign in with Face ID / Passkey")}</span>
               </Button>
             )}
           </div>
 
+          {/* Divider */}
           <div className="relative flex py-1 items-center">
-            <div className="flex-grow border-t border-zinc-800"></div>
-            <span className="flex-shrink mx-3 text-[10px] font-bold uppercase tracking-wider text-zinc-400">
-              {t("أو سجّل ببريدك", "OR SIGN IN WITH EMAIL")}
+            <div className="flex-grow border-t border-border"></div>
+            <span className="flex-shrink mx-3 text-xs uppercase tracking-wider text-muted-foreground font-medium">
+              {t("أو عبر البريد الإلكتروني", "OR WITH EMAIL")}
             </span>
-            <div className="flex-grow border-t border-zinc-800"></div>
+            <div className="flex-grow border-t border-border"></div>
           </div>
 
+          {/* Tabs for Sign In vs Sign Up */}
           <Tabs value={tab} onValueChange={(value) => setTab(value as "signin" | "signup")}>
-            <TabsList className="grid h-12 w-full grid-cols-2 p-1 bg-zinc-950/80 backdrop-blur-md rounded-2xl border border-zinc-800">
+            <TabsList className="grid h-11 w-full grid-cols-2 p-1 bg-muted rounded-xl">
               <TabsTrigger
-                className="h-10 text-xs font-bold text-zinc-400 rounded-xl transition-all data-[state=active]:bg-zinc-800 data-[state=active]:text-white data-[state=active]:shadow-xs"
+                className="h-9 text-xs sm:text-sm font-semibold rounded-lg transition-all"
                 value="signin"
               >
                 {t("تسجيل الدخول", "Sign in")}
               </TabsTrigger>
               <TabsTrigger
-                className="h-10 text-xs font-bold text-zinc-400 rounded-xl transition-all data-[state=active]:bg-zinc-800 data-[state=active]:text-white data-[state=active]:shadow-xs"
+                className="h-9 text-xs sm:text-sm font-semibold rounded-lg transition-all"
                 value="signup"
               >
-                {t("إنشاء حساب", "Create account")}
+                {t("إنشاء حساب جديد", "Create account")}
               </TabsTrigger>
             </TabsList>
+
             <TabsContent
               value="signin"
               className="mt-4 space-y-3.5 animate-in fade-in-40 duration-200"
@@ -445,17 +413,19 @@ function StorefrontAuth() {
               <Field
                 label={t("البريد الإلكتروني", "Email")}
                 type="email"
+                placeholder="name@example.com"
                 value={form.email}
                 onChange={(email) => setForm({ ...form, email })}
               />
               <Field
                 label={t("كلمة المرور", "Password")}
                 type="password"
+                placeholder="••••••••"
                 value={form.password}
                 onChange={(password) => setForm({ ...form, password })}
               />
               <Button
-                className="h-12 w-full font-semibold rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-all shadow-md mt-1"
+                className="h-11 w-full font-semibold rounded-xl bg-primary text-primary-foreground hover:opacity-90 transition-all shadow-sm mt-2"
                 onClick={signIn}
                 disabled={working}
               >
@@ -467,23 +437,27 @@ function StorefrontAuth() {
                 {t("تسجيل الدخول", "Sign in")}
               </Button>
             </TabsContent>
+
             <TabsContent
               value="signup"
               className="mt-4 space-y-3.5 animate-in fade-in-40 duration-200"
             >
               <Field
                 label={t("الاسم الكامل", "Full name")}
+                placeholder={t("مثال: سارة أحمد", "e.g. Sarah Ahmed")}
                 value={form.name}
                 onChange={(name) => setForm({ ...form, name })}
               />
               <Field
                 label={t("رقم الهاتف", "Phone")}
+                placeholder="+973 3900 0000"
                 value={form.phone}
                 onChange={(phone) => setForm({ ...form, phone })}
               />
               <Field
                 label={t("البريد الإلكتروني", "Email")}
                 type="email"
+                placeholder="name@example.com"
                 value={form.email}
                 disabled={Boolean(session)}
                 onChange={(email) => setForm({ ...form, email })}
@@ -492,27 +466,30 @@ function StorefrontAuth() {
                 <Field
                   label={t("كلمة المرور", "Password")}
                   type="password"
+                  placeholder="••••••••"
                   value={form.password}
                   onChange={(password) => setForm({ ...form, password })}
                 />
               )}
               <Button
-                className="h-12 w-full font-semibold rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-all shadow-md mt-1"
+                className="h-11 w-full font-semibold rounded-xl bg-primary text-primary-foreground hover:opacity-90 transition-all shadow-sm mt-2"
                 onClick={signUp}
                 disabled={working}
               >
                 {working && <Loader2 className="me-2 h-4 w-4 animate-spin" />}
-                {t("إنشاء حساب في هذا المتجر", "Create account for this store")}
+                {t("إنشاء حساب جديد", "Create Account")}
               </Button>
             </TabsContent>
           </Tabs>
-          <div className="text-center text-sm pt-1">
+
+          {/* Footer guest link */}
+          <div className="text-center pt-1 border-t border-border">
             <Link
               to="/$slug"
               params={{ slug: brand.slug }}
-              className="inline-flex min-h-11 items-center text-xs font-bold text-primary hover:text-white underline underline-offset-4 transition-colors"
+              className="inline-flex min-h-11 items-center text-xs sm:text-sm font-medium text-muted-foreground hover:text-foreground underline underline-offset-4 transition-colors"
             >
-              {t("متابعة كضيف", "Continue as guest")}
+              {t("المتابعة كزائر دون تسجيل", "Continue shopping as guest")}
             </Link>
           </div>
         </Card>
@@ -525,12 +502,14 @@ function Field({
   label,
   value,
   onChange,
+  placeholder,
   type = "text",
   disabled = false,
 }: {
   label: string;
   value: string;
   onChange: (value: string) => void;
+  placeholder?: string;
   type?: string;
   disabled?: boolean;
 }) {
@@ -539,14 +518,15 @@ function Field({
     type === "email" ? "email" : type === "password" ? "current-password" : undefined;
   return (
     <div className="space-y-1.5">
-      <Label htmlFor={id} className="text-xs font-bold text-zinc-200">
+      <Label htmlFor={id} className="text-xs sm:text-sm font-medium text-foreground">
         {label}
       </Label>
       <Input
         id={id}
         name={id}
+        placeholder={placeholder}
         autoComplete={autocomplete}
-        className="h-11 bg-zinc-950/80 border-zinc-800 focus:border-primary focus:ring-2 focus:ring-primary/30 text-white placeholder:text-zinc-500 rounded-xl transition-all font-medium"
+        className="h-11 bg-background border-border focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 text-foreground placeholder:text-muted-foreground/60 rounded-xl transition-all font-normal"
         type={type}
         value={value}
         disabled={disabled}

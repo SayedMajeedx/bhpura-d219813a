@@ -324,7 +324,7 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
     initialData: loaderData?.product ?? undefined,
     queryFn: async () => {
       const primaryFields =
-        "id, category, name, name_ar, name_en, description, description_ar, description_en, image_url, media, custom_fields, base_price, product_variants(id, size, size_unit, color, fabric, selling_price, original_price, stock_main, image_url)";
+        "id, category, name, name_ar, name_en, description, description_ar, description_en, image_url, media, custom_fields, base_price, product_variants(id, size, size_unit, color, fabric, selling_price, original_price, stock_main, stock_incubator, image_url)";
       const fullFields = `${primaryFields}, variant_label_size_ar, variant_label_size_en, variant_label_color_ar, variant_label_color_en, variant_label_fabric_ar, variant_label_fabric_en`;
 
       const fetchByTargetId = async (targetId: string) => {
@@ -750,7 +750,6 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
     : minMatchingPrice;
 
   const maxStock = (Number(variant?.stock_main ?? 0) + Number(variant?.stock_incubator ?? 0));
-  const selectedVariantOutOfStock = Boolean(variant && maxStock <= 0);
 
   const displayName = pickName(lang, product);
   const displayDescription = pickDescription(lang, product);
@@ -776,6 +775,11 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
   const hasReadySizes = uniqueSizes.length > 0 || hasVariants;
   const hasCustomFields = customFields.length > 0;
   const showSizeModeToggle = hasReadySizes && hasCustomFields;
+  const isTailoringActive =
+    (showSizeModeToggle && sizeMode === "custom") ||
+    (!showSizeModeToggle && hasCustomFields && uniqueSizes.length === 0);
+
+  const selectedVariantOutOfStock = Boolean(!isTailoringActive && variant && maxStock <= 0);
 
   const validate = (): string | null => {
     if (showSizeModeToggle) {
@@ -794,11 +798,14 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
         }
       }
     } else {
-      if (hasVariants && !variant) {
-        return t("يرجى اختيار مقاس/خيار أولاً", "Please select a size or option first");
-      }
-      if (variant && (Number(variant.stock_main || 0) + Number(variant.stock_incubator || 0)) <= 0) {
-        return t("هذا الخيار غير متوفر حالياً", "This option is out of stock");
+      const isPureCustom = hasCustomFields && uniqueSizes.length === 0;
+      if (!isPureCustom) {
+        if (hasVariants && !variant) {
+          return t("يرجى اختيار مقاس/خيار أولاً", "Please select a size or option first");
+        }
+        if (variant && (Number(variant.stock_main || 0) + Number(variant.stock_incubator || 0)) <= 0) {
+          return t("هذا الخيار غير متوفر حالياً", "This option is out of stock");
+        }
       }
       for (const f of customFields) {
         if (f.required && !(cfValues[f.key] ?? "").trim()) {
@@ -817,9 +824,15 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
       scrollToOptions();
       return;
     }
-    const isCustomTailoring = showSizeModeToggle && sizeMode === "custom";
-    const targetVariant = isCustomTailoring ? variant || variants[0] || null : variant;
-    if (!targetVariant && hasVariants) {
+    const targetVariant = isTailoringActive
+      ? variant ||
+        matchingVariants[0] ||
+        variants.find((v) => !selectedColor || v.color === selectedColor) ||
+        variants[0] ||
+        null
+      : variant;
+
+    if (!targetVariant && hasVariants && !isTailoringActive) {
       const msg = t("يرجى اختيار خيار أولاً", "Please select an option first");
       setErrorMsg(msg);
       toast.error(msg);
@@ -875,7 +888,7 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
     const effectiveSize =
       showSizeModeToggle && sizeMode === "custom"
         ? t("تفصيل / قياسات خاصة", "Custom Tailoring")
-        : targetVariant?.size || null;
+        : targetVariant?.size || (hasCustomFields ? t("تفصيل", "Custom Tailoring") : null);
 
     addToCart({
       cart_line_id: "",
@@ -892,12 +905,13 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
       price: displayPrice,
       original_price: originalPriceWithAddons > displayPrice ? originalPriceWithAddons : null,
       size: effectiveSize,
-      color: targetVariant?.color || null,
-      fabric: targetVariant?.fabric || null,
+      color: targetVariant?.color || selectedColor || null,
+      fabric: targetVariant?.fabric || selectedFabric || null,
       qty,
-      max_stock:
-        (Number(targetVariant?.stock_main ?? 0) + Number(targetVariant?.stock_incubator ?? 0)) ||
-        999,
+      max_stock: isTailoringActive
+        ? 999
+        : (Number(targetVariant?.stock_main ?? 0) + Number(targetVariant?.stock_incubator ?? 0)) ||
+          999,
       custom_fields: custom,
       selected_customizations,
     } as any);
@@ -1144,7 +1158,7 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
                   <div className="flex flex-wrap gap-2.5">
                     {uniqueColors.map((color) => {
                       const active = selectedColor === color;
-                      const oos = isColorOutOfStock[color];
+                      const oos = !isTailoringActive && Boolean(isColorOutOfStock[color]);
                       const hex = resolveColorHex(color);
                       const ringStyle = active ? { borderColor: primary } : {};
                       return (
@@ -1161,7 +1175,7 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
                             active ? "scale-110 shadow-sm" : "border-transparent hover:scale-105"
                           } ${oos ? "opacity-45 cursor-not-allowed" : ""}`}
                           style={ringStyle}
-                          title={color + (oos ? ` (${t("غير متوفر", "out of stock")})` : "")}
+                          title={color + (oos ? ` (${t("غير متوفر جاهز", "out of ready stock")})` : "")}
                           aria-label={color}
                         >
                           {hex ? (
@@ -1176,7 +1190,7 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
                           ) : (
                             <span className="h-7 w-7 rounded-full border bg-muted flex items-center justify-center text-[10px] font-bold uppercase truncate shadow-inner relative overflow-hidden">
                               {color.slice(0, 2)}
-                              {(isColorOutOfStock[color] || (Number(variants.filter(v => v.color === color).reduce((acc, v) => acc + Number(v.stock_main || 0) + Number(v.stock_incubator || 0), 0)) <= 0)) && (
+                              {oos && (
                                 <span className="absolute inset-0 w-full h-[2px] bg-destructive/80 rotate-45 origin-center top-1/2 -translate-y-1/2" />
                               )}
                             </span>
@@ -1240,7 +1254,7 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
                   <div className="flex flex-wrap gap-2">
                     {uniqueFabrics.map((fb) => {
                       const active = selectedFabric === fb;
-                      const oos = isFabricOutOfStock[fb] || (Number(variants.filter(v => v.fabric === fb).reduce((acc, v) => acc + Number(v.stock_main || 0) + Number(v.stock_incubator || 0), 0)) <= 0);
+                      const oos = !isTailoringActive && (isFabricOutOfStock[fb] || (Number(variants.filter(v => v.fabric === fb).reduce((acc, v) => acc + Number(v.stock_main || 0) + Number(v.stock_incubator || 0), 0)) <= 0));
                       return (
                         <Button
                           key={fb}
@@ -1539,36 +1553,46 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
             </div>
           )}
 
-          {variant && (
-            <div className="mb-4">
-              <div className="text-sm font-medium mb-2">{t("الكمية", "Quantity")}</div>
-              <div className="inline-flex items-center border rounded-lg overflow-hidden">
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  aria-label={t("تقليل الكمية", "Decrease quantity")}
-                  className="h-11 w-11 rounded-none"
-                  onClick={() => setQty((q) => Math.max(1, q - 1))}
-                >
-                  −
-                </Button>
-                <span className="px-4 text-sm font-medium">{qty}</span>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  aria-label={t("زيادة الكمية", "Increase quantity")}
-                  className="h-11 w-11 rounded-none"
-                  disabled={qty >= maxStock}
-                  onClick={() => setQty((q) => Math.min(maxStock, q + 1))}
-                >
-                  +
-                </Button>
+          {(variant || isTailoringActive) && (
+            <div className="mb-4 flex items-center">
+              <div>
+                <div className="text-sm font-medium mb-2">{t("الكمية", "Quantity")}</div>
+                <div className="inline-flex items-center border rounded-lg overflow-hidden">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    aria-label={t("تقليل الكمية", "Decrease quantity")}
+                    className="h-11 w-11 rounded-none"
+                    onClick={() => setQty((q) => Math.max(1, q - 1))}
+                  >
+                    −
+                  </Button>
+                  <span className="px-4 text-sm font-medium">{qty}</span>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    aria-label={t("زيادة الكمية", "Increase quantity")}
+                    className="h-11 w-11 rounded-none"
+                    disabled={isTailoringActive ? false : qty >= maxStock}
+                    onClick={() => setQty((q) => (isTailoringActive ? q + 1 : Math.min(maxStock, q + 1)))}
+                  >
+                    +
+                  </Button>
+                </div>
               </div>
-              <span className="ms-3 inline-flex items-center rounded-full border px-2 py-0.5 text-xs bg-white/95 text-neutral-900">
-                {maxStock} {t("متوفر", "available")}
-              </span>
+              <div className="ms-3 mt-6">
+                {isTailoringActive ? (
+                  <span className="inline-flex items-center rounded-full border border-primary/20 bg-primary/10 px-2.5 py-1 text-xs text-primary font-medium">
+                    {t("تفصيل حسب الطلب", "Made to order")}
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center rounded-full border border-border bg-muted px-2.5 py-1 text-xs text-foreground">
+                    {maxStock} {t("متوفر", "available")}
+                  </span>
+                )}
+              </div>
             </div>
           )}
 

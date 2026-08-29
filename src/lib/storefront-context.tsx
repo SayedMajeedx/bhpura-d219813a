@@ -434,10 +434,22 @@ export function StorefrontProvider({
       setCart((prev) => {
         const lineId = cartLineId(item);
         const existing = prev.find((c) => c.cart_line_id === lineId);
-        const usedByOtherConfigurations = prev
-          .filter((c) => c.variant_id === item.variant_id && c.cart_line_id !== lineId)
-          .reduce((sum, c) => sum + c.qty, 0);
-        const availableForLine = Math.max(0, item.max_stock - usedByOtherConfigurations);
+        const isCustomLine = Boolean(
+          (Array.isArray(item.custom_fields) && item.custom_fields.length > 0) ||
+          item.max_stock >= 999
+        );
+        const usedByOtherConfigurations = isCustomLine
+          ? 0
+          : prev
+              .filter(
+                (c) =>
+                  c.variant_id === item.variant_id &&
+                  c.cart_line_id !== lineId &&
+                  !(Array.isArray(c.custom_fields) && c.custom_fields.length > 0),
+              )
+              .reduce((sum, c) => sum + c.qty, 0);
+        const effectiveMax = isCustomLine ? 999 : item.max_stock;
+        const availableForLine = Math.max(0, effectiveMax - usedByOtherConfigurations);
         if (existing) {
           if (availableForLine === 0) {
             return prev.filter((c) => c.cart_line_id !== lineId);
@@ -475,10 +487,22 @@ export function StorefrontProvider({
     setCart((prev) => {
       const target = prev.find((c) => c.cart_line_id === cart_line_id);
       if (!target) return prev;
-      const usedByOthers = prev
-        .filter((c) => c.variant_id === target.variant_id && c.cart_line_id !== cart_line_id)
-        .reduce((sum, c) => sum + c.qty, 0);
-      const availableForLine = Math.max(0, target.max_stock - usedByOthers);
+      const isCustomLine = Boolean(
+        (Array.isArray(target.custom_fields) && target.custom_fields.length > 0) ||
+        target.max_stock >= 999
+      );
+      const usedByOthers = isCustomLine
+        ? 0
+        : prev
+            .filter(
+              (c) =>
+                c.variant_id === target.variant_id &&
+                c.cart_line_id !== cart_line_id &&
+                !(Array.isArray(c.custom_fields) && c.custom_fields.length > 0),
+            )
+            .reduce((sum, c) => sum + c.qty, 0);
+      const effectiveMax = isCustomLine ? 999 : target.max_stock;
+      const availableForLine = Math.max(0, effectiveMax - usedByOthers);
       if (qty <= 0 || availableForLine <= 0) {
         return prev.filter((c) => c.cart_line_id !== cart_line_id);
       }

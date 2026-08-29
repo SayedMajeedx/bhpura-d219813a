@@ -212,7 +212,7 @@ function CategoryPage() {
         const { data, error } = await supabase
           .from("products")
           .select(
-            "id, name, name_ar, name_en, description, description_ar, description_en, category, image_url, media, brand_id, created_at, product_variants(id, selling_price, original_price, stock_main, stock_incubator, size, color)",
+            "id, name, name_ar, name_en, description, description_ar, description_en, category, image_url, media, brand_id, created_at, custom_fields, product_variants(id, selling_price, original_price, stock_main, stock_incubator, size, color)",
           )
           .eq("brand_id", brand.id)
           .eq("is_active", true)
@@ -229,7 +229,7 @@ function CategoryPage() {
         const { data, error } = await supabase
           .from("products")
           .select(
-            "id, name, name_ar, name_en, description, description_ar, description_en, category, image_url, media, brand_id, created_at, product_variants(id, selling_price, original_price, stock_main, stock_incubator, size, color)",
+            "id, name, name_ar, name_en, description, description_ar, description_en, category, image_url, media, brand_id, created_at, custom_fields, product_variants(id, selling_price, original_price, stock_main, stock_incubator, size, color)",
           )
           .eq("brand_id", brand.id)
           .eq("is_active", true)
@@ -256,7 +256,7 @@ function CategoryPage() {
       const { data, error } = await supabase
         .from("products")
         .select(
-          "id, name, name_ar, name_en, description, description_ar, description_en, category, image_url, media, brand_id, created_at, product_variants(id, selling_price, original_price, stock_main, stock_incubator, size, color)",
+          "id, name, name_ar, name_en, description, description_ar, description_en, category, image_url, media, brand_id, created_at, custom_fields, product_variants(id, selling_price, original_price, stock_main, stock_incubator, size, color)",
         )
         .eq("brand_id", brand.id)
         .eq("is_active", true)

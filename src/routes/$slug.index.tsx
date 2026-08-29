@@ -59,6 +59,7 @@ export type ProductRow = {
   created_at: string;
   featured_trending?: boolean;
   show_sale_badge?: boolean;
+  custom_fields?: unknown;
   product_variants: Array<{
     id: string;
     selling_price: number;
@@ -71,6 +72,9 @@ export type ProductRow = {
 };
 
 export function hasAvailableStock(product: ProductRow): boolean {
+  if (Array.isArray(product.custom_fields) && product.custom_fields.length > 0) {
+    return true;
+  }
   return product.product_variants.some(
     (variant) => (Number(variant.stock_main || 0) + Number(variant.stock_incubator || 0)) > 0,
   );

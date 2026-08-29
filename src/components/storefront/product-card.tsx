@@ -44,7 +44,12 @@ export function ProductCard({
     (s, v) => s + (Number(v.stock_main || 0) + Number(v.stock_incubator || 0)),
     0,
   );
-  const oos = totalStock <= 0;
+  const isCustomTailoringAvailable = Boolean(
+    product.custom_fields &&
+      Array.isArray(product.custom_fields) &&
+      product.custom_fields.length > 0,
+  );
+  const oos = !isCustomTailoringAvailable && totalStock <= 0;
 
   const media = Array.isArray(product.media)
     ? (product.media as Array<{ type: string; url: string }>)
