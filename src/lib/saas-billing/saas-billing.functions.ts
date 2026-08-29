@@ -186,7 +186,6 @@ export const createPlanVersion = createServerFn({ method: "POST" })
       feature_key: f.featureKey,
       boolean_value: f.booleanValue,
       numeric_value: f.numericValue,
-      is_unlimited: f.numericValue === -1,
     }));
 
     if (featureInserts.length > 0) {
@@ -408,7 +407,6 @@ export const createCustomPlan = createServerFn({ method: "POST" })
       feature_key: f.featureKey,
       boolean_value: f.booleanValue,
       numeric_value: f.numericValue,
-      is_unlimited: f.numericValue === -1,
     }));
 
     if (featureInserts.length > 0) {
