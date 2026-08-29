@@ -23,6 +23,9 @@ import {
   PhoneCall,
   QrCode,
   Copy,
+  ArrowUpRight,
+  ShieldCheck,
+  Zap,
 } from "lucide-react";
 import {
   Select,
@@ -680,9 +683,9 @@ function OnboardPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col md:flex-row bg-background">
-      {/* Brand Visual Left Sidebar (Desktop only) */}
-      <div className="hidden md:flex md:w-[35%] bg-zinc-950 text-white flex-col justify-between p-12 relative overflow-hidden shrink-0 border-r border-zinc-900 select-none">
+    <div className="min-h-screen bg-[#fbfaf8] text-foreground">
+      {/* Immersive product hero */}
+      <div className="flex min-h-[620px] w-full bg-[#120b0d] text-white flex-col justify-between px-6 py-7 sm:px-10 lg:min-h-[680px] lg:px-16 lg:py-10 relative overflow-hidden select-none">
         <style>{`
           @keyframes float-slow {
             0%, 100% { transform: translateY(0px) rotate(0deg); }
@@ -715,11 +718,11 @@ function OnboardPage() {
         `}</style>
 
         {/* Dynamic moving luxury gradients */}
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(183,110,121,0.18),transparent_60%)] z-0" />
-        <div className="absolute inset-0 bg-[linear-gradient(to_bottom,transparent,rgba(9,9,11,0.95))] z-0" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_78%_22%,rgba(137,25,43,0.32),transparent_34%),radial-gradient(circle_at_10%_100%,rgba(130,88,70,0.18),transparent_42%)] z-0" />
+        <div className="absolute inset-0 bg-[linear-gradient(115deg,rgba(18,11,13,0.98)_0%,rgba(18,11,13,0.88)_44%,rgba(10,7,8,0.7)_100%)] z-0" />
 
         {/* Showcase Canvas Background (Animated Cards) */}
-        <div className="absolute inset-0 pointer-events-none opacity-30 dark:opacity-50 z-0">
+        <div className={`absolute inset-y-0 hidden w-[52%] pointer-events-none opacity-80 lg:block z-0 ${lang === "ar" ? "left-0" : "right-0"}`}>
           {/* Glowing gradient backdrops */}
           <div className="absolute top-[20%] right-[-10%] w-72 h-72 rounded-full bg-rose-500/10 blur-3xl animate-pulse-soft" />
           <div
@@ -728,7 +731,7 @@ function OnboardPage() {
           />
 
           {/* New Order Pill Notification */}
-          <div className="absolute top-[22%] left-6 right-6 z-20 animate-banner-slide">
+          <div className="absolute top-[18%] left-[8%] right-[8%] z-20 animate-banner-slide">
             <div className="bg-zinc-900/90 border border-emerald-500/30 backdrop-blur-md px-4 py-2.5 rounded-xl shadow-lg shadow-emerald-950/20 flex items-center justify-between gap-3">
               <div className="flex items-center gap-2">
                 <div className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-ping" />
@@ -748,7 +751,7 @@ function OnboardPage() {
           </div>
 
           {/* Live Sales Dashboard Card */}
-          <div className="absolute top-[32%] left-6 right-6 bg-zinc-900/85 border border-border backdrop-blur-md p-5 rounded-2xl shadow-xl animate-float-slow">
+          <div className="absolute top-[34%] left-[13%] right-[6%] bg-white/[0.06] border border-white/10 backdrop-blur-xl p-6 rounded-[28px] shadow-2xl shadow-black/40 animate-float-slow">
             <div className="flex justify-between items-center mb-3">
               <span className="text-[9px] text-zinc-400 font-bold tracking-widest uppercase">
                 {lang === "ar" ? "المبيعات المباشرة" : "LIVE MERCHANT SALES"}
@@ -779,7 +782,7 @@ function OnboardPage() {
 
           {/* Luxury Abaya Product Card */}
           <div
-            className="absolute bottom-[24%] left-6 w-[75%] bg-zinc-900/85 border border-border backdrop-blur-md p-4 rounded-xl shadow-lg animate-float-slower"
+            className="absolute bottom-[13%] left-[5%] w-[62%] bg-white/[0.06] border border-white/10 backdrop-blur-xl p-4 rounded-2xl shadow-2xl animate-float-slower"
             style={{ animationDelay: "1s" }}
           >
             <div className="flex items-center gap-3">
@@ -800,7 +803,7 @@ function OnboardPage() {
 
           {/* Floating VIP customer tag */}
           <div
-            className="absolute bottom-[36%] right-6 bg-rose-500/10 border border-rose-500/20 text-rose-300 text-[9px] font-bold px-3 py-1.5 rounded-full shadow-md animate-float-slow"
+            className="absolute bottom-[23%] right-[7%] bg-rose-500/10 border border-rose-400/20 text-rose-200 text-[9px] font-bold px-3 py-1.5 rounded-full shadow-md animate-float-slow"
             style={{ animationDelay: "2.5s" }}
           >
             {lang === "ar" ? "عملاء كبار الشخصيات VIP" : "VIP CONCIERGE"}
@@ -808,7 +811,8 @@ function OnboardPage() {
         </div>
 
         {/* Top Header Section */}
-        <div className="relative z-10 flex items-center gap-2">
+        <div className="relative z-10 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-2">
           {platformIconUrl && !logoError ? (
             <img
               src={platformIconUrl}
@@ -822,25 +826,47 @@ function OnboardPage() {
               <span className="font-display text-lg tracking-wider font-semibold">Boutq</span>
             </>
           )}
+          </div>
+          <div className="hidden items-center gap-2 text-[11px] text-zinc-400 sm:flex">
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_12px_rgba(52,211,153,.8)]" />
+            {lang === "ar" ? "المنصة تعمل الآن" : "Platform operational"}
+          </div>
         </div>
 
         {/* Central Overlay Text with luxury branding content */}
-        <div className="relative z-10 space-y-6 max-w-sm mt-auto mb-16">
-          <Sparkles className="h-10 w-10 text-primary animate-pulse" />
-          <h2 className="text-4xl font-display font-medium leading-tight tracking-tight">
+        <div className={`relative z-10 my-auto max-w-xl space-y-7 pt-14 lg:w-[43%] lg:pt-0 ${lang === "ar" ? "lg:mr-[4%] lg:ml-auto" : "lg:ml-[4%]"}`}>
+          <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.055] px-3 py-1.5 text-[10px] font-semibold tracking-[0.14em] text-rose-100 backdrop-blur-md">
+            <Sparkles className="h-3.5 w-3.5 text-rose-300" />
+            {lang === "ar" ? "من الفكرة إلى متجر متكامل" : "FROM IDEA TO A COMPLETE STORE"}
+          </div>
+          <h2 className="text-4xl sm:text-5xl lg:text-6xl font-display font-medium leading-[1.12] tracking-[-0.035em]">
             {lang === "ar"
-              ? "أطلق مساحتك التجارية الفاخرة اليوم"
-              : "Own your professional luxury boutique store."}
+              ? "متجرك، عملياتك، ونموّك. في منصة واحدة."
+              : "Your store, operations, and growth. One platform."}
           </h2>
-          <p className="text-zinc-400 text-sm leading-relaxed">
+          <p className="max-w-lg text-sm leading-7 text-zinc-300 sm:text-base">
             {lang === "ar"
-              ? "منصة الإدارة المتكاملة لمصممي الأزياء، العبايات، وصالات العرض النخبوية في البحرين والخليج العربي. واجهات في غاية الفخامة والدقة."
-              : "The premium management stack designed for visual designers, Abaya houses, and high-end couture stores in Bahrain and the GCC. Exquisite storefront interfaces."}
+              ? "Boutq OS يجمع المتجر الإلكتروني، الطلبات، المخزون، العملاء، التقارير والتسويق في تجربة صُممت للعلامات التي تطمح للنمو."
+              : "Boutq OS brings storefront, orders, inventory, customers, analytics and marketing into one experience built for ambitious brands."}
           </p>
+          <div className="flex flex-wrap gap-3">
+            <a href="#start" className="inline-flex h-12 items-center gap-2 rounded-full bg-white px-6 text-sm font-bold text-[#330a0a] shadow-xl shadow-black/20 transition hover:-translate-y-0.5 hover:bg-rose-50">
+              {lang === "ar" ? "ابدأ الآن" : "Get started"}
+              <ArrowUpRight className="h-4 w-4" />
+            </a>
+            <button type="button" onClick={() => setShowFeaturesModal(true)} className="inline-flex h-12 items-center gap-2 rounded-full border border-white/15 bg-white/[0.04] px-6 text-sm font-semibold text-white backdrop-blur-md transition hover:bg-white/[0.09]">
+              {lang === "ar" ? "استكشف المنصة" : "Explore the platform"}
+            </button>
+          </div>
+          <div className="flex flex-wrap gap-x-6 gap-y-2 pt-2 text-[11px] text-zinc-400">
+            <span className="flex items-center gap-1.5"><ShieldCheck className="h-4 w-4 text-emerald-400" />{lang === "ar" ? "حماية مؤسسية" : "Enterprise security"}</span>
+            <span className="flex items-center gap-1.5"><Zap className="h-4 w-4 text-amber-300" />{lang === "ar" ? "إطلاق سريع" : "Fast launch"}</span>
+            <span className="flex items-center gap-1.5"><CheckCircle2 className="h-4 w-4 text-sky-300" />{lang === "ar" ? "دعم مباشر" : "Direct support"}</span>
+          </div>
         </div>
 
         {/* Footer info badge */}
-        <div className="relative z-10 text-xs text-zinc-500 flex items-center gap-1.5 mt-auto">
+        <div className="relative z-10 text-[11px] text-zinc-500 flex items-center gap-1.5 mt-auto">
           <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
           <span>
             {lang === "ar" ? "بنية سحابية فائقة الأمان" : "RLS-Secured Enterprise Deployment Stack"}
@@ -849,9 +875,9 @@ function OnboardPage() {
       </div>
 
       {/* Main Interaction Area */}
-      <div className="flex-1 flex flex-col justify-between p-6 md:p-12 lg:p-16 max-w-7xl mx-auto w-full">
+      <main id="start" className="mx-auto flex w-full max-w-[1240px] flex-col justify-between px-5 py-10 sm:px-8 lg:px-10 lg:py-16">
         {/* Top bar with Translation selector */}
-        <div className="flex justify-between items-center gap-4 mb-8">
+        <div className="flex justify-between items-center gap-4 mb-14">
           <div className="flex items-center gap-2 md:hidden">
             {platformIconUrl && !logoError ? (
               <img
@@ -892,21 +918,24 @@ function OnboardPage() {
           </div>
         </div>
 
-        <div className="mb-10 max-w-2xl text-center md:text-left">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-3">
-            <h1 className="text-3xl md:text-4xl font-display font-medium text-foreground tracking-tight">
-              {lang === "ar" ? "اختر باقة إطلاق متجرك" : "Select Your Boutq Activation"}
+        <div className="mx-auto mb-14 max-w-3xl text-center">
+          <div className="mb-4 flex flex-col items-center gap-4">
+            <span className="rounded-full border border-primary/15 bg-primary/[0.045] px-3 py-1 text-[10px] font-bold tracking-[0.16em] text-primary">
+              {lang === "ar" ? "ابدأ رحلتك مع BOUTQ" : "START YOUR BOUTQ JOURNEY"}
+            </span>
+            <h1 className="text-3xl md:text-5xl font-display font-semibold text-foreground tracking-[-0.035em]">
+              {lang === "ar" ? "اختر البداية التي تناسب طموحك" : "Choose the start that fits your ambition"}
             </h1>
             <Button
               variant="outline"
               size="sm"
               onClick={() => setShowFeaturesModal(true)}
-              className="border-primary/30 hover:border-primary text-primary bg-transparent hover:bg-primary/10 rounded-full font-semibold px-4 h-9 self-center md:self-auto shrink-0"
+              className="border-primary/20 hover:border-primary text-primary bg-white hover:bg-primary/5 rounded-full font-semibold px-4 h-9 self-center shrink-0"
             >
               ✨ {lang === "ar" ? "اكتشف جميع مميزات منصة Boutq" : "Discover All Boutq Features"}
             </Button>
           </div>
-          <p className="text-sm text-muted-foreground leading-relaxed">
+          <p className="mx-auto max-w-2xl text-sm text-muted-foreground leading-7">
             {lang === "ar"
               ? "نحن نوفر خيارين مخصصين لبدء تجارتك. سواء كنت ترغب بتجربة المنصة لـ 3 أيام مجاناً، أو الحصول على رخصة المتجر المتكاملة مع الدعم الفني، بادر بتعبئة بياناتك وبدء مغامرتك فورياً."
               : "We provide two options to fit your boutique expansion. Start with our 3-day complimentary test drive via our WhatsApp concierge or launch your permanent brand portal immediately."}
@@ -914,7 +943,7 @@ function OnboardPage() {
         </div>
 
         {/* Live SaaS catalog: sourced from the current public versions managed by Super Admin. */}
-        <section className="mb-10 space-y-5" aria-labelledby="plans-heading">
+        <section className="mb-14 space-y-6 rounded-[32px] border border-black/[0.06] bg-white p-5 shadow-[0_24px_70px_rgba(51,10,10,0.07)] sm:p-8" aria-labelledby="plans-heading">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <div className="mb-1 flex items-center gap-2 text-primary">
@@ -969,7 +998,7 @@ function OnboardPage() {
                 : "No plans are currently published. Contact us and we will tailor the right setup."}
             </div>
           ) : (
-            <div className={`grid gap-4 ${publicPlans.length === 1 ? "max-w-xl" : "md:grid-cols-2 xl:grid-cols-3"}`}>
+            <div className={`grid gap-5 ${publicPlans.length === 1 ? "mx-auto w-full max-w-2xl" : "md:grid-cols-2 xl:grid-cols-3"}`}>
               {publicPlans.map((plan) => {
                 const active = selectedPlanId === plan.id;
                 const price = Number(
@@ -989,10 +1018,10 @@ function OnboardPage() {
                       setActiveOnboardTab("paid");
                     }}
                     disabled={!availableForInterval}
-                    className={`group relative overflow-hidden rounded-2xl border p-5 text-start transition-all duration-200 ${
+                    className={`group relative overflow-hidden rounded-[24px] border p-6 text-start transition-all duration-300 ${
                       active
-                        ? "border-primary bg-primary/[0.035] shadow-xl shadow-primary/10 ring-1 ring-primary"
-                        : "border-border bg-card/70 shadow-sm hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-lg"
+                        ? "border-primary bg-[linear-gradient(145deg,rgba(51,10,10,.035),rgba(255,255,255,1))] shadow-2xl shadow-primary/10 ring-1 ring-primary"
+                        : "border-border bg-card shadow-sm hover:-translate-y-1 hover:border-primary/40 hover:shadow-xl"
                     } ${!availableForInterval ? "cursor-not-allowed opacity-55" : ""}`}
                   >
                     {active && (
@@ -1122,10 +1151,10 @@ function OnboardPage() {
         </div>
 
         {/* Dual Card responsive Grid */}
-        <div className="grid grid-cols-1 items-start lg:grid-cols-2 gap-8 mb-12">
+        <div className="grid grid-cols-1 items-start lg:grid-cols-2 gap-7 mb-12">
           {/* CARD A: 3-Day Free Trial */}
           <Card
-            className={`border-border shadow-md flex-col relative overflow-hidden group ${
+            className={`rounded-[28px] border-black/[0.07] bg-white shadow-[0_18px_60px_rgba(51,10,10,0.07)] flex-col relative overflow-hidden group ${
               activeOnboardTab === "trial" ? "flex" : "hidden lg:flex"
             }`}
           >
@@ -1374,7 +1403,7 @@ function OnboardPage() {
 
           {/* CARD B: Official Paid Registration */}
           <Card
-            className={`border-border shadow-md flex-col relative overflow-hidden group ring-1 ring-primary/40 bg-primary/[0.01] ${
+            className={`rounded-[28px] border-primary/20 bg-white shadow-[0_18px_60px_rgba(51,10,10,0.09)] flex-col relative overflow-hidden group ring-1 ring-primary/30 ${
               activeOnboardTab === "paid" ? "flex" : "hidden lg:flex"
             }`}
           >
@@ -1784,7 +1813,7 @@ function OnboardPage() {
             {lang === "ar" ? "تسجيل الدخول للوحة التحكم" : "Sign in to Dashboard"}
           </Link>
         </div>
-      </div>
+      </main>
 
       {/* Dynamic Features Transparency Modal */}
       {showFeaturesModal && (
