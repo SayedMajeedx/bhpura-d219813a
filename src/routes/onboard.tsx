@@ -168,6 +168,33 @@ function OnboardPage() {
   }, [lang]);
 
   const selectedPlan = publicPlans.find((plan) => plan.id === selectedPlanId) ?? null;
+  const availableBillingIntervals = (["monthly", "annual"] as const).filter((interval) =>
+    publicPlans.some(
+      (plan) =>
+        Number(
+          interval === "monthly"
+            ? plan.version?.price_monthly || 0
+            : plan.version?.price_annual || 0,
+        ) > 0,
+    ),
+  );
+  const chooseBillingInterval = (interval: "monthly" | "annual") => {
+    const currentSupportsInterval =
+      selectedPlan &&
+      Number(
+        interval === "monthly"
+          ? selectedPlan.version.price_monthly
+          : selectedPlan.version.price_annual,
+      ) > 0;
+    const fallbackPlan = publicPlans.find(
+      (plan) =>
+        Number(
+          interval === "monthly" ? plan.version.price_monthly : plan.version.price_annual,
+        ) > 0,
+    );
+    setBillingInterval(interval);
+    if (!currentSupportsInterval) setSelectedPlanId(fallbackPlan?.id || null);
+  };
   const selectedPrice = selectedPlan
     ? Number(
         billingInterval === "monthly"
@@ -906,11 +933,11 @@ function OnboardPage() {
               </p>
             </div>
             <div className="inline-flex self-start rounded-xl border border-border bg-muted/40 p-1 shadow-sm">
-              {(["monthly", "annual"] as const).map((interval) => (
+              {availableBillingIntervals.map((interval) => (
                 <button
                   key={interval}
                   type="button"
-                  onClick={() => setBillingInterval(interval)}
+                  onClick={() => chooseBillingInterval(interval)}
                   className={`rounded-lg px-4 py-2 text-xs font-semibold transition-all ${
                     billingInterval === interval
                       ? "bg-background text-primary shadow-sm"
@@ -951,19 +978,22 @@ function OnboardPage() {
                     : plan.version.price_annual,
                 );
                 const monthlyEquivalent = Number(plan.version.price_annual) / 12;
+                const availableForInterval = price > 0;
                 return (
                   <button
                     type="button"
                     key={plan.id}
                     onClick={() => {
+                      if (!availableForInterval) return;
                       setSelectedPlanId(plan.id);
                       setActiveOnboardTab("paid");
                     }}
+                    disabled={!availableForInterval}
                     className={`group relative overflow-hidden rounded-2xl border p-5 text-start transition-all duration-200 ${
                       active
                         ? "border-primary bg-primary/[0.035] shadow-xl shadow-primary/10 ring-1 ring-primary"
                         : "border-border bg-card/70 shadow-sm hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-lg"
-                    }`}
+                    } ${!availableForInterval ? "cursor-not-allowed opacity-55" : ""}`}
                   >
                     {active && (
                       <span className="absolute end-4 top-4 rounded-full bg-primary px-2.5 py-1 text-[9px] font-bold text-primary-foreground">
@@ -1010,7 +1040,17 @@ function OnboardPage() {
                       ))}
                     </div>
                     <div className={`mt-5 rounded-xl py-2.5 text-center text-xs font-bold ${active ? "bg-primary text-primary-foreground" : "bg-muted text-foreground group-hover:bg-primary/10 group-hover:text-primary"}`}>
-                      {active ? (lang === "ar" ? "تم اختيار الباقة" : "Plan selected") : (lang === "ar" ? "اختر هذه الباقة" : "Choose this plan")}
+                      {!availableForInterval
+                        ? lang === "ar"
+                          ? "غير متاحة لهذه الدورة"
+                          : "Unavailable for this interval"
+                        : active
+                          ? lang === "ar"
+                            ? "تم اختيار الباقة"
+                            : "Plan selected"
+                          : lang === "ar"
+                            ? "اختر هذه الباقة"
+                            : "Choose this plan"}
                     </div>
                   </button>
                 );

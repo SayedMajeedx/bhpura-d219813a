@@ -241,6 +241,27 @@ function SuperRequestsPage() {
   };
 
   const pendingRequests = requestsQuery.data ?? [];
+  const paidCatalogPlans = (publicPlansQuery.data ?? []).filter(
+    (plan: any) => plan.code !== "trial",
+  ) as any[];
+  const approvalIntervals = (["monthly", "annual"] as const).filter((interval) =>
+    paidCatalogPlans.some(
+      (plan) =>
+        Number(interval === "monthly" ? plan.version.price_monthly : plan.version.price_annual) > 0,
+    ),
+  );
+  const chooseApprovalInterval = (interval: "monthly" | "annual") => {
+    const selected = paidCatalogPlans.find((plan) => plan.id === selectedPlanId);
+    const supported =
+      selected &&
+      Number(interval === "monthly" ? selected.version.price_monthly : selected.version.price_annual) > 0;
+    const fallback = paidCatalogPlans.find(
+      (plan) =>
+        Number(interval === "monthly" ? plan.version.price_monthly : plan.version.price_annual) > 0,
+    );
+    setSelectedBillingInterval(interval);
+    if (!supported) setSelectedPlanId(fallback?.id || null);
+  };
 
   return (
     <div className="space-y-3.5">
@@ -534,13 +555,13 @@ function SuperRequestsPage() {
               ) : (
                 <div className="space-y-3">
                   <div className="flex rounded-lg border bg-muted/40 p-1">
-                    {(["monthly", "annual"] as const).map((interval) => (
-                      <button key={interval} type="button" onClick={() => setSelectedBillingInterval(interval)} className={`flex-1 rounded-md py-2 text-xs font-semibold ${selectedBillingInterval === interval ? "bg-background text-primary shadow-sm" : "text-muted-foreground"}`}>
+                    {approvalIntervals.map((interval) => (
+                      <button key={interval} type="button" onClick={() => chooseApprovalInterval(interval)} className={`flex-1 rounded-md py-2 text-xs font-semibold ${selectedBillingInterval === interval ? "bg-background text-primary shadow-sm" : "text-muted-foreground"}`}>
                         {interval === "monthly" ? (lang === "ar" ? "شهري" : "Monthly") : (lang === "ar" ? "سنوي" : "Annual")}
                       </button>
                     ))}
                   </div>
-                  {(publicPlansQuery.data ?? []).filter((plan: any) => plan.code !== "trial").map((plan: any) => (
+                  {paidCatalogPlans.filter((plan: any) => Number(selectedBillingInterval === "monthly" ? plan.version.price_monthly : plan.version.price_annual) > 0).map((plan: any) => (
                     <button key={plan.id} type="button" onClick={() => setSelectedPlanId(plan.id)} className={`w-full rounded-xl border p-4 text-start transition-all ${selectedPlanId === plan.id ? "border-primary bg-primary/[0.03] ring-1 ring-primary" : "border-border"}`}>
                       <div className="flex items-center justify-between gap-3">
                         <span className="flex items-center gap-2 text-sm font-semibold"><Crown className="h-4 w-4 text-amber-500" />{lang === "ar" ? plan.name_ar : plan.name_en}</span>

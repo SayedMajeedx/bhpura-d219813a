@@ -19,6 +19,7 @@ describe("onboarding SaaS catalog contract", () => {
     expect(onboarding).toContain("selected_plan_version_id: selectedVersion?.id");
     expect(onboarding).toContain("quoted_price: quotedPrice");
     expect(onboarding).toContain('throw new Error("PLAN_SELECTION_REQUIRED")');
+    expect(onboarding).toContain('throw new Error("PLAN_INTERVAL_NOT_FOR_SALE")');
   });
 
   it("activates the exact selected version as the brand subscription", () => {
@@ -29,7 +30,7 @@ describe("onboarding SaaS catalog contract", () => {
 
   it("renders the live catalog and monthly or annual prices on onboarding", () => {
     expect(page).toContain("getPublicOnboardingPlans");
-    expect(page).toContain('setBillingInterval(interval)');
+    expect(page).toContain('chooseBillingInterval(interval)');
     expect(page).toContain("selectedPlanVersionId: selectedPlan.version.id");
     expect(migration).toContain('billing_interval IN (\'monthly\',\'annual\',\'trial\')');
   });

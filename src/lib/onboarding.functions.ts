@@ -154,6 +154,9 @@ export const createTenantRequest = createServerFn({ method: "POST" })
           ? Number(selectedVersion.price_annual)
           : 0
       : 0;
+    if (data.requestType === "paid" && quotedPrice <= 0) {
+      throw new Error("PLAN_INTERVAL_NOT_FOR_SALE");
+    }
     const { error } = await (supabaseAdmin.from("tenant_requests") as any).insert({
       full_name: data.fullName,
       email: data.email,
@@ -417,11 +420,20 @@ export const approveTenantRequest = createServerFn({ method: "POST" })
     const { data: validatedVersion } = await (
       context.supabase.from("saas_plan_versions" as never) as any
     )
-      .select("id,plan_id")
+      .select("id,plan_id,price_monthly,price_annual")
       .eq("id", resolvedPlanVersionId)
       .eq("plan_id", resolvedPlanId)
       .maybeSingle();
     if (!validatedVersion) throw new Error("SELECTED_PLAN_VERSION_NOT_FOUND");
+    const activationPrice =
+      resolvedInterval === "monthly"
+        ? Number(validatedVersion.price_monthly)
+        : resolvedInterval === "annual"
+          ? Number(validatedVersion.price_annual)
+          : 0;
+    if (request.request_type === "paid" && activationPrice <= 0) {
+      throw new Error("PLAN_INTERVAL_NOT_FOR_SALE");
+    }
 
     // Update status to 'approved' and payment_verified to true
     const { error } = await context.supabase
