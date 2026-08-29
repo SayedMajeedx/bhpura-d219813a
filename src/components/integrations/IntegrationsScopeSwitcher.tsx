@@ -1,4 +1,16 @@
-import { BarChart3, CreditCard, Mail, MoreHorizontal, Plug, Truck } from "lucide-react";
+import {
+  BarChart3,
+  CreditCard,
+  Mail,
+  MoreHorizontal,
+  Plug,
+  Truck,
+  KeyRound,
+  Webhook,
+  Activity,
+  BookOpen,
+  Sparkles,
+} from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -7,7 +19,17 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 
-export type IntegrationsCategoryScope = "all" | "payments" | "shipping" | "email_ai" | "pixels";
+export type IntegrationsCategoryScope =
+  | "all"
+  | "connectors"
+  | "api_keys"
+  | "webhooks"
+  | "api_logs"
+  | "dev_docs"
+  | "payments"
+  | "shipping"
+  | "email_ai"
+  | "pixels";
 
 interface IntegrationsScopeSwitcherProps {
   lang: "ar" | "en";
@@ -32,6 +54,11 @@ export function IntegrationsScopeSwitcher({
       badge: integrationCount,
     },
     { id: "payments", icon: CreditCard, ar: "بوابات الدفع", en: "Payment Gateways" },
+    { id: "connectors", icon: Sparkles, ar: "الموصلات الجاهزة", en: "Connectors Hub" },
+    { id: "api_keys", icon: KeyRound, ar: "مفاتيح API", en: "API Keys" },
+    { id: "webhooks", icon: Webhook, ar: "خطافات الويب", en: "Webhooks" },
+    { id: "api_logs", icon: Activity, ar: "سجل الطلبات", en: "API Logs" },
+    { id: "dev_docs", icon: BookOpen, ar: "توثيق المطورين", en: "Developer Docs" },
     { id: "shipping", icon: Truck, ar: "شركات الشحن", en: "Logistics & Shipping" },
     { id: "email_ai", icon: Mail, ar: "البريد والذكاء الاصطناعي", en: "Email & AI Services" },
     { id: "pixels", icon: BarChart3, ar: "التتبع والتحليلات", en: "Tracking Pixels" },
@@ -42,6 +69,7 @@ export function IntegrationsScopeSwitcher({
     en: string;
     badge?: number;
   }>;
+
   const primary = scopes.slice(0, 2);
   const secondary = scopes.slice(2);
   const activeSecondary = secondary.find((scope) => scope.id === activeScope);
@@ -63,13 +91,13 @@ export function IntegrationsScopeSwitcher({
             : "text-muted-foreground hover:bg-background/80 hover:text-foreground",
         )}
       >
-        <Icon className="h-3.5 w-3.5 shrink-0" />
+        <Icon className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
         <span className="truncate">{isAr ? scope.ar : scope.en}</span>
         {scope.badge !== undefined && (
           <span
             className={cn(
-              "rounded-full px-1.5 text-[10px]",
-              isActive ? "bg-primary-foreground text-primary" : "bg-muted",
+              "rounded-full px-1.5 py-0.5 text-[10px] font-extrabold",
+              isActive ? "bg-primary-foreground/20 text-primary-foreground" : "bg-muted text-foreground",
             )}
           >
             {scope.badge}
@@ -81,26 +109,31 @@ export function IntegrationsScopeSwitcher({
 
   return (
     <div className="rounded-2xl border border-border/60 bg-muted/40 p-1">
-      <div className="grid grid-cols-[1fr_1fr_auto] gap-1 sm:hidden">
-        {primary.map((scope) => scopeButton(scope, true))}
+      <div className="flex flex-wrap items-center gap-1.5">
+        {primary.map((scope) => scopeButton(scope))}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button
               type="button"
-              aria-label={isAr ? "المزيد من أنواع التكامل" : "More integration categories"}
+              aria-label={isAr ? "المزيد من فئات التكامل" : "More integration categories"}
               className={cn(
-                "flex min-h-11 min-w-11 items-center justify-center gap-1 rounded-xl px-2 text-xs font-bold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
-                activeSecondary ? "bg-primary text-primary-foreground" : "text-muted-foreground",
+                "flex min-h-11 items-center justify-center gap-1.5 rounded-xl px-3 py-2 text-xs font-bold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
+                activeSecondary
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground hover:bg-background/80 hover:text-foreground",
               )}
             >
               {activeSecondary ? (
-                <activeSecondary.icon className="h-4 w-4" />
+                <>
+                  <activeSecondary.icon className="h-4 w-4" />
+                  <span>{isAr ? activeSecondary.ar : activeSecondary.en}</span>
+                </>
               ) : (
-                <MoreHorizontal className="h-4 w-4" />
+                <>
+                  <MoreHorizontal className="h-4 w-4" />
+                  <span>{isAr ? "المزيد" : "More"}</span>
+                </>
               )}
-              <span className="sr-only">
-                {activeSecondary ? (isAr ? activeSecondary.ar : activeSecondary.en) : ""}
-              </span>
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align={isAr ? "start" : "end"}>
@@ -116,9 +149,6 @@ export function IntegrationsScopeSwitcher({
             ))}
           </DropdownMenuContent>
         </DropdownMenu>
-      </div>
-      <div className="hidden items-center gap-1.5 sm:flex">
-        {scopes.map((scope) => scopeButton(scope))}
       </div>
     </div>
   );

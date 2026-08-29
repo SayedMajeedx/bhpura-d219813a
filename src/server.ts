@@ -167,6 +167,14 @@ export default {
         return withSecurityHeaders(await handleWhiteLabelApkUpload(request, env), correlationId);
       }
 
+      if (url.pathname.startsWith("/api/v1")) {
+        const { handlePublicApiV1Request } = await import("./lib/public-api/public-api-router.server");
+        return withSecurityHeaders(
+          await handlePublicApiV1Request(request, env, ctx),
+          correlationId,
+        );
+      }
+
       if (
         url.hostname === "media.boutq.store" ||
         url.hostname.endsWith(".media.boutq.store") ||

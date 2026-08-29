@@ -46,6 +46,11 @@ import {
   IntegrationsScopeSwitcher,
   type IntegrationsCategoryScope,
 } from "@/components/integrations/IntegrationsScopeSwitcher";
+import { ApiKeysManager } from "@/components/integrations/ApiKeysManager";
+import { WebhooksManager } from "@/components/integrations/WebhooksManager";
+import { ApiLogsTable } from "@/components/integrations/ApiLogsTable";
+import { ConnectorsCatalog } from "@/components/integrations/ConnectorsCatalog";
+import { DeveloperDocumentation } from "@/components/integrations/DeveloperDocumentation";
 
 export const Route = createFileRoute("/_authenticated/admin/b/$slug/integrations")({
   component: IntegrationsPage,
@@ -220,20 +225,30 @@ function IntegrationsPage() {
         />
       </Dialog>
 
-      {(categoryScope === "all" || categoryScope === "email_ai") && (
-        <NabdaOtpPilotCard isAr={isAr} />
-      )}
+      {categoryScope === "connectors" && <ConnectorsCatalog brandId={brandId} />}
+      {categoryScope === "api_keys" && <ApiKeysManager brandId={brandId} />}
+      {categoryScope === "webhooks" && <WebhooksManager brandId={brandId} />}
+      {categoryScope === "api_logs" && <ApiLogsTable brandId={brandId} />}
+      {categoryScope === "dev_docs" && <DeveloperDocumentation />}
+      {categoryScope === "pixels" && <AnalyticsTrackingCard brandId={brandId} isAr={isAr} />}
 
-      {categoryScope === "pixels" ? (
-        <AnalyticsTrackingCard brandId={brandId} isAr={isAr} />
-      ) : (
-        <>
-          <Card className="overflow-hidden border border-amber-500/40 shadow-md rounded-2xl bg-amber-500/5 p-4">
-            <div className="flex items-start gap-2 text-sm text-amber-800 dark:text-amber-300">
-              <ShieldAlert className="h-4 w-4 mt-0.5 text-amber-600 shrink-0" />
-              <p className="leading-relaxed">{t("integrations.warning")}</p>
-            </div>
-          </Card>
+      {categoryScope !== "connectors" &&
+        categoryScope !== "api_keys" &&
+        categoryScope !== "webhooks" &&
+        categoryScope !== "api_logs" &&
+        categoryScope !== "dev_docs" &&
+        categoryScope !== "pixels" && (
+          <>
+            {(categoryScope === "all" || categoryScope === "email_ai") && (
+              <NabdaOtpPilotCard isAr={isAr} />
+            )}
+
+            <Card className="overflow-hidden border border-amber-500/40 shadow-md rounded-2xl bg-amber-500/5 p-4">
+              <div className="flex items-start gap-2 text-sm text-amber-800 dark:text-amber-300">
+                <ShieldAlert className="h-4 w-4 mt-0.5 text-amber-600 shrink-0" />
+                <p className="leading-relaxed">{t("integrations.warning")}</p>
+              </div>
+            </Card>
 
           {filteredIntegrations.length === 0 ? (
             <Card className="overflow-hidden border border-dashed border-border/80 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm p-8 sm:p-12 text-center">
