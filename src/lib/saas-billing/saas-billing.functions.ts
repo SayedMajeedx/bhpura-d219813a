@@ -32,11 +32,18 @@ async function requireSuperAdmin(context: any) {
 async function requireBrandAccess(context: any, brandId: string) {
   const db = context.supabase as any;
   const { data: hasAccess } = await db.rpc("can_access_brand", {
-    target_brand_id: brandId,
+    _brand_id: brandId,
   });
   if (!hasAccess) {
     const { data: isSuperAdmin } = await db.rpc("is_super_admin");
     if (!isSuperAdmin) {
+      try {
+        const { getImpersonationSession } = await import("@/lib/impersonation.server");
+        const imp = await getImpersonationSession();
+        if (imp && imp.targetBrandId === brandId) {
+          return;
+        }
+      } catch {}
       throw new Error("UNAUTHORIZED_BRAND_ACCESS_DENIED");
     }
   }
@@ -309,15 +316,20 @@ export const setBrandEntitlementOverride = createServerFn({ method: "POST" })
     await requireSuperAdmin(context);
     const db = context.supabase as any;
 
+    const overrideType =
+      data.numericValue !== undefined && data.numericValue !== null
+        ? "set_limit"
+        : "set_boolean";
+
     const { error } = await db.from("brand_entitlement_overrides").upsert(
       {
         brand_id: data.brandId,
         feature_key: data.featureKey,
+        override_type: overrideType,
         boolean_value: data.booleanValue ?? null,
         numeric_value: data.numericValue ?? null,
-        is_unlimited: data.numericValue === -1,
         reason: data.reason,
-        granted_by: context.userId || null,
+        created_by: context.userId || null,
         expires_at: data.expiresAt || null,
         updated_at: new Date().toISOString(),
       },
@@ -470,7 +482,7 @@ export const getBrandSubscriptionDetails = createServerFn({ method: "GET" })
     // Fetch store metadata
     const { data: brand } = await db
       .from("brands")
-      .select("id, name, slug, plan_type, subscription_status, subscription_expires_at, trial_ends_at, renewal_intent")
+      .select("id, name_ar, name_en, slug, plan_type, subscription_status, subscription_expires_at, trial_ends_at, renewal_intent")
       .eq("id", data.brandId)
       .single();
 

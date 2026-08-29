@@ -107,13 +107,20 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
     );
   }
 
-  const { subscription, currentPlan, currentVersion, activeAddons, availableAddons, allPlans } = subData;
+  const {
+    subscription = {} as any,
+    currentPlan = {} as any,
+    currentVersion,
+    activeAddons = [],
+    availableAddons = [],
+    allPlans = [],
+  } = subData;
 
   // Derive status
-  const isFounder = currentPlan.code === "lifetime_founder";
-  const isTrial = subscription.status === "trialing";
-  const isInGrace = subscription.status === "grace_period";
-  const isCancelled = subscription.status === "cancelled" || subscription.cancel_at_period_end;
+  const isFounder = currentPlan?.code === "lifetime_founder";
+  const isTrial = subscription?.status === "trialing";
+  const isInGrace = subscription?.status === "grace_period";
+  const isCancelled = subscription?.status === "cancelled" || subscription?.cancel_at_period_end;
 
   const handleAddonAction = async () => {
     if (!selectedAddonForAction) return;
@@ -194,9 +201,9 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
               <div className="flex items-center gap-2">
                 <Badge
                   variant="outline"
-                  className={currentPlan.badge_color || "bg-primary/10 text-primary border-primary/20 text-xs font-bold"}
+                  className={currentPlan?.badge_color || "bg-primary/10 text-primary border-primary/20 text-xs font-bold"}
                 >
-                  {currentPlan.code.toUpperCase()}
+                  {(currentPlan?.code || "PLAN").toUpperCase()}
                 </Badge>
                 {isFounder && (
                   <Badge variant="outline" className="bg-amber-500/10 text-amber-600 border-amber-500/20 text-xs font-bold gap-1">
@@ -207,25 +214,25 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
                 <Badge
                   variant="outline"
                   className={
-                    subscription.status === "active"
+                    subscription?.status === "active"
                       ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20 text-xs"
-                      : subscription.status === "trialing"
+                      : subscription?.status === "trialing"
                         ? "bg-sky-500/10 text-sky-600 border-sky-500/20 text-xs"
                         : "bg-destructive/10 text-destructive border-destructive/20 text-xs"
                   }
                 >
-                  {subscription.status.toUpperCase()}
+                  {(subscription?.status || "ACTIVE").toUpperCase()}
                 </Badge>
               </div>
 
               <CardTitle className="text-2xl font-extrabold text-foreground mt-2">
-                {isAr ? currentPlan.name_ar : currentPlan.name_en}
+                {isAr ? currentPlan?.name_ar || currentPlan?.name_en : currentPlan?.name_en || currentPlan?.name_ar}
                 <span className="text-xs font-normal text-muted-foreground ms-2">
                   (v{currentVersion?.version_number || 1})
                 </span>
               </CardTitle>
               <CardDescription className="text-xs max-w-xl">
-                {isAr ? currentPlan.description_ar : currentPlan.description_en}
+                {isAr ? currentPlan?.description_ar : currentPlan?.description_en}
               </CardDescription>
             </div>
 
@@ -252,7 +259,7 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
                 {isAr ? "فترة الفوترة" : "Billing Cycle"}
               </span>
               <span className="text-sm font-bold text-foreground capitalize">
-                {subscription.billing_interval === "annual" ? (isAr ? "سنوي" : "Annual") : (isAr ? "شهري" : "Monthly")}
+                {subscription?.billing_interval === "annual" ? (isAr ? "سنوي" : "Annual") : (isAr ? "شهري" : "Monthly")}
               </span>
             </div>
 
@@ -261,7 +268,7 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
                 {isAr ? "تاريخ التجديد القادم" : "Next Renewal Date"}
               </span>
               <span className="text-sm font-bold text-foreground font-mono">
-                {subscription.current_period_end
+                {subscription?.current_period_end
                   ? new Date(subscription.current_period_end).toLocaleDateString()
                   : isFounder
                     ? isAr
@@ -308,8 +315,8 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
               <Info className="h-4 w-4 shrink-0" />
               <span>
                 {isAr
-                  ? `سينتهي اشتراكك في ${new Date(subscription.current_period_end!).toLocaleDateString()}. بياناتك ومنتجاتك محفوظة بأمان ولن تُحذف.`
-                  : `Your plan will end on ${new Date(subscription.current_period_end!).toLocaleDateString()}. Your data and store remain completely safe.`}
+                  ? `سينتهي اشتراكك في ${subscription?.current_period_end ? new Date(subscription.current_period_end).toLocaleDateString() : "-"}. بياناتك ومنتجاتك محفوظة بأمان ولن تُحذف.`
+                  : `Your plan will end on ${subscription?.current_period_end ? new Date(subscription.current_period_end).toLocaleDateString() : "-"}. Your data and store remain completely safe.`}
               </span>
             </div>
           )}
