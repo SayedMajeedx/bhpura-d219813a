@@ -29,6 +29,8 @@ import {
   Languages,
   Search,
   RotateCcw,
+  Award,
+  ShoppingCart,
 } from "lucide-react";
 
 export function SpotlightCommandPalette({
@@ -155,6 +157,16 @@ export function SpotlightCommandPalette({
       label: isAr ? "رموز الخصم" : "Discount Codes",
       icon: BadgePercent,
       to: "/admin/b/$slug/discounts",
+    },
+    {
+      label: isAr ? "برنامج الولاء والمكافآت" : "Loyalty & Rewards",
+      icon: Award,
+      to: "/admin/b/$slug/loyalty",
+    },
+    {
+      label: isAr ? "السلات المتروكة والاستعادة" : "Abandoned Carts",
+      icon: ShoppingCart,
+      to: "/admin/b/$slug/abandoned-carts",
     },
     {
       label: isAr ? "سجل المصروفات" : "Expenses",

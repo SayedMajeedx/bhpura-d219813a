@@ -16,6 +16,8 @@ import {
   Building2,
   MessageSquareHeart,
   RotateCcw,
+  Award,
+  ShoppingCart,
   type LucideIcon,
 } from "lucide-react";
 
@@ -177,6 +179,26 @@ export function getAdminNavItems({
       labelAr: lang === "ar" ? "رموز الخصم" : "Discount Codes",
       icon: BadgePercent,
       permission: "manage_settings",
+      section: "growth_finance",
+    },
+    {
+      id: "loyalty",
+      to: "/admin/b/$slug/loyalty",
+      params: { slug: activeSlug },
+      labelEn: "Loyalty & Rewards",
+      labelAr: lang === "ar" ? "برنامج الولاء والمكافآت" : "Loyalty & Rewards",
+      icon: Award,
+      permission: "manage_settings",
+      section: "growth_finance",
+    },
+    {
+      id: "abandoned-carts",
+      to: "/admin/b/$slug/abandoned-carts",
+      params: { slug: activeSlug },
+      labelEn: "Abandoned Carts",
+      labelAr: lang === "ar" ? "السلات المتروكة" : "Abandoned Carts",
+      icon: ShoppingCart,
+      permission: "manage_orders",
       section: "growth_finance",
     },
     {

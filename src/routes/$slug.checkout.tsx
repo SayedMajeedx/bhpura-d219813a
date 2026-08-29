@@ -38,14 +38,29 @@ import {
   Mail,
   MessageCircle,
   Copy,
-  UploadCloud,
   CheckCircle2,
   X,
+  UploadCloud,
+  Coins,
+  Award,
+  Sparkles,
 } from "lucide-react";
 import { uploadBenefitReceipt } from "@/lib/benefit-receipt";
 import { trackStorefrontEvent } from "@/lib/storefront-analytics";
 import { ResponsiveImage } from "@/components/responsive-media";
 import { Checkbox } from "@/components/ui/checkbox";
+import {
+  calculateOrderLoyaltyPoints,
+  calculatePointsRedemptionDiscount,
+  redeemLoyaltyPoints,
+  awardOrderLoyaltyPoints,
+} from "@/lib/loyalty.functions";
+import {
+  syncStorefrontCartActivity,
+  restoreAbandonedCart,
+  markCartRecoveredOnOrder,
+} from "@/lib/abandoned-carts.functions";
+import type { BrandLoyaltyProgram, LoyaltyAccount, LoyaltyTier } from "@/lib/loyalty.types";
 
 export const Route = createFileRoute("/$slug/checkout")({
   component: Checkout,
@@ -91,6 +106,25 @@ function Checkout() {
       }
     }
   }, [mounted, t]);
+
+  const [customerId, setCustomerId] = useState<string | null>(null);
+  const [loyaltyAccount, setLoyaltyAccount] = useState<LoyaltyAccount | null>(null);
+  const [loyaltyProgram, setLoyaltyProgram] = useState<BrandLoyaltyProgram | null>(null);
+  const [loyaltyTier, setLoyaltyTier] = useState<LoyaltyTier | null>(null);
+  const [pointsToRedeemInput, setPointsToRedeemInput] = useState<string>("");
+  const [redeemedPoints, setRedeemedPoints] = useState<number>(0);
+  const [marketingConsent, setMarketingConsent] = useState<boolean>(true);
+  const [cartSessionId] = useState<string>(() => {
+    if (typeof window !== "undefined") {
+      const existing = sessionStorage.getItem("boutq_cart_session_id");
+      if (existing) return existing;
+      const newId = crypto.randomUUID();
+      sessionStorage.setItem("boutq_cart_session_id", newId);
+      return newId;
+    }
+    return crypto.randomUUID();
+  });
+
   const [form, setForm] = useState<{
     name: string;
     phone: string;
@@ -180,6 +214,7 @@ function Checkout() {
           .maybeSingle();
 
         if (customer) {
+          setCustomerId(customer.id);
           // Fetch saved addresses from customer_addresses
           const { data: addresses } = await supabase
             .from("customer_addresses")
@@ -417,8 +452,146 @@ function Checkout() {
         ? (selectedZone?.fee ?? 0)
         : Number(settings.delivery_fee || 0)
       : 0;
+
+  // 1. Fetch Loyalty Program and Customer Account
+  useEffect(() => {
+    (async () => {
+      try {
+        const { data: prog } = await (supabase as any)
+          .from("brand_loyalty_programs")
+          .select("*")
+          .eq("brand_id", brand.id)
+          .maybeSingle();
+        if (prog) setLoyaltyProgram(prog);
+
+        if (customerId) {
+          const { data: acc } = await (supabase as any)
+            .from("loyalty_accounts")
+            .select("*")
+            .eq("brand_id", brand.id)
+            .eq("customer_id", customerId)
+            .maybeSingle();
+          if (acc) {
+            setLoyaltyAccount(acc);
+            const { data: tier } = await (supabase as any)
+              .from("brand_loyalty_tiers")
+              .select("*")
+              .eq("brand_id", brand.id)
+              .eq("tier_key", acc.current_tier_key)
+              .maybeSingle();
+            if (tier) setLoyaltyTier(tier);
+          }
+        }
+      } catch (e) {
+        console.error("Loyalty program fetch failed", e);
+      }
+    })();
+  }, [brand.id, customerId]);
+
+  // 2. Restore Abandoned Cart if ?recover=TOKEN in URL
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    const recoverToken = params.get("recover");
+    const couponParam = params.get("coupon");
+
+    if (recoverToken) {
+      (async () => {
+        try {
+          const res = await restoreAbandonedCart({
+            brandSlug: brand.slug,
+            recoveryToken: recoverToken,
+          });
+          if (res && res.valid) {
+            toast.success(
+              lang === "ar"
+                ? "تمت استعادة محتويات سلتك بنجاح!"
+                : "Your abandoned cart has been restored!",
+            );
+            if (res.guest_name || res.guest_phone || res.guest_email) {
+              setForm((prev) => ({
+                ...prev,
+                name: prev.name || res.guest_name || "",
+                phone: prev.phone || res.guest_phone || "",
+                email: prev.email || res.guest_email || "",
+              }));
+            }
+            if (couponParam) {
+              setPromoInput(couponParam.toUpperCase());
+            }
+          }
+        } catch (e) {
+          console.error("Cart restore error:", e);
+        }
+      })();
+    }
+  }, [brand.slug, lang]);
+
+  // 3. Debounced Sync of Active Cart Activity
+  useEffect(() => {
+    if (!cart.length) return;
+    const timer = setTimeout(() => {
+      syncStorefrontCartActivity({
+        brandId: brand.id,
+        sessionId: cartSessionId,
+        customerId: customerId,
+        guestEmail: form.email || undefined,
+        guestPhone: form.phone || undefined,
+        guestName: form.name || undefined,
+        cartItems: cart.map((item) => ({
+          cart_line_id: item.cart_line_id,
+          product_id: item.product_id,
+          variant_id: item.variant_id ?? null,
+          name: item.name,
+          title: item.name,
+          image: item.image,
+          image_url: item.image ?? null,
+          qty: item.qty,
+          quantity: item.qty,
+          price: item.price,
+          unit_price: item.price,
+          line_total: Number((item.price * item.qty).toFixed(3)),
+        })),
+        subtotal: cartTotal,
+        currency: currency,
+        marketingConsent: marketingConsent,
+      }).catch((err) => console.warn("Cart activity sync failed:", err));
+    }, 1500);
+
+    return () => clearTimeout(timer);
+  }, [
+    cart,
+    cartTotal,
+    customerId,
+    form.name,
+    form.phone,
+    form.email,
+    marketingConsent,
+    brand.id,
+    cartSessionId,
+    currency,
+  ]);
+
   const promoDiscount = Math.min(appliedPromo?.amount ?? 0, cartTotal);
-  const grandTotal = Math.max(0, cartTotal - promoDiscount) + shipping;
+  const loyaltyDiscount = useMemo(() => {
+    if (!loyaltyProgram?.is_enabled || redeemedPoints <= 0) return 0;
+    return Number((redeemedPoints * Number(loyaltyProgram.redemption_rate || 0.010)).toFixed(3));
+  }, [loyaltyProgram, redeemedPoints]);
+
+  const grandTotal = Math.max(0, cartTotal - promoDiscount - loyaltyDiscount) + shipping;
+
+  const estimatedPointsToEarn = useMemo(() => {
+    if (!loyaltyProgram?.is_enabled) return 0;
+    const res = calculateOrderLoyaltyPoints({
+      subtotal: cartTotal,
+      discount: promoDiscount + loyaltyDiscount,
+      tax: 0,
+      shipping: 0,
+      program: loyaltyProgram,
+      tierMultiplier: loyaltyTier?.points_multiplier || 1.0,
+    });
+    return res.finalPoints;
+  }, [loyaltyProgram, cartTotal, promoDiscount, loyaltyDiscount, loyaltyTier]);
 
   useEffect(() => {
     if (!cart.length) return;
@@ -517,6 +690,53 @@ function Checkout() {
     setAppliedPromo({ code: result.code, amount: Number(result.discount_amount) });
     setPromoInput(result.code);
     toast.success(t("تم تطبيق الخصم", "Promo code applied"));
+  };
+
+  const handleApplyPoints = () => {
+    const pts = parseInt(pointsToRedeemInput, 10);
+    if (isNaN(pts) || pts <= 0) {
+      setRedeemedPoints(0);
+      return toast.error(lang === "ar" ? "أدخل عدد نقاط صحيح" : "Enter a valid points amount");
+    }
+    const maxAvailable = loyaltyAccount?.active_points || 0;
+    if (pts > maxAvailable) {
+      return toast.error(
+        lang === "ar"
+          ? `رصيد نقاطك المتاح هو ${maxAvailable} نقطة فقط`
+          : `You only have ${maxAvailable} points available`,
+      );
+    }
+    const minRedemption = loyaltyProgram?.min_points_to_redeem ?? loyaltyProgram?.min_redemption_points ?? 100;
+    if (pts < minRedemption) {
+      return toast.error(
+        lang === "ar"
+          ? `الحد الأدنى لاستخدام النقاط هو ${minRedemption} نقطة`
+          : `Minimum points to redeem is ${minRedemption}`,
+      );
+    }
+    const maxPercent = loyaltyProgram?.max_redemption_percentage ?? loyaltyProgram?.max_redemption_percent ?? 50;
+    const maxDiscountAllowed = (cartTotal * maxPercent) / 100;
+    const calculatedDisc = pts * Number(loyaltyProgram?.redemption_rate || 0.010);
+    if (calculatedDisc > maxDiscountAllowed) {
+      const allowedPts = Math.floor(maxDiscountAllowed / Number(loyaltyProgram?.redemption_rate || 0.010));
+      return toast.error(
+        lang === "ar"
+          ? `أقصى خصم مسموح بالنقاط لهذا الطلب هو ${allowedPts} نقطة (${maxDiscountAllowed.toFixed(3)} ${currency})`
+          : `Max points allowed for this order is ${allowedPts} (${maxDiscountAllowed.toFixed(3)} ${currency})`,
+      );
+    }
+    setRedeemedPoints(pts);
+    toast.success(
+      lang === "ar"
+        ? `تم تطبيق خصم النقاط (${calculatedDisc.toFixed(3)} ${currency})`
+        : `Points discount applied (${calculatedDisc.toFixed(3)} ${currency})`,
+    );
+  };
+
+  const handleRemovePoints = () => {
+    setRedeemedPoints(0);
+    setPointsToRedeemInput("");
+    toast.info(lang === "ar" ? "تم إزالة خصم النقاط" : "Points discount removed");
   };
 
   if (cart.length === 0) {
@@ -682,6 +902,51 @@ function Checkout() {
           );
           if (whatsappOptInError) {
             console.warn("[checkout] WhatsApp order-update consent could not be recorded");
+          }
+        }
+
+        // 1. Loyalty redemption
+        if (redeemedPoints > 0 && customerId && orderId) {
+          try {
+            await redeemLoyaltyPoints({
+              brandId: brand.id,
+              customerId,
+              pointsToRedeem: redeemedPoints,
+              orderSubtotal: cartTotal,
+              idempotencyKey: `${idempotencyKey}_redeem`,
+              orderId: String(orderId),
+            });
+          } catch (ptsErr) {
+            console.warn("Points redemption error:", ptsErr);
+          }
+        }
+
+        // 2. Award points for order
+        if (orderId) {
+          try {
+            await awardOrderLoyaltyPoints({
+              brandId: brand.id,
+              orderId: String(orderId),
+              idempotencyKey: `${idempotencyKey}_award`,
+            });
+          } catch (ptsAwardErr) {
+            console.warn("Points award error:", ptsAwardErr);
+          }
+        }
+
+        // 3. Mark cart recovered
+        if (orderId) {
+          try {
+            await markCartRecoveredOnOrder({
+              brandId: brand.id,
+              orderId: String(orderId),
+              customerId: customerId || undefined,
+              sessionId: cartSessionId,
+              guestEmail: form.email || undefined,
+              guestPhone: form.phone || undefined,
+            });
+          } catch (cartRecoverErr) {
+            console.warn("Cart recovery mark error:", cartRecoverErr);
           }
         }
       }
@@ -1658,14 +1923,24 @@ function Checkout() {
               </span>
             </div>
             {promoDiscount > 0 && (
-              <div className="flex justify-between font-medium text-emerald-700">
+              <div className="flex justify-between font-medium text-emerald-700 dark:text-emerald-400">
                 <span>
-                  {t("الخصم", "Discount")} ({appliedPromo?.code})
+                  {t("الخصم الترويجي", "Promo Discount")} ({appliedPromo?.code})
                 </span>
                 <span>− {formatPrice(promoDiscount, currency, lang)}</span>
               </div>
             )}
+            {loyaltyDiscount > 0 && (
+              <div className="flex justify-between font-medium text-amber-700 dark:text-amber-400">
+                <span>
+                  {t("خصم النقاط والمكافآت", "Points Discount")} ({redeemedPoints} {t("نقطة", "pts")})
+                </span>
+                <span>− {formatPrice(loyaltyDiscount, currency, lang)}</span>
+              </div>
+            )}
           </div>
+
+          {/* Promo Code Box */}
           <div className="space-y-2 rounded-lg border bg-muted/20 p-3">
             <Label htmlFor="promo-code">{t("هل لديك رمز خصم؟", "Have a promo code?")}</Label>
             <div className="flex gap-2">
@@ -1694,6 +1969,72 @@ function Checkout() {
               </Button>
             </div>
           </div>
+
+          {/* Loyalty Points Redemption Widget */}
+          {loyaltyProgram?.is_enabled && (loyaltyAccount?.active_points ?? 0) > 0 && (
+            <div className="space-y-2 rounded-lg border border-amber-500/30 bg-amber-500/5 p-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1.5 text-xs font-semibold text-foreground">
+                  <Coins className="h-4 w-4 text-amber-500" />
+                  <span>{t("استخدام نقاط المكافآت", "Redeem Loyalty Points")}</span>
+                </div>
+                <span className="text-[11px] font-mono text-muted-foreground">
+                  {t("متاح:", "Available:")} {loyaltyAccount?.active_points} {t("نقطة", "pts")}
+                </span>
+              </div>
+
+              {redeemedPoints > 0 ? (
+                <div className="flex items-center justify-between p-2 rounded bg-amber-500/10 border border-amber-500/20 text-xs">
+                  <span className="font-semibold text-foreground">
+                    {redeemedPoints} {t("نقطة مطبقة", "points applied")} (−{formatPrice(loyaltyDiscount, currency, lang)})
+                  </span>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleRemovePoints}
+                    className="h-7 text-xs text-rose-600 hover:text-rose-700 p-0 hover:bg-transparent"
+                  >
+                    {t("إلغاء", "Remove")}
+                  </Button>
+                </div>
+              ) : (
+                <div className="flex gap-2">
+                  <Input
+                    type="number"
+                    min="1"
+                    max={loyaltyAccount?.active_points}
+                    placeholder={t("أدخل عدد النقاط...", "Enter points to redeem...")}
+                    className="h-11 font-mono text-sm bg-background"
+                    value={pointsToRedeemInput}
+                    onChange={(e) => setPointsToRedeemInput(e.target.value)}
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleApplyPoints}
+                    className="h-11 border-amber-500/30 text-amber-700 dark:text-amber-400"
+                  >
+                    {t("استخدام", "Redeem")}
+                  </Button>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Estimated Points Earned Badge */}
+          {estimatedPointsToEarn > 0 && (
+            <div className="flex items-center gap-2 p-2.5 rounded-lg bg-primary/10 border border-primary/20 text-xs text-primary font-medium">
+              <Sparkles className="h-4 w-4 shrink-0" />
+              <span>
+                {t(
+                  `ستكسب +${estimatedPointsToEarn} نقطة مكافأة فور إتمام هذا الطلب!`,
+                  `You will earn +${estimatedPointsToEarn} loyalty points on this order!`,
+                )}
+              </span>
+            </div>
+          )}
+
           <div className="border-t pt-3 flex justify-between font-semibold text-lg">
             <span>{t("الإجمالي", "Total")}</span>
             <span style={{ color: settings.primary_color }}>
@@ -1721,6 +2062,21 @@ function Checkout() {
               )}
             </span>
           </label>
+
+          <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-border/70 bg-muted/20 p-3">
+            <Checkbox
+              className="mt-0.5"
+              checked={marketingConsent}
+              onCheckedChange={(checked) => setMarketingConsent(checked === true)}
+            />
+            <span className="text-xs leading-relaxed text-muted-foreground">
+              {t(
+                "أوافق على استلام إشعارات وعروض خاصة ورسائل تذكير بالسلة عبر واتساب والبريد.",
+                "Keep me updated with cart reminders, points balance, and exclusive offers via WhatsApp & Email.",
+              )}
+            </span>
+          </label>
+
           <Button
             className="w-full h-12 bg-primary text-primary-foreground rounded-lg"
             disabled={

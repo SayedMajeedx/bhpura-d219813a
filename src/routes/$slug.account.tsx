@@ -38,12 +38,14 @@ import {
   Wallet,
   CircleDollarSign,
   CheckCircle2,
+  Coins,
 } from "lucide-react";
 import { BAHRAIN_REGIONS, regionLabel } from "@/lib/bahrain-regions";
 import { DeliveryAddressCard } from "@/components/delivery-address-card";
 import { PhoneInput } from "@/components/phone-input";
 import { PasskeySettings } from "@/components/passkey-settings";
 import { CustomerReturnRequestModal } from "@/components/storefront/CustomerReturnRequestModal";
+import { CustomerLoyaltySection } from "@/components/loyalty/CustomerLoyaltySection";
 import { getCustomerStoreCreditBalance } from "@/lib/returns.functions";
 import { RETURN_STATUS_CONFIG, type ReturnStatus } from "@/lib/returns.types";
 
@@ -507,7 +509,7 @@ function AccountPage() {
             defaultValue="orders"
             className="w-full rounded-2xl border bg-card/40 backdrop-blur-md p-4 shadow-xs sm:p-6 border-border/70"
           >
-            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-5 h-auto rounded-xl p-1 bg-muted/40 border border-border/40 mb-6 gap-1">
+            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-6 h-auto rounded-xl p-1 bg-muted/40 border border-border/40 mb-6 gap-1">
               <TabsTrigger
                 value="orders"
                 className="gap-1.5 py-2.5 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-xs transition-all text-xs"
@@ -515,6 +517,15 @@ function AccountPage() {
                 <PackageSearch className="h-4 w-4 text-primary" />
                 <span className="font-semibold text-xs">
                   {t("طلباتي", "My orders")}
+                </span>
+              </TabsTrigger>
+              <TabsTrigger
+                value="loyalty"
+                className="gap-1.5 py-2.5 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-xs transition-all text-xs"
+              >
+                <Coins className="h-4 w-4 text-primary" />
+                <span className="font-semibold text-xs">
+                  {t("المكافآت والولاء", "Rewards")}
                 </span>
               </TabsTrigger>
               <TabsTrigger
@@ -568,6 +579,14 @@ function AccountPage() {
                 orders={orders}
                 isLoading={loadingOrders}
                 onRequestReturn={(order) => setReturnModalOrder(order)}
+              />
+            </TabsContent>
+
+            <TabsContent value="loyalty" className="mt-0 focus-visible:outline-none">
+              <CustomerLoyaltySection
+                brandId={brand.id}
+                customerId={customer?.id || ""}
+                currency={currency}
               />
             </TabsContent>
 

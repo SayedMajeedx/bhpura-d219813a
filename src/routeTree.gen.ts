@@ -52,6 +52,7 @@ import { Route as ApiPublicPaymentsCreateTapChargeRouteImport } from './routes/a
 import { Route as ApiPublicPaymentsTapRedirectRouteImport } from './routes/api.public.payments.tap-redirect'
 import { Route as ApiPublicWebhooksTapRouteImport } from './routes/api.public.webhooks.tap'
 import { Route as BrandsBrandIdKindFilenameRouteImport } from './routes/brands.$brandId.$kind.$filename'
+import { Route as AuthenticatedAdminBSlugAbandonedCartsRouteImport } from './routes/_authenticated/admin.b.$slug.abandoned-carts'
 import { Route as AuthenticatedAdminBSlugCampaignsRouteImport } from './routes/_authenticated/admin.b.$slug.campaigns'
 import { Route as AuthenticatedAdminBSlugCategoriesRouteImport } from './routes/_authenticated/admin.b.$slug.categories'
 import { Route as AuthenticatedAdminBSlugCommunicationsRouteImport } from './routes/_authenticated/admin.b.$slug.communications'
@@ -62,6 +63,7 @@ import { Route as AuthenticatedAdminBSlugExpensesRouteImport } from './routes/_a
 import { Route as AuthenticatedAdminBSlugIncubatorsRouteImport } from './routes/_authenticated/admin.b.$slug.incubators'
 import { Route as AuthenticatedAdminBSlugIntegrationsRouteImport } from './routes/_authenticated/admin.b.$slug.integrations'
 import { Route as AuthenticatedAdminBSlugInventoryRouteImport } from './routes/_authenticated/admin.b.$slug.inventory'
+import { Route as AuthenticatedAdminBSlugLoyaltyRouteImport } from './routes/_authenticated/admin.b.$slug.loyalty'
 import { Route as AuthenticatedAdminBSlugPagesRouteImport } from './routes/_authenticated/admin.b.$slug.pages'
 import { Route as AuthenticatedAdminBSlugReportsRouteImport } from './routes/_authenticated/admin.b.$slug.reports'
 import { Route as AuthenticatedAdminBSlugReviewsRouteImport } from './routes/_authenticated/admin.b.$slug.reviews'
@@ -307,6 +309,12 @@ const BrandsBrandIdKindFilenameRoute =
     path: '/brands/$brandId/$kind/$filename',
     getParentRoute: () => rootRouteImport,
   } as any)
+const AuthenticatedAdminBSlugAbandonedCartsRoute =
+  AuthenticatedAdminBSlugAbandonedCartsRouteImport.update({
+    id: '/abandoned-carts',
+    path: '/abandoned-carts',
+    getParentRoute: () => AuthenticatedAdminBSlugRouteRoute,
+  } as any)
 const AuthenticatedAdminBSlugCampaignsRoute =
   AuthenticatedAdminBSlugCampaignsRouteImport.update({
     id: '/campaigns',
@@ -365,6 +373,12 @@ const AuthenticatedAdminBSlugInventoryRoute =
   AuthenticatedAdminBSlugInventoryRouteImport.update({
     id: '/inventory',
     path: '/inventory',
+    getParentRoute: () => AuthenticatedAdminBSlugRouteRoute,
+  } as any)
+const AuthenticatedAdminBSlugLoyaltyRoute =
+  AuthenticatedAdminBSlugLoyaltyRouteImport.update({
+    id: '/loyalty',
+    path: '/loyalty',
     getParentRoute: () => AuthenticatedAdminBSlugRouteRoute,
   } as any)
 const AuthenticatedAdminBSlugPagesRoute =
@@ -501,6 +515,7 @@ export interface FileRoutesByFullPath {
   '/api/public/payments/tap-redirect': typeof ApiPublicPaymentsTapRedirectRoute
   '/api/public/webhooks/tap': typeof ApiPublicWebhooksTapRoute
   '/brands/$brandId/$kind/$filename': typeof BrandsBrandIdKindFilenameRoute
+  '/admin/b/$slug/abandoned-carts': typeof AuthenticatedAdminBSlugAbandonedCartsRoute
   '/admin/b/$slug/campaigns': typeof AuthenticatedAdminBSlugCampaignsRoute
   '/admin/b/$slug/categories': typeof AuthenticatedAdminBSlugCategoriesRoute
   '/admin/b/$slug/communications': typeof AuthenticatedAdminBSlugCommunicationsRoute
@@ -511,6 +526,7 @@ export interface FileRoutesByFullPath {
   '/admin/b/$slug/incubators': typeof AuthenticatedAdminBSlugIncubatorsRoute
   '/admin/b/$slug/integrations': typeof AuthenticatedAdminBSlugIntegrationsRoute
   '/admin/b/$slug/inventory': typeof AuthenticatedAdminBSlugInventoryRoute
+  '/admin/b/$slug/loyalty': typeof AuthenticatedAdminBSlugLoyaltyRoute
   '/admin/b/$slug/pages': typeof AuthenticatedAdminBSlugPagesRoute
   '/admin/b/$slug/reports': typeof AuthenticatedAdminBSlugReportsRouteWithChildren
   '/admin/b/$slug/reviews': typeof AuthenticatedAdminBSlugReviewsRoute
@@ -568,6 +584,7 @@ export interface FileRoutesByTo {
   '/api/public/payments/tap-redirect': typeof ApiPublicPaymentsTapRedirectRoute
   '/api/public/webhooks/tap': typeof ApiPublicWebhooksTapRoute
   '/brands/$brandId/$kind/$filename': typeof BrandsBrandIdKindFilenameRoute
+  '/admin/b/$slug/abandoned-carts': typeof AuthenticatedAdminBSlugAbandonedCartsRoute
   '/admin/b/$slug/campaigns': typeof AuthenticatedAdminBSlugCampaignsRoute
   '/admin/b/$slug/categories': typeof AuthenticatedAdminBSlugCategoriesRoute
   '/admin/b/$slug/communications': typeof AuthenticatedAdminBSlugCommunicationsRoute
@@ -578,6 +595,7 @@ export interface FileRoutesByTo {
   '/admin/b/$slug/incubators': typeof AuthenticatedAdminBSlugIncubatorsRoute
   '/admin/b/$slug/integrations': typeof AuthenticatedAdminBSlugIntegrationsRoute
   '/admin/b/$slug/inventory': typeof AuthenticatedAdminBSlugInventoryRoute
+  '/admin/b/$slug/loyalty': typeof AuthenticatedAdminBSlugLoyaltyRoute
   '/admin/b/$slug/pages': typeof AuthenticatedAdminBSlugPagesRoute
   '/admin/b/$slug/reviews': typeof AuthenticatedAdminBSlugReviewsRoute
   '/admin/b/$slug/settings': typeof AuthenticatedAdminBSlugSettingsRoute
@@ -638,6 +656,7 @@ export interface FileRoutesById {
   '/api/public/payments/tap-redirect': typeof ApiPublicPaymentsTapRedirectRoute
   '/api/public/webhooks/tap': typeof ApiPublicWebhooksTapRoute
   '/brands/$brandId/$kind/$filename': typeof BrandsBrandIdKindFilenameRoute
+  '/_authenticated/admin/b/$slug/abandoned-carts': typeof AuthenticatedAdminBSlugAbandonedCartsRoute
   '/_authenticated/admin/b/$slug/campaigns': typeof AuthenticatedAdminBSlugCampaignsRoute
   '/_authenticated/admin/b/$slug/categories': typeof AuthenticatedAdminBSlugCategoriesRoute
   '/_authenticated/admin/b/$slug/communications': typeof AuthenticatedAdminBSlugCommunicationsRoute
@@ -648,6 +667,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/b/$slug/incubators': typeof AuthenticatedAdminBSlugIncubatorsRoute
   '/_authenticated/admin/b/$slug/integrations': typeof AuthenticatedAdminBSlugIntegrationsRoute
   '/_authenticated/admin/b/$slug/inventory': typeof AuthenticatedAdminBSlugInventoryRoute
+  '/_authenticated/admin/b/$slug/loyalty': typeof AuthenticatedAdminBSlugLoyaltyRoute
   '/_authenticated/admin/b/$slug/pages': typeof AuthenticatedAdminBSlugPagesRoute
   '/_authenticated/admin/b/$slug/reports': typeof AuthenticatedAdminBSlugReportsRouteWithChildren
   '/_authenticated/admin/b/$slug/reviews': typeof AuthenticatedAdminBSlugReviewsRoute
@@ -709,6 +729,7 @@ export interface FileRouteTypes {
     | '/api/public/payments/tap-redirect'
     | '/api/public/webhooks/tap'
     | '/brands/$brandId/$kind/$filename'
+    | '/admin/b/$slug/abandoned-carts'
     | '/admin/b/$slug/campaigns'
     | '/admin/b/$slug/categories'
     | '/admin/b/$slug/communications'
@@ -719,6 +740,7 @@ export interface FileRouteTypes {
     | '/admin/b/$slug/incubators'
     | '/admin/b/$slug/integrations'
     | '/admin/b/$slug/inventory'
+    | '/admin/b/$slug/loyalty'
     | '/admin/b/$slug/pages'
     | '/admin/b/$slug/reports'
     | '/admin/b/$slug/reviews'
@@ -776,6 +798,7 @@ export interface FileRouteTypes {
     | '/api/public/payments/tap-redirect'
     | '/api/public/webhooks/tap'
     | '/brands/$brandId/$kind/$filename'
+    | '/admin/b/$slug/abandoned-carts'
     | '/admin/b/$slug/campaigns'
     | '/admin/b/$slug/categories'
     | '/admin/b/$slug/communications'
@@ -786,6 +809,7 @@ export interface FileRouteTypes {
     | '/admin/b/$slug/incubators'
     | '/admin/b/$slug/integrations'
     | '/admin/b/$slug/inventory'
+    | '/admin/b/$slug/loyalty'
     | '/admin/b/$slug/pages'
     | '/admin/b/$slug/reviews'
     | '/admin/b/$slug/settings'
@@ -845,6 +869,7 @@ export interface FileRouteTypes {
     | '/api/public/payments/tap-redirect'
     | '/api/public/webhooks/tap'
     | '/brands/$brandId/$kind/$filename'
+    | '/_authenticated/admin/b/$slug/abandoned-carts'
     | '/_authenticated/admin/b/$slug/campaigns'
     | '/_authenticated/admin/b/$slug/categories'
     | '/_authenticated/admin/b/$slug/communications'
@@ -855,6 +880,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/b/$slug/incubators'
     | '/_authenticated/admin/b/$slug/integrations'
     | '/_authenticated/admin/b/$slug/inventory'
+    | '/_authenticated/admin/b/$slug/loyalty'
     | '/_authenticated/admin/b/$slug/pages'
     | '/_authenticated/admin/b/$slug/reports'
     | '/_authenticated/admin/b/$slug/reviews'
@@ -1195,6 +1221,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BrandsBrandIdKindFilenameRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/admin/b/$slug/abandoned-carts': {
+      id: '/_authenticated/admin/b/$slug/abandoned-carts'
+      path: '/abandoned-carts'
+      fullPath: '/admin/b/$slug/abandoned-carts'
+      preLoaderRoute: typeof AuthenticatedAdminBSlugAbandonedCartsRouteImport
+      parentRoute: typeof AuthenticatedAdminBSlugRouteRoute
+    }
     '/_authenticated/admin/b/$slug/campaigns': {
       id: '/_authenticated/admin/b/$slug/campaigns'
       path: '/campaigns'
@@ -1263,6 +1296,13 @@ declare module '@tanstack/react-router' {
       path: '/inventory'
       fullPath: '/admin/b/$slug/inventory'
       preLoaderRoute: typeof AuthenticatedAdminBSlugInventoryRouteImport
+      parentRoute: typeof AuthenticatedAdminBSlugRouteRoute
+    }
+    '/_authenticated/admin/b/$slug/loyalty': {
+      id: '/_authenticated/admin/b/$slug/loyalty'
+      path: '/loyalty'
+      fullPath: '/admin/b/$slug/loyalty'
+      preLoaderRoute: typeof AuthenticatedAdminBSlugLoyaltyRouteImport
       parentRoute: typeof AuthenticatedAdminBSlugRouteRoute
     }
     '/_authenticated/admin/b/$slug/pages': {
@@ -1450,6 +1490,7 @@ const AuthenticatedAdminBSlugReportsRouteWithChildren =
   )
 
 interface AuthenticatedAdminBSlugRouteRouteChildren {
+  AuthenticatedAdminBSlugAbandonedCartsRoute: typeof AuthenticatedAdminBSlugAbandonedCartsRoute
   AuthenticatedAdminBSlugCampaignsRoute: typeof AuthenticatedAdminBSlugCampaignsRoute
   AuthenticatedAdminBSlugCategoriesRoute: typeof AuthenticatedAdminBSlugCategoriesRoute
   AuthenticatedAdminBSlugCommunicationsRoute: typeof AuthenticatedAdminBSlugCommunicationsRoute
@@ -1460,6 +1501,7 @@ interface AuthenticatedAdminBSlugRouteRouteChildren {
   AuthenticatedAdminBSlugIncubatorsRoute: typeof AuthenticatedAdminBSlugIncubatorsRoute
   AuthenticatedAdminBSlugIntegrationsRoute: typeof AuthenticatedAdminBSlugIntegrationsRoute
   AuthenticatedAdminBSlugInventoryRoute: typeof AuthenticatedAdminBSlugInventoryRoute
+  AuthenticatedAdminBSlugLoyaltyRoute: typeof AuthenticatedAdminBSlugLoyaltyRoute
   AuthenticatedAdminBSlugPagesRoute: typeof AuthenticatedAdminBSlugPagesRoute
   AuthenticatedAdminBSlugReportsRoute: typeof AuthenticatedAdminBSlugReportsRouteWithChildren
   AuthenticatedAdminBSlugReviewsRoute: typeof AuthenticatedAdminBSlugReviewsRoute
@@ -1473,6 +1515,8 @@ interface AuthenticatedAdminBSlugRouteRouteChildren {
 
 const AuthenticatedAdminBSlugRouteRouteChildren: AuthenticatedAdminBSlugRouteRouteChildren =
   {
+    AuthenticatedAdminBSlugAbandonedCartsRoute:
+      AuthenticatedAdminBSlugAbandonedCartsRoute,
     AuthenticatedAdminBSlugCampaignsRoute:
       AuthenticatedAdminBSlugCampaignsRoute,
     AuthenticatedAdminBSlugCategoriesRoute:
@@ -1492,6 +1536,7 @@ const AuthenticatedAdminBSlugRouteRouteChildren: AuthenticatedAdminBSlugRouteRou
       AuthenticatedAdminBSlugIntegrationsRoute,
     AuthenticatedAdminBSlugInventoryRoute:
       AuthenticatedAdminBSlugInventoryRoute,
+    AuthenticatedAdminBSlugLoyaltyRoute: AuthenticatedAdminBSlugLoyaltyRoute,
     AuthenticatedAdminBSlugPagesRoute: AuthenticatedAdminBSlugPagesRoute,
     AuthenticatedAdminBSlugReportsRoute:
       AuthenticatedAdminBSlugReportsRouteWithChildren,
