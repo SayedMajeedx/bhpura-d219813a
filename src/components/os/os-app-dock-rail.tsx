@@ -129,12 +129,15 @@ export function OsAppDockRail({
               onClick={() => setAppsHubOpen(true)}
               title={lang === "ar" ? "مركز التطبيقات والأدوات" : "Apps & Tools Hub"}
               aria-label={lang === "ar" ? "مركز التطبيقات والأدوات" : "Apps & Tools Hub"}
-              className="relative group h-9 w-9 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary border border-primary/25 flex items-center justify-center transition-all hover:scale-105 active:scale-95 shadow-2xs cursor-pointer"
+              className="relative group h-10 w-10 rounded-2xl bg-gradient-to-br from-primary/20 via-primary/10 to-amber-500/15 hover:from-primary/30 hover:to-amber-500/25 text-primary border border-primary/30 hover:border-primary/50 flex items-center justify-center transition-all duration-300 hover:scale-110 active:scale-95 shadow-sm shadow-primary/10 cursor-pointer"
             >
-              <Boxes className="h-4.5 w-4.5" />
+              <Boxes className="h-5 w-5 transition-transform duration-300 group-hover:rotate-6" />
+              {/* Subtle top-end indicator dot */}
+              <span className="absolute top-1 end-1 h-2 w-2 rounded-full bg-amber-500 ring-2 ring-background animate-pulse" />
               {/* Tooltip */}
-              <div className="absolute start-full top-1/2 -translate-y-1/2 ms-3 px-2.5 py-1 rounded-lg bg-popover text-popover-foreground text-xs font-semibold shadow-md whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity z-50 border border-border/60">
-                {lang === "ar" ? "مركز التطبيقات والأدوات" : "Apps & Tools Hub"}
+              <div className="absolute start-full top-1/2 -translate-y-1/2 ms-3 px-3 py-1.5 rounded-xl bg-popover text-popover-foreground text-xs font-semibold shadow-xl whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity z-50 border border-border/80 flex items-center gap-1.5">
+                <Boxes className="h-3.5 w-3.5 text-primary" />
+                <span>{lang === "ar" ? "مركز الأدوات والتطبيقات" : "Apps & Tools Hub"}</span>
               </div>
             </button>
           )}
