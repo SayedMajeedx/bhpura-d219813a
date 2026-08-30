@@ -49,6 +49,9 @@ jobs:
         working-directory: ${{ matrix.app_directory }}
         env:
           BUILD_NUMBER: ${{ inputs.build_number }}
+          EXPO_PUBLIC_SUPABASE_URL: ${{ secrets.EXPO_PUBLIC_SUPABASE_URL }}
+          EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
+          EXPO_PUBLIC_BOUTQ_ADMIN_URL: https://boutq.store/admin
         run: |
           set -euo pipefail
           WORKSPACE="$(find ios -maxdepth 1 -name '*.xcworkspace' -print -quit)"
