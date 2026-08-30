@@ -24,7 +24,11 @@ export const OrderItemsSection: React.FC<OrderItemsSectionProps> = ({ lang, orde
 
       <div className="divide-y divide-border/40">
         {items.map((item: any, idx: number) => {
-          const itemTitle = item.product_title || item.title || (isAr ? "منتج" : "Product");
+          const itemTitle =
+            item.product_title ||
+            item.title ||
+            item.description ||
+            (isAr ? "منتج مخصص" : "Custom Item");
           const variantParts = [
             item.selected_variant?.color || item.color,
             item.selected_variant?.size || item.size,

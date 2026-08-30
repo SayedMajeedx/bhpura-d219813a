@@ -910,45 +910,65 @@ function OrderDetail() {
     initialSnapshotRef.current = { order: draft, items: [] };
   }, [brandId, id, order, settingsQ.data]);
 
+  const simplifyItem = (it: Item) => ({
+    id: it.id ?? null,
+    product_id: it.product_id ?? null,
+    variant_id: it.variant_id ?? null,
+    description: (it.description ?? "").trim(),
+    quantity: Number(it.quantity || 0),
+    unit_price: Number(it.unit_price || 0),
+    unit_cost: it.unit_cost == null ? null : Number(it.unit_cost),
+    original_price: it.original_price == null ? null : Number(it.original_price),
+    line_total: Number(it.line_total || 0),
+    location: it.location ?? "main",
+    customizations: it.customizations ?? [],
+    customization_total: Number(it.customization_total || 0),
+    selected_variant: it.selected_variant
+      ? {
+          size: it.selected_variant.size ?? null,
+          color: it.selected_variant.color ?? null,
+          fabric: it.selected_variant.fabric ?? null,
+        }
+      : null,
+    custom_field_values: (it.custom_field_values ?? []).map((cf) => ({
+      key: cf.key,
+      value: cf.value,
+    })),
+  });
+
+  const normalizeOrderMin = (o: any) => ({
+    id: o?.id ?? null,
+    notes: o?.notes ?? "",
+    delivery_notes: o?.delivery_notes ?? "",
+    customer_id: o?.customer_id ?? null,
+    shipping_address_id: o?.shipping_address_id ?? null,
+    branch_id: o?.branch_id ?? null,
+    fulfillment_method: o?.fulfillment_method ?? "delivery",
+    digital_delivery_channel: o?.digital_delivery_channel ?? null,
+    digital_delivery_contact: o?.digital_delivery_contact ?? null,
+    payment_status: o?.payment_status ?? "unpaid",
+    fulfillment_status: o?.fulfillment_status ?? "ON_HOLD",
+    status: o?.status ?? "draft",
+    payment_method: o?.payment_method ?? null,
+    discount: Number(o?.discount ?? 0),
+    shipping: Number(o?.shipping ?? 0),
+    tax_rate: Number(o?.tax_rate ?? 0),
+    advance_paid: Number(o?.advance_paid ?? 0),
+    order_date: o?.order_date ?? "",
+  });
+
   const isDirty = useMemo(() => {
     if (!initialSnapshotRef.current || !order) return false;
     const snap = initialSnapshotRef.current;
-
-    const normalizeOrderMin = (o: any) => ({
-      id: o?.id ?? null,
-      notes: o?.notes ?? "",
-      delivery_notes: o?.delivery_notes ?? "",
-      customer_id: o?.customer_id ?? null,
-      shipping_address_id: o?.shipping_address_id ?? null,
-      payment_status: o?.payment_status ?? "unpaid",
-      fulfillment_status: o?.fulfillment_status ?? "ON_HOLD",
-      status: o?.status ?? "draft",
-      payment_method: o?.payment_method ?? null,
-      discount: Number(o?.discount ?? 0),
-      shipping: Number(o?.shipping ?? 0),
-      tax_rate: Number(o?.tax_rate ?? 0),
-      advance_paid: Number(o?.advance_paid ?? 0),
-      order_date: o?.order_date ?? "",
-    });
 
     const currentOrderMin = normalizeOrderMin(order);
     const snapOrderMin = normalizeOrderMin(snap.order);
 
     const orderChanged = JSON.stringify(currentOrderMin) !== JSON.stringify(snapOrderMin);
 
-    const simplifyItem = (it: Item) => ({
-      id: it.id,
-      product_id: it.product_id ?? null,
-      variant_id: it.variant_id ?? null,
-      quantity: Number(it.quantity),
-      unit_price: Number(it.unit_price),
-      unit_cost: it.unit_cost == null ? null : Number(it.unit_cost),
-      line_total: Number(it.line_total),
-      customizations: it.customizations ?? [],
-    });
-
     const itemsChanged =
-      JSON.stringify(items.map(simplifyItem)) !== JSON.stringify(snap.items.map(simplifyItem));
+      JSON.stringify(items.map(simplifyItem)) !==
+      JSON.stringify((snap.items ?? []).map(simplifyItem));
 
     return orderChanged || itemsChanged;
   }, [items, order]);
@@ -1197,22 +1217,7 @@ function OrderDetail() {
       setItems(loadedItems);
 
       initialSnapshotRef.current = {
-        order: {
-          id: orderQ.data.id,
-          notes: orderQ.data.notes ?? "",
-          delivery_notes: orderQ.data.delivery_notes ?? "",
-          customer_id: orderQ.data.customer_id ?? null,
-          shipping_address_id: orderQ.data.shipping_address_id ?? null,
-          payment_status: orderQ.data.payment_status,
-          fulfillment_status: orderQ.data.fulfillment_status,
-          status: orderQ.data.status,
-          payment_method: orderQ.data.payment_method ?? null,
-          discount: Number(orderQ.data.discount ?? 0),
-          shipping: Number(orderQ.data.shipping ?? 0),
-          tax_rate: Number(orderQ.data.tax_rate ?? 0),
-          advance_paid: Number(orderQ.data.advance_paid ?? 0),
-          order_date: orderQ.data.order_date,
-        },
+        order: normalizeOrderMin(orderQ.data),
         items: loadedItems,
       };
 
@@ -1676,6 +1681,10 @@ function OrderDetail() {
       const wantByVariant = new Map<string, number>();
       for (const it of items) {
         if (!it.variant_id) continue;
+        const isCustom =
+          (it.custom_field_values && it.custom_field_values.length > 0) ||
+          (it.selected_variant?.size && String(it.selected_variant.size).includes("تفصيل"));
+        if (isCustom) continue;
         wantByVariant.set(
           it.variant_id,
           (wantByVariant.get(it.variant_id) ?? 0) + Number(it.quantity),
@@ -1738,6 +1747,7 @@ function OrderDetail() {
         const { error: itemError } = await (supabase.from("order_items") as any).insert(
           items.map((item) => ({
             user_id: user.id,
+            brand_id: brandId,
             order_id: created.id,
             product_id: item.product_id ?? null,
             variant_id: item.variant_id ?? null,
@@ -1821,22 +1831,22 @@ function OrderDetail() {
     if (!itemsModified) {
       for (const item of items) {
         const orig = originalItems.find((o) => o.id === item.id);
-        if (
-          !orig ||
-          orig.product_id !== item.product_id ||
-          orig.variant_id !== item.variant_id ||
-          Number(orig.quantity) !== Number(item.quantity) ||
-          Number(orig.unit_price) !== Number(item.unit_price) ||
-          (orig.unit_cost == null ? null : Number(orig.unit_cost)) !==
-            (item.unit_cost == null ? null : Number(item.unit_cost)) ||
-          orig.description !== item.description ||
-          (orig.location === "incubator" ? "incubator" : "main") !== item.location ||
-          JSON.stringify(orig.customizations ?? []) !== JSON.stringify(item.customizations ?? []) ||
-          JSON.stringify(orig.selected_variant ?? null) !==
-            JSON.stringify(item.selected_variant ?? null) ||
-          JSON.stringify(orig.custom_field_values ?? []) !==
-            JSON.stringify(item.custom_field_values ?? [])
-        ) {
+        if (!orig) {
+          itemsModified = true;
+          break;
+        }
+        const sOrig = simplifyItem({
+          ...orig,
+          unit_price: Number(orig.unit_price),
+          unit_cost: orig.unit_cost == null ? null : Number(orig.unit_cost),
+          original_price: orig.original_price == null ? null : Number(orig.original_price),
+          customization_total: Number(orig.customization_total || 0),
+          line_total: Number(orig.line_total || 0),
+          location: orig.location === "incubator" ? "incubator" : "main",
+          custom_field_values: normalizeCustomFieldValues(orig.custom_field_values),
+        });
+        const sItem = simplifyItem(item);
+        if (JSON.stringify(sOrig) !== JSON.stringify(sItem)) {
           itemsModified = true;
           break;
         }
@@ -1849,6 +1859,7 @@ function OrderDetail() {
         const { error: ie } = await (supabase.from("order_items") as any).insert(
           items.map((i) => ({
             user_id: user.id,
+            brand_id: brandId,
             order_id: order.id,
             product_id: i.product_id ?? null,
             variant_id: i.variant_id ?? null,
@@ -1961,22 +1972,7 @@ function OrderDetail() {
     setItems(loadedItems);
 
     initialSnapshotRef.current = {
-      order: {
-        id: freshOrder.id,
-        notes: freshOrder.notes ?? "",
-        delivery_notes: freshOrder.delivery_notes ?? "",
-        customer_id: freshOrder.customer_id ?? null,
-        shipping_address_id: freshOrder.shipping_address_id ?? null,
-        payment_status: freshOrder.payment_status,
-        fulfillment_status: freshOrder.fulfillment_status,
-        status: freshOrder.status,
-        payment_method: freshOrder.payment_method ?? null,
-        discount: Number(freshOrder.discount ?? 0),
-        shipping: Number(freshOrder.shipping ?? 0),
-        tax_rate: Number(freshOrder.tax_rate ?? 0),
-        advance_paid: Number(freshOrder.advance_paid ?? 0),
-        order_date: freshOrder.order_date,
-      },
+      order: normalizeOrderMin(freshOrder),
       items: loadedItems,
     };
 
@@ -3640,12 +3636,17 @@ function OrderDetail() {
                             <Label className="text-xs text-muted-foreground mb-1 block">
                               {t("orderDetail.description")}
                             </Label>
-                            {editingItems[idx] ? (
+                            {editingItems[idx] || !it.variant_id ? (
                               <Textarea
                                 rows={2}
                                 value={it.description}
+                                placeholder={
+                                  isAr
+                                    ? "اكتب اسم أو وصف البند المخصص..."
+                                    : "Enter item description..."
+                                }
                                 onChange={(e) => updateItem(idx, { description: e.target.value })}
-                                className="text-sm leading-snug"
+                                className="text-xs leading-snug rounded-xl resize-none"
                               />
                             ) : (
                               <div className="text-xs font-medium text-foreground bg-muted/20 border border-border/60 rounded-lg p-2.5 min-h-[42px] flex items-center">
@@ -3698,7 +3699,7 @@ function OrderDetail() {
                             <Label className="text-xs text-muted-foreground mb-1 block">
                               {t("orderDetail.unitPrice")}
                             </Label>
-                            {editingItems[idx] ? (
+                            {editingItems[idx] || !it.variant_id ? (
                               <Input
                                 type="number"
                                 step="0.001"
@@ -3706,6 +3707,7 @@ function OrderDetail() {
                                 onChange={(e) =>
                                   updateItem(idx, { unit_price: Number(e.target.value) })
                                 }
+                                className="h-9 text-xs font-bold rounded-xl"
                               />
                             ) : (
                               <div className="text-xs font-bold text-foreground bg-muted/20 border border-border/60 rounded-lg p-2.5 min-h-[42px] flex items-center">

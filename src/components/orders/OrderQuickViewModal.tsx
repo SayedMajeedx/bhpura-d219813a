@@ -277,7 +277,8 @@ export function OrderQuickViewModal({
                         it.products?.name ||
                         it.products?.name_ar ||
                         it.products?.name_en ||
-                        (isAr ? "منتج" : "Product");
+                        it.description ||
+                        (isAr ? "منتج مخصص" : "Custom Item");
 
                       const variantParts = [
                         it.selected_variant?.color || it.color,
