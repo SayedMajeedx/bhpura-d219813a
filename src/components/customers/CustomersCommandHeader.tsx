@@ -23,14 +23,14 @@ export const CustomersCommandHeader: React.FC<CustomersCommandHeaderProps> = ({
   const isAr = lang === "ar";
 
   return (
-    <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 sm:p-4 rounded-xl bg-card border border-border/60 shadow-2xs">
+    <header className="flex min-w-0 flex-col gap-3 rounded-xl border border-border/60 bg-card p-3.5 shadow-2xs sm:flex-row sm:items-center sm:justify-between sm:p-4">
       {/* Title + Icon + Count Badge */}
-      <div className="flex items-center gap-3">
+      <div className="flex min-w-0 items-center gap-3">
         <div className="h-9 w-9 rounded-lg bg-primary/10 text-primary border border-primary/20 flex items-center justify-center shrink-0">
           <Users className="h-4.5 w-4.5" />
         </div>
-        <div>
-          <div className="flex items-center gap-2">
+        <div className="min-w-0">
+          <div className="flex min-w-0 flex-wrap items-center gap-2">
             <h1 className="font-display text-lg sm:text-xl font-bold tracking-tight text-foreground">
               {isAr ? "العملاء وسجل المبيعات" : "Customers & CRM Database"}
             </h1>
@@ -47,10 +47,10 @@ export const CustomersCommandHeader: React.FC<CustomersCommandHeaderProps> = ({
       </div>
 
       {/* Primary & Secondary Actions Group */}
-      <div className="flex items-center gap-2 shrink-0">
+      <div className="flex w-full min-w-0 items-center gap-2 sm:w-auto sm:shrink-0">
         <Button
           onClick={onCreateNew}
-          className="h-9 px-3.5 gap-1.5 font-bold bg-primary text-primary-foreground hover:bg-primary/90 shadow-2xs text-xs"
+          className="h-9 min-w-0 flex-1 gap-1.5 px-3.5 text-xs font-bold shadow-2xs sm:flex-none"
         >
           <Plus className="h-4 w-4" />
           {isAr ? "عميل جديد" : "New Customer"}
@@ -70,7 +70,7 @@ export const CustomersCommandHeader: React.FC<CustomersCommandHeaderProps> = ({
             </DropdownMenuTrigger>
             <DropdownMenuContent
               align={isAr ? "start" : "end"}
-              className="w-80 p-1.5 shadow-xl border border-border/80 rounded-xl"
+              className="w-80 max-w-[calc(100vw-1rem)] rounded-xl border border-border/80 p-1.5 shadow-xl [&_button]:h-auto [&_button]:min-h-9 [&_button]:w-full [&_button]:min-w-0 [&_button]:justify-start [&_button]:whitespace-normal [&_button]:text-start"
             >
               {renderImporters}
             </DropdownMenuContent>

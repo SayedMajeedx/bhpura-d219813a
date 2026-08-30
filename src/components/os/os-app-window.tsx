@@ -99,7 +99,7 @@ export const OsAppWindow = React.forwardRef<HTMLDivElement, OsAppWindowProps>(
         {/* Opaque Readable Content Area with Butter-Smooth Page Transition */}
         <div
           key={pageKey}
-          className="flex-1 overflow-auto overscroll-contain os-scrollbar p-4 pb-32 sm:p-5 sm:pb-28 md:pb-24 lg:pb-20 bg-card/95 text-card-foreground os-page-transition"
+          className="flex-1 min-w-0 overflow-y-auto overflow-x-hidden overscroll-contain os-scrollbar p-3 pb-32 sm:p-5 sm:pb-28 md:pb-24 lg:pb-20 bg-card/95 text-card-foreground os-page-transition"
           style={{ WebkitOverflowScrolling: "touch" }}
         >
           {children}
