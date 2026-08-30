@@ -4,10 +4,19 @@ import {
   decodeCartSharePayload,
   buildCartShareUrl,
   buildWhatsAppShareUrl,
+  generateShortCartCode,
 } from "../src/lib/cart-sharing";
 import type { CartItem } from "../src/lib/storefront-context";
 
 describe("Cart Sharing", () => {
+  it("generates random alphanumeric short codes of given length", () => {
+    const code = generateShortCartCode(6);
+    expect(code).toHaveLength(6);
+    expect(/^[23456789abcdefghjkmnpqrstuvwxyz]+$/.test(code)).toBe(true);
+
+    const code8 = generateShortCartCode(8);
+    expect(code8).toHaveLength(8);
+  });
   const sampleCart: CartItem[] = [
     {
       cart_line_id: "line-1",

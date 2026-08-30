@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Check, Copy, MessageCircle, Share2 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Check, Copy, Loader2, MessageCircle, Share2 } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import {
   buildCartShareUrl,
   buildWhatsAppShareUrl,
+  createSharedCartLink,
 } from "@/lib/cart-sharing";
 import { formatPrice, useStorefront } from "@/lib/storefront-context";
 
@@ -24,16 +25,46 @@ interface ShareCartModalProps {
 export function ShareCartModal({ open, onOpenChange }: ShareCartModalProps) {
   const { cart, cartTotal, currency, lang, t, brand, settings } = useStorefront();
   const [copied, setCopied] = useState(false);
+  const [shortUrl, setShortUrl] = useState<string>("");
+  const [generating, setGenerating] = useState(false);
 
   const isAr = lang === "ar";
-  const shareUrl = buildCartShareUrl(brand.slug, cart);
-  const totalFormatted = formatPrice(cartTotal, currency, lang);
   const brandName = isAr ? brand.name_ar || brand.name_en : brand.name_en;
+  const totalFormatted = formatPrice(cartTotal, currency, lang);
+
+  // Fallback URL if async short code is still generating or fails
+  const fallbackUrl = buildCartShareUrl(brand.slug, cart);
+  const activeShareUrl = shortUrl || fallbackUrl;
+
+  useEffect(() => {
+    if (!open || cart.length === 0) return;
+    let cancelled = false;
+    setGenerating(true);
+
+    createSharedCartLink(brand.id, brand.slug, cart)
+      .then((url) => {
+        if (!cancelled && url) {
+          setShortUrl(url);
+        }
+      })
+      .catch((err) => {
+        console.warn("Could not generate short cart URL:", err);
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setGenerating(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [open, cart, brand.id, brand.slug]);
 
   const handleCopy = async () => {
-    if (!shareUrl) return;
+    if (!activeShareUrl) return;
     try {
-      await navigator.clipboard.writeText(shareUrl);
+      await navigator.clipboard.writeText(activeShareUrl);
       setCopied(true);
       toast.success(
         t("تم نسخ رابط السلة بنجاح!", "Cart link copied to clipboard!"),
@@ -45,7 +76,7 @@ export function ShareCartModal({ open, onOpenChange }: ShareCartModalProps) {
   };
 
   const handleNativeShare = async () => {
-    if (!shareUrl) return;
+    if (!activeShareUrl) return;
     if (typeof navigator !== "undefined" && navigator.share) {
       try {
         await navigator.share({
@@ -53,7 +84,7 @@ export function ShareCartModal({ open, onOpenChange }: ShareCartModalProps) {
           text: isAr
             ? `تفضل سلة المشتريات المختارة من ${brandName} (${cart.length} منتجات - ${totalFormatted})`
             : `Here is the cart from ${brandName} (${cart.length} items - ${totalFormatted})`,
-          url: shareUrl,
+          url: activeShareUrl,
         });
       } catch (err: any) {
         if (err?.name !== "AbortError") {
@@ -66,7 +97,7 @@ export function ShareCartModal({ open, onOpenChange }: ShareCartModalProps) {
   };
 
   const whatsappUrl = buildWhatsAppShareUrl({
-    shareUrl,
+    shareUrl: activeShareUrl,
     brandName,
     itemCount: cart.length,
     totalFormatted,
@@ -86,8 +117,8 @@ export function ShareCartModal({ open, onOpenChange }: ShareCartModalProps) {
           </DialogTitle>
           <DialogDescription className="text-sm text-muted-foreground">
             {t(
-              "شارك محتويات سلتك الحالية مع أصدقائك أو عملائك برابط مباشر ليتمكنوا من إكمال الشراء فوراً.",
-              "Share your current cart with friends or customers so they can complete the checkout immediately.",
+              "شارك محتويات سلتك الحالية برابط مختصر وسريع ليتمكن الطرف الآخر من إكمال الشراء فوراً.",
+              "Share your current cart with a short, fast link so others can complete the checkout immediately.",
             )}
           </DialogDescription>
         </DialogHeader>
@@ -108,13 +139,21 @@ export function ShareCartModal({ open, onOpenChange }: ShareCartModalProps) {
 
           {/* Share Link Input */}
           <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-muted-foreground">
-              {t("رابط السلة المباشر", "Direct Cart Link")}
-            </label>
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-semibold text-muted-foreground">
+                {t("رابط السلة المختصر", "Short Cart Link")}
+              </label>
+              {generating && (
+                <span className="flex items-center gap-1 text-[11px] text-muted-foreground">
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                  <span>{t("جاري التجهيز...", "Generating...")}</span>
+                </span>
+              )}
+            </div>
             <div className="flex items-center gap-2">
               <Input
                 readOnly
-                value={shareUrl}
+                value={activeShareUrl}
                 className="h-11 flex-1 font-mono text-xs focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                 onClick={(e) => (e.target as HTMLInputElement).select()}
               />

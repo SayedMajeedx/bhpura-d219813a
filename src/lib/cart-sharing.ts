@@ -1,3 +1,4 @@
+import { supabase } from "@/integrations/supabase/client";
 import type { CartItem, CustomFieldValue } from "./storefront-context";
 
 export type CompactCustomField = {
@@ -23,6 +24,94 @@ export type CompactCartItem = {
   m: number; // max_stock
   cf?: CompactCustomField[]; // custom_fields
 };
+
+const SHORT_CODE_CHARS = "23456789abcdefghjkmnpqrstuvwxyz";
+
+/**
+ * Generates a clean, unambiguous 6-character short code.
+ */
+export function generateShortCartCode(length: number = 6): string {
+  let result = "";
+  const bytes = new Uint8Array(length);
+  if (typeof crypto !== "undefined" && crypto.getRandomValues) {
+    crypto.getRandomValues(bytes);
+    for (let i = 0; i < length; i++) {
+      result += SHORT_CODE_CHARS[bytes[i] % SHORT_CODE_CHARS.length];
+    }
+  } else {
+    for (let i = 0; i < length; i++) {
+      result += SHORT_CODE_CHARS[Math.floor(Math.random() * SHORT_CODE_CHARS.length)];
+    }
+  }
+  return result;
+}
+
+/**
+ * Creates a persistent short cart link in Supabase and returns the short URL.
+ * Falls back to base64 URL if database insertion is unavailable.
+ */
+export async function createSharedCartLink(
+  brandId: string,
+  brandSlug: string,
+  cart: CartItem[],
+  baseUrl?: string,
+): Promise<string> {
+  if (!cart || cart.length === 0) return "";
+
+  const origin =
+    baseUrl || (typeof window !== "undefined" ? window.location.origin : "https://boutq.store");
+
+  try {
+    const code = generateShortCartCode(6);
+    const { error } = await (supabase as any).from("shared_carts").insert({
+      code,
+      brand_id: brandId || null,
+      brand_slug: brandSlug,
+      items: cart,
+    });
+
+    if (!error) {
+      return `${origin}/${brandSlug}?c=${code}`;
+    }
+    console.warn("Failed to create short cart record, falling back to base64:", error);
+  } catch (err) {
+    console.warn("Shared cart database error, falling back to base64:", err);
+  }
+
+  // Fallback to Base64 parameter if DB write failed
+  return buildCartShareUrl(brandSlug, cart, baseUrl);
+}
+
+/**
+ * Fetches a shared cart by its short code from the database.
+ */
+export async function fetchSharedCartByCode(code: string): Promise<CartItem[] | null> {
+  if (!code || typeof code !== "string") return null;
+
+  try {
+    const cleanCode = code.trim().toLowerCase();
+    const { data, error } = await (supabase as any)
+      .from("shared_carts")
+      .select("items, expires_at")
+      .eq("code", cleanCode)
+      .maybeSingle();
+
+    if (error || !data) return null;
+
+    if (data.expires_at && new Date(data.expires_at).getTime() < Date.now()) {
+      console.warn("Shared cart link has expired");
+      return null;
+    }
+
+    if (Array.isArray(data.items) && data.items.length > 0) {
+      return data.items as CartItem[];
+    }
+  } catch (err) {
+    console.error("Error fetching shared cart by code:", err);
+  }
+
+  return null;
+}
 
 /**
  * Compacts and encodes an array of CartItems into a URL-safe Base64 string.
@@ -56,7 +145,6 @@ export function encodeCartSharePayload(cart: CartItem[]): string {
 
   try {
     const json = JSON.stringify(compactList);
-    // Base64 encoding compatible with UTF-8
     const utf8Bytes = new TextEncoder().encode(json);
     let binary = "";
     for (let i = 0; i < utf8Bytes.length; i++) {

@@ -12,7 +12,7 @@ import type { Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { trackStorefrontEvent } from "@/lib/storefront-analytics";
 import { westernNumeralLocale } from "@/lib/format";
-import { decodeCartSharePayload } from "@/lib/cart-sharing";
+import { decodeCartSharePayload, fetchSharedCartByCode } from "@/lib/cart-sharing";
 import { toast } from "sonner";
 
 export type StoreLang = "ar" | "en";
@@ -313,13 +313,37 @@ export function StorefrontProvider({
       const storedLang = localStorage.getItem(langKey);
       if (storedLang === "en" || storedLang === "ar") setLangState(storedLang);
 
-      // 1. Check for shared cart in URL parameter ?share_cart=... or ?shared_cart=...
+      // 1. Check for shared cart in URL: ?c=... or ?cart=... (short code) OR ?share_cart=... (payload)
       let sharedCartLoaded = false;
       if (typeof window !== "undefined") {
         try {
           const urlParams = new URLSearchParams(window.location.search);
+          const shortCode = urlParams.get("c") || urlParams.get("cart");
           const sharePayload = urlParams.get("share_cart") || urlParams.get("shared_cart");
-          if (sharePayload) {
+
+          if (shortCode) {
+            sharedCartLoaded = true;
+            fetchSharedCartByCode(shortCode).then((items) => {
+              if (items && items.length > 0) {
+                setCart(items);
+                urlParams.delete("c");
+                urlParams.delete("cart");
+                const newSearch = urlParams.toString();
+                const newUrl =
+                  window.location.pathname +
+                  (newSearch ? `?${newSearch}` : "") +
+                  window.location.hash;
+                window.history.replaceState({}, document.title, newUrl);
+                setTimeout(() => {
+                  toast.success(
+                    (storedLang || "ar") === "en"
+                      ? `Shared cart loaded (${items.length} ${items.length === 1 ? "item" : "items"}) 🛒`
+                      : `تم تحميل سلة المشتريات المشتركة بنجاح (${items.length} ${items.length === 1 ? "منتج" : "منتجات"}) 🛒`,
+                  );
+                }, 400);
+              }
+            });
+          } else if (sharePayload) {
             const decoded = decodeCartSharePayload(sharePayload);
             if (decoded && decoded.length > 0) {
               setCart(decoded);
