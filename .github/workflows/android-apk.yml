@@ -1,0 +1,112 @@
+name: Android APK Releases
+
+on:
+  workflow_dispatch:
+    inputs:
+      build_number:
+        description: Positive Android build number
+        required: true
+        default: "1"
+
+permissions:
+  contents: read
+
+jobs:
+  android:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - app_key: boutq_os
+            app_directory: apps/boutq-os-mobile
+            artifact_name: boutq-os
+          - app_key: pura_line
+            app_directory: apps/pura-line-mobile
+            artifact_name: pura-line
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            ${{ matrix.app_directory }}/package-lock.json
+      - uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961
+        with:
+          distribution: temurin
+          java-version: "17"
+      - name: Validate build input
+        run: test "${{ inputs.build_number }}" -ge 1
+      - name: Install root dependencies
+        run: npm ci
+      - name: Install application dependencies
+        working-directory: ${{ matrix.app_directory }}
+        run: npm ci --legacy-peer-deps
+      - name: Generate native Android project
+        working-directory: ${{ matrix.app_directory }}
+        env:
+          EXPO_NO_GIT_STATUS: "1"
+        run: npx expo prebuild --platform android --clean --no-install
+      - name: Restore Gradle cache
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles(format('{0}/android/**/*.gradle*', matrix.app_directory), format('{0}/android/**/gradle-wrapper.properties', matrix.app_directory)) }}
+          restore-keys: ${{ runner.os }}-gradle-
+      - name: Configure Keystore Signing
+        working-directory: ${{ matrix.app_directory }}/android
+        env:
+          KEYSTORE_B64: ${{ secrets.WHITE_LABEL_ANDROID_KEYSTORE_B64 }}
+          STORE_PASSWORD: ${{ secrets.WHITE_LABEL_ANDROID_STORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.WHITE_LABEL_ANDROID_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.WHITE_LABEL_ANDROID_KEY_PASSWORD }}
+        run: |
+          if [ -n "$KEYSTORE_B64" ] && [ -n "$STORE_PASSWORD" ] && [ -n "$KEY_ALIAS" ] && [ -n "$KEY_PASSWORD" ]; then
+            printf '%s' "$KEYSTORE_B64" | base64 --decode > app/boutq-release.jks
+            printf '\nBOUTQ_UPLOAD_STORE_FILE=boutq-release.jks\nBOUTQ_UPLOAD_KEY_ALIAS=%s\nBOUTQ_UPLOAD_STORE_PASSWORD=%s\nBOUTQ_UPLOAD_KEY_PASSWORD=%s\n' "$KEY_ALIAS" "$STORE_PASSWORD" "$KEY_PASSWORD" >> gradle.properties
+            node ../../../scripts/white-label/configure-signing.mjs || true
+          fi
+      - name: Build Android APK
+        working-directory: ${{ matrix.app_directory }}/android
+        env:
+          EXPO_PUBLIC_SUPABASE_URL: ${{ secrets.EXPO_PUBLIC_SUPABASE_URL }}
+          EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
+          EXPO_PUBLIC_BOUTQ_ADMIN_URL: https://boutq.store/admin
+        run: |
+          ./gradlew assembleRelease --no-daemon
+      - name: Locate APK file
+        id: locate_apk
+        working-directory: ${{ matrix.app_directory }}
+        run: |
+          APK_FILE="$(find android/app/build/outputs/apk -type f -name '*.apk' | head -n 1)"
+          if [ -z "$APK_FILE" ]; then
+            echo "Error: No APK file generated!"
+            exit 1
+          fi
+          echo "Found APK: $APK_FILE"
+          echo "path=${{ matrix.app_directory }}/$APK_FILE" >> "$GITHUB_OUTPUT"
+      - name: Read app version
+        id: version
+        working-directory: ${{ matrix.app_directory }}
+        run: node -e "console.log('name=' + require('./app.json').expo.version)" >> "$GITHUB_OUTPUT"
+      - name: Store release permanently
+        env:
+          MOBILE_ARTIFACT_PATH: ${{ steps.locate_apk.outputs.path }}
+          MOBILE_APP_KEY: ${{ matrix.app_key }}
+          MOBILE_PLATFORM: android
+          MOBILE_VERSION_NAME: ${{ steps.version.outputs.name }}
+          MOBILE_BUILD_NUMBER: ${{ inputs.build_number }}
+          MOBILE_RELEASE_UPLOAD_SECRET: ${{ secrets.MOBILE_RELEASE_UPLOAD_SECRET }}
+        run: node scripts/mobile/upload-release.mjs
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: ${{ matrix.artifact_name }}-android-apk-${{ steps.version.outputs.name }}-${{ inputs.build_number }}
+          path: ${{ steps.locate_apk.outputs.path }}
+          if-no-files-found: error
+          retention-days: 30

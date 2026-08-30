@@ -12,6 +12,8 @@ import type { Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { trackStorefrontEvent } from "@/lib/storefront-analytics";
 import { westernNumeralLocale } from "@/lib/format";
+import { decodeCartSharePayload } from "@/lib/cart-sharing";
+import { toast } from "sonner";
 
 export type StoreLang = "ar" | "en";
 export type HomePromoCard = {
@@ -311,12 +313,45 @@ export function StorefrontProvider({
       const storedLang = localStorage.getItem(langKey);
       if (storedLang === "en" || storedLang === "ar") setLangState(storedLang);
 
+      // 1. Check for shared cart in URL parameter ?share_cart=... or ?shared_cart=...
+      let sharedCartLoaded = false;
+      if (typeof window !== "undefined") {
+        try {
+          const urlParams = new URLSearchParams(window.location.search);
+          const sharePayload = urlParams.get("share_cart") || urlParams.get("shared_cart");
+          if (sharePayload) {
+            const decoded = decodeCartSharePayload(sharePayload);
+            if (decoded && decoded.length > 0) {
+              setCart(decoded);
+              sharedCartLoaded = true;
+              urlParams.delete("share_cart");
+              urlParams.delete("shared_cart");
+              const newSearch = urlParams.toString();
+              const newUrl =
+                window.location.pathname +
+                (newSearch ? `?${newSearch}` : "") +
+                window.location.hash;
+              window.history.replaceState({}, document.title, newUrl);
+              setTimeout(() => {
+                toast.success(
+                  (storedLang || "ar") === "en"
+                    ? `Shared cart loaded (${decoded.length} ${decoded.length === 1 ? "item" : "items"}) 🛒`
+                    : `تم تحميل سلة المشتريات المشتركة بنجاح (${decoded.length} ${decoded.length === 1 ? "منتج" : "منتجات"}) 🛒`,
+                );
+              }, 400);
+            }
+          }
+        } catch (e) {
+          console.warn("Shared cart parse failed:", e);
+        }
+      }
+
       const isThankYouPage =
         typeof window !== "undefined" && window.location.pathname.includes("/thank-you/");
       if (isThankYouPage) {
         localStorage.removeItem(cartKey);
         setCart([]);
-      } else {
+      } else if (!sharedCartLoaded) {
         const storedCart = localStorage.getItem(cartKey);
         if (storedCart) {
           const parsed = JSON.parse(storedCart) as Array<

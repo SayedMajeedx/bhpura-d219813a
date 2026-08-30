@@ -44,7 +44,9 @@ import {
   Coins,
   Award,
   Sparkles,
+  Share2,
 } from "lucide-react";
+import { ShareCartModal } from "@/components/storefront/ShareCartModal";
 import { uploadBenefitReceipt } from "@/lib/benefit-receipt";
 import { trackStorefrontEvent } from "@/lib/storefront-analytics";
 import { ResponsiveImage } from "@/components/responsive-media";
@@ -73,6 +75,7 @@ function Checkout() {
     useStorefront();
   const navigate = useNavigate();
   const [submitting, setSubmitting] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
   const [idempotencyKey] = useState(() => crypto.randomUUID());
   const [paymentErrorState, setPaymentErrorState] = useState<{
     status: string;
@@ -1830,7 +1833,19 @@ function Checkout() {
 
       <div>
         <Card className="p-5 sticky top-20 space-y-3">
-          <h2 className="font-display text-xl">{t("ملخّص الطلب", "Order summary")}</h2>
+          <div className="flex items-center justify-between">
+            <h2 className="font-display text-xl">{t("ملخّص الطلب", "Order summary")}</h2>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="h-8 gap-1.5 rounded-lg border-border text-xs"
+              onClick={() => setShareOpen(true)}
+            >
+              <Share2 className="h-3.5 w-3.5 text-primary" />
+              <span>{t("مشاركة السلة", "Share cart")}</span>
+            </Button>
+          </div>
           <div className="space-y-2 max-h-72 overflow-auto">
             {cart.map((c) => (
               <div key={c.cart_line_id} className="flex justify-between gap-3 text-sm">
@@ -2091,6 +2106,7 @@ function Checkout() {
             {submitting && <Loader2 className="h-4 w-4 me-2 animate-spin" />}
             {t("تأكيد الطلب", "Place order")}
           </Button>
+          <ShareCartModal open={shareOpen} onOpenChange={setShareOpen} />
         </Card>
       </div>
 

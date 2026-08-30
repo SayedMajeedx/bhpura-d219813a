@@ -49,7 +49,9 @@ import {
   Grid2X2,
   ChevronDown,
   Sparkles,
+  Share2,
 } from "lucide-react";
+import { ShareCartModal } from "@/components/storefront/ShareCartModal";
 import { OsEmptyState } from "@/components/os/os-empty-state";
 import { Input } from "@/components/ui/input";
 import { cloudflareImageUrl } from "@/lib/media-delivery";
@@ -1543,6 +1545,7 @@ function CartDrawer({ children }: { children: React.ReactNode }) {
   const { cart, cartTotal, currency, lang, t, updateQty, removeFromCart, brand, settings } =
     useStorefront();
   const [open, setOpen] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
   const navigate = useNavigate();
   const drawerCheckoutBg =
     settings.cart_drawer_checkout_bg ??
@@ -1707,20 +1710,32 @@ function CartDrawer({ children }: { children: React.ReactNode }) {
                     {formatPrice(cartTotal, currency, lang)}
                   </span>
                 </div>
-                <Button
-                  className="w-full h-12"
-                  style={{
-                    backgroundColor: drawerCheckoutBg,
-                    color: drawerCheckoutFg,
-                    borderColor: drawerCheckoutBg,
-                  }}
-                  onClick={() => {
-                    setOpen(false);
-                    navigate({ to: "/$slug/checkout", params: { slug: brand.slug } });
-                  }}
-                >
-                  {t("إتمام الشراء", "Checkout")}
-                </Button>
+                <div className="grid grid-cols-2 gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="h-12 rounded-xl gap-2 border-border font-medium"
+                    onClick={() => setShareOpen(true)}
+                  >
+                    <Share2 className="h-4 w-4 text-primary" />
+                    <span>{t("مشاركة السلة", "Share cart")}</span>
+                  </Button>
+                  <Button
+                    className="h-12 rounded-xl"
+                    style={{
+                      backgroundColor: drawerCheckoutBg,
+                      color: drawerCheckoutFg,
+                      borderColor: drawerCheckoutBg,
+                    }}
+                    onClick={() => {
+                      setOpen(false);
+                      navigate({ to: "/$slug/checkout", params: { slug: brand.slug } });
+                    }}
+                  >
+                    {t("إتمام الشراء", "Checkout")}
+                  </Button>
+                </div>
+                <ShareCartModal open={shareOpen} onOpenChange={setShareOpen} />
               </div>
             )}
           </>
