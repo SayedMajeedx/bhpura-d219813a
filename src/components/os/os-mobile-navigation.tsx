@@ -15,6 +15,7 @@ import {
   Settings,
   Activity,
   Boxes,
+  Fingerprint,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetClose } from "@/components/ui/sheet";
@@ -390,6 +391,24 @@ export function OsMobileNavigation({
 
             {/* iOS Liquid Control Center Footer */}
             <div className="p-3.5 border-t border-border/40 bg-white/40 dark:bg-slate-900/40 backdrop-blur-md space-y-2.5 relative z-10">
+              {/* Native App Tools Trigger (When in iPhone/Android Native App Wrapper) */}
+              {typeof window !== "undefined" && Boolean((window as any).ReactNativeWebView) && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full h-11 min-h-[44px] gap-2 text-xs font-semibold text-primary hover:bg-primary/10 border-primary/30 bg-primary/5 rounded-2xl transition-all"
+                  onClick={() => {
+                    (window as any).ReactNativeWebView?.postMessage(
+                      JSON.stringify({ type: "OPEN_NATIVE_TOOLS" }),
+                    );
+                    onOpenChangeMobile(false);
+                  }}
+                >
+                  <Fingerprint className="h-4 w-4 shrink-0" />
+                  <span>{lang === "ar" ? "أدوات تطبيق الآيفون (البصمة والإشعارات)" : "iPhone App Tools (Face ID & Push)"}</span>
+                </Button>
+              )}
+
               {/* Language Segmented Pill Toggle */}
               <div className="flex items-center justify-between bg-muted/60 p-1 rounded-2xl border border-border/40">
                 <span className="text-xs font-semibold px-3 text-muted-foreground">

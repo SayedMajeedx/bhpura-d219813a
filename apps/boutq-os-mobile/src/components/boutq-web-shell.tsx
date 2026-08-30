@@ -65,6 +65,8 @@ export function BoutqWebShell() {
   const [failure, setFailure] = useState<FailureState | null>(null);
   const [currentUrl, setCurrentUrl] = useState(ADMIN_URL);
   const [unlocked, setUnlocked] = useState<boolean | null>(null);
+  const [nativeToolsOpen, setNativeToolsOpen] = useState(false);
+  const [nativeScannerOpen, setNativeScannerOpen] = useState(false);
 
   const unlock = useCallback(() => {
     void authenticateAppIfEnabled().then(setUnlocked);
@@ -220,6 +222,25 @@ export function BoutqWebShell() {
         onShouldStartLoadWithRequest={handleNavigation}
         onNavigationStateChange={handleNavigationState}
         onOpenWindow={handleOpenWindow}
+        onMessage={(event) => {
+          try {
+            const data = JSON.parse(event.nativeEvent.data);
+            if (
+              data?.type === "OPEN_NATIVE_TOOLS" ||
+              data?.type === "OPEN_NOTIFICATIONS" ||
+              data?.type === "OPEN_BIOMETRIC" ||
+              data?.type === "OPEN_PASSKEY"
+            ) {
+              setNativeToolsOpen(true);
+            } else if (data?.type === "OPEN_SCANNER") {
+              setNativeScannerOpen(true);
+            } else if (data?.type === "SHARE_INVOICE") {
+              void shareInvoice();
+            } else if (data?.type === "DOWNLOAD_INVOICE") {
+              downloadInvoice();
+            }
+          } catch {}
+        }}
         onLoadStart={() => {
           setFailure(null);
           setProgress(0.05);
@@ -272,6 +293,10 @@ export function BoutqWebShell() {
           onShareInvoice={shareInvoice}
           onDownloadInvoice={downloadInvoice}
           onPushRegistration={registerPushDevice}
+          externalOpen={nativeToolsOpen}
+          onExternalOpenChange={setNativeToolsOpen}
+          externalScanner={nativeScannerOpen}
+          onExternalScannerChange={setNativeScannerOpen}
         />
       ) : null}
     </View>

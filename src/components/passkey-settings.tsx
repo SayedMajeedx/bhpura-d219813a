@@ -130,6 +130,40 @@ export function PasskeySettings() {
           </span>
         </div>
       </Card>
+
+      {typeof window !== "undefined" && Boolean((window as any).ReactNativeWebView) && (
+        <Card className="overflow-hidden border border-primary/30 shadow-md rounded-2xl bg-primary/5 p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="rounded-xl bg-primary/10 p-2 text-primary shrink-0">
+              <Fingerprint className="h-5 w-5" />
+            </div>
+            <div>
+              <p className="font-semibold text-sm">
+                {isAr ? "قفل تطبيق الآيفون بـ Face ID" : "iPhone App Lock with Face ID"}
+              </p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {isAr
+                  ? "يمكنك التحكم في قفل التطبيق بالبصمة وإشعارات الموبايل مباشرة من أدوات التطبيق"
+                  : "Manage app biometric lock and push notifications directly from native app tools"}
+              </p>
+            </div>
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="shrink-0 border-primary/40 text-primary hover:bg-primary/10 min-h-[44px]"
+            onClick={() => {
+              (window as any).ReactNativeWebView?.postMessage(
+                JSON.stringify({ type: "OPEN_NATIVE_TOOLS" }),
+              );
+            }}
+          >
+            {isAr ? "فتح أدوات التطبيق" : "Open App Tools"}
+          </Button>
+        </Card>
+      )}
+
       <Card className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm">
         <div className="border-b border-border/60 p-4">
           <h3 className="font-medium">
