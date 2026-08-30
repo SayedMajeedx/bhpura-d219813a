@@ -8,11 +8,22 @@ export function resolvePaymentStatus(
   total: number,
   advance: number,
 ): PaymentBadge {
+  const t = Number(total || 0);
+  const a = Number(advance || 0);
+  const remaining = +(t - a).toFixed(3);
+
   if (manual) {
     const norm = manual.toLowerCase();
     if (norm === "paid") return "paid";
-    if (norm === "partial" || norm === "partially_paid") return "partial";
-    if (norm === "unpaid") return "unpaid";
+    if (norm === "partial" || norm === "partially_paid") {
+      if (t > 0 && remaining <= 0) return "paid";
+      return "partial";
+    }
+    if (norm === "unpaid") {
+      if (a > 0 && remaining > 0) return "partial";
+      if (t > 0 && remaining <= 0) return "paid";
+      return "unpaid";
+    }
     if (norm === "refunded") return "refunded";
   }
   return derivePaymentStatus(orderStatus, total, advance);
@@ -69,6 +80,9 @@ export function formatPaymentBadgeDetail(
   const baseLabel = PAYMENT_BADGE_LABEL[badge]?.[lang] || badge;
   if (badge === "partial" && advance > 0) {
     const due = Math.max(0, total - advance);
+    if (due <= 0 && total > 0) {
+      return PAYMENT_BADGE_LABEL.paid[lang];
+    }
     if (isAr) {
       return `${baseLabel} (مدفوع ${advance.toFixed(3)} ${currency} / متبقي ${due.toFixed(3)} ${currency})`;
     }

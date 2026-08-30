@@ -64,3 +64,37 @@ describe("payment method filtering", () => {
     });
   });
 });
+
+describe("payment status badge and detail formatting", () => {
+  it("resolves paid when advance covers full total", async () => {
+    const { resolvePaymentStatus } = await import("../src/lib/payment-status");
+    expect(resolvePaymentStatus("partial", "pending", 10, 10)).toBe("paid");
+    expect(resolvePaymentStatus("partially_paid", "pending", 25, 25)).toBe("paid");
+  });
+
+  it("resolves partial when advance is positive but less than total", async () => {
+    const { resolvePaymentStatus, derivePaymentStatus } = await import("../src/lib/payment-status");
+    expect(resolvePaymentStatus("partial", "pending", 25, 10)).toBe("partial");
+    expect(resolvePaymentStatus("unpaid", "pending", 25, 10)).toBe("partial");
+    expect(derivePaymentStatus("pending", 25, 10)).toBe("partial");
+  });
+
+  it("formats payment badge detail with correct remaining balance", async () => {
+    const { formatPaymentBadgeDetail } = await import("../src/lib/payment-status");
+    // 25 total, 10 advance -> due is 15
+    const arDetail = formatPaymentBadgeDetail("partial", 25, 10, "BHD", "ar");
+    expect(arDetail).toBe("مدفوع جزئياً (مدفوع 10.000 BHD / متبقي 15.000 BHD)");
+
+    const enDetail = formatPaymentBadgeDetail("partial", 25, 10, "BHD", "en");
+    expect(enDetail).toBe("Partially Paid (Paid BHD 10.000 / Due BHD 15.000)");
+  });
+
+  it("does not format remaining 0 when fully paid", async () => {
+    const { formatPaymentBadgeDetail } = await import("../src/lib/payment-status");
+    const arDetail = formatPaymentBadgeDetail("partial", 10, 10, "BHD", "ar");
+    expect(arDetail).toBe("مدفوع");
+
+    const enDetail = formatPaymentBadgeDetail("partial", 10, 10, "BHD", "en");
+    expect(enDetail).toBe("Paid");
+  });
+});

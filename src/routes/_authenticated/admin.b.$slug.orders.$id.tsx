@@ -2725,6 +2725,7 @@ function OrderDetail() {
           slug={slug}
           order={order}
           items={items}
+          totals={totals}
           isCreationMode={isCreationMode}
           isReadOnly={isReadOnly}
           isAdmin={isAdmin}

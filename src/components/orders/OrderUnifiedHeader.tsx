@@ -44,6 +44,15 @@ interface OrderUnifiedHeaderProps {
   slug: string;
   order: any;
   items: any[];
+  totals?: {
+    subtotal?: number;
+    discount?: number;
+    shipping?: number;
+    taxAmount?: number;
+    total?: number;
+    advancePaid?: number;
+    remaining?: number;
+  };
   isCreationMode: boolean;
   isReadOnly: boolean;
   isAdmin: boolean;
@@ -66,6 +75,7 @@ export const OrderUnifiedHeader: React.FC<OrderUnifiedHeaderProps> = ({
   slug,
   order,
   items,
+  totals,
   isCreationMode,
   isReadOnly,
   isAdmin,
@@ -149,8 +159,8 @@ export const OrderUnifiedHeader: React.FC<OrderUnifiedHeaderProps> = ({
                 <span>
                   {formatPaymentBadgeDetail(
                     paymentBadge,
-                    Number(order?.total_amount ?? 0),
-                    Number(order?.advance_paid ?? 0),
+                    Number(totals?.total ?? order?.total ?? order?.total_amount ?? 0),
+                    Number(totals?.advancePaid ?? order?.advance_paid ?? 0),
                     order?.currency || "BHD",
                     lang,
                   )}
