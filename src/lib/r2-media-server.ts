@@ -17,6 +17,7 @@ const MIME_TYPES: Record<string, string> = {
   otf: "font/otf",
   pdf: "application/pdf",
   apk: "application/vnd.android.package-archive",
+  ipa: "application/octet-stream",
 };
 
 function getMimeType(key: string, contentTypeFromR2?: string | null): string {
@@ -77,7 +78,12 @@ export async function handleR2MediaRequest(
   const url = new URL(request.url);
   const key = url.pathname.replace(/^\/+/, "");
 
-  if (!key || (!key.startsWith("brands/") && !key.startsWith("app-builds/"))) {
+  if (
+    !key ||
+    (!key.startsWith("brands/") &&
+      !key.startsWith("app-builds/") &&
+      !key.startsWith("mobile-releases/"))
+  ) {
     return new Response("Not Found", { status: 404 });
   }
 
