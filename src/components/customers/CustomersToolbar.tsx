@@ -57,9 +57,7 @@ export const CustomersToolbar: React.FC<CustomersToolbarProps> = ({
           value={search}
           onChange={(e) => onSearchChange(e.target.value)}
           placeholder={
-            isAr
-              ? "ابحث باسم العميل، رقم الهاتف، أو البريد الإلكتروني... (⌘K)"
-              : "Search customer name, phone, or email... (⌘K)"
+            isAr ? "ابحث باسم العميل أو رقم الهاتف..." : "Search customer name, phone, or email..."
           }
           className="ps-9 h-8 text-xs bg-muted/30 border-border/60 focus:bg-background"
         />

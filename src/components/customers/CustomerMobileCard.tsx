@@ -3,6 +3,7 @@ import { formatMoney } from "@/lib/format";
 import { Users, Star, Phone, Mail, MapPin, ChevronRight, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { regionLabel } from "@/lib/bahrain-regions";
 
 interface CustomerMobileCardProps {
   lang: "en" | "ar";
@@ -26,7 +27,10 @@ export const CustomerMobileCard: React.FC<CustomerMobileCardProps> = ({
   onToggleSelected = () => undefined,
 }) => {
   const isAr = lang === "ar";
-  const regionText = defaultAddress?.region || customer.region || customer.city || "";
+  const regionText = regionLabel(
+    defaultAddress?.region || customer.region || customer.city || "",
+    lang,
+  );
   const cleanPhone = customer.phone ? customer.phone.replace(/[^\d+]/g, "") : "";
 
   return (

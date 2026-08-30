@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { regionLabel } from "@/lib/bahrain-regions";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -129,7 +130,7 @@ export const CustomersWorkQueue: React.FC<CustomersWorkQueueProps> = ({
           <tbody className="divide-y divide-border/40">
             {customers.map((c) => {
               const defAddress = defaultByCustomer.get(c.id);
-              const regionText = defAddress?.region || c.region || c.city || "";
+              const regionText = regionLabel(defAddress?.region || c.region || c.city || "", lang);
               const stats = customerCrmStats.get(c.id) || {
                 totalOrders: 0,
                 lifetimeSpend: 0,

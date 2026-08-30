@@ -2470,35 +2470,40 @@ function OrderDetail() {
           onSavePayment={handleSavePaymentDetails}
         />
 
-        {/* Mobile Segmented Control Tab Bar (< 768px) */}
-        {!isCreationMode && (
-          <div className="no-print sm:hidden my-3 grid grid-cols-3 gap-1 rounded-2xl bg-muted/60 p-1.5 border border-border/70 select-none shadow-2xs">
-            <button
-              type="button"
-              onClick={() => setMobileTab("items")}
-              className={cn(
-                "flex items-center justify-center gap-1.5 py-2 px-2 rounded-xl text-xs font-extrabold transition-all touch-manipulation min-h-10",
-                mobileTab === "items"
-                  ? "bg-card text-foreground shadow-xs border border-border/80 font-bold"
-                  : "text-muted-foreground hover:text-foreground",
-              )}
-            >
-              <Package className="h-4 w-4 shrink-0" />
-              <span>{lang === "ar" ? "المنتجات" : "Items"}</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setMobileTab("customer")}
-              className={cn(
-                "flex items-center justify-center gap-1.5 py-2 px-2 rounded-xl text-xs font-extrabold transition-all touch-manipulation min-h-10",
-                mobileTab === "customer"
-                  ? "bg-card text-foreground shadow-xs border border-border/80 font-bold"
-                  : "text-muted-foreground hover:text-foreground",
-              )}
-            >
-              <UserRound className="h-4 w-4 shrink-0" />
-              <span>{lang === "ar" ? "العميل والتوصيل" : "Customer"}</span>
-            </button>
+        {/* Mobile workflow navigation. Creation mode must expose customer details too. */}
+        <div
+          className={cn(
+            "no-print my-3 grid gap-1 rounded-2xl border border-border/70 bg-muted/60 p-1.5 shadow-2xs select-none sm:hidden",
+            isCreationMode ? "grid-cols-2" : "grid-cols-3",
+          )}
+        >
+          <button
+            type="button"
+            onClick={() => setMobileTab("items")}
+            className={cn(
+              "flex items-center justify-center gap-1.5 py-2 px-2 rounded-xl text-xs font-extrabold transition-all touch-manipulation min-h-10",
+              mobileTab === "items"
+                ? "bg-card text-foreground shadow-xs border border-border/80 font-bold"
+                : "text-muted-foreground hover:text-foreground",
+            )}
+          >
+            <Package className="h-4 w-4 shrink-0" />
+            <span>{lang === "ar" ? "المنتجات" : "Items"}</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setMobileTab("customer")}
+            className={cn(
+              "flex items-center justify-center gap-1.5 py-2 px-2 rounded-xl text-xs font-extrabold transition-all touch-manipulation min-h-10",
+              mobileTab === "customer"
+                ? "bg-card text-foreground shadow-xs border border-border/80 font-bold"
+                : "text-muted-foreground hover:text-foreground",
+            )}
+          >
+            <UserRound className="h-4 w-4 shrink-0" />
+            <span>{lang === "ar" ? "العميل والتوصيل" : "Customer"}</span>
+          </button>
+          {!isCreationMode && (
             <button
               type="button"
               onClick={() => setMobileTab("activity")}
@@ -2512,8 +2517,8 @@ function OrderDetail() {
               <Receipt className="h-4 w-4 shrink-0" />
               <span>{lang === "ar" ? "النشاط" : "Activity"}</span>
             </button>
-          </div>
-        )}
+          )}
+        </div>
 
         {/* Desktop Section Navigation Bar (≥ 768px) */}
         {!isCreationMode && (

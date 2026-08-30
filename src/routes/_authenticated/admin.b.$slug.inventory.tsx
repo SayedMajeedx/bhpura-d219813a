@@ -226,6 +226,7 @@ function InventoryDeleteAction({
 
 function Inventory() {
   const t = useT();
+  const { lang } = useI18n();
   const qc = useQueryClient();
   const brand = useBrand();
   const brandId = brand.id;
@@ -325,16 +326,7 @@ function Inventory() {
 
   return (
     <div className="mx-auto max-w-7xl space-y-4 p-1 sm:p-2 animate-fade-in">
-      <div className="mb-6 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h2 className="font-display text-3xl font-extrabold tracking-tight bg-clip-text bg-gradient-to-r from-slate-900 via-slate-800 to-slate-950 dark:from-slate-50 dark:to-slate-300 sm:text-4xl">
-            {t("inventory.title")}
-          </h2>
-          <p className="mt-1.5 text-muted-foreground text-sm max-w-md">{t("inventory.subtitle")}</p>
-        </div>
-      </div>
-
-      <div className="flex p-1.5 gap-1.5 bg-muted/40 rounded-xl border border-border/40 backdrop-blur-sm max-w-lg mb-6">
+      <div className="flex p-1.5 gap-1.5 bg-muted/40 rounded-xl border border-border/40 backdrop-blur-sm max-w-lg">
         <button
           className={`flex-1 rounded-lg py-2 px-3 text-sm font-semibold transition-all duration-200 ${tab === "products" ? "bg-background shadow-md text-foreground" : "text-muted-foreground hover:bg-background/20"}`}
           onClick={() => setTab("products")}
@@ -351,7 +343,7 @@ function Inventory() {
           className={`flex-1 rounded-lg py-2 px-3 text-sm font-semibold transition-all duration-200 ${tab === "packaging" ? "bg-background shadow-md text-foreground" : "text-muted-foreground hover:bg-background/20"}`}
           onClick={() => setTab("packaging")}
         >
-          مواد التغليف (BOM)
+          {lang === "ar" ? "مواد التغليف" : "Packaging materials"}
         </button>
       </div>
 
