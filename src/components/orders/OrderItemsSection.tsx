@@ -24,8 +24,22 @@ export const OrderItemsSection: React.FC<OrderItemsSectionProps> = ({ lang, orde
 
       <div className="divide-y divide-border/40">
         {items.map((item: any, idx: number) => {
-          const itemTitle = item.product_title || item.title || "Product";
-          const variantTitle = item.variant_title || item.variant_name || "";
+          const itemTitle = item.product_title || item.title || (isAr ? "منتج" : "Product");
+          const variantParts = [
+            item.selected_variant?.color || item.color,
+            item.selected_variant?.size || item.size,
+            item.selected_variant?.fabric || item.fabric,
+          ].filter(Boolean);
+
+          const variantTitle =
+            item.variant_title ||
+            item.variant_name ||
+            (variantParts.length > 0 ? variantParts.join(" · ") : "");
+
+          const customFields = Array.isArray(item.custom_field_values)
+            ? item.custom_field_values
+            : [];
+
           const qty = item.quantity || 1;
           const unitPrice = item.unit_price || item.price || 0;
           const lineTotal = item.total_price || qty * unitPrice;
@@ -49,6 +63,16 @@ export const OrderItemsSection: React.FC<OrderItemsSectionProps> = ({ lang, orde
                   {variantTitle && (
                     <div className="text-[11px] text-muted-foreground font-mono">
                       {variantTitle}
+                    </div>
+                  )}
+                  {customFields.length > 0 && (
+                    <div className="text-[10px] text-muted-foreground/80 mt-0.5 space-y-0.5">
+                      {customFields.map((cf: any, cfi: number) => (
+                        <div key={cfi} className="flex items-center gap-1">
+                          <span className="font-semibold">{isAr ? cf.label_ar || cf.label_en || cf.key : cf.label_en || cf.label_ar || cf.key}:</span>
+                          <span>{cf.value}</span>
+                        </div>
+                      ))}
                     </div>
                   )}
                   <div className="text-[10px] text-muted-foreground font-mono mt-0.5">

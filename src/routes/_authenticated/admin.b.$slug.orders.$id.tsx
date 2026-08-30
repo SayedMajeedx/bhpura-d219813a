@@ -287,7 +287,289 @@ function fillCourierMessage(template: string, order: any, brandName: string) {
     .replaceAll("{{customer_phone}}", getOrderCustomerPhone(order));
 }
 
-const CourierOrderView = lazy(() => import("@/components/orders/CourierOrderView"));
+const QUICK_SIZES = [
+  "50",
+  "52",
+  "54",
+  "56",
+  "58",
+  "60",
+  "62",
+  "XS",
+  "S",
+  "M",
+  "L",
+  "XL",
+  "XXL",
+  "Free Size",
+  "تفصيل خاص",
+];
+
+const QUICK_COLORS = [
+  { name: "أسود", color: "#18181b", border: "border-zinc-700" },
+  { name: "كحلي", color: "#1e293b", border: "border-slate-700" },
+  { name: "بيج", color: "#d4c5b9", border: "border-stone-400" },
+  { name: "أبيض", color: "#ffffff", border: "border-zinc-300" },
+  { name: "عنابي", color: "#881337", border: "border-rose-900" },
+  { name: "رمادي", color: "#64748b", border: "border-slate-500" },
+  { name: "زيتي", color: "#3f6212", border: "border-lime-900" },
+  { name: "بني", color: "#78350f", border: "border-amber-900" },
+];
+
+const QUICK_FABRICS = [
+  "كريب صالونا",
+  "لينن طبيعي",
+  "حرير مغسول",
+  "كريب ملكي",
+  "قطن فاخر",
+  "شيفون ناعم",
+];
+
+function ItemTailoringCustomizer({
+  item,
+  isAr,
+  onChange,
+}: {
+  item: Item;
+  isAr: boolean;
+  onChange: (patch: Partial<Item>) => void;
+}) {
+  const currentSize = item.selected_variant?.size ?? "";
+  const currentColor = item.selected_variant?.color ?? "";
+  const currentFabric = item.selected_variant?.fabric ?? "";
+
+  const notesField = (item.custom_field_values ?? []).find(
+    (cf) => cf.key === "tailoring_notes" || cf.key === "custom_measurements",
+  );
+  const currentNotes = notesField?.value ?? "";
+
+  const handleSizeChange = (sizeVal: string) => {
+    onChange({
+      selected_variant: {
+        ...(item.selected_variant ?? {}),
+        size: sizeVal,
+      },
+    });
+  };
+
+  const handleColorChange = (colorVal: string) => {
+    onChange({
+      selected_variant: {
+        ...(item.selected_variant ?? {}),
+        color: colorVal,
+      },
+    });
+  };
+
+  const handleFabricChange = (fabricVal: string) => {
+    onChange({
+      selected_variant: {
+        ...(item.selected_variant ?? {}),
+        fabric: fabricVal,
+      },
+    });
+  };
+
+  const handleNotesChange = (notesVal: string) => {
+    const others = (item.custom_field_values ?? []).filter(
+      (cf) => cf.key !== "tailoring_notes" && cf.key !== "custom_measurements",
+    );
+    const updated = notesVal.trim()
+      ? [
+          ...others,
+          {
+            key: "tailoring_notes",
+            label_ar: "ملاحظات وتفاصيل التفصيل",
+            label_en: "Tailoring & Measurements",
+            value: notesVal.trim(),
+          },
+        ]
+      : others;
+    onChange({ custom_field_values: updated });
+  };
+
+  return (
+    <div className="rounded-xl border border-primary/25 bg-primary/5 p-3.5 space-y-3.5 text-xs animate-in fade-in-50 duration-200">
+      <div className="flex items-center justify-between gap-2 border-b border-primary/15 pb-2">
+        <div className="flex items-center gap-1.5 font-bold text-primary">
+          <Scissors className="h-4 w-4" />
+          <span>
+            {isAr
+              ? "خيارات التخصيص والمقاسات (اختياري)"
+              : "Customization & Tailoring Options (Optional)"}
+          </span>
+        </div>
+        <span className="text-[11px] text-muted-foreground font-normal">
+          {isAr ? "تفصيل حسب الطلب" : "Made to order"}
+        </span>
+      </div>
+
+      {/* Size Selection */}
+      <div className="space-y-1.5">
+        <div className="flex items-center justify-between">
+          <Label className="text-[11px] font-semibold text-foreground">
+            {isAr ? "المقاس أو الطول:" : "Size / Length:"}
+          </Label>
+          {currentSize && (
+            <button
+              type="button"
+              onClick={() => handleSizeChange("")}
+              className="text-[10px] text-muted-foreground hover:text-destructive transition-colors"
+            >
+              {isAr ? "مسح" : "Clear"}
+            </button>
+          )}
+        </div>
+        <div className="flex flex-wrap gap-1.5">
+          {QUICK_SIZES.map((s) => {
+            const active = currentSize === s;
+            return (
+              <button
+                key={s}
+                type="button"
+                onClick={() => handleSizeChange(active ? "" : s)}
+                className={`px-2.5 py-1 rounded-lg text-xs font-medium border transition-all ${
+                  active
+                    ? "bg-primary text-primary-foreground border-primary shadow-xs font-bold"
+                    : "border-border/80 bg-background hover:bg-muted text-foreground"
+                }`}
+              >
+                {s}
+              </button>
+            );
+          })}
+        </div>
+        <Input
+          type="text"
+          value={currentSize}
+          onChange={(e) => handleSizeChange(e.target.value)}
+          placeholder={
+            isAr
+              ? "أو اكتب المقاس يدوياً (مثال: 54 خاص أو مقاس مخصص)..."
+              : "Or type custom size..."
+          }
+          className="h-8 text-xs bg-background mt-1"
+        />
+      </div>
+
+      {/* Color Selection */}
+      <div className="space-y-1.5">
+        <div className="flex items-center justify-between">
+          <Label className="text-[11px] font-semibold text-foreground">
+            {isAr ? "اللون:" : "Color:"}
+          </Label>
+          {currentColor && (
+            <button
+              type="button"
+              onClick={() => handleColorChange("")}
+              className="text-[10px] text-muted-foreground hover:text-destructive transition-colors"
+            >
+              {isAr ? "مسح" : "Clear"}
+            </button>
+          )}
+        </div>
+        <div className="flex flex-wrap gap-1.5">
+          {QUICK_COLORS.map((c) => {
+            const active = currentColor === c.name;
+            return (
+              <button
+                key={c.name}
+                type="button"
+                onClick={() => handleColorChange(active ? "" : c.name)}
+                className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium border transition-all ${
+                  active
+                    ? "bg-primary text-primary-foreground border-primary shadow-xs font-bold"
+                    : "border-border/80 bg-background hover:bg-muted text-foreground"
+                }`}
+              >
+                <span
+                  className={`h-2.5 w-2.5 rounded-full border shrink-0 ${c.border}`}
+                  style={{ backgroundColor: c.color }}
+                />
+                <span>{c.name}</span>
+              </button>
+            );
+          })}
+        </div>
+        <Input
+          type="text"
+          value={currentColor}
+          onChange={(e) => handleColorChange(e.target.value)}
+          placeholder={
+            isAr
+              ? "أو اكتب اسم اللون يدوياً (مثال: رمادي غامق، كحلي مطفي)..."
+              : "Or type custom color..."
+          }
+          className="h-8 text-xs bg-background mt-1"
+        />
+      </div>
+
+      {/* Fabric Selection */}
+      <div className="space-y-1.5">
+        <div className="flex items-center justify-between">
+          <Label className="text-[11px] font-semibold text-foreground">
+            {isAr ? "القماش أو نوع الخامة (اختياري):" : "Fabric / Material (Optional):"}
+          </Label>
+          {currentFabric && (
+            <button
+              type="button"
+              onClick={() => handleFabricChange("")}
+              className="text-[10px] text-muted-foreground hover:text-destructive transition-colors"
+            >
+              {isAr ? "مسح" : "Clear"}
+            </button>
+          )}
+        </div>
+        <div className="flex flex-wrap gap-1.5">
+          {QUICK_FABRICS.map((f) => {
+            const active = currentFabric === f;
+            return (
+              <button
+                key={f}
+                type="button"
+                onClick={() => handleFabricChange(active ? "" : f)}
+                className={`px-2.5 py-1 rounded-lg text-xs font-medium border transition-all ${
+                  active
+                    ? "bg-primary text-primary-foreground border-primary shadow-xs font-bold"
+                    : "border-border/80 bg-background hover:bg-muted text-foreground"
+                }`}
+              >
+                {f}
+              </button>
+            );
+          })}
+        </div>
+        <Input
+          type="text"
+          value={currentFabric}
+          onChange={(e) => handleFabricChange(e.target.value)}
+          placeholder={isAr ? "أو اكتب نوع القماش يدوياً..." : "Or type custom fabric..."}
+          className="h-8 text-xs bg-background mt-1"
+        />
+      </div>
+
+      {/* Tailoring Notes & Custom Measurements */}
+      <div className="space-y-1.5">
+        <Label className="text-[11px] font-semibold text-foreground">
+          {isAr
+            ? "ملاحظات القياسات والتفصيل الخاص (اختياري):"
+            : "Tailoring Measurements & Workshop Notes (Optional):"}
+        </Label>
+        <Textarea
+          rows={2}
+          value={currentNotes}
+          onChange={(e) => handleNotesChange(e.target.value)}
+          placeholder={
+            isAr
+              ? "مثال: الطول 54، دوران الصدر 22، طول الكم 28، تضييق بسيط عند الخصر، بطانة كاملة..."
+              : "e.g. Length 54, Chest 22, Sleeves 28, extra lining..."
+          }
+          className="text-xs bg-background resize-none leading-relaxed"
+        />
+      </div>
+    </div>
+  );
+}
 
 function OrderDetail() {
   const t = useT();
@@ -1224,6 +1506,8 @@ function OrderDetail() {
         customization_total: 0,
         line_total: 0,
         location: "main",
+        selected_variant: { size: "", color: "", fabric: "" },
+        custom_field_values: [],
       },
     ]);
   };
@@ -1261,37 +1545,39 @@ function OrderDetail() {
     const sizeLabel = isAr ? "المقاس" : "Size";
     const colorLabel = isAr ? "اللون" : "Color";
     const fabricLabel = isAr ? "القماش" : "Fabric";
-    const lines = [p?.name ?? ""];
+    const lines = [p?.name || v.title || "Product"];
     if (v.size) lines.push(`${sizeLabel}: ${v.size}`);
     if (v.color) lines.push(`${colorLabel}: ${v.color}`);
     if (v.fabric) lines.push(`${fabricLabel}: ${v.fabric}`);
-    // Default to whichever location has stock; prefer main.
-    const preferred: "main" | "incubator" =
-      (v.stock_main ?? 0) > 0 ? "main" : (v.stock_incubator ?? 0) > 0 ? "incubator" : "main";
-    const newItem: Item = {
-      product_id: v.product_id,
-      variant_id: v.id,
-      description: lines.filter(Boolean).join("\n"),
-      quantity: 1,
-      unit_price: Number(v.selling_price ?? 0),
-      unit_cost: (v as any).cost_price == null ? null : Number((v as any).cost_price),
-      original_price: (v as any).original_price == null ? null : Number((v as any).original_price),
-      customizations: [],
-      customization_total: 0,
-      line_total: Number(v.selling_price ?? 0),
-      location: preferred,
-    };
-    setItems((prev) => {
-      const existingIndex = prev.findIndex(
-        (item) =>
-          item.variant_id === v.id && item.location === preferred && !item.customizations?.length,
-      );
-      if (existingIndex < 0) return [...prev, newItem];
-      return prev.map((item, index) =>
-        index === existingIndex ? recalc({ ...item, quantity: Number(item.quantity) + 1 }) : item,
-      );
-    });
-    toast.success(isAr ? "تمت إضافة القطعة" : "Item added");
+    const nextIdx = items.length;
+    setItems([
+      ...items,
+      {
+        product_id: p?.id ?? null,
+        variant_id: v.id,
+        description: lines.join("\n"),
+        quantity: 1,
+        unit_price: Number(v.selling_price || 0),
+        unit_cost: (v as any).cost_price == null ? null : Number((v as any).cost_price),
+        original_price:
+          (v as any).original_price == null ? null : Number((v as any).original_price),
+        customizations: [],
+        customization_total: 0,
+        line_total: Number(v.selling_price || 0),
+        location: "main",
+        selected_variant: {
+          size: v.size || null,
+          color: v.color || null,
+          fabric: v.fabric || null,
+        },
+        custom_field_values: [],
+      },
+    ]);
+    toast.success(
+      lang === "ar"
+        ? `تمت إضافة ${p?.name || "المنتج"} بنجاح!`
+        : `Added ${p?.name || "product"}!`,
+    );
   };
 
   const recalc = (i: Item): Item => {
@@ -1323,6 +1609,11 @@ function OrderDetail() {
       unit_price: Number(v.selling_price),
       unit_cost: (v as any).cost_price == null ? null : Number((v as any).cost_price),
       original_price: (v as any).original_price == null ? null : Number((v as any).original_price),
+      selected_variant: {
+        size: v.size || null,
+        color: v.color || null,
+        fabric: v.fabric || null,
+      },
     });
   };
 
@@ -1459,6 +1750,8 @@ function OrderDetail() {
             customization_total: item.customization_total,
             line_total: item.line_total,
             location: item.location ?? "main",
+            selected_variant: item.selected_variant ?? null,
+            custom_field_values: item.custom_field_values ?? [],
           })),
         );
         if (itemError) {
@@ -1538,7 +1831,11 @@ function OrderDetail() {
             (item.unit_cost == null ? null : Number(item.unit_cost)) ||
           orig.description !== item.description ||
           (orig.location === "incubator" ? "incubator" : "main") !== item.location ||
-          JSON.stringify(orig.customizations ?? []) !== JSON.stringify(item.customizations ?? [])
+          JSON.stringify(orig.customizations ?? []) !== JSON.stringify(item.customizations ?? []) ||
+          JSON.stringify(orig.selected_variant ?? null) !==
+            JSON.stringify(item.selected_variant ?? null) ||
+          JSON.stringify(orig.custom_field_values ?? []) !==
+            JSON.stringify(item.custom_field_values ?? [])
         ) {
           itemsModified = true;
           break;
@@ -1564,6 +1861,8 @@ function OrderDetail() {
             customization_total: i.customization_total,
             line_total: i.line_total,
             location: i.location ?? "main",
+            selected_variant: i.selected_variant ?? null,
+            custom_field_values: i.custom_field_values ?? [],
           })),
         );
         if (ie) {
@@ -3433,17 +3732,82 @@ function OrderDetail() {
                           </div>
                         </div>
 
-                        {!it.variant_id ||
-                        (it.selected_variant?.size &&
-                          String(it.selected_variant.size).includes("تفصيل")) ||
-                        (it.custom_field_values && it.custom_field_values.length > 0) ? (
-                          <div className="rounded-md border border-primary/20 bg-primary/5 p-2 text-xs font-medium text-primary flex items-center gap-1.5">
-                            <span>
-                              ✂️{" "}
-                              {isAr
-                                ? "طلب تفصيل خاص (ينفّذ بعد الطلب - لا يخصم من المخزون الجاهز)"
-                                : "Custom Tailoring (Made-To-Order · No Ready Inventory Deduction)"}
-                            </span>
+                        {/* Custom Tailoring & Made-To-Order Specifications */}
+                        {(!it.variant_id ||
+                          (it.selected_variant?.size &&
+                            String(it.selected_variant.size).includes("تفصيل")) ||
+                          (it.custom_field_values && it.custom_field_values.length > 0) ||
+                          editingItems[idx]) ? (
+                          <div className="space-y-2">
+                            {!it.variant_id && (
+                              <div className="rounded-lg border border-primary/20 bg-primary/10 px-3 py-2 text-xs font-semibold text-primary flex items-center justify-between">
+                                <span className="flex items-center gap-1.5">
+                                  <Scissors className="h-4 w-4" />
+                                  {isAr
+                                    ? "طلب تفصيل خاص (ينفّذ بعد الطلب - لا يخصم من المخزون الجاهز)"
+                                    : "Custom Tailoring (Made-To-Order · No Ready Inventory Deduction)"}
+                                </span>
+                              </div>
+                            )}
+
+                            {editingItems[idx] || !it.variant_id ? (
+                              <ItemTailoringCustomizer
+                                item={it}
+                                isAr={isAr}
+                                onChange={(patch) => updateItem(idx, patch)}
+                              />
+                            ) : (
+                              (it.selected_variant ||
+                                (it.custom_field_values && it.custom_field_values.length > 0)) && (
+                                <div className="rounded-xl border border-border bg-muted/30 p-3 text-xs space-y-2">
+                                  <div className="font-bold text-xs text-foreground flex items-center gap-1.5">
+                                    <Scissors className="h-3.5 w-3.5 text-primary" />
+                                    <span>{isAr ? "المواصفات والتفصيل" : "Tailoring Specifications"}</span>
+                                  </div>
+                                  {it.selected_variant && (
+                                    <div className="flex flex-wrap gap-2">
+                                      {it.selected_variant.size && (
+                                        <span className="inline-flex items-center gap-1 bg-background border border-border/80 px-2.5 py-1 rounded-lg text-[11px] font-medium text-foreground">
+                                          <span className="text-muted-foreground">{isAr ? "المقاس:" : "Size:"}</span>
+                                          <b>{String(it.selected_variant?.size ?? "").includes("تفصيل")
+                                      ? isAr
+                                        ? "تفصيل / قياسات خاصة"
+                                        : "Custom Tailoring"
+                                      : it.selected_variant.size}</b>
+                                        </span>
+                                      )}
+                                      {it.selected_variant.color && (
+                                        <span className="inline-flex items-center gap-1.5 bg-background border border-border/80 px-2.5 py-1 rounded-lg text-[11px] font-medium text-foreground">
+                                          <span className="text-muted-foreground">{isAr ? "اللون:" : "Color:"}</span>
+                                          <b>{it.selected_variant.color}</b>
+                                        </span>
+                                      )}
+                                      {it.selected_variant.fabric && (
+                                        <span className="inline-flex items-center gap-1 bg-background border border-border/80 px-2.5 py-1 rounded-lg text-[11px] font-medium text-foreground">
+                                          <span className="text-muted-foreground">{isAr ? "القماش:" : "Fabric:"}</span>
+                                          <b>{it.selected_variant.fabric}</b>
+                                        </span>
+                                      )}
+                                    </div>
+                                  )}
+                                  {it.custom_field_values && it.custom_field_values.length > 0 && (
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1 pt-1 border-t border-border/50">
+                                      {it.custom_field_values.map((cf, i) => (
+                                        <div key={i} className="text-[11px]">
+                                          <span className="font-bold text-muted-foreground">
+                                            {isAr
+                                              ? cf.label_ar || cf.label_en || cf.key
+                                              : cf.label_en || cf.label_ar || cf.key}
+                                            :{" "}
+                                          </span>
+                                          <span className="text-foreground font-medium">{cf.value}</span>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  )}
+                                </div>
+                              )
+                            )}
                           </div>
                         ) : (
                           it.variant_id && (
@@ -3485,78 +3849,6 @@ function OrderDetail() {
                               </div>
                             </div>
                           )
-                        )}
-
-                        {(it.selected_variant ||
-                          (it.custom_field_values && it.custom_field_values.length > 0)) && (
-                          <div className="rounded-md border border-border bg-muted/40 p-3 text-xs space-y-1">
-                            <div className="font-medium text-sm">
-                              {isAr ? "اختيارات العميل" : "Customer selections"}
-                            </div>
-                            {it.selected_variant && (
-                              <div className="flex flex-wrap gap-x-3 gap-y-1">
-                                {((it.custom_field_values && it.custom_field_values.length > 0) ||
-                                  it.selected_variant?.size) && (
-                                  <span>
-                                    <b>{isAr ? "المقاس" : "Size"}:</b>{" "}
-                                    {(it.custom_field_values &&
-                                      it.custom_field_values.length > 0) ||
-                                    String(it.selected_variant?.size ?? "").includes("تفصيل")
-                                      ? isAr
-                                        ? "تفصيل / قياسات خاصة"
-                                        : "Custom Tailoring"
-                                      : it.selected_variant?.size}
-                                  </span>
-                                )}
-                                {it.selected_variant.color && (
-                                  <span>
-                                    <b>{isAr ? "اللون" : "Color"}:</b> {it.selected_variant.color}
-                                  </span>
-                                )}
-                                {it.selected_variant.fabric && (
-                                  <span>
-                                    <b>{isAr ? "القماش" : "Fabric"}:</b>{" "}
-                                    {it.selected_variant.fabric}
-                                  </span>
-                                )}
-                              </div>
-                            )}
-                            {it.custom_field_values && it.custom_field_values.length > 0 && (
-                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-0.5 pt-1">
-                                {it.custom_field_values.map((cf, i) => (
-                                  <div key={i}>
-                                    <b>
-                                      {isAr
-                                        ? cf.label_ar || cf.label_en || cf.key
-                                        : cf.label_en || cf.label_ar || cf.key}
-                                      :
-                                    </b>{" "}
-                                    {cf.value.startsWith("http") ? (
-                                      <div className="inline-flex flex-col gap-1 mt-1">
-                                        <a
-                                          href={cf.value}
-                                          target="_blank"
-                                          rel="noreferrer"
-                                          className="text-primary hover:underline font-semibold inline-flex items-center gap-1 bg-primary/10 px-2 py-0.5 rounded"
-                                        >
-                                          📎 {isAr ? "تحميل/عرض الملف" : "View Uploaded File"}
-                                        </a>
-                                        {/\.(jpg|jpeg|png|gif|webp|svg)$/i.test(cf.value) && (
-                                          <img
-                                            src={cf.value}
-                                            alt=""
-                                            className="mt-1 max-h-24 rounded border object-contain bg-background"
-                                          />
-                                        )}
-                                      </div>
-                                    ) : (
-                                      cf.value
-                                    )}
-                                  </div>
-                                ))}
-                              </div>
-                            )}
-                          </div>
                         )}
 
                         {Boolean(it.product_id) && (
@@ -3774,6 +4066,15 @@ function OrderDetail() {
                                     className="mt-1.5 h-10 text-sm rounded-xl"
                                   />
                                 </div>
+                              </div>
+
+                              {/* Made-To-Order & Tailoring Specs Customizer */}
+                              <div className="pt-2 border-t border-border/60">
+                                <ItemTailoringCustomizer
+                                  item={it}
+                                  isAr={isAr}
+                                  onChange={(patch) => updateItem(idx, patch)}
+                                />
                               </div>
                             </div>
 

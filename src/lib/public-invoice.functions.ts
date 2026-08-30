@@ -18,7 +18,7 @@ export const getPublicInvoice = createServerFn({ method: "GET" })
         branch_id, digital_delivery_channel, digital_delivery_contact,
         customers(name, phone, email, region),
         order_items(description, quantity, unit_price, original_price, line_total, customization_total,
-          customizations, custom_field_values, products(name), product_variants(size, color, fabric))
+          customizations, custom_field_values, selected_variant, products(name), product_variants(size, color, fabric))
       `,
       )
       .eq("public_invoice_token", data.id)

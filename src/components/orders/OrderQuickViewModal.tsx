@@ -279,12 +279,22 @@ export function OrderQuickViewModal({
                         it.products?.name_en ||
                         (isAr ? "منتج" : "Product");
 
+                      const variantParts = [
+                        it.selected_variant?.color || it.color,
+                        it.selected_variant?.size || it.size,
+                        it.selected_variant?.fabric || it.fabric,
+                      ].filter(Boolean);
+
                       const variantTitle =
                         it.variant_title ||
                         it.variant_name ||
-                        [it.size, it.color].filter(Boolean).join(" / ") ||
+                        (variantParts.length > 0 ? variantParts.join(" · ") : "") ||
                         it.variants?.title ||
                         "";
+
+                      const customFields = Array.isArray(it.custom_field_values)
+                        ? it.custom_field_values
+                        : [];
 
                       const qty = it.quantity || it.qty || 1;
                       const unitPrice = Number(it.unit_price || it.price || 0);
@@ -297,9 +307,19 @@ export function OrderQuickViewModal({
                           <td className="p-2.5 font-semibold text-foreground">
                             <div>{itemTitle}</div>
                             {variantTitle && (
-                              <span className="text-[10px] text-muted-foreground block font-mono">
+                              <span className="text-[11px] text-muted-foreground block font-mono font-medium mt-0.5">
                                 {variantTitle}
                               </span>
+                            )}
+                            {customFields.length > 0 && (
+                              <div className="text-[10px] text-muted-foreground/90 mt-1 space-y-0.5">
+                                {customFields.map((cf: any, cfi: number) => (
+                                  <div key={cfi} className="flex items-center gap-1">
+                                    <span className="font-semibold">{isAr ? cf.label_ar || cf.label_en || cf.key : cf.label_en || cf.label_ar || cf.key}:</span>
+                                    <span>{cf.value}</span>
+                                  </div>
+                                ))}
+                              </div>
                             )}
                           </td>
                           <td className="p-2.5 text-center font-bold">{qty}</td>
