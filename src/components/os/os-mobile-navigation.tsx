@@ -14,11 +14,13 @@ import {
   Clock as ClockIcon,
   Settings,
   Activity,
+  Boxes,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetClose } from "@/components/ui/sheet";
 import { OsMobileTabBar, type OsMobileTabItem } from "./os-mobile-tab-bar";
 import { OsQuickActions } from "./os-quick-actions";
+import { OsAppsHubModal } from "./os-apps-hub-modal";
 import { type AdminNavItemConfig } from "@/config/admin-navigation";
 import { cn } from "@/lib/utils";
 
@@ -50,6 +52,7 @@ export function OsMobileNavigation({
   onOpenChangeMobile,
 }: OsMobileNavigationProps) {
   const navigate = useNavigate();
+  const [appsHubOpen, setAppsHubOpen] = React.useState(false);
 
   // Pick top items for quick mobile tabs + "More" item
   const primaryTabItems: OsMobileTabItem[] = React.useMemo(() => {
@@ -300,6 +303,37 @@ export function OsMobileNavigation({
 
             {/* Categorized iOS Control Center Navigation Menu */}
             <nav className="flex-1 p-3.5 space-y-4 overflow-y-auto relative z-10 os-scrollbar">
+              {/* Apps & Tools Hub Launcher Button */}
+              {activeSlug && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    onOpenChangeMobile(false);
+                    setAppsHubOpen(true);
+                  }}
+                  className="w-full flex items-center justify-between p-3 rounded-2xl bg-gradient-to-r from-primary/15 via-primary/10 to-amber-500/10 border border-primary/25 text-primary shadow-xs transition-all active:scale-[0.98]"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="h-8 w-8 rounded-xl bg-primary text-primary-foreground flex items-center justify-center shadow-xs">
+                      <Boxes className="h-4 w-4" />
+                    </div>
+                    <div className="text-start">
+                      <div className="text-xs font-bold font-heading">
+                        {lang === "ar" ? "مركز الأدوات والتطبيقات" : "Apps & Tools Hub"}
+                      </div>
+                      <div className="text-[10px] text-muted-foreground">
+                        {lang === "ar"
+                          ? "استعرض وشاهد شرح وتفعيل كافة الأدوات"
+                          : "Explore, guide, and manage all tools"}
+                      </div>
+                    </div>
+                  </div>
+                  <span className="text-xs font-semibold px-2 py-1 rounded-lg bg-primary/20 text-primary">
+                    {lang === "ar" ? "فتح" : "Open"}
+                  </span>
+                </button>
+              )}
+
               {navGroups.map((group) => {
                 if (group.items.length === 0) return null;
                 return (
@@ -438,6 +472,17 @@ export function OsMobileNavigation({
 
       {/* Mobile Bottom Tab Bar */}
       {(activeSlug || isSuperAdmin) && <OsMobileTabBar items={primaryTabItems} />}
+
+      {/* Apps Hub Modal */}
+      {activeSlug && (
+        <OsAppsHubModal
+          open={appsHubOpen}
+          onOpenChange={setAppsHubOpen}
+          activeSlug={activeSlug}
+          navItems={navItems}
+          lang={lang}
+        />
+      )}
     </>
   );
 }

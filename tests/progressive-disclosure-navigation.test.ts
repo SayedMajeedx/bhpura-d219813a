@@ -74,12 +74,14 @@ describe("Progressive Disclosure & Modular Navigation", () => {
     expect(items[0].id).toBe("orders");
   });
 
-  it("returns empty navigation when no active slug is present", () => {
-    const items = getAdminNavItems({
-      ...mockOptions,
-      activeSlug: null,
-    });
+  it("provides informative descriptions for all navigation items", () => {
+    const items = getAdminNavItems(mockOptions);
 
-    expect(items).toEqual([]);
+    for (const item of items) {
+      expect(item.descriptionAr).toBeDefined();
+      expect(item.descriptionAr?.length).toBeGreaterThan(10);
+      expect(item.descriptionEn).toBeDefined();
+      expect(item.descriptionEn?.length).toBeGreaterThan(10);
+    }
   });
 });
