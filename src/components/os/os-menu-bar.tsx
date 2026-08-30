@@ -10,6 +10,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { OsQuickActions } from "./os-quick-actions";
 import { cn } from "@/lib/utils";
 
 export interface OsMenuBarProps {
@@ -19,6 +20,7 @@ export interface OsMenuBarProps {
   onSetLang: (lang: "en" | "ar") => void;
   onOpenSpotlight: () => void;
   onSignOut: () => void;
+  activeSlug?: string | null;
   userEmail?: string;
   className?: string;
 }
@@ -30,6 +32,7 @@ export function OsMenuBar({
   onSetLang,
   onOpenSpotlight,
   onSignOut,
+  activeSlug,
   userEmail,
   className,
 }: OsMenuBarProps) {
@@ -89,8 +92,11 @@ export function OsMenuBar({
         </span>
       </div>
 
-      {/* Right: Global Search, Language, & Account Menu */}
-      <div className="flex items-center gap-2.5">
+      {/* Right: Global Quick Actions, Search, Language, & Account Menu */}
+      <div className="flex items-center gap-2">
+        {/* Global Quick Action Trigger (+ جديد) */}
+        <OsQuickActions slug={activeSlug ?? null} lang={lang} />
+
         {/* Spotlight Command Center Trigger */}
         <button
           type="button"

@@ -18,6 +18,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetClose } from "@/components/ui/sheet";
 import { OsMobileTabBar, type OsMobileTabItem } from "./os-mobile-tab-bar";
+import { OsQuickActions } from "./os-quick-actions";
 import { type AdminNavItemConfig } from "@/config/admin-navigation";
 import { cn } from "@/lib/utils";
 
@@ -412,7 +413,8 @@ export function OsMobileNavigation({
           )}
         </div>
 
-        <div className="flex items-center gap-1 shrink-0">
+        <div className="flex items-center gap-1.5 shrink-0">
+          <OsQuickActions slug={activeSlug} lang={lang} className="h-8.5 px-2 text-xs" />
           <Button
             variant="ghost"
             size="icon"

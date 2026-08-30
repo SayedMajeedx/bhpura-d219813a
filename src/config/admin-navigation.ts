@@ -21,6 +21,8 @@ import {
   type LucideIcon,
 } from "lucide-react";
 
+export type NavItemTier = "core" | "modular";
+
 export interface AdminNavItemConfig {
   id: string;
   to: string;
@@ -31,7 +33,20 @@ export interface AdminNavItemConfig {
   permission?: string;
   adminOnly?: boolean;
   section: "overview" | "operations" | "growth_finance" | "storefront_settings";
+  tier?: NavItemTier;
+  badge?: string | number;
 }
+
+export const CORE_NAV_IDS = [
+  "dashboard",
+  "orders",
+  "inventory",
+  "customers",
+  "reports",
+  "settings",
+] as const;
+
+export const DEFAULT_PINNED_IDS = ["returns", "discounts", "campaigns"] as const;
 
 export interface GetNavItemsOptions {
   activeSlug: string | null;
@@ -76,6 +91,7 @@ export function getAdminNavItems({
       labelAr: t("nav.dashboard"),
       icon: LayoutDashboard,
       section: "overview",
+      tier: "core",
     },
     {
       id: "reports",
@@ -86,6 +102,7 @@ export function getAdminNavItems({
       icon: BarChart,
       permission: "manage_orders",
       section: "overview",
+      tier: "core",
     },
 
     // Group 2: OPERATIONS
@@ -98,6 +115,7 @@ export function getAdminNavItems({
       icon: ReceiptText,
       permission: "manage_orders",
       section: "operations",
+      tier: "core",
     },
     {
       id: "returns",
@@ -108,6 +126,7 @@ export function getAdminNavItems({
       icon: RotateCcw,
       permission: "manage_orders",
       section: "operations",
+      tier: "modular",
     },
     {
       id: "customers",
@@ -118,6 +137,7 @@ export function getAdminNavItems({
       icon: Users,
       permission: "manage_customers",
       section: "operations",
+      tier: "core",
     },
     {
       id: "reviews",
@@ -128,6 +148,7 @@ export function getAdminNavItems({
       icon: MessageSquareHeart,
       permission: "manage_customers",
       section: "operations",
+      tier: "modular",
     },
     {
       id: "inventory",
@@ -138,6 +159,7 @@ export function getAdminNavItems({
       icon: Package,
       permission: "manage_inventory",
       section: "operations",
+      tier: "core",
     },
     {
       id: "incubators",
@@ -148,6 +170,7 @@ export function getAdminNavItems({
       icon: Building2,
       permission: "manage_inventory",
       section: "operations",
+      tier: "modular",
     },
     {
       id: "categories",
@@ -158,6 +181,7 @@ export function getAdminNavItems({
       icon: Tags,
       permission: "manage_inventory",
       section: "operations",
+      tier: "modular",
     },
 
     // Group 3: GROWTH & FINANCE
@@ -170,6 +194,7 @@ export function getAdminNavItems({
       icon: Megaphone,
       permission: "manage_orders",
       section: "growth_finance",
+      tier: "modular",
     },
     {
       id: "discounts",
@@ -180,6 +205,7 @@ export function getAdminNavItems({
       icon: BadgePercent,
       permission: "manage_settings",
       section: "growth_finance",
+      tier: "modular",
     },
     {
       id: "loyalty",
@@ -190,6 +216,7 @@ export function getAdminNavItems({
       icon: Award,
       permission: "manage_settings",
       section: "growth_finance",
+      tier: "modular",
     },
     {
       id: "abandoned-carts",
@@ -200,6 +227,7 @@ export function getAdminNavItems({
       icon: ShoppingCart,
       permission: "manage_orders",
       section: "growth_finance",
+      tier: "modular",
     },
     {
       id: "expenses",
@@ -210,6 +238,7 @@ export function getAdminNavItems({
       icon: Wallet,
       permission: "view_financials",
       section: "growth_finance",
+      tier: "modular",
     },
 
     // Group 4: STOREFRONT & SETTINGS
@@ -222,6 +251,7 @@ export function getAdminNavItems({
       icon: Plug,
       adminOnly: true,
       section: "storefront_settings",
+      tier: "modular",
     },
     {
       id: "communications",
@@ -232,6 +262,7 @@ export function getAdminNavItems({
       icon: Mail,
       permission: "manage_settings",
       section: "storefront_settings",
+      tier: "modular",
     },
     {
       id: "pages",
@@ -242,6 +273,7 @@ export function getAdminNavItems({
       icon: FileText,
       permission: "manage_settings",
       section: "storefront_settings",
+      tier: "modular",
     },
     {
       id: "team",
@@ -252,6 +284,7 @@ export function getAdminNavItems({
       icon: Shield,
       adminOnly: true,
       section: "storefront_settings",
+      tier: "modular",
     },
     {
       id: "settings",
@@ -262,6 +295,7 @@ export function getAdminNavItems({
       icon: Settings,
       permission: "manage_settings",
       section: "storefront_settings",
+      tier: "core",
     },
   ];
 

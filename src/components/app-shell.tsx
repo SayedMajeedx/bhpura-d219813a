@@ -512,6 +512,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               onSetLang={setLang}
               onOpenSpotlight={() => setSpotlightOpen(true)}
               onSignOut={signOut}
+              activeSlug={activeSlug}
               userEmail={profile?.email}
             />
           )}

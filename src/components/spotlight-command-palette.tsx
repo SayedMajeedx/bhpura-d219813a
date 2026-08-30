@@ -304,20 +304,85 @@ export function SpotlightCommandPalette({
 
         {/* Quick Actions */}
         <CommandGroup heading={isAr ? "الإجراءات السريعة" : "Quick Actions"}>
-          <CommandItem
-            onSelect={() =>
-              handleSelect(() =>
-                navigate({
-                  to: "/admin/b/$slug/inventory",
-                  params: { slug: activeSlug },
-                }),
-              )
-            }
-            className="flex items-center gap-2 cursor-pointer"
-          >
-            <Plus className="h-4 w-4 text-emerald-500" />
-            <span>{isAr ? "إضافة منتج جديد" : "Create New Product"}</span>
-          </CommandItem>
+          {activeSlug && (
+            <>
+              <CommandItem
+                onSelect={() =>
+                  handleSelect(() =>
+                    navigate({
+                      to: "/admin/b/$slug/inventory",
+                      params: { slug: activeSlug },
+                      search: { action: "new" } as any,
+                    }),
+                  )
+                }
+                className="flex items-center gap-2 cursor-pointer"
+              >
+                <Plus className="h-4 w-4 text-emerald-500" />
+                <span>{isAr ? "إضافة منتج جديد" : "Create New Product"}</span>
+              </CommandItem>
+              <CommandItem
+                onSelect={() =>
+                  handleSelect(() =>
+                    navigate({
+                      to: "/admin/b/$slug/orders",
+                      params: { slug: activeSlug },
+                      search: { action: "new_manual" } as any,
+                    }),
+                  )
+                }
+                className="flex items-center gap-2 cursor-pointer"
+              >
+                <ReceiptText className="h-4 w-4 text-blue-500" />
+                <span>{isAr ? "إنشاء طلب يدوي جديد" : "Create Manual Order"}</span>
+              </CommandItem>
+              <CommandItem
+                onSelect={() =>
+                  handleSelect(() =>
+                    navigate({
+                      to: "/admin/b/$slug/discounts",
+                      params: { slug: activeSlug },
+                      search: { action: "new" } as any,
+                    }),
+                  )
+                }
+                className="flex items-center gap-2 cursor-pointer"
+              >
+                <BadgePercent className="h-4 w-4 text-purple-500" />
+                <span>{isAr ? "إنشاء كود خصم جديد" : "Create Discount Code"}</span>
+              </CommandItem>
+              <CommandItem
+                onSelect={() =>
+                  handleSelect(() =>
+                    navigate({
+                      to: "/admin/b/$slug/campaigns",
+                      params: { slug: activeSlug },
+                      search: { segment: "All" },
+                    }),
+                  )
+                }
+                className="flex items-center gap-2 cursor-pointer"
+              >
+                <Megaphone className="h-4 w-4 text-rose-500" />
+                <span>{isAr ? "إرسال رسالة واتساب / حملة" : "Send WhatsApp Campaign"}</span>
+              </CommandItem>
+              <CommandItem
+                onSelect={() =>
+                  handleSelect(() =>
+                    navigate({
+                      to: "/admin/b/$slug/expenses",
+                      params: { slug: activeSlug },
+                      search: { action: "new" } as any,
+                    }),
+                  )
+                }
+                className="flex items-center gap-2 cursor-pointer"
+              >
+                <Wallet className="h-4 w-4 text-amber-500" />
+                <span>{isAr ? "تسجيل مصروف جديد" : "Record Expense"}</span>
+              </CommandItem>
+            </>
+          )}
           <CommandItem
             onSelect={() => handleSelect(() => setLang(lang === "en" ? "ar" : "en"))}
             className="flex items-center gap-2 cursor-pointer"
