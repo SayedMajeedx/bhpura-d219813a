@@ -211,28 +211,31 @@ export function OsMobileNavigation({
       ];
     }
 
-    const coreIds = new Set(["dashboard", "reports", "orders", "customers", "inventory"]);
-    const growthIds = new Set(["categories", "campaigns", "discounts", "pages"]);
-
-    const core = navItems.filter((i) => coreIds.has(i.id));
-    const growth = navItems.filter((i) => growthIds.has(i.id));
-    const ops = navItems.filter((i) => !coreIds.has(i.id) && !growthIds.has(i.id));
+    const core = navItems.filter((item) => item.section === "overview");
+    const operations = navItems.filter((item) => item.section === "operations");
+    const growth = navItems.filter((item) => item.section === "growth_finance");
+    const settings = navItems.filter((item) => item.section === "storefront_settings");
 
     return [
       {
         id: "core",
-        title: lang === "ar" ? "المساحة الرئيسية" : "Core Workspace",
+        title: lang === "ar" ? "الرئيسية" : "Overview",
         items: core,
       },
       {
+        id: "operations",
+        title: lang === "ar" ? "إدارة الطلبات والمنتجات" : "Orders & Products",
+        items: operations,
+      },
+      {
         id: "growth",
-        title: lang === "ar" ? "المبيعات والكتالوج" : "Sales & Catalog",
+        title: lang === "ar" ? "التسويق والمال" : "Growth & Finance",
         items: growth,
       },
       {
-        id: "ops",
-        title: lang === "ar" ? "العمليات والنظام" : "Operations & System",
-        items: ops,
+        id: "settings",
+        title: lang === "ar" ? "المتجر والإعدادات" : "Store & Settings",
+        items: settings,
       },
     ];
   }, [activeSlug, isSuperAdmin, navItems, lang]);

@@ -117,7 +117,12 @@ async function provisionBrandWithOwner(payload: Record<string, unknown>) {
     },
     body: JSON.stringify(payload),
   });
-  const result = await response.json().catch(() => ({}));
+  const result = (await response.json().catch(() => ({}))) as {
+    error?: string;
+    brand_id?: string;
+    linked_existing_identity?: boolean;
+    trial_days?: number | null;
+  };
   if (!response.ok) throw new Error(result.error || `Request failed (${response.status})`);
   return result as {
     brand_id: string;
@@ -725,7 +730,9 @@ function NewBrandDialog({ onSaved }: { onSaved: () => void }) {
     }
     if (!owner.name.trim() || !owner.email.trim()) {
       toast.error(
-        lang === "ar" ? "اسم مدير البراند وبريده الإلكتروني مطلوبان" : "Owner name and email are required",
+        lang === "ar"
+          ? "اسم مدير البراند وبريده الإلكتروني مطلوبان"
+          : "Owner name and email are required",
       );
       return;
     }
@@ -743,17 +750,17 @@ function NewBrandDialog({ onSaved }: { onSaved: () => void }) {
       });
 
       if (createMobileApp) {
-          const { data: appResult, error: appError } = await supabase.functions.invoke(
-            "provision-white-label-app",
-            { body: { brand_id: provisioned.brand_id, rebuild: false } },
+        const { data: appResult, error: appError } = await supabase.functions.invoke(
+          "provision-white-label-app",
+          { body: { brand_id: provisioned.brand_id, rebuild: false } },
+        );
+        if (appError || appResult?.error) {
+          toast.warning(
+            lang === "ar"
+              ? "تم إنشاء المتجر، لكن تجهيز التطبيق يحتاج مراجعة من تبويب تطبيقات البراندات."
+              : "Store created; app provisioning needs attention in Brand Apps.",
           );
-          if (appError || appResult?.error) {
-            toast.warning(
-              lang === "ar"
-                ? "تم إنشاء المتجر، لكن تجهيز التطبيق يحتاج مراجعة من تبويب تطبيقات البراندات."
-                : "Store created; app provisioning needs attention in Brand Apps.",
-            );
-          }
+        }
       }
 
       toast.success(
@@ -871,7 +878,11 @@ function NewBrandDialog({ onSaved }: { onSaved: () => void }) {
                 type="password"
                 value={owner.password}
                 onChange={(e) => setOwner({ ...owner, password: e.target.value })}
-                placeholder={lang === "ar" ? "مطلوبة للحساب الجديد فقط (8 أحرف على الأقل)" : "New accounts only (minimum 8 characters)"}
+                placeholder={
+                  lang === "ar"
+                    ? "مطلوبة للحساب الجديد فقط (8 أحرف على الأقل)"
+                    : "New accounts only (minimum 8 characters)"
+                }
                 autoComplete="new-password"
               />
               <p className="mt-1.5 text-[11px] leading-5 text-muted-foreground">

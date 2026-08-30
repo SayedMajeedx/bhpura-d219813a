@@ -883,7 +883,7 @@ function OrdersList() {
     {
       id: "action_required",
       label_en: "Needs attention",
-      label_ar: "مطلوب إجراء",
+      label_ar: "يحتاج متابعة",
       count: tabCounts.action_required,
       icon: Clock3,
     },
@@ -1316,9 +1316,9 @@ function OrdersList() {
                 <Loader2 className="h-3.5 w-3.5 animate-spin" />
               ) : lang === "ar" ? (
                 isPartial ? (
-                  "تحصيل المتبقي وتسليم"
+                  "استلام المتبقي وتسليم الطلب"
                 ) : (
-                  "تحصيل وتسليم"
+                  "استلام المبلغ وتسليم الطلب"
                 )
               ) : isPartial ? (
                 "Collect Balance & Hand Over"
@@ -1643,7 +1643,12 @@ function OrdersList() {
       />
 
       {isAdmin && (
-        <div className="flex flex-col gap-2 rounded-xl border border-border/70 bg-card p-3 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+        <div
+          className={cn(
+            "flex-col gap-2 rounded-xl border border-border/70 bg-card p-3 shadow-sm sm:flex sm:flex-row sm:items-center sm:justify-between",
+            selectedOrderIds.size > 0 ? "flex" : "hidden",
+          )}
+        >
           <div className="flex items-center gap-2 text-xs font-semibold">
             <CheckSquare className="h-4 w-4 text-primary" />
             <span>

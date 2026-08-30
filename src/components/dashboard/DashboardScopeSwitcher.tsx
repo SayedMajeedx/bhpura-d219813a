@@ -28,19 +28,19 @@ export function DashboardScopeSwitcher({
     {
       id: "financials",
       icon: TrendingUp,
-      labelAr: "التقرير المالي (30 يومًا)",
+      labelAr: "الملخص المالي",
       labelEn: "Financial Overview (30 Days)",
     },
     {
       id: "sales_series",
       icon: CalendarDays,
-      labelAr: "مخطط المبيعات اليومية",
+      labelAr: "المبيعات اليومية",
       labelEn: "Daily Sales Chart",
     },
     {
       id: "diagnostics",
       icon: ShieldAlert,
-      labelAr: "تنبيهات المخزون والعملاء",
+      labelAr: "تنبيهات تحتاج متابعة",
       labelEn: "Stock & Customer Alerts",
       badge: lowStockCount > 0 ? lowStockCount : undefined,
     },

@@ -78,12 +78,12 @@ export const OsAppWindow = React.forwardRef<HTMLDivElement, OsAppWindowProps>(
                 title={
                   isFocusMode
                     ? "خروج من مساحة العمل المركزة / Exit Focus Workspace"
-                    : "دخول مساحة العمل المركزة / Enter Focus Workspace"
+                    : "وضع التركيز / Focus mode"
                 }
                 aria-label={
                   isFocusMode
                     ? "خروج من مساحة العمل المركزة / Exit Focus Workspace"
-                    : "دخول مساحة العمل المركزة / Enter Focus Workspace"
+                    : "وضع التركيز / Focus mode"
                 }
               >
                 {isFocusMode ? (

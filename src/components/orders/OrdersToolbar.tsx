@@ -80,7 +80,7 @@ export const OrdersToolbar: React.FC<OrdersToolbarProps> = ({
             onChange={(e) => onSearchChange(e.target.value)}
             placeholder={
               isAr
-                ? "ابحث برقم الفاتورة، العميل، أو الهاتف... (⌘K)"
+                ? "ابحث برقم الطلب أو اسم العميل..."
                 : "Search invoice, customer, or phone... (⌘K)"
             }
             className="h-9 ps-9 text-xs bg-background/50 border-border/70"
@@ -108,7 +108,7 @@ export const OrdersToolbar: React.FC<OrdersToolbarProps> = ({
             </PopoverTrigger>
             <PopoverContent align={isAr ? "start" : "end"} className="w-80 space-y-3 p-4">
               <div className="text-xs font-bold text-foreground">
-                {isAr ? "تصفية المتقدمة" : "Advanced Filters"}
+                {isAr ? "تصفية الطلبات" : "Advanced Filters"}
               </div>
 
               {/* Payment Filter */}

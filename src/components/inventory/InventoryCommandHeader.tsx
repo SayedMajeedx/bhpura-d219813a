@@ -47,7 +47,7 @@ export const InventoryCommandHeader: React.FC<InventoryCommandHeaderProps> = ({
           </div>
           <p className="text-xs text-muted-foreground">
             {isAr
-              ? "متابعة كتل المخزون، الأسعار، والمتغيرات وطباعة البارکود"
+              ? "تابع المنتجات والكميات والأسعار، واطبع الباركود بسهولة"
               : "Manage product catalog, stock levels, variants, and barcode printing."}
           </p>
         </div>

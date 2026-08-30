@@ -33,6 +33,7 @@ import { useRealtimeInvalidate } from "@/hooks/use-realtime-invalidate";
 import { useMemo, useEffect, useState } from "react";
 import { getOrderCustomerName } from "@/lib/order-customer-snapshot";
 import { getOrderWorkflow } from "@/lib/order-workflow";
+import { isLowStock } from "@/lib/inventory-health";
 import { OsStatusPill } from "@/components/os/os-status-pill";
 
 import { DashboardCommandHeader } from "@/components/dashboard/DashboardCommandHeader";
@@ -633,7 +634,7 @@ function Dashboard() {
     products.forEach((product) => {
       const stock = productStockMap.get(product.id) ?? 0;
       const weeklySales = productWeeklySalesMap.get(product.id) ?? 0;
-      if (stock < weeklySales) {
+      if (isLowStock(stock, weeklySales)) {
         lowStockCount++;
       }
     });
@@ -871,7 +872,7 @@ function Dashboard() {
                     </h3>
                     <p className="text-[11px] text-muted-foreground">
                       {isAr
-                        ? "مخطط حركة إجمالي المبيعات والطلبات اليومية المؤكدة"
+                        ? "المبيعات خلال آخر 30 يومًا"
                         : "Daily revenue trajectory and completed volume trends."}
                     </p>
                   </div>

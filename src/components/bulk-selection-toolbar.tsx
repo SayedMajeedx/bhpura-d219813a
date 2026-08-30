@@ -1,5 +1,6 @@
 import { Building2, CheckSquare, Square, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 type BulkSelectionToolbarProps = {
   lang: "en" | "ar";
@@ -28,7 +29,12 @@ export function BulkSelectionToolbar({
 }: BulkSelectionToolbarProps) {
   const isAr = lang === "ar";
   return (
-    <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-border/60 bg-card px-3 py-2.5 shadow-2xs">
+    <div
+      className={cn(
+        "flex-wrap items-center justify-between gap-2 rounded-xl border border-border/60 bg-card px-3 py-2.5 shadow-2xs sm:flex",
+        selectedCount > 0 ? "flex" : "hidden",
+      )}
+    >
       <div className="inline-flex items-center gap-2 text-xs font-bold text-foreground">
         <CheckSquare className="h-4 w-4 text-primary" />
         <span>

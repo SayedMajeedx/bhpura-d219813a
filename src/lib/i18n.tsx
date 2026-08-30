@@ -549,7 +549,7 @@ const ar: Dict = {
   "fulfillment.free": "مجانًا",
 
   "inventory.title": "المخزون",
-  "inventory.subtitle": "المنتجات والأحجام والألوان وإضافات التخصيص.",
+  "inventory.subtitle": "تابع المنتجات والكميات والأسعار من مكان واحد.",
   "inventory.products": "المنتجات",
   "inventory.customizations": "إضافات التخصيص",
   "inventory.newProduct": "منتج جديد",

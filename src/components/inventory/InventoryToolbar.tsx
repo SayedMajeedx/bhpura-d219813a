@@ -70,7 +70,7 @@ export const InventoryToolbar: React.FC<InventoryToolbarProps> = ({
             onChange={(e) => onSearchChange(e.target.value)}
             placeholder={
               isAr
-                ? "ابحث باسم المنتج، SKU، أو الباركوّد... (⌘K)"
+                ? "ابحث باسم المنتج أو الباركود..."
                 : "Search product name, SKU, or barcode... (⌘K)"
             }
             className="h-9 ps-9 text-xs bg-background/50 border-border/70"

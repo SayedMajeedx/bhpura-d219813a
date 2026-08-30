@@ -109,6 +109,7 @@ import { ProductBomModal } from "@/components/products/ProductBomModal";
 import { BatchIncubatorTransferModal } from "@/components/incubators/BatchIncubatorTransferModal";
 
 import { ListPagination } from "@/components/list-pagination";
+import { isLowStock, isOutOfStock } from "@/lib/inventory-health";
 
 /** Common measurement units the admin can pick from for a "size" variant. */
 const SIZE_UNITS = ["", "cm", "mm", "m", "inch", "ft", "kg", "g", "ml", "l"] as const;
@@ -1769,7 +1770,7 @@ function ProductsSection({
   const lowStock = products.filter((product) => {
     const stock = productStock(product.id);
     const weeklySales = productWeeklySales(product.id);
-    return stock < weeklySales;
+    return isLowStock(stock, weeklySales);
   }).length;
 
   const deadStock = variants.filter((v) => (salesByVariant.get(v.id) || 0) === 0).length;
@@ -1862,13 +1863,13 @@ function ProductsSection({
       id: "out",
       label_en: "Out of Stock",
       label_ar: "نفد المخزون",
-      count: products.filter((p) => productStock(p.id) === 0).length,
+      count: products.filter((p) => isOutOfStock(productStock(p.id))).length,
       icon: Boxes,
     },
     {
       id: "featured",
       label_en: "Featured / Trending",
-      label_ar: "مميز ومطلوب",
+      label_ar: "المنتجات المميزة",
       count: products.filter((p) => p.featured_trending).length,
       icon: TrendingUp,
     },
@@ -1912,8 +1913,8 @@ function ProductsSection({
       const matchesCategory = selectedCategory === "all" || product.category === selectedCategory;
 
       let matchesScope = true;
-      if (scopeFilter === "low") matchesScope = stock > 0 && stock <= 5;
-      else if (scopeFilter === "out") matchesScope = stock === 0;
+      if (scopeFilter === "low") matchesScope = isLowStock(stock, productWeeklySales(product.id));
+      else if (scopeFilter === "out") matchesScope = isOutOfStock(stock);
       else if (scopeFilter === "featured") matchesScope = Boolean(product.featured_trending);
       else if (scopeFilter === "inactive") matchesScope = !product.is_active;
 
