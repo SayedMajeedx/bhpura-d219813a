@@ -76,7 +76,7 @@ jobs:
       - name: Read app version
         id: version
         working-directory: ${{ matrix.app_directory }}
-        run: echo "name=$(node -p \"require('./app.json').expo.version\")" >> "$GITHUB_OUTPUT"
+        run: node -e "console.log('name=' + require('./app.json').expo.version)" >> "$GITHUB_OUTPUT"
       - name: Verify IPA archive
         working-directory: ${{ matrix.app_directory }}
         run: |
