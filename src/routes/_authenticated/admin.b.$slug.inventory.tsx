@@ -12,6 +12,7 @@ import {
   bulkInsertProducts,
   scanCaptionForSoldOut,
   type InstagramPostPreview,
+  type InstagramProductDraft,
 } from "@/lib/instagram-ai-importer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -1120,7 +1121,9 @@ function InstagramImporterModal({
   renderTrigger?: (onClick: () => void) => React.ReactNode;
 }) {
   const [isOpen, setIsOpen] = useState(false);
-  const [step, setStep] = useState<"inputs" | "grid" | "importing" | "success">("inputs");
+  const [step, setStep] = useState<
+    "inputs" | "grid" | "analyzing" | "review" | "importing" | "success"
+  >("inputs");
   const [username, setUsername] = useState("");
   const [urlsText, setUrlsUrlsText] = useState("");
   const [range, setRange] = useState<number>(50);
@@ -1128,6 +1131,8 @@ function InstagramImporterModal({
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [progress, setProgress] = useState("");
   const [successCount, setSuccessCount] = useState(0);
+  const [skippedCount, setSkippedCount] = useState(0);
+  const [drafts, setDrafts] = useState<InstagramProductDraft[]>([]);
   const [loadingPosts, setLoadingPosts] = useState(false);
   const [fetchStatus, setFetchStatus] = useState("");
   const { lang } = useI18n();
@@ -1244,7 +1249,7 @@ function InstagramImporterModal({
     setSelectedIds(next);
   };
 
-  const handleStartImport = async () => {
+  const handleAnalyze = async () => {
     if (selectedIds.size === 0) {
       toast.error(
         isAr
@@ -1253,16 +1258,23 @@ function InstagramImporterModal({
       );
       return;
     }
+    if (selectedIds.size > 20) {
+      toast.error(
+        isAr
+          ? "اختر 20 منشوراً أو أقل في كل دفعة لضمان تحليل الصور بدقة، ثم أكمل الباقي في دفعة ثانية."
+          : "Select up to 20 posts per batch for reliable visual analysis, then import the rest in another batch.",
+      );
+      return;
+    }
 
-    setStep("importing");
+    setStep("analyzing");
     const checkedPosts = posts.filter((p) => selectedIds.has(p.id));
 
     try {
-      // Step 1/3: AI analyzing all captions in parallel
       setProgress(
         isAr
-          ? "⚡ الخطوة 1/3: جاري تحليل كافة النصوص بالذكاء الاصطناعي في نفس الوقت..."
-          : "⚡ Step 1/3: AI analyzing all captions in parallel...",
+          ? "جاري قراءة الصور والنصوص وتجهيز مسودات قابلة للمراجعة..."
+          : "Reading images and captions to prepare reviewable drafts...",
       );
       const parseResult = await batchParseCaptionsWithAI({
         data: {
@@ -1278,24 +1290,45 @@ function InstagramImporterModal({
         },
       });
 
-      // Step 2/3: Re-hosting high-res images to R2
+      setDrafts(parseResult.products);
+      setStep("review");
+    } catch (err) {
+      console.error("Instagram analysis failed", err);
+      const errMsg = err instanceof Error ? err.message : String(err);
+      toast.error(isAr ? `تعذر تحليل المنشورات: ${errMsg}` : `Could not analyze posts: ${errMsg}`);
+      setStep("grid");
+    }
+  };
+
+  const updateDraft = (id: string, patch: Partial<InstagramProductDraft>) => {
+    setDrafts((current) =>
+      current.map((draft) => (draft.id === id ? { ...draft, ...patch } : draft)),
+    );
+  };
+
+  const handleConfirmImport = async () => {
+    if (drafts.some((draft) => !draft.title.trim())) {
+      toast.error(
+        isAr ? "أضف اسماً لكل منتج قبل الحفظ." : "Add a name to every product before saving.",
+      );
+      return;
+    }
+    setStep("importing");
+    try {
       setProgress(
-        isAr
-          ? "🖼️ الخطوة 2/3: جاري إعادة استضافة الصور عالية الدقة في سحابة R2..."
-          : "🖼️ Step 2/3: Re-hosting high-res images to R2...",
+        isAr ? "جاري حفظ الصور في مكتبة متجرك..." : "Saving images to your store library...",
       );
       const rehostResult = await batchRehostImages({
         data: {
           brandId,
-          products: parseResult.products,
+          products: drafts,
         },
       });
 
-      // Step 3/3: Bulk saving catalog to database
       setProgress(
         isAr
-          ? "💾 الخطوة 3/3: جاري حفظ المنتجات والمقاسات في قاعدة البيانات دفعة واحدة..."
-          : "💾 Step 3/3: Bulk saving catalog to database...",
+          ? "جاري إنشاء مسودات المنتجات ومنع أي تكرار..."
+          : "Creating product drafts and preventing duplicates...",
       );
       const insertResult = await bulkInsertProducts({
         data: {
@@ -1305,15 +1338,14 @@ function InstagramImporterModal({
       });
 
       setSuccessCount(insertResult.successCount);
+      setSkippedCount(insertResult.skippedCount || 0);
       setStep("success");
       onComplete();
     } catch (err) {
-      console.error("Turbo batch pipeline failed", err);
+      console.error("Instagram import failed", err);
       const errMsg = err instanceof Error ? err.message : String(err);
-      toast.error(
-        isAr ? `فشل الاستيراد السريع: ${errMsg}` : `Turbo Batch Import failed: ${errMsg}`,
-      );
-      setStep("grid");
+      toast.error(isAr ? `تعذر إكمال الاستيراد: ${errMsg}` : `Instagram import failed: ${errMsg}`);
+      setStep("review");
     }
   };
 
@@ -1563,20 +1595,153 @@ function InstagramImporterModal({
                   {isAr ? "السابق" : "Back"}
                 </Button>
                 <Button
-                  onClick={handleStartImport}
+                  onClick={handleAnalyze}
                   disabled={selectedIds.size === 0}
                   className="bg-purple-600 hover:bg-purple-700 text-white rounded-xl px-6 font-semibold shadow-lg shadow-purple-500/10"
                 >
                   <Sparkles className="h-4 w-4 me-2" />
                   {isAr
-                    ? `بدء استيراد ${selectedIds.size} منتج`
-                    : `Import ${selectedIds.size} Products`}
+                    ? `تحليل ${selectedIds.size} منتج ومراجعتها`
+                    : `Analyze & Review ${selectedIds.size} Products`}
                 </Button>
               </DialogFooter>
             </div>
           )}
 
-          {step === "importing" && (
+          {step === "review" && (
+            <div className="space-y-4 py-4">
+              <div className="flex items-start justify-between gap-4 rounded-2xl border border-purple-200 bg-purple-50/60 p-4 dark:border-purple-900 dark:bg-purple-950/20">
+                <div>
+                  <h3 className="font-bold">
+                    {isAr ? "راجع المنتجات قبل إضافتها" : "Review before adding products"}
+                  </h3>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {isAr
+                      ? "لم نخمن أي سعر أو مخزون. أكمل الحقول الناقصة، وستُحفظ المنتجات كمسودات غير منشورة."
+                      : "No price or stock was invented. Complete missing details; products are saved as unpublished drafts."}
+                  </p>
+                </div>
+                <span className="shrink-0 rounded-full bg-white px-3 py-1 text-xs font-bold shadow-sm dark:bg-zinc-900">
+                  {drafts.length}
+                </span>
+              </div>
+
+              <div className="grid max-h-[55vh] gap-4 overflow-y-auto pe-1 md:grid-cols-2">
+                {drafts.map((draft) => (
+                  <Card
+                    key={draft.id}
+                    className="overflow-hidden rounded-2xl border-zinc-200 p-0 dark:border-zinc-800"
+                  >
+                    <div className="flex gap-3 p-3">
+                      <img
+                        src={draft.imageUrl}
+                        alt=""
+                        className="h-24 w-24 shrink-0 rounded-xl bg-zinc-100 object-cover"
+                        referrerPolicy="no-referrer"
+                      />
+                      <div className="min-w-0 flex-1 space-y-2">
+                        <Input
+                          value={draft.title}
+                          onChange={(e) => updateDraft(draft.id, { title: e.target.value })}
+                          placeholder={isAr ? "اسم المنتج" : "Product name"}
+                          className="h-9 font-semibold"
+                        />
+                        <div className="grid grid-cols-2 gap-2">
+                          <Input
+                            type="number"
+                            min="0"
+                            step="0.001"
+                            value={draft.price ?? ""}
+                            onChange={(e) =>
+                              updateDraft(draft.id, {
+                                price: e.target.value ? Number(e.target.value) : null,
+                              })
+                            }
+                            placeholder={isAr ? "السعر د.ب" : "Price BHD"}
+                            className="h-9"
+                          />
+                          <Input
+                            value={draft.category}
+                            onChange={(e) => updateDraft(draft.id, { category: e.target.value })}
+                            placeholder={isAr ? "التصنيف" : "Category"}
+                            className="h-9"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                    <div className="space-y-2 border-t p-3">
+                      <Input
+                        value={draft.sizes.join(", ")}
+                        onChange={(e) =>
+                          updateDraft(draft.id, {
+                            sizes: e.target.value
+                              .split(",")
+                              .map((v) => v.trim())
+                              .filter(Boolean),
+                          })
+                        }
+                        placeholder={
+                          isAr ? "المقاسات، افصل بينها بفاصلة" : "Sizes, comma separated"
+                        }
+                        className="h-9"
+                      />
+                      <Input
+                        value={draft.colors.join(", ")}
+                        onChange={(e) =>
+                          updateDraft(draft.id, {
+                            colors: e.target.value
+                              .split(",")
+                              .map((v) => v.trim())
+                              .filter(Boolean),
+                          })
+                        }
+                        placeholder={
+                          isAr ? "الألوان، افصل بينها بفاصلة" : "Colors, comma separated"
+                        }
+                        className="h-9"
+                      />
+                      {draft.issues.length > 0 && (
+                        <div className="flex flex-wrap gap-1.5">
+                          {draft.issues.map((issue) => (
+                            <span
+                              key={issue}
+                              className="rounded-full bg-amber-100 px-2 py-1 text-[10px] font-semibold text-amber-800 dark:bg-amber-950/40 dark:text-amber-300"
+                            >
+                              {isAr
+                                ? (
+                                    {
+                                      missing_price: "السعر غير موجود",
+                                      missing_sizes: "المقاسات غير واضحة",
+                                      missing_title: "الاسم غير واضح",
+                                      image_unavailable: "تعذر قراءة الصورة",
+                                      uncertain_category: "راجع التصنيف",
+                                    } as Record<string, string>
+                                  )[issue] || issue
+                                : issue.replaceAll("_", " ")}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </Card>
+                ))}
+              </div>
+              <DialogFooter className="border-t pt-4">
+                <Button variant="ghost" onClick={() => setStep("grid")}>
+                  {isAr ? "رجوع" : "Back"}
+                </Button>
+                <Button
+                  onClick={handleConfirmImport}
+                  className="bg-purple-600 text-white hover:bg-purple-700"
+                >
+                  <Check className="me-2 h-4 w-4" />
+                  {isAr ? `حفظ ${drafts.length} كمسودات` : `Save ${drafts.length} drafts`}
+                </Button>
+              </DialogFooter>
+            </div>
+          )}
+
+          {(step === "analyzing" || step === "importing") && (
             <div className="flex flex-col items-center justify-center py-12 px-4 space-y-6 text-center">
               <div className="relative">
                 <div className="h-20 w-20 rounded-full border-4 border-purple-500/20 border-t-purple-500 animate-spin" />
@@ -1587,8 +1752,12 @@ function InstagramImporterModal({
               <div className="space-y-2">
                 <h3 className="text-lg font-bold font-display text-zinc-900 dark:text-zinc-50">
                   {isAr
-                    ? "جاري استيراد المنتجات بالذكاء الاصطناعي..."
-                    : "AI Instagram-to-Storefront Ingestion"}
+                    ? step === "analyzing"
+                      ? "جاري تجهيز المسودات للمراجعة..."
+                      : "جاري حفظ المنتجات بأمان..."
+                    : step === "analyzing"
+                      ? "Preparing drafts for review..."
+                      : "Saving products safely..."}
                 </h3>
                 <p className="text-sm text-zinc-500 dark:text-zinc-400 max-w-md font-mono bg-zinc-50 dark:bg-zinc-900 p-3 rounded-xl border border-border">
                   {progress}
@@ -1608,8 +1777,8 @@ function InstagramImporterModal({
                 </h3>
                 <p className="text-xs text-muted-foreground leading-relaxed max-w-sm">
                   {isAr
-                    ? `تم تحليل واستيراد ${successCount} منتجاً بنجاح وحفظها كمسودات، وإعادة استضافة جميع صورها على Cloudflare R2.`
-                    : `Successfully analyzed and imported ${successCount} products as drafts, and re-hosted all product photos to Cloudflare R2.`}
+                    ? `تم حفظ ${successCount} منتج كمسودات غير منشورة${skippedCount ? `، وتخطي ${skippedCount} منتج مكرر` : ""}. راجع السعر والمخزون قبل النشر.`
+                    : `Saved ${successCount} unpublished product drafts${skippedCount ? ` and skipped ${skippedCount} duplicates` : ""}. Review price and stock before publishing.`}
                 </p>
               </div>
               <Button

@@ -28,6 +28,57 @@ export type InstagramPostPreview = {
   isVideo?: boolean;
 };
 
+export type InstagramProductDraft = {
+  id: string;
+  imageUrl: string;
+  url: string;
+  isSoldOut: boolean;
+  title: string;
+  price: number | null;
+  description: string;
+  sizes: string[];
+  colors: string[];
+  category: string;
+  confidence: number;
+  issues: string[];
+};
+
+const MAX_VISION_IMAGE_BYTES = 1.5 * 1024 * 1024;
+const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
+
+function isSafeRemoteImageUrl(value: string) {
+  try {
+    const url = new URL(value);
+    const host = url.hostname.toLowerCase();
+    if (url.protocol !== "https:") return false;
+    if (host === "localhost" || host.endsWith(".local")) return false;
+    if (/^(127\.|10\.|0\.|169\.254\.|192\.168\.)/.test(host)) return false;
+    const match = host.match(/^172\.(\d+)\./);
+    if (match && Number(match[1]) >= 16 && Number(match[1]) <= 31) return false;
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+async function imagePartForGemini(imageUrl: string) {
+  try {
+    if (!isSafeRemoteImageUrl(imageUrl)) return null;
+    const response = await fetch(imageUrl, {
+      signal: AbortSignal.timeout(10_000),
+      headers: { Accept: "image/jpeg,image/png,image/webp" },
+    });
+    if (!response.ok) return null;
+    const mimeType = (response.headers.get("content-type") || "image/jpeg").split(";")[0];
+    if (!new Set(["image/jpeg", "image/png", "image/webp"]).has(mimeType)) return null;
+    const bytes = new Uint8Array(await response.arrayBuffer());
+    if (bytes.byteLength === 0 || bytes.byteLength > MAX_VISION_IMAGE_BYTES) return null;
+    return { inlineData: { mimeType, data: Buffer.from(bytes).toString("base64") } };
+  } catch {
+    return null;
+  }
+}
+
 // Client and server sold-out scanning helper
 export function scanCaptionForSoldOut(caption: string): { isSoldOut: boolean; keyword?: string } {
   const lower = caption.toLowerCase();
@@ -280,15 +331,22 @@ export function extractPriceFallback(caption: string): number {
 }
 
 // Re-hosting core single uploader
-async function rehostSingleImage(brandId: string, imageUrl: string): Promise<string> {
+async function rehostSingleImage(brandId: string, imageUrl: string): Promise<string | null> {
   try {
-    const imageFetch = await fetch(imageUrl);
+    if (!isSafeRemoteImageUrl(imageUrl)) throw new Error("Unsafe image URL");
+    const imageFetch = await fetch(imageUrl, { signal: AbortSignal.timeout(15_000) });
     if (!imageFetch.ok) {
       throw new Error(`Failed to fetch original image from CDN: ${imageFetch.status}`);
     }
+    const contentType = (imageFetch.headers.get("content-type") || "").split(";")[0];
+    if (!new Set(["image/jpeg", "image/png", "image/webp"]).has(contentType)) {
+      throw new Error("Unsupported image response");
+    }
+    const contentLength = Number(imageFetch.headers.get("content-length") || 0);
+    if (contentLength > MAX_IMAGE_BYTES) throw new Error("Image is too large");
     const arrayBuffer = await imageFetch.arrayBuffer();
+    if (arrayBuffer.byteLength > MAX_IMAGE_BYTES) throw new Error("Image is too large");
     const buffer = Buffer.from(arrayBuffer);
-    const contentType = imageFetch.headers.get("content-type") || "image/jpeg";
     const ext = contentType.includes("png") ? "png" : contentType.includes("webp") ? "webp" : "jpg";
 
     const { client, bucket, publicBaseUrl } = r2Client();
@@ -307,7 +365,8 @@ async function rehostSingleImage(brandId: string, imageUrl: string): Promise<str
     return `${publicBaseUrl}/${key}`;
   } catch (err) {
     console.error("Rehost single image to Cloudflare R2 failed:", err);
-    return imageUrl; // Graceful fallback to original URL
+    // Instagram CDN links expire. Never persist an unstable external URL as product media.
+    return null;
   }
 }
 
@@ -318,16 +377,19 @@ export const batchParseCaptionsWithAI = createServerFn({ method: "POST" })
     z
       .object({
         brandId: z.string().uuid(),
-        posts: z.array(
-          z.object({
-            id: z.string(),
-            url: z.string(),
-            imageUrl: z.string(),
-            caption: z.string(),
-            isSoldOut: z.boolean(),
-            isVideo: z.boolean().optional(),
-          }),
-        ),
+        posts: z
+          .array(
+            z.object({
+              id: z.string(),
+              url: z.string(),
+              imageUrl: z.string(),
+              caption: z.string(),
+              isSoldOut: z.boolean(),
+              isVideo: z.boolean().optional(),
+            }),
+          )
+          .min(1)
+          .max(20),
       })
       .parse(raw),
   )
@@ -355,18 +417,13 @@ export const batchParseCaptionsWithAI = createServerFn({ method: "POST" })
       throw new Error("Missing Gemini API Key. Please configure it in your settings page.");
     }
 
-    const postsPayload = data.posts.map((p) => ({
-      id: p.id,
-      caption: p.caption,
-    }));
-
     let parsedArray: any[] = [];
 
     try {
       try {
         const systemPrompt = [
           "You are an expert GCC boutique product migration assistant.",
-          "Analyze a JSON array of Instagram post captions and extract structured product catalog metadata for each.",
+          "Analyze each Instagram post using both its image and caption. Never invent catalog data.",
           "Strict Price Rules:",
           "1. CURRENCY PRIORITY: Explicitly look for prices in BHD, BD, bd, dinar, دينار, د.ب, د.ب. (e.g. '35 BD' -> price: 35).",
           "2. MULTIPLE CURRENCIES: If multiple currencies are listed (e.g. '35 BD / 350 SAR'), always extract the BHD/BD value (35).",
@@ -376,13 +433,21 @@ export const batchParseCaptionsWithAI = createServerFn({ method: "POST" })
           "   - Do NOT confuse abaya/clothing sizes (50 to 62) with prices unless followed by BD/BHD/دينار.",
           "   - Do NOT confuse 8-digit phone numbers starting with 3, 6, 17, or +973, 00973 with prices.",
           "   - Do NOT parse delivery fees (e.g. 'توصيل 2 دينار' should be ignored).",
-          "6. DECIMALS & FALLBACK: Handle 3-decimal formats (e.g. '35.000 BD' -> 35). If no explicit currency is found, check for 'السعر', 'Price', or 'بـ' followed by a number under 200. If no price is detectable, return 0.",
-          "7. SIZES: Extract standard GCC garments sizes (like 52, 54, 56, 58, 60, 62) as an array of strings. If no sizes are detectable, return a default list ['52', '54', '56', '58'].",
-          "8. CATEGORY: Categorize into 'Abayas', 'Dresses', 'Accessories' or other GCC apparel collections.",
+          "6. DECIMALS: Handle 3-decimal formats (e.g. '35.000 BD' -> 35). If no reliable price is detectable, return null.",
+          "7. SIZES/COLORS: Extract only values explicitly written or clearly visible. Otherwise return empty arrays.",
+          "8. CATEGORY: Infer a short useful category from the image and caption, or use 'General' when uncertain.",
+          "9. QUALITY: confidence must be between 0 and 1. Add short issue codes from: missing_price, missing_title, missing_sizes, image_unavailable, uncertain_category.",
           "Provide a minified JSON array matching the requested schema and nothing else.",
         ].join("\n");
 
         const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
+        const parts: Array<Record<string, unknown>> = [];
+        for (const post of data.posts) {
+          parts.push({ text: `POST ${post.id}\nCAPTION:\n${post.caption || "(none)"}` });
+          const imagePart = await imagePartForGemini(post.imageUrl);
+          if (imagePart) parts.push(imagePart);
+          else parts.push({ text: `POST ${post.id} image_unavailable` });
+        }
         let response = await fetch(endpoint, {
           method: "POST",
           headers: {
@@ -394,11 +459,7 @@ export const batchParseCaptionsWithAI = createServerFn({ method: "POST" })
             contents: [
               {
                 role: "user",
-                parts: [
-                  {
-                    text: `Analyze and extract structured catalog data for these Instagram posts:\n\n${JSON.stringify(postsPayload, null, 2)}`,
-                  },
-                ],
+                parts,
               },
             ],
             generationConfig: {
@@ -411,12 +472,25 @@ export const batchParseCaptionsWithAI = createServerFn({ method: "POST" })
                   properties: {
                     id: { type: "string" },
                     title: { type: "string" },
-                    price: { type: "number" },
+                    price: { type: ["number", "null"] },
                     description: { type: "string" },
                     sizes: { type: "array", items: { type: "string" } },
+                    colors: { type: "array", items: { type: "string" } },
                     category: { type: "string" },
+                    confidence: { type: "number" },
+                    issues: { type: "array", items: { type: "string" } },
                   },
-                  required: ["id", "title", "price", "description", "sizes", "category"],
+                  required: [
+                    "id",
+                    "title",
+                    "price",
+                    "description",
+                    "sizes",
+                    "colors",
+                    "category",
+                    "confidence",
+                    "issues",
+                  ],
                 },
               },
             },
@@ -440,11 +514,7 @@ export const batchParseCaptionsWithAI = createServerFn({ method: "POST" })
               contents: [
                 {
                   role: "user",
-                  parts: [
-                    {
-                      text: `Analyze and extract structured catalog data for these Instagram posts:\n\n${JSON.stringify(postsPayload, null, 2)}`,
-                    },
-                  ],
+                  parts,
                 },
               ],
               generationConfig: {
@@ -457,12 +527,25 @@ export const batchParseCaptionsWithAI = createServerFn({ method: "POST" })
                     properties: {
                       id: { type: "string" },
                       title: { type: "string" },
-                      price: { type: "number" },
+                      price: { type: ["number", "null"] },
                       description: { type: "string" },
                       sizes: { type: "array", items: { type: "string" } },
+                      colors: { type: "array", items: { type: "string" } },
                       category: { type: "string" },
+                      confidence: { type: "number" },
+                      issues: { type: "array", items: { type: "string" } },
                     },
-                    required: ["id", "title", "price", "description", "sizes", "category"],
+                    required: [
+                      "id",
+                      "title",
+                      "price",
+                      "description",
+                      "sizes",
+                      "colors",
+                      "category",
+                      "confidence",
+                      "issues",
+                    ],
                   },
                 },
               },
@@ -503,10 +586,12 @@ export const batchParseCaptionsWithAI = createServerFn({ method: "POST" })
                   .trim()
               : "Instagram Product";
 
-          const price = extractPriceFallback(post.caption) || 25;
+          const extractedPrice = extractPriceFallback(post.caption);
+          const price = extractedPrice > 0 ? extractedPrice : null;
           const description = post.caption;
-          const sizes = ["52", "54", "56", "58"];
-          const category = "Abayas";
+          const sizes: string[] = [];
+          const colors: string[] = [];
+          const category = "General";
 
           return {
             id: post.id,
@@ -514,7 +599,10 @@ export const batchParseCaptionsWithAI = createServerFn({ method: "POST" })
             price,
             description,
             sizes,
+            colors,
             category,
+            confidence: extractedPrice > 0 ? 0.55 : 0.3,
+            issues: [extractedPrice > 0 ? "missing_sizes" : "missing_price", "uncertain_category"],
           };
         });
       }
@@ -538,23 +626,26 @@ export const batchParseCaptionsWithAI = createServerFn({ method: "POST" })
               : "Instagram Product";
         }
 
-        let price = Number(parsed.price);
-        // Regex Parser Fallback Safety Net (for zero, sizes, or over-inflated prices)
+        let price = parsed.price == null ? null : Number(parsed.price);
         const isUnlikelyPrice =
-          isNaN(price) || price === 0 || price > 200 || [52, 54, 56, 58, 60, 62].includes(price);
+          price == null ||
+          isNaN(price) ||
+          price <= 0 ||
+          price > 200 ||
+          [52, 54, 56, 58, 60, 62].includes(price);
         if (isUnlikelyPrice) {
           const regexPrice = extractPriceFallback(originalPost.caption);
-          if (regexPrice > 0) {
-            price = regexPrice;
-          } else if (isNaN(price) || price === 0) {
-            price = 25; // safe default BHD fallback
-          }
+          price = regexPrice > 0 ? regexPrice : null;
         }
 
         const description = parsed.description || originalPost.caption;
-        const sizes =
-          parsed.sizes && parsed.sizes.length > 0 ? parsed.sizes : ["52", "54", "56", "58"];
-        const category = parsed.category || "Abayas";
+        const sizes = Array.isArray(parsed.sizes) ? parsed.sizes.map(String) : [];
+        const colors = Array.isArray(parsed.colors) ? parsed.colors.map(String) : [];
+        const category = parsed.category || "General";
+        const issues = new Set<string>(Array.isArray(parsed.issues) ? parsed.issues : []);
+        if (!price) issues.add("missing_price");
+        if (!sizes.length) issues.add("missing_sizes");
+        if (!originalPost.imageUrl) issues.add("image_unavailable");
 
         return {
           id: originalPost.id,
@@ -565,7 +656,10 @@ export const batchParseCaptionsWithAI = createServerFn({ method: "POST" })
           price,
           description,
           sizes,
+          colors,
           category,
+          confidence: Math.max(0, Math.min(1, Number(parsed.confidence) || 0.35)),
+          issues: [...issues],
         };
       });
 
@@ -590,17 +684,25 @@ export const batchRehostImages = createServerFn({ method: "POST" })
             url: z.string(),
             isSoldOut: z.boolean(),
             title: z.string(),
-            price: z.number(),
+            price: z.number().nullable(),
             description: z.string(),
             sizes: z.array(z.string()),
+            colors: z.array(z.string()).default([]),
             category: z.string(),
+            confidence: z.number().min(0).max(1).default(0),
+            issues: z.array(z.string()).default([]),
           }),
         ),
       })
       .parse(raw),
   )
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
     const brandId = data.brandId;
+    const [{ data: hasAccess }, { data: isAdmin }] = await Promise.all([
+      context.supabase.rpc("can_access_brand", { _brand_id: brandId }),
+      context.supabase.rpc("is_admin"),
+    ]);
+    if (!hasAccess && !isAdmin) throw new Error("UNAUTHORIZED");
     const items = [...data.products];
     const batchSize = 5;
 
@@ -613,7 +715,10 @@ export const batchRehostImages = createServerFn({ method: "POST" })
             const idx = items.findIndex((item) => item.id === product.id);
             if (idx !== -1) {
               const r2Url = await rehostSingleImage(brandId, product.imageUrl);
-              items[idx].imageUrl = r2Url;
+              items[idx].imageUrl = r2Url || "";
+              if (!r2Url && !items[idx].issues.includes("image_unavailable")) {
+                items[idx].issues.push("image_unavailable");
+              }
             }
           }),
         );
@@ -639,10 +744,13 @@ export const bulkInsertProducts = createServerFn({ method: "POST" })
             url: z.string(),
             isSoldOut: z.boolean(),
             title: z.string(),
-            price: z.number(),
+            price: z.number().nullable(),
             description: z.string(),
             sizes: z.array(z.string()),
+            colors: z.array(z.string()).default([]),
             category: z.string(),
+            confidence: z.number().min(0).max(1).default(0),
+            issues: z.array(z.string()).default([]),
           }),
         ),
       })
@@ -652,13 +760,35 @@ export const bulkInsertProducts = createServerFn({ method: "POST" })
     const userId = context.userId;
     const brandId = data.brandId;
 
+    const [{ data: hasAccess }, { data: isAdmin }] = await Promise.all([
+      context.supabase.rpc("can_access_brand", { _brand_id: brandId }),
+      context.supabase.rpc("is_admin"),
+    ]);
+    if (!hasAccess && !isAdmin) throw new Error("UNAUTHORIZED");
+
     if (data.products.length === 0) {
       return { successCount: 0 };
     }
 
     try {
-      const productRows = data.products.map((p) => {
-        const mediaArray = [{ type: "image", url: p.imageUrl }];
+      const { data: existingProducts, error: existingError } = await context.supabase
+        .from("products")
+        .select("custom_fields")
+        .eq("brand_id", brandId);
+      if (existingError)
+        throw new Error(`Failed to check existing imports: ${existingError.message}`);
+      const existingPostIds = new Set(
+        (existingProducts || [])
+          .map((row: any) => row.custom_fields?.instagram_post_id)
+          .filter((value: unknown): value is string => typeof value === "string"),
+      );
+      const newProducts = data.products.filter((product) => !existingPostIds.has(product.id));
+      if (newProducts.length === 0) {
+        return { successCount: 0, skippedCount: data.products.length };
+      }
+
+      const productRows = newProducts.map((p) => {
+        const mediaArray = p.imageUrl ? [{ type: "image", url: p.imageUrl }] : [];
         return {
           user_id: userId,
           brand_id: brandId,
@@ -669,7 +799,7 @@ export const bulkInsertProducts = createServerFn({ method: "POST" })
           description_en: p.description,
           description_ar: p.description,
           category: p.category,
-          image_url: p.imageUrl,
+          image_url: p.imageUrl || null,
           is_active: false, // Created as drafts for merchant review
           featured_trending: false,
           show_sale_badge: false,
@@ -690,32 +820,32 @@ export const bulkInsertProducts = createServerFn({ method: "POST" })
       const variantRows: any[] = [];
       insertedProducts.forEach((insertedProd: any) => {
         const postInstaId = (insertedProd.custom_fields as any)?.instagram_post_id;
-        const originalPost = data.products.find((p) => p.id === postInstaId);
+        const originalPost = newProducts.find((p) => p.id === postInstaId);
         if (!originalPost) return;
 
-        const sizes =
-          originalPost.sizes && originalPost.sizes.length > 0
-            ? originalPost.sizes
-            : ["52", "54", "56", "58"];
-        const price = originalPost.price || 25;
+        const sizes = originalPost.sizes.length > 0 ? originalPost.sizes : [""];
+        const colors = originalPost.colors.length > 0 ? originalPost.colors : [""];
+        const price = originalPost.price || 0;
 
-        sizes.forEach((size: string) => {
-          variantRows.push({
-            user_id: userId,
-            brand_id: brandId,
-            product_id: insertedProd.id,
-            size,
-            size_unit: "",
-            color: "",
-            fabric: "",
-            sku: `IG-${insertedProd.id.slice(0, 5).toUpperCase()}-${size}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`,
-            barcode: null,
-            cost_price: Math.round(price * 0.5),
-            selling_price: price,
-            stock_main: originalPost.isSoldOut ? 0 : 15,
-            stock_incubator: 0,
+        sizes
+          .flatMap((size: string) => colors.map((color: string) => ({ size, color })))
+          .forEach(({ size, color }) => {
+            variantRows.push({
+              user_id: userId,
+              brand_id: brandId,
+              product_id: insertedProd.id,
+              size,
+              size_unit: "",
+              color,
+              fabric: "",
+              sku: `IG-${insertedProd.id.slice(0, 5).toUpperCase()}-${size}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`,
+              barcode: null,
+              cost_price: 0,
+              selling_price: price,
+              stock_main: 0,
+              stock_incubator: 0,
+            });
           });
-        });
       });
 
       if (variantRows.length > 0) {
@@ -728,7 +858,10 @@ export const bulkInsertProducts = createServerFn({ method: "POST" })
         }
       }
 
-      return { successCount: insertedProducts.length };
+      return {
+        successCount: insertedProducts.length,
+        skippedCount: data.products.length - newProducts.length,
+      };
     } catch (error: any) {
       console.error("Bulk database insertion failed:", error);
       throw error;
