@@ -1545,7 +1545,7 @@ function OrderDetail() {
     const sizeLabel = isAr ? "المقاس" : "Size";
     const colorLabel = isAr ? "اللون" : "Color";
     const fabricLabel = isAr ? "القماش" : "Fabric";
-    const lines = [p?.name || v.title || "Product"];
+    const lines = [p?.name || (v as any).title || "Product"];
     if (v.size) lines.push(`${sizeLabel}: ${v.size}`);
     if (v.color) lines.push(`${colorLabel}: ${v.color}`);
     if (v.fabric) lines.push(`${fabricLabel}: ${v.fabric}`);
