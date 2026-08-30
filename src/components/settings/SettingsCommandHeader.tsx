@@ -7,6 +7,7 @@ interface SettingsCommandHeaderProps {
   activeTabLabel: string;
   saving: boolean;
   onSave: () => void;
+  showSave?: boolean;
 }
 
 export function SettingsCommandHeader({
@@ -15,6 +16,7 @@ export function SettingsCommandHeader({
   activeTabLabel,
   saving,
   onSave,
+  showSave = true,
 }: SettingsCommandHeaderProps) {
   const isAr = lang === "ar";
 
@@ -44,23 +46,25 @@ export function SettingsCommandHeader({
           </p>
         </div>
 
-        <Button
-          type="button"
-          onClick={onSave}
-          disabled={saving}
-          className="w-full shadow-sm transition-all duration-200 hover:shadow hover:scale-[1.01] active:scale-95 gap-2 text-xs font-bold sm:w-auto sm:self-center bg-primary text-primary-foreground"
-        >
-          {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-          <span>
-            {saving
-              ? isAr
-                ? "جاري الحفظ..."
-                : "Saving Changes…"
-              : isAr
-                ? "حفظ التغييرات"
-                : "Save All Changes"}
-          </span>
-        </Button>
+        {showSave && (
+          <Button
+            type="button"
+            onClick={onSave}
+            disabled={saving}
+            className="w-full shadow-sm transition-all duration-200 hover:shadow hover:scale-[1.01] active:scale-95 gap-2 text-xs font-bold sm:w-auto sm:self-center bg-primary text-primary-foreground"
+          >
+            {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+            <span>
+              {saving
+                ? isAr
+                  ? "جاري الحفظ..."
+                  : "Saving Changes…"
+                : isAr
+                  ? "حفظ التغييرات"
+                  : "Save All Changes"}
+            </span>
+          </Button>
+        )}
       </div>
     </div>
   );

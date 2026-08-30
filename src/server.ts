@@ -167,8 +167,14 @@ export default {
         return withSecurityHeaders(await handleWhiteLabelApkUpload(request, env), correlationId);
       }
 
+      if (url.pathname === "/api/internal/mobile-releases/upload") {
+        const { handleMobileReleaseUpload } = await import("./lib/mobile-releases.server");
+        return withSecurityHeaders(await handleMobileReleaseUpload(request, env), correlationId);
+      }
+
       if (url.pathname.startsWith("/api/v1")) {
-        const { handlePublicApiV1Request } = await import("./lib/public-api/public-api-router.server");
+        const { handlePublicApiV1Request } =
+          await import("./lib/public-api/public-api-router.server");
         return withSecurityHeaders(
           await handlePublicApiV1Request(request, env, ctx),
           correlationId,
@@ -179,7 +185,8 @@ export default {
         url.hostname === "media.boutq.store" ||
         url.hostname.endsWith(".media.boutq.store") ||
         url.pathname.startsWith("/brands/") ||
-        url.pathname.startsWith("/app-builds/")
+        url.pathname.startsWith("/app-builds/") ||
+        url.pathname.startsWith("/mobile-releases/")
       ) {
         return await handleR2MediaRequest(request, env);
       }

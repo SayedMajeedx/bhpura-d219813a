@@ -10,6 +10,7 @@ interface __BaseEnv_Env {
   META_WHATSAPP_APP_SECRET: string;
   META_WHATSAPP_VERIFY_TOKEN: string;
   CRON_SECRET: string;
+  MOBILE_RELEASE_UPLOAD_SECRET: string;
   GEMINI_API_KEY: string;
   APIFY_API_TOKEN: string;
   R2_ACCOUNT_ID: string;
@@ -39,6 +40,7 @@ declare namespace NodeJS {
       | "META_WHATSAPP_APP_SECRET"
       | "META_WHATSAPP_VERIFY_TOKEN"
       | "CRON_SECRET"
+      | "MOBILE_RELEASE_UPLOAD_SECRET"
       | "GEMINI_API_KEY"
       | "APIFY_API_TOKEN"
       | "R2_ACCOUNT_ID"

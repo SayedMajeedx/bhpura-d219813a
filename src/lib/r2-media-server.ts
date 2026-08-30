@@ -92,7 +92,8 @@ export async function handleR2MediaRequest(
         headers.set("Content-Type", mime);
         headers.set("Content-Length", String(object.size));
         if (object.httpEtag) headers.set("ETag", object.httpEtag);
-        if (key.endsWith(".apk")) headers.set("Content-Disposition", "attachment");
+        if (key.endsWith(".apk") || key.endsWith(".ipa"))
+          headers.set("Content-Disposition", "attachment");
 
         if (request.method === "HEAD") {
           return new Response(null, { status: 200, headers });
@@ -154,7 +155,8 @@ export async function handleR2MediaRequest(
 
       const etag = r2Res.headers.get("etag");
       if (etag) responseHeaders.set("ETag", etag);
-      if (key.endsWith(".apk")) responseHeaders.set("Content-Disposition", "attachment");
+      if (key.endsWith(".apk") || key.endsWith(".ipa"))
+        responseHeaders.set("Content-Disposition", "attachment");
 
       if (request.method === "HEAD") {
         return new Response(null, { status: 200, headers: responseHeaders });

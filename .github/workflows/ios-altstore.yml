@@ -1,0 +1,100 @@
+name: iOS AltStore Releases
+
+on:
+  workflow_dispatch:
+    inputs:
+      build_number:
+        description: Positive iOS build number
+        required: true
+        default: "1"
+
+permissions:
+  contents: read
+
+jobs:
+  ios:
+    runs-on: macos-15
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - app_key: boutq_os
+            app_directory: apps/boutq-os-mobile
+            artifact_name: boutq-os
+          - app_key: pura_line
+            app_directory: apps/pura-line-mobile
+            artifact_name: pura-line
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: ${{ matrix.app_directory }}/package-lock.json
+      - name: Validate build input
+        run: test "${{ inputs.build_number }}" -ge 1
+      - name: Install application dependencies
+        working-directory: ${{ matrix.app_directory }}
+        run: npm ci --legacy-peer-deps
+      - name: Generate native iOS project
+        working-directory: ${{ matrix.app_directory }}
+        env:
+          EXPO_NO_GIT_STATUS: "1"
+        run: npx expo prebuild --platform ios --clean --no-install
+      - name: Install CocoaPods
+        working-directory: ${{ matrix.app_directory }}/ios
+        run: pod install --repo-update
+      - name: Build unsigned device application
+        working-directory: ${{ matrix.app_directory }}
+        env:
+          BUILD_NUMBER: ${{ inputs.build_number }}
+        run: |
+          set -euo pipefail
+          WORKSPACE="$(find ios -maxdepth 1 -name '*.xcworkspace' -print -quit)"
+          test -n "$WORKSPACE"
+          SCHEME="$(basename "$WORKSPACE" .xcworkspace)"
+          xcodebuild \
+            -workspace "$WORKSPACE" \
+            -scheme "$SCHEME" \
+            -configuration Release \
+            -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath build/ios-altstore \
+            CURRENT_PROJECT_VERSION="$BUILD_NUMBER" \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            DEVELOPMENT_TEAM="" \
+            clean build
+          APP_PATH="$(find build/ios-altstore/Build/Products/Release-iphoneos -maxdepth 1 -name '*.app' -print -quit)"
+          test -n "$APP_PATH"
+          rm -rf build/Payload
+          mkdir -p build/Payload
+          cp -R "$APP_PATH" build/Payload/
+          ditto -c -k --sequesterRsrc --keepParent build/Payload "build/${{ matrix.artifact_name }}.ipa"
+      - name: Read app version
+        id: version
+        working-directory: ${{ matrix.app_directory }}
+        run: echo "name=$(node -p \"require('./app.json').expo.version\")" >> "$GITHUB_OUTPUT"
+      - name: Verify IPA archive
+        working-directory: ${{ matrix.app_directory }}
+        run: |
+          unzip -t "build/${{ matrix.artifact_name }}.ipa"
+          unzip -l "build/${{ matrix.artifact_name }}.ipa" | grep -q 'Payload/.*\.app/'
+      - name: Store release permanently
+        env:
+          MOBILE_ARTIFACT_PATH: ${{ matrix.app_directory }}/build/${{ matrix.artifact_name }}.ipa
+          MOBILE_APP_KEY: ${{ matrix.app_key }}
+          MOBILE_PLATFORM: ios
+          MOBILE_VERSION_NAME: ${{ steps.version.outputs.name }}
+          MOBILE_BUILD_NUMBER: ${{ inputs.build_number }}
+          MOBILE_RELEASE_UPLOAD_SECRET: ${{ secrets.MOBILE_RELEASE_UPLOAD_SECRET }}
+        run: node scripts/mobile/upload-release.mjs
+      - name: Upload IPA artifact
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: ${{ matrix.artifact_name }}-ios-altstore-${{ steps.version.outputs.name }}-${{ inputs.build_number }}
+          path: ${{ matrix.app_directory }}/build/${{ matrix.artifact_name }}.ipa
+          if-no-files-found: error
+          retention-days: 30

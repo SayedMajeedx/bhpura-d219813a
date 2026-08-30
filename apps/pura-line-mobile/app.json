@@ -8,6 +8,15 @@
     "scheme": "puraline",
     "userInterfaceStyle": "light",
     "newArchEnabled": false,
+    "ios": {
+      "icon": "./assets/pura-line-icon.png",
+      "bundleIdentifier": "com.puraline.store",
+      "buildNumber": "1",
+      "supportsTablet": true,
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
+    },
     "android": {
       "googleServicesFile": "./google-services.json",
       "package": "com.puraline.store",
@@ -17,9 +26,7 @@
         "backgroundColor": "#330A0A",
         "foregroundImage": "./assets/pura-line-icon.png"
       },
-      "permissions": [
-        "POST_NOTIFICATIONS"
-      ]
+      "permissions": ["POST_NOTIFICATIONS"]
     },
     "plugins": [
       "expo-router",

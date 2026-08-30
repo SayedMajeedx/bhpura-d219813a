@@ -7,6 +7,7 @@ import {
   Receipt,
   ShieldCheck,
   Store,
+  Smartphone,
   Truck,
 } from "lucide-react";
 import {
@@ -26,6 +27,7 @@ export type SettingsTabId =
   | "branches"
   | "emails"
   | "security"
+  | "apps"
   | "subscription";
 
 interface SettingsScopeSwitcherProps {
@@ -54,6 +56,7 @@ export function SettingsScopeSwitcher({
     { id: "branches", icon: MapPin, ar: "الفروع والمواقع", en: "Branches" },
     { id: "emails", icon: Mail, ar: "الإشعارات والبريد", en: "Notifications" },
     { id: "security", icon: ShieldCheck, ar: "الأمان والبصمة", en: "Security" },
+    { id: "apps", icon: Smartphone, ar: "تطبيقات الجوال", en: "Mobile Apps" },
     { id: "subscription", icon: CreditCard, ar: "الاشتراك والترخيص", en: "Subscription" },
   ] satisfies Array<{ id: SettingsTabId; icon: React.ElementType; ar: string; en: string }>;
   const primary = tabs.slice(0, 2);

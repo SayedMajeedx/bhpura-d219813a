@@ -28,6 +28,7 @@ import { uploadPublicMedia } from "@/lib/r2-upload";
 import { formatMoney } from "@/lib/format";
 import { PasskeySettings } from "@/components/passkey-settings";
 import { SubscriptionCard } from "@/components/subscription-card";
+import { MobileAppDownloadsCard } from "@/components/mobile/MobileAppDownloadsCard";
 import { SupportAccessCard } from "@/components/support-access-card";
 import { META_DESCRIPTION_LIMIT, META_TITLE_LIMIT, sanitizeMetaText } from "@/lib/seo";
 import { ImageCropperDialog } from "@/components/image-cropper-dialog";
@@ -780,6 +781,7 @@ function Settings() {
     { value: "branches", ar: "الفروع", en: "Branches" },
     { value: "emails", ar: "الإشعارات والبريد", en: "Notifications & Emails" },
     { value: "security", ar: "الأمان والخصوصية", en: "Security & Privacy" },
+    { value: "apps", ar: "تطبيقات الجوال", en: "Mobile Applications" },
     { value: "subscription", ar: "إدارة الاشتراك", en: "Platform Subscription" },
   ];
   const TAB_HEADERS: Record<
@@ -835,6 +837,12 @@ function Settings() {
       ar: "إعدادات الأمان والخصوصية",
       arDescription: "إدارة بصمة المرور، وأمان الحساب، وصلاحيات وصول مهندسي الدعم الفني لبوتيك.",
     },
+    apps: {
+      en: "Mobile Application Downloads",
+      enDescription: "Download approved Android and iOS builds for your devices.",
+      ar: "تحميل تطبيقات الجوال",
+      arDescription: "تحميل النسخ المعتمدة لأجهزة Android وiPhone.",
+    },
     subscription: {
       en: "Subscription Settings",
       enDescription: "Manage your boutique platform license and technical support options.",
@@ -857,6 +865,7 @@ function Settings() {
         activeTabLabel={lang === "ar" ? activeHeader.ar : activeHeader.en}
         saving={saving}
         onSave={save}
+        showSave={activeTab !== "apps"}
       />
 
       {/* 2. Scope Switcher */}
@@ -1618,6 +1627,10 @@ function Settings() {
         <TabsContent value="security" className="space-y-6 mt-0">
           <SupportAccessCard brand={brand} />
           <PasskeySettings />
+        </TabsContent>
+
+        <TabsContent value="apps" className="mt-0">
+          <MobileAppDownloadsCard brandSlug={brand.slug} isAr={lang === "ar"} />
         </TabsContent>
 
         <TabsContent value="subscription" className="mt-0">
