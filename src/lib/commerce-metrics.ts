@@ -27,9 +27,16 @@ export function isRecognizedPaidSale(order: CustomerMetricOrder) {
   );
 }
 
+export function isActiveCustomerOrder(order: CustomerMetricOrder) {
+  return (
+    !["cancelled", "canceled", "refunded"].includes(normalized(order.status)) &&
+    !["cancelled", "canceled", "refunded"].includes(normalized(order.fulfillment_status))
+  );
+}
+
 export function buildCustomerCrmStats(orders: CustomerMetricOrder[], nowMs = Date.now()) {
   const grouped = new Map<string, CustomerMetricOrder[]>();
-  orders.filter(isRecognizedPaidSale).forEach((order) => {
+  orders.filter(isActiveCustomerOrder).forEach((order) => {
     if (!order.customer_id) return;
     grouped.set(order.customer_id, [...(grouped.get(order.customer_id) ?? []), order]);
   });
@@ -38,7 +45,9 @@ export function buildCustomerCrmStats(orders: CustomerMetricOrder[], nowMs = Dat
   const sixtyDaysMs = 60 * 24 * 60 * 60 * 1000;
   grouped.forEach((customerOrders, customerId) => {
     const totalOrders = customerOrders.length;
-    const lifetimeSpend = customerOrders.reduce((sum, order) => sum + Number(order.total || 0), 0);
+    const lifetimeSpend = customerOrders
+      .filter(isRecognizedPaidSale)
+      .reduce((sum, order) => sum + Number(order.total || 0), 0);
     const latest = customerOrders.reduce<CustomerMetricOrder | null>(
       (current, order) =>
         !current || Date.parse(order.created_at) > Date.parse(current.created_at) ? order : current,

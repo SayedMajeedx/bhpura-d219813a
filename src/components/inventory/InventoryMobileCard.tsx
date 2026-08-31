@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { formatMoney } from "@/lib/format";
+import { stockUnitsLabel, variantCountLabel } from "@/lib/inventory-labels";
 import {
   Package,
   Pencil,
@@ -97,7 +98,7 @@ export const InventoryMobileCard: React.FC<InventoryMobileCardProps> = ({
                 )}
               </h3>
               <p className="text-[11px] text-muted-foreground font-mono mt-0.5">
-                {variants.length} {isAr ? "متغيرات" : "variants"}
+                {variantCountLabel(variants.length, lang)}
               </p>
             </div>
           </div>
@@ -126,11 +127,11 @@ export const InventoryMobileCard: React.FC<InventoryMobileCardProps> = ({
                 : "Out of Stock"
               : isLowStock
                 ? isAr
-                  ? `منخفض (${totalStock})`
-                  : `Low Stock (${totalStock})`
+                  ? stockUnitsLabel(totalStock, "low", lang)
+                  : stockUnitsLabel(totalStock, "low", lang)
                 : isAr
-                  ? `متوفر (${totalStock})`
-                  : `In Stock (${totalStock})`}
+                  ? stockUnitsLabel(totalStock, "available", lang)
+                  : stockUnitsLabel(totalStock, "available", lang)}
           </span>
 
           {/* Mobile Actions */}

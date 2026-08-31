@@ -766,12 +766,6 @@ function Settings() {
       ? "'CustomFont', sans-serif"
       : `"${f.font_family}", sans-serif`;
 
-  const saveButton = (
-    <div className="flex justify-end pt-2">
-      <Button onClick={save}>{t("settings.save")}</Button>
-    </div>
-  );
-
   const TABS: { value: string; ar: string; en: string }[] = [
     { value: "business", ar: "الملف التجاري", en: "Business Profile" },
     { value: "invoice", ar: "إعدادات الفاتورة", en: "Invoice Settings" },
@@ -865,7 +859,7 @@ function Settings() {
         activeTabLabel={lang === "ar" ? activeHeader.ar : activeHeader.en}
         saving={saving}
         onSave={save}
-        showSave={activeTab !== "apps"}
+        showSave={activeTab === "business" || activeTab === "invoice"}
       />
 
       {/* 2. Scope Switcher */}
@@ -1023,7 +1017,6 @@ function Settings() {
               />
             </div>
           </Card>
-          {saveButton}
         </TabsContent>
 
         <TabsContent value="invoice" className="space-y-6 mt-0">
@@ -1600,7 +1593,6 @@ function Settings() {
               </div>
             </Card>
           )}
-          {saveButton}
         </TabsContent>
 
         <TabsContent value="storefront" className="space-y-6 mt-0">

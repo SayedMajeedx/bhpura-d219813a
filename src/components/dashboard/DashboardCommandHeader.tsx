@@ -5,14 +5,16 @@ interface DashboardCommandHeaderProps {
   lang: "ar" | "en";
   slug: string;
   brandName: string;
-  orderCount: number;
+  salesTransactionCount: number;
+  periodLabel: string;
 }
 
 export function DashboardCommandHeader({
   lang,
   slug,
   brandName,
-  orderCount,
+  salesTransactionCount,
+  periodLabel,
 }: DashboardCommandHeaderProps) {
   const isAr = lang === "ar";
 
@@ -34,14 +36,14 @@ export function DashboardCommandHeader({
           <h1 className="text-xl font-extrabold tracking-tight text-foreground sm:text-2xl flex items-center gap-2">
             <span>{isAr ? "نظرة عامة" : "Overview"}</span>
             <span className="inline-flex items-center px-2 py-0.5 text-xs font-bold bg-muted text-foreground border border-border rounded-full">
-              {orderCount} {isAr ? "طلب" : "orders"}
+              {salesTransactionCount} {isAr ? "عملية بيع" : "sales"}
             </span>
           </h1>
 
           <p className="text-xs text-muted-foreground max-w-xl">
             {isAr
-              ? "كل ما تحتاج متابعته اليوم: المبيعات والطلبات والأرباح والمخزون."
-              : "Everything you need today: sales, orders, profit, and stock."}
+              ? `المبيعات المحصلة من الطلبات والحاضنات خلال ${periodLabel}. افتح صفحة الطلبات لعدد طلبات المتجر فقط.`
+              : `Collected order and incubator sales for ${periodLabel}. Open Orders for storefront orders only.`}
           </p>
         </div>
 

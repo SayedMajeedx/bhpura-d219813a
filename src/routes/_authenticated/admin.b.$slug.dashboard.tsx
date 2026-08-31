@@ -58,6 +58,7 @@ function Dashboard() {
   const brand = useBrand();
   const brandId = brand.id;
   const locale = lang === "ar" ? "ar-BH-u-nu-latn" : "en-US";
+  const reportingPeriodLabel = isAr ? "آخر 30 يومًا" : "the last 30 days";
 
   const isMounted = typeof window !== "undefined";
   const [activeScope, setActiveScope] = useState<DashboardViewScope>("financials");
@@ -698,6 +699,7 @@ function Dashboard() {
     return {
       deadStockCount,
       lowStockCount,
+      outOfStockVariantCount: lowStockVariants.filter((item) => item.stock === 0).length,
       lowStockVariants: lowStockVariants.sort((a, b) => a.daysLeft - b.daysLeft).slice(0, 5),
       availableWithoutImages,
     };
@@ -774,7 +776,8 @@ function Dashboard() {
         lang={isAr ? "ar" : "en"}
         slug={slug}
         brandName={(isAr ? brand.name_ar : brand.name_en) || brand.name_en || brand.slug}
-        orderCount={financials.ordersCurrent}
+        salesTransactionCount={financials.ordersCurrent}
+        periodLabel={reportingPeriodLabel}
       />
 
       <ReviewRequestQueue
@@ -861,7 +864,7 @@ function Dashboard() {
           {/* Middle Multi-Column Grid: Sales Trajectory & Action Feed */}
           <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 items-stretch">
             {canViewFinancials && (
-              <Card className="lg:col-span-3 p-5 border border-border shadow-xs rounded-2xl bg-card flex flex-col justify-between space-y-3 h-full">
+              <Card className="min-w-0 overflow-hidden lg:col-span-3 p-5 border border-border shadow-xs rounded-2xl bg-card flex flex-col justify-between space-y-3 h-full">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                   <div>
                     <h3 className="text-base font-bold font-heading flex items-center gap-2">
@@ -882,7 +885,7 @@ function Dashboard() {
                   </span>
                 </div>
 
-                <div className="h-56 w-full pt-1">
+                <div className="h-56 min-w-0 w-full overflow-hidden pt-1">
                   {isMounted ? (
                     <ResponsiveContainer width="100%" height="100%">
                       <AreaChart
@@ -1046,7 +1049,7 @@ function Dashboard() {
                 <div className="flex items-center gap-2">
                   <Package className="h-4.5 w-4.5 text-amber-500" />
                   <h3 className="font-bold text-base font-heading text-foreground">
-                    {isAr ? "تنبيهات انخفاض المخزون" : "Low Stock Alerts"}
+                    {isAr ? "تنبيهات متغيرات المخزون" : "Variant Stock Alerts"}
                   </h3>
                 </div>
                 <Link
@@ -1057,6 +1060,12 @@ function Dashboard() {
                   {isAr ? "المخزون ←" : "Inventory →"}
                 </Link>
               </div>
+
+              <p className="text-[11px] leading-relaxed text-muted-foreground">
+                {isAr
+                  ? `${inventoryIntel.lowStockCount} منتجات منخفضة إجمالًا، منها ${inventoryIntel.outOfStockVariantCount} خيارات مقاس أو لون نافدة. قد يبقى المنتج متوفرًا إذا كانت خيارات أخرى منه موجودة.`
+                  : `${inventoryIntel.lowStockCount} products are low overall, including ${inventoryIntel.outOfStockVariantCount} sold-out size or color options. A product can remain available when other options have stock.`}
+              </p>
 
               {inventoryIntel.availableWithoutImages.length > 0 && (
                 <div className="space-y-2 rounded-xl border border-rose-500/25 bg-rose-500/10 p-3">
@@ -1146,7 +1155,7 @@ function Dashboard() {
               </div>
             </div>
 
-            <div className="h-80 w-full pt-2">
+            <div className="h-80 min-w-0 w-full overflow-hidden pt-2">
               {isMounted ? (
                 <ResponsiveContainer width="100%" height="100%">
                   <AreaChart

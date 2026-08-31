@@ -20,6 +20,7 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { getStoredPaymentMethodPresentation } from "@/lib/payment-method";
 import { orderRequiresCourier } from "@/lib/order-fulfillment";
+import { maskPhoneForList } from "@/lib/privacy";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -221,7 +222,7 @@ export const OrdersWorkQueue: React.FC<OrdersWorkQueueProps> = ({
                             className="inline-flex items-center gap-1 text-[10px] font-mono text-muted-foreground hover:text-primary mt-0.5"
                           >
                             <Phone className="h-2.5 w-2.5" />
-                            {customerPhone}
+                            {maskPhoneForList(customerPhone)}
                           </a>
                         )}
                       </div>

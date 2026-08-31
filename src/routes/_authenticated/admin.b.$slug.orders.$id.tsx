@@ -1472,8 +1472,8 @@ function OrderDetail() {
         .eq("id", order.id);
 
       if (error) {
-        toast.error(error.message);
-        return;
+        setOrder({ ...order });
+        throw error;
       }
 
       // Log Activity Entry
@@ -1495,8 +1495,42 @@ function OrderDetail() {
 
   const currency = order?.currency ?? "BHD";
   const isClosedOrder = serverOrder?.status === "completed" || serverOrder?.status === "paid";
-  const isReadOnly = isClosedOrder && !editingUnlocked;
   const isCreationMode = isBlankDraft && !hasSavedDraft;
+  const isReadOnly = !isCreationMode && !editingUnlocked;
+  const canUnlockEditing = !isCourier && (isAdmin || !isClosedOrder);
+
+  const cancelEditing = () => {
+    if (
+      isDirty &&
+      !window.confirm(
+        lang === "ar"
+          ? "هل تريد إلغاء التعديل وتجاهل جميع التغييرات غير المحفوظة؟"
+          : "Cancel editing and discard all unsaved changes?",
+      )
+    ) {
+      return;
+    }
+
+    const snapshot = initialSnapshotRef.current;
+    if (snapshot) {
+      setOrder((current: any) => ({ ...(current ?? {}), ...snapshot.order }));
+      setItems(snapshot.items.map((item) => ({ ...item })));
+    }
+    const savedPromo = (orderQ.data as any)?.promo_code ?? null;
+    setPromoInput(savedPromo ?? "");
+    setAppliedPromo(
+      savedPromo
+        ? {
+            code: savedPromo,
+            id: (orderQ.data as any)?.promo_code_id ?? "",
+            amount: Number((orderQ.data as any)?.discount ?? 0),
+          }
+        : null,
+    );
+    setEditingItemSheetIdx(null);
+    setIsEditingFees(false);
+    setEditingUnlocked(false);
+  };
 
   const addItem = () => {
     setItems([
@@ -2018,14 +2052,14 @@ function OrderDetail() {
 
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      if (isDirty && !hasSavedDraft && !isReadOnly && !saving) {
+      if (isDirty && !isReadOnly && !saving) {
         e.preventDefault();
         e.returnValue = "";
       }
     };
     window.addEventListener("beforeunload", handleBeforeUnload);
     return () => window.removeEventListener("beforeunload", handleBeforeUnload);
-  }, [isDirty, hasSavedDraft, isReadOnly, saving]);
+  }, [isDirty, isReadOnly, saving]);
 
   if (orderQ.isError) {
     const rawErr =
@@ -2181,7 +2215,7 @@ function OrderDetail() {
   const isPickup = String(order?.fulfillment_method || "").toLowerCase() === "pickup";
 
   const renderTopPrimaryAction = () => {
-    if (isCreationMode || !order) return null;
+    if (isCreationMode || !order || isReadOnly) return null;
     const computedOrderType = detectOrderType(items, order?.order_type);
     const workflow = getOrderWorkflow({ ...order, order_type: computedOrderType });
 
@@ -2710,6 +2744,7 @@ function OrderDetail() {
       toast.error(
         err?.message || (lang === "ar" ? "تعذر تحديث حالة الطلب" : "Unable to update order status"),
       );
+      throw err;
     }
   };
 
@@ -2728,12 +2763,14 @@ function OrderDetail() {
           totals={totals}
           isCreationMode={isCreationMode}
           isReadOnly={isReadOnly}
-          isAdmin={isAdmin}
+          isEditing={editingUnlocked}
+          canUnlockEditing={canUnlockEditing}
           isDirty={isDirty}
           saving={saving}
           paymentBadge={paymentBadge}
           onSave={save}
           onUnlock={() => setEditingUnlocked(true)}
+          onCancelEditing={cancelEditing}
           onPrintReceipt={printReceipt}
           onPrintA4={handlePrintA4}
           onCopyLink={copyLink}
@@ -3637,7 +3674,7 @@ function OrderDetail() {
                             <Label className="text-xs text-muted-foreground mb-1 block">
                               {t("orderDetail.description")}
                             </Label>
-                            {editingItems[idx] || !it.variant_id ? (
+                            {editingItems[idx] ? (
                               <Textarea
                                 rows={2}
                                 value={it.description}
@@ -3700,7 +3737,7 @@ function OrderDetail() {
                             <Label className="text-xs text-muted-foreground mb-1 block">
                               {t("orderDetail.unitPrice")}
                             </Label>
-                            {editingItems[idx] || !it.variant_id ? (
+                            {editingItems[idx] ? (
                               <Input
                                 type="number"
                                 step="0.001"
@@ -3753,7 +3790,7 @@ function OrderDetail() {
                               </div>
                             )}
 
-                            {editingItems[idx] || !it.variant_id ? (
+                            {editingItems[idx] ? (
                               <ItemTailoringCustomizer
                                 item={it}
                                 isAr={isAr}
@@ -4630,9 +4667,22 @@ function OrderDetail() {
                         </div>
                       </div>
 
-                      <div className="flex justify-between items-center text-xs font-extrabold text-emerald-600 dark:text-emerald-400 pt-1.5 border-t border-border/40">
+                      <div
+                        className={cn(
+                          "flex justify-between items-center text-xs font-extrabold pt-1.5 border-t border-border/40",
+                          totals.remaining > 0
+                            ? "text-amber-700 dark:text-amber-300"
+                            : "text-emerald-600 dark:text-emerald-400",
+                        )}
+                      >
                         <span>
-                          {isAr ? "صافي ربح هذا الطلب المباشر:" : "Order Net Gross Profit:"}
+                          {totals.remaining > 0
+                            ? isAr
+                              ? "الربح الإجمالي المتوقع بعد التحصيل الكامل:"
+                              : "Estimated gross profit after full collection:"
+                            : isAr
+                              ? "الربح الإجمالي التقديري:"
+                              : "Estimated gross profit:"}
                         </span>
                         <span className="font-mono text-sm font-extrabold">
                           {formatMoney(orderNetProfit, currency)}

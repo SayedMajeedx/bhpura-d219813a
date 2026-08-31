@@ -12,6 +12,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { useCommandShortcutLabel } from "@/lib/platform-shortcut";
 
 export type PaymentMethodFilter = "all" | "benefit" | "cod" | "card";
 
@@ -55,6 +56,7 @@ export const OrdersToolbar: React.FC<OrdersToolbarProps> = ({
   onClearFilters,
 }) => {
   const isAr = lang === "ar";
+  const shortcutLabel = useCommandShortcutLabel();
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -81,7 +83,7 @@ export const OrdersToolbar: React.FC<OrdersToolbarProps> = ({
             placeholder={
               isAr
                 ? "ابحث برقم الطلب أو اسم العميل..."
-                : "Search invoice, customer, or phone... (⌘K)"
+                : `Search invoice, customer, or phone... (${shortcutLabel})`
             }
             className="h-9 ps-9 text-xs bg-background/50 border-border/70"
           />

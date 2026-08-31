@@ -12,6 +12,7 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { SlidersHorizontal } from "lucide-react";
+import { useCommandShortcutLabel } from "@/lib/platform-shortcut";
 
 interface CategoryOption {
   id: string;
@@ -45,6 +46,7 @@ export const InventoryToolbar: React.FC<InventoryToolbarProps> = ({
   onClearFilters,
 }) => {
   const isAr = lang === "ar";
+  const shortcutLabel = useCommandShortcutLabel();
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -71,7 +73,7 @@ export const InventoryToolbar: React.FC<InventoryToolbarProps> = ({
             placeholder={
               isAr
                 ? "ابحث باسم المنتج أو الباركود..."
-                : "Search product name, SKU, or barcode... (⌘K)"
+                : `Search product name, SKU, or barcode... (${shortcutLabel})`
             }
             className="h-9 ps-9 text-xs bg-background/50 border-border/70"
           />

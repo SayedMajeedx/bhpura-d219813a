@@ -61,7 +61,7 @@ export function SettingsCommandHeader({
                   : "Saving Changes…"
                 : isAr
                   ? "حفظ التغييرات"
-                  : "Save All Changes"}
+                  : "Save This Section"}
             </span>
           </Button>
         )}

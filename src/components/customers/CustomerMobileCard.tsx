@@ -4,6 +4,7 @@ import { Users, Star, Phone, Mail, MapPin, ChevronRight, MessageCircle } from "l
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { regionLabel } from "@/lib/bahrain-regions";
+import { maskPhoneForList } from "@/lib/privacy";
 
 interface CustomerMobileCardProps {
   lang: "en" | "ar";
@@ -67,7 +68,7 @@ export const CustomerMobileCard: React.FC<CustomerMobileCardProps> = ({
             </h3>
             {customer.phone && (
               <p className="text-[11px] text-muted-foreground font-mono mt-0.5" dir="ltr">
-                {customer.phone}
+                {maskPhoneForList(customer.phone)}
               </p>
             )}
           </div>

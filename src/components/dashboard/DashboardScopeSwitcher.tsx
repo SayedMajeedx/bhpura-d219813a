@@ -23,6 +23,8 @@ export function DashboardScopeSwitcher({
     icon: React.ElementType;
     labelAr: string;
     labelEn: string;
+    shortLabelAr: string;
+    shortLabelEn: string;
     badge?: number;
   }[] = [
     {
@@ -30,24 +32,30 @@ export function DashboardScopeSwitcher({
       icon: TrendingUp,
       labelAr: "الملخص المالي",
       labelEn: "Financial Overview (30 Days)",
+      shortLabelAr: "الملخص",
+      shortLabelEn: "Summary",
     },
     {
       id: "sales_series",
       icon: CalendarDays,
       labelAr: "المبيعات اليومية",
       labelEn: "Daily Sales Chart",
+      shortLabelAr: "المبيعات",
+      shortLabelEn: "Sales",
     },
     {
       id: "diagnostics",
       icon: ShieldAlert,
       labelAr: "تنبيهات تحتاج متابعة",
       labelEn: "Stock & Customer Alerts",
+      shortLabelAr: "التنبيهات",
+      shortLabelEn: "Alerts",
       badge: lowStockCount > 0 ? lowStockCount : undefined,
     },
   ];
 
   return (
-    <div className="flex items-center gap-1.5 overflow-x-auto p-1 bg-muted/40 border border-border rounded-2xl scrollbar-none">
+    <div className="grid grid-cols-3 items-stretch gap-1 p-1 bg-muted/40 border border-border rounded-2xl sm:flex sm:items-center sm:gap-1.5 sm:overflow-x-auto scrollbar-none">
       {scopes.map((scope) => {
         const Icon = scope.icon;
         const isActive = activeScope === scope.id;
@@ -58,14 +66,17 @@ export function DashboardScopeSwitcher({
             type="button"
             onClick={() => onScopeChange(scope.id)}
             className={cn(
-              "flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all duration-200 cursor-pointer shrink-0",
+              "min-w-0 flex items-center justify-center gap-1 px-1.5 py-2 rounded-xl text-[11px] font-bold whitespace-nowrap transition-all duration-200 cursor-pointer sm:justify-start sm:gap-1.5 sm:px-3 sm:text-xs sm:shrink-0",
               isActive
                 ? "bg-primary text-primary-foreground shadow-sm scale-[1.01]"
                 : "text-muted-foreground hover:bg-background/80 hover:text-foreground",
             )}
           >
             <Icon className="h-3.5 w-3.5 shrink-0" />
-            <span>{isAr ? scope.labelAr : scope.labelEn}</span>
+            <span className="sm:hidden truncate">
+              {isAr ? scope.shortLabelAr : scope.shortLabelEn}
+            </span>
+            <span className="hidden sm:inline">{isAr ? scope.labelAr : scope.labelEn}</span>
             {scope.badge !== undefined && (
               <span
                 className={cn(

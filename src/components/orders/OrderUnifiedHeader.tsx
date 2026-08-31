@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { useRouter } from "@tanstack/react-router";
 import {
   ArrowLeft,
@@ -38,6 +38,16 @@ import {
   type PaymentBadge,
 } from "@/lib/payment-status";
 import { cn } from "@/lib/utils";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface OrderUnifiedHeaderProps {
   lang: "en" | "ar";
@@ -55,12 +65,14 @@ interface OrderUnifiedHeaderProps {
   };
   isCreationMode: boolean;
   isReadOnly: boolean;
-  isAdmin: boolean;
+  isEditing: boolean;
+  canUnlockEditing: boolean;
   isDirty: boolean;
   saving: boolean;
   paymentBadge: PaymentBadge;
   onSave: () => void;
   onUnlock: () => void;
+  onCancelEditing: () => void;
   onPrintReceipt: () => void;
   onPrintA4: () => void;
   onCopyLink: () => void;
@@ -78,12 +90,14 @@ export const OrderUnifiedHeader: React.FC<OrderUnifiedHeaderProps> = ({
   totals,
   isCreationMode,
   isReadOnly,
-  isAdmin,
+  isEditing,
+  canUnlockEditing,
   isDirty,
   saving,
   paymentBadge,
   onSave,
   onUnlock,
+  onCancelEditing,
   onPrintReceipt,
   onPrintA4,
   onCopyLink,
@@ -94,6 +108,24 @@ export const OrderUnifiedHeader: React.FC<OrderUnifiedHeaderProps> = ({
 }) => {
   const router = useRouter();
   const isAr = lang === "ar";
+  const [pendingStatus, setPendingStatus] = useState<{
+    status: string;
+    fulfillmentStatus: string;
+  } | null>(null);
+  const [confirmingStatus, setConfirmingStatus] = useState(false);
+
+  const confirmStatusChange = async () => {
+    if (!pendingStatus || !onUpdateOrderStatus) return;
+    setConfirmingStatus(true);
+    try {
+      await onUpdateOrderStatus(pendingStatus.status, pendingStatus.fulfillmentStatus);
+      setPendingStatus(null);
+    } catch {
+      // Keep the confirmation open so the user can retry or go back.
+    } finally {
+      setConfirmingStatus(false);
+    }
+  };
 
   const orderType = detectOrderType(items, order?.order_type);
   const orderTypeLabel = getOrderTypeLabel(orderType, lang);
@@ -107,6 +139,16 @@ export const OrderUnifiedHeader: React.FC<OrderUnifiedHeaderProps> = ({
             type="button"
             onClick={(e) => {
               e.preventDefault();
+              if (
+                isDirty &&
+                !window.confirm(
+                  isAr
+                    ? "لديك تغييرات غير محفوظة. هل تريد مغادرة الطلب وتجاهلها؟"
+                    : "You have unsaved changes. Leave this order and discard them?",
+                )
+              ) {
+                return;
+              }
               if (window.history.length > 2) {
                 router.history.back();
               } else {
@@ -149,10 +191,10 @@ export const OrderUnifiedHeader: React.FC<OrderUnifiedHeaderProps> = ({
               <button
                 type="button"
                 onClick={onOpenPaymentModal}
-                disabled={!onOpenPaymentModal}
+                disabled={isReadOnly || !onOpenPaymentModal}
                 title={isAr ? "انقر لإدارة حالة وسجل الدفع" : "Click to manage payment lifecycle"}
                 className={cn(
-                  "inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-[11px] font-bold tracking-tight transition-all hover:opacity-90 touch-manipulation focus-visible:ring-2 focus-visible:ring-ring",
+                  "inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-[11px] font-bold tracking-tight transition-all hover:opacity-90 touch-manipulation focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-default disabled:opacity-80",
                   PAYMENT_BADGE_CLASSES[paymentBadge],
                 )}
               >
@@ -172,7 +214,7 @@ export const OrderUnifiedHeader: React.FC<OrderUnifiedHeaderProps> = ({
                 <DropdownMenuTrigger asChild>
                   <button
                     type="button"
-                    disabled={!onUpdateOrderStatus}
+                    disabled={isReadOnly || !onUpdateOrderStatus}
                     title={
                       isAr
                         ? "انقر لتغير حالة الطلب والتنفيذ"
@@ -194,7 +236,12 @@ export const OrderUnifiedHeader: React.FC<OrderUnifiedHeaderProps> = ({
                   <DropdownMenuSeparator />
 
                   <DropdownMenuItem
-                    onClick={() => onUpdateOrderStatus?.("sent_to_tailor", "SENT_TO_TAILOR")}
+                    onClick={() =>
+                      setPendingStatus({
+                        status: "sent_to_tailor",
+                        fulfillmentStatus: "SENT_TO_TAILOR",
+                      })
+                    }
                     className="cursor-pointer flex items-center justify-between"
                   >
                     <div className="flex items-center gap-2">
@@ -210,7 +257,10 @@ export const OrderUnifiedHeader: React.FC<OrderUnifiedHeaderProps> = ({
 
                   <DropdownMenuItem
                     onClick={() =>
-                      onUpdateOrderStatus?.("received_from_tailor", "RECEIVED_FROM_TAILOR")
+                      setPendingStatus({
+                        status: "received_from_tailor",
+                        fulfillmentStatus: "RECEIVED_FROM_TAILOR",
+                      })
                     }
                     className="cursor-pointer flex items-center justify-between"
                   >
@@ -226,7 +276,9 @@ export const OrderUnifiedHeader: React.FC<OrderUnifiedHeaderProps> = ({
                   </DropdownMenuItem>
 
                   <DropdownMenuItem
-                    onClick={() => onUpdateOrderStatus?.("packing", "PACKING")}
+                    onClick={() =>
+                      setPendingStatus({ status: "packing", fulfillmentStatus: "PACKING" })
+                    }
                     className="cursor-pointer flex items-center justify-between"
                   >
                     <div className="flex items-center gap-2">
@@ -241,7 +293,12 @@ export const OrderUnifiedHeader: React.FC<OrderUnifiedHeaderProps> = ({
                   </DropdownMenuItem>
 
                   <DropdownMenuItem
-                    onClick={() => onUpdateOrderStatus?.("ready_for_pickup", "READY_FOR_PICKUP")}
+                    onClick={() =>
+                      setPendingStatus({
+                        status: "ready_for_pickup",
+                        fulfillmentStatus: "READY_FOR_PICKUP",
+                      })
+                    }
                     className="cursor-pointer flex items-center justify-between"
                   >
                     <div className="flex items-center gap-2">
@@ -256,7 +313,9 @@ export const OrderUnifiedHeader: React.FC<OrderUnifiedHeaderProps> = ({
                   </DropdownMenuItem>
 
                   <DropdownMenuItem
-                    onClick={() => onUpdateOrderStatus?.("shipped", "SHIPPED")}
+                    onClick={() =>
+                      setPendingStatus({ status: "shipped", fulfillmentStatus: "SHIPPED" })
+                    }
                     className="cursor-pointer flex items-center justify-between"
                   >
                     <div className="flex items-center gap-2">
@@ -271,7 +330,9 @@ export const OrderUnifiedHeader: React.FC<OrderUnifiedHeaderProps> = ({
                   </DropdownMenuItem>
 
                   <DropdownMenuItem
-                    onClick={() => onUpdateOrderStatus?.("completed", "COMPLETED")}
+                    onClick={() =>
+                      setPendingStatus({ status: "completed", fulfillmentStatus: "COMPLETED" })
+                    }
                     className="cursor-pointer flex items-center justify-between"
                   >
                     <div className="flex items-center gap-2">
@@ -288,7 +349,9 @@ export const OrderUnifiedHeader: React.FC<OrderUnifiedHeaderProps> = ({
                   <DropdownMenuSeparator />
 
                   <DropdownMenuItem
-                    onClick={() => onUpdateOrderStatus?.("pending", "ON_HOLD")}
+                    onClick={() =>
+                      setPendingStatus({ status: "pending", fulfillmentStatus: "ON_HOLD" })
+                    }
                     className="cursor-pointer flex items-center justify-between"
                   >
                     <div className="flex items-center gap-2">
@@ -303,7 +366,9 @@ export const OrderUnifiedHeader: React.FC<OrderUnifiedHeaderProps> = ({
                   </DropdownMenuItem>
 
                   <DropdownMenuItem
-                    onClick={() => onUpdateOrderStatus?.("cancelled", "CANCELLED")}
+                    onClick={() =>
+                      setPendingStatus({ status: "cancelled", fulfillmentStatus: "CANCELLED" })
+                    }
                     className="cursor-pointer flex items-center justify-between text-destructive focus:text-destructive"
                   >
                     <div className="flex items-center gap-2">
@@ -328,7 +393,19 @@ export const OrderUnifiedHeader: React.FC<OrderUnifiedHeaderProps> = ({
           {children}
 
           {/* Primary Action Button (e.g. Receive from Tailor, Approve Payment, Hand Over) */}
-          <div className="hidden sm:block">{renderPrimaryAction()}</div>
+          {!isReadOnly && <div className="hidden sm:block">{renderPrimaryAction()}</div>}
+
+          {isEditing && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={onCancelEditing}
+              className="h-9 px-3 text-xs font-bold rounded-xl"
+            >
+              {isAr ? "إلغاء التعديل" : "Cancel Editing"}
+            </Button>
+          )}
 
           {/* Save Button */}
           {(isCreationMode || isDirty) && (
@@ -384,8 +461,8 @@ export const OrderUnifiedHeader: React.FC<OrderUnifiedHeaderProps> = ({
             </DropdownMenu>
           )}
 
-          {/* Unlock for Admin Editing */}
-          {isReadOnly && isAdmin && (
+          {/* Existing orders open safely in view mode. */}
+          {isReadOnly && canUnlockEditing && (
             <Button
               variant="default"
               size="sm"
@@ -393,7 +470,7 @@ export const OrderUnifiedHeader: React.FC<OrderUnifiedHeaderProps> = ({
               className="h-9 px-3 text-xs font-bold gap-1.5 shadow-xs bg-primary text-primary-foreground hover:bg-primary/90 rounded-xl"
             >
               <Unlock className="h-4 w-4" />
-              <span>{isAr ? "فتح للتعديل" : "Unlock for Editing"}</span>
+              <span>{isAr ? "تعديل الطلب" : "Edit Order"}</span>
             </Button>
           )}
         </div>
@@ -404,11 +481,81 @@ export const OrderUnifiedHeader: React.FC<OrderUnifiedHeaderProps> = ({
           <Lock className="h-4 w-4 shrink-0" />
           <span>
             {isAr
-              ? "هذا الطلب مكتمل أو مغلق. الحقول مقفلة لحماية السجل التاريخي."
-              : "This order is closed or completed. Fields are locked to preserve audit history."}
+              ? "أنت في وضع العرض الآمن. الحقول مقفلة لمنع التعديل غير المقصود."
+              : "You are in safe view mode. Fields are locked to prevent accidental changes."}
           </span>
         </div>
       )}
+
+      <div className="flex sm:hidden">
+        {isReadOnly && canUnlockEditing && (
+          <Button type="button" onClick={onUnlock} className="w-full min-h-11 font-bold rounded-xl">
+            <Unlock className="h-4 w-4 me-1.5" />
+            {isAr ? "تعديل الطلب" : "Edit Order"}
+          </Button>
+        )}
+        {isEditing && (
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onCancelEditing}
+            className="w-full min-h-11 font-bold rounded-xl"
+          >
+            {isAr ? "إلغاء التعديل" : "Cancel Editing"}
+          </Button>
+        )}
+      </div>
+
+      <AlertDialog
+        open={Boolean(pendingStatus)}
+        onOpenChange={(open) => !open && setPendingStatus(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {isAr ? "تأكيد تغيير حالة الطلب" : "Confirm order status change"}
+            </AlertDialogTitle>
+            <AlertDialogDescription className="space-y-2">
+              <span className="block">
+                {isAr
+                  ? "سيتم تسجيل هذا التغيير في سجل نشاط الطلب وقد يؤثر في خطوات التنفيذ التالية."
+                  : "This change will be recorded in the order activity log and may affect the next fulfillment steps."}
+              </span>
+              {pendingStatus && (
+                <span className="block rounded-lg border border-border bg-muted/50 px-3 py-2 font-semibold text-foreground">
+                  {getFulfillmentLabel(order?.fulfillment_status, lang)}
+                  {" → "}
+                  {getFulfillmentLabel(pendingStatus.fulfillmentStatus, lang)}
+                </span>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={confirmingStatus}>
+              {isAr ? "رجوع" : "Go Back"}
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(event) => {
+                event.preventDefault();
+                void confirmStatusChange();
+              }}
+              disabled={confirmingStatus}
+              className={cn(
+                pendingStatus?.fulfillmentStatus === "CANCELLED" &&
+                  "bg-destructive text-destructive-foreground hover:bg-destructive/90",
+              )}
+            >
+              {confirmingStatus
+                ? isAr
+                  ? "جارٍ التحديث…"
+                  : "Updating…"
+                : isAr
+                  ? "تأكيد التغيير"
+                  : "Confirm Change"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </header>
   );
 };

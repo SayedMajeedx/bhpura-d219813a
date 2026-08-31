@@ -14,6 +14,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { regionLabel } from "@/lib/bahrain-regions";
+import { maskPhoneForList } from "@/lib/privacy";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -196,7 +197,7 @@ export const CustomersWorkQueue: React.FC<CustomersWorkQueueProps> = ({
                         <div className="inline-flex items-center gap-1.5 text-foreground">
                           <Phone className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                           <span dir="ltr" className="font-mono">
-                            {c.phone}
+                            {maskPhoneForList(c.phone)}
                           </span>
                           {cleanPhone && (
                             <a

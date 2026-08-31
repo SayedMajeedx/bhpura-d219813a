@@ -62,6 +62,17 @@ export const ManagePaymentModal: React.FC<ManagePaymentModalProps> = ({
   const [advanceAmount, setAdvanceAmount] = useState<string>("0");
   const [paymentRef, setPaymentRef] = useState<string>("");
   const [saving, setSaving] = useState(false);
+  const parsedAdvance = Math.max(0, Number(advanceAmount) || 0);
+  const originalStatus = ((order?.payment_status as PaymentBadge) || "unpaid") as PaymentBadge;
+  const originalMethod = order?.payment_method || "cod";
+  const originalAdvance = Number(order?.advance_paid ?? totals.advancePaid ?? 0);
+  const originalReference =
+    order?.payment_reference || order?.gateway_reference || order?.benefit_receipt_key || "";
+  const hasChanges =
+    paymentStatus !== originalStatus ||
+    paymentMethod !== originalMethod ||
+    parsedAdvance !== originalAdvance ||
+    paymentRef.trim() !== String(originalReference).trim();
 
   useEffect(() => {
     if (order && open) {
@@ -86,9 +97,25 @@ export const ManagePaymentModal: React.FC<ManagePaymentModalProps> = ({
   };
 
   const handleSave = async () => {
+    if (!hasChanges) return;
+    if (parsedAdvance > totals.total) {
+      toast.error(
+        isAr
+          ? "المبلغ المستلم لا يمكن أن يتجاوز إجمالي الطلب"
+          : "Collected amount cannot exceed the order total",
+      );
+      return;
+    }
+    if (paymentStatus === "paid" && parsedAdvance < totals.total) {
+      toast.error(
+        isAr
+          ? "اختر مدفوع جزئيًا إذا كان المبلغ المستلم أقل من إجمالي الطلب"
+          : "Use Partially Paid when the collected amount is below the order total",
+      );
+      return;
+    }
     setSaving(true);
     try {
-      const parsedAdvance = Math.max(0, Number(advanceAmount) || 0);
       await onSavePayment({
         payment_status: paymentStatus,
         payment_method: paymentMethod,
@@ -230,6 +257,25 @@ export const ManagePaymentModal: React.FC<ManagePaymentModalProps> = ({
               />
             </div>
           </div>
+
+          {hasChanges && (
+            <div className="space-y-2 rounded-xl border border-amber-300/70 bg-amber-50/80 p-3 text-amber-950 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-100">
+              <p className="font-bold">
+                {isAr ? "راجع التغييرات قبل التأكيد" : "Review changes before confirming"}
+              </p>
+              <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2 text-[11px]">
+                <span className="truncate">
+                  {PAYMENT_BADGE_LABEL[originalStatus]?.[lang]} ·{" "}
+                  {formatMoney(originalAdvance, currency, lang)}
+                </span>
+                <span aria-hidden="true">→</span>
+                <span className="truncate font-bold">
+                  {PAYMENT_BADGE_LABEL[paymentStatus]?.[lang]} ·{" "}
+                  {formatMoney(parsedAdvance, currency, lang)}
+                </span>
+              </div>
+            </div>
+          )}
         </div>
 
         <DialogFooter className="gap-2 sm:gap-0 border-t border-border/60 pt-3">
@@ -245,7 +291,7 @@ export const ManagePaymentModal: React.FC<ManagePaymentModalProps> = ({
           <Button
             type="button"
             onClick={handleSave}
-            disabled={saving}
+            disabled={saving || !hasChanges}
             className="h-9 rounded-xl text-xs font-bold bg-primary text-primary-foreground hover:bg-primary/90 shadow-2xs gap-1.5"
           >
             {saving ? (

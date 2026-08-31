@@ -5,6 +5,7 @@ import { getOrderCustomerContact } from "@/lib/order-customer-snapshot";
 import { UserX, Phone, ExternalLink } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { getStoredPaymentMethodPresentation } from "@/lib/payment-method";
+import { maskPhoneForList } from "@/lib/privacy";
 
 interface OrderMobileCardProps {
   lang: "en" | "ar";
@@ -86,7 +87,7 @@ export const OrderMobileCard: React.FC<OrderMobileCardProps> = ({
             className="inline-flex items-center gap-1 text-[11px] font-bold text-primary hover:underline shrink-0 font-mono"
           >
             <Phone className="h-3 w-3" />
-            {customerPhone}
+            {maskPhoneForList(customerPhone)}
           </a>
         )}
       </div>

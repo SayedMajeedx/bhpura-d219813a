@@ -111,6 +111,8 @@ import { BatchIncubatorTransferModal } from "@/components/incubators/BatchIncuba
 
 import { ListPagination } from "@/components/list-pagination";
 import { isLowStock, isOutOfStock } from "@/lib/inventory-health";
+import { RoutePendingSkeleton } from "@/components/os/route-pending-skeleton";
+import { OsEmptyState } from "@/components/os/os-empty-state";
 
 /** Common measurement units the admin can pick from for a "size" variant. */
 const SIZE_UNITS = ["", "cm", "mm", "m", "inch", "ft", "kg", "g", "ml", "l"] as const;
@@ -324,6 +326,54 @@ function Inventory() {
       return (data ?? []) as any[];
     },
   });
+
+  if (
+    products.isLoading ||
+    variants.isLoading ||
+    customizations.isLoading ||
+    businessName.isLoading ||
+    salesHistory.isLoading
+  ) {
+    return <RoutePendingSkeleton />;
+  }
+
+  if (
+    products.isError ||
+    variants.isError ||
+    customizations.isError ||
+    businessName.isError ||
+    salesHistory.isError
+  ) {
+    return (
+      <OsEmptyState
+        icon={AlertTriangle}
+        title={lang === "ar" ? "تعذّر تحميل المخزون" : "Inventory could not be loaded"}
+        description={
+          lang === "ar"
+            ? "لم يتم تغيير أي منتجات أو كميات. تحقق من الاتصال ثم أعد المحاولة."
+            : "No products or quantities were changed. Check the connection and try again."
+        }
+        action={
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() =>
+              void Promise.all([
+                products.refetch(),
+                variants.refetch(),
+                customizations.refetch(),
+                businessName.refetch(),
+                salesHistory.refetch(),
+              ])
+            }
+          >
+            <RefreshCw className="h-4 w-4 me-1.5" />
+            {lang === "ar" ? "إعادة المحاولة" : "Try again"}
+          </Button>
+        }
+      />
+    );
+  }
 
   return (
     <div className="mx-auto max-w-7xl space-y-4 p-1 sm:p-2 animate-fade-in">
@@ -2254,8 +2304,49 @@ function ProductsSection({
         }}
       />
 
+      {filteredDisplayProducts.length === 0 && (
+        <OsEmptyState
+          icon={Package}
+          compact
+          title={isAr ? "لا توجد منتجات مطابقة" : "No matching products"}
+          description={
+            products.length === 0
+              ? isAr
+                ? "ابدأ بإضافة أول منتج إلى مخزون المتجر."
+                : "Add the first product to your store inventory."
+              : isAr
+                ? "غيّر البحث أو الفلاتر لعرض منتجات أخرى."
+                : "Change the search or filters to see other products."
+          }
+          action={
+            <Button
+              type="button"
+              onClick={() => {
+                if (products.length === 0) {
+                  setEditing(null);
+                  setDialogSession((value) => value + 1);
+                  setOpen(true);
+                } else {
+                  setSearch("");
+                  setSelectedCategory("all");
+                  setScopeFilter("all");
+                }
+              }}
+            >
+              {products.length === 0
+                ? isAr
+                  ? "إضافة منتج"
+                  : "Add Product"
+                : isAr
+                  ? "مسح الفلاتر"
+                  : "Clear Filters"}
+            </Button>
+          }
+        />
+      )}
+
       {/* 4. Mobile Purpose-Built Product Cards */}
-      <div className="space-y-3 block sm:hidden">
+      <div className="space-y-3 block sm:hidden" hidden={filteredDisplayProducts.length === 0}>
         {paginatedProducts.map((p) => {
           const pVariants = variantsByProduct[p.id] || [];
           const totalStock = productStock(p.id);
@@ -2316,7 +2407,7 @@ function ProductsSection({
       </div>
 
       {/* 5. Desktop High-Density Work Queue */}
-      <div className="hidden sm:block">
+      <div className={filteredDisplayProducts.length === 0 ? "hidden" : "hidden sm:block"}>
         <InventoryWorkQueue
           lang={isAr ? "ar" : "en"}
           products={paginatedProducts}

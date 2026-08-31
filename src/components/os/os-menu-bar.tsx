@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { OsQuickActions } from "./os-quick-actions";
 import { cn } from "@/lib/utils";
+import { useCommandShortcutLabel } from "@/lib/platform-shortcut";
 
 export interface OsMenuBarProps {
   brandLabel: string;
@@ -36,6 +37,8 @@ export function OsMenuBar({
   userEmail,
   className,
 }: OsMenuBarProps) {
+  const shortcutLabel = useCommandShortcutLabel();
+
   return (
     <header
       className={cn(
@@ -101,7 +104,7 @@ export function OsMenuBar({
         <button
           type="button"
           onClick={onOpenSpotlight}
-          aria-label={lang === "ar" ? "البحث السريع (Cmd+K)" : "Quick Search (Cmd+K)"}
+          aria-label={`${lang === "ar" ? "البحث السريع" : "Quick Search"} (${shortcutLabel})`}
           className="h-6.5 px-2 gap-1.5 text-xs text-muted-foreground hover:text-foreground bg-background/50 hover:bg-background/90 border border-[var(--os-border)] rounded-md flex items-center transition-all shadow-2xs"
         >
           <Search className="h-3 w-3 text-muted-foreground" />
@@ -109,7 +112,7 @@ export function OsMenuBar({
             {lang === "ar" ? "البحث السريع..." : "Search OS..."}
           </span>
           <kbd className="pointer-events-none inline-flex h-4 select-none items-center gap-0.5 rounded border bg-muted/80 px-1 font-mono text-[9px] font-semibold text-muted-foreground">
-            ⌘K
+            {shortcutLabel}
           </kbd>
         </button>
 

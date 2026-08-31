@@ -9,6 +9,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
+import { useCommandShortcutLabel } from "@/lib/platform-shortcut";
 
 export interface OsTopbarProps {
   currentPageLabel?: string;
@@ -27,6 +28,8 @@ export function OsTopbar({
   onSignOut,
   className,
 }: OsTopbarProps) {
+  const shortcutLabel = useCommandShortcutLabel();
+
   return (
     <header
       className={cn(
@@ -51,7 +54,7 @@ export function OsTopbar({
             {lang === "ar" ? "البحث السريع..." : "Quick search..."}
           </span>
           <kbd className="pointer-events-none inline-flex h-5 select-none items-center gap-0.5 rounded-md border bg-muted/80 px-1.5 font-mono text-[10px] font-semibold text-muted-foreground">
-            <span className="text-xs">⌘</span>K
+            {shortcutLabel}
           </kbd>
         </Button>
       </div>

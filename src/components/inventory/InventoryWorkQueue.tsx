@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { formatMoney } from "@/lib/format";
+import { stockUnitsLabel, variantCountLabel } from "@/lib/inventory-labels";
 import {
   Package,
   Pencil,
@@ -221,7 +222,7 @@ export const InventoryWorkQueue: React.FC<InventoryWorkQueueProps> = ({
                           }}
                           className="h-7 px-2 text-[11px] font-mono font-bold hover:bg-primary/10 hover:text-primary"
                         >
-                          {pVariants.length} {isAr ? "متغيرات" : "variants"}
+                          {variantCountLabel(pVariants.length, lang)}
                           {isExpanded ? (
                             <ChevronUp className="h-3 w-3 ms-1 text-primary" />
                           ) : (
@@ -247,11 +248,11 @@ export const InventoryWorkQueue: React.FC<InventoryWorkQueueProps> = ({
                               : "Out of Stock"
                             : isLowStock
                               ? isAr
-                                ? `منخفض (${totalStock})`
-                                : `Low Stock (${totalStock})`
+                                ? stockUnitsLabel(totalStock, "low", lang)
+                                : stockUnitsLabel(totalStock, "low", lang)
                               : isAr
-                                ? `متوفر (${totalStock})`
-                                : `In Stock (${totalStock})`}
+                                ? stockUnitsLabel(totalStock, "available", lang)
+                                : stockUnitsLabel(totalStock, "available", lang)}
                         </span>
                       </td>
 

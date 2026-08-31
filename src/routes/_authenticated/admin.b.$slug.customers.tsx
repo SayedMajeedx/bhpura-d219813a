@@ -36,6 +36,8 @@ import {
   Loader2,
   Upload,
   Sparkles,
+  AlertTriangle,
+  RefreshCw,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useT, useI18n } from "@/lib/i18n";
@@ -75,6 +77,8 @@ import { CustomerMobileCard } from "@/components/customers/CustomerMobileCard";
 import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { BulkSelectionToolbar } from "@/components/bulk-selection-toolbar";
 import { ListPagination } from "@/components/list-pagination";
+import { RoutePendingSkeleton } from "@/components/os/route-pending-skeleton";
+import { OsEmptyState } from "@/components/os/os-empty-state";
 
 export const Route = createFileRoute("/_authenticated/admin/b/$slug/customers")({
   component: CustomersRoute,
@@ -873,7 +877,12 @@ function CustomersPage() {
     `customers-list-${brandId}`,
   );
 
-  const { data } = useQuery({
+  const {
+    data,
+    isLoading: customersLoading,
+    isError: customersError,
+    refetch: refetchCustomers,
+  } = useQuery({
     queryKey: ["customers", brandId],
     staleTime: 30_000,
     refetchOnWindowFocus: false,
@@ -1051,6 +1060,36 @@ function CustomersPage() {
     }
   };
 
+  if (customersLoading || addressesQ.isLoading || ordersQ.isLoading) {
+    return <RoutePendingSkeleton />;
+  }
+
+  if (customersError || addressesQ.isError || ordersQ.isError) {
+    return (
+      <OsEmptyState
+        icon={AlertTriangle}
+        title={isAr ? "تعذّر تحميل العملاء" : "Customers could not be loaded"}
+        description={
+          isAr
+            ? "لم يتم تغيير أي بيانات. تحقق من الاتصال ثم أعد المحاولة."
+            : "No data was changed. Check the connection and try again."
+        }
+        action={
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() =>
+              void Promise.all([refetchCustomers(), addressesQ.refetch(), ordersQ.refetch()])
+            }
+          >
+            <RefreshCw className="h-4 w-4 me-1.5" />
+            {isAr ? "إعادة المحاولة" : "Try again"}
+          </Button>
+        }
+      />
+    );
+  }
+
   return (
     <div className="space-y-3.5">
       {/* 1. Integrated Command Header */}
@@ -1120,8 +1159,46 @@ function CustomersPage() {
         onDeleteSelected={() => setBulkDeleteOpen(true)}
       />
 
+      {filteredCustomers.length === 0 && (
+        <OsEmptyState
+          icon={Users}
+          compact
+          title={isAr ? "لا يوجد عملاء مطابقون" : "No matching customers"}
+          description={
+            (data ?? []).length === 0
+              ? isAr
+                ? "ابدأ بإضافة أول عميل إلى قاعدة بيانات المتجر."
+                : "Add the first customer to your store database."
+              : isAr
+                ? "غيّر البحث أو الفلاتر لعرض عملاء آخرين."
+                : "Change the search or filters to see other customers."
+          }
+          action={
+            <Button
+              type="button"
+              onClick={() => {
+                if ((data ?? []).length === 0) setOpen(true);
+                else {
+                  setSearch("");
+                  setRegionFilter("all");
+                  setSegmentScope("all");
+                }
+              }}
+            >
+              {(data ?? []).length === 0
+                ? isAr
+                  ? "إضافة عميل"
+                  : "Add Customer"
+                : isAr
+                  ? "مسح الفلاتر"
+                  : "Clear Filters"}
+            </Button>
+          }
+        />
+      )}
+
       {/* 4. Mobile Cards View */}
-      <div className="space-y-3 block sm:hidden">
+      <div className="space-y-3 block sm:hidden" hidden={filteredCustomers.length === 0}>
         {paginatedCustomers.map((c) => {
           const def = defaultByCustomer.get(c.id);
           const stats = customerCrmStats.get(c.id) || {
@@ -1153,7 +1230,7 @@ function CustomersPage() {
       </div>
 
       {/* 5. Desktop High-Density Work Queue */}
-      <div className="hidden sm:block">
+      <div className={filteredCustomers.length === 0 ? "hidden" : "hidden sm:block"}>
         <CustomersWorkQueue
           lang={isAr ? "ar" : "en"}
           customers={paginatedCustomers}

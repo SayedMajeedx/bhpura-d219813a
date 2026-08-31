@@ -491,8 +491,22 @@ export function OrderQuickViewModal({
                     </div>
                   </div>
 
-                  <div className="flex justify-between items-center text-xs font-extrabold text-emerald-600 dark:text-emerald-400 pt-1.5 border-t border-border/40">
-                    <span>{isAr ? "صافي ربح هذا الطلب المباشر:" : "Order Net Gross Profit:"}</span>
+                  <div
+                    className={`flex justify-between items-center text-xs font-extrabold pt-1.5 border-t border-border/40 ${
+                      codRemaining > 0
+                        ? "text-amber-700 dark:text-amber-300"
+                        : "text-emerald-600 dark:text-emerald-400"
+                    }`}
+                  >
+                    <span>
+                      {codRemaining > 0
+                        ? isAr
+                          ? "الربح الإجمالي المتوقع بعد التحصيل الكامل:"
+                          : "Estimated gross profit after full collection:"
+                        : isAr
+                          ? "الربح الإجمالي التقديري:"
+                          : "Estimated gross profit:"}
+                    </span>
                     <span className="font-mono text-sm font-extrabold">
                       {formatMoney(orderNetProfit, currency, lang)}
                     </span>
