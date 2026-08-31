@@ -1764,7 +1764,34 @@ function PaymentSettingsCard({ brandId }: { brandId: string }) {
     }
   };
 
-  if (!state) return null;
+  if (isError) {
+    return (
+      <Card className="overflow-hidden border border-destructive/30 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm p-6 text-center space-y-3">
+        <p className="text-sm font-semibold text-destructive">
+          {isAr ? "تعذر تحميل إعدادات طرق الدفع" : "Failed to load payment settings"}
+        </p>
+        <Button variant="outline" size="sm" onClick={() => void refetch()} className="mx-auto">
+          {isAr ? "إعادة المحاولة" : "Retry"}
+        </Button>
+      </Card>
+    );
+  }
+
+  if (isLoading || !state) {
+    return (
+      <Card className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm p-6 space-y-4">
+        <div className="space-y-2">
+          <Skeleton className="h-6 w-48" />
+          <Skeleton className="h-4 w-72" />
+        </div>
+        <div className="space-y-3 pt-4">
+          <Skeleton className="h-12 w-full rounded-xl" />
+          <Skeleton className="h-12 w-full rounded-xl" />
+          <Skeleton className="h-12 w-full rounded-xl" />
+        </div>
+      </Card>
+    );
+  }
 
   return (
     <Card className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm p-6 space-y-6">
@@ -2945,7 +2972,7 @@ function ShippingSettingsCard({ brandId }: { brandId: string }) {
   >([]);
   const [newZone, setNewZone] = useState({ name_en: "", name_ar: "", fee: "" });
 
-  const { data } = useQuery({
+  const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["business-settings-shipping", brandId],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -3036,7 +3063,34 @@ function ShippingSettingsCard({ brandId }: { brandId: string }) {
     setZones(zones.filter((z) => z.id !== id));
   };
 
-  if (!state) return null;
+  if (isError) {
+    return (
+      <Card className="overflow-hidden border border-destructive/30 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm p-6 text-center space-y-3">
+        <p className="text-sm font-semibold text-destructive">
+          {isAr ? "تعذر تحميل إعدادات الشحن والتسليم" : "Failed to load shipping settings"}
+        </p>
+        <Button variant="outline" size="sm" onClick={() => void refetch()} className="mx-auto">
+          {isAr ? "إعادة المحاولة" : "Retry"}
+        </Button>
+      </Card>
+    );
+  }
+
+  if (isLoading || !state) {
+    return (
+      <Card className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm p-6 space-y-4">
+        <div className="space-y-2">
+          <Skeleton className="h-6 w-48" />
+          <Skeleton className="h-4 w-72" />
+        </div>
+        <div className="space-y-3 pt-4">
+          <Skeleton className="h-12 w-full rounded-xl" />
+          <Skeleton className="h-12 w-full rounded-xl" />
+          <Skeleton className="h-12 w-full rounded-xl" />
+        </div>
+      </Card>
+    );
+  }
 
   return (
     <Card className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm p-6 space-y-4">
