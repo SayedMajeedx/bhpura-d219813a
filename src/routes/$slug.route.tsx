@@ -50,6 +50,7 @@ import {
   ChevronDown,
   Sparkles,
   Share2,
+  Gift,
 } from "lucide-react";
 import { ShareCartModal } from "@/components/storefront/ShareCartModal";
 import { OsEmptyState } from "@/components/os/os-empty-state";
@@ -157,6 +158,9 @@ export const Route = createFileRoute("/$slug")({
       pickup_enabled: s?.pickup_enabled ?? true,
       digital_delivery_enabled: s?.digital_delivery_enabled ?? false,
       delivery_fee: Number(s?.delivery_fee ?? 0),
+      delivery_estimate_enabled: Boolean(s?.delivery_estimate_enabled ?? true),
+      delivery_estimate_ar: s?.delivery_estimate_ar ?? null,
+      delivery_estimate_en: s?.delivery_estimate_en ?? null,
       vat_inclusive: Boolean(s?.vat_inclusive ?? false),
       shipping_zones: (() => {
         try {
@@ -1546,6 +1550,40 @@ function CartDrawer({ children }: { children: React.ReactNode }) {
     useStorefront();
   const [open, setOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
+  const [isGift, setIsGift] = useState(() => {
+    try {
+      const saved = sessionStorage.getItem("boutq_gift_details");
+      return saved ? JSON.parse(saved).is_gift === true : false;
+    } catch {
+      return false;
+    }
+  });
+  const [recipientName, setRecipientName] = useState(() => {
+    try {
+      const saved = sessionStorage.getItem("boutq_gift_details");
+      return saved ? JSON.parse(saved).recipient_name || "" : "";
+    } catch {
+      return "";
+    }
+  });
+  const [giftMessage, setGiftMessage] = useState(() => {
+    try {
+      const saved = sessionStorage.getItem("boutq_gift_details");
+      return saved ? JSON.parse(saved).gift_message || "" : "";
+    } catch {
+      return "";
+    }
+  });
+
+  useEffect(() => {
+    try {
+      sessionStorage.setItem(
+        "boutq_gift_details",
+        JSON.stringify({ is_gift: isGift, recipient_name: recipientName, gift_message: giftMessage }),
+      );
+    } catch {}
+  }, [isGift, recipientName, giftMessage]);
+
   const navigate = useNavigate();
   const drawerCheckoutBg =
     settings.cart_drawer_checkout_bg ??
@@ -1704,6 +1742,40 @@ function CartDrawer({ children }: { children: React.ReactNode }) {
 
             {cart.length > 0 && (
               <div className="border-t pt-4 space-y-3">
+                {/* 🎁 Gift Option Box */}
+                <div className="rounded-xl border bg-muted/20 p-3 space-y-2">
+                  <label className="flex items-center gap-2 cursor-pointer select-none text-xs font-semibold text-foreground">
+                    <input
+                      type="checkbox"
+                      checked={isGift}
+                      onChange={(e) => setIsGift(e.target.checked)}
+                      className="h-4 w-4 rounded border-input text-primary focus:ring-primary"
+                    />
+                    <Gift className="h-4 w-4 text-primary" />
+                    <span>{t("هل هذا الطلب إهداء؟ 🎁", "Is this order a gift? 🎁")}</span>
+                  </label>
+                  {isGift && (
+                    <div className="space-y-2 pt-1 border-t border-border/60">
+                      <Input
+                        type="text"
+                        placeholder={t("اسم المستلم (اختياري)", "Recipient Name (Optional)")}
+                        value={recipientName}
+                        onChange={(e) => setRecipientName(e.target.value)}
+                        className="h-9 text-xs rounded-lg bg-background"
+                      />
+                      <textarea
+                        placeholder={t(
+                          "رسالة الإهداء لكتابتها على الكرت...",
+                          "Gift message to write on card...",
+                        )}
+                        value={giftMessage}
+                        onChange={(e) => setGiftMessage(e.target.value)}
+                        className="w-full h-16 p-2 text-xs rounded-lg border bg-background text-foreground resize-none focus:outline-none focus:ring-1 focus:ring-primary"
+                      />
+                    </div>
+                  )}
+                </div>
+
                 <div className="flex justify-between text-lg font-semibold">
                   <span>{t("الإجمالي", "Total")}</span>
                   <span style={{ color: settings.primary_color }}>

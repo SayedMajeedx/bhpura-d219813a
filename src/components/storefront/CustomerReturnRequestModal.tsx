@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -96,9 +96,9 @@ export function CustomerReturnRequestModal({
   // Initialize selectable items
   const [items, setItems] = useState<SelectedReturnItem[]>([]);
 
-  // Sync items when order changes
-  useState(() => {
-    if (order?.order_items) {
+  // Sync items when order or modal open state changes
+  useEffect(() => {
+    if (open && order?.order_items) {
       setItems(
         order.order_items.map((it: any) => ({
           orderItemId: it.id,
@@ -111,7 +111,7 @@ export function CustomerReturnRequestModal({
         })),
       );
     }
-  });
+  }, [open, order]);
 
   const selectedItems = items.filter((i) => i.selected && i.quantity > 0);
 

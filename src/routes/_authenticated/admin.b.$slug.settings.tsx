@@ -2936,6 +2936,9 @@ function ShippingSettingsCard({ brandId }: { brandId: string }) {
     pickup_enabled: boolean;
     digital_delivery_enabled: boolean;
     delivery_fee: number;
+    delivery_estimate_enabled: boolean;
+    delivery_estimate_ar: string;
+    delivery_estimate_en: string;
   } | null>(null);
   const [zones, setZones] = useState<
     Array<{ id: string; name_en: string; name_ar: string; fee: number }>
@@ -2948,7 +2951,7 @@ function ShippingSettingsCard({ brandId }: { brandId: string }) {
       const { data, error } = await supabase
         .from("business_settings")
         .select(
-          "delivery_enabled, pickup_enabled, digital_delivery_enabled, delivery_fee, shipping_zones, currency",
+          "delivery_enabled, pickup_enabled, digital_delivery_enabled, delivery_fee, delivery_estimate_enabled, delivery_estimate_ar, delivery_estimate_en, shipping_zones, currency",
         )
         .eq("brand_id", brandId)
         .maybeSingle();
@@ -2964,6 +2967,11 @@ function ShippingSettingsCard({ brandId }: { brandId: string }) {
         pickup_enabled: (data as any).pickup_enabled ?? true,
         digital_delivery_enabled: (data as any).digital_delivery_enabled ?? false,
         delivery_fee: Number((data as any).delivery_fee ?? 0),
+        delivery_estimate_enabled: (data as any).delivery_estimate_enabled ?? true,
+        delivery_estimate_ar:
+          (data as any).delivery_estimate_ar ?? "التوصيل المتوقع خلال 24 - 48 ساعة داخل البحرين",
+        delivery_estimate_en:
+          (data as any).delivery_estimate_en ?? "Estimated delivery within 24 - 48 hours",
       });
       try {
         const rawZones = (data as any).shipping_zones;
@@ -2992,6 +3000,9 @@ function ShippingSettingsCard({ brandId }: { brandId: string }) {
         pickup_enabled: state.pickup_enabled,
         digital_delivery_enabled: state.digital_delivery_enabled,
         delivery_fee: state.delivery_fee,
+        delivery_estimate_enabled: state.delivery_estimate_enabled,
+        delivery_estimate_ar: state.delivery_estimate_ar,
+        delivery_estimate_en: state.delivery_estimate_en,
         shipping_zones: zones as any,
         benefit_account_number: (state as any).benefit_account_number,
       } as any)
@@ -3194,6 +3205,57 @@ function ShippingSettingsCard({ brandId }: { brandId: string }) {
           </div>
         </div>
       )}
+
+      {/* Estimated Delivery Notice Settings */}
+      <div className="rounded-lg border border-border p-4 bg-secondary/5 space-y-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-sm font-semibold">
+              {isAr ? "مؤشر مدة التوصيل التقديرية" : "Estimated Delivery Notice"}
+            </p>
+            <p className="text-xs text-muted-foreground">
+              {isAr
+                ? "يظهر للعميل في صفحة المنتج وسلة الشراء لطمأنته حول موعد استلام الطلب"
+                : "Appears on product page and cart to assure customers of delivery timelines"}
+            </p>
+          </div>
+          <Switch
+            checked={state.delivery_estimate_enabled}
+            onCheckedChange={(v) => setState({ ...state, delivery_estimate_enabled: v })}
+          />
+        </div>
+
+        {state.delivery_estimate_enabled && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2 border-t border-border/50">
+            <div>
+              <Label className="text-xs font-medium">
+                {isAr ? "نص مدة التوصيل (بالعربية)" : "Delivery Estimate Text (Arabic)"}
+              </Label>
+              <Input
+                type="text"
+                value={state.delivery_estimate_ar}
+                onChange={(e) => setState({ ...state, delivery_estimate_ar: e.target.value })}
+                placeholder="التوصيل المتوقع خلال 24 - 48 ساعة داخل البحرين"
+                className="text-xs mt-1 text-right"
+                dir="rtl"
+              />
+            </div>
+            <div>
+              <Label className="text-xs font-medium">
+                {isAr ? "نص مدة التوصيل (بالإنجليزية)" : "Delivery Estimate Text (English)"}
+              </Label>
+              <Input
+                type="text"
+                value={state.delivery_estimate_en}
+                onChange={(e) => setState({ ...state, delivery_estimate_en: e.target.value })}
+                placeholder="Estimated delivery within 24 - 48 hours"
+                className="text-xs mt-1"
+                dir="ltr"
+              />
+            </div>
+          </div>
+        )}
+      </div>
 
       <div className="flex justify-end pt-2">
         <Button size="sm" onClick={save} disabled={saving}>

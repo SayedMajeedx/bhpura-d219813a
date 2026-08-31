@@ -460,6 +460,9 @@ export type Database = {
           default_tax_rate: number;
           delivery_enabled: boolean;
           delivery_fee: number;
+          delivery_estimate_enabled?: boolean;
+          delivery_estimate_ar?: string | null;
+          delivery_estimate_en?: string | null;
           digital_delivery_enabled: boolean;
           email: string | null;
           email_footer_ar: string | null;
@@ -589,6 +592,9 @@ export type Database = {
           default_tax_rate?: number;
           delivery_enabled?: boolean;
           delivery_fee?: number;
+          delivery_estimate_enabled?: boolean;
+          delivery_estimate_ar?: string | null;
+          delivery_estimate_en?: string | null;
           digital_delivery_enabled?: boolean;
           email?: string | null;
           email_footer_ar?: string | null;
@@ -718,6 +724,9 @@ export type Database = {
           default_tax_rate?: number;
           delivery_enabled?: boolean;
           delivery_fee?: number;
+          delivery_estimate_enabled?: boolean;
+          delivery_estimate_ar?: string | null;
+          delivery_estimate_en?: string | null;
           digital_delivery_enabled?: boolean;
           email?: string | null;
           email_footer_ar?: string | null;

@@ -105,6 +105,9 @@ export function getFulfillmentStage(order: OrderWorkflowInput): FulfillmentStage
   if (fulfillment === "received_from_tailor" || status === "received_from_tailor") {
     return "received_from_tailor";
   }
+  if (fulfillment === "on_hold" || status === "on_hold") {
+    return "on_hold";
+  }
   if (fulfillment === "packing" || status === "packing" || fulfillment === "needs_packing") {
     return "packing";
   }

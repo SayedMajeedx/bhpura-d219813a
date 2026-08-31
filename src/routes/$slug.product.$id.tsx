@@ -27,7 +27,11 @@ import {
   Scissors,
   Sparkles,
   Check,
+  Truck,
+  Share2,
 } from "lucide-react";
+import { SizeGuideModal } from "@/components/storefront/SizeGuideModal";
+import { ProductShareModal } from "@/components/storefront/ProductShareModal";
 import { toast } from "sonner";
 import { trackStorefrontEvent } from "@/lib/storefront-analytics";
 import { OptimizedVideo, ResponsiveImage } from "@/components/responsive-media";
@@ -1065,18 +1069,25 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
         <div className="md:col-span-7">
           <div className="mb-1 flex items-start justify-between gap-3 sm:mb-2">
             <h1 className="font-display text-2xl sm:text-3xl">{displayName}</h1>
-            <Button
-              type="button"
-              variant="outline"
-              size="icon"
-              className="shrink-0 rounded-full"
-              onClick={() => toggleWishlist(product.id)}
-              aria-label={t("المفضلة", "Wishlist")}
-            >
-              <Heart
-                className={`h-5 w-5 ${isWishlisted(product.id) ? "fill-red-600 text-red-600" : ""}`}
+            <div className="flex items-center gap-2 shrink-0">
+              <ProductShareModal
+                isAr={lang === "ar"}
+                productName={displayName}
+                priceFormatted={priceLabel}
               />
-            </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                className="shrink-0 rounded-full h-11 w-11"
+                onClick={() => toggleWishlist(product.id)}
+                aria-label={t("المفضلة", "Wishlist")}
+              >
+                <Heart
+                  className={`h-5 w-5 ${isWishlisted(product.id) ? "fill-red-600 text-red-600" : ""}`}
+                />
+              </Button>
+            </div>
           </div>
           <div
             className="mb-3 flex flex-wrap items-center gap-3 text-xl font-semibold sm:mb-4 sm:text-2xl"
@@ -1205,13 +1216,16 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
               {/* 📏 Size Selection Pills */}
               {uniqueSizes.length > 0 && (!showSizeModeToggle || sizeMode === "ready") && (
                 <div>
-                  <div className="text-sm font-semibold mb-2">
-                    {(lang === "ar"
-                      ? product.variant_label_size_ar
-                      : product.variant_label_size_en) ||
-                      product.variant_label_size_en ||
-                      product.variant_label_size_ar ||
-                      t("المقاس / خيار", "Size / Option")}
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="text-sm font-semibold">
+                      {(lang === "ar"
+                        ? product.variant_label_size_ar
+                        : product.variant_label_size_en) ||
+                        product.variant_label_size_en ||
+                        product.variant_label_size_ar ||
+                        t("المقاس / خيار", "Size / Option")}
+                    </div>
+                    <SizeGuideModal isAr={lang === "ar"} />
                   </div>
                   <div className="flex flex-wrap gap-2">
                     {uniqueSizes.map((sz) => {
@@ -1587,6 +1601,11 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
                   <span className="inline-flex items-center rounded-full border border-primary/20 bg-primary/10 px-2.5 py-1 text-xs text-primary font-medium">
                     {t("تفصيل حسب الطلب", "Made to order")}
                   </span>
+                ) : maxStock > 0 && maxStock <= 5 ? (
+                  <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-500/40 bg-amber-500/10 px-2.5 py-1 text-xs text-amber-700 dark:text-amber-300 font-semibold animate-pulse">
+                    <span>🔥</span>
+                    <span>{t(`متبقي ${maxStock} قطع فقط!`, `Only ${maxStock} left in stock!`)}</span>
+                  </span>
                 ) : (
                   <span className="inline-flex items-center rounded-full border border-border bg-muted px-2.5 py-1 text-xs text-foreground">
                     {maxStock} {t("متوفر", "available")}
@@ -1626,6 +1645,17 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
               {t("اشتر الآن", "Buy now")}
             </Button>
           </div>
+
+          {settings.delivery_estimate_enabled !== false && (
+            <div className="mt-4 flex items-center gap-2.5 rounded-xl border border-primary/20 bg-primary/5 p-3 text-xs text-muted-foreground">
+              <Truck className="h-4 w-4 text-primary shrink-0" />
+              <span className="font-medium text-foreground">
+                {lang === "ar"
+                  ? settings.delivery_estimate_ar || "التوصيل المتوقع خلال 24 - 48 ساعة داخل البحرين"
+                  : settings.delivery_estimate_en || "Estimated delivery within 24 - 48 hours"}
+              </span>
+            </div>
+          )}
         </div>
 
         {/* Mobile sticky purchase bar */}

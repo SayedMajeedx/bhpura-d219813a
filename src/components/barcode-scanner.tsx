@@ -1,6 +1,5 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { BrowserMultiFormatReader, type IScannerControls } from "@zxing/browser";
-import { BarcodeFormat, DecodeHintType, NotFoundException } from "@zxing/library";
+import { useCallback, useEffect, useRef, useState } from "react";
+import type { IScannerControls } from "@zxing/browser";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,18 +15,43 @@ type Props = {
 
 type CameraInfo = { id: string; label: string };
 
-const FORMATS = [
-  BarcodeFormat.EAN_13,
-  BarcodeFormat.EAN_8,
-  BarcodeFormat.UPC_A,
-  BarcodeFormat.UPC_E,
-  BarcodeFormat.CODE_128,
-  BarcodeFormat.CODE_39,
-  BarcodeFormat.CODE_93,
-  BarcodeFormat.ITF,
-  BarcodeFormat.CODABAR,
-  BarcodeFormat.QR_CODE,
-];
+let zxingCache: Promise<{
+  BrowserMultiFormatReader: typeof import("@zxing/browser").BrowserMultiFormatReader;
+  NotFoundException: typeof import("@zxing/library").NotFoundException;
+  hints: Map<any, any>;
+}> | null = null;
+
+function loadZXing() {
+  if (!zxingCache) {
+    zxingCache = Promise.all([import("@zxing/browser"), import("@zxing/library")]).then(
+      ([{ BrowserMultiFormatReader }, { BarcodeFormat, DecodeHintType, NotFoundException }]) => {
+        const formats = [
+          BarcodeFormat.EAN_13,
+          BarcodeFormat.EAN_8,
+          BarcodeFormat.UPC_A,
+          BarcodeFormat.UPC_E,
+          BarcodeFormat.CODE_128,
+          BarcodeFormat.CODE_39,
+          BarcodeFormat.CODE_93,
+          BarcodeFormat.ITF,
+          BarcodeFormat.CODABAR,
+          BarcodeFormat.QR_CODE,
+        ];
+
+        const hints = new Map();
+        hints.set(DecodeHintType.POSSIBLE_FORMATS, formats);
+        hints.set(DecodeHintType.TRY_HARDER, true);
+
+        return {
+          BrowserMultiFormatReader,
+          NotFoundException,
+          hints,
+        };
+      },
+    );
+  }
+  return zxingCache;
+}
 
 export function BarcodeScanner({ open, onOpenChange, onDetected }: Props) {
   const { lang } = useI18n();
@@ -47,13 +71,6 @@ export function BarcodeScanner({ open, onOpenChange, onDetected }: Props) {
   );
   const [zoom, setZoom] = useState(1);
   const [cameraRequested, setCameraRequested] = useState(false);
-
-  const hints = useMemo(() => {
-    const map = new Map();
-    map.set(DecodeHintType.POSSIBLE_FORMATS, FORMATS);
-    map.set(DecodeHintType.TRY_HARDER, true);
-    return map;
-  }, []);
 
   const stop = useCallback(() => {
     controlsRef.current?.stop();
@@ -123,32 +140,33 @@ export function BarcodeScanner({ open, onOpenChange, onDetected }: Props) {
     setError(null);
     setStarting(true);
     let cancelled = false;
-    const reader = new BrowserMultiFormatReader(hints, { delayBetweenScanAttempts: 80 });
 
     const start = async () => {
       try {
         stop();
-        const constraints: MediaStreamConstraints = {
-          audio: false,
-          video: activeCameraId
-            ? {
-                deviceId: { exact: activeCameraId },
-                width: { ideal: 1920 },
-                height: { ideal: 1080 },
-              }
-            : {
-                facingMode: { ideal: "environment" },
-                width: { ideal: 1920 },
-                height: { ideal: 1080 },
-              },
-        };
-        // Own the MediaStream directly. This avoids iOS WebKit producing a
-        // live-but-black preview when a decoder library attaches the stream.
-        const stream = await navigator.mediaDevices.getUserMedia(constraints);
+        const [{ BrowserMultiFormatReader, NotFoundException, hints }, stream] = await Promise.all([
+          loadZXing(),
+          navigator.mediaDevices.getUserMedia({
+            audio: false,
+            video: activeCameraId
+              ? {
+                  deviceId: { exact: activeCameraId },
+                  width: { ideal: 1920 },
+                  height: { ideal: 1080 },
+                }
+              : {
+                  facingMode: { ideal: "environment" },
+                  width: { ideal: 1920 },
+                  height: { ideal: 1080 },
+                },
+          }),
+        ]);
+
         if (cancelled) {
           stream.getTracks().forEach((track) => track.stop());
           return;
         }
+
         const video = videoRef.current!;
         video.setAttribute("playsinline", "true");
         video.setAttribute("webkit-playsinline", "true");
@@ -170,6 +188,7 @@ export function BarcodeScanner({ open, onOpenChange, onDetected }: Props) {
         const currentId = stream.getVideoTracks()[0]?.getSettings().deviceId ?? null;
         if (currentId) setActiveCameraId(currentId);
 
+        const reader = new BrowserMultiFormatReader(hints, { delayBetweenScanAttempts: 80 });
         const controls = await reader.decodeFromStream(stream, video, (result, decodeError) => {
           if (result) finish(result.getText());
           if (decodeError && !(decodeError instanceof NotFoundException)) {
@@ -204,20 +223,7 @@ export function BarcodeScanner({ open, onOpenChange, onDetected }: Props) {
       cancelled = true;
       stop();
     };
-    // activeCameraId is intentionally excluded: selecting the initial rear
-    // camera updates its label without tearing down the stream that just opened.
-    // Explicit lens switches increment restartKey and start a new stream safely.
-  }, [
-    activeCameraId,
-    cameraRequested,
-    configureTrack,
-    finish,
-    hints,
-    isAr,
-    open,
-    restartKey,
-    stop,
-  ]);
+  }, [activeCameraId, cameraRequested, configureTrack, finish, isAr, open, restartKey, stop]);
 
   const switchCamera = () => {
     if (cameras.length < 2) return;
@@ -240,8 +246,9 @@ export function BarcodeScanner({ open, onOpenChange, onDetected }: Props) {
     setError(null);
     stop();
     const objectUrl = URL.createObjectURL(file);
-    const reader = new BrowserMultiFormatReader(hints);
     try {
+      const { BrowserMultiFormatReader, hints } = await loadZXing();
+      const reader = new BrowserMultiFormatReader(hints);
       const result = await reader.decodeFromImageUrl(objectUrl);
       finish(result.getText());
     } catch {

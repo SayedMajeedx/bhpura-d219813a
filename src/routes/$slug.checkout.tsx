@@ -45,6 +45,7 @@ import {
   Award,
   Sparkles,
   Share2,
+  Gift,
 } from "lucide-react";
 import { ShareCartModal } from "@/components/storefront/ShareCartModal";
 import { uploadBenefitReceipt } from "@/lib/benefit-receipt";
@@ -166,6 +167,44 @@ function Checkout() {
   const [saveToProfile, setSaveToProfile] = useState(false);
   const [whatsappOrderUpdates, setWhatsappOrderUpdates] = useState(false);
   const [acceptedTerms, setAcceptedTerms] = useState(false);
+  const [isGift, setIsGift] = useState(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const saved = sessionStorage.getItem("boutq_gift_details");
+        if (saved) return JSON.parse(saved).is_gift === true;
+      } catch {}
+    }
+    return false;
+  });
+  const [giftRecipient, setGiftRecipient] = useState(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const saved = sessionStorage.getItem("boutq_gift_details");
+        if (saved) return JSON.parse(saved).recipient_name || "";
+      } catch {}
+    }
+    return "";
+  });
+  const [giftMessage, setGiftMessage] = useState(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const saved = sessionStorage.getItem("boutq_gift_details");
+        if (saved) return JSON.parse(saved).gift_message || "";
+      } catch {}
+    }
+    return "";
+  });
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      try {
+        sessionStorage.setItem(
+          "boutq_gift_details",
+          JSON.stringify({ is_gift: isGift, recipient_name: giftRecipient, gift_message: giftMessage })
+        );
+      } catch {}
+    }
+  }, [isGift, giftRecipient, giftMessage]);
 
   const [showAccountPopup, setShowAccountPopup] = useState<{
     show: boolean;
@@ -865,7 +904,13 @@ function Checkout() {
             custom_field_values: c.custom_fields ?? [],
           })),
           p_payment_method: method,
-          p_notes: form.notes || undefined,
+          p_notes: (() => {
+            const giftNote = isGift
+              ? `🎁 [طلب إهداء / Gift Order]\nالمستلم: ${giftRecipient || "غير محدد"}\nرسالة الإهداء: ${giftMessage || "بدون رسالة"}`
+              : "";
+            const userNote = form.notes?.trim() || "";
+            return [giftNote, userNote].filter(Boolean).join("\n\n") || undefined;
+          })(),
           p_fulfillment: fulfillment,
           p_branch_id: fulfillment === "pickup" ? branchId || null : null,
           p_digital_channel: fulfillment === "digital" ? digitalChannel : null,
@@ -1239,6 +1284,52 @@ function Checkout() {
               />
             </div>
           </div>
+          {/* 🎁 Gift Option Box */}
+          <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 space-y-3">
+            <label className="flex items-center gap-2.5 cursor-pointer select-none">
+              <Checkbox
+                checked={isGift}
+                onCheckedChange={(checked) => setIsGift(checked === true)}
+              />
+              <Gift className="h-4 w-4 text-primary shrink-0" />
+              <span className="text-sm font-semibold text-foreground">
+                {t("هل ترغب في إرسال هذا الطلب كهدية؟ 🎁", "Send this order as a gift? 🎁")}
+              </span>
+            </label>
+            {isGift && (
+              <div className="space-y-3 pt-2 border-t border-primary/15 animate-in fade-in-50 duration-200">
+                <div>
+                  <Label htmlFor="gift-recipient" className="text-xs font-medium">
+                    {t("اسم المستلم (اختياري)", "Recipient Name (Optional)")}
+                  </Label>
+                  <Input
+                    id="gift-recipient"
+                    type="text"
+                    placeholder={t("مثال: سارة محمد", "e.g. Sarah Mohamed")}
+                    value={giftRecipient}
+                    onChange={(e) => setGiftRecipient(e.target.value)}
+                    className="h-9 text-xs rounded-lg mt-1 bg-background"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="gift-card-message" className="text-xs font-medium">
+                    {t("رسالة كرت الإهداء", "Gift Card Message")}
+                  </Label>
+                  <Textarea
+                    id="gift-card-message"
+                    placeholder={t(
+                      "اكتب كلماتك الرقيقة لطباعتها في بطاقة الإهداء الفاخرة...",
+                      "Write your warm message to print on our luxury gift card..."
+                    )}
+                    value={giftMessage}
+                    onChange={(e) => setGiftMessage(e.target.value)}
+                    className="min-h-[70px] text-xs rounded-lg mt-1 bg-background resize-none"
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+
           <div>
             <Label htmlFor="checkout-notes">{t("ملاحظات", "Notes")}</Label>
             <Textarea
@@ -1340,6 +1431,16 @@ function Checkout() {
                 );
               })}
             </div>
+            {fulfillment === "delivery" && settings.delivery_estimate_enabled !== false && (
+              <div className="flex items-center gap-2 text-xs text-muted-foreground bg-primary/5 rounded-lg px-3 py-2 border border-primary/10 mt-2">
+                <Truck className="h-4 w-4 text-primary shrink-0" />
+                <span>
+                  {lang === "ar"
+                    ? settings.delivery_estimate_ar || "التوصيل المتوقع خلال 24 - 48 ساعة داخل البحرين"
+                    : settings.delivery_estimate_en || "Estimated delivery within 24 - 48 hours"}
+                </span>
+              </div>
+            )}
           </Card>
         )}
 

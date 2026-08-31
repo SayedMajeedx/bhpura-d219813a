@@ -96,6 +96,9 @@ export type PublicSettings = {
   pickup_enabled: boolean;
   digital_delivery_enabled: boolean;
   delivery_fee: number;
+  delivery_estimate_enabled?: boolean;
+  delivery_estimate_ar?: string | null;
+  delivery_estimate_en?: string | null;
   // Theme customizer
   logo_size: number;
   logo_align: "left" | "center" | "right";
