@@ -1709,7 +1709,7 @@ function PaymentSettingsCard({ brandId }: { brandId: string }) {
     card_secret_key: string;
   } | null>(null);
 
-  const { data } = useQuery({
+  const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["business-settings-payments", brandId],
     queryFn: async () => {
       const { data, error } = await (supabase.from("business_settings") as any)
