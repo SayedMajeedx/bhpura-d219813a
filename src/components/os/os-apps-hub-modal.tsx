@@ -123,7 +123,7 @@ export function OsAppsHubModal({
     },
     {
       id: "growth_finance" as const,
-      label: isAr ? "التسويق والمالية" : "Growth",
+      label: isAr ? "التسويق والمال" : "Growth & finance",
       count: modularItems.filter((i) => i.section === "growth_finance").length,
       icon: Zap,
     },
@@ -177,7 +177,7 @@ export function OsAppsHubModal({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         dir={isAr ? "rtl" : "ltr"}
-        className="flex h-[min(760px,88vh)] w-[calc(100vw-1.5rem)] max-w-5xl flex-col overflow-hidden rounded-[24px] border-border/70 bg-background p-0 text-foreground shadow-2xl sm:w-[calc(100vw-3rem)]"
+        className="flex h-[calc(100dvh-2rem)] max-h-[760px] w-[calc(100vw-1.5rem)] max-w-5xl flex-col overflow-hidden rounded-[24px] border-border/70 bg-background p-0 text-foreground shadow-2xl sm:w-[calc(100vw-3rem)]"
       >
         <DialogHeader className="border-b border-border/70 px-5 pb-5 pt-6 sm:px-7 sm:pb-6 sm:pt-7">
           <div className="flex items-start gap-3">
@@ -219,7 +219,7 @@ export function OsAppsHubModal({
         </DialogHeader>
 
         <div className="flex min-h-0 flex-1 flex-col md:flex-row">
-          <aside className="shrink-0 border-b border-border/70 bg-muted/15 p-3 md:w-56 md:border-b-0 md:border-e md:p-4">
+          <aside className="shrink-0 border-b border-border/70 bg-muted/15 p-3 md:w-60 md:border-b-0 md:border-e md:p-4">
             <div className="flex gap-1 overflow-x-auto scrollbar-none md:flex-col md:overflow-visible">
               {categories.map((cat) => {
                 const Icon = cat.icon;
@@ -230,7 +230,7 @@ export function OsAppsHubModal({
                     type="button"
                     onClick={() => setSelectedCategory(cat.id)}
                     className={cn(
-                      "flex h-10 shrink-0 items-center gap-2.5 rounded-xl px-3 text-sm font-medium transition-colors md:w-full",
+                      "flex h-10 shrink-0 items-center gap-2.5 whitespace-nowrap rounded-xl px-3 text-sm font-medium transition-colors md:w-full",
                       isSelected
                         ? "bg-background text-foreground shadow-sm ring-1 ring-border/70"
                         : "text-muted-foreground hover:bg-background/70 hover:text-foreground",
@@ -244,18 +244,6 @@ export function OsAppsHubModal({
                   </button>
                 );
               })}
-            </div>
-
-            <div className="mt-5 hidden rounded-xl border border-border/60 bg-background/70 p-3 md:block">
-              <div className="flex items-center gap-2 text-xs font-semibold text-foreground">
-                <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-500" />
-                {isAr ? `${pinnedCount} أدوات مثبتة` : `${pinnedCount} pinned tools`}
-              </div>
-              <p className="mt-1.5 text-[11px] leading-5 text-muted-foreground">
-                {isAr
-                  ? "تظهر الأدوات المثبتة مباشرة في الشريط الجانبي."
-                  : "Pinned tools appear directly in your sidebar."}
-              </p>
             </div>
           </aside>
 
@@ -359,10 +347,12 @@ export function OsAppsHubModal({
         </div>
 
         <footer className="flex min-h-14 items-center justify-between border-t border-border/70 bg-background px-5 sm:px-7">
-          <p className="text-xs text-muted-foreground md:hidden">
-            {isAr ? `${pinnedCount} أدوات مثبتة` : `${pinnedCount} pinned tools`}
+          <p className="flex items-center gap-2 text-xs text-muted-foreground">
+            <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-500" />
+            {isAr
+              ? `${pinnedCount} أدوات مثبتة في الشريط الجانبي`
+              : `${pinnedCount} tools pinned to the sidebar`}
           </p>
-          <div className="hidden md:block" />
           <Button
             type="button"
             variant="ghost"
