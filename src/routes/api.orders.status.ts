@@ -187,6 +187,13 @@ export const Route = createFileRoute("/api/orders/status")({
           }
           if (fulfillment_status !== undefined) {
             updates.fulfillment_status = fulfillment_status;
+            const normalizedFulfillment = fulfillment_status.toLowerCase();
+            if (
+              status === undefined &&
+              ["sent_to_tailor", "received_from_tailor", "packing"].includes(normalizedFulfillment)
+            ) {
+              updates.status = normalizedFulfillment;
+            }
           }
           if (status !== undefined) {
             updates.status = status;

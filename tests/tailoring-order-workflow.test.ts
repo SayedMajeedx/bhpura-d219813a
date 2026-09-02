@@ -8,6 +8,19 @@ import { getOrderWorkflow } from "../src/lib/order-workflow";
 import { getInvoiceStatusLabel } from "../src/lib/status-labels";
 
 describe("Ready Stock vs Tailoring Order Workflow", () => {
+  it("prefers the canonical fulfillment stage over a stale legacy tailoring status", () => {
+    const workflow = getOrderWorkflow({
+      fulfillment_status: "RECEIVED_FROM_TAILOR",
+      status: "sent_to_tailor",
+      order_type: "tailoring",
+      payment_method: "cash",
+      fulfillment_method: "pickup",
+    });
+
+    expect(workflow.fulfillment).toBe("received_from_tailor");
+    expect(workflow.nextAction).toBe("start_packing");
+  });
+
   it("detects ready stock item correctly", () => {
     const item = {
       variant_id: "v-123",

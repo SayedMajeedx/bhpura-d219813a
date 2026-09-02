@@ -99,12 +99,16 @@ export function getFulfillmentStage(order: OrderWorkflowInput): FulfillmentStage
   if (fulfillment === "ready_for_pickup" || status === "ready_for_pickup") {
     return "ready_for_pickup";
   }
-  if (fulfillment === "sent_to_tailor" || status === "sent_to_tailor") {
+  // fulfillment_status is canonical. Prefer it over the legacy status column
+  // so stale legacy data cannot keep showing the previous tailoring action.
+  if (fulfillment === "sent_to_tailor") {
     return "sent_to_tailor";
   }
-  if (fulfillment === "received_from_tailor" || status === "received_from_tailor") {
+  if (fulfillment === "received_from_tailor") {
     return "received_from_tailor";
   }
+  if (status === "sent_to_tailor") return "sent_to_tailor";
+  if (status === "received_from_tailor") return "received_from_tailor";
   if (fulfillment === "on_hold" || status === "on_hold") {
     return "on_hold";
   }
