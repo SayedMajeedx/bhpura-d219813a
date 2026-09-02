@@ -204,11 +204,13 @@ export const Route = createFileRoute("/api/orders/status")({
           }
 
           // Execute database update
-          const { error: updateErr } = await supabaseAdmin
+          const { data: updatedOrder, error: updateErr } = await supabaseAdmin
             .from("orders")
             .update(updates as any)
             .eq("id", id)
-            .eq("brand_id", order.brand_id);
+            .eq("brand_id", order.brand_id)
+            .select()
+            .single();
 
           if (updateErr) {
             return new Response(JSON.stringify({ error: updateErr.message }), {
@@ -218,7 +220,11 @@ export const Route = createFileRoute("/api/orders/status")({
           }
 
           return new Response(
-            JSON.stringify({ success: true, message: "Order status updated successfully" }),
+            JSON.stringify({
+              success: true,
+              message: "Order status updated successfully",
+              order: updatedOrder,
+            }),
             {
               status: 200,
               headers: { "Content-Type": "application/json" },

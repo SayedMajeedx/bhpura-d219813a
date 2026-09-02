@@ -49,4 +49,15 @@ describe("orders list payment and courier rules", () => {
     expect(routeSource).toContain("orderRequiresCourier(order)");
     expect(routeSource).toContain("Couriers can only be assigned to delivery orders.");
   });
+
+  it("updates a changed order in the list cache before reconciling with the server", () => {
+    const routeSource = readFileSync("src/routes/api.orders.status.ts", "utf8");
+    const pageSource = readFileSync(
+      "src/routes/_authenticated/admin.b.$slug.orders.index.tsx",
+      "utf8",
+    );
+    expect(routeSource).toContain("order: updatedOrder");
+    expect(pageSource).toContain("qc.setQueriesData<any[]>");
+    expect(pageSource).toContain('await qc.invalidateQueries({ queryKey: ["orders", brandId] })');
+  });
 });

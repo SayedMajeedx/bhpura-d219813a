@@ -1005,10 +1005,28 @@ function OrdersList() {
           headers: await authenticatedJsonHeaders(),
           body: JSON.stringify({ id: o.id, admin_override: true, ...payload }),
         });
-        const data = await res.json<{ error?: string; error_ar?: string }>();
+        const data = await res.json<{
+          error?: string;
+          error_ar?: string;
+          order?: Record<string, any>;
+        }>();
         if (!res.ok) throw new Error(data.error_ar && lang === "ar" ? data.error_ar : data.error);
+        if (data.order) {
+          qc.setQueriesData<any[]>({ queryKey: ["orders", brandId] }, (current) =>
+            current?.map((item) =>
+              item.id === o.id
+                ? {
+                    ...item,
+                    ...data.order,
+                    customers: item.customers,
+                    order_items: item.order_items,
+                  }
+                : item,
+            ),
+          );
+        }
         toast.success(successMsg);
-        qc.invalidateQueries({ queryKey: ["orders", brandId] });
+        await qc.invalidateQueries({ queryKey: ["orders", brandId] });
       } catch (err: any) {
         toast.error(err.message || "Failed to update order status");
       } finally {
