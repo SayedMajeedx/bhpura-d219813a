@@ -18,6 +18,7 @@ import {
   RotateCcw,
   Award,
   ShoppingCart,
+  Palette,
   type LucideIcon,
 } from "lucide-react";
 
@@ -105,7 +106,8 @@ export function getAdminNavItems({
       params: { slug: activeSlug },
       labelEn: "Reports",
       labelAr: lang === "ar" ? "التقارير" : "Reports",
-      descriptionEn: "Comprehensive financial accounting, VAT reports, sales, and profit margin analysis",
+      descriptionEn:
+        "Comprehensive financial accounting, VAT reports, sales, and profit margin analysis",
       descriptionAr: "التقارير المحاسبية التفصيلية، المبيعات، ضريبة القيمة المضافة، والربحية",
       icon: BarChart,
       permission: "manage_orders",
@@ -133,7 +135,8 @@ export function getAdminNavItems({
       params: { slug: activeSlug },
       labelEn: "Returns & Exchanges",
       labelAr: lang === "ar" ? "المرتجعات والاستبدال" : "Returns & Exchanges",
-      descriptionEn: "Manage return and exchange requests, compensation policies, and reverse logistics",
+      descriptionEn:
+        "Manage return and exchange requests, compensation policies, and reverse logistics",
       descriptionAr: "إدارة طلبات الاسترجاع والاستبدال وسياسات التعويض واستلام المنتجات",
       icon: RotateCcw,
       permission: "manage_orders",
@@ -185,7 +188,8 @@ export function getAdminNavItems({
       params: { slug: activeSlug },
       labelEn: "Incubators & Consignment",
       labelAr: lang === "ar" ? "الحاضنات والعُهد" : "Incubators & Consignment",
-      descriptionEn: "Consignment inventory tracking, vendor payouts, and profit-sharing management",
+      descriptionEn:
+        "Consignment inventory tracking, vendor payouts, and profit-sharing management",
       descriptionAr: "إدارة بضائع الأمانة، الموردين الخارجيين، ونسب الأرباح المشتركة",
       icon: Building2,
       permission: "manage_inventory",
@@ -198,7 +202,8 @@ export function getAdminNavItems({
       params: { slug: activeSlug },
       labelEn: "Categories",
       labelAr: lang === "ar" ? "الأقسام" : "Categories",
-      descriptionEn: "Organize products into main and sub-categories for intuitive storefront browsing",
+      descriptionEn:
+        "Organize products into main and sub-categories for intuitive storefront browsing",
       descriptionAr: "تنظيم المنتجات في أقسام وتصنيفات رئيسية وفرعية لتسهيل التصفح",
       icon: Tags,
       permission: "manage_inventory",
@@ -207,6 +212,19 @@ export function getAdminNavItems({
     },
 
     // Group 3: GROWTH & FINANCE
+    {
+      id: "content-studio",
+      to: "/admin/b/$slug/content-studio",
+      params: { slug: activeSlug },
+      labelEn: "Pura Content Studio",
+      labelAr: lang === "ar" ? "استديو المحتوى" : "Pura Content Studio",
+      descriptionEn: "Create on-brand product stories and social posts ready to publish",
+      descriptionAr: "صمّم ستوريات ومنشورات احترافية من صور ومنتجات متجرك",
+      icon: Palette,
+      permission: "manage_inventory",
+      section: "growth_finance",
+      tier: "modular",
+    },
     {
       id: "campaigns",
       to: "/admin/b/$slug/campaigns",
@@ -293,7 +311,8 @@ export function getAdminNavItems({
       params: { slug: activeSlug },
       labelEn: "Communications",
       labelAr: lang === "ar" ? "الاتصالات" : "Communications",
-      descriptionEn: "Automated order confirmation templates, SMS, and email communication channels",
+      descriptionEn:
+        "Automated order confirmation templates, SMS, and email communication channels",
       descriptionAr: "إعداد قوالب الإشعارات التلقائية عبر الواتساب والرسائل النصية والبريد",
       icon: Mail,
       permission: "manage_settings",

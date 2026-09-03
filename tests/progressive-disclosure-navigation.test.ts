@@ -1,9 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  getAdminNavItems,
-  CORE_NAV_IDS,
-  DEFAULT_PINNED_IDS,
-} from "../src/config/admin-navigation";
+import { getAdminNavItems, CORE_NAV_IDS, DEFAULT_PINNED_IDS } from "../src/config/admin-navigation";
 
 describe("Progressive Disclosure & Modular Navigation", () => {
   const mockOptions = {
@@ -52,6 +48,7 @@ describe("Progressive Disclosure & Modular Navigation", () => {
       "reviews",
       "incubators",
       "categories",
+      "content-studio",
       "campaigns",
       "discounts",
       "loyalty",

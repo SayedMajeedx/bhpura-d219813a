@@ -49,6 +49,7 @@ import {
   CustomerAddressManager,
   type ManagedCustomerAddress,
 } from "@/components/customer-address-manager";
+import { CustomerFitPassport } from "@/components/customers/CustomerFitPassport";
 
 export const Route = createFileRoute("/_authenticated/admin/b/$slug/customers/$customerId")({
   component: CustomerProfilePage,
@@ -422,203 +423,209 @@ function CustomerProfilePage() {
           </Card>
         </div>
 
-        <Card className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm">
-          <div className="flex items-center justify-between gap-3 border-b border-border/50 p-5 bg-primary/5">
-            <div>
-              <h2 className="font-display text-xl font-bold">
-                {lang === "ar" ? "سجل الطلبات" : "Order History"}
-              </h2>
-              <p className="text-xs text-muted-foreground">
-                {lang === "ar"
-                  ? "اضغط على أي طلب لفتح تفاصيله."
-                  : "Select any order to open its full details."}
-              </p>
-            </div>
-            <ReceiptText className="h-6 w-6 text-primary" />
-          </div>
-          {ordersQ.isLoading ? (
-            <div className="p-8 text-center text-muted-foreground">
-              {lang === "ar" ? "جاري تحميل الطلبات…" : "Loading orders…"}
-            </div>
-          ) : orders.length === 0 ? (
-            <div className="p-12 text-center">
-              <ReceiptText className="mx-auto mb-3 h-9 w-9 text-muted-foreground" />
-              <p className="text-muted-foreground">
-                {lang === "ar"
-                  ? "لا توجد طلبات لهذا العميل بعد."
-                  : "This customer has no orders yet."}
-              </p>
-            </div>
-          ) : (
-            <>
-              <div className="space-y-2 p-3 sm:hidden">
-                {paginatedOrders.map((order) => (
-                  <button
-                    key={order.id}
-                    type="button"
-                    onClick={() =>
-                      navigate({ to: "/admin/b/$slug/orders/$id", params: { slug, id: order.id } })
-                    }
-                    className="w-full rounded-xl border border-border/60 bg-background/70 p-3 text-start transition-colors hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
-                  >
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <p className="font-mono text-sm font-bold text-primary">
-                          #{order.invoice_number}
-                        </p>
-                        <p className="mt-1 flex items-center gap-1.5 text-[11px] text-muted-foreground">
-                          <CalendarDays className="h-3.5 w-3.5" />
-                          {new Date(order.order_date).toLocaleDateString(
-                            lang === "ar" ? "ar-BH-u-nu-latn" : "en-BH",
-                          )}
-                        </p>
-                      </div>
-                      <p className="font-mono text-sm font-extrabold">
-                        {formatMoney(Number(order.total), order.currency || "BHD")}
-                      </p>
-                    </div>
-                    <div className="mt-3 flex items-center justify-between gap-2 border-t border-border/50 pt-2.5">
-                      <span className="rounded-full bg-secondary px-2.5 py-1 text-[11px] font-bold">
-                        {formatArabicOrderStatus(order.status, lang)}
-                      </span>
-                      <span className="truncate text-[11px] text-muted-foreground">
-                        {paymentLabel(order.payment_method, lang)}
-                      </span>
-                    </div>
-                  </button>
-                ))}
+        <div className="space-y-6">
+          <CustomerFitPassport brandId={brand.id} customerId={customerId} isAr={lang === "ar"} />
+          <Card className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm">
+            <div className="flex items-center justify-between gap-3 border-b border-border/50 p-5 bg-primary/5">
+              <div>
+                <h2 className="font-display text-xl font-bold">
+                  {lang === "ar" ? "سجل الطلبات" : "Order History"}
+                </h2>
+                <p className="text-xs text-muted-foreground">
+                  {lang === "ar"
+                    ? "اضغط على أي طلب لفتح تفاصيله."
+                    : "Select any order to open its full details."}
+                </p>
               </div>
-              <div className="hidden overflow-x-auto sm:block">
-                <table className="w-full min-w-[680px] text-sm whitespace-nowrap">
-                  <thead className="border-b bg-muted/40 font-semibold text-muted-foreground">
-                    <tr>
-                      <th className="p-4 text-start font-semibold text-xs uppercase tracking-wider whitespace-nowrap">
-                        {lang === "ar" ? "رقم الطلب" : "Order ID #"}
-                      </th>
-                      <th className="p-4 text-start font-semibold text-xs uppercase tracking-wider whitespace-nowrap">
-                        {lang === "ar" ? "التاريخ" : "Date"}
-                      </th>
-                      <th className="p-4 text-start font-semibold text-xs uppercase tracking-wider whitespace-nowrap">
-                        {lang === "ar" ? "الحالة" : "Status"}
-                      </th>
-                      <th className="p-4 text-start font-semibold text-xs uppercase tracking-wider whitespace-nowrap">
-                        {lang === "ar" ? "طريقة الدفع" : "Payment Method"}
-                      </th>
-                      <th className="p-4 text-end font-semibold text-xs uppercase tracking-wider whitespace-nowrap">
-                        {lang === "ar" ? "الإجمالي" : "Total Amount"}
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {paginatedOrders.map((order) => (
-                      <tr
-                        key={order.id}
-                        tabIndex={0}
-                        className="cursor-pointer border-t border-border transition-colors hover:bg-muted/40 focus-visible:bg-muted/40 focus-visible:outline-none"
-                        onClick={() =>
-                          navigate({
-                            to: "/admin/b/$slug/orders/$id",
-                            params: { slug, id: order.id },
-                          })
-                        }
-                        onKeyDown={(event) => {
-                          if (event.key === "Enter" || event.key === " ")
-                            navigate({
-                              to: "/admin/b/$slug/orders/$id",
-                              params: { slug, id: order.id },
-                            });
-                        }}
-                      >
-                        <td className="p-4 whitespace-nowrap font-mono font-bold">
-                          <Link
-                            to="/admin/b/$slug/orders/$id"
-                            params={{ slug, id: order.id }}
-                            className="font-semibold text-primary hover:underline"
-                          >
+              <ReceiptText className="h-6 w-6 text-primary" />
+            </div>
+            {ordersQ.isLoading ? (
+              <div className="p-8 text-center text-muted-foreground">
+                {lang === "ar" ? "جاري تحميل الطلبات…" : "Loading orders…"}
+              </div>
+            ) : orders.length === 0 ? (
+              <div className="p-12 text-center">
+                <ReceiptText className="mx-auto mb-3 h-9 w-9 text-muted-foreground" />
+                <p className="text-muted-foreground">
+                  {lang === "ar"
+                    ? "لا توجد طلبات لهذا العميل بعد."
+                    : "This customer has no orders yet."}
+                </p>
+              </div>
+            ) : (
+              <>
+                <div className="space-y-2 p-3 sm:hidden">
+                  {paginatedOrders.map((order) => (
+                    <button
+                      key={order.id}
+                      type="button"
+                      onClick={() =>
+                        navigate({
+                          to: "/admin/b/$slug/orders/$id",
+                          params: { slug, id: order.id },
+                        })
+                      }
+                      className="w-full rounded-xl border border-border/60 bg-background/70 p-3 text-start transition-colors hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <p className="font-mono text-sm font-bold text-primary">
                             #{order.invoice_number}
-                          </Link>
-                        </td>
-                        <td className="p-4 text-muted-foreground whitespace-nowrap">
-                          <span className="inline-flex items-center gap-2">
-                            <CalendarDays className="h-4 w-4" />
+                          </p>
+                          <p className="mt-1 flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                            <CalendarDays className="h-3.5 w-3.5" />
                             {new Date(order.order_date).toLocaleDateString(
                               lang === "ar" ? "ar-BH-u-nu-latn" : "en-BH",
                             )}
-                          </span>
-                        </td>
-                        <td className="p-4 whitespace-nowrap">
-                          <span className="rounded-full bg-secondary px-3 py-1 text-xs font-bold text-foreground">
-                            {formatArabicOrderStatus(order.status, lang)}
-                          </span>
-                        </td>
-                        <td className="p-4 text-muted-foreground whitespace-nowrap">
-                          {paymentLabel(order.payment_method, lang)}
-                        </td>
-                        <td className="p-4 text-end font-semibold text-foreground whitespace-nowrap font-mono">
+                          </p>
+                        </div>
+                        <p className="font-mono text-sm font-extrabold">
                           {formatMoney(Number(order.total), order.currency || "BHD")}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-
-              {/* Pagination Controls */}
-              {totalPages > 1 && (
-                <div className="flex items-center justify-between border-t border-border/60 bg-muted/20 px-4 py-3 text-xs">
-                  <p className="text-muted-foreground font-medium">
-                    {lang === "ar"
-                      ? `عرض ${Math.min(orders.length, (currentPage - 1) * PAGE_SIZE + 1)}–${Math.min(orders.length, currentPage * PAGE_SIZE)} من إجمالي ${orders.length} طلب`
-                      : `Showing ${Math.min(orders.length, (currentPage - 1) * PAGE_SIZE + 1)}–${Math.min(orders.length, currentPage * PAGE_SIZE)} of ${orders.length} orders`}
-                  </p>
-                  <div className="flex items-center gap-1.5">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      disabled={currentPage === 1}
-                      onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                      className="h-8 px-2.5 text-xs font-semibold flex items-center gap-1"
-                    >
-                      {lang === "ar" ? (
-                        <>
-                          <span className="hidden sm:inline">السابق</span>
-                          <ChevronRight className="h-3.5 w-3.5" />
-                        </>
-                      ) : (
-                        <>
-                          <ChevronLeft className="h-3.5 w-3.5" />
-                          <span className="hidden sm:inline">Previous</span>
-                        </>
-                      )}
-                    </Button>
-                    <span className="px-2 font-bold text-foreground">
-                      {currentPage} / {totalPages}
-                    </span>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      disabled={currentPage === totalPages}
-                      onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                      className="h-8 px-2.5 text-xs font-semibold flex items-center gap-1"
-                    >
-                      {lang === "ar" ? (
-                        <>
-                          <ChevronLeft className="h-3.5 w-3.5" />
-                          <span className="hidden sm:inline">التالي</span>
-                        </>
-                      ) : (
-                        <>
-                          <span className="hidden sm:inline">Next</span>
-                          <ChevronRight className="h-3.5 w-3.5" />
-                        </>
-                      )}
-                    </Button>
-                  </div>
+                        </p>
+                      </div>
+                      <div className="mt-3 flex items-center justify-between gap-2 border-t border-border/50 pt-2.5">
+                        <span className="rounded-full bg-secondary px-2.5 py-1 text-[11px] font-bold">
+                          {formatArabicOrderStatus(order.status, lang)}
+                        </span>
+                        <span className="truncate text-[11px] text-muted-foreground">
+                          {paymentLabel(order.payment_method, lang)}
+                        </span>
+                      </div>
+                    </button>
+                  ))}
                 </div>
-              )}
-            </>
-          )}
-        </Card>
+                <div className="hidden overflow-x-auto sm:block">
+                  <table className="w-full min-w-[680px] text-sm whitespace-nowrap">
+                    <thead className="border-b bg-muted/40 font-semibold text-muted-foreground">
+                      <tr>
+                        <th className="p-4 text-start font-semibold text-xs uppercase tracking-wider whitespace-nowrap">
+                          {lang === "ar" ? "رقم الطلب" : "Order ID #"}
+                        </th>
+                        <th className="p-4 text-start font-semibold text-xs uppercase tracking-wider whitespace-nowrap">
+                          {lang === "ar" ? "التاريخ" : "Date"}
+                        </th>
+                        <th className="p-4 text-start font-semibold text-xs uppercase tracking-wider whitespace-nowrap">
+                          {lang === "ar" ? "الحالة" : "Status"}
+                        </th>
+                        <th className="p-4 text-start font-semibold text-xs uppercase tracking-wider whitespace-nowrap">
+                          {lang === "ar" ? "طريقة الدفع" : "Payment Method"}
+                        </th>
+                        <th className="p-4 text-end font-semibold text-xs uppercase tracking-wider whitespace-nowrap">
+                          {lang === "ar" ? "الإجمالي" : "Total Amount"}
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {paginatedOrders.map((order) => (
+                        <tr
+                          key={order.id}
+                          tabIndex={0}
+                          className="cursor-pointer border-t border-border transition-colors hover:bg-muted/40 focus-visible:bg-muted/40 focus-visible:outline-none"
+                          onClick={() =>
+                            navigate({
+                              to: "/admin/b/$slug/orders/$id",
+                              params: { slug, id: order.id },
+                            })
+                          }
+                          onKeyDown={(event) => {
+                            if (event.key === "Enter" || event.key === " ")
+                              navigate({
+                                to: "/admin/b/$slug/orders/$id",
+                                params: { slug, id: order.id },
+                              });
+                          }}
+                        >
+                          <td className="p-4 whitespace-nowrap font-mono font-bold">
+                            <Link
+                              to="/admin/b/$slug/orders/$id"
+                              params={{ slug, id: order.id }}
+                              className="font-semibold text-primary hover:underline"
+                            >
+                              #{order.invoice_number}
+                            </Link>
+                          </td>
+                          <td className="p-4 text-muted-foreground whitespace-nowrap">
+                            <span className="inline-flex items-center gap-2">
+                              <CalendarDays className="h-4 w-4" />
+                              {new Date(order.order_date).toLocaleDateString(
+                                lang === "ar" ? "ar-BH-u-nu-latn" : "en-BH",
+                              )}
+                            </span>
+                          </td>
+                          <td className="p-4 whitespace-nowrap">
+                            <span className="rounded-full bg-secondary px-3 py-1 text-xs font-bold text-foreground">
+                              {formatArabicOrderStatus(order.status, lang)}
+                            </span>
+                          </td>
+                          <td className="p-4 text-muted-foreground whitespace-nowrap">
+                            {paymentLabel(order.payment_method, lang)}
+                          </td>
+                          <td className="p-4 text-end font-semibold text-foreground whitespace-nowrap font-mono">
+                            {formatMoney(Number(order.total), order.currency || "BHD")}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Pagination Controls */}
+                {totalPages > 1 && (
+                  <div className="flex items-center justify-between border-t border-border/60 bg-muted/20 px-4 py-3 text-xs">
+                    <p className="text-muted-foreground font-medium">
+                      {lang === "ar"
+                        ? `عرض ${Math.min(orders.length, (currentPage - 1) * PAGE_SIZE + 1)}–${Math.min(orders.length, currentPage * PAGE_SIZE)} من إجمالي ${orders.length} طلب`
+                        : `Showing ${Math.min(orders.length, (currentPage - 1) * PAGE_SIZE + 1)}–${Math.min(orders.length, currentPage * PAGE_SIZE)} of ${orders.length} orders`}
+                    </p>
+                    <div className="flex items-center gap-1.5">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        disabled={currentPage === 1}
+                        onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                        className="h-8 px-2.5 text-xs font-semibold flex items-center gap-1"
+                      >
+                        {lang === "ar" ? (
+                          <>
+                            <span className="hidden sm:inline">السابق</span>
+                            <ChevronRight className="h-3.5 w-3.5" />
+                          </>
+                        ) : (
+                          <>
+                            <ChevronLeft className="h-3.5 w-3.5" />
+                            <span className="hidden sm:inline">Previous</span>
+                          </>
+                        )}
+                      </Button>
+                      <span className="px-2 font-bold text-foreground">
+                        {currentPage} / {totalPages}
+                      </span>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        disabled={currentPage === totalPages}
+                        onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                        className="h-8 px-2.5 text-xs font-semibold flex items-center gap-1"
+                      >
+                        {lang === "ar" ? (
+                          <>
+                            <ChevronLeft className="h-3.5 w-3.5" />
+                            <span className="hidden sm:inline">التالي</span>
+                          </>
+                        ) : (
+                          <>
+                            <span className="hidden sm:inline">Next</span>
+                            <ChevronRight className="h-3.5 w-3.5" />
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+          </Card>
+        </div>
       </div>
 
       <EditCustomerDialog
