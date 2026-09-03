@@ -42,6 +42,14 @@ import {
   fetchRecommendationCatalog,
 } from "@/lib/storefront-queries";
 import { uploadPublicMedia } from "@/lib/r2-upload";
+import {
+  FIT_PROFILE_FIELDS,
+  fitProfileForProduct,
+  matchCustomFieldToMeasurement,
+  missingFitFields,
+  normalizeFitProfiles,
+  type FitProfileType,
+} from "@/lib/fit-passport";
 
 export const Route = createFileRoute("/$slug/product/$id")({
   loader: async ({ params }) => {
@@ -308,7 +316,7 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
     | undefined;
   const params = Route.useParams() as any;
   const id = splatId || params?.id || params?._splat || params?.["_"] || params?.["$"] || "";
-  const { brand, settings, currency, lang, t, addToCart, isWishlisted, toggleWishlist } =
+  const { brand, settings, currency, lang, t, addToCart, isWishlisted, toggleWishlist, session } =
     useStorefront();
   const navigate = useNavigate();
   const [mediaIdx, setMediaIdx] = useState(0);
@@ -320,6 +328,7 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
   const [selectedFabric, setSelectedFabric] = useState<string | null>(null);
   const [sizeMode, setSizeMode] = useState<"ready" | "custom">("ready");
+  const [passportApplied, setPassportApplied] = useState(false);
   const [uploadingField, setUploadingField] = useState<Record<string, boolean>>({});
   const optionsRef = useRef<HTMLDivElement | null>(null);
 
@@ -538,9 +547,7 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
         });
         acc[col] =
           matching.length === 0 ||
-          matching.every(
-            (v) => (Number(v.stock_main ?? 0) + Number(v.stock_incubator ?? 0)) <= 0,
-          );
+          matching.every((v) => Number(v.stock_main ?? 0) + Number(v.stock_incubator ?? 0) <= 0);
         return acc;
       },
       {} as Record<string, boolean>,
@@ -558,9 +565,7 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
         });
         acc[sz] =
           matching.length === 0 ||
-          matching.every(
-            (v) => (Number(v.stock_main ?? 0) + Number(v.stock_incubator ?? 0)) <= 0,
-          );
+          matching.every((v) => Number(v.stock_main ?? 0) + Number(v.stock_incubator ?? 0) <= 0);
         return acc;
       },
       {} as Record<string, boolean>,
@@ -578,9 +583,7 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
         });
         acc[fb] =
           matching.length === 0 ||
-          matching.every(
-            (v) => (Number(v.stock_main ?? 0) + Number(v.stock_incubator ?? 0)) <= 0,
-          );
+          matching.every((v) => Number(v.stock_main ?? 0) + Number(v.stock_incubator ?? 0) <= 0);
         return acc;
       },
       {} as Record<string, boolean>,
@@ -631,6 +634,65 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
     () => (Array.isArray(product?.custom_fields) ? (product!.custom_fields as CustomField[]) : []),
     [product],
   );
+  const fitProfileType: FitProfileType = fitProfileForProduct(
+    product?.category,
+    product ? pickName(lang, product) : null,
+  );
+  const customerQ = useQuery({
+    queryKey: ["product-fit-customer", brand.id, session?.user?.id],
+    enabled: Boolean(session?.user?.id),
+    queryFn: async () => {
+      const { data } = await (supabase as any)
+        .from("customers")
+        .select("id")
+        .eq("brand_id", brand.id)
+        .eq("auth_user_id", session!.user.id)
+        .maybeSingle();
+      return data as { id: string } | null;
+    },
+  });
+  const fitPassportQ = useQuery({
+    queryKey: ["storefront-fit-passport", brand.id, customerQ.data?.id],
+    enabled: Boolean(customerQ.data?.id),
+    queryFn: async () => {
+      const { data } = await (supabase as any)
+        .from("customer_fit_passports")
+        .select("measurements,preferred_length_unit,version,consent_to_store")
+        .eq("brand_id", brand.id)
+        .eq("customer_id", customerQ.data!.id)
+        .maybeSingle();
+      return data as {
+        measurements: unknown;
+        preferred_length_unit: "in" | "cm";
+        version: number;
+        consent_to_store: boolean;
+      } | null;
+    },
+  });
+  const fitProfileValues = normalizeFitProfiles(fitPassportQ.data?.measurements)[fitProfileType];
+  const fitProfileComplete = Boolean(
+    fitPassportQ.data?.consent_to_store &&
+    missingFitFields(fitProfileType, fitProfileValues).length === 0,
+  );
+  const applyFitPassport = () => {
+    setCfValues((current) => {
+      const next = { ...current };
+      customFields.forEach((field) => {
+        const measurement = matchCustomFieldToMeasurement(field);
+        if (measurement && fitProfileValues[measurement] != null)
+          next[field.key] = String(fitProfileValues[measurement]);
+      });
+      return next;
+    });
+    setPassportApplied(true);
+    setErrorMsg(null);
+    toast.success(
+      t(
+        `تم تطبيق ملف ${fitProfileType === "abaya" ? "العباية" : "الفستان"}`,
+        "Fit Passport applied",
+      ),
+    );
+  };
   useEffect(() => {
     if (!product?.id) return;
     const key = `product-view:${product.id}:${new Date().toISOString().slice(0, 10)}`;
@@ -753,7 +815,7 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
     ? Number(matchedVariant.selling_price || basePrice) + selectedAddOnPrice
     : minMatchingPrice;
 
-  const maxStock = (Number(variant?.stock_main ?? 0) + Number(variant?.stock_incubator ?? 0));
+  const maxStock = Number(variant?.stock_main ?? 0) + Number(variant?.stock_incubator ?? 0);
 
   const displayName = pickName(lang, product);
   const displayDescription = pickDescription(lang, product);
@@ -791,7 +853,10 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
         if (hasVariants && !variant) {
           return t("يرجى اختيار مقاس جاهز أولاً", "Please select a ready size first");
         }
-        if (variant && (Number(variant.stock_main || 0) + Number(variant.stock_incubator || 0)) <= 0) {
+        if (
+          variant &&
+          Number(variant.stock_main || 0) + Number(variant.stock_incubator || 0) <= 0
+        ) {
           return t("هذا المقاس غير متوفر حالياً", "This size is out of stock");
         }
       } else {
@@ -807,7 +872,10 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
         if (hasVariants && !variant) {
           return t("يرجى اختيار مقاس/خيار أولاً", "Please select a size or option first");
         }
-        if (variant && (Number(variant.stock_main || 0) + Number(variant.stock_incubator || 0)) <= 0) {
+        if (
+          variant &&
+          Number(variant.stock_main || 0) + Number(variant.stock_incubator || 0) <= 0
+        ) {
           return t("هذا الخيار غير متوفر حالياً", "This option is out of stock");
         }
       }
@@ -860,6 +928,37 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
         };
       })
       .filter((v) => v.value.length > 0);
+
+    if (isTailoringActive && passportApplied && fitProfileComplete && fitPassportQ.data) {
+      custom.push({
+        key: "fit_passport_profile",
+        label_ar: "ملف المقاس المستخدم",
+        label_en: "Fit Passport profile",
+        value: fitProfileType === "abaya" ? "عباية / Abaya" : "فستان / Dress",
+        type: "text",
+        price_delta: 0,
+      });
+      FIT_PROFILE_FIELDS[fitProfileType].forEach(([key, labelAr, labelEn]) => {
+        const value = fitProfileValues[key];
+        if (value == null || String(value).trim() === "") return;
+        custom.push({
+          key: `fit_passport_${fitProfileType}_${key}`,
+          label_ar: `Passport — ${labelAr}`,
+          label_en: `Passport — ${labelEn}`,
+          value: `${value} ${fitPassportQ.data!.preferred_length_unit}`,
+          type: "number",
+          price_delta: 0,
+        });
+      });
+      custom.push({
+        key: "fit_passport_version",
+        label_ar: "إصدار ملف المقاس",
+        label_en: "Fit Passport version",
+        value: String(fitPassportQ.data.version),
+        type: "text",
+        price_delta: 0,
+      });
+    }
 
     const chosenAddons = applicableAddons.filter((a: any) => selectedAddonIds.includes(a.id));
     for (const addon of chosenAddons) {
@@ -914,7 +1013,7 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
       qty,
       max_stock: isTailoringActive
         ? 999
-        : (Number(targetVariant?.stock_main ?? 0) + Number(targetVariant?.stock_incubator ?? 0)) ||
+        : Number(targetVariant?.stock_main ?? 0) + Number(targetVariant?.stock_incubator ?? 0) ||
           999,
       custom_fields: custom,
       selected_customizations,
@@ -1186,7 +1285,9 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
                             active ? "scale-110 shadow-sm" : "border-transparent hover:scale-105"
                           } ${oos ? "opacity-45 cursor-not-allowed" : ""}`}
                           style={ringStyle}
-                          title={color + (oos ? ` (${t("غير متوفر جاهز", "out of ready stock")})` : "")}
+                          title={
+                            color + (oos ? ` (${t("غير متوفر جاهز", "out of ready stock")})` : "")
+                          }
                           aria-label={color}
                         >
                           {hex ? (
@@ -1230,7 +1331,17 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
                   <div className="flex flex-wrap gap-2">
                     {uniqueSizes.map((sz) => {
                       const active = selectedSize === sz;
-                      const oos = isSizeOutOfStock[sz] || (Number(variants.filter(v => v.size === sz).reduce((acc, v) => acc + Number(v.stock_main || 0) + Number(v.stock_incubator || 0), 0)) <= 0);
+                      const oos =
+                        isSizeOutOfStock[sz] ||
+                        Number(
+                          variants
+                            .filter((v) => v.size === sz)
+                            .reduce(
+                              (acc, v) =>
+                                acc + Number(v.stock_main || 0) + Number(v.stock_incubator || 0),
+                              0,
+                            ),
+                        ) <= 0;
                       return (
                         <Button
                           key={sz}
@@ -1268,7 +1379,18 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
                   <div className="flex flex-wrap gap-2">
                     {uniqueFabrics.map((fb) => {
                       const active = selectedFabric === fb;
-                      const oos = !isTailoringActive && (isFabricOutOfStock[fb] || (Number(variants.filter(v => v.fabric === fb).reduce((acc, v) => acc + Number(v.stock_main || 0) + Number(v.stock_incubator || 0), 0)) <= 0));
+                      const oos =
+                        !isTailoringActive &&
+                        (isFabricOutOfStock[fb] ||
+                          Number(
+                            variants
+                              .filter((v) => v.fabric === fb)
+                              .reduce(
+                                (acc, v) =>
+                                  acc + Number(v.stock_main || 0) + Number(v.stock_incubator || 0),
+                                0,
+                              ),
+                          ) <= 0);
                       return (
                         <Button
                           key={fb}
@@ -1302,7 +1424,7 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
                     <div className="text-sm font-medium mb-2">{t("الخيارات", "Options")}</div>
                     <div className="flex flex-wrap gap-2">
                       {variants.map((v) => {
-                        const oos = (Number(v.stock_main || 0) + Number(v.stock_incubator || 0)) <= 0;
+                        const oos = Number(v.stock_main || 0) + Number(v.stock_incubator || 0) <= 0;
                         const active = v.id === variantId;
                         const label =
                           [formatSizeWithUnit(v.size, v.size_unit, lang), v.color, v.fabric]
@@ -1396,6 +1518,66 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
                       "Please enter your custom tailoring measurements below accurately:",
                     )}
                   </span>
+                </div>
+              )}
+              {fitPassportQ.data && (
+                <div
+                  className={`rounded-xl border p-4 ${fitProfileComplete ? "border-primary/20 bg-primary/[0.045]" : "border-amber-200 bg-amber-50/70"}`}
+                >
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div className="flex items-start gap-3">
+                      <span className="grid size-9 place-items-center rounded-lg bg-primary text-primary-foreground">
+                        <Ruler className="size-4" />
+                      </span>
+                      <div>
+                        <p className="text-sm font-bold">
+                          Pura Fit Passport ·{" "}
+                          {fitProfileType === "abaya" ? t("عباية", "Abaya") : t("فستان", "Dress")}
+                        </p>
+                        <p className="mt-0.5 text-xs text-muted-foreground">
+                          {fitProfileComplete
+                            ? t(
+                                "مقاساتك المحفوظة جاهزة لهذا الطلب",
+                                "Your saved measurements are ready for this order",
+                              )
+                            : t(
+                                "ملف المقاس غير مكتمل. أكمليه من حسابك أولاً.",
+                                "This profile is incomplete. Complete it in your account first.",
+                              )}
+                        </p>
+                      </div>
+                    </div>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant={passportApplied ? "default" : "outline"}
+                      disabled={!fitProfileComplete}
+                      onClick={applyFitPassport}
+                      className="gap-2"
+                    >
+                      <Check className="size-4" />
+                      {passportApplied
+                        ? t("تم التطبيق", "Applied")
+                        : t("استخدام مقاساتي", "Use my measurements")}
+                    </Button>
+                  </div>
+                  {fitProfileComplete && (
+                    <div className="mt-3 flex flex-wrap gap-1.5">
+                      {FIT_PROFILE_FIELDS[fitProfileType]
+                        .filter(([key]) => fitProfileValues[key] != null)
+                        .map(([key, ar, en]) => (
+                          <span
+                            key={key}
+                            className="rounded-full border bg-background px-2.5 py-1 text-[11px]"
+                          >
+                            {lang === "ar" ? ar : en}:{" "}
+                            <b dir="ltr">
+                              {fitProfileValues[key]} {fitPassportQ.data!.preferred_length_unit}
+                            </b>
+                          </span>
+                        ))}
+                    </div>
+                  )}
                 </div>
               )}
               {customFields.map((f) => {
@@ -1590,7 +1772,9 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
                     aria-label={t("زيادة الكمية", "Increase quantity")}
                     className="h-11 w-11 rounded-none"
                     disabled={isTailoringActive ? false : qty >= maxStock}
-                    onClick={() => setQty((q) => (isTailoringActive ? q + 1 : Math.min(maxStock, q + 1)))}
+                    onClick={() =>
+                      setQty((q) => (isTailoringActive ? q + 1 : Math.min(maxStock, q + 1)))
+                    }
                   >
                     +
                   </Button>
@@ -1604,7 +1788,9 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
                 ) : maxStock > 0 && maxStock <= 5 ? (
                   <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-500/40 bg-amber-500/10 px-2.5 py-1 text-xs text-amber-700 dark:text-amber-300 font-semibold animate-pulse">
                     <span>🔥</span>
-                    <span>{t(`متبقي ${maxStock} قطع فقط!`, `Only ${maxStock} left in stock!`)}</span>
+                    <span>
+                      {t(`متبقي ${maxStock} قطع فقط!`, `Only ${maxStock} left in stock!`)}
+                    </span>
                   </span>
                 ) : (
                   <span className="inline-flex items-center rounded-full border border-border bg-muted px-2.5 py-1 text-xs text-foreground">
@@ -1651,7 +1837,8 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
               <Truck className="h-4 w-4 text-primary shrink-0" />
               <span className="font-medium text-foreground">
                 {lang === "ar"
-                  ? settings.delivery_estimate_ar || "التوصيل المتوقع خلال 24 - 48 ساعة داخل البحرين"
+                  ? settings.delivery_estimate_ar ||
+                    "التوصيل المتوقع خلال 24 - 48 ساعة داخل البحرين"
                   : settings.delivery_estimate_en || "Estimated delivery within 24 - 48 hours"}
               </span>
             </div>

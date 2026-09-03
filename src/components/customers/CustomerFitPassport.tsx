@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { CheckCircle2, History, Ruler, Save, ShieldCheck } from "lucide-react";
+import { CheckCircle2, History, Ruler, Save, ShieldCheck, Shirt } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -9,6 +9,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  FIT_PROFILE_FIELDS,
+  missingFitFields,
+  normalizeFitProfiles,
+  type FitProfileType,
+  type FitProfiles,
+} from "@/lib/fit-passport";
 import {
   Select,
   SelectContent,
@@ -16,17 +24,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-
-const FIELDS = [
-  ["height", "الطول", "Height"],
-  ["abaya_length", "طول العباية", "Abaya length"],
-  ["sleeve", "طول الكم", "Sleeve"],
-  ["shoulder", "عرض الكتف", "Shoulder"],
-  ["bust", "الصدر", "Bust"],
-  ["waist", "الخصر", "Waist"],
-  ["hips", "الأرداف", "Hips"],
-  ["arm_width", "عرض الذراع", "Arm width"],
-] as const;
 
 type Passport = {
   id: string;
@@ -78,7 +75,8 @@ export function CustomerFitPassport({
       return (data ?? []) as { id: string; version: number; changed_at: string }[];
     },
   });
-  const [measurements, setMeasurements] = useState<Record<string, string>>({});
+  const [profile, setProfile] = useState<FitProfileType>("abaya");
+  const [measurements, setMeasurements] = useState<FitProfiles>({ abaya: {}, dress: {} });
   const [fit, setFit] = useState<Passport["fit_preference"]>("regular");
   const [unit, setUnit] = useState<Passport["preferred_length_unit"]>("in");
   const [notes, setNotes] = useState("");
@@ -88,11 +86,15 @@ export function CustomerFitPassport({
   useEffect(() => {
     const p = passportQ.data;
     if (!p) return;
-    setMeasurements(
-      Object.fromEntries(
-        Object.entries(p.measurements ?? {}).map(([key, value]) => [key, String(value)]),
+    const normalized = normalizeFitProfiles(p.measurements);
+    setMeasurements({
+      abaya: Object.fromEntries(
+        Object.entries(normalized.abaya).map(([key, value]) => [key, String(value)]),
       ),
-    );
+      dress: Object.fromEntries(
+        Object.entries(normalized.dress).map(([key, value]) => [key, String(value)]),
+      ),
+    });
     setFit(p.fit_preference);
     setUnit(p.preferred_length_unit);
     setNotes(p.tailoring_notes ?? "");
@@ -107,11 +109,22 @@ export function CustomerFitPassport({
           ? "يجب تسجيل موافقة العميلة قبل حفظ المقاسات"
           : "Customer consent is required before saving measurements",
       );
+    if (missingFitFields(profile, measurements[profile]).length)
+      return toast.error(
+        isAr
+          ? "أكمل الحقول الإجبارية المعلّمة بنجمة"
+          : "Complete the required fields marked with an asterisk",
+      );
     setSaving(true);
     const clean = Object.fromEntries(
-      Object.entries(measurements)
-        .filter(([, value]) => value.trim())
-        .map(([key, value]) => [key, Number(value)]),
+      Object.entries(measurements).map(([kind, values]) => [
+        kind,
+        Object.fromEntries(
+          Object.entries(values)
+            .filter(([, value]) => String(value).trim())
+            .map(([key, value]) => [key, Number(value)]),
+        ),
+      ]),
     );
     const { error } = await (supabase as any).from("customer_fit_passports").upsert(
       {
@@ -160,6 +173,18 @@ export function CustomerFitPassport({
         )}
       </div>
       <div className="space-y-5 p-5">
+        <Tabs value={profile} onValueChange={(value) => setProfile(value as FitProfileType)}>
+          <TabsList className="grid h-auto w-full grid-cols-2 p-1">
+            <TabsTrigger value="abaya" className="gap-2 py-2.5">
+              <Ruler className="size-4" />
+              {isAr ? "ملف العباية" : "Abaya profile"}
+            </TabsTrigger>
+            <TabsTrigger value="dress" className="gap-2 py-2.5">
+              <Shirt className="size-4" />
+              {isAr ? "ملف الفستان" : "Dress profile"}
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
             <Label>{isAr ? "وحدة القياس" : "Measurement unit"}</Label>
@@ -191,10 +216,11 @@ export function CustomerFitPassport({
           </div>
         </div>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          {FIELDS.map(([key, ar, en]) => (
+          {FIT_PROFILE_FIELDS[profile].map(([key, ar, en, required]) => (
             <div key={key}>
               <Label htmlFor={`fit-${key}`} className="text-xs">
                 {isAr ? ar : en}
+                {required && <span className="ms-1 text-destructive">*</span>}
               </Label>
               <div className="relative mt-1.5">
                 <Input
@@ -202,9 +228,12 @@ export function CustomerFitPassport({
                   type="number"
                   min="0"
                   step="0.1"
-                  value={measurements[key] ?? ""}
+                  value={String(measurements[profile][key] ?? "")}
                   onChange={(event) =>
-                    setMeasurements((current) => ({ ...current, [key]: event.target.value }))
+                    setMeasurements((current) => ({
+                      ...current,
+                      [profile]: { ...current[profile], [key]: event.target.value },
+                    }))
                   }
                   className="pe-9 font-mono"
                 />
