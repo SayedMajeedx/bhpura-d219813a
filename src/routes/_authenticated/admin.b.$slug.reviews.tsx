@@ -5,6 +5,7 @@ import {
   AlertTriangle,
   ArrowUpRight,
   Gift,
+  ImageDown,
   MessageSquareHeart,
   Search,
   Sparkles,
@@ -31,6 +32,7 @@ import {
 } from "@/components/ui/select";
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
+import { ReviewStoryDialog } from "@/components/reviews/ReviewStoryDialog";
 
 export const Route = createFileRoute("/_authenticated/admin/b/$slug/reviews")({
   component: CustomerReviewsPage,
@@ -45,6 +47,20 @@ function CustomerReviewsPage() {
   const deferredSearch = useDeferredValue(search.trim().toLowerCase());
   const [ratingFilter, setRatingFilter] = useState("all");
   const [period, setPeriod] = useState("all");
+  const [storyReview, setStoryReview] = useState<OrderReviewAdminRow | null>(null);
+
+  const brandStyleQ = useQuery({
+    queryKey: ["review-story-brand", brand.id],
+    queryFn: async () => {
+      const { data, error } = await (supabase.from("business_settings") as any)
+        .select("business_name, primary_color")
+        .eq("brand_id", brand.id)
+        .maybeSingle();
+      if (error) throw error;
+      return data as { business_name?: string | null; primary_color?: string | null } | null;
+    },
+    staleTime: 5 * 60_000,
+  });
 
   const reviewsQ = useQuery({
     queryKey: ["brand-order-reviews", brand.id],
@@ -228,12 +244,29 @@ function CustomerReviewsPage() {
           ) : (
             <div className="space-y-3">
               {filtered.map((review) => (
-                <ReviewCard key={review.review_id} review={review} slug={slug} isAr={isAr} />
+                <ReviewCard
+                  key={review.review_id}
+                  review={review}
+                  slug={slug}
+                  isAr={isAr}
+                  onCreateStory={() => setStoryReview(review)}
+                />
               ))}
             </div>
           )}
         </div>
       </section>
+      <ReviewStoryDialog
+        open={Boolean(storyReview)}
+        onOpenChange={(open) => !open && setStoryReview(null)}
+        review={storyReview}
+        brandName={
+          brandStyleQ.data?.business_name?.trim() ||
+          (isAr ? brand.name_ar || brand.name_en : brand.name_en)
+        }
+        brandColor={brandStyleQ.data?.primary_color}
+        isAr={isAr}
+      />
     </div>
   );
 }
@@ -276,10 +309,12 @@ function ReviewCard({
   review,
   slug,
   isAr,
+  onCreateStory,
 }: {
   review: OrderReviewAdminRow;
   slug: string;
   isAr: boolean;
+  onCreateStory: () => void;
 }) {
   const low = Number(review.rating) <= 3;
   return (
@@ -335,12 +370,18 @@ function ReviewCard({
             <Gift className="size-3.5" />
             {isAr ? `تم عرض كود ${review.reward_code}` : `${review.reward_code} reward shown`}
           </span>
-          <Button asChild size="sm" variant="outline" className="min-h-11 gap-2">
-            <Link to="/admin/b/$slug/orders/$id" params={{ slug, id: review.order_id }}>
-              {isAr ? "فتح الطلب" : "Open order"}
-              <ArrowUpRight className="size-4 rtl:-scale-x-100" />
-            </Link>
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button size="sm" className="min-h-11 gap-2" onClick={onCreateStory}>
+              <ImageDown className="size-4" />
+              {isAr ? "إنشاء ستوري" : "Create story"}
+            </Button>
+            <Button asChild size="sm" variant="outline" className="min-h-11 gap-2">
+              <Link to="/admin/b/$slug/orders/$id" params={{ slug, id: review.order_id }}>
+                {isAr ? "فتح الطلب" : "Open order"}
+                <ArrowUpRight className="size-4 rtl:-scale-x-100" />
+              </Link>
+            </Button>
+          </div>
         </div>
       </CardContent>
     </Card>
