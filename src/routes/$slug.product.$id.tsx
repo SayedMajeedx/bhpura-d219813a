@@ -642,6 +642,12 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
     : customFields.some((field) => field.key.includes("passport_abaya"))
       ? "abaya"
       : null;
+  const passportConfigured = configuredPassportType !== null;
+  const visibleCustomFields = passportConfigured
+    ? customFields.filter(
+        (field) => !field.key.includes("passport_") && !matchCustomFieldToMeasurement(field),
+      )
+    : customFields;
   const fitProfileType: FitProfileType =
     configuredPassportType ??
     fitProfileForProduct(product?.category, product ? pickName(lang, product) : null);
@@ -699,6 +705,19 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
         "Fit Passport applied",
       ),
     );
+  };
+  const removeFitPassport = () => {
+    setPassportApplied(false);
+    setCfValues((current) => {
+      const next = { ...current };
+      customFields.forEach((field) => {
+        if (field.key.includes("passport_") || matchCustomFieldToMeasurement(field)) {
+          delete next[field.key];
+        }
+      });
+      return next;
+    });
+    toast.success(t("تم إلغاء استخدام المقاسات المحفوظة", "Saved measurements removed"));
   };
   useEffect(() => {
     if (!product?.id) return;
@@ -867,7 +886,10 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
           return t("هذا المقاس غير متوفر حالياً", "This size is out of stock");
         }
       } else {
-        for (const f of customFields) {
+        if (passportConfigured && !passportApplied) {
+          return t("طبّقي Fit Passport لإكمال طلب التفصيل", "Apply your Fit Passport to continue");
+        }
+        for (const f of visibleCustomFields) {
           if (f.required && !(cfValues[f.key] ?? "").trim()) {
             return t(`الحقل مطلوب: ${cfLabel(f)}`, `Required field: ${cfLabel(f)}`);
           }
@@ -886,7 +908,10 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
           return t("هذا الخيار غير متوفر حالياً", "This option is out of stock");
         }
       }
-      for (const f of customFields) {
+      if (isTailoringActive && passportConfigured && !passportApplied) {
+        return t("طبّقي Fit Passport لإكمال طلب التفصيل", "Apply your Fit Passport to continue");
+      }
+      for (const f of visibleCustomFields) {
         if (f.required && !(cfValues[f.key] ?? "").trim()) {
           return t(`الحقل مطلوب: ${cfLabel(f)}`, `Required field: ${cfLabel(f)}`);
         }
@@ -920,7 +945,8 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
     }
     setErrorMsg(null);
 
-    const activeCustomFields = showSizeModeToggle && sizeMode === "ready" ? [] : customFields;
+    const activeCustomFields =
+      showSizeModeToggle && sizeMode === "ready" ? [] : visibleCustomFields;
     const custom = activeCustomFields
       .map((f) => {
         const val = (cfValues[f.key] ?? "").trim();
@@ -1521,13 +1547,17 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
                   <Scissors className="h-4 w-4 shrink-0" />
                   <span>
                     {t(
-                      "يرجى إدخال قياسات التفصيل أدناه بدقة:",
-                      "Please enter your custom tailoring measurements below accurately:",
+                      passportConfigured
+                        ? "اختاري ملف مقاساتك لإكمال طلب التفصيل:"
+                        : "يرجى إدخال قياسات التفصيل أدناه بدقة:",
+                      passportConfigured
+                        ? "Choose your saved fit profile to complete this custom order:"
+                        : "Please enter your custom tailoring measurements below accurately:",
                     )}
                   </span>
                 </div>
               )}
-              {fitPassportQ.data && (
+              {passportConfigured && fitPassportQ.data && (
                 <div
                   className={`rounded-xl border p-4 ${fitProfileComplete ? "border-primary/20 bg-primary/[0.045]" : "border-amber-200 bg-amber-50/70"}`}
                 >
@@ -1557,14 +1587,14 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
                     <Button
                       type="button"
                       size="sm"
-                      variant={passportApplied ? "default" : "outline"}
+                      variant={passportApplied ? "outline" : "default"}
                       disabled={!fitProfileComplete}
-                      onClick={applyFitPassport}
+                      onClick={passportApplied ? removeFitPassport : applyFitPassport}
                       className="gap-2"
                     >
-                      <Check className="size-4" />
+                      {passportApplied ? <X className="size-4" /> : <Check className="size-4" />}
                       {passportApplied
-                        ? t("تم التطبيق", "Applied")
+                        ? t("إلغاء التطبيق", "Remove")
                         : t("استخدام مقاساتي", "Use my measurements")}
                     </Button>
                   </div>
@@ -1587,7 +1617,34 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
                   )}
                 </div>
               )}
-              {customFields.map((f) => {
+              {passportConfigured && !fitPassportQ.isLoading && !fitPassportQ.data && (
+                <div className="rounded-xl border border-dashed border-primary/30 bg-primary/[0.035] p-5 text-center">
+                  <Ruler className="mx-auto size-6 text-primary" />
+                  <p className="mt-2 text-sm font-bold">Pura Fit Passport</p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {session
+                      ? t(
+                          "أنشئي ملف المقاسات المناسب من حسابك لإكمال طلب التفصيل.",
+                          "Create the matching measurement profile in your account to continue.",
+                        )
+                      : t(
+                          "سجّلي الدخول واختاري مقاساتك لإكمال طلب التفصيل.",
+                          "Sign in and save your measurements to continue.",
+                        )}
+                  </p>
+                  <Button asChild type="button" variant="outline" size="sm" className="mt-3">
+                    <Link
+                      to={session ? "/$slug/account" : "/$slug/auth"}
+                      params={{ slug: brand.slug }}
+                    >
+                      {session
+                        ? t("فتح مقاساتي", "Open my measurements")
+                        : t("تسجيل الدخول", "Sign in")}
+                    </Link>
+                  </Button>
+                </div>
+              )}
+              {visibleCustomFields.map((f) => {
                 const label = cfLabel(f);
                 const val = cfValues[f.key] ?? "";
                 const set = (v: string) => {

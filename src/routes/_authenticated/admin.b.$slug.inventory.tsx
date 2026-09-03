@@ -113,6 +113,11 @@ import { ListPagination } from "@/components/list-pagination";
 import { isLowStock, isOutOfStock } from "@/lib/inventory-health";
 import { RoutePendingSkeleton } from "@/components/os/route-pending-skeleton";
 import { OsEmptyState } from "@/components/os/os-empty-state";
+import {
+  FIT_PROFILE_FIELDS,
+  matchCustomFieldToMeasurement,
+  type FitProfileType,
+} from "@/lib/fit-passport";
 
 /** Common measurement units the admin can pick from for a "size" variant. */
 const SIZE_UNITS = ["", "cm", "mm", "m", "inch", "ft", "kg", "g", "ml", "l"] as const;
@@ -2842,6 +2847,14 @@ const CUSTOMIZER_PRESETS = {
   },
 };
 
+function cleanPassportCustomFields(fields: CustomField[]) {
+  const passportMode = fields.some((field) => field.key.includes("passport_"));
+  if (!passportMode) return fields;
+  return fields.filter(
+    (field) => field.key.includes("passport_") || !matchCustomFieldToMeasurement(field),
+  );
+}
+
 function ProductDialog({ product, onSaved }: { product: Product | null; onSaved: () => void }) {
   const t = useT();
   const { lang } = useI18n();
@@ -3063,7 +3076,7 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
         featured_trending: form.featured_trending,
         show_sale_badge: form.show_sale_badge,
         media: form.media as any,
-        custom_fields: (form.custom_fields ?? []) as any,
+        custom_fields: cleanPassportCustomFields(form.custom_fields ?? []) as any,
         variant_label_size_ar: (form.variant_label_size_ar || "").trim() || null,
         variant_label_size_en: (form.variant_label_size_en || "").trim() || null,
         variant_label_color_ar: (form.variant_label_color_ar || "").trim() || null,
@@ -3107,7 +3120,7 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
         featured_trending: form.featured_trending,
         show_sale_badge: form.show_sale_badge,
         media: form.media as any,
-        custom_fields: (form.custom_fields ?? []) as any,
+        custom_fields: cleanPassportCustomFields(form.custom_fields ?? []) as any,
         variant_label_size_ar: (form.variant_label_size_ar || "").trim() || null,
         variant_label_size_en: (form.variant_label_size_en || "").trim() || null,
         variant_label_color_ar: (form.variant_label_color_ar || "").trim() || null,
@@ -3694,10 +3707,19 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
                       const preset =
                         CUSTOMIZER_PRESETS[presetKey as keyof typeof CUSTOMIZER_PRESETS];
                       if (preset) {
+                        const isPassportPreset =
+                          presetKey === "passport_abaya" || presetKey === "passport_dress";
+                        const retainedFields = isPassportPreset
+                          ? (form.custom_fields ?? []).filter(
+                              (field) =>
+                                !field.key.includes("passport_") &&
+                                !matchCustomFieldToMeasurement(field),
+                            )
+                          : (form.custom_fields ?? []);
                         setForm({
                           ...form,
                           custom_fields: [
-                            ...(form.custom_fields ?? []),
+                            ...retainedFields,
                             ...preset.fields.map(
                               (f, index) =>
                                 ({
@@ -3782,218 +3804,295 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {(form.custom_fields ?? []).map((f, i) => {
-                    const upd = (patch: Partial<CustomField>) => {
-                      const next = [...form.custom_fields];
-                      next[i] = { ...next[i], ...patch };
-                      setForm({ ...form, custom_fields: next });
-                    };
-                    const remove = () =>
-                      setForm({
-                        ...form,
-                        custom_fields: form.custom_fields.filter((_, j) => j !== i),
-                      });
+                  {(() => {
+                    const passportType: FitProfileType | null = (form.custom_fields ?? []).some(
+                      (field) => field.key.includes("passport_dress"),
+                    )
+                      ? "dress"
+                      : (form.custom_fields ?? []).some((field) =>
+                            field.key.includes("passport_abaya"),
+                          )
+                        ? "abaya"
+                        : null;
+                    if (!passportType) return null;
                     return (
-                      <div
-                        key={f.key}
-                        className="rounded-xl border border-border p-4 bg-background space-y-3 shadow-sm transition hover:border-primary/40"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-                          <Input
-                            className="h-9 text-xs rounded-lg"
-                            placeholder={isAr ? "التسمية بالعربية" : "Arabic label"}
-                            value={f.label_ar ?? ""}
-                            onChange={(e) => upd({ label_ar: e.target.value })}
-                          />
-                          <Input
-                            className="h-9 text-xs rounded-lg"
-                            placeholder={isAr ? "التسمية بالإنجليزية" : "English label"}
-                            value={f.label_en ?? ""}
-                            onChange={(e) => upd({ label_en: e.target.value })}
-                          />
-                          <Select
-                            value={f.type}
-                            onValueChange={(v) => upd({ type: v as CustomField["type"] })}
-                          >
-                            <SelectTrigger className="h-9 text-xs rounded-lg font-bold">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="text">{isAr ? "نص" : "Text"}</SelectItem>
-                              <SelectItem value="number">{isAr ? "رقم" : "Number"}</SelectItem>
-                              <SelectItem value="select">
-                                {isAr ? "قائمة اختيار" : "Dropdown"}
-                              </SelectItem>
-                              <SelectItem value="file">
-                                {isAr ? "رفع ملف" : "File upload"}
-                              </SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        {f.type === "select" && (
-                          <Input
-                            className="h-9 text-xs rounded-lg"
-                            placeholder={
-                              isAr
-                                ? "الخيارات مفصولة بفاصلة (,) أو (،)"
-                                : "Options separated by commas"
-                            }
-                            defaultValue={(f.options ?? []).join(", ")}
-                            onChange={(e) =>
-                              upd({
-                                options: e.target.value
-                                  .split(/[,،]/)
-                                  .map((s) => s.trim())
-                                  .filter(Boolean),
+                      <div className="rounded-2xl border border-primary/25 bg-primary/[0.045] p-4 shadow-sm">
+                        <div className="flex flex-wrap items-start justify-between gap-3">
+                          <div>
+                            <p className="font-bold text-primary">
+                              Pura Fit Passport ·{" "}
+                              {passportType === "abaya"
+                                ? isAr
+                                  ? "عباية"
+                                  : "Abaya"
+                                : isAr
+                                  ? "فستان"
+                                  : "Dress"}
+                            </p>
+                            <p className="mt-1 text-xs text-muted-foreground">
+                              {isAr
+                                ? "هذا المنتج يستخدم ملف المقاسات المحفوظ، ولا يعرض حقول قياس مكررة للعميل."
+                                : "This product uses the saved fit profile without showing duplicate measurement fields."}
+                            </p>
+                          </div>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            onClick={() =>
+                              setForm({
+                                ...form,
+                                custom_fields: (form.custom_fields ?? []).filter(
+                                  (field) => !field.key.includes("passport_"),
+                                ),
                               })
                             }
-                          />
-                        )}
-
-                        {/* Real-time storefront preview block */}
-                        <div className="rounded-lg bg-muted/40 p-3 border border-dashed border-border/60 text-xs">
-                          <div className="flex items-center justify-between">
-                            <span className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
-                              {isAr
-                                ? "👁️ معاينة فورية لصفحة المنتج"
-                                : "👁️ Real-time Storefront Preview"}
-                            </span>
-                          </div>
-                          <div className="mt-2 space-y-1">
-                            <div className="flex items-center gap-1 font-bold text-foreground/90">
-                              <span>
-                                {isAr
-                                  ? f.label_ar || f.label_en || "اسم الحقل"
-                                  : f.label_en || f.label_ar || "Field Name"}
-                              </span>
-                              {f.required && <span className="text-red-500 font-bold">*</span>}
-                            </div>
-                            {f.type === "text" && (
-                              <Input
-                                disabled
-                                className="h-8.5 text-xs bg-background rounded-lg"
-                                placeholder={isAr ? "كتابة نص مخصص..." : "Enter custom text..."}
-                              />
-                            )}
-                            {f.type === "number" && (
-                              <Input
-                                disabled
-                                type="number"
-                                className="h-8.5 text-xs bg-background rounded-lg"
-                                placeholder="123"
-                              />
-                            )}
-                            {f.type === "file" && (
-                              <div className="flex h-11 items-center justify-center gap-2 rounded-xl border border-dashed border-border bg-background text-muted-foreground">
-                                <svg
-                                  className="h-4 w-4 opacity-60"
-                                  fill="none"
-                                  viewBox="0 0 24 24"
-                                  stroke="currentColor"
-                                >
-                                  <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={2}
-                                    d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"
-                                  />
-                                </svg>
-                                <span className="text-[10px] font-bold">
-                                  {isAr
-                                    ? "انقر لرفع ملف مخصص (.pdf, .png, .jpg)"
-                                    : "Click to upload custom file (.pdf, .png, .jpg)"}
-                                </span>
-                              </div>
-                            )}
-                            {f.type === "select" && (
-                              <div className="flex flex-wrap gap-1.5 pt-0.5">
-                                {(f.options ?? []).length === 0 ? (
-                                  <span className="text-[11px] text-muted-foreground italic">
-                                    {isAr ? "لا توجد خيارات بعد" : "No options specified yet"}
-                                  </span>
-                                ) : (
-                                  (f.options ?? []).map((opt) => (
-                                    <div
-                                      key={opt}
-                                      className="rounded-md border border-border bg-background px-2.5 py-1 text-[11px] font-bold text-foreground shadow-sm"
-                                    >
-                                      {opt}
-                                    </div>
-                                  ))
-                                )}
-                              </div>
-                            )}
-                          </div>
+                          >
+                            {isAr ? "إزالة Passport" : "Remove Passport"}
+                          </Button>
                         </div>
-
-                        <div
-                          className="flex items-center justify-between border-t border-border/40 pt-3 text-xs"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <div className="flex items-center gap-2 text-xs font-medium">
-                            <Switch
-                              checked={!!f.required}
-                              onCheckedChange={(v) => upd({ required: v })}
-                            />
-                            <span className="text-muted-foreground">
-                              {isAr ? "حقل إلزامي" : "Required field"}
+                        <div className="mt-3 flex flex-wrap gap-1.5">
+                          {FIT_PROFILE_FIELDS[passportType].map(([key, ar, en, required]) => (
+                            <span
+                              key={key}
+                              className="rounded-full border bg-background px-2.5 py-1 text-[11px]"
+                            >
+                              {isAr ? ar : en} ·{" "}
+                              {required
+                                ? isAr
+                                  ? "إجباري"
+                                  : "Required"
+                                : isAr
+                                  ? "اختياري"
+                                  : "Optional"}
                             </span>
-                          </div>
-                          <div className="flex items-center gap-0.5">
-                            <Button
-                              type="button"
-                              size="icon"
-                              variant="ghost"
-                              className="h-7 w-7 p-0 touch-manipulation"
-                              disabled={i === 0}
-                              onClick={(e) => {
-                                e.preventDefault();
-                                const next = [...form.custom_fields];
-                                const temp = next[i];
-                                next[i] = next[i - 1];
-                                next[i - 1] = temp;
-                                setForm({ ...form, custom_fields: next });
-                              }}
-                              title={isAr ? "نقل للأعلى" : "Move Up"}
-                            >
-                              ▲
-                            </Button>
-                            <Button
-                              type="button"
-                              size="icon"
-                              variant="ghost"
-                              className="h-7 w-7 p-0 touch-manipulation"
-                              disabled={i === (form.custom_fields ?? []).length - 1}
-                              onClick={(e) => {
-                                e.preventDefault();
-                                const next = [...form.custom_fields];
-                                const temp = next[i];
-                                next[i] = next[i + 1];
-                                next[i + 1] = temp;
-                                setForm({ ...form, custom_fields: next });
-                              }}
-                              title={isAr ? "نقل للأسفل" : "Move Down"}
-                            >
-                              ▼
-                            </Button>
-                            <Button
-                              type="button"
-                              size="sm"
-                              variant="ghost"
-                              className="text-rose-600 hover:text-rose-700 hover:bg-rose-50 h-7 text-[11px] rounded font-bold touch-manipulation"
-                              onClick={(e) => {
-                                e.preventDefault();
-                                remove();
-                              }}
-                            >
-                              {isAr ? "حذف" : "Remove"}
-                            </Button>
-                          </div>
+                          ))}
                         </div>
                       </div>
                     );
-                  })}
+                  })()}
+                  {(form.custom_fields ?? [])
+                    .map((field, index) => ({ field, index }))
+                    .filter(
+                      ({ field }) =>
+                        !field.key.includes("passport_") &&
+                        (!(form.custom_fields ?? []).some((entry) =>
+                          entry.key.includes("passport_"),
+                        ) ||
+                          !matchCustomFieldToMeasurement(field)),
+                    )
+                    .map(({ field: f, index: i }) => {
+                      const upd = (patch: Partial<CustomField>) => {
+                        const next = [...form.custom_fields];
+                        next[i] = { ...next[i], ...patch };
+                        setForm({ ...form, custom_fields: next });
+                      };
+                      const remove = () =>
+                        setForm({
+                          ...form,
+                          custom_fields: form.custom_fields.filter((_, j) => j !== i),
+                        });
+                      return (
+                        <div
+                          key={f.key}
+                          className="rounded-xl border border-border p-4 bg-background space-y-3 shadow-sm transition hover:border-primary/40"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                            <Input
+                              className="h-9 text-xs rounded-lg"
+                              placeholder={isAr ? "التسمية بالعربية" : "Arabic label"}
+                              value={f.label_ar ?? ""}
+                              onChange={(e) => upd({ label_ar: e.target.value })}
+                            />
+                            <Input
+                              className="h-9 text-xs rounded-lg"
+                              placeholder={isAr ? "التسمية بالإنجليزية" : "English label"}
+                              value={f.label_en ?? ""}
+                              onChange={(e) => upd({ label_en: e.target.value })}
+                            />
+                            <Select
+                              value={f.type}
+                              onValueChange={(v) => upd({ type: v as CustomField["type"] })}
+                            >
+                              <SelectTrigger className="h-9 text-xs rounded-lg font-bold">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="text">{isAr ? "نص" : "Text"}</SelectItem>
+                                <SelectItem value="number">{isAr ? "رقم" : "Number"}</SelectItem>
+                                <SelectItem value="select">
+                                  {isAr ? "قائمة اختيار" : "Dropdown"}
+                                </SelectItem>
+                                <SelectItem value="file">
+                                  {isAr ? "رفع ملف" : "File upload"}
+                                </SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          {f.type === "select" && (
+                            <Input
+                              className="h-9 text-xs rounded-lg"
+                              placeholder={
+                                isAr
+                                  ? "الخيارات مفصولة بفاصلة (,) أو (،)"
+                                  : "Options separated by commas"
+                              }
+                              defaultValue={(f.options ?? []).join(", ")}
+                              onChange={(e) =>
+                                upd({
+                                  options: e.target.value
+                                    .split(/[,،]/)
+                                    .map((s) => s.trim())
+                                    .filter(Boolean),
+                                })
+                              }
+                            />
+                          )}
+
+                          {/* Real-time storefront preview block */}
+                          <div className="rounded-lg bg-muted/40 p-3 border border-dashed border-border/60 text-xs">
+                            <div className="flex items-center justify-between">
+                              <span className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">
+                                {isAr
+                                  ? "👁️ معاينة فورية لصفحة المنتج"
+                                  : "👁️ Real-time Storefront Preview"}
+                              </span>
+                            </div>
+                            <div className="mt-2 space-y-1">
+                              <div className="flex items-center gap-1 font-bold text-foreground/90">
+                                <span>
+                                  {isAr
+                                    ? f.label_ar || f.label_en || "اسم الحقل"
+                                    : f.label_en || f.label_ar || "Field Name"}
+                                </span>
+                                {f.required && <span className="text-red-500 font-bold">*</span>}
+                              </div>
+                              {f.type === "text" && (
+                                <Input
+                                  disabled
+                                  className="h-8.5 text-xs bg-background rounded-lg"
+                                  placeholder={isAr ? "كتابة نص مخصص..." : "Enter custom text..."}
+                                />
+                              )}
+                              {f.type === "number" && (
+                                <Input
+                                  disabled
+                                  type="number"
+                                  className="h-8.5 text-xs bg-background rounded-lg"
+                                  placeholder="123"
+                                />
+                              )}
+                              {f.type === "file" && (
+                                <div className="flex h-11 items-center justify-center gap-2 rounded-xl border border-dashed border-border bg-background text-muted-foreground">
+                                  <svg
+                                    className="h-4 w-4 opacity-60"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    stroke="currentColor"
+                                  >
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      strokeWidth={2}
+                                      d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"
+                                    />
+                                  </svg>
+                                  <span className="text-[10px] font-bold">
+                                    {isAr
+                                      ? "انقر لرفع ملف مخصص (.pdf, .png, .jpg)"
+                                      : "Click to upload custom file (.pdf, .png, .jpg)"}
+                                  </span>
+                                </div>
+                              )}
+                              {f.type === "select" && (
+                                <div className="flex flex-wrap gap-1.5 pt-0.5">
+                                  {(f.options ?? []).length === 0 ? (
+                                    <span className="text-[11px] text-muted-foreground italic">
+                                      {isAr ? "لا توجد خيارات بعد" : "No options specified yet"}
+                                    </span>
+                                  ) : (
+                                    (f.options ?? []).map((opt) => (
+                                      <div
+                                        key={opt}
+                                        className="rounded-md border border-border bg-background px-2.5 py-1 text-[11px] font-bold text-foreground shadow-sm"
+                                      >
+                                        {opt}
+                                      </div>
+                                    ))
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+
+                          <div
+                            className="flex items-center justify-between border-t border-border/40 pt-3 text-xs"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <div className="flex items-center gap-2 text-xs font-medium">
+                              <Switch
+                                checked={!!f.required}
+                                onCheckedChange={(v) => upd({ required: v })}
+                              />
+                              <span className="text-muted-foreground">
+                                {isAr ? "حقل إلزامي" : "Required field"}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-0.5">
+                              <Button
+                                type="button"
+                                size="icon"
+                                variant="ghost"
+                                className="h-7 w-7 p-0 touch-manipulation"
+                                disabled={i === 0}
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  const next = [...form.custom_fields];
+                                  const temp = next[i];
+                                  next[i] = next[i - 1];
+                                  next[i - 1] = temp;
+                                  setForm({ ...form, custom_fields: next });
+                                }}
+                                title={isAr ? "نقل للأعلى" : "Move Up"}
+                              >
+                                ▲
+                              </Button>
+                              <Button
+                                type="button"
+                                size="icon"
+                                variant="ghost"
+                                className="h-7 w-7 p-0 touch-manipulation"
+                                disabled={i === (form.custom_fields ?? []).length - 1}
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  const next = [...form.custom_fields];
+                                  const temp = next[i];
+                                  next[i] = next[i + 1];
+                                  next[i + 1] = temp;
+                                  setForm({ ...form, custom_fields: next });
+                                }}
+                                title={isAr ? "نقل للأسفل" : "Move Down"}
+                              >
+                                ▼
+                              </Button>
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant="ghost"
+                                className="text-rose-600 hover:text-rose-700 hover:bg-rose-50 h-7 text-[11px] rounded font-bold touch-manipulation"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  remove();
+                                }}
+                              >
+                                {isAr ? "حذف" : "Remove"}
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
                 </div>
               )}
             </div>
