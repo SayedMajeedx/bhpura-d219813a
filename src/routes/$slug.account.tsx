@@ -39,6 +39,7 @@ import {
   CircleDollarSign,
   CheckCircle2,
   Coins,
+  Ruler,
 } from "lucide-react";
 import { BAHRAIN_REGIONS, regionLabel } from "@/lib/bahrain-regions";
 import { DeliveryAddressCard } from "@/components/delivery-address-card";
@@ -48,6 +49,7 @@ import { CustomerReturnRequestModal } from "@/components/storefront/CustomerRetu
 import { CustomerLoyaltySection } from "@/components/loyalty/CustomerLoyaltySection";
 import { getCustomerStoreCreditBalance } from "@/lib/returns.functions";
 import { RETURN_STATUS_CONFIG, type ReturnStatus } from "@/lib/returns.types";
+import { StorefrontFitPassport } from "@/components/storefront/StorefrontFitPassport";
 
 export const Route = createFileRoute("/$slug/account")({
   component: AccountPage,
@@ -311,13 +313,18 @@ function AccountPage() {
     },
   });
 
-  const { data: customerReturns = [], isLoading: loadingReturns, refetch: refetchReturns } = useQuery({
+  const {
+    data: customerReturns = [],
+    isLoading: loadingReturns,
+    refetch: refetchReturns,
+  } = useQuery({
     queryKey: ["storefront-account-returns", brand.id, customer?.id],
     enabled: !!brand.id && !!customer?.id,
     queryFn: async () => {
       const { data, error } = await (supabase as any)
         .from("return_requests")
-        .select(`
+        .select(
+          `
           id,
           return_number,
           status,
@@ -335,7 +342,8 @@ function AccountPage() {
             unit_price,
             product:products (name_ar, name_en)
           )
-        `)
+        `,
+        )
         .eq("brand_id", brand.id)
         .eq("customer_id", customer!.id)
         .order("created_at", { ascending: false });
@@ -509,33 +517,27 @@ function AccountPage() {
             defaultValue="orders"
             className="w-full rounded-2xl border bg-card/40 backdrop-blur-md p-4 shadow-xs sm:p-6 border-border/70"
           >
-            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-6 h-auto rounded-xl p-1 bg-muted/40 border border-border/40 mb-6 gap-1">
+            <TabsList className="grid w-full grid-cols-2 sm:grid-cols-7 h-auto rounded-xl p-1 bg-muted/40 border border-border/40 mb-6 gap-1">
               <TabsTrigger
                 value="orders"
                 className="gap-1.5 py-2.5 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-xs transition-all text-xs"
               >
                 <PackageSearch className="h-4 w-4 text-primary" />
-                <span className="font-semibold text-xs">
-                  {t("طلباتي", "My orders")}
-                </span>
+                <span className="font-semibold text-xs">{t("طلباتي", "My orders")}</span>
               </TabsTrigger>
               <TabsTrigger
                 value="loyalty"
                 className="gap-1.5 py-2.5 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-xs transition-all text-xs"
               >
                 <Coins className="h-4 w-4 text-primary" />
-                <span className="font-semibold text-xs">
-                  {t("المكافآت والولاء", "Rewards")}
-                </span>
+                <span className="font-semibold text-xs">{t("المكافآت والولاء", "Rewards")}</span>
               </TabsTrigger>
               <TabsTrigger
                 value="returns"
                 className="gap-1.5 py-2.5 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-xs transition-all text-xs"
               >
                 <RotateCcw className="h-4 w-4 text-primary" />
-                <span className="font-semibold text-xs">
-                  {t("المرتجعات", "Returns")}
-                </span>
+                <span className="font-semibold text-xs">{t("المرتجعات", "Returns")}</span>
                 {customerReturns.length > 0 && (
                   <span className="text-[10px] font-mono font-bold bg-primary/20 text-primary px-1.5 py-0.2 rounded-full">
                     {customerReturns.length}
@@ -543,31 +545,32 @@ function AccountPage() {
                 )}
               </TabsTrigger>
               <TabsTrigger
+                value="fit"
+                className="gap-1.5 py-2.5 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-xs transition-all text-xs"
+              >
+                <Ruler className="h-4 w-4 text-primary" />
+                <span className="font-semibold text-xs">{t("مقاساتي", "My fit")}</span>
+              </TabsTrigger>
+              <TabsTrigger
                 value="profile"
                 className="gap-1.5 py-2.5 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-xs transition-all text-xs"
               >
                 <UserIcon className="h-4 w-4 text-primary" />
-                <span className="font-semibold text-xs">
-                  {t("البيانات", "Profile")}
-                </span>
+                <span className="font-semibold text-xs">{t("البيانات", "Profile")}</span>
               </TabsTrigger>
               <TabsTrigger
                 value="addresses"
                 className="gap-1.5 py-2.5 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-xs transition-all text-xs"
               >
                 <MapPin className="h-4 w-4 text-primary" />
-                <span className="font-semibold text-xs">
-                  {t("العناوين", "Addresses")}
-                </span>
+                <span className="font-semibold text-xs">{t("العناوين", "Addresses")}</span>
               </TabsTrigger>
               <TabsTrigger
                 value="security"
                 className="gap-1.5 py-2.5 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-xs transition-all text-xs"
               >
                 <Fingerprint className="h-4 w-4 text-primary" />
-                <span className="font-semibold text-xs">
-                  {t("الأمان", "Security")}
-                </span>
+                <span className="font-semibold text-xs">{t("الأمان", "Security")}</span>
               </TabsTrigger>
             </TabsList>
 
@@ -602,6 +605,10 @@ function AccountPage() {
 
             <TabsContent value="profile" className="mt-0 focus-visible:outline-none">
               <ProfileSection isAr={isAr} customer={customer} loadingCustomer={loadingCustomer} />
+            </TabsContent>
+
+            <TabsContent value="fit" className="mt-0 focus-visible:outline-none">
+              <StorefrontFitPassport brandId={brand.id} customerId={customer?.id} isAr={isAr} />
             </TabsContent>
 
             <TabsContent value="addresses" className="mt-0 focus-visible:outline-none">
@@ -939,7 +946,8 @@ function CustomerReturnsSection({
   return (
     <div className="space-y-4">
       {returns.map((r) => {
-        const statusCfg = RETURN_STATUS_CONFIG[r.status as ReturnStatus] || RETURN_STATUS_CONFIG.new;
+        const statusCfg =
+          RETURN_STATUS_CONFIG[r.status as ReturnStatus] || RETURN_STATUS_CONFIG.new;
         const date = new Date(r.created_at).toLocaleDateString(isAr ? "ar-BH-u-nu-latn" : "en-BH", {
           year: "numeric",
           month: "short",
@@ -947,10 +955,7 @@ function CustomerReturnsSection({
         });
 
         return (
-          <Card
-            key={r.id}
-            className="p-5 border border-border/70 rounded-xl bg-card space-y-3"
-          >
+          <Card key={r.id} className="p-5 border border-border/70 rounded-xl bg-card space-y-3">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div className="space-y-1">
                 <div className="flex items-center gap-2">
@@ -973,7 +978,8 @@ function CustomerReturnsSection({
                   </span>
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  {isAr ? "مرتبط بالفاتورة:" : "Linked to Invoice:"} #{r.order?.invoice_number || "---"} • {date}
+                  {isAr ? "مرتبط بالفاتورة:" : "Linked to Invoice:"} #
+                  {r.order?.invoice_number || "---"} • {date}
                 </p>
               </div>
 
