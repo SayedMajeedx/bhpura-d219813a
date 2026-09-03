@@ -332,6 +332,8 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
   const [selectedFabric, setSelectedFabric] = useState<string | null>(null);
   const [sizeMode, setSizeMode] = useState<"ready" | "custom">("ready");
   const [passportApplied, setPassportApplied] = useState(false);
+  const [passportDraft, setPassportDraft] = useState<Record<string, string>>({});
+  const [savingPassport, setSavingPassport] = useState(false);
   const [uploadingField, setUploadingField] = useState<Record<string, boolean>>({});
   const optionsRef = useRef<HTMLDivElement | null>(null);
 
@@ -682,7 +684,14 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
       } | null;
     },
   });
-  const fitProfileValues = normalizeFitProfiles(fitPassportQ.data?.measurements)[fitProfileType];
+  const storedFitProfiles = normalizeFitProfiles(fitPassportQ.data?.measurements);
+  const fitProfileValues = passportDraft;
+  useEffect(() => {
+    const values = storedFitProfiles[fitProfileType];
+    setPassportDraft(
+      Object.fromEntries(Object.entries(values).map(([key, value]) => [key, String(value)])),
+    );
+  }, [fitPassportQ.data?.measurements, fitProfileType]);
   const fitProfileComplete = Boolean(
     fitPassportQ.data?.consent_to_store &&
     missingFitFields(fitProfileType, fitProfileValues).length === 0,
@@ -705,6 +714,42 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
         "Fit Passport applied",
       ),
     );
+  };
+  const saveAndApplyFitPassport = async () => {
+    if (!customerQ.data?.id) return;
+    if (missingFitFields(fitProfileType, passportDraft).length) {
+      toast.error(
+        t(
+          "أكملي المقاسات الإجبارية بقيم صحيحة أكبر من صفر",
+          "Complete all required measurements with values greater than zero",
+        ),
+      );
+      return;
+    }
+    const cleanedProfile = Object.fromEntries(
+      Object.entries(passportDraft)
+        .filter(([, value]) => Number(value) > 0)
+        .map(([key, value]) => [key, Number(value)]),
+    );
+    setSavingPassport(true);
+    const { error } = await (authenticatedSupabase as any).from("customer_fit_passports").upsert(
+      {
+        brand_id: brand.id,
+        customer_id: customerQ.data.id,
+        measurements: { ...storedFitProfiles, [fitProfileType]: cleanedProfile },
+        preferred_length_unit: fitPassportQ.data?.preferred_length_unit ?? "in",
+        consent_to_store: true,
+      },
+      { onConflict: "brand_id,customer_id" },
+    );
+    setSavingPassport(false);
+    if (error) {
+      toast.error(t("تعذر حفظ المقاسات", "Could not save measurements"));
+      return;
+    }
+    await fitPassportQ.refetch();
+    applyFitPassport();
+    toast.success(t("تم حفظ المقاسات في Passport وتطبيقها", "Measurements saved and applied"));
   };
   const removeFitPassport = () => {
     setPassportApplied(false);
@@ -1557,7 +1602,7 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
                   </span>
                 </div>
               )}
-              {passportConfigured && fitPassportQ.data && (
+              {passportConfigured && customerQ.data && (
                 <div
                   className={`rounded-xl border p-4 ${fitProfileComplete ? "border-primary/20 bg-primary/[0.045]" : "border-amber-200 bg-amber-50/70"}`}
                 >
@@ -1572,14 +1617,14 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
                           {fitProfileType === "abaya" ? t("عباية", "Abaya") : t("فستان", "Dress")}
                         </p>
                         <p className="mt-0.5 text-xs text-muted-foreground">
-                          {fitProfileComplete
+                          {passportApplied
                             ? t(
-                                "مقاساتك المحفوظة جاهزة لهذا الطلب",
-                                "Your saved measurements are ready for this order",
+                                "تم حفظ هذه المقاسات وتطبيقها على الطلب",
+                                "These measurements are saved and applied to this order",
                               )
                             : t(
-                                "ملف المقاس غير مكتمل. أكمليه من حسابك أولاً.",
-                                "This profile is incomplete. Complete it in your account first.",
+                                "عدّلي المقاسات هنا، ثم احفظيها واستخدميها مباشرة.",
+                                "Edit your measurements here, then save and use them instantly.",
                               )}
                         </p>
                       </div>
@@ -1588,36 +1633,66 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
                       type="button"
                       size="sm"
                       variant={passportApplied ? "outline" : "default"}
-                      disabled={!fitProfileComplete}
-                      onClick={passportApplied ? removeFitPassport : applyFitPassport}
+                      disabled={savingPassport}
+                      onClick={passportApplied ? removeFitPassport : saveAndApplyFitPassport}
                       className="gap-2"
                     >
                       {passportApplied ? <X className="size-4" /> : <Check className="size-4" />}
                       {passportApplied
                         ? t("إلغاء التطبيق", "Remove")
-                        : t("استخدام مقاساتي", "Use my measurements")}
+                        : savingPassport
+                          ? t("جارٍ الحفظ…", "Saving…")
+                          : t("حفظ واستخدام", "Save & use")}
                     </Button>
                   </div>
-                  {fitProfileComplete && (
-                    <div className="mt-3 flex flex-wrap gap-1.5">
-                      {FIT_PROFILE_FIELDS[fitProfileType]
-                        .filter(([key]) => fitProfileValues[key] != null)
-                        .map(([key, ar, en]) => (
-                          <span
-                            key={key}
-                            className="rounded-full border bg-background px-2.5 py-1 text-[11px]"
-                          >
-                            {lang === "ar" ? ar : en}:{" "}
-                            <b dir="ltr">
-                              {fitProfileValues[key]} {fitPassportQ.data!.preferred_length_unit}
-                            </b>
+                  <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+                    {FIT_PROFILE_FIELDS[fitProfileType].map(([key, ar, en, required]) => (
+                      <label key={key} className="space-y-1.5">
+                        <span className="block text-xs font-semibold">
+                          {lang === "ar" ? ar : en}
+                          {required ? (
+                            <span className="ms-1 text-destructive">*</span>
+                          ) : (
+                            <span className="ms-1 font-normal text-muted-foreground">
+                              {t("اختياري", "optional")}
+                            </span>
+                          )}
+                        </span>
+                        <div className="relative">
+                          <Input
+                            type="number"
+                            inputMode="decimal"
+                            min="0.1"
+                            step="0.1"
+                            value={passportDraft[key] ?? ""}
+                            disabled={passportApplied}
+                            onChange={(event) =>
+                              setPassportDraft((current) => ({
+                                ...current,
+                                [key]: event.target.value,
+                              }))
+                            }
+                            className="h-10 pe-9 bg-background"
+                          />
+                          <span className="absolute end-3 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">
+                            {fitPassportQ.data?.preferred_length_unit ?? "in"}
                           </span>
-                        ))}
-                    </div>
+                        </div>
+                      </label>
+                    ))}
+                  </div>
+                  {passportApplied && (
+                    <p className="mt-3 flex items-center gap-1.5 text-xs font-medium text-emerald-700">
+                      <Check className="size-3.5" />
+                      {t(
+                        "تم ربط نسخة هذه المقاسات بالطلب، ويمكنك إلغاء التطبيق لتعديلها.",
+                        "A snapshot is attached to this order. Remove it to edit again.",
+                      )}
+                    </p>
                   )}
                 </div>
               )}
-              {passportConfigured && !fitPassportQ.isLoading && !fitPassportQ.data && (
+              {passportConfigured && !fitPassportQ.isLoading && !customerQ.data && (
                 <div className="rounded-xl border border-dashed border-primary/30 bg-primary/[0.035] p-5 text-center">
                   <Ruler className="mx-auto size-6 text-primary" />
                   <p className="mt-2 text-sm font-bold">Pura Fit Passport</p>

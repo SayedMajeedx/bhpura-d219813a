@@ -47,7 +47,10 @@ export function fitProfileForProduct(
 export function missingFitFields(type: FitProfileType, values: FitMeasurements) {
   return FIT_PROFILE_FIELDS[type]
     .filter(([, , , required]) => required)
-    .filter(([key]) => !String(values[key] ?? "").trim())
+    .filter(([key]) => {
+      const value = Number(values[key]);
+      return !Number.isFinite(value) || value <= 0;
+    })
     .map(([key]) => key);
 }
 
