@@ -51,6 +51,7 @@ import {
   PackageCheck,
   Box,
   Store,
+  Ruler,
 } from "lucide-react";
 import {
   Dialog,
@@ -131,6 +132,13 @@ import { OrderStickyBottomBar } from "@/components/orders/OrderStickyBottomBar";
 import { OrderItemsWorkflowCard } from "@/components/orders/OrderItemsWorkflowCard";
 import { OrderFinancialLedgerCard } from "@/components/orders/OrderFinancialLedgerCard";
 import { OrderMetaSidePanel } from "@/components/orders/OrderMetaSidePanel";
+import {
+  FIT_PROFILE_FIELDS,
+  fitProfileForProduct,
+  missingFitFields,
+  normalizeFitProfiles,
+  type FitProfileType,
+} from "@/lib/fit-passport";
 
 function formatDeliveryAddress(
   c:
@@ -328,15 +336,70 @@ const QUICK_FABRICS = [
 function ItemTailoringCustomizer({
   item,
   isAr,
+  passport,
+  productCategory,
+  productName,
   onChange,
 }: {
   item: Item;
   isAr: boolean;
+  passport?: { measurements: unknown; preferred_length_unit: "in" | "cm"; version: number } | null;
+  productCategory?: string | null;
+  productName?: string | null;
   onChange: (patch: Partial<Item>) => void;
 }) {
   const currentSize = item.selected_variant?.size ?? "";
   const currentColor = item.selected_variant?.color ?? "";
   const currentFabric = item.selected_variant?.fabric ?? "";
+  const configuredType = String(
+    item.custom_field_values?.find((field) => field.key === "fit_passport_profile")?.value ?? "",
+  ).toLowerCase();
+  const profileType: FitProfileType =
+    configuredType.includes("dress") || configuredType.includes("فستان")
+      ? "dress"
+      : fitProfileForProduct(productCategory, productName);
+  const passportValues = normalizeFitProfiles(passport?.measurements)[profileType];
+  const passportComplete = Boolean(
+    passport && missingFitFields(profileType, passportValues).length === 0,
+  );
+
+  const applyPassport = () => {
+    if (!passport || !passportComplete) return;
+    const retained = (item.custom_field_values ?? []).filter(
+      (field) => !field.key.startsWith("fit_passport_"),
+    );
+    const snapshot: NonNullable<Item["custom_field_values"]> = [
+      {
+        key: "fit_passport_profile",
+        label_ar: "ملف المقاس المستخدم",
+        label_en: "Fit Passport profile",
+        value: profileType === "abaya" ? "عباية / Abaya" : "فستان / Dress",
+      },
+      ...FIT_PROFILE_FIELDS[profileType]
+        .filter(([key]) => passportValues[key] != null && String(passportValues[key]).trim())
+        .map(([key, ar, en]) => ({
+          key: `fit_passport_${profileType}_${key}`,
+          label_ar: `Passport — ${ar}`,
+          label_en: `Passport — ${en}`,
+          value: `${passportValues[key]} ${passport.preferred_length_unit}`,
+        })),
+      {
+        key: "fit_passport_version",
+        label_ar: "إصدار ملف المقاس",
+        label_en: "Fit Passport version",
+        value: String(passport.version),
+      },
+    ];
+    onChange({
+      selected_variant: {
+        ...(item.selected_variant ?? {}),
+        size: isAr ? "تفصيل / قياسات Passport" : "Custom / Fit Passport",
+      },
+      location: "custom",
+      custom_field_values: [...retained, ...snapshot],
+    });
+    toast.success(isAr ? "تم تطبيق مقاسات العميل على البند" : "Customer Fit Passport applied");
+  };
 
   const notesField = (item.custom_field_values ?? []).find(
     (cf) => cf.key === "tailoring_notes" || cf.key === "custom_measurements",
@@ -403,6 +466,41 @@ function ItemTailoringCustomizer({
           {isAr ? "تفصيل حسب الطلب" : "Made to order"}
         </span>
       </div>
+
+      {passport && (
+        <div
+          className={`rounded-lg border p-3 ${passportComplete ? "border-primary/25 bg-background" : "border-amber-200 bg-amber-50"}`}
+        >
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <p className="font-bold">
+                Pura Fit Passport ·{" "}
+                {profileType === "abaya" ? (isAr ? "عباية" : "Abaya") : isAr ? "فستان" : "Dress"}
+              </p>
+              <p className="mt-0.5 text-[11px] text-muted-foreground">
+                {passportComplete
+                  ? isAr
+                    ? "مقاسات العميل جاهزة للاستخدام"
+                    : "Customer measurements are ready"
+                  : isAr
+                    ? "ملف العميل غير مكتمل لهذا النوع"
+                    : "Customer profile is incomplete for this type"}
+              </p>
+            </div>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              disabled={!passportComplete}
+              onClick={applyPassport}
+              className="h-8 gap-1.5"
+            >
+              <Ruler className="size-3.5" />
+              {isAr ? "تطبيق المقاسات" : "Apply measurements"}
+            </Button>
+          </div>
+        </div>
+      )}
 
       {/* Size Selection */}
       <div className="space-y-1.5">
@@ -826,6 +924,24 @@ function OrderDetail() {
 
   const [order, setOrder] = useState<Order | null>(null);
   const [items, setItems] = useState<Item[]>([]);
+  const customerPassportQ = useQuery({
+    queryKey: ["admin-order-fit-passport", brandId, order?.customer_id],
+    enabled: !isCourier && Boolean(order?.customer_id),
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from("customer_fit_passports")
+        .select("measurements,preferred_length_unit,version")
+        .eq("brand_id", brandId)
+        .eq("customer_id", order!.customer_id)
+        .maybeSingle();
+      if (error) throw error;
+      return data as {
+        measurements: unknown;
+        preferred_length_unit: "in" | "cm";
+        version: number;
+      } | null;
+    },
+  });
   const [phoneSearch, setPhoneSearch] = useState("");
   const [editingUnlocked, setEditingUnlocked] = useState(false);
   const [invoicePreviewOpen, setInvoicePreviewOpen] = useState(false);
@@ -3803,6 +3919,9 @@ function OrderDetail() {
                               <ItemTailoringCustomizer
                                 item={it}
                                 isAr={isAr}
+                                passport={customerPassportQ.data}
+                                productCategory={product?.category}
+                                productName={product?.name}
                                 onChange={(patch) => updateItem(idx, patch)}
                               />
                             ) : (
@@ -4136,6 +4255,9 @@ function OrderDetail() {
                                 <ItemTailoringCustomizer
                                   item={it}
                                   isAr={isAr}
+                                  passport={customerPassportQ.data}
+                                  productCategory={product?.category}
+                                  productName={product?.name}
                                   onChange={(patch) => updateItem(idx, patch)}
                                 />
                               </div>

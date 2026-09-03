@@ -2664,6 +2664,130 @@ const CUSTOMIZER_PRESETS = {
       },
     ],
   },
+  passport_abaya: {
+    label_en: "Fit Passport — Abaya",
+    label_ar: "Fit Passport — عباية",
+    fields: [
+      {
+        key: "passport_abaya_length",
+        label_ar: "الطول",
+        label_en: "Length",
+        type: "number",
+        options: [],
+        required: true,
+      },
+      {
+        key: "passport_abaya_bust",
+        label_ar: "الصدر",
+        label_en: "Bust",
+        type: "number",
+        options: [],
+        required: true,
+      },
+      {
+        key: "passport_abaya_sleeve",
+        label_ar: "طول الكم",
+        label_en: "Sleeve length",
+        type: "number",
+        options: [],
+        required: true,
+      },
+      {
+        key: "passport_abaya_shoulder",
+        label_ar: "عرض الكتف",
+        label_en: "Shoulder",
+        type: "number",
+        options: [],
+        required: true,
+      },
+      {
+        key: "passport_abaya_waist",
+        label_ar: "الخصر (اختياري)",
+        label_en: "Waist (optional)",
+        type: "number",
+        options: [],
+        required: false,
+      },
+      {
+        key: "passport_abaya_hips",
+        label_ar: "الأرداف (اختياري)",
+        label_en: "Hips (optional)",
+        type: "number",
+        options: [],
+        required: false,
+      },
+      {
+        key: "passport_abaya_arm_width",
+        label_ar: "عرض الذراع (اختياري)",
+        label_en: "Arm width (optional)",
+        type: "number",
+        options: [],
+        required: false,
+      },
+    ],
+  },
+  passport_dress: {
+    label_en: "Fit Passport — Dress",
+    label_ar: "Fit Passport — فستان",
+    fields: [
+      {
+        key: "passport_dress_length",
+        label_ar: "الطول",
+        label_en: "Length",
+        type: "number",
+        options: [],
+        required: true,
+      },
+      {
+        key: "passport_dress_bust",
+        label_ar: "الصدر",
+        label_en: "Bust",
+        type: "number",
+        options: [],
+        required: true,
+      },
+      {
+        key: "passport_dress_waist",
+        label_ar: "الخصر",
+        label_en: "Waist",
+        type: "number",
+        options: [],
+        required: true,
+      },
+      {
+        key: "passport_dress_shoulder",
+        label_ar: "عرض الكتف",
+        label_en: "Shoulder",
+        type: "number",
+        options: [],
+        required: true,
+      },
+      {
+        key: "passport_dress_sleeve",
+        label_ar: "طول الكم (اختياري)",
+        label_en: "Sleeve length (optional)",
+        type: "number",
+        options: [],
+        required: false,
+      },
+      {
+        key: "passport_dress_hips",
+        label_ar: "الأرداف (اختياري)",
+        label_en: "Hips (optional)",
+        type: "number",
+        options: [],
+        required: false,
+      },
+      {
+        key: "passport_dress_arm_width",
+        label_ar: "عرض الذراع (اختياري)",
+        label_en: "Arm width (optional)",
+        type: "number",
+        options: [],
+        required: false,
+      },
+    ],
+  },
   gift: {
     label_en: "Gift / Perfume Preset",
     label_ar: "نموذج هدايا / عطور",
@@ -3600,6 +3724,12 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
                       </SelectItem>
                       <SelectItem value="fashion">
                         {isAr ? "عبايات وأزياء" : "Fashion / Abaya"}
+                      </SelectItem>
+                      <SelectItem value="passport_abaya">
+                        {isAr ? "📏 مقاسات Passport — عباية" : "📏 Fit Passport — Abaya"}
+                      </SelectItem>
+                      <SelectItem value="passport_dress">
+                        {isAr ? "📏 مقاسات Passport — فستان" : "📏 Fit Passport — Dress"}
                       </SelectItem>
                       <SelectItem value="gift">
                         {isAr ? "عطور وهدايا" : "Gift / Perfume"}

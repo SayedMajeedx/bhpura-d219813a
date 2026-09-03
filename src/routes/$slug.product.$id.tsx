@@ -1,6 +1,9 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { publicSupabase as supabase } from "@/integrations/supabase/client";
+import {
+  publicSupabase as supabase,
+  supabase as authenticatedSupabase,
+} from "@/integrations/supabase/client";
 import {
   useStorefront,
   formatPrice,
@@ -634,15 +637,19 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
     () => (Array.isArray(product?.custom_fields) ? (product!.custom_fields as CustomField[]) : []),
     [product],
   );
-  const fitProfileType: FitProfileType = fitProfileForProduct(
-    product?.category,
-    product ? pickName(lang, product) : null,
-  );
+  const configuredPassportType = customFields.some((field) => field.key.includes("passport_dress"))
+    ? "dress"
+    : customFields.some((field) => field.key.includes("passport_abaya"))
+      ? "abaya"
+      : null;
+  const fitProfileType: FitProfileType =
+    configuredPassportType ??
+    fitProfileForProduct(product?.category, product ? pickName(lang, product) : null);
   const customerQ = useQuery({
     queryKey: ["product-fit-customer", brand.id, session?.user?.id],
     enabled: Boolean(session?.user?.id),
     queryFn: async () => {
-      const { data } = await (supabase as any)
+      const { data } = await (authenticatedSupabase as any)
         .from("customers")
         .select("id")
         .eq("brand_id", brand.id)
@@ -655,7 +662,7 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
     queryKey: ["storefront-fit-passport", brand.id, customerQ.data?.id],
     enabled: Boolean(customerQ.data?.id),
     queryFn: async () => {
-      const { data } = await (supabase as any)
+      const { data } = await (authenticatedSupabase as any)
         .from("customer_fit_passports")
         .select("measurements,preferred_length_unit,version,consent_to_store")
         .eq("brand_id", brand.id)
