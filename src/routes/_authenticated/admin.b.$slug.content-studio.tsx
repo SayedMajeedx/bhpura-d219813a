@@ -98,6 +98,10 @@ function instagramHandle(socials: unknown) {
   return handle ? `@${handle.replace(/^@/, "")}` : null;
 }
 
+function containsArabic(value: string) {
+  return /[\u0600-\u06ff]/.test(value);
+}
+
 function ContentStudioPage() {
   const { slug } = Route.useParams();
   const brand = useBrand();
@@ -146,6 +150,9 @@ function ContentStudioPage() {
   const phone = settingsQ.data?.phone || settingsQ.data?.whatsapp_number;
   const instagram = instagramHandle(settingsQ.data?.socials);
   const palette = THEMES[theme];
+  const editionIsAr = containsArabic(editionLabel);
+  const headlineIsAr = containsArabic(headline);
+  const bodyIsAr = containsArabic(body);
   const productName = selected
     ? isAr
       ? selected.name_ar || selected.name
@@ -164,16 +171,46 @@ function ContentStudioPage() {
         useCORS: true,
         logging: false,
       });
-      const link = document.createElement("a");
-      link.download = `pura-${selected?.name || "creative"}-${format}.png`
+      const fileName = `pura-${selected?.name || "creative"}-${format}.png`
         .replace(/\s+/g, "-")
         .toLowerCase();
-      link.href = canvas.toDataURL("image/png", 1);
+      const blob = await new Promise<Blob>((resolve, reject) =>
+        canvas.toBlob(
+          (result) => (result ? resolve(result) : reject(new Error("PNG export failed"))),
+          "image/png",
+          1,
+        ),
+      );
+      const file = new File([blob], fileName, { type: "image/png" });
+      const canShareFile =
+        typeof navigator.share === "function" && navigator.canShare?.({ files: [file] });
+
+      if (canShareFile) {
+        try {
+          await navigator.share({ files: [file], title: headline || businessName });
+          toast.success(
+            isAr ? "التصميم جاهز للحفظ أو المشاركة" : "Creative ready to save or share",
+          );
+          return;
+        } catch (shareError) {
+          if (shareError instanceof DOMException && shareError.name === "AbortError") return;
+          console.warn("Native file sharing was unavailable; using download fallback", shareError);
+        }
+      }
+
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.download = fileName;
+      link.href = url;
+      link.style.display = "none";
+      document.body.appendChild(link);
       link.click();
+      link.remove();
+      window.setTimeout(() => URL.revokeObjectURL(url), 30_000);
       toast.success(
         isAr
-          ? `تم تصدير التصميم ${target.width}×${target.height}`
-          : `Exported at ${target.width}×${target.height}`,
+          ? `تم تنزيل التصميم ${target.width}×${target.height}`
+          : `Downloaded at ${target.width}×${target.height}`,
       );
     } catch (error) {
       console.error(error);
@@ -389,7 +426,12 @@ function ContentStudioPage() {
         <div className="rounded-[28px] border bg-[#ece7e2] p-4 sm:p-7">
           <div className="mb-4 flex items-center justify-between">
             <div>
-              <p className="text-xs font-bold uppercase tracking-[.15em] text-muted-foreground">
+              <p
+                className={cn(
+                  "text-xs font-bold text-muted-foreground",
+                  !isAr && "uppercase tracking-[.15em]",
+                )}
+              >
                 {isAr ? "معاينة مباشرة" : "Live preview"}
               </p>
               <p className="mt-1 text-sm font-semibold">
@@ -431,7 +473,15 @@ function ContentStudioPage() {
                     <span className="font-serif text-2xl tracking-[.22em]">PURA</span>
                   )}
                   <span className="h-7 w-px bg-white/40" />
-                  <span className="text-[9px] font-semibold uppercase tracking-[.25em]">
+                  <span
+                    dir="auto"
+                    lang={editionIsAr ? "ar" : "en"}
+                    className={cn(
+                      "text-[9px] font-semibold",
+                      !editionIsAr && "uppercase tracking-[.25em]",
+                    )}
+                    style={editionIsAr ? { fontFamily: "Tahoma, Arial, sans-serif" } : undefined}
+                  >
                     {editionLabel || " "}
                   </span>
                 </div>
@@ -454,17 +504,30 @@ function ContentStudioPage() {
               >
                 <div className="mb-[3%] flex items-center gap-2">
                   <span className="h-px w-7 bg-current opacity-45" />
-                  <p className="text-[9px] font-black tracking-[.14em] opacity-65">{productName}</p>
+                  <p className="text-[9px] font-black opacity-65">{productName}</p>
                 </div>
                 <h2
-                  className="font-display text-2xl font-black leading-[1.25] sm:text-4xl"
-                  style={{ unicodeBidi: "plaintext" }}
+                  dir="auto"
+                  lang={headlineIsAr ? "ar" : "en"}
+                  className={cn(
+                    "text-2xl font-black leading-[1.35] sm:text-4xl",
+                    !headlineIsAr && "font-display tracking-tight",
+                  )}
+                  style={{
+                    unicodeBidi: "plaintext",
+                    fontFamily: headlineIsAr ? "Tahoma, Arial, sans-serif" : undefined,
+                  }}
                 >
                   {headline || " "}
                 </h2>
                 <p
+                  dir="auto"
+                  lang={bodyIsAr ? "ar" : "en"}
                   className="mt-[3%] max-w-[92%] text-xs font-medium leading-[1.75] opacity-80 sm:text-base"
-                  style={{ unicodeBidi: "plaintext" }}
+                  style={{
+                    unicodeBidi: "plaintext",
+                    fontFamily: bodyIsAr ? "Tahoma, Arial, sans-serif" : undefined,
+                  }}
                 >
                   {body || " "}
                 </p>
