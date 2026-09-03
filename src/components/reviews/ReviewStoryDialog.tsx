@@ -329,8 +329,7 @@ function prepareStoryLayers({
 
   fgCtx.font = "500 30px 'Tajawal', 'Cairo', Arial, sans-serif";
   const commentText =
-    comment.trim() ||
-    (isAr ? "تجربة تستحق المشاركة ورائعة جداً" : "An experience worth sharing");
+    comment.trim() || (isAr ? "تجربة تستحق المشاركة ورائعة جداً" : "An experience worth sharing");
   const commentLines = fitLines(fgCtx, commentText, maxCommentWidth, 6);
   const commentLineHeight = 46;
   const textBlockHeight = commentLines.length * commentLineHeight;
@@ -339,10 +338,7 @@ function prepareStoryLayers({
   const hasHighlights = showHighlights && validHighlights.length > 0;
   const extraHighlightsHeight = hasHighlights ? 52 : 0;
 
-  const ch = Math.max(
-    320,
-    Math.min(560, 160 + textBlockHeight + extraHighlightsHeight),
-  );
+  const ch = Math.max(320, Math.min(560, 160 + textBlockHeight + extraHighlightsHeight));
   const cy = Math.round(850 - ch / 2);
 
   // Frosted Card Shadow
@@ -369,7 +365,7 @@ function prepareStoryLayers({
     showName && publicFirstName(review.customer_name)
       ? publicFirstName(review.customer_name)
       : isAr
-        ? "عميلة موثّقة"
+        ? "تقييم موثّق"
         : "Verified customer";
 
   const headerY = cy + 48;
@@ -499,7 +495,7 @@ function prepareStoryLayers({
   fgCtx.fillStyle = dark ? "#fffaf5" : primary;
   fgCtx.font = "600 22px 'Tajawal', 'Cairo', Arial, sans-serif";
   fgCtx.textAlign = "center";
-  fgCtx.fillText(isAr ? "✓  رأي عميلة موثّق" : "✓  VERIFIED REVIEW", 540, 1768);
+  fgCtx.fillText(isAr ? "✓  تقييم موثّق" : "✓  VERIFIED REVIEW", 540, 1768);
 
   return { bgCanvas, fgCanvas };
 }
@@ -1152,7 +1148,9 @@ export function ReviewStoryDialog({
                   ) : (
                     <ImageIcon className="size-4 text-primary" />
                   )}
-                  {isAr ? "وسائط المنتج (صورة أو فيديو داخل الإطار)" : "Product media (photo or video)"}
+                  {isAr
+                    ? "وسائط المنتج (صورة أو فيديو داخل الإطار)"
+                    : "Product media (photo or video)"}
                 </Label>
                 {selectedMedia && (
                   <Button
@@ -1248,7 +1246,9 @@ export function ReviewStoryDialog({
             {/* Story Review Copy */}
             <div className="space-y-2">
               <div className="flex items-center justify-between gap-3">
-                <Label htmlFor="story-review-copy">{isAr ? "نص تقييم العميل" : "Review text"}</Label>
+                <Label htmlFor="story-review-copy">
+                  {isAr ? "نص تقييم العميل" : "Review text"}
+                </Label>
                 <span className="text-xs tabular-nums text-muted-foreground">
                   {comment.length}/280
                 </span>
@@ -1270,10 +1270,14 @@ export function ReviewStoryDialog({
                   <Calendar className="size-4 text-muted-foreground" />
                   <div>
                     <p className="text-sm font-semibold">
-                      {isAr ? "إظهار تاريخ الطلب داخل بوكس التقييم" : "Show order date in review box"}
+                      {isAr
+                        ? "إظهار تاريخ الطلب داخل بوكس التقييم"
+                        : "Show order date in review box"}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      {isAr ? "يظهر داخل البطاقة الزجاجية مع التقييم" : "Appears inside the frosted review card"}
+                      {isAr
+                        ? "يظهر داخل البطاقة الزجاجية مع التقييم"
+                        : "Appears inside the frosted review card"}
                     </p>
                   </div>
                 </div>
@@ -1348,7 +1352,7 @@ export function ReviewStoryDialog({
                     {showName
                       ? publicFirstName(review.customer_name)
                       : isAr
-                        ? "عميلة موثّقة"
+                        ? "تقييم موثّق"
                         : "Verified customer"}
                   </p>
                 </div>

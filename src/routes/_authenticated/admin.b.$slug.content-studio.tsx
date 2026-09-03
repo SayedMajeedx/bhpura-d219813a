@@ -296,7 +296,7 @@ function ContentStudioPage() {
               <Label>{isAr ? "المنتج" : "Product"}</Label>
               <Select value={selected?.id ?? ""} onValueChange={setProductId}>
                 <SelectTrigger className="mt-2 h-12 rounded-xl">
-                  <SelectValue placeholder={isAr ? "اختاري منتجاً" : "Choose a product"} />
+                  <SelectValue placeholder={isAr ? "اختيار منتج" : "Choose a product"} />
                 </SelectTrigger>
                 <SelectContent>
                   {products.map((product) => (
@@ -418,7 +418,7 @@ function ContentStudioPage() {
                     {isAr ? "آراء العملاء" : "Customer stories"}
                   </strong>
                   <small className="text-muted-foreground">
-                    {isAr ? "حوّلي أي تقييم إلى ستوري" : "Turn any review into a story"}
+                    {isAr ? "تحويل أي تقييم إلى ستوري" : "Turn any review into a story"}
                   </small>
                 </span>
               </span>

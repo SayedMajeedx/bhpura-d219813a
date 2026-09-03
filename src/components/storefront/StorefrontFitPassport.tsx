@@ -86,7 +86,7 @@ export function StorefrontFitPassport({
     return (
       <Card className="rounded-xl border border-dashed p-8 text-center text-sm text-muted-foreground">
         {isAr
-          ? "أكملي أول طلب لتفعيل Pura Fit Passport الخاص بك."
+          ? "يتم تفعيل Pura Fit Passport بعد إكمال أول طلب."
           : "Place your first order to activate your Pura Fit Passport."}
       </Card>
     );
@@ -94,13 +94,13 @@ export function StorefrontFitPassport({
     if (!consent)
       return toast.error(
         isAr
-          ? "وافقي على حفظ المقاسات قبل المتابعة."
+          ? "يرجى الموافقة على حفظ المقاسات قبل المتابعة."
           : "Please consent to storing your measurements.",
       );
     if (missingFitFields(profile, measurements[profile]).length)
       return toast.error(
         isAr
-          ? "أكملي الحقول الإجبارية المعلّمة بنجمة."
+          ? "يرجى إكمال الحقول الإجبارية المعلّمة بنجمة."
           : "Complete the required fields marked with an asterisk.",
       );
     const clean = Object.fromEntries(
@@ -114,24 +114,22 @@ export function StorefrontFitPassport({
       ]),
     );
     setSaving(true);
-    const { error } = await (supabase as any)
-      .from("customer_fit_passports")
-      .upsert(
-        {
-          brand_id: brandId,
-          customer_id: customerId,
-          measurements: clean,
-          fit_preference: fit,
-          preferred_length_unit: unit,
-          tailoring_notes: notes.trim() || null,
-          consent_to_store: true,
-        },
-        { onConflict: "brand_id,customer_id" },
-      );
+    const { error } = await (supabase as any).from("customer_fit_passports").upsert(
+      {
+        brand_id: brandId,
+        customer_id: customerId,
+        measurements: clean,
+        fit_preference: fit,
+        preferred_length_unit: unit,
+        tailoring_notes: notes.trim() || null,
+        consent_to_store: true,
+      },
+      { onConflict: "brand_id,customer_id" },
+    );
     setSaving(false);
     if (error)
       return toast.error(
-        isAr ? "تعذر حفظ المقاسات. حاولي مرة أخرى." : "Could not save your measurements.",
+        isAr ? "تعذر حفظ المقاسات. يرجى المحاولة مرة أخرى." : "Could not save your measurements.",
       );
     toast.success(
       isAr ? `تم حفظ ملف ${profile === "abaya" ? "العباية" : "الفستان"}` : "Fit profile saved",

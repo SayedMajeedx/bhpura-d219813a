@@ -106,7 +106,7 @@ export function CustomerFitPassport({
     if (!consent)
       return toast.error(
         isAr
-          ? "يجب تسجيل موافقة العميلة قبل حفظ المقاسات"
+          ? "يجب تسجيل موافقة صاحب الملف قبل حفظ المقاسات"
           : "Customer consent is required before saving measurements",
       );
     if (missingFitFields(profile, measurements[profile]).length)
@@ -161,7 +161,7 @@ export function CustomerFitPassport({
             <h2 className="font-display text-xl font-bold">Pura Fit Passport</h2>
             <p className="mt-1 text-xs text-muted-foreground">
               {isAr
-                ? "مقاسات موثّقة تعيد استخدامها العميلة في طلباتها القادمة"
+                ? "مقاسات موثّقة يمكن إعادة استخدامها في الطلبات القادمة"
                 : "Verified measurements ready for every future order"}
             </p>
           </div>
@@ -254,7 +254,7 @@ export function CustomerFitPassport({
             className="mt-1.5"
             placeholder={
               isAr
-                ? "مثال: تفضّل الكم أوسع قليلاً..."
+                ? "مثال: يُفضّل أن يكون الكم أوسع قليلاً..."
                 : "Example: prefers a slightly wider sleeve..."
             }
           />
@@ -268,7 +268,7 @@ export function CustomerFitPassport({
               </span>
               <span className="mt-1 block text-xs text-muted-foreground">
                 {isAr
-                  ? "أكدت العميلة موافقتها على حفظ بيانات المقاس"
+                  ? "تم تأكيد الموافقة على حفظ بيانات المقاس"
                   : "Customer approved storing fit data"}
               </span>
             </span>
@@ -281,7 +281,7 @@ export function CustomerFitPassport({
                 {isAr ? "تم التحقق" : "Fit verified"}
               </span>
               <span className="mt-1 block text-xs text-muted-foreground">
-                {isAr ? "تمت مراجعة المقاسات مع العميلة" : "Measurements reviewed with customer"}
+                {isAr ? "تمت مراجعة المقاسات مع صاحب الملف" : "Measurements reviewed with customer"}
               </span>
             </span>
             <Switch checked={verified} onCheckedChange={setVerified} />

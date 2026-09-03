@@ -720,7 +720,7 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
     if (missingFitFields(fitProfileType, passportDraft).length) {
       toast.error(
         t(
-          "أكملي المقاسات الإجبارية بقيم صحيحة أكبر من صفر",
+          "يرجى إكمال المقاسات الإجبارية بقيم صحيحة أكبر من صفر",
           "Complete all required measurements with values greater than zero",
         ),
       );
@@ -932,7 +932,10 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
         }
       } else {
         if (passportConfigured && !passportApplied) {
-          return t("طبّقي Fit Passport لإكمال طلب التفصيل", "Apply your Fit Passport to continue");
+          return t(
+            "يرجى تطبيق Fit Passport لإكمال طلب التفصيل",
+            "Apply your Fit Passport to continue",
+          );
         }
         for (const f of visibleCustomFields) {
           if (f.required && !(cfValues[f.key] ?? "").trim()) {
@@ -954,7 +957,10 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
         }
       }
       if (isTailoringActive && passportConfigured && !passportApplied) {
-        return t("طبّقي Fit Passport لإكمال طلب التفصيل", "Apply your Fit Passport to continue");
+        return t(
+          "يرجى تطبيق Fit Passport لإكمال طلب التفصيل",
+          "Apply your Fit Passport to continue",
+        );
       }
       for (const f of visibleCustomFields) {
         if (f.required && !(cfValues[f.key] ?? "").trim()) {
@@ -1593,7 +1599,7 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
                   <span>
                     {t(
                       passportConfigured
-                        ? "اختاري ملف مقاساتك لإكمال طلب التفصيل:"
+                        ? "يرجى اختيار ملف المقاسات لإكمال طلب التفصيل:"
                         : "يرجى إدخال قياسات التفصيل أدناه بدقة:",
                       passportConfigured
                         ? "Choose your saved fit profile to complete this custom order:"
@@ -1623,7 +1629,7 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
                                 "These measurements are saved and applied to this order",
                               )
                             : t(
-                                "عدّلي المقاسات هنا، ثم احفظيها واستخدميها مباشرة.",
+                                "يمكن تعديل المقاسات هنا، ثم حفظها واستخدامها مباشرة.",
                                 "Edit your measurements here, then save and use them instantly.",
                               )}
                         </p>
@@ -1699,11 +1705,11 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
                   <p className="mt-1 text-xs text-muted-foreground">
                     {session
                       ? t(
-                          "أنشئي ملف المقاسات المناسب من حسابك لإكمال طلب التفصيل.",
+                          "يرجى إنشاء ملف المقاسات المناسب من الحساب لإكمال طلب التفصيل.",
                           "Create the matching measurement profile in your account to continue.",
                         )
                       : t(
-                          "سجّلي الدخول واختاري مقاساتك لإكمال طلب التفصيل.",
+                          "يرجى تسجيل الدخول وحفظ المقاسات لإكمال طلب التفصيل.",
                           "Sign in and save your measurements to continue.",
                         )}
                   </p>
