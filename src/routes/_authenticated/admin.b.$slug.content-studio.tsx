@@ -107,6 +107,7 @@ function ContentStudioPage() {
   const [format, setFormat] = useState<keyof typeof FORMATS>("story");
   const [theme, setTheme] = useState<keyof typeof THEMES>("editorial");
   const [productId, setProductId] = useState("");
+  const [editionLabel, setEditionLabel] = useState("The Pura Edit");
   const [headline, setHeadline] = useState("صُممت لتبقى في الذاكرة");
   const [body, setBody] = useState("أناقة هادئة، وتفاصيل مدروسة لكل لحظة.");
   const [cta, setCta] = useState("تسوّقي المجموعة");
@@ -317,6 +318,19 @@ function ContentStudioPage() {
             </div>
             <div className="space-y-4">
               <div>
+                <Label htmlFor="studio-edition-label">
+                  {isAr ? "العبارة بجانب الشعار" : "Edition label"}
+                </Label>
+                <Input
+                  id="studio-edition-label"
+                  value={editionLabel}
+                  maxLength={28}
+                  onChange={(event) => setEditionLabel(event.target.value)}
+                  className="mt-2 h-11 rounded-xl"
+                  placeholder="The Pura Edit"
+                />
+              </div>
+              <div>
                 <Label htmlFor="studio-headline">{isAr ? "العنوان" : "Headline"}</Label>
                 <Input
                   id="studio-headline"
@@ -400,8 +414,11 @@ function ContentStudioPage() {
               ) : (
                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(214,177,130,.65),transparent_28%),radial-gradient(circle_at_80%_75%,rgba(51,10,10,.22),transparent_30%)]" />
               )}
-              <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/50" />
-              <div className="absolute inset-x-[7%] top-[5%] flex items-center justify-between gap-3 text-white">
+              <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent via-55% to-black/75" />
+              <div
+                dir="ltr"
+                className="absolute inset-x-[7%] top-[4.5%] flex items-center justify-between gap-3 text-white"
+              >
                 <div className="flex items-center gap-3">
                   {logo ? (
                     <img
@@ -413,9 +430,9 @@ function ContentStudioPage() {
                   ) : (
                     <span className="font-serif text-2xl tracking-[.22em]">PURA</span>
                   )}
-                  <span className="h-8 w-px bg-white/40" />
-                  <span className="text-[10px] font-semibold uppercase tracking-[.22em]">
-                    New edit
+                  <span className="h-7 w-px bg-white/40" />
+                  <span className="text-[9px] font-semibold uppercase tracking-[.25em]">
+                    {editionLabel || " "}
                   </span>
                 </div>
                 <span className="rounded-full border border-white/50 px-3 py-1 text-[9px] font-bold uppercase tracking-[.16em]">
@@ -423,38 +440,57 @@ function ContentStudioPage() {
                 </span>
               </div>
               <div
-                className="absolute inset-x-[6%] bottom-[7%] overflow-hidden rounded-[26px] border border-white/35 p-[7%] shadow-2xl backdrop-blur-md"
-                style={{ background: palette.panel }}
+                dir={isAr ? "rtl" : "ltr"}
+                lang={isAr ? "ar" : "en"}
+                className={cn(
+                  "absolute bottom-[8%] w-[78%] overflow-hidden rounded-[22px] border border-white/30 px-[5.5%] py-[5%] shadow-2xl backdrop-blur-md",
+                  isAr ? "right-[6%] text-right" : "left-[6%] text-left",
+                )}
+                style={{
+                  background: palette.panel,
+                  direction: isAr ? "rtl" : "ltr",
+                  textAlign: isAr ? "right" : "left",
+                }}
               >
-                <p className="text-[10px] font-black uppercase tracking-[.22em] opacity-70">
-                  {productName}
-                </p>
-                <h2 className="mt-[3%] font-display text-[clamp(24px,5vw,54px)] font-black leading-[1.05] tracking-tight">
+                <div className="mb-[3%] flex items-center gap-2">
+                  <span className="h-px w-7 bg-current opacity-45" />
+                  <p className="text-[9px] font-black tracking-[.14em] opacity-65">{productName}</p>
+                </div>
+                <h2
+                  className="font-display text-2xl font-black leading-[1.25] sm:text-4xl"
+                  style={{ unicodeBidi: "plaintext" }}
+                >
                   {headline || " "}
                 </h2>
-                <p className="mt-[4%] max-w-[88%] text-[clamp(12px,2.1vw,21px)] font-medium leading-relaxed opacity-80">
+                <p
+                  className="mt-[3%] max-w-[92%] text-xs font-medium leading-[1.75] opacity-80 sm:text-base"
+                  style={{ unicodeBidi: "plaintext" }}
+                >
                   {body || " "}
                 </p>
-                <div className="mt-[7%] flex items-end justify-between gap-4 border-t border-current/15 pt-[4%]">
+                <div className="mt-[5%] flex items-end justify-between gap-4 border-t border-current/15 pt-[4%]">
                   <span
-                    className="rounded-full px-5 py-2 text-[clamp(10px,1.6vw,15px)] font-black"
+                    className="rounded-full px-4 py-2 text-[10px] font-black sm:text-xs"
                     style={{ background: palette.ink, color: palette.bg }}
                   >
                     {cta}
                   </span>
                   {selected?.base_price ? (
-                    <span className="text-end">
-                      <small className="block text-[9px] uppercase tracking-widest opacity-60">
+                    <span dir={isAr ? "rtl" : "ltr"} className="text-end">
+                      <small className="block text-[8px] tracking-wider opacity-60">
                         {isAr ? "ابتداءً من" : "From"}
                       </small>
-                      <strong className="text-lg">
-                        {Number(selected.base_price).toFixed(3)} د.ب.
+                      <strong dir="ltr" className="block text-sm sm:text-base">
+                        {Number(selected.base_price).toFixed(3)} BHD
                       </strong>
                     </span>
                   ) : null}
                 </div>
               </div>
-              <div className="absolute inset-x-[7%] bottom-[2.2%] flex items-center justify-between text-[9px] font-semibold tracking-wide text-white/85">
+              <div
+                dir="ltr"
+                className="absolute inset-x-[7%] bottom-[2.3%] flex items-center justify-between text-[9px] font-semibold tracking-wide text-white/85"
+              >
                 <span className="flex items-center gap-1.5">
                   <Instagram className="size-3" /> {instagram || businessName}
                 </span>
