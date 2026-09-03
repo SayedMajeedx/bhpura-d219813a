@@ -499,7 +499,7 @@ function ContentStudioPage() {
                 dir={isAr ? "rtl" : "ltr"}
                 lang={isAr ? "ar" : "en"}
                 className={cn(
-                  "absolute bottom-[8%] w-[72%] overflow-hidden rounded-[20px] border border-white/25 px-[5%] py-[4.25%] shadow-xl backdrop-blur-[7px]",
+                  "absolute bottom-[7.5%] w-[66%] overflow-hidden rounded-[18px] border border-white/25 px-[4.25%] py-[3.5%] shadow-xl backdrop-blur-[6px]",
                   isAr ? "right-[6%] text-right" : "left-[6%] text-left",
                 )}
                 style={{
@@ -508,15 +508,15 @@ function ContentStudioPage() {
                   textAlign: isAr ? "right" : "left",
                 }}
               >
-                <div className="mb-[3%] flex items-center gap-2">
-                  <span className="h-px w-7 bg-current opacity-45" />
+                <div className="mb-[2.25%] flex items-center gap-2">
+                  <span className="h-px w-6 bg-current opacity-45" />
                   <p className="text-[9px] font-black opacity-65">{productName}</p>
                 </div>
                 <h2
                   dir="auto"
                   lang={headlineIsAr ? "ar" : "en"}
                   className={cn(
-                    "text-2xl font-black leading-[1.35] sm:text-4xl",
+                    "text-xl font-black leading-[1.3] sm:text-[30px]",
                     !headlineIsAr && "font-display tracking-tight",
                   )}
                   style={{
@@ -529,7 +529,7 @@ function ContentStudioPage() {
                 <p
                   dir="auto"
                   lang={bodyIsAr ? "ar" : "en"}
-                  className="mt-[3%] max-w-[92%] text-xs font-medium leading-[1.75] opacity-80 sm:text-base"
+                  className="mt-[2.5%] max-w-[94%] text-[11px] font-medium leading-[1.65] opacity-80 sm:text-sm"
                   style={{
                     unicodeBidi: "plaintext",
                     fontFamily: bodyIsAr ? "Tahoma, Arial, sans-serif" : undefined,
@@ -537,23 +537,31 @@ function ContentStudioPage() {
                 >
                   {body || " "}
                 </p>
-                <div className="mt-[5%] flex items-end justify-between gap-4 border-t border-current/15 pt-[4%]">
+                <div
+                  dir="ltr"
+                  className="mt-[4%] flex items-end justify-between gap-3 border-t border-current/15 pt-[3.25%]"
+                >
                   <span
-                    className="rounded-full px-4 py-2 text-[10px] font-black sm:text-xs"
+                    dir={isAr ? "rtl" : "ltr"}
+                    className={cn(
+                      "rounded-full px-3.5 py-1.5 text-[9px] font-black sm:text-[11px]",
+                      isAr && "order-2",
+                    )}
                     style={{ background: palette.ink, color: palette.bg }}
                   >
                     {cta}
                   </span>
                   {selected?.base_price ? (
-                    <span dir={isAr ? "rtl" : "ltr"} className="text-end">
+                    <span dir="ltr" className={cn("text-left", isAr && "order-1")}>
                       <small
+                        dir="rtl"
                         lang={isAr ? "ar" : "en"}
-                        className="block whitespace-nowrap text-[10px] opacity-70"
+                        className="block whitespace-nowrap text-left text-[9px] opacity-70"
                         style={isAr ? { fontFamily: "Tahoma, Arial, sans-serif" } : undefined}
                       >
                         {isAr ? "ابتداءً من" : "From"}
                       </small>
-                      <strong dir="ltr" className="block text-sm sm:text-base">
+                      <strong dir="ltr" className="block text-left text-xs sm:text-sm">
                         {Number(selected.base_price).toFixed(3)} BHD
                       </strong>
                     </span>
