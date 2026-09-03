@@ -51,9 +51,20 @@ function AuthPage() {
   useEffect(() => {
     const returnPath = readStorefrontOAuthReturn();
     if (!returnPath) return;
+    let active = true;
+    const continueToStorefront = () => {
+      if (active) window.location.replace(returnPath);
+    };
     void supabase.auth.getSession().then(({ data }) => {
-      if (data.session?.user) window.location.replace(returnPath);
+      if (data.session?.user) continueToStorefront();
     });
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user) continueToStorefront();
+    });
+    return () => {
+      active = false;
+      listener.subscription.unsubscribe();
+    };
   }, []);
 
   const submit = async (e: React.FormEvent) => {

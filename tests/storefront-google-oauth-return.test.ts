@@ -38,4 +38,12 @@ describe("storefront Google OAuth return", () => {
     expect(protectedRoute).toContain("const storefrontReturn = readStorefrontOAuthReturn()");
     expect(protectedRoute).toContain("throw redirect({ to: storefrontReturn as any })");
   });
+
+  it("persists Google login and waits for the OAuth session", () => {
+    const storefrontAuth = readFileSync("src/routes/$slug.auth.tsx", "utf8");
+    const adminAuth = readFileSync("src/routes/auth.tsx", "utf8");
+    expect(storefrontAuth).toContain("applyRememberMe(true)");
+    expect(adminAuth).toContain("supabase.auth.onAuthStateChange");
+    expect(adminAuth).toContain("window.location.replace(returnPath)");
+  });
 });

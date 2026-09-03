@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { translateAuthError } from "@/lib/auth-errors";
+import { applyRememberMe } from "@/lib/session-persistence";
 import {
   clearStorefrontOAuthReturn,
   rememberStorefrontOAuthReturn,
@@ -70,6 +71,7 @@ function StorefrontAuth() {
   const signInWithGoogle = async () => {
     setWorking(true);
     const callbackPath = `/${encodeURIComponent(brand.slug)}/auth-confirmed`;
+    applyRememberMe(true);
     rememberStorefrontOAuthReturn(callbackPath);
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",

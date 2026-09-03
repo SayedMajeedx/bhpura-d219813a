@@ -460,7 +460,7 @@ function ContentStudioPage() {
               ) : (
                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(214,177,130,.65),transparent_28%),radial-gradient(circle_at_80%_75%,rgba(51,10,10,.22),transparent_30%)]" />
               )}
-              <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent via-55% to-black/75" />
+              <div className="absolute inset-0 bg-gradient-to-b from-black/25 via-transparent via-70% to-black/20" />
               <div
                 dir="ltr"
                 className="absolute inset-x-[7%] top-[4.5%] flex items-center justify-between gap-3 text-white"
@@ -570,12 +570,12 @@ function ContentStudioPage() {
               </div>
               <div
                 dir="ltr"
-                className="absolute inset-x-[7%] bottom-[2.3%] flex items-center justify-between text-[9px] font-semibold tracking-wide text-white/85"
+                className="absolute inset-x-[6%] bottom-[2.2%] flex items-center justify-between gap-3 text-[9px] font-semibold tracking-wide text-white"
               >
-                <span className="flex items-center gap-1.5">
+                <span className="flex items-center gap-1.5 rounded-full bg-black/35 px-2.5 py-1.5 shadow-sm backdrop-blur-sm">
                   <Instagram className="size-3" /> {instagram || businessName}
                 </span>
-                <span className="flex items-center gap-1.5">
+                <span className="flex items-center gap-1.5 rounded-full bg-black/35 px-2.5 py-1.5 shadow-sm backdrop-blur-sm">
                   <Phone className="size-3" /> {phone || `boutq.store/${slug}`}
                 </span>
               </div>
