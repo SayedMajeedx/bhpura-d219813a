@@ -53,14 +53,78 @@ function CustomerReviewsPage() {
     queryKey: ["review-story-brand", brand.id],
     queryFn: async () => {
       const { data, error } = await (supabase.from("business_settings") as any)
-        .select("business_name")
+        .select("business_name, phone, whatsapp_number, socials")
         .eq("brand_id", brand.id)
         .maybeSingle();
       if (error) throw error;
-      return data as { business_name?: string | null } | null;
+      return data as {
+        business_name?: string | null;
+        phone?: string | null;
+        whatsapp_number?: string | null;
+        socials?: Array<{ name?: string; url?: string }> | null;
+      } | null;
     },
     staleTime: 5 * 60_000,
   });
+
+  const orderDetailsQ = useQuery({
+    queryKey: ["review-story-order", storyReview?.order_id],
+    enabled: Boolean(storyReview?.order_id),
+    queryFn: async () => {
+      if (!storyReview?.order_id) return null;
+      const { data, error } = await (supabase.from("orders") as any)
+        .select("id, order_date, created_at, order_items(id, description, product_id, products(id, image_url, media))")
+        .eq("id", storyReview.order_id)
+        .maybeSingle();
+      if (error) {
+        console.warn("Could not fetch order items for review story:", error);
+        return null;
+      }
+      return data;
+    },
+    staleTime: 60_000,
+  });
+
+  const brandPhone = brandStyleQ.data?.phone || brandStyleQ.data?.whatsapp_number || null;
+  const brandInstagram = useMemo(() => {
+    const rawSocials = Array.isArray(brandStyleQ.data?.socials) ? brandStyleQ.data!.socials : [];
+    const ig = rawSocials.find(
+      (s) =>
+        s.name?.toLowerCase().includes("instagram") ||
+        s.url?.toLowerCase().includes("instagram.com"),
+    );
+    if (!ig?.url) return null;
+    const clean = ig.url
+      .trim()
+      .replace(/^https?:\/\/(www\.)?instagram\.com\//i, "")
+      .replace(/\/+$/, "")
+      .replace(/^\/?@?/, "");
+    return clean ? `@${clean}` : null;
+  }, [brandStyleQ.data?.socials]);
+
+  const productImages = useMemo(() => {
+    if (!orderDetailsQ.data?.order_items) return [];
+    const urls: string[] = [];
+    for (const item of orderDetailsQ.data.order_items as any[]) {
+      const prod = item?.products;
+      if (prod?.image_url && typeof prod.image_url === "string" && prod.image_url.trim()) {
+        urls.push(prod.image_url.trim());
+      }
+      if (Array.isArray(prod?.media)) {
+        for (const m of prod.media) {
+          if (typeof m === "string" && m.trim()) urls.push(m.trim());
+          else if (m && typeof m.url === "string" && m.url.trim()) urls.push(m.url.trim());
+        }
+      }
+    }
+    return Array.from(new Set(urls));
+  }, [orderDetailsQ.data]);
+
+  const orderDate =
+    orderDetailsQ.data?.order_date ||
+    orderDetailsQ.data?.created_at ||
+    storyReview?.reviewed_at ||
+    null;
 
   const reviewsQ = useQuery({
     queryKey: ["brand-order-reviews", brand.id],
@@ -269,6 +333,10 @@ function CustomerReviewsPage() {
         }
         logoUrl={brand.logo_url}
         isAr={isAr}
+        orderDate={orderDate}
+        productImages={productImages}
+        brandPhone={brandPhone}
+        brandInstagram={brandInstagram}
       />
     </div>
   );
