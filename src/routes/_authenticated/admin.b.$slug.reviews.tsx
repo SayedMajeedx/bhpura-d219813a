@@ -102,23 +102,43 @@ function CustomerReviewsPage() {
     return clean ? `@${clean}` : null;
   }, [brandStyleQ.data?.socials]);
 
-  const productImages = useMemo(() => {
+  const productMedia = useMemo(() => {
     if (!orderDetailsQ.data?.order_items) return [];
-    const urls: string[] = [];
+    const items: Array<{ url: string; type: "image" | "video" }> = [];
+    const seen = new Set<string>();
     for (const item of orderDetailsQ.data.order_items as any[]) {
       const prod = item?.products;
       if (prod?.image_url && typeof prod.image_url === "string" && prod.image_url.trim()) {
-        urls.push(prod.image_url.trim());
+        const url = prod.image_url.trim();
+        if (!seen.has(url)) {
+          seen.add(url);
+          items.push({ url, type: "image" });
+        }
       }
       if (Array.isArray(prod?.media)) {
         for (const m of prod.media) {
-          if (typeof m === "string" && m.trim()) urls.push(m.trim());
-          else if (m && typeof m.url === "string" && m.url.trim()) urls.push(m.url.trim());
+          let u = "";
+          let t: "image" | "video" = "image";
+          if (typeof m === "string" && m.trim()) {
+            u = m.trim();
+            if (/\.(mp4|webm|mov|m4v)(\?.*)?$/i.test(u)) t = "video";
+          } else if (m && typeof m.url === "string" && m.url.trim()) {
+            u = m.url.trim();
+            if (m.type === "video" || /\.(mp4|webm|mov|m4v)(\?.*)?$/i.test(u)) t = "video";
+          }
+          if (u && !seen.has(u)) {
+            seen.add(u);
+            items.push({ url: u, type: t });
+          }
         }
       }
     }
-    return Array.from(new Set(urls));
+    return items;
   }, [orderDetailsQ.data]);
+
+  const productImages = useMemo(() => {
+    return productMedia.filter((m) => m.type === "image").map((m) => m.url);
+  }, [productMedia]);
 
   const orderDate =
     orderDetailsQ.data?.order_date ||
@@ -335,6 +355,7 @@ function CustomerReviewsPage() {
         isAr={isAr}
         orderDate={orderDate}
         productImages={productImages}
+        productMedia={productMedia}
         brandPhone={brandPhone}
         brandInstagram={brandInstagram}
       />

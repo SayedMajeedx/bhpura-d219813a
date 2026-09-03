@@ -3,15 +3,19 @@ import {
   Calendar,
   Check,
   Download,
+  Film,
   Image as ImageIcon,
   Instagram,
   Loader2,
+  Pause,
   Phone,
+  Play,
   ShieldCheck,
   Sparkles,
   Star,
   Trash2,
   Upload,
+  Video,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -31,6 +35,11 @@ import { REVIEW_HIGHLIGHT_LABELS, type OrderReviewAdminRow } from "@/lib/order-r
 
 type StoryTemplate = "classic" | "editorial" | "midnight";
 
+export type ProductMediaItem = {
+  url: string;
+  type: "image" | "video";
+};
+
 type ReviewStoryDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -41,6 +50,7 @@ type ReviewStoryDialogProps = {
   isAr: boolean;
   orderDate?: string | null;
   productImages?: string[];
+  productMedia?: ProductMediaItem[];
   brandPhone?: string | null;
   brandInstagram?: string | null;
 };
@@ -184,7 +194,7 @@ function drawStory({
   showHighlights: boolean;
   showDate?: boolean;
   orderDateText?: string | null;
-  productImage?: HTMLImageElement | null;
+  productImage?: HTMLImageElement | HTMLVideoElement | null;
   showBrandContact?: boolean;
   brandPhone?: string | null;
   brandInstagram?: string | null;
@@ -268,10 +278,19 @@ function drawStory({
   ctx.save();
   roundedRect(ctx, fx, fy, fw, fh, fr);
   ctx.clip();
-  if (productImage?.naturalWidth && productImage.naturalHeight) {
-    const scale = Math.max(fw / productImage.naturalWidth, fh / productImage.naturalHeight);
-    const iw = productImage.naturalWidth * scale;
-    const ih = productImage.naturalHeight * scale;
+  const isVideo =
+    typeof HTMLVideoElement !== "undefined" && productImage instanceof HTMLVideoElement;
+  const pw = isVideo
+    ? (productImage as HTMLVideoElement).videoWidth
+    : (productImage as HTMLImageElement)?.naturalWidth || 0;
+  const ph = isVideo
+    ? (productImage as HTMLVideoElement).videoHeight
+    : (productImage as HTMLImageElement)?.naturalHeight || 0;
+
+  if (pw > 0 && ph > 0 && productImage) {
+    const scale = Math.max(fw / pw, fh / ph);
+    const iw = pw * scale;
+    const ih = ph * scale;
     const ix = fx + (fw - iw) / 2;
     const iy = fy + (fh - ih) / 2;
     ctx.drawImage(productImage, ix, iy, iw, ih);
@@ -513,11 +532,13 @@ export function ReviewStoryDialog({
   isAr,
   orderDate,
   productImages = [],
+  productMedia = [],
   brandPhone: initialBrandPhone,
   brandInstagram: initialBrandInstagram,
 }: ReviewStoryDialogProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
 
   const [template, setTemplate] = useState<StoryTemplate>("classic");
   const [comment, setComment] = useState("");
@@ -528,13 +549,21 @@ export function ReviewStoryDialog({
   const [showBrandContact, setShowBrandContact] = useState(true);
   const [customBrandPhone, setCustomBrandPhone] = useState("");
   const [customBrandInstagram, setCustomBrandInstagram] = useState("");
-  const [selectedProductImageUrl, setSelectedProductImageUrl] = useState<string | null>(null);
+  const [selectedMedia, setSelectedMedia] = useState<ProductMediaItem | null>(null);
   const [downloading, setDownloading] = useState(false);
+  const [isExportingVideo, setIsExportingVideo] = useState(false);
+  const [exportProgress, setExportProgress] = useState(0);
+  const [isVideoPlaying, setIsVideoPlaying] = useState(true);
 
   const [productImgElement, setProductImgElement] = useState<HTMLImageElement | null>(null);
   const [logoImgElement, setLogoImgElement] = useState<HTMLImageElement | null>(null);
 
   const primary = safeColor(brandColor);
+
+  const availableMedia: ProductMediaItem[] = useMemo(() => {
+    if (productMedia && productMedia.length > 0) return productMedia;
+    return (productImages || []).map((url) => ({ url, type: "image" as const }));
+  }, [productMedia, productImages]);
 
   // Sync initial state when review opens
   useEffect(() => {
@@ -551,13 +580,13 @@ export function ReviewStoryDialog({
     const formattedDate = formatOrderDate(orderDate || review.reviewed_at, isAr);
     setOrderDateInput(formattedDate);
 
-    // Auto-select product image if available from the system
-    if (productImages.length > 0) {
-      setSelectedProductImageUrl(productImages[0]);
+    // Auto-select first media item (image or video) if available
+    if (availableMedia.length > 0) {
+      setSelectedMedia(availableMedia[0]);
     } else {
-      setSelectedProductImageUrl(null);
+      setSelectedMedia(null);
     }
-  }, [review, open, initialBrandPhone, initialBrandInstagram, orderDate, productImages, isAr]);
+  }, [review, open, initialBrandPhone, initialBrandInstagram, orderDate, availableMedia, isAr]);
 
   // Load logo image
   useEffect(() => {
@@ -580,15 +609,15 @@ export function ReviewStoryDialog({
     };
   }, [logoUrl]);
 
-  // Load product image
+  // Handle image loading if media is image
   useEffect(() => {
-    if (!selectedProductImageUrl) {
+    if (!selectedMedia || selectedMedia.type !== "image") {
       setProductImgElement(null);
       return;
     }
     let cancelled = false;
     const img = new Image();
-    if (!selectedProductImageUrl.startsWith("data:")) {
+    if (!selectedMedia.url.startsWith("data:")) {
       img.crossOrigin = "anonymous";
     }
     img.onload = () => {
@@ -597,33 +626,100 @@ export function ReviewStoryDialog({
     img.onerror = () => {
       if (!cancelled) setProductImgElement(null);
     };
-    img.src = selectedProductImageUrl;
+    img.src = selectedMedia.url;
     return () => {
       cancelled = true;
     };
-  }, [selectedProductImageUrl]);
+  }, [selectedMedia]);
 
-  // Render canvas whenever relevant state changes
+  // Handle video element if media is video
+  useEffect(() => {
+    if (selectedMedia?.type !== "video" || !selectedMedia.url) {
+      if (videoRef.current) {
+        videoRef.current.pause();
+        videoRef.current.src = "";
+        videoRef.current = null;
+      }
+      return;
+    }
+
+    const v = document.createElement("video");
+    v.loop = true;
+    v.muted = true;
+    v.playsInline = true;
+    (v as any).webkitPlaysInline = true;
+    v.crossOrigin = "anonymous";
+    v.autoplay = true;
+    v.src = selectedMedia.url;
+    videoRef.current = v;
+    v.play().catch(() => {});
+    setIsVideoPlaying(true);
+
+    return () => {
+      v.pause();
+      v.src = "";
+      if (videoRef.current === v) {
+        videoRef.current = null;
+      }
+    };
+  }, [selectedMedia]);
+
+  // Render canvas (single frame for images, requestAnimationFrame loop for video)
   useEffect(() => {
     if (!review || !canvasRef.current || !open) return;
-    drawStory({
-      canvas: canvasRef.current,
-      template,
-      review,
-      comment,
-      brandName,
-      primary,
-      isAr,
-      showName,
-      showHighlights,
-      showDate,
-      orderDateText: orderDateInput,
-      productImage: productImgElement,
-      showBrandContact,
-      brandPhone: customBrandPhone,
-      brandInstagram: customBrandInstagram,
-      logoImage: logoImgElement,
-    });
+
+    if (selectedMedia?.type !== "video" || !videoRef.current) {
+      drawStory({
+        canvas: canvasRef.current,
+        template,
+        review,
+        comment,
+        brandName,
+        primary,
+        isAr,
+        showName,
+        showHighlights,
+        showDate,
+        orderDateText: orderDateInput,
+        productImage: productImgElement,
+        showBrandContact,
+        brandPhone: customBrandPhone,
+        brandInstagram: customBrandInstagram,
+        logoImage: logoImgElement,
+      });
+      return;
+    }
+
+    let animId: number;
+    const v = videoRef.current;
+    const loop = () => {
+      if (canvasRef.current) {
+        drawStory({
+          canvas: canvasRef.current,
+          template,
+          review,
+          comment,
+          brandName,
+          primary,
+          isAr,
+          showName,
+          showHighlights,
+          showDate,
+          orderDateText: orderDateInput,
+          productImage: v,
+          showBrandContact,
+          brandPhone: customBrandPhone,
+          brandInstagram: customBrandInstagram,
+          logoImage: logoImgElement,
+        });
+      }
+      animId = requestAnimationFrame(loop);
+    };
+    animId = requestAnimationFrame(loop);
+
+    return () => {
+      cancelAnimationFrame(animId);
+    };
   }, [
     review,
     open,
@@ -637,11 +733,25 @@ export function ReviewStoryDialog({
     showDate,
     orderDateInput,
     productImgElement,
+    selectedMedia,
     showBrandContact,
     customBrandPhone,
     customBrandInstagram,
     logoImgElement,
   ]);
+
+  const toggleVideoPlayback = () => {
+    if (!videoRef.current) return;
+    if (videoRef.current.paused) {
+      videoRef.current
+        .play()
+        .then(() => setIsVideoPlaying(true))
+        .catch(() => {});
+    } else {
+      videoRef.current.pause();
+      setIsVideoPlaying(false);
+    }
+  };
 
   const templates = useMemo(
     () => [
@@ -667,20 +777,120 @@ export function ReviewStoryDialog({
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (!file.type.startsWith("image/")) {
-      toast.error(isAr ? "يرجى اختيار ملف صورة صالح" : "Please select a valid image file");
-      return;
+    if (file.type.startsWith("video/")) {
+      const url = URL.createObjectURL(file);
+      setSelectedMedia({ url, type: "video" });
+      toast.success(isAr ? "تم إدراج مقطع الفيديو بنجاح" : "Product video loaded successfully");
+    } else if (file.type.startsWith("image/")) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        if (typeof reader.result === "string") {
+          setSelectedMedia({ url: reader.result, type: "image" });
+          toast.success(isAr ? "تم إدراج صورة المنتج بنجاح" : "Product photo loaded successfully");
+        }
+      };
+      reader.readAsDataURL(file);
+    } else {
+      toast.error(
+        isAr ? "يرجى اختيار ملف صورة أو فيديو صالح" : "Please select a valid image or video file",
+      );
     }
-    const reader = new FileReader();
-    reader.onload = () => {
-      if (typeof reader.result === "string") {
-        setSelectedProductImageUrl(reader.result);
-        toast.success(isAr ? "تم إدراج صورة المنتج بنجاح" : "Product photo loaded successfully");
-      }
-    };
-    reader.readAsDataURL(file);
   };
 
+  // Download video (MP4 or WebM)
+  const downloadVideo = async () => {
+    if (!canvasRef.current || !videoRef.current || !review) return;
+    const canvas = canvasRef.current;
+    const video = videoRef.current;
+    setIsExportingVideo(true);
+    setExportProgress(0);
+
+    try {
+      video.currentTime = 0;
+      try {
+        await video.play();
+      } catch {}
+      setIsVideoPlaying(true);
+
+      const duration = Math.min(Math.max(video.duration || 6, 4), 12);
+      const fps = 30;
+      const stream = (canvas as any).captureStream ? (canvas as any).captureStream(fps) : null;
+      if (!stream) {
+        throw new Error("captureStream not supported in this browser");
+      }
+
+      let mimeType = "video/webm";
+      let ext = "webm";
+      if (typeof MediaRecorder !== "undefined") {
+        if (MediaRecorder.isTypeSupported("video/mp4;codecs=avc1")) {
+          mimeType = "video/mp4;codecs=avc1";
+          ext = "mp4";
+        } else if (MediaRecorder.isTypeSupported("video/mp4")) {
+          mimeType = "video/mp4";
+          ext = "mp4";
+        } else if (MediaRecorder.isTypeSupported("video/webm;codecs=vp9")) {
+          mimeType = "video/webm;codecs=vp9";
+          ext = "webm";
+        }
+      }
+
+      const recorder = new MediaRecorder(stream, {
+        mimeType: MediaRecorder.isTypeSupported(mimeType) ? mimeType : undefined,
+        videoBitsPerSecond: 6_000_000,
+      });
+
+      const chunks: Blob[] = [];
+      recorder.ondataavailable = (ev) => {
+        if (ev.data && ev.data.size > 0) chunks.push(ev.data);
+      };
+
+      const recordingPromise = new Promise<Blob>((resolve, reject) => {
+        recorder.onstop = () => resolve(new Blob(chunks, { type: mimeType }));
+        recorder.onerror = reject;
+      });
+
+      recorder.start(100);
+
+      const startTime = performance.now();
+      const interval = window.setInterval(() => {
+        const elapsed = (performance.now() - startTime) / 1000;
+        const prog = Math.min(Math.round((elapsed / duration) * 100), 99);
+        setExportProgress(prog);
+        if (elapsed >= duration) {
+          window.clearInterval(interval);
+          if (recorder.state === "recording") recorder.stop();
+        }
+      }, 100);
+
+      const blob = await recordingPromise;
+      window.clearInterval(interval);
+      setExportProgress(100);
+
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `customer-review-story-${review.review_id}.${ext}`;
+      link.click();
+      window.setTimeout(() => URL.revokeObjectURL(url), 2000);
+      toast.success(
+        isAr
+          ? `تم تنزيل فيديو الستوري (${ext.toUpperCase()}) بنجاح`
+          : `Story video (${ext.toUpperCase()}) downloaded successfully`,
+      );
+    } catch (err) {
+      console.error("Video export error:", err);
+      toast.error(
+        isAr
+          ? "تعذر تصدير الفيديو، يمكنك تنزيل صورة ثابتة بدلاً من ذلك"
+          : "Could not export video, try PNG download instead",
+      );
+    } finally {
+      setIsExportingVideo(false);
+      setExportProgress(0);
+    }
+  };
+
+  // Download static PNG
   const download = async () => {
     if (!canvasRef.current || !review) return;
     setDownloading(true);
@@ -719,8 +929,8 @@ export function ReviewStoryDialog({
             </DialogTitle>
             <DialogDescription className="leading-6">
               {isAr
-                ? "قالب جمالي مستوحى من تقييمات العملاء الحقيقية مع إطار صورة المنتج وبطاقة التقييم الزجاجية."
-                : "Aesthetic customer review story with framed product photo and frosted card overlay."}
+                ? "قالب جمالي مستوحى من تقييمات العملاء الحقيقية مع إطار المنتج (صورة أو فيديو) وبطاقة التقييم الزجاجية."
+                : "Aesthetic customer review story with framed product media (photo or video) and frosted card overlay."}
             </DialogDescription>
           </DialogHeader>
 
@@ -761,55 +971,70 @@ export function ReviewStoryDialog({
               </div>
             </div>
 
-            {/* Product Photo Selector / Uploader */}
+            {/* Product Media Selector / Uploader (Images & Videos) */}
             <div className="space-y-2.5 rounded-xl border border-border bg-muted/20 p-4">
               <div className="flex items-center justify-between">
                 <Label className="flex items-center gap-2">
-                  <ImageIcon className="size-4 text-primary" />
-                  {isAr ? "صورة المنتج داخل الإطار" : "Product photo in frame"}
+                  {selectedMedia?.type === "video" ? (
+                    <Film className="size-4 text-primary" />
+                  ) : (
+                    <ImageIcon className="size-4 text-primary" />
+                  )}
+                  {isAr ? "وسائط المنتج (صورة أو فيديو داخل الإطار)" : "Product media (photo or video)"}
                 </Label>
-                {selectedProductImageUrl && (
+                {selectedMedia && (
                   <Button
                     type="button"
                     variant="ghost"
                     size="sm"
                     className="h-8 gap-1 text-xs text-destructive hover:bg-destructive/10"
-                    onClick={() => setSelectedProductImageUrl(null)}
+                    onClick={() => setSelectedMedia(null)}
                   >
                     <Trash2 className="size-3.5" />
-                    {isAr ? "إزالة الصورة" : "Remove"}
+                    {isAr ? "إزالة الوسائط" : "Remove"}
                   </Button>
                 )}
               </div>
 
-              {/* Order Product Images thumbnails if any */}
-              {productImages.length > 0 && (
+              {/* Order Product Media thumbnails if any */}
+              {availableMedia.length > 0 && (
                 <div className="space-y-1.5">
                   <p className="text-xs text-muted-foreground">
                     {isAr
-                      ? "تم جلب الصور المرتبطة بالطلب تلقائياً (اضغط لاختيار صورة):"
-                      : "Images detected from the order (click to select):"}
+                      ? "الوسائط المتوفرة في الطلب (اضغط للاختيار):"
+                      : "Media detected from the order (click to select):"}
                   </p>
                   <div className="flex flex-wrap gap-2 pt-1">
-                    {productImages.map((url, idx) => (
+                    {availableMedia.map((m, idx) => (
                       <button
-                        key={url + idx}
+                        key={m.url + idx}
                         type="button"
-                        onClick={() => setSelectedProductImageUrl(url)}
+                        onClick={() => setSelectedMedia(m)}
                         className={cn(
                           "relative size-14 overflow-hidden rounded-lg border-2 transition-all",
-                          selectedProductImageUrl === url
+                          selectedMedia?.url === m.url
                             ? "border-primary ring-2 ring-primary/20"
                             : "border-border opacity-70 hover:opacity-100",
                         )}
                       >
-                        <img
-                          src={url}
-                          alt="product"
-                          className="size-full object-cover"
-                          crossOrigin="anonymous"
-                        />
-                        {selectedProductImageUrl === url && (
+                        {m.type === "video" ? (
+                          <div className="flex size-full items-center justify-center bg-zinc-900 text-white">
+                            <Video className="size-5" />
+                          </div>
+                        ) : (
+                          <img
+                            src={m.url}
+                            alt="product"
+                            className="size-full object-cover"
+                            crossOrigin="anonymous"
+                          />
+                        )}
+                        {m.type === "video" && (
+                          <span className="absolute bottom-1 end-1 rounded bg-black/60 px-1 py-0.5 text-[9px] font-bold text-white">
+                            فيديو
+                          </span>
+                        )}
+                        {selectedMedia?.url === m.url && (
                           <span className="absolute inset-0 grid place-items-center bg-black/20 text-white">
                             <Check className="size-4 stroke-[3]" />
                           </span>
@@ -820,12 +1045,12 @@ export function ReviewStoryDialog({
                 </div>
               )}
 
-              {/* Upload custom image */}
+              {/* Upload custom image or video */}
               <div>
                 <input
                   type="file"
                   ref={fileInputRef}
-                  accept="image/*"
+                  accept="image/*,video/*"
                   className="hidden"
                   onChange={handleFileUpload}
                 />
@@ -837,13 +1062,13 @@ export function ReviewStoryDialog({
                   onClick={() => fileInputRef.current?.click()}
                 >
                   <Upload className="size-4" />
-                  {selectedProductImageUrl
+                  {selectedMedia
                     ? isAr
-                      ? "رفع صورة بديلة من جهازك"
-                      : "Upload a different photo"
+                      ? "رفع صورة أو فيديو بديل من جهازك"
+                      : "Upload a different photo or video"
                     : isAr
-                      ? "رفع صورة للمنتج من جهازك"
-                      : "Upload product photo"}
+                      ? "رفع صورة أو مقطع فيديو من جهازك"
+                      : "Upload photo or video"}
                 </Button>
               </div>
             </div>
@@ -979,32 +1204,102 @@ export function ReviewStoryDialog({
                 : "Safe to publish: private order number, payment and reward code excluded."}
             </div>
 
-            <Button className="min-h-12 w-full gap-2" onClick={download} disabled={downloading}>
-              {downloading ? (
-                <Loader2 className="size-4 animate-spin" />
+            {/* Action Buttons: Video Download vs Static Image */}
+            <div className="space-y-2">
+              {selectedMedia?.type === "video" ? (
+                <>
+                  <Button
+                    className="min-h-12 w-full gap-2 font-semibold"
+                    onClick={downloadVideo}
+                    disabled={isExportingVideo || downloading}
+                  >
+                    {isExportingVideo ? (
+                      <>
+                        <Loader2 className="size-4 animate-spin" />
+                        {isAr
+                          ? `جاري تسجيل وتصدير الفيديو... (${exportProgress}%)`
+                          : `Exporting video story... (${exportProgress}%)`}
+                      </>
+                    ) : (
+                      <>
+                        <Film className="size-4" />
+                        {isAr ? "تنزيل فيديو الستوري (MP4)" : "Download story video (MP4)"}
+                      </>
+                    )}
+                  </Button>
+
+                  <Button
+                    variant="outline"
+                    className="min-h-11 w-full gap-2 text-xs"
+                    onClick={download}
+                    disabled={downloading || isExportingVideo}
+                  >
+                    {downloading ? (
+                      <Loader2 className="size-4 animate-spin" />
+                    ) : (
+                      <Download className="size-4" />
+                    )}
+                    {isAr ? "أو تنزيل كصورة ثابتة (PNG)" : "Or download static story (PNG)"}
+                  </Button>
+                </>
               ) : (
-                <Download className="size-4" />
+                <Button
+                  className="min-h-12 w-full gap-2 font-semibold"
+                  onClick={download}
+                  disabled={downloading}
+                >
+                  {downloading ? (
+                    <Loader2 className="size-4 animate-spin" />
+                  ) : (
+                    <Download className="size-4" />
+                  )}
+                  {isAr ? "تنزيل PNG للستوري (1080 × 1920)" : "Download story PNG (1080 × 1920)"}
+                </Button>
               )}
-              {isAr ? "تنزيل PNG للستوري (1080 × 1920)" : "Download story PNG (1080 × 1920)"}
-            </Button>
+            </div>
           </div>
         </section>
 
         {/* Live Canvas Preview */}
-        <aside className="order-1 flex min-h-0 items-center justify-center border-b bg-muted/35 p-5 lg:order-2 lg:border-b-0 lg:border-s">
+        <aside className="order-1 flex min-h-0 flex-col items-center justify-center border-b bg-muted/35 p-5 lg:order-2 lg:border-b-0 lg:border-s">
           <div className="w-full max-w-[170px] sm:max-w-[230px] lg:max-w-[290px]">
             <div className="mb-3 flex items-center justify-between text-xs text-muted-foreground">
               <span className="flex items-center gap-1.5">
-                <ImageIcon className="size-3.5" />
-                {isAr ? "معاينة حية" : "Live Preview"}
+                {selectedMedia?.type === "video" ? (
+                  <Film className="size-3.5 text-primary" />
+                ) : (
+                  <ImageIcon className="size-3.5" />
+                )}
+                {selectedMedia?.type === "video"
+                  ? isAr
+                    ? "معاينة فيديو حي"
+                    : "Live Video Preview"
+                  : isAr
+                    ? "معاينة حية"
+                    : "Live Preview"}
               </span>
               <span dir="ltr">1080 × 1920</span>
             </div>
-            <canvas
-              ref={canvasRef}
-              aria-label={isAr ? "معاينة ستوري تقييم العميل" : "Customer review story preview"}
-              className="aspect-[9/16] w-full rounded-xl bg-white shadow-2xl ring-1 ring-black/10"
-            />
+
+            <div className="group relative">
+              <canvas
+                ref={canvasRef}
+                aria-label={isAr ? "معاينة ستوري تقييم العميل" : "Customer review story preview"}
+                className="aspect-[9/16] w-full rounded-xl bg-white shadow-2xl ring-1 ring-black/10"
+              />
+
+              {/* Video Play/Pause floating toggle */}
+              {selectedMedia?.type === "video" && (
+                <button
+                  type="button"
+                  onClick={toggleVideoPlayback}
+                  className="absolute bottom-3 end-3 flex size-8 items-center justify-center rounded-full bg-black/65 text-white backdrop-blur-sm transition-all hover:bg-black/85"
+                  title={isAr ? "إيقاف / تشغيل المعاينة" : "Play / Pause"}
+                >
+                  {isVideoPlaying ? <Pause className="size-4" /> : <Play className="size-4 ms-0.5" />}
+                </button>
+              )}
+            </div>
           </div>
         </aside>
       </DialogContent>
