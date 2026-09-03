@@ -39,5 +39,7 @@ describe("customer review story generator", () => {
     expect(reviewsPage).toContain("logoUrl={brand.logo_url}");
     expect(storySource).toContain("logoImage?.naturalWidth");
     expect(storySource).toContain('logo.crossOrigin = "anonymous"');
+    expect(storySource).toContain("drawBrandLogo(ctx, logoImage, dark ? null : primary)");
+    expect(storySource).toContain('globalCompositeOperation = "source-in"');
   });
 });

@@ -84,6 +84,32 @@ function fitLines(ctx: CanvasRenderingContext2D, text: string, maxWidth: number,
   return lines;
 }
 
+function drawBrandLogo(ctx: CanvasRenderingContext2D, logo: HTMLImageElement, tint: string | null) {
+  const maxWidth = 390;
+  const maxHeight = 175;
+  const scale = Math.min(maxWidth / logo.naturalWidth, maxHeight / logo.naturalHeight);
+  const width = logo.naturalWidth * scale;
+  const height = logo.naturalHeight * scale;
+  const x = (STORY_WIDTH - width) / 2;
+  const y = 90 + (maxHeight - height) / 2;
+
+  if (!tint) {
+    ctx.drawImage(logo, x, y, width, height);
+    return;
+  }
+
+  const tinted = document.createElement("canvas");
+  tinted.width = Math.max(1, Math.round(width));
+  tinted.height = Math.max(1, Math.round(height));
+  const tintedCtx = tinted.getContext("2d");
+  if (!tintedCtx) return;
+  tintedCtx.drawImage(logo, 0, 0, tinted.width, tinted.height);
+  tintedCtx.globalCompositeOperation = "source-in";
+  tintedCtx.fillStyle = tint;
+  tintedCtx.fillRect(0, 0, tinted.width, tinted.height);
+  ctx.drawImage(tinted, x, y, width, height);
+}
+
 function drawStory({
   canvas,
   template,
@@ -133,6 +159,10 @@ function drawStory({
     ctx.arc(70, 1770, 330, 0, Math.PI * 2);
     ctx.fill();
     ctx.globalAlpha = 1;
+    ctx.strokeStyle = `${primary}22`;
+    ctx.lineWidth = 2;
+    roundedRect(ctx, 58, 58, 964, 1804, 38);
+    ctx.stroke();
   } else if (template === "editorial") {
     ctx.fillStyle = primary;
     ctx.fillRect(0, 0, 34, STORY_HEIGHT);
@@ -151,15 +181,7 @@ function drawStory({
 
   ctx.textAlign = "center";
   if (logoImage?.naturalWidth && logoImage.naturalHeight) {
-    const maxWidth = 250;
-    const maxHeight = 120;
-    const scale = Math.min(maxWidth / logoImage.naturalWidth, maxHeight / logoImage.naturalHeight);
-    const width = logoImage.naturalWidth * scale;
-    const height = logoImage.naturalHeight * scale;
-    ctx.drawImage(logoImage, (STORY_WIDTH - width) / 2, 105, width, height);
-    ctx.fillStyle = dark ? "#ffffff" : primary;
-    ctx.font = `700 30px Arial, sans-serif`;
-    ctx.fillText(brandName, 540, 260);
+    drawBrandLogo(ctx, logoImage, dark ? null : primary);
   } else {
     ctx.fillStyle = accent;
     roundedRect(ctx, 514, 110, 52, 80, 18);
@@ -172,16 +194,27 @@ function drawStory({
     ctx.fillText(brandName, 540, 235);
   }
 
+  ctx.strokeStyle = dark ? "rgba(255,255,255,.22)" : `${primary}35`;
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(430, 315);
+  ctx.lineTo(650, 315);
+  ctx.stroke();
+
   ctx.textAlign = "center";
   ctx.fillStyle = muted;
-  ctx.font = `600 27px Arial, sans-serif`;
-  ctx.fillText(isAr ? "من كلام عميلاتنا" : "From our customers", 540, 410);
+  ctx.font = `600 25px Arial, sans-serif`;
+  ctx.fillText(
+    isAr ? "آراء حقيقية، وتجارب نعتز بها" : "Real words. Genuine experiences.",
+    540,
+    405,
+  );
 
   const rating = Math.max(1, Math.min(5, Number(review.rating) || 5));
   ctx.fillStyle = dark ? "#efd9c8" : primary;
   ctx.font = `700 58px Arial, sans-serif`;
   ctx.direction = "ltr";
-  ctx.fillText("★".repeat(rating), 540, 490);
+  ctx.fillText("★".repeat(rating), 540, 486);
   ctx.direction = isAr ? "rtl" : "ltr";
 
   const fontSize = comment.length > 190 ? 48 : comment.length > 110 ? 56 : 66;
@@ -195,7 +228,7 @@ function drawStory({
   );
   const lineHeight = fontSize * 1.55;
   const blockHeight = lines.length * lineHeight;
-  let y = 890 - blockHeight / 2;
+  let y = 875 - blockHeight / 2;
   ctx.fillStyle = accent;
   ctx.font = `700 150px Georgia, serif`;
   ctx.fillText("“", 540, y - 100);
@@ -239,6 +272,13 @@ function drawStory({
   ctx.font = `500 25px Arial, sans-serif`;
   ctx.fillText(isAr ? "تقييم موثّق بعد الشراء" : "Verified post-purchase review", 540, 1500);
 
+  ctx.fillStyle = dark ? "rgba(255,255,255,.12)" : `${primary}12`;
+  roundedRect(ctx, 414, 1545, 252, 56, 28);
+  ctx.fill();
+  ctx.fillStyle = dark ? "#fffaf5" : primary;
+  ctx.font = `600 22px Arial, sans-serif`;
+  ctx.fillText(isAr ? "✓  رأي عميلة موثّق" : "✓  VERIFIED REVIEW", 540, 1573);
+
   ctx.strokeStyle = dark ? "rgba(255,255,255,.18)" : `${primary}30`;
   ctx.lineWidth = 2;
   ctx.beginPath();
@@ -247,7 +287,7 @@ function drawStory({
   ctx.stroke();
   ctx.fillStyle = muted;
   ctx.font = `500 25px Arial, sans-serif`;
-  ctx.fillText(isAr ? "شكراً لثقتكم" : "Thank you for your trust", 540, 1690);
+  ctx.fillText(isAr ? "تفاصيل تُصنع بعناية" : "Made with care, down to every detail", 540, 1690);
 }
 
 export function ReviewStoryDialog({
