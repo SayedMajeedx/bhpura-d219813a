@@ -200,7 +200,11 @@ function Checkout() {
       try {
         sessionStorage.setItem(
           "boutq_gift_details",
-          JSON.stringify({ is_gift: isGift, recipient_name: giftRecipient, gift_message: giftMessage })
+          JSON.stringify({
+            is_gift: isGift,
+            recipient_name: giftRecipient,
+            gift_message: giftMessage,
+          }),
         );
       } catch {}
     }
@@ -617,7 +621,7 @@ function Checkout() {
   const promoDiscount = Math.min(appliedPromo?.amount ?? 0, cartTotal);
   const loyaltyDiscount = useMemo(() => {
     if (!loyaltyProgram?.is_enabled || redeemedPoints <= 0) return 0;
-    return Number((redeemedPoints * Number(loyaltyProgram.redemption_rate || 0.010)).toFixed(3));
+    return Number((redeemedPoints * Number(loyaltyProgram.redemption_rate || 0.01)).toFixed(3));
   }, [loyaltyProgram, redeemedPoints]);
 
   const grandTotal = Math.max(0, cartTotal - promoDiscount - loyaltyDiscount) + shipping;
@@ -748,7 +752,8 @@ function Checkout() {
           : `You only have ${maxAvailable} points available`,
       );
     }
-    const minRedemption = loyaltyProgram?.min_points_to_redeem ?? loyaltyProgram?.min_redemption_points ?? 100;
+    const minRedemption =
+      loyaltyProgram?.min_points_to_redeem ?? loyaltyProgram?.min_redemption_points ?? 100;
     if (pts < minRedemption) {
       return toast.error(
         lang === "ar"
@@ -756,11 +761,14 @@ function Checkout() {
           : `Minimum points to redeem is ${minRedemption}`,
       );
     }
-    const maxPercent = loyaltyProgram?.max_redemption_percentage ?? loyaltyProgram?.max_redemption_percent ?? 50;
+    const maxPercent =
+      loyaltyProgram?.max_redemption_percentage ?? loyaltyProgram?.max_redemption_percent ?? 50;
     const maxDiscountAllowed = (cartTotal * maxPercent) / 100;
-    const calculatedDisc = pts * Number(loyaltyProgram?.redemption_rate || 0.010);
+    const calculatedDisc = pts * Number(loyaltyProgram?.redemption_rate || 0.01);
     if (calculatedDisc > maxDiscountAllowed) {
-      const allowedPts = Math.floor(maxDiscountAllowed / Number(loyaltyProgram?.redemption_rate || 0.010));
+      const allowedPts = Math.floor(
+        maxDiscountAllowed / Number(loyaltyProgram?.redemption_rate || 0.01),
+      );
       return toast.error(
         lang === "ar"
           ? `أقصى خصم مسموح بالنقاط لهذا الطلب هو ${allowedPts} نقطة (${maxDiscountAllowed.toFixed(3)} ${currency})`
@@ -1065,6 +1073,13 @@ function Checkout() {
       const msg = String(e?.message ?? e);
       if (msg.includes("INSUFFICIENT_STOCK")) {
         toast.error(t("المخزون غير كافٍ لأحد المنتجات", "Insufficient stock for one item"));
+      } else if (msg.includes("order_items_location_check")) {
+        toast.error(
+          t(
+            "تعذر تجهيز طلب التفصيل حالياً. حدّث الصفحة وحاول مرة أخرى.",
+            "Custom tailoring checkout is temporarily unavailable. Refresh and try again.",
+          ),
+        );
       } else if (msg.includes("PAYMENT_METHOD_DISABLED")) {
         toast.error(t("طريقة الدفع غير متاحة", "Payment method unavailable"));
       } else if (
@@ -1319,7 +1334,7 @@ function Checkout() {
                     id="gift-card-message"
                     placeholder={t(
                       "اكتب كلماتك الرقيقة لطباعتها في بطاقة الإهداء الفاخرة...",
-                      "Write your warm message to print on our luxury gift card..."
+                      "Write your warm message to print on our luxury gift card...",
                     )}
                     value={giftMessage}
                     onChange={(e) => setGiftMessage(e.target.value)}
@@ -1436,7 +1451,8 @@ function Checkout() {
                 <Truck className="h-4 w-4 text-primary shrink-0" />
                 <span>
                   {lang === "ar"
-                    ? settings.delivery_estimate_ar || "التوصيل المتوقع خلال 24 - 48 ساعة داخل البحرين"
+                    ? settings.delivery_estimate_ar ||
+                      "التوصيل المتوقع خلال 24 - 48 ساعة داخل البحرين"
                     : settings.delivery_estimate_en || "Estimated delivery within 24 - 48 hours"}
                 </span>
               </div>
@@ -2049,7 +2065,8 @@ function Checkout() {
             {loyaltyDiscount > 0 && (
               <div className="flex justify-between font-medium text-amber-700 dark:text-amber-400">
                 <span>
-                  {t("خصم النقاط والمكافآت", "Points Discount")} ({redeemedPoints} {t("نقطة", "pts")})
+                  {t("خصم النقاط والمكافآت", "Points Discount")} ({redeemedPoints}{" "}
+                  {t("نقطة", "pts")})
                 </span>
                 <span>− {formatPrice(loyaltyDiscount, currency, lang)}</span>
               </div>
@@ -2102,7 +2119,8 @@ function Checkout() {
               {redeemedPoints > 0 ? (
                 <div className="flex items-center justify-between p-2 rounded bg-amber-500/10 border border-amber-500/20 text-xs">
                   <span className="font-semibold text-foreground">
-                    {redeemedPoints} {t("نقطة مطبقة", "points applied")} (−{formatPrice(loyaltyDiscount, currency, lang)})
+                    {redeemedPoints} {t("نقطة مطبقة", "points applied")} (−
+                    {formatPrice(loyaltyDiscount, currency, lang)})
                   </span>
                   <Button
                     type="button"

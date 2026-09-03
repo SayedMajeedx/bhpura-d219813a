@@ -216,7 +216,7 @@ type Item = {
   customizations: { name: string; price_delta: number }[];
   customization_total: number;
   line_total: number;
-  location: "main" | "incubator";
+  location: "main" | "incubator" | "custom";
   selected_variant?: { size?: string | null; color?: string | null; fabric?: string | null } | null;
   custom_field_values?: Array<{
     key: string;
@@ -444,9 +444,7 @@ function ItemTailoringCustomizer({
           value={currentSize}
           onChange={(e) => handleSizeChange(e.target.value)}
           placeholder={
-            isAr
-              ? "أو اكتب المقاس يدوياً (مثال: 54 خاص أو مقاس مخصص)..."
-              : "Or type custom size..."
+            isAr ? "أو اكتب المقاس يدوياً (مثال: 54 خاص أو مقاس مخصص)..." : "Or type custom size..."
           }
           className="h-8 text-xs bg-background mt-1"
         />
@@ -1188,7 +1186,11 @@ function OrderDetail() {
         customizations: i.customizations ?? [],
         customization_total: Number(i.customization_total),
         line_total: Number(i.line_total),
-        location: (i.location === "incubator" ? "incubator" : "main") as "main" | "incubator",
+        location: (i.location === "custom"
+          ? "custom"
+          : i.location === "incubator"
+            ? "incubator"
+            : "main") as Item["location"],
         selected_variant: i.selected_variant ?? null,
         custom_field_values: normalizeCustomFieldValues(i.custom_field_values),
       }));
@@ -1613,9 +1615,7 @@ function OrderDetail() {
       },
     ]);
     toast.success(
-      lang === "ar"
-        ? `تمت إضافة ${p?.name || "المنتج"} بنجاح!`
-        : `Added ${p?.name || "product"}!`,
+      lang === "ar" ? `تمت إضافة ${p?.name || "المنتج"} بنجاح!` : `Added ${p?.name || "product"}!`,
     );
   };
 
@@ -1876,7 +1876,12 @@ function OrderDetail() {
           original_price: orig.original_price == null ? null : Number(orig.original_price),
           customization_total: Number(orig.customization_total || 0),
           line_total: Number(orig.line_total || 0),
-          location: orig.location === "incubator" ? "incubator" : "main",
+          location:
+            orig.location === "custom"
+              ? "custom"
+              : orig.location === "incubator"
+                ? "incubator"
+                : "main",
           custom_field_values: normalizeCustomFieldValues(orig.custom_field_values),
         });
         const sItem = simplifyItem(item);
@@ -1999,7 +2004,11 @@ function OrderDetail() {
       customizations: i.customizations ?? [],
       customization_total: Number(i.customization_total),
       line_total: Number(i.line_total),
-      location: (i.location === "incubator" ? "incubator" : "main") as "main" | "incubator",
+      location: (i.location === "custom"
+        ? "custom"
+        : i.location === "incubator"
+          ? "incubator"
+          : "main") as Item["location"],
       selected_variant: i.selected_variant ?? null,
       custom_field_values: normalizeCustomFieldValues(i.custom_field_values),
     }));
@@ -3773,11 +3782,11 @@ function OrderDetail() {
                         </div>
 
                         {/* Custom Tailoring & Made-To-Order Specifications */}
-                        {(!it.variant_id ||
-                          (it.selected_variant?.size &&
-                            String(it.selected_variant.size).includes("تفصيل")) ||
-                          (it.custom_field_values && it.custom_field_values.length > 0) ||
-                          editingItems[idx]) ? (
+                        {!it.variant_id ||
+                        (it.selected_variant?.size &&
+                          String(it.selected_variant.size).includes("تفصيل")) ||
+                        (it.custom_field_values && it.custom_field_values.length > 0) ||
+                        editingItems[idx] ? (
                           <div className="space-y-2">
                             {!it.variant_id && (
                               <div className="rounded-lg border border-primary/20 bg-primary/10 px-3 py-2 text-xs font-semibold text-primary flex items-center justify-between">
@@ -3802,29 +3811,41 @@ function OrderDetail() {
                                 <div className="rounded-xl border border-border bg-muted/30 p-3 text-xs space-y-2">
                                   <div className="font-bold text-xs text-foreground flex items-center gap-1.5">
                                     <Scissors className="h-3.5 w-3.5 text-primary" />
-                                    <span>{isAr ? "المواصفات والتفصيل" : "Tailoring Specifications"}</span>
+                                    <span>
+                                      {isAr ? "المواصفات والتفصيل" : "Tailoring Specifications"}
+                                    </span>
                                   </div>
                                   {it.selected_variant && (
                                     <div className="flex flex-wrap gap-2">
                                       {it.selected_variant.size && (
                                         <span className="inline-flex items-center gap-1 bg-background border border-border/80 px-2.5 py-1 rounded-lg text-[11px] font-medium text-foreground">
-                                          <span className="text-muted-foreground">{isAr ? "المقاس:" : "Size:"}</span>
-                                          <b>{String(it.selected_variant?.size ?? "").includes("تفصيل")
-                                      ? isAr
-                                        ? "تفصيل / قياسات خاصة"
-                                        : "Custom Tailoring"
-                                      : it.selected_variant.size}</b>
+                                          <span className="text-muted-foreground">
+                                            {isAr ? "المقاس:" : "Size:"}
+                                          </span>
+                                          <b>
+                                            {String(it.selected_variant?.size ?? "").includes(
+                                              "تفصيل",
+                                            )
+                                              ? isAr
+                                                ? "تفصيل / قياسات خاصة"
+                                                : "Custom Tailoring"
+                                              : it.selected_variant.size}
+                                          </b>
                                         </span>
                                       )}
                                       {it.selected_variant.color && (
                                         <span className="inline-flex items-center gap-1.5 bg-background border border-border/80 px-2.5 py-1 rounded-lg text-[11px] font-medium text-foreground">
-                                          <span className="text-muted-foreground">{isAr ? "اللون:" : "Color:"}</span>
+                                          <span className="text-muted-foreground">
+                                            {isAr ? "اللون:" : "Color:"}
+                                          </span>
                                           <b>{it.selected_variant.color}</b>
                                         </span>
                                       )}
                                       {it.selected_variant.fabric && (
                                         <span className="inline-flex items-center gap-1 bg-background border border-border/80 px-2.5 py-1 rounded-lg text-[11px] font-medium text-foreground">
-                                          <span className="text-muted-foreground">{isAr ? "القماش:" : "Fabric:"}</span>
+                                          <span className="text-muted-foreground">
+                                            {isAr ? "القماش:" : "Fabric:"}
+                                          </span>
                                           <b>{it.selected_variant.fabric}</b>
                                         </span>
                                       )}
@@ -3840,7 +3861,9 @@ function OrderDetail() {
                                               : cf.label_en || cf.label_ar || cf.key}
                                             :{" "}
                                           </span>
-                                          <span className="text-foreground font-medium">{cf.value}</span>
+                                          <span className="text-foreground font-medium">
+                                            {cf.value}
+                                          </span>
                                         </div>
                                       ))}
                                     </div>
