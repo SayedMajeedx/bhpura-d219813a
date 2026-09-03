@@ -1651,15 +1651,18 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
                           : t("حفظ واستخدام", "Save & use")}
                     </Button>
                   </div>
-                  <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+                  <div className="mt-4 grid grid-cols-2 gap-x-3 gap-y-4 sm:grid-cols-12">
                     {FIT_PROFILE_FIELDS[fitProfileType].map(([key, ar, en, required]) => (
-                      <label key={key} className="space-y-1.5">
-                        <span className="block text-xs font-semibold">
-                          {lang === "ar" ? ar : en}
+                      <label
+                        key={key}
+                        className={`min-w-0 space-y-1.5 ${required ? "sm:col-span-3" : "sm:col-span-4"}`}
+                      >
+                        <span className="flex min-h-5 flex-wrap items-center gap-1.5 text-xs font-semibold sm:flex-nowrap">
+                          <span>{lang === "ar" ? ar : en}</span>
                           {required ? (
                             <span className="ms-1 text-destructive">*</span>
                           ) : (
-                            <span className="ms-1 font-normal text-muted-foreground">
+                            <span className="rounded-full bg-muted px-1.5 py-0.5 text-[9px] font-medium leading-none text-muted-foreground">
                               {t("اختياري", "optional")}
                             </span>
                           )}
