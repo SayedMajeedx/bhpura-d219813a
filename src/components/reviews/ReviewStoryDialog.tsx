@@ -10,6 +10,7 @@ import {
   Pause,
   Phone,
   Play,
+  RotateCcw,
   ShieldCheck,
   Sparkles,
   Star,
@@ -165,6 +166,395 @@ function drawBrandLogo(ctx: CanvasRenderingContext2D, logo: HTMLImageElement, ti
   ctx.drawImage(tinted, x, y, width, height);
 }
 
+interface StoryLayers {
+  bgCanvas: HTMLCanvasElement;
+  fgCanvas: HTMLCanvasElement;
+}
+
+function prepareStoryLayers({
+  template,
+  review,
+  comment,
+  brandName,
+  primary,
+  isAr,
+  showName,
+  showHighlights,
+  showDate,
+  orderDateText,
+  showBrandContact,
+  brandPhone,
+  brandInstagram,
+  logoImage,
+  hasMedia = false,
+}: {
+  template: StoryTemplate;
+  review: OrderReviewAdminRow;
+  comment: string;
+  brandName: string;
+  primary: string;
+  isAr: boolean;
+  showName: boolean;
+  showHighlights: boolean;
+  showDate?: boolean;
+  orderDateText?: string | null;
+  showBrandContact?: boolean;
+  brandPhone?: string | null;
+  brandInstagram?: string | null;
+  logoImage?: HTMLImageElement | null;
+  hasMedia?: boolean;
+}): StoryLayers {
+  const bgCanvas = document.createElement("canvas");
+  bgCanvas.width = STORY_WIDTH;
+  bgCanvas.height = STORY_HEIGHT;
+  const ctx = bgCanvas.getContext("2d")!;
+  ctx.textBaseline = "middle";
+  ctx.direction = isAr ? "rtl" : "ltr";
+
+  const dark = template === "midnight";
+
+  // 1. Background
+  if (template === "classic") {
+    const bgGrad = ctx.createLinearGradient(0, 0, 0, STORY_HEIGHT);
+    bgGrad.addColorStop(0, "#ece3d8");
+    bgGrad.addColorStop(0.45, "#dfd4c7");
+    bgGrad.addColorStop(1, "#cfc0b0");
+    ctx.fillStyle = bgGrad;
+    ctx.fillRect(0, 0, STORY_WIDTH, STORY_HEIGHT);
+
+    const ambient = ctx.createRadialGradient(540, 750, 60, 540, 750, 750);
+    ambient.addColorStop(0, "rgba(255, 255, 255, 0.28)");
+    ambient.addColorStop(1, "rgba(255, 255, 255, 0)");
+    ctx.fillStyle = ambient;
+    ctx.fillRect(0, 0, STORY_WIDTH, STORY_HEIGHT);
+  } else if (template === "editorial") {
+    const bgGrad = ctx.createLinearGradient(0, 0, 0, STORY_HEIGHT);
+    bgGrad.addColorStop(0, "#ffffff");
+    bgGrad.addColorStop(0.5, "#faf8f5");
+    bgGrad.addColorStop(1, "#f0ede8");
+    ctx.fillStyle = bgGrad;
+    ctx.fillRect(0, 0, STORY_WIDTH, STORY_HEIGHT);
+  } else {
+    const bgGrad = ctx.createLinearGradient(0, 0, 0, STORY_HEIGHT);
+    bgGrad.addColorStop(0, "#1c1010");
+    bgGrad.addColorStop(0.6, "#120a0a");
+    bgGrad.addColorStop(1, "#0a0505");
+    ctx.fillStyle = bgGrad;
+    ctx.fillRect(0, 0, STORY_WIDTH, STORY_HEIGHT);
+
+    const ambient = ctx.createRadialGradient(540, 700, 80, 540, 700, 800);
+    ambient.addColorStop(0, "rgba(239, 217, 200, 0.08)");
+    ambient.addColorStop(1, "rgba(0, 0, 0, 0)");
+    ctx.fillStyle = ambient;
+    ctx.fillRect(0, 0, STORY_WIDTH, STORY_HEIGHT);
+  }
+
+  // 2. Brand Header
+  ctx.textAlign = "center";
+  if (logoImage?.naturalWidth && logoImage.naturalHeight) {
+    drawBrandLogo(ctx, logoImage, dark ? null : primary);
+  } else {
+    ctx.fillStyle = dark ? "#fffaf5" : primary;
+    ctx.font = "700 38px 'Tajawal', 'Cairo', Arial, sans-serif";
+    ctx.fillText(brandName, 540, 130);
+  }
+
+  // 3. Central Frame Dimensions
+  const fw = 660;
+  const fh = 1140;
+  const fx = (STORY_WIDTH - fw) / 2; // 210
+  const fy = 240;
+  const fr = 42;
+
+  // Frame Drop Shadow
+  ctx.save();
+  ctx.shadowColor = dark ? "rgba(0, 0, 0, 0.55)" : "rgba(60, 45, 38, 0.16)";
+  ctx.shadowBlur = 42;
+  ctx.shadowOffsetY = 16;
+  ctx.fillStyle = dark ? "#241616" : "#fdfbf9";
+  roundedRect(ctx, fx, fy, fw, fh, fr);
+  ctx.fill();
+  ctx.restore();
+
+  // Placeholder inside frame if no media is selected
+  if (!hasMedia) {
+    ctx.save();
+    roundedRect(ctx, fx, fy, fw, fh, fr);
+    ctx.clip();
+    const pGrad = ctx.createLinearGradient(fx, fy, fx + fw, fy + fh);
+    pGrad.addColorStop(0, dark ? "#2c1a1a" : "#e7dfd5");
+    pGrad.addColorStop(1, dark ? "#190e0e" : "#d9cebf");
+    ctx.fillStyle = pGrad;
+    ctx.fillRect(fx, fy, fw, fh);
+
+    ctx.fillStyle = dark ? "rgba(255, 255, 255, 0.4)" : "rgba(80, 60, 50, 0.45)";
+    ctx.font = "600 32px 'Tajawal', 'Cairo', Arial, sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText(isAr ? "صورة المنتج" : "Product photo", 540, fy + fh / 2 - 20);
+    ctx.font = "400 24px 'Tajawal', 'Cairo', Arial, sans-serif";
+    ctx.fillText(
+      isAr ? "(يمكن رفع صورة من القائمة)" : "(Upload photo from controls)",
+      540,
+      fy + fh / 2 + 25,
+    );
+    ctx.restore();
+  }
+
+  // FOREGROUND LAYER
+  const fgCanvas = document.createElement("canvas");
+  fgCanvas.width = STORY_WIDTH;
+  fgCanvas.height = STORY_HEIGHT;
+  const fgCtx = fgCanvas.getContext("2d")!;
+  fgCtx.textBaseline = "middle";
+  fgCtx.direction = isAr ? "rtl" : "ltr";
+
+  // Crisp White Border
+  fgCtx.save();
+  fgCtx.strokeStyle = dark ? "rgba(255, 255, 255, 0.9)" : "#ffffff";
+  fgCtx.lineWidth = 12;
+  roundedRect(fgCtx, fx, fy, fw, fh, fr);
+  fgCtx.stroke();
+  fgCtx.restore();
+
+  // 4. Decorative Sparkles
+  const sparkleColor = dark ? "rgba(245, 225, 210, 0.9)" : "rgba(255, 255, 255, 0.95)";
+  drawSparkle(fgCtx, 880, 460, 32, sparkleColor);
+  drawSparkle(fgCtx, 190, 1310, 26, sparkleColor);
+  drawSparkle(fgCtx, 890, 1180, 18, sparkleColor);
+
+  // 5. Floating Frosted Review Card
+  const cw = 780;
+  const cx = (STORY_WIDTH - cw) / 2;
+  const maxCommentWidth = 684;
+
+  fgCtx.font = "500 30px 'Tajawal', 'Cairo', Arial, sans-serif";
+  const commentText =
+    comment.trim() ||
+    (isAr ? "تجربة تستحق المشاركة ورائعة جداً" : "An experience worth sharing");
+  const commentLines = fitLines(fgCtx, commentText, maxCommentWidth, 6);
+  const commentLineHeight = 46;
+  const textBlockHeight = commentLines.length * commentLineHeight;
+
+  const validHighlights = (review.highlights || []).slice(0, 2);
+  const hasHighlights = showHighlights && validHighlights.length > 0;
+  const extraHighlightsHeight = hasHighlights ? 52 : 0;
+
+  const ch = Math.max(
+    320,
+    Math.min(560, 160 + textBlockHeight + extraHighlightsHeight),
+  );
+  const cy = Math.round(850 - ch / 2);
+
+  // Frosted Card Shadow
+  fgCtx.save();
+  fgCtx.shadowColor = dark ? "rgba(0, 0, 0, 0.45)" : "rgba(50, 35, 25, 0.16)";
+  fgCtx.shadowBlur = 38;
+  fgCtx.shadowOffsetY = 14;
+  fgCtx.fillStyle = dark ? "rgba(28, 16, 16, 0.88)" : "rgba(255, 255, 255, 0.88)";
+  roundedRect(fgCtx, cx, cy, cw, ch, 36);
+  fgCtx.fill();
+  fgCtx.restore();
+
+  // Frosted Card Border Outline
+  fgCtx.save();
+  fgCtx.strokeStyle = dark ? "rgba(255, 255, 255, 0.22)" : "rgba(255, 255, 255, 0.85)";
+  fgCtx.lineWidth = 1.5;
+  roundedRect(fgCtx, cx, cy, cw, ch, 36);
+  fgCtx.stroke();
+  fgCtx.restore();
+
+  // Card Content
+  const padX = 48;
+  const customerName =
+    showName && publicFirstName(review.customer_name)
+      ? publicFirstName(review.customer_name)
+      : isAr
+        ? "عميلة موثّقة"
+        : "Verified customer";
+
+  const headerY = cy + 48;
+  if (isAr) {
+    fgCtx.textAlign = "right";
+    fgCtx.fillStyle = dark ? "#fffaf5" : "#231815";
+    fgCtx.font = "700 36px 'Tajawal', 'Cairo', Arial, sans-serif";
+    fgCtx.fillText(customerName, cx + cw - padX, headerY);
+
+    if (showDate && orderDateText) {
+      fgCtx.textAlign = "left";
+      fgCtx.fillStyle = dark ? "rgba(255, 250, 245, 0.65)" : "#7a6b65";
+      fgCtx.font = "500 24px 'Tajawal', 'Cairo', Arial, sans-serif";
+      fgCtx.fillText(orderDateText, cx + padX, headerY);
+    }
+  } else {
+    fgCtx.textAlign = "left";
+    fgCtx.fillStyle = dark ? "#fffaf5" : "#231815";
+    fgCtx.font = "700 36px 'Tajawal', 'Cairo', Arial, sans-serif";
+    fgCtx.fillText(customerName, cx + padX, headerY);
+
+    if (showDate && orderDateText) {
+      fgCtx.textAlign = "right";
+      fgCtx.fillStyle = dark ? "rgba(255, 250, 245, 0.65)" : "#7a6b65";
+      fgCtx.font = "500 24px 'Tajawal', 'Cairo', Arial, sans-serif";
+      fgCtx.fillText(orderDateText, cx + cw - padX, headerY);
+    }
+  }
+
+  const starsY = cy + 98;
+  const rating = Math.max(1, Math.min(5, Number(review.rating) || 5));
+  fgCtx.fillStyle = dark ? "#efd9c8" : "#32231f";
+  fgCtx.font = "700 34px Arial, sans-serif";
+  fgCtx.direction = "ltr";
+  if (isAr) {
+    fgCtx.textAlign = "right";
+    fgCtx.fillText("★".repeat(rating), cx + cw - padX, starsY);
+  } else {
+    fgCtx.textAlign = "left";
+    fgCtx.fillText("★".repeat(rating), cx + padX, starsY);
+  }
+  fgCtx.direction = isAr ? "rtl" : "ltr";
+
+  let commentY = cy + 155;
+  fgCtx.font = "500 30px 'Tajawal', 'Cairo', Arial, sans-serif";
+  fgCtx.fillStyle = dark ? "#f4ede6" : "#2b211e";
+  fgCtx.textAlign = isAr ? "right" : "left";
+  const commentStartX = isAr ? cx + cw - padX : cx + padX;
+
+  commentLines.forEach((line) => {
+    fgCtx.fillText(line, commentStartX, commentY);
+    commentY += commentLineHeight;
+  });
+
+  if (hasHighlights) {
+    const labels = validHighlights.map(
+      (h) => REVIEW_HIGHLIGHT_LABELS[h]?.[isAr ? "ar" : "en"] ?? h,
+    );
+    fgCtx.font = "600 22px 'Tajawal', 'Cairo', Arial, sans-serif";
+    const tagY = cy + ch - 40;
+    let currX = isAr ? cx + cw - padX : cx + padX;
+
+    labels.forEach((label) => {
+      const textWidth = fgCtx.measureText(label).width;
+      const tagW = textWidth + 32;
+      const tagH = 38;
+      const tagBoxX = isAr ? currX - tagW : currX;
+
+      fgCtx.fillStyle = dark ? "rgba(255, 255, 255, 0.12)" : "rgba(0, 0, 0, 0.05)";
+      roundedRect(fgCtx, tagBoxX, tagY - tagH / 2, tagW, tagH, 19);
+      fgCtx.fill();
+
+      fgCtx.fillStyle = dark ? "#f0e6dd" : "#4a3c37";
+      fgCtx.textAlign = "center";
+      fgCtx.fillText(label, tagBoxX + tagW / 2, tagY);
+
+      if (isAr) {
+        currX -= tagW + 12;
+      } else {
+        currX += tagW + 12;
+      }
+    });
+  }
+
+  fgCtx.textAlign = "center";
+  fgCtx.font = "500 24px 'Tajawal', 'Cairo', Arial, sans-serif";
+  fgCtx.fillStyle = dark ? "rgba(255, 250, 245, 0.72)" : "#756660";
+  fgCtx.fillText(
+    isAr ? "آراء حقيقية، وتجارب نعتز بها" : "Real words. Genuine experiences.",
+    540,
+    1565,
+  );
+
+  if (showBrandContact && (brandInstagram?.trim() || brandPhone?.trim())) {
+    const contactParts: string[] = [];
+    if (brandInstagram?.trim()) contactParts.push(`Instagram: ${brandInstagram.trim()}`);
+    if (brandPhone?.trim()) contactParts.push(`Tel: ${brandPhone.trim()}`);
+    const contactText = contactParts.join("   •   ");
+
+    fgCtx.font = "700 26px 'Tajawal', 'Cairo', Arial, sans-serif";
+    const contactTextWidth = fgCtx.measureText(contactText).width;
+    const pillW = Math.min(STORY_WIDTH - 120, contactTextWidth + 64);
+    const pillH = 58;
+    const pillX = 540 - pillW / 2;
+    const pillY = 1625;
+
+    fgCtx.save();
+    fgCtx.fillStyle = dark ? "rgba(255, 255, 255, 0.12)" : "rgba(255, 255, 255, 0.75)";
+    roundedRect(fgCtx, pillX, pillY, pillW, pillH, 29);
+    fgCtx.fill();
+
+    fgCtx.strokeStyle = dark ? "rgba(255, 255, 255, 0.22)" : "rgba(255, 255, 255, 0.9)";
+    fgCtx.lineWidth = 1.5;
+    roundedRect(fgCtx, pillX, pillY, pillW, pillH, 29);
+    fgCtx.stroke();
+    fgCtx.restore();
+
+    fgCtx.fillStyle = dark ? "#fffaf5" : primary;
+    fgCtx.textAlign = "center";
+    fgCtx.fillText(contactText, 540, pillY + pillH / 2);
+  }
+
+  fgCtx.fillStyle = dark ? "rgba(255, 255, 255, 0.1)" : `${primary}12`;
+  roundedRect(fgCtx, 414, 1740, 252, 54, 27);
+  fgCtx.fill();
+
+  fgCtx.fillStyle = dark ? "#fffaf5" : primary;
+  fgCtx.font = "600 22px 'Tajawal', 'Cairo', Arial, sans-serif";
+  fgCtx.textAlign = "center";
+  fgCtx.fillText(isAr ? "✓  رأي عميلة موثّق" : "✓  VERIFIED REVIEW", 540, 1768);
+
+  return { bgCanvas, fgCanvas };
+}
+
+function drawStoryFast({
+  canvas,
+  bgCanvas,
+  fgCanvas,
+  productImage,
+}: {
+  canvas: HTMLCanvasElement;
+  bgCanvas: HTMLCanvasElement;
+  fgCanvas: HTMLCanvasElement;
+  productImage?: HTMLImageElement | HTMLVideoElement | null;
+}) {
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return;
+  if (canvas.width !== STORY_WIDTH) canvas.width = STORY_WIDTH;
+  if (canvas.height !== STORY_HEIGHT) canvas.height = STORY_HEIGHT;
+
+  ctx.drawImage(bgCanvas, 0, 0);
+
+  if (productImage) {
+    const isVideo =
+      typeof HTMLVideoElement !== "undefined" && productImage instanceof HTMLVideoElement;
+    const pw = isVideo
+      ? (productImage as HTMLVideoElement).videoWidth
+      : (productImage as HTMLImageElement)?.naturalWidth || 0;
+    const ph = isVideo
+      ? (productImage as HTMLVideoElement).videoHeight
+      : (productImage as HTMLImageElement)?.naturalHeight || 0;
+
+    if (pw > 0 && ph > 0) {
+      const fw = 660;
+      const fh = 1140;
+      const fx = (STORY_WIDTH - fw) / 2;
+      const fy = 240;
+      const fr = 42;
+
+      ctx.save();
+      roundedRect(ctx, fx, fy, fw, fh, fr);
+      ctx.clip();
+      const scale = Math.max(fw / pw, fh / ph);
+      const iw = pw * scale;
+      const ih = ph * scale;
+      const ix = fx + (fw - iw) / 2;
+      const iy = fy + (fh - ih) / 2;
+      ctx.drawImage(productImage, ix, iy, iw, ih);
+      ctx.restore();
+    }
+  }
+
+  ctx.drawImage(fgCanvas, 0, 0);
+}
+
 function drawStory({
   canvas,
   template,
@@ -200,326 +590,30 @@ function drawStory({
   brandInstagram?: string | null;
   logoImage?: HTMLImageElement | null;
 }) {
-  const ctx = canvas.getContext("2d");
-  if (!ctx) return;
-  canvas.width = STORY_WIDTH;
-  canvas.height = STORY_HEIGHT;
-  ctx.textBaseline = "middle";
-  ctx.direction = isAr ? "rtl" : "ltr";
-
-  const dark = template === "midnight";
-
-  // 1. Background
-  if (template === "classic") {
-    const bgGrad = ctx.createLinearGradient(0, 0, 0, STORY_HEIGHT);
-    bgGrad.addColorStop(0, "#ece3d8");
-    bgGrad.addColorStop(0.45, "#dfd4c7");
-    bgGrad.addColorStop(1, "#cfc0b0");
-    ctx.fillStyle = bgGrad;
-    ctx.fillRect(0, 0, STORY_WIDTH, STORY_HEIGHT);
-
-    // Warm aesthetic ambient glow
-    const ambient = ctx.createRadialGradient(540, 750, 60, 540, 750, 750);
-    ambient.addColorStop(0, "rgba(255, 255, 255, 0.28)");
-    ambient.addColorStop(1, "rgba(255, 255, 255, 0)");
-    ctx.fillStyle = ambient;
-    ctx.fillRect(0, 0, STORY_WIDTH, STORY_HEIGHT);
-  } else if (template === "editorial") {
-    const bgGrad = ctx.createLinearGradient(0, 0, 0, STORY_HEIGHT);
-    bgGrad.addColorStop(0, "#ffffff");
-    bgGrad.addColorStop(0.5, "#faf8f5");
-    bgGrad.addColorStop(1, "#f0ede8");
-    ctx.fillStyle = bgGrad;
-    ctx.fillRect(0, 0, STORY_WIDTH, STORY_HEIGHT);
-  } else {
-    // midnight
-    const bgGrad = ctx.createLinearGradient(0, 0, 0, STORY_HEIGHT);
-    bgGrad.addColorStop(0, "#1c1010");
-    bgGrad.addColorStop(0.6, "#120a0a");
-    bgGrad.addColorStop(1, "#0a0505");
-    ctx.fillStyle = bgGrad;
-    ctx.fillRect(0, 0, STORY_WIDTH, STORY_HEIGHT);
-
-    const ambient = ctx.createRadialGradient(540, 700, 80, 540, 700, 800);
-    ambient.addColorStop(0, "rgba(239, 217, 200, 0.08)");
-    ambient.addColorStop(1, "rgba(0, 0, 0, 0)");
-    ctx.fillStyle = ambient;
-    ctx.fillRect(0, 0, STORY_WIDTH, STORY_HEIGHT);
-  }
-
-  // 2. Brand Header (Top)
-  ctx.textAlign = "center";
-  if (logoImage?.naturalWidth && logoImage.naturalHeight) {
-    drawBrandLogo(ctx, logoImage, dark ? null : primary);
-  } else {
-    ctx.fillStyle = dark ? "#fffaf5" : primary;
-    ctx.font = "700 38px 'Tajawal', 'Cairo', Arial, sans-serif";
-    ctx.fillText(brandName, 540, 130);
-  }
-
-  // 3. Central Framed Product Image
-  const fw = 660;
-  const fh = 1140;
-  const fx = (STORY_WIDTH - fw) / 2; // 210
-  const fy = 240;
-  const fr = 42;
-
-  // Drop shadow behind frame
-  ctx.save();
-  ctx.shadowColor = dark ? "rgba(0, 0, 0, 0.55)" : "rgba(60, 45, 38, 0.16)";
-  ctx.shadowBlur = 42;
-  ctx.shadowOffsetY = 16;
-  ctx.fillStyle = dark ? "#241616" : "#fdfbf9";
-  roundedRect(ctx, fx, fy, fw, fh, fr);
-  ctx.fill();
-  ctx.restore();
-
-  // Draw product photo or placeholder inside clipped rounded rectangle
-  ctx.save();
-  roundedRect(ctx, fx, fy, fw, fh, fr);
-  ctx.clip();
-  const isVideo =
-    typeof HTMLVideoElement !== "undefined" && productImage instanceof HTMLVideoElement;
-  const pw = isVideo
-    ? (productImage as HTMLVideoElement).videoWidth
-    : (productImage as HTMLImageElement)?.naturalWidth || 0;
-  const ph = isVideo
-    ? (productImage as HTMLVideoElement).videoHeight
-    : (productImage as HTMLImageElement)?.naturalHeight || 0;
-
-  if (pw > 0 && ph > 0 && productImage) {
-    const scale = Math.max(fw / pw, fh / ph);
-    const iw = pw * scale;
-    const ih = ph * scale;
-    const ix = fx + (fw - iw) / 2;
-    const iy = fy + (fh - ih) / 2;
-    ctx.drawImage(productImage, ix, iy, iw, ih);
-  } else {
-    // Elegant warm placeholder
-    const pGrad = ctx.createLinearGradient(fx, fy, fx + fw, fy + fh);
-    pGrad.addColorStop(0, dark ? "#2c1a1a" : "#e7dfd5");
-    pGrad.addColorStop(1, dark ? "#190e0e" : "#d9cebf");
-    ctx.fillStyle = pGrad;
-    ctx.fillRect(fx, fy, fw, fh);
-
-    ctx.fillStyle = dark ? "rgba(255, 255, 255, 0.4)" : "rgba(80, 60, 50, 0.45)";
-    ctx.font = "600 32px 'Tajawal', 'Cairo', Arial, sans-serif";
-    ctx.textAlign = "center";
-    ctx.fillText(isAr ? "صورة المنتج" : "Product photo", 540, fy + fh / 2 - 20);
-    ctx.font = "400 24px 'Tajawal', 'Cairo', Arial, sans-serif";
-    ctx.fillText(
-      isAr ? "(يمكن رفع صورة من القائمة)" : "(Upload photo from controls)",
-      540,
-      fy + fh / 2 + 25,
-    );
-  }
-  ctx.restore();
-
-  // Crisp White Border (as in Image 2!)
-  ctx.save();
-  ctx.strokeStyle = dark ? "rgba(255, 255, 255, 0.9)" : "#ffffff";
-  ctx.lineWidth = 12;
-  roundedRect(ctx, fx, fy, fw, fh, fr);
-  ctx.stroke();
-  ctx.restore();
-
-  // 4. Decorative Sparkles (✦) around the frame
-  const sparkleColor = dark ? "rgba(245, 225, 210, 0.9)" : "rgba(255, 255, 255, 0.95)";
-  drawSparkle(ctx, 880, 460, 32, sparkleColor); // Top-right of frame
-  drawSparkle(ctx, 190, 1310, 26, sparkleColor); // Bottom-left of frame
-  drawSparkle(ctx, 890, 1180, 18, sparkleColor); // Subtle accent
-
-  // 5. Floating Frosted Review Card (Overlaid across the framed picture)
-  // Card width is 780px, overlapping the 660px frame by 60px on both sides!
-  const cw = 780;
-  const cx = (STORY_WIDTH - cw) / 2; // 150
-  const maxCommentWidth = 684;
-
-  ctx.font = "500 30px 'Tajawal', 'Cairo', Arial, sans-serif";
-  const commentText =
-    comment.trim() ||
-    (isAr ? "تجربة تستحق المشاركة ورائعة جداً" : "An experience worth sharing");
-  const commentLines = fitLines(ctx, commentText, maxCommentWidth, 6);
-  const commentLineHeight = 46;
-  const textBlockHeight = commentLines.length * commentLineHeight;
-
-  const validHighlights = (review.highlights || []).slice(0, 2);
-  const hasHighlights = showHighlights && validHighlights.length > 0;
-  const extraHighlightsHeight = hasHighlights ? 52 : 0;
-
-  // Calculate card height to wrap nicely
-  const ch = Math.max(
-    320,
-    Math.min(560, 160 + textBlockHeight + extraHighlightsHeight),
-  );
-  // Vertically centered across the product image
-  const cy = Math.round(850 - ch / 2);
-
-  // Frosted Card Shadow
-  ctx.save();
-  ctx.shadowColor = dark ? "rgba(0, 0, 0, 0.45)" : "rgba(50, 35, 25, 0.16)";
-  ctx.shadowBlur = 38;
-  ctx.shadowOffsetY = 14;
-  ctx.fillStyle = dark ? "rgba(28, 16, 16, 0.88)" : "rgba(255, 255, 255, 0.88)";
-  roundedRect(ctx, cx, cy, cw, ch, 36);
-  ctx.fill();
-  ctx.restore();
-
-  // Frosted Card Border Outline
-  ctx.save();
-  ctx.strokeStyle = dark ? "rgba(255, 255, 255, 0.22)" : "rgba(255, 255, 255, 0.85)";
-  ctx.lineWidth = 1.5;
-  roundedRect(ctx, cx, cy, cw, ch, 36);
-  ctx.stroke();
-  ctx.restore();
-
-  // Card Content
-  const padX = 48;
-  const customerName =
-    showName && publicFirstName(review.customer_name)
-      ? publicFirstName(review.customer_name)
-      : isAr
-        ? "عميلة موثّقة"
-        : "Verified customer";
-
-  // Header inside card: Name & Order Date
-  const headerY = cy + 48;
-  if (isAr) {
-    ctx.textAlign = "right";
-    ctx.fillStyle = dark ? "#fffaf5" : "#231815";
-    ctx.font = "700 36px 'Tajawal', 'Cairo', Arial, sans-serif";
-    ctx.fillText(customerName, cx + cw - padX, headerY);
-
-    if (showDate && orderDateText) {
-      ctx.textAlign = "left";
-      ctx.fillStyle = dark ? "rgba(255, 250, 245, 0.65)" : "#7a6b65";
-      ctx.font = "500 24px 'Tajawal', 'Cairo', Arial, sans-serif";
-      ctx.fillText(orderDateText, cx + padX, headerY);
-    }
-  } else {
-    ctx.textAlign = "left";
-    ctx.fillStyle = dark ? "#fffaf5" : "#231815";
-    ctx.font = "700 36px 'Tajawal', 'Cairo', Arial, sans-serif";
-    ctx.fillText(customerName, cx + padX, headerY);
-
-    if (showDate && orderDateText) {
-      ctx.textAlign = "right";
-      ctx.fillStyle = dark ? "rgba(255, 250, 245, 0.65)" : "#7a6b65";
-      ctx.font = "500 24px 'Tajawal', 'Cairo', Arial, sans-serif";
-      ctx.fillText(orderDateText, cx + cw - padX, headerY);
-    }
-  }
-
-  // Rating Stars below customer name
-  const starsY = cy + 98;
-  const rating = Math.max(1, Math.min(5, Number(review.rating) || 5));
-  ctx.fillStyle = dark ? "#efd9c8" : "#32231f"; // Elegant dark charcoal/bronze matching reference
-  ctx.font = "700 34px Arial, sans-serif";
-  ctx.direction = "ltr";
-  if (isAr) {
-    ctx.textAlign = "right";
-    ctx.fillText("★".repeat(rating), cx + cw - padX, starsY);
-  } else {
-    ctx.textAlign = "left";
-    ctx.fillText("★".repeat(rating), cx + padX, starsY);
-  }
-  ctx.direction = isAr ? "rtl" : "ltr";
-
-  // Review comment text
-  let commentY = cy + 155;
-  ctx.font = "500 30px 'Tajawal', 'Cairo', Arial, sans-serif";
-  ctx.fillStyle = dark ? "#f4ede6" : "#2b211e";
-  ctx.textAlign = isAr ? "right" : "left";
-  const commentStartX = isAr ? cx + cw - padX : cx + padX;
-
-  commentLines.forEach((line) => {
-    ctx.fillText(line, commentStartX, commentY);
-    commentY += commentLineHeight;
+  const { bgCanvas, fgCanvas } = prepareStoryLayers({
+    template,
+    review,
+    comment,
+    brandName,
+    primary,
+    isAr,
+    showName,
+    showHighlights,
+    showDate,
+    orderDateText,
+    showBrandContact,
+    brandPhone,
+    brandInstagram,
+    logoImage,
+    hasMedia: Boolean(productImage),
   });
 
-  // Optional Highlights Tags inside the card
-  if (hasHighlights) {
-    const labels = validHighlights.map(
-      (h) => REVIEW_HIGHLIGHT_LABELS[h]?.[isAr ? "ar" : "en"] ?? h,
-    );
-    ctx.font = "600 22px 'Tajawal', 'Cairo', Arial, sans-serif";
-    const tagY = cy + ch - 40;
-    let currX = isAr ? cx + cw - padX : cx + padX;
-
-    labels.forEach((label) => {
-      const textWidth = ctx.measureText(label).width;
-      const tagW = textWidth + 32;
-      const tagH = 38;
-      const tagBoxX = isAr ? currX - tagW : currX;
-
-      ctx.fillStyle = dark ? "rgba(255, 255, 255, 0.12)" : "rgba(0, 0, 0, 0.05)";
-      roundedRect(ctx, tagBoxX, tagY - tagH / 2, tagW, tagH, 19);
-      ctx.fill();
-
-      ctx.fillStyle = dark ? "#f0e6dd" : "#4a3c37";
-      ctx.textAlign = "center";
-      ctx.fillText(label, tagBoxX + tagW / 2, tagY);
-
-      if (isAr) {
-        currX -= tagW + 12;
-      } else {
-        currX += tagW + 12;
-      }
-    });
-  }
-
-  // 6. Brand Contact Footer (Bottom)
-  ctx.textAlign = "center";
-
-  // Subtitle
-  ctx.font = "500 24px 'Tajawal', 'Cairo', Arial, sans-serif";
-  ctx.fillStyle = dark ? "rgba(255, 250, 245, 0.72)" : "#756660";
-  ctx.fillText(
-    isAr ? "آراء حقيقية، وتجارب نعتز بها" : "Real words. Genuine experiences.",
-    540,
-    1565,
-  );
-
-  // Brand Phone & Instagram pill (as requested: "مع اضافة رقم الهاتف للبراند و الانستجرام تبع البراند")
-  if (showBrandContact && (brandInstagram?.trim() || brandPhone?.trim())) {
-    const contactParts: string[] = [];
-    if (brandInstagram?.trim()) contactParts.push(`Instagram: ${brandInstagram.trim()}`);
-    if (brandPhone?.trim()) contactParts.push(`Tel: ${brandPhone.trim()}`);
-    const contactText = contactParts.join("   •   ");
-
-    ctx.font = "700 26px 'Tajawal', 'Cairo', Arial, sans-serif";
-    const contactTextWidth = ctx.measureText(contactText).width;
-    const pillW = Math.min(STORY_WIDTH - 120, contactTextWidth + 64);
-    const pillH = 58;
-    const pillX = 540 - pillW / 2;
-    const pillY = 1625;
-
-    // Contact pill background
-    ctx.save();
-    ctx.fillStyle = dark ? "rgba(255, 255, 255, 0.12)" : "rgba(255, 255, 255, 0.75)";
-    roundedRect(ctx, pillX, pillY, pillW, pillH, 29);
-    ctx.fill();
-
-    ctx.strokeStyle = dark ? "rgba(255, 255, 255, 0.22)" : "rgba(255, 255, 255, 0.9)";
-    ctx.lineWidth = 1.5;
-    roundedRect(ctx, pillX, pillY, pillW, pillH, 29);
-    ctx.stroke();
-    ctx.restore();
-
-    ctx.fillStyle = dark ? "#fffaf5" : primary;
-    ctx.textAlign = "center";
-    ctx.fillText(contactText, 540, pillY + pillH / 2);
-  }
-
-  // Verified Badge (Bottom-most)
-  ctx.fillStyle = dark ? "rgba(255, 255, 255, 0.1)" : `${primary}12`;
-  roundedRect(ctx, 414, 1740, 252, 54, 27);
-  ctx.fill();
-
-  ctx.fillStyle = dark ? "#fffaf5" : primary;
-  ctx.font = "600 22px 'Tajawal', 'Cairo', Arial, sans-serif";
-  ctx.textAlign = "center";
-  ctx.fillText(isAr ? "✓  رأي عميلة موثّق" : "✓  VERIFIED REVIEW", 540, 1768);
+  drawStoryFast({
+    canvas,
+    bgCanvas,
+    fgCanvas,
+    productImage,
+  });
 }
 
 export function ReviewStoryDialog({
@@ -554,6 +648,7 @@ export function ReviewStoryDialog({
   const [isExportingVideo, setIsExportingVideo] = useState(false);
   const [exportProgress, setExportProgress] = useState(0);
   const [isVideoPlaying, setIsVideoPlaying] = useState(true);
+  const [isVideoEnded, setIsVideoEnded] = useState(false);
 
   const [productImgElement, setProductImgElement] = useState<HTMLImageElement | null>(null);
   const [logoImgElement, setLogoImgElement] = useState<HTMLImageElement | null>(null);
@@ -632,7 +727,7 @@ export function ReviewStoryDialog({
     };
   }, [selectedMedia]);
 
-  // Handle video element if media is video
+  // Handle video element if media is video (no loop - play once and stop at the last frame)
   useEffect(() => {
     if (selectedMedia?.type !== "video" || !selectedMedia.url) {
       if (videoRef.current) {
@@ -640,11 +735,13 @@ export function ReviewStoryDialog({
         videoRef.current.src = "";
         videoRef.current = null;
       }
+      setIsVideoPlaying(false);
+      setIsVideoEnded(false);
       return;
     }
 
     const v = document.createElement("video");
-    v.loop = true;
+    v.loop = false; // Never loop: play once and stop at last frame
     v.muted = true;
     v.playsInline = true;
     (v as any).webkitPlaysInline = true;
@@ -652,8 +749,9 @@ export function ReviewStoryDialog({
     v.autoplay = true;
     v.src = selectedMedia.url;
     videoRef.current = v;
-    v.play().catch(() => {});
     setIsVideoPlaying(true);
+    setIsVideoEnded(false);
+    v.play().catch(() => {});
 
     return () => {
       v.pause();
@@ -664,65 +762,29 @@ export function ReviewStoryDialog({
     };
   }, [selectedMedia]);
 
-  // Render canvas (single frame for images, requestAnimationFrame loop for video)
-  useEffect(() => {
-    if (!review || !canvasRef.current || !open) return;
-
-    if (selectedMedia?.type !== "video" || !videoRef.current) {
-      drawStory({
-        canvas: canvasRef.current,
-        template,
-        review,
-        comment,
-        brandName,
-        primary,
-        isAr,
-        showName,
-        showHighlights,
-        showDate,
-        orderDateText: orderDateInput,
-        productImage: productImgElement,
-        showBrandContact,
-        brandPhone: customBrandPhone,
-        brandInstagram: customBrandInstagram,
-        logoImage: logoImgElement,
-      });
-      return;
-    }
-
-    let animId: number;
-    const v = videoRef.current;
-    const loop = () => {
-      if (canvasRef.current) {
-        drawStory({
-          canvas: canvasRef.current,
-          template,
-          review,
-          comment,
-          brandName,
-          primary,
-          isAr,
-          showName,
-          showHighlights,
-          showDate,
-          orderDateText: orderDateInput,
-          productImage: v,
-          showBrandContact,
-          brandPhone: customBrandPhone,
-          brandInstagram: customBrandInstagram,
-          logoImage: logoImgElement,
-        });
-      }
-      animId = requestAnimationFrame(loop);
-    };
-    animId = requestAnimationFrame(loop);
-
-    return () => {
-      cancelAnimationFrame(animId);
-    };
+  // Pre-render static layers (background + foreground) offscreen
+  // This enables silky-smooth 60fps video playback without recalculating text, shadows, or gradients
+  const cachedLayers = useMemo(() => {
+    if (!review || typeof document === "undefined") return null;
+    return prepareStoryLayers({
+      template,
+      review,
+      comment,
+      brandName,
+      primary,
+      isAr,
+      showName,
+      showHighlights,
+      showDate,
+      orderDateText: orderDateInput,
+      showBrandContact,
+      brandPhone: customBrandPhone,
+      brandInstagram: customBrandInstagram,
+      logoImage: logoImgElement,
+      hasMedia: Boolean(selectedMedia),
+    });
   }, [
     review,
-    open,
     template,
     comment,
     brandName,
@@ -732,17 +794,113 @@ export function ReviewStoryDialog({
     showHighlights,
     showDate,
     orderDateInput,
-    productImgElement,
-    selectedMedia,
     showBrandContact,
     customBrandPhone,
     customBrandInstagram,
     logoImgElement,
+    selectedMedia,
   ]);
+
+  // Render canvas (instant for images, hardware-synced requestVideoFrameCallback for video)
+  useEffect(() => {
+    if (!canvasRef.current || !open || !cachedLayers) return;
+
+    if (selectedMedia?.type !== "video" || !videoRef.current) {
+      drawStoryFast({
+        canvas: canvasRef.current,
+        bgCanvas: cachedLayers.bgCanvas,
+        fgCanvas: cachedLayers.fgCanvas,
+        productImage: productImgElement,
+      });
+      return;
+    }
+
+    const v = videoRef.current;
+    let frameCallbackId: number | null = null;
+    let animId: number | null = null;
+    let isCancelled = false;
+
+    const renderFrame = () => {
+      if (isCancelled) return;
+      if (canvasRef.current && cachedLayers) {
+        drawStoryFast({
+          canvas: canvasRef.current,
+          bgCanvas: cachedLayers.bgCanvas,
+          fgCanvas: cachedLayers.fgCanvas,
+          productImage: v,
+        });
+      }
+
+      if (!v.paused && !v.ended) {
+        if ("requestVideoFrameCallback" in v) {
+          frameCallbackId = (v as any).requestVideoFrameCallback(renderFrame);
+        } else {
+          animId = requestAnimationFrame(renderFrame);
+        }
+      }
+    };
+
+    // Draw initial frame
+    renderFrame();
+
+    const onPlay = () => {
+      setIsVideoPlaying(true);
+      setIsVideoEnded(false);
+      if ("requestVideoFrameCallback" in v) {
+        frameCallbackId = (v as any).requestVideoFrameCallback(renderFrame);
+      } else {
+        animId = requestAnimationFrame(renderFrame);
+      }
+    };
+
+    const onPause = () => {
+      setIsVideoPlaying(false);
+    };
+
+    const onEnded = () => {
+      setIsVideoPlaying(false);
+      setIsVideoEnded(true);
+      // Ensure the canvas firmly displays the last video frame
+      if (canvasRef.current && cachedLayers) {
+        drawStoryFast({
+          canvas: canvasRef.current,
+          bgCanvas: cachedLayers.bgCanvas,
+          fgCanvas: cachedLayers.fgCanvas,
+          productImage: v,
+        });
+      }
+    };
+
+    v.addEventListener("play", onPlay);
+    v.addEventListener("pause", onPause);
+    v.addEventListener("ended", onEnded);
+
+    return () => {
+      isCancelled = true;
+      v.removeEventListener("play", onPlay);
+      v.removeEventListener("pause", onPause);
+      v.removeEventListener("ended", onEnded);
+      if (frameCallbackId !== null && "cancelVideoFrameCallback" in v) {
+        (v as any).cancelVideoFrameCallback(frameCallbackId);
+      }
+      if (animId !== null) {
+        cancelAnimationFrame(animId);
+      }
+    };
+  }, [open, cachedLayers, selectedMedia, productImgElement]);
 
   const toggleVideoPlayback = () => {
     if (!videoRef.current) return;
-    if (videoRef.current.paused) {
+    if (videoRef.current.ended || isVideoEnded) {
+      videoRef.current.currentTime = 0;
+      videoRef.current
+        .play()
+        .then(() => {
+          setIsVideoPlaying(true);
+          setIsVideoEnded(false);
+        })
+        .catch(() => {});
+    } else if (videoRef.current.paused) {
       videoRef.current
         .play()
         .then(() => setIsVideoPlaying(true))
@@ -811,8 +969,10 @@ export function ReviewStoryDialog({
         await video.play();
       } catch {}
       setIsVideoPlaying(true);
+      setIsVideoEnded(false);
 
-      const duration = Math.min(Math.max(video.duration || 6, 4), 12);
+      const duration = Math.min(Math.max(video.duration || 6, 4), 15);
+      const totalDuration = duration + 1; // 1s pause on the last frame
       const fps = 30;
       const stream = (canvas as any).captureStream ? (canvas as any).captureStream(fps) : null;
       if (!stream) {
@@ -851,19 +1011,31 @@ export function ReviewStoryDialog({
 
       recorder.start(100);
 
+      let stopped = false;
+      const finishRecording = () => {
+        if (stopped) return;
+        stopped = true;
+        window.setTimeout(() => {
+          if (recorder.state === "recording") recorder.stop();
+        }, 1000); // 1-second hold on the last frame
+      };
+
+      video.addEventListener("ended", finishRecording, { once: true });
+
       const startTime = performance.now();
       const interval = window.setInterval(() => {
         const elapsed = (performance.now() - startTime) / 1000;
-        const prog = Math.min(Math.round((elapsed / duration) * 100), 99);
+        const prog = Math.min(Math.round((elapsed / totalDuration) * 100), 99);
         setExportProgress(prog);
-        if (elapsed >= duration) {
+        if (elapsed >= totalDuration + 0.5) {
           window.clearInterval(interval);
-          if (recorder.state === "recording") recorder.stop();
+          finishRecording();
         }
       }, 100);
 
       const blob = await recordingPromise;
       window.clearInterval(interval);
+      video.removeEventListener("ended", finishRecording);
       setExportProgress(100);
 
       const url = URL.createObjectURL(blob);
@@ -1294,9 +1466,27 @@ export function ReviewStoryDialog({
                   type="button"
                   onClick={toggleVideoPlayback}
                   className="absolute bottom-3 end-3 flex size-8 items-center justify-center rounded-full bg-black/65 text-white backdrop-blur-sm transition-all hover:bg-black/85"
-                  title={isAr ? "إيقاف / تشغيل المعاينة" : "Play / Pause"}
+                  title={
+                    isVideoEnded
+                      ? isAr
+                        ? "إعادة التشغيل"
+                        : "Replay"
+                      : isVideoPlaying
+                        ? isAr
+                          ? "إيقاف مؤقت"
+                          : "Pause"
+                        : isAr
+                          ? "تشغيل"
+                          : "Play"
+                  }
                 >
-                  {isVideoPlaying ? <Pause className="size-4" /> : <Play className="size-4 ms-0.5" />}
+                  {isVideoEnded ? (
+                    <RotateCcw className="size-4" />
+                  ) : isVideoPlaying ? (
+                    <Pause className="size-4" />
+                  ) : (
+                    <Play className="size-4 ms-0.5" />
+                  )}
                 </button>
               )}
             </div>
