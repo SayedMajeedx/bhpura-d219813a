@@ -25,6 +25,7 @@ import {
 } from "lucide-react";
 import { applyRememberMe } from "@/lib/session-persistence";
 import { translateAuthError } from "@/lib/auth-errors";
+import { readStorefrontOAuthReturn } from "@/lib/storefront-oauth-return";
 
 export const Route = createFileRoute("/auth")({
   ssr: false,
@@ -45,6 +46,14 @@ function AuthPage() {
     setPasskeySupported(
       window.isSecureContext && typeof window.PublicKeyCredential !== "undefined",
     );
+  }, []);
+
+  useEffect(() => {
+    const returnPath = readStorefrontOAuthReturn();
+    if (!returnPath) return;
+    void supabase.auth.getSession().then(({ data }) => {
+      if (data.session?.user) window.location.replace(returnPath);
+    });
   }, []);
 
   const submit = async (e: React.FormEvent) => {

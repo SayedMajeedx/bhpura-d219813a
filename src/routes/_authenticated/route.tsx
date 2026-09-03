@@ -2,10 +2,14 @@ import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell } from "@/components/app-shell";
 import { RoutePendingSkeleton } from "@/components/os/route-pending-skeleton";
+import { readStorefrontOAuthReturn } from "@/lib/storefront-oauth-return";
 
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
   beforeLoad: async ({ context: { queryClient } }) => {
+    const storefrontReturn = readStorefrontOAuthReturn();
+    if (storefrontReturn) throw redirect({ to: storefrontReturn as any });
+
     const user = await queryClient.ensureQueryData({
       queryKey: ["auth_user"],
       queryFn: async () => {

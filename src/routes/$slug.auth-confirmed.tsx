@@ -4,6 +4,7 @@ import { AlertCircle, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useStorefront } from "@/lib/storefront-context";
 import { Button } from "@/components/ui/button";
+import { clearStorefrontOAuthReturn } from "@/lib/storefront-oauth-return";
 
 export const Route = createFileRoute("/$slug/auth-confirmed")({
   component: StorefrontAuthConfirmed,
@@ -16,6 +17,7 @@ function StorefrontAuthConfirmed() {
 
   useEffect(() => {
     let active = true;
+    clearStorefrontOAuthReturn();
     const finish = async () => {
       for (let attempt = 0; attempt < 20 && active; attempt += 1) {
         const { data } = await supabase.auth.getSession();
@@ -41,7 +43,10 @@ function StorefrontAuthConfirmed() {
             return;
           }
           await refreshMembership();
-          if (active) navigate({ to: "/$slug", params: { slug: brand.slug }, replace: true });
+          if (active) {
+            clearStorefrontOAuthReturn();
+            navigate({ to: "/$slug", params: { slug: brand.slug }, replace: true });
+          }
           return;
         }
         await new Promise((resolve) => setTimeout(resolve, 150));

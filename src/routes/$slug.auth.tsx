@@ -10,6 +10,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { translateAuthError } from "@/lib/auth-errors";
+import {
+  clearStorefrontOAuthReturn,
+  rememberStorefrontOAuthReturn,
+} from "@/lib/storefront-oauth-return";
 
 export const Route = createFileRoute("/$slug/auth")({
   validateSearch: (search: Record<string, unknown>) => ({
@@ -65,16 +69,16 @@ function StorefrontAuth() {
 
   const signInWithGoogle = async () => {
     setWorking(true);
+    const callbackPath = `/${encodeURIComponent(brand.slug)}/auth-confirmed`;
+    rememberStorefrontOAuthReturn(callbackPath);
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: new URL(
-          `/${encodeURIComponent(brand.slug)}/auth-confirmed`,
-          window.location.origin,
-        ).toString(),
+        redirectTo: new URL(callbackPath, window.location.origin).toString(),
       },
     });
     if (error) {
+      clearStorefrontOAuthReturn();
       setWorking(false);
       toast.error(translateAuthError(error, lang));
     }
@@ -156,7 +160,9 @@ function StorefrontAuth() {
 
   const signIn = async () => {
     if (!form.email || !form.password)
-      return toast.error(t("البريد الإلكتروني وكلمة المرور مطلوبان", "Email and password are required"));
+      return toast.error(
+        t("البريد الإلكتروني وكلمة المرور مطلوبان", "Email and password are required"),
+      );
     setWorking(true);
     const { error } = await supabase.auth.signInWithPassword({
       email: form.email.trim().toLowerCase(),
@@ -192,7 +198,9 @@ function StorefrontAuth() {
 
   const signUp = async () => {
     if (!form.email || (!session && !form.password))
-      return toast.error(t("البريد الإلكتروني وكلمة المرور مطلوبان", "Email and password are required"));
+      return toast.error(
+        t("البريد الإلكتروني وكلمة المرور مطلوبان", "Email and password are required"),
+      );
     setWorking(true);
 
     if (session?.user) {
@@ -250,9 +258,12 @@ function StorefrontAuth() {
     if (!data.session) {
       setWorking(false);
       setPendingVerification(form.email.trim());
-      toast.success(t("تحقق من بريدك الإلكتروني لتأكيد الحساب.", "Check your email to verify your account."), {
-        duration: 8000,
-      });
+      toast.success(
+        t("تحقق من بريدك الإلكتروني لتأكيد الحساب.", "Check your email to verify your account."),
+        {
+          duration: 8000,
+        },
+      );
       return;
     }
     const activated = await activateMembership();
@@ -269,7 +280,8 @@ function StorefrontAuth() {
       </div>
     );
 
-  const storeName = (lang === "ar" ? brand.name_ar || brand.name_en : brand.name_en || brand.name_ar) || "";
+  const storeName =
+    (lang === "ar" ? brand.name_ar || brand.name_en : brand.name_en || brand.name_ar) || "";
 
   return (
     <div
@@ -289,8 +301,7 @@ function StorefrontAuth() {
             </div>
             <div>
               <h1 className="font-display text-xl sm:text-2xl font-bold tracking-tight text-foreground">
-                {t("مرحباً بك في", "Welcome to")}{" "}
-                <span className="text-primary">{storeName}</span>
+                {t("مرحباً بك في", "Welcome to")} <span className="text-primary">{storeName}</span>
               </h1>
               <p className="mt-1 text-xs sm:text-sm text-muted-foreground leading-relaxed">
                 {t(
