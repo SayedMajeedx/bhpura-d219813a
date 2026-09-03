@@ -27,4 +27,17 @@ describe("customer review story generator", () => {
     expect(storySource).toContain("setShowName");
     expect(storySource).toContain("setShowHighlights");
   });
+
+  it("uses the tenant brand color with Pura maroon as the safe default", () => {
+    expect(storySource).toContain(
+      'return value && /^#[0-9a-f]{6}$/i.test(value) ? value : "#330a0a"',
+    );
+    expect(reviewsPage).toContain('brand.slug.toLowerCase() === "pura" ? "#330a0a"');
+  });
+
+  it("includes the configured brand logo with a safe wordmark fallback", () => {
+    expect(reviewsPage).toContain("logoUrl={brand.logo_url}");
+    expect(storySource).toContain("logoImage?.naturalWidth");
+    expect(storySource).toContain('logo.crossOrigin = "anonymous"');
+  });
 });

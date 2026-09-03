@@ -31,6 +31,7 @@ type ReviewStoryDialogProps = {
   review: OrderReviewAdminRow | null;
   brandName: string;
   brandColor?: string | null;
+  logoUrl?: string | null;
   isAr: boolean;
 };
 
@@ -38,7 +39,7 @@ const STORY_WIDTH = 1080;
 const STORY_HEIGHT = 1920;
 
 function safeColor(value?: string | null) {
-  return value && /^#[0-9a-f]{6}$/i.test(value) ? value : "#5b0a0a";
+  return value && /^#[0-9a-f]{6}$/i.test(value) ? value : "#330a0a";
 }
 
 function publicFirstName(name: string) {
@@ -93,6 +94,7 @@ function drawStory({
   isAr,
   showName,
   showHighlights,
+  logoImage,
 }: {
   canvas: HTMLCanvasElement;
   template: StoryTemplate;
@@ -103,6 +105,7 @@ function drawStory({
   isAr: boolean;
   showName: boolean;
   showHighlights: boolean;
+  logoImage?: HTMLImageElement | null;
 }) {
   const ctx = canvas.getContext("2d");
   if (!ctx) return;
@@ -146,17 +149,28 @@ function drawStory({
     ctx.stroke();
   }
 
-  ctx.textAlign = isAr ? "right" : "left";
-  ctx.fillStyle = dark ? "#ffffff" : primary;
-  ctx.font = `700 42px Arial, sans-serif`;
-  ctx.fillText(brandName, isAr ? 900 : 180, 175);
-  ctx.fillStyle = accent;
-  roundedRect(ctx, isAr ? 920 : 100, 135, 52, 80, 18);
-  ctx.fill();
-  ctx.fillStyle = dark ? primary : "#ffffff";
-  ctx.font = `700 38px Arial, sans-serif`;
   ctx.textAlign = "center";
-  ctx.fillText(brandName.trim().charAt(0).toUpperCase(), isAr ? 946 : 126, 177);
+  if (logoImage?.naturalWidth && logoImage.naturalHeight) {
+    const maxWidth = 250;
+    const maxHeight = 120;
+    const scale = Math.min(maxWidth / logoImage.naturalWidth, maxHeight / logoImage.naturalHeight);
+    const width = logoImage.naturalWidth * scale;
+    const height = logoImage.naturalHeight * scale;
+    ctx.drawImage(logoImage, (STORY_WIDTH - width) / 2, 105, width, height);
+    ctx.fillStyle = dark ? "#ffffff" : primary;
+    ctx.font = `700 30px Arial, sans-serif`;
+    ctx.fillText(brandName, 540, 260);
+  } else {
+    ctx.fillStyle = accent;
+    roundedRect(ctx, 514, 110, 52, 80, 18);
+    ctx.fill();
+    ctx.fillStyle = dark ? primary : "#ffffff";
+    ctx.font = `700 38px Arial, sans-serif`;
+    ctx.fillText(brandName.trim().charAt(0).toUpperCase(), 540, 152);
+    ctx.fillStyle = dark ? "#ffffff" : primary;
+    ctx.font = `700 38px Arial, sans-serif`;
+    ctx.fillText(brandName, 540, 235);
+  }
 
   ctx.textAlign = "center";
   ctx.fillStyle = muted;
@@ -242,6 +256,7 @@ export function ReviewStoryDialog({
   review,
   brandName,
   brandColor,
+  logoUrl,
   isAr,
 }: ReviewStoryDialogProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -262,18 +277,44 @@ export function ReviewStoryDialog({
 
   useEffect(() => {
     if (!review || !canvasRef.current || !open) return;
-    drawStory({
-      canvas: canvasRef.current,
-      template,
-      review,
-      comment,
-      brandName,
-      primary,
-      isAr,
-      showName,
-      showHighlights,
-    });
-  }, [review, open, template, comment, brandName, primary, isAr, showName, showHighlights]);
+    const canvas = canvasRef.current;
+    const render = (logoImage?: HTMLImageElement | null) =>
+      drawStory({
+        canvas,
+        template,
+        review,
+        comment,
+        brandName,
+        primary,
+        isAr,
+        showName,
+        showHighlights,
+        logoImage,
+      });
+    render();
+    if (!logoUrl) return;
+    let cancelled = false;
+    const logo = new Image();
+    logo.crossOrigin = "anonymous";
+    logo.onload = () => {
+      if (!cancelled) render(logo);
+    };
+    logo.src = logoUrl;
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    review,
+    open,
+    template,
+    comment,
+    brandName,
+    primary,
+    logoUrl,
+    isAr,
+    showName,
+    showHighlights,
+  ]);
 
   const templates = useMemo(
     () => [
@@ -316,9 +357,9 @@ export function ReviewStoryDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         dir={isAr ? "rtl" : "ltr"}
-        className="grid max-h-[calc(100dvh-1rem)] max-w-5xl gap-0 overflow-y-auto rounded-2xl p-0 lg:grid-cols-[minmax(0,1fr)_390px] lg:overflow-hidden"
+        className="grid h-[calc(100dvh-1rem)] max-h-[820px] min-h-0 max-w-5xl gap-0 overflow-y-auto rounded-2xl p-0 sm:h-[calc(100dvh-2rem)] lg:grid-cols-[minmax(0,1fr)_390px] lg:overflow-hidden"
       >
-        <section className="order-2 min-w-0 p-5 sm:p-7 lg:order-1 lg:overflow-y-auto">
+        <section className="order-2 min-h-0 min-w-0 p-5 sm:p-7 lg:order-1 lg:overflow-y-auto lg:overscroll-contain">
           <DialogHeader className="px-0 pe-10">
             <DialogTitle className="flex items-center gap-2 text-xl">
               <Sparkles className="size-5 text-primary" />

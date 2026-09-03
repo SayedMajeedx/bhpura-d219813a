@@ -6,6 +6,7 @@ export type Brand = {
   name_en: string;
   name_ar: string | null;
   logo_url: string | null;
+  primary_color?: string | null;
   favicon_url?: string | null;
   is_active: boolean;
   subscription_tier?: string | null;

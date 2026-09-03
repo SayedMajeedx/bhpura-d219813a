@@ -53,11 +53,11 @@ function CustomerReviewsPage() {
     queryKey: ["review-story-brand", brand.id],
     queryFn: async () => {
       const { data, error } = await (supabase.from("business_settings") as any)
-        .select("business_name, primary_color")
+        .select("business_name")
         .eq("brand_id", brand.id)
         .maybeSingle();
       if (error) throw error;
-      return data as { business_name?: string | null; primary_color?: string | null } | null;
+      return data as { business_name?: string | null } | null;
     },
     staleTime: 5 * 60_000,
   });
@@ -264,7 +264,10 @@ function CustomerReviewsPage() {
           brandStyleQ.data?.business_name?.trim() ||
           (isAr ? brand.name_ar || brand.name_en : brand.name_en)
         }
-        brandColor={brandStyleQ.data?.primary_color}
+        brandColor={
+          brand.slug.toLowerCase() === "pura" ? "#330a0a" : brand.primary_color || "#330a0a"
+        }
+        logoUrl={brand.logo_url}
         isAr={isAr}
       />
     </div>
