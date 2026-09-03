@@ -57,21 +57,21 @@ const THEMES = {
     en: "Editorial",
     bg: "#f4eee9",
     ink: "#330a0a",
-    panel: "rgba(255,255,255,.86)",
+    panel: "rgba(255,255,255,.68)",
   },
   maison: {
     ar: "دار الأزياء",
     en: "Maison",
     bg: "#330a0a",
     ink: "#fffaf6",
-    panel: "rgba(51,10,10,.78)",
+    panel: "rgba(51,10,10,.64)",
   },
   minimal: {
     ar: "هادئ",
     en: "Minimal",
     bg: "#e8ddd5",
     ink: "#330a0a",
-    panel: "rgba(244,238,233,.88)",
+    panel: "rgba(244,238,233,.7)",
   },
 } as const;
 
@@ -182,8 +182,12 @@ function ContentStudioPage() {
         ),
       );
       const file = new File([blob], fileName, { type: "image/png" });
+      const isMobileDevice =
+        window.matchMedia("(pointer: coarse)").matches && window.innerWidth < 900;
       const canShareFile =
-        typeof navigator.share === "function" && navigator.canShare?.({ files: [file] });
+        isMobileDevice &&
+        typeof navigator.share === "function" &&
+        navigator.canShare?.({ files: [file] });
 
       if (canShareFile) {
         try {
@@ -477,8 +481,10 @@ function ContentStudioPage() {
                     dir="auto"
                     lang={editionIsAr ? "ar" : "en"}
                     className={cn(
-                      "text-[9px] font-semibold",
-                      !editionIsAr && "uppercase tracking-[.25em]",
+                      "font-semibold",
+                      editionIsAr
+                        ? "text-[12px] sm:text-sm"
+                        : "text-[9px] uppercase tracking-[.25em]",
                     )}
                     style={editionIsAr ? { fontFamily: "Tahoma, Arial, sans-serif" } : undefined}
                   >
@@ -493,7 +499,7 @@ function ContentStudioPage() {
                 dir={isAr ? "rtl" : "ltr"}
                 lang={isAr ? "ar" : "en"}
                 className={cn(
-                  "absolute bottom-[8%] w-[78%] overflow-hidden rounded-[22px] border border-white/30 px-[5.5%] py-[5%] shadow-2xl backdrop-blur-md",
+                  "absolute bottom-[8%] w-[72%] overflow-hidden rounded-[20px] border border-white/25 px-[5%] py-[4.25%] shadow-xl backdrop-blur-[7px]",
                   isAr ? "right-[6%] text-right" : "left-[6%] text-left",
                 )}
                 style={{
@@ -540,7 +546,11 @@ function ContentStudioPage() {
                   </span>
                   {selected?.base_price ? (
                     <span dir={isAr ? "rtl" : "ltr"} className="text-end">
-                      <small className="block text-[8px] tracking-wider opacity-60">
+                      <small
+                        lang={isAr ? "ar" : "en"}
+                        className="block whitespace-nowrap text-[10px] opacity-70"
+                        style={isAr ? { fontFamily: "Tahoma, Arial, sans-serif" } : undefined}
+                      >
                         {isAr ? "ابتداءً من" : "From"}
                       </small>
                       <strong dir="ltr" className="block text-sm sm:text-base">
