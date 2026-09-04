@@ -21,6 +21,7 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
 import {
   Select,
   SelectContent,
@@ -114,7 +115,7 @@ function ContentStudioPage() {
   const [editionLabel, setEditionLabel] = useState("The Pura Edit");
   const [headline, setHeadline] = useState("صُممت لتبقى في الذاكرة");
   const [body, setBody] = useState("أناقة هادئة، وتفاصيل مدروسة لكل لحظة.");
-  const [cta, setCta] = useState("تسوّقي المجموعة");
+  const [showPrice, setShowPrice] = useState(true);
   const [exporting, setExporting] = useState(false);
 
   const productsQ = useQuery({
@@ -393,14 +394,14 @@ function ContentStudioPage() {
                   placeholder={selectedDescription || ""}
                 />
               </div>
-              <div>
-                <Label htmlFor="studio-cta">{isAr ? "الدعوة للإجراء" : "Call to action"}</Label>
-                <Input
-                  id="studio-cta"
-                  value={cta}
-                  maxLength={32}
-                  onChange={(event) => setCta(event.target.value)}
-                  className="mt-2 h-11 rounded-xl"
+              <div className="flex items-center justify-between rounded-xl border bg-muted/20 px-3.5 py-2.5">
+                <Label htmlFor="studio-show-price" className="text-xs font-semibold cursor-pointer">
+                  {isAr ? "إظهار السعر على البطاقة" : "Show price on card"}
+                </Label>
+                <Switch
+                  id="studio-show-price"
+                  checked={showPrice}
+                  onCheckedChange={setShowPrice}
                 />
               </div>
             </div>
@@ -499,7 +500,7 @@ function ContentStudioPage() {
                 dir={isAr ? "rtl" : "ltr"}
                 lang={isAr ? "ar" : "en"}
                 className={cn(
-                  "absolute bottom-[7.5%] w-[66%] overflow-hidden rounded-[18px] border border-white/25 px-[4.25%] py-[3.5%] shadow-xl backdrop-blur-[6px]",
+                  "absolute bottom-[7.5%] w-[66%] overflow-hidden rounded-[18px] border border-white/25 px-[4%] py-[2.75%] shadow-xl backdrop-blur-[6px]",
                   isAr ? "right-[6%] text-right" : "left-[6%] text-left",
                 )}
                 style={{
@@ -537,36 +538,16 @@ function ContentStudioPage() {
                 >
                   {body || " "}
                 </p>
-                <div
-                  dir="ltr"
-                  className="mt-[4%] flex items-end justify-between gap-3 border-t border-current/15 pt-[3.25%]"
-                >
-                  <span
-                    dir={isAr ? "rtl" : "ltr"}
-                    className={cn(
-                      "rounded-full px-3.5 py-1.5 text-[9px] font-black sm:text-[11px]",
-                      isAr && "order-2",
-                    )}
-                    style={{ background: palette.ink, color: palette.bg }}
+                {showPrice && selected?.base_price ? (
+                  <div
+                    dir="ltr"
+                    className="mt-[2.5%] flex items-center border-t border-current/15 pt-[2%]"
                   >
-                    {cta}
-                  </span>
-                  {selected?.base_price ? (
-                    <span dir="ltr" className={cn("text-left", isAr && "order-1")}>
-                      <small
-                        dir="rtl"
-                        lang={isAr ? "ar" : "en"}
-                        className="block whitespace-nowrap text-left text-[9px] opacity-70"
-                        style={isAr ? { fontFamily: "Tahoma, Arial, sans-serif" } : undefined}
-                      >
-                        {isAr ? "ابتداءً من" : "From"}
-                      </small>
-                      <strong dir="ltr" className="block text-left text-xs sm:text-sm">
-                        {Number(selected.base_price).toFixed(3)} BHD
-                      </strong>
+                    <span dir="ltr" className="font-black text-xs sm:text-sm tracking-tight">
+                      {Number(selected.base_price).toFixed(3)} BHD
                     </span>
-                  ) : null}
-                </div>
+                  </div>
+                ) : null}
               </div>
               <div
                 dir="ltr"
