@@ -7,6 +7,8 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { cn } from "@/lib/utils";
 import {
   Dialog,
   DialogContent,
@@ -48,6 +50,58 @@ export function PackagingMaterialsTab() {
   const [unitCost, setUnitCost] = useState<number>(0);
   const [reorderLevel, setReorderLevel] = useState<number>(10);
   const [isSaving, setIsSaving] = useState(false);
+
+  const [isTogglingBom, setIsTogglingBom] = useState(false);
+
+  const settingsQ = useQuery({
+    queryKey: ["business-settings-bom", brandId],
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from("business_settings")
+        .select("bom_enabled")
+        .eq("brand_id", brandId)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const bomEnabled = (settingsQ.data as any)?.bom_enabled !== false;
+
+  const handleToggleBom = async (checked: boolean) => {
+    setIsTogglingBom(true);
+    try {
+      const { error } = await (supabase as any)
+        .from("business_settings")
+        .update({ bom_enabled: checked })
+        .eq("brand_id", brandId);
+
+      if (error) throw error;
+
+      await qc.invalidateQueries({ queryKey: ["business-settings-bom", brandId] });
+      await qc.invalidateQueries({ queryKey: ["dashboard-business-settings", brandId] });
+      await qc.invalidateQueries({ queryKey: ["dashboard-reporting-overview"] });
+      await qc.invalidateQueries({ queryKey: ["cogs", brandId] });
+
+      if (checked) {
+        toast.success(
+          isAr
+            ? "تم تشغيل نظام الـ BOM: سيتم خصم مواد التغليف واحتساب تكلفتها تلقائياً."
+            : "BOM System Enabled: Packaging materials and costs will be deducted automatically.",
+        );
+      } else {
+        toast.info(
+          isAr
+            ? "تم إيقاف نظام الـ BOM مؤقتاً: لن يتم خصم مواد التغليف من المخزون للطلبات القادمة."
+            : "BOM System Paused: Packaging materials will not be deducted for upcoming orders.",
+        );
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Failed to update BOM setting");
+    } finally {
+      setIsTogglingBom(false);
+    }
+  };
 
   const materialsQ = useQuery({
     queryKey: ["packaging-materials", brandId],
@@ -226,6 +280,69 @@ export function PackagingMaterialsTab() {
             <Plus className="h-4 w-4" />
             {isAr ? "إضافة مادة تغليف جديدة" : "Add Packaging Material"}
           </Button>
+        </div>
+      </div>
+
+      {/* BOM Status & Toggle Control Banner */}
+      <div
+        className={cn(
+          "rounded-xl border p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 transition-colors",
+          bomEnabled
+            ? "border-primary/30 bg-primary/5"
+            : "border-border bg-muted/40",
+        )}
+      >
+        <div className="flex items-start gap-3">
+          <div
+            className={cn(
+              "p-2.5 rounded-lg shrink-0",
+              bomEnabled ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground",
+            )}
+          >
+            <Box className="h-5 w-5" />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-bold text-foreground">
+                {isAr
+                  ? "نظام استهلاك وحساب مواد التغليف (BOM Packaging Automation)"
+                  : "BOM Packaging Automation"}
+              </span>
+              <span
+                className={cn(
+                  "text-[10px] font-bold px-2 py-0.5 rounded-full border",
+                  bomEnabled
+                    ? "bg-primary/10 text-primary border-primary/30"
+                    : "bg-muted text-muted-foreground border-border",
+                )}
+              >
+                {bomEnabled ? (isAr ? "شغال ومفعل" : "Active") : (isAr ? "متوقف مؤقتاً" : "Paused")}
+              </span>
+            </div>
+            <p className="text-xs text-muted-foreground mt-1 max-w-2xl leading-relaxed">
+              {bomEnabled
+                ? (isAr
+                    ? "الخصم التلقائي شغال: يتم خصم الأكياس والكروت من المخزون فور تجهيز/تسليم الطلب، وتُخصم التكلفة تلقائياً من صافي الأرباح."
+                    : "Active: Packaging stock is automatically deducted upon order fulfillment and calculated into net profit.")
+                : (isAr
+                    ? "النظام متوقف مؤقتاً: لن يتم سحب أي مواد من المخزون ولن تُحسب تكاليف تغليف في صافي الأرباح للطلبات الجديدة."
+                    : "Paused: Packaging materials will not be deducted from stock and packaging cost is omitted from net profit.")}
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-3 shrink-0 self-end sm:self-center bg-background/80 p-2 rounded-lg border border-border/60">
+          <Label htmlFor="bom-toggle" className="text-xs font-semibold cursor-pointer select-none">
+            {bomEnabled
+              ? (isAr ? "تشغيل BOM (شغال)" : "BOM Enabled")
+              : (isAr ? "إيقاف BOM (معطل)" : "BOM Disabled")}
+          </Label>
+          <Switch
+            id="bom-toggle"
+            checked={bomEnabled}
+            disabled={isTogglingBom || settingsQ.isLoading}
+            onCheckedChange={handleToggleBom}
+          />
         </div>
       </div>
 

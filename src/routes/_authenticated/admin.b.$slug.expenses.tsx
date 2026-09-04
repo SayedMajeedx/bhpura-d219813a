@@ -323,13 +323,13 @@ function ExpensesPage() {
   const settingsQ = useQuery({
     queryKey: ["expenses-business-settings", brandId],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from("business_settings")
-        .select("card_processing_fee, benefit_processing_fee")
+        .select("card_processing_fee, benefit_processing_fee, bom_enabled")
         .eq("brand_id", brandId)
         .maybeSingle();
       if (error) throw error;
-      return data ?? { card_processing_fee: 0, benefit_processing_fee: 0 };
+      return data ?? { card_processing_fee: 0, benefit_processing_fee: 0, bom_enabled: true };
     },
   });
 
@@ -373,10 +373,10 @@ function ExpensesPage() {
       let q2 = (supabase as any)
         .from("orders")
         .select(
-          "id, invoice_number, created_at, currency, total, payment_method, status, fulfillment_status, order_items(id, description, quantity, unit_price, unit_cost, line_total, variant_id, product_id)",
+          "id, invoice_number, created_at, currency, total, payment_method, status, fulfillment_status, order_items(id, description, quantity, unit_price, unit_cost, line_total, variant_id, product_id, packaging_cost_snapshot)",
         )
         .eq("brand_id", brandId)
-        .in("status", ["confirmed", "paid", "shipped", "completed"])
+        .in("status", ["confirmed", "paid", "shipped", "completed", "delivered", "ready_for_pickup", "picked_up"])
         .order("created_at", { ascending: false });
       if (activeRange.from) q2 = q2.gte("created_at", activeRange.from);
       if (activeRange.to) {
@@ -516,14 +516,14 @@ function ExpensesPage() {
     const mats = packagingMaterialsQ.data ?? [];
 
     (cogsQ.data ?? []).forEach((order) => {
-      const isFulfilled = ["fulfilled", "delivered", "completed", "shipped"].includes(
+      const isFulfilled = ["fulfilled", "delivered", "completed", "shipped", "picked_up", "ready_for_pickup"].includes(
         String(order.fulfillment_status || order.status || "").toLowerCase(),
       );
       (order.order_items ?? []).forEach((item) => {
         const pCost = Number((item as any).unit_cost ?? 0);
         const qty = Number(item.quantity ?? 1);
         prod += pCost * qty;
-        if (isFulfilled) {
+        if (isFulfilled && (settingsQ.data as any)?.bom_enabled !== false) {
           const bCost = getItemPackagingCost(item, prods, vars, boms, mats);
           pkg += bCost * qty;
         }

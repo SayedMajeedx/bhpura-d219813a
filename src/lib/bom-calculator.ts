@@ -65,16 +65,12 @@ export function matchProductForItem(
     }
   }
 
-  // 3. Fallback fuzzy match by description
+  // 3. Fallback fuzzy match by description / code
   if (item.description) {
     const desc = String(item.description).trim().toLowerCase();
     const p = products.find((x) => {
-      const name = String(x.name || "")
-        .trim()
-        .toLowerCase();
-      const nameAr = String(x.name_ar || "")
-        .trim()
-        .toLowerCase();
+      const name = String(x.name || "").trim().toLowerCase();
+      const nameAr = String(x.name_ar || "").trim().toLowerCase();
       return (
         (name && (desc.includes(name) || name.includes(desc))) ||
         (nameAr && (desc.includes(nameAr) || nameAr.includes(desc)))
@@ -98,8 +94,7 @@ export function getItemPackagingCost(
 ): number {
   if (!item) return 0;
 
-  // Completed orders carry an immutable snapshot so later BOM price edits do
-  // not rewrite historical order profit.
+  // 1. Completed orders carry an immutable snapshot
   if (
     item.packaging_cost_snapshot != null &&
     !isNaN(Number(item.packaging_cost_snapshot))
@@ -107,7 +102,7 @@ export function getItemPackagingCost(
     return Number(Number(item.packaging_cost_snapshot).toFixed(3));
   }
 
-  // If item already has a non-zero explicit packaging_cost property attached
+  // 2. Explicit packaging_cost property attached
   if (
     item.packaging_cost != null &&
     !isNaN(Number(item.packaging_cost)) &&
@@ -118,6 +113,30 @@ export function getItemPackagingCost(
 
   const product = matchProductForItem(item, products, variants);
   if (!product) {
+    // Fallback: If no catalog product matched (e.g. custom/manual line item),
+    // calculate using the brand's configured packaging BOM materials.
+    if (bomItems.length > 0) {
+      const uniqueMatMap = new Map<string, number>();
+      bomItems.forEach((b) => {
+        const q = Number(b.quantity_per_unit || 1);
+        const prev = uniqueMatMap.get(b.packaging_material_id) ?? 0;
+        if (q > prev) uniqueMatMap.set(b.packaging_material_id, q);
+      });
+      const defaultCost = Array.from(uniqueMatMap.entries()).reduce((sum, [matId, qty]) => {
+        const mat =
+          packagingMaterials.find((m) => m.id === matId) ||
+          bomItems.find((b) => b.packaging_material_id === matId)?.packaging_material ||
+          bomItems.find((b) => b.packaging_material_id === matId)?.packaging_materials;
+        return sum + Number(mat?.unit_cost || 0) * qty;
+      }, 0);
+      if (defaultCost > 0) return Number(defaultCost.toFixed(3));
+    }
+
+    if (packagingMaterials.length > 0) {
+      const defaultCost = packagingMaterials.reduce((sum, m) => sum + Number(m.unit_cost || 0), 0);
+      if (defaultCost > 0) return Number(defaultCost.toFixed(3));
+    }
+
     return 0;
   }
 
@@ -140,6 +159,12 @@ export function getItemPackagingCost(
 
   if (directCost > 0) {
     return Number(directCost.toFixed(3));
+  }
+
+  // Fallback to brand packaging materials if product has no specific BOM rows
+  if (packagingMaterials.length > 0) {
+    const defaultCost = packagingMaterials.reduce((sum, m) => sum + Number(m.unit_cost || 0), 0);
+    if (defaultCost > 0) return Number(defaultCost.toFixed(3));
   }
 
   return 0;
@@ -172,36 +197,72 @@ export function calculateOrderPackagingCogs(
  */
 export async function deductOrderPackagingStock(
   brandId: string,
-  productId: string,
+  productId: string | null | undefined,
   quantitySold: number,
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    if (!productId || !brandId || quantitySold <= 0) return { success: true };
+    if (!brandId || quantitySold <= 0) return { success: true };
 
-    // 1. Fetch BOM items attached to this product
-    const { data: bomItems, error } = await (supabase as any)
-      .from("product_bom_items")
-      .select("packaging_material_id, quantity_per_unit, packaging_materials(id, stock_quantity)")
-      .eq("product_id", productId)
-      .eq("brand_id", brandId);
+    // Check if BOM deduction is enabled for this brand
+    const { data: st } = await (supabase as any)
+      .from("business_settings")
+      .select("bom_enabled")
+      .eq("brand_id", brandId)
+      .maybeSingle();
 
-    if (error || !bomItems || bomItems.length === 0) {
-      return { success: true }; // No attached BOM items
+    if (st && st.bom_enabled === false) {
+      return { success: true };
     }
 
-    // 2. Deduct packaging material stock
-    for (const item of bomItems) {
-      const mat = item.packaging_materials as any;
-      if (!mat) continue;
-      const currentQty = Number(mat.stock_quantity || 0);
-      const neededQty = Number(item.quantity_per_unit || 1) * quantitySold;
-      const nextQty = Math.max(0, currentQty - neededQty);
-
-      await (supabase as any)
-        .from("packaging_materials")
-        .update({ stock_quantity: nextQty } as any)
-        .eq("id", mat.id)
+    // 1. If productId provided, fetch BOM items attached to this product
+    if (productId) {
+      const { data: bomItems, error } = await (supabase as any)
+        .from("product_bom_items")
+        .select("packaging_material_id, quantity_per_unit, packaging_materials(id, stock_quantity)")
+        .eq("product_id", productId)
         .eq("brand_id", brandId);
+
+      if (!error && bomItems && bomItems.length > 0) {
+        for (const item of bomItems) {
+          const mat = item.packaging_materials as any;
+          if (!mat) continue;
+          const currentQty = Number(mat.stock_quantity || 0);
+          const neededQty = Number(item.quantity_per_unit || 1) * quantitySold;
+          const nextQty = Math.max(0, currentQty - neededQty);
+
+          await (supabase as any)
+            .from("packaging_materials")
+            .update({ stock_quantity: nextQty } as any)
+            .eq("id", mat.id)
+            .eq("brand_id", brandId);
+        }
+        return { success: true };
+      }
+    }
+
+    // 2. If no productId or no specific BOM, deduct from brand's distinct packaging materials
+    const { data: brandBoms } = await (supabase as any)
+      .from("product_bom_items")
+      .select("packaging_material_id, quantity_per_unit, packaging_materials(id, stock_quantity)")
+      .eq("brand_id", brandId);
+
+    if (brandBoms && brandBoms.length > 0) {
+      const seen = new Set<string>();
+      for (const item of brandBoms) {
+        if (seen.has(item.packaging_material_id)) continue;
+        seen.add(item.packaging_material_id);
+        const mat = item.packaging_materials as any;
+        if (!mat) continue;
+        const currentQty = Number(mat.stock_quantity || 0);
+        const neededQty = Number(item.quantity_per_unit || 1) * quantitySold;
+        const nextQty = Math.max(0, currentQty - neededQty);
+
+        await (supabase as any)
+          .from("packaging_materials")
+          .update({ stock_quantity: nextQty } as any)
+          .eq("id", mat.id)
+          .eq("brand_id", brandId);
+      }
     }
 
     return { success: true };

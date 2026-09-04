@@ -33,13 +33,13 @@ export function FinancialReportsTab() {
   const settingsQ = useQuery({
     queryKey: ["dashboard-business-settings", brandId],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from("business_settings")
-        .select("card_processing_fee, benefit_processing_fee")
+        .select("card_processing_fee, benefit_processing_fee, bom_enabled")
         .eq("brand_id", brandId)
         .maybeSingle();
       if (error) throw error;
-      return data ?? { card_processing_fee: 0, benefit_processing_fee: 0 };
+      return data ?? { card_processing_fee: 0, benefit_processing_fee: 0, bom_enabled: true };
     },
   });
 
@@ -89,6 +89,8 @@ export function FinancialReportsTab() {
     expenses,
     Number(settings.card_processing_fee || 0),
     Number(settings.benefit_processing_fee || 0),
+    [],
+    { bomEnabled: settings.bom_enabled !== false },
   );
 
   const cashFlow = calculateCashFlowStatement(accounts, orders, expenses);
@@ -99,7 +101,9 @@ export function FinancialReportsTab() {
       rows = [
         ["INCOME STATEMENT / PROFIT & LOSS REPORT", "BHD"],
         ["Gross Revenue (المبيعات والإيرادات الإجمالية)", String(pnl.grossRevenue)],
-        ["Total COGS - Product & BOM Packaging (تكلفة البضاعة المباعة)", String(pnl.totalCogs)],
+        ["Product COGS (تكلفة المنتجات المباعة)", String(pnl.productCogs)],
+        ["Packaging BOM COGS (تكلفة مواد التغليف والعلب المستهلكة)", String(pnl.packagingBomCogs)],
+        ["Total COGS - Product & BOM Packaging (إجمالي تكلفة المبيعات والتغليف)", String(pnl.totalCogs)],
         ["Gross Profit (إجمالي الربح)", String(pnl.grossProfit)],
         [
           "Operating Expenses - OpEx (المصاريف التشغيلية والأجور والإيجار)",

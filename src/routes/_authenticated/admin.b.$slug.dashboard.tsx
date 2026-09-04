@@ -80,9 +80,9 @@ function Dashboard() {
   const businessSettings = useQuery({
     queryKey: ["dashboard-business-settings", brandId],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from("business_settings")
-        .select("business_name, currency, card_processing_fee, benefit_processing_fee")
+        .select("business_name, currency, card_processing_fee, benefit_processing_fee, bom_enabled")
         .eq("brand_id", brandId)
         .maybeSingle();
       if (error) throw error;
@@ -92,6 +92,7 @@ function Dashboard() {
           currency: "BHD",
           card_processing_fee: 0,
           benefit_processing_fee: 0,
+          bom_enabled: true,
         }
       );
     },
@@ -199,7 +200,7 @@ function Dashboard() {
       const { data, error } = await supabase
         .from("orders")
         .select(
-          "id, invoice_number, created_at, currency, total, status, fulfillment_status, payment_status, customer_id, customer_name_snapshot, customer_email_snapshot, customer_phone_snapshot, customers(name), payment_method, order_items(id, description, product_id, variant_id, quantity, unit_price, unit_cost, line_total)",
+          "id, invoice_number, created_at, currency, total, status, fulfillment_status, payment_status, customer_id, customer_name_snapshot, customer_email_snapshot, customer_phone_snapshot, customers(name), payment_method, order_items(id, description, product_id, variant_id, quantity, unit_price, unit_cost, line_total, packaging_cost_snapshot)",
         )
         .eq("brand_id", brandId)
         .order("created_at", { ascending: false });
@@ -378,7 +379,7 @@ function Dashboard() {
     const mats = packagingMaterialsQ.data ?? [];
 
     orders.forEach((order) => {
-      const isFulfilled = ["fulfilled", "delivered", "completed", "shipped"].includes(
+      const isFulfilled = ["fulfilled", "delivered", "completed", "shipped", "picked_up"].includes(
         String(order.fulfillment_status || order.status || "").toLowerCase(),
       );
       (order.order_items ?? []).forEach((item: any) => {
@@ -389,7 +390,7 @@ function Dashboard() {
         const qty = Number(item.quantity || 0);
 
         productCogs += itemCost * qty;
-        if (isFulfilled) {
+        if (isFulfilled && (businessSettings.data as any)?.bom_enabled !== false) {
           const pkgCost = getItemPackagingCost(item, prods, variants, boms, mats);
           packagingBomCogs += pkgCost * qty;
         }

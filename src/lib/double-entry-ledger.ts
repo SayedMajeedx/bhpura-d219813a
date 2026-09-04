@@ -36,10 +36,19 @@ export function calculateIncomeStatement(
   cardFeePercent: number = 0,
   benefitFeePercent: number = 0,
   returns: any[] = [],
+  options?: { defaultPackagingCost?: number; bomEnabled?: boolean },
 ): IncomeStatementData {
-  const confirmedOrders = orders.filter((o) =>
-    ["confirmed", "paid", "shipped", "completed"].includes(o.status),
-  );
+  const confirmedOrders = orders.filter((o) => {
+    const st = String(o.status || "").toLowerCase();
+    const fSt = String(o.fulfillment_status || "").toLowerCase();
+    const pSt = String(o.payment_status || "").toLowerCase();
+    if (st === "cancelled" || st === "canceled" || st === "refunded") return false;
+    return (
+      ["confirmed", "paid", "shipped", "completed", "delivered", "ready_for_pickup", "picked_up"].includes(st) ||
+      ["paid", "completed"].includes(pSt) ||
+      ["completed", "delivered", "fulfilled", "shipped", "picked_up"].includes(fSt)
+    );
+  });
 
   const grossRevenue = confirmedOrders.reduce((sum, o) => sum + Number(o.total || 0), 0);
   const returnsDiscounts = returns
@@ -51,16 +60,19 @@ export function calculateIncomeStatement(
   let packagingBomCogs = 0;
 
   confirmedOrders.forEach((order) => {
-    const isFulfilled = ["fulfilled", "delivered", "completed", "shipped"].includes(
+    const isFulfilled = ["fulfilled", "delivered", "completed", "shipped", "picked_up"].includes(
       String(order.fulfillment_status || order.status || "").toLowerCase(),
     );
     (order.order_items ?? []).forEach((item: any) => {
       const qty = Number(item.quantity || 0);
       const unitCost = Number(item.unit_cost || 0);
-      const packagingCost = Number(item.packaging_cost || 0);
+      let packagingCost = Number(item.packaging_cost_snapshot ?? item.packaging_cost ?? 0);
+      if (packagingCost <= 0 && options?.defaultPackagingCost) {
+        packagingCost = options.defaultPackagingCost;
+      }
 
       productCogs += unitCost * qty;
-      if (isFulfilled) {
+      if (isFulfilled && options?.bomEnabled !== false) {
         packagingBomCogs += packagingCost * qty;
       }
     });
