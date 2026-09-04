@@ -14,6 +14,11 @@ import { trackStorefrontEvent } from "@/lib/storefront-analytics";
 import { westernNumeralLocale } from "@/lib/format";
 import { decodeCartSharePayload, fetchSharedCartByCode } from "@/lib/cart-sharing";
 import { toast } from "sonner";
+import { syncStorefrontCartActivity } from "@/lib/abandoned-carts.functions";
+import {
+  getExistingCartSessionId,
+  getOrCreateCartSessionId,
+} from "@/lib/abandoned-cart-session";
 
 export type StoreLang = "ar" | "en";
 export type HomePromoCard = {
@@ -410,6 +415,41 @@ export function StorefrontProvider({
       /* ignore storage error */
     }
   }, [cart, cartKey, storageHydrated]);
+
+  // Track the cart everywhere in the storefront, not only after the customer
+  // reaches checkout. An empty cart closes an existing tracking session.
+  useEffect(() => {
+    if (!storageHydrated) return;
+    const existingSessionId = getExistingCartSessionId(brand.id);
+    if (cart.length === 0 && !existingSessionId) return;
+
+    const timer = window.setTimeout(() => {
+      const sessionId = existingSessionId || getOrCreateCartSessionId(brand.id);
+      void syncStorefrontCartActivity({
+        brandId: brand.id,
+        sessionId,
+        customerId: null,
+        cartItems: cart.map((item) => ({
+          cart_line_id: item.cart_line_id,
+          product_id: item.product_id,
+          variant_id: item.variant_id,
+          title: item.name,
+          name: item.name,
+          price: item.price,
+          unit_price: item.price,
+          qty: item.qty,
+          quantity: item.qty,
+          line_total: Number((item.price * item.qty).toFixed(3)),
+          image: item.image,
+          image_url: item.image,
+        })),
+        subtotal: cart.reduce((sum, item) => sum + item.price * item.qty, 0),
+        currency: settings.currency || "BHD",
+      });
+    }, 1200);
+
+    return () => window.clearTimeout(timer);
+  }, [brand.id, cart, settings.currency, storageHydrated]);
 
   useEffect(() => {
     if (!storageHydrated) return;

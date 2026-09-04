@@ -107,6 +107,11 @@ async function runScheduledTasks(cron: string, env: Cloudflare.Env): Promise<voi
     return { cron, ...(await retryWhatsAppOutbox(env)) };
   });
 
+  await runObservedTask(env, "abandoned_cart_processing", correlationId, async () => {
+    const { processAbandonedCarts } = await import("./lib/abandoned-carts.server");
+    return { cron, ...(await processAbandonedCarts()) };
+  });
+
   if (cron === "17 2 * * *") {
     await runObservedTask(env, "benefit_receipt_cleanup", correlationId, async () => {
       const { cleanupBenefitReceipts } = await import("./lib/benefit-receipt-cleanup.server");

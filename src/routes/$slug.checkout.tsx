@@ -64,6 +64,7 @@ import {
   markCartRecoveredOnOrder,
 } from "@/lib/abandoned-carts.functions";
 import type { BrandLoyaltyProgram, LoyaltyAccount, LoyaltyTier } from "@/lib/loyalty.types";
+import { getOrCreateCartSessionId } from "@/lib/abandoned-cart-session";
 
 export const Route = createFileRoute("/$slug/checkout")({
   component: Checkout,
@@ -72,7 +73,7 @@ export const Route = createFileRoute("/$slug/checkout")({
 type Fulfillment = "delivery" | "pickup" | "digital";
 
 function Checkout() {
-  const { brand, settings, cart, cartTotal, currency, lang, t, clearCart, session } =
+  const { brand, settings, cart, cartTotal, currency, lang, t, clearCart, addToCart, session } =
     useStorefront();
   const navigate = useNavigate();
   const [submitting, setSubmitting] = useState(false);
@@ -118,16 +119,7 @@ function Checkout() {
   const [pointsToRedeemInput, setPointsToRedeemInput] = useState<string>("");
   const [redeemedPoints, setRedeemedPoints] = useState<number>(0);
   const [marketingConsent, setMarketingConsent] = useState<boolean>(true);
-  const [cartSessionId] = useState<string>(() => {
-    if (typeof window !== "undefined") {
-      const existing = sessionStorage.getItem("boutq_cart_session_id");
-      if (existing) return existing;
-      const newId = crypto.randomUUID();
-      sessionStorage.setItem("boutq_cart_session_id", newId);
-      return newId;
-    }
-    return crypto.randomUUID();
-  });
+  const [cartSessionId] = useState<string>(() => getOrCreateCartSessionId(brand.id));
 
   const [form, setForm] = useState<{
     name: string;
@@ -548,7 +540,24 @@ function Checkout() {
             brandSlug: brand.slug,
             recoveryToken: recoverToken,
           });
-          if (res && res.valid) {
+          if (res?.success && Array.isArray(res.items)) {
+            clearCart();
+            for (const item of res.items) {
+              addToCart({
+                cart_line_id: item.cart_line_id || crypto.randomUUID(),
+                variant_id: item.variant_id ?? null,
+                product_id: item.product_id,
+                name: item.title || item.name || "Product",
+                image: item.image_url || item.image || null,
+                price: Number(item.price || item.unit_price || 0),
+                size: item.size || null,
+                color: item.color || null,
+                fabric: item.fabric || null,
+                qty: Number(item.qty || item.quantity || 1),
+                max_stock: Number(item.stock_available || 999),
+                custom_fields: Array.isArray(item.custom_fields) ? item.custom_fields : undefined,
+              });
+            }
             toast.success(
               lang === "ar"
                 ? "تمت استعادة محتويات سلتك بنجاح!"
@@ -571,11 +580,10 @@ function Checkout() {
         }
       })();
     }
-  }, [brand.slug, lang]);
+  }, [addToCart, brand.slug, clearCart, lang]);
 
   // 3. Debounced Sync of Active Cart Activity
   useEffect(() => {
-    if (!cart.length) return;
     const timer = setTimeout(() => {
       syncStorefrontCartActivity({
         brandId: brand.id,

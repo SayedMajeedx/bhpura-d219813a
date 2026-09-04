@@ -65,6 +65,8 @@ function AbandonedCartsDashboardPage() {
     refetch: refetchCarts,
   } = useQuery({
     queryKey: ["abandoned_carts_list", brand.id],
+    refetchInterval: 30_000,
+    refetchIntervalInBackground: true,
     queryFn: async () => {
       const { data, error } = await (supabase as any)
         .from("abandoned_carts")
@@ -80,6 +82,7 @@ function AbandonedCartsDashboardPage() {
   // 4. Fetch dispatch logs
   const { data: logs = [], isLoading: loadingLogs } = useQuery({
     queryKey: ["abandoned_cart_dispatch_logs", brand.id],
+    refetchInterval: 30_000,
     queryFn: async () => {
       const { data, error } = await (supabase as any)
         .from("abandoned_cart_dispatch_logs")
