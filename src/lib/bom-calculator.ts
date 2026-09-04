@@ -183,13 +183,23 @@ export function calculateOrderPackagingCogs(
 ): number {
   if (!isFulfilled || !items || items.length === 0) return 0;
 
-  const total = items.reduce((sum, it) => {
-    const qty = Number(it.quantity || it.qty || 1);
-    const unitPkgCost = getItemPackagingCost(it, products, variants, bomItems, packagingMaterials);
-    return sum + unitPkgCost * qty;
-  }, 0);
+  // If any item has immutable snapshot, respect the snapshot directly
+  const hasSnapshots = items.some(
+    (it) => it.packaging_cost_snapshot != null && !isNaN(Number(it.packaging_cost_snapshot)),
+  );
 
-  return Number(total.toFixed(3));
+  if (hasSnapshots) {
+    const total = items.reduce((sum, it) => {
+      const qty = Number(it.quantity || it.qty || 1);
+      const unitPkgCost = getItemPackagingCost(it, products, variants, bomItems, packagingMaterials);
+      return sum + unitPkgCost * qty;
+    }, 0);
+    return Number(total.toFixed(3));
+  }
+
+  // Otherwise calculate with deduction_rule breakdown (per_item * qty + per_order * 1)
+  const breakdown = calculateOrderPackagingBreakdown(items, packagingMaterials);
+  return breakdown.totalCost;
 }
 
 /**
@@ -218,7 +228,7 @@ export async function deductOrderPackagingStock(
     if (productId) {
       const { data: bomItems, error } = await (supabase as any)
         .from("product_bom_items")
-        .select("packaging_material_id, quantity_per_unit, packaging_materials(id, stock_quantity)")
+        .select("packaging_material_id, quantity_per_unit, packaging_materials(id, stock_quantity, deduction_rule)")
         .eq("product_id", productId)
         .eq("brand_id", brandId);
 
@@ -227,7 +237,8 @@ export async function deductOrderPackagingStock(
           const mat = item.packaging_materials as any;
           if (!mat) continue;
           const currentQty = Number(mat.stock_quantity || 0);
-          const neededQty = Number(item.quantity_per_unit || 1) * quantitySold;
+          const isPerOrder = mat.deduction_rule === "per_order";
+          const neededQty = Number(item.quantity_per_unit || 1) * (isPerOrder ? 1 : quantitySold);
           const nextQty = Math.max(0, currentQty - neededQty);
 
           await (supabase as any)
@@ -243,7 +254,7 @@ export async function deductOrderPackagingStock(
     // 2. If no productId or no specific BOM, deduct from brand's distinct packaging materials
     const { data: brandBoms } = await (supabase as any)
       .from("product_bom_items")
-      .select("packaging_material_id, quantity_per_unit, packaging_materials(id, stock_quantity)")
+      .select("packaging_material_id, quantity_per_unit, packaging_materials(id, stock_quantity, deduction_rule)")
       .eq("brand_id", brandId);
 
     if (brandBoms && brandBoms.length > 0) {
@@ -254,7 +265,8 @@ export async function deductOrderPackagingStock(
         const mat = item.packaging_materials as any;
         if (!mat) continue;
         const currentQty = Number(mat.stock_quantity || 0);
-        const neededQty = Number(item.quantity_per_unit || 1) * quantitySold;
+        const isPerOrder = mat.deduction_rule === "per_order";
+        const neededQty = Number(item.quantity_per_unit || 1) * (isPerOrder ? 1 : quantitySold);
         const nextQty = Math.max(0, currentQty - neededQty);
 
         await (supabase as any)
@@ -270,3 +282,28 @@ export async function deductOrderPackagingStock(
     return { success: false, error: err.message || "Failed to deduct packaging stock" };
   }
 }
+
+/**
+ * Calculate total packaging cost breakdown for an entire order considering deduction_rule.
+ */
+export function calculateOrderPackagingBreakdown(
+  orderItems: any[] = [],
+  packagingMaterials: any[] = [],
+): { perItemCost: number; perOrderCost: number; totalCost: number } {
+  const totalQty = orderItems.reduce((sum, item) => sum + Number(item.quantity || 1), 0);
+
+  const perItemMats = packagingMaterials.filter((m) => (m.deduction_rule || "per_item") === "per_item");
+  const perOrderMats = packagingMaterials.filter((m) => m.deduction_rule === "per_order");
+
+  const perItemUnitCost = perItemMats.reduce((sum, m) => sum + Number(m.unit_cost || 0), 0);
+  const perItemCost = perItemUnitCost * totalQty;
+
+  const perOrderCost = perOrderMats.reduce((sum, m) => sum + Number(m.unit_cost || 0), 0);
+
+  return {
+    perItemCost: Number(perItemCost.toFixed(3)),
+    perOrderCost: Number(perOrderCost.toFixed(3)),
+    totalCost: Number((perItemCost + perOrderCost).toFixed(3)),
+  };
+}
+

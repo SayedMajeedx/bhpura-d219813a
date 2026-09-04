@@ -49,6 +49,7 @@ export function PackagingMaterialsTab() {
   const [stock, setStock] = useState<number>(0);
   const [unitCost, setUnitCost] = useState<number>(0);
   const [reorderLevel, setReorderLevel] = useState<number>(10);
+  const [deductionRule, setDeductionRule] = useState<"per_item" | "per_order">("per_item");
   const [isSaving, setIsSaving] = useState(false);
 
   const [isTogglingBom, setIsTogglingBom] = useState(false);
@@ -170,6 +171,7 @@ export function PackagingMaterialsTab() {
     setStock(0);
     setUnitCost(0);
     setReorderLevel(10);
+    setDeductionRule("per_item");
     setOpenModal(true);
   };
 
@@ -181,6 +183,7 @@ export function PackagingMaterialsTab() {
     setStock(item.stock_quantity || 0);
     setUnitCost(item.unit_cost || 0);
     setReorderLevel(item.reorder_level || 10);
+    setDeductionRule(item.deduction_rule === "per_order" ? "per_order" : "per_item");
     setOpenModal(true);
   };
 
@@ -219,6 +222,7 @@ export function PackagingMaterialsTab() {
             stock_quantity: stock,
             unit_cost: unitCost,
             reorder_level: reorderLevel,
+            deduction_rule: deductionRule,
           } as any)
           .eq("id", editingItem.id)
           .eq("brand_id", brandId);
@@ -233,6 +237,7 @@ export function PackagingMaterialsTab() {
           stock_quantity: stock,
           unit_cost: unitCost,
           reorder_level: reorderLevel,
+          deduction_rule: deductionRule,
         } as any);
         if (error) throw error;
         toast.success(isAr ? "تمت الإضافة بنجاح" : "Added successfully");
@@ -409,9 +414,23 @@ export function PackagingMaterialsTab() {
                 <div className="space-y-2">
                   <div className="flex items-start justify-between gap-2">
                     <div>
-                      <h3 className="font-bold text-sm text-foreground">
-                        {isAr ? item.name_ar || item.name : item.name}
-                      </h3>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h3 className="font-bold text-sm text-foreground">
+                          {isAr ? item.name_ar || item.name : item.name}
+                        </h3>
+                        <span
+                          className={cn(
+                            "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold border",
+                            item.deduction_rule === "per_order"
+                              ? "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20"
+                              : "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20",
+                          )}
+                        >
+                          {item.deduction_rule === "per_order"
+                            ? (isAr ? "📦 لكل طلب كامل" : "📦 Per Order")
+                            : (isAr ? "👗 لكل قطعة منتج" : "👗 Per Product Item")}
+                        </span>
+                      </div>
                       {item.sku && (
                         <span className="text-[11px] font-mono text-muted-foreground">
                           SKU: {item.sku}
@@ -510,6 +529,56 @@ export function PackagingMaterialsTab() {
                 placeholder="مثال: علبة هدايا فاخرة (وسط)"
                 className="h-9 text-xs text-right"
               />
+            </div>
+
+            {/* Deduction Rule Selection */}
+            <div className="space-y-2 rounded-xl border border-border/80 bg-muted/20 p-3">
+              <Label className="text-xs font-bold text-foreground block">
+                {isAr ? "طريقة الخصم والاستهلاك في الطلبات" : "Deduction Rule in Orders"}
+              </Label>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setDeductionRule("per_item")}
+                  className={cn(
+                    "flex flex-col items-start gap-1 p-2.5 rounded-lg border text-right transition-all",
+                    deductionRule === "per_item"
+                      ? "border-primary bg-primary/10 text-primary ring-1 ring-primary"
+                      : "border-border bg-background text-muted-foreground hover:bg-muted/50",
+                  )}
+                >
+                  <div className="flex items-center gap-1.5 font-bold text-xs">
+                    <span>👗</span>
+                    <span>{isAr ? "لكل منتج / قطعة" : "Per Product Item"}</span>
+                  </div>
+                  <span className="text-[10px] text-muted-foreground leading-tight">
+                    {isAr
+                      ? "تُخصم بعدد المنتجات (مثل كيس بلاستيك فردي أو بطاقة تسعير لكل عباية)"
+                      : "Deducts for each item (e.g. polybag/tag per abaya)"}
+                  </span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setDeductionRule("per_order")}
+                  className={cn(
+                    "flex flex-col items-start gap-1 p-2.5 rounded-lg border text-right transition-all",
+                    deductionRule === "per_order"
+                      ? "border-amber-500 bg-amber-500/10 text-amber-700 dark:text-amber-400 ring-1 ring-amber-500"
+                      : "border-border bg-background text-muted-foreground hover:bg-muted/50",
+                  )}
+                >
+                  <div className="flex items-center gap-1.5 font-bold text-xs">
+                    <span>📦</span>
+                    <span>{isAr ? "لكل طلب كامل" : "Per Entire Order"}</span>
+                  </div>
+                  <span className="text-[10px] text-muted-foreground leading-tight">
+                    {isAr
+                      ? "تُخصم قطعة واحدة فقط للطلب مهما كان عدد المنتجات (مثل كيس المحل الكبير أو كرتون الشحن)"
+                      : "Deducts 1 unit per order regardless of items (e.g. boutique bag)"}
+                  </span>
+                </button>
+              </div>
             </div>
 
             <div className="grid grid-cols-2 gap-3">
