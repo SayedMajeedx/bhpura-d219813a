@@ -3,6 +3,7 @@ import { useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
   Check,
+  Copy,
   Download,
   ImageIcon,
   Instagram,
@@ -44,6 +45,8 @@ type Product = {
   image_url: string | null;
   media: unknown;
   base_price: number | null;
+  fabric_type?: string | null;
+  occasion?: string | null;
 };
 
 const FORMATS = {
@@ -123,12 +126,29 @@ function ContentStudioPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("products")
-        .select("id,name,name_ar,name_en,description,description_ar,image_url,media,base_price")
+        .select("id,name,name_ar,name_en,description,description_ar,image_url,media,base_price,fabric_type,occasion")
         .eq("brand_id", brand.id)
         .eq("is_active", true)
         .order("updated_at", { ascending: false });
       if (error) throw error;
       return (data ?? []) as Product[];
+    },
+  });
+  const variantsQ = useQuery({
+    queryKey: ["content-studio-variants", brand.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("product_variants")
+        .select("id,product_id,size,stock_main,stock_incubator")
+        .eq("brand_id", brand.id);
+      if (error) throw error;
+      return (data ?? []) as Array<{
+        id: string;
+        product_id: string;
+        size: string | null;
+        stock_main: number | null;
+        stock_incubator: number | null;
+      }>;
     },
   });
   const settingsQ = useQuery({
@@ -239,6 +259,56 @@ function ContentStudioPage() {
     [isAr, selected],
   );
 
+  const [copiedCaption, setCopiedCaption] = useState(false);
+
+  const captionText = useMemo(() => {
+    if (!selected) return "";
+    const title = headline.trim() ? `✨ ${headline.trim()}` : "✨ [العنوان العاطفي]";
+    const desc = body.trim() || selectedDescription || "";
+
+    const pVariants = (variantsQ.data ?? []).filter((v) => v.product_id === selected.id);
+    const availableSizes = Array.from(
+      new Set(
+        pVariants
+          .filter(
+            (v) => (Number(v.stock_main) || 0) + (Number(v.stock_incubator) || 0) > 0 && v.size,
+          )
+          .map((v) => v.size!.trim()),
+      ),
+    );
+
+    const sizesFormatted =
+      availableSizes.length > 0 ? availableSizes.join(" · ") : "غير متوفر حالياً للبيع الفوري";
+
+    const occasionFormatted = selected.occasion ? selected.occasion.trim() : "";
+    const fabricFormatted = selected.fabric_type ? selected.fabric_type.trim() : "";
+    const priceFormatted = selected.base_price ? Number(selected.base_price).toFixed(3) : "0.000";
+
+    return `${title}
+${desc}
+
+📏 المقاسات المتوفرة للبيع الفوري: ${sizesFormatted}
+👗 مناسبة لـ: ${occasionFormatted}
+✂️ متوفرة للتفصيل حسب الطلب: نعم
+🧵 نوع القماش: ${fabricFormatted}
+
+💰 ${priceFormatted} د.ب.`;
+  }, [selected, headline, body, selectedDescription, variantsQ.data]);
+
+  const handleCopyCaption = async () => {
+    if (!captionText) return;
+    try {
+      await navigator.clipboard.writeText(captionText);
+      setCopiedCaption(true);
+      setTimeout(() => setCopiedCaption(false), 2000);
+      toast.success(
+        isAr ? "تم نسخ كابشن انستقرام للحافظة بنجاح!" : "Instagram caption copied to clipboard!",
+      );
+    } catch {
+      toast.error(isAr ? "تعذر النسخ للحافظة" : "Failed to copy to clipboard");
+    }
+  };
+
   return (
     <div className="mx-auto max-w-[1500px] space-y-5 p-1 sm:p-2" dir={isAr ? "rtl" : "ltr"}>
       <section className="relative overflow-hidden rounded-[28px] border bg-card px-5 py-7 shadow-sm sm:px-8">
@@ -262,21 +332,33 @@ function ContentStudioPage() {
               </p>
             </div>
           </div>
-          <Button
-            onClick={exportCreative}
-            disabled={exporting || productsQ.isLoading}
-            size="lg"
-            className="gap-2 rounded-xl"
-          >
-            <Download className="size-4" />
-            {exporting
-              ? isAr
-                ? "جارٍ التصدير…"
-                : "Exporting…"
-              : isAr
-                ? "تنزيل PNG"
-                : "Download PNG"}
-          </Button>
+          <div className="flex flex-wrap items-center gap-2.5">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleCopyCaption}
+              size="lg"
+              className="gap-2 rounded-xl border-border bg-background/80 shadow-sm hover:bg-muted/50"
+            >
+              {copiedCaption ? <Check className="size-4 text-emerald-600" /> : <Copy className="size-4 text-primary" />}
+              {isAr ? "نسخ كابشن انستقرام" : "Copy Instagram Caption"}
+            </Button>
+            <Button
+              onClick={exportCreative}
+              disabled={exporting || productsQ.isLoading}
+              size="lg"
+              className="gap-2 rounded-xl"
+            >
+              <Download className="size-4" />
+              {exporting
+                ? isAr
+                  ? "جارٍ التصدير…"
+                  : "Exporting…"
+                : isAr
+                  ? "تنزيل PNG"
+                  : "Download PNG"}
+            </Button>
+          </div>
         </div>
       </section>
 
@@ -403,6 +485,30 @@ function ContentStudioPage() {
                   checked={showPrice}
                   onCheckedChange={setShowPrice}
                 />
+              </div>
+              <div className="rounded-2xl border bg-muted/20 p-4 space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold flex items-center gap-1.5 text-primary">
+                    <Sparkles className="size-3.5" />
+                    {isAr ? "كابشن انستقرام التلقائي" : "Auto Instagram Caption"}
+                  </span>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="ghost"
+                    onClick={handleCopyCaption}
+                    className="h-7 text-xs font-semibold gap-1 px-2.5"
+                  >
+                    {copiedCaption ? <Check className="size-3.5 text-emerald-600" /> : <Copy className="size-3.5" />}
+                    {copiedCaption ? (isAr ? "تم النسخ" : "Copied") : (isAr ? "نسخ" : "Copy")}
+                  </Button>
+                </div>
+                <pre
+                  dir="rtl"
+                  className="whitespace-pre-wrap font-sans text-xs leading-relaxed text-muted-foreground bg-background/80 p-3 rounded-xl border select-all"
+                >
+                  {captionText}
+                </pre>
               </div>
             </div>
             <Link

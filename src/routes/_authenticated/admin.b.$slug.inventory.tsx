@@ -164,6 +164,8 @@ type Product = {
   variant_label_color_en?: string | null;
   variant_label_fabric_ar?: string | null;
   variant_label_fabric_en?: string | null;
+  fabric_type?: string | null;
+  occasion?: string | null;
 };
 type Variant = {
   id: string;
@@ -2882,6 +2884,8 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
     variant_label_color_en: product?.variant_label_color_en ?? "",
     variant_label_fabric_ar: product?.variant_label_fabric_ar ?? "",
     variant_label_fabric_en: product?.variant_label_fabric_en ?? "",
+    fabric_type: (product as any)?.fabric_type ?? "",
+    occasion: (product as any)?.occasion ?? "",
   };
   const [form, setForm] = useState(initialForm);
   const [errors, setErrors] = useState<{ name?: string; price?: string; cost?: string }>({});
@@ -2928,6 +2932,8 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
       variant_label_color_en: product?.variant_label_color_en ?? "",
       variant_label_fabric_ar: product?.variant_label_fabric_ar ?? "",
       variant_label_fabric_en: product?.variant_label_fabric_en ?? "",
+      fabric_type: (product as any)?.fabric_type ?? "",
+      occasion: (product as any)?.occasion ?? "",
     });
     setErrors({});
     setActiveDialogTab("basic");
@@ -3083,6 +3089,8 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
         variant_label_color_en: (form.variant_label_color_en || "").trim() || null,
         variant_label_fabric_ar: (form.variant_label_fabric_ar || "").trim() || null,
         variant_label_fabric_en: (form.variant_label_fabric_en || "").trim() || null,
+        fabric_type: (form.fabric_type || "").trim() || null,
+        occasion: (form.occasion || "").trim() || null,
       };
       const { error } = await supabase.from("products").update(patch).eq("id", product.id);
       if (error) return toast.error(error.message);
@@ -3127,6 +3135,8 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
         variant_label_color_en: (form.variant_label_color_en || "").trim() || null,
         variant_label_fabric_ar: (form.variant_label_fabric_ar || "").trim() || null,
         variant_label_fabric_en: (form.variant_label_fabric_en || "").trim() || null,
+        fabric_type: (form.fabric_type || "").trim() || null,
+        occasion: (form.occasion || "").trim() || null,
       };
       const { error } = await (supabase.from("products") as any).insert(payload);
       if (error) return toast.error(error.message);
@@ -3269,6 +3279,37 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
                     : "Create categories in the Categories page to get a dropdown here."}
                 </p>
               )}
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <Label className="text-xs font-bold text-muted-foreground">
+                  {isAr ? "نوع القماش" : "Fabric Type"}
+                </Label>
+                <Input
+                  className="mt-1 h-10.5 rounded-lg"
+                  placeholder={isAr ? "مثال: كريب ملكي، لينن، حرير..." : "e.g., Royal Crepe, Linen..."}
+                  value={form.fabric_type}
+                  onChange={(e) => setForm({ ...form, fabric_type: e.target.value })}
+                />
+              </div>
+              <div>
+                <Label className="text-xs font-bold text-muted-foreground">
+                  {isAr ? "مناسبة لـ" : "Suitable for"}
+                </Label>
+                <div className="mt-1">
+                  <select
+                    className="w-full h-10.5 rounded-lg border border-input bg-background px-3 text-sm focus:ring-1 focus:ring-primary outline-none"
+                    value={form.occasion}
+                    onChange={(e) => setForm({ ...form, occasion: e.target.value })}
+                  >
+                    <option value="">{isAr ? "اختر المناسبة..." : "Select occasion..."}</option>
+                    <option value="يومي">{isAr ? "يومي" : "Daily"}</option>
+                    <option value="سهرة">{isAr ? "سهرة" : "Evening"}</option>
+                    <option value="مناسبات">{isAr ? "مناسبات" : "Occasions"}</option>
+                    <option value="إطلالة رسمية">{isAr ? "إطلالة رسمية" : "Formal"}</option>
+                  </select>
+                </div>
+              </div>
             </div>
             <div>
               <Label className="text-xs font-bold text-muted-foreground">
