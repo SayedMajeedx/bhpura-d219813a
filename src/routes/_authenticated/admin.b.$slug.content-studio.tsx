@@ -477,20 +477,24 @@ function ContentStudioPage() {
                   ) : (
                     <span className="font-serif text-2xl tracking-[.22em]">PURA</span>
                   )}
-                  <span className="h-7 w-px bg-white/40" />
-                  <span
-                    dir="auto"
-                    lang={editionIsAr ? "ar" : "en"}
-                    className={cn(
-                      "font-semibold",
-                      editionIsAr
-                        ? "text-[12px] sm:text-sm"
-                        : "text-[9px] uppercase tracking-[.25em]",
-                    )}
-                    style={editionIsAr ? { fontFamily: "Tahoma, Arial, sans-serif" } : undefined}
-                  >
-                    {editionLabel || " "}
-                  </span>
+                  {editionLabel?.trim() ? (
+                    <>
+                      <span className="h-7 w-px bg-white/40" />
+                      <span
+                        dir="auto"
+                        lang={editionIsAr ? "ar" : "en"}
+                        className={cn(
+                          "font-semibold",
+                          editionIsAr
+                            ? "text-[12px] sm:text-sm"
+                            : "text-[9px] uppercase tracking-[.25em]",
+                        )}
+                        style={editionIsAr ? { fontFamily: "Tahoma, Arial, sans-serif" } : undefined}
+                      >
+                        {editionLabel}
+                      </span>
+                    </>
+                  ) : null}
                 </div>
                 <span className="rounded-full border border-white/50 px-3 py-1 text-[9px] font-bold uppercase tracking-[.16em]">
                   Bahrain
