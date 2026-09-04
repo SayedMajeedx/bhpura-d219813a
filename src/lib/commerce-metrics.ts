@@ -34,7 +34,30 @@ export function isActiveCustomerOrder(order: CustomerMetricOrder) {
   );
 }
 
-export function buildCustomerCrmStats(orders: CustomerMetricOrder[], nowMs = Date.now()) {
+export const DEFAULT_VIP_THRESHOLDS: Record<string, number> = {
+  BHD: 250,
+  KWD: 200,
+  OMR: 250,
+  SAR: 2500,
+  AED: 2500,
+  QAR: 2500,
+  USD: 700,
+  EUR: 650,
+  GBP: 550,
+};
+
+export function getVipThreshold(currency?: string): number {
+  if (!currency) return 250;
+  const normalizedKey = currency.toUpperCase().trim();
+  return DEFAULT_VIP_THRESHOLDS[normalizedKey] ?? 250;
+}
+
+export function buildCustomerCrmStats(
+  orders: CustomerMetricOrder[],
+  nowMs = Date.now(),
+  currency = "BHD",
+) {
+  const vipThreshold = getVipThreshold(currency);
   const grouped = new Map<string, CustomerMetricOrder[]>();
   orders.filter(isActiveCustomerOrder).forEach((order) => {
     if (!order.customer_id) return;
@@ -56,8 +79,8 @@ export function buildCustomerCrmStats(orders: CustomerMetricOrder[], nowMs = Dat
     const lastOrderDate = latest?.created_at ?? null;
     const lastOrderMs = lastOrderDate ? Date.parse(lastOrderDate) : 0;
     let badge: CustomerCrmStats["badge"] = null;
-    if (lifetimeSpend > 250) badge = "VIP";
-    else if (lastOrderMs > 0 && nowMs - lastOrderMs > sixtyDaysMs) badge = "Churn Risk";
+    if (lifetimeSpend >= vipThreshold) badge = "VIP";
+    else if (totalOrders > 1 && lastOrderMs > 0 && nowMs - lastOrderMs > sixtyDaysMs) badge = "Churn Risk";
     else if (totalOrders === 1) badge = "New Buyer";
     else if (totalOrders > 1) badge = "Regular";
     result.set(customerId, { totalOrders, lifetimeSpend, lastOrderDate, badge });

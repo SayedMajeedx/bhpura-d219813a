@@ -47,6 +47,7 @@ interface InventoryWorkQueueProps {
   selectedProductIds?: ReadonlySet<string>;
   onToggleProduct?: (productId: string) => void;
   onToggleAll?: () => void;
+  currency?: string;
 }
 
 export const InventoryWorkQueue: React.FC<InventoryWorkQueueProps> = ({
@@ -64,6 +65,7 @@ export const InventoryWorkQueue: React.FC<InventoryWorkQueueProps> = ({
   selectedProductIds = new Set<string>(),
   onToggleProduct = () => undefined,
   onToggleAll = () => undefined,
+  currency = "BHD",
 }) => {
   const isAr = lang === "ar";
   const [expandedProducts, setExpandedProducts] = useState<Record<string, boolean>>({});
@@ -258,7 +260,7 @@ export const InventoryWorkQueue: React.FC<InventoryWorkQueueProps> = ({
 
                       {/* Price */}
                       <td className="p-3 align-middle text-end font-mono font-extrabold text-foreground">
-                        {formatMoney(minPrice, "BHD", lang)}
+                        {formatMoney(minPrice, currency, lang)}
                       </td>
 
                       {/* Primary Action Button */}

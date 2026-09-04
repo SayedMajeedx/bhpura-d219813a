@@ -944,7 +944,10 @@ function CustomersPage() {
     },
   });
 
-  const customerCrmStats = useMemo(() => buildCustomerCrmStats(ordersQ.data ?? []), [ordersQ.data]);
+  const customerCrmStats = useMemo(
+    () => buildCustomerCrmStats(ordersQ.data ?? [], Date.now(), currency),
+    [ordersQ.data, currency],
+  );
 
   const del = async (id: string) => {
     const { error } = await supabase.rpc("delete_brand_customers", {

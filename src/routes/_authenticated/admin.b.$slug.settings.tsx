@@ -49,6 +49,18 @@ import {
   type SettingsTabId,
 } from "@/components/settings/SettingsScopeSwitcher";
 
+const SUPPORTED_CURRENCIES = [
+  { code: "BHD", name_en: "BHD — Bahraini Dinar", name_ar: "د.ب — دينار بحريني" },
+  { code: "SAR", name_en: "SAR — Saudi Riyal", name_ar: "ر.س — ريال سعودي" },
+  { code: "AED", name_en: "AED — UAE Dirham", name_ar: "د.إ — درهم إماراتي" },
+  { code: "KWD", name_en: "KWD — Kuwaiti Dinar", name_ar: "د.ك — دينار كويتي" },
+  { code: "QAR", name_en: "QAR — Qatari Riyal", name_ar: "ر.ق — ريال قطري" },
+  { code: "OMR", name_en: "OMR — Omani Rial", name_ar: "ر.ع — ريال عماني" },
+  { code: "USD", name_en: "USD — US Dollar ($)", name_ar: "$ — دولار أمريكي" },
+  { code: "EUR", name_en: "EUR — Euro (€)", name_ar: "€ — يورو" },
+  { code: "GBP", name_en: "GBP — British Pound (£)", name_ar: "£ — جنيه إسترليني" },
+];
+
 export const Route = createFileRoute("/_authenticated/admin/b/$slug/settings")({
   beforeLoad: async ({ context: { queryClient }, params }) => {
     const user = await queryClient.ensureQueryData({
@@ -970,10 +982,21 @@ function Settings() {
               </div>
               <div>
                 <Label>{t("settings.currency")}</Label>
-                <Input
-                  value={f.currency}
-                  onChange={(e) => setF({ ...f, currency: e.target.value.toUpperCase() })}
-                />
+                <Select
+                  value={f.currency || "BHD"}
+                  onValueChange={(v) => setF({ ...f, currency: v })}
+                >
+                  <SelectTrigger className="h-9">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {SUPPORTED_CURRENCIES.map((curr) => (
+                      <SelectItem key={curr.code} value={curr.code}>
+                        {lang === "ar" ? curr.name_ar : curr.name_en}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div>
                 <Label>{t("settings.defaultVat")}</Label>
@@ -985,6 +1008,14 @@ function Settings() {
                 />
               </div>
             </div>
+            {Number(f.default_tax_rate) > 0 && !f.vat_number?.trim() && (
+              <p className="text-xs text-amber-600 dark:text-amber-400 flex items-center gap-1.5 font-medium bg-amber-50 dark:bg-amber-950/20 p-2.5 rounded-lg border border-amber-200 dark:border-amber-800/40">
+                <AlertTriangle className="h-4 w-4 shrink-0" />
+                {lang === "ar"
+                  ? "تنبيه: تم تحديد نسبة ضريبة بدون إدخال الرقم الضريبي للعلامة التجارية"
+                  : "Notice: A tax rate is configured without a registered VAT number"}
+              </p>
+            )}
             <div className="flex items-center justify-between rounded-md border border-border p-3 bg-secondary/10">
               <div>
                 <p className="text-sm font-medium">

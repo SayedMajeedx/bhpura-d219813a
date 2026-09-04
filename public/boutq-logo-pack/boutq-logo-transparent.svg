@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 500" width="1600" height="500">
+  <defs>
+    <style>
+      .brand-title { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; font-weight: 900; font-size: 130px; fill: #ffffff; letter-spacing: 6px; }
+      .brand-sub { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; font-weight: 700; font-size: 38px; fill: #c5a059; letter-spacing: 16px; }
+    </style>
+  </defs>
+  <g transform="translate(80, 50) scale(0.78)">
+    <rect width="512" height="512" rx="112" fill="#1e202c"/>
+    <g fill="none" stroke="#ffffff" stroke-width="16" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M151 142h-12c-14 0-25 11-25 25v178c0 14 11 25 25 25h12"/>
+      <path d="M181 142h-12c-14 0-25 11-25 25v178c0 14 11 25 25 25h12"/>
+      <path d="M211 142h-12c-14 0-25 11-25 25v178c0 14 11 25 25 25h12"/>
+    </g>
+    <path fill="#ffffff" d="M218 142h108c29 0 52 23 52 52 0 24-15 44-36 52h22c36 0 65 28 65 62s-29 62-65 62H218c-14 0-26-12-26-26V168c0-14 12-26 26-26Z"/>
+  </g>
+  <text x="540" y="260" class="brand-title">BOUTQ</text>
+  <text x="545" y="340" class="brand-sub">STORE • OS</text>
+</svg>

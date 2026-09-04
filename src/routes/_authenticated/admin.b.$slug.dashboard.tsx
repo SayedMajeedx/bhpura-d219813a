@@ -464,9 +464,7 @@ function Dashboard() {
     const revenueDeltaPct =
       revenuePrior > 0
         ? ((revenueWithIncubators - revenuePrior) / revenuePrior) * 100
-        : revenueWithIncubators > 0
-          ? 100
-          : 0;
+        : null;
 
     const ordersCurrent =
       current30Orders.length +
@@ -477,14 +475,12 @@ function Dashboard() {
     const ordersDeltaPct =
       ordersPrior > 0
         ? ((ordersCurrent - ordersPrior) / ordersPrior) * 100
-        : ordersCurrent > 0
-          ? 100
-          : 0;
+        : null;
 
     const aovCurrent = ordersCurrent > 0 ? revenueWithIncubators / ordersCurrent : 0;
     const aovPrior = ordersPrior > 0 ? revenuePrior / ordersPrior : 0;
     const aovDeltaPct =
-      aovPrior > 0 ? ((aovCurrent - aovPrior) / aovPrior) * 100 : aovCurrent > 0 ? 100 : 0;
+      aovPrior > 0 ? ((aovCurrent - aovPrior) / aovPrior) * 100 : null;
 
     // 30-Day Daily Sales Time Series Chart Data
     const chartDataMap = new Map<string, { date: string; sales: number; orders: number }>();
@@ -883,7 +879,7 @@ function Dashboard() {
                         {k.label}
                       </p>
                       <div className="flex items-center gap-1.5 shrink-0">
-                        {hasDelta && (
+                        {hasDelta ? (
                           <span
                             title={
                               isAr
@@ -902,6 +898,17 @@ function Dashboard() {
                               <ArrowDownRight className="h-3 w-3 me-0.5" />
                             )}
                             {Math.abs(delta).toFixed(1)}%
+                          </span>
+                        ) : (
+                          <span
+                            title={
+                              isAr
+                                ? "لا تتوفر فترة سابقة كافية للمقارنة"
+                                : "No prior baseline available"
+                            }
+                            className="inline-flex items-center text-[10px] font-medium px-1.5 py-0.5 rounded-full border border-border bg-muted/40 text-muted-foreground"
+                          >
+                            —
                           </span>
                         )}
                         <div

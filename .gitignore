@@ -42,6 +42,7 @@ playwright-report/
 
 # Temporary Scratch & Artifacts
 scratch/
+artifacts/
 .codex-*
 .tmp-*
 .wrangler-local/

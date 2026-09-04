@@ -140,19 +140,28 @@ export function getOrderWorkflow(order: OrderWorkflowInput): OrderWorkflow {
   const isManualBenefit = ["benefit", "benefitpay", "benefit_pay", "bank_transfer"].includes(
     method,
   );
-  const terminal =
+  const isFulfillmentTerminal =
     ["completed", "delivered", "picked_up", "cancelled", "returned"].includes(fulfillment) ||
-    payment === "refunded";
+    orderStatus === "cancelled";
   const outstanding = Math.max(0, Number((total - paid).toFixed(3)));
 
   // If the order is already marked as paid or has 0 outstanding balance, no cash collection is required
   const isFullyPaid = payment === "paid" || (total > 0 && outstanding <= 0);
   const requiresCollection = !isFullyPaid && (isCod || outstanding > 0);
+  const hasUnpaidBalance = outstanding > 0 && payment !== "paid" && orderStatus !== "cancelled";
+
+  // An order is strictly terminal ONLY if fulfillment is terminal AND it has no unpaid balance (or is cancelled/refunded)
+  const terminal =
+    (isFulfillmentTerminal && !hasUnpaidBalance) ||
+    payment === "refunded" ||
+    orderStatus === "cancelled";
 
   let nextAction: OrderNextAction = "none";
 
   if (!terminal) {
-    if (fulfillment === "failed") {
+    if (["completed", "delivered", "picked_up"].includes(fulfillment) && hasUnpaidBalance) {
+      nextAction = "review_order";
+    } else if (fulfillment === "failed") {
       nextAction = "resolve_delivery_failure";
     } else if (isManualBenefit && payment !== "paid") {
       nextAction = "validate_payment";
@@ -199,7 +208,7 @@ export function getOrderWorkflow(order: OrderWorkflowInput): OrderWorkflow {
     }
   }
 
-  const awaitingPayment = !terminal && !isCod && payment !== "paid";
+  const awaitingPayment = !terminal && (hasUnpaidBalance || (!isCod && payment !== "paid"));
 
   return {
     payment,

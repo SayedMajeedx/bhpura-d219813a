@@ -74,6 +74,7 @@ type OrderRow = {
   fulfillment_status: string | null;
   total: number;
   currency: string;
+  public_invoice_token?: string | null;
   order_items: Array<{ id: string; description: string; quantity: number; unit_price: number }>;
 };
 
@@ -278,7 +279,7 @@ function AccountPage() {
       const { data, error } = await supabase
         .from("orders")
         .select(
-          "id, invoice_number, order_date, status, payment_status, fulfillment_status, total, currency, order_items(id, description, quantity, unit_price)",
+          "id, invoice_number, order_date, status, payment_status, fulfillment_status, total, currency, public_invoice_token, order_items(id, description, quantity, unit_price)",
         )
         .eq("customer_id", customer!.id)
         .order("created_at", { ascending: false })
@@ -725,9 +726,10 @@ function OrdersSection({
     window.open(`https://wa.me/${digits}?text=${encodeURIComponent(text)}`, "_blank");
   };
 
-  const copyInvoiceLink = async (id: string) => {
+  const copyInvoiceLink = async (order: OrderRow) => {
     const origin = typeof window !== "undefined" ? window.location.origin : "";
-    const url = `${origin}/invoice/${id}`;
+    const token = order.public_invoice_token || order.id;
+    const url = `${origin}/invoice/${token}`;
     try {
       if (navigator?.clipboard?.writeText) {
         await navigator.clipboard.writeText(url);
@@ -869,7 +871,7 @@ function OrdersSection({
                   variant="outline"
                   size="sm"
                   className="text-xs h-8 px-3 font-semibold gap-1"
-                  onClick={() => copyInvoiceLink(o.id)}
+                  onClick={() => copyInvoiceLink(o)}
                 >
                   <FileText className="h-3.5 w-3.5" />
                   {t("رابط الفاتورة", "Invoice Link")}

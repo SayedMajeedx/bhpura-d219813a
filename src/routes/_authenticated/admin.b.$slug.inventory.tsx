@@ -2100,13 +2100,46 @@ function ProductsSection({
     },
   ];
 
+  const categoriesQ = useQuery({
+    queryKey: ["categories", brand.id],
+    queryFn: async () => {
+      const { data, error } = await (supabase.from("categories") as any)
+        .select("id, name_en, name_ar, slug")
+        .eq("brand_id", brand.id)
+        .eq("is_active", true)
+        .order("sort_order", { ascending: true });
+      if (error) return [];
+      return (data ?? []) as Array<{
+        id: string;
+        name_en: string;
+        name_ar: string | null;
+        slug: string | null;
+      }>;
+    },
+  });
+
   const categoryOptions = useMemo(() => {
     const categoriesSet = new Set<string>();
     products.forEach((p) => {
       if (p.category) categoriesSet.add(p.category);
     });
-    return Array.from(categoriesSet).map((c) => ({ id: c, name: c, name_ar: c }));
-  }, [products]);
+
+    const categoryLookup = new Map<string, { name_ar?: string | null; name_en?: string | null }>();
+    (categoriesQ.data ?? []).forEach((c) => {
+      if (c.slug) categoryLookup.set(c.slug.toLowerCase(), c);
+      if (c.name_en) categoryLookup.set(c.name_en.toLowerCase(), c);
+      if (c.name_ar) categoryLookup.set(c.name_ar.toLowerCase(), c);
+    });
+
+    return Array.from(categoriesSet).map((c) => {
+      const match = categoryLookup.get(c.toLowerCase());
+      return {
+        id: c,
+        name: match?.name_en || c,
+        name_ar: match?.name_ar || match?.name_en || c,
+      };
+    });
+  }, [products, categoriesQ.data]);
 
   const filteredDisplayProducts = useMemo(() => {
     const result = products.filter((product) => {
@@ -2370,6 +2403,7 @@ function ProductsSection({
               variants={pVariants}
               totalStock={totalStock}
               minPrice={minPrice}
+              currency={currency}
               onEdit={(prod) => {
                 setEditing(prod);
                 setDialogSession((v) => v + 1);
@@ -2419,6 +2453,7 @@ function ProductsSection({
           lang={isAr ? "ar" : "en"}
           products={paginatedProducts}
           variantsByProduct={variantsByProduct}
+          currency={currency}
           isLoading={false}
           isError={false}
           onEdit={(prod) => {

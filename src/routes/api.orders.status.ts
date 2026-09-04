@@ -72,13 +72,23 @@ export const Route = createFileRoute("/api/orders/status")({
             });
           }
 
-          // 1. Fetch current order status details
-          const { data: order, error: fetchErr } = await (supabaseAdmin.from("orders") as any)
+          const role = String(profile.role || "");
+          const permissions = Array.isArray(profile.permissions) ? profile.permissions : [];
+          const isSuperAdmin = role === "super_admin";
+          const isAdmin = ["admin", "brand_admin"].includes(role);
+
+          // 1. Fetch current order status details (scoped to user's brand unless super_admin)
+          let query = (supabaseAdmin.from("orders") as any)
             .select(
               "id, brand_id, status, payment_status, payment_method, fulfillment_method, fulfillment_status, delivery_notes, assigned_to",
             )
-            .eq("id", id)
-            .maybeSingle();
+            .eq("id", id);
+
+          if (!isSuperAdmin && profile.brand_id) {
+            query = query.eq("brand_id", profile.brand_id);
+          }
+
+          const { data: order, error: fetchErr } = await query.maybeSingle();
 
           if (fetchErr || !order) {
             return new Response(JSON.stringify({ error: "Order not found" }), {
@@ -87,16 +97,11 @@ export const Route = createFileRoute("/api/orders/status")({
             });
           }
 
-          const role = String(profile.role || "");
-          const permissions = Array.isArray(profile.permissions) ? profile.permissions : [];
-          const isSuperAdmin = role === "super_admin";
-          const isAdmin = ["admin", "brand_admin"].includes(role);
           const isAssignedCourier = role === "courier" && order.assigned_to === user.id;
           const canManageOrders =
             isSuperAdmin || isAdmin || permissions.includes("manage_orders") || isAssignedCourier;
-          const canAccessBrand = isSuperAdmin || profile.brand_id === order.brand_id;
 
-          if (!canManageOrders || !canAccessBrand) {
+          if (!canManageOrders) {
             return new Response(JSON.stringify({ error: "Forbidden" }), {
               status: 403,
               headers: { "Content-Type": "application/json" },

@@ -43,6 +43,7 @@ interface InventoryMobileCardProps {
   renderVariantList?: (product: any) => React.ReactNode;
   selected?: boolean;
   onToggleSelected?: (productId: string) => void;
+  currency?: string;
 }
 
 export const InventoryMobileCard: React.FC<InventoryMobileCardProps> = ({
@@ -58,6 +59,7 @@ export const InventoryMobileCard: React.FC<InventoryMobileCardProps> = ({
   renderVariantList,
   selected = false,
   onToggleSelected = () => undefined,
+  currency = "BHD",
 }) => {
   const isAr = lang === "ar";
   const [isExpanded, setIsExpanded] = useState(false);
@@ -105,7 +107,7 @@ export const InventoryMobileCard: React.FC<InventoryMobileCardProps> = ({
 
           <div className="text-end shrink-0">
             <span className="font-mono text-xs font-extrabold text-foreground">
-              {formatMoney(minPrice, "BHD", lang)}
+              {formatMoney(minPrice, currency, lang)}
             </span>
           </div>
         </div>
