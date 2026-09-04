@@ -75,7 +75,9 @@ function AbandonedCartsDashboardPage() {
         .order("last_activity_at", { ascending: false })
         .limit(200);
       if (error) throw error;
-      return data || [];
+      return (data || []).filter(
+        (cart: any) => Array.isArray(cart.cart_items) && cart.cart_items.length > 0,
+      );
     },
   });
 

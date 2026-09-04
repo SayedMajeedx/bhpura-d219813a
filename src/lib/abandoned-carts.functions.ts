@@ -28,6 +28,18 @@ export async function syncStorefrontCartActivity({
   marketingConsent?: boolean;
 }) {
   try {
+    if (cartItems.length === 0) {
+      const { data, error } = await (supabase.rpc as any)("rpc_close_storefront_cart_session", {
+        p_brand_id: brandId,
+        p_session_id: sessionId,
+      });
+      if (error) {
+        console.warn("Non-fatal cart close warning:", error.message);
+        return null;
+      }
+      return data;
+    }
+
     const { data, error } = await (supabase.rpc as any)("rpc_record_or_update_cart_activity", {
       p_brand_id: brandId,
       p_session_id: sessionId,

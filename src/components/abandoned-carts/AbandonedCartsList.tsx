@@ -101,7 +101,7 @@ export function AbandonedCartsList({
       case "expired":
         return (
           <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-muted text-muted-foreground border border-border">
-            {isAr ? "منتهية" : "Expired"}
+            {isAr ? "تم إفراغها" : "Cleared"}
           </span>
         );
       case "unsubscribed":
@@ -193,7 +193,7 @@ export function AbandonedCartsList({
               <SelectItem value="active">{isAr ? "نشطة" : "Active"}</SelectItem>
               <SelectItem value="recovering">{isAr ? "قيد المتابعة" : "Recovering"}</SelectItem>
               <SelectItem value="recovered">{isAr ? "تمت الاستعادة" : "Recovered"}</SelectItem>
-              <SelectItem value="expired">{isAr ? "منتهية" : "Expired"}</SelectItem>
+              <SelectItem value="expired">{isAr ? "تم إفراغها" : "Cleared"}</SelectItem>
               <SelectItem value="unsubscribed">{isAr ? "أوقف المتابعة" : "Unsubscribed"}</SelectItem>
             </SelectContent>
           </Select>
@@ -300,7 +300,7 @@ export function AbandonedCartsList({
                             <Link2 className="h-4 w-4" />
                           </Button>
 
-                          {phone && (
+                          {phone && (cart.status === "abandoned" || cart.status === "recovering") && (
                             <Button
                               variant="outline"
                               size="sm"
