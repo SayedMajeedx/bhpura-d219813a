@@ -373,13 +373,9 @@ export function OrderQuickViewModal({
               return sum + unitCost * qty;
             }, 0);
 
-            const isFulfilled = ["fulfilled", "delivered", "completed", "shipped"].includes(
-              String(order.fulfillment_status || order.status || "").toLowerCase(),
-            );
-
             const packagingCogsTotal = calculateOrderPackagingCogs(
               items,
-              isFulfilled,
+              true,
               productsQ.data ?? [],
               variantsQ.data ?? [],
               bomItemsQ.data ?? [],

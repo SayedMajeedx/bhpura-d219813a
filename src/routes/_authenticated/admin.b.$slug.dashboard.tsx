@@ -26,6 +26,7 @@ import {
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip } from "recharts";
 import { formatDate, formatMoney } from "@/lib/format";
 import { getItemPackagingCost } from "@/lib/bom-calculator";
+import { fetchReportingOverview } from "@/lib/reporting.functions";
 import { useI18n, useT } from "@/lib/i18n";
 import { useProfile } from "@/lib/profile-context";
 import { useBrand } from "@/lib/brand-context";
@@ -59,6 +60,18 @@ function Dashboard() {
   const brandId = brand.id;
   const locale = lang === "ar" ? "ar-BH-u-nu-latn" : "en-US";
   const reportingPeriodLabel = isAr ? "آخر 30 يومًا" : "the last 30 days";
+  const dashboardPeriods = useMemo(() => {
+    const end = new Date();
+    const start = new Date(end);
+    start.setDate(start.getDate() - 29);
+    start.setHours(0, 0, 0, 0);
+    const previousEnd = new Date(start.getTime() - 1);
+    const previousStart = new Date(previousEnd);
+    previousStart.setDate(previousStart.getDate() - 29);
+    previousStart.setHours(0, 0, 0, 0);
+    return { start, end, previousStart, previousEnd };
+  }, []);
+  const reportingTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
   const isMounted = typeof window !== "undefined";
   const [activeScope, setActiveScope] = useState<DashboardViewScope>("financials");
@@ -87,6 +100,20 @@ function Dashboard() {
   });
 
   const currency = businessSettings.data?.currency ?? "BHD";
+
+  // Use the exact same accounting engine as Reports so dashboard KPIs cannot drift.
+  const reportingOverviewQ = useQuery({
+    queryKey: ["dashboard-reporting-overview", slug, dashboardPeriods.start.toISOString(), dashboardPeriods.end.toISOString(), reportingTimezone],
+    queryFn: () => fetchReportingOverview({ from: dashboardPeriods.start, to: dashboardPeriods.end }, reportingTimezone, false, slug),
+    staleTime: 60_000,
+    refetchOnWindowFocus: false,
+  });
+  const previousReportingOverviewQ = useQuery({
+    queryKey: ["dashboard-reporting-overview-previous", slug, dashboardPeriods.previousStart.toISOString(), dashboardPeriods.previousEnd.toISOString(), reportingTimezone],
+    queryFn: () => fetchReportingOverview({ from: dashboardPeriods.previousStart, to: dashboardPeriods.previousEnd }, reportingTimezone, false, slug),
+    staleTime: 60_000,
+    refetchOnWindowFocus: false,
+  });
 
   // 2. Fetch all products
   const productsQ = useQuery({
@@ -248,6 +275,9 @@ function Dashboard() {
       { table: "products", brandId, queryKey: ["dashboard-products", brandId] },
       { table: "product_variants", brandId, queryKey: ["dashboard-variants", brandId] },
       { table: "expenses", brandId, queryKey: ["dashboard-expenses", brandId] },
+      { table: "return_requests", brandId, queryKey: ["dashboard-reporting-overview", slug] },
+      { table: "product_bom_items", brandId, queryKey: ["dashboard-reporting-overview", slug] },
+      { table: "packaging_materials", brandId, queryKey: ["dashboard-reporting-overview", slug] },
       { table: "business_settings", brandId, queryKey: ["dashboard-business-settings", brandId] },
     ],
     `dashboard-realtime:${brandId}`,
@@ -261,7 +291,13 @@ function Dashboard() {
     ordersQ.isLoading ||
     recentOrdersQ.isLoading ||
     expensesQ.isLoading ||
-    incubatorSalesQ.isLoading;
+    incubatorSalesQ.isLoading ||
+    reportingOverviewQ.isLoading ||
+    previousReportingOverviewQ.isLoading;
+  const accountingRows = Array.isArray(reportingOverviewQ.data) ? reportingOverviewQ.data : [];
+  const accountingRow: any = accountingRows.find((row: any) => row.currency === currency) ?? accountingRows[0];
+  const previousAccountingRows = Array.isArray(previousReportingOverviewQ.data) ? previousReportingOverviewQ.data : [];
+  const previousAccountingRow: any = previousAccountingRows.find((row: any) => row.currency === (accountingRow?.currency || currency)) ?? previousAccountingRows[0];
 
   // Filter confirmed/completed orders for revenue reporting
   const validRevenueOrders = useMemo(() => {
@@ -391,8 +427,11 @@ function Dashboard() {
     );
     const opex = manualOpex + paymentProcessingFees + incubatorCommissions;
     const totalExpenses = cogs + opex;
-    const netProfit = revenue - totalExpenses;
-    const grossMarginPercent = revenue > 0 ? ((revenue - cogs) / revenue) * 100 : 0;
+    const reportRevenue = Number(accountingRow?.net_revenue ?? revenue);
+    const reportCogs = Number(accountingRow?.known_cogs_after_returns ?? accountingRow?.known_cogs ?? cogs);
+    const reportOpex = Number(accountingRow?.expenses ?? opex);
+    const netProfit = reportRevenue - reportCogs - reportOpex;
+    const grossMarginPercent = reportRevenue > 0 ? ((reportRevenue - reportCogs) / reportRevenue) * 100 : 0;
 
     // Period Comparison Deltas (Current 30 Days vs Prior 30 Days)
     const nowMs = now.getTime();
@@ -416,13 +455,11 @@ function Dashboard() {
         timestamp < currentStart.getTime()
       );
     });
-    const revenueWithIncubators = revenueCurrent + currentIncubatorRevenue;
-    const revenuePrior =
+    const revenueWithIncubators = reportRevenue;
+    const revenuePrior = Number(previousAccountingRow?.net_revenue ?? (
       prior30Orders.reduce((sum, o) => sum + Number(o.total || 0), 0) +
-      priorIncubatorSales.reduce(
-        (sum: number, sale: any) => sum + Number(sale.gross_amount || 0),
-        0,
-      );
+      priorIncubatorSales.reduce((sum: number, sale: any) => sum + Number(sale.gross_amount || 0), 0)
+    ));
     const revenueDeltaPct =
       revenuePrior > 0
         ? ((revenueWithIncubators - revenuePrior) / revenuePrior) * 100
@@ -483,10 +520,10 @@ function Dashboard() {
     const dailyChartSeries = Array.from(chartDataMap.values());
 
     return {
-      revenue,
-      cogs,
-      opex,
-      totalExpenses,
+      revenue: reportRevenue,
+      cogs: reportCogs,
+      opex: reportOpex,
+      totalExpenses: reportCogs + reportOpex,
       netProfit,
       grossMarginPercent,
       revenueCurrent: revenueWithIncubators,
@@ -506,6 +543,8 @@ function Dashboard() {
     bomItemsQ.data,
     packagingMaterialsQ.data,
     businessSettings.data,
+    accountingRow,
+    previousAccountingRow,
     locale,
   ]);
 
@@ -722,6 +761,31 @@ function Dashboard() {
           <div className="lg:col-span-2 h-64 bg-muted rounded-2xl border" />
           <div className="lg:col-span-1 h-64 bg-muted rounded-2xl border" />
         </div>
+      </div>
+    );
+  }
+
+  if (reportingOverviewQ.error) {
+    return (
+      <div className="mx-auto max-w-3xl p-4">
+        <Card className="border-rose-200 bg-rose-50/70 p-8 text-center">
+          <AlertCircle className="mx-auto h-9 w-9 text-rose-600" />
+          <h2 className="mt-4 text-lg font-semibold">
+            {isAr ? "تعذر تحميل الأرقام المالية الموحّدة" : "Unified financial figures could not be loaded"}
+          </h2>
+          <p className="mt-2 text-sm text-muted-foreground">
+            {isAr
+              ? "لن نعرض أرقاماً تقديرية قد تتعارض مع التقارير. أعد المحاولة بعد التحقق من الاتصال."
+              : "We will not show fallback estimates that may conflict with Reports. Check the connection and try again."}
+          </p>
+          <button
+            type="button"
+            className="mt-5 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground"
+            onClick={() => reportingOverviewQ.refetch()}
+          >
+            {isAr ? "إعادة المحاولة" : "Try again"}
+          </button>
+        </Card>
       </div>
     );
   }

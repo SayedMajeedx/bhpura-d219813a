@@ -4765,13 +4765,12 @@ function OrderDetail() {
                     return sum + unitCost * qty;
                   }, 0);
 
-                  const isFulfilled = ["fulfilled", "delivered", "completed", "shipped"].includes(
-                    String(order.fulfillment_status || order.status || "").toLowerCase(),
-                  );
-
+                  // This card is an estimated order margin, so show the configured BOM
+                  // before fulfillment as well. Financial reports recognize actual COGS
+                  // according to the order lifecycle.
                   const packagingCogsTotal = calculateOrderPackagingCogs(
                     items,
-                    isFulfilled,
+                    true,
                     productsQ.data ?? [],
                     variantsQ.data ?? [],
                     bomItemsQ.data ?? [],

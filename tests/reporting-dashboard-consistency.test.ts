@@ -39,4 +39,11 @@ describe("dashboard and reporting consistency", () => {
   it("includes the selected end date when aggregating dated expenses", () => {
     expect(migration).toContain("expense_date <= (p_end_date AT TIME ZONE p_tz)::date");
   });
+
+  it("uses the reporting accounting engine for dashboard financial KPIs", () => {
+    expect(dashboard).toContain('fetchReportingOverview');
+    expect(dashboard).toContain('accountingRow?.net_revenue');
+    expect(dashboard).toContain('accountingRow?.known_cogs_after_returns');
+    expect(dashboard).toContain('accountingRow?.expenses');
+  });
 });
