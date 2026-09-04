@@ -20,10 +20,12 @@ import {
   AlertCircle,
   RefreshCw,
   Info,
+  TrendingUp,
 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export const Route = createFileRoute("/_authenticated/admin/b/$slug/reports/")({
   component: ReportsOverview,
@@ -37,6 +39,7 @@ function ReportsOverview() {
     to: endOfDay(new Date()),
   });
   const [includeHistorical, setIncludeHistorical] = useState(false);
+  const [selectedCurrency, setSelectedCurrency] = useState("");
   const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
   const query = useQuery({
     queryKey: [
@@ -57,10 +60,32 @@ function ReportsOverview() {
     enabled: !!date?.from && !!date?.to,
     retry: 1,
   });
+  const periodMs = date?.from && date?.to ? date.to.getTime() - date.from.getTime() + 1 : 0;
+  const previousTo = date?.from ? new Date(date.from.getTime() - 1) : null;
+  const previousFrom = previousTo ? new Date(previousTo.getTime() - periodMs + 1) : null;
+  const previousQuery = useQuery({
+    queryKey: ["reports-overview-previous", slug, previousFrom?.toISOString(), previousTo?.toISOString(), timezone, includeHistorical],
+    queryFn: () => fetchReportingOverview({ from: previousFrom!, to: previousTo! }, timezone, includeHistorical, slug),
+    enabled: !!previousFrom && !!previousTo,
+    retry: 1,
+  });
 
   const rows = Array.isArray(query.data) ? query.data : query.data ? [query.data] : [];
-  const data = rows[0] as any;
+  const currencies = rows.map((row: any) => row.currency).filter(Boolean);
+  const effectiveCurrency = currencies.includes(selectedCurrency) ? selectedCurrency : currencies[0];
+  const data = rows.find((row: any) => row.currency === effectiveCurrency) as any;
   const money = (value: unknown) => formatMoney(Number(value || 0), data?.currency || "BHD", lang);
+  const netRevenue = Number(data?.net_revenue ?? data?.paid_order_value ?? 0);
+  const grossProfit = Number(data?.net_merchandise_after_returns ?? data?.net_merch_sales ?? 0) - Number(data?.known_cogs_after_returns ?? data?.known_cogs ?? 0);
+  const netProfit = grossProfit - Number(data?.expenses || 0);
+  const grossMargin = netRevenue > 0 ? (grossProfit / netRevenue) * 100 : 0;
+  const averageOrderValue = Number(data?.paid_order_count || 0) > 0 ? netRevenue / Number(data.paid_order_count) : 0;
+  const previousRows = Array.isArray(previousQuery.data) ? previousQuery.data : [];
+  const previousData: any = previousRows.find((row: any) => row.currency === effectiveCurrency);
+  const previousNetRevenue = Number(previousData?.net_revenue ?? previousData?.paid_order_value ?? 0);
+  const previousGrossProfit = Number(previousData?.net_merchandise_after_returns ?? previousData?.net_merch_sales ?? 0) - Number(previousData?.known_cogs_after_returns ?? previousData?.known_cogs ?? 0);
+  const previousNetProfit = previousGrossProfit - Number(previousData?.expenses || 0);
+  const trend = (current: number, previous: number) => previous === 0 ? undefined : ({ value: Number((((current - previous) / Math.abs(previous)) * 100).toFixed(1)), label: lang === "ar" ? "مقارنة بالفترة السابقة" : "vs previous period", isPositive: current >= previous });
 
   return (
     <div className="space-y-6">
@@ -71,6 +96,16 @@ function ReportsOverview() {
         includeHistorical={includeHistorical}
         setIncludeHistorical={setIncludeHistorical}
       />
+
+      {currencies.length > 1 && (
+        <div className="flex items-center justify-end gap-2">
+          <span className="text-sm font-medium text-muted-foreground">{lang === "ar" ? "عملة التقرير" : "Reporting currency"}</span>
+          <Select value={effectiveCurrency} onValueChange={setSelectedCurrency}>
+            <SelectTrigger className="w-32 bg-card"><SelectValue /></SelectTrigger>
+            <SelectContent>{currencies.map((currency: string) => <SelectItem key={currency} value={currency}>{currency}</SelectItem>)}</SelectContent>
+          </Select>
+        </div>
+      )}
 
       {query.isLoading ? (
         <Skeleton />
@@ -112,6 +147,7 @@ function ReportsOverview() {
               value={money(data.paid_order_value)}
               icon={<Banknote />}
               description={lang === "ar" ? "الإيراد المحصل" : "Revenue collected"}
+              trend={trend(Number(data.paid_order_value || 0), Number(previousData?.paid_order_value || 0))}
             />
             <KpiCard
               title={lang === "ar" ? "صافي مبيعات المنتجات" : "Net merchandise"}
@@ -125,6 +161,7 @@ function ReportsOverview() {
               value={Number(data.paid_order_count || 0)}
               icon={<PackageCheck />}
               accent="blue"
+              trend={trend(Number(data.paid_order_count || 0), Number(previousData?.paid_order_count || 0))}
             />
             <KpiCard
               title={lang === "ar" ? "الخصومات" : "Discounts"}
@@ -156,6 +193,12 @@ function ReportsOverview() {
                   : `Manual ${money(data.manual_expenses)} + fees ${money(data.processing_fees)} + commissions ${money(data.incubator_commissions)}`
               }
             />
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            <KpiCard title={lang === "ar" ? "صافي الإيراد بعد الاسترجاع" : "Net revenue after refunds"} value={money(netRevenue)} icon={<Banknote />} accent="emerald" trend={trend(netRevenue, previousNetRevenue)} />
+            <KpiCard title={lang === "ar" ? "مجمل الربح" : "Gross profit"} value={money(grossProfit)} icon={<TrendingUp />} accent={grossProfit >= 0 ? "emerald" : "amber"} description={lang === "ar" ? "بعد التكلفة والاسترجاعات" : "After COGS and refunds"} />
+            <KpiCard title={lang === "ar" ? "هامش الربح" : "Gross margin"} value={`${grossMargin.toFixed(1)}%`} icon={<Percent />} accent={grossMargin >= 30 ? "emerald" : "amber"} />
+            <KpiCard title={lang === "ar" ? "صافي الربح التشغيلي" : "Operating net profit"} value={money(netProfit)} icon={<WalletCards />} accent={netProfit >= 0 ? "emerald" : "amber"} description={`${lang === "ar" ? "متوسط الطلب" : "AOV"}: ${money(averageOrderValue)}`} trend={trend(netProfit, previousNetProfit)} />
           </div>
           <div className="grid gap-5 lg:grid-cols-2">
             <DetailCard

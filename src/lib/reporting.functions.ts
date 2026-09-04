@@ -92,12 +92,29 @@ export async function fetchReportingOverview(
     }
     throw error;
   }
-  const incubator = await fetchIncubatorReporting(range, tz, brandSlug);
+  const [incubator, refundsResponse] = await Promise.all([
+    fetchIncubatorReporting(range, tz, brandSlug),
+    (supabase as any).rpc("rpc_reporting_processed_returns", {
+      p_start_date: range.from.toISOString(),
+      p_end_date: range.to.toISOString(),
+      p_tz: tz,
+      p_brand_slug: brandSlug || null,
+    }),
+  ]);
+  if (refundsResponse.error && refundsResponse.error.code !== "PGRST202") {
+    throw refundsResponse.error;
+  }
+  const refundRows = Array.isArray(refundsResponse.data) ? refundsResponse.data : [];
   const incubatorByCurrency = new Map(
     (incubator.summary || []).map((row: any) => [row.currency, row]),
   );
   const baseRows = Array.isArray(data) ? data : [];
   for (const row of incubator.summary || []) {
+    if (!baseRows.some((base: any) => base.currency === row.currency)) {
+      baseRows.push({ currency: row.currency });
+    }
+  }
+  for (const row of refundRows) {
     if (!baseRows.some((base: any) => base.currency === row.currency)) {
       baseRows.push({ currency: row.currency });
     }
@@ -125,18 +142,31 @@ export async function fetchReportingOverview(
       Number(row.processing_fees || 0),
     ]),
   );
+  const refundsByCurrency = new Map(refundRows.map((row: any) => [row.currency, row]));
   return baseRows.map((row: any) => {
     const consignment: any = incubatorByCurrency.get(row.currency) || {};
     const processingFees = feesByCurrency.get(row.currency) ?? 0;
     const manualExpenses = Number(row.expenses || 0);
     const incubatorCommissions = Number(consignment.commission_amount || 0);
+    const refunds: any = refundsByCurrency.get(row.currency) || {};
+    const paidOrderValue = Number(row.paid_order_value || 0) + Number(consignment.gross_amount || 0);
+    const netMerchandise = Number(row.net_merch_sales || 0) + Number(consignment.gross_amount || 0);
     return {
       ...row,
-      paid_order_value: Number(row.paid_order_value || 0) + Number(consignment.gross_amount || 0),
+      paid_order_value: paidOrderValue,
       gross_merch_sales: Number(row.gross_merch_sales || 0) + Number(consignment.gross_amount || 0),
-      net_merch_sales: Number(row.net_merch_sales || 0) + Number(consignment.gross_amount || 0),
+      net_merch_sales: netMerchandise,
+      refunded_total: Number(refunds.refunded_total ?? row.refunded_total ?? 0),
+      refunded_merchandise: Number(refunds.refunded_merchandise || 0),
+      net_revenue: paidOrderValue - Number(refunds.revenue_deduction || 0),
+      net_merchandise_after_returns: netMerchandise - Number(refunds.merchandise_deduction || 0),
       paid_order_count: Number(row.paid_order_count || 0) + Number(consignment.sale_count || 0),
       known_cogs: Number(row.known_cogs || 0) + Number(consignment.cogs || 0),
+      known_cogs_after_returns: Math.max(
+        0,
+        Number(row.known_cogs || 0) + Number(consignment.cogs || 0) - Number(refunds.returned_cogs_reversal || 0),
+      ),
+      returned_cogs_reversal: Number(refunds.returned_cogs_reversal || 0),
       manual_expenses: manualExpenses,
       processing_fees: processingFees,
       incubator_commissions: incubatorCommissions,

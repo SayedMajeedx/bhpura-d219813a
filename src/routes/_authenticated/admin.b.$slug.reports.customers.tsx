@@ -60,7 +60,7 @@ function ReportsCustomers() {
         { from: date.from, to: date.to },
         timezone,
         includeHistorical,
-        50,
+        200,
         0,
         slug,
       );
@@ -105,8 +105,8 @@ function ReportsCustomers() {
       ) : error ? (
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Error</AlertTitle>
-          <AlertDescription>Failed to load customers data.</AlertDescription>
+          <AlertTitle>{lang === "ar" ? "تعذر تحميل التقرير" : "Report unavailable"}</AlertTitle>
+          <AlertDescription>{lang === "ar" ? "تعذر تحميل بيانات العملاء. أعد المحاولة." : "Failed to load customer data. Please try again."}</AlertDescription>
         </Alert>
       ) : customersData ? (
         <>

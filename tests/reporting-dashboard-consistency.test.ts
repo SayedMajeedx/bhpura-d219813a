@@ -30,8 +30,8 @@ describe("dashboard and reporting consistency", () => {
   });
 
   it("renders the sales breakdown keys returned by the RPC", () => {
-    expect(sales).toContain("?.payment}");
-    expect(sales).toContain("?.fulfillment}");
+    expect(sales).toContain("?.payment || []");
+    expect(sales).toContain("?.fulfillment || []");
     expect(sales).not.toContain("payment_methods");
     expect(sales).not.toContain("fulfillment_methods");
   });

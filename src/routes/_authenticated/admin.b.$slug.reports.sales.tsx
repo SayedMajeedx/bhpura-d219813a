@@ -44,6 +44,7 @@ function ReportsSales() {
   });
   const [interval, setInterval] = useState<ReportInterval>("day");
   const [includeHistorical, setIncludeHistorical] = useState(false);
+  const [selectedCurrency, setSelectedCurrency] = useState("");
   const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
   const query = useQuery({
@@ -69,7 +70,10 @@ function ReportsSales() {
 
   const chartData = useMemo(() => {
     const rows = (query.data as any)?.timeseries || [];
+    const currencies = Array.from(new Set(rows.map((row: any) => row.currency).filter(Boolean))) as string[];
+    const currency = currencies.includes(selectedCurrency) ? selectedCurrency : currencies[0];
     return [...rows]
+      .filter((row: any) => !currency || row.currency === currency)
       .sort((a, b) => new Date(a.time_bucket).getTime() - new Date(b.time_bucket).getTime())
       .map((row) => ({
         ...row,
@@ -79,7 +83,9 @@ function ReportsSales() {
           year: interval === "year" ? "numeric" : undefined,
         }),
       }));
-  }, [query.data, interval]);
+  }, [query.data, interval, selectedCurrency]);
+
+  const currencies = useMemo(() => Array.from(new Set(((query.data as any)?.timeseries || []).map((row: any) => row.currency).filter(Boolean))) as string[], [query.data]);
 
   const currency = chartData[0]?.currency || "BHD";
   const totalRevenue = chartData.reduce((sum, row) => sum + Number(row.pov || 0), 0);
@@ -100,6 +106,15 @@ function ReportsSales() {
         includeHistorical={includeHistorical}
         setIncludeHistorical={setIncludeHistorical}
       />
+      {currencies.length > 1 && (
+        <div className="flex items-center justify-end gap-2">
+          <span className="text-sm text-muted-foreground">{lang === "ar" ? "عملة التقرير" : "Reporting currency"}</span>
+          <Select value={currencies.includes(selectedCurrency) ? selectedCurrency : currencies[0]} onValueChange={setSelectedCurrency}>
+            <SelectTrigger className="w-32 bg-card"><SelectValue /></SelectTrigger>
+            <SelectContent>{currencies.map((item) => <SelectItem key={item} value={item}>{item}</SelectItem>)}</SelectContent>
+          </Select>
+        </div>
+      )}
 
       {query.isLoading ? (
         <ReportSkeleton />
@@ -233,7 +248,7 @@ function ReportsSales() {
             <BreakdownCard
               title={lang === "ar" ? "طرق الدفع" : "Payment methods"}
               icon={<CreditCard />}
-              rows={(query.data as any)?.payment}
+              rows={((query.data as any)?.payment || []).filter((row: any) => row.currency === currency)}
               keyName="payment_method"
               currency={currency}
               lang={lang}
@@ -241,7 +256,7 @@ function ReportsSales() {
             <BreakdownCard
               title={lang === "ar" ? "طرق الاستلام" : "Fulfillment methods"}
               icon={<Truck />}
-              rows={(query.data as any)?.fulfillment}
+              rows={((query.data as any)?.fulfillment || []).filter((row: any) => row.currency === currency)}
               keyName="fulfillment_method"
               currency={currency}
               lang={lang}
