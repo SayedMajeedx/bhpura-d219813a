@@ -53,6 +53,21 @@ function ReturnsIndexPage() {
 
   const brandId = brand?.id;
 
+  const settingsQ = useQuery({
+    queryKey: ["business-settings-currency", brandId],
+    queryFn: async () => {
+      if (!brandId) return null;
+      const { data } = await (supabase as any)
+        .from("business_settings")
+        .select("currency")
+        .eq("brand_id", brandId)
+        .maybeSingle();
+      return data;
+    },
+    enabled: !!brandId,
+  });
+  const currency = settingsQ.data?.currency || (brand as any)?.currency || "BHD";
+
   // Fetch returns with related order, customer, and items
   const { data: returns = [], isLoading, refetch } = useQuery<ReturnRequest[]>({
     queryKey: ["admin-returns-list", brandId],
@@ -218,7 +233,7 @@ function ReturnsIndexPage() {
               </span>
               <div className="flex items-baseline gap-2 mt-1">
                 <span className="text-xl font-bold font-mono text-emerald-600 dark:text-emerald-400">
-                  {formatMoney(totalRefundedSum, "BHD", isAr ? "ar-BH-u-nu-latn" : "en-US")}
+                  {formatMoney(totalRefundedSum, currency, isAr ? "ar-BH-u-nu-latn" : "en-US")}
                 </span>
               </div>
             </div>
@@ -364,7 +379,7 @@ function ReturnsIndexPage() {
                           <td className="p-3.5 font-mono font-bold text-foreground">
                             {formatMoney(
                               Number(r.net_refund_amount || 0),
-                              "BHD",
+                              currency,
                               isAr ? "ar-BH-u-nu-latn" : "en-US",
                             )}
                           </td>

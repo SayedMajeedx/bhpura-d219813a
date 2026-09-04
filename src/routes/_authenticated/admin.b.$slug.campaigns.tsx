@@ -57,7 +57,13 @@ export const Route = createFileRoute("/_authenticated/admin/b/$slug/campaigns")(
   component: CampaignsPage,
 });
 
-type Customer = { id: string; name: string; phone: string | null };
+type Customer = {
+  id: string;
+  name: string;
+  phone: string | null;
+  marketing_consent?: boolean | null;
+  opted_out_at?: string | null;
+};
 type Template = { id: string; name: string; body: string };
 type BulkStatus = "queued" | "sending" | "sent" | "skipped";
 
@@ -130,7 +136,7 @@ function CampaignsPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("customers")
-        .select("id, name, phone")
+        .select("id, name, phone, marketing_consent, opted_out_at")
         .eq("brand_id", brandId)
         .order("name");
       if (error) throw error;
@@ -278,14 +284,23 @@ function CampaignsPage() {
     };
   }, [customersQ.data, customerCrmStats]);
 
-  // Pre-populate checkboxes on segment/filter change
+  // Pre-populate checkboxes on segment/filter change: exclude zero-order and opted-out contacts by default
   useEffect(() => {
-    const validIds = filtered.filter((c) => c.phone && c.phone.trim()).map((c) => c.id);
+    const validIds = filtered
+      .filter((c) => {
+        if (!c.phone || !c.phone.trim()) return false;
+        if (c.opted_out_at) return false;
+        const totalOrders = customerCrmStats.get(c.id)?.totalOrders ?? 0;
+        return totalOrders > 0;
+      })
+      .map((c) => c.id);
     setSelectedCustomerIds(validIds);
-  }, [filtered]);
+  }, [filtered, customerCrmStats]);
 
   const toggleSelectAll = () => {
-    const validFiltered = filtered.filter((c) => c.phone && c.phone.trim());
+    const validFiltered = filtered.filter(
+      (c) => c.phone && c.phone.trim() && !c.opted_out_at,
+    );
     const allSelected = validFiltered.every((c) => selectedCustomerIds.includes(c.id));
     if (allSelected) {
       setSelectedCustomerIds((prev) =>
@@ -403,7 +418,7 @@ function CampaignsPage() {
       setBulkSent((prev) => ({ ...prev, [customer.id]: "queued" }));
       toast.error(
         isAr
-          ? "Ø§Ø³Ù…Ø­ Ø¨Ø§Ù„Ù†ÙˆØ§ÙØ° Ø§Ù„Ù…Ù†Ø¨Ø«Ù‚Ø© Ù„Ø¨Ø¯Ø¡ Ø§Ù„Ø­Ù…Ù„Ø©"
+          ? "اسمح بالنوافذ المنبثقة لبدء الحملة"
           : "Allow popups to start the campaign",
       );
       return;
@@ -514,7 +529,7 @@ function CampaignsPage() {
             setBulkSent((prev) => ({ ...prev, [customer.id]: "queued" }));
             toast.info(
               isAr
-                ? "Ø§Ø¶ØºØ· Ø§Ø³ØªØ¦Ù†Ø§Ù Ù„ÙØªØ­ Ø§Ù„Ù…Ø­Ø§Ø¯Ø«Ø© Ø§Ù„ØªØ§Ù„ÙŠØ©"
+                ? "اضغط استئناف لفتح المحادثة التالية"
                 : "Tap Resume to open the next chat",
             );
             return;
@@ -522,7 +537,7 @@ function CampaignsPage() {
         } catch (err) {
           setBulkActive(false);
           setBulkSent((prev) => ({ ...prev, [customer.id]: "queued" }));
-          toast.error(isAr ? "ØªØ¹Ø°Ø± ÙØªØ­ ÙˆØ§ØªØ³Ø§Ø¨" : "Could not open WhatsApp");
+          toast.error(isAr ? "تعذر فتح واتساب" : "Could not open WhatsApp");
           return;
         }
 
@@ -594,7 +609,7 @@ function CampaignsPage() {
             setBulkSent((prev) => ({ ...prev, [customer.id]: "queued" }));
             toast.error(
               isAr
-                ? "Ø§Ø³Ù…Ø­ Ø¨Ø§Ù„Ù†ÙˆØ§ÙØ° Ø§Ù„Ù…Ù†Ø¨Ø«Ù‚Ø© Ø£Ùˆ Ø­Ø§ÙˆÙ„ Ù…Ø¬Ø¯Ø¯Ù‹Ø§"
+                ? "اسمح بالنوافذ المنبثقة أو حاول مجددًا"
                 : "Allow popups or try again",
             );
             return;
@@ -603,7 +618,7 @@ function CampaignsPage() {
         }
       } catch (err) {
         setBulkSent((prev) => ({ ...prev, [customer.id]: "queued" }));
-        toast.error(isAr ? "ØªØ¹Ø°Ø± ÙØªØ­ ÙˆØ§ØªØ³Ø§Ø¨" : "Could not open WhatsApp");
+        toast.error(isAr ? "تعذر فتح واتساب" : "Could not open WhatsApp");
         return;
       }
 
@@ -849,7 +864,14 @@ function CampaignsPage() {
                           disabled={!c.phone}
                         />
                         <div className="min-w-0">
-                          <div className="font-semibold text-foreground truncate">{c.name}</div>
+                          <div className="flex items-center gap-1.5 font-semibold text-foreground truncate">
+                            <span className="truncate">{c.name}</span>
+                            {c.opted_out_at && (
+                              <span className="rounded bg-rose-500/15 px-1.5 py-0.5 text-[10px] font-bold text-rose-700 dark:text-rose-400 shrink-0">
+                                {isAr ? "إلغاء اشتراك" : "Opted out"}
+                              </span>
+                            )}
+                          </div>
                           <div className="text-xs text-muted-foreground mt-0.5" dir="ltr">
                             {c.phone || "—"}
                           </div>
@@ -872,9 +894,16 @@ function CampaignsPage() {
                       )}
                     </div>
                     <div className="mt-2 flex items-center justify-between gap-3 text-xs text-muted-foreground border-t border-border/40 pt-2">
-                      <span>
-                        {isAr ? "إجمالي الطلبات" : "Total orders"}: {orderCount}
-                      </span>
+                      <div className="flex items-center gap-1.5">
+                        <span>{isAr ? "إجمالي الطلبات:" : "Total orders:"}</span>
+                        {orderCount === 0 ? (
+                          <span className="font-semibold text-amber-600 dark:text-amber-400">
+                            0 ({isAr ? "بدون طلبات" : "No orders"})
+                          </span>
+                        ) : (
+                          <span className="font-bold text-foreground">{orderCount}</span>
+                        )}
+                      </div>
                       <div>
                         {isSent ? (
                           <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 px-2 py-0.5 font-medium text-emerald-700 dark:text-emerald-400">
@@ -955,7 +984,16 @@ function CampaignsPage() {
                             disabled={!c.phone}
                           />
                         </td>
-                        <td className="p-4 font-medium">{c.name}</td>
+                        <td className="p-4 font-medium">
+                          <div className="flex items-center gap-2">
+                            <span>{c.name}</span>
+                            {c.opted_out_at && (
+                              <span className="rounded bg-rose-500/15 px-1.5 py-0.5 text-[10px] font-bold text-rose-700 dark:text-rose-400">
+                                {isAr ? "إلغاء اشتراك" : "Opted out"}
+                              </span>
+                            )}
+                          </div>
+                        </td>
                         <td className="p-4 text-muted-foreground font-mono" dir="ltr">
                           {c.phone || "—"}
                         </td>
@@ -978,7 +1016,15 @@ function CampaignsPage() {
                             <span className="text-muted-foreground text-xs">—</span>
                           )}
                         </td>
-                        <td className="p-4 text-muted-foreground font-mono">{orderCount}</td>
+                        <td className="p-4 font-mono">
+                          {orderCount === 0 ? (
+                            <span className="text-xs font-semibold text-amber-600 dark:text-amber-400">
+                              0 ({isAr ? "بدون طلبات" : "No orders"})
+                            </span>
+                          ) : (
+                            <span className="text-foreground">{orderCount}</span>
+                          )}
+                        </td>
                         <td className="p-4 text-end">
                           {isSent ? (
                             <span className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 font-medium">

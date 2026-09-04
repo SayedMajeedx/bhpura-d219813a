@@ -200,10 +200,11 @@ export function DiscountsWorkQueue({
                         {p.start_date && (
                           <span>
                             {isAr ? "من:" : "From:"}{" "}
-                            <b className="text-foreground">
-                              {new Date(p.start_date).toLocaleDateString("en-GB", {
+                            <b className="text-foreground" dir="ltr">
+                              {new Date(p.start_date).toLocaleDateString(isAr ? "ar-BH-u-nu-latn" : "en-GB", {
                                 day: "2-digit",
                                 month: "short",
+                                year: "numeric",
                               })}
                             </b>
                           </span>
@@ -211,10 +212,11 @@ export function DiscountsWorkQueue({
                         {p.end_date && (
                           <span>
                             {isAr ? "إلى:" : "To:"}{" "}
-                            <b className="text-foreground">
-                              {new Date(p.end_date).toLocaleDateString("en-GB", {
+                            <b className="text-foreground" dir="ltr">
+                              {new Date(p.end_date).toLocaleDateString(isAr ? "ar-BH-u-nu-latn" : "en-GB", {
                                 day: "2-digit",
                                 month: "short",
+                                year: "numeric",
                               })}
                             </b>
                           </span>
@@ -228,12 +230,12 @@ export function DiscountsWorkQueue({
                     {/* Usage & Revenue */}
                     <td className="p-3 align-middle text-center font-mono">
                       <div className="flex flex-col items-center gap-0.5">
-                        <span className="font-bold text-foreground text-xs">
-                          {usage} {p.max_redemptions ? `/ ${p.max_redemptions}` : ""}{" "}
-                          {isAr ? "استخدام" : "redemptions"}
+                        <span className="font-bold text-foreground text-xs flex items-center justify-center gap-1">
+                          <span dir="ltr">{usage} {p.max_redemptions ? `/ ${p.max_redemptions}` : ""}</span>
+                          <span className="text-muted-foreground font-normal text-[11px]">{isAr ? "استخدام" : "redemptions"}</span>
                         </span>
                         {revenue > 0 && (
-                          <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold">
+                          <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold" dir="ltr">
                             {formatMoney(revenue, currency)}
                           </span>
                         )}

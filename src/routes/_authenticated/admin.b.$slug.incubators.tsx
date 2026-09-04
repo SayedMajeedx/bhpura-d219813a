@@ -149,6 +149,7 @@ function IncubatorsPage() {
     "incubator" | "edit_incubator" | "edit_item" | "transfer" | "sale" | "payment" | "return" | null
   >(null);
   const [activeItem, setActiveItem] = useState<StockItem | null>(null);
+  const [includeZeroStock, setIncludeZeroStock] = useState(false);
   const [busy, setBusy] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const [stockPage, setStockPage] = useState(1);
@@ -272,12 +273,15 @@ function IncubatorsPage() {
   const allStock = inventoryQ.data ?? [];
   const allSales = salesQ.data ?? [];
   const allPayments = paymentsQ.data ?? [];
-  const stock = allStock.filter((item) => item.incubator_id === currentId && item.quantity > 0);
+  const stock = allStock.filter(
+    (item) => item.incubator_id === currentId && (includeZeroStock ? true : item.quantity > 0),
+  );
   const sales = allSales.filter((item) => item.incubator_id === currentId);
   const payments = allPayments.filter((item) => item.incubator_id === currentId);
   const summary = useMemo(() => {
-    const units = stock.reduce((sum, item) => sum + Number(item.quantity), 0);
-    const stockValue = stock.reduce(
+    const activeStock = stock.filter((item) => item.quantity > 0);
+    const units = activeStock.reduce((sum, item) => sum + Number(item.quantity), 0);
+    const stockValue = activeStock.reduce(
       (sum, item) => sum + Number(item.quantity) * Number(item.consignment_price),
       0,
     );
@@ -290,6 +294,38 @@ function IncubatorsPage() {
     const paid = payments.reduce((sum, payment) => sum + Number(payment.amount), 0);
     return { units, stockValue, gross, due, paid };
   }, [stock, sales, payments]);
+
+  const handleReverseSale = async (saleId: string) => {
+    if (
+      !confirm(
+        isAr
+          ? "هل أنت متأكد من إلغاء عملية البيع وإعادة البضاعة إلى مخزون الحاضنة؟"
+          : "Are you sure you want to reverse this sale and restore stock?",
+      )
+    ) {
+      return;
+    }
+    setBusy(true);
+    try {
+      const { error } = await db.rpc("reverse_incubator_sale", {
+        p_sale_id: saleId,
+        p_reason: "Manual reversal from admin panel",
+      });
+      if (error) throw error;
+      toast.success(
+        isAr
+          ? "تم إلغاء عملية البيع وإعادة البضاعة للمخزون"
+          : "Sale reversed and stock restored to incubator",
+      );
+      qc.invalidateQueries({ queryKey: ["incubator_sales", brand.id] });
+      qc.invalidateQueries({ queryKey: ["incubator_inventory", brand.id] });
+      qc.invalidateQueries({ queryKey: ["incubators", brand.id] });
+    } catch (err: any) {
+      toast.error(err.message || (isAr ? "فشل إلغاء عملية البيع" : "Failed to reverse sale"));
+    } finally {
+      setBusy(false);
+    }
+  };
 
   const filteredStock = stock.filter((item) => {
     const needle = search.trim().toLowerCase();
@@ -384,7 +420,7 @@ function IncubatorsPage() {
           settlement_day: values.settlement_day ? Number(values.settlement_day) : null,
           packaging_policy: values.packaging_policy,
           fixed_packaging_cost: Number(values.fixed_packaging_cost || 0),
-          currency: "BHD",
+          currency: current?.currency || "BHD",
           notes: String(values.notes || "").trim() || null,
         });
       } else if (dialog === "edit_incubator" && currentId) {
@@ -620,18 +656,34 @@ function IncubatorsPage() {
                   <TabsTrigger value="payments">{isAr ? "الدفعات" : "Payments"}</TabsTrigger>
                 </TabsList>
                 <TabsContent value="stock" className="space-y-3">
-                  <div className="relative">
-                    <Search className="absolute start-3 top-3 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      className="ps-9"
-                      value={search}
-                      onChange={(event) => setSearch(event.target.value)}
-                      placeholder={
-                        isAr
-                          ? "ابحث بكودنا أو كود الحاضنة أو اسم المنتج"
-                          : "Search by SKU, external code, or product"
-                      }
-                    />
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="relative flex-1">
+                      <Search className="absolute start-3 top-3 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        className="ps-9"
+                        value={search}
+                        onChange={(event) => setSearch(event.target.value)}
+                        placeholder={
+                          isAr
+                            ? "ابحث بكودنا أو كود الحاضنة أو اسم المنتج"
+                            : "Search by SKU, external code, or product"
+                        }
+                      />
+                    </div>
+                    <div className="flex items-center gap-3 text-xs">
+                      <label className="flex items-center gap-1.5 cursor-pointer select-none text-muted-foreground hover:text-foreground">
+                        <input
+                          type="checkbox"
+                          checked={includeZeroStock}
+                          onChange={(e) => setIncludeZeroStock(e.target.checked)}
+                          className="h-4 w-4 rounded border-input text-primary focus:ring-primary accent-primary"
+                        />
+                        <span>{isAr ? "إظهار الأصناف المنتهية (0 كمية)" : "Show out of stock (0 qty)"}</span>
+                      </label>
+                      <span className="rounded-md bg-muted px-2.5 py-1 font-mono text-xs font-semibold text-foreground">
+                        {filteredStock.length} {isAr ? "صنف" : "variants"} ({summary.units} {isAr ? "قطعة متوفرة" : "available units"})
+                      </span>
+                    </div>
                   </div>
                   <div className="overflow-x-auto rounded-md border border-border bg-card">
                     <table className="w-full min-w-[760px] text-sm">
@@ -650,8 +702,9 @@ function IncubatorsPage() {
                       <tbody className="divide-y divide-border">
                         {pagedStock.map((item) => {
                           const v = item.product_variants;
+                          const isZero = item.quantity <= 0;
                           return (
-                            <tr key={item.id}>
+                            <tr key={item.id} className={isZero ? "opacity-60 bg-muted/20" : ""}>
                               <td className="p-3 font-medium">
                                 {(isAr ? v?.products?.name_ar : v?.products?.name) ||
                                   v?.products?.name ||
@@ -670,7 +723,15 @@ function IncubatorsPage() {
                                   onSave={(value) => saveExternalCode(item, value)}
                                 />
                               </td>
-                              <td className="p-3 text-center font-bold">{item.quantity}</td>
+                              <td className="p-3 text-center font-bold">
+                                {isZero ? (
+                                  <span className="inline-flex items-center rounded-full bg-rose-500/10 px-2 py-0.5 text-[11px] font-bold text-destructive">
+                                    {isAr ? "نافد" : "0"}
+                                  </span>
+                                ) : (
+                                  item.quantity
+                                )}
+                              </td>
                               <td className="p-3 text-end">
                                 {money(item.quantity * item.consignment_price, current.currency)}
                               </td>
@@ -690,6 +751,7 @@ function IncubatorsPage() {
                                   <Button
                                     size="sm"
                                     variant="outline"
+                                    disabled={isZero}
                                     onClick={() => {
                                       setActiveItem(item);
                                       setDialog("return");
@@ -700,6 +762,7 @@ function IncubatorsPage() {
                                   </Button>
                                   <Button
                                     size="sm"
+                                    disabled={isZero}
                                     onClick={() => {
                                       setActiveItem(item);
                                       setDialog("sale");
@@ -727,8 +790,8 @@ function IncubatorsPage() {
                   </div>
                   <ListPagination
                     lang={lang}
-                    entityAr="قطعة"
-                    entityEn="Items"
+                    entityAr="صنف / متغير"
+                    entityEn="Variants"
                     totalItems={filteredStock.length}
                     page={stockPage}
                     pageSize={stockPageSize}
@@ -765,6 +828,19 @@ function IncubatorsPage() {
                             : isAr
                               ? "مستحقة"
                               : "Due",
+                      action:
+                        sale.status === "confirmed" && Number(sale.paid_amount || 0) === 0 ? (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            disabled={busy}
+                            className="h-7 px-2 text-xs text-destructive hover:bg-destructive/10"
+                            onClick={() => handleReverseSale(sale.id)}
+                          >
+                            <RotateCcw className="me-1 h-3.5 w-3.5" />
+                            {isAr ? "إلغاء البيع" : "Reverse"}
+                          </Button>
+                        ) : null,
                     }))}
                     empty={isAr ? "لا توجد مبيعات مسجلة" : "No recorded sales"}
                   />
@@ -967,7 +1043,14 @@ function DataTable({
   rows,
   empty,
 }: {
-  rows: Array<{ id: string; primary: string; secondary: string; amount: string; badge: string }>;
+  rows: Array<{
+    id: string;
+    primary: string;
+    secondary: string;
+    amount: string;
+    badge: string;
+    action?: React.ReactNode;
+  }>;
   empty: string;
 }) {
   return (
@@ -978,11 +1061,14 @@ function DataTable({
             <p className="truncate text-sm font-bold">{row.primary}</p>
             <p className="text-xs text-muted-foreground">{row.secondary}</p>
           </div>
-          <div className="text-end">
-            <p className="font-bold">{row.amount}</p>
-            <Badge variant="secondary" className="mt-1">
-              {row.badge}
-            </Badge>
+          <div className="flex items-center gap-3">
+            <div className="text-end">
+              <p className="font-bold">{row.amount}</p>
+              <Badge variant="secondary" className="mt-1">
+                {row.badge}
+              </Badge>
+            </div>
+            {row.action}
           </div>
         </div>
       ))}

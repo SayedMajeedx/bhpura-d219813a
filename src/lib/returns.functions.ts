@@ -349,6 +349,20 @@ export async function createExchangeReplacementOrder(params: {
 /**
  * Update Return Request status (Approve, Reject, Receive, Complete, Cancel)
  */
+const VALID_STATUS_TRANSITIONS: Record<ReturnStatus, ReturnStatus[]> = {
+  new: ["under_review", "approved", "rejected", "cancelled"],
+  under_review: ["approved", "rejected", "cancelled"],
+  approved: ["awaiting_shipment", "received", "cancelled"],
+  awaiting_shipment: ["received", "cancelled"],
+  received: ["under_inspection", "rejected", "refunded", "exchanged", "completed"],
+  under_inspection: ["refunded", "exchanged", "rejected", "completed"],
+  refunded: ["completed"],
+  exchanged: ["completed"],
+  completed: [],
+  rejected: [],
+  cancelled: [],
+};
+
 export async function updateReturnRequestStatus(
   brandId: string,
   returnId: string,
@@ -361,6 +375,29 @@ export async function updateReturnRequestStatus(
   },
 ): Promise<{ success: boolean; error?: string }> {
   try {
+    const { data: currentReq, error: fetchErr } = await (supabase as any)
+      .from("return_requests")
+      .select("status")
+      .eq("id", returnId)
+      .eq("brand_id", brandId)
+      .single();
+
+    if (fetchErr || !currentReq) {
+      return { success: false, error: "Return request not found" };
+    }
+
+    const currentStatus = currentReq.status as ReturnStatus;
+    if (currentStatus === newStatus) {
+      return { success: true };
+    }
+    const allowed = VALID_STATUS_TRANSITIONS[currentStatus] || [];
+    if (!allowed.includes(newStatus)) {
+      return {
+        success: false,
+        error: `Invalid status transition from "${currentStatus}" to "${newStatus}"`,
+      };
+    }
+
     const updatePayload: Record<string, any> = {
       status: newStatus,
       updated_at: new Date().toISOString(),

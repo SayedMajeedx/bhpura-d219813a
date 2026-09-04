@@ -125,10 +125,31 @@ export function DiscountMobileCard({
 
       <div className="flex items-center justify-between text-xs text-muted-foreground">
         <span>{isAr ? "الاستخدام الإجمالي:" : "Total Redemptions:"}</span>
-        <span className="font-mono font-bold text-foreground">
+        <span className="font-mono font-bold text-foreground" dir="ltr">
           {usage} {p.max_redemptions ? `/ ${p.max_redemptions}` : ""}
         </span>
       </div>
+
+      {(p.start_date || p.end_date) && (
+        <div className="flex items-center justify-between text-[11px] text-muted-foreground">
+          <span>{isAr ? "فترة الصلاحية:" : "Validity:"}</span>
+          <span className="font-mono text-foreground text-[11px]" dir="ltr">
+            {p.start_date
+              ? new Date(p.start_date).toLocaleDateString(isAr ? "ar-BH-u-nu-latn" : "en-GB", {
+                  day: "numeric",
+                  month: "short",
+                })
+              : "—"}
+            {" → "}
+            {p.end_date
+              ? new Date(p.end_date).toLocaleDateString(isAr ? "ar-BH-u-nu-latn" : "en-GB", {
+                  day: "numeric",
+                  month: "short",
+                })
+              : "—"}
+          </span>
+        </div>
+      )}
 
       <div
         className="flex items-center justify-end gap-1 pt-2 border-t border-border/40"

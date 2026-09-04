@@ -94,6 +94,7 @@ function ReturnDetailPage() {
             total,
             subtotal,
             discount,
+            currency,
             tax_amount,
             tax_rate,
             shipping,
@@ -172,6 +173,8 @@ function ReturnDetailPage() {
     },
     enabled: !!brandId && !!returnReq?.order_id,
   });
+
+  const currency = (returnReq?.order as any)?.currency || (brand as any)?.currency || "BHD";
 
   const handleStatusChange = async (
     newStatus: ReturnStatus,
@@ -443,7 +446,7 @@ function ReturnDetailPage() {
                           <span className="text-muted-foreground">
                             {formatMoney(
                               Number(item.unit_price || 0),
-                              "BHD",
+                              currency,
                               isAr ? "ar-BH-u-nu-latn" : "en-US",
                             )}
                           </span>
@@ -451,7 +454,7 @@ function ReturnDetailPage() {
                           <span className="font-bold text-foreground">
                             {formatMoney(
                               Number(item.total_price || 0),
-                              "BHD",
+                              currency,
                               isAr ? "ar-BH-u-nu-latn" : "en-US",
                             )}
                           </span>
@@ -608,7 +611,7 @@ function ReturnDetailPage() {
                 <span className="font-mono font-bold text-foreground">
                   {formatMoney(
                     Number(returnReq.order?.total || 0),
-                    "BHD",
+                    currency,
                     isAr ? "ar-BH-u-nu-latn" : "en-US",
                   )}
                 </span>
@@ -619,7 +622,7 @@ function ReturnDetailPage() {
                 <span className="font-mono font-semibold text-foreground">
                   {formatMoney(
                     Number(returnReq.order?.advance_paid || returnReq.order?.total || 0),
-                    "BHD",
+                    currency,
                     isAr ? "ar-BH-u-nu-latn" : "en-US",
                   )}
                 </span>
@@ -659,7 +662,7 @@ function ReturnDetailPage() {
                 <span className="font-mono text-foreground font-medium">
                   {formatMoney(
                     Number(returnReq.total_item_refund || 0),
-                    "BHD",
+                    currency,
                     isAr ? "ar-BH-u-nu-latn" : "en-US",
                   )}
                 </span>
@@ -671,7 +674,7 @@ function ReturnDetailPage() {
                   <span className="font-mono text-destructive">
                     -{formatMoney(
                       Number(returnReq.pro_rated_discount_deduction || 0),
-                      "BHD",
+                      currency,
                       isAr ? "ar-BH-u-nu-latn" : "en-US",
                     )}
                   </span>
@@ -684,7 +687,7 @@ function ReturnDetailPage() {
                   <span className="font-mono text-foreground">
                     +{formatMoney(
                       Number(returnReq.tax_refund || 0),
-                      "BHD",
+                      currency,
                       isAr ? "ar-BH-u-nu-latn" : "en-US",
                     )}
                   </span>
@@ -697,7 +700,7 @@ function ReturnDetailPage() {
                   <span className="font-mono text-destructive">
                     -{formatMoney(
                       Number(returnReq.return_fee || 0),
-                      "BHD",
+                      currency,
                       isAr ? "ar-BH-u-nu-latn" : "en-US",
                     )}
                   </span>
@@ -709,7 +712,7 @@ function ReturnDetailPage() {
                 <span className="font-mono text-emerald-600 dark:text-emerald-400">
                   {formatMoney(
                     Number(returnReq.net_refund_amount || 0),
-                    "BHD",
+                    currency,
                     isAr ? "ar-BH-u-nu-latn" : "en-US",
                   )}
                 </span>
@@ -771,6 +774,7 @@ function ReturnDetailPage() {
         onOpenChange={setRefundDialogOpen}
         returnReq={returnReq}
         brandId={brandId || ""}
+        currency={currency}
         lang={language}
         onSuccess={() => refetch()}
       />

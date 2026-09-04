@@ -37,6 +37,7 @@ interface ReturnRefundDialogProps {
   onOpenChange: (open: boolean) => void;
   returnReq: ReturnRequest;
   brandId: string;
+  currency?: string;
   lang: "en" | "ar";
   onSuccess: () => void;
 }
@@ -46,6 +47,7 @@ export function ReturnRefundDialog({
   onOpenChange,
   returnReq,
   brandId,
+  currency = "BHD",
   lang,
   onSuccess,
 }: ReturnRefundDialogProps) {
@@ -101,8 +103,8 @@ export function ReturnRefundDialog({
 
       toast.success(
         isAr
-          ? `تم تنفيذ الاسترداد بمبلغ ${formatMoney(numRefundAmount, "BHD", "ar-BH-u-nu-latn")} بنجاح`
-          : `Refund of ${formatMoney(numRefundAmount, "BHD", "en-US")} processed successfully`,
+          ? `تم تنفيذ الاسترداد بمبلغ ${formatMoney(numRefundAmount, currency, "ar-BH-u-nu-latn")} بنجاح`
+          : `Refund of ${formatMoney(numRefundAmount, currency, "en-US")} processed successfully`,
       );
       onSuccess();
       onOpenChange(false);
@@ -129,7 +131,7 @@ export function ReturnRefundDialog({
             <div className="flex items-center justify-between text-muted-foreground">
               <span>{isAr ? "قيمة البنود المرتجعة:" : "Items Total:"}</span>
               <span className="font-mono font-medium text-foreground">
-                {formatMoney(Number(returnReq.total_item_refund || 0), "BHD", isAr ? "ar-BH-u-nu-latn" : "en-US")}
+                {formatMoney(Number(returnReq.total_item_refund || 0), currency, isAr ? "ar-BH-u-nu-latn" : "en-US")}
               </span>
             </div>
 
@@ -137,7 +139,7 @@ export function ReturnRefundDialog({
               <div className="flex items-center justify-between text-muted-foreground">
                 <span>{isAr ? "خصم ترويجي موزع مستقطع:" : "Pro-rated Discount:"}</span>
                 <span className="font-mono text-destructive">
-                  -{formatMoney(Number(returnReq.pro_rated_discount_deduction || 0), "BHD", isAr ? "ar-BH-u-nu-latn" : "en-US")}
+                  -{formatMoney(Number(returnReq.pro_rated_discount_deduction || 0), currency, isAr ? "ar-BH-u-nu-latn" : "en-US")}
                 </span>
               </div>
             )}
@@ -146,7 +148,7 @@ export function ReturnRefundDialog({
               <div className="flex items-center justify-between text-muted-foreground">
                 <span>{isAr ? "استرداد ضريبة القيمة المضافة:" : "Tax Refund (VAT):"}</span>
                 <span className="font-mono text-foreground">
-                  +{formatMoney(Number(returnReq.tax_refund || 0), "BHD", isAr ? "ar-BH-u-nu-latn" : "en-US")}
+                  +{formatMoney(Number(returnReq.tax_refund || 0), currency, isAr ? "ar-BH-u-nu-latn" : "en-US")}
                 </span>
               </div>
             )}
@@ -155,7 +157,7 @@ export function ReturnRefundDialog({
               <div className="flex items-center justify-between text-muted-foreground">
                 <span>{isAr ? "رسوم شحن الإرجاع المستقطعة:" : "Return Shipping Fee:"}</span>
                 <span className="font-mono text-destructive">
-                  -{formatMoney(Number(returnReq.return_fee || 0), "BHD", isAr ? "ar-BH-u-nu-latn" : "en-US")}
+                  -{formatMoney(Number(returnReq.return_fee || 0), currency, isAr ? "ar-BH-u-nu-latn" : "en-US")}
                 </span>
               </div>
             )}
@@ -163,7 +165,7 @@ export function ReturnRefundDialog({
             <div className="pt-2 border-t border-border flex items-center justify-between font-bold text-sm">
               <span className="text-foreground">{isAr ? "صافي المستحق للاسترداد:" : "Net Refund Amount:"}</span>
               <span className="font-mono text-emerald-600 dark:text-emerald-400">
-                {formatMoney(Number(returnReq.net_refund_amount || 0), "BHD", isAr ? "ar-BH-u-nu-latn" : "en-US")}
+                {formatMoney(Number(returnReq.net_refund_amount || 0), currency, isAr ? "ar-BH-u-nu-latn" : "en-US")}
               </span>
             </div>
           </div>
@@ -173,47 +175,59 @@ export function ReturnRefundDialog({
             <Label className="text-xs font-semibold text-foreground">
               {isAr ? "طريقة التعويض / الاسترداد" : "Compensation & Refund Method"}
             </Label>
-            <Select value={refundMethod} onValueChange={setRefundMethod}>
-              <SelectTrigger className="h-9 text-xs">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="original_payment" className="text-xs">
-                  <div className="flex items-center gap-2">
-                    <CreditCard className="h-3.5 w-3.5 text-primary" />
-                    <span>{isAr ? "طريقة الدفع الأصلية (بطاقة / بنفت)" : "Original Payment Method"}</span>
-                  </div>
-                </SelectItem>
-                <SelectItem value="store_credit" className="text-xs">
-                  <div className="flex items-center gap-2">
-                    <Wallet className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
-                    <span>{isAr ? "رصيد متجر (إيداع فوري في محفظة العميل)" : "Store Credit Wallet"}</span>
-                  </div>
-                </SelectItem>
-                <SelectItem value="cash" className="text-xs">
-                  <div className="flex items-center gap-2">
-                    <Banknote className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
-                    <span>{isAr ? "نقداً (تسليم يدوي)" : "Cash Payout"}</span>
-                  </div>
-                </SelectItem>
-                <SelectItem value="bank_transfer" className="text-xs">
-                  <div className="flex items-center gap-2">
-                    <Building2 className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
-                    <span>{isAr ? "تحويل بنكي مباشر (IBAN)" : "Direct Bank Transfer"}</span>
-                  </div>
-                </SelectItem>
-              </SelectContent>
-            </Select>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => setRefundMethod("store_credit")}
+                className={`flex flex-col items-start gap-1 p-3 rounded-lg border text-start transition-colors ${
+                  refundMethod === "store_credit"
+                    ? "border-primary bg-primary/10 text-primary"
+                    : "border-border hover:bg-muted/50 text-muted-foreground"
+                }`}
+              >
+                <div className="flex items-center gap-1.5 font-bold text-xs text-foreground">
+                  <CreditCard className="h-4 w-4 text-primary" />
+                  {isAr ? "رصيد متجر (موصى به)" : "Store Credit"}
+                </div>
+                <p className="text-[10px] text-muted-foreground leading-relaxed">
+                  {isAr
+                    ? "فوري وبدون رسوم بنكية للمتجر، يشجع العميل على الشراء ثانية"
+                    : "Instant, no payment gateway fees, retains customer value"}
+                </p>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setRefundMethod("original_payment")}
+                className={`flex flex-col items-start gap-1 p-3 rounded-lg border text-start transition-colors ${
+                  refundMethod === "original_payment"
+                    ? "border-primary bg-primary/10 text-primary"
+                    : "border-border hover:bg-muted/50 text-muted-foreground"
+                }`}
+              >
+                <div className="flex items-center gap-1.5 font-bold text-xs text-foreground">
+                  <Banknote className="h-4 w-4 text-emerald-600" />
+                  {isAr ? "استرداد للوسيلة الأصلية" : "Original Payment"}
+                </div>
+                <p className="text-[10px] text-muted-foreground leading-relaxed">
+                  {isAr
+                    ? "تحويل بنكي أو بطاقة، يستغرق 3-7 أيام عمل"
+                    : "Card or bank reversal, takes 3-7 business days"}
+                </p>
+              </button>
+            </div>
           </div>
 
           {/* Refund Amount Input with Max Cap Indicator */}
           <div className="space-y-1.5">
             <div className="flex items-center justify-between">
               <Label className="text-xs font-semibold text-foreground">
-                {isAr ? "مبلغ الاسترداد الفعلي (د.ب)" : "Refund Amount (BHD)"}
+                {isAr
+                  ? `مبلغ الاسترداد الفعلي (${currency === "BHD" ? "د.ب" : currency})`
+                  : `Refund Amount (${currency})`}
               </Label>
               <span className="text-[11px] text-muted-foreground font-mono">
-                {isAr ? "سقف المدفوع:" : "Paid Cap:"} {formatMoney(totalPaid, "BHD", isAr ? "ar-BH-u-nu-latn" : "en-US")}
+                {isAr ? "سقف المدفوع:" : "Paid Cap:"} {formatMoney(totalPaid, currency, isAr ? "ar-BH-u-nu-latn" : "en-US")}
               </span>
             </div>
             <Input

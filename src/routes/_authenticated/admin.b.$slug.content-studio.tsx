@@ -155,7 +155,7 @@ function ContentStudioPage() {
     queryKey: ["content-studio-settings", brand.id],
     queryFn: async () => {
       const { data, error } = await (supabase.from("business_settings") as any)
-        .select("business_name,phone,whatsapp_number,socials,logo_url,primary_color")
+        .select("business_name,phone,whatsapp_number,socials,logo_url,primary_color,currency")
         .eq("brand_id", brand.id)
         .maybeSingle();
       if (error) throw error;
@@ -170,6 +170,16 @@ function ContentStudioPage() {
   const logo = settingsQ.data?.logo_url || brand.logo_url;
   const phone = settingsQ.data?.phone || settingsQ.data?.whatsapp_number;
   const instagram = instagramHandle(settingsQ.data?.socials);
+  const currency = settingsQ.data?.currency || "BHD";
+  const currencySymbol = isAr
+    ? currency === "BHD"
+      ? "د.ب."
+      : currency === "SAR"
+        ? "ر.س."
+        : currency === "KWD"
+          ? "د.ك."
+          : currency
+    : currency;
   const palette = THEMES[theme];
   const editionIsAr = containsArabic(editionLabel);
   const headlineIsAr = containsArabic(headline);
@@ -278,22 +288,33 @@ function ContentStudioPage() {
     );
 
     const sizesFormatted =
-      availableSizes.length > 0 ? availableSizes.join(" · ") : "غير متوفر حالياً للبيع الفوري";
+      availableSizes.length > 0 ? availableSizes.join(" · ") : "";
 
     const occasionFormatted = selected.occasion ? selected.occasion.trim() : "";
     const fabricFormatted = selected.fabric_type ? selected.fabric_type.trim() : "";
     const priceFormatted = selected.base_price ? Number(selected.base_price).toFixed(3) : "0.000";
 
+    const details: string[] = [];
+    if (sizesFormatted) {
+      details.push(`📏 المقاسات المتوفرة للبيع الفوري: ${sizesFormatted}`);
+    } else {
+      details.push("📏 المقاسات: متوفرة للتفصيل حسب الطلب");
+    }
+    if (occasionFormatted) {
+      details.push(`👗 مناسبة لـ: ${occasionFormatted}`);
+    }
+    if (fabricFormatted) {
+      details.push(`🧵 نوع القماش: ${fabricFormatted}`);
+    }
+    details.push("✂️ متوفرة للتفصيل حسب الطلب: نعم");
+
+    const detailsBlock = details.length > 0 ? `\n\n${details.join("\n")}` : "";
+
     return `${title}
-${desc}
+${desc}${detailsBlock}
 
-📏 المقاسات المتوفرة للبيع الفوري: ${sizesFormatted}
-👗 مناسبة لـ: ${occasionFormatted}
-✂️ متوفرة للتفصيل حسب الطلب: نعم
-🧵 نوع القماش: ${fabricFormatted}
-
-💰 ${priceFormatted} د.ب.`;
-  }, [selected, headline, body, selectedDescription, variantsQ.data]);
+💰 ${priceFormatted} ${currencySymbol}`;
+  }, [selected, headline, body, selectedDescription, variantsQ.data, currencySymbol]);
 
   const handleCopyCaption = async () => {
     if (!captionText) return;
@@ -654,7 +675,7 @@ ${desc}
                     className="mt-[2.5%] flex items-center border-t border-current/15 pt-[2%]"
                   >
                     <span dir="ltr" className="font-black text-xs sm:text-sm tracking-tight">
-                      {Number(selected.base_price).toFixed(3)} BHD
+                      {Number(selected.base_price).toFixed(3)} {currencySymbol}
                     </span>
                   </div>
                 ) : null}
