@@ -98,6 +98,18 @@ export function AbandonedCartsList({
             {isAr ? "تمت الاستعادة بنجاح" : "Recovered"}
           </span>
         );
+      case "expired":
+        return (
+          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-muted text-muted-foreground border border-border">
+            {isAr ? "منتهية" : "Expired"}
+          </span>
+        );
+      case "unsubscribed":
+        return (
+          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-slate-500/10 text-slate-600 dark:text-slate-400 border border-slate-500/20">
+            {isAr ? "أوقف المتابعة" : "Unsubscribed"}
+          </span>
+        );
       default:
         return (
           <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-muted text-muted-foreground border border-border">
@@ -181,6 +193,8 @@ export function AbandonedCartsList({
               <SelectItem value="active">{isAr ? "نشطة" : "Active"}</SelectItem>
               <SelectItem value="recovering">{isAr ? "قيد المتابعة" : "Recovering"}</SelectItem>
               <SelectItem value="recovered">{isAr ? "تمت الاستعادة" : "Recovered"}</SelectItem>
+              <SelectItem value="expired">{isAr ? "منتهية" : "Expired"}</SelectItem>
+              <SelectItem value="unsubscribed">{isAr ? "أوقف المتابعة" : "Unsubscribed"}</SelectItem>
             </SelectContent>
           </Select>
 
