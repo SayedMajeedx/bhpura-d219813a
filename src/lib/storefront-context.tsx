@@ -313,6 +313,12 @@ export function StorefrontProvider({
   const [storageHydrated, setStorageHydrated] = useState(false);
 
   const [session, setSession] = useState<Session | null>(null);
+  const [trackingCustomer, setTrackingCustomer] = useState<{
+    id: string;
+    name: string | null;
+    phone: string | null;
+    email: string | null;
+  } | null>(null);
   const [isStoreMember, setIsStoreMember] = useState(false);
   const [membershipLoading, setMembershipLoading] = useState(true);
 
@@ -428,7 +434,10 @@ export function StorefrontProvider({
       void syncStorefrontCartActivity({
         brandId: brand.id,
         sessionId,
-        customerId: null,
+        customerId: trackingCustomer?.id ?? null,
+        guestName: trackingCustomer?.name ?? undefined,
+        guestPhone: trackingCustomer?.phone ?? undefined,
+        guestEmail: trackingCustomer?.email ?? session?.user.email ?? undefined,
         cartItems: cart.map((item) => ({
           cart_line_id: item.cart_line_id,
           product_id: item.product_id,
@@ -449,7 +458,7 @@ export function StorefrontProvider({
     }, 1200);
 
     return () => window.clearTimeout(timer);
-  }, [brand.id, cart, settings.currency, storageHydrated]);
+  }, [brand.id, cart, session?.user.email, settings.currency, storageHydrated, trackingCustomer]);
 
   useEffect(() => {
     if (!storageHydrated) return;
@@ -486,6 +495,36 @@ export function StorefrontProvider({
     setSession(activeSession);
     return checkMembership(activeSession);
   }, [checkMembership]);
+
+  useEffect(() => {
+    let active = true;
+    if (!session?.user) {
+      setTrackingCustomer(null);
+      return () => {
+        active = false;
+      };
+    }
+
+    void supabase
+      .from("customers")
+      .select("id, name, phone, email")
+      .eq("brand_id", brand.id)
+      .eq("auth_user_id", session.user.id)
+      .maybeSingle()
+      .then(({ data, error }) => {
+        if (!active) return;
+        if (error) {
+          console.warn("Storefront customer lookup failed", error.message);
+          setTrackingCustomer(null);
+          return;
+        }
+        setTrackingCustomer(data ?? null);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [brand.id, session?.user]);
 
   useEffect(() => {
     let active = true;
