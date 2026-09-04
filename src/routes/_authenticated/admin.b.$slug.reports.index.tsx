@@ -228,16 +228,27 @@ function ReportsOverview() {
               title={lang === "ar" ? "صحة بيانات التكلفة" : "Cost data health"}
               rows={[
                 [lang === "ar" ? "تكلفة البضاعة المعروفة" : "Known COGS", money(data.known_cogs)],
+                [lang === "ar" ? "تكلفة المنتجات" : "Product COGS", money(data.product_cogs)],
+                [lang === "ar" ? "تكلفة تغليف الطلبات" : "Order packaging COGS", money(data.packaging_cogs)],
                 [
                   lang === "ar" ? "عناصر بلا تكلفة" : "Items missing cost",
                   Number(data.missing_cost_item_count || 0),
+                ],
+                [
+                  lang === "ar" ? "عناصر بلا رابط منتج" : "Items missing product link",
+                  Number(data.missing_product_link_count || 0),
+                ],
+                [
+                  lang === "ar" ? "عناصر مكتملة بتغليف صفري" : "Completed items with zero packaging",
+                  Number(data.zero_packaging_item_count || 0),
                 ],
                 [
                   lang === "ar" ? "قيمة المبيعات المتأثرة" : "Sales value affected",
                   money(data.missing_cost_exposure),
                 ],
               ]}
-              warning={Number(data.missing_cost_item_count || 0) > 0}
+              warning={Number(data.missing_cost_item_count || 0) > 0 || Number(data.missing_product_link_count || 0) > 0 || Number(data.zero_packaging_item_count || 0) > 0}
+              warningLabel={lang === "ar" ? "يتطلب المراجعة" : "Action required"}
             />
           </div>
         </>
@@ -254,10 +265,12 @@ function DetailCard({
   title,
   rows,
   warning,
+  warningLabel,
 }: {
   title: string;
   rows: [string, string | number][];
   warning?: boolean;
+  warningLabel?: string;
 }) {
   return (
     <section className="rounded-2xl border bg-white p-5 shadow-sm">
@@ -265,7 +278,7 @@ function DetailCard({
         <h2 className="text-lg font-semibold">{title}</h2>
         {warning && (
           <span className="rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-700">
-            Action required
+            {warningLabel || "Action required"}
           </span>
         )}
       </div>

@@ -92,7 +92,7 @@ export async function fetchReportingOverview(
     }
     throw error;
   }
-  const [incubator, refundsResponse] = await Promise.all([
+  const [incubator, refundsResponse, cogsResponse] = await Promise.all([
     fetchIncubatorReporting(range, tz, brandSlug),
     (supabase as any).rpc("rpc_reporting_processed_returns", {
       p_start_date: range.from.toISOString(),
@@ -100,11 +100,21 @@ export async function fetchReportingOverview(
       p_tz: tz,
       p_brand_slug: brandSlug || null,
     }),
+    (supabase as any).rpc("rpc_reporting_order_cogs", {
+      p_start_date: range.from.toISOString(),
+      p_end_date: range.to.toISOString(),
+      p_include_historical: includeHistorical,
+      p_brand_slug: brandSlug || null,
+    }),
   ]);
   if (refundsResponse.error && refundsResponse.error.code !== "PGRST202") {
     throw refundsResponse.error;
   }
   const refundRows = Array.isArray(refundsResponse.data) ? refundsResponse.data : [];
+  if (cogsResponse.error && cogsResponse.error.code !== "PGRST202") {
+    throw cogsResponse.error;
+  }
+  const cogsRows = Array.isArray(cogsResponse.data) ? cogsResponse.data : [];
   const incubatorByCurrency = new Map(
     (incubator.summary || []).map((row: any) => [row.currency, row]),
   );
@@ -115,6 +125,11 @@ export async function fetchReportingOverview(
     }
   }
   for (const row of refundRows) {
+    if (!baseRows.some((base: any) => base.currency === row.currency)) {
+      baseRows.push({ currency: row.currency });
+    }
+  }
+  for (const row of cogsRows) {
     if (!baseRows.some((base: any) => base.currency === row.currency)) {
       baseRows.push({ currency: row.currency });
     }
@@ -143,12 +158,14 @@ export async function fetchReportingOverview(
     ]),
   );
   const refundsByCurrency = new Map(refundRows.map((row: any) => [row.currency, row]));
+  const cogsByCurrency = new Map(cogsRows.map((row: any) => [row.currency, row]));
   return baseRows.map((row: any) => {
     const consignment: any = incubatorByCurrency.get(row.currency) || {};
     const processingFees = feesByCurrency.get(row.currency) ?? 0;
     const manualExpenses = Number(row.expenses || 0);
     const incubatorCommissions = Number(consignment.commission_amount || 0);
     const refunds: any = refundsByCurrency.get(row.currency) || {};
+    const orderCogs: any = cogsByCurrency.get(row.currency) || {};
     const paidOrderValue = Number(row.paid_order_value || 0) + Number(consignment.gross_amount || 0);
     const netMerchandise = Number(row.net_merch_sales || 0) + Number(consignment.gross_amount || 0);
     return {
@@ -161,10 +178,14 @@ export async function fetchReportingOverview(
       net_revenue: paidOrderValue - Number(refunds.revenue_deduction || 0),
       net_merchandise_after_returns: netMerchandise - Number(refunds.merchandise_deduction || 0),
       paid_order_count: Number(row.paid_order_count || 0) + Number(consignment.sale_count || 0),
-      known_cogs: Number(row.known_cogs || 0) + Number(consignment.cogs || 0),
+      product_cogs: Number(orderCogs.product_cogs || 0),
+      packaging_cogs: Number(orderCogs.packaging_cogs || 0),
+      missing_product_link_count: Number(orderCogs.missing_product_link_count || 0),
+      zero_packaging_item_count: Number(orderCogs.zero_packaging_item_count || 0),
+      known_cogs: Number(orderCogs.known_cogs ?? row.known_cogs ?? 0) + Number(consignment.cogs || 0),
       known_cogs_after_returns: Math.max(
         0,
-        Number(row.known_cogs || 0) + Number(consignment.cogs || 0) - Number(refunds.returned_cogs_reversal || 0),
+        Number(orderCogs.known_cogs ?? row.known_cogs ?? 0) + Number(consignment.cogs || 0) - Number(refunds.returned_cogs_reversal || 0),
       ),
       returned_cogs_reversal: Number(refunds.returned_cogs_reversal || 0),
       manual_expenses: manualExpenses,

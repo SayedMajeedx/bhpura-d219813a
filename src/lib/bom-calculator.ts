@@ -98,6 +98,15 @@ export function getItemPackagingCost(
 ): number {
   if (!item) return 0;
 
+  // Completed orders carry an immutable snapshot so later BOM price edits do
+  // not rewrite historical order profit.
+  if (
+    item.packaging_cost_snapshot != null &&
+    !isNaN(Number(item.packaging_cost_snapshot))
+  ) {
+    return Number(Number(item.packaging_cost_snapshot).toFixed(3));
+  }
+
   // If item already has a non-zero explicit packaging_cost property attached
   if (
     item.packaging_cost != null &&
