@@ -228,14 +228,15 @@ function ReportsOverview() {
               title={lang === "ar" ? "صحة بيانات التكلفة" : "Cost data health"}
               rows={[
                 [lang === "ar" ? "تكلفة البضاعة المعروفة" : "Known COGS", money(data.known_cogs)],
-                [lang === "ar" ? "تكلفة المنتجات" : "Product COGS", money(data.product_cogs)],
+                [lang === "ar" ? "تكلفة طلبات المتجر" : "Store orders COGS", money(data.product_cogs)],
+                [lang === "ar" ? "تكلفة مبيعات الحاضنات" : "Incubator sales COGS", money(data.incubator_cogs)],
                 [lang === "ar" ? "تكلفة تغليف الطلبات" : "Order packaging COGS", money(data.packaging_cogs)],
                 [
-                  lang === "ar" ? "عناصر بلا تكلفة" : "Items missing cost",
+                  lang === "ar" ? "عناصر بلا تكلفة مسجلة" : "Items missing cost",
                   Number(data.missing_cost_item_count || 0),
                 ],
                 [
-                  lang === "ar" ? "عناصر بلا رابط منتج" : "Items missing product link",
+                  lang === "ar" ? "عناصر يدوية (طلبات تفصيل)" : "Manual / bespoke items",
                   Number(data.missing_product_link_count || 0),
                 ],
                 [
@@ -243,11 +244,11 @@ function ReportsOverview() {
                   Number(data.zero_packaging_item_count || 0),
                 ],
                 [
-                  lang === "ar" ? "قيمة المبيعات المتأثرة" : "Sales value affected",
+                  lang === "ar" ? "قيمة المبيعات غير المحددة التكلفة" : "Sales value missing cost",
                   money(data.missing_cost_exposure),
                 ],
               ]}
-              warning={Number(data.missing_cost_item_count || 0) > 0 || Number(data.missing_product_link_count || 0) > 0 || Number(data.zero_packaging_item_count || 0) > 0}
+              warning={Number(data.missing_cost_item_count || 0) > 0 || Number(data.missing_cost_exposure || 0) > 0}
               warningLabel={lang === "ar" ? "يتطلب المراجعة" : "Action required"}
             />
           </div>
