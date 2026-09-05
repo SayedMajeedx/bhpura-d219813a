@@ -48,10 +48,11 @@ export function OsIslandDock({
             type="button"
             onClick={item.onClick}
             className={cn(
-              "relative z-10 flex flex-col items-center justify-center min-w-[52px] sm:min-w-[62px] min-h-[44px] px-2.5 py-1 rounded-full transition-all duration-200 outline-none select-none",
+              "relative z-10 flex flex-col items-center justify-center min-w-[52px] sm:min-w-[62px] min-h-[44px] px-2.5 py-1 rounded-full outline-none select-none",
+              "transition-all duration-200 ease-[cubic-bezier(0.34,1.56,0.64,1)] active:scale-90",
               item.active
                 ? "bg-gradient-to-b from-primary/80 to-primary/60 dark:from-primary/75 dark:to-primary/55 backdrop-blur-xl border border-white/50 dark:border-white/35 text-primary-foreground font-bold shadow-[0_4px_16px_rgba(0,0,0,0.22),inset_0_1.5px_1.5px_rgba(255,255,255,0.7),inset_0_-1px_1px_rgba(0,0,0,0.2)] scale-[1.03]"
-                : "text-muted-foreground hover:text-foreground hover:bg-white/30 dark:hover:bg-white/10 active:scale-95",
+                : "text-muted-foreground hover:text-foreground hover:bg-white/30 dark:hover:bg-white/10",
             )}
           >
             {/* Glass highlight glare inside the active maroon pill */}
