@@ -20,7 +20,7 @@ export function OsMobileTabBar({ items, className }: OsMobileTabBarProps) {
   return (
     <nav
       className={cn(
-        "no-print fixed bottom-0 inset-x-0 z-40 md:hidden flex items-center justify-around px-2 py-1.5 pb-[max(0.5rem,env(safe-area-inset-bottom))] border-t border-white/20 dark:border-white/10 bg-card/65 dark:bg-card/50 shadow-2xl backdrop-blur-2xl backdrop-saturate-150",
+        "no-print fixed bottom-0 inset-x-0 z-40 md:hidden flex items-center justify-around px-2 py-1.5 pb-[max(0.5rem,env(safe-area-inset-bottom))] border-t border-white/60 dark:border-white/20 bg-white/40 dark:bg-black/45 shadow-[0_-8px_32px_rgba(0,0,0,0.12),inset_0_1px_1.5px_rgba(255,255,255,0.7)] backdrop-blur-2xl backdrop-saturate-200",
         className,
       )}
       aria-label="Mobile Navigation"
@@ -33,10 +33,10 @@ export function OsMobileTabBar({ items, className }: OsMobileTabBarProps) {
             type="button"
             onClick={item.onClick}
             className={cn(
-              "relative flex flex-col items-center justify-center gap-1 min-w-[56px] min-h-[44px] py-1 px-2 rounded-xl transition-all duration-200 outline-none select-none",
+              "relative flex flex-col items-center justify-center gap-1 min-w-[56px] min-h-[44px] py-1 px-2.5 rounded-xl transition-all duration-200 outline-none select-none",
               item.active
-                ? "text-primary font-bold scale-105"
-                : "text-muted-foreground hover:text-foreground",
+                ? "bg-gradient-to-b from-primary/80 to-primary/60 dark:from-primary/75 dark:to-primary/55 backdrop-blur-xl border border-white/50 dark:border-white/35 text-primary-foreground font-bold shadow-[0_4px_16px_rgba(0,0,0,0.22),inset_0_1.5px_1.5px_rgba(255,255,255,0.7)] scale-105"
+                : "text-muted-foreground hover:text-foreground hover:bg-white/20 active:scale-95",
             )}
           >
             <div className="relative">
