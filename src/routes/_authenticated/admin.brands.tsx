@@ -322,6 +322,7 @@ function BrandsPage() {
         <InstantInstagramOnboardingModal
           open={instagramModalOpen}
           onOpenChange={setInstagramModalOpen}
+          isAdminModal={true}
           onSuccess={() => refresh()}
         />
       </div>

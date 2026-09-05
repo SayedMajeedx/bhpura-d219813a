@@ -875,6 +875,7 @@ export const bulkInsertProducts = createServerFn({ method: "POST" })
       .parse(raw),
   )
   .handler(async ({ data, context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const userId = context.userId;
     const brandId = data.brandId;
 
@@ -885,100 +886,115 @@ export const bulkInsertProducts = createServerFn({ method: "POST" })
     if (!hasAccess && !isAdmin) throw new Error("UNAUTHORIZED");
 
     if (data.products.length === 0) {
-      return { successCount: 0 };
+      return { successCount: 0, skippedCount: 0 };
     }
 
     try {
-      const { data: existingProducts, error: existingError } = await context.supabase
-        .from("products")
-        .select("custom_fields")
+      const { data: existingProducts, error: existingError } = await (supabaseAdmin
+        .from("products" as never) as any)
+        .select("id, custom_fields")
         .eq("brand_id", brandId);
       if (existingError)
         throw new Error(`Failed to check existing imports: ${existingError.message}`);
-      const existingPostIds = new Set(
-        (existingProducts || [])
-          .map((row: any) => row.custom_fields?.instagram_post_id)
-          .filter((value: unknown): value is string => typeof value === "string"),
-      );
+
+      const existingPostIds = new Set<string>();
+      if (Array.isArray(existingProducts)) {
+        for (const row of existingProducts) {
+          if (Array.isArray(row.custom_fields)) {
+            const field = row.custom_fields.find((f: any) => f?.key === "instagram_post_id");
+            if (field?.value) existingPostIds.add(String(field.value));
+          } else if (row.custom_fields && typeof row.custom_fields === "object") {
+            if (row.custom_fields.instagram_post_id) {
+              existingPostIds.add(String(row.custom_fields.instagram_post_id));
+            }
+          }
+        }
+      }
+
       const newProducts = data.products.filter((product) => !existingPostIds.has(product.id));
       if (newProducts.length === 0) {
         return { successCount: 0, skippedCount: data.products.length };
       }
 
-      const productRows = newProducts.map((p) => {
+      let insertedCount = 0;
+
+      for (const p of newProducts) {
         const mediaArray = p.imageUrl ? [{ type: "image", url: p.imageUrl }] : [];
-        return {
-          user_id: userId,
-          brand_id: brandId,
-          name: p.title,
-          name_en: p.title,
-          name_ar: p.title,
-          description: p.description,
-          description_en: p.description,
-          description_ar: p.description,
-          category: p.category,
-          image_url: p.imageUrl || null,
-          is_active: false, // Created as drafts for merchant review
-          featured_trending: false,
-          show_sale_badge: false,
-          media: mediaArray,
-          custom_fields: { instagram_post_id: p.id },
-        };
-      });
+        const customFieldsArray = [
+          {
+            key: "instagram_post_id",
+            value: p.id,
+            label_ar: "منشور انستقرام",
+            label_en: "Instagram Post ID",
+          },
+        ];
 
-      const { data: insertedProducts, error: prodErr } = await context.supabase
-        .from("products")
-        .insert(productRows)
-        .select("id, custom_fields");
+        const { data: prodData, error: prodErr } = await (supabaseAdmin
+          .from("products" as never) as any)
+          .insert({
+            user_id: userId,
+            brand_id: brandId,
+            name: p.title || "منتج انستقرام",
+            name_en: p.title || "Instagram Product",
+            name_ar: p.title || "منتج انستقرام",
+            description: p.description || "",
+            description_en: p.description || "",
+            description_ar: p.description || "",
+            category: p.category || "عام",
+            image_url: p.imageUrl || null,
+            is_active: false, // Created as drafts for merchant review
+            featured_trending: false,
+            show_sale_badge: false,
+            media: mediaArray,
+            custom_fields: customFieldsArray,
+          })
+          .select("id")
+          .single();
 
-      if (prodErr || !insertedProducts) {
-        throw new Error(`Failed to batch insert products: ${prodErr?.message}`);
-      }
+        if (prodErr || !prodData?.id) {
+          console.error("Failed to insert product:", prodErr);
+          throw new Error(`Failed to batch insert products: ${prodErr?.message || "Insert failed"}`);
+        }
 
-      const variantRows: any[] = [];
-      insertedProducts.forEach((insertedProd: any) => {
-        const postInstaId = (insertedProd.custom_fields as any)?.instagram_post_id;
-        const originalPost = newProducts.find((p) => p.id === postInstaId);
-        if (!originalPost) return;
+        insertedCount++;
 
-        const sizes = originalPost.sizes.length > 0 ? originalPost.sizes : [""];
-        const colors = originalPost.colors.length > 0 ? originalPost.colors : [""];
-        const price = originalPost.price || 0;
+        const sizes = Array.isArray(p.sizes) && p.sizes.length > 0 ? p.sizes : [""];
+        const colors = Array.isArray(p.colors) && p.colors.length > 0 ? p.colors : [""];
+        const price = Number(p.price) || 0;
 
-        sizes
+        const variantRows = sizes
           .flatMap((size: string) => colors.map((color: string) => ({ size, color })))
-          .forEach(({ size, color }) => {
-            variantRows.push({
-              user_id: userId,
-              brand_id: brandId,
-              product_id: insertedProd.id,
-              size,
-              size_unit: "",
-              color,
-              fabric: "",
-              sku: `IG-${insertedProd.id.slice(0, 5).toUpperCase()}-${size}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`,
-              barcode: null,
-              cost_price: 0,
-              selling_price: price,
-              stock_main: 0,
-              stock_incubator: 0,
-            });
-          });
-      });
+          .map(({ size, color }) => ({
+            user_id: userId,
+            brand_id: brandId,
+            product_id: prodData.id,
+            size,
+            size_unit: "",
+            color,
+            fabric: "",
+            sku: `IG-${prodData.id.slice(0, 5).toUpperCase()}-${size ? size + "-" : ""}${Math.random().toString(36).slice(2, 6).toUpperCase()}`,
+            barcode: null,
+            cost_price: 0,
+            selling_price: price,
+            stock_main: 0,
+            stock_incubator: 0,
+          }));
 
-      if (variantRows.length > 0) {
-        const { error: varErr } = await context.supabase
-          .from("product_variants")
-          .insert(variantRows);
+        if (variantRows.length > 0) {
+          const { error: varErr } = await (supabaseAdmin
+            .from("product_variants" as never) as any)
+            .insert(variantRows);
 
-        if (varErr) {
-          throw new Error(`Failed to batch insert variants: ${varErr.message}`);
+          if (varErr) {
+            console.error("Failed to insert product variants:", varErr);
+            throw new Error(`Failed to batch insert variants: ${varErr.message}`);
+          }
         }
       }
 
       return {
-        successCount: insertedProducts.length,
-        skippedCount: data.products.length - newProducts.length,
+        successCount: insertedCount,
+        skippedCount: data.products.length - insertedCount,
       };
     } catch (error: any) {
       console.error("Bulk database insertion failed:", error);

@@ -22,6 +22,8 @@ import {
   Building2,
   CheckCircle2,
   AlertCircle,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import {
   registerInstantTrial,
@@ -56,6 +58,7 @@ function OnboardPage() {
   const [contactNumber, setContactNumber] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [slugStatus, setSlugStatus] = useState<"idle" | "checking" | "available" | "taken">("idle");
   const [existingAccountWarning, setExistingAccountWarning] = useState<string | null>(null);
 
@@ -534,18 +537,40 @@ function OnboardPage() {
                     <Label htmlFor="password" className="text-xs font-semibold">
                       {isAr ? "كلمة المرور" : "Password"} *
                     </Label>
-                    <Input
-                      id="password"
-                      type="password"
-                      dir="ltr"
-                      placeholder=""
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      className="h-10 text-xs placeholder:text-muted-foreground/35 placeholder:font-normal bg-background text-left"
-                      autoComplete="new-password"
-                      required
-                      minLength={6}
-                    />
+                    <div className="relative" dir={isAr ? "rtl" : "ltr"}>
+                      <Input
+                        id="password"
+                        type={showPassword ? "text" : "password"}
+                        dir={isAr ? "rtl" : "ltr"}
+                        placeholder="••••••••"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        className={cn(
+                          "h-10 text-xs rounded-xl pe-10 placeholder:text-muted-foreground/35 placeholder:font-normal bg-background font-mono",
+                          isAr ? "text-right" : "text-left",
+                        )}
+                        autoComplete="new-password"
+                        required
+                        minLength={6}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute end-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-1 z-10 transition-colors"
+                        tabIndex={-1}
+                        aria-label={
+                          showPassword
+                            ? isAr
+                              ? "إخفاء كلمة المرور"
+                              : "Hide password"
+                            : isAr
+                              ? "إظهار كلمة المرور"
+                              : "Show password"
+                        }
+                      >
+                        {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                      </button>
+                    </div>
                   </div>
                 </div>
 

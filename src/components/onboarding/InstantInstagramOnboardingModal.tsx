@@ -28,6 +28,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { useI18n } from "@/lib/i18n";
+import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { registerInstantTrial } from "@/lib/onboarding.functions";
 import { provisionBrandWithOwner } from "@/lib/brand-provisioning";
@@ -47,12 +48,14 @@ export interface InstantInstagramOnboardingModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSuccess?: (slug: string) => void;
+  isAdminModal?: boolean;
 }
 
 export function InstantInstagramOnboardingModal({
   open,
   onOpenChange,
   onSuccess,
+  isAdminModal = false,
 }: InstantInstagramOnboardingModalProps) {
   const { lang } = useI18n();
   const isAr = lang === "ar";
@@ -317,13 +320,9 @@ export function InstantInstagramOnboardingModal({
       const cleanPassword = ownerPassword.trim();
       const cleanEmail = ownerEmail.trim().toLowerCase();
 
-      // Check if session exists (e.g. super admin executing from /admin/brands)
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
       let brandId: string;
 
-      if (session) {
+      if (isAdminModal) {
         // Superadmin provisioning via edge function
         const provisioned = await provisionBrandWithOwner({
           slug: slug.trim().toLowerCase(),
@@ -601,22 +600,34 @@ export function InstantInstagramOnboardingModal({
                   <Label className="text-xs font-semibold">
                     {isAr ? "كلمة المرور (لتسجيل الدخول لاحقاً)" : "Password (to sign in later)"} *
                   </Label>
-                  <div className="relative mt-1">
+                  <div className="relative mt-1" dir={isAr ? "rtl" : "ltr"}>
                     <Input
                       type={showPassword ? "text" : "password"}
-                      dir="ltr"
+                      dir={isAr ? "rtl" : "ltr"}
                       value={ownerPassword}
                       onChange={(e) => setOwnerPassword(e.target.value)}
                       placeholder="••••••••"
                       minLength={6}
-                      className="h-9 text-xs rounded-xl pe-9 placeholder:text-muted-foreground/35 placeholder:font-normal font-mono text-left"
+                      className={cn(
+                        "h-9 text-xs rounded-xl pe-10 placeholder:text-muted-foreground/35 placeholder:font-normal font-mono",
+                        isAr ? "text-right" : "text-left",
+                      )}
                       required
                     />
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute end-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-0.5"
+                      className="absolute end-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-1 z-10 transition-colors"
                       tabIndex={-1}
+                      aria-label={
+                        showPassword
+                          ? isAr
+                            ? "إخفاء كلمة المرور"
+                            : "Hide password"
+                          : isAr
+                            ? "إظهار كلمة المرور"
+                            : "Show password"
+                      }
                     >
                       {showPassword ? <EyeOff className="size-3.5" /> : <Eye className="size-3.5" />}
                     </button>
