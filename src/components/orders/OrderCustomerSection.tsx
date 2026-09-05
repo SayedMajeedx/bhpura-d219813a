@@ -2,6 +2,7 @@ import React from "react";
 import { Link } from "@tanstack/react-router";
 import { User, UserX, Phone, Mail, MapPin, ExternalLink, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { buildWhatsAppLink } from "@/lib/os-formatting";
 
 interface OrderCustomerSectionProps {
   lang: "en" | "ar";
@@ -21,7 +22,7 @@ export const OrderCustomerSection: React.FC<OrderCustomerSectionProps> = ({
   const address = order.shipping_address || order.billing_address || {};
   const isGuest = !customerName;
 
-  const whatsappUrl = customerPhone ? `https://wa.me/${customerPhone.replace(/\D/g, "")}` : "";
+  const whatsappUrl = buildWhatsAppLink(customerPhone);
 
   return (
     <div className="p-4 rounded-xl bg-card border border-border/60 shadow-2xs space-y-4">

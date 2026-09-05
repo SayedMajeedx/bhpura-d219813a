@@ -49,6 +49,7 @@ import {
 } from "@/components/ui/select";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { formatDate, formatMoney, formatOrderStatus } from "@/lib/format";
+import { buildWhatsAppLink } from "@/lib/os-formatting";
 import { OrdersCommandHeader } from "@/components/orders/OrdersCommandHeader";
 import { OrdersScopeSwitcher } from "@/components/orders/OrdersScopeSwitcher";
 import { OrdersToolbar } from "@/components/orders/OrdersToolbar";
@@ -1802,7 +1803,8 @@ function OrdersList() {
           }}
           onWhatsAppCustomer={(o: any) => {
             const phone = getOrderCustomerContact(o)?.phone;
-            if (phone) window.open(`https://wa.me/${phone.replace(/\D/g, "")}`, "_blank");
+            const waUrl = buildWhatsAppLink(phone);
+            if (waUrl) window.open(waUrl, "_blank");
           }}
           couriers={couriersQ.data ?? []}
           onQuickViewOrder={(o: any) => setInspectOrder(o)}
