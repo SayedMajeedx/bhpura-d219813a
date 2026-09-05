@@ -250,7 +250,7 @@ export function AbandonedCartsList({
                           <span className="text-xs text-muted-foreground block font-mono">
                             {phone || cart.guest_email || cart.customers?.email || "—"}
                           </span>
-                          {cart.marketing_consent && (
+                          {Boolean(cart.marketing_consent && (phone || cart.guest_email || cart.customers?.email)) && (
                             <span className="text-[10px] text-emerald-600 dark:text-emerald-400 inline-flex items-center gap-1 mt-0.5">
                               <CheckCircle2 className="h-2.5 w-2.5" />
                               {isAr ? "موافق على التسويق" : "Marketing consent"}

@@ -30,6 +30,7 @@ import {
   Trash2,
   Copy,
   ShieldAlert,
+  ShieldCheck,
   Mail,
   RefreshCw,
   Sparkles,
@@ -243,9 +244,9 @@ function IntegrationsPage() {
               <NabdaOtpPilotCard isAr={isAr} />
             )}
 
-            <Card className="overflow-hidden border border-amber-500/40 shadow-md rounded-2xl bg-amber-500/5 p-4">
-              <div className="flex items-start gap-2 text-sm text-amber-800 dark:text-amber-300">
-                <ShieldAlert className="h-4 w-4 mt-0.5 text-amber-600 shrink-0" />
+            <Card className="overflow-hidden border border-primary/20 shadow-sm rounded-2xl bg-primary/5 p-4">
+              <div className="flex items-start gap-2 text-sm text-foreground">
+                <ShieldCheck className="h-4 w-4 mt-0.5 text-primary shrink-0" />
                 <p className="leading-relaxed">{t("integrations.warning")}</p>
               </div>
             </Card>

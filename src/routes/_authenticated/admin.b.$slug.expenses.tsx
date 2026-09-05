@@ -276,7 +276,7 @@ function ExpensesPage() {
   );
   const initialMonth = useMemo(() => presetRange("month"), []);
 
-  const [customRange, setCustomRange] = useState(initialMonth);
+  const [customRange, setCustomRange] = useState({ from: "", to: "" });
   const fileRef = useRef<HTMLInputElement | null>(null);
   const scanFn = useServerFn(scanReceipt);
 
@@ -554,10 +554,10 @@ function ExpensesPage() {
 
   // Separate OpEx from Bulk COGS Inventory purchases
   const manualOpexExpenses = useMemo(() => {
-    return (list ?? [])
+    return (filteredList ?? [])
       .filter((e) => (e.expense_type || "opex") === "opex")
       .reduce((sum, e) => sum + Number(e.amount || 0), 0);
-  }, [list]);
+  }, [filteredList]);
 
   const totalOpex = manualOpexExpenses + paymentProcessingFees;
   const netProfit = totalRevenue - (totalCogs + totalOpex);
@@ -639,7 +639,7 @@ function ExpensesPage() {
       </div>
 
       {/* Tab Views */}
-      {mainTab === "opex_cogs" && <ExpensesOpExCogsTab />}
+      {mainTab === "opex_cogs" && <ExpensesOpExCogsTab activeRange={activeRange} />}
       {mainTab === "cash_flow" && <CashFlowLiquidityTab />}
       {mainTab === "vendors_pos" && <VendorsPurchaseOrdersTab />}
       {mainTab === "reports" && <FinancialReportsTab />}

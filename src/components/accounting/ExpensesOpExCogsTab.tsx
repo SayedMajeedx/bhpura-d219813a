@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useBrand } from "@/lib/brand-context";
@@ -33,13 +33,18 @@ import { formatMoney, formatDate } from "@/lib/format";
 import { toast } from "sonner";
 import { syncSingleExpenseToPackagingMaterial } from "@/lib/packaging-sync";
 
-export function ExpensesOpExCogsTab() {
+interface ExpensesOpExCogsTabProps {
+  activeRange?: { from: string; to: string };
+}
+
+export function ExpensesOpExCogsTab({ activeRange }: ExpensesOpExCogsTabProps = {}) {
   const { lang } = useI18n();
   const isAr = lang === "ar";
   const brand = useBrand();
   const brandId = brand.id;
   const qc = useQueryClient();
 
+  const [filterByDateRange, setFilterByDateRange] = useState(true);
   const [activeTypeFilter, setActiveTypeFilter] = useState<"all" | "cogs" | "opex">("all");
   const [modalOpen, setModalOpen] = useState(false);
   const [editingExpense, setEditingExpense] = useState<any | null>(null);
@@ -89,16 +94,26 @@ export function ExpensesOpExCogsTab() {
   const rawExpenses: any[] = expensesQ.data ?? [];
   const vendors: any[] = vendorsQ.data ?? [];
 
-  const filteredExpenses = rawExpenses.filter((e) => {
+  const rangeFilteredExpenses = useMemo(() => {
+    if (!filterByDateRange || !activeRange?.from || !activeRange?.to) {
+      return rawExpenses;
+    }
+    return rawExpenses.filter((e) => {
+      const d = String(e.expense_date || "").slice(0, 10);
+      return (!activeRange.from || d >= activeRange.from) && (!activeRange.to || d <= activeRange.to);
+    });
+  }, [rawExpenses, filterByDateRange, activeRange]);
+
+  const filteredExpenses = rangeFilteredExpenses.filter((e) => {
     if (activeTypeFilter === "all") return true;
     return (e.expense_type || "opex") === activeTypeFilter;
   });
 
-  const totalCogsAmount = rawExpenses
+  const totalCogsAmount = rangeFilteredExpenses
     .filter((e) => e.expense_type === "cogs")
     .reduce((sum, e) => sum + Number(e.amount || 0), 0);
 
-  const totalOpexAmount = rawExpenses
+  const totalOpexAmount = rangeFilteredExpenses
     .filter((e) => (e.expense_type || "opex") === "opex")
     .reduce((sum, e) => sum + Number(e.amount || 0), 0);
 
@@ -251,6 +266,35 @@ export function ExpensesOpExCogsTab() {
 
   return (
     <div className="space-y-6">
+      {/* Active Range Filter Indicator */}
+      {Boolean(activeRange?.from && activeRange?.to) && (
+        <div className="flex flex-wrap items-center justify-between gap-2 px-3.5 py-2 rounded-xl bg-muted/40 border border-border text-xs">
+          <div className="flex items-center gap-2 text-muted-foreground">
+            <Calendar className="h-4 w-4 text-primary shrink-0" />
+            <span>
+              {isAr
+                ? `النطاق الزمني المطبق: من ${activeRange?.from} إلى ${activeRange?.to}`
+                : `Active Range: ${activeRange?.from} to ${activeRange?.to}`}
+            </span>
+            <Badge variant="outline" className="text-[10px] bg-background">
+              {filterByDateRange
+                ? (isAr ? "مفلتر" : "Filtered")
+                : (isAr ? "الكل" : "All Time")}
+            </Badge>
+          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setFilterByDateRange((prev) => !prev)}
+            className="h-7 text-xs px-2.5 font-medium"
+          >
+            {filterByDateRange
+              ? (isAr ? "عرض جميع الفترات" : "Show All Time")
+              : (isAr ? "تطبيق فلترة الفترة" : "Filter by Active Range")}
+          </Button>
+        </div>
+      )}
+
       {/* Overview Metric Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card className="p-4 border-border/80 bg-card flex flex-col justify-between">

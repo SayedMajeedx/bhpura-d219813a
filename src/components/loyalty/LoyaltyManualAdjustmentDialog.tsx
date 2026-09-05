@@ -69,78 +69,28 @@ export function LoyaltyManualAdjustmentDialog({
       if (pointsAmount <= 0) {
         throw new Error(isAr ? "مقدار النقاط يجب أن يكون أكبر من الصفر" : "Points must be > 0");
       }
-
-      const pointsDelta = adjustmentType === "add" ? pointsAmount : -pointsAmount;
-      const idempotencyKey = `manual_adj_${brandId}_${selectedCustomerId}_${Date.now()}`;
-
-      // 1. Get or create loyalty account
-      const { data: account, error: accErr } = await (supabase as any)
-        .from("loyalty_accounts")
-        .select("id, active_points, lifetime_points, lifetime_spent_points")
-        .eq("brand_id", brandId)
-        .eq("customer_id", selectedCustomerId)
-        .maybeSingle();
-
-      let activeBalance = account?.active_points || 0;
-      let accountId = account?.id;
-
-      if (!account) {
-        const { data: newAcc, error: createErr } = await (supabase as any)
-          .from("loyalty_accounts")
-          .insert({
-            brand_id: brandId,
-            customer_id: selectedCustomerId,
-            active_points: 0,
-            pending_points: 0,
-            current_tier_key: "bronze",
-          })
-          .select()
-          .single();
-        if (createErr) throw createErr;
-        accountId = newAcc.id;
-        activeBalance = 0;
+      const trimmedReasonAr = reasonAr.trim();
+      const trimmedReasonEn = reasonEn.trim();
+      if (!trimmedReasonAr && !trimmedReasonEn) {
+        throw new Error(
+          isAr
+            ? "يرجى كتابة سبب التعديل لتدوينه في سجل الرقابة والتدقيق"
+            : "Please provide an audit reason for this manual adjustment",
+        );
       }
 
-      const newBalance = Math.max(0, activeBalance + pointsDelta);
+      const pointsDelta = adjustmentType === "add" ? pointsAmount : -pointsAmount;
 
-      // 2. Update account
-      const { error: updateErr } = await (supabase as any)
-        .from("loyalty_accounts")
-        .update({
-          active_points: newBalance,
-          lifetime_points:
-            pointsDelta > 0
-              ? (account?.lifetime_points || 0) + pointsDelta
-              : account?.lifetime_points || 0,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", accountId);
-      if (updateErr) throw updateErr;
+      const { data, error } = await (supabase as any).rpc("rpc_manual_adjust_loyalty_points", {
+        p_brand_id: brandId,
+        p_customer_id: selectedCustomerId,
+        p_points_delta: pointsDelta,
+        p_reason_ar: trimmedReasonAr || trimmedReasonEn,
+        p_reason_en: trimmedReasonEn || trimmedReasonAr,
+      });
 
-      // 3. Log into ledger
-      const { error: ledgerErr } = await (supabase as any)
-        .from("loyalty_ledger")
-        .insert({
-          brand_id: brandId,
-          customer_id: selectedCustomerId,
-          account_id: accountId,
-          event_type: "earn_manual",
-          points: pointsDelta,
-          points_status: "active",
-          effective_at: new Date().toISOString(),
-          idempotency_key: idempotencyKey,
-          reference_note_ar:
-            reasonAr.trim() ||
-            (adjustmentType === "add" ? "منح يدوي لنقاط مكافأة" : "خصم يدوي للنقاط"),
-          reference_note_en:
-            reasonEn.trim() ||
-            (adjustmentType === "add"
-              ? "Manual loyalty points bonus"
-              : "Manual loyalty points deduction"),
-          balance_after: newBalance,
-        });
-
-      if (ledgerErr) throw ledgerErr;
+      if (error) throw error;
+      return data;
     },
     onSuccess: () => {
       toast.success(
@@ -198,23 +148,15 @@ export function LoyaltyManualAdjustmentDialog({
               type="button"
               variant={adjustmentType === "add" ? "default" : "outline"}
               onClick={() => setAdjustmentType("add")}
-              className={`min-h-[44px] ${
-                adjustmentType === "add"
-                  ? "bg-emerald-600 text-white hover:bg-emerald-700"
-                  : "border-border"
-              }`}
+              className="min-h-[44px]"
             >
               + {isAr ? "إضافة / منح نقاط" : "Award Points"}
             </Button>
             <Button
               type="button"
-              variant={adjustmentType === "deduct" ? "default" : "outline"}
+              variant={adjustmentType === "deduct" ? "destructive" : "outline"}
               onClick={() => setAdjustmentType("deduct")}
-              className={`min-h-[44px] ${
-                adjustmentType === "deduct"
-                  ? "bg-rose-600 text-white hover:bg-rose-700"
-                  : "border-border"
-              }`}
+              className="min-h-[44px]"
             >
               - {isAr ? "خصم نقاط" : "Deduct Points"}
             </Button>

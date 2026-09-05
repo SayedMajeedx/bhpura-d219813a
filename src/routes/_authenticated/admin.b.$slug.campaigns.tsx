@@ -134,7 +134,7 @@ function CampaignsPage() {
   const customersQ = useQuery({
     queryKey: ["campaigns-customers", brandId],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from("customers")
         .select("id, name, phone, marketing_consent, opted_out_at")
         .eq("brand_id", brandId)

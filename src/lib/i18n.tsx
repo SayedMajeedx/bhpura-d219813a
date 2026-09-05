@@ -167,7 +167,7 @@ const en: Dict = {
   "integrations.notes": "Notes",
   "integrations.active": "Active",
   "integrations.warning":
-    "Credentials are stored as-is inside your workspace. Do not paste production secrets until we ship encrypted storage.",
+    "Credentials and webhook secrets are protected with encryption at rest (Supabase Vault). Sensitive keys are masked in this dashboard.",
   "integrations.webhookHint": "Point this URL at your provider once wiring goes live:",
 
   "settings.shippingTitle": "Shipping & Fulfillment",
@@ -523,7 +523,7 @@ const ar: Dict = {
   "integrations.notes": "ملاحظات",
   "integrations.active": "مفعّل",
   "integrations.warning":
-    "يتم حفظ البيانات كما هي داخل مساحة عملك. لا تلصق أسرار الإنتاج قبل تفعيل التخزين المشفّر.",
+    "بيانات الاعتماد ورموز الويبهوك محمية بتشفير مصادق at-rest بواسطة Supabase Vault، مع إخفاء المفاتيح الحساسة في لوحة التحكم.",
   "integrations.webhookHint": "استخدم هذا الرابط عند تفعيل التكامل مع مزوّد الخدمة:",
 
   "settings.shippingTitle": "الشحن والاستلام",

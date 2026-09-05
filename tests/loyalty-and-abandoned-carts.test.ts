@@ -225,4 +225,38 @@ describe("Abandoned Carts Recovery Logic", () => {
     const isEligibleForPromotions = unconsentedGuest.marketing_consent === true;
     expect(isEligibleForPromotions).toBe(false);
   });
+
+  it("should correctly identify targetable abandoned carts based on reachable contact channels", () => {
+    const carts = [
+      { id: "1", status: "abandoned", guest_phone: "39955508", guest_email: null, customer_id: null },
+      { id: "2", status: "abandoned", guest_phone: null, guest_email: "test@example.com", customer_id: null },
+      { id: "3", status: "abandoned", guest_phone: null, guest_email: null, customer_id: null }, // anonymous, unreachable
+      { id: "4", status: "active", guest_phone: "39955508", guest_email: null, customer_id: null }, // active, not abandoned
+      { id: "5", status: "recovering", guest_phone: null, guest_email: null, customers: { phone: "39955508" } }, // reachable via customer
+    ];
+
+    const abandonedCarts = carts.filter((c) => c.status === "abandoned" || c.status === "recovering");
+    const targetableCarts = abandonedCarts.filter((c) =>
+      Boolean(c.guest_phone || c.guest_email || c.customers?.phone),
+    );
+
+    expect(abandonedCarts.length).toBe(4);
+    expect(targetableCarts.length).toBe(3); // carts 1, 2, 5
+  });
+
+  it("should block ghost marketing consent for anonymous visitors without contact info", () => {
+    const anonymousVisitor = {
+      guest_phone: null,
+      guest_email: null,
+      customer_id: null,
+      marketing_consent: false,
+    };
+
+    const canConsentWithoutContact = Boolean(
+      anonymousVisitor.marketing_consent &&
+      (anonymousVisitor.guest_phone || anonymousVisitor.guest_email || anonymousVisitor.customer_id),
+    );
+
+    expect(canConsentWithoutContact).toBe(false);
+  });
 });

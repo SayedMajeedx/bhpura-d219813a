@@ -114,6 +114,11 @@ function AbandonedCartsDashboardPage() {
 
   const totalActionableCarts = abandonedCarts.length + recoveredCarts.length;
 
+  const targetableAbandonedCarts = abandonedCarts.filter((c: any) =>
+    Boolean(c.guest_phone || c.guest_email || c.customers?.phone || c.customers?.email),
+  );
+  const unreachableCartsCount = abandonedCarts.length - targetableAbandonedCarts.length;
+
   const recoveryRate =
     totalActionableCarts > 0
       ? Math.round((recoveredCarts.length / totalActionableCarts) * 100)
@@ -187,7 +192,7 @@ function AbandonedCartsDashboardPage() {
         <Card className="p-4 border-border bg-card">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-              {isAr ? "السلات المستهدفة" : "Active & Abandoned"}
+              {isAr ? "السلات المستهدفة للتذكير" : "Targetable Outreach"}
             </span>
             <div className="h-8 w-8 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center">
               <ShoppingCart className="h-4 w-4" />
@@ -195,12 +200,12 @@ function AbandonedCartsDashboardPage() {
           </div>
           <div className="mt-3">
             <span className="text-2xl font-bold font-mono text-foreground">
-              {abandonedCarts.length + activeCarts.length}
+              {targetableAbandonedCarts.length}
             </span>
             <span className="text-xs text-muted-foreground block mt-1">
               {isAr
-                ? `${abandonedCarts.length} متروكة · ${activeCarts.length} نشطة حالياً`
-                : `${abandonedCarts.length} abandoned · ${activeCarts.length} active`}
+                ? `${targetableAbandonedCarts.length} برقم/بريد قابل للتواصل · ${unreachableCartsCount} بدون بيانات`
+                : `${targetableAbandonedCarts.length} reachable · ${unreachableCartsCount} without contact info`}
             </span>
           </div>
         </Card>
