@@ -1,5 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
-import { requireSupabaseAuth, getGeminiCredentials } from "@/integrations/supabase/auth-middleware";
+import { requireSupabaseAuth, getGeminiCredentials, getEnvVariableAsync } from "@/integrations/supabase/auth-middleware";
 import { r2Client } from "@/lib/r2-upload.functions";
 import { z } from "zod";
 
@@ -65,7 +65,7 @@ async function imagePartForGemini(imageUrl: string) {
   try {
     if (!isSafeRemoteImageUrl(imageUrl)) return null;
     const response = await fetch(imageUrl, {
-      signal: AbortSignal.timeout(10_000),
+      signal: AbortSignal.timeout(3_500),
       headers: { Accept: "image/jpeg,image/png,image/webp" },
     });
     if (!response.ok) return null;
@@ -330,6 +330,131 @@ export function extractPriceFallback(caption: string): number {
   return 0;
 }
 
+export interface ExtractedBoutiqueMetadata {
+  code: string | null;
+  title: string;
+  price: number | null;
+  description: string;
+  category: string;
+}
+
+// Smart GCC boutique metadata extractor from Instagram caption
+export function extractBoutiqueMetadataFromCaption(
+  caption: string,
+  accountHandle?: string,
+): ExtractedBoutiqueMetadata {
+  if (!caption) {
+    return {
+      code: null,
+      title: "منتج جديد",
+      price: null,
+      description: "",
+      category: "عبايات",
+    };
+  }
+
+  // Normalize Eastern Arabic numerals
+  const normalized = caption.replace(/[٠-٩]/g, (d) => String.fromCharCode(d.charCodeAt(0) - 1632));
+  const lines = normalized
+    .split("\n")
+    .map((l) => l.trim())
+    .filter(Boolean);
+
+  // 1. Detect Code/Model (e.g. Code: MC5, كود: MC5, Model: 102, Ref: #40)
+  let code: string | null = null;
+  const codeRegex = /(?:code|كود|موديل|model|رقم|ref|item)\s*[:#-]?\s*([A-Za-z0-9_-]+)/i;
+  for (const line of lines) {
+    const match = line.match(codeRegex);
+    if (match && match[1]) {
+      code = match[1].trim();
+      break;
+    }
+  }
+
+  // 2. Detect garment type (Abaya, Dress, Kaftan, etc.)
+  const garmentMatch = normalized.match(
+    /(عباية|عبايه|فستان|بشت|قفطان|جلابية|جلابيه|دراعة|دراعه|طقم|شيلة|شيله|توب|جاكيت|كيمونو|abaya|dress|kaftan)/i,
+  );
+  const garmentType = garmentMatch ? garmentMatch[1].trim() : null;
+
+  // 3. Price
+  const priceVal = extractPriceFallback(caption);
+  const price = priceVal > 0 ? priceVal : null;
+
+  // 4. Formulate Title
+  let title = "";
+  if (code) {
+    if (garmentType) {
+      const formattedGarment = garmentType.startsWith("عباي") ? "عباية" : garmentType;
+      title = `${formattedGarment} ${code}`;
+    } else {
+      title = `Code: ${code}`;
+    }
+  }
+
+  // Filter lines to find descriptive line if title still empty
+  const collectionRegex =
+    /(?:new\s+collection|collection\s+\d+|summer|winter|eid|drop|كولكشن|تشكيلة|جديدنا|إصدار|حصري|arrival)/i;
+  const priceLineRegex = /(?:bhd|bd|د\.ب|دينار|sar|aed|ريال|السعر|price)/i;
+  const orderLineRegex = /(?:للطلب|للتواصل|واتساب|whatsapp|dm|direct|order|توصيل|delivery|link in bio)/i;
+  const cleanHandle = (accountHandle || "").replace(/^@/, "").toLowerCase();
+
+  const descriptiveLines: string[] = [];
+
+  for (const line of lines) {
+    const isCodeLine = codeRegex.test(line);
+    const isPriceLine = priceLineRegex.test(line) && /\d/.test(line);
+    const isOrderLine = orderLineRegex.test(line);
+    const isHandle = cleanHandle ? line.toLowerCase().includes(cleanHandle) : false;
+    const isCollection = collectionRegex.test(line);
+
+    if (isCodeLine || isPriceLine || isOrderLine || isHandle || isCollection) {
+      continue;
+    }
+
+    // Clean emojis & formatting
+    const cleaned = line.replace(/[✨🌿🌟🤍🖤⭐💫🔥💎👑]/g, "").trim();
+    if (cleaned.length > 3) {
+      descriptiveLines.push(cleaned);
+    }
+  }
+
+  if (!title) {
+    if (descriptiveLines.length > 0) {
+      title = descriptiveLines[0].slice(0, 60).trim();
+    } else if (garmentType) {
+      title = garmentType.startsWith("عباي") ? "عباية أنيقة" : garmentType;
+    } else {
+      title = "منتج حصري";
+    }
+  }
+
+  // 5. Description
+  const description =
+    descriptiveLines.length > 0
+      ? descriptiveLines.join("\n")
+      : caption.replace(/[✨🌿🌟🤍🖤]/g, "").trim();
+
+  // 6. Category
+  let category = "عبايات";
+  if (garmentType) {
+    const lowerGarment = garmentType.toLowerCase();
+    if (lowerGarment.includes("فستان") || lowerGarment.includes("dress")) category = "فساتين";
+    else if (lowerGarment.includes("قفطان") || lowerGarment.includes("kaftan")) category = "قفاطين";
+    else if (lowerGarment.includes("شيل") || lowerGarment.includes("طرح")) category = "شيل وطرح";
+    else if (lowerGarment.includes("جلاب") || lowerGarment.includes("دراع")) category = "جلابيات";
+    else category = "عبايات";
+  }
+
+  return {
+    code,
+    title,
+    price,
+    description,
+    category,
+  };
+}
+
 // Re-hosting core single uploader
 async function rehostSingleImage(brandId: string, imageUrl: string): Promise<string | null> {
   try {
@@ -397,113 +522,71 @@ export const batchParseCaptionsWithAI = createServerFn({ method: "POST" })
     const userId = context.userId;
     const brandId = data.brandId;
 
-    // Brand and admin access checks
-    const [{ data: hasAccess }, { data: isAdmin }] = await Promise.all([
-      context.supabase.rpc("can_access_brand", { _brand_id: brandId }),
-      context.supabase.rpc("is_admin"),
-    ]);
-    if (!hasAccess && !isAdmin) {
-      throw new Error("UNAUTHORIZED");
+    // Brand and admin access checks (bypass for onboarding temp ID)
+    const isZeroBrand = brandId === "00000000-0000-0000-0000-000000000000";
+    if (!isZeroBrand) {
+      const [{ data: hasAccess }, { data: isAdmin }] = await Promise.all([
+        (context.supabase.rpc as any)("can_access_brand", { _brand_id: brandId }),
+        (context.supabase.rpc as any)("is_admin"),
+      ]);
+      if (!hasAccess && !isAdmin) {
+        throw new Error("UNAUTHORIZED");
+      }
     }
 
-    const creds = await getGeminiCredentials(context.supabase, userId);
-    const apiKey = creds.apiKey;
-    let model = creds.model || "gemini-2.5-flash";
+    let apiKey = (await getEnvVariableAsync("GEMINI_API_KEY")) || process.env.GEMINI_API_KEY || "";
+    let model = "gemini-2.5-flash";
+    if (!isZeroBrand && userId) {
+      try {
+        const creds = await getGeminiCredentials(context.supabase, userId);
+        if (creds?.apiKey) apiKey = creds.apiKey;
+        if (creds?.model) model = creds.model;
+      } catch {}
+    }
     if (model === "gemini-1.5-flash") {
       model = "gemini-1.5-flash-latest"; // Map legacy flash to the updated v1beta valid name
-    }
-
-    if (!apiKey) {
-      throw new Error("Missing Gemini API Key. Please configure it in your settings page.");
     }
 
     let parsedArray: any[] = [];
 
     try {
-      try {
-        const systemPrompt = [
-          "You are an expert GCC boutique product migration assistant.",
-          "Analyze each Instagram post using both its image and caption. Never invent catalog data.",
-          "Strict Price Rules:",
-          "1. CURRENCY PRIORITY: Explicitly look for prices in BHD, BD, bd, dinar, دينار, د.ب, د.ب. (e.g. '35 BD' -> price: 35).",
-          "2. MULTIPLE CURRENCIES: If multiple currencies are listed (e.g. '35 BD / 350 SAR'), always extract the BHD/BD value (35).",
-          "3. AUTO-CONVERT: If only SAR or AED is listed (e.g. '350 SAR' or '350 ريال'), divide by 10 to auto-convert to BHD (35).",
-          "4. ARABIC NUMERALS: Normalize Eastern Arabic numerals (٠١٢٣٤٥٦٧٨٩) to standard digits (0123456789).",
-          "5. CRITICAL EXCLUSIONS:",
-          "   - Do NOT confuse abaya/clothing sizes (50 to 62) with prices unless followed by BD/BHD/دينار.",
-          "   - Do NOT confuse 8-digit phone numbers starting with 3, 6, 17, or +973, 00973 with prices.",
-          "   - Do NOT parse delivery fees (e.g. 'توصيل 2 دينار' should be ignored).",
-          "6. DECIMALS: Handle 3-decimal formats (e.g. '35.000 BD' -> 35). If no reliable price is detectable, return null.",
-          "7. SIZES/COLORS: Extract only values explicitly written or clearly visible. Otherwise return empty arrays.",
-          "8. CATEGORY: Infer a short useful category from the image and caption, or use 'General' when uncertain.",
-          "9. QUALITY: confidence must be between 0 and 1. Add short issue codes from: missing_price, missing_title, missing_sizes, image_unavailable, uncertain_category.",
-          "Provide a minified JSON array matching the requested schema and nothing else.",
-        ].join("\n");
+      if (apiKey) {
+        try {
+          const systemPrompt = [
+            "You are an expert GCC boutique and fashion e-commerce catalog migration assistant.",
+            "Analyze each Instagram post using both its image and caption. Never invent catalog data.",
+            "CRITICAL TITLE & CODE RULES:",
+            "1. NEVER use generic collection slogans, seasonal drops, year labels, or account handles as the product title (e.g. NEVER use 'NEW COLLECTION 2026', 'SUMMER DROP', 'minnaz.couture').",
+            "2. LOOK FOR PRODUCT CODES: Check for 'Code: MC5', 'كود: MC5', 'Model: 102', 'MC5'. If a code is found, format the title as 'عباية MC5' or 'كود MC5' (combining garment type with the code).",
+            "3. IF NO CODE: Find the substantive line describing the garment (e.g. 'عباية بشت حرير مغسول').",
+            "4. DESCRIPTION: Extract the rich Arabic or English text describing the fabric, cut, embroidery, and details into 'description'. Do NOT include phone numbers, delivery terms, or hashtags.",
+            "5. CATEGORY: Infer 'عبايات' (Abayas), 'فساتين' (Dresses), 'جلابيات' (Jalabiya), 'قفاطين' (Kaftans), or 'شيل وطرح' (Scarves). Default to 'عبايات' for abaya boutiques.",
+            "STRICT PRICE RULES:",
+            "6. CURRENCY PRIORITY: Explicitly look for prices in BHD, BD, bd, dinar, دينار, د.ب (e.g. '37 BD' -> price: 37).",
+            "7. MULTIPLE CURRENCIES: If multiple currencies are listed, extract the BHD/BD value.",
+            "8. AUTO-CONVERT: If only SAR or AED is listed, divide by 10 to convert to BHD.",
+            "9. ARABIC NUMERALS: Normalize Eastern Arabic numerals (٠١٢٣٤٥٦٧٨٩) to standard digits.",
+            "10. EXCLUSIONS: Do NOT confuse abaya sizes (50 to 62) or phone numbers with prices.",
+            "Provide a minified JSON array matching the requested schema and nothing else.",
+          ].join("\n");
 
-        const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
-        const parts: Array<Record<string, unknown>> = [];
-        for (const post of data.posts) {
-          parts.push({ text: `POST ${post.id}\nCAPTION:\n${post.caption || "(none)"}` });
-          const imagePart = await imagePartForGemini(post.imageUrl);
-          if (imagePart) parts.push(imagePart);
-          else parts.push({ text: `POST ${post.id} image_unavailable` });
-        }
-        let response = await fetch(endpoint, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "x-goog-api-key": apiKey,
-          },
-          body: JSON.stringify({
-            systemInstruction: { parts: [{ text: systemPrompt }] },
-            contents: [
-              {
-                role: "user",
-                parts,
-              },
-            ],
-            generationConfig: {
-              temperature: 0.1,
-              responseMimeType: "application/json",
-              responseJsonSchema: {
-                type: "array",
-                items: {
-                  type: "object",
-                  properties: {
-                    id: { type: "string" },
-                    title: { type: "string" },
-                    price: { type: ["number", "null"] },
-                    description: { type: "string" },
-                    sizes: { type: "array", items: { type: "string" } },
-                    colors: { type: "array", items: { type: "string" } },
-                    category: { type: "string" },
-                    confidence: { type: "number" },
-                    issues: { type: "array", items: { type: "string" } },
-                  },
-                  required: [
-                    "id",
-                    "title",
-                    "price",
-                    "description",
-                    "sizes",
-                    "colors",
-                    "category",
-                    "confidence",
-                    "issues",
-                  ],
-                },
-              },
-            },
-          }),
-        });
+          const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
 
-        // Automated retry fallback if the primary model failed
-        if (!response.ok && model !== "gemini-1.5-flash-latest") {
-          console.warn(
-            `Primary Gemini model (${model}) request failed. Retrying with ultra-stable gemini-1.5-flash-latest...`,
+          // Fetch images in parallel with tight timeouts for speed
+          const imageParts = await Promise.all(
+            data.posts.map((post) => imagePartForGemini(post.imageUrl)),
           );
-          const fallbackEndpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent`;
-          response = await fetch(fallbackEndpoint, {
+
+          const parts: Array<Record<string, unknown>> = [];
+          for (let i = 0; i < data.posts.length; i++) {
+            const post = data.posts[i];
+            parts.push({ text: `POST ${post.id}\nCAPTION:\n${post.caption || "(none)"}` });
+            const imgPart = imageParts[i];
+            if (imgPart) parts.push(imgPart);
+            else parts.push({ text: `POST ${post.id} image_unavailable` });
+          }
+
+          let response = await fetch(endpoint, {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
@@ -551,79 +634,112 @@ export const batchParseCaptionsWithAI = createServerFn({ method: "POST" })
               },
             }),
           });
-        }
 
-        if (!response.ok) {
-          const errText = await response.text();
-          throw new Error(`Gemini batch request failed: ${response.status} - ${errText}`);
-        }
+          // Automated retry fallback if the primary model failed
+          if (!response.ok && model !== "gemini-1.5-flash-latest") {
+            console.warn(
+              `Primary Gemini model (${model}) request failed. Retrying with ultra-stable gemini-1.5-flash-latest...`,
+            );
+            const fallbackEndpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent`;
+            response = await fetch(fallbackEndpoint, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "x-goog-api-key": apiKey,
+              },
+              body: JSON.stringify({
+                systemInstruction: { parts: [{ text: systemPrompt }] },
+                contents: [
+                  {
+                    role: "user",
+                    parts,
+                  },
+                ],
+                generationConfig: {
+                  temperature: 0.1,
+                  responseMimeType: "application/json",
+                  responseJsonSchema: {
+                    type: "array",
+                    items: {
+                      type: "object",
+                      properties: {
+                        id: { type: "string" },
+                        title: { type: "string" },
+                        price: { type: ["number", "null"] },
+                        description: { type: "string" },
+                        sizes: { type: "array", items: { type: "string" } },
+                        colors: { type: "array", items: { type: "string" } },
+                        category: { type: "string" },
+                        confidence: { type: "number" },
+                        issues: { type: "array", items: { type: "string" } },
+                      },
+                      required: [
+                        "id",
+                        "title",
+                        "price",
+                        "description",
+                        "sizes",
+                        "colors",
+                        "category",
+                        "confidence",
+                        "issues",
+                      ],
+                    },
+                  },
+                },
+              }),
+            });
+          }
 
-        const resJson = await response.json<{
-          candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>;
-        }>();
-        const rawText = resJson.candidates?.[0]?.content?.parts?.[0]?.text;
-        if (!rawText) {
-          throw new Error("Gemini returned an empty response candidate.");
+          if (response.ok) {
+            const resJson = await response.json<{
+              candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>;
+            }>();
+            const rawText = resJson.candidates?.[0]?.content?.parts?.[0]?.text;
+            if (rawText) {
+              parsedArray = JSON.parse(rawText.trim()) as any[];
+            }
+          }
+        } catch (apiErr) {
+          console.error(
+            "Gemini batch request error, falling back to smart boutique rule extractor:",
+            apiErr,
+          );
         }
+      }
 
-        parsedArray = JSON.parse(rawText.trim()) as any[];
-      } catch (apiErr) {
-        console.error(
-          "Gemini batch request failed completely, invoking robust local regex/heuristic fallback:",
-          apiErr,
-        );
-        // Fail-safe pure rule-based fallback mapping
+      // If Gemini wasn't called or failed, populate parsedArray using smart boutique extractor
+      if (parsedArray.length === 0) {
         parsedArray = data.posts.map((post) => {
-          const lines = post.caption
-            .split("\n")
-            .map((l) => l.trim())
-            .filter(Boolean);
-          const title =
-            lines.length > 0
-              ? lines[0]
-                  .replace(/[✨🌿🌟🤍🖤]/g, "")
-                  .slice(0, 60)
-                  .trim()
-              : "Instagram Product";
-
-          const extractedPrice = extractPriceFallback(post.caption);
-          const price = extractedPrice > 0 ? extractedPrice : null;
-          const description = post.caption;
-          const sizes: string[] = [];
-          const colors: string[] = [];
-          const category = "General";
-
+          const meta = extractBoutiqueMetadataFromCaption(post.caption);
           return {
             id: post.id,
-            title,
-            price,
-            description,
-            sizes,
-            colors,
-            category,
-            confidence: extractedPrice > 0 ? 0.55 : 0.3,
-            issues: [extractedPrice > 0 ? "missing_sizes" : "missing_price", "uncertain_category"],
+            title: meta.title,
+            price: meta.price,
+            description: meta.description,
+            sizes: [],
+            colors: [],
+            category: meta.category,
+            confidence: meta.price ? 0.75 : 0.4,
+            issues: [meta.price ? "missing_sizes" : "missing_price"],
           };
         });
       }
 
-      // Perform strict regex safety checks and complete fallback operations
+      // Perform strict regex safety checks, sanitization, and fallback
       const products = data.posts.map((originalPost) => {
         const parsed = parsedArray.find((item) => item.id === originalPost.id) || {};
+        const meta = extractBoutiqueMetadataFromCaption(originalPost.caption);
 
         let title = parsed.title;
-        if (!title || title === "Instagram Product") {
-          const lines = originalPost.caption
-            .split("\n")
-            .map((l: string) => l.trim())
-            .filter(Boolean);
-          title =
-            lines.length > 0
-              ? lines[0]
-                  .replace(/[✨🌿🌟🤍🖤]/g, "")
-                  .slice(0, 60)
-                  .trim()
-              : "Instagram Product";
+        const isGenericOrCollection =
+          !title ||
+          title === "Instagram Product" ||
+          /(?:new\s+collection|collection\s+\d+|summer|winter|eid|drop|كولكشن|تشكيلة|جديدنا)/i.test(
+            title,
+          );
+        if (isGenericOrCollection) {
+          title = meta.title;
         }
 
         let price = parsed.price == null ? null : Number(parsed.price);
@@ -634,14 +750,21 @@ export const batchParseCaptionsWithAI = createServerFn({ method: "POST" })
           price > 200 ||
           [52, 54, 56, 58, 60, 62].includes(price);
         if (isUnlikelyPrice) {
-          const regexPrice = extractPriceFallback(originalPost.caption);
-          price = regexPrice > 0 ? regexPrice : null;
+          price = meta.price;
         }
 
-        const description = parsed.description || originalPost.caption;
+        let description = parsed.description;
+        if (!description || description.trim().length === 0 || description === originalPost.caption) {
+          description = meta.description;
+        }
+
+        let category = parsed.category;
+        if (!category || category === "General" || category === "fashion") {
+          category = meta.category;
+        }
+
         const sizes = Array.isArray(parsed.sizes) ? parsed.sizes.map(String) : [];
         const colors = Array.isArray(parsed.colors) ? parsed.colors.map(String) : [];
-        const category = parsed.category || "General";
         const issues = new Set<string>(Array.isArray(parsed.issues) ? parsed.issues : []);
         if (!price) issues.add("missing_price");
         if (!sizes.length) issues.add("missing_sizes");
@@ -652,13 +775,13 @@ export const batchParseCaptionsWithAI = createServerFn({ method: "POST" })
           imageUrl: originalPost.imageUrl,
           url: originalPost.url,
           isSoldOut: originalPost.isSoldOut,
-          title,
+          title: title || meta.title || "عباية أنيقة",
           price,
-          description,
+          description: description || meta.description,
           sizes,
           colors,
           category,
-          confidence: Math.max(0, Math.min(1, Number(parsed.confidence) || 0.35)),
+          confidence: Math.max(0, Math.min(1, Number(parsed.confidence) || 0.6)),
           issues: [...issues],
         };
       });
@@ -670,30 +793,35 @@ export const batchParseCaptionsWithAI = createServerFn({ method: "POST" })
     }
   });
 
-// 3. Phase 2: Parallel R2 Image Re-Hosting (Concurrent batches of 5)
+const productImportItemSchema = z.object({
+  id: z.string(),
+  imageUrl: z.string(),
+  url: z.string(),
+  isSoldOut: z.boolean(),
+  title: z.string(),
+  price: z.number().nullable(),
+  description: z.string(),
+  sizes: z.array(z.string()),
+  colors: z.array(z.string()).default([]),
+  category: z.string(),
+  confidence: z.number().min(0).max(1).default(0),
+  issues: z.array(z.string()).default([]),
+});
+
+// 3. Phase 2: Parallel R2 Image Re-Hosting (Concurrent batches of 6)
 export const batchRehostImages = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .validator((raw: unknown) =>
     z
       .object({
         brandId: z.string().uuid(),
-        products: z.array(
-          z.object({
-            id: z.string(),
-            imageUrl: z.string(),
-            url: z.string(),
-            isSoldOut: z.boolean(),
-            title: z.string(),
-            price: z.number().nullable(),
-            description: z.string(),
-            sizes: z.array(z.string()),
-            colors: z.array(z.string()).default([]),
-            category: z.string(),
-            confidence: z.number().min(0).max(1).default(0),
-            issues: z.array(z.string()).default([]),
-          }),
-        ),
+        products: z.array(productImportItemSchema).optional(),
+        drafts: z.array(productImportItemSchema).optional(),
       })
+      .transform((val) => ({
+        brandId: val.brandId,
+        products: val.products || val.drafts || [],
+      }))
       .parse(raw),
   )
   .handler(async ({ data, context }) => {
@@ -704,10 +832,10 @@ export const batchRehostImages = createServerFn({ method: "POST" })
     ]);
     if (!hasAccess && !isAdmin) throw new Error("UNAUTHORIZED");
     const items = [...data.products];
-    const batchSize = 5;
+    const batchSize = 6;
 
     try {
-      // Chunk processing in concurrent groups of 5
+      // Chunk processing in concurrent groups of 6
       for (let i = 0; i < items.length; i += batchSize) {
         const chunk = items.slice(i, i + batchSize);
         await Promise.all(
@@ -737,23 +865,13 @@ export const bulkInsertProducts = createServerFn({ method: "POST" })
     z
       .object({
         brandId: z.string().uuid(),
-        products: z.array(
-          z.object({
-            id: z.string(),
-            imageUrl: z.string(),
-            url: z.string(),
-            isSoldOut: z.boolean(),
-            title: z.string(),
-            price: z.number().nullable(),
-            description: z.string(),
-            sizes: z.array(z.string()),
-            colors: z.array(z.string()).default([]),
-            category: z.string(),
-            confidence: z.number().min(0).max(1).default(0),
-            issues: z.array(z.string()).default([]),
-          }),
-        ),
+        products: z.array(productImportItemSchema).optional(),
+        drafts: z.array(productImportItemSchema).optional(),
       })
+      .transform((val) => ({
+        brandId: val.brandId,
+        products: val.products || val.drafts || [],
+      }))
       .parse(raw),
   )
   .handler(async ({ data, context }) => {

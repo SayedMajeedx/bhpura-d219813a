@@ -34,6 +34,7 @@ import {
   batchParseCaptionsWithAI,
   batchRehostImages,
   bulkInsertProducts,
+  extractBoutiqueMetadataFromCaption,
   type InstagramPostPreview,
   type InstagramProductDraft,
 } from "@/lib/instagram-ai-importer";
@@ -66,6 +67,10 @@ export function InstantInstagramOnboardingModal({
   const [ownerPhone, setOwnerPhone] = React.useState("");
   const [ownerPassword, setOwnerPassword] = React.useState("");
 
+  // Tracking manual edits so auto-fill from handle is smooth and non-destructive
+  const [isSlugManuallyEdited, setIsSlugManuallyEdited] = React.useState(false);
+  const [isNameEnManuallyEdited, setIsNameEnManuallyEdited] = React.useState(false);
+
   // Scraper & AI extraction state
   const [statusMessage, setStatusMessage] = React.useState("");
   const [scrapedPosts, setScrapedPosts] = React.useState<InstagramPostPreview[]>([]);
@@ -76,11 +81,11 @@ export function InstantInstagramOnboardingModal({
   const handleInstagramChange = (val: string) => {
     const clean = val.replace(/^@/, "").trim().toLowerCase();
     setInstagramHandle(clean);
-    if (!slug) {
+    if (!isSlugManuallyEdited) {
       setSlug(clean.replace(/[^a-z0-9_-]/g, ""));
     }
-    if (!storeNameEn) {
-      // capitalize words
+    if (!isNameEnManuallyEdited) {
+      // capitalize words from handle e.g. minnaz.couture -> Minnaz Couture
       const words = clean.replace(/[._-]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
       setStoreNameEn(words);
     }
@@ -103,44 +108,85 @@ export function InstantInstagramOnboardingModal({
     setStep("fetching");
     setStatusMessage(
       isAr
-        ? "جاري الاتصال بـ Instagram وسحب المنتجات..."
-        : "Connecting to Instagram & fetching posts...",
+        ? "قاعدين نتصفح حسابك بالانستقرام ونطلع أحلى البوستات... 📸"
+        : "Scanning your Instagram feed for your best posts... 📸",
     );
 
     try {
-      // 1. Start Apify Scraper run
+      // 1. Start Apify Scraper run (10 posts)
       const initResult = await fetchInstagramPosts({
         data: {
           username: instagramHandle,
-          range: 12,
+          range: 10,
         },
       });
 
       const { runId, datasetId } = initResult;
 
-      // 2. Poll status
+      // 2. Poll status with eager dataset consumption
       let status = "RUNNING";
       let attempt = 0;
-      const maxRetries = 40;
+      const maxRetries = 25;
+      let earlyPosts: InstagramPostPreview[] = [];
 
       while (status === "RUNNING" || status === "READY") {
         if (attempt >= maxRetries) {
-          throw new Error("Scraping timed out. Trying with available data.");
+          break;
         }
         attempt++;
-        setStatusMessage(
-          isAr
-            ? `جاري استخراج منشورات الكتالوج (${attempt}/${maxRetries})...`
-            : `Extracting catalog posts (${attempt}/${maxRetries})...`,
-        );
-        await new Promise((r) => setTimeout(r, 2500));
+
+        // Friendly progress status
+        if (attempt <= 2) {
+          setStatusMessage(
+            isAr
+              ? "قاعدين نتصفح حسابك بالانستقرام ونطلع أحلى البوستات... 📸"
+              : "Scanning your Instagram feed for your best posts... 📸",
+          );
+        } else if (attempt <= 5) {
+          setStatusMessage(
+            isAr
+              ? "بنطلع لك كود العباية، السعر، والوصف بثواني ✨"
+              : "Extracting product codes, prices, and descriptions... ✨",
+          );
+        } else {
+          setStatusMessage(
+            isAr
+              ? "قاعدين نجهّز الصور والكتالوج... ثواني بس 👗"
+              : "Getting the photos and catalog ready... 👗",
+          );
+        }
+
+        await new Promise((r) => setTimeout(r, 1200));
+
+        // From attempt 3 onwards, check if dataset already has enough posts to proceed early
+        if (attempt >= 3 && datasetId) {
+          try {
+            const partialRes = await fetchScraperDataset({ data: { datasetId } });
+            if (Array.isArray(partialRes) && partialRes.length >= 6) {
+              earlyPosts = partialRes;
+              break;
+            }
+          } catch {
+            // continue polling
+          }
+        }
+
         const checkResult = await checkScraperStatus({ data: { runId } });
         status = checkResult.status;
       }
 
       // 3. Fetch scraped posts
-      setStatusMessage(isAr ? "جاري قراءة المنشورات والصور..." : "Reading posts and media...");
-      const posts = await fetchScraperDataset({ data: { datasetId } });
+      setStatusMessage(
+        isAr
+          ? "جالسين نرتّب لك المنتجات، الأكواد، والأسعار تلقائياً... 🪄"
+          : "Organizing your products, codes, and prices automatically... 🪄",
+      );
+
+      let posts = earlyPosts;
+      if (posts.length === 0) {
+        posts = (await fetchScraperDataset({ data: { datasetId } })) || [];
+      }
+
       setScrapedPosts(posts);
 
       if (!posts || posts.length === 0) {
@@ -149,13 +195,7 @@ export function InstantInstagramOnboardingModal({
         );
       }
 
-      // 4. Batch parse with Gemini Vision
-      setStatusMessage(
-        isAr
-          ? "الذكاء الاصطناعي (Gemini Vision) يحلل الأسعار والأسماء والألوان..."
-          : "AI (Gemini Vision) is analyzing prices, sizes, and colors...",
-      );
-
+      // 4. Batch parse with AI
       let aiDrafts: InstagramProductDraft[] = [];
       try {
         const parsed = await batchParseCaptionsWithAI({
@@ -177,12 +217,12 @@ export function InstantInstagramOnboardingModal({
             imageUrl: p.imageUrl,
             url: p.url,
             isSoldOut: Boolean(p.isSoldOut),
-            title: p.title || "Instagram Item",
-            price: typeof p.price === "number" ? p.price : 45,
+            title: p.title || "عباية أنيقة",
+            price: typeof p.price === "number" ? p.price : 35,
             description: p.description || "",
             sizes: Array.isArray(p.sizes) ? p.sizes : [],
             colors: Array.isArray(p.colors) ? p.colors : [],
-            category: p.category || "Fashion",
+            category: p.category || "عبايات",
             confidence: typeof p.confidence === "number" ? p.confidence : 0.85,
             issues: Array.isArray(p.issues) ? p.issues : [],
           }));
@@ -191,21 +231,25 @@ export function InstantInstagramOnboardingModal({
         console.warn("AI parsing fallback", err);
       }
 
+      // Fail-safe smart boutique parser fallback
       if (aiDrafts.length === 0) {
-        aiDrafts = posts.slice(0, 10).map((p, idx) => ({
-          id: p.id,
-          imageUrl: p.imageUrl,
-          url: p.url,
-          isSoldOut: p.isSoldOut,
-          title: `Product #${idx + 1}`,
-          price: 45,
-          description: p.caption.slice(0, 200),
-          sizes: ["S", "M", "L"],
-          colors: ["Black"],
-          category: "Fashion",
-          confidence: 0.9,
-          issues: [],
-        }));
+        aiDrafts = posts.slice(0, 10).map((p) => {
+          const meta = extractBoutiqueMetadataFromCaption(p.caption, instagramHandle);
+          return {
+            id: p.id,
+            imageUrl: p.imageUrl,
+            url: p.url,
+            isSoldOut: p.isSoldOut,
+            title: meta.title,
+            price: meta.price || 35,
+            description: meta.description,
+            sizes: [],
+            colors: [],
+            category: meta.category,
+            confidence: meta.price ? 0.8 : 0.5,
+            issues: [],
+          };
+        });
       }
 
       setDrafts(aiDrafts);
@@ -228,7 +272,11 @@ export function InstantInstagramOnboardingModal({
 
   const handleDeployStore = async () => {
     setStep("provisioning");
-    setStatusMessage(isAr ? "جاري إنشاء المتجر وحساب الإدارة..." : "Creating boutique & owner account...");
+    setStatusMessage(
+      isAr
+        ? "جاري تجهيز متجرك الأنيق وحساب الإدارة... 🚀"
+        : "Setting up your custom boutique storefront... 🚀",
+    );
 
     try {
       // 1. Provision Brand Tenant
@@ -249,25 +297,35 @@ export function InstantInstagramOnboardingModal({
       const draftsToImport = drafts.filter((d) => selectedDraftIds.has(d.id));
 
       if (draftsToImport.length > 0) {
-        setStatusMessage(isAr ? "جاري رفع الصور إلى التخزين السحابي الدائم (R2)..." : "Rehosting images to Cloudflare R2...");
-        
-        // Rehost images
-        const rehosted = await batchRehostImages({
+        setStatusMessage(
+          isAr
+            ? "نرفع الصور ونثبت لك المنتجات في متجرك... ☁️"
+            : "Uploading photos and securing your products... ☁️",
+        );
+
+        // Rehost images to permanent storage
+        const rehostResult = await batchRehostImages({
           data: {
             brandId,
-            drafts: draftsToImport,
+            products: draftsToImport,
           },
         }).catch((err) => {
           console.warn("Rehost note", err);
-          return draftsToImport;
+          return { products: draftsToImport };
         });
 
-        setStatusMessage(isAr ? "جاري إدخال المنتجات في الكتالوج..." : "Inserting products into database...");
-        
+        const finalProducts = (rehostResult as any)?.products || draftsToImport;
+
+        setStatusMessage(
+          isAr
+            ? "خلاص قربنا! نحط اللمسات الأخيرة لمتجرك الجديد 🎉"
+            : "Polishing the details and preparing your store... 🎉",
+        );
+
         await bulkInsertProducts({
           data: {
             brandId,
-            drafts: rehosted,
+            products: finalProducts,
           },
         });
       }
@@ -340,13 +398,15 @@ export function InstantInstagramOnboardingModal({
                 <Input
                   value={instagramHandle}
                   onChange={(e) => handleInstagramChange(e.target.value)}
-                  placeholder="pureline_bh"
-                  className="ps-8 text-sm font-mono h-10 rounded-xl"
+                  placeholder="brand_name"
+                  className="ps-8 text-sm font-mono h-10 rounded-xl placeholder:text-muted-foreground/40 placeholder:font-normal placeholder:opacity-60"
                   autoFocus
                 />
               </div>
               <p className="text-[11px] text-muted-foreground mt-1">
-                {isAr ? "سنقوم باستخراج الكتالوج، الصور، والأسعار تلقائياً عبر الذكاء الاصطناعي." : "We'll scrape public posts, images, and prices with Gemini Vision."}
+                {isAr
+                  ? "سنقوم باستخراج الكتالوج، الأسعار، وأكواد العبايات وتجهيز متجرك فوراً."
+                  : "We'll automatically extract your catalog, codes, prices, and photos instantly."}
               </p>
             </div>
 
@@ -357,9 +417,12 @@ export function InstantInstagramOnboardingModal({
                 </Label>
                 <Input
                   value={storeNameEn}
-                  onChange={(e) => setStoreNameEn(e.target.value)}
-                  placeholder="Pure Line Boutique"
-                  className="h-9 text-xs rounded-xl mt-1"
+                  onChange={(e) => {
+                    setIsNameEnManuallyEdited(true);
+                    setStoreNameEn(e.target.value);
+                  }}
+                  placeholder="Your Brand Name"
+                  className="h-9 text-xs rounded-xl mt-1 placeholder:text-muted-foreground/40 placeholder:font-normal placeholder:opacity-60"
                 />
               </div>
               <div>
@@ -369,8 +432,8 @@ export function InstantInstagramOnboardingModal({
                 <Input
                   value={storeNameAr}
                   onChange={(e) => setStoreNameAr(e.target.value)}
-                  placeholder="بوتيك بيور لاين"
-                  className="h-9 text-xs rounded-xl mt-1"
+                  placeholder="اسم علامتك التجارية"
+                  className="h-9 text-xs rounded-xl mt-1 placeholder:text-muted-foreground/40 placeholder:font-normal placeholder:opacity-60"
                 />
               </div>
             </div>
@@ -383,9 +446,12 @@ export function InstantInstagramOnboardingModal({
                 <div className="flex items-center gap-1 mt-1">
                   <Input
                     value={slug}
-                    onChange={(e) => setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9_-]/g, ""))}
-                    placeholder="pureline"
-                    className="h-9 text-xs rounded-xl font-mono"
+                    onChange={(e) => {
+                      setIsSlugManuallyEdited(true);
+                      setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9_-]/g, ""));
+                    }}
+                    placeholder="yourbrand"
+                    className="h-9 text-xs rounded-xl font-mono placeholder:text-muted-foreground/40 placeholder:font-normal placeholder:opacity-60"
                   />
                   <span className="text-[11px] text-muted-foreground font-mono">.boutq.site</span>
                 </div>
@@ -398,8 +464,8 @@ export function InstantInstagramOnboardingModal({
                   type="email"
                   value={ownerEmail}
                   onChange={(e) => setOwnerEmail(e.target.value)}
-                  placeholder="owner@pureline.com"
-                  className="h-9 text-xs rounded-xl mt-1"
+                  placeholder="admin@example.com"
+                  className="h-9 text-xs rounded-xl mt-1 placeholder:text-muted-foreground/40 placeholder:font-normal placeholder:opacity-60"
                 />
               </div>
             </div>
