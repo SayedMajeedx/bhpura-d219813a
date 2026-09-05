@@ -5614,7 +5614,7 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
         </div>
       </div>
 
-      <div className="sticky bottom-3 z-10 flex justify-end rounded-xl border bg-background/95 p-3 shadow-lg backdrop-blur">
+      <div className="sticky bottom-20 md:bottom-3 z-10 flex justify-end rounded-xl border border-border/70 bg-background/90 p-3 shadow-lg backdrop-blur-xl">
         <Button onClick={save} disabled={saving}>
           {saving
             ? isAr

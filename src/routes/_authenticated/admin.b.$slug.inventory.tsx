@@ -6228,7 +6228,7 @@ function VariantList({
 
       {/* FLOATING BULK ACTIONS TOOLBAR */}
       {selectedIds.size > 0 && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-background/90 backdrop-blur-md border border-border/80 shadow-2xl rounded-2xl py-3 px-5 flex items-center gap-4 z-55 animate-in slide-in-from-bottom-5 duration-200">
+        <div className="fixed bottom-20 md:bottom-6 left-1/2 -translate-x-1/2 max-w-[95vw] overflow-x-auto bg-white/85 dark:bg-black/75 backdrop-blur-2xl backdrop-saturate-200 border border-white/50 dark:border-white/15 shadow-2xl rounded-2xl py-2.5 px-4 flex items-center gap-3 z-55 animate-in slide-in-from-bottom-5 duration-200">
           <div className="flex items-center gap-2 border-r border-border pr-4 shrink-0">
             <div className="w-5 h-5 rounded-full bg-primary flex items-center justify-center text-[10px] text-primary-foreground font-black">
               {selectedIds.size}
