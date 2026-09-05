@@ -1,5 +1,5 @@
 import * as React from "react";
-import { type LucideIcon, Sparkles } from "lucide-react";
+import { type LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export interface OsIslandDockItem {
@@ -13,27 +13,33 @@ export interface OsIslandDockItem {
 
 export interface OsIslandDockProps {
   items: OsIslandDockItem[];
-  onOpenCopilot?: () => void;
   className?: string;
   lang?: "en" | "ar";
 }
 
 export function OsIslandDock({
   items,
-  onOpenCopilot,
   className,
   lang = "ar",
 }: OsIslandDockProps) {
-  const isAr = lang === "ar";
-
   return (
     <nav
       className={cn(
-        "no-print fixed bottom-3 left-1/2 -translate-x-1/2 z-40 flex items-center gap-1 sm:gap-1.5 p-1.5 rounded-full border border-border/80 bg-card/90 shadow-2xl backdrop-blur-2xl transition-all duration-300 max-w-[96vw]",
+        "no-print fixed bottom-3 left-1/2 -translate-x-1/2 z-40 flex items-center gap-1 sm:gap-1.5 p-1.5 sm:p-2 rounded-full",
+        "bg-card/65 dark:bg-card/50 backdrop-blur-2xl backdrop-saturate-150",
+        "border border-white/20 dark:border-white/10 ring-1 ring-black/5 dark:ring-white/5",
+        "shadow-[0_12px_36px_rgba(0,0,0,0.16)] dark:shadow-[0_16px_40px_rgba(0,0,0,0.45)]",
+        "transition-all duration-300 max-w-[96vw] overflow-hidden",
         className,
       )}
       aria-label="Island Dock Navigation"
     >
+      {/* Specular glass reflection overlay */}
+      <div
+        className="pointer-events-none absolute inset-0 rounded-full bg-gradient-to-b from-white/25 via-white/5 to-transparent dark:from-white/10 dark:via-transparent dark:to-transparent opacity-80"
+        aria-hidden="true"
+      />
+
       {items.map((item) => {
         const Icon = item.icon;
         return (
@@ -42,10 +48,10 @@ export function OsIslandDock({
             type="button"
             onClick={item.onClick}
             className={cn(
-              "relative flex flex-col items-center justify-center min-w-[50px] sm:min-w-[58px] min-h-[44px] px-2.5 py-1 rounded-full transition-all duration-200 outline-none select-none",
+              "relative z-10 flex flex-col items-center justify-center min-w-[52px] sm:min-w-[62px] min-h-[44px] px-2.5 py-1 rounded-full transition-all duration-200 outline-none select-none",
               item.active
-                ? "bg-primary text-primary-foreground font-bold shadow-sm"
-                : "text-muted-foreground hover:text-foreground hover:bg-muted/50",
+                ? "bg-primary text-primary-foreground font-bold shadow-md shadow-primary/20 scale-[1.02]"
+                : "text-muted-foreground hover:text-foreground hover:bg-foreground/5 active:scale-95",
             )}
           >
             <div className="relative">
@@ -56,26 +62,12 @@ export function OsIslandDock({
                 </span>
               )}
             </div>
-            <span className="text-[10px] tracking-tight truncate max-w-[56px] mt-0.5">
+            <span className="text-[10px] tracking-tight truncate max-w-[58px] mt-0.5">
               {item.label}
             </span>
           </button>
         );
       })}
-
-      {onOpenCopilot && (
-        <button
-          type="button"
-          onClick={onOpenCopilot}
-          className="relative flex items-center justify-center gap-1.5 min-h-[44px] px-3.5 py-1 rounded-full bg-gradient-to-r from-violet-600 to-indigo-600 text-white font-semibold text-xs shadow-md hover:opacity-95 active:scale-95 transition-all select-none"
-          title={isAr ? "مساعد المتجر الذكي" : "Store AI Copilot"}
-        >
-          <Sparkles className="size-4 animate-pulse shrink-0" />
-          <span className="text-[11px] font-bold">
-            {isAr ? "كوبايلوت" : "Copilot"}
-          </span>
-        </button>
-      )}
     </nav>
   );
 }

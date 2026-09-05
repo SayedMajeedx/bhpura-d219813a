@@ -38,7 +38,6 @@ export interface OsMobileNavigationProps {
   onSignOut: () => void;
   mobileOpen: boolean;
   onOpenChangeMobile: (open: boolean) => void;
-  onOpenCopilot?: () => void;
 }
 
 export function OsMobileNavigation({
@@ -53,7 +52,6 @@ export function OsMobileNavigation({
   onSignOut,
   mobileOpen,
   onOpenChangeMobile,
-  onOpenCopilot,
 }: OsMobileNavigationProps) {
   const navigate = useNavigate();
   const [appsHubOpen, setAppsHubOpen] = React.useState(false);
@@ -497,7 +495,6 @@ export function OsMobileNavigation({
         <div className="md:hidden">
           <OsIslandDock
             items={primaryTabItems}
-            onOpenCopilot={activeSlug ? onOpenCopilot : undefined}
             lang={lang}
           />
         </div>
