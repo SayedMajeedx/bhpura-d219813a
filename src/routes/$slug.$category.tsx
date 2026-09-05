@@ -226,13 +226,20 @@ function CategoryPage() {
         );
       }
       if (smartKind === "new" || smartKind === "offers") {
-        const { data, error } = await supabase
+        let query = supabase
           .from("products")
           .select(
             "id, name, name_ar, name_en, description, description_ar, description_en, category, image_url, media, brand_id, created_at, custom_fields, product_variants(id, selling_price, original_price, stock_main, stock_incubator, size, color)",
           )
           .eq("brand_id", brand.id)
-          .eq("is_active", true)
+          .eq("is_active", true);
+
+        if (smartKind === "new") {
+          const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+          query = query.gte("created_at", thirtyDaysAgo);
+        }
+
+        const { data, error } = await query
           .order("created_at", { ascending: false })
           .limit(smartKind === "new" ? 60 : 200);
         if (error) throw error;

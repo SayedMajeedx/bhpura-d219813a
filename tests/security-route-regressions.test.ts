@@ -122,15 +122,16 @@ describe("server route security regressions", () => {
       },
       error: null,
     });
+    const updateSpy = vi.fn(() => {
+      throw new Error("Cross-brand update must not be attempted");
+    });
     supabaseAdmin.from.mockImplementation((table: string) => ({
       select: vi.fn().mockReturnValue({
         eq: vi.fn().mockReturnValue({
           maybeSingle: table === "profiles" ? profileMaybeSingle : orderMaybeSingle,
         }),
       }),
-      update: vi.fn(() => {
-        throw new Error("Cross-brand update must not be attempted");
-      }),
+      update: updateSpy,
     }));
 
     const response = await handler(
@@ -148,6 +149,7 @@ describe("server route security regressions", () => {
     });
 
     expect(response.status).toBe(403);
+    expect(updateSpy).not.toHaveBeenCalled();
   });
 
   it("prevents an assigned courier from changing payment or assignment fields", async () => {
@@ -172,15 +174,16 @@ describe("server route security regressions", () => {
       },
       error: null,
     });
+    const updateSpy = vi.fn(() => {
+      throw new Error("Courier update must not be attempted");
+    });
     supabaseAdmin.from.mockImplementation((table: string) => ({
       select: vi.fn().mockReturnValue({
         eq: vi.fn().mockReturnValue({
           maybeSingle: table === "profiles" ? profileMaybeSingle : orderMaybeSingle,
         }),
       }),
-      update: vi.fn(() => {
-        throw new Error("Courier update must not be attempted");
-      }),
+      update: updateSpy,
     }));
 
     const response = await handler(
@@ -198,6 +201,127 @@ describe("server route security regressions", () => {
     });
 
     expect(response.status).toBe(403);
+    expect(updateSpy).not.toHaveBeenCalled();
+  });
+
+  it("allows same-brand admin to successfully mutate order status", async () => {
+    supabaseAdmin.auth.getUser.mockResolvedValue({
+      data: { user: { id: "admin-1" } },
+      error: null,
+    });
+    const profileMaybeSingle = vi.fn().mockResolvedValue({
+      data: { role: "admin", status: "active", brand_id: "brand-1", permissions: [] },
+      error: null,
+    });
+    const orderMaybeSingle = vi.fn().mockResolvedValue({
+      data: {
+        id: "order-1",
+        brand_id: "brand-1",
+        status: "confirmed",
+        payment_status: "paid",
+        payment_method: "card",
+        fulfillment_status: "packing",
+        delivery_notes: null,
+        assigned_to: null,
+      },
+      error: null,
+    });
+    const updateSingle = vi.fn().mockResolvedValue({
+      data: { id: "order-1", status: "shipped", fulfillment_status: "shipped" },
+      error: null,
+    });
+    const updateSelect = vi.fn().mockReturnValue({ single: updateSingle });
+    const updateEqBrand = vi.fn().mockReturnValue({ select: updateSelect });
+    const updateEqId = vi.fn().mockReturnValue({ eq: updateEqBrand });
+    const updateSpy = vi.fn().mockReturnValue({ eq: updateEqId });
+
+    supabaseAdmin.from.mockImplementation((table: string) => ({
+      select: vi.fn().mockReturnValue({
+        eq: vi.fn().mockReturnValue({
+          maybeSingle: table === "profiles" ? profileMaybeSingle : orderMaybeSingle,
+        }),
+      }),
+      update: updateSpy,
+    }));
+
+    const response = await handler(
+      OrderStatusRoute,
+      "PATCH",
+    )({
+      request: new Request("https://example.test/api/orders/status", {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: "Bearer valid-token",
+        },
+        body: JSON.stringify({ id: "order-1", fulfillment_status: "shipped" }),
+      }),
+    });
+
+    expect(response.status).toBe(200);
+    expect(updateSpy).toHaveBeenCalledWith(
+      expect.objectContaining({ fulfillment_status: "shipped" }),
+    );
+  });
+
+  it("allows super_admin to mutate orders across any brand", async () => {
+    supabaseAdmin.auth.getUser.mockResolvedValue({
+      data: { user: { id: "super-1" } },
+      error: null,
+    });
+    const profileMaybeSingle = vi.fn().mockResolvedValue({
+      data: { role: "super_admin", status: "active", brand_id: null, permissions: [] },
+      error: null,
+    });
+    const orderMaybeSingle = vi.fn().mockResolvedValue({
+      data: {
+        id: "order-99",
+        brand_id: "brand-other",
+        status: "pending",
+        payment_status: "unpaid",
+        payment_method: "card",
+        fulfillment_status: "pending",
+        delivery_notes: null,
+        assigned_to: null,
+      },
+      error: null,
+    });
+    const updateSingle = vi.fn().mockResolvedValue({
+      data: { id: "order-99", payment_status: "paid", status: "confirmed" },
+      error: null,
+    });
+    const updateSelect = vi.fn().mockReturnValue({ single: updateSingle });
+    const updateEqBrand = vi.fn().mockReturnValue({ select: updateSelect });
+    const updateEqId = vi.fn().mockReturnValue({ eq: updateEqBrand });
+    const updateSpy = vi.fn().mockReturnValue({ eq: updateEqId });
+
+    supabaseAdmin.from.mockImplementation((table: string) => ({
+      select: vi.fn().mockReturnValue({
+        eq: vi.fn().mockReturnValue({
+          maybeSingle: table === "profiles" ? profileMaybeSingle : orderMaybeSingle,
+        }),
+      }),
+      update: updateSpy,
+    }));
+
+    const response = await handler(
+      OrderStatusRoute,
+      "PATCH",
+    )({
+      request: new Request("https://example.test/api/orders/status", {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: "Bearer valid-token",
+        },
+        body: JSON.stringify({ id: "order-99", payment_status: "paid" }),
+      }),
+    });
+
+    expect(response.status).toBe(200);
+    expect(updateSpy).toHaveBeenCalledWith(
+      expect.objectContaining({ payment_status: "paid" }),
+    );
   });
 
   it("rejects a Tap redirect whose verified metadata targets another order", async () => {

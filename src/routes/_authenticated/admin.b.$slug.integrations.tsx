@@ -37,6 +37,7 @@ import {
   CreditCard,
   Truck,
   MessageCircle,
+  History,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useT, useI18n } from "@/lib/i18n";
@@ -69,6 +70,7 @@ type Row = {
   is_active: boolean;
   notes: string | null;
   updated_at: string;
+  last_rotated_at: string | null;
 };
 
 const PROVIDER_PRESETS = [
@@ -361,6 +363,25 @@ function IntegrationsPage() {
                           row.provider === "gemini" ? row.api_key_masked : row.webhook_secret_masked
                         }
                       />
+                      <div className="flex items-center justify-between text-[11px] text-muted-foreground pt-1.5 border-t border-border/50">
+                        <span className="flex items-center gap-1.5">
+                          <History className="h-3 w-3 text-muted-foreground/70" />
+                          {isAr ? "آخر تدوير للمفاتيح:" : "Last rotated:"}
+                        </span>
+                        <span className="font-mono font-medium">
+                          {row.last_rotated_at
+                            ? new Date(row.last_rotated_at).toLocaleDateString(isAr ? "ar-BH" : "en-US", {
+                                year: "numeric",
+                                month: "short",
+                                day: "numeric",
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              })
+                            : isAr
+                              ? "غير مدوّر بعد"
+                              : "Not rotated yet"}
+                        </span>
+                      </div>
                     </div>
 
                     <div className="mt-4 pt-4 border-t border-border/80 text-xs">

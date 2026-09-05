@@ -237,7 +237,11 @@ function StoreHome() {
       const isSale = ["offers", "sale", "discounts"].includes(catSlug);
 
       if (isNew) {
-        return list;
+        const thirtyDaysAgo = Date.now() - 30 * 24 * 60 * 60 * 1000;
+        return list.filter((p) => {
+          const createdAt = p.created_at ? new Date(p.created_at).getTime() : 0;
+          return createdAt >= thirtyDaysAgo;
+        });
       }
       if (isBest) {
         const bestIds = new Map(

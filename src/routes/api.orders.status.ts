@@ -77,22 +77,24 @@ export const Route = createFileRoute("/api/orders/status")({
           const isSuperAdmin = role === "super_admin";
           const isAdmin = ["admin", "brand_admin"].includes(role);
 
-          // 1. Fetch current order status details (scoped to user's brand unless super_admin)
-          let query = (supabaseAdmin.from("orders") as any)
+          // 1. Fetch current order status details
+          const { data: order, error: fetchErr } = await (supabaseAdmin.from("orders") as any)
             .select(
               "id, brand_id, status, payment_status, payment_method, fulfillment_method, fulfillment_status, delivery_notes, assigned_to",
             )
-            .eq("id", id);
-
-          if (!isSuperAdmin && profile.brand_id) {
-            query = query.eq("brand_id", profile.brand_id);
-          }
-
-          const { data: order, error: fetchErr } = await query.maybeSingle();
+            .eq("id", id)
+            .maybeSingle();
 
           if (fetchErr || !order) {
             return new Response(JSON.stringify({ error: "Order not found" }), {
               status: 404,
+              headers: { "Content-Type": "application/json" },
+            });
+          }
+
+          if (!isSuperAdmin && profile.brand_id && order.brand_id !== profile.brand_id) {
+            return new Response(JSON.stringify({ error: "Forbidden" }), {
+              status: 403,
               headers: { "Content-Type": "application/json" },
             });
           }

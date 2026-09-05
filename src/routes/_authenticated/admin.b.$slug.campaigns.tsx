@@ -36,12 +36,14 @@ import {
   Square,
   ExternalLink,
   ShieldCheck,
+  ShieldAlert,
   Download,
 } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
 import { toast } from "sonner";
 import { useBrand } from "@/lib/brand-context";
 import { buildCustomerCrmStats, type CustomerMetricOrder } from "@/lib/commerce-metrics";
+import { isMarketingEligible } from "@/lib/marketing-eligibility";
 
 import { CampaignsCommandHeader } from "@/components/campaigns/CampaignsCommandHeader";
 import {
@@ -284,24 +286,33 @@ function CampaignsPage() {
     };
   }, [customersQ.data, customerCrmStats]);
 
-  // Pre-populate checkboxes on segment/filter change: exclude zero-order and opted-out contacts by default
+  const eligibleSelectedCount = useMemo(() => {
+    return filtered.filter((c) => {
+      if (!selectedCustomerIds.includes(c.id)) return false;
+      const totalOrders = customerCrmStats.get(c.id)?.totalOrders ?? 0;
+      return isMarketingEligible(c, totalOrders).eligible;
+    }).length;
+  }, [filtered, selectedCustomerIds, customerCrmStats]);
+
+  // Pre-populate checkboxes on segment/filter change: only fully eligible contacts
   useEffect(() => {
     const validIds = filtered
       .filter((c) => {
-        if (!c.phone || !c.phone.trim()) return false;
-        if (c.opted_out_at) return false;
         const totalOrders = customerCrmStats.get(c.id)?.totalOrders ?? 0;
-        return totalOrders > 0;
+        return isMarketingEligible(c, totalOrders).eligible;
       })
       .map((c) => c.id);
     setSelectedCustomerIds(validIds);
   }, [filtered, customerCrmStats]);
 
   const toggleSelectAll = () => {
-    const validFiltered = filtered.filter(
-      (c) => c.phone && c.phone.trim() && !c.opted_out_at,
-    );
-    const allSelected = validFiltered.every((c) => selectedCustomerIds.includes(c.id));
+    const validFiltered = filtered.filter((c) => {
+      const totalOrders = customerCrmStats.get(c.id)?.totalOrders ?? 0;
+      return isMarketingEligible(c, totalOrders).eligible;
+    });
+    const allSelected =
+      validFiltered.length > 0 &&
+      validFiltered.every((c) => selectedCustomerIds.includes(c.id));
     if (allSelected) {
       setSelectedCustomerIds((prev) =>
         prev.filter((id) => !validFiltered.some((c) => c.id === id)),
@@ -317,9 +328,19 @@ function CampaignsPage() {
     }
   };
 
-  const toggleSelectCustomer = (id: string) => {
+  const toggleSelectCustomer = (c: Customer) => {
+    const totalOrders = customerCrmStats.get(c.id)?.totalOrders ?? 0;
+    const eligibility = isMarketingEligible(c, totalOrders);
+    if (!eligibility.eligible) {
+      toast.error(
+        isAr
+          ? eligibility.reason_ar || "العميل غير مؤهل للتسويق"
+          : eligibility.reason || "Customer not eligible for marketing",
+      );
+      return;
+    }
     setSelectedCustomerIds((prev) =>
-      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
+      prev.includes(c.id) ? prev.filter((x) => x !== c.id) : [...prev, c.id],
     );
   };
 
@@ -341,15 +362,17 @@ function CampaignsPage() {
   );
 
   const send = (c: Customer) => {
-    if (!c.phone || !c.phone.trim()) {
-      toast.error(isAr ? "لا يوجد رقم هاتف" : "No phone number on file");
+    const totalOrders = customerCrmStats.get(c.id)?.totalOrders ?? 0;
+    const eligibility = isMarketingEligible(c, totalOrders);
+    if (!eligibility.eligible) {
+      toast.error(
+        isAr
+          ? eligibility.reason_ar || "العميل غير مؤهل للتسويق"
+          : eligibility.reason || "Customer not eligible for marketing",
+      );
       return;
     }
-    const phone = c.phone.replace(/[^\d]/g, "");
-    if (!phone) {
-      toast.error(isAr ? "رقم الهاتف غير صالح" : "Invalid phone number");
-      return;
-    }
+    const phone = c.phone!.replace(/[^\d]/g, "");
     // Encode string payloads explicitly with encodeURIComponent for robust formatting
     const url = `https://wa.me/${phone}?text=${encodeURIComponent(buildMessage(c.name))}`;
     window.open(url, "_blank", "noopener,noreferrer");
@@ -358,14 +381,16 @@ function CampaignsPage() {
 
   // Launch bulk campaign wizard modal pre-population
   const launchBulkCampaign = () => {
-    const list = filtered.filter(
-      (c) => selectedCustomerIds.includes(c.id) && c.phone && c.phone.trim(),
-    );
+    const list = filtered.filter((c) => {
+      if (!selectedCustomerIds.includes(c.id)) return false;
+      const totalOrders = customerCrmStats.get(c.id)?.totalOrders ?? 0;
+      return isMarketingEligible(c, totalOrders).eligible;
+    });
     if (list.length === 0) {
       toast.error(
         isAr
-          ? "لا يوجد عملاء محددون لديهم أرقام هواتف"
-          : "No selected customers with phone numbers",
+          ? "لا يوجد عملاء مؤهلون للتسويق ضمن التحديد الحالي"
+          : "No eligible marketing recipients found in selection",
       );
       return;
     }
@@ -431,14 +456,16 @@ function CampaignsPage() {
 
   // Export selected segments to a CSV format compatible with free Chrome/browser bulk-sender extensions
   const exportBulkCampaignCsv = () => {
-    const list = filtered.filter(
-      (c) => selectedCustomerIds.includes(c.id) && c.phone && c.phone.trim(),
-    );
+    const list = filtered.filter((c) => {
+      if (!selectedCustomerIds.includes(c.id)) return false;
+      const orders = customerCrmStats.get(c.id)?.totalOrders ?? 0;
+      return isMarketingEligible(c, orders).eligible;
+    });
     if (list.length === 0) {
       toast.error(
         isAr
-          ? "لا يوجد عملاء محددون لديهم أرقام هواتف"
-          : "No selected customers with phone numbers",
+          ? "لا يوجد عملاء مؤهلون للتسويق ضمن التحديد الحالي"
+          : "No eligible marketing recipients found in selection",
       );
       return;
     }
@@ -514,6 +541,23 @@ function CampaignsPage() {
       }
 
       const customer = q[idx];
+      const orders = customerCrmStats.get(customer.id)?.totalOrders ?? 0;
+      const eligibility = isMarketingEligible(customer, orders);
+      if (!eligibility.eligible) {
+        setBulkSent((prev) => ({ ...prev, [customer.id]: "skipped" }));
+        const nextIdx = idx + 1;
+        setBulkIndex(nextIdx);
+        if (nextIdx < q.length) {
+          timeoutId = setTimeout(runNext, delayRef.current);
+        } else {
+          setBulkActive(false);
+          toast.success(
+            isAr ? "تم إكمال الحملة التلقائية بنجاح!" : "Automated campaign completed successfully!",
+          );
+        }
+        return;
+      }
+
       setBulkSent((prev) => ({ ...prev, [customer.id]: "sending" }));
 
       const url = buildWhatsAppUrl(customer);
@@ -587,6 +631,19 @@ function CampaignsPage() {
       return;
     }
     const customer = q[idx];
+    const orders = customerCrmStats.get(customer.id)?.totalOrders ?? 0;
+    const eligibility = isMarketingEligible(customer, orders);
+    if (!eligibility.eligible) {
+      setBulkSent((prev) => ({ ...prev, [customer.id]: "skipped" }));
+      setBulkIndex((prev) => prev + 1);
+      toast.error(
+        isAr
+          ? eligibility.reason_ar || "العميل غير مؤهل للتسويق"
+          : eligibility.reason || "Customer not eligible for marketing",
+      );
+      return;
+    }
+
     setBulkSent((prev) => ({ ...prev, [customer.id]: "sending" }));
 
     const url = buildWhatsAppUrl(customer);
@@ -796,7 +853,7 @@ function CampaignsPage() {
               variant="outline"
               className="h-auto min-h-9 whitespace-normal border-dashed font-medium shadow-sm transition-all duration-200 hover:scale-[1.01] hover:bg-secondary hover:shadow active:scale-95"
               onClick={exportBulkCampaignCsv}
-              disabled={selectedCustomerIds.length === 0}
+              disabled={eligibleSelectedCount === 0}
             >
               <Download className="h-4 w-4 me-1.5" />
               {isAr ? "تصدير قائمة الرسائل (CSV)" : "Export Campaign CSV"}
@@ -805,15 +862,26 @@ function CampaignsPage() {
               size="sm"
               className="h-auto min-h-9 whitespace-normal bg-primary font-medium text-primary-foreground shadow-sm transition-all duration-200 hover:scale-[1.01] hover:bg-primary/90 hover:shadow active:scale-95"
               onClick={launchBulkCampaign}
-              disabled={selectedCustomerIds.length === 0}
+              disabled={eligibleSelectedCount === 0}
             >
               <Megaphone className="h-4 w-4 me-1.5" />
               {isAr
-                ? `إطلاق حملة جماعية (المستهدفة: ${selectedCustomerIds.length})`
-                : `Launch Bulk Campaign (Targeting: ${selectedCustomerIds.length})`}
+                ? `إطلاق حملة جماعية (المؤهلون: ${eligibleSelectedCount})`
+                : `Launch Bulk Campaign (Eligible: ${eligibleSelectedCount})`}
             </Button>
           </div>
         </div>
+
+        {filtered.length > 0 && eligibleSelectedCount === 0 && (
+          <div className="m-3 sm:m-4 rounded-xl border border-amber-500/30 bg-amber-500/10 p-3.5 text-xs text-amber-900 dark:text-amber-200 flex items-center gap-2.5">
+            <ShieldAlert className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
+            <span>
+              {isAr
+                ? "لا يوجد مستلمون مؤهلون محددون. تشترط الحملات التسويقية موافقة تسويقية صريحة، ورقم هاتف صالح، وعدم إلغاء الاشتراك، ووجود طلب سابق."
+                : "No eligible recipients selected. Marketing campaigns require explicit consent, a valid phone, no opt-out, and at least one prior order."}
+            </span>
+          </div>
+        )}
 
         {filtered.length === 0 ? (
           <OsEmptyState
@@ -836,9 +904,9 @@ function CampaignsPage() {
                   type="checkbox"
                   className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary accent-primary cursor-pointer"
                   checked={
-                    filtered.length > 0 &&
+                    filtered.filter((c) => isMarketingEligible(c, customerCrmStats.get(c.id)?.totalOrders ?? 0).eligible).length > 0 &&
                     filtered
-                      .filter((c) => c.phone && c.phone.trim())
+                      .filter((c) => isMarketingEligible(c, customerCrmStats.get(c.id)?.totalOrders ?? 0).eligible)
                       .every((c) => selectedCustomerIds.includes(c.id))
                   }
                   onChange={toggleSelectAll}
@@ -848,6 +916,7 @@ function CampaignsPage() {
                 const isSent = !!sent[c.id];
                 const stats = customerCrmStats.get(c.id);
                 const orderCount = stats?.totalOrders ?? 0;
+                const eligibility = isMarketingEligible(c, orderCount);
                 const isChecked = selectedCustomerIds.includes(c.id);
                 return (
                   <div
@@ -858,14 +927,20 @@ function CampaignsPage() {
                       <div className="flex items-start gap-2.5 min-w-0">
                         <input
                           type="checkbox"
-                          className="mt-1 h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary accent-primary cursor-pointer"
+                          className="mt-1 h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary accent-primary cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
                           checked={isChecked}
-                          onChange={() => toggleSelectCustomer(c.id)}
-                          disabled={!c.phone}
+                          onChange={() => toggleSelectCustomer(c)}
+                          disabled={!eligibility.eligible}
+                          title={eligibility.eligible ? undefined : (isAr ? eligibility.reason_ar : eligibility.reason)}
                         />
                         <div className="min-w-0">
-                          <div className="flex items-center gap-1.5 font-semibold text-foreground truncate">
+                          <div className="flex items-center gap-1.5 font-semibold text-foreground truncate flex-wrap">
                             <span className="truncate">{c.name}</span>
+                            {c.marketing_consent !== true && (
+                              <span className="rounded bg-amber-500/15 px-1.5 py-0.5 text-[10px] font-bold text-amber-700 dark:text-amber-400 shrink-0">
+                                {isAr ? "بلا موافقة تسويقية" : "No consent"}
+                              </span>
+                            )}
                             {c.opted_out_at && (
                               <span className="rounded bg-rose-500/15 px-1.5 py-0.5 text-[10px] font-bold text-rose-700 dark:text-rose-400 shrink-0">
                                 {isAr ? "إلغاء اشتراك" : "Opted out"}
@@ -916,7 +991,8 @@ function CampaignsPage() {
                             className="h-7 text-[11px]"
                             variant="outline"
                             onClick={() => send(c)}
-                            disabled={!c.phone}
+                            disabled={!eligibility.eligible}
+                            title={eligibility.eligible ? undefined : (isAr ? eligibility.reason_ar : eligibility.reason)}
                           >
                             <MessageCircle className="me-1 h-3 w-3" />
                             {isAr ? "إرسال" : "Send"}
@@ -939,9 +1015,9 @@ function CampaignsPage() {
                         type="checkbox"
                         className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary accent-primary cursor-pointer"
                         checked={
-                          filtered.length > 0 &&
+                          filtered.filter((c) => isMarketingEligible(c, customerCrmStats.get(c.id)?.totalOrders ?? 0).eligible).length > 0 &&
                           filtered
-                            .filter((c) => c.phone && c.phone.trim())
+                            .filter((c) => isMarketingEligible(c, customerCrmStats.get(c.id)?.totalOrders ?? 0).eligible)
                             .every((c) => selectedCustomerIds.includes(c.id))
                         }
                         onChange={toggleSelectAll}
@@ -967,6 +1043,7 @@ function CampaignsPage() {
                     const isSent = !!sent[c.id];
                     const stats = customerCrmStats.get(c.id);
                     const orderCount = stats?.totalOrders ?? 0;
+                    const eligibility = isMarketingEligible(c, orderCount);
                     const isChecked = selectedCustomerIds.includes(c.id);
                     return (
                       <tr
@@ -978,15 +1055,21 @@ function CampaignsPage() {
                         <td className="p-4 text-center">
                           <input
                             type="checkbox"
-                            className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary accent-primary cursor-pointer"
+                            className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary accent-primary cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
                             checked={isChecked}
-                            onChange={() => toggleSelectCustomer(c.id)}
-                            disabled={!c.phone}
+                            onChange={() => toggleSelectCustomer(c)}
+                            disabled={!eligibility.eligible}
+                            title={eligibility.eligible ? undefined : (isAr ? eligibility.reason_ar : eligibility.reason)}
                           />
                         </td>
                         <td className="p-4 font-medium">
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-2 flex-wrap">
                             <span>{c.name}</span>
+                            {c.marketing_consent !== true && (
+                              <span className="rounded bg-amber-500/15 px-1.5 py-0.5 text-[10px] font-bold text-amber-700 dark:text-amber-400">
+                                {isAr ? "بلا موافقة تسويقية" : "No consent"}
+                              </span>
+                            )}
                             {c.opted_out_at && (
                               <span className="rounded bg-rose-500/15 px-1.5 py-0.5 text-[10px] font-bold text-rose-700 dark:text-rose-400">
                                 {isAr ? "إلغاء اشتراك" : "Opted out"}
@@ -1031,7 +1114,12 @@ function CampaignsPage() {
                               <Check className="h-3 w-3" /> {isAr ? "تم الإرسال" : "Sent"}
                             </span>
                           ) : (
-                            <Button size="sm" onClick={() => send(c)} disabled={!c.phone}>
+                            <Button
+                              size="sm"
+                              onClick={() => send(c)}
+                              disabled={!eligibility.eligible}
+                              title={eligibility.eligible ? undefined : (isAr ? eligibility.reason_ar : eligibility.reason)}
+                            >
                               <MessageCircle className="h-4 w-4 me-2" />
                               {isAr ? "إرسال عبر الواتساب" : "Send via WhatsApp"}
                             </Button>
