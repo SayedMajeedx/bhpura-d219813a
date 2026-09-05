@@ -81,7 +81,10 @@ export function PackagingMaterialsTab() {
 
       await qc.invalidateQueries({ queryKey: ["business-settings-bom", brandId] });
       await qc.invalidateQueries({ queryKey: ["dashboard-business-settings", brandId] });
-      await qc.invalidateQueries({ queryKey: ["dashboard-reporting-overview"] });
+      await qc.invalidateQueries({ queryKey: ["dashboard-reporting-overview", brand.slug] });
+      await qc.invalidateQueries({
+        queryKey: ["dashboard-reporting-overview-previous", brand.slug],
+      });
       await qc.invalidateQueries({ queryKey: ["cogs", brandId] });
 
       if (checked) {
@@ -292,9 +295,7 @@ export function PackagingMaterialsTab() {
       <div
         className={cn(
           "rounded-xl border p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 transition-colors",
-          bomEnabled
-            ? "border-primary/30 bg-primary/5"
-            : "border-border bg-muted/40",
+          bomEnabled ? "border-primary/30 bg-primary/5" : "border-border bg-muted/40",
         )}
       >
         <div className="flex items-start gap-3">
@@ -321,17 +322,17 @@ export function PackagingMaterialsTab() {
                     : "bg-muted text-muted-foreground border-border",
                 )}
               >
-                {bomEnabled ? (isAr ? "شغال ومفعل" : "Active") : (isAr ? "متوقف مؤقتاً" : "Paused")}
+                {bomEnabled ? (isAr ? "شغال ومفعل" : "Active") : isAr ? "متوقف مؤقتاً" : "Paused"}
               </span>
             </div>
             <p className="text-xs text-muted-foreground mt-1 max-w-2xl leading-relaxed">
               {bomEnabled
-                ? (isAr
-                    ? "الخصم التلقائي شغال: يتم خصم الأكياس والكروت من المخزون فور تجهيز/تسليم الطلب، وتُخصم التكلفة تلقائياً من صافي الأرباح."
-                    : "Active: Packaging stock is automatically deducted upon order fulfillment and calculated into net profit.")
-                : (isAr
-                    ? "النظام متوقف مؤقتاً: لن يتم سحب أي مواد من المخزون ولن تُحسب تكاليف تغليف في صافي الأرباح للطلبات الجديدة."
-                    : "Paused: Packaging materials will not be deducted from stock and packaging cost is omitted from net profit.")}
+                ? isAr
+                  ? "الخصم التلقائي شغال: يتم خصم الأكياس والكروت من المخزون فور تجهيز/تسليم الطلب، وتُخصم التكلفة تلقائياً من صافي الأرباح."
+                  : "Active: Packaging stock is automatically deducted upon order fulfillment and calculated into net profit."
+                : isAr
+                  ? "النظام متوقف مؤقتاً: لن يتم سحب أي مواد من المخزون ولن تُحسب تكاليف تغليف في صافي الأرباح للطلبات الجديدة."
+                  : "Paused: Packaging materials will not be deducted from stock and packaging cost is omitted from net profit."}
             </p>
           </div>
         </div>
@@ -339,8 +340,12 @@ export function PackagingMaterialsTab() {
         <div className="flex items-center gap-3 shrink-0 self-end sm:self-center bg-background/80 p-2 rounded-lg border border-border/60">
           <Label htmlFor="bom-toggle" className="text-xs font-semibold cursor-pointer select-none">
             {bomEnabled
-              ? (isAr ? "تشغيل BOM (شغال)" : "BOM Enabled")
-              : (isAr ? "إيقاف BOM (معطل)" : "BOM Disabled")}
+              ? isAr
+                ? "تشغيل BOM (شغال)"
+                : "BOM Enabled"
+              : isAr
+                ? "إيقاف BOM (معطل)"
+                : "BOM Disabled"}
           </Label>
           <Switch
             id="bom-toggle"
@@ -427,8 +432,12 @@ export function PackagingMaterialsTab() {
                           )}
                         >
                           {item.deduction_rule === "per_order"
-                            ? (isAr ? "📦 لكل طلب كامل" : "📦 Per Order")
-                            : (isAr ? "👗 لكل قطعة منتج" : "👗 Per Product Item")}
+                            ? isAr
+                              ? "📦 لكل طلب كامل"
+                              : "📦 Per Order"
+                            : isAr
+                              ? "👗 لكل قطعة منتج"
+                              : "👗 Per Product Item"}
                         </span>
                       </div>
                       {item.sku && (

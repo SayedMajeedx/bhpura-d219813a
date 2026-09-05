@@ -64,7 +64,7 @@ export function ProductBomModal({
 
   // Fetch current product BOM items
   const { data: currentBom = [], isLoading: isLoadingBom } = useQuery({
-    queryKey: ["product-bom-items", productId],
+    queryKey: ["product-bom-items", brandId, productId],
     queryFn: async () => {
       const { data, error } = await (supabase as any)
         .from("product_bom_items")
@@ -174,7 +174,7 @@ export function ProductBomModal({
       toast.success(isAr ? "تم حفظ تكاليف التغليف بنجاح" : "BOM packaging saved successfully");
       qc.invalidateQueries({ queryKey: ["dashboard-products", brandId] });
       qc.invalidateQueries({ queryKey: ["products", brandId] });
-      qc.invalidateQueries({ queryKey: ["product-bom-items", productId] });
+      qc.invalidateQueries({ queryKey: ["product-bom-items", brandId, productId] });
       qc.invalidateQueries({ queryKey: ["product-bom-items-all", brandId] });
 
       onSaved?.();
@@ -238,7 +238,7 @@ export function ProductBomModal({
       );
       qc.invalidateQueries({ queryKey: ["dashboard-products", brandId] });
       qc.invalidateQueries({ queryKey: ["products", brandId] });
-      qc.invalidateQueries({ queryKey: ["product-bom-items"] });
+      qc.invalidateQueries({ queryKey: ["product-bom-items", brandId] });
       qc.invalidateQueries({ queryKey: ["product-bom-items-all", brandId] });
 
       onSaved?.();
