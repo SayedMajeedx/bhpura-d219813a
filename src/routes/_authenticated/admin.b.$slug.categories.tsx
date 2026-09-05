@@ -39,6 +39,9 @@ type Category = {
   menu_icon_url: string | null;
   sort_order: number;
   is_active: boolean;
+  product_count?: number;
+  total_product_count?: number;
+  is_smart?: boolean;
 };
 
 function slugify(v: string) {
@@ -66,21 +69,117 @@ function CategoriesPage() {
   const { data } = useQuery({
     queryKey: ["categories", brandId],
     queryFn: async () => {
-      const { data, error } = await (supabase.from("categories") as any)
-        .select("*")
-        .eq("brand_id", brandId)
-        .order("sort_order", { ascending: true });
-      if (error) throw error;
-      return (data ?? []) as Category[];
+      const [{ data: cats, error: catErr }, { data: prods, error: prodErr }] = await Promise.all([
+        (supabase.from("categories") as any)
+          .select("*")
+          .eq("brand_id", brandId)
+          .order("sort_order", { ascending: true }),
+        supabase
+          .from("products")
+          .select("id, category, is_active, show_sale_badge, product_variants(original_price, selling_price)")
+          .eq("brand_id", brandId),
+      ]);
+      if (catErr) throw catErr;
+      if (prodErr) console.warn("Failed to fetch product count details:", prodErr);
+
+      const productsList = prods ?? [];
+      const totalActiveProducts = productsList.filter((p: any) => p.is_active).length;
+
+      let bestSellersIds = new Set<string>();
+      try {
+        const { data: best } = await (supabase.rpc as any)("get_storefront_best_sellers", {
+          p_brand_slug: brand.slug,
+          p_limit: 24,
+        });
+        if (Array.isArray(best)) {
+          bestSellersIds = new Set(best.map((b: any) => b.product_id));
+        }
+      } catch {
+        // Fallback gracefully
+      }
+
+      const categoriesWithCount = (cats ?? []).map((cat: any) => {
+        const slug = cat.slug || "";
+        const nameEn = cat.name_en || "";
+
+        if (["new-arrivals", "new"].includes(slug)) {
+          return {
+            ...cat,
+            product_count: totalActiveProducts,
+            total_product_count: totalActiveProducts,
+            is_smart: true,
+          };
+        }
+        if (["most-selling", "best-sellers", "best-selling"].includes(slug)) {
+          const count = bestSellersIds.size;
+          return {
+            ...cat,
+            product_count: count,
+            total_product_count: count,
+            is_smart: true,
+          };
+        }
+        if (["sale", "offers", "discounts"].includes(slug)) {
+          const saleCount = productsList.filter((p: any) => {
+            if (!p.is_active) return false;
+            if (p.show_sale_badge) return true;
+            return (p.product_variants || []).some(
+              (v: any) => Number(v.original_price || 0) > Number(v.selling_price || 0),
+            );
+          }).length;
+          return {
+            ...cat,
+            product_count: saleCount,
+            total_product_count: saleCount,
+            is_smart: true,
+          };
+        }
+
+        const matches = productsList.filter(
+          (p: any) => p.category === slug || p.category === nameEn || p.category === cat.id,
+        );
+        const activeMatches = matches.filter((p: any) => p.is_active);
+
+        return {
+          ...cat,
+          product_count: activeMatches.length,
+          total_product_count: matches.length,
+          is_smart: false,
+        };
+      });
+
+      return categoriesWithCount as Category[];
     },
   });
 
   const move = async (c: Category, dir: -1 | 1) => {
-    const { error } = await (supabase.from("categories") as any)
-      .update({ sort_order: c.sort_order + dir })
-      .eq("id", c.id);
-    if (error) toast.error(error.message);
-    else qc.invalidateQueries({ queryKey: ["categories", brandId] });
+    const list = data ?? [];
+    const index = list.findIndex((x) => x.id === c.id);
+    const targetIndex = index + dir;
+    if (index === -1 || targetIndex < 0 || targetIndex >= list.length) return;
+
+    const targetCat = list[targetIndex];
+    if (targetCat.sort_order === c.sort_order) {
+      const reordered = [...list];
+      reordered.splice(index, 1);
+      reordered.splice(targetIndex, 0, c);
+      const updates = reordered.map((cat, idx) =>
+        (supabase.from("categories") as any)
+          .update({ sort_order: idx + 1 })
+          .eq("id", cat.id),
+      );
+      await Promise.all(updates);
+    } else {
+      await Promise.all([
+        (supabase.from("categories") as any)
+          .update({ sort_order: targetCat.sort_order })
+          .eq("id", c.id),
+        (supabase.from("categories") as any)
+          .update({ sort_order: c.sort_order })
+          .eq("id", targetCat.id),
+      ]);
+    }
+    qc.invalidateQueries({ queryKey: ["categories", brandId] });
   };
 
   const remove = async (c: Category) => {

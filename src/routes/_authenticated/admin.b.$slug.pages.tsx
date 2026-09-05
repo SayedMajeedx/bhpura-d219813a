@@ -172,10 +172,10 @@ function PagesAndPolicies() {
     );
     setWaEnabled(Boolean(data.whatsapp_enabled));
     setWaNumber(data.whatsapp_number ?? "");
-    setCompanyTitleEn(footerTitles?.company_en ?? "Company");
-    setCompanyTitleAr(footerTitles?.company_ar ?? "الشركة");
-    setHelpTitleEn(footerTitles?.help_en ?? "Help");
-    setHelpTitleAr(footerTitles?.help_ar ?? "المساعدة");
+    setCompanyTitleEn(footerTitles?.company_en?.trim() || "Company");
+    setCompanyTitleAr(footerTitles?.company_ar?.trim() || "الشركة");
+    setHelpTitleEn(footerTitles?.help_en?.trim() || "Help");
+    setHelpTitleAr(footerTitles?.help_ar?.trim() || "المساعدة");
   }, [data]);
 
   const updatePage = (index: number, patch: Partial<PageSlot>) => {

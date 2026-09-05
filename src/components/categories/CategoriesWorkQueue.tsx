@@ -12,6 +12,35 @@ interface CategoriesWorkQueueProps {
   onReorder: (id: string, dir: "up" | "down") => void;
 }
 
+function formatProductCount(count: number, isAr: boolean, total?: number, isSmart?: boolean): string {
+  if (isSmart) {
+    if (isAr) {
+      if (count === 0) return "تلقائي (0 منتج)";
+      if (count === 1) return "تلقائي (منتج واحد)";
+      if (count === 2) return "تلقائي (منتجان)";
+      if (count >= 3 && count <= 10) return `تلقائي (${count} منتجات)`;
+      return `تلقائي (${count} منتجاً)`;
+    }
+    return `Smart (${count} ${count === 1 ? "item" : "items"})`;
+  }
+
+  if (total !== undefined && total > count) {
+    if (isAr) {
+      return `${count} نشط (${total} إجمالي)`;
+    }
+    return `${count} active (${total} total)`;
+  }
+
+  if (isAr) {
+    if (count === 0) return "0 منتجات";
+    if (count === 1) return "منتج واحد";
+    if (count === 2) return "منتجان";
+    if (count >= 3 && count <= 10) return `${count} منتجات`;
+    return `${count} منتجاً`;
+  }
+  return `${count} ${count === 1 ? "item" : "items"}`;
+}
+
 export const CategoriesWorkQueue: React.FC<CategoriesWorkQueueProps> = ({
   lang,
   categories,
@@ -50,6 +79,12 @@ export const CategoriesWorkQueue: React.FC<CategoriesWorkQueueProps> = ({
       <div className="space-y-2 p-2 sm:hidden">
         {categories.map((cat, index) => {
           const name = isAr ? cat.name_ar || cat.name : cat.name_en || cat.name;
+          const countText = formatProductCount(
+            cat.product_count || 0,
+            isAr,
+            cat.total_product_count,
+            cat.is_smart,
+          );
           return (
             <article
               key={cat.id}
@@ -57,7 +92,14 @@ export const CategoriesWorkQueue: React.FC<CategoriesWorkQueueProps> = ({
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
-                  <h2 className="truncate text-sm font-bold text-foreground">{name}</h2>
+                  <div className="flex items-center gap-1.5">
+                    <h2 className="truncate text-sm font-bold text-foreground">{name}</h2>
+                    {cat.is_smart && (
+                      <span className="shrink-0 rounded-md border border-primary/20 bg-primary/10 px-1.5 py-0.5 text-[9px] font-semibold text-primary">
+                        {isAr ? "ذكي" : "Smart"}
+                      </span>
+                    )}
+                  </div>
                   <p
                     className="mt-0.5 truncate font-mono text-[11px] text-muted-foreground"
                     dir="ltr"
@@ -65,8 +107,8 @@ export const CategoriesWorkQueue: React.FC<CategoriesWorkQueueProps> = ({
                     /{cat.slug || cat.id.slice(0, 8)}
                   </p>
                 </div>
-                <span className="shrink-0 rounded-full border border-primary/20 bg-primary/10 px-2 py-1 text-[10px] font-bold text-primary">
-                  {cat.product_count || 0} {isAr ? "منتج" : "items"}
+                <span className="shrink-0 rounded-full border border-primary/20 bg-primary/10 px-2.5 py-1 text-[10px] font-bold text-primary">
+                  {countText}
                 </span>
               </div>
               <div className="mt-3 flex items-center justify-between border-t border-border/50 pt-3">
@@ -133,16 +175,31 @@ export const CategoriesWorkQueue: React.FC<CategoriesWorkQueueProps> = ({
           <tbody className="divide-y divide-border/40">
             {categories.map((cat, index) => {
               const name = isAr ? cat.name_ar || cat.name : cat.name_en || cat.name;
+              const countText = formatProductCount(
+                cat.product_count || 0,
+                isAr,
+                cat.total_product_count,
+                cat.is_smart,
+              );
 
               return (
                 <tr key={cat.id} className="hover:bg-muted/30 transition-colors">
-                  <td className="p-3 align-middle font-bold text-foreground">{name}</td>
+                  <td className="p-3 align-middle font-bold text-foreground">
+                    <div className="flex items-center gap-1.5">
+                      <span>{name}</span>
+                      {cat.is_smart && (
+                        <span className="shrink-0 rounded-md border border-primary/20 bg-primary/10 px-1.5 py-0.5 text-[9px] font-semibold text-primary">
+                          {isAr ? "قسم ذكي" : "Smart"}
+                        </span>
+                      )}
+                    </div>
+                  </td>
                   <td className="p-3 align-middle font-mono text-[11px] text-muted-foreground">
                     {cat.slug || cat.id.slice(0, 8)}
                   </td>
                   <td className="p-3 align-middle font-mono text-xs font-semibold">
                     <span className="inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold bg-primary/10 text-primary border border-primary/20">
-                      {cat.product_count || 0} {isAr ? "منتجات" : "items"}
+                      {countText}
                     </span>
                   </td>
                   <td className="p-3 align-middle text-center">

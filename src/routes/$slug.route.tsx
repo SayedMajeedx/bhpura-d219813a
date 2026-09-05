@@ -2162,15 +2162,13 @@ function StorefrontFooter() {
   const helpPages = pageLinks.filter((p) => p.group === "help");
   const socials = settings.socials ?? [];
 
-  const companyTitle =
-    (isAr ? settings.footer_company_title_ar : settings.footer_company_title_en) ||
-    (isAr ? settings.footer_company_title_en : settings.footer_company_title_ar) ||
-    (isAr ? "الشركة" : "Company");
+  const companyTitle = isAr
+    ? settings.footer_company_title_ar?.trim() || "الشركة"
+    : settings.footer_company_title_en?.trim() || "Company";
 
-  const helpTitle =
-    (isAr ? settings.footer_help_title_ar : settings.footer_help_title_en) ||
-    (isAr ? settings.footer_help_title_en : settings.footer_help_title_ar) ||
-    (isAr ? "المساعدة" : "Help");
+  const helpTitle = isAr
+    ? settings.footer_help_title_ar?.trim() || "المساعدة"
+    : settings.footer_help_title_en?.trim() || "Help";
 
   return (
     <footer

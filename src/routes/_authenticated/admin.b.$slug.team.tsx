@@ -32,7 +32,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Plus, Pencil, Trash2, Users, Shield, UserX, Check, X, Crown } from "lucide-react";
+import { Plus, Pencil, Trash2, Users, Shield, UserX, Check, X, Crown, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { useI18n, useT } from "@/lib/i18n";
 import { useProfile, SUPER_ADMIN_EMAIL } from "@/lib/profile-context";
@@ -263,6 +263,9 @@ function TeamManagement() {
   };
 
   const locale = isAr ? "ar-BH-u-nu-latn" : "en-US";
+  const adminMembers = staff.filter((m) => m.role === "admin" || m.role === "super_admin");
+  const isSingleAdmin = !staffQ.isLoading && adminMembers.length <= 1;
+  const adminHasNoPhone = adminMembers.length > 0 && adminMembers.every((m) => !m.phone);
 
   return (
     <div className="space-y-3.5">
@@ -281,6 +284,27 @@ function TeamManagement() {
         onScopeChange={(scope) => setStatusScope(scope)}
         counts={scopeCounts}
       />
+
+      {isSingleAdmin && (
+        <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3.5 text-xs text-amber-800 dark:text-amber-200 flex items-start gap-3">
+          <AlertTriangle className="h-5 w-5 shrink-0 mt-0.5 text-amber-600" />
+          <div className="space-y-1">
+            <p className="font-bold text-sm">
+              {isAr
+                ? "تنبيه أمان واستمرارية: يوجد حساب مدير واحد فقط للمتجر"
+                : "Security Notice: Single Store Administrator"}
+            </p>
+            <p className="opacity-90 leading-relaxed">
+              {isAr
+                ? adminHasNoPhone
+                  ? "المتجر يدار حالياً بواسطة حساب إداري واحد وبدون رقم هاتف مسجل للطوارئ. يوصى بشدة بإضافة رقم هاتف ودعوة مدير احتياطي ثانٍ لتفادي فقدان الوصول للمتجر نهائياً."
+                  : "المتجر يدار حالياً بواسطة حساب إداري واحد فقط. يوصى بدعوة حساب إداري احتياطي لتفادي مخاطر نقطة الفشل الفردية (SPOF)."
+                : "The store is operated by a single admin account. Registering a backup admin and recovery phone is strongly recommended to eliminate Single Point of Failure (SPOF) risks."}
+            </p>
+          </div>
+        </div>
+      )}
+
       <Dialog
         open={addOpen}
         onOpenChange={(v) => {

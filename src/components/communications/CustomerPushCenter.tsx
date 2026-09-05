@@ -1,6 +1,6 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
-import { BellRing, RefreshCw, Send } from "lucide-react";
+import { AlertTriangle, BellRing, RefreshCw, Send } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -28,7 +28,16 @@ export function CustomerPushCenter({ brandId, isAr }: { brandId:string; isAr:boo
     if(error) throw error; return (data??[]) as PushEvent[];
   }});
   const installedCustomers=useMemo(()=>new Set((devices.data??[]).map((d:any)=>d.customer_id)),[devices.data]);
+  const hasRecipients = target === "all" ? installedCustomers.size > 0 : installedCustomers.has(target);
+
   const send=async()=>{
+    if(!hasRecipients) {
+      return toast.error(
+        isAr
+          ? "لا يمكن الإرسال لعدم وجود عملاء لديهم التطبيق والإشعارات مفعلة"
+          : "Cannot send notification because there are no active app subscribers",
+      );
+    }
     if(!title.trim()||!body.trim()) return toast.error(isAr?"أدخل عنوان ورسالة الإشعار":"Enter a title and message");
     if(target!=="all"&&!installedCustomers.has(target)) return toast.error(isAr?"هذا العميل لم يسجل جهازاً في التطبيق":"This customer has no registered app device");
     setSending(true);
@@ -42,10 +51,27 @@ export function CustomerPushCenter({ brandId, isAr }: { brandId:string; isAr:boo
     <Card className="p-4 sm:p-6">
       <div className="flex items-center gap-3"><span className="rounded-xl bg-primary/10 p-2.5 text-primary"><BellRing className="h-5 w-5"/></span><div><h2 className="font-bold">{isAr?"إرسال إشعار للعملاء":"Send customer notification"}</h2><p className="text-xs text-muted-foreground">{isAr?`${installedCustomers.size} عميل لديهم التطبيق والإشعارات مفعلة`:`${installedCustomers.size} customers have active app notifications`}</p></div></div>
       <div className="mt-5 space-y-4">
+        {installedCustomers.size === 0 && (
+          <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-800 dark:text-amber-200 flex items-start gap-2.5">
+            <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5 text-amber-600" />
+            <div className="space-y-0.5">
+              <p className="font-bold">
+                {isAr
+                  ? "لا يوجد عملاء مفعلون للإشعارات حتى الآن"
+                  : "No active push subscribers currently registered"}
+              </p>
+              <p className="opacity-90 leading-relaxed">
+                {isAr
+                  ? "تم تعطيل زر الإرسال تلقائياً لتفادي الحملات الوهمية حتى يقوم العملاء بتثبيت تطبيق المتجر وتفعيل الإشعارات."
+                  : "Sending is temporarily disabled to prevent zero-recipient broadcasts until customers install the app and enable notifications."}
+              </p>
+            </div>
+          </div>
+        )}
         <div className="space-y-2"><Label>{isAr?"المستلم":"Recipient"}</Label><Select value={target} onValueChange={setTarget}><SelectTrigger><SelectValue/></SelectTrigger><SelectContent><SelectItem value="all">{isAr?"كل العملاء المشتركين في العروض":"All marketing subscribers"}</SelectItem>{(customers.data??[]).filter(c=>installedCustomers.has(c.id)).map(c=><SelectItem key={c.id} value={c.id}>{c.name||c.phone||c.email||c.id}</SelectItem>)}</SelectContent></Select></div>
         <div className="space-y-2"><Label>{isAr?"عنوان الإشعار":"Notification title"}</Label><Input value={title} maxLength={100} onChange={e=>setTitle(e.target.value)} placeholder={isAr?"وصل الجديد من Pura Line":"New at Pura Line"}/><p className="text-end text-[11px] text-muted-foreground">{title.length}/100</p></div>
         <div className="space-y-2"><Label>{isAr?"الرسالة":"Message"}</Label><textarea className="flex min-h-28 w-full rounded-md border border-input bg-background px-3 py-2 text-sm" value={body} maxLength={500} onChange={e=>setBody(e.target.value)} placeholder={isAr?"اكتب رسالة قصيرة وواضحة...":"Write a short, clear message..."}/><p className="text-end text-[11px] text-muted-foreground">{body.length}/500</p></div>
-        <Button onClick={send} disabled={sending} className="w-full gap-2"><Send className="h-4 w-4"/>{sending?(isAr?"جاري الجدولة...":"Queueing..."):(isAr?"إرسال الإشعار":"Send notification")}</Button>
+        <Button onClick={send} disabled={sending || !hasRecipients || !title.trim() || !body.trim()} className="w-full gap-2"><Send className="h-4 w-4"/>{sending?(isAr?"جاري الجدولة...":"Queueing..."):(isAr?"إرسال الإشعار":"Send notification")}</Button>
         <p className="text-xs text-muted-foreground">{isAr?"الإرسال الجماعي يصل فقط لمن فعّل «العروض والأخبار». تحديثات الطلبات تُرسل تلقائياً ولا تعتمد على هذا الخيار.":"Broadcasts reach only customers who enabled marketing. Order updates are automatic and independent."}</p>
       </div>
     </Card>

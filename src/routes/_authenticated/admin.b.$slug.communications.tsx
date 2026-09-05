@@ -24,6 +24,7 @@ import {
   ArrowUpDown,
   ArrowUp,
   ArrowDown,
+  AlertTriangle,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useT, useI18n } from "@/lib/i18n";
@@ -238,6 +239,24 @@ function AdminNotificationRecipientsCard({
           {isAr ? "إضافة مستلم" : "Add recipient"}
         </Button>
       </div>
+
+      {(q.data ?? []).length <= 1 && (
+        <div className="mt-4 rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-800 dark:text-amber-200 flex items-start gap-2.5">
+          <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5 text-amber-600" />
+          <div className="space-y-0.5">
+            <p className="font-bold">
+              {isAr
+                ? "تنبيه استمرارية الأعمال: يوجد مستلم إداري واحد فقط للإشعارات"
+                : "Operational Resilience Notice: Only 1 admin alert recipient"}
+            </p>
+            <p className="opacity-90 leading-relaxed">
+              {isAr
+                ? "يوصى بشدة بإضافة بريد إلكتروني احتياطي ثانٍ على الأقل لتفادي فقدان إشعارات الطلبات الجديدة وتحديثات الدفع في حال امتلاء البريد أو حدوث مشاكل تسليم."
+                : "It is strongly recommended to register at least one backup recipient to avoid missing new order alerts and payment updates if delivery issues occur."}
+            </p>
+          </div>
+        </div>
+      )}
 
       {adding && (
         <div className="mt-5 rounded-lg border bg-muted/20 p-4 space-y-4">
