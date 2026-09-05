@@ -119,6 +119,7 @@ function ContentStudioPage() {
   const [headline, setHeadline] = useState("صُممت لتبقى في الذاكرة");
   const [body, setBody] = useState("أناقة هادئة، وتفاصيل مدروسة لكل لحظة.");
   const [showPrice, setShowPrice] = useState(true);
+  const [imageFit, setImageFit] = useState<"cover" | "contain">("cover");
   const [exporting, setExporting] = useState(false);
 
   const productsQ = useQuery({
@@ -461,6 +462,51 @@ ${desc}${detailsBlock}
                 ))}
               </div>
             </div>
+            <div>
+              <Label>{isAr ? "طريقة عرض صورة المنتج" : "Product photo framing"}</Label>
+              <div className="mt-2 grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setImageFit("cover")}
+                  className={cn(
+                    "relative rounded-xl border p-3 text-start transition-all",
+                    imageFit === "cover"
+                      ? "border-primary bg-primary/5 ring-1 ring-primary"
+                      : "hover:border-primary/40",
+                  )}
+                >
+                  <span className="block text-xs font-bold">
+                    {isAr ? "ملء الإطار (قص)" : "Cover frame"}
+                  </span>
+                  <span className="mt-1 block text-[10px] text-muted-foreground">
+                    {isAr ? "تكبير الصورة لملء الخلفية" : "Fills canvas boundary"}
+                  </span>
+                  {imageFit === "cover" && (
+                    <Check className="absolute end-2 top-2 size-3.5 text-primary" />
+                  )}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setImageFit("contain")}
+                  className={cn(
+                    "relative rounded-xl border p-3 text-start transition-all",
+                    imageFit === "contain"
+                      ? "border-primary bg-primary/5 ring-1 ring-primary"
+                      : "hover:border-primary/40",
+                  )}
+                >
+                  <span className="block text-xs font-bold">
+                    {isAr ? "احتواء كامل (كاملة)" : "Fit / Contain"}
+                  </span>
+                  <span className="mt-1 block text-[10px] text-muted-foreground">
+                    {isAr ? "حفظ كامل تفاصيل الصورة" : "Preserves full photo"}
+                  </span>
+                  {imageFit === "contain" && (
+                    <Check className="absolute end-2 top-2 size-3.5 text-primary" />
+                  )}
+                </button>
+              </div>
+            </div>
             <div className="space-y-4">
               <div>
                 <Label htmlFor="studio-edition-label">
@@ -579,12 +625,30 @@ ${desc}${detailsBlock}
               style={{ background: palette.bg, color: palette.ink }}
             >
               {photo ? (
-                <img
-                  src={photo}
-                  crossOrigin="anonymous"
-                  alt=""
-                  className="absolute inset-0 size-full object-cover"
-                />
+                imageFit === "contain" ? (
+                  <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
+                    <img
+                      src={photo}
+                      crossOrigin="anonymous"
+                      alt=""
+                      className="absolute inset-0 size-full object-cover blur-2xl scale-125 opacity-70 brightness-75 select-none"
+                    />
+                    <div className="absolute inset-0 bg-black/20" />
+                    <img
+                      src={photo}
+                      crossOrigin="anonymous"
+                      alt=""
+                      className="relative z-10 max-h-full max-w-full object-contain drop-shadow-[0_16px_32px_rgba(0,0,0,0.4)] select-none"
+                    />
+                  </div>
+                ) : (
+                  <img
+                    src={photo}
+                    crossOrigin="anonymous"
+                    alt=""
+                    className="absolute inset-0 size-full object-cover"
+                  />
+                )
               ) : (
                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(214,177,130,.65),transparent_28%),radial-gradient(circle_at_80%_75%,rgba(51,10,10,.22),transparent_30%)]" />
               )}

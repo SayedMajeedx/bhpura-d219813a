@@ -51,6 +51,7 @@ export function CropUploadButton({
   const isAr = lang === "ar";
   const inputRef = useRef<HTMLInputElement>(null);
   const [source, setSource] = useState<string | null>(null);
+  const [sourceFile, setSourceFile] = useState<File | null>(null);
 
   useEffect(
     () => () => {
@@ -60,6 +61,7 @@ export function CropUploadButton({
   );
 
   const close = () => {
+    setSourceFile(null);
     setSource((current) => {
       if (current) URL.revokeObjectURL(current);
       return null;
@@ -78,6 +80,7 @@ export function CropUploadButton({
       );
       return;
     }
+    setSourceFile(file);
     setSource((current) => {
       if (current) URL.revokeObjectURL(current);
       return URL.createObjectURL(file);
@@ -124,6 +127,12 @@ export function CropUploadButton({
         onCancel={close}
         onConfirm={async (blob) => {
           await onCrop(blob);
+          close();
+        }}
+        onSkipCrop={async () => {
+          if (sourceFile) {
+            await onCrop(sourceFile);
+          }
           close();
         }}
       />

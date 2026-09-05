@@ -2291,6 +2291,7 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
   const [errors, setErrors] = useState<{ name?: string; price?: string; cost?: string }>({});
   const [uploading, setUploading] = useState(false);
   const [cropSrc, setCropSrc] = useState<string | null>(null);
+  const [pendingImageFile, setPendingImageFile] = useState<File | null>(null);
   const [pendingVideo, setPendingVideo] = useState<File | null>(null);
   const uncommittedUploads = useRef(new Set<string>());
   const removedCommittedMedia = useRef(new Set<string>());
@@ -2381,6 +2382,7 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
       void uploadBlob(file, ext, "video").finally(() => setPendingVideo(null));
       return;
     }
+    setPendingImageFile(file);
     const reader = new FileReader();
     reader.onload = () => setCropSrc(String(reader.result));
     reader.readAsDataURL(file);
@@ -2389,6 +2391,16 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
   const handleCropConfirmed = async (blob: Blob) => {
     await uploadBlob(blob, "jpg", "image");
     setCropSrc(null);
+    setPendingImageFile(null);
+  };
+
+  const handleSkipCrop = async () => {
+    if (pendingImageFile) {
+      const ext = pendingImageFile.name.split(".").pop() ?? "jpg";
+      await uploadBlob(pendingImageFile, ext, "image");
+      setCropSrc(null);
+      setPendingImageFile(null);
+    }
   };
 
   const removeMedia = (index: number) => {
@@ -3591,11 +3603,15 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
         title={isAr ? "ضبط صورة المنتج" : "Frame product image"}
         description={
           isAr
-            ? "اضبط الصورة ضمن النسبة العمودية نفسها المستخدمة في بطاقات وصفحة المنتج."
-            : "Frame the image in the same portrait ratio used by product cards and product pages."
+            ? "اختر ملء الإطار أو احتواء كامل لمنع قص أي تفاصيل، أو تخطّ القص لاستخدام الصورة الأصلية."
+            : "Choose cover to crop, contain to preserve full height, or skip crop to keep original."
         }
-        onCancel={() => setCropSrc(null)}
+        onCancel={() => {
+          setCropSrc(null);
+          setPendingImageFile(null);
+        }}
         onConfirm={handleCropConfirmed}
+        onSkipCrop={handleSkipCrop}
       />
     </DialogContent>
   );
