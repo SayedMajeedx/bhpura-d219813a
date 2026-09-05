@@ -20,7 +20,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetClose } from "@/components/ui/sheet";
 import { OsMobileTabBar, type OsMobileTabItem } from "./os-mobile-tab-bar";
-import { OsIslandDock } from "./os-island-dock";
+import { OsIslandDock, type OsIslandDockItem } from "./os-island-dock";
 import { OsQuickActions } from "./os-quick-actions";
 import { OsAppsHubModal } from "./os-apps-hub-modal";
 import { type AdminNavItemConfig } from "@/config/admin-navigation";
@@ -59,15 +59,16 @@ export function OsMobileNavigation({
   // Deep detail views (order detail, return detail, customer detail) require full vertical focus and hide the global dock
   const isDetailPage = React.useMemo(() => {
     if (!pathname) return false;
+    const cleanPath = pathname.split("?")[0].replace(/\/+$/, "");
     return (
-      /\/orders\/[^/]+/.test(pathname) ||
-      /\/returns\/[^/]+/.test(pathname) ||
-      /\/customers\/[^/]+/.test(pathname)
+      /\/orders\/[^/]+$/.test(cleanPath) ||
+      /\/returns\/[^/]+$/.test(cleanPath) ||
+      /\/customers\/[^/]+$/.test(cleanPath)
     );
   }, [pathname]);
 
   // Pick top items for quick mobile tabs + "More" item
-  const primaryTabItems: OsMobileTabItem[] = React.useMemo(() => {
+  const primaryTabItems: OsIslandDockItem[] = React.useMemo(() => {
     if (!activeSlug) {
       if (isSuperAdmin) {
         return [
@@ -502,20 +503,11 @@ export function OsMobileNavigation({
 
       {/* Mobile & Tablet Floating Island Dock */}
       {(activeSlug || isSuperAdmin) && (
-        <div
-          className={cn(
-            "md:hidden transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]",
-            isDetailPage
-              ? "translate-y-28 opacity-0 pointer-events-none scale-95"
-              : "translate-y-0 opacity-100 scale-100"
-          )}
-          aria-hidden={isDetailPage}
-        >
-          <OsIslandDock
-            items={primaryTabItems}
-            lang={lang}
-          />
-        </div>
+        <OsIslandDock
+          items={primaryTabItems}
+          lang={lang}
+          isHidden={isDetailPage}
+        />
       )}
 
       {/* Apps Hub Modal */}
