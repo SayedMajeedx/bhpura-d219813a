@@ -87,12 +87,12 @@ type Brand = {
   meta_title: string | null;
   meta_description: string | null;
   subscription_tier: "basic" | "growth" | "enterprise" | null;
-  subscription_status: "active" | "pending_verification" | "suspended" | null;
+  subscription_status: "active" | "pending_verification" | "suspended" | "trialing" | null;
   subscription_expires_at: string | null;
   payment_receipt_url: string | null;
   payment_receipt_uploaded_at: string | null;
   custom_domain: string | null;
-  plan_type: "annual" | "lifetime" | "trial" | null;
+  plan_type: "annual" | "monthly" | "lifetime" | "trial" | null;
   trial_ends_at: string | null;
   renewal_intent: "renew" | "cancel" | null;
   renewal_intent_recorded_at: string | null;
@@ -209,8 +209,9 @@ function BrandsPage() {
     (sum, brand) =>
       brand.subscription_status === "active" &&
       brand.plan_type !== "lifetime" &&
+      brand.plan_type !== "trial" &&
       brand.slug.toLowerCase() !== "pura"
-        ? sum + 49
+        ? sum + (brand.plan_type === "monthly" ? 0 : 49)
         : sum,
     0,
   );
@@ -446,9 +447,15 @@ function BrandsPage() {
                           <Badge className="bg-violet-600 text-white hover:bg-violet-700 text-[10px]">
                             {lang === "ar" ? "مشروع دائم" : "Permanent"}
                           </Badge>
+                        ) : b.plan_type === "trial" || b.subscription_status === "trialing" ? (
+                          <Badge className="bg-amber-500 text-white hover:bg-amber-600 text-[10px]">
+                            {lang === "ar" ? "تجربة مجانية" : "Free Trial"}
+                          </Badge>
                         ) : b.subscription_status === "active" ? (
                           <Badge className="bg-emerald-500 text-white hover:bg-emerald-600 text-[10px]">
-                            {lang === "ar" ? "سنوي نشط" : "Annual active"}
+                            {b.plan_type === "monthly"
+                              ? lang === "ar" ? "شهري نشط" : "Monthly active"
+                              : lang === "ar" ? "سنوي نشط" : "Annual active"}
                           </Badge>
                         ) : b.subscription_status === "pending_verification" ? (
                           <Badge className="bg-amber-500 text-white hover:bg-amber-600 text-[10px] animate-pulse">
@@ -459,7 +466,20 @@ function BrandsPage() {
                             Unpaid
                           </Badge>
                         )}
-                        {b.subscription_expires_at && b.plan_type !== "lifetime" && (
+                        {b.plan_type === "trial" && b.trial_ends_at && (
+                          <span className="text-[9px] text-amber-600 dark:text-amber-400 font-semibold flex items-center gap-0.5">
+                            <ClockIcon className="h-2.5 w-2.5" />
+                            {Math.max(
+                              0,
+                              Math.ceil(
+                                (new Date(b.trial_ends_at).getTime() - Date.now()) /
+                                  86400000,
+                              ),
+                            )}{" "}
+                            {lang === "ar" ? "أيام تجريبية متبقية" : "trial days left"}
+                          </span>
+                        )}
+                        {b.subscription_expires_at && b.plan_type !== "lifetime" && b.plan_type !== "trial" && (
                           <span className="text-[9px] text-muted-foreground font-semibold flex items-center gap-0.5">
                             <ClockIcon className="h-2.5 w-2.5" />
                             {Math.max(

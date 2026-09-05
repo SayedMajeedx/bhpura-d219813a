@@ -591,6 +591,8 @@ export const logImpersonationStart = createServerFn({ method: "POST" })
 // 8. Register Instant 3-Day Free Trial (Self-Service)
 const RegisterInstantTrialInput = z.object({
   brandName: z.string().min(2),
+  nameEn: z.string().optional(),
+  nameAr: z.string().optional(),
   slug: z.string().min(2).max(32).regex(/^[a-z0-9](?:[a-z0-9-]{0,30}[a-z0-9])?$/),
   ownerName: z.string().min(2),
   contactNumber: z.string().min(6),
@@ -698,8 +700,8 @@ export const registerInstantTrial = createServerFn({ method: "POST" })
       "create_tenant_with_defaults",
       {
         p_slug: normalizedSlug,
-        p_name_en: data.brandName.trim(),
-        p_name_ar: data.brandName.trim(),
+        p_name_en: (data.nameEn || data.brandName).trim(),
+        p_name_ar: (data.nameAr || data.brandName).trim(),
         p_primary_color: "#800020",
         p_owner_id: userId,
         p_business_type: data.businessType || "Abayas & Fashion",

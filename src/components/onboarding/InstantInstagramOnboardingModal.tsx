@@ -23,9 +23,13 @@ import {
   ChevronRight,
   ExternalLink,
   ShieldCheck,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useI18n } from "@/lib/i18n";
+import { supabase } from "@/integrations/supabase/client";
+import { registerInstantTrial } from "@/lib/onboarding.functions";
 import { provisionBrandWithOwner } from "@/lib/brand-provisioning";
 import {
   fetchInstagramPosts,
@@ -66,6 +70,14 @@ export function InstantInstagramOnboardingModal({
   const [ownerName, setOwnerName] = React.useState("");
   const [ownerPhone, setOwnerPhone] = React.useState("");
   const [ownerPassword, setOwnerPassword] = React.useState("");
+  const [showPassword, setShowPassword] = React.useState(false);
+
+  // Clear any residual impersonation cookies when modal opens
+  React.useEffect(() => {
+    if (open && typeof document !== "undefined") {
+      document.cookie = "boutq_impersonation_token=; path=/; max-age=0; samesite=lax";
+    }
+  }, [open]);
 
   // Tracking manual edits so auto-fill from handle is smooth and non-destructive
   const [isSlugManuallyEdited, setIsSlugManuallyEdited] = React.useState(false);
@@ -102,6 +114,18 @@ export function InstantInstagramOnboardingModal({
     }
     if (!slug.trim()) {
       toast.error(isAr ? "يرجى تحديد المعرّف (Slug)" : "Store slug is required");
+      return;
+    }
+    if (!ownerEmail.trim() || !ownerEmail.includes("@")) {
+      toast.error(isAr ? "يرجى إدخال بريد إلكتروني صحيح لمدير المتجر" : "Valid owner email is required");
+      return;
+    }
+    if (!ownerPassword.trim() || ownerPassword.trim().length < 6) {
+      toast.error(
+        isAr
+          ? "يرجى تعيين كلمة مرور مكونة من 6 خانات على الأقل لتسجيل الدخول لاحقاً"
+          : "Please set a password of at least 6 characters to sign in later",
+      );
       return;
     }
 
@@ -278,20 +302,67 @@ export function InstantInstagramOnboardingModal({
         : "Setting up your custom boutique storefront... 🚀",
     );
 
-    try {
-      // 1. Provision Brand Tenant
-      const provisioned = await provisionBrandWithOwner({
-        slug,
-        name_en: storeNameEn.trim(),
-        name_ar: storeNameAr.trim() || null,
-        owner_name: ownerName.trim() || storeNameEn.trim(),
-        owner_email: ownerEmail.trim(),
-        owner_phone: ownerPhone.trim() || null,
-        owner_password: ownerPassword.trim() || "Boutq2026!",
-        plan_type: "trial",
-      });
+    // Clear any residual impersonation cookies before deploying
+    if (typeof document !== "undefined") {
+      document.cookie = "boutq_impersonation_token=; path=/; max-age=0; samesite=lax";
+    }
 
-      const brandId = provisioned.brand_id;
+    try {
+      const cleanPhone = ownerPhone.trim()
+        ? ownerPhone.trim().startsWith("+")
+          ? ownerPhone.trim()
+          : `+973${ownerPhone.trim().replace(/^0+/, "")}`
+        : "+97300000000";
+
+      const cleanPassword = ownerPassword.trim();
+      const cleanEmail = ownerEmail.trim().toLowerCase();
+
+      // Check if session exists (e.g. super admin executing from /admin/brands)
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      let brandId: string;
+
+      if (session) {
+        // Superadmin provisioning via edge function
+        const provisioned = await provisionBrandWithOwner({
+          slug: slug.trim().toLowerCase(),
+          name_en: storeNameEn.trim(),
+          name_ar: storeNameAr.trim() || null,
+          owner_name: ownerName.trim() || storeNameEn.trim(),
+          owner_email: cleanEmail,
+          owner_phone: cleanPhone,
+          owner_password: cleanPassword,
+          plan_type: "trial",
+        });
+        brandId = provisioned.brand_id;
+      } else {
+        // Public visitor self-service provisioning
+        const res = await registerInstantTrial({
+          data: {
+            brandName: storeNameAr.trim() || storeNameEn.trim(),
+            nameEn: storeNameEn.trim(),
+            nameAr: storeNameAr.trim() || undefined,
+            slug: slug.trim().toLowerCase(),
+            ownerName: ownerName.trim() || storeNameEn.trim(),
+            contactNumber: cleanPhone,
+            email: cleanEmail,
+            password: cleanPassword,
+            businessType: "Boutique & Fashion",
+          },
+        });
+
+        if (res.alreadyRegistered) {
+          throw new Error(res.message);
+        }
+        brandId = res.brandId;
+
+        // Automatically sign in the new owner so their session is active for subsequent product insertion
+        await supabase.auth.signInWithPassword({
+          email: cleanEmail,
+          password: cleanPassword,
+        });
+      }
 
       // 2. Filter selected drafts
       const draftsToImport = drafts.filter((d) => selectedDraftIds.has(d.id));
@@ -339,11 +410,11 @@ export function InstantInstagramOnboardingModal({
       setStep("success");
       if (onSuccess) onSuccess(slug);
 
-      // Auto redirect to new boutique dashboard
+      // Auto redirect to new boutique dashboard after giving time to see credentials
       setTimeout(() => {
         onOpenChange(false);
         navigate({ to: `/admin/b/$slug/dashboard`, params: { slug } });
-      }, 1500);
+      }, 2500);
     } catch (err: any) {
       console.error(err);
       toast.error(isAr ? `فشل إطلاق المتجر: ${err.message}` : `Deployment error: ${err.message}`);
@@ -438,44 +509,119 @@ export function InstantInstagramOnboardingModal({
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <Label className="text-xs font-semibold">
-                  {isAr ? "معرّف الرابط (Slug)" : "Store URL Slug"}
-                </Label>
-                <div
+            {/* Store URL Slug */}
+            <div>
+              <Label className="text-xs font-semibold">
+                {isAr ? "معرّف الرابط (Slug)" : "Store URL Slug"}
+              </Label>
+              <div
+                dir="ltr"
+                className="flex items-center rounded-xl border border-input bg-background focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 overflow-hidden h-9 mt-1 transition-colors"
+              >
+                <input
+                  value={slug}
+                  onChange={(e) => {
+                    setIsSlugManuallyEdited(true);
+                    setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9_-]/g, ""));
+                  }}
+                  placeholder="yourbrand"
+                  className="flex-1 min-w-0 bg-transparent px-3 text-xs text-foreground font-mono placeholder:text-muted-foreground/35 placeholder:font-normal focus:outline-none"
+                  autoComplete="off"
+                />
+                <span
                   dir="ltr"
-                  className="flex items-center rounded-xl border border-input bg-background focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 overflow-hidden h-9 mt-1 transition-colors"
+                  className="px-2.5 py-1.5 text-xs text-muted-foreground font-mono bg-muted/40 border-s border-border select-none shrink-0"
                 >
-                  <input
-                    value={slug}
-                    onChange={(e) => {
-                      setIsSlugManuallyEdited(true);
-                      setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9_-]/g, ""));
-                    }}
-                    placeholder="yourbrand"
-                    className="flex-1 min-w-0 bg-transparent px-3 text-xs text-foreground font-mono placeholder:text-muted-foreground/35 placeholder:font-normal focus:outline-none"
-                    autoComplete="off"
+                  .boutq.store
+                </span>
+              </div>
+            </div>
+
+            {/* Account & Login Credentials */}
+            <div className="pt-2 border-t border-border/50 space-y-2.5">
+              <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider block">
+                {isAr ? "بيانات حساب المالك وتأكيد الدخول" : "Owner Account & Login Credentials"}
+              </span>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <Label className="text-xs font-semibold">
+                    {isAr ? "الاسم الكامل" : "Full Name"} *
+                  </Label>
+                  <Input
+                    value={ownerName}
+                    onChange={(e) => setOwnerName(e.target.value)}
+                    placeholder={isAr ? "اسم مالك المتجر" : "Your full name"}
+                    className="h-9 text-xs rounded-xl mt-1 placeholder:text-muted-foreground/35 placeholder:font-normal"
+                    required
                   />
-                  <span
+                </div>
+                <div>
+                  <Label className="text-xs font-semibold">
+                    {isAr ? "البريد الإلكتروني" : "Owner Email"} *
+                  </Label>
+                  <Input
+                    type="email"
                     dir="ltr"
-                    className="px-2.5 py-1.5 text-xs text-muted-foreground font-mono bg-muted/40 border-s border-border select-none shrink-0"
-                  >
-                    .boutq.store
-                  </span>
+                    value={ownerEmail}
+                    onChange={(e) => setOwnerEmail(e.target.value)}
+                    placeholder="admin@example.com"
+                    className="h-9 text-xs rounded-xl mt-1 placeholder:text-muted-foreground/40 placeholder:font-normal text-left font-mono"
+                    required
+                  />
                 </div>
               </div>
-              <div>
-                <Label className="text-xs font-semibold">
-                  {isAr ? "بريد المدير الإلكتروني" : "Owner Email"}
-                </Label>
-                <Input
-                  type="email"
-                  value={ownerEmail}
-                  onChange={(e) => setOwnerEmail(e.target.value)}
-                  placeholder="admin@example.com"
-                  className="h-9 text-xs rounded-xl mt-1 placeholder:text-muted-foreground/40 placeholder:font-normal placeholder:opacity-60"
-                />
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <Label className="text-xs font-semibold">
+                    {isAr ? "رقم الواتساب" : "WhatsApp Number"}
+                  </Label>
+                  <div
+                    dir="ltr"
+                    className="flex items-center rounded-xl border border-input bg-background focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 overflow-hidden h-9 mt-1 transition-colors"
+                  >
+                    <span
+                      dir="ltr"
+                      className="px-2.5 py-1.5 text-xs text-muted-foreground font-mono bg-muted/40 border-e border-border select-none shrink-0"
+                    >
+                      +973
+                    </span>
+                    <input
+                      type="tel"
+                      dir="ltr"
+                      value={ownerPhone}
+                      onChange={(e) => setOwnerPhone(e.target.value)}
+                      placeholder="39955508"
+                      className="flex-1 min-w-0 bg-transparent px-3 text-xs text-foreground font-mono placeholder:text-muted-foreground/35 placeholder:font-normal focus:outline-none"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <Label className="text-xs font-semibold">
+                    {isAr ? "كلمة المرور (لتسجيل الدخول لاحقاً)" : "Password (to sign in later)"} *
+                  </Label>
+                  <div className="relative mt-1">
+                    <Input
+                      type={showPassword ? "text" : "password"}
+                      dir="ltr"
+                      value={ownerPassword}
+                      onChange={(e) => setOwnerPassword(e.target.value)}
+                      placeholder="••••••••"
+                      minLength={6}
+                      className="h-9 text-xs rounded-xl pe-9 placeholder:text-muted-foreground/35 placeholder:font-normal font-mono text-left"
+                      required
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute end-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-0.5"
+                      tabIndex={-1}
+                    >
+                      {showPassword ? <EyeOff className="size-3.5" /> : <Eye className="size-3.5" />}
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -601,15 +747,43 @@ export function InstantInstagramOnboardingModal({
 
         {/* STEP 5: SUCCESS */}
         {step === "success" && (
-          <div className="py-10 flex flex-col items-center justify-center text-center space-y-3">
+          <div className="py-6 flex flex-col items-center justify-center text-center space-y-4">
             <div className="size-14 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
               <CheckCircle2 className="size-8" />
             </div>
-            <h4 className="font-bold text-base text-foreground">
-              {isAr ? "تم إطلاق المتجر بنجاح!" : "Store Launched Successfully!"}
-            </h4>
-            <p className="text-xs text-muted-foreground">
-              {isAr ? "جاري نقلك مباشرة إلى لوحة التحكم الخاصة بالبوتيك..." : "Redirecting to your boutique dashboard..."}
+            <div className="space-y-1">
+              <h4 className="font-bold text-base text-foreground">
+                {isAr ? "تم إطلاق المتجر بنجاح!" : "Store Launched Successfully!"}
+              </h4>
+              <p className="text-xs text-muted-foreground">
+                {isAr
+                  ? "تم تفعيل متجرك وتجهيز حسابك التجريبي (3 أيام مجانية)"
+                  : "Your store and 3-day trial account are ready"}
+              </p>
+            </div>
+
+            <div className="w-full max-w-sm bg-muted/40 border border-border/80 rounded-xl p-3.5 text-xs text-start space-y-2">
+              <div className="font-bold text-foreground flex items-center gap-1.5 border-b border-border/60 pb-1.5">
+                <ShieldCheck className="size-4 text-emerald-600" />
+                {isAr ? "بيانات الدخول لحساب الإدارة" : "Login Credentials"}
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-muted-foreground">{isAr ? "البريد الإلكتروني:" : "Email:"}</span>
+                <span className="font-mono text-foreground font-semibold">{ownerEmail}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-muted-foreground">{isAr ? "رابط تسجيل الدخول:" : "Sign In URL:"}</span>
+                <span className="font-mono text-primary font-semibold">boutq.store/auth</span>
+              </div>
+              <div className="text-[11px] text-muted-foreground pt-1 border-t border-border/40">
+                {isAr
+                  ? "يمكنك تسجيل الدخول في أي وقت باستخدام بريدك الإلكتروني وكلمة المرور التي حددتها."
+                  : "You can sign in anytime using your email and the password you set."}
+              </div>
+            </div>
+
+            <p className="text-[11px] text-muted-foreground animate-pulse">
+              {isAr ? "جاري نقلك مباشرة إلى لوحة التحكم..." : "Redirecting to your boutique dashboard..."}
             </p>
           </div>
         )}

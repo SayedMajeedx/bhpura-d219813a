@@ -20,11 +20,31 @@ function getImpersonationToken(request?: Request): string | null {
   return null;
 }
 
-function decodeBase64(str: string): string {
-  if (typeof Buffer !== "undefined") {
-    return Buffer.from(str, "base64").toString("utf-8");
+function parseTokenPayload(token: string | null): any | null {
+  if (!token) return null;
+  try {
+    const part = token.includes(".") ? token.split(".")[0] : token;
+    let base64 = part.replace(/-/g, "+").replace(/_/g, "/");
+    while (base64.length % 4) {
+      base64 += "=";
+    }
+    if (typeof Buffer !== "undefined") {
+      try {
+        return JSON.parse(Buffer.from(part, "base64url").toString("utf-8"));
+      } catch {}
+      return JSON.parse(Buffer.from(base64, "base64").toString("utf-8"));
+    }
+    const binary = atob(base64);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) {
+      bytes[i] = binary.charCodeAt(i);
+    }
+    const decoded = new TextDecoder("utf-8").decode(bytes);
+    return JSON.parse(decoded);
+  } catch (err) {
+    console.error("[Impersonation] Failed to decode token payload:", err);
+    return null;
   }
-  return atob(str);
 }
 
 export const Route = createFileRoute("/_authenticated/admin/b/$slug")({
@@ -130,7 +150,7 @@ export const Route = createFileRoute("/_authenticated/admin/b/$slug")({
       throw redirect({ to: "/admin" });
     }
 
-    if (isSuperAdmin) {
+    if (isSuperAdmin && !belongsToBrand) {
       const accessEnabled = brand.support_access_enabled !== false;
       if (!accessEnabled) {
         throw redirect({ to: "/admin/brands" });
@@ -142,9 +162,12 @@ export const Route = createFileRoute("/_authenticated/admin/b/$slug")({
       }
 
       try {
-        const payload = JSON.parse(decodeBase64(token));
-        const matchesBrand = payload.targetTenantId === brand.id;
-        const isNotExpired = payload.issuedAt > Date.now() - 1000 * 60 * 60 * 24;
+        const payload = parseTokenPayload(token);
+        const matchesBrand = payload && payload.targetTenantId === brand.id;
+        const isNotExpired =
+          payload &&
+          typeof payload.issuedAt === "number" &&
+          payload.issuedAt > Date.now() - 1000 * 60 * 60 * 24;
 
         if (!matchesBrand || !isNotExpired) {
           throw redirect({ to: "/admin/brands" });

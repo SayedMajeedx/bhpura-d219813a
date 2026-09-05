@@ -248,8 +248,19 @@ function createSupabaseAuthMiddleware(options?: { allowImpersonationLifecycle?: 
     let isImpersonating = false;
     if (cookieHeader) {
       const match = cookieHeader.match(/(^|;)\s*boutq_impersonation_token\s*=\s*([^;]+)/);
-      if (match) {
-        isImpersonating = true;
+      if (match && match[2]) {
+        try {
+          const { verifyImpersonationToken } = await import("@/lib/impersonation-cookies.server");
+          const verified = await verifyImpersonationToken(match[2]);
+          if (verified?.targetTenantId) {
+            // Only apply safeguard if the request originated from within a tenant brand workspace (/admin/b/:slug)
+            const referer = request.headers.get("referer");
+            const isInsideTenantWorkspace = referer ? /\/admin\/b\/[^/]+/.test(referer) : true;
+            if (isInsideTenantWorkspace) {
+              isImpersonating = true;
+            }
+          }
+        } catch {}
       }
     }
 

@@ -300,7 +300,7 @@ async function handleProvisionBrand(supabase: any, body: any) {
           planType === "trial"
             ? new Date(Date.now() + trialDays * 24 * 60 * 60 * 1000).toISOString()
             : null,
-        subscription_status: "active",
+        subscription_status: planType === "trial" ? "trialing" : "active",
         subscription_expires_at: planType === "annual" ? annualExpiry.toISOString() : null,
         updated_at: new Date().toISOString(),
       })

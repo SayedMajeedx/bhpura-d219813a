@@ -73,6 +73,13 @@ function OnboardPage() {
       .catch(() => {});
   }, []);
 
+  // Clear any leftover impersonation cookies on the onboarding portal
+  useEffect(() => {
+    if (typeof document !== "undefined") {
+      document.cookie = "boutq_impersonation_token=; path=/; max-age=0; samesite=lax";
+    }
+  }, []);
+
   // Load public plans for bottom preview
   useEffect(() => {
     getPublicOnboardingPlans()
