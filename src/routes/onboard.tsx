@@ -12,7 +12,6 @@ import { cn } from "@/lib/utils";
 import {
   Sparkles,
   Check,
-  Instagram,
   ArrowRight,
   ShieldCheck,
   Zap,
@@ -30,7 +29,6 @@ import {
   getPublicOnboardingPlans,
   getOnboardingTrialDays,
 } from "@/lib/onboarding.functions";
-import { InstantInstagramOnboardingModal } from "@/components/onboarding/InstantInstagramOnboardingModal";
 
 export const Route = createFileRoute("/onboard")({
   ssr: false,
@@ -43,7 +41,6 @@ function OnboardPage() {
   const navigate = useNavigate();
 
   // Modals & loading states
-  const [instagramModalOpen, setInstagramModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [plans, setPlans] = useState<any[]>([]);
   const [trialDays, setTrialDays] = useState(3);
@@ -80,16 +77,6 @@ function OnboardPage() {
   useEffect(() => {
     if (typeof document !== "undefined") {
       document.cookie = "boutq_impersonation_token=; path=/; max-age=0; samesite=lax";
-    }
-  }, []);
-
-  // Auto-open Instagram modal if returning from Meta OAuth callback
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      const params = new URLSearchParams(window.location.search);
-      if (params.get("instagram_connected") === "true" || params.get("instagram_error")) {
-        setInstagramModalOpen(true);
-      }
     }
   }, []);
 
@@ -329,76 +316,16 @@ function OnboardPage() {
           </div>
         )}
 
-        {/* 3. Two Primary Launch Options (Unlabelled-inspired Simplicity) */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-          {/* OPTION A: Instagram AI Instant Catalog Import (Featured / Star action) */}
-          <Card className="lg:col-span-5 border border-primary/20 bg-card rounded-2xl shadow-sm relative overflow-hidden flex flex-col justify-between">
-            <div className="absolute top-0 right-0 p-6 opacity-5 pointer-events-none text-primary">
-              <Instagram className="size-36" />
-            </div>
-
-            <CardHeader className="space-y-3 pb-4">
-              <div className="size-12 rounded-xl bg-gradient-to-tr from-amber-500 via-rose-500 to-purple-600 text-white flex items-center justify-center shadow-sm">
-                <Instagram className="size-6" />
-              </div>
-
-              <div>
-                <CardTitle className="text-lg font-bold text-foreground">
-                  {isAr ? "استيراد كتالوج انستقرام الفوري" : "Instant Instagram Import"}
-                </CardTitle>
-                <CardDescription className="text-xs text-muted-foreground mt-1 leading-relaxed">
-                  {isAr
-                    ? "استيراد كتالوج المنتجات، الصور، والأسعار تلقائياً عبر الذكاء الاصطناعي وتجهيز المتجر فوراً بدون إدخال يدوي."
-                    : "Have an active Instagram brand page? Our AI automatically extracts your products, photos, and captions into your store."}
-                </CardDescription>
-              </div>
-            </CardHeader>
-
-            <CardContent className="space-y-3 text-xs">
-              <div className="space-y-2 text-muted-foreground">
-                <div className="flex items-center gap-2">
-                  <Check className="size-4 text-primary" />
-                  <span>{isAr ? "سحب الصور والوصف والأسعار فوراً" : "Automatic photos, description & prices"}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Check className="size-4 text-primary" />
-                  <span>{isAr ? "تجهيز المتجر في أقل من دقيقة" : "Store setup ready in under 60 seconds"}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Check className="size-4 text-primary" />
-                  <span>
-                    {isAr ? `تجربة مجانية كاملة (${trialDays} أيام)` : `Full ${trialDays}-day free trial included`}
-                  </span>
-                </div>
-              </div>
-            </CardContent>
-
-            <CardFooter className="pt-2">
-              <Button
-                type="button"
-                size="default"
-                onClick={() => setInstagramModalOpen(true)}
-                className="w-full font-bold text-xs min-h-[44px] shadow-sm gap-2"
-              >
-                <Sparkles className="size-4" />
-                <span>
-                  {isAr
-                    ? `بدء استيراد انستقرام (${trialDays} أيام مجاناً)`
-                    : `Start Instagram Import (${trialDays} Days Free)`}
-                </span>
-              </Button>
-            </CardFooter>
-          </Card>
-
-          {/* OPTION B: Quick 1-Step Manual Boutique Launch Form */}
-          <Card className="lg:col-span-7 border border-border bg-card rounded-2xl shadow-sm">
+        {/* 3. Boutique Launch Form */}
+        <div className="max-w-2xl mx-auto w-full">
+          <Card className="border border-border bg-card rounded-2xl shadow-sm">
             <CardHeader className="pb-4">
-              <CardTitle className="text-lg font-bold text-foreground">
-                {isAr ? "إنشاء المتجر يدوياً" : "Or Create Your Boutique Manually"}
+              <CardTitle className="text-xl font-bold text-foreground">
+                {isAr ? "إطلاق متجرك الإلكتروني" : "Launch Your Boutique"}
               </CardTitle>
               <CardDescription className="text-xs text-muted-foreground">
                 {isAr
-                  ? `إدخال تفاصيل المتجر للبدء الفوري بالتجربة المجانية (${trialDays} أيام).`
+                  ? `أدخل تفاصيل متجرك للبدء الفوري بالتجربة المجانية (${trialDays} أيام).`
                   : `Enter your boutique details to start your instant ${trialDays}-day free trial.`}
               </CardDescription>
             </CardHeader>
@@ -796,12 +723,6 @@ function OnboardPage() {
             : "© 2026 Boutq OS. All rights reserved. E-commerce OS for GCC Fashion Boutiques."}
         </p>
       </footer>
-
-      {/* Instagram Importer Modal */}
-      <InstantInstagramOnboardingModal
-        open={instagramModalOpen}
-        onOpenChange={setInstagramModalOpen}
-      />
     </div>
   );
 }

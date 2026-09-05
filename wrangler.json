@@ -22,9 +22,6 @@
       "custom_domain": true
     }
   ],
-  "vars": {
-    "INSTAGRAM_APP_ID": "1435921631930750"
-  },
   "secrets": {
     "required": [
       "SUPABASE_URL",

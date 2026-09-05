@@ -53,7 +53,6 @@ import {
   rejectSubscriptionSaaS,
 } from "@/lib/saas-subscription.functions";
 import { WhiteLabelAppsPanel } from "@/components/super-admin/WhiteLabelAppsPanel";
-import { InstantInstagramOnboardingModal } from "@/components/onboarding/InstantInstagramOnboardingModal";
 
 export const Route = createFileRoute("/_authenticated/admin/brands")({
   beforeLoad: async () => {
@@ -139,7 +138,6 @@ function BrandsPage() {
   const qc = useQueryClient();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
-  const [instagramModalOpen, setInstagramModalOpen] = useState(false);
 
   const handleImpersonate = async (brandId: string, slug: string) => {
     // A stale read-only session must not block the super admin from starting a
@@ -294,15 +292,6 @@ function BrandsPage() {
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2.5">
-          <Button
-            type="button"
-            onClick={() => setInstagramModalOpen(true)}
-            className="h-11 bg-gradient-to-tr from-pink-600 via-rose-600 to-amber-600 text-white font-bold shadow-md hover:opacity-95 hover:scale-[1.01] active:scale-95 transition-all"
-          >
-            <Sparkles className="h-4 w-4 me-2 animate-pulse" />
-            {lang === "ar" ? "⚡ استيراد فوري من انستقرام" : "⚡ Instant Instagram Launch"}
-          </Button>
-
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
               <Button variant="outline" className="h-11 shadow-sm transition-all duration-200 hover:shadow hover:scale-[1.01] active:scale-95">
@@ -318,13 +307,6 @@ function BrandsPage() {
             />
           </Dialog>
         </div>
-
-        <InstantInstagramOnboardingModal
-          open={instagramModalOpen}
-          onOpenChange={setInstagramModalOpen}
-          isAdminModal={true}
-          onSuccess={() => refresh()}
-        />
       </div>
 
       {/* Modern SaaS KPI Stats Grid */}

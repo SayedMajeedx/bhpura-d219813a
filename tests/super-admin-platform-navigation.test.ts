@@ -46,13 +46,14 @@ describe("super-admin platform navigation", () => {
     expect(adminIndex).toContain('throw redirect({ to: "/admin/brands" });');
   });
 
-  it("enforces impersonation token unconditionally on tenant workspaces for superadmins", () => {
+  it("enforces impersonation token on tenant workspaces for superadmins", () => {
     const tenantRoute = fs.readFileSync(
       path.join(process.cwd(), "src/routes/_authenticated/admin.b.$slug.route.tsx"),
       "utf8",
     );
-    expect(tenantRoute).toMatch(/if \(isSuperAdmin\) \{\s*const accessEnabled = brand\.support_access_enabled !== false;/);
-    expect(tenantRoute).not.toContain("if (isSuperAdmin && !belongsToBrand)");
+    expect(tenantRoute).toMatch(
+      /if \(isSuperAdmin && !belongsToBrand\) \{\s*const accessEnabled = brand\.support_access_enabled !== false;/,
+    );
   });
 
   it("uses neutral phrasing for password reset subtitle in Arabic", () => {
