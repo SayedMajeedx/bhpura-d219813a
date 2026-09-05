@@ -1,4 +1,4 @@
-﻿import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { buildInstagramAuthorizeUrl } from "@/lib/instagram-oauth.server";
 
 export const Route = createFileRoute("/api/auth/instagram/authorize")({
@@ -65,11 +65,13 @@ export const Route = createFileRoute("/api/auth/instagram/authorize")({
 
         // Also check if user is the brand owner directly
         const { data: brand } = await (supabaseAdmin.from("brands") as any)
-          .select("id, owner_id")
+          .select("id, created_by")
           .eq("id", brandId)
           .maybeSingle();
 
-        const isOwner = brand && brand.owner_id === authenticatedUserId;
+        const isOwner =
+          brand &&
+          (brand.created_by === authenticatedUserId || (brand as any).owner_id === authenticatedUserId);
 
         if (!hasAccess && !isAdmin && !isOwner) {
           return new Response("Forbidden: You do not have access to this brand", { status: 403 });

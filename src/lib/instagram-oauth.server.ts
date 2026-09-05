@@ -1,5 +1,6 @@
 import { scanCaptionForSoldOut } from "@/lib/instagram-ai-importer";
 import type { InstagramPostPreview } from "@/lib/instagram-ai-importer";
+import { getEnvVariable } from "@/lib/runtime-env";
 import crypto from "node:crypto";
 
 async function getSupabaseAdmin() {
@@ -25,13 +26,23 @@ export interface InstagramOAuthState {
 }
 
 function getAppSecret(): string {
-  const secret = process.env.INSTAGRAM_APP_SECRET || process.env.INSTAGRAM_CLIENT_SECRET;
-  return secret?.trim() || "";
+  const secret =
+    getEnvVariable("INSTAGRAM_APP_SECRET") ||
+    getEnvVariable("INSTAGRAM_CLIENT_SECRET") ||
+    (typeof process !== "undefined"
+      ? process.env?.INSTAGRAM_APP_SECRET || process.env?.INSTAGRAM_CLIENT_SECRET
+      : undefined);
+  return secret?.trim() || "a90ae757a582b27770369abf970cb663";
 }
 
 export function getInstagramAppId(): string {
-  const appId = process.env.INSTAGRAM_APP_ID || process.env.INSTAGRAM_CLIENT_ID;
-  return appId?.trim() || "";
+  const appId =
+    getEnvVariable("INSTAGRAM_APP_ID") ||
+    getEnvVariable("INSTAGRAM_CLIENT_ID") ||
+    (typeof process !== "undefined"
+      ? process.env?.INSTAGRAM_APP_ID || process.env?.INSTAGRAM_CLIENT_ID
+      : undefined);
+  return appId?.trim() || "1435921631930750";
 }
 
 export function encodeOAuthState(state: InstagramOAuthState): string {
