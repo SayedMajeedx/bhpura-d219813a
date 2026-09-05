@@ -1,5 +1,5 @@
 import { useRouterState, useNavigate, useParams, useRouter } from "@tanstack/react-router";
-import { LogOut, Shield, Store, Search } from "lucide-react";
+import { LogOut, Shield, Store, Search, Sparkles } from "lucide-react";
 import { SpotlightCommandPalette } from "@/components/spotlight-command-palette";
 import { useState, useEffect, useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -15,6 +15,7 @@ import { OsMenuBar } from "@/components/os/os-menu-bar";
 import { OsAppWindow } from "@/components/os/os-app-window";
 import { OsMobileNavigation } from "@/components/os/os-mobile-navigation";
 import { OsRecentHistoryBar } from "@/components/os/os-recent-history-bar";
+import { OsCopilotSheet } from "@/components/os/os-copilot-sheet";
 import { cn } from "@/lib/utils";
 import {
   customFontFaces,
@@ -38,6 +39,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const { t, lang, setLang } = useI18n();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [isFocusMode, setIsFocusMode] = useState(false);
+  const [copilotOpen, setCopilotOpen] = useState(false);
 
   const [sidebarExpanded, setSidebarExpanded] = useState<boolean>(() => {
     if (typeof window !== "undefined") {
@@ -494,6 +496,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           onSignOut={signOut}
           mobileOpen={mobileOpen}
           onOpenChangeMobile={setMobileOpen}
+          onOpenCopilot={() => setCopilotOpen(true)}
         />
 
         {/* Level 2: Active Application Window Frame */}
@@ -563,6 +566,28 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </main>
         </div>
       </div>
+
+      {/* Level 3: AI Store Copilot Floating Button (Desktop) & Sheet */}
+      {activeBrand && (
+        <>
+          <button
+            type="button"
+            onClick={() => setCopilotOpen(true)}
+            className="fixed bottom-6 end-6 z-40 hidden sm:flex items-center gap-2 px-3.5 py-2 rounded-full bg-gradient-to-tr from-violet-600 to-indigo-600 text-white font-bold text-xs shadow-xl hover:shadow-2xl hover:scale-105 active:scale-95 transition-all select-none border border-white/20"
+            title={lang === "ar" ? "المساعد الذكي للمتجر" : "Store AI Copilot"}
+          >
+            <Sparkles className="size-4 animate-pulse" />
+            <span>{lang === "ar" ? "كوبايلوت" : "Copilot"}</span>
+          </button>
+          <OsCopilotSheet
+            open={copilotOpen}
+            onOpenChange={setCopilotOpen}
+            brandId={activeBrand.id}
+            slug={activeSlug!}
+            lang={lang}
+          />
+        </>
+      )}
 
       {/* Level 3: Spotlight Command Palette */}
       <SpotlightCommandPalette open={spotlightOpen} onOpenChange={setSpotlightOpen} />

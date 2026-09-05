@@ -26,6 +26,7 @@ import {
   ArrowUpRight,
   ShieldCheck,
   Zap,
+  Instagram,
 } from "lucide-react";
 import {
   Select,
@@ -42,6 +43,7 @@ import {
   getOnboardingTrialDays,
 } from "@/lib/onboarding.functions";
 import { TurnstileWidget } from "@/components/TurnstileWidget";
+import { InstantInstagramOnboardingModal } from "@/components/onboarding/InstantInstagramOnboardingModal";
 
 export const Route = createFileRoute("/onboard")({
   ssr: false,
@@ -52,6 +54,7 @@ function OnboardPage() {
   const { lang, setLang } = useI18n();
   const [liveSales, setLiveSales] = useState(4284.15);
   const [activeNotifyIdx, setActiveNotifyIdx] = useState(0);
+  const [instagramModalOpen, setInstagramModalOpen] = useState(false);
   const [showFeaturesModal, setShowFeaturesModal] = useState(false);
   const [copiedIban, setCopiedIban] = useState(false);
   const [activeOnboardTab, setActiveOnboardTab] = useState<"trial" | "paid">("trial");
@@ -1131,6 +1134,43 @@ function OnboardPage() {
             </span>
           </div>
         </div>
+
+        {/* Instant Instagram AI Launch Banner */}
+        <div className="mx-auto mb-6 w-full max-w-3xl rounded-2xl border border-primary/20 bg-gradient-to-r from-pink-500/10 via-purple-500/10 to-amber-500/10 p-4 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-3 relative z-10">
+          <div className="flex items-center gap-3">
+            <div className="size-10 rounded-xl bg-gradient-to-tr from-pink-500 via-rose-500 to-amber-500 text-white flex items-center justify-center shrink-0 shadow-md">
+              <Instagram className="size-5" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="font-bold text-sm text-foreground">
+                  {lang === "ar" ? "عندك حساب انستقرام للمتجر؟" : "Have an Instagram Store?"}
+                </span>
+                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-primary/10 text-primary">
+                  {lang === "ar" ? "تلقائي بثوانٍ" : "Auto Import"}
+                </span>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {lang === "ar"
+                  ? "نسحب المنتجات والصور والأسعار وننشئ متجرك تلقائياً بدون تعبئة بيانات يدوية."
+                  : "We'll scrape your posts, images, and prices with AI and launch your store in seconds."}
+              </p>
+            </div>
+          </div>
+          <Button
+            type="button"
+            onClick={() => setInstagramModalOpen(true)}
+            className="w-full sm:w-auto shrink-0 bg-gradient-to-tr from-pink-600 via-rose-600 to-amber-600 text-white font-bold text-xs h-9 px-4 rounded-xl shadow-md hover:opacity-95"
+          >
+            <Sparkles className="size-3.5 me-1.5" />
+            {lang === "ar" ? "استيراد الكتالوج الفوري" : "Instant Catalog Import"}
+          </Button>
+        </div>
+
+        <InstantInstagramOnboardingModal
+          open={instagramModalOpen}
+          onOpenChange={setInstagramModalOpen}
+        />
 
         {/* One clear decision at a time keeps the application concise. */}
         <div className="mx-auto mb-7 flex w-full max-w-3xl rounded-2xl border border-black/[0.06] bg-white p-1.5 shadow-sm select-none relative z-10">

@@ -20,6 +20,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetClose } from "@/components/ui/sheet";
 import { OsMobileTabBar, type OsMobileTabItem } from "./os-mobile-tab-bar";
+import { OsIslandDock } from "./os-island-dock";
 import { OsQuickActions } from "./os-quick-actions";
 import { OsAppsHubModal } from "./os-apps-hub-modal";
 import { type AdminNavItemConfig } from "@/config/admin-navigation";
@@ -37,6 +38,7 @@ export interface OsMobileNavigationProps {
   onSignOut: () => void;
   mobileOpen: boolean;
   onOpenChangeMobile: (open: boolean) => void;
+  onOpenCopilot?: () => void;
 }
 
 export function OsMobileNavigation({
@@ -51,6 +53,7 @@ export function OsMobileNavigation({
   onSignOut,
   mobileOpen,
   onOpenChangeMobile,
+  onOpenCopilot,
 }: OsMobileNavigationProps) {
   const navigate = useNavigate();
   const [appsHubOpen, setAppsHubOpen] = React.useState(false);
@@ -489,8 +492,16 @@ export function OsMobileNavigation({
         </div>
       </div>
 
-      {/* Mobile Bottom Tab Bar */}
-      {(activeSlug || isSuperAdmin) && <OsMobileTabBar items={primaryTabItems} />}
+      {/* Mobile & Tablet Floating Island Dock */}
+      {(activeSlug || isSuperAdmin) && (
+        <div className="md:hidden">
+          <OsIslandDock
+            items={primaryTabItems}
+            onOpenCopilot={activeSlug ? onOpenCopilot : undefined}
+            lang={lang}
+          />
+        </div>
+      )}
 
       {/* Apps Hub Modal */}
       {activeSlug && (

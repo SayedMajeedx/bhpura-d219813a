@@ -12,6 +12,9 @@ import {
   ChevronUp,
   Box,
   Building2,
+  Copy,
+  ExternalLink,
+  Share2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -43,6 +46,9 @@ interface InventoryWorkQueueProps {
   onPrintLabel: (product: any) => void;
   onConfigureBom?: (product: any) => void;
   onTransferToIncubator?: (product: any) => void;
+  onDuplicate?: (product: any) => void;
+  onShare?: (product: any) => void;
+  onPreview?: (product: any) => void;
   renderVariantList?: (product: any) => React.ReactNode;
   selectedProductIds?: ReadonlySet<string>;
   onToggleProduct?: (productId: string) => void;
@@ -61,6 +67,9 @@ export const InventoryWorkQueue: React.FC<InventoryWorkQueueProps> = ({
   onPrintLabel,
   onConfigureBom,
   onTransferToIncubator,
+  onDuplicate,
+  onShare,
+  onPreview,
   renderVariantList,
   selectedProductIds = new Set<string>(),
   onToggleProduct = () => undefined,
@@ -298,8 +307,26 @@ export const InventoryWorkQueue: React.FC<InventoryWorkQueueProps> = ({
                           </DropdownMenuTrigger>
                           <DropdownMenuContent
                             align={isAr ? "start" : "end"}
-                            className="w-40 text-xs"
+                            className="w-48 text-xs"
                           >
+                            {onPreview && (
+                              <DropdownMenuItem onClick={() => onPreview(product)}>
+                                <ExternalLink className="h-3.5 w-3.5 me-2 text-primary" />
+                                {isAr ? "معاينة المنتج" : "Preview Product"}
+                              </DropdownMenuItem>
+                            )}
+                            {onShare && (
+                              <DropdownMenuItem onClick={() => onShare(product)}>
+                                <Share2 className="h-3.5 w-3.5 me-2 text-primary" />
+                                {isAr ? "مشاركة الرابط" : "Share Link"}
+                              </DropdownMenuItem>
+                            )}
+                            {onDuplicate && (
+                              <DropdownMenuItem onClick={() => onDuplicate(product)}>
+                                <Copy className="h-3.5 w-3.5 me-2 text-primary" />
+                                {isAr ? "تكرار المنتج" : "Duplicate Product"}
+                              </DropdownMenuItem>
+                            )}
                             <DropdownMenuItem onClick={() => onPrintLabel(product)}>
                               <Printer className="h-3.5 w-3.5 me-2" />
                               {isAr ? "طباعة الباركوّد" : "Print Barcode"}

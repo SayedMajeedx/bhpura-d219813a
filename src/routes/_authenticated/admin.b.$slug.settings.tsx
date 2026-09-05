@@ -16,7 +16,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-import { AlertTriangle, Eye, EyeOff, RefreshCw, Upload } from "lucide-react";
+import { AlertTriangle, Eye, EyeOff, RefreshCw, Upload, Sparkles } from "lucide-react";
 import { useT, useI18n } from "@/lib/i18n";
 import { PhoneInput } from "@/components/phone-input";
 import { Rnd } from "react-rnd";
@@ -49,6 +49,10 @@ import {
   SettingsScopeSwitcher,
   type SettingsTabId,
 } from "@/components/settings/SettingsScopeSwitcher";
+import {
+  QuickThemeCustomizer,
+  type FontMoodPreset,
+} from "@/components/settings/QuickThemeCustomizer";
 
 const SUPPORTED_CURRENCIES = [
   { code: "BHD", name_en: "BHD — Bahraini Dinar", name_ar: "د.ب — دينار بحريني" },
@@ -3593,6 +3597,7 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
   const [settingsTab, setSettingsTab] = useState<"general" | "theme" | "content" | "promotions">(
     "theme",
   );
+  const [themeMode, setThemeMode] = useState<"quick" | "advanced">("quick");
   const [contentLanguage, setContentLanguage] = useState<"en" | "ar">(lang === "ar" ? "ar" : "en");
   const enFontInput = useRef<HTMLInputElement>(null);
   const arFontInput = useRef<HTMLInputElement>(null);
@@ -4204,9 +4209,114 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
         </div>
       </div>
 
+      {settingsTab === "theme" && (
+        <div className="flex items-center gap-2 p-1 bg-muted/40 rounded-lg w-fit border border-border">
+          <Button
+            type="button"
+            size="sm"
+            variant={themeMode === "quick" ? "default" : "ghost"}
+            onClick={() => setThemeMode("quick")}
+            className="gap-1.5 h-8 text-xs font-semibold"
+          >
+            <Sparkles className="size-3.5" />
+            <span>{isAr ? "المظهر السريع (Quick)" : "Quick Theme"}</span>
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            variant={themeMode === "advanced" ? "default" : "ghost"}
+            onClick={() => setThemeMode("advanced")}
+            className="gap-1.5 h-8 text-xs font-semibold"
+          >
+            <span>{isAr ? "تخصيص متقدم (Advanced)" : "Advanced Customizer"}</span>
+          </Button>
+        </div>
+      )}
+
+      {settingsTab === "theme" && themeMode === "quick" && state && (
+        <QuickThemeCustomizer
+          primaryColor={state.storefront_accent_color || state.btn_primary_bg || "#000000"}
+          secondaryColor={state.btn_secondary_bg || "#1f1f1f"}
+          radius={state.storefront_radius || "0.5rem"}
+          currentFontAr={state.storefront_font_ar || "Cairo"}
+          currentFontEn={state.storefront_font_en || "Inter"}
+          isAr={isAr}
+          onPrimaryChange={(val) =>
+            setState((prev) =>
+              !prev
+                ? prev
+                : {
+                    ...prev,
+                    storefront_accent_color: val,
+                    btn_primary_bg: val,
+                  },
+            )
+          }
+          onSecondaryChange={(val) =>
+            setState((prev) =>
+              !prev
+                ? prev
+                : {
+                    ...prev,
+                    btn_secondary_bg: val,
+                  },
+            )
+          }
+          onRadiusChange={(val) =>
+            setState((prev) =>
+              !prev
+                ? prev
+                : {
+                    ...prev,
+                    storefront_radius: val,
+                  },
+            )
+          }
+          onSelectFontPreset={(preset: FontMoodPreset) => {
+            setState((prev) =>
+              !prev
+                ? prev
+                : {
+                    ...prev,
+                    storefront_font_ar: preset.fontAr,
+                    storefront_font_en: preset.fontEn,
+                    storefront_typography: {
+                      ...(prev.storefront_typography || {}),
+                      body: {
+                        ...(prev.storefront_typography?.body || {}),
+                        ar: { family: preset.fontAr, url: null },
+                        en: { family: preset.fontEn, url: null },
+                      },
+                      display: {
+                        ...(prev.storefront_typography?.display || {}),
+                        ar: { family: preset.fontAr, url: null },
+                        en: { family: preset.fontEn, url: null },
+                      },
+                    },
+                  },
+            );
+          }}
+          onSwapColors={() => {
+            setState((prev) => {
+              if (!prev) return prev;
+              const currentP = prev.storefront_accent_color || prev.btn_primary_bg || "#000000";
+              const currentS = prev.btn_secondary_bg || "#1f1f1f";
+              return {
+                ...prev,
+                storefront_accent_color: currentS,
+                btn_primary_bg: currentS,
+                btn_secondary_bg: currentP,
+              };
+            });
+          }}
+        />
+      )}
+
       <div
         className={
-          settingsTab === "theme" ? "space-y-4 rounded-xl border border-border p-4" : "hidden"
+          settingsTab === "theme" && themeMode === "advanced"
+            ? "space-y-4 rounded-xl border border-border p-4"
+            : "hidden"
         }
       >
         <div className="flex items-center justify-between gap-4">
@@ -4473,7 +4583,7 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
 
       <div
         className={
-          settingsTab === "theme"
+          settingsTab === "theme" && themeMode === "advanced"
             ? "space-y-6 rounded-xl border border-border p-4 sm:p-5"
             : "hidden"
         }
@@ -4653,7 +4763,9 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
 
       <div
         className={
-          settingsTab === "theme" ? "space-y-4 rounded-xl border border-border p-4" : "hidden"
+          settingsTab === "theme" && themeMode === "advanced"
+            ? "space-y-4 rounded-xl border border-border p-4"
+            : "hidden"
         }
       >
         <div>
@@ -4968,7 +5080,7 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
         </div>
       </div>
 
-      <div className={settingsTab === "theme" ? "space-y-3" : "hidden"}>
+      <div className={settingsTab === "theme" && themeMode === "advanced" ? "space-y-3" : "hidden"}>
         <h3 className="font-medium text-sm">{isAr ? "الترويسة والتذييل" : "Header & Footer"}</h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <ColorField
@@ -5440,7 +5552,7 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
         onConfirm={confirmPromoCrop}
       />
 
-      <div className={settingsTab === "theme" ? "space-y-3" : "hidden"}>
+      <div className={settingsTab === "theme" && themeMode === "advanced" ? "space-y-3" : "hidden"}>
         <h3 className="font-medium text-sm">{isAr ? "الطباعة" : "Typography"}</h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <ColorField
@@ -5456,7 +5568,7 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
         </div>
       </div>
 
-      <div className={settingsTab === "theme" ? "space-y-3" : "hidden"}>
+      <div className={settingsTab === "theme" && themeMode === "advanced" ? "space-y-3" : "hidden"}>
         <h3 className="font-medium text-sm">{isAr ? "الأزرار" : "Buttons"}</h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <ColorField

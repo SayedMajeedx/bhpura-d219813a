@@ -1909,6 +1909,97 @@ function ProductsSection({
     }
   };
 
+  const handleDuplicateProduct = async (productToDuplicate: Product) => {
+    try {
+      const copySuffixAr = " (نسخة)";
+      const copySuffixEn = " (Copy)";
+      const newName = `${productToDuplicate.name}${isAr ? copySuffixAr : copySuffixEn}`;
+      const newNameAr = productToDuplicate.name_ar ? `${productToDuplicate.name_ar}${copySuffixAr}` : null;
+      const newNameEn = productToDuplicate.name_en ? `${productToDuplicate.name_en}${copySuffixEn}` : null;
+
+      const { data: insertedProduct, error: prodErr } = await (supabase.from("products") as any)
+        .insert({
+          brand_id: brandId,
+          name: newName,
+          name_ar: newNameAr,
+          name_en: newNameEn,
+          description: productToDuplicate.description,
+          description_ar: productToDuplicate.description_ar,
+          description_en: productToDuplicate.description_en,
+          category: productToDuplicate.category,
+          base_price: productToDuplicate.base_price,
+          is_active: false,
+          image_url: productToDuplicate.image_url,
+          media: productToDuplicate.media,
+          custom_fields: productToDuplicate.custom_fields,
+          fabric_type: productToDuplicate.fabric_type,
+          occasion: productToDuplicate.occasion,
+        })
+        .select()
+        .single();
+
+      if (prodErr || !insertedProduct) {
+        toast.error(prodErr?.message || (isAr ? "فشل تكرار المنتج" : "Failed to duplicate product"));
+        return;
+      }
+
+      const originalVariants = variants.filter((v) => v.product_id === productToDuplicate.id);
+      if (originalVariants.length > 0) {
+        const variantsPayload = originalVariants.map((v) => ({
+          product_id: insertedProduct.id,
+          brand_id: brandId,
+          sku: v.sku ? `${v.sku}-COPY-${Math.floor(Math.random() * 1000)}` : null,
+          barcode: null,
+          size: v.size,
+          color: v.color,
+          fabric: v.fabric,
+          selling_price: v.selling_price,
+          cost_price: v.cost_price,
+          stock_main: v.stock_main ?? 0,
+          stock_incubator: 0,
+        }));
+
+        await (supabase.from("product_variants") as any).insert(variantsPayload);
+      }
+
+      toast.success(
+        isAr
+          ? "تم تكرار المنتج كمسودة بنجاح"
+          : "Product duplicated as draft successfully",
+      );
+      onChanged();
+    } catch (err: any) {
+      toast.error(err?.message || (isAr ? "حدث خطأ أثناء التكرار" : "Error duplicating product"));
+    }
+  };
+
+  const handlePreviewProduct = (product: Product) => {
+    const url = `/${brand.slug}/p/${product.id}`;
+    window.open(url, "_blank", "noopener,noreferrer");
+  };
+
+  const handleShareProduct = async (product: Product) => {
+    const storeUrl = `${window.location.origin}/${brand.slug}/p/${product.id}`;
+    const title = isAr ? product.name_ar || product.name : product.name_en || product.name;
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title,
+          url: storeUrl,
+        });
+        return;
+      } catch {
+        // user cancelled or fallback
+      }
+    }
+    try {
+      await navigator.clipboard.writeText(storeUrl);
+      toast.success(isAr ? "تم نسخ رابط المنتج" : "Product link copied");
+    } catch {
+      toast.error(isAr ? "فشل نسخ الرابط" : "Failed to copy link");
+    }
+  };
+
   const isAr = useI18n().lang === "ar";
   const productStock = useCallback(
     (productId: string) =>
@@ -2394,6 +2485,9 @@ function ProductsSection({
                 setIncubatorTransferProducts([prod]);
                 setIncubatorTransferModalOpen(true);
               }}
+              onDuplicate={handleDuplicateProduct}
+              onPreview={handlePreviewProduct}
+              onShare={handleShareProduct}
               renderVariantList={(prod) => (
                 <VariantList
                   productId={prod.id}
@@ -2446,6 +2540,9 @@ function ProductsSection({
             setIncubatorTransferProducts([prod]);
             setIncubatorTransferModalOpen(true);
           }}
+          onDuplicate={handleDuplicateProduct}
+          onPreview={handlePreviewProduct}
+          onShare={handleShareProduct}
           renderVariantList={(prod) => (
             <VariantList
               productId={prod.id}
