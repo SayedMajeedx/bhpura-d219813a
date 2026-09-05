@@ -30,26 +30,19 @@ export function OsIslandDock({
       aria-label={lang === "ar" ? "شريط التنقل السريع" : "Island Dock Navigation"}
       aria-hidden={isHidden}
       className={cn(
-        // Viewport fixed positioning & safe area clearance (no-transform horizontal centering)
+        // Viewport fixed positioning & safe area clearance
         "no-print fixed z-40 md:hidden",
         "inset-x-0 mx-auto w-fit max-w-[calc(100vw-1.5rem)]",
-        "bottom-[max(0.75rem,calc(env(safe-area-inset-bottom,0px)+0.5rem))]",
-        // 4 True Glass Layers:
-        // 1. Optical Blur & Saturation
-        "backdrop-blur-2xl backdrop-saturate-200",
-        // 2. Translucent Base
-        "bg-white/70 dark:bg-zinc-950/70",
-        // 3. Specular Reflection Rim & Inset Highlights
-        "border border-white/60 dark:border-white/15",
-        "shadow-[inset_0_1px_1.5px_0_rgba(255,255,255,0.85),inset_0_-1px_1px_0_rgba(0,0,0,0.06)]",
-        "dark:shadow-[inset_0_1px_1.5px_0_rgba(255,255,255,0.22),inset_0_-1px_1px_0_rgba(0,0,0,0.4)]",
-        // 4. Soft Multi-tier Floating Shadow
-        "shadow-[0_16px_36px_-6px_rgba(51,10,10,0.16),0_6px_16px_-2px_rgba(51,10,10,0.08)]",
-        "dark:shadow-[0_22px_44px_-8px_rgba(0,0,0,0.65),0_8px_20px_-4px_rgba(0,0,0,0.4)]",
-        // Sizing, layout & touch safety
-        "flex items-center gap-1 sm:gap-1.5 p-1.5 sm:p-2 rounded-full",
-        "select-none overflow-hidden touch-manipulation",
-        // Smooth slide-in / slide-out when isHidden toggles
+        "bottom-[max(0.85rem,calc(env(safe-area-inset-bottom,0px)+0.5rem))]",
+        // World-Class 2026 Seamless Frosted Glass
+        "bg-background/80 dark:bg-zinc-950/80",
+        "backdrop-blur-2xl backdrop-saturate-180",
+        "border border-border/50 dark:border-white/10",
+        "shadow-[0_12px_32px_-6px_rgba(0,0,0,0.12),0_4px_12px_-2px_rgba(0,0,0,0.06)]",
+        "dark:shadow-[0_16px_40px_-8px_rgba(0,0,0,0.7),0_0_0_1px_rgba(255,255,255,0.06)]",
+        // Sleek ergonomic pill layout
+        "flex items-center gap-1 p-1.5 rounded-full select-none touch-manipulation",
+        // Smooth slide-in / slide-out when hidden on detail pages
         "transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)]",
         "motion-reduce:transition-none motion-reduce:transform-none",
         isHidden
@@ -58,12 +51,6 @@ export function OsIslandDock({
         className,
       )}
     >
-      {/* Curved glass lens reflection highlight on top half */}
-      <div
-        className="pointer-events-none absolute inset-x-3 top-0 h-1/2 rounded-t-full bg-gradient-to-b from-white/35 to-transparent dark:from-white/10"
-        aria-hidden="true"
-      />
-
       {items.map((item) => {
         const Icon = item.icon;
         return (
@@ -74,52 +61,30 @@ export function OsIslandDock({
             aria-current={item.active ? "page" : undefined}
             aria-label={item.label}
             className={cn(
-              // Apple touch target compliance: >= 44px min height & width
-              "relative z-10 flex flex-col items-center justify-center min-w-[52px] sm:min-w-[62px] min-h-[44px] h-[48px] px-2.5 py-1 rounded-full outline-none select-none",
-              // iOS Spring Physics: tactile compression and elastic overshoot recovery
-              "transition-all duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] active:scale-[0.88]",
+              // Apple touch target compliance & ergonomic pill sizing
+              "relative flex flex-col items-center justify-center min-w-[54px] sm:min-w-[62px] h-[48px] px-2.5 py-1 rounded-full outline-none select-none",
+              // Refined native touch feedback
+              "transition-all duration-200 ease-out active:scale-95",
               "motion-reduce:transition-none motion-reduce:transform-none motion-reduce:active:scale-100",
-              // Focus accessibility
+              // Accessible focus
               "focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:ring-offset-background",
-              // Active vs Inactive State
+              // Active vs Inactive state
               item.active
-                ? [
-                    "bg-primary text-primary-foreground font-semibold",
-                    "shadow-[0_4px_14px_rgba(51,10,10,0.28),inset_0_1px_1px_rgba(255,255,255,0.4)]",
-                    "dark:shadow-[0_4px_18px_rgba(0,0,0,0.5),inset_0_1px_1px_rgba(255,255,255,0.3)]",
-                    "border border-white/40 dark:border-white/20",
-                  ]
-                : [
-                    "text-muted-foreground hover:text-foreground",
-                    "hover:bg-black/5 dark:hover:bg-white/10",
-                    "active:bg-black/10 dark:active:bg-white/15",
-                  ],
+                ? "bg-primary/10 dark:bg-primary/20 text-primary"
+                : "text-muted-foreground/75 hover:text-foreground hover:bg-foreground/[0.04] dark:hover:bg-white/[0.06] active:bg-foreground/[0.08] dark:active:bg-white/[0.1]",
             )}
           >
-            {/* Active glass highlight sheen inside the pill */}
-            {item.active && (
-              <div
-                className="pointer-events-none absolute inset-x-2.5 top-0.5 h-2 rounded-full bg-gradient-to-b from-white/40 to-transparent blur-[0.5px]"
-                aria-hidden="true"
-              />
-            )}
-
             <div className="relative flex items-center justify-center">
               <Icon
                 className={cn(
-                  "size-4.5 sm:size-5 transition-transform duration-200",
-                  item.active ? "scale-105" : "scale-100",
+                  "size-5 transition-transform duration-200",
+                  item.active
+                    ? "stroke-[2.2] scale-105 text-primary"
+                    : "stroke-[1.8] text-current",
                 )}
               />
               {item.badge !== undefined && (
-                <span
-                  className={cn(
-                    "absolute -top-1.5 -end-2 flex h-4 min-w-[1rem] items-center justify-center rounded-full px-1 text-[9px] font-bold shadow-xs border border-background",
-                    item.active
-                      ? "bg-background text-foreground"
-                      : "bg-destructive text-destructive-foreground",
-                  )}
-                >
+                <span className="absolute -top-1 -end-2 flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-destructive px-1 text-[9px] font-bold text-destructive-foreground shadow-xs border-2 border-background">
                   {item.badge}
                 </span>
               )}
@@ -127,17 +92,19 @@ export function OsIslandDock({
 
             <span
               className={cn(
-                "text-[10px] tracking-tight truncate max-w-[58px] mt-0.5 font-medium leading-none",
-                item.active ? "font-bold text-primary-foreground" : "text-muted-foreground",
+                "text-[10px] tracking-tight truncate max-w-[56px] mt-0.5 leading-none transition-colors duration-200",
+                item.active
+                  ? "font-semibold text-primary"
+                  : "font-medium text-muted-foreground/80",
               )}
             >
               {item.label}
             </span>
 
-            {/* Micro active dot indicator */}
+            {/* Micro active dot */}
             {item.active && (
               <span
-                className="pointer-events-none absolute bottom-1 h-0.5 w-1.5 rounded-full bg-primary-foreground/90 shadow-2xs"
+                className="pointer-events-none absolute bottom-1 h-1 w-1 rounded-full bg-primary"
                 aria-hidden="true"
               />
             )}
