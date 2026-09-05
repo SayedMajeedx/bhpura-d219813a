@@ -83,6 +83,7 @@ import {
 } from "@/lib/courier-whatsapp";
 import { CourierWhatsAppModal } from "@/components/courier/CourierWhatsAppModal";
 import { formatDate, formatMoney, formatOrderStatus } from "@/lib/format";
+import { queryKeys } from "@/lib/query-keys";
 import { useT, useI18n } from "@/lib/i18n";
 import {
   getOrderCustomerEmail,
@@ -737,13 +738,13 @@ function OrderDetail() {
   }, [id, qc, brandId]);
 
   const productsQ = useQuery({
-    queryKey: ["products", brandId],
+    queryKey: queryKeys.products.all(brandId),
     enabled: !isCourier,
     queryFn: async () =>
       (await supabase.from("products").select("*").eq("brand_id", brandId)).data ?? [],
   });
   const variantsQ = useQuery({
-    queryKey: ["variants", brandId],
+    queryKey: queryKeys.variants.all(brandId),
     enabled: !isCourier,
     queryFn: async () =>
       (await supabase.from("product_variants").select("*").eq("brand_id", brandId)).data ?? [],
@@ -3914,11 +3915,14 @@ function OrderDetail() {
                                 <div className="flex items-center gap-2">
                                   {it.unit_cost != null && Number(it.unit_cost) > 0 ? (
                                     <span className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-800 dark:text-emerald-300 bg-emerald-500/10 border border-emerald-500/30 px-2 py-0.5 rounded-md">
-                                      {isAr ? "التكلفة المسجلة:" : "Cost:"} {formatMoney(it.unit_cost, currency)}
+                                      {isAr ? "التكلفة المسجلة:" : "Cost:"}{" "}
+                                      {formatMoney(it.unit_cost, currency)}
                                     </span>
                                   ) : (
                                     <span className="inline-flex items-center gap-1 text-[11px] font-medium text-amber-800 dark:text-amber-300 bg-amber-500/10 border border-amber-500/30 px-2 py-0.5 rounded-md">
-                                      {isAr ? "بدون تكلفة مسجلة (اضغط تعديل لإضافتها)" : "No cost set (click edit to set)"}
+                                      {isAr
+                                        ? "بدون تكلفة مسجلة (اضغط تعديل لإضافتها)"
+                                        : "No cost set (click edit to set)"}
                                     </span>
                                   )}
                                 </div>

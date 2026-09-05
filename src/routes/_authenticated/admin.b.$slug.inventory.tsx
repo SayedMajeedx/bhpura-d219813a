@@ -72,6 +72,7 @@ import { PrintLabelButton, printLabels, type LabelData } from "@/components/barc
 import { useProfile } from "@/lib/profile-context";
 import { useBrand } from "@/lib/brand-context";
 import { useRealtimeInvalidate } from "@/hooks/use-realtime-invalidate";
+import { queryKeys } from "@/lib/query-keys";
 import { Switch } from "@/components/ui/switch";
 import { ImageCropperDialog } from "@/components/image-cropper-dialog";
 import { CropUploadButton } from "@/components/crop-upload-button";
@@ -246,15 +247,15 @@ function Inventory() {
 
   useRealtimeInvalidate(
     [
-      { table: "products", brandId, queryKey: ["products", brandId] },
-      { table: "product_variants", brandId, queryKey: ["variants", brandId] },
-      { table: "customization_options", brandId, queryKey: ["customizations", brandId] },
+      { table: "products", brandId, queryKey: queryKeys.products.all(brandId) },
+      { table: "product_variants", brandId, queryKey: queryKeys.variants.all(brandId) },
+      { table: "customization_options", brandId, queryKey: queryKeys.customizations.all(brandId) },
     ],
     `inventory-${brandId}`,
   );
 
   const products = useQuery({
-    queryKey: ["products", brandId],
+    queryKey: queryKeys.products.all(brandId),
     staleTime: 30_000,
     refetchOnWindowFocus: false,
     queryFn: async () => {
@@ -273,7 +274,7 @@ function Inventory() {
   });
 
   const variants = useQuery({
-    queryKey: ["variants", brandId],
+    queryKey: queryKeys.variants.all(brandId),
     staleTime: 30_000,
     refetchOnWindowFocus: false,
     queryFn: async () => {
@@ -288,7 +289,7 @@ function Inventory() {
   });
 
   const customizations = useQuery({
-    queryKey: ["customizations", brandId],
+    queryKey: queryKeys.customizations.all(brandId),
     staleTime: 30_000,
     refetchOnWindowFocus: false,
     queryFn: async () => {
@@ -412,8 +413,8 @@ function Inventory() {
           businessName={businessName.data?.business_name ?? null}
           currency={businessName.data?.currency ?? "BHD"}
           onChanged={() => {
-            qc.invalidateQueries({ queryKey: ["products"] });
-            qc.invalidateQueries({ queryKey: ["variants"] });
+            qc.invalidateQueries({ queryKey: queryKeys.products.all(brandId) });
+            qc.invalidateQueries({ queryKey: queryKeys.variants.all(brandId) });
           }}
           salesHistory={salesHistory.data ?? []}
         />
@@ -424,7 +425,9 @@ function Inventory() {
           brandId={brandId}
           items={customizations.data ?? []}
           products={products.data ?? []}
-          onChanged={() => qc.invalidateQueries({ queryKey: ["customizations"] })}
+          onChanged={() =>
+            qc.invalidateQueries({ queryKey: queryKeys.customizations.all(brandId) })
+          }
         />
       )}
 
@@ -3322,7 +3325,9 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
                 </Label>
                 <Input
                   className="mt-1 h-10.5 rounded-lg"
-                  placeholder={isAr ? "مثال: كريب ملكي، لينن، حرير..." : "e.g., Royal Crepe, Linen..."}
+                  placeholder={
+                    isAr ? "مثال: كريب ملكي، لينن، حرير..." : "e.g., Royal Crepe, Linen..."
+                  }
                   value={form.fabric_type}
                   onChange={(e) => setForm({ ...form, fabric_type: e.target.value })}
                 />

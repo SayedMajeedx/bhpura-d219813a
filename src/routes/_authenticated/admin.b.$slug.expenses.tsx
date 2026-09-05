@@ -63,6 +63,7 @@ import { toast } from "sonner";
 import { formatMoney } from "@/lib/format";
 import { useI18n, useT } from "@/lib/i18n";
 import { useBrand } from "@/lib/brand-context";
+import { queryKeys } from "@/lib/query-keys";
 import { cn } from "@/lib/utils";
 import { deletePublicMediaUrl, uploadPublicMedia } from "@/lib/r2-upload";
 import { syncSingleExpenseToPackagingMaterial } from "@/lib/packaging-sync";
@@ -334,12 +335,12 @@ function ExpensesPage() {
   });
 
   const productsQ = useQuery({
-    queryKey: ["products", brandId],
+    queryKey: queryKeys.products.all(brandId),
     queryFn: async () =>
       (await supabase.from("products").select("*").eq("brand_id", brandId)).data ?? [],
   });
   const variantsQ = useQuery({
-    queryKey: ["variants", brandId],
+    queryKey: queryKeys.variants.all(brandId),
     queryFn: async () =>
       (await supabase.from("product_variants").select("*").eq("brand_id", brandId)).data ?? [],
   });
@@ -376,7 +377,15 @@ function ExpensesPage() {
           "id, invoice_number, created_at, currency, total, payment_method, status, fulfillment_status, order_items(id, description, quantity, unit_price, unit_cost, line_total, variant_id, product_id, packaging_cost_snapshot)",
         )
         .eq("brand_id", brandId)
-        .in("status", ["confirmed", "paid", "shipped", "completed", "delivered", "ready_for_pickup", "picked_up"])
+        .in("status", [
+          "confirmed",
+          "paid",
+          "shipped",
+          "completed",
+          "delivered",
+          "ready_for_pickup",
+          "picked_up",
+        ])
         .order("created_at", { ascending: false });
       if (activeRange.from) q2 = q2.gte("created_at", activeRange.from);
       if (activeRange.to) {
@@ -516,9 +525,14 @@ function ExpensesPage() {
     const mats = packagingMaterialsQ.data ?? [];
 
     (cogsQ.data ?? []).forEach((order) => {
-      const isFulfilled = ["fulfilled", "delivered", "completed", "shipped", "picked_up", "ready_for_pickup"].includes(
-        String(order.fulfillment_status || order.status || "").toLowerCase(),
-      );
+      const isFulfilled = [
+        "fulfilled",
+        "delivered",
+        "completed",
+        "shipped",
+        "picked_up",
+        "ready_for_pickup",
+      ].includes(String(order.fulfillment_status || order.status || "").toLowerCase());
       (order.order_items ?? []).forEach((item) => {
         const pCost = Number((item as any).unit_cost ?? 0);
         const qty = Number(item.quantity ?? 1);

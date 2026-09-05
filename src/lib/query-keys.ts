@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Centralized React Query Key Factory for Boutq OS
  *
  * Enforces explicit brand scoping (multi-tenant safety) across cache keys
@@ -37,5 +37,22 @@ export const queryKeys = {
   couriers: {
     all: (brandId: string) => ["couriers", brandId] as const,
     detail: (brandId: string, courierId: string) => ["couriers", brandId, courierId] as const,
+  },
+
+  // Products & Catalog
+  products: {
+    all: (brandId: string) => ["products", brandId] as const,
+    detail: (brandId: string, productId: string) => ["products", brandId, productId] as const,
+  },
+
+  // Variants & Options
+  variants: {
+    all: (brandId: string) => ["variants", brandId] as const,
+    byProduct: (brandId: string, productId: string) => ["variants", brandId, productId] as const,
+  },
+
+  // Customizations
+  customizations: {
+    all: (brandId: string) => ["customizations", brandId] as const,
   },
 } as const;
