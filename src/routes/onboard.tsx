@@ -162,15 +162,19 @@ function OnboardPage() {
     );
 
     try {
+      const cleanPhone = contactNumber.trim().startsWith("+")
+        ? contactNumber.trim()
+        : `+973${contactNumber.trim().replace(/^0+/, "")}`;
+
       const res = await registerInstantTrial({
         data: {
           brandName: brandName.trim(),
           slug: cleanSlug,
           ownerName: ownerName.trim(),
-          contactNumber: contactNumber.trim(),
+          contactNumber: cleanPhone,
           email: cleanEmail,
           password: password,
-          businessType: "Abayas & Fashion",
+          businessType: "Boutique & Fashion",
         },
       });
 
@@ -236,11 +240,16 @@ function OnboardPage() {
       {/* 1. Minimalist Header */}
       <header className="border-b border-border/60 bg-background/80 backdrop-blur sticky top-0 z-30">
         <div className="max-w-6xl mx-auto px-4 sm:px-8 h-16 flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-2.5">
-            <div className="size-8 rounded-lg bg-primary text-primary-foreground flex items-center justify-center font-bold text-sm shadow-sm">
-              B
+          <Link to="/" dir="ltr" className="flex items-center gap-2.5 group">
+            <img
+              src="/boutq-logo-pack/boutq-icon-squircle.svg"
+              alt="Boutq"
+              className="size-8 rounded-xl shadow-sm object-contain"
+            />
+            <div className="flex flex-col text-left">
+              <span className="font-black text-sm tracking-widest text-foreground font-mono leading-none">BOUTQ</span>
+              <span className="text-[9px] font-bold text-amber-600 dark:text-amber-500 tracking-widest leading-none mt-1">STORE • OS</span>
             </div>
-            <span className="font-bold text-base tracking-tight text-foreground">Boutq OS</span>
           </Link>
 
           <div className="flex items-center gap-3">
@@ -277,12 +286,12 @@ function OnboardPage() {
           </Badge>
 
           <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-foreground leading-tight">
-            {isAr ? "ابدئي متجرك الإلكتروني في دقائق" : "Launch Your Fashion Boutique in Minutes"}
+            {isAr ? "إطلاق متجرك الإلكتروني في دقائق" : "Launch Your Fashion Boutique in Minutes"}
           </h1>
 
           <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">
             {isAr
-              ? "المنصة المتكاملة المخصصة للبوتيكات الخليجية. اجمعي المتجر الأنيق، إدارة الطلبات، والمخزون في مكان واحد وبسهولة تامة."
+              ? "المنصة المتكاملة لإدارة وتجارة البوتيكات. منصة متطورة تجمع بين المتجر الإلكتروني، وإدارة الطلبات، والمخزون في مكان واحد وبسهولة تامة."
               : "The bespoke e-commerce platform for Gulf fashion houses. Manage your elegant storefront, orders, and inventory effortlessly."}
           </p>
         </div>
@@ -319,7 +328,7 @@ function OnboardPage() {
                 </CardTitle>
                 <CardDescription className="text-xs text-muted-foreground mt-1 leading-relaxed">
                   {isAr
-                    ? "عندك حساب انستقرام للمتجر؟ نسحب صور العبايات والأسعار تلقائياً بالذكاء الاصطناعي ونجهّز متجرك فوراً بدون إدخال يدوي."
+                    ? "استيراد كتالوج المنتجات، الصور، والأسعار تلقائياً عبر الذكاء الاصطناعي وتجهيز المتجر فوراً بدون إدخال يدوي."
                     : "Have an active Instagram brand page? Our AI automatically extracts your products, photos, and captions into your store."}
                 </CardDescription>
               </div>
@@ -365,11 +374,11 @@ function OnboardPage() {
           <Card className="lg:col-span-7 border border-border bg-card rounded-2xl shadow-sm">
             <CardHeader className="pb-4">
               <CardTitle className="text-lg font-bold text-foreground">
-                {isAr ? "أو أنشئي متجرك يدوياً" : "Or Create Your Boutique Manually"}
+                {isAr ? "إنشاء المتجر يدوياً" : "Or Create Your Boutique Manually"}
               </CardTitle>
               <CardDescription className="text-xs text-muted-foreground">
                 {isAr
-                  ? `أدخلي تفاصيل متجرك للبدء الفوري بالتجربة المجانية (${trialDays} أيام).`
+                  ? `إدخال تفاصيل المتجر للبدء الفوري بالتجربة المجانية (${trialDays} أيام).`
                   : `Enter your boutique details to start your instant ${trialDays}-day free trial.`}
               </CardDescription>
             </CardHeader>
@@ -380,11 +389,11 @@ function OnboardPage() {
                   {/* Store Name */}
                   <div className="space-y-1.5">
                     <Label htmlFor="brandName" className="text-xs font-semibold">
-                      {isAr ? "اسم البوتيك / المتجر" : "Boutique Name"} *
+                      {isAr ? "اسم المتجر" : "Boutique Name"} *
                     </Label>
                     <Input
                       id="brandName"
-                      placeholder={isAr ? "اسم البوتيك" : "Boutique name"}
+                      placeholder={isAr ? "اسم المتجر" : "Boutique name"}
                       value={brandName}
                       onChange={(e) => {
                         const val = e.target.value;
@@ -422,18 +431,25 @@ function OnboardPage() {
                         </span>
                       )}
                     </div>
-                    <div className="relative">
-                      <Input
+                    <div
+                      dir="ltr"
+                      className="flex items-center rounded-md border border-input bg-background focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 overflow-hidden h-10 transition-colors"
+                    >
+                      <input
                         id="slug"
+                        type="text"
                         dir="ltr"
                         placeholder="brand"
                         value={slug}
                         onChange={(e) => setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ""))}
-                        className="h-10 text-xs pe-24 placeholder:text-muted-foreground/35 placeholder:font-normal bg-background"
+                        className="flex-1 min-w-0 bg-transparent px-3 text-xs text-foreground placeholder:text-muted-foreground/35 placeholder:font-normal focus:outline-none font-mono"
                         autoComplete="off"
                         required
                       />
-                      <span className="absolute end-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground font-mono pointer-events-none">
+                      <span
+                        dir="ltr"
+                        className="px-3 py-2 text-xs text-muted-foreground font-mono bg-muted/40 border-s border-border select-none shrink-0"
+                      >
                         .boutq.store
                       </span>
                     </div>
@@ -444,11 +460,11 @@ function OnboardPage() {
                   {/* Owner Full Name */}
                   <div className="space-y-1.5">
                     <Label htmlFor="ownerName" className="text-xs font-semibold">
-                      {isAr ? "اسم صاحبة / صاحب المتجر" : "Owner Full Name"} *
+                      {isAr ? "الاسم الكامل" : "Owner Full Name"} *
                     </Label>
                     <Input
                       id="ownerName"
-                      placeholder={isAr ? "الاسم الكريم" : "Your name"}
+                      placeholder={isAr ? "الاسم الكامل" : "Your name"}
                       value={ownerName}
                       onChange={(e) => setOwnerName(e.target.value)}
                       className="h-10 text-xs placeholder:text-muted-foreground/35 placeholder:font-normal bg-background"
@@ -462,16 +478,28 @@ function OnboardPage() {
                     <Label htmlFor="contactNumber" className="text-xs font-semibold">
                       {isAr ? "رقم الواتساب" : "WhatsApp Number"} *
                     </Label>
-                    <Input
-                      id="contactNumber"
+                    <div
                       dir="ltr"
-                      placeholder="39955508"
-                      value={contactNumber}
-                      onChange={(e) => setContactNumber(e.target.value)}
-                      className="h-10 text-xs placeholder:text-muted-foreground/35 placeholder:font-normal bg-background"
-                      autoComplete="tel"
-                      required
-                    />
+                      className="flex items-center rounded-md border border-input bg-background focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 overflow-hidden h-10 transition-colors"
+                    >
+                      <span
+                        dir="ltr"
+                        className="px-3 py-2 text-xs text-muted-foreground font-mono bg-muted/40 border-e border-border select-none shrink-0"
+                      >
+                        +973
+                      </span>
+                      <input
+                        id="contactNumber"
+                        type="tel"
+                        dir="ltr"
+                        placeholder="39955508"
+                        value={contactNumber}
+                        onChange={(e) => setContactNumber(e.target.value)}
+                        className="flex-1 min-w-0 bg-transparent px-3 text-xs text-foreground placeholder:text-muted-foreground/35 placeholder:font-normal focus:outline-none font-mono"
+                        autoComplete="tel"
+                        required
+                      />
+                    </div>
                   </div>
                 </div>
 
@@ -488,7 +516,7 @@ function OnboardPage() {
                       placeholder="name@example.com"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      className="h-10 text-xs placeholder:text-muted-foreground/35 placeholder:font-normal bg-background"
+                      className="h-10 text-xs placeholder:text-muted-foreground/35 placeholder:font-normal bg-background text-left"
                       autoComplete="email"
                       required
                     />
@@ -506,7 +534,7 @@ function OnboardPage() {
                       placeholder=""
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      className="h-10 text-xs placeholder:text-muted-foreground/35 placeholder:font-normal bg-background"
+                      className="h-10 text-xs placeholder:text-muted-foreground/35 placeholder:font-normal bg-background text-left"
                       autoComplete="new-password"
                       required
                       minLength={6}
@@ -557,7 +585,7 @@ function OnboardPage() {
             </h2>
             <p className="text-xs text-muted-foreground">
               {isAr
-                ? `ابدئي بـ ${trialDays} أيام مجاناً، ثم اختاري الباقة المناسبة لحجم أعمالك لمتابعة البيع.`
+                ? `تجربة مجانية لمدة ${trialDays} أيام، مع إمكانية اختيار الباقة المناسبة لحجم أعمالك لمتابعة البيع.`
                 : `Begin with ${trialDays} free days, then pick the tier matching your growth to continue selling.`}
             </p>
 

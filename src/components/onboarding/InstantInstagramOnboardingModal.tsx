@@ -139,20 +139,20 @@ export function InstantInstagramOnboardingModal({
         if (attempt <= 2) {
           setStatusMessage(
             isAr
-              ? "قاعدين نتصفح حسابك بالانستقرام ونطلع أحلى البوستات... 📸"
+              ? "جاري تصفح حساب انستقرام واستخراج المنشورات... 📸"
               : "Scanning your Instagram feed for your best posts... 📸",
           );
         } else if (attempt <= 5) {
           setStatusMessage(
             isAr
-              ? "بنطلع لك كود العباية، السعر، والوصف بثواني ✨"
+              ? "جاري استخراج بيانات المنتجات، الأسعار، والأوصاف... ✨"
               : "Extracting product codes, prices, and descriptions... ✨",
           );
         } else {
           setStatusMessage(
             isAr
-              ? "قاعدين نجهّز الصور والكتالوج... ثواني بس 👗"
-              : "Getting the photos and catalog ready... 👗",
+              ? "جاري تجهيز صور المنتجات والكتالوج... ✨"
+              : "Getting the photos and catalog ready... ✨",
           );
         }
 
@@ -217,12 +217,12 @@ export function InstantInstagramOnboardingModal({
             imageUrl: p.imageUrl,
             url: p.url,
             isSoldOut: Boolean(p.isSoldOut),
-            title: p.title || "عباية أنيقة",
+            title: p.title || (isAr ? "منتج راقي" : "Luxury Product"),
             price: typeof p.price === "number" ? p.price : 35,
             description: p.description || "",
             sizes: Array.isArray(p.sizes) ? p.sizes : [],
             colors: Array.isArray(p.colors) ? p.colors : [],
-            category: p.category || "عبايات",
+            category: p.category || (isAr ? "أزياء" : "Fashion"),
             confidence: typeof p.confidence === "number" ? p.confidence : 0.85,
             issues: Array.isArray(p.issues) ? p.issues : [],
           }));
@@ -405,7 +405,7 @@ export function InstantInstagramOnboardingModal({
               </div>
               <p className="text-[11px] text-muted-foreground mt-1">
                 {isAr
-                  ? "سنقوم باستخراج الكتالوج، الأسعار، وأكواد العبايات وتجهيز متجرك فوراً."
+                  ? "استخراج تلقائي للكتالوج، الأسعار، والمواصفات وتجهيز المتجر فوراً."
                   : "We'll automatically extract your catalog, codes, prices, and photos instantly."}
               </p>
             </div>
@@ -422,7 +422,7 @@ export function InstantInstagramOnboardingModal({
                     setStoreNameEn(e.target.value);
                   }}
                   placeholder="Your Brand Name"
-                  className="h-9 text-xs rounded-xl mt-1 placeholder:text-muted-foreground/40 placeholder:font-normal placeholder:opacity-60"
+                  className="h-9 text-xs rounded-xl mt-1 placeholder:text-muted-foreground/35 placeholder:font-normal"
                 />
               </div>
               <div>
@@ -433,7 +433,7 @@ export function InstantInstagramOnboardingModal({
                   value={storeNameAr}
                   onChange={(e) => setStoreNameAr(e.target.value)}
                   placeholder="اسم علامتك التجارية"
-                  className="h-9 text-xs rounded-xl mt-1 placeholder:text-muted-foreground/40 placeholder:font-normal placeholder:opacity-60"
+                  className="h-9 text-xs rounded-xl mt-1 placeholder:text-muted-foreground/35 placeholder:font-normal"
                 />
               </div>
             </div>
@@ -443,17 +443,26 @@ export function InstantInstagramOnboardingModal({
                 <Label className="text-xs font-semibold">
                   {isAr ? "معرّف الرابط (Slug)" : "Store URL Slug"}
                 </Label>
-                <div className="flex items-center gap-1 mt-1">
-                  <Input
+                <div
+                  dir="ltr"
+                  className="flex items-center rounded-xl border border-input bg-background focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 overflow-hidden h-9 mt-1 transition-colors"
+                >
+                  <input
                     value={slug}
                     onChange={(e) => {
                       setIsSlugManuallyEdited(true);
                       setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9_-]/g, ""));
                     }}
                     placeholder="yourbrand"
-                    className="h-9 text-xs rounded-xl font-mono placeholder:text-muted-foreground/40 placeholder:font-normal placeholder:opacity-60"
+                    className="flex-1 min-w-0 bg-transparent px-3 text-xs text-foreground font-mono placeholder:text-muted-foreground/35 placeholder:font-normal focus:outline-none"
+                    autoComplete="off"
                   />
-                  <span className="text-[11px] text-muted-foreground font-mono">.boutq.site</span>
+                  <span
+                    dir="ltr"
+                    className="px-2.5 py-1.5 text-xs text-muted-foreground font-mono bg-muted/40 border-s border-border select-none shrink-0"
+                  >
+                    .boutq.store
+                  </span>
                 </div>
               </div>
               <div>
