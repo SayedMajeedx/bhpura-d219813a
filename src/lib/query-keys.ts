@@ -55,4 +55,16 @@ export const queryKeys = {
   customizations: {
     all: (brandId: string) => ["customizations", brandId] as const,
   },
+
+  // Expenses
+  expenses: {
+    all: (brandId: string) => ["expenses", brandId] as const,
+  },
+
+  // Team & Staff
+  staff: {
+    all: (brandId: string) => ["staff", brandId] as const,
+    list: (brandId: string, isSuperAdmin?: boolean) =>
+      ["staff", brandId, Boolean(isSuperAdmin)] as const,
+  },
 } as const;

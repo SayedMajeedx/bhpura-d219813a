@@ -242,7 +242,7 @@ function ExpensesPage() {
   const brandId = brand.id;
 
   const q = useQuery({
-    queryKey: ["expenses", brandId],
+    queryKey: queryKeys.expenses.all(brandId),
     queryFn: async () => {
       try {
         const { data, error } = await (supabase.from("expenses") as any)
@@ -456,7 +456,7 @@ function ExpensesPage() {
         setDeleteTargetId(null);
         if (target?.receipt_url)
           void deletePublicMediaUrl(brandId, target.receipt_url).catch(() => undefined);
-        await qc.invalidateQueries({ queryKey: ["expenses"] });
+        await qc.invalidateQueries({ queryKey: queryKeys.expenses.all(brandId) });
       }
     } finally {
       setDeleting(false);
@@ -720,7 +720,7 @@ function ExpensesPage() {
           categories={categories}
           onSaved={() => {
             setOpen(false);
-            void qc.invalidateQueries({ queryKey: ["expenses"] });
+            void qc.invalidateQueries({ queryKey: queryKeys.expenses.all(brandId) });
           }}
         />
       )}
@@ -737,7 +737,7 @@ function ExpensesPage() {
           onSaved={() => {
             setReviewOpen(false);
             setScanned(null);
-            qc.invalidateQueries({ queryKey: ["expenses"] });
+            qc.invalidateQueries({ queryKey: queryKeys.expenses.all(brandId) });
           }}
         />
       )}

@@ -32,7 +32,18 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Plus, Pencil, Trash2, Users, Shield, UserX, Check, X, Crown, AlertTriangle } from "lucide-react";
+import {
+  Plus,
+  Pencil,
+  Trash2,
+  Users,
+  Shield,
+  UserX,
+  Check,
+  X,
+  Crown,
+  AlertTriangle,
+} from "lucide-react";
 import { toast } from "sonner";
 import { useI18n, useT } from "@/lib/i18n";
 import { useProfile, SUPER_ADMIN_EMAIL } from "@/lib/profile-context";
@@ -41,6 +52,7 @@ import type { Profile, UserRole, UserStatus } from "@/lib/profile-context";
 
 import { TeamCommandHeader } from "@/components/team/TeamCommandHeader";
 import { TeamScopeSwitcher, type TeamStatusScope } from "@/components/team/TeamScopeSwitcher";
+import { queryKeys } from "@/lib/query-keys";
 
 export const Route = createFileRoute("/_authenticated/admin/b/$slug/team")({
   beforeLoad: async ({ context: { queryClient }, params }) => {
@@ -147,7 +159,7 @@ function TeamManagement() {
   const [deleteConfirm, setDeleteConfirm] = useState<StaffMember | null>(null);
 
   const staffQ = useQuery({
-    queryKey: ["staff", brand.id, isSuperAdmin],
+    queryKey: queryKeys.staff.list(brand.id, isSuperAdmin),
     queryFn: async () => {
       const result = await callUserManagement("list");
       const list = (result.profiles || []) as StaffMember[];
@@ -203,7 +215,7 @@ function TeamManagement() {
       );
       setAddOpen(false);
       resetForm();
-      qc.invalidateQueries({ queryKey: ["staff"] });
+      qc.invalidateQueries({ queryKey: queryKeys.staff.all(brand.id) });
     } catch (err: any) {
       toast.error(err.message || (isAr ? "فشل إضافة المستخدم" : "Failed to add user"));
     }
@@ -224,7 +236,7 @@ function TeamManagement() {
       toast.success(isAr ? "تم التحديث بنجاح" : "Updated successfully");
       setEditOpen(false);
       setEditing(null);
-      qc.invalidateQueries({ queryKey: ["staff"] });
+      qc.invalidateQueries({ queryKey: queryKeys.staff.all(brand.id) });
     } catch (err: any) {
       toast.error(err.message || (isAr ? "فشل التحديث" : "Failed to update"));
     }
@@ -235,7 +247,7 @@ function TeamManagement() {
       await callUserManagement("delete", { userId });
       toast.success(isAr ? "تم حذف المستخدم" : "User deleted");
       setDeleteConfirm(null);
-      qc.invalidateQueries({ queryKey: ["staff"] });
+      qc.invalidateQueries({ queryKey: queryKeys.staff.all(brand.id) });
     } catch (err: any) {
       toast.error(err.message || (isAr ? "فشل الحذف" : "Failed to delete"));
     }
