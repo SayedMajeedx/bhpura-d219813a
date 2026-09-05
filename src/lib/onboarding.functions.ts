@@ -195,8 +195,14 @@ export const createTenantRequest = createServerFn({ method: "POST" })
 export const getPublicOnboardingPlans = createServerFn({ method: "GET" }).handler(async () => {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const now = new Date().toISOString();
+  const { data: sysSettings } = await (supabaseAdmin.from("system_settings" as never) as any)
+    .select("billing_interval_mode")
+    .eq("id", 1)
+    .maybeSingle();
+  const globalMode = sysSettings?.billing_interval_mode || "both";
+
   const { data: plans, error } = await (supabaseAdmin.from("saas_plans" as never) as any)
-    .select("id,code,name_en,name_ar,description_en,description_ar,sort_order,trial_days,badge_color")
+    .select("id,code,name_en,name_ar,description_en,description_ar,sort_order,trial_days,badge_color,billing_interval_mode")
     .eq("is_active", true)
     .eq("is_public", true)
     .order("sort_order", { ascending: true });
@@ -229,6 +235,8 @@ export const getPublicOnboardingPlans = createServerFn({ method: "GET" }).handle
     );
     result.push({
       ...plan,
+      billing_interval_mode: plan.billing_interval_mode || globalMode,
+      platform_billing_interval_mode: globalMode,
       version,
       features: (allocations ?? [])
         .filter((item: any) => featureMap.has(item.feature_key))

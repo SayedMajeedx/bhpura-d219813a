@@ -259,7 +259,7 @@ export const updatePlanStatus = createServerFn({ method: "POST" })
   });
 
 /**
- * 2c. Update Plan Metadata Details (Names, Descriptions, Badge Color, Trial Days, Sort Order)
+ * 2c. Update Plan Metadata Details (Names, Descriptions, Badge Color, Trial Days, Sort Order, Billing Interval Mode)
  */
 const UpdatePlanDetailsInput = z.object({
   planId: z.string().uuid(),
@@ -270,6 +270,7 @@ const UpdatePlanDetailsInput = z.object({
   badgeColor: z.string().nullable().optional(),
   sortOrder: z.number().optional(),
   trialDays: z.number().min(0).optional(),
+  billingIntervalMode: z.enum(["both", "monthly_only", "annual_only"]).optional(),
 });
 
 export const updatePlanDetails = createServerFn({ method: "POST" })
@@ -289,6 +290,7 @@ export const updatePlanDetails = createServerFn({ method: "POST" })
         badge_color: data.badgeColor || null,
         sort_order: data.sortOrder ?? 0,
         trial_days: data.trialDays ?? 0,
+        ...(data.billingIntervalMode ? { billing_interval_mode: data.billingIntervalMode } : {}),
         updated_at: new Date().toISOString(),
       })
       .eq("id", data.planId)
@@ -312,6 +314,27 @@ export const updatePlanDetails = createServerFn({ method: "POST" })
   });
 
 /**
+ * Update Platform-wide Billing Interval Mode (Both, Monthly Only, Annual Only)
+ */
+export const updatePlatformBillingMode = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .validator((raw: unknown) =>
+    z.object({ mode: z.enum(["both", "monthly_only", "annual_only"]) }).parse(raw),
+  )
+  .handler(async ({ data, context }) => {
+    await requireSuperAdmin(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await (supabaseAdmin.from("system_settings" as never) as any)
+      .update({
+        billing_interval_mode: data.mode,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", 1);
+    if (error) throw error;
+    return { success: true };
+  });
+
+/**
  * 2d. Create a New Custom SaaS Plan with Initial Version (v1)
  */
 const CreateCustomPlanInput = z.object({
@@ -325,6 +348,7 @@ const CreateCustomPlanInput = z.object({
   descriptionAr: z.string().nullable().optional(),
   descriptionEn: z.string().nullable().optional(),
   badgeColor: z.string().nullable().optional(),
+  billingIntervalMode: z.enum(["both", "monthly_only", "annual_only"]).default("both"),
   isPublic: z.boolean().default(true),
   isActive: z.boolean().default(true),
   sortOrder: z.number().default(0),
@@ -368,6 +392,7 @@ export const createCustomPlan = createServerFn({ method: "POST" })
         description_ar: data.descriptionAr?.trim() || null,
         description_en: data.descriptionEn?.trim() || null,
         badge_color: data.badgeColor || "bg-primary/10 text-primary",
+        billing_interval_mode: data.billingIntervalMode || "both",
         is_public: data.isPublic,
         is_active: data.isActive,
         sort_order: data.sortOrder,

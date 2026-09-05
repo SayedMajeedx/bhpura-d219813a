@@ -4,6 +4,7 @@
 
 import React, { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import {
   listPlansWithDetails,
   createPlanVersion,
@@ -11,12 +12,14 @@ import {
   updatePlanDetails,
   createCustomPlan,
   deletePlan,
+  updatePlatformBillingMode,
 } from "@/lib/saas-billing/saas-billing.functions";
 import type {
   SaaSPlan,
   SaaSPlanVersion,
   SaaSFeature,
   SaaSPlanFeature,
+  BillingIntervalMode,
 } from "@/lib/saas-billing/saas-billing.types";
 import { useI18n } from "@/lib/i18n";
 import { getFriendlyErrorMessage } from "@/lib/utils";
@@ -85,6 +88,18 @@ export function SuperPlansManager() {
     queryFn: () => listPlansWithDetails(),
   });
 
+  const { data: platformSettings } = useQuery({
+    queryKey: ["platform_system_settings_billing"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("system_settings")
+        .select("billing_interval_mode")
+        .eq("id", 1)
+        .maybeSingle();
+      return data as { billing_interval_mode: BillingIntervalMode } | null;
+    },
+  });
+
   const [filter, setFilter] = useState<PlanFilter>("all");
   const [expandedPlanId, setExpandedPlanId] = useState<string | null>(null);
 
@@ -106,6 +121,7 @@ export function SuperPlansManager() {
   const [editBadgeColor, setEditBadgeColor] = useState<string>("");
   const [editTrialDays, setEditTrialDays] = useState<number>(0);
   const [editSortOrder, setEditSortOrder] = useState<number>(0);
+  const [editBillingIntervalMode, setEditBillingIntervalMode] = useState<BillingIntervalMode>("both");
 
   // Create Custom Plan Modal State
   const [isCreatingPlan, setIsCreatingPlan] = useState<boolean>(false);
@@ -117,6 +133,7 @@ export function SuperPlansManager() {
   const [newPlanPriceMonthly, setNewPlanPriceMonthly] = useState<number>(0);
   const [newPlanPriceAnnual, setNewPlanPriceAnnual] = useState<number>(0);
   const [newPlanTrialDays, setNewPlanTrialDays] = useState<number>(0);
+  const [newPlanBillingIntervalMode, setNewPlanBillingIntervalMode] = useState<BillingIntervalMode>("both");
   const [newPlanIsPublic, setNewPlanIsPublic] = useState<boolean>(true);
   const [newPlanIsActive, setNewPlanIsActive] = useState<boolean>(true);
   const [newPlanFeatures, setNewPlanFeatures] = useState<
@@ -236,6 +253,22 @@ export function SuperPlansManager() {
     }
   };
 
+  // Update Platform Global Billing Interval Mode
+  const handleUpdateGlobalBillingMode = async (mode: BillingIntervalMode) => {
+    const toastId = toast.loading(isAr ? "جاري تحديث دورات الفوترة..." : "Updating billing cycles...");
+    try {
+      await updatePlatformBillingMode({ data: { mode } });
+      toast.success(isAr ? "تم تحديث دورات الفوترة بنجاح!" : "Billing cycles updated successfully!", {
+        id: toastId,
+      });
+      void queryClient.invalidateQueries({ queryKey: ["platform_system_settings_billing"] });
+      void queryClient.invalidateQueries({ queryKey: ["super_saas_plans"] });
+    } catch (err) {
+      console.error(err);
+      toast.error(getFriendlyErrorMessage(err) || "Failed to update billing mode", { id: toastId });
+    }
+  };
+
   // Open Edit Details Modal
   const handleOpenEditDetails = (plan: SaaSPlan) => {
     setEditingPlanDetails(plan);
@@ -246,6 +279,7 @@ export function SuperPlansManager() {
     setEditBadgeColor(plan.badge_color || "bg-primary/10 text-primary");
     setEditTrialDays(plan.trial_days || 0);
     setEditSortOrder(plan.sort_order || 0);
+    setEditBillingIntervalMode(plan.billing_interval_mode || "both");
   };
 
   // Save Edit Details
@@ -265,6 +299,7 @@ export function SuperPlansManager() {
           badgeColor: editBadgeColor.trim() || null,
           trialDays: Number(editTrialDays) || 0,
           sortOrder: Number(editSortOrder) || 0,
+          billingIntervalMode: editBillingIntervalMode,
         },
       });
 
@@ -291,6 +326,7 @@ export function SuperPlansManager() {
     setNewPlanPriceMonthly(20);
     setNewPlanPriceAnnual(200);
     setNewPlanTrialDays(0);
+    setNewPlanBillingIntervalMode("both");
     setNewPlanIsPublic(true);
     setNewPlanIsActive(true);
 
@@ -344,6 +380,7 @@ export function SuperPlansManager() {
           isPublic: newPlanIsPublic,
           isActive: newPlanIsActive,
           trialDays: Number(newPlanTrialDays) || 0,
+          billingIntervalMode: newPlanBillingIntervalMode,
           priceMonthly: Number(newPlanPriceMonthly) || 0,
           priceAnnual: Number(newPlanPriceAnnual) || 0,
           features: formattedFeatures,
@@ -509,6 +546,57 @@ export function SuperPlansManager() {
         </div>
       </div>
 
+      {/* Platform-wide Billing Mode Control Card */}
+      <div className="p-4 rounded-2xl bg-card border border-border shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
+            <Sparkles className="h-4 w-4 text-primary" />
+            <span>{isAr ? "نظام دورات الفوترة المعروضة للمتاجر" : "Active Merchant Billing Cycles"}</span>
+          </h3>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            {isAr
+              ? "تحكم فيما إذا كان المتجر يمكنه الاختيار بين شهري وسنوي، أو حصر التسجيل على شهري فقط أو سنوي فقط."
+              : "Specify whether merchants can choose between monthly and annual, or restrict checkout to monthly only or annual only."}
+          </p>
+        </div>
+
+        <div className="flex items-center gap-1.5 p-1 bg-muted/40 border border-border/60 rounded-xl shrink-0">
+          <button
+            type="button"
+            onClick={() => handleUpdateGlobalBillingMode("both")}
+            className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all min-h-[36px] ${
+              (platformSettings?.billing_interval_mode || "both") === "both"
+                ? "bg-primary text-primary-foreground shadow-sm font-bold"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            {isAr ? "شهري وسنوي" : "Monthly & Annual"}
+          </button>
+          <button
+            type="button"
+            onClick={() => handleUpdateGlobalBillingMode("monthly_only")}
+            className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all min-h-[36px] ${
+              platformSettings?.billing_interval_mode === "monthly_only"
+                ? "bg-primary text-primary-foreground shadow-sm font-bold"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            {isAr ? "شهري فقط" : "Monthly Only"}
+          </button>
+          <button
+            type="button"
+            onClick={() => handleUpdateGlobalBillingMode("annual_only")}
+            className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all min-h-[36px] ${
+              platformSettings?.billing_interval_mode === "annual_only"
+                ? "bg-primary text-primary-foreground shadow-sm font-bold"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            {isAr ? "سنوي فقط" : "Annual Only"}
+          </button>
+        </div>
+      </div>
+
       {/* Filter Tabs Bar */}
       <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
         <Button
@@ -631,6 +719,14 @@ export function SuperPlansManager() {
                             {isAr ? "نشطة ومتاحة" : "Active"}
                           </Badge>
                         )}
+
+                        <Badge variant="secondary" className="text-[10px] font-medium">
+                          {plan.billing_interval_mode === "monthly_only"
+                            ? (isAr ? "شهري فقط" : "Monthly Only")
+                            : plan.billing_interval_mode === "annual_only"
+                            ? (isAr ? "سنوي فقط" : "Annual Only")
+                            : (isAr ? "شهري وسنوي" : "Monthly & Annual")}
+                        </Badge>
                       </div>
 
                       <CardTitle className="text-base font-bold text-foreground">
@@ -960,6 +1056,46 @@ export function SuperPlansManager() {
                 </div>
               </div>
 
+              {/* Allowed Billing Intervals */}
+              <div className="space-y-1.5">
+                <Label className="font-bold">{isAr ? "دورة الفوترة المتاحة للباقة" : "Allowed Billing Intervals"}</Label>
+                <div className="grid grid-cols-3 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setNewPlanBillingIntervalMode("both")}
+                    className={`p-2.5 rounded-xl border text-xs font-semibold text-center transition-all ${
+                      newPlanBillingIntervalMode === "both"
+                        ? "border-primary bg-primary/10 text-primary font-bold shadow-sm"
+                        : "border-border/60 hover:bg-muted/40 text-muted-foreground"
+                    }`}
+                  >
+                    {isAr ? "شهري وسنوي" : "Monthly & Annual"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setNewPlanBillingIntervalMode("monthly_only")}
+                    className={`p-2.5 rounded-xl border text-xs font-semibold text-center transition-all ${
+                      newPlanBillingIntervalMode === "monthly_only"
+                        ? "border-primary bg-primary/10 text-primary font-bold shadow-sm"
+                        : "border-border/60 hover:bg-muted/40 text-muted-foreground"
+                    }`}
+                  >
+                    {isAr ? "فقط شهري" : "Monthly Only"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setNewPlanBillingIntervalMode("annual_only")}
+                    className={`p-2.5 rounded-xl border text-xs font-semibold text-center transition-all ${
+                      newPlanBillingIntervalMode === "annual_only"
+                        ? "border-primary bg-primary/10 text-primary font-bold shadow-sm"
+                        : "border-border/60 hover:bg-muted/40 text-muted-foreground"
+                    }`}
+                  >
+                    {isAr ? "فقط سنوي" : "Annual Only"}
+                  </button>
+                </div>
+              </div>
+
               {/* Visibility & Status toggles */}
               <div className="p-3 rounded-xl bg-muted/30 border border-border/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div className="flex items-center gap-2">
@@ -1159,6 +1295,46 @@ export function SuperPlansManager() {
                     onChange={(e) => setEditSortOrder(parseInt(e.target.value, 10) || 0)}
                     className="font-mono text-xs"
                   />
+                </div>
+              </div>
+
+              {/* Allowed Billing Intervals */}
+              <div className="space-y-1.5">
+                <Label className="font-bold">{isAr ? "دورة الفوترة المتاحة للباقة" : "Allowed Billing Intervals"}</Label>
+                <div className="grid grid-cols-3 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setEditBillingIntervalMode("both")}
+                    className={`p-2.5 rounded-xl border text-xs font-semibold text-center transition-all ${
+                      editBillingIntervalMode === "both"
+                        ? "border-primary bg-primary/10 text-primary font-bold shadow-sm"
+                        : "border-border/60 hover:bg-muted/40 text-muted-foreground"
+                    }`}
+                  >
+                    {isAr ? "شهري وسنوي" : "Monthly & Annual"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setEditBillingIntervalMode("monthly_only")}
+                    className={`p-2.5 rounded-xl border text-xs font-semibold text-center transition-all ${
+                      editBillingIntervalMode === "monthly_only"
+                        ? "border-primary bg-primary/10 text-primary font-bold shadow-sm"
+                        : "border-border/60 hover:bg-muted/40 text-muted-foreground"
+                    }`}
+                  >
+                    {isAr ? "فقط شهري" : "Monthly Only"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setEditBillingIntervalMode("annual_only")}
+                    className={`p-2.5 rounded-xl border text-xs font-semibold text-center transition-all ${
+                      editBillingIntervalMode === "annual_only"
+                        ? "border-primary bg-primary/10 text-primary font-bold shadow-sm"
+                        : "border-border/60 hover:bg-muted/40 text-muted-foreground"
+                    }`}
+                  >
+                    {isAr ? "فقط سنوي" : "Annual Only"}
+                  </button>
                 </div>
               </div>
             </div>

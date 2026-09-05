@@ -11,6 +11,8 @@ export type SaaSPlanCode =
   | "lifetime_founder"
   | (string & {});
 
+export type BillingIntervalMode = "both" | "monthly_only" | "annual_only";
+
 export type SaaSPlan = {
   id: string;
   code: SaaSPlanCode;
@@ -23,6 +25,7 @@ export type SaaSPlan = {
   sort_order: number;
   trial_days: number;
   badge_color: string | null;
+  billing_interval_mode?: BillingIntervalMode;
   created_at: string;
   updated_at: string;
 };

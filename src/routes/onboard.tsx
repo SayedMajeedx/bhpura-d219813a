@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { useI18n } from "@/lib/i18n";
+import { cn } from "@/lib/utils";
 import {
   Sparkles,
   Check,
@@ -45,6 +46,7 @@ function OnboardPage() {
   const [plans, setPlans] = useState<any[]>([]);
   const [trialDays, setTrialDays] = useState(3);
   const [billingInterval, setBillingInterval] = useState<"monthly" | "annual">("annual");
+  const [platformBillingMode, setPlatformBillingMode] = useState<"both" | "monthly_only" | "annual_only">("both");
   const [selectedPlan, setSelectedPlan] = useState<any>(null);
 
   // Form Fields
@@ -76,7 +78,15 @@ function OnboardPage() {
     getPublicOnboardingPlans()
       .then((data) => {
         if (Array.isArray(data)) {
-          setPlans(data.filter((p) => p.code !== "lifetime_founder" && p.code !== "trial"));
+          const filtered = data.filter((p) => p.code !== "lifetime_founder" && p.code !== "trial");
+          setPlans(filtered);
+          const mode = data[0]?.platform_billing_interval_mode || "both";
+          setPlatformBillingMode(mode);
+          if (mode === "monthly_only") {
+            setBillingInterval("monthly");
+          } else if (mode === "annual_only") {
+            setBillingInterval("annual");
+          }
         }
       })
       .catch(() => {});
@@ -374,7 +384,7 @@ function OnboardPage() {
                     </Label>
                     <Input
                       id="brandName"
-                      placeholder={isAr ? "مثال: دار الحرير" : "e.g. Silk Abaya"}
+                      placeholder={isAr ? "اسم البوتيك" : "Boutique name"}
                       value={brandName}
                       onChange={(e) => {
                         const val = e.target.value;
@@ -389,7 +399,8 @@ function OnboardPage() {
                           if (suggested) setSlug(suggested);
                         }
                       }}
-                      className="h-10 text-xs"
+                      className="h-10 text-xs placeholder:text-muted-foreground/35 placeholder:font-normal bg-background"
+                      autoComplete="off"
                       required
                     />
                   </div>
@@ -415,10 +426,11 @@ function OnboardPage() {
                       <Input
                         id="slug"
                         dir="ltr"
-                        placeholder="myboutique"
+                        placeholder="brand"
                         value={slug}
                         onChange={(e) => setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ""))}
-                        className="h-10 text-xs pe-24"
+                        className="h-10 text-xs pe-24 placeholder:text-muted-foreground/35 placeholder:font-normal bg-background"
+                        autoComplete="off"
                         required
                       />
                       <span className="absolute end-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground font-mono pointer-events-none">
@@ -436,10 +448,11 @@ function OnboardPage() {
                     </Label>
                     <Input
                       id="ownerName"
-                      placeholder={isAr ? "مثال: ريم أحمد" : "e.g. Reem Ahmed"}
+                      placeholder={isAr ? "الاسم الكريم" : "Your name"}
                       value={ownerName}
                       onChange={(e) => setOwnerName(e.target.value)}
-                      className="h-10 text-xs"
+                      className="h-10 text-xs placeholder:text-muted-foreground/35 placeholder:font-normal bg-background"
+                      autoComplete="name"
                       required
                     />
                   </div>
@@ -452,10 +465,11 @@ function OnboardPage() {
                     <Input
                       id="contactNumber"
                       dir="ltr"
-                      placeholder="+973 39955508"
+                      placeholder="39955508"
                       value={contactNumber}
                       onChange={(e) => setContactNumber(e.target.value)}
-                      className="h-10 text-xs"
+                      className="h-10 text-xs placeholder:text-muted-foreground/35 placeholder:font-normal bg-background"
+                      autoComplete="tel"
                       required
                     />
                   </div>
@@ -471,10 +485,11 @@ function OnboardPage() {
                       id="email"
                       type="email"
                       dir="ltr"
-                      placeholder="owner@example.com"
+                      placeholder="name@example.com"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      className="h-10 text-xs"
+                      className="h-10 text-xs placeholder:text-muted-foreground/35 placeholder:font-normal bg-background"
+                      autoComplete="email"
                       required
                     />
                   </div>
@@ -488,10 +503,11 @@ function OnboardPage() {
                       id="password"
                       type="password"
                       dir="ltr"
-                      placeholder="••••••••"
+                      placeholder=""
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      className="h-10 text-xs"
+                      className="h-10 text-xs placeholder:text-muted-foreground/35 placeholder:font-normal bg-background"
+                      autoComplete="new-password"
                       required
                       minLength={6}
                     />
@@ -545,120 +561,159 @@ function OnboardPage() {
                 : `Begin with ${trialDays} free days, then pick the tier matching your growth to continue selling.`}
             </p>
 
-            {/* Monthly / Annual Toggle */}
-            <div className="inline-flex items-center gap-1 p-1 bg-muted rounded-lg border border-border text-xs mt-2">
-              <button
-                type="button"
-                onClick={() => chooseBillingInterval("monthly")}
-                className={`px-3 py-1 rounded-md font-semibold transition-all ${
-                  billingInterval === "monthly"
-                    ? "bg-background text-foreground shadow-sm"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                {isAr ? "شهري" : "Monthly"}
-              </button>
-              <button
-                type="button"
-                onClick={() => chooseBillingInterval("annual")}
-                className={`px-3 py-1 rounded-md font-semibold transition-all ${
-                  billingInterval === "annual"
-                    ? "bg-background text-foreground shadow-sm"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                {isAr ? "سنوي (وفر 20%)" : "Annual (Save 20%)"}
-              </button>
-            </div>
+            {/* Monthly / Annual Toggle (if platform allows both) */}
+            {platformBillingMode === "both" && (
+              <div className="inline-flex items-center gap-1 p-1 bg-muted rounded-lg border border-border text-xs mt-2">
+                <button
+                  type="button"
+                  onClick={() => chooseBillingInterval("monthly")}
+                  className={`px-3 py-1 rounded-md font-semibold transition-all ${
+                    billingInterval === "monthly"
+                      ? "bg-background text-foreground shadow-sm"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {isAr ? "شهري" : "Monthly"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => chooseBillingInterval("annual")}
+                  className={`px-3 py-1 rounded-md font-semibold transition-all ${
+                    billingInterval === "annual"
+                      ? "bg-background text-foreground shadow-sm"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {isAr ? "سنوي (وفر 20%)" : "Annual (Save 20%)"}
+                </button>
+              </div>
+            )}
+            {platformBillingMode === "monthly_only" && (
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-muted/60 rounded-full border border-border text-xs text-muted-foreground mt-2 font-medium">
+                <span>{isAr ? "دورة الفوترة المتاحة: شهرياً" : "Available Cycle: Monthly"}</span>
+              </div>
+            )}
+            {platformBillingMode === "annual_only" && (
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-muted/60 rounded-full border border-border text-xs text-muted-foreground mt-2 font-medium">
+                <span>{isAr ? "دورة الفوترة المتاحة: سنوياً (بأفضل قيمة)" : "Available Cycle: Annual (Best Value)"}</span>
+              </div>
+            )}
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
-            {/* Starter */}
-            <div className="p-5 rounded-2xl border border-border bg-card/60 flex flex-col justify-between space-y-4">
-              <div className="space-y-2">
-                <h3 className="font-bold text-sm text-foreground">{isAr ? "باقة البداية" : "Starter"}</h3>
-                <p className="text-xs text-muted-foreground">
-                  {isAr ? "للبوتيكات والمصممات الناشئات." : "For emerging boutique designers."}
-                </p>
-                <div className="font-mono text-xl font-extrabold text-foreground pt-2">
-                  {billingInterval === "annual" ? "12" : "15"}{" "}
-                  <span className="text-xs font-normal text-muted-foreground">{isAr ? "د.ب / شهرياً" : "BHD / mo"}</span>
-                </div>
-              </div>
-              <ul className="text-xs space-y-1.5 text-muted-foreground">
-                <li className="flex items-center gap-2">
-                  <Check className="size-3.5 text-primary" />
-                  <span>{isAr ? "حتى 50 منتج" : "Up to 50 products"}</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <Check className="size-3.5 text-primary" />
-                  <span>{isAr ? "تتبع الطلبات والمخزون" : "Orders & stock tracking"}</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <Check className="size-3.5 text-primary" />
-                  <span>{isAr ? "تنبيهات فورية على واتساب" : "Instant WhatsApp alerts"}</span>
-                </li>
-              </ul>
-            </div>
+          {/* DYNAMIC PLANS LIST */}
+          <div
+            className={cn(
+              "grid gap-6 mx-auto",
+              plans.length === 1
+                ? "grid-cols-1 max-w-sm"
+                : plans.length === 2
+                ? "grid-cols-1 md:grid-cols-2 max-w-2xl"
+                : "grid-cols-1 md:grid-cols-3 max-w-4xl",
+            )}
+          >
+            {plans.map((plan) => {
+              const isAnnual = billingInterval === "annual";
+              const isPlanMonthlyOnly = plan.billing_interval_mode === "monthly_only";
+              const isPlanAnnualOnly = plan.billing_interval_mode === "annual_only";
 
-            {/* Growth */}
-            <div className="p-5 rounded-2xl border border-primary bg-primary/[0.02] ring-1 ring-primary/20 flex flex-col justify-between space-y-4 relative">
-              <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 text-[10px] font-bold bg-primary text-primary-foreground">
-                {isAr ? "الأكثر شعبية" : "Most Popular"}
-              </Badge>
-              <div className="space-y-2">
-                <h3 className="font-bold text-sm text-foreground">{isAr ? "باقة النمو" : "Growth"}</h3>
-                <p className="text-xs text-muted-foreground">
-                  {isAr ? "للبوتيكات المتوسعة التي تبحث عن المبيعات السريعة." : "For growing boutiques scaling sales."}
-                </p>
-                <div className="font-mono text-xl font-extrabold text-foreground pt-2">
-                  {billingInterval === "annual" ? "28" : "35"}{" "}
-                  <span className="text-xs font-normal text-muted-foreground">{isAr ? "د.ب / شهرياً" : "BHD / mo"}</span>
-                </div>
-              </div>
-              <ul className="text-xs space-y-1.5 text-muted-foreground">
-                <li className="flex items-center gap-2">
-                  <Check className="size-3.5 text-primary" />
-                  <span>{isAr ? "منتجات وتصنيفات غير محدودة" : "Unlimited products"}</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <Check className="size-3.5 text-primary" />
-                  <span>{isAr ? "ربط دومين خاص مخصص" : "Custom domain connection"}</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <Check className="size-3.5 text-primary" />
-                  <span>{isAr ? "استرجاع السلات المتروكة" : "Abandoned cart recovery"}</span>
-                </li>
-              </ul>
-            </div>
+              let displayPrice: string | number = 0;
+              let displayPeriod = isAr ? "د.ب / شهرياً" : "BHD / mo";
 
-            {/* Pro */}
-            <div className="p-5 rounded-2xl border border-border bg-card/60 flex flex-col justify-between space-y-4">
-              <div className="space-y-2">
-                <h3 className="font-bold text-sm text-foreground">{isAr ? "الباقة الاحترافية" : "Pro"}</h3>
-                <p className="text-xs text-muted-foreground">
-                  {isAr ? "للبراندات الكبرى والمشاغل الراقية." : "For established luxury fashion brands."}
-                </p>
-                <div className="font-mono text-xl font-extrabold text-foreground pt-2">
-                  {billingInterval === "annual" ? "48" : "60"}{" "}
-                  <span className="text-xs font-normal text-muted-foreground">{isAr ? "د.ب / شهرياً" : "BHD / mo"}</span>
+              if (isPlanMonthlyOnly) {
+                displayPrice = Number(plan.version?.price_monthly ?? 0);
+                displayPeriod = isAr ? "د.ب / شهرياً" : "BHD / mo";
+              } else if (isPlanAnnualOnly || isAnnual) {
+                const annualTotal = Number(plan.version?.price_annual ?? 0);
+                const perMonth = annualTotal > 0 ? (annualTotal / 12).toFixed(1).replace(/\.0$/, "") : "0";
+                displayPrice = perMonth;
+                displayPeriod = isAr
+                  ? `د.ب / شهرياً (${annualTotal} د.ب سنوياً)`
+                  : `BHD / mo (${annualTotal} BHD/yr)`;
+              } else {
+                displayPrice = Number(plan.version?.price_monthly ?? 0);
+                displayPeriod = isAr ? "د.ب / شهرياً" : "BHD / mo";
+              }
+
+              const isPopular = plan.code === "growth" || plan.sort_order === 20;
+
+              return (
+                <div
+                  key={plan.id}
+                  className={cn(
+                    "p-5 rounded-2xl flex flex-col justify-between space-y-4 transition-all",
+                    isPopular
+                      ? "border border-primary bg-primary/[0.02] ring-1 ring-primary/20 relative"
+                      : "border border-border bg-card/60",
+                  )}
+                >
+                  {isPopular && (
+                    <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 text-[10px] font-bold bg-primary text-primary-foreground">
+                      {isAr ? "الأكثر شعبية" : "Most Popular"}
+                    </Badge>
+                  )}
+
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <h3 className="font-bold text-sm text-foreground">
+                        {isAr ? plan.name_ar : plan.name_en}
+                      </h3>
+                      {plan.billing_interval_mode === "monthly_only" && (
+                        <span className="text-[10px] text-muted-foreground bg-muted px-2 py-0.5 rounded-md font-medium">
+                          {isAr ? "شهري فقط" : "Monthly Only"}
+                        </span>
+                      )}
+                      {plan.billing_interval_mode === "annual_only" && (
+                        <span className="text-[10px] text-muted-foreground bg-muted px-2 py-0.5 rounded-md font-medium">
+                          {isAr ? "سنوي فقط" : "Annual Only"}
+                        </span>
+                      )}
+                    </div>
+
+                    <p className="text-xs text-muted-foreground">
+                      {isAr ? plan.description_ar : plan.description_en}
+                    </p>
+
+                    <div className="font-mono text-xl font-extrabold text-foreground pt-2 flex items-baseline gap-1.5">
+                      <span>{displayPrice}</span>
+                      <span className="text-xs font-normal text-muted-foreground">{displayPeriod}</span>
+                    </div>
+                  </div>
+
+                  <ul className="text-xs space-y-1.5 text-muted-foreground flex-1">
+                    {Array.isArray(plan.features) && plan.features.length > 0 ? (
+                      plan.features.slice(0, 5).map((feat: any, idx: number) => {
+                        const featName = isAr ? feat.name_ar : feat.name_en;
+                        let text = featName;
+                        if (feat.numeric_value && feat.numeric_value > 0) {
+                          text = `${featName} (${feat.numeric_value} ${feat.unit ? (isAr ? feat.unit_ar || feat.unit : feat.unit) : ""})`;
+                        }
+                        return (
+                          <li key={idx} className="flex items-center gap-2">
+                            <Check className="size-3.5 text-primary shrink-0" />
+                            <span className="line-clamp-1">{text}</span>
+                          </li>
+                        );
+                      })
+                    ) : (
+                      <>
+                        <li className="flex items-center gap-2">
+                          <Check className="size-3.5 text-primary shrink-0" />
+                          <span>{isAr ? "إدارة متجر متكاملة" : "Full store management"}</span>
+                        </li>
+                        <li className="flex items-center gap-2">
+                          <Check className="size-3.5 text-primary shrink-0" />
+                          <span>{isAr ? "تتبع الطلبات والمخزون" : "Orders & stock tracking"}</span>
+                        </li>
+                        <li className="flex items-center gap-2">
+                          <Check className="size-3.5 text-primary shrink-0" />
+                          <span>{isAr ? "تنبيهات فورية على واتساب" : "Instant WhatsApp alerts"}</span>
+                        </li>
+                      </>
+                    )}
+                  </ul>
                 </div>
-              </div>
-              <ul className="text-xs space-y-1.5 text-muted-foreground">
-                <li className="flex items-center gap-2">
-                  <Check className="size-3.5 text-primary" />
-                  <span>{isAr ? "بوابة المرتجعات الآلية" : "Automated returns portal"}</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <Check className="size-3.5 text-primary" />
-                  <span>{isAr ? "برنامج نقاط الولاء ومكافآت VIP" : "VIP Loyalty & rewards"}</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <Check className="size-3.5 text-primary" />
-                  <span>{isAr ? "إزالة شارة المنصة بالكامل" : "White-label branding"}</span>
-                </li>
-              </ul>
-            </div>
+              );
+            })}
           </div>
         </div>
       </main>
