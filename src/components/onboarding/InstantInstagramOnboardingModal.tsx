@@ -36,6 +36,8 @@ import {
   fetchInstagramPosts,
   checkScraperStatus,
   fetchScraperDataset,
+  fetchInstagramGraphPosts,
+  getInstagramAuthorizeUrlFn,
   batchParseCaptionsWithAI,
   batchRehostImages,
   bulkInsertProducts,
@@ -86,6 +88,10 @@ export function InstantInstagramOnboardingModal({
   const [isSlugManuallyEdited, setIsSlugManuallyEdited] = React.useState(false);
   const [isNameEnManuallyEdited, setIsNameEnManuallyEdited] = React.useState(false);
 
+  // Official Instagram OAuth & Provisioned Brand State
+  const [provisionedBrandId, setProvisionedBrandId] = React.useState<string | null>(null);
+  const [isConnectingOAuth, setIsConnectingOAuth] = React.useState(false);
+
   // Scraper & AI extraction state
   const [statusMessage, setStatusMessage] = React.useState("");
   const [scrapedPosts, setScrapedPosts] = React.useState<InstagramPostPreview[]>([]);
@@ -100,47 +106,331 @@ export function InstantInstagramOnboardingModal({
       setSlug(clean.replace(/[^a-z0-9_-]/g, ""));
     }
     if (!isNameEnManuallyEdited) {
-      // capitalize words from handle e.g. minnaz.couture -> Minnaz Couture
       const words = clean.replace(/[._-]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
       setStoreNameEn(words);
     }
   };
 
-  const handleStartScrape = async () => {
-    if (!instagramHandle) {
-      toast.error(isAr ? "يرجى إدخال حساب انستقرام" : "Please enter Instagram handle");
-      return;
-    }
-    if (!storeNameEn.trim()) {
-      toast.error(isAr ? "يرجى كتابة اسم المتجر بالإنجليزي" : "Store name in English is required");
-      return;
-    }
-    if (!slug.trim()) {
-      toast.error(isAr ? "يرجى تحديد المعرّف (Slug)" : "Store slug is required");
-      return;
-    }
-    if (!ownerEmail.trim() || !ownerEmail.includes("@")) {
-      toast.error(isAr ? "يرجى إدخال بريد إلكتروني صحيح لمدير المتجر" : "Valid owner email is required");
-      return;
-    }
-    if (!ownerPassword.trim() || ownerPassword.trim().length < 6) {
-      toast.error(
-        isAr
-          ? "يرجى تعيين كلمة مرور مكونة من 6 خانات على الأقل لتسجيل الدخول لاحقاً"
-          : "Please set a password of at least 6 characters to sign in later",
-      );
-      return;
+  // Requirement 4: Ensure an active brand and authenticated session exists BEFORE starting any import
+  const ensureAuthenticatedBrandSession = async (): Promise<string> => {
+    if (provisionedBrandId) {
+      return provisionedBrandId;
     }
 
+    if (isAdminModal) {
+      if (!storeNameEn.trim()) {
+        throw new Error(isAr ? "يرجى كتابة اسم المتجر بالإنجليزي" : "Store name in English is required");
+      }
+      if (!slug.trim()) {
+        throw new Error(isAr ? "يرجى تحديد المعرّف (Slug)" : "Store slug is required");
+      }
+      if (!ownerEmail.trim() || !ownerEmail.includes("@")) {
+        throw new Error(isAr ? "يرجى إدخال بريد إلكتروني صحيح" : "Valid owner email is required");
+      }
+      if (!ownerPassword.trim() || ownerPassword.trim().length < 6) {
+        throw new Error(
+          isAr
+            ? "يرجى تعيين كلمة مرور مكونة من 6 خانات على الأقل"
+            : "Password must be at least 6 characters",
+        );
+      }
+
+      const cleanPhone = ownerPhone.trim()
+        ? ownerPhone.trim().startsWith("+")
+          ? ownerPhone.trim()
+          : `+973${ownerPhone.trim().replace(/^0+/, "")}`
+        : "+97300000000";
+
+      const provisioned = await provisionBrandWithOwner({
+        slug: slug.trim().toLowerCase(),
+        name_en: storeNameEn.trim(),
+        name_ar: storeNameAr.trim() || null,
+        owner_name: ownerName.trim() || storeNameEn.trim(),
+        owner_email: ownerEmail.trim().toLowerCase(),
+        owner_phone: cleanPhone,
+        owner_password: ownerPassword.trim(),
+        plan_type: "trial",
+      });
+      setProvisionedBrandId(provisioned.brand_id);
+      return provisioned.brand_id;
+    }
+
+    // Check if user already has an active Supabase session
+    const { data: sessionData } = await supabase.auth.getSession();
+    const currentSession = sessionData?.session;
+
+    if (currentSession?.user) {
+      const { data: brands } = await supabase
+        .from("brands")
+        .select("id")
+        .eq("created_by", currentSession.user.id)
+        .limit(1);
+      if (brands && brands.length > 0) {
+        setProvisionedBrandId(brands[0].id);
+        return brands[0].id;
+      }
+    }
+
+    // Unregistered visitor: validate fields first and create trial account
+    if (!storeNameEn.trim()) {
+      throw new Error(isAr ? "يرجى كتابة اسم المتجر بالإنجليزي أولاً" : "Store name in English is required");
+    }
+    if (!slug.trim()) {
+      throw new Error(isAr ? "يرجى تحديد المعرّف (Slug) أولاً" : "Store slug is required");
+    }
+    if (!ownerEmail.trim() || !ownerEmail.includes("@")) {
+      throw new Error(isAr ? "يرجى إدخال بريد إلكتروني صحيح لإنشاء الحساب أولاً" : "Valid owner email is required");
+    }
+    if (!ownerPassword.trim() || ownerPassword.trim().length < 6) {
+      throw new Error(
+        isAr
+          ? "يرجى تعيين كلمة مرور مكونة من 6 خانات على الأقل لإنشاء الحساب أولاً"
+          : "Password of at least 6 characters is required",
+      );
+    }
+
+    const cleanPhone = ownerPhone.trim()
+      ? ownerPhone.trim().startsWith("+")
+      ? ownerPhone.trim()
+      : `+973${ownerPhone.trim().replace(/^0+/, "")}`
+      : "+97300000000";
+
+    const cleanPassword = ownerPassword.trim();
+    const cleanEmail = ownerEmail.trim().toLowerCase();
+
+    const res = await registerInstantTrial({
+      data: {
+        brandName: storeNameAr.trim() || storeNameEn.trim(),
+        nameEn: storeNameEn.trim(),
+        nameAr: storeNameAr.trim() || undefined,
+        slug: slug.trim().toLowerCase(),
+        ownerName: ownerName.trim() || storeNameEn.trim(),
+        contactNumber: cleanPhone,
+        email: cleanEmail,
+        password: cleanPassword,
+        businessType: "Boutique & Fashion",
+      },
+    });
+
+    if (res.alreadyRegistered) {
+      throw new Error(res.message);
+    }
+
+    const brandId = res.brandId;
+    setProvisionedBrandId(brandId);
+
+    // Auto sign-in to guarantee session is active
+    await supabase.auth.signInWithPassword({
+      email: cleanEmail,
+      password: cleanPassword,
+    });
+
+    return brandId;
+  };
+
+  // Shared: Batch parse posts with Gemini AI and open preview step
+  const parsePostsAndOpenPreview = async (posts: InstagramPostPreview[], currentBrandId: string) => {
+    setScrapedPosts(posts);
+
+    if (!posts || posts.length === 0) {
+      throw new Error(
+        isAr ? "لم نجد منشورات متاحة في هذا الحساب" : "No posts found for this account",
+      );
+    }
+
+    setStatusMessage(
+      isAr
+        ? "الذكاء الاصطناعي يحلل الصور والأوصاف لاستخراج الأسعار والمقاسات والألوان... ✨"
+        : "Gemini AI is analyzing photos and captions for prices, sizes, and colors... ✨",
+    );
+
+    let aiDrafts: InstagramProductDraft[] = [];
+    try {
+      const parsed = await batchParseCaptionsWithAI({
+        data: {
+          brandId: currentBrandId,
+          posts: posts.slice(0, 12).map((p) => ({
+            id: p.id,
+            url: p.url,
+            imageUrl: p.imageUrl,
+            caption: p.caption,
+            isSoldOut: p.isSoldOut,
+            isVideo: p.isVideo,
+          })),
+        },
+      });
+      if (parsed?.products && Array.isArray(parsed.products)) {
+        aiDrafts = parsed.products.map((p: any) => ({
+          id: p.id,
+          imageUrl: p.imageUrl,
+          url: p.url,
+          isSoldOut: Boolean(p.isSoldOut),
+          title: p.title || (isAr ? "منتج راقي" : "Luxury Product"),
+          price: typeof p.price === "number" ? p.price : 35,
+          description: p.description || "",
+          sizes: Array.isArray(p.sizes) ? p.sizes : [],
+          colors: Array.isArray(p.colors) ? p.colors : [],
+          category: p.category || (isAr ? "أزياء" : "Fashion"),
+          confidence: typeof p.confidence === "number" ? p.confidence : 0.85,
+          issues: Array.isArray(p.issues) ? p.issues : [],
+        }));
+      }
+    } catch (err) {
+      console.warn("AI parsing fallback", err);
+    }
+
+    // Heuristic boutique fallback
+    if (aiDrafts.length === 0) {
+      aiDrafts = posts.slice(0, 10).map((p) => {
+        const meta = extractBoutiqueMetadataFromCaption(p.caption, instagramHandle);
+        return {
+          id: p.id,
+          imageUrl: p.imageUrl,
+          url: p.url,
+          isSoldOut: p.isSoldOut,
+          title: meta.title,
+          price: meta.price || 35,
+          description: meta.description,
+          sizes: [],
+          colors: [],
+          category: meta.category,
+          confidence: meta.price ? 0.8 : 0.5,
+          issues: [],
+        };
+      });
+    }
+
+    setDrafts(aiDrafts);
+    const selected = new Set<string>();
+    aiDrafts.forEach((d) => {
+      if (!d.isSoldOut) selected.add(d.id);
+    });
+    setSelectedDraftIds(selected.size > 0 ? selected : new Set(aiDrafts.map((d) => d.id)));
+    setStep("preview");
+  };
+
+  // Official Instagram Graph API Fetch
+  const fetchPostsFromGraph = async (brandId: string, handle?: string) => {
     setStep("fetching");
     setStatusMessage(
       isAr
-        ? "قاعدين نتصفح حسابك بالانستقرام ونطلع أحلى البوستات... 📸"
-        : "Scanning your Instagram feed for your best posts... 📸",
+        ? "تم ربط حساب إنستغرام بنجاح! جاري جلب أحدث منشوراتك الرسمية... 📸"
+        : "Connected to Instagram! Fetching your official posts... 📸",
     );
 
     try {
-      // 1. Start Apify Scraper run (10 posts)
+      const res = await fetchInstagramGraphPosts({
+        data: {
+          brandId,
+          limit: 50,
+        },
+      });
+
+      if (res.username && !instagramHandle) {
+        setInstagramHandle(res.username);
+      }
+
+      await parsePostsAndOpenPreview(res.posts || [], brandId);
+    } catch (err: any) {
+      console.error("Failed to load Instagram Graph posts:", err);
+      toast.error(
+        isAr
+          ? `تعذر استيراد المنشورات الرسمية: ${err.message}`
+          : `Failed to fetch official posts: ${err.message}`,
+      );
+      setStep("input");
+    }
+  };
+
+  // Listen for OAuth callback return from Meta
+  React.useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    const isConnected = params.get("instagram_connected") === "true";
+    const brandId = params.get("brandId") || sessionStorage.getItem("boutq_pending_brand_id");
+    const handle = params.get("instagram_handle");
+    const igError = params.get("instagram_error");
+
+    if (igError) {
+      toast.error(
+        isAr
+          ? `تعذر إتمام ربط إنستغرام: ${igError}`
+          : `Instagram connection error: ${igError}`,
+      );
+      window.history.replaceState({}, document.title, window.location.pathname);
+      return;
+    }
+
+    if (isConnected && brandId) {
+      onOpenChange(true);
+      setProvisionedBrandId(brandId);
+      if (handle) setInstagramHandle(handle);
+
+      const savedSlug = sessionStorage.getItem("boutq_pending_slug");
+      if (savedSlug && !slug) setSlug(savedSlug);
+
+      window.history.replaceState({}, document.title, window.location.pathname);
+      fetchPostsFromGraph(brandId, handle || "");
+    }
+  }, []);
+
+  // Action 1: Connect Official Instagram (Recommended)
+  const handleConnectOfficialInstagram = async () => {
+    try {
+      setIsConnectingOAuth(true);
+      toast.loading(
+        isAr ? "جاري التحقق وإنشاء الحساب لبدء الربط الرسمي..." : "Creating account & initiating Meta connection...",
+        { id: "ig-oauth" },
+      );
+
+      const brandId = await ensureAuthenticatedBrandSession();
+
+      if (typeof window !== "undefined") {
+        sessionStorage.setItem("boutq_pending_brand_id", brandId);
+        sessionStorage.setItem("boutq_pending_slug", slug.trim().toLowerCase());
+        sessionStorage.setItem("boutq_pending_email", ownerEmail.trim().toLowerCase());
+      }
+
+      const { url } = await getInstagramAuthorizeUrlFn({
+        data: {
+          brandId,
+          returnTo: window.location.pathname,
+        },
+      });
+
+      toast.success(
+        isAr ? "تحويلك إلى صفحة تفويض إنستغرام الرسمية..." : "Redirecting to official Instagram authorization...",
+        { id: "ig-oauth" },
+      );
+
+      window.location.href = url;
+    } catch (err: any) {
+      setIsConnectingOAuth(false);
+      console.error("OAuth init failed:", err);
+      toast.error(err.message || (isAr ? "فشل بدء الربط الرسمي" : "Failed to initiate official connection"), {
+        id: "ig-oauth",
+      });
+    }
+  };
+
+  // Action 2: Fallback Scrape via Apify (Username only)
+  const handleStartScrape = async () => {
+    if (!instagramHandle) {
+      toast.error(isAr ? "يرجى كتابة اسم حساب إنستغرام أولاً" : "Please enter Instagram username first");
+      return;
+    }
+
+    try {
+      // Requirement 4: Ensure authenticated session before scraping
+      const brandId = await ensureAuthenticatedBrandSession();
+
+      setStep("fetching");
+      setStatusMessage(
+        isAr
+          ? "جاري الاتصال بخدمة الاستيراد وتصفح المنشورات العامة... 📸"
+          : "Connecting to scraper and scanning public Instagram feed... 📸",
+      );
+
       const initResult = await fetchInstagramPosts({
         data: {
           username: instagramHandle,
@@ -150,7 +440,7 @@ export function InstantInstagramOnboardingModal({
 
       const { runId, datasetId } = initResult;
 
-      // 2. Poll status with eager dataset consumption
+      // Poll status with eager dataset consumption
       let status = "RUNNING";
       let attempt = 0;
       const maxRetries = 25;
@@ -162,7 +452,6 @@ export function InstantInstagramOnboardingModal({
         }
         attempt++;
 
-        // Friendly progress status
         if (attempt <= 2) {
           setStatusMessage(
             isAr
@@ -185,7 +474,6 @@ export function InstantInstagramOnboardingModal({
 
         await new Promise((r) => setTimeout(r, 1200));
 
-        // From attempt 3 onwards, check if dataset already has enough posts to proceed early
         if (attempt >= 3 && datasetId) {
           try {
             const partialRes = await fetchScraperDataset({ data: { datasetId } });
@@ -202,95 +490,17 @@ export function InstantInstagramOnboardingModal({
         status = checkResult.status;
       }
 
-      // 3. Fetch scraped posts
-      setStatusMessage(
-        isAr
-          ? "جالسين نرتّب لك المنتجات، الأكواد، والأسعار تلقائياً... 🪄"
-          : "Organizing your products, codes, and prices automatically... 🪄",
-      );
-
       let posts = earlyPosts;
       if (posts.length === 0) {
         posts = (await fetchScraperDataset({ data: { datasetId } })) || [];
       }
 
-      setScrapedPosts(posts);
-
-      if (!posts || posts.length === 0) {
-        throw new Error(
-          isAr ? "لم نجد منشورات متاحة في هذا الحساب" : "No public posts found for this account",
-        );
-      }
-
-      // 4. Batch parse with AI
-      let aiDrafts: InstagramProductDraft[] = [];
-      try {
-        const parsed = await batchParseCaptionsWithAI({
-          data: {
-            brandId: "00000000-0000-0000-0000-000000000000", // Will be remapped on provision
-            posts: posts.slice(0, 10).map((p) => ({
-              id: p.id,
-              url: p.url,
-              imageUrl: p.imageUrl,
-              caption: p.caption,
-              isSoldOut: p.isSoldOut,
-              isVideo: p.isVideo,
-            })),
-          },
-        });
-        if (parsed?.products && Array.isArray(parsed.products)) {
-          aiDrafts = parsed.products.map((p: any) => ({
-            id: p.id,
-            imageUrl: p.imageUrl,
-            url: p.url,
-            isSoldOut: Boolean(p.isSoldOut),
-            title: p.title || (isAr ? "منتج راقي" : "Luxury Product"),
-            price: typeof p.price === "number" ? p.price : 35,
-            description: p.description || "",
-            sizes: Array.isArray(p.sizes) ? p.sizes : [],
-            colors: Array.isArray(p.colors) ? p.colors : [],
-            category: p.category || (isAr ? "أزياء" : "Fashion"),
-            confidence: typeof p.confidence === "number" ? p.confidence : 0.85,
-            issues: Array.isArray(p.issues) ? p.issues : [],
-          }));
-        }
-      } catch (err) {
-        console.warn("AI parsing fallback", err);
-      }
-
-      // Fail-safe smart boutique parser fallback
-      if (aiDrafts.length === 0) {
-        aiDrafts = posts.slice(0, 10).map((p) => {
-          const meta = extractBoutiqueMetadataFromCaption(p.caption, instagramHandle);
-          return {
-            id: p.id,
-            imageUrl: p.imageUrl,
-            url: p.url,
-            isSoldOut: p.isSoldOut,
-            title: meta.title,
-            price: meta.price || 35,
-            description: meta.description,
-            sizes: [],
-            colors: [],
-            category: meta.category,
-            confidence: meta.price ? 0.8 : 0.5,
-            issues: [],
-          };
-        });
-      }
-
-      setDrafts(aiDrafts);
-      const selected = new Set<string>();
-      aiDrafts.forEach((d) => {
-        if (!d.isSoldOut) selected.add(d.id);
-      });
-      setSelectedDraftIds(selected);
-      setStep("preview");
+      await parsePostsAndOpenPreview(posts, brandId);
     } catch (err: any) {
       console.error(err);
       toast.error(
         isAr
-          ? `حدث خطأ أثناء الجلب من انستقرام: ${err.message}`
+          ? `حدث خطأ أثناء الاستيراد: ${err.message}`
           : `Instagram import error: ${err.message}`,
       );
       setStep("input");
@@ -311,59 +521,9 @@ export function InstantInstagramOnboardingModal({
     }
 
     try {
-      const cleanPhone = ownerPhone.trim()
-        ? ownerPhone.trim().startsWith("+")
-          ? ownerPhone.trim()
-          : `+973${ownerPhone.trim().replace(/^0+/, "")}`
-        : "+97300000000";
+      const brandId = provisionedBrandId || (await ensureAuthenticatedBrandSession());
 
-      const cleanPassword = ownerPassword.trim();
-      const cleanEmail = ownerEmail.trim().toLowerCase();
-
-      let brandId: string;
-
-      if (isAdminModal) {
-        // Superadmin provisioning via edge function
-        const provisioned = await provisionBrandWithOwner({
-          slug: slug.trim().toLowerCase(),
-          name_en: storeNameEn.trim(),
-          name_ar: storeNameAr.trim() || null,
-          owner_name: ownerName.trim() || storeNameEn.trim(),
-          owner_email: cleanEmail,
-          owner_phone: cleanPhone,
-          owner_password: cleanPassword,
-          plan_type: "trial",
-        });
-        brandId = provisioned.brand_id;
-      } else {
-        // Public visitor self-service provisioning
-        const res = await registerInstantTrial({
-          data: {
-            brandName: storeNameAr.trim() || storeNameEn.trim(),
-            nameEn: storeNameEn.trim(),
-            nameAr: storeNameAr.trim() || undefined,
-            slug: slug.trim().toLowerCase(),
-            ownerName: ownerName.trim() || storeNameEn.trim(),
-            contactNumber: cleanPhone,
-            email: cleanEmail,
-            password: cleanPassword,
-            businessType: "Boutique & Fashion",
-          },
-        });
-
-        if (res.alreadyRegistered) {
-          throw new Error(res.message);
-        }
-        brandId = res.brandId;
-
-        // Automatically sign in the new owner so their session is active for subsequent product insertion
-        await supabase.auth.signInWithPassword({
-          email: cleanEmail,
-          password: cleanPassword,
-        });
-      }
-
-      // 2. Filter selected drafts
+      // Filter selected drafts
       const draftsToImport = drafts.filter((d) => selectedDraftIds.has(d.id));
 
       if (draftsToImport.length > 0) {
@@ -407,16 +567,19 @@ export function InstantInstagramOnboardingModal({
       );
 
       setStep("success");
-      if (onSuccess) onSuccess(slug);
 
-      // Auto redirect to new boutique dashboard after giving time to see credentials
+      // Auto-redirect to brand admin after 3 seconds
       setTimeout(() => {
-        onOpenChange(false);
-        navigate({ to: `/admin/b/$slug/dashboard`, params: { slug } });
-      }, 2500);
+        const cleanSlug = slug.trim().toLowerCase();
+        window.location.href = `/admin/b/${cleanSlug}/dashboard`;
+      }, 3000);
     } catch (err: any) {
       console.error(err);
-      toast.error(isAr ? `فشل إطلاق المتجر: ${err.message}` : `Deployment error: ${err.message}`);
+      toast.error(
+        isAr
+          ? `تعذر إطلاق المتجر: ${err.message}`
+          : `Failed to deploy store: ${err.message}`,
+      );
       setStep("preview");
     }
   };
@@ -457,33 +620,11 @@ export function InstantInstagramOnboardingModal({
         {/* STEP 1: INPUT */}
         {step === "input" && (
           <div className="space-y-4 pt-2">
-            <div>
-              <Label className="text-xs font-bold text-foreground">
-                {isAr ? "حساب انستقرام التجاري" : "Instagram Business Handle"}
-              </Label>
-              <div className="relative mt-1">
-                <span className="absolute inset-y-0 start-3 flex items-center text-muted-foreground font-mono text-sm">
-                  @
-                </span>
-                <Input
-                  value={instagramHandle}
-                  onChange={(e) => handleInstagramChange(e.target.value)}
-                  placeholder="brand_name"
-                  className="ps-8 text-sm font-mono h-10 rounded-xl placeholder:text-muted-foreground/40 placeholder:font-normal placeholder:opacity-60"
-                  autoFocus
-                />
-              </div>
-              <p className="text-[11px] text-muted-foreground mt-1">
-                {isAr
-                  ? "استخراج تلقائي للكتالوج، الأسعار، والمواصفات وتجهيز المتجر فوراً."
-                  : "We'll automatically extract your catalog, codes, prices, and photos instantly."}
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+            {/* Store Branding Fields */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <Label className="text-xs font-semibold">
-                  {isAr ? "اسم المتجر (إنجليزي)" : "Store Name (English)"}
+                  {isAr ? "اسم المتجر (إنجليزي)" : "Store Name (English)"} *
                 </Label>
                 <Input
                   value={storeNameEn}
@@ -493,6 +634,7 @@ export function InstantInstagramOnboardingModal({
                   }}
                   placeholder="Your Brand Name"
                   className="h-9 text-xs rounded-xl mt-1 placeholder:text-muted-foreground/35 placeholder:font-normal"
+                  required
                 />
               </div>
               <div>
@@ -511,7 +653,7 @@ export function InstantInstagramOnboardingModal({
             {/* Store URL Slug */}
             <div>
               <Label className="text-xs font-semibold">
-                {isAr ? "معرّف الرابط (Slug)" : "Store URL Slug"}
+                {isAr ? "معرّف الرابط (Slug)" : "Store URL Slug"} *
               </Label>
               <div
                 dir="ltr"
@@ -526,6 +668,7 @@ export function InstantInstagramOnboardingModal({
                   placeholder="yourbrand"
                   className="flex-1 min-w-0 bg-transparent px-3 text-xs text-foreground font-mono placeholder:text-muted-foreground/35 placeholder:font-normal focus:outline-none"
                   autoComplete="off"
+                  required
                 />
                 <span
                   dir="ltr"
@@ -636,17 +779,94 @@ export function InstantInstagramOnboardingModal({
               </div>
             </div>
 
-            <div className="pt-3 border-t border-border/60 flex items-center justify-end gap-2">
+            {/* DUAL IMPORT METHODS CONTAINER */}
+            <div className="pt-3 border-t border-border/60 space-y-3">
+              <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider block">
+                {isAr ? "طرق استيراد المنتجات من إنستغرام" : "Instagram Catalog Import Methods"}
+              </span>
+
+              {/* OPTION 1: OFFICIAL INSTAGRAM (RECOMMENDED) */}
+              <div className="p-4 rounded-2xl border-2 border-primary/40 bg-primary/5 hover:border-primary transition-all relative overflow-hidden group space-y-3">
+                <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+                  <div className="space-y-1.5 flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="font-bold text-sm text-foreground flex items-center gap-1.5">
+                        <Instagram className="size-4 text-primary" />
+                        {isAr ? "ربط حساب إنستغرام (رسمي)" : "Connect Official Instagram (Meta)"}
+                      </span>
+                      <Badge className="bg-primary text-primary-foreground text-[10px] font-bold px-2 py-0.5">
+                        {isAr ? "موصى به • رسمي وموثق" : "Recommended • Official"}
+                      </Badge>
+                    </div>
+                    <p className="text-xs text-muted-foreground leading-relaxed">
+                      {isAr
+                        ? "ربط مباشر ومعتمد من Meta يضمن أعلى دقة للصور والتفاصيل، واستيراد فوري بدون انتظار أو حظر."
+                        : "Direct official Meta integration with full resolution photos, exact details, and high-speed sync."}
+                    </p>
+                  </div>
+                  <Button
+                    type="button"
+                    size="sm"
+                    disabled={isConnectingOAuth}
+                    onClick={handleConnectOfficialInstagram}
+                    className="h-11 px-5 text-xs font-bold bg-primary text-primary-foreground shadow-md hover:bg-primary/90 shrink-0 min-h-[44px]"
+                  >
+                    {isConnectingOAuth ? (
+                      <Loader2 className="size-4 animate-spin me-2" />
+                    ) : (
+                      <ShieldCheck className="size-4 me-2" />
+                    )}
+                    {isAr ? "ربط الحساب الرسمي الآن" : "Connect via Meta"}
+                  </Button>
+                </div>
+              </div>
+
+              {/* OPTION 2: FALLBACK VIA USERNAME (APIFY) */}
+              <div className="p-4 rounded-2xl border border-border/80 bg-muted/20 hover:border-border transition-all space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold text-xs text-foreground">
+                      {isAr ? "استيراد عبر اسم المستخدم فقط (خيار بديل)" : "Import via Username Only (Fallback)"}
+                    </span>
+                    <Badge variant="outline" className="text-[10px] font-medium text-muted-foreground">
+                      {isAr ? "بدون تسجيل دخول Meta" : "No Meta Login"}
+                    </Badge>
+                  </div>
+                </div>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  {isAr
+                    ? "استيراد سريع بالاسم العام عبر فحص المنشورات المتاحة للعامة، كبديل احتياطي دون الحاجة لتسجيل دخول Meta."
+                    : "Scrapes public posts using your Instagram handle without requiring Meta login."}
+                </p>
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 pt-1">
+                  <div className="relative flex-1">
+                    <span className="absolute start-3 top-1/2 -translate-y-1/2 text-xs font-bold text-muted-foreground select-none">
+                      @
+                    </span>
+                    <Input
+                      value={instagramHandle}
+                      onChange={(e) => handleInstagramChange(e.target.value)}
+                      placeholder="brand_handle"
+                      className="ps-8 text-xs font-mono h-10 rounded-xl"
+                    />
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleStartScrape}
+                    className="h-10 px-4 text-xs font-semibold shrink-0 min-h-[44px]"
+                  >
+                    <Sparkles className="size-3.5 me-1.5 text-muted-foreground" />
+                    {isAr ? "استيراد بالاسم العام" : "Scrape by Username"}
+                  </Button>
+                </div>
+              </div>
+            </div>
+
+            <div className="pt-2 border-t border-border/60 flex items-center justify-end">
               <Button variant="ghost" size="sm" onClick={() => onOpenChange(false)} className="text-xs">
                 {isAr ? "إلغاء" : "Cancel"}
-              </Button>
-              <Button
-                size="sm"
-                onClick={handleStartScrape}
-                className="h-10 px-5 text-xs font-bold bg-primary text-primary-foreground shadow-md hover:bg-primary/90"
-              >
-                <Sparkles className="size-4 me-1.5" />
-                {isAr ? "استخراج الكتالوج بالذكاء الاصطناعي" : "Fetch Catalog with AI"}
               </Button>
             </div>
           </div>

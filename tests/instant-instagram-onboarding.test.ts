@@ -67,4 +67,46 @@ Price: 37 BD
       storeNameEn: "Minnaz Couture",
     });
   });
+
+  it("builds official Instagram Business Login OAuth URL with strict parameters and signed state", async () => {
+    process.env.INSTAGRAM_APP_ID = "1435921631930750";
+    process.env.INSTAGRAM_APP_SECRET = "a90ae757a582b27770369abf970cb663";
+
+    const {
+      buildInstagramAuthorizeUrl,
+      decodeOAuthState,
+      INSTAGRAM_OAUTH_CONFIG,
+    } = await import("../src/lib/instagram-oauth.server");
+
+    expect(INSTAGRAM_OAUTH_CONFIG.REDIRECT_URI).toBe("https://boutq.store/api/auth/instagram/callback");
+    expect(INSTAGRAM_OAUTH_CONFIG.DEFAULT_SCOPE).toBe("instagram_business_basic");
+
+    const authUrl = buildInstagramAuthorizeUrl({
+      brandId: "11111111-2222-3333-4444-555555555555",
+      userId: "user-12345",
+      returnTo: "/onboard",
+    });
+
+    const parsed = new URL(authUrl);
+    expect(parsed.origin).toBe("https://www.instagram.com");
+    expect(parsed.pathname).toBe("/oauth/authorize");
+    expect(parsed.searchParams.get("client_id")).toBe("1435921631930750");
+    expect(parsed.searchParams.get("redirect_uri")).toBe("https://boutq.store/api/auth/instagram/callback");
+    expect(parsed.searchParams.get("response_type")).toBe("code");
+    expect(parsed.searchParams.get("scope")).toBe("instagram_business_basic");
+
+    const stateParam = parsed.searchParams.get("state");
+    expect(stateParam).toBeTruthy();
+
+    const decoded = decodeOAuthState(stateParam!);
+    expect(decoded).toBeTruthy();
+    expect(decoded?.brandId).toBe("11111111-2222-3333-4444-555555555555");
+    expect(decoded?.userId).toBe("user-12345");
+    expect(decoded?.returnTo).toBe("/onboard");
+
+    // Tampered state must be rejected
+    const tampered = stateParam + "tampered";
+    expect(decodeOAuthState(tampered)).toBeNull();
+  });
 });
+

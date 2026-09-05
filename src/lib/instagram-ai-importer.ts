@@ -1001,3 +1001,110 @@ export const bulkInsertProducts = createServerFn({ method: "POST" })
       throw error;
     }
   });
+
+// 5. Official Instagram Graph API Media Fetch
+export const fetchInstagramGraphPosts = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .validator((raw: unknown) =>
+    z
+      .object({
+        brandId: z.string().uuid(),
+        limit: z.number().int().min(5).max(100).default(50),
+      })
+      .parse(raw),
+  )
+  .handler(async ({ data, context }) => {
+    const brandId = data.brandId;
+    const [{ data: hasAccess }, { data: isAdmin }] = await Promise.all([
+      context.supabase.rpc("can_access_brand", { _brand_id: brandId }),
+      context.supabase.rpc("is_admin"),
+    ]);
+    if (!hasAccess && !isAdmin) throw new Error("UNAUTHORIZED");
+
+    const { fetchInstagramGraphMedia } = await import("@/lib/instagram-oauth.server");
+    return await fetchInstagramGraphMedia({
+      brandId,
+      limit: data.limit,
+    });
+  });
+
+// 6. Get Official Instagram Connection Status (Safe for UI display)
+export const getInstagramConnectionStatus = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .validator((raw: unknown) =>
+    z
+      .object({
+        brandId: z.string().uuid(),
+      })
+      .parse(raw),
+  )
+  .handler(async ({ data, context }) => {
+    const brandId = data.brandId;
+    const [{ data: hasAccess }, { data: isAdmin }] = await Promise.all([
+      context.supabase.rpc("can_access_brand", { _brand_id: brandId }),
+      context.supabase.rpc("is_admin"),
+    ]);
+    if (!hasAccess && !isAdmin) throw new Error("UNAUTHORIZED");
+
+    const { data: statusList, error } = await (context.supabase.rpc as any)(
+      "get_instagram_connection_status",
+      { p_brand_id: brandId },
+    );
+
+    if (error) {
+      console.error("Failed to query Instagram connection status:", error);
+      throw new Error(error.message);
+    }
+
+    const rows = (statusList ?? []) as any[];
+    if (rows.length === 0) {
+      return {
+        isConnected: false,
+        username: null,
+        expiresAt: null,
+        daysUntilExpiry: 0,
+        refreshError: null,
+      };
+    }
+
+    const row = rows[0];
+    return {
+      isConnected: !!row.is_connected,
+      username: row.instagram_username || null,
+      expiresAt: row.expires_at || null,
+      daysUntilExpiry: Number(row.days_until_expiry) || 0,
+      refreshError: row.refresh_error || null,
+    };
+  });
+
+// 7. Generate Instagram Official Authorization URL
+export const getInstagramAuthorizeUrlFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .validator((raw: unknown) =>
+    z
+      .object({
+        brandId: z.string().uuid(),
+        returnTo: z.string().optional(),
+      })
+      .parse(raw),
+  )
+  .handler(async ({ data, context }) => {
+    const brandId = data.brandId;
+    const userId = context.userId;
+
+    const [{ data: hasAccess }, { data: isAdmin }] = await Promise.all([
+      context.supabase.rpc("can_access_brand", { _brand_id: brandId }),
+      context.supabase.rpc("is_admin"),
+    ]);
+    if (!hasAccess && !isAdmin) throw new Error("UNAUTHORIZED");
+
+    const { buildInstagramAuthorizeUrl } = await import("@/lib/instagram-oauth.server");
+    const url = buildInstagramAuthorizeUrl({
+      brandId,
+      userId,
+      returnTo: data.returnTo,
+    });
+
+    return { url };
+  });
+

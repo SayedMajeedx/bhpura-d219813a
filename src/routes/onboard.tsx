@@ -83,6 +83,16 @@ function OnboardPage() {
     }
   }, []);
 
+  // Auto-open Instagram modal if returning from Meta OAuth callback
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get("instagram_connected") === "true" || params.get("instagram_error")) {
+        setInstagramModalOpen(true);
+      }
+    }
+  }, []);
+
   // Load public plans for bottom preview
   useEffect(() => {
     getPublicOnboardingPlans()
