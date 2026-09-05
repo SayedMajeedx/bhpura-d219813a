@@ -34,12 +34,12 @@ export function OsIslandDock({
         "no-print fixed z-40 md:hidden",
         "inset-x-0 mx-auto w-fit max-w-[calc(100vw-1.5rem)]",
         "bottom-[max(0.85rem,calc(env(safe-area-inset-bottom,0px)+0.5rem))]",
-        // World-Class 2026 Seamless Frosted Glass
-        "bg-background/80 dark:bg-zinc-950/80",
-        "backdrop-blur-2xl backdrop-saturate-180",
-        "border border-border/50 dark:border-white/10",
-        "shadow-[0_12px_32px_-6px_rgba(0,0,0,0.12),0_4px_12px_-2px_rgba(0,0,0,0.06)]",
-        "dark:shadow-[0_16px_40px_-8px_rgba(0,0,0,0.7),0_0_0_1px_rgba(255,255,255,0.06)]",
+        // World-Class 2026 Seamless Frosted Glass (Enhanced Translucency)
+        "bg-background/45 dark:bg-zinc-950/45",
+        "backdrop-blur-3xl backdrop-saturate-200",
+        "border border-white/40 dark:border-white/10",
+        "shadow-[0_12px_32px_-6px_rgba(0,0,0,0.1),0_4px_12px_-2px_rgba(0,0,0,0.04)]",
+        "dark:shadow-[0_16px_40px_-8px_rgba(0,0,0,0.6),0_0_0_1px_rgba(255,255,255,0.08)]",
         // Sleek ergonomic pill layout
         "flex items-center gap-1 p-1.5 rounded-full select-none touch-manipulation",
         // Smooth slide-in / slide-out when hidden on detail pages
@@ -100,14 +100,6 @@ export function OsIslandDock({
             >
               {item.label}
             </span>
-
-            {/* Micro active dot */}
-            {item.active && (
-              <span
-                className="pointer-events-none absolute bottom-1 h-1 w-1 rounded-full bg-primary"
-                aria-hidden="true"
-              />
-            )}
           </button>
         );
       })}
