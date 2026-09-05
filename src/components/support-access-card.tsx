@@ -6,6 +6,7 @@ import { Loader2, ShieldAlert, CheckCircle2, History, AlertCircle } from "lucide
 import { toast } from "sonner";
 import { useI18n } from "@/lib/i18n";
 import { getTenantAuditLogs, toggleSupportAccess } from "@/lib/impersonation.functions";
+import { queryKeys } from "@/lib/query-keys";
 
 type SupportAccessCardProps = {
   brand: {
@@ -52,7 +53,7 @@ export function SupportAccessCard({ brand }: SupportAccessCardProps) {
             ? "Technical support access enabled successfully."
             : "Technical support access disabled.",
       );
-      qc.invalidateQueries({ queryKey: ["business-settings"] });
+      qc.invalidateQueries({ queryKey: queryKeys.brand.businessSettings(brand.id) });
     },
     onError: (err: any) => {
       toast.error(err.message || "Failed to update support access.");

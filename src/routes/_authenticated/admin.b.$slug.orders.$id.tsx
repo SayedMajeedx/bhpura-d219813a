@@ -911,7 +911,7 @@ function OrderDetail() {
       ).data ?? [],
   });
   const settingsQ = useQuery({
-    queryKey: ["business-settings", brandId],
+    queryKey: queryKeys.brand.businessSettings(brandId),
     enabled: !isCourier,
     queryFn: async () => {
       const { data } = await supabase

@@ -21,6 +21,7 @@ import { useT, useI18n } from "@/lib/i18n";
 import { PhoneInput } from "@/components/phone-input";
 import { Rnd } from "react-rnd";
 import { useBrand } from "@/lib/brand-context";
+import { queryKeys } from "@/lib/query-keys";
 import { Switch } from "@/components/ui/switch";
 import { Trash2 } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -630,7 +631,7 @@ function Settings() {
   const [uploading, setUploading] = useState<null | "logo" | "favicon" | "font">(null);
 
   const { data, isLoading, isError, refetch } = useQuery({
-    queryKey: ["business-settings", brandId],
+    queryKey: queryKeys.brand.businessSettings(brandId),
     queryFn: async () => {
       const {
         data: { user },
@@ -749,7 +750,7 @@ function Settings() {
       if (error) toast.error(error.message);
       else {
         toast.success(lang === "ar" ? "تم حفظ التغييرات بنجاح" : "Settings saved successfully");
-        qc.invalidateQueries({ queryKey: ["business-settings"] });
+        qc.invalidateQueries({ queryKey: queryKeys.brand.businessSettings(brandId) });
       }
     } finally {
       setSaving(false);
@@ -2081,6 +2082,7 @@ function BrandHeroCard({
   onSaveRef?: React.MutableRefObject<(() => Promise<void>) | null>;
 }) {
   const router = useRouter();
+  const brand = useBrand();
   const { lang } = useI18n();
   const isAr = lang === "ar";
   const qc = useQueryClient();
@@ -2173,7 +2175,7 @@ function BrandHeroCard({
       toast.error(error.message);
     } else {
       qc.invalidateQueries({ queryKey: ["brand-hero", brandId] });
-      qc.invalidateQueries({ queryKey: ["storefront"] });
+      qc.invalidateQueries({ queryKey: queryKeys.storefront.all(brand.slug) });
       router.invalidate();
     }
     return !error;

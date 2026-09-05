@@ -11,7 +11,7 @@ export const queryKeys = {
     all: ["brand"] as const,
     profile: (brandId: string) => ["brand", brandId] as const,
     settings: (brandId: string) => ["brand", brandId, "settings"] as const,
-    businessSettings: (brandId: string) => ["business_settings", brandId] as const,
+    businessSettings: (brandId: string) => ["business-settings", brandId] as const,
   },
 
   // Orders
@@ -72,5 +72,10 @@ export const queryKeys = {
   templates: {
     message: (brandId: string) => ["message-templates", brandId] as const,
     campaign: (brandId: string) => ["campaign-templates", brandId] as const,
+  },
+
+  // Storefront
+  storefront: {
+    all: (slug: string) => ["storefront", slug] as const,
   },
 } as const;
