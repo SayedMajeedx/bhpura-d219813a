@@ -249,7 +249,7 @@ export const getOnboardingTrialDays = createServerFn({ method: "GET" }).handler(
     .eq("is_active", true)
     .maybeSingle();
   if (error) throw new Error("TRIAL_CONFIGURATION_UNAVAILABLE");
-  return Math.max(1, Number(data?.trial_days || 14));
+  return Math.max(1, Number(data?.trial_days || 3));
 });
 
 // 3. Dynamic pricing retrieval server function (reading from system_settings)
@@ -431,7 +431,7 @@ export const approveTenantRequest = createServerFn({ method: "POST" })
       resolvedPlanVersionId = currentVersion?.id ?? null;
     }
     if (!resolvedPlanId || !resolvedPlanVersionId) throw new Error("PLAN_SELECTION_REQUIRED");
-    let resolvedTrialDays = 14;
+    let resolvedTrialDays = 3;
     if (request.request_type === "trial") {
       const { data: trialConfiguration } = await (
         context.supabase.from("saas_plans" as never) as any
@@ -439,7 +439,7 @@ export const approveTenantRequest = createServerFn({ method: "POST" })
         .select("trial_days")
         .eq("id", resolvedPlanId)
         .single();
-      resolvedTrialDays = Math.max(1, Number(trialConfiguration?.trial_days || 14));
+      resolvedTrialDays = Math.max(1, Number(trialConfiguration?.trial_days || 3));
     }
     const { data: validatedVersion } = await (
       context.supabase.from("saas_plan_versions" as never) as any
@@ -578,4 +578,157 @@ export const logImpersonationStart = createServerFn({ method: "POST" })
       throw error;
     }
     return { success: true };
+  });
+
+// 8. Register Instant 3-Day Free Trial (Self-Service)
+const RegisterInstantTrialInput = z.object({
+  brandName: z.string().min(2),
+  slug: z.string().min(2).max(32).regex(/^[a-z0-9](?:[a-z0-9-]{0,30}[a-z0-9])?$/),
+  ownerName: z.string().min(2),
+  contactNumber: z.string().min(6),
+  email: z.string().email(),
+  password: z.string().min(6),
+  businessType: z.string().optional(),
+});
+
+export const registerInstantTrial = createServerFn({ method: "POST" })
+  .validator((raw: unknown) => RegisterInstantTrialInput.parse(raw))
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const normalizedEmail = data.email.trim().toLowerCase();
+    const normalizedSlug = data.slug.trim().toLowerCase();
+
+    // 1. Check if slug already exists
+    const { data: existingBrand } = await (supabaseAdmin.from("brands" as never) as any)
+      .select("id")
+      .eq("slug", normalizedSlug)
+      .maybeSingle();
+
+    if (existingBrand) {
+      throw new Error("SLUG_ALREADY_TAKEN");
+    }
+
+    // 2. Check if email already exists in profiles
+    const { data: existingProfile } = await (supabaseAdmin.from("profiles" as never) as any)
+      .select("id, brand_id, role")
+      .eq("email", normalizedEmail)
+      .maybeSingle();
+
+    if (existingProfile?.brand_id) {
+      const { data: userBrand } = await (supabaseAdmin.from("brands" as never) as any)
+        .select("id, slug, plan_type, trial_ends_at, subscription_status")
+        .eq("id", existingProfile.brand_id)
+        .maybeSingle();
+
+      const isExpired =
+        userBrand &&
+        userBrand.plan_type === "trial" &&
+        userBrand.trial_ends_at &&
+        new Date(userBrand.trial_ends_at).getTime() <= Date.now() &&
+        userBrand.subscription_status !== "active_paid";
+
+      return {
+        alreadyRegistered: true,
+        isTrialExpired: Boolean(isExpired),
+        brandSlug: userBrand?.slug || null,
+        message: isExpired
+          ? "يوجد لديك حساب مسجل بالفعل بمتجر انتهت فترته التجريبية. يرجى تسجيل الدخول لترقية اشتراكك."
+          : "يوجد لديك حساب مسجل بالفعل. يرجى تسجيل الدخول للوصول إلى متجرك.",
+      };
+    }
+
+    // 3. Create or fetch Auth user
+    let userId: string;
+    if (existingProfile?.id) {
+      userId = existingProfile.id;
+    } else {
+      const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
+        email: normalizedEmail,
+        password: data.password,
+        email_confirm: true,
+        user_metadata: {
+          full_name: data.ownerName.trim(),
+          phone: data.contactNumber.trim(),
+        },
+      });
+
+      if (authError || !authData?.user) {
+        // If auth user already exists in auth.users
+        const { data: listData } = await supabaseAdmin.auth.admin.listUsers();
+        const found = listData?.users?.find(
+          (u) => u.email?.toLowerCase() === normalizedEmail,
+        );
+        if (found) {
+          userId = found.id;
+        } else {
+          throw new Error(authError?.message || "FAILED_TO_CREATE_USER");
+        }
+      } else {
+        userId = authData.user.id;
+      }
+    }
+
+    // 4. Ensure profile exists
+    await (supabaseAdmin.from("profiles" as never) as any).upsert(
+      {
+        id: userId,
+        email: normalizedEmail,
+        full_name: data.ownerName.trim(),
+        phone: data.contactNumber.trim(),
+        role: "brand_admin",
+        status: "active",
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "id" },
+    );
+
+    // 5. Create Brand with 3-day trial
+    const trialDays = 3;
+    const trialEndsAt = new Date(Date.now() + trialDays * 24 * 60 * 60 * 1000).toISOString();
+
+    const { data: brandId, error: createError } = await (supabaseAdmin.rpc as any)(
+      "create_tenant_with_defaults",
+      {
+        p_slug: normalizedSlug,
+        p_name_en: data.brandName.trim(),
+        p_name_ar: data.brandName.trim(),
+        p_primary_color: "#800020",
+        p_owner_id: userId,
+        p_business_type: data.businessType || "Abayas & Fashion",
+      },
+    );
+
+    if (createError || !brandId) {
+      console.error("Failed to execute create_tenant_with_defaults:", createError);
+      throw new Error(createError?.message || "FAILED_TO_CREATE_BRAND");
+    }
+
+    // 6. Update brand with trial details and ensure active status
+    await (supabaseAdmin.from("brands" as never) as any)
+      .update({
+        plan_type: "trial",
+        trial_ends_at: trialEndsAt,
+        subscription_tier: "starter",
+        subscription_status: "trialing",
+        is_active: true,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", brandId);
+
+    // 7. Associate brand_id in profile
+    await (supabaseAdmin.from("profiles" as never) as any)
+      .update({
+        brand_id: brandId,
+        role: "brand_admin",
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", userId);
+
+    return {
+      alreadyRegistered: false,
+      isTrialExpired: false,
+      brandSlug: normalizedSlug,
+      brandId,
+      trialDays,
+    };
   });

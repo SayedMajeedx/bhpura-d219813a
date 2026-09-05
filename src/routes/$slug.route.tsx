@@ -28,6 +28,7 @@ import {
 import { useQueryClient } from "@tanstack/react-query";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { StorefrontSuspended } from "@/components/storefront/StorefrontSuspended";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
@@ -72,6 +73,16 @@ export const Route = createFileRoute("/$slug")({
     if (error || !pageData || !pageData.brand) throw notFound();
 
     const brand = pageData.brand;
+    if (pageData.is_suspended) {
+      return {
+        brand: brand as unknown as Brand,
+        settings: { business_name: brand.name_ar || brand.name_en } as unknown as PublicSettings,
+        bootstrapData: pageData,
+        isSuspended: true,
+        suspensionReason: pageData.suspension_reason || "trial_expired",
+      };
+    }
+
     const settings = pageData.settings ?? {};
     const benefitSettings = pageData.benefitSettings ?? [];
     const trackingSettings = pageData.trackingSettings ?? {};
@@ -312,11 +323,14 @@ export const Route = createFileRoute("/$slug")({
 });
 
 function StorefrontLayout() {
-  const { brand, settings } = Route.useLoaderData() as unknown as {
-    brand: Brand;
-    settings: PublicSettings;
-  };
-  useDynamicFavicon(settings.favicon_url, settings.logo_url ?? brand.logo_url);
+  const loaderData = Route.useLoaderData() as any;
+  const { brand, settings, isSuspended, suspensionReason } = loaderData;
+
+  if (isSuspended) {
+    return <StorefrontSuspended brand={brand} suspensionReason={suspensionReason} />;
+  }
+
+  useDynamicFavicon(settings?.favicon_url, settings?.logo_url ?? brand.logo_url);
   return (
     <StorefrontProvider brand={brand} settings={settings}>
       <StorefrontAnalytics />

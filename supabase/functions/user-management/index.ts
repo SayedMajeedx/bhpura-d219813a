@@ -280,7 +280,7 @@ async function handleProvisionBrand(supabase: any, body: any) {
     if (provisionError) throw provisionError;
     brandId = provisionedBrandId;
 
-    let trialDays = 14;
+    let trialDays = 3;
     if (planType === "trial") {
       const { data: trialPlan } = await supabase
         .from("saas_plans")
@@ -288,7 +288,7 @@ async function handleProvisionBrand(supabase: any, body: any) {
         .eq("code", "trial")
         .eq("is_active", true)
         .maybeSingle();
-      trialDays = Math.max(1, Number(trialPlan?.trial_days || 14));
+      trialDays = Math.max(1, Number(trialPlan?.trial_days || 3));
     }
     const annualExpiry = new Date();
     annualExpiry.setFullYear(annualExpiry.getFullYear() + 1);

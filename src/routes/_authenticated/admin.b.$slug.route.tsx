@@ -5,6 +5,7 @@ import { useI18n } from "@/lib/i18n";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { RotateCw, AlertTriangle, ArrowLeft } from "lucide-react";
+import { TrialExpiredPaywall } from "@/components/admin/TrialExpiredPaywall";
 
 function getImpersonationToken(request?: Request): string | null {
   if (typeof document !== "undefined") {
@@ -153,9 +154,13 @@ export const Route = createFileRoute("/_authenticated/admin/b/$slug")({
       }
     }
 
-    if (!brand.is_active && !isSuperAdmin) {
-      throw redirect({ to: "/admin" });
-    }
+    const isTrialExpired =
+      brand.plan_type === "trial" &&
+      brand.trial_ends_at &&
+      new Date(brand.trial_ends_at).getTime() <= Date.now() &&
+      brand.subscription_status !== "active_paid";
+
+    const isBrandSuspended = (!brand.is_active || Boolean(isTrialExpired)) && !isSuperAdmin;
 
     return {
       brand: {
@@ -163,6 +168,8 @@ export const Route = createFileRoute("/_authenticated/admin/b/$slug")({
         favicon_url: iconSettings?.favicon_url ?? null,
         logo_url: iconSettings?.logo_url ?? brand.logo_url ?? null,
       } as Brand,
+      isBrandSuspended,
+      isTrialExpired: Boolean(isTrialExpired),
     };
   },
   component: BrandLayout,
@@ -171,7 +178,17 @@ export const Route = createFileRoute("/_authenticated/admin/b/$slug")({
 });
 
 function BrandLayout() {
-  const { brand } = Route.useRouteContext();
+  const { brand, isBrandSuspended, isTrialExpired } = Route.useRouteContext();
+
+  if (isBrandSuspended) {
+    return (
+      <TrialExpiredPaywall
+        brand={brand}
+        reason={isTrialExpired ? "trial_expired" : "inactive"}
+      />
+    );
+  }
+
   return (
     <BrandProvider brand={brand}>
       <Outlet />
