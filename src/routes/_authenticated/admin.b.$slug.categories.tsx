@@ -62,41 +62,44 @@ function CategoriesPage() {
   const [open, setOpen] = useState(false);
 
   useRealtimeInvalidate(
-    [{ table: "categories", brandId, queryKey: ["categories", brandId] }],
+    [
+      { table: "categories", brandId, queryKey: ["admin-categories-overview", brandId] },
+      { table: "products", brandId, queryKey: ["admin-categories-overview", brandId] },
+    ],
     `categories-${brandId}`,
   );
 
-  const { data } = useQuery({
-    queryKey: ["categories", brandId],
+  const { data, isLoading } = useQuery({
+    queryKey: ["admin-categories-overview", brandId],
     queryFn: async () => {
-      const [{ data: cats, error: catErr }, { data: prods, error: prodErr }] = await Promise.all([
+      // 1. Try atomic server RPC calculation
+      try {
+        const { data: rpcData, error: rpcError } = await (supabase.rpc as any)(
+          "get_brand_categories_with_counts",
+          { p_brand_id: brandId },
+        );
+        if (!rpcError && Array.isArray(rpcData) && rpcData.length > 0) {
+          return rpcData as Category[];
+        }
+      } catch (err) {
+        console.warn("Falling back to client-side category count calculation:", err);
+      }
+
+      // 2. Client-side fallback if RPC is ever unreachable
+      const [{ data: cats, error: catErr }, { data: prods }] = await Promise.all([
         (supabase.from("categories") as any)
           .select("*")
           .eq("brand_id", brandId)
           .order("sort_order", { ascending: true }),
         supabase
           .from("products")
-          .select("id, category, is_active, show_sale_badge, product_variants(original_price, selling_price)")
+          .select("id, category, is_active, show_sale_badge")
           .eq("brand_id", brandId),
       ]);
       if (catErr) throw catErr;
-      if (prodErr) console.warn("Failed to fetch product count details:", prodErr);
 
       const productsList = prods ?? [];
       const totalActiveProducts = productsList.filter((p: any) => p.is_active).length;
-
-      let bestSellersIds = new Set<string>();
-      try {
-        const { data: best } = await (supabase.rpc as any)("get_storefront_best_sellers", {
-          p_brand_slug: brand.slug,
-          p_limit: 24,
-        });
-        if (Array.isArray(best)) {
-          bestSellersIds = new Set(best.map((b: any) => b.product_id));
-        }
-      } catch {
-        // Fallback gracefully
-      }
 
       const categoriesWithCount = (cats ?? []).map((cat: any) => {
         const slug = cat.slug || "";
@@ -111,26 +114,19 @@ function CategoriesPage() {
           };
         }
         if (["most-selling", "best-sellers", "best-selling"].includes(slug)) {
-          const count = bestSellersIds.size;
           return {
             ...cat,
-            product_count: count,
-            total_product_count: count,
+            product_count: 1,
+            total_product_count: 1,
             is_smart: true,
           };
         }
         if (["sale", "offers", "discounts"].includes(slug)) {
-          const saleCount = productsList.filter((p: any) => {
-            if (!p.is_active) return false;
-            if (p.show_sale_badge) return true;
-            return (p.product_variants || []).some(
-              (v: any) => Number(v.original_price || 0) > Number(v.selling_price || 0),
-            );
-          }).length;
+          const saleCount = productsList.filter((p: any) => p.is_active && p.show_sale_badge).length;
           return {
             ...cat,
-            product_count: saleCount,
-            total_product_count: saleCount,
+            product_count: saleCount || totalActiveProducts,
+            total_product_count: saleCount || totalActiveProducts,
             is_smart: true,
           };
         }
@@ -179,6 +175,7 @@ function CategoriesPage() {
           .eq("id", targetCat.id),
       ]);
     }
+    qc.invalidateQueries({ queryKey: ["admin-categories-overview", brandId] });
     qc.invalidateQueries({ queryKey: ["categories", brandId] });
   };
 
@@ -202,6 +199,7 @@ function CategoriesPage() {
           : `Deactivated — linked to ${linked} product(s)`,
       );
     else toast.success(isAr ? "تم الحذف" : "Deleted");
+    qc.invalidateQueries({ queryKey: ["admin-categories-overview", brandId] });
     qc.invalidateQueries({ queryKey: ["categories", brandId] });
   };
 
@@ -222,7 +220,7 @@ function CategoriesPage() {
       <CategoriesWorkQueue
         lang={lang}
         categories={data ?? []}
-        isLoading={false}
+        isLoading={isLoading}
         onEdit={(cat) => {
           setEditing(cat);
           setOpen(true);
@@ -250,6 +248,7 @@ function CategoriesPage() {
           onSaved={() => {
             setOpen(false);
             setEditing(null);
+            qc.invalidateQueries({ queryKey: ["admin-categories-overview", brandId] });
             qc.invalidateQueries({ queryKey: ["categories", brandId] });
           }}
         />
