@@ -62,7 +62,7 @@ export function OsIslandDock({
             aria-label={item.label}
             className={cn(
               // Apple touch target compliance & ergonomic pill sizing
-              "relative flex flex-col items-center justify-center min-w-[54px] sm:min-w-[62px] h-[48px] px-2.5 py-1 rounded-full outline-none select-none",
+              "relative flex flex-col items-center justify-center min-w-[54px] sm:min-w-[62px] h-[52px] px-2 pt-1.5 pb-2 rounded-full outline-none select-none",
               // Refined native touch feedback
               "transition-all duration-200 ease-out active:scale-95",
               "motion-reduce:transition-none motion-reduce:transform-none motion-reduce:active:scale-100",
@@ -77,7 +77,7 @@ export function OsIslandDock({
             <div className="relative flex items-center justify-center">
               <Icon
                 className={cn(
-                  "size-5 transition-transform duration-200",
+                  "size-[18px] transition-transform duration-200",
                   item.active
                     ? "stroke-[2.2] scale-105 text-primary"
                     : "stroke-[1.8] text-current",
@@ -92,7 +92,7 @@ export function OsIslandDock({
 
             <span
               className={cn(
-                "text-[10px] tracking-tight truncate max-w-[56px] mt-0.5 leading-none transition-colors duration-200",
+                "text-[10px] tracking-tight leading-normal whitespace-nowrap mt-0.5 transition-colors duration-200",
                 item.active
                   ? "font-semibold text-primary"
                   : "font-medium text-muted-foreground/80",

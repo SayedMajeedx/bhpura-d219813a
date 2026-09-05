@@ -44,22 +44,22 @@ export const CustomerMobileCard: React.FC<CustomerMobileCardProps> = ({
       }}
       className="p-3.5 rounded-xl bg-card border border-border/60 shadow-2xs space-y-2.5 cursor-pointer hover:border-primary/40 focus-visible:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 transition-all"
     >
-      <div className="flex items-start justify-between gap-3">
-        <div onClick={(event) => event.stopPropagation()}>
-          <Checkbox
-            checked={selected}
-            onCheckedChange={() => onToggleSelected(customer.id)}
-            aria-label={isAr ? `تحديد العميل ${customer.name}` : `Select customer ${customer.name}`}
-          />
-        </div>
-        <div className="flex items-center gap-3 min-w-0">
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2.5 min-w-0 flex-1">
+          <div onClick={(event) => event.stopPropagation()} className="shrink-0 flex items-center">
+            <Checkbox
+              checked={selected}
+              onCheckedChange={() => onToggleSelected(customer.id)}
+              aria-label={isAr ? `تحديد العميل ${customer.name}` : `Select customer ${customer.name}`}
+            />
+          </div>
           <div className="h-10 w-10 rounded-full bg-primary/10 text-primary border border-primary/20 flex items-center justify-center font-bold text-sm shrink-0">
             {customer.name ? customer.name.charAt(0).toUpperCase() : "C"}
           </div>
-          <div className="min-w-0">
+          <div className="min-w-0 flex-1">
             <h3 className="font-bold text-xs text-foreground truncate flex items-center gap-1.5">
               <span>{customer.name}</span>
-              {stats.badge === "VIP" && (
+              {stats?.badge === "VIP" && (
                 <span className="inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded-full text-[9px] font-bold bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300 border border-amber-300/40">
                   <Star className="h-2.5 w-2.5 fill-amber-500 text-amber-500" />
                   VIP
@@ -74,7 +74,7 @@ export const CustomerMobileCard: React.FC<CustomerMobileCardProps> = ({
           </div>
         </div>
 
-        <ChevronRight className={`h-4 w-4 text-muted-foreground ${isAr ? "rotate-180" : ""}`} />
+        <ChevronRight className={`h-4 w-4 text-muted-foreground shrink-0 ${isAr ? "rotate-180" : ""}`} />
       </div>
 
       {/* Address & Email */}
@@ -97,11 +97,11 @@ export const CustomerMobileCard: React.FC<CustomerMobileCardProps> = ({
       <div className="flex items-center justify-between pt-2 border-t border-border/40 text-xs">
         <div className="flex items-center gap-3">
           <span className="font-mono text-[11px]">
-            {isAr ? "الطلبات:" : "Orders:"} <b className="text-foreground">{stats.totalOrders}</b>
+            {isAr ? "الطلبات:" : "Orders:"} <b className="text-foreground">{stats?.totalOrders ?? 0}</b>
           </span>
           <span>•</span>
           <span className="font-mono text-xs font-extrabold text-foreground">
-            {formatMoney(stats.lifetimeSpend, currency, lang)}
+            {formatMoney(stats?.lifetimeSpend ?? 0, currency, lang)}
           </span>
         </div>
 
