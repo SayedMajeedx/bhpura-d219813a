@@ -67,6 +67,7 @@ import { cn } from "@/lib/utils";
 import { getNavFilterContext, saveNavFilterContext } from "@/lib/os-productivity";
 import { queryKeys } from "@/lib/query-keys";
 import { parseCSV } from "@/lib/csv-parser";
+import { sanitizeGCCPhone } from "@/lib/os-formatting";
 
 import { CustomersCommandHeader } from "@/components/customers/CustomersCommandHeader";
 import {
@@ -199,23 +200,6 @@ function parseVCard(
     }
   }
   return contacts;
-}
-
-function sanitizeGCCPhone(phoneStr: string | null): string | null {
-  if (!phoneStr) return null;
-  let clean = phoneStr.replace(/[^\d]/g, "");
-  clean = clean.replace(/^0+/, "");
-
-  if (clean.length === 8) {
-    return `+973${clean}`;
-  }
-  if (clean.length === 9 && clean.startsWith("5")) {
-    return `+966${clean}`;
-  }
-  if (clean.startsWith("973") || clean.startsWith("966")) {
-    return `+${clean}`;
-  }
-  return `+${clean}`;
 }
 
 const CUSTOMER_HEADER_MAPS = {

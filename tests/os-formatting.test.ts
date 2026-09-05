@@ -1,9 +1,10 @@
-﻿import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 import {
   extractDigits,
   normalizeSearchQuery,
   buildWhatsAppLink,
   formatTrackingDisplay,
+  sanitizeGCCPhone,
 } from "../src/lib/os-formatting";
 
 describe("OS Formatting Utilities", () => {
@@ -70,6 +71,40 @@ describe("OS Formatting Utilities", () => {
     it("returns single value when one is missing", () => {
       expect(formatTrackingDisplay(null, "12345678")).toBe("12345678");
       expect(formatTrackingDisplay("DHL", "")).toBe("DHL");
+    });
+  });
+
+  describe("sanitizeGCCPhone", () => {
+    it("handles null, undefined, empty, and non-digit inputs gracefully", () => {
+      expect(sanitizeGCCPhone(null)).toBeNull();
+      expect(sanitizeGCCPhone(undefined)).toBeNull();
+      expect(sanitizeGCCPhone("")).toBeNull();
+      expect(sanitizeGCCPhone("   ")).toBeNull();
+      expect(sanitizeGCCPhone("---")).toBeNull();
+    });
+
+    it("formats 8-digit Bahrain phone numbers by adding +973", () => {
+      expect(sanitizeGCCPhone("39991234")).toBe("+97339991234");
+      expect(sanitizeGCCPhone("17001234")).toBe("+97317001234");
+      expect(sanitizeGCCPhone("039991234")).toBe("+97339991234");
+    });
+
+    it("formats 9-digit Saudi phone numbers starting with 5 by adding +966", () => {
+      expect(sanitizeGCCPhone("501234567")).toBe("+966501234567");
+      expect(sanitizeGCCPhone("0501234567")).toBe("+966501234567");
+    });
+
+    it("preserves numbers that already start with country code 973 or 966", () => {
+      expect(sanitizeGCCPhone("97339991234")).toBe("+97339991234");
+      expect(sanitizeGCCPhone("+97339991234")).toBe("+97339991234");
+      expect(sanitizeGCCPhone("0097339991234")).toBe("+97339991234");
+      expect(sanitizeGCCPhone("966501234567")).toBe("+966501234567");
+      expect(sanitizeGCCPhone("+966501234567")).toBe("+966501234567");
+    });
+
+    it("cleans extra characters such as dashes, spaces, and parentheses", () => {
+      expect(sanitizeGCCPhone("+973 (39) 99-1234")).toBe("+97339991234");
+      expect(sanitizeGCCPhone("050-123-4567")).toBe("+966501234567");
     });
   });
 });

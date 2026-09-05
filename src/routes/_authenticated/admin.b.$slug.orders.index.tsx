@@ -49,7 +49,7 @@ import {
 } from "@/components/ui/select";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { formatDate, formatMoney, formatOrderStatus } from "@/lib/format";
-import { buildWhatsAppLink } from "@/lib/os-formatting";
+import { buildWhatsAppLink, sanitizeGCCPhone } from "@/lib/os-formatting";
 import { OrdersCommandHeader } from "@/components/orders/OrdersCommandHeader";
 import { OrdersScopeSwitcher } from "@/components/orders/OrdersScopeSwitcher";
 import { OrdersToolbar } from "@/components/orders/OrdersToolbar";
@@ -2476,23 +2476,6 @@ const ORDER_HEADER_MAPS = {
   item_quantity: ["lineitem quantity", "quantity", "الكمية", "item quantity"],
   item_price: ["lineitem price", "item price", "سعر المنتج", "السعر"],
 };
-
-function sanitizeGCCPhone(phoneStr: string | null): string | null {
-  if (!phoneStr) return null;
-  let clean = phoneStr.replace(/[^\d]/g, "");
-  clean = clean.replace(/^0+/, "");
-
-  if (clean.length === 8) {
-    return `+973${clean}`;
-  }
-  if (clean.length === 9 && clean.startsWith("5")) {
-    return `+966${clean}`;
-  }
-  if (clean.startsWith("973") || clean.startsWith("966")) {
-    return `+${clean}`;
-  }
-  return `+${clean}`;
-}
 
 function parseCSV(text: string): string[][] {
   const lines: string[][] = [];
