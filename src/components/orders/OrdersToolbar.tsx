@@ -36,6 +36,34 @@ interface OrdersToolbarProps {
   onClearFilters: () => void;
 }
 
+const PAYMENT_FILTER_OPTIONS = [
+  { value: "all", ar: "الكل", en: "All" },
+  { value: "unpaid", ar: "غير مدفوع", en: "Unpaid" },
+  { value: "pending_verification", ar: "بانتظار التحقق", en: "Pending Verification" },
+  { value: "partial", ar: "مدفوع جزئيًا", en: "Partially Paid" },
+  { value: "paid", ar: "مدفوع", en: "Paid" },
+  { value: "refunded", ar: "مسترجع", en: "Refunded" },
+] as const;
+
+const FULFILLMENT_STATUS_FILTER_OPTIONS = [
+  { value: "all", ar: "الكل", en: "All" },
+  { value: "on_hold", ar: "قيد الانتظار", en: "On Hold" },
+  { value: "sent_to_tailor", ar: "تم الإرسال للخياط", en: "Sent to Tailor" },
+  { value: "received_from_tailor", ar: "تم الاستلام من الخياط", en: "Received from Tailor" },
+  { value: "packing", ar: "قيد التعبئة والتغليف", en: "Packing" },
+  { value: "ready_for_pickup", ar: "جاهز للاستلام", en: "Ready for Pickup" },
+  { value: "out_for_delivery", ar: "خرج للتوصيل", en: "Out for Delivery" },
+  { value: "completed", ar: "تم التوصيل/الاستلام", en: "Delivered/Picked Up" },
+  { value: "cancelled", ar: "ملغي", en: "Cancelled" },
+] as const;
+
+const GATEWAY_FILTER_OPTIONS: Array<{ value: PaymentMethodFilter; ar: string; en: string }> = [
+  { value: "all", ar: "الكل", en: "All" },
+  { value: "benefit", ar: "بنفت", en: "Benefit" },
+  { value: "cod", ar: "الدفع عند الاستلام", en: "Cash on Delivery" },
+  { value: "card", ar: "بطاقة", en: "Card" },
+];
+
 export const OrdersToolbar: React.FC<OrdersToolbarProps> = ({
   lang,
   search,
@@ -123,16 +151,11 @@ export const OrdersToolbar: React.FC<OrdersToolbarProps> = ({
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">{isAr ? "الكل" : "All"}</SelectItem>
-                    <SelectItem value="unpaid">{isAr ? "غير مدفوع" : "Unpaid"}</SelectItem>
-                    <SelectItem value="pending_verification">
-                      {isAr ? "بانتظار التحقق" : "Pending Verification"}
-                    </SelectItem>
-                    <SelectItem value="partial">
-                      {isAr ? "مدفوع جزئيًا" : "Partially Paid"}
-                    </SelectItem>
-                    <SelectItem value="paid">{isAr ? "مدفوع" : "Paid"}</SelectItem>
-                    <SelectItem value="refunded">{isAr ? "مسترجع" : "Refunded"}</SelectItem>
+                    {PAYMENT_FILTER_OPTIONS.map((opt) => (
+                      <SelectItem key={opt.value} value={opt.value}>
+                        {isAr ? opt.ar : opt.en}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -150,27 +173,11 @@ export const OrdersToolbar: React.FC<OrdersToolbarProps> = ({
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">{isAr ? "الكل" : "All"}</SelectItem>
-                    <SelectItem value="on_hold">{isAr ? "قيد الانتظار" : "On Hold"}</SelectItem>
-                    <SelectItem value="sent_to_tailor">
-                      {isAr ? "تم الإرسال للخياط" : "Sent to Tailor"}
-                    </SelectItem>
-                    <SelectItem value="received_from_tailor">
-                      {isAr ? "تم الاستلام من الخياط" : "Received from Tailor"}
-                    </SelectItem>
-                    <SelectItem value="packing">
-                      {isAr ? "قيد التعبئة والتغليف" : "Packing"}
-                    </SelectItem>
-                    <SelectItem value="ready_for_pickup">
-                      {isAr ? "جاهز للاستلام" : "Ready for Pickup"}
-                    </SelectItem>
-                    <SelectItem value="out_for_delivery">
-                      {isAr ? "خرج للتوصيل" : "Out for Delivery"}
-                    </SelectItem>
-                    <SelectItem value="completed">
-                      {isAr ? "تم التوصيل/الاستلام" : "Delivered/Picked Up"}
-                    </SelectItem>
-                    <SelectItem value="cancelled">{isAr ? "ملغي" : "Cancelled"}</SelectItem>
+                    {FULFILLMENT_STATUS_FILTER_OPTIONS.map((opt) => (
+                      <SelectItem key={opt.value} value={opt.value}>
+                        {isAr ? opt.ar : opt.en}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -188,12 +195,11 @@ export const OrdersToolbar: React.FC<OrdersToolbarProps> = ({
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">{isAr ? "الكل" : "All"}</SelectItem>
-                    <SelectItem value="benefit">{isAr ? "بنفت" : "Benefit"}</SelectItem>
-                    <SelectItem value="cod">
-                      {isAr ? "الدفع عند الاستلام" : "Cash on Delivery"}
-                    </SelectItem>
-                    <SelectItem value="card">{isAr ? "بطاقة" : "Card"}</SelectItem>
+                    {GATEWAY_FILTER_OPTIONS.map((opt) => (
+                      <SelectItem key={opt.value} value={opt.value}>
+                        {isAr ? opt.ar : opt.en}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -236,16 +242,11 @@ export const OrdersToolbar: React.FC<OrdersToolbarProps> = ({
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">{isAr ? "الكل" : "All"}</SelectItem>
-                      <SelectItem value="unpaid">{isAr ? "غير مدفوع" : "Unpaid"}</SelectItem>
-                      <SelectItem value="pending_verification">
-                        {isAr ? "بانتظار التحقق" : "Pending Verification"}
-                      </SelectItem>
-                      <SelectItem value="partial">
-                        {isAr ? "مدفوع جزئيًا" : "Partially Paid"}
-                      </SelectItem>
-                      <SelectItem value="paid">{isAr ? "مدفوع" : "Paid"}</SelectItem>
-                      <SelectItem value="refunded">{isAr ? "مسترجع" : "Refunded"}</SelectItem>
+                      {PAYMENT_FILTER_OPTIONS.map((opt) => (
+                        <SelectItem key={opt.value} value={opt.value}>
+                          {isAr ? opt.ar : opt.en}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
@@ -263,27 +264,11 @@ export const OrdersToolbar: React.FC<OrdersToolbarProps> = ({
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">{isAr ? "الكل" : "All"}</SelectItem>
-                      <SelectItem value="on_hold">{isAr ? "قيد الانتظار" : "On Hold"}</SelectItem>
-                      <SelectItem value="sent_to_tailor">
-                        {isAr ? "تم الإرسال للخياط" : "Sent to Tailor"}
-                      </SelectItem>
-                      <SelectItem value="received_from_tailor">
-                        {isAr ? "تم الاستلام من الخياط" : "Received from Tailor"}
-                      </SelectItem>
-                      <SelectItem value="packing">
-                        {isAr ? "قيد التعبئة والتغليف" : "Packing"}
-                      </SelectItem>
-                      <SelectItem value="ready_for_pickup">
-                        {isAr ? "جاهز للاستلام" : "Ready for Pickup"}
-                      </SelectItem>
-                      <SelectItem value="out_for_delivery">
-                        {isAr ? "خرج للتوصيل" : "Out for Delivery"}
-                      </SelectItem>
-                      <SelectItem value="completed">
-                        {isAr ? "تم التوصيل/الاستلام" : "Delivered/Picked Up"}
-                      </SelectItem>
-                      <SelectItem value="cancelled">{isAr ? "ملغي" : "Cancelled"}</SelectItem>
+                      {FULFILLMENT_STATUS_FILTER_OPTIONS.map((opt) => (
+                        <SelectItem key={opt.value} value={opt.value}>
+                          {isAr ? opt.ar : opt.en}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
@@ -301,12 +286,11 @@ export const OrdersToolbar: React.FC<OrdersToolbarProps> = ({
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">{isAr ? "الكل" : "All"}</SelectItem>
-                      <SelectItem value="benefit">{isAr ? "بنفت" : "Benefit"}</SelectItem>
-                      <SelectItem value="cod">
-                        {isAr ? "الدفع عند الاستلام" : "Cash on Delivery"}
-                      </SelectItem>
-                      <SelectItem value="card">{isAr ? "بطاقة" : "Card"}</SelectItem>
+                      {GATEWAY_FILTER_OPTIONS.map((opt) => (
+                        <SelectItem key={opt.value} value={opt.value}>
+                          {isAr ? opt.ar : opt.en}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
