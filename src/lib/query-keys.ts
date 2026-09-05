@@ -67,4 +67,10 @@ export const queryKeys = {
     list: (brandId: string, isSuperAdmin?: boolean) =>
       ["staff", brandId, Boolean(isSuperAdmin)] as const,
   },
+
+  // Message & Campaign Templates
+  templates: {
+    message: (brandId: string) => ["message-templates", brandId] as const,
+    campaign: (brandId: string) => ["campaign-templates", brandId] as const,
+  },
 } as const;

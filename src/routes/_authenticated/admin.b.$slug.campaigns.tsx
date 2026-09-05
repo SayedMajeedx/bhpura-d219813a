@@ -42,6 +42,7 @@ import {
 import { useI18n } from "@/lib/i18n";
 import { toast } from "sonner";
 import { useBrand } from "@/lib/brand-context";
+import { queryKeys } from "@/lib/query-keys";
 import { buildCustomerCrmStats, type CustomerMetricOrder } from "@/lib/commerce-metrics";
 import { isMarketingEligible } from "@/lib/marketing-eligibility";
 
@@ -120,7 +121,7 @@ function CampaignsPage() {
   const bulkWindowRef = useRef<Window | null>(null);
 
   const templatesQ = useQuery({
-    queryKey: ["campaign-templates", brandId],
+    queryKey: queryKeys.templates.campaign(brandId),
     queryFn: async () => {
       const { data, error } = await supabase
         .from("message_templates")
@@ -216,7 +217,7 @@ function CampaignsPage() {
     }
     toast.success(isAr ? "تم الحفظ" : "Saved");
     setSaveOpen(false);
-    qc.invalidateQueries({ queryKey: ["campaign-templates"] });
+    qc.invalidateQueries({ queryKey: queryKeys.templates.campaign(brandId) });
   };
 
   const deleteTemplate = async () => {
@@ -228,7 +229,7 @@ function CampaignsPage() {
     if (error) return toast.error(error.message);
     toast.success(isAr ? "تم الحفظ" : "Deleted");
     setSelectedId("");
-    qc.invalidateQueries({ queryKey: ["campaign-templates"] });
+    qc.invalidateQueries({ queryKey: queryKeys.templates.campaign(brandId) });
   };
 
   const insertPlaceholder = (token: string) => {
@@ -311,8 +312,7 @@ function CampaignsPage() {
       return isMarketingEligible(c, totalOrders).eligible;
     });
     const allSelected =
-      validFiltered.length > 0 &&
-      validFiltered.every((c) => selectedCustomerIds.includes(c.id));
+      validFiltered.length > 0 && validFiltered.every((c) => selectedCustomerIds.includes(c.id));
     if (allSelected) {
       setSelectedCustomerIds((prev) =>
         prev.filter((id) => !validFiltered.some((c) => c.id === id)),
@@ -442,9 +442,7 @@ function CampaignsPage() {
     if (!win) {
       setBulkSent((prev) => ({ ...prev, [customer.id]: "queued" }));
       toast.error(
-        isAr
-          ? "اسمح بالنوافذ المنبثقة لبدء الحملة"
-          : "Allow popups to start the campaign",
+        isAr ? "اسمح بالنوافذ المنبثقة لبدء الحملة" : "Allow popups to start the campaign",
       );
       return;
     }
@@ -552,7 +550,9 @@ function CampaignsPage() {
         } else {
           setBulkActive(false);
           toast.success(
-            isAr ? "تم إكمال الحملة التلقائية بنجاح!" : "Automated campaign completed successfully!",
+            isAr
+              ? "تم إكمال الحملة التلقائية بنجاح!"
+              : "Automated campaign completed successfully!",
           );
         }
         return;
@@ -572,9 +572,7 @@ function CampaignsPage() {
             setBulkActive(false);
             setBulkSent((prev) => ({ ...prev, [customer.id]: "queued" }));
             toast.info(
-              isAr
-                ? "اضغط استئناف لفتح المحادثة التالية"
-                : "Tap Resume to open the next chat",
+              isAr ? "اضغط استئناف لفتح المحادثة التالية" : "Tap Resume to open the next chat",
             );
             return;
           }
@@ -665,9 +663,7 @@ function CampaignsPage() {
           if (!win) {
             setBulkSent((prev) => ({ ...prev, [customer.id]: "queued" }));
             toast.error(
-              isAr
-                ? "اسمح بالنوافذ المنبثقة أو حاول مجددًا"
-                : "Allow popups or try again",
+              isAr ? "اسمح بالنوافذ المنبثقة أو حاول مجددًا" : "Allow popups or try again",
             );
             return;
           }
@@ -904,9 +900,17 @@ function CampaignsPage() {
                   type="checkbox"
                   className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary accent-primary cursor-pointer"
                   checked={
-                    filtered.filter((c) => isMarketingEligible(c, customerCrmStats.get(c.id)?.totalOrders ?? 0).eligible).length > 0 &&
+                    filtered.filter(
+                      (c) =>
+                        isMarketingEligible(c, customerCrmStats.get(c.id)?.totalOrders ?? 0)
+                          .eligible,
+                    ).length > 0 &&
                     filtered
-                      .filter((c) => isMarketingEligible(c, customerCrmStats.get(c.id)?.totalOrders ?? 0).eligible)
+                      .filter(
+                        (c) =>
+                          isMarketingEligible(c, customerCrmStats.get(c.id)?.totalOrders ?? 0)
+                            .eligible,
+                      )
                       .every((c) => selectedCustomerIds.includes(c.id))
                   }
                   onChange={toggleSelectAll}
@@ -931,7 +935,13 @@ function CampaignsPage() {
                           checked={isChecked}
                           onChange={() => toggleSelectCustomer(c)}
                           disabled={!eligibility.eligible}
-                          title={eligibility.eligible ? undefined : (isAr ? eligibility.reason_ar : eligibility.reason)}
+                          title={
+                            eligibility.eligible
+                              ? undefined
+                              : isAr
+                                ? eligibility.reason_ar
+                                : eligibility.reason
+                          }
                         />
                         <div className="min-w-0">
                           <div className="flex items-center gap-1.5 font-semibold text-foreground truncate flex-wrap">
@@ -992,7 +1002,13 @@ function CampaignsPage() {
                             variant="outline"
                             onClick={() => send(c)}
                             disabled={!eligibility.eligible}
-                            title={eligibility.eligible ? undefined : (isAr ? eligibility.reason_ar : eligibility.reason)}
+                            title={
+                              eligibility.eligible
+                                ? undefined
+                                : isAr
+                                  ? eligibility.reason_ar
+                                  : eligibility.reason
+                            }
                           >
                             <MessageCircle className="me-1 h-3 w-3" />
                             {isAr ? "إرسال" : "Send"}
@@ -1015,9 +1031,17 @@ function CampaignsPage() {
                         type="checkbox"
                         className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary accent-primary cursor-pointer"
                         checked={
-                          filtered.filter((c) => isMarketingEligible(c, customerCrmStats.get(c.id)?.totalOrders ?? 0).eligible).length > 0 &&
+                          filtered.filter(
+                            (c) =>
+                              isMarketingEligible(c, customerCrmStats.get(c.id)?.totalOrders ?? 0)
+                                .eligible,
+                          ).length > 0 &&
                           filtered
-                            .filter((c) => isMarketingEligible(c, customerCrmStats.get(c.id)?.totalOrders ?? 0).eligible)
+                            .filter(
+                              (c) =>
+                                isMarketingEligible(c, customerCrmStats.get(c.id)?.totalOrders ?? 0)
+                                  .eligible,
+                            )
                             .every((c) => selectedCustomerIds.includes(c.id))
                         }
                         onChange={toggleSelectAll}
@@ -1059,7 +1083,13 @@ function CampaignsPage() {
                             checked={isChecked}
                             onChange={() => toggleSelectCustomer(c)}
                             disabled={!eligibility.eligible}
-                            title={eligibility.eligible ? undefined : (isAr ? eligibility.reason_ar : eligibility.reason)}
+                            title={
+                              eligibility.eligible
+                                ? undefined
+                                : isAr
+                                  ? eligibility.reason_ar
+                                  : eligibility.reason
+                            }
                           />
                         </td>
                         <td className="p-4 font-medium">
@@ -1118,7 +1148,13 @@ function CampaignsPage() {
                               size="sm"
                               onClick={() => send(c)}
                               disabled={!eligibility.eligible}
-                              title={eligibility.eligible ? undefined : (isAr ? eligibility.reason_ar : eligibility.reason)}
+                              title={
+                                eligibility.eligible
+                                  ? undefined
+                                  : isAr
+                                    ? eligibility.reason_ar
+                                    : eligibility.reason
+                              }
                             >
                               <MessageCircle className="h-4 w-4 me-2" />
                               {isAr ? "إرسال عبر الواتساب" : "Send via WhatsApp"}

@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useT, useI18n } from "@/lib/i18n";
 import { useBrand } from "@/lib/brand-context";
+import { queryKeys } from "@/lib/query-keys";
 import {
   Dialog,
   DialogContent,
@@ -298,7 +299,7 @@ export default function SendInvoiceDialog({
   const brand = useBrand();
   const brandId = brand.id;
   const templatesQ = useQuery({
-    queryKey: ["message-templates", brandId],
+    queryKey: queryKeys.templates.message(brandId),
     queryFn: async () => {
       const { data, error } = await supabase
         .from("message_templates")
@@ -436,7 +437,7 @@ export default function SendInvoiceDialog({
         open={manageOpen}
         onOpenChange={setManageOpen}
         templates={templatesQ.data ?? []}
-        onChanged={() => qc.invalidateQueries({ queryKey: ["message-templates"] })}
+        onChanged={() => qc.invalidateQueries({ queryKey: queryKeys.templates.message(brandId) })}
       />
     </>
   );
