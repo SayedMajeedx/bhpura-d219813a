@@ -97,7 +97,7 @@ import {
   type StructuredAddress,
 } from "@/lib/bahrain-regions";
 import { printThermalReceipt } from "@/lib/thermal-print";
-import { cn } from "@/lib/utils";
+import { cn, getFriendlyErrorMessage } from "@/lib/utils";
 import {
   resolvePaymentStatus,
   PAYMENT_BADGE_CLASSES,
@@ -1194,9 +1194,10 @@ function OrderDetail() {
       setNewCustHouse("");
       setNewCustFlat("");
       setNewCustomerOpen(false);
-    } catch (err: any) {
+    } catch (err: unknown) {
       toast.error(
-        err.message || (lang === "ar" ? "تعذر إنشاء العميل" : "Failed to create customer"),
+        getFriendlyErrorMessage(err) ||
+          (lang === "ar" ? "تعذر إنشاء العميل" : "Failed to create customer"),
       );
     } finally {
       setCreatingCustomer(false);
@@ -2371,9 +2372,10 @@ function OrderDetail() {
               await orderQ.refetch();
               qc.invalidateQueries({ queryKey: ["orders", brandId] });
               qc.invalidateQueries({ queryKey: ["activity_logs"] });
-            } catch (err: any) {
+            } catch (err: unknown) {
               toast.error(
-                err?.message || (lang === "ar" ? "تعذر تحديث الحالة" : "Unable to update status"),
+                getFriendlyErrorMessage(err) ||
+                  (lang === "ar" ? "تعذر تحديث الحالة" : "Unable to update status"),
               );
             }
           }}
@@ -2411,9 +2413,10 @@ function OrderDetail() {
               await orderQ.refetch();
               qc.invalidateQueries({ queryKey: ["orders", brandId] });
               qc.invalidateQueries({ queryKey: ["activity_logs"] });
-            } catch (err: any) {
+            } catch (err: unknown) {
               toast.error(
-                err?.message || (lang === "ar" ? "تعذر تحديث الحالة" : "Unable to update status"),
+                getFriendlyErrorMessage(err) ||
+                  (lang === "ar" ? "تعذر تحديث الحالة" : "Unable to update status"),
               );
             }
           }}
@@ -2451,9 +2454,10 @@ function OrderDetail() {
               await orderQ.refetch();
               qc.invalidateQueries({ queryKey: ["orders", brandId] });
               qc.invalidateQueries({ queryKey: ["activity_logs"] });
-            } catch (err: any) {
+            } catch (err: unknown) {
               toast.error(
-                err?.message || (lang === "ar" ? "تعذر تحديث الحالة" : "Unable to update status"),
+                getFriendlyErrorMessage(err) ||
+                  (lang === "ar" ? "تعذر تحديث الحالة" : "Unable to update status"),
               );
             }
           }}
@@ -2491,9 +2495,10 @@ function OrderDetail() {
               await orderQ.refetch();
               qc.invalidateQueries({ queryKey: ["orders", brandId] });
               qc.invalidateQueries({ queryKey: ["activity_logs"] });
-            } catch (err: any) {
+            } catch (err: unknown) {
               toast.error(
-                err?.message || (lang === "ar" ? "تعذر تحديث الحالة" : "Unable to update status"),
+                getFriendlyErrorMessage(err) ||
+                  (lang === "ar" ? "تعذر تحديث الحالة" : "Unable to update status"),
               );
             }
           }}
@@ -2531,9 +2536,10 @@ function OrderDetail() {
               await orderQ.refetch();
               qc.invalidateQueries({ queryKey: ["orders", brandId] });
               qc.invalidateQueries({ queryKey: ["activity_logs"] });
-            } catch (err: any) {
+            } catch (err: unknown) {
               toast.error(
-                err?.message || (lang === "ar" ? "تعذر تحديث الحالة" : "Unable to update status"),
+                getFriendlyErrorMessage(err) ||
+                  (lang === "ar" ? "تعذر تحديث الحالة" : "Unable to update status"),
               );
             }
           }}
@@ -2572,9 +2578,10 @@ function OrderDetail() {
               await orderQ.refetch();
               qc.invalidateQueries({ queryKey: ["orders", brandId] });
               qc.invalidateQueries({ queryKey: ["activity_logs"] });
-            } catch (err: any) {
+            } catch (err: unknown) {
               toast.error(
-                err?.message || (lang === "ar" ? "تعذر إكمال التسليم" : "Unable to complete order"),
+                getFriendlyErrorMessage(err) ||
+                  (lang === "ar" ? "تعذر إكمال التسليم" : "Unable to complete order"),
               );
             }
           }}
@@ -2604,9 +2611,10 @@ function OrderDetail() {
               );
               await orderQ.refetch();
               qc.invalidateQueries({ queryKey: ["orders", brandId] });
-            } catch (err: any) {
+            } catch (err: unknown) {
               toast.error(
-                err?.message || (lang === "ar" ? "تعذر تحديث الحالة" : "Unable to update status"),
+                getFriendlyErrorMessage(err) ||
+                  (lang === "ar" ? "تعذر تحديث الحالة" : "Unable to update status"),
               );
             }
           }}
@@ -2638,9 +2646,10 @@ function OrderDetail() {
               );
               await orderQ.refetch();
               qc.invalidateQueries({ queryKey: ["orders", brandId] });
-            } catch (err: any) {
+            } catch (err: unknown) {
               toast.error(
-                err?.message || (lang === "ar" ? "تعذر تحديث الحالة" : "Unable to update status"),
+                getFriendlyErrorMessage(err) ||
+                  (lang === "ar" ? "تعذر تحديث الحالة" : "Unable to update status"),
               );
             }
           }}
@@ -2697,9 +2706,9 @@ function OrderDetail() {
               );
               await orderQ.refetch();
               qc.invalidateQueries({ queryKey: ["orders", brandId] });
-            } catch (err: any) {
+            } catch (err: unknown) {
               toast.error(
-                err?.message ||
+                getFriendlyErrorMessage(err) ||
                   (lang === "ar" ? "تعذر إكمال التسليم" : "Unable to complete delivery"),
               );
             }
@@ -2728,9 +2737,10 @@ function OrderDetail() {
               toast.success(lang === "ar" ? "تم تجهيز الطلب للاستلام" : "Ready for pickup");
               await orderQ.refetch();
               qc.invalidateQueries({ queryKey: ["orders", brandId] });
-            } catch (err: any) {
+            } catch (err: unknown) {
               toast.error(
-                err?.message || (lang === "ar" ? "تعذر تحديث الحالة" : "Unable to update status"),
+                getFriendlyErrorMessage(err) ||
+                  (lang === "ar" ? "تعذر تحديث الحالة" : "Unable to update status"),
               );
             }
           }}
@@ -2763,9 +2773,9 @@ function OrderDetail() {
               toast.success(lang === "ar" ? "تم تسليم الطلب للعميل" : "Handed over to customer");
               await orderQ.refetch();
               qc.invalidateQueries({ queryKey: ["orders", brandId] });
-            } catch (err: any) {
+            } catch (err: unknown) {
               toast.error(
-                err?.message ||
+                getFriendlyErrorMessage(err) ||
                   (lang === "ar" ? "تعذر إكمال التسليم" : "Unable to complete handover"),
               );
             }
@@ -2865,9 +2875,10 @@ function OrderDetail() {
       await orderQ.refetch();
       qc.invalidateQueries({ queryKey: ["orders", brandId] });
       qc.invalidateQueries({ queryKey: ["activity_logs"] });
-    } catch (err: any) {
+    } catch (err: unknown) {
       toast.error(
-        err?.message || (lang === "ar" ? "تعذر تحديث حالة الطلب" : "Unable to update order status"),
+        getFriendlyErrorMessage(err) ||
+          (lang === "ar" ? "تعذر تحديث حالة الطلب" : "Unable to update order status"),
       );
       throw err;
     }

@@ -4,10 +4,28 @@ import { User, UserX, Phone, Mail, MapPin, ExternalLink, MessageSquare } from "l
 import { Button } from "@/components/ui/button";
 import { buildWhatsAppLink } from "@/lib/os-formatting";
 
+export interface OrderCustomerAddress {
+  address_line1?: string | null;
+  area?: string | null;
+  city?: string | null;
+  building?: string | null;
+  road?: string | null;
+  block?: string | null;
+}
+
+export interface OrderCustomerSummary {
+  customer_name?: string | null;
+  customer_phone?: string | null;
+  customer_email?: string | null;
+  customer_id?: string | null;
+  shipping_address?: OrderCustomerAddress | null;
+  billing_address?: OrderCustomerAddress | null;
+}
+
 interface OrderCustomerSectionProps {
   lang: "en" | "ar";
   slug: string;
-  order: any;
+  order: OrderCustomerSummary;
 }
 
 export const OrderCustomerSection: React.FC<OrderCustomerSectionProps> = ({
