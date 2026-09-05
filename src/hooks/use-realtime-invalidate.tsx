@@ -1,11 +1,11 @@
 import { useEffect } from "react";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQueryClient, type QueryKey } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
 type Sub = {
   table: string;
   brandId?: string;
-  queryKey: unknown[];
+  queryKey: QueryKey;
 };
 
 /**

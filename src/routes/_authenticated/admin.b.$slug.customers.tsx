@@ -65,6 +65,7 @@ import { formatMoney } from "@/lib/format";
 import { buildCustomerCrmStats, type CustomerMetricOrder } from "@/lib/commerce-metrics";
 import { cn } from "@/lib/utils";
 import { getNavFilterContext, saveNavFilterContext } from "@/lib/os-productivity";
+import { queryKeys } from "@/lib/query-keys";
 
 import { CustomersCommandHeader } from "@/components/customers/CustomersCommandHeader";
 import {
@@ -871,7 +872,7 @@ function CustomersPage() {
 
   useRealtimeInvalidate(
     [
-      { table: "customers", brandId, queryKey: ["customers", brandId] },
+      { table: "customers", brandId, queryKey: queryKeys.customers.all(brandId) },
       { table: "customer_addresses", brandId, queryKey: ["customer_addresses", brandId] },
     ],
     `customers-list-${brandId}`,
@@ -883,7 +884,7 @@ function CustomersPage() {
     isError: customersError,
     refetch: refetchCustomers,
   } = useQuery({
-    queryKey: ["customers", brandId],
+    queryKey: queryKeys.customers.all(brandId),
     staleTime: 30_000,
     refetchOnWindowFocus: false,
     queryFn: async () => {
@@ -957,7 +958,7 @@ function CustomersPage() {
     if (error) toast.error(error.message);
     else {
       toast.success(t("common.delete"));
-      qc.invalidateQueries({ queryKey: ["customers"] });
+      qc.invalidateQueries({ queryKey: queryKeys.customers.all(brandId) });
     }
   };
 
@@ -1049,7 +1050,7 @@ function CustomersPage() {
       toast.success(isAr ? `تم حذف ${ids.length} عميل` : `${ids.length} customers deleted`);
       setSelectedCustomerIds(new Set());
       setBulkDeleteOpen(false);
-      await qc.invalidateQueries({ queryKey: ["customers", brandId] });
+      await qc.invalidateQueries({ queryKey: queryKeys.customers.all(brandId) });
     } catch (error) {
       toast.error(
         error instanceof Error
@@ -1103,7 +1104,7 @@ function CustomersPage() {
         renderImporters={
           <CustomerImporterModal
             brandId={brandId}
-            onComplete={() => qc.invalidateQueries({ queryKey: ["customers"] })}
+            onComplete={() => qc.invalidateQueries({ queryKey: queryKeys.customers.all(brandId) })}
             renderTrigger={(openImporter) => (
               <DropdownMenuItem
                 onClick={openImporter}
@@ -1345,7 +1346,7 @@ function CustomersPage() {
           customer={null}
           onSaved={() => {
             setOpen(false);
-            qc.invalidateQueries({ queryKey: ["customers"] });
+            qc.invalidateQueries({ queryKey: queryKeys.customers.all(brandId) });
           }}
         />
       </Dialog>
@@ -1510,10 +1511,9 @@ function CustomerDialog({ customer, onSaved }: { customer: Customer | null; onSa
       if (error) return toast.error(error.message);
     }
     toast.success(t("common.save"));
-    qc.invalidateQueries({ queryKey: ["customers"] });
-    qc.invalidateQueries({ queryKey: ["customer_addresses"] });
-    qc.invalidateQueries({ queryKey: ["order"] });
-    qc.invalidateQueries({ queryKey: ["orders"] });
+    qc.invalidateQueries({ queryKey: queryKeys.customers.all(brand.id) });
+    qc.invalidateQueries({ queryKey: ["customer_addresses", brand.id] });
+    qc.invalidateQueries({ queryKey: queryKeys.orders.all(brand.id) });
     onSaved();
   };
 

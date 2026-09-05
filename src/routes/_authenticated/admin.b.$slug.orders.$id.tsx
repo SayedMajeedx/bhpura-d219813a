@@ -717,7 +717,7 @@ function OrderDetail() {
         { event: "UPDATE", schema: "public", table: "orders", filter: `id=eq.${id}` },
         () => {
           void qc.invalidateQueries({ queryKey: ["order", id] });
-          void qc.invalidateQueries({ queryKey: ["orders"] });
+          void qc.invalidateQueries({ queryKey: ["orders", brandId] });
         },
       )
       .on(
@@ -734,7 +734,7 @@ function OrderDetail() {
     return () => {
       void supabase.removeChannel(channel);
     };
-  }, [id, qc]);
+  }, [id, qc, brandId]);
 
   const productsQ = useQuery({
     queryKey: ["products", brandId],
@@ -839,7 +839,7 @@ function OrderDetail() {
       if (error) throw error;
 
       await orderQ.refetch();
-      qc.invalidateQueries({ queryKey: ["orders"] });
+      qc.invalidateQueries({ queryKey: ["orders", brandId] });
       toast.success(
         lang === "ar" ? "تم التحقق من الدفع واعتماده" : "Payment verified and approved",
       );
@@ -870,7 +870,7 @@ function OrderDetail() {
       );
       await orderQ.refetch();
       qc.removeQueries({ queryKey: ["benefit-receipt-view", id] });
-      qc.invalidateQueries({ queryKey: ["orders"] });
+      qc.invalidateQueries({ queryKey: ["orders", brandId] });
       setRejectReasonOpen(false);
       setRejectReason("");
     } catch (error) {
@@ -1180,8 +1180,8 @@ function OrderDetail() {
       });
 
       // Refetch queries
-      qc.invalidateQueries({ queryKey: ["customers"] });
-      qc.invalidateQueries({ queryKey: ["customer_addresses"] });
+      qc.invalidateQueries({ queryKey: ["customers", brandId] });
+      qc.invalidateQueries({ queryKey: ["customer_addresses", brandId] });
 
       // Reset form & close modal
       setNewCustName("");
@@ -2145,9 +2145,8 @@ function OrderDetail() {
     setHasSavedDraft(true);
     setEditingUnlocked(false);
     setSaving(false);
-    qc.invalidateQueries({ queryKey: ["orders"] });
+    qc.invalidateQueries({ queryKey: ["orders", brandId] });
     qc.invalidateQueries({ queryKey: ["variants"] });
-    qc.invalidateQueries({ queryKey: ["activity_logs"] });
     qc.invalidateQueries({ queryKey: ["activity_logs"] });
   };
   saveRef.current = save;
@@ -2369,7 +2368,7 @@ function OrderDetail() {
                 ar: "تحويل الطلب إلى الخياط للتفصيل والتفصيل الخياطي",
               });
               await orderQ.refetch();
-              qc.invalidateQueries({ queryKey: ["orders"] });
+              qc.invalidateQueries({ queryKey: ["orders", brandId] });
               qc.invalidateQueries({ queryKey: ["activity_logs"] });
             } catch (err: any) {
               toast.error(
@@ -2409,7 +2408,7 @@ function OrderDetail() {
                 ar: "تم استلام الطلب الجاهز من الخياط",
               });
               await orderQ.refetch();
-              qc.invalidateQueries({ queryKey: ["orders"] });
+              qc.invalidateQueries({ queryKey: ["orders", brandId] });
               qc.invalidateQueries({ queryKey: ["activity_logs"] });
             } catch (err: any) {
               toast.error(
@@ -2449,7 +2448,7 @@ function OrderDetail() {
                 ar: "بدء تعبئة وتغليف منتجات الطلب",
               });
               await orderQ.refetch();
-              qc.invalidateQueries({ queryKey: ["orders"] });
+              qc.invalidateQueries({ queryKey: ["orders", brandId] });
               qc.invalidateQueries({ queryKey: ["activity_logs"] });
             } catch (err: any) {
               toast.error(
@@ -2489,7 +2488,7 @@ function OrderDetail() {
                 ar: "تجهيز الطلب للاستلام من الفرع/المحل",
               });
               await orderQ.refetch();
-              qc.invalidateQueries({ queryKey: ["orders"] });
+              qc.invalidateQueries({ queryKey: ["orders", brandId] });
               qc.invalidateQueries({ queryKey: ["activity_logs"] });
             } catch (err: any) {
               toast.error(
@@ -2529,7 +2528,7 @@ function OrderDetail() {
                 ar: "تم تسليم الطلب لشركة الشحن/المندوب",
               });
               await orderQ.refetch();
-              qc.invalidateQueries({ queryKey: ["orders"] });
+              qc.invalidateQueries({ queryKey: ["orders", brandId] });
               qc.invalidateQueries({ queryKey: ["activity_logs"] });
             } catch (err: any) {
               toast.error(
@@ -2570,7 +2569,7 @@ function OrderDetail() {
                 ar: "تم إكمال وتسليم الطلب بنجاح",
               });
               await orderQ.refetch();
-              qc.invalidateQueries({ queryKey: ["orders"] });
+              qc.invalidateQueries({ queryKey: ["orders", brandId] });
               qc.invalidateQueries({ queryKey: ["activity_logs"] });
             } catch (err: any) {
               toast.error(
@@ -2603,7 +2602,7 @@ function OrderDetail() {
                 lang === "ar" ? "تم جاهزية الطلب وتعيينه للمندوب" : "Packed & Assigned to Courier",
               );
               await orderQ.refetch();
-              qc.invalidateQueries({ queryKey: ["orders"] });
+              qc.invalidateQueries({ queryKey: ["orders", brandId] });
             } catch (err: any) {
               toast.error(
                 err?.message || (lang === "ar" ? "تعذر تحديث الحالة" : "Unable to update status"),
@@ -2637,7 +2636,7 @@ function OrderDetail() {
                   : "Courier picked up parcel - Out for Delivery",
               );
               await orderQ.refetch();
-              qc.invalidateQueries({ queryKey: ["orders"] });
+              qc.invalidateQueries({ queryKey: ["orders", brandId] });
             } catch (err: any) {
               toast.error(
                 err?.message || (lang === "ar" ? "تعذر تحديث الحالة" : "Unable to update status"),
@@ -2696,7 +2695,7 @@ function OrderDetail() {
                 lang === "ar" ? "تم تسجيل تسليم الطلب وإتمامه" : "Order delivered & completed",
               );
               await orderQ.refetch();
-              qc.invalidateQueries({ queryKey: ["orders"] });
+              qc.invalidateQueries({ queryKey: ["orders", brandId] });
             } catch (err: any) {
               toast.error(
                 err?.message ||
@@ -2727,7 +2726,7 @@ function OrderDetail() {
               if (error) throw error;
               toast.success(lang === "ar" ? "تم تجهيز الطلب للاستلام" : "Ready for pickup");
               await orderQ.refetch();
-              qc.invalidateQueries({ queryKey: ["orders"] });
+              qc.invalidateQueries({ queryKey: ["orders", brandId] });
             } catch (err: any) {
               toast.error(
                 err?.message || (lang === "ar" ? "تعذر تحديث الحالة" : "Unable to update status"),
@@ -2762,7 +2761,7 @@ function OrderDetail() {
               if (error) throw error;
               toast.success(lang === "ar" ? "تم تسليم الطلب للعميل" : "Handed over to customer");
               await orderQ.refetch();
-              qc.invalidateQueries({ queryKey: ["orders"] });
+              qc.invalidateQueries({ queryKey: ["orders", brandId] });
             } catch (err: any) {
               toast.error(
                 err?.message ||
@@ -2863,7 +2862,7 @@ function OrderDetail() {
       });
 
       await orderQ.refetch();
-      qc.invalidateQueries({ queryKey: ["orders"] });
+      qc.invalidateQueries({ queryKey: ["orders", brandId] });
       qc.invalidateQueries({ queryKey: ["activity_logs"] });
     } catch (err: any) {
       toast.error(
