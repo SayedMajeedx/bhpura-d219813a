@@ -5282,9 +5282,12 @@ function OrderDetail() {
         primaryAction={renderTopPrimaryAction()}
         isDirty={isDirty}
         isCreationMode={isCreationMode}
+        isReadOnly={isReadOnly}
+        canUnlockEditing={canUnlockEditing}
         saving={saving}
         customerPhone={getOrderCustomerPhone(order)}
         onSave={save}
+        onUnlock={() => setEditingUnlocked(true)}
         onPrintReceipt={printReceipt}
         onPrintA4={handlePrintA4}
         onCopyLink={copyLink}

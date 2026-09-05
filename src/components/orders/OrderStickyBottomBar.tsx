@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { Save, Loader2, MoreHorizontal, Phone, Receipt, Printer, Copy, Send } from "lucide-react";
+import { Save, Loader2, MoreHorizontal, Phone, Receipt, Printer, Copy, Unlock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -15,9 +15,12 @@ interface OrderStickyBottomBarProps {
   primaryAction?: React.ReactNode;
   isDirty?: boolean;
   isCreationMode?: boolean;
+  isReadOnly?: boolean;
+  canUnlockEditing?: boolean;
   saving?: boolean;
   customerPhone?: string | null;
   onSave?: () => void;
+  onUnlock?: () => void;
   onPrintReceipt?: () => void;
   onPrintA4?: () => void;
   onCopyLink?: () => void;
@@ -29,9 +32,12 @@ export const OrderStickyBottomBar: React.FC<OrderStickyBottomBarProps> = ({
   primaryAction,
   isDirty = false,
   isCreationMode = false,
+  isReadOnly = false,
+  canUnlockEditing = false,
   saving = false,
   customerPhone,
   onSave,
+  onUnlock,
   onPrintReceipt,
   onPrintA4,
   onCopyLink,
@@ -88,14 +94,31 @@ export const OrderStickyBottomBar: React.FC<OrderStickyBottomBarProps> = ({
             <span className="ms-2 flex h-2 w-2 rounded-full bg-emerald-400 ring-2 ring-white animate-pulse" />
           )}
         </Button>
-      ) : (
-        <div className="flex min-w-0 flex-1 [&>button]:min-h-11 [&>button]:w-full [&>button]:rounded-2xl [&>button]:font-bold [&>button]:text-sm [&>button]:shadow-sm [&>button]:border-white/50 dark:[&>button]:border-white/15 [&>button]:bg-card/85 dark:[&>button]:bg-card/50 [&>button]:backdrop-blur-md [&>button]:active:scale-[0.97] [&>button]:transition-all">
-          {primaryAction || (
-            <Button variant="outline" className="font-bold border-white/50 dark:border-white/15">
-              {isAr ? "نظرة عامة على الطلب" : "Review Order Details"}
-            </Button>
-          )}
+      ) : primaryAction ? (
+        <div className="flex min-w-0 flex-1 [&>button]:min-h-11 [&>button]:w-full [&>button]:rounded-2xl [&>button]:font-bold [&>button]:text-sm [&>button]:shadow-md [&>button]:active:scale-[0.97] [&>button]:transition-all">
+          {primaryAction}
         </div>
+      ) : isReadOnly && canUnlockEditing && onUnlock ? (
+        <Button
+          type="button"
+          onClick={onUnlock}
+          className="min-h-11 flex-1 rounded-2xl font-bold text-sm bg-primary text-primary-foreground shadow-md shadow-primary/20 hover:bg-primary/90 active:scale-[0.97] transition-all"
+        >
+          <Unlock className="me-2 h-4 w-4 shrink-0" />
+          <span>{isAr ? "تعديل الطلب" : "Edit Order"}</span>
+        </Button>
+      ) : (
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => {
+            const el = document.getElementById("sec-overview");
+            if (el) el.scrollIntoView({ behavior: "smooth" });
+          }}
+          className="min-h-11 flex-1 rounded-2xl font-bold text-sm bg-card/85 dark:bg-card/50 text-foreground border-white/50 dark:border-white/15 backdrop-blur-md shadow-xs active:scale-[0.97] transition-all"
+        >
+          {isAr ? "نظرة عامة على الطلب" : "Review Order Details"}
+        </Button>
       )}
 
       {/* Secondary Actions Overflow Menu ("...") */}
