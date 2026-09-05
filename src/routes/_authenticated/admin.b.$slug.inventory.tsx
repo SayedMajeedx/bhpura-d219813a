@@ -73,6 +73,7 @@ import { useProfile } from "@/lib/profile-context";
 import { useBrand } from "@/lib/brand-context";
 import { useRealtimeInvalidate } from "@/hooks/use-realtime-invalidate";
 import { queryKeys } from "@/lib/query-keys";
+import { parseCSV } from "@/lib/csv-parser";
 import { Switch } from "@/components/ui/switch";
 import { ImageCropperDialog } from "@/components/image-cropper-dialog";
 import { CropUploadButton } from "@/components/crop-upload-button";
@@ -436,45 +437,6 @@ function Inventory() {
       </div>
     </div>
   );
-}
-
-function parseCSV(text: string): string[][] {
-  const lines: string[][] = [];
-  let row: string[] = [];
-  let inQuotes = false;
-  let currentVal = "";
-
-  for (let i = 0; i < text.length; i++) {
-    const char = text[i];
-    const nextChar = text[i + 1];
-
-    if (char === '"') {
-      if (inQuotes && nextChar === '"') {
-        currentVal += '"';
-        i++;
-      } else {
-        inQuotes = !inQuotes;
-      }
-    } else if (char === "," && !inQuotes) {
-      row.push(currentVal.trim());
-      currentVal = "";
-    } else if ((char === "\r" || char === "\n") && !inQuotes) {
-      if (char === "\r" && nextChar === "\n") {
-        i++;
-      }
-      row.push(currentVal.trim());
-      lines.push(row);
-      row = [];
-      currentVal = "";
-    } else {
-      currentVal += char;
-    }
-  }
-  if (currentVal || row.length > 0) {
-    row.push(currentVal.trim());
-    lines.push(row);
-  }
-  return lines.filter((r) => r.length > 0 && r.some((val) => val !== ""));
 }
 
 const PRODUCT_HEADER_MAPS = {
