@@ -16,7 +16,7 @@ export type Brand = {
   payment_receipt_uploaded_at?: string | null;
   custom_domain?: string | null;
   plan_type?: "annual" | "lifetime" | "trial" | null;
-  renewal_intent?: "renew" | "cancel" | null;
+  renewal_intent?: "renew" | "cancel" | "upgrade" | "downgrade" | null;
   renewal_intent_recorded_at?: string | null;
   trial_ends_at?: string | null;
   created_at?: string;

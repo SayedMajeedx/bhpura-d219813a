@@ -30,6 +30,7 @@ import {
   ArrowLeft,
   ArrowRight,
   ShieldCheck,
+  ShieldAlert,
   CreditCard,
   PackageCheck,
   TrendingUp,
@@ -481,24 +482,13 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
 
           {/* Active Trial Notice Banner */}
           {isTrial && !isPendingVerification && (
-            <div className="mt-4 p-3.5 rounded-2xl bg-sky-500/10 border border-sky-500/20 text-xs text-sky-900 dark:text-sky-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-              <div className="flex items-center gap-2.5">
-                <Sparkles className="h-4 w-4 shrink-0 text-sky-600 dark:text-sky-400" />
-                <span>
-                  {isAr
-                    ? `أنت حالياً في الفترة التجريبية المجانية (${trialDaysRemaining !== null ? `متبقي ${trialDaysRemaining} أيام` : "3 أيام"}). جميع مزايا المنصة متاحة لك بالكامل.`
-                    : `You are currently in your free trial (${trialDaysRemaining !== null ? `${trialDaysRemaining} days remaining` : "3 days"}). All platform features are unlocked.`}
-                </span>
-              </div>
-              <Button
-                type="button"
-                size="sm"
-                variant="default"
-                onClick={() => setIsUpgradeModalOpen(true)}
-                className="shrink-0 text-xs font-bold"
-              >
-                {isAr ? "ترقية الخطة الآن" : "Upgrade Plan Now"}
-              </Button>
+            <div className="mt-4 p-3.5 rounded-2xl bg-sky-500/10 border border-sky-500/20 text-xs text-sky-900 dark:text-sky-200 flex items-center gap-2.5">
+              <Sparkles className="h-4 w-4 shrink-0 text-sky-600 dark:text-sky-400" />
+              <span>
+                {isAr
+                  ? `أنت حالياً في الفترة التجريبية المجانية (${trialDaysRemaining !== null ? `متبقي ${trialDaysRemaining} أيام` : "3 أيام"}). جميع مزايا المنصة متاحة لك بالكامل.`
+                  : `You are currently in your free trial (${trialDaysRemaining !== null ? `${trialDaysRemaining} days remaining` : "3 days"}). All platform features are unlocked.`}
+              </span>
             </div>
           )}
 
@@ -535,17 +525,17 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
               <div>
                 <CardTitle className="text-xl font-bold flex items-center gap-2.5">
                   <CreditCard className="h-5 w-5 text-primary" />
-                  <span>{isAr ? "ترقية الاشتراك وتفعيل الباقة عبر BenefitPay" : "Upgrade Subscription & Pay via BenefitPay"}</span>
+                  <span>{isAr ? "ترقية الباقة وطلب الاعتماد عبر BenefitPay" : "Upgrade Plan & Request BenefitPay Approval"}</span>
                 </CardTitle>
                 <CardDescription className="text-xs mt-1">
                   {isAr
-                    ? "اختر الباقة المناسبة لمتجرك ثم حوّل الرسوم مباشرة عبر بنفت لإتمام التفعيل والاعتماد دون انقطاع لخدمات المتجر."
-                    : "Select your preferred plan and transfer fees via BenefitPay for immediate activation."}
+                    ? "اختر الباقة المناسبة وحوّل الرسوم عبر BenefitPay ثم أرفق إشعار التحويل؛ سيقوم السوبر أدمن بالتحقق من الحوالة وتفعيل باقتك يدوياً بعد الاعتماد."
+                    : "Select your plan, transfer via BenefitPay, and upload your receipt. The super-admin will verify payment and activate your tier upon review."}
                 </CardDescription>
               </div>
-              <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20 text-xs font-bold gap-1 self-start sm:self-center">
-                <Sparkles className="h-3.5 w-3.5" />
-                <span>{isAr ? "دفع فوري معتمد" : "Instant Verification"}</span>
+              <Badge variant="outline" className="bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/30 text-xs font-bold gap-1.5 self-start sm:self-center">
+                <ShieldCheck className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
+                <span>{isAr ? "تفعيل يدوي باعتماد الإدارة" : "Admin Approval Required"}</span>
               </Badge>
             </div>
           </CardHeader>
@@ -780,6 +770,21 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
                 </label>
               )}
 
+              {/* Clarification Notice: Manual Super-Admin Approval */}
+              <div className="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-xs text-amber-900 dark:text-amber-200 flex items-start gap-2.5">
+                <ShieldAlert className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+                <div>
+                  <p className="font-bold text-amber-800 dark:text-amber-300">
+                    {isAr ? "ملاحظة هامة حول آلية التفعيل:" : "Important Activation Note:"}
+                  </p>
+                  <p className="text-[11px] text-amber-800/80 dark:text-amber-300/80 mt-0.5 leading-relaxed">
+                    {isAr
+                      ? "التفعيل ليس تلقائياً أو فورياً. بعد إرسال الإيصال، يقوم السوبر أدمن بالتحقق من استلام المبلغ في الحساب البنكي ثم تفعيل الباقة والموارد الجديدة لحساب متجرك يدوياً."
+                      : "Activation is not instant. After submitting the receipt, the super-admin verifies the bank transfer and manually activates your upgraded tier."}
+                  </p>
+                </div>
+              </div>
+
               <Button
                 type="button"
                 size="lg"
@@ -790,15 +795,15 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
                 {isUploadingReceipt ? (
                   <>
                     <Loader2 className="h-4 w-4 animate-spin" />
-                    <span>{isAr ? "جاري رفع الإيصال وتأكيد الطلب..." : "Uploading & Confirming..."}</span>
+                    <span>{isAr ? "جاري رفع الإيصال وإرساله للاعتماد..." : "Uploading & Submitting for Approval..."}</span>
                   </>
                 ) : (
                   <>
                     <PackageCheck className="h-4.5 w-4.5" />
                     <span>
                       {isAr
-                        ? `تأكيد الدفع وإرسال الإيصال (${activeInlinePrice.toFixed(3)} د.ب)`
-                        : `Confirm Payment & Submit Receipt (${activeInlinePrice.toFixed(3)} BHD)`}
+                        ? `إرسال الإيصال لاعتماد السوبر أدمن (${activeInlinePrice.toFixed(3)} د.ب)`
+                        : `Submit Receipt for Super-Admin Approval (${activeInlinePrice.toFixed(3)} BHD)`}
                     </span>
                   </>
                 )}
@@ -1197,8 +1202,8 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
                       </DialogTitle>
                       <DialogDescription className="text-xs">
                         {isAr
-                          ? "قم بتحويل المبلغ المطلوب عبر تطبيق BenefitPay ثم ارفع صورة إشعار التحويل للاعتماد الفوري."
-                          : "Transfer the amount via BenefitPay and upload your receipt screenshot for activation."}
+                          ? "قم بتحويل المبلغ المطلوب عبر تطبيق BenefitPay ثم ارفع صورة إشعار التحويل لاعتماد السوبر أدمن قبل التفعيل."
+                          : "Transfer the amount via BenefitPay and upload your receipt screenshot for super-admin approval."}
                       </DialogDescription>
                     </DialogHeader>
 
@@ -1355,6 +1360,13 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
                       )}
                     </div>
 
+                    {/* Super-admin approval note */}
+                    <p className="text-[11px] text-amber-800 dark:text-amber-300 bg-amber-500/10 border border-amber-500/20 p-2.5 rounded-xl">
+                      {isAr
+                        ? "تنويه: يتم تدقيق الإيصال واعتماد التفعيل يدوياً من السوبر أدمن فور مطابقة التحويل البنكي."
+                        : "Note: The super-admin will manually verify the receipt and activate your plan upon bank transfer confirmation."}
+                    </p>
+
                     {/* Confirmation Footer */}
                     <DialogFooter className="gap-2 sm:gap-0 pt-2">
                       <Button
@@ -1378,12 +1390,12 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
                         {isUploadingReceipt ? (
                           <>
                             <Loader2 className="h-4 w-4 animate-spin" />
-                            <span>{isAr ? "جاري الرفع والتأكيد..." : "Uploading & Confirming..."}</span>
+                            <span>{isAr ? "جاري الرفع والإرسال للاعتماد..." : "Uploading & Submitting..."}</span>
                           </>
                         ) : (
                           <>
                             <CheckCircle2 className="h-4 w-4" />
-                            <span>{isAr ? "تأكيد الدفع وإرسال الإيصال" : "Confirm Payment & Submit Receipt"}</span>
+                            <span>{isAr ? "إرسال الإيصال لاعتماد السوبر أدمن" : "Submit Receipt for Super-Admin Approval"}</span>
                           </>
                         )}
                       </Button>

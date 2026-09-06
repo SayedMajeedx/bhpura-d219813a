@@ -93,7 +93,7 @@ type Brand = {
   custom_domain: string | null;
   plan_type: "annual" | "monthly" | "lifetime" | "trial" | null;
   trial_ends_at: string | null;
-  renewal_intent: "renew" | "cancel" | null;
+  renewal_intent: "renew" | "cancel" | "upgrade" | "downgrade" | null;
   renewal_intent_recorded_at: string | null;
   support_access_enabled: boolean;
 };
@@ -478,18 +478,30 @@ function BrandsPage() {
                         {b.renewal_intent && (
                           <Badge
                             className={
-                              b.renewal_intent === "renew"
+                              b.renewal_intent === "upgrade"
+                                ? "bg-emerald-600 text-white hover:bg-emerald-700 text-[10px]"
+                                : b.renewal_intent === "renew"
                                 ? "bg-blue-600 text-white hover:bg-blue-700 text-[10px]"
+                                : b.renewal_intent === "downgrade"
+                                ? "bg-amber-600 text-white hover:bg-amber-700 text-[10px]"
                                 : "bg-rose-600 text-white hover:bg-rose-700 text-[10px]"
                             }
                           >
-                            {b.renewal_intent === "renew"
+                            {b.renewal_intent === "upgrade"
+                              ? lang === "ar"
+                                ? "طلب ترقية باقة"
+                                : "Upgrade Request"
+                              : b.renewal_intent === "renew"
                               ? lang === "ar"
                                 ? "يرغب بالتجديد"
                                 : "Wants to renew"
+                              : b.renewal_intent === "downgrade"
+                              ? lang === "ar"
+                                ? "طلب خفض باقة"
+                                : "Downgrade Request"
                               : lang === "ar"
-                                ? "لن يجدد"
-                                : "Will not renew"}
+                              ? "لن يجدد"
+                              : "Will not renew"}
                           </Badge>
                         )}
                       </div>
