@@ -47,102 +47,131 @@ export function PayPalSubscriptionButton({
     const scriptId = "paypal-sdk-script";
 
     const renderButtons = () => {
-      if (!isMounted || !containerRef.current || !window.paypal?.Buttons) return;
+      if (!isMounted || !containerRef.current) return;
+      if (!window.paypal?.Buttons) {
+        if (isMounted) {
+          setLoadError(
+            isAr
+              ? "مكونات أزرار الدفع غير متوفرة في PayPal SDK."
+              : "PayPal Buttons component is not available.",
+          );
+          setLoadingSdk(false);
+        }
+        return;
+      }
 
       containerRef.current.innerHTML = "";
 
       try {
-        window.paypal
-          .Buttons({
-            style: {
-              layout: "vertical",
-              color: "gold",
-              shape: "rect",
-              label: "pay",
-              height: 44,
-            },
-            createOrder: async () => {
-              try {
-                const res = await createPayPalSubscriptionOrder({
-                  data: {
-                    brandId,
-                    targetPlanId,
-                    billingInterval,
-                  },
-                });
-                return res.orderId;
-              } catch (err: any) {
-                const msg = err.message || "Failed to create PayPal order";
-                toast.error(isAr ? "تعذر إنشاء جلسة الدفع في PayPal" : msg);
-                throw err;
-              }
-            },
-            onApprove: async (data: { orderID: string }) => {
-              setIsProcessing(true);
-              const toastId = toast.loading(
+        const buttons = window.paypal.Buttons({
+          style: {
+            layout: "vertical",
+            color: "gold",
+            shape: "rect",
+            label: "pay",
+            height: 44,
+          },
+          createOrder: async () => {
+            try {
+              const res = await createPayPalSubscriptionOrder({
+                data: {
+                  brandId,
+                  targetPlanId,
+                  billingInterval,
+                },
+              });
+              return res.orderId;
+            } catch (err: any) {
+              const msg = err.message || "Failed to create PayPal order";
+              toast.error(isAr ? "تعذر إنشاء جلسة الدفع في PayPal" : msg);
+              throw err;
+            }
+          },
+          onApprove: async (data: { orderID: string }) => {
+            setIsProcessing(true);
+            const toastId = toast.loading(
+              isAr
+                ? "جاري تأكيد عملية الدفع وتفعيل الباقة فورياً..."
+                : "Confirming payment and activating your subscription...",
+            );
+
+            try {
+              await capturePayPalSubscriptionOrder({
+                data: {
+                  brandId,
+                  orderId: data.orderID,
+                  targetPlanId,
+                  billingInterval,
+                },
+              });
+
+              toast.success(
                 isAr
-                  ? "جاري تأكيد عملية الدفع وتفعيل الباقة فورياً..."
-                  : "Confirming payment and activating your subscription...",
+                  ? "تم استلام الدفعة وتفعيل الباقة بنجاح!"
+                  : "Payment verified and subscription activated successfully!",
+                { id: toastId },
               );
 
-              try {
-                await capturePayPalSubscriptionOrder({
-                  data: {
-                    brandId,
-                    orderId: data.orderID,
-                    targetPlanId,
-                    billingInterval,
-                  },
-                });
-
-                toast.success(
-                  isAr
-                    ? "تم استلام الدفعة وتفعيل الباقة بنجاح!"
-                    : "Payment verified and subscription activated successfully!",
-                  { id: toastId },
-                );
-
-                onSuccess();
-              } catch (err: any) {
-                toast.error(
-                  isAr
-                    ? "حدث خطأ أثناء إتمام الدفع. يرجى التواصل مع الدعم."
-                    : (err.message ?? "Capture failed. Please contact support."),
-                  { id: toastId },
-                );
-              } finally {
-                setIsProcessing(false);
-              }
-            },
-            onError: (err: any) => {
-              console.error("PayPal Smart Button error:", err);
+              onSuccess();
+            } catch (err: any) {
               toast.error(
                 isAr
-                  ? "حدث خطأ أثناء الدفع عبر PayPal. يرجى المحاولة مرة أخرى."
-                  : "PayPal checkout error. Please try again.",
+                  ? "حدث خطأ أثناء إتمام الدفع. يرجى التواصل مع الدعم."
+                  : (err.message ?? "Capture failed. Please contact support."),
+                { id: toastId },
               );
-            },
-            onCancel: () => {
-              toast.info(
-                isAr ? "تم إلغاء عملية الدفع في PayPal." : "PayPal checkout was cancelled.",
-              );
-            },
-          })
+            } finally {
+              setIsProcessing(false);
+            }
+          },
+          onError: (err: any) => {
+            console.error("PayPal Smart Button error:", err);
+            toast.error(
+              isAr
+                ? "حدث خطأ أثناء الدفع عبر PayPal. يرجى المحاولة مرة أخرى."
+                : "PayPal checkout error. Please try again.",
+            );
+          },
+          onCancel: () => {
+            toast.info(
+              isAr ? "تم إلغاء عملية الدفع في PayPal." : "PayPal checkout was cancelled.",
+            );
+          },
+        });
+
+        if (buttons.isEligible && !buttons.isEligible()) {
+          if (isMounted) {
+            setLoadError(
+              isAr
+                ? "طريقة الدفع غير مؤهلة في هذا المتصفح."
+                : "Payment method not eligible in this browser.",
+            );
+            setLoadingSdk(false);
+          }
+          return;
+        }
+
+        buttons
           .render(containerRef.current)
+          .then(() => {
+            if (isMounted) setLoadingSdk(false);
+          })
           .catch((err: any) => {
             console.error("PayPal render error:", err);
+            if (isMounted) {
+              setLoadError(err?.message || (isAr ? "تعذر عرض أزرار PayPal" : "Failed to render buttons"));
+              setLoadingSdk(false);
+            }
           });
-
-        setLoadingSdk(false);
       } catch (err: any) {
         if (isMounted) {
-          setLoadError(err.message || "Failed to initialize PayPal buttons");
+          setLoadError(err?.message || "Failed to initialize PayPal buttons");
           setLoadingSdk(false);
         }
       }
     };
 
-    if (window.paypal) {
+    if (window.paypal?.Buttons) {
       renderButtons();
       return () => {
         isMounted = false;
@@ -150,9 +179,13 @@ export function PayPalSubscriptionButton({
       };
     }
 
-    const existingScript = document.getElementById(scriptId);
+    const existingScript = document.getElementById(scriptId) as HTMLScriptElement | null;
     if (existingScript) {
-      existingScript.addEventListener("load", renderButtons);
+      if (window.paypal?.Buttons) {
+        renderButtons();
+      } else {
+        existingScript.addEventListener("load", renderButtons);
+      }
       return () => {
         isMounted = false;
         existingScript.removeEventListener("load", renderButtons);
@@ -161,19 +194,20 @@ export function PayPalSubscriptionButton({
 
     const script = document.createElement("script");
     script.id = scriptId;
-    script.src = `https://www.paypal.com/sdk/js?client-id=${PAYPAL_LIVE_CLIENT_ID}&currency=USD&intent=capture&enable-funding=card,applepay`;
+    script.src = `https://www.paypal.com/sdk/js?client-id=${PAYPAL_LIVE_CLIENT_ID}&currency=USD&intent=capture&enable-funding=card`;
     script.async = true;
 
     script.onload = () => {
       renderButtons();
     };
 
-    script.onerror = () => {
+    script.onerror = (e) => {
+      console.error("PayPal SDK script load error:", e);
       if (isMounted) {
         setLoadError(
           isAr
-            ? "تعذر تحميل مكتبة PayPal. يرجى التحقق من اتصال الإنترنت."
-            : "Failed to load PayPal SDK.",
+            ? "تعذر تحميل مكتبة PayPal. يرجى التحقق من اتصال الإنترنت أو إيقاف مانع الإعلانات (AdBlock)."
+            : "Failed to load PayPal SDK. Please check internet connection or disable ad blockers.",
         );
         setLoadingSdk(false);
       }
@@ -245,8 +279,8 @@ export function PayPalSubscriptionButton({
 
       {/* Error state */}
       {loadError && (
-        <div className="p-3 text-xs text-destructive bg-destructive/10 border border-destructive/20 rounded-xl">
-          {loadError}
+        <div className="p-3 text-xs text-destructive bg-destructive/10 border border-destructive/20 rounded-xl flex items-center justify-between gap-2">
+          <span>{loadError}</span>
         </div>
       )}
 
@@ -254,7 +288,6 @@ export function PayPalSubscriptionButton({
       <div
         ref={containerRef}
         className="w-full min-h-[44px] transition-all"
-        style={{ display: loadingSdk ? "none" : "block" }}
       />
     </div>
   );
