@@ -14,6 +14,7 @@ import {
   Layers,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { getStorefrontUrl } from "@/lib/storefront-url";
 import { OsNavItem } from "./os-nav-item";
 import { OsBrandSwitcher, type BrandRow } from "./os-brand-switcher";
 import { OsAppsHubModal } from "./os-apps-hub-modal";
@@ -239,13 +240,7 @@ export function OsSidebar({
         {activeSlug && !isCourier && !collapsed && (
           <div className="px-3 pt-3">
             <a
-              href={
-                typeof window !== "undefined" &&
-                window.location.hostname.toLowerCase() !== "localhost" &&
-                window.location.hostname.toLowerCase() !== "127.0.0.1"
-                  ? `https://${activeSlug}.boutq.store`
-                  : `/${activeSlug}`
-              }
+              href={getStorefrontUrl(activeSlug)}
               target="_blank"
               rel="noopener noreferrer"
               className="w-full flex items-center justify-center gap-2 px-3 py-2 text-xs font-semibold text-foreground/90 bg-muted/40 border border-[var(--os-border)] rounded-xl hover:bg-muted/80 transition-all shadow-2xs"

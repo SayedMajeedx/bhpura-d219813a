@@ -38,6 +38,7 @@ import { getOrderCustomerName } from "@/lib/order-customer-snapshot";
 import { getOrderWorkflow } from "@/lib/order-workflow";
 import { isLowStock } from "@/lib/inventory-health";
 import { OsStatusPill } from "@/components/os/os-status-pill";
+import { getStorefrontUrl } from "@/lib/storefront-url";
 
 import { DashboardCommandHeader } from "@/components/dashboard/DashboardCommandHeader";
 import {
@@ -994,7 +995,7 @@ function Dashboard() {
                     variant="outline"
                     className="w-full font-bold text-xs rounded-xl border-border hover:bg-secondary"
                   >
-                    <a href={`/b/${slug}`} target="_blank" rel="noopener noreferrer">
+                    <a href={getStorefrontUrl(brand)} target="_blank" rel="noopener noreferrer">
                       <ExternalLink className="h-3.5 w-3.5 me-1.5 text-primary" />
                       {isAr ? "معاينة المتجر العام ↗" : "Preview Storefront ↗"}
                     </a>

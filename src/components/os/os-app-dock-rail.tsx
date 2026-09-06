@@ -2,6 +2,7 @@ import * as React from "react";
 import { Link } from "@tanstack/react-router";
 import { Store, PanelLeftOpen, Boxes } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { getStorefrontUrl } from "@/lib/storefront-url";
 import { OsBrandSwitcher, type BrandRow } from "./os-brand-switcher";
 import { OsAppsHubModal } from "./os-apps-hub-modal";
 import { type AdminNavItemConfig } from "@/config/admin-navigation";
@@ -145,13 +146,7 @@ export function OsAppDockRail({
           {/* View Storefront Link */}
           {activeSlug && !isCourier && (
             <a
-              href={
-                typeof window !== "undefined" &&
-                window.location.hostname.toLowerCase() !== "localhost" &&
-                window.location.hostname.toLowerCase() !== "127.0.0.1"
-                  ? `https://${activeSlug}.boutq.store`
-                  : `/${activeSlug}`
-              }
+              href={getStorefrontUrl(activeSlug)}
               target="_blank"
               rel="noopener noreferrer"
               title={lang === "ar" ? "عرض المتجر" : "View Storefront"}

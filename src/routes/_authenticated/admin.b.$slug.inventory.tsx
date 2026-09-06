@@ -66,6 +66,7 @@ import { ActivityLogList } from "@/components/activity-log-list";
 import { PrintLabelButton, printLabels, type LabelData } from "@/components/barcode-label";
 import { useProfile } from "@/lib/profile-context";
 import { useBrand } from "@/lib/brand-context";
+import { getStorefrontUrl } from "@/lib/storefront-url";
 import { useRealtimeInvalidate } from "@/hooks/use-realtime-invalidate";
 import { queryKeys } from "@/lib/query-keys";
 import { parseCSV } from "@/lib/csv-parser";
@@ -1285,12 +1286,12 @@ function ProductsSection({
   };
 
   const handlePreviewProduct = (product: Product) => {
-    const url = `/${brand.slug}/p/${product.id}`;
+    const url = getStorefrontUrl(brand, `/product/${product.id}`);
     window.open(url, "_blank", "noopener,noreferrer");
   };
 
   const handleShareProduct = async (product: Product) => {
-    const storeUrl = `${window.location.origin}/${brand.slug}/p/${product.id}`;
+    const storeUrl = getStorefrontUrl(brand, `/product/${product.id}`);
     const title = isAr ? product.name_ar || product.name : product.name_en || product.name;
     if (navigator.share) {
       try {

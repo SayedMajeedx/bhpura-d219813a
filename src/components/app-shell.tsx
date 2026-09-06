@@ -16,6 +16,7 @@ import { OsAppWindow } from "@/components/os/os-app-window";
 import { OsMobileNavigation } from "@/components/os/os-mobile-navigation";
 import { OsRecentHistoryBar } from "@/components/os/os-recent-history-bar";
 import { cn } from "@/lib/utils";
+import { getStorefrontUrl } from "@/lib/storefront-url";
 import {
   customFontFaces,
   defaultAdminTypography,
@@ -537,13 +538,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 <div className="flex items-center gap-1.5">
                   {activeSlug && !isCourier && (
                     <a
-                      href={
-                        typeof window !== "undefined" &&
-                        window.location.hostname.toLowerCase() !== "localhost" &&
-                        window.location.hostname.toLowerCase() !== "127.0.0.1"
-                          ? `https://${activeSlug}.boutq.store`
-                          : `/${activeSlug}`
-                      }
+                      href={getStorefrontUrl(activeSlug)}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="inline-flex items-center gap-1.5 h-6.5 px-2 text-xs font-semibold text-primary bg-primary/10 hover:bg-primary/20 border border-primary/20 rounded-md transition-colors"

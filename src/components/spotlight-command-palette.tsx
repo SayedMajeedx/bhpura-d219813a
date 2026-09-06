@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useI18n } from "@/lib/i18n";
 import { formatMoney } from "@/lib/format";
 import { useBrandOptional } from "@/lib/brand-context";
+import { getStorefrontUrl } from "@/lib/storefront-url";
 import {
   CommandDialog,
   CommandInput,
@@ -396,14 +397,7 @@ export function SpotlightCommandPalette({
             <CommandItem
               onSelect={() =>
                 handleSelect(() =>
-                  window.open(
-                    typeof window !== "undefined" &&
-                      window.location.hostname.toLowerCase() !== "localhost" &&
-                      window.location.hostname.toLowerCase() !== "127.0.0.1"
-                      ? `https://${activeSlug}.boutq.store`
-                      : `/${activeSlug}`,
-                    "_blank",
-                  ),
+                  window.open(getStorefrontUrl(activeSlug), "_blank"),
                 )
               }
               className="flex items-center gap-2 cursor-pointer"

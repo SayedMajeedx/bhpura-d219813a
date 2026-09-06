@@ -142,7 +142,7 @@ export const TrialExpiredPaywall: React.FC<TrialExpiredPaywallProps> = ({
           </div>
           <div>
             <h1 className="text-base font-bold text-foreground leading-none">{brandName}</h1>
-            <p className="text-xs text-muted-foreground mt-0.5">boutq.store/{brand.slug}</p>
+            <p className="text-xs text-muted-foreground mt-0.5">{brand.slug}.boutq.store</p>
           </div>
         </div>
 

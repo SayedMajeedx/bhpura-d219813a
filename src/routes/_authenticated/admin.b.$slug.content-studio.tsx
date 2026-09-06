@@ -752,7 +752,7 @@ ${desc}${detailsBlock}
                   <Instagram className="size-3" /> {instagram || businessName}
                 </span>
                 <span className="flex items-center gap-1.5 rounded-full bg-black/35 px-2.5 py-1.5 shadow-sm backdrop-blur-sm">
-                  <Phone className="size-3" /> {phone || `boutq.store/${slug}`}
+                  <Phone className="size-3" /> {phone || `${slug}.boutq.store`}
                 </span>
               </div>
             </div>
