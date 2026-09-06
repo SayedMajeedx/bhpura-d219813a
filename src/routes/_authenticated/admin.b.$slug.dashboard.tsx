@@ -1018,8 +1018,8 @@ function Dashboard() {
                     </h4>
                     <p className="text-xs text-muted-foreground leading-relaxed">
                       {isAr
-                        ? "سجّل طلباً فورياً من نقطة البيع أو استقبل طلباً حقيقياً لتشغيل لوحة الأرباح والمخزون."
-                        : "Record a sale via POS or wait for a live order to activate financial telemetry."}
+                        ? "استقبل أول طلب من متجرك الإلكتروني، أو سجّل طلباً يدوياً لتشغيل لوحة الأرباح والمخزون."
+                        : "Receive your first online order or create a manual order to activate financial metrics."}
                     </p>
                   </div>
                   <Button
@@ -1028,9 +1028,9 @@ function Dashboard() {
                     variant="secondary"
                     className="w-full font-bold text-xs rounded-xl hover:bg-secondary/80"
                   >
-                    <Link to="/admin/b/$slug/pos" params={{ slug }}>
+                    <Link to="/admin/b/$slug/orders" params={{ slug }}>
                       <ReceiptText className="h-3.5 w-3.5 me-1.5 text-primary" />
-                      {isAr ? "فتح نقطة البيع (POS)" : "Open POS Terminal"}
+                      {isAr ? "الطلبات والفواتير" : "Orders & Invoices"}
                     </Link>
                   </Button>
                 </div>
