@@ -111,6 +111,7 @@ import { ListPagination } from "@/components/list-pagination";
 import { isLowStock, isOutOfStock } from "@/lib/inventory-health";
 import { RoutePendingSkeleton } from "@/components/os/route-pending-skeleton";
 import { OsEmptyState } from "@/components/os/os-empty-state";
+import { useEntitlements } from "@/lib/saas-billing/use-entitlements";
 import {
   FIT_PROFILE_FIELDS,
   matchCustomFieldToMeasurement,
@@ -238,6 +239,7 @@ function Inventory() {
   const qc = useQueryClient();
   const brand = useBrand();
   const brandId = brand.id;
+  const { entitlements } = useEntitlements({ brandId });
   const [tab, setTab] = useState<"products" | "customizations" | "packaging">("products");
 
   const [productToDelete, setProductToDelete] = useState<string | null>(null);
@@ -1223,6 +1225,20 @@ function ProductsSection({
 
   const handleDuplicateProduct = async (productToDuplicate: Product) => {
     try {
+      const productLimit = entitlements?.limits?.["products.limit"];
+      const isUnlimited = productLimit === -1;
+      if (!isUnlimited && typeof productLimit === "number" && productLimit > 0) {
+        const currentCount = products.data?.length ?? 0;
+        if (currentCount >= productLimit) {
+          toast.error(
+            isAr
+              ? `لقد بلغت الحد الأقصى للمنتجات المسموح بها في باقتك (${productLimit} منتج). يرجى ترقية باقتك لتكرار المنتجات.`
+              : `You have reached the products limit for your plan (${productLimit} products). Please upgrade your plan to duplicate products.`,
+          );
+          return;
+        }
+      }
+
       const copySuffixAr = " (نسخة)";
       const copySuffixEn = " (Copy)";
       const newName = `${productToDuplicate.name}${isAr ? copySuffixAr : copySuffixEn}`;
@@ -2270,6 +2286,7 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
   const { lang } = useI18n();
   const isAr = lang === "ar";
   const brand = useBrand();
+  const { entitlements } = useEntitlements({ brandId: brand.id });
   const initialForm = {
     name_ar: product?.name_ar ?? "",
     name_en: product?.name_en ?? product?.name ?? "",
@@ -2545,6 +2562,23 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
         .not("original_price", "is", null);
       if (saleOriginalError) return toast.error(saleOriginalError.message);
     } else {
+      const productLimit = entitlements?.limits?.["products.limit"];
+      const isUnlimited = productLimit === -1;
+      if (!isUnlimited && typeof productLimit === "number" && productLimit > 0) {
+        const { count: currentProductCount } = await supabase
+          .from("products")
+          .select("id", { count: "exact", head: true })
+          .eq("brand_id", brand.id);
+
+        if ((currentProductCount || 0) >= productLimit) {
+          return toast.error(
+            isAr
+              ? `لقد بلغت الحد الأقصى للمنتجات المسموح بها في باقتك (${productLimit} منتج). يرجى ترقية باقتك لإضافة المزيد.`
+              : `You have reached the products limit for your plan (${productLimit} products). Please upgrade your plan to add more.`,
+          );
+        }
+      }
+
       const payload = {
         user_id: user.id,
         brand_id: brand.id,

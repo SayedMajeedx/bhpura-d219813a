@@ -114,13 +114,20 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
     activeAddons = [],
     availableAddons = [],
     allPlans = [],
+    usageSummary = {} as any,
+    brand = {} as any,
   } = subData;
 
   // Derive status
   const isFounder = currentPlan?.code === "lifetime_founder";
-  const isTrial = subscription?.status === "trialing";
+  const isTrial = currentPlan?.code === "trial" || subscription?.status === "trialing" || subscription?.billing_interval === "trial";
   const isInGrace = subscription?.status === "grace_period";
   const isCancelled = subscription?.status === "cancelled" || subscription?.cancel_at_period_end;
+
+  const trialEndsAtDate = subscription?.trial_ends_at || brand?.trial_ends_at;
+  const trialDaysRemaining = trialEndsAtDate
+    ? Math.max(0, Math.ceil((new Date(trialEndsAtDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
+    : null;
 
   const handleAddonAction = async () => {
     if (!selectedAddonForAction) return;
@@ -201,9 +208,15 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
               <div className="flex items-center gap-2">
                 <Badge
                   variant="outline"
-                  className={currentPlan?.badge_color || "bg-primary/10 text-primary border-primary/20 text-xs font-bold"}
+                  className={
+                    isTrial
+                      ? "bg-sky-500/10 text-sky-600 border-sky-500/20 text-xs font-bold"
+                      : currentPlan?.badge_color || "bg-primary/10 text-primary border-primary/20 text-xs font-bold"
+                  }
                 >
-                  {(currentPlan?.code || "PLAN").toUpperCase()}
+                  {isTrial
+                    ? (isAr ? "باقة تجريبية (3 أيام)" : "3-DAY TRIAL")
+                    : (currentPlan?.code || "PLAN").toUpperCase()}
                 </Badge>
                 {isFounder && (
                   <Badge variant="outline" className="bg-amber-500/10 text-amber-600 border-amber-500/20 text-xs font-bold gap-1">
@@ -215,24 +228,32 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
                   variant="outline"
                   className={
                     subscription?.status === "active"
-                      ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20 text-xs"
-                      : subscription?.status === "trialing"
-                        ? "bg-sky-500/10 text-sky-600 border-sky-500/20 text-xs"
-                        : "bg-destructive/10 text-destructive border-destructive/20 text-xs"
+                      ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20 text-xs font-semibold"
+                      : subscription?.status === "trialing" || isTrial
+                        ? "bg-sky-500/10 text-sky-600 border-sky-500/20 text-xs font-semibold"
+                        : "bg-destructive/10 text-destructive border-destructive/20 text-xs font-semibold"
                   }
                 >
-                  {(subscription?.status || "ACTIVE").toUpperCase()}
+                  {subscription?.status === "active"
+                    ? (isAr ? "نشط" : "ACTIVE")
+                    : subscription?.status === "trialing" || isTrial
+                      ? (isAr ? "فترة تجريبية نشطة" : "ACTIVE TRIAL")
+                      : (subscription?.status || "ACTIVE").toUpperCase()}
                 </Badge>
               </div>
 
               <CardTitle className="text-2xl font-extrabold text-foreground mt-2">
-                {isAr ? currentPlan?.name_ar || currentPlan?.name_en : currentPlan?.name_en || currentPlan?.name_ar}
+                {isAr
+                  ? (currentPlan?.name_ar || (isTrial ? "الفترة التجريبية (3 أيام)" : "الخطة الأساسية"))
+                  : (currentPlan?.name_en || (isTrial ? "3-Day Free Trial" : "Base Plan"))}
                 <span className="text-xs font-normal text-muted-foreground ms-2">
                   (v{currentVersion?.version_number || 1})
                 </span>
               </CardTitle>
               <CardDescription className="text-xs max-w-xl">
-                {isAr ? currentPlan?.description_ar : currentPlan?.description_en}
+                {isAr
+                  ? (currentPlan?.description_ar || (isTrial ? "تجربة كاملة ومجانية لكافة مزايا وموارد المتجر لمدة 3 أيام." : ""))
+                  : (currentPlan?.description_en || (isTrial ? "Full-featured 3-day trial of all store capabilities." : ""))}
               </CardDescription>
             </div>
 
@@ -258,23 +279,31 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
               <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground block">
                 {isAr ? "فترة الفوترة" : "Billing Cycle"}
               </span>
-              <span className="text-sm font-bold text-foreground capitalize">
-                {subscription?.billing_interval === "annual" ? (isAr ? "سنوي" : "Annual") : (isAr ? "شهري" : "Monthly")}
+              <span className="text-sm font-bold text-foreground">
+                {isTrial
+                  ? (isAr ? "فترة تجريبية (3 أيام)" : "Free Trial (3 Days)")
+                  : subscription?.billing_interval === "annual"
+                    ? (isAr ? "سنوي" : "Annual")
+                    : (isAr ? "شهري" : "Monthly")}
               </span>
             </div>
 
             <div>
               <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground block">
-                {isAr ? "تاريخ التجديد القادم" : "Next Renewal Date"}
+                {isTrial
+                  ? (isAr ? "تاريخ انتهاء التجربة" : "Trial Expiry Date")
+                  : (isAr ? "تاريخ التجديد القادم" : "Next Renewal Date")}
               </span>
               <span className="text-sm font-bold text-foreground font-mono">
-                {subscription?.current_period_end
-                  ? new Date(subscription.current_period_end).toLocaleDateString()
-                  : isFounder
-                    ? isAr
-                      ? "دائم"
-                      : "Never"
-                    : "-"}
+                {isTrial && trialEndsAtDate
+                  ? `${new Date(trialEndsAtDate).toLocaleDateString(isAr ? "ar-BH" : "en-US", { year: "numeric", month: "short", day: "numeric" })} ${
+                      trialDaysRemaining !== null ? `(${isAr ? `متبقي ${trialDaysRemaining} أيام` : `${trialDaysRemaining}d left`})` : ""
+                    }`
+                  : subscription?.current_period_end
+                    ? new Date(subscription.current_period_end).toLocaleDateString(isAr ? "ar-BH" : "en-US", { year: "numeric", month: "short", day: "numeric" })
+                    : isFounder
+                      ? (isAr ? "دائم" : "Never")
+                      : "-"}
               </span>
             </div>
 
@@ -289,14 +318,46 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
 
             <div>
               <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground block">
-                {isAr ? "حماية الأسعار" : "Grandfathering"}
+                {isTrial
+                  ? (isAr ? "نوع الحساب" : "Account Mode")
+                  : (isAr ? "حماية الأسعار" : "Grandfathering")}
               </span>
-              <span className="text-sm font-bold text-emerald-600 flex items-center gap-1">
-                <ShieldCheck className="h-3.5 w-3.5" />
-                <span>{isAr ? "سعر محمي" : "Locked v" + (currentVersion?.version_number || 1)}</span>
-              </span>
+              {isTrial ? (
+                <span className="text-sm font-bold text-sky-600 dark:text-sky-400 flex items-center gap-1">
+                  <Sparkles className="h-3.5 w-3.5" />
+                  <span>{isAr ? "تجربة كاملة المزايا" : "Full Access Trial"}</span>
+                </span>
+              ) : (
+                <span className="text-sm font-bold text-emerald-600 flex items-center gap-1">
+                  <ShieldCheck className="h-3.5 w-3.5" />
+                  <span>{isAr ? "سعر محمي" : "Locked v" + (currentVersion?.version_number || 1)}</span>
+                </span>
+              )}
             </div>
           </div>
+
+          {/* Active Trial Notice Banner */}
+          {isTrial && (
+            <div className="mt-4 p-3.5 rounded-2xl bg-sky-500/10 border border-sky-500/20 text-xs text-sky-900 dark:text-sky-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-2.5">
+                <Sparkles className="h-4 w-4 shrink-0 text-sky-600 dark:text-sky-400" />
+                <span>
+                  {isAr
+                    ? `أنت حالياً في الفترة التجريبية المجانية (${trialDaysRemaining !== null ? `متبقي ${trialDaysRemaining} أيام` : "3 أيام"}). جميع مزايا المنصة متاحة لك بالكامل.`
+                    : `You are currently in your free trial (${trialDaysRemaining !== null ? `${trialDaysRemaining} days remaining` : "3 days"}). All platform features are unlocked.`}
+                </span>
+              </div>
+              <Button
+                type="button"
+                size="sm"
+                variant="default"
+                onClick={() => setIsUpgradeModalOpen(true)}
+                className="shrink-0 text-xs font-bold"
+              >
+                {isAr ? "ترقية الخطة الآن" : "Upgrade Plan Now"}
+              </Button>
+            </div>
+          )}
 
           {/* Grace Period or Cancellation Warning */}
           {isInGrace && (
@@ -342,9 +403,9 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
           <UsageMeterBar
             labelAr="عدد المنتجات في الكتالوج"
             labelEn="Catalog Products Limit"
-            currentUsage={usageSnapshots["products.limit"]?.current_usage || 0}
-            limitValue={entitlements?.limits["products.limit"] ?? 100}
-            isUnlimited={entitlements?.limits["products.limit"] === -1}
+            currentUsage={usageSummary.products?.current_usage ?? (usageSnapshots["products.limit"]?.current_usage || 0)}
+            limitValue={usageSummary.products?.limit_value ?? (entitlements?.limits["products.limit"] ?? 25)}
+            isUnlimited={usageSummary.products?.is_unlimited ?? (entitlements?.limits["products.limit"] === -1)}
             unitAr="منتج"
             unitEn="items"
           />
@@ -353,9 +414,9 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
           <UsageMeterBar
             labelAr="طلبات المتجر الشهرية"
             labelEn="Monthly Orders Quota"
-            currentUsage={usageSnapshots["orders.monthly_limit"]?.current_usage || 0}
-            limitValue={entitlements?.limits["orders.monthly_limit"] ?? 200}
-            isUnlimited={entitlements?.limits["orders.monthly_limit"] === -1}
+            currentUsage={usageSummary.orders?.current_usage ?? (usageSnapshots["orders.monthly_limit"]?.current_usage || 0)}
+            limitValue={usageSummary.orders?.limit_value ?? (entitlements?.limits["orders.monthly_limit"] ?? 50)}
+            isUnlimited={usageSummary.orders?.is_unlimited ?? (entitlements?.limits["orders.monthly_limit"] === -1)}
             unitAr="طلب"
             unitEn="orders"
           />
@@ -364,9 +425,9 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
           <UsageMeterBar
             labelAr="استدعاءات الـ API الشهرية"
             labelEn="Monthly API Requests"
-            currentUsage={usageSnapshots["api.monthly_requests"]?.current_usage || 0}
-            limitValue={entitlements?.limits["api.monthly_requests"] ?? 10000}
-            isUnlimited={entitlements?.limits["api.monthly_requests"] === -1}
+            currentUsage={usageSummary.api_requests?.current_usage ?? (usageSnapshots["api.monthly_requests"]?.current_usage || 0)}
+            limitValue={usageSummary.api_requests?.limit_value ?? (entitlements?.limits["api.monthly_requests"] ?? 2500)}
+            isUnlimited={usageSummary.api_requests?.is_unlimited ?? (entitlements?.limits["api.monthly_requests"] === -1)}
             unitAr="استدعاء"
             unitEn="reqs"
           />
@@ -375,9 +436,9 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
           <UsageMeterBar
             labelAr="رسائل استرجاع السلات المتروكة"
             labelEn="Abandoned Cart Messages"
-            currentUsage={usageSnapshots["abandoned_carts.monthly_messages"]?.current_usage || 0}
-            limitValue={entitlements?.limits["abandoned_carts.monthly_messages"] ?? 100}
-            isUnlimited={entitlements?.limits["abandoned_carts.monthly_messages"] === -1}
+            currentUsage={usageSummary.abandoned_cart_messages?.current_usage ?? (usageSnapshots["abandoned_carts.monthly_messages"]?.current_usage || 0)}
+            limitValue={usageSummary.abandoned_cart_messages?.limit_value ?? (entitlements?.limits["abandoned_carts.monthly_messages"] ?? 50)}
+            isUnlimited={usageSummary.abandoned_cart_messages?.is_unlimited ?? (entitlements?.limits["abandoned_carts.monthly_messages"] === -1)}
             unitAr="رسالة"
             unitEn="msgs"
           />
@@ -386,9 +447,9 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
           <UsageMeterBar
             labelAr="أعضاء فريق العمل والموظفين"
             labelEn="Team Members Limit"
-            currentUsage={usageSnapshots["team.members_limit"]?.current_usage || 1}
-            limitValue={entitlements?.limits["team.members_limit"] ?? 2}
-            isUnlimited={entitlements?.limits["team.members_limit"] === -1}
+            currentUsage={usageSummary.team_members?.current_usage ?? (usageSnapshots["team.members_limit"]?.current_usage || 1)}
+            limitValue={usageSummary.team_members?.limit_value ?? (entitlements?.limits["team.members_limit"] ?? 2)}
+            isUnlimited={usageSummary.team_members?.is_unlimited ?? (entitlements?.limits["team.members_limit"] === -1)}
             unitAr="حساب"
             unitEn="members"
           />
@@ -397,9 +458,9 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
           <UsageMeterBar
             labelAr="إرساليات الويب هوك الشهرية"
             labelEn="Monthly Webhook Deliveries"
-            currentUsage={usageSnapshots["webhooks.monthly_deliveries"]?.current_usage || 0}
-            limitValue={entitlements?.limits["webhooks.monthly_deliveries"] ?? 5000}
-            isUnlimited={entitlements?.limits["webhooks.monthly_deliveries"] === -1}
+            currentUsage={usageSummary.webhooks?.current_usage ?? (usageSnapshots["webhooks.monthly_deliveries"]?.current_usage || 0)}
+            limitValue={usageSummary.webhooks?.limit_value ?? (entitlements?.limits["webhooks.monthly_deliveries"] ?? 5000)}
+            isUnlimited={usageSummary.webhooks?.is_unlimited ?? (entitlements?.limits["webhooks.monthly_deliveries"] === -1)}
             unitAr="إرسالية"
             unitEn="events"
           />
@@ -591,6 +652,10 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
                 .filter((p) => p.code !== "lifetime_founder" && p.code !== "trial")
                 .map((plan) => {
                   const isCurrent = plan.id === currentPlan.id;
+                  const currentVer = (plan as any).versions?.find((v: any) => v.is_current) || (plan as any).versions?.[0];
+                  const monthlyPrice = currentVer?.price_monthly;
+                  const annualPrice = currentVer?.price_annual;
+                  const currency = currentVer?.currency || "BHD";
 
                   return (
                     <div
@@ -611,6 +676,11 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
                               {isAr ? "خطتك الحالية" : "Current"}
                             </Badge>
                           )}
+                          {currentVer && (
+                            <span className="text-[10px] text-muted-foreground font-mono">
+                              v{currentVer.version_number}
+                            </span>
+                          )}
                         </div>
                         <h4 className="text-base font-bold text-foreground">
                           {isAr ? plan.name_ar : plan.name_en}
@@ -622,7 +692,23 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
 
                       <div className="pt-2 border-t border-border/50 space-y-2">
                         <div className="font-mono text-sm font-bold text-foreground">
-                          {plan.code === "enterprise" ? (isAr ? "اتفاقية خاصة" : "Custom") : "15 - 45 BHD/m"}
+                          {plan.code === "enterprise" ? (
+                            <span>{isAr ? "اتفاقية خاصة" : "Custom Enterprise"}</span>
+                          ) : currentVer ? (
+                            <div className="space-y-0.5">
+                              <div className="flex items-baseline gap-1">
+                                <span className="text-lg font-black text-foreground">{monthlyPrice}</span>
+                                <span className="text-xs text-muted-foreground font-normal">{currency} / {isAr ? "شهرياً" : "mo"}</span>
+                              </div>
+                              {Number(annualPrice) > 0 && (
+                                <div className="text-[11px] text-muted-foreground font-normal">
+                                  {annualPrice} {currency} {isAr ? "سنوياً (توفير إضافي)" : "annually"}
+                                </div>
+                              )}
+                            </div>
+                          ) : (
+                            <span>{isAr ? "حسب العرض" : "On Request"}</span>
+                          )}
                         </div>
                         <Button
                           type="button"

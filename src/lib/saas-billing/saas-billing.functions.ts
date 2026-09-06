@@ -735,10 +735,11 @@ export const getBrandSubscriptionDetails = createServerFn({ method: "GET" })
     await requireBrandAccess(context, data.brandId);
     const db = context.supabase as any;
 
-    // Fetch subscription record
+    // Fetch subscription record with explicit relation keys to prevent PGRST201 ambiguity
+    const subQuerySelect = "*, saas_plans:saas_plans!brand_subscriptions_plan_id_fkey(*), saas_plan_versions:saas_plan_versions!brand_subscriptions_plan_version_id_fkey(*)";
     let { data: subscription } = await db
       .from("brand_subscriptions")
-      .select("*, saas_plans(*), saas_plan_versions(*)")
+      .select(subQuerySelect)
       .eq("brand_id", data.brandId)
       .maybeSingle();
 
@@ -747,7 +748,7 @@ export const getBrandSubscriptionDetails = createServerFn({ method: "GET" })
       await db.rpc("rpc_sync_legacy_brands_to_subscriptions");
       const { data: syncedSub } = await db
         .from("brand_subscriptions")
-        .select("*, saas_plans(*), saas_plan_versions(*)")
+        .select(subQuerySelect)
         .eq("brand_id", data.brandId)
         .maybeSingle();
       subscription = syncedSub;
@@ -785,10 +786,21 @@ export const getBrandSubscriptionDetails = createServerFn({ method: "GET" })
       .select("*")
       .eq("is_active", true);
 
-    // Fetch all public plans
+    // Fetch all public plans with their current version details dynamically configured by super admin
     const { data: allPlans } = await db
       .from("saas_plans")
-      .select("*")
+      .select(`
+        *,
+        versions:saas_plan_versions(
+          id,
+          version_number,
+          currency,
+          price_monthly,
+          price_annual,
+          is_current,
+          change_summary
+        )
+      `)
       .eq("is_active", true)
       .order("sort_order", { ascending: true });
 

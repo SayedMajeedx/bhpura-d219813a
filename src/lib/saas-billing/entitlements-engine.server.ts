@@ -23,7 +23,9 @@ const DEFAULT_FALLBACK_ENTITLEMENTS: Partial<Record<SaaSFeatureKey, EffectiveEnt
   "loyalty.enabled": { enabled: false, limit_value: 0, is_unlimited: false, source: "plan_version" },
   "abandoned_carts.enabled": { enabled: false, limit_value: 0, is_unlimited: false, source: "plan_version" },
   "api.enabled": { enabled: false, limit_value: 0, is_unlimited: false, source: "plan_version" },
+  "api.monthly_requests": { enabled: true, limit_value: 2500, is_unlimited: false, source: "plan_version" },
   "webhooks.enabled": { enabled: false, limit_value: 0, is_unlimited: false, source: "plan_version" },
+  "webhooks.monthly_deliveries": { enabled: true, limit_value: 5000, is_unlimited: false, source: "plan_version" },
   "custom_domain.enabled": { enabled: false, limit_value: 0, is_unlimited: false, source: "plan_version" },
   "white_label.enabled": { enabled: false, limit_value: 0, is_unlimited: false, source: "plan_version" },
   "mobile_factory.enabled": { enabled: false, limit_value: 0, is_unlimited: false, source: "plan_version" },
@@ -205,12 +207,13 @@ export async function getBrandUsageSummary(
     storage_bytes: { entKey: "storage.bytes_limit", labelEn: "Storage (GB)", labelAr: "المساحة السحابية" },
     api_requests: { entKey: "api.monthly_requests", labelEn: "API Requests", labelAr: "استدعاءات API" },
     abandoned_cart_messages: { entKey: "abandoned_carts.monthly_messages", labelEn: "Abandoned Cart Messages", labelAr: "رسائل السلات المتروكة" },
+    webhooks: { entKey: "webhooks.monthly_deliveries", labelEn: "Webhook Deliveries", labelAr: "إرساليات الويب هوك" },
     returns: { entKey: "returns.monthly_limit", labelEn: "Returns", labelAr: "طلبات الإرجاع" },
   };
 
   const result: Record<string, { current_usage: number; limit_value: number; is_unlimited: boolean; percent: number; warning_triggered: string | null }> = {};
 
-  // For products, compute live count if snapshot not yet recorded
+  // For products, orders, and team members, compute live count if snapshot not yet recorded
   for (const [metricKey, info] of Object.entries(metricMapping)) {
     const ent = entitlements[info.entKey];
     const isUnlimited = Boolean(ent?.is_unlimited);
@@ -223,6 +226,10 @@ export async function getBrandUsageSummary(
     } else if (metricKey === "products") {
       // Live count fallback
       const { count } = await supabase.from("products").select("id", { count: "exact", head: true }).eq("brand_id", brandId);
+      currentUsage = count || 0;
+    } else if (metricKey === "orders") {
+      // Live count fallback for current store orders
+      const { count } = await supabase.from("orders").select("id", { count: "exact", head: true }).eq("brand_id", brandId);
       currentUsage = count || 0;
     } else if (metricKey === "team_members") {
       const { count } = await supabase.from("profiles").select("id", { count: "exact", head: true }).eq("brand_id", brandId);

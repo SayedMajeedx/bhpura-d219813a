@@ -53,6 +53,7 @@ import type { Profile, UserRole, UserStatus } from "@/lib/profile-context";
 import { TeamCommandHeader } from "@/components/team/TeamCommandHeader";
 import { TeamScopeSwitcher, type TeamStatusScope } from "@/components/team/TeamScopeSwitcher";
 import { queryKeys } from "@/lib/query-keys";
+import { useEntitlements } from "@/lib/saas-billing/use-entitlements";
 
 export const Route = createFileRoute("/_authenticated/admin/b/$slug/team")({
   beforeLoad: async ({ context: { queryClient }, params }) => {
@@ -151,6 +152,7 @@ function TeamManagement() {
   const qc = useQueryClient();
   const { profile: currentUser, isSuperAdmin } = useProfile();
   const brand = useBrand();
+  const { entitlements } = useEntitlements({ brandId: brand.id });
 
   const [addOpen, setAddOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
@@ -190,6 +192,18 @@ function TeamManagement() {
   const handleAdd = async () => {
     if (!form.email.trim()) {
       toast.error(isAr ? "البريد الإلكتروني مطلوب" : "Email is required");
+      return;
+    }
+
+    const memberLimit = entitlements?.limits?.["team.members_limit"];
+    const isUnlimited = memberLimit === -1;
+    const currentMemberCount = (staffQ.data || []).length;
+    if (!isUnlimited && typeof memberLimit === "number" && memberLimit > 0 && currentMemberCount >= memberLimit) {
+      toast.error(
+        isAr
+          ? `لقد وصلت إلى الحد الأقصى لعدد أعضاء الفريق في باقتك الحالية (${memberLimit} أعضاء). يرجى ترقية باقتك لإضافة المزيد.`
+          : `You have reached the team members limit for your plan (${memberLimit} members). Please upgrade your plan to add more.`,
+      );
       return;
     }
 
