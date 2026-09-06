@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import {
   Package,
   Users,
@@ -22,6 +23,7 @@ import {
   ExternalLink,
   ChevronRight,
   Filter,
+  Sparkles,
 } from "lucide-react";
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip } from "recharts";
 import { formatDate, formatMoney } from "@/lib/format";
@@ -787,6 +789,10 @@ function Dashboard() {
     );
   }
 
+  // Sales & Product status for guided onboarding
+  const hasSales = financials.ordersCurrent > 0 || validRevenueOrders.length > 0;
+  const hasProducts = (productsQ.data?.length ?? 0) > 0;
+
   // Primary Financial KPIs
   const primaryKpis = [
     ...(canViewFinancials
@@ -860,6 +866,177 @@ function Dashboard() {
       {/* Dynamic View 1: Financial Telemetry (Default / "financials") */}
       {activeScope === "financials" && (
         <div className="space-y-4 animate-in fade-in duration-200">
+          {/* Guided Empty State Checklist for stores with 0 sales */}
+          {!hasSales && (
+            <Card className="p-5 sm:p-6 border-2 border-primary/25 bg-gradient-to-br from-primary/5 via-background to-secondary/15 rounded-3xl shadow-xs space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-border/60">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-xs">
+                    <Sparkles className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <h3 className="font-heading font-extrabold text-base sm:text-lg text-foreground flex items-center gap-2">
+                      <span>
+                        {isAr
+                          ? "ابدأ هنا — 3 خطوات لإطلاق متجرك بنجاح"
+                          : "Start Here — 3 Steps to Launch Your Store"}
+                      </span>
+                    </h3>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      {isAr
+                        ? "أكمل هذه الخطوات البسيطة لبدء استقبال الطلبات ومتابعة أرباحك مباشرة"
+                        : "Complete these simple steps to start receiving orders and tracking your live profits"}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-bold px-3 py-1 rounded-full bg-primary/10 text-primary border border-primary/20">
+                    {hasProducts
+                      ? isAr
+                        ? "مكتمل 1 من 3"
+                        : "1 of 3 Done"
+                      : isAr
+                        ? "مكتمل 0 من 3"
+                        : "0 of 3 Done"}
+                  </span>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {/* Step 1: Add First Product */}
+                <div
+                  className={`p-4 rounded-2xl border transition-all flex flex-col justify-between space-y-3 ${
+                    hasProducts
+                      ? "bg-emerald-500/5 border-emerald-500/20 text-foreground"
+                      : "bg-card border-border shadow-2xs hover:border-primary/40"
+                  }`}
+                >
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                        {isAr ? "الخطوة 1" : "Step 1"}
+                      </span>
+                      {hasProducts ? (
+                        <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded-full">
+                          <CheckCircle2 className="h-3.5 w-3.5" />
+                          {isAr ? "تمت الإضافة" : "Completed"}
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 px-2 py-0.5 rounded-full">
+                          <Clock className="h-3.5 w-3.5" />
+                          {isAr ? "بانتظارك" : "Pending"}
+                        </span>
+                      )}
+                    </div>
+                    <h4 className="font-bold text-sm text-foreground">
+                      {isAr ? "إضافة أول منتج" : "Add Your First Product"}
+                    </h4>
+                    <p className="text-xs text-muted-foreground leading-relaxed">
+                      {hasProducts
+                        ? isAr
+                          ? `لديك الآن ${productsQ.data?.length ?? 1} منتج جاهز للبيع في المتجر.`
+                          : `You have ${productsQ.data?.length ?? 1} products ready to sell.`
+                        : isAr
+                          ? "أدخل اسم وسعر وصورة أول منتج لعرضه فوراً أمام عملائك."
+                          : "Add name, price, and photo of your first item to display."}
+                    </p>
+                  </div>
+                  <Button
+                    asChild
+                    size="sm"
+                    variant={hasProducts ? "outline" : "default"}
+                    className={`w-full font-bold text-xs rounded-xl ${
+                      !hasProducts ? "bg-primary text-primary-foreground shadow-xs" : ""
+                    }`}
+                  >
+                    <Link to="/admin/b/$slug/inventory" params={{ slug }}>
+                      <Package className="h-3.5 w-3.5 me-1.5" />
+                      {hasProducts
+                        ? isAr
+                          ? "إدارة المنتجات"
+                          : "Manage Products"
+                        : isAr
+                          ? "أضف منتجك الأول الآن"
+                          : "Add Product Now"}
+                    </Link>
+                  </Button>
+                </div>
+
+                {/* Step 2: Preview Storefront */}
+                <div
+                  className={`p-4 rounded-2xl border transition-all flex flex-col justify-between space-y-3 ${
+                    hasProducts
+                      ? "bg-card border-border shadow-2xs hover:border-primary/40"
+                      : "bg-muted/30 border-border/60 opacity-80"
+                  }`}
+                >
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                        {isAr ? "الخطوة 2" : "Step 2"}
+                      </span>
+                      <span className="inline-flex items-center gap-1 text-[11px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-full">
+                        {isAr ? "جاهز للمعاينة" : "Ready"}
+                      </span>
+                    </div>
+                    <h4 className="font-bold text-sm text-foreground">
+                      {isAr ? "معاينة ومشاركة المتجر" : "Preview & Share Store"}
+                    </h4>
+                    <p className="text-xs text-muted-foreground leading-relaxed">
+                      {isAr
+                        ? "شاهد كيف يبدو متجرك لعملائك على الجوال، وشارك الرابط مع جمهورك."
+                        : "See how your store looks to mobile buyers, and share the link with your audience."}
+                    </p>
+                  </div>
+                  <Button
+                    asChild
+                    size="sm"
+                    variant="outline"
+                    className="w-full font-bold text-xs rounded-xl border-border hover:bg-secondary"
+                  >
+                    <a href={`/b/${slug}`} target="_blank" rel="noopener noreferrer">
+                      <ExternalLink className="h-3.5 w-3.5 me-1.5 text-primary" />
+                      {isAr ? "معاينة المتجر العام ↗" : "Preview Storefront ↗"}
+                    </a>
+                  </Button>
+                </div>
+
+                {/* Step 3: First Sale */}
+                <div className="p-4 rounded-2xl border bg-card border-border shadow-2xs hover:border-primary/40 transition-all flex flex-col justify-between space-y-3">
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                        {isAr ? "الخطوة 3" : "Step 3"}
+                      </span>
+                      <span className="inline-flex items-center gap-1 text-[11px] font-bold text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
+                        {isAr ? "الخطوة القادمة" : "Next Milestone"}
+                      </span>
+                    </div>
+                    <h4 className="font-bold text-sm text-foreground">
+                      {isAr ? "تسجيل أول عملية بيع" : "Record Your First Sale"}
+                    </h4>
+                    <p className="text-xs text-muted-foreground leading-relaxed">
+                      {isAr
+                        ? "سجّل طلباً فورياً من نقطة البيع أو استقبل طلباً حقيقياً لتشغيل لوحة الأرباح والمخزون."
+                        : "Record a sale via POS or wait for a live order to activate financial telemetry."}
+                    </p>
+                  </div>
+                  <Button
+                    asChild
+                    size="sm"
+                    variant="secondary"
+                    className="w-full font-bold text-xs rounded-xl hover:bg-secondary/80"
+                  >
+                    <Link to="/admin/b/$slug/pos" params={{ slug }}>
+                      <ReceiptText className="h-3.5 w-3.5 me-1.5 text-primary" />
+                      {isAr ? "فتح نقطة البيع (POS)" : "Open POS Terminal"}
+                    </Link>
+                  </Button>
+                </div>
+              </div>
+            </Card>
+          )}
+
           {/* Primary Financial KPIs (Top Row) */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {primaryKpis.map((k) => {
@@ -936,81 +1113,99 @@ function Dashboard() {
           {/* Middle Multi-Column Grid: Sales Trajectory & Action Feed */}
           <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 items-stretch">
             {canViewFinancials && (
-              <Card className="min-w-0 overflow-hidden lg:col-span-3 p-5 border border-border shadow-xs rounded-2xl bg-card flex flex-col justify-between space-y-3 h-full">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                  <div>
-                    <h3 className="text-base font-bold font-heading flex items-center gap-2">
-                      <TrendingUp className="h-4.5 w-4.5 text-emerald-500" />
-                      {isAr
-                        ? "اتجاه المبيعات اليومية (آخر 30 يومًا)"
-                        : "Daily Sales Performance (30 Days)"}
+              !hasSales ? (
+                <Card className="min-w-0 overflow-hidden lg:col-span-3 p-6 border border-dashed border-border rounded-2xl bg-card/60 flex flex-col items-center justify-center text-center space-y-3 h-full min-h-[260px]">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+                    <TrendingUp className="h-6 w-6" />
+                  </div>
+                  <div className="max-w-md space-y-1.5">
+                    <h3 className="text-base font-bold text-foreground font-heading">
+                      {isAr ? "مخطط المبيعات اليومية بانتظار أول طلب" : "Sales Trajectory Awaiting First Order"}
                     </h3>
-                    <p className="text-[11px] text-muted-foreground">
+                    <p className="text-xs text-muted-foreground leading-relaxed">
                       {isAr
-                        ? "المبيعات خلال آخر 30 يومًا"
-                        : "Daily revenue trajectory and completed volume trends."}
+                        ? "بمجرد إتمام أول طلب، ستظهر هنا تلقائياً تحليلات المبيعات اليومية، ومنحنى الأرباح، ومعدل نمو متجرك بصورة تفاعلية."
+                        : "Once your first order is placed, daily revenue trends, profit curves, and store growth will appear here interactively."}
                     </p>
                   </div>
-                  <span className="text-xs font-bold text-primary font-mono bg-primary/10 px-2.5 py-1 rounded-full border border-primary/20 w-fit">
-                    {formatMoney(financials.revenueCurrent, currency, locale)}
-                    {isAr ? " (إجمالي 30 يوم)" : " (30-Day Total)"}
-                  </span>
-                </div>
+                </Card>
+              ) : (
+                <Card className="min-w-0 overflow-hidden lg:col-span-3 p-5 border border-border shadow-xs rounded-2xl bg-card flex flex-col justify-between space-y-3 h-full">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div>
+                      <h3 className="text-base font-bold font-heading flex items-center gap-2">
+                        <TrendingUp className="h-4.5 w-4.5 text-emerald-500" />
+                        {isAr
+                          ? "اتجاه المبيعات اليومية (آخر 30 يومًا)"
+                          : "Daily Sales Performance (30 Days)"}
+                      </h3>
+                      <p className="text-[11px] text-muted-foreground">
+                        {isAr
+                          ? "المبيعات خلال آخر 30 يومًا"
+                          : "Daily revenue trajectory and completed volume trends."}
+                      </p>
+                    </div>
+                    <span className="text-xs font-bold text-primary font-mono bg-primary/10 px-2.5 py-1 rounded-full border border-primary/20 w-fit">
+                      {formatMoney(financials.revenueCurrent, currency, locale)}
+                      {isAr ? " (إجمالي 30 يوم)" : " (30-Day Total)"}
+                    </span>
+                  </div>
 
-                <div className="h-56 min-w-0 w-full overflow-hidden pt-1">
-                  {isMounted ? (
-                    <ResponsiveContainer width="100%" height="100%">
-                      <AreaChart
-                        data={financials.dailyChartSeries}
-                        margin={{ top: 15, right: 15, left: -10, bottom: 5 }}
-                      >
-                        <defs>
-                          <linearGradient id="salesGrad" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor="#10b981" stopOpacity={0.35} />
-                            <stop offset="95%" stopColor="#10b981" stopOpacity={0.0} />
-                          </linearGradient>
-                        </defs>
-                        <XAxis
-                          dataKey="date"
-                          tick={{ fontSize: 10 }}
-                          stroke="#888888"
-                          tickLine={false}
-                        />
-                        <YAxis tick={{ fontSize: 10 }} stroke="#888888" tickLine={false} />
-                        <Tooltip
-                          content={({ active, payload }) => {
-                            if (active && payload && payload.length) {
-                              const data = payload[0].payload;
-                              return (
-                                <div className="rounded-xl border bg-popover/95 p-2.5 shadow-xl backdrop-blur-md text-xs space-y-1">
-                                  <p className="font-bold text-foreground">{data.date}</p>
-                                  <p className="text-emerald-500 font-mono font-bold">
-                                    {formatMoney(Number(data.sales), currency, locale)}
-                                  </p>
-                                  <p className="text-muted-foreground text-[11px]">
-                                    {data.orders} {isAr ? "عمليات بيع" : "sales transactions"}
-                                  </p>
-                                </div>
-                              );
-                            }
-                            return null;
-                          }}
-                        />
-                        <Area
-                          type="monotone"
-                          dataKey="sales"
-                          stroke="#10b981"
-                          strokeWidth={2}
-                          fillOpacity={1}
-                          fill="url(#salesGrad)"
-                        />
-                      </AreaChart>
-                    </ResponsiveContainer>
-                  ) : (
-                    <div className="h-full w-full animate-pulse bg-muted rounded-xl" />
-                  )}
-                </div>
-              </Card>
+                  <div className="h-56 min-w-0 w-full overflow-hidden pt-1">
+                    {isMounted ? (
+                      <ResponsiveContainer width="100%" height="100%">
+                        <AreaChart
+                          data={financials.dailyChartSeries}
+                          margin={{ top: 15, right: 15, left: -10, bottom: 5 }}
+                        >
+                          <defs>
+                            <linearGradient id="salesGrad" x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="5%" stopColor="#10b981" stopOpacity={0.35} />
+                              <stop offset="95%" stopColor="#10b981" stopOpacity={0.0} />
+                            </linearGradient>
+                          </defs>
+                          <XAxis
+                            dataKey="date"
+                            tick={{ fontSize: 10 }}
+                            stroke="#888888"
+                            tickLine={false}
+                          />
+                          <YAxis tick={{ fontSize: 10 }} stroke="#888888" tickLine={false} />
+                          <Tooltip
+                            content={({ active, payload }) => {
+                              if (active && payload && payload.length) {
+                                const data = payload[0].payload;
+                                return (
+                                  <div className="rounded-xl border bg-popover/95 p-2.5 shadow-xl backdrop-blur-md text-xs space-y-1">
+                                    <p className="font-bold text-foreground">{data.date}</p>
+                                    <p className="text-emerald-500 font-mono font-bold">
+                                      {formatMoney(Number(data.sales), currency, locale)}
+                                    </p>
+                                    <p className="text-muted-foreground text-[11px]">
+                                      {data.orders} {isAr ? "عمليات بيع" : "sales transactions"}
+                                    </p>
+                                  </div>
+                                );
+                              }
+                              return null;
+                            }}
+                          />
+                          <Area
+                            type="monotone"
+                            dataKey="sales"
+                            stroke="#10b981"
+                            strokeWidth={2}
+                            fillOpacity={1}
+                            fill="url(#salesGrad)"
+                          />
+                        </AreaChart>
+                      </ResponsiveContainer>
+                    ) : (
+                      <div className="h-full w-full animate-pulse bg-muted rounded-xl" />
+                    )}
+                  </div>
+                </Card>
+              )
             )}
 
             {/* Action Needed Feed */}

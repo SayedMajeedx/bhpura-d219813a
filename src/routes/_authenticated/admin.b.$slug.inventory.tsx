@@ -8,6 +8,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import {
   Dialog,
   DialogContent,
   DialogHeader,
@@ -51,6 +57,7 @@ import {
   TableProperties,
   ChevronLeft,
   ChevronRight,
+  HelpCircle,
 } from "lucide-react";
 import { toast } from "sonner";
 import { formatMoney } from "@/lib/format";
@@ -2271,7 +2278,8 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
     base_price: product?.base_price ? String(product.base_price) : "0",
     cost_price: product?.cost_price ? String(product.cost_price) : "0",
     image_url: product?.image_url ?? "",
-    is_active: product?.is_active ?? false,
+    is_active: product ? product.is_active : true,
+    initial_stock: "10",
     featured_trending: product?.featured_trending ?? false,
     show_sale_badge: product?.show_sale_badge ?? true,
     media: (product?.media ?? []) as MediaItem[],
@@ -2320,7 +2328,8 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
       base_price: product?.base_price ? String(product.base_price) : "0",
       cost_price: product?.cost_price ? String(product.cost_price) : "0",
       image_url: product?.image_url ?? "",
-      is_active: product?.is_active ?? false,
+      is_active: product ? product.is_active : true,
+      initial_stock: "10",
       featured_trending: product?.featured_trending ?? false,
       show_sale_badge: product?.show_sale_badge ?? true,
       media: (product?.media ?? []) as MediaItem[],
@@ -2444,8 +2453,8 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
         ? "يجب إدخال سعر صحيح أكبر من أو يساوي الصفر"
         : "A valid price greater than or equal to 0 is required";
     }
-    if (!form.cost_price.trim() || isNaN(Number(form.cost_price)) || Number(form.cost_price) < 0) {
-      newErrors.cost = isAr ? "أدخل تكلفة صحيحة" : "Enter a valid non-negative cost";
+    if (form.cost_price.trim() && (isNaN(Number(form.cost_price)) || Number(form.cost_price) < 0)) {
+      newErrors.cost = isAr ? "أدخل تكلفة صحيحة غير سالبة أو اترك الحقل فارغاً" : "Enter a valid non-negative cost or leave empty";
     }
 
     if (Object.keys(newErrors).length > 0) {
@@ -2471,12 +2480,26 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
           .eq("product_id", product.id);
         if (variantCountError) return toast.error(variantCountError.message);
         if (!count) {
-          setActiveDialogTab("basic");
-          return toast.error(
-            isAr
-              ? "أضف متغيراً واحداً على الأقل قبل تفعيل المنتج في المتجر."
-              : "Add at least one variant before activating this product in the storefront.",
-          );
+          // Smart default: Automatically create a standard default variant so merchant isn't blocked
+          const initialQty = Math.max(0, parseInt(form.initial_stock || "10", 10) || 0);
+          const baseP = form.base_price ? Number(form.base_price) : 0;
+          const costP = form.cost_price ? Number(form.cost_price) : 0;
+          await (supabase.from("product_variants") as any).insert({
+            user_id: user.id,
+            brand_id: brand.id,
+            product_id: product.id,
+            size: isAr ? "قياسي" : "Standard",
+            color: null,
+            fabric: (form.fabric_type || "").trim() || null,
+            cost_price: costP,
+            selling_price: baseP,
+            stock_main: initialQty,
+            stock_incubator: 0,
+            stock: initialQty,
+            sku: null,
+            barcode: null,
+            image_url: form.image_url || null,
+          });
         }
       }
       const patch = {
@@ -2532,11 +2555,12 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
         description_en: form.description_en.trim() || null,
         category: form.category,
         base_price: form.base_price ? Number(form.base_price) : 0,
+        // TODO (Tech Debt / Financial Reporting): Currently defaults to 0 due to database NOT NULL constraint.
+        // In a future migration, alter column to nullable to distinguish between 'unknown cost' (null) and 'zero cost' (0),
+        // preventing false 100% gross profit margins on financial reports/expenses screens.
         cost_price: form.cost_price ? Number(form.cost_price) : 0,
         image_url: form.image_url,
-        // A product without variants cannot be purchased. Keep new products
-        // hidden until inventory has been configured explicitly.
-        is_active: false,
+        is_active: form.is_active,
         featured_trending: form.featured_trending,
         show_sale_badge: form.show_sale_badge,
         media: form.media as any,
@@ -2550,8 +2574,34 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
         fabric_type: (form.fabric_type || "").trim() || null,
         occasion: (form.occasion || "").trim() || null,
       };
-      const { error } = await (supabase.from("products") as any).insert(payload);
+      const { data: newProd, error } = await (supabase.from("products") as any)
+        .insert(payload)
+        .select("id")
+        .single();
       if (error) return toast.error(error.message);
+
+      // Auto-create default standard variant for instant purchaseability
+      if (newProd?.id) {
+        const initialQty = Math.max(0, parseInt(form.initial_stock || "10", 10) || 0);
+        const baseP = form.base_price ? Number(form.base_price) : 0;
+        const costP = form.cost_price ? Number(form.cost_price) : 0;
+        await (supabase.from("product_variants") as any).insert({
+          user_id: user.id,
+          brand_id: brand.id,
+          product_id: newProd.id,
+          size: isAr ? "قياسي" : "Standard",
+          color: null,
+          fabric: (form.fabric_type || "").trim() || null,
+          cost_price: costP,
+          selling_price: baseP,
+          stock_main: initialQty,
+          stock_incubator: 0,
+          stock: initialQty,
+          sku: null,
+          barcode: null,
+          image_url: form.image_url || (form.media?.[0]?.url ?? null),
+        });
+      }
     }
     for (const url of removedCommittedMedia.current) {
       void deletePublicMediaUrl(brand.id, url).catch(() => undefined);
@@ -2561,8 +2611,8 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
     toast.success(
       !product
         ? isAr
-          ? "تم حفظ المنتج كمخفي. أضف المتغيرات ثم فعّله من تعديل المنتج."
-          : "Product saved as hidden. Add variants, then activate it from Edit product."
+          ? "تم إنشاء المنتج وتفعيله في المتجر بنجاح!"
+          : "Product created and published successfully!"
         : t("common.save"),
     );
     onSaved();
@@ -2758,24 +2808,45 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
             </div>
             <div>
               <Label className="text-xs font-bold text-muted-foreground">
-                {isAr ? "تكلفة الوحدة (د.ب)" : "Unit Cost (BHD)"}
+                {isAr ? "تكلفة القطعة عليك (اختياري)" : "Unit Cost (Optional)"}
               </Label>
               <Input
                 type="number"
                 step="0.001"
                 min="0"
                 className={`mt-1 h-10.5 rounded-lg ${errors.cost ? "border-destructive" : ""}`}
-                placeholder="0.000"
+                placeholder={isAr ? "0.000 (اختياري)" : "0.000 (optional)"}
                 value={form.cost_price}
                 onChange={(e) => setForm({ ...form, cost_price: e.target.value })}
               />
               {errors.cost && <p className="mt-1 text-xs text-destructive">{errors.cost}</p>}
               <p className="mt-1.5 text-xs text-muted-foreground">
                 {isAr
-                  ? "تُورّث للمتغيرات وتُحتسب ضمن تكلفة البضاعة المباعة عند البيع، وليست مصروفاً فورياً."
-                  : "Inherited by variants and recognized as COGS when sold; it is not an immediate expense."}
+                  ? "اتركه فاضي إذا ما تعرف الرقم الآن، تقدر تضيفه لاحقاً لحساب صافي أرباحك بدقة."
+                  : "Leave it empty if you don't know it now; you can add it anytime later to track net profit."}
               </p>
             </div>
+            {!product && (
+              <div>
+                <Label className="text-xs font-bold text-muted-foreground">
+                  {isAr ? "الكمية المتوفرة بالمحل (المخزون الأولي)" : "In-Store Available Quantity (Initial Stock)"}
+                </Label>
+                <Input
+                  type="number"
+                  step="1"
+                  min="0"
+                  className="mt-1 h-10.5 rounded-lg"
+                  placeholder="10"
+                  value={form.initial_stock}
+                  onChange={(e) => setForm({ ...form, initial_stock: e.target.value })}
+                />
+                <p className="mt-1.5 text-xs text-muted-foreground">
+                  {isAr
+                    ? "الكمية الجاهزة للبيع فوراً. سيتم إنشاء مقاس افتراضي تلقائياً لتتمكن من بيع المنتج مباشرة."
+                    : "Ready-to-sell quantity. A default standard variant is created automatically so you can start selling immediately."}
+                </p>
+              </div>
+            )}
             <div>
               <Label className="text-xs font-bold text-muted-foreground">
                 {t("inventory.imageUrl")}
@@ -2843,17 +2914,18 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
                 <Switch
                   checked={form.is_active}
                   onCheckedChange={(v) => setForm({ ...form, is_active: v })}
-                  disabled={!product}
                   aria-label={isAr ? "إظهار المنتج في المتجر" : "Show product in storefront"}
                 />
               </div>
             </div>
             {!product && (
-              <p className="-mt-2 text-xs text-amber-700 dark:text-amber-400">
-                {isAr
-                  ? "سيُحفظ المنتج كمخفي. أضف متغيراً واحداً على الأقل، ثم فعّله من تعديل المنتج."
-                  : "This product will be saved as hidden. Add at least one variant, then activate it from Edit product."}
-              </p>
+              <div className="rounded-xl border border-dashed border-primary/30 bg-primary/5 p-3.5 text-xs text-muted-foreground flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <span className="leading-relaxed">
+                  {isAr
+                    ? "💡 هل لديك مقاسات أو ألوان متعددة؟ سيتم نشر هذا المنتج بمقاس قياسي تلقائياً، ويمكنك إضافة وتخصيص تفاصيل المقاسات والألوان في أي وقت بعد الحفظ."
+                    : "💡 Have multiple sizes or colors? This product will be published with a standard size automatically; you can add and customize variants anytime after saving."}
+                </span>
+              </div>
             )}
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="flex items-center justify-between rounded-xl border border-border/80 p-4 bg-secondary/10 transition hover:bg-secondary/20">
@@ -4118,7 +4190,7 @@ function BulkVariantDialog({
             </div>
           )}
           <div>
-            <Label>{isAr ? "سعر التخفيض (اختياري)" : "Sale price (optional)"}</Label>
+            <Label>{isAr ? "السعر اللي يدفعه العميل" : "Customer Price"}</Label>
             <Input
               type="number"
               min="0"
@@ -4134,12 +4206,28 @@ function BulkVariantDialog({
             />
             <p className="mt-1 text-[10px] text-muted-foreground">
               {isAr
-                ? "اتركه فارغاً أو أدخل 0 أو السعر الأساسي لإزالة التخفيض."
-                : "Leave blank, enter 0, or use the regular price to remove the sale."}
+                ? "السعر الفعلي للبيع. اتركه مطابقاً للأساسي أو فارغاً إذا لم يكن هناك تخفيض."
+                : "The price customers actually pay. Leave blank if matching regular price."}
             </p>
           </div>
           <div>
-            <Label>{isAr ? "مخزون الرئيسي" : "Main stock"}</Label>
+            <div className="flex items-center gap-1">
+              <Label>{isAr ? "مخزون المحل" : "Store stock"}</Label>
+              <TooltipProvider delayDuration={200}>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button type="button" className="text-muted-foreground hover:text-foreground">
+                      <HelpCircle className="h-3 w-3" />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="max-w-xs text-center text-xs">
+                    {isAr
+                      ? "القطع المتوفرة فعلياً داخل متجرك والجاهزة للبيع المباشر والشحن."
+                      : "Physical stock in your primary store, ready for instant sale and shipping."}
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
             <Input
               type="number"
               min="0"
@@ -4148,7 +4236,23 @@ function BulkVariantDialog({
             />
           </div>
           <div>
-            <Label>{isAr ? "مخزون الحاضنة" : "Incubator stock"}</Label>
+            <div className="flex items-center gap-1">
+              <Label>{isAr ? "مخزون الأمانة / الحاضنة" : "Consignment / Incubator stock"}</Label>
+              <TooltipProvider delayDuration={200}>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button type="button" className="text-muted-foreground hover:text-foreground">
+                      <HelpCircle className="h-3 w-3" />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="max-w-xs text-center text-xs">
+                    {isAr
+                      ? "القطع المعروضة في محلات خارجية أو حاضنات شريكة بنظام الأمانة/العُهدة."
+                      : "Items held at partner boutiques or business incubators under consignment."}
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
             <Input
               type="number"
               min="0"
@@ -4171,7 +4275,8 @@ function BulkVariantDialog({
               className="text-muted-foreground"
               onClick={() => setRows([])}
             >
-              {isAr ? "مسح المعاينة" : "Clear preview"}
+              <RefreshCw className="me-2 h-4 w-4" />
+              {isAr ? "إعادة تعيين" : "Reset"}
             </Button>
           )}
         </div>
@@ -4198,7 +4303,7 @@ function BulkVariantDialog({
                 {isAr ? "تعديل جماعي:" : "Batch edit:"}
               </span>
               <div className="flex items-center gap-1.5">
-                <span>{isAr ? "الرئيسي:" : "Main:"}</span>
+                <span>{isAr ? "مخزون المحل:" : "Store stock:"}</span>
                 <Input
                   className="h-7 w-16 text-xs"
                   type="number"
@@ -4219,7 +4324,7 @@ function BulkVariantDialog({
               </div>
 
               <div className="flex items-center gap-1.5">
-                <span>{isAr ? "الحاضنة:" : "Incubator:"}</span>
+                <span>{isAr ? "الأمانة/الحاضنة:" : "Consignment:"}</span>
                 <Input
                   className="h-7 w-16 text-xs"
                   type="number"
@@ -4273,9 +4378,9 @@ function BulkVariantDialog({
                       "SKU",
                       isAr ? "الباركود (EAN-13)" : "Barcode (EAN-13)",
                       ...(canViewFinancials ? [isAr ? "التكلفة" : "Cost"] : []),
-                      isAr ? "سعر التخفيض" : "Sale price",
-                      isAr ? "الرئيسي" : "Main",
-                      isAr ? "الحاضنة" : "Incubator",
+                      isAr ? "السعر اللي يدفعه العميل" : "Customer price",
+                      isAr ? "مخزون المحل" : "Store Stock",
+                      isAr ? "الأمانة / الحاضنة" : "Consignment / Incubator",
                       "",
                     ].map((label) => (
                       <th key={label} className="p-2 text-start font-semibold">
@@ -5128,9 +5233,25 @@ function VariantMobileCard({
         onClick={(e) => e.stopPropagation()}
       >
         <div>
-          <Label className="text-[10px] font-black uppercase text-muted-foreground/85">
-            {mainLabel}
-          </Label>
+          <div className="flex items-center gap-1">
+            <Label className="text-[10px] font-black uppercase text-muted-foreground/85">
+              {mainLabel}
+            </Label>
+            <TooltipProvider delayDuration={200}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button type="button" className="text-muted-foreground hover:text-foreground">
+                    <HelpCircle className="h-3 w-3" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="top" className="max-w-xs text-center text-xs">
+                  {isAr
+                    ? "القطع المتوفرة فعلياً داخل متجرك والجاهزة للبيع المباشر والشحن."
+                    : "Physical stock in your primary store, ready for instant sale and shipping."}
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
           <div className="mt-1">
             <StockStepper
               value={v.stock_main ?? 0}
@@ -5139,9 +5260,25 @@ function VariantMobileCard({
           </div>
         </div>
         <div>
-          <Label className="text-[10px] font-black uppercase text-muted-foreground/85">
-            {incLabel}
-          </Label>
+          <div className="flex items-center gap-1">
+            <Label className="text-[10px] font-black uppercase text-muted-foreground/85">
+              {incLabel}
+            </Label>
+            <TooltipProvider delayDuration={200}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button type="button" className="text-muted-foreground hover:text-foreground">
+                    <HelpCircle className="h-3 w-3" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="top" className="max-w-xs text-center text-xs">
+                  {isAr
+                    ? "القطع المعروضة في محلات خارجية أو حاضنات شريكة بنظام الأمانة/العُهدة."
+                    : "Items held at partner boutiques or business incubators under consignment."}
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
           <div className="mt-1">
             <StockStepper
               value={v.stock_incubator ?? 0}
@@ -5182,7 +5319,7 @@ function VariantMobileCard({
           )}
           <div>
             <Label className="text-[10px] font-black uppercase text-muted-foreground/85">
-              {isAr ? "سعر التخفيض" : "Sale Price"}
+              {isAr ? "السعر اللي يدفعه العميل" : "Customer Price"}
             </Label>
             <div className="mt-1">
               <PremiumCurrencyInput
@@ -5475,8 +5612,14 @@ function VariantList({
     else onChanged();
   };
 
-  const mainLabel = isAr ? "الرئيسي" : "Main";
-  const incLabel = isAr ? "الحاضنة" : "Incubator";
+  const mainLabel = isAr ? "مخزون المحل" : "Store Stock";
+  const incLabel = isAr ? "مخزون الأمانة / الحاضنة" : "Consignment / Incubator";
+  const mainTooltip = isAr
+    ? "القطع المتوفرة فعلياً داخل متجرك والجاهزة للبيع المباشر والشحن للعملاء."
+    : "Physical stock in your primary store, ready for instant sale and shipping.";
+  const incTooltip = isAr
+    ? "القطع المعروضة في محلات خارجية أو حاضنات تجارية شريكة بنظام الأمانة/العُهدة."
+    : "Items held at partner boutiques or business incubators under consignment.";
   const barcodeLabel = isAr ? "الباركود" : "Barcode";
 
   // State for dynamic columns compacting / hiding
@@ -5755,19 +5898,20 @@ function VariantList({
               )}
               <div>
                 <Label className="text-[10px] font-bold text-muted-foreground uppercase">
-                  {isAr ? "سعر التخفيض (اختياري)" : "Sale Price (optional)"}
+                  {isAr ? "السعر اللي يدفعه العميل" : "Customer Price"}
                 </Label>
                 <Input
                   type="number"
                   step="0.001"
                   className="mt-1 h-9 rounded-md text-xs font-bold"
                   value={row.selling_price}
+                  placeholder={String(product?.base_price ?? "0.000")}
                   onChange={(e) => setRow({ ...row, selling_price: e.target.value })}
                 />
               </div>
               <div>
                 <Label className="text-[10px] font-bold text-muted-foreground uppercase">
-                  {isAr ? "السعر العادي" : "Regular Price"}
+                  {isAr ? "السعر الأساسي للمنتج" : "Base Price"}
                 </Label>
                 <Input
                   type="number"
@@ -5779,9 +5923,23 @@ function VariantList({
                 />
               </div>
               <div>
-                <Label className="text-[10px] font-bold text-muted-foreground uppercase">
-                  {mainLabel}
-                </Label>
+                <div className="flex items-center gap-1">
+                  <Label className="text-[10px] font-bold text-muted-foreground uppercase">
+                    {mainLabel}
+                  </Label>
+                  <TooltipProvider delayDuration={200}>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <button type="button" className="text-muted-foreground hover:text-foreground">
+                          <HelpCircle className="h-3 w-3" />
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent side="top" className="max-w-xs text-center text-xs">
+                        {mainTooltip}
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </div>
                 <Input
                   type="number"
                   className="mt-1 h-9 rounded-md text-xs"
@@ -5790,9 +5948,23 @@ function VariantList({
                 />
               </div>
               <div>
-                <Label className="text-[10px] font-bold text-muted-foreground uppercase">
-                  {incLabel}
-                </Label>
+                <div className="flex items-center gap-1">
+                  <Label className="text-[10px] font-bold text-muted-foreground uppercase">
+                    {incLabel}
+                  </Label>
+                  <TooltipProvider delayDuration={200}>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <button type="button" className="text-muted-foreground hover:text-foreground">
+                          <HelpCircle className="h-3 w-3" />
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent side="top" className="max-w-xs text-center text-xs">
+                        {incTooltip}
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </div>
                 <Input
                   type="number"
                   className="mt-1 h-9 rounded-md text-xs"
@@ -5949,18 +6121,50 @@ function VariantList({
                   </th>
                 )}
                 <th className="px-2 py-3 text-center font-black text-[10px]">
-                  {isAr ? "سعر التخفيض" : "Sale Price"}
+                  {isAr ? "السعر اللي يدفعه العميل" : "Customer Price"}
                 </th>
                 <th className="px-2 py-3 text-center font-black text-[10px]">
-                  {isAr ? "السعر العادي" : "Regular Price"}
+                  {isAr ? "السعر الأساسي" : "Base Price"}
                 </th>
                 {canViewFinancials && (
                   <th className="px-2 py-3 text-center font-black text-[10px]">
                     {t("inventory.margin")}
                   </th>
                 )}
-                <th className="px-2 py-3 text-center font-black text-[10px]">{mainLabel}</th>
-                <th className="px-2 py-3 text-center font-black text-[10px]">{incLabel}</th>
+                <th className="px-2 py-3 text-center font-black text-[10px]">
+                  <div className="inline-flex items-center justify-center gap-1">
+                    <span>{mainLabel}</span>
+                    <TooltipProvider delayDuration={200}>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <button type="button" className="text-muted-foreground hover:text-foreground">
+                            <HelpCircle className="h-3 w-3" />
+                          </button>
+                        </TooltipTrigger>
+                        <TooltipContent side="top" className="max-w-xs text-center text-xs">
+                          {mainTooltip}
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </div>
+                </th>
+                <th className="px-2 py-3 text-center font-black text-[10px]">
+                  <div className="inline-flex items-center justify-center gap-1">
+                    <span>{incLabel}</span>
+                    <TooltipProvider delayDuration={200}>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <button type="button" className="text-muted-foreground hover:text-foreground">
+                            <HelpCircle className="h-3 w-3" />
+                          </button>
+                        </TooltipTrigger>
+                        <TooltipContent side="top" className="max-w-xs text-center text-xs">
+                          {incTooltip}
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </div>
+                </th>
                 <th className="px-2 py-3 text-center font-black text-[10px]">
                   {t("inventory.stock")}
                 </th>

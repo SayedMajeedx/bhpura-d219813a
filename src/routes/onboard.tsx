@@ -30,6 +30,29 @@ import {
   getOnboardingTrialDays,
 } from "@/lib/onboarding.functions";
 
+function arabicToLatinSlug(text: string): string {
+  const map: Record<string, string> = {
+    'أ': 'a', 'إ': 'e', 'آ': 'a', 'ا': 'a', 'ب': 'b', 'ت': 't', 'ث': 'th',
+    'ج': 'j', 'ح': 'h', 'خ': 'kh', 'د': 'd', 'ذ': 'th', 'ر': 'r', 'ز': 'z',
+    'س': 's', 'ش': 'sh', 'ص': 's', 'ض': 'd', 'ط': 't', 'ظ': 'z', 'ع': 'a',
+    'غ': 'gh', 'ف': 'f', 'ق': 'q', 'ك': 'k', 'ل': 'l', 'م': 'm', 'ن': 'n',
+    'ه': 'h', 'و': 'w', 'ي': 'y', 'ى': 'a', 'ة': 'h', 'ء': 'a', 'ئ': 'e', 'ؤ': 'o',
+    'پ': 'p', 'چ': 'ch', 'ڤ': 'v', 'گ': 'g'
+  };
+
+  let result = "";
+  for (const char of text) {
+    if (map[char]) {
+      result += map[char];
+    } else if (/[a-zA-Z0-9]/.test(char)) {
+      result += char.toLowerCase();
+    } else if (/[\s\-_]/.test(char)) {
+      result += "-";
+    }
+  }
+  return result.replace(/-+/g, "-").replace(/^-|-$/g, "").slice(0, 30);
+}
+
 export const Route = createFileRoute("/onboard")({
   ssr: false,
   component: OnboardPage,
@@ -51,6 +74,8 @@ function OnboardPage() {
   // Form Fields
   const [brandName, setBrandName] = useState("");
   const [slug, setSlug] = useState("");
+  const [isSlugManuallyEdited, setIsSlugManuallyEdited] = useState(false);
+  const [slugArabicWarning, setSlugArabicWarning] = useState(false);
   const [ownerName, setOwnerName] = useState("");
   const [contactNumber, setContactNumber] = useState("");
   const [email, setEmail] = useState("");
@@ -345,14 +370,10 @@ function OnboardPage() {
                       onChange={(e) => {
                         const val = e.target.value;
                         setBrandName(val);
-                        // Auto-suggest slug if empty
-                        if (!slug) {
-                          const suggested = val
-                            .toLowerCase()
-                            .replace(/[^a-z0-9]/g, "-")
-                            .replace(/-+/g, "-")
-                            .replace(/^-|-$/g, "");
-                          if (suggested) setSlug(suggested);
+                        // Auto-suggest transliterated slug if user hasn't typed a custom slug
+                        if (!isSlugManuallyEdited) {
+                          const transliterated = arabicToLatinSlug(val);
+                          setSlug(transliterated);
                         }
                       }}
                       className="h-10 text-xs placeholder:text-muted-foreground/35 placeholder:font-normal bg-background"
@@ -386,9 +407,18 @@ function OnboardPage() {
                         id="slug"
                         type="text"
                         dir="ltr"
-                        placeholder="brand"
+                        placeholder="dar-alanaqa"
                         value={slug}
-                        onChange={(e) => setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ""))}
+                        onChange={(e) => {
+                          setIsSlugManuallyEdited(true);
+                          const raw = e.target.value;
+                          if (/[\u0600-\u06FF]/.test(raw)) {
+                            setSlugArabicWarning(true);
+                          } else {
+                            setSlugArabicWarning(false);
+                          }
+                          setSlug(raw.toLowerCase().replace(/[^a-z0-9-]/g, ""));
+                        }}
                         className="flex-1 min-w-0 bg-transparent px-3 text-xs text-foreground placeholder:text-muted-foreground/35 placeholder:font-normal focus:outline-none font-mono"
                         autoComplete="off"
                         required
@@ -400,6 +430,18 @@ function OnboardPage() {
                         .boutq.store
                       </span>
                     </div>
+                    <p className="text-[11px] text-muted-foreground">
+                      {isAr
+                        ? "يُقترح تلقائياً من اسم متجرك بحروف إنجليزية (مثال: dar-alanaqa)، ويمكنك تعديله."
+                        : "Auto-suggested from your boutique name in English letters (e.g. dar-alanaqa)."}
+                    </p>
+                    {slugArabicWarning && (
+                      <p className="text-[11px] text-amber-600 dark:text-amber-500 font-medium">
+                        {isAr
+                          ? "تنبيه: الرابط يقبل الحروف الإنجليزية فقط (a-z والأرقام)."
+                          : "Note: Store links only support English letters (a-z) and numbers."}
+                      </p>
+                    )}
                   </div>
                 </div>
 
