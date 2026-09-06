@@ -48,7 +48,7 @@ export function SubscriptionCard({ brand }: SubscriptionCardProps) {
     : 0;
   const expired = !isPermanent && (!expiresAt || new Date(expiresAt).getTime() <= Date.now());
   const pending = brand.subscription_status === "pending_verification";
-  const renewalWindowOpen = !isPermanent && !isTrial && (expired || daysLeft <= 30);
+  const renewalWindowOpen = !isPermanent && (isTrial || expired || daysLeft <= 30 || pending);
   const [uploading, setUploading] = useState(false);
   const [savingDecision, setSavingDecision] = useState(false);
   const [renewalIntent, setRenewalIntent] = useState<"renew" | "cancel" | null>(
@@ -135,6 +135,7 @@ export function SubscriptionCard({ brand }: SubscriptionCardProps) {
           fileName: file.name,
           contentType: file.type,
           fileSize: file.size,
+          isTrial,
         },
       });
 

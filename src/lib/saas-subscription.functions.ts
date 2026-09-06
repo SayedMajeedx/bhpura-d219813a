@@ -15,12 +15,15 @@ const CreateUploadInput = z.object({
     .number()
     .int()
     .positive()
-    .max(5 * 1024 * 1024),
+    .max(10 * 1024 * 1024),
+  isUpgrade: z.boolean().optional(),
 });
 
 const SubmitReceiptInput = z.object({
   brandId: z.string().uuid(),
   objectKey: z.string().min(10),
+  targetPlanId: z.string().uuid().optional(),
+  billingInterval: z.enum(["monthly", "annual"]).optional(),
 });
 
 const AdminReviewInput = z.object({
@@ -86,8 +89,17 @@ export const getSubscriptionReceiptUploadUrl = createServerFn({ method: "POST" }
     });
     if (!hasAccess) throw new Error("UNAUTHORIZED_BRAND_ACCESS");
 
-    const brand = await requireOpenRenewalWindow(context, data.brandId);
-    if (brand.renewal_intent !== "renew") throw new Error("RENEWAL_DECISION_REQUIRED");
+    const { data: brand } = await context.supabase
+      .from("brands")
+      .select("plan_type, subscription_expires_at, renewal_intent")
+      .eq("id", data.brandId)
+      .maybeSingle();
+
+    const isTrial = brand?.plan_type === "trial";
+    if (!data.isUpgrade && !isTrial) {
+      await requireOpenRenewalWindow(context, data.brandId);
+      if (brand?.renewal_intent !== "renew") throw new Error("RENEWAL_DECISION_REQUIRED");
+    }
 
     const { enforceMutationSafeguard } = await import("@/lib/impersonation.server");
     await enforceMutationSafeguard(context.supabase, context.userId, data.brandId);
@@ -111,8 +123,19 @@ export const submitSubscriptionReceipt = createServerFn({ method: "POST" })
     });
     if (!hasAccess) throw new Error("UNAUTHORIZED_BRAND_ACCESS");
 
-    const brand = await requireOpenRenewalWindow(context, data.brandId);
-    if (brand.renewal_intent !== "renew") throw new Error("RENEWAL_DECISION_REQUIRED");
+    const { data: brand } = await context.supabase
+      .from("brands")
+      .select("plan_type, subscription_expires_at, renewal_intent")
+      .eq("id", data.brandId)
+      .maybeSingle();
+
+    const isTrial = brand?.plan_type === "trial";
+    const isUpgrade = Boolean(data.targetPlanId) || isTrial || brand?.renewal_intent === "upgrade";
+
+    if (!isUpgrade) {
+      await requireOpenRenewalWindow(context, data.brandId);
+      if (brand?.renewal_intent !== "renew") throw new Error("RENEWAL_DECISION_REQUIRED");
+    }
 
     // Inspect private R2 object to verify the merchant actually uploaded it
     const { inspectPrivateObject } = await import("@/lib/private-r2.server");
@@ -120,7 +143,7 @@ export const submitSubscriptionReceipt = createServerFn({ method: "POST" })
       throw new Error("INVALID_RECEIPT_KEY");
     }
     const head = await inspectPrivateObject(data.objectKey);
-    if (!head.ContentLength || head.ContentLength > 5 * 1024 * 1024) {
+    if (!head.ContentLength || head.ContentLength > 10 * 1024 * 1024) {
       throw new Error("RECEIPT_FILE_INVALID");
     }
 
@@ -131,10 +154,26 @@ export const submitSubscriptionReceipt = createServerFn({ method: "POST" })
         payment_receipt_url: data.objectKey,
         payment_receipt_uploaded_at: new Date().toISOString(),
         subscription_status: "pending_verification",
+        renewal_intent: isUpgrade ? "upgrade" : "renew",
+        renewal_intent_recorded_at: new Date().toISOString(),
       })
       .eq("id", data.brandId);
 
     if (error) throw error;
+
+    // Update brand_subscriptions if upgrade targets a specific plan
+    if (data.targetPlanId) {
+      await context.supabase
+        .from("brand_subscriptions")
+        .update({
+          renewal_intent: "upgrade",
+          renewal_target_plan_id: data.targetPlanId,
+          ...(data.billingInterval ? { billing_interval: data.billingInterval } : {}),
+          updated_at: new Date().toISOString(),
+        })
+        .eq("brand_id", data.brandId);
+    }
+
     return { success: true };
   });
 
@@ -204,6 +243,42 @@ export const approveSubscriptionSaaS = createServerFn({ method: "POST" })
       .eq("id", data.brandId);
 
     if (error) throw error;
+
+    // Synchronize brand_subscriptions table
+    const { data: sub } = await context.supabase
+      .from("brand_subscriptions")
+      .select("id, renewal_target_plan_id, billing_interval, plan_id")
+      .eq("brand_id", data.brandId)
+      .maybeSingle();
+
+    if (sub) {
+      const targetPlanId = sub.renewal_target_plan_id || sub.plan_id;
+      const { data: ver } = await context.supabase
+        .from("saas_plan_versions")
+        .select("id")
+        .eq("plan_id", targetPlanId)
+        .eq("is_current", true)
+        .maybeSingle();
+
+      const billingInterval = sub.billing_interval === "monthly" ? "monthly" : "annual";
+
+      await context.supabase
+        .from("brand_subscriptions")
+        .update({
+          plan_id: targetPlanId,
+          plan_version_id: ver?.id || sub.plan_version_id,
+          billing_interval: billingInterval,
+          status: "active",
+          current_period_start: new Date().toISOString(),
+          current_period_end: newExpiresAt,
+          trial_ends_at: null,
+          renewal_intent: null,
+          renewal_target_plan_id: null,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", sub.id);
+    }
+
     return { success: true };
   });
 

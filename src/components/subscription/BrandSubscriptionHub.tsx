@@ -6,10 +6,13 @@ import React, { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   getBrandSubscriptionDetails,
-  subscribeAddon,
-  cancelAddon,
   cancelBrandSubscription,
 } from "@/lib/saas-billing/saas-billing.functions";
+import {
+  getSubscriptionReceiptUploadUrl,
+  submitSubscriptionReceipt,
+} from "@/lib/saas-subscription.functions";
+import { supabase } from "@/integrations/supabase/client";
 import { useEntitlements } from "@/lib/saas-billing/use-entitlements";
 import { UsageMeterBar } from "@/components/common/UsageMeterBar";
 import { useI18n } from "@/lib/i18n";
@@ -24,16 +27,23 @@ import {
   AlertTriangle,
   Plus,
   ArrowUpRight,
+  ArrowLeft,
+  ArrowRight,
   ShieldCheck,
   CreditCard,
   PackageCheck,
   TrendingUp,
-  PackagePlus,
   Loader2,
   Check,
   XCircle,
   HelpCircle,
   Info,
+  Clock,
+  Copy,
+  QrCode,
+  UploadCloud,
+  FileImage,
+  X,
 } from "lucide-react";
 import {
   Card,
@@ -77,16 +87,133 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
     isLoading: isEntitlementsLoading,
   } = useEntitlements({ brandId });
 
-  const [selectedAddonForAction, setSelectedAddonForAction] = useState<{
-    id: string;
-    code: string;
-    name: string;
-    action: "subscribe" | "cancel";
-  } | null>(null);
-
+  // Subscription upgrade & payment states
   const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false);
+  const [selectedPlanForUpgrade, setSelectedPlanForUpgrade] = useState<any | null>(null);
+  const [upgradeBillingInterval, setUpgradeBillingInterval] = useState<"monthly" | "annual">("annual");
+  const [receiptFile, setReceiptFile] = useState<File | null>(null);
+  const [receiptPreview, setReceiptPreview] = useState<string | null>(null);
+  const [isUploadingReceipt, setIsUploadingReceipt] = useState(false);
+  const [copiedIban, setCopiedIban] = useState(false);
+
   const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Fetch BenefitPay system settings
+  const { data: systemSettings } = useQuery({
+    queryKey: ["system_settings_billing"],
+    queryFn: async () => {
+      const { data } = await (supabase as any)
+        .from("system_settings")
+        .select(
+          "base_price_bhd, discount_price_bhd, benefit_pay_qr_url, merchant_account_name, subscription_iban",
+        )
+        .eq("id", 1)
+        .maybeSingle();
+      return (
+        data ?? {
+          merchant_account_name: "BOUTQ-OFFICIAL",
+          subscription_iban: "BH12KHCB0000001234567890",
+          benefit_pay_qr_url: null,
+        }
+      );
+    },
+  });
+
+  const handleCopyIban = () => {
+    const iban = systemSettings?.subscription_iban || "BH12KHCB0000001234567890";
+    navigator.clipboard.writeText(iban);
+    setCopiedIban(true);
+    toast.success(isAr ? "تم نسخ رقم الآيبان بنجاح!" : "IBAN copied to clipboard!");
+    setTimeout(() => setCopiedIban(false), 2500);
+  };
+
+  const handleReceiptFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
+      toast.error(isAr ? "يرجى اختيار صورة بصيغة JPG أو PNG أو WebP." : "Please upload a JPG, PNG, or WebP image.");
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error(isAr ? "حجم الصورة كبير جداً، الحد الأقصى هو 10 ميجابايت." : "File is too large, maximum 10MB allowed.");
+      return;
+    }
+
+    setReceiptFile(file);
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      setReceiptPreview(event.target?.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleUploadAndConfirmUpgrade = async () => {
+    if (!receiptFile || !selectedPlanForUpgrade) {
+      toast.error(isAr ? "يرجى إرفاق صورة إشعار التحويل أولاً." : "Please attach the transfer receipt image first.");
+      return;
+    }
+
+    setIsUploadingReceipt(true);
+    const toastId = toast.loading(
+      isAr ? "جاري رفع إشعار التحويل وتأكيد الترقية..." : "Uploading receipt and confirming upgrade...",
+    );
+
+    try {
+      // 1. Request presigned R2 upload URL
+      const { objectKey, uploadUrl } = await getSubscriptionReceiptUploadUrl({
+        data: {
+          brandId,
+          contentType: receiptFile.type as "image/jpeg" | "image/png" | "image/webp",
+          size: receiptFile.size,
+          isUpgrade: true,
+        },
+      });
+
+      // 2. Upload file directly to private R2 storage
+      const putRes = await fetch(uploadUrl, {
+        method: "PUT",
+        headers: { "Content-Type": receiptFile.type },
+        body: receiptFile,
+      });
+
+      if (!putRes.ok) {
+        throw new Error("Failed to upload receipt file to storage.");
+      }
+
+      // 3. Submit receipt to update brand to pending_verification and record upgrade intent
+      await submitSubscriptionReceipt({
+        data: {
+          brandId,
+          objectKey,
+          targetPlanId: selectedPlanForUpgrade.id,
+          billingInterval: upgradeBillingInterval,
+        },
+      });
+
+      toast.success(
+        isAr
+          ? "تم إرسال إشعار الدفع بنجاح! طلب ترقية متجرك قيد المراجعة لدى إدارة المنصة وسيتم اعتماد الباقة فوراً."
+          : "Payment receipt submitted successfully! Your plan upgrade is pending admin verification.",
+        { id: toastId, duration: 6000 },
+      );
+
+      setIsUpgradeModalOpen(false);
+      setSelectedPlanForUpgrade(null);
+      setReceiptFile(null);
+      setReceiptPreview(null);
+
+      void queryClient.invalidateQueries({ queryKey: ["brand_subscription_details", brandId] });
+      void queryClient.invalidateQueries({ queryKey: ["brand", brandSlug] });
+      void queryClient.invalidateQueries({ queryKey: ["brands"] });
+    } catch (err: any) {
+      console.error(err);
+      toast.error(getFriendlyErrorMessage(err) || "Failed to submit upgrade receipt", { id: toastId });
+    } finally {
+      setIsUploadingReceipt(false);
+    }
+  };
 
   if (isLoading || isEntitlementsLoading) {
     return (
@@ -123,48 +250,12 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
   const isTrial = currentPlan?.code === "trial" || subscription?.status === "trialing" || subscription?.billing_interval === "trial";
   const isInGrace = subscription?.status === "grace_period";
   const isCancelled = subscription?.status === "cancelled" || subscription?.cancel_at_period_end;
+  const isPendingVerification = brand?.subscription_status === "pending_verification";
 
   const trialEndsAtDate = subscription?.trial_ends_at || brand?.trial_ends_at;
   const trialDaysRemaining = trialEndsAtDate
     ? Math.max(0, Math.ceil((new Date(trialEndsAtDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
     : null;
-
-  const handleAddonAction = async () => {
-    if (!selectedAddonForAction) return;
-    setIsSubmitting(true);
-    const isSub = selectedAddonForAction.action === "subscribe";
-    const toastId = toast.loading(isAr ? "جاري تحديث الاشتراك..." : "Updating add-on subscription...");
-
-    try {
-      if (isSub) {
-        await subscribeAddon({
-          data: {
-            brandId,
-            addonId: selectedAddonForAction.id,
-            billingInterval: subscription.billing_interval || "monthly",
-          },
-        });
-        toast.success(isAr ? "تم تفعيل الإضافة السحابية بنجاح!" : "Add-on activated successfully!", { id: toastId });
-      } else {
-        await cancelAddon({
-          data: {
-            brandId,
-            addonId: selectedAddonForAction.id,
-          },
-        });
-        toast.success(isAr ? "تم إلغاء الإضافة السحابية." : "Add-on cancelled.", { id: toastId });
-      }
-
-      setSelectedAddonForAction(null);
-      void queryClient.invalidateQueries({ queryKey: ["brand_subscription_details", brandId] });
-      void queryClient.invalidateQueries({ queryKey: ["brand_entitlements", brandId] });
-    } catch (err) {
-      console.error(err);
-      toast.error(getFriendlyErrorMessage(err) || "Addon action failed", { id: toastId });
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
 
   const handleCancelSubscription = async () => {
     setIsSubmitting(true);
@@ -274,7 +365,26 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
         </CardHeader>
 
         <CardContent className="pt-2 pb-6">
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 p-4 rounded-2xl bg-background/60 border border-border/60 backdrop-blur-sm">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 p-4 rounded-2xl bg-background/60 border border-border/60 backdrop-blur-sm">
+            <div>
+              <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground block">
+                {isTrial
+                  ? (isAr ? "نوع الحساب" : "Account Mode")
+                  : (isAr ? "حماية الأسعار" : "Grandfathering")}
+              </span>
+              {isTrial ? (
+                <span className="text-sm font-bold text-sky-600 dark:text-sky-400 flex items-center gap-1">
+                  <Sparkles className="h-3.5 w-3.5" />
+                  <span>{isAr ? "تجربة كاملة المزايا" : "Full Access Trial"}</span>
+                </span>
+              ) : (
+                <span className="text-sm font-bold text-emerald-600 flex items-center gap-1">
+                  <ShieldCheck className="h-3.5 w-3.5" />
+                  <span>{isAr ? "سعر محمي" : "Locked v" + (currentVersion?.version_number || 1)}</span>
+                </span>
+              )}
+            </div>
+
             <div>
               <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground block">
                 {isAr ? "فترة الفوترة" : "Billing Cycle"}
@@ -306,38 +416,32 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
                       : "-"}
               </span>
             </div>
-
-            <div>
-              <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground block">
-                {isAr ? "الإضافات النشطة" : "Active Boost Add-ons"}
-              </span>
-              <span className="text-sm font-bold text-primary font-mono">
-                {activeAddons.length} {isAr ? "إضافة" : "Add-ons"}
-              </span>
-            </div>
-
-            <div>
-              <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground block">
-                {isTrial
-                  ? (isAr ? "نوع الحساب" : "Account Mode")
-                  : (isAr ? "حماية الأسعار" : "Grandfathering")}
-              </span>
-              {isTrial ? (
-                <span className="text-sm font-bold text-sky-600 dark:text-sky-400 flex items-center gap-1">
-                  <Sparkles className="h-3.5 w-3.5" />
-                  <span>{isAr ? "تجربة كاملة المزايا" : "Full Access Trial"}</span>
-                </span>
-              ) : (
-                <span className="text-sm font-bold text-emerald-600 flex items-center gap-1">
-                  <ShieldCheck className="h-3.5 w-3.5" />
-                  <span>{isAr ? "سعر محمي" : "Locked v" + (currentVersion?.version_number || 1)}</span>
-                </span>
-              )}
-            </div>
           </div>
 
+          {/* Pending Verification Notice Banner */}
+          {isPendingVerification && (
+            <div className="mt-4 p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-xs text-amber-900 dark:text-amber-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-2.5">
+                <Clock className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400 animate-pulse" />
+                <div>
+                  <p className="font-bold text-amber-800 dark:text-amber-300">
+                    {isAr ? "طلب الترقية قيد المراجعة والتحقق" : "Upgrade Request Pending Verification"}
+                  </p>
+                  <p className="text-[11px] text-amber-700/80 dark:text-amber-400/80 mt-0.5">
+                    {isAr
+                      ? "تم استلام إشعار التحويل عبر BenefitPay بنجاح. جاري مطابقة التحويل من قبل إدارة المنصة وسيتم تفعيل الباقة فور الاعتماد."
+                      : "BenefitPay transfer receipt submitted. Admin verification is in progress."}
+                  </p>
+                </div>
+              </div>
+              <Badge className="bg-amber-500 text-white shrink-0 text-[10px] font-bold">
+                {isAr ? "بانتظار الاعتماد" : "Pending Approval"}
+              </Badge>
+            </div>
+          )}
+
           {/* Active Trial Notice Banner */}
-          {isTrial && (
+          {isTrial && !isPendingVerification && (
             <div className="mt-4 p-3.5 rounded-2xl bg-sky-500/10 border border-sky-500/20 text-xs text-sky-900 dark:text-sky-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
               <div className="flex items-center gap-2.5">
                 <Sparkles className="h-4 w-4 shrink-0 text-sky-600 dark:text-sky-400" />
@@ -467,105 +571,7 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
         </div>
       </div>
 
-      {/* 3. Modular SaaS Add-ons Store */}
-      <div className="space-y-4">
-        <div>
-          <h3 className="text-base font-bold text-foreground flex items-center gap-2">
-            <PackagePlus className="h-4.5 w-4.5 text-primary" />
-            <span>{isAr ? "متجر الإضافات السحابية الموديلية" : "Modular Capacity Add-ons Store"}</span>
-          </h3>
-          <p className="text-xs text-muted-foreground">
-            {isAr
-              ? "قم بتوسيع سعة متجرك بمرونة فورية عبر زيادة المنتجات أو الطلبات دون الحاجة لترقية الخطة بأكملها."
-              : "Instantly expand catalog limits, order volumes, and storage without upgrading full plan tiers."}
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-          {availableAddons.map((addon) => {
-            const isSubscribed = activeAddons.some((a: any) => a.addon_id === addon.id);
-
-            return (
-              <Card
-                key={addon.id}
-                className="border border-border bg-card shadow-sm rounded-2xl flex flex-col justify-between"
-              >
-                <CardHeader className="pb-3 border-b border-border/50">
-                  <div className="flex items-center justify-between">
-                    <Badge variant="outline" className="font-mono text-[10px]">
-                      {addon.code}
-                    </Badge>
-                    {isSubscribed ? (
-                      <Badge variant="outline" className="bg-emerald-500/10 text-emerald-600 text-[10px] font-bold">
-                        {isAr ? "مفعل بالمتجر" : "Active"}
-                      </Badge>
-                    ) : (
-                      <span className="text-xs font-mono font-bold text-foreground">
-                        {addon.price_monthly} BHD<span className="text-[10px] font-normal text-muted-foreground">/{isAr ? "شهر" : "mo"}</span>
-                      </span>
-                    )}
-                  </div>
-                  <CardTitle className="text-sm font-bold text-foreground mt-2">
-                    {isAr ? addon.name_ar : addon.name_en}
-                  </CardTitle>
-                  <CardDescription className="text-xs line-clamp-2">
-                    {isAr ? addon.description_ar : addon.description_en}
-                  </CardDescription>
-                </CardHeader>
-
-                <CardContent className="pt-4 space-y-3">
-                  <div className="p-2.5 rounded-xl bg-muted/40 border border-border/50 text-xs flex items-center justify-between">
-                    <span className="text-muted-foreground">{isAr ? "السعة الإضافية:" : "Capacity Boost:"}</span>
-                    <span className="font-bold text-foreground">
-                      +{addon.grant_numeric_amount.toLocaleString()} ({addon.target_feature_key})
-                    </span>
-                  </div>
-
-                  {isSubscribed ? (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() =>
-                        setSelectedAddonForAction({
-                          id: addon.id,
-                          code: addon.code,
-                          name: isAr ? addon.name_ar : addon.name_en,
-                          action: "cancel",
-                        })
-                      }
-                      className="w-full text-xs font-bold text-destructive hover:bg-destructive/10 min-h-[44px]"
-                    >
-                      <XCircle className="h-3.5 w-3.5 me-1.5" />
-                      <span>{isAr ? "إلغاء الإضافة" : "Cancel Add-on"}</span>
-                    </Button>
-                  ) : (
-                    <Button
-                      type="button"
-                      variant="default"
-                      size="sm"
-                      onClick={() =>
-                        setSelectedAddonForAction({
-                          id: addon.id,
-                          code: addon.code,
-                          name: isAr ? addon.name_ar : addon.name_en,
-                          action: "subscribe",
-                        })
-                      }
-                      className="w-full text-xs font-bold gap-1.5 min-h-[44px]"
-                    >
-                      <Plus className="h-3.5 w-3.5" />
-                      <span>{isAr ? "تفعيل الإضافة الآن" : "Activate Add-on"}</span>
-                    </Button>
-                  )}
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* 4. Active Unlocked Features Summary */}
+      {/* 3. Active Unlocked Features Summary */}
       <Card className="border border-border bg-card shadow-sm rounded-2xl">
         <CardHeader className="pb-3 border-b border-border/50">
           <CardTitle className="text-base font-bold text-foreground flex items-center gap-2">
@@ -574,7 +580,7 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
           </CardTitle>
           <CardDescription className="text-xs">
             {isAr
-              ? "الميزات البرمجية والتسويقية المتاحة لمتجرك بناءً على باقتك الحالية والإضافات المفعلة."
+              ? "الميزات البرمجية والتسويقية المتاحة لمتجرك بناءً على باقتك الحالية."
               : "Marketing, operations, and developer API capabilities unlocked for your store."}
           </CardDescription>
         </CardHeader>
@@ -618,7 +624,7 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
           </div>
         </CardContent>
         <CardFooter className="pt-2 pb-4 border-t border-border/50 flex justify-between items-center text-xs text-muted-foreground">
-          <span>{isAr ? "هل تحتاج إلى ميزة إضافية؟" : "Need more custom features?"}</span>
+          <span>{isAr ? "هل ترغب في إدارة اشتراكك؟" : "Manage your store plan?"}</span>
           <Button
             type="button"
             variant="ghost"
@@ -631,169 +637,395 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
         </CardFooter>
       </Card>
 
-      {/* Upgrade / Change Plan Dialog */}
+      {/* Upgrade / Change Plan & BenefitPay Payment Dialog */}
       {isUpgradeModalOpen && (
-        <Dialog open={isUpgradeModalOpen} onOpenChange={setIsUpgradeModalOpen}>
-          <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle className="text-lg font-bold flex items-center gap-2">
-                <TrendingUp className="h-5 w-5 text-primary" />
-                <span>{isAr ? "ترقية خطة المتجر والمزايا" : "Upgrade / Select Plan"}</span>
-              </DialogTitle>
-              <DialogDescription className="text-xs">
-                {isAr
-                  ? "اختر الباقة المناسبة لحجم أعمالك. يتم تفعيل المزايا فوراً دون أي انقطاع في الخدمة."
-                  : "Select the plan that fits your growth. New quotas apply immediately without store downtime."}
-              </DialogDescription>
-            </DialogHeader>
+        <Dialog
+          open={isUpgradeModalOpen}
+          onOpenChange={(open) => {
+            if (!open) {
+              setSelectedPlanForUpgrade(null);
+              setReceiptFile(null);
+              setReceiptPreview(null);
+            }
+            setIsUpgradeModalOpen(open);
+          }}
+        >
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            {!selectedPlanForUpgrade ? (
+              // STEP 1: Plan Selection & Billing Interval Switcher
+              <>
+                <DialogHeader>
+                  <DialogTitle className="text-lg font-bold flex items-center gap-2">
+                    <TrendingUp className="h-5 w-5 text-primary" />
+                    <span>{isAr ? "ترقية خطة المتجر والمزايا" : "Upgrade / Select Plan"}</span>
+                  </DialogTitle>
+                  <DialogDescription className="text-xs">
+                    {isAr
+                      ? "اختر الباقة المناسبة لحجم أعمالك. يتم تفعيل المزايا فوراً دون أي انقطاع في الخدمة."
+                      : "Select the plan that fits your growth. New quotas apply immediately without store downtime."}
+                  </DialogDescription>
+                </DialogHeader>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 py-4">
-              {allPlans
-                .filter((p) => p.code !== "lifetime_founder" && p.code !== "trial")
-                .map((plan) => {
-                  const isCurrent = plan.id === currentPlan.id;
-                  const currentVer = (plan as any).versions?.find((v: any) => v.is_current) || (plan as any).versions?.[0];
-                  const monthlyPrice = currentVer?.price_monthly;
-                  const annualPrice = currentVer?.price_annual;
-                  const currency = currentVer?.currency || "BHD";
+                {/* Billing Interval Switcher */}
+                <div className="flex items-center justify-center p-1 bg-muted/60 rounded-xl max-w-xs mx-auto my-2 border border-border">
+                  <button
+                    type="button"
+                    onClick={() => setUpgradeBillingInterval("monthly")}
+                    className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-bold transition-all ${
+                      upgradeBillingInterval === "monthly"
+                        ? "bg-background text-foreground shadow-sm"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    {isAr ? "اشتراك شهري" : "Monthly"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setUpgradeBillingInterval("annual")}
+                    className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-bold transition-all relative ${
+                      upgradeBillingInterval === "annual"
+                        ? "bg-primary text-primary-foreground shadow-sm"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    {isAr ? "اشتراك سنوي (وفّر شهرين!)" : "Annual (2 Mo Free!)"}
+                  </button>
+                </div>
 
-                  return (
-                    <div
-                      key={plan.id}
-                      className={`p-4 rounded-2xl border flex flex-col justify-between text-xs space-y-3 ${
-                        isCurrent
-                          ? "border-primary bg-primary/5 ring-2 ring-primary/20"
-                          : "border-border bg-card hover:border-border/80"
-                      }`}
-                    >
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between">
-                          <Badge variant="outline" className={plan.badge_color || "bg-primary/10 text-primary font-bold"}>
-                            {plan.code}
-                          </Badge>
-                          {isCurrent && (
-                            <Badge variant="outline" className="bg-emerald-500/10 text-emerald-600 font-bold text-[10px]">
-                              {isAr ? "خطتك الحالية" : "Current"}
-                            </Badge>
-                          )}
-                          {currentVer && (
-                            <span className="text-[10px] text-muted-foreground font-mono">
-                              v{currentVer.version_number}
-                            </span>
-                          )}
-                        </div>
-                        <h4 className="text-base font-bold text-foreground">
-                          {isAr ? plan.name_ar : plan.name_en}
-                        </h4>
-                        <p className="text-[11px] text-muted-foreground line-clamp-2">
-                          {isAr ? plan.description_ar : plan.description_en}
-                        </p>
-                      </div>
+                {/* Plans Grid */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 py-2">
+                  {allPlans
+                    .filter((p) => p.code !== "lifetime_founder" && p.code !== "trial")
+                    .map((plan) => {
+                      const isCurrent = plan.id === currentPlan.id;
+                      const currentVer =
+                        (plan as any).versions?.find((v: any) => v.is_current) ||
+                        (plan as any).versions?.[0];
+                      const monthlyPrice = currentVer?.price_monthly ?? 0;
+                      const annualPrice = currentVer?.price_annual ?? 0;
+                      const currency = currentVer?.currency || "BHD";
+                      const effectivePrice =
+                        upgradeBillingInterval === "annual" ? annualPrice : monthlyPrice;
 
-                      <div className="pt-2 border-t border-border/50 space-y-2">
-                        <div className="font-mono text-sm font-bold text-foreground">
-                          {plan.code === "enterprise" ? (
-                            <span>{isAr ? "اتفاقية خاصة" : "Custom Enterprise"}</span>
-                          ) : currentVer ? (
-                            <div className="space-y-0.5">
-                              <div className="flex items-baseline gap-1">
-                                <span className="text-lg font-black text-foreground">{monthlyPrice}</span>
-                                <span className="text-xs text-muted-foreground font-normal">{currency} / {isAr ? "شهرياً" : "mo"}</span>
-                              </div>
-                              {Number(annualPrice) > 0 && (
-                                <div className="text-[11px] text-muted-foreground font-normal">
-                                  {annualPrice} {currency} {isAr ? "سنوياً (توفير إضافي)" : "annually"}
-                                </div>
+                      return (
+                        <div
+                          key={plan.id}
+                          className={`p-4 rounded-2xl border flex flex-col justify-between text-xs space-y-3 ${
+                            isCurrent
+                              ? "border-primary bg-primary/5 ring-2 ring-primary/20"
+                              : "border-border bg-card hover:border-border/80"
+                          }`}
+                        >
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between">
+                              <Badge
+                                variant="outline"
+                                className={plan.badge_color || "bg-primary/10 text-primary font-bold"}
+                              >
+                                {plan.code}
+                              </Badge>
+                              {isCurrent && (
+                                <Badge
+                                  variant="outline"
+                                  className="bg-emerald-500/10 text-emerald-600 font-bold text-[10px]"
+                                >
+                                  {isAr ? "خطتك الحالية" : "Current"}
+                                </Badge>
+                              )}
+                              {currentVer && (
+                                <span className="text-[10px] text-muted-foreground font-mono">
+                                  v{currentVer.version_number}
+                                </span>
                               )}
                             </div>
-                          ) : (
-                            <span>{isAr ? "حسب العرض" : "On Request"}</span>
-                          )}
+                            <h4 className="text-base font-bold text-foreground">
+                              {isAr ? plan.name_ar : plan.name_en}
+                            </h4>
+                            <p className="text-[11px] text-muted-foreground line-clamp-2">
+                              {isAr ? plan.description_ar : plan.description_en}
+                            </p>
+                          </div>
+
+                          <div className="pt-2 border-t border-border/50 space-y-3">
+                            <div className="font-mono text-sm font-bold text-foreground">
+                              {plan.code === "enterprise" ? (
+                                <span>{isAr ? "اتفاقية خاصة" : "Custom Enterprise"}</span>
+                              ) : currentVer ? (
+                                <div className="space-y-0.5">
+                                  <div className="flex items-baseline gap-1">
+                                    <span className="text-2xl font-black text-foreground">
+                                      {effectivePrice}
+                                    </span>
+                                    <span className="text-xs text-muted-foreground font-normal">
+                                      {currency} / {upgradeBillingInterval === "annual" ? (isAr ? "سنوياً" : "year") : (isAr ? "شهرياً" : "mo")}
+                                    </span>
+                                  </div>
+                                  {upgradeBillingInterval === "annual" && Number(monthlyPrice) > 0 && (
+                                    <div className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold">
+                                      {isAr
+                                        ? `(يعادل ${(Number(annualPrice) / 12).toFixed(1)} د.ب / شهرياً فقط)`
+                                        : `(Equivalent to ${(Number(annualPrice) / 12).toFixed(1)} BHD/mo)`}
+                                    </div>
+                                  )}
+                                </div>
+                              ) : (
+                                <span>{isAr ? "حسب العرض" : "On Request"}</span>
+                              )}
+                            </div>
+
+                            <Button
+                              type="button"
+                              variant={isCurrent ? "outline" : "default"}
+                              size="sm"
+                              disabled={isCurrent}
+                              onClick={() => setSelectedPlanForUpgrade(plan)}
+                              className="w-full font-bold text-xs min-h-[44px]"
+                            >
+                              {isCurrent
+                                ? (isAr ? "الخطة الحالية" : "Current Plan")
+                                : (isAr ? "اختيار الباقة والمتابعة للدفع" : "Select Plan & Pay")}
+                            </Button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                </div>
+              </>
+            ) : (
+              // STEP 2: BenefitPay Payment Checkout & Transfer Receipt Upload
+              (() => {
+                const currentVer =
+                  selectedPlanForUpgrade.versions?.find((v: any) => v.is_current) ||
+                  selectedPlanForUpgrade.versions?.[0];
+                const duePrice =
+                  upgradeBillingInterval === "annual"
+                    ? currentVer?.price_annual ?? 0
+                    : currentVer?.price_monthly ?? 0;
+                const currency = currentVer?.currency || "BHD";
+                const merchantName = systemSettings?.merchant_account_name || "BOUTQ-OFFICIAL";
+                const iban = systemSettings?.subscription_iban || "BH12KHCB0000001234567890";
+                const qrUrl = systemSettings?.benefit_pay_qr_url;
+
+                return (
+                  <div className="space-y-4">
+                    <DialogHeader>
+                      <div className="flex items-center justify-between">
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setSelectedPlanForUpgrade(null)}
+                          className="h-8 px-2 text-xs gap-1 text-muted-foreground hover:text-foreground"
+                        >
+                          {isAr ? <ArrowRight className="h-3.5 w-3.5" /> : <ArrowLeft className="h-3.5 w-3.5" />}
+                          <span>{isAr ? "العودة لتغيير الباقة" : "Change Plan"}</span>
+                        </Button>
+                        <Badge variant="outline" className="font-mono text-xs">
+                          {selectedPlanForUpgrade.code}
+                        </Badge>
+                      </div>
+
+                      <DialogTitle className="text-lg font-bold flex items-center gap-2 mt-2">
+                        <CreditCard className="h-5 w-5 text-primary" />
+                        <span>{isAr ? "الدفع عبر BenefitPay وتأكيد الترقية" : "Pay via BenefitPay & Confirm Upgrade"}</span>
+                      </DialogTitle>
+                      <DialogDescription className="text-xs">
+                        {isAr
+                          ? "قم بتحويل المبلغ المطلوب عبر تطبيق BenefitPay ثم ارفع صورة إشعار التحويل للاعتماد الفوري."
+                          : "Transfer the amount via BenefitPay and upload your receipt screenshot for activation."}
+                      </DialogDescription>
+                    </DialogHeader>
+
+                    {/* Order Summary Card */}
+                    <div className="p-3.5 rounded-2xl bg-muted/40 border border-border/80 flex items-center justify-between">
+                      <div>
+                        <span className="text-[11px] text-muted-foreground block">
+                          {isAr ? "الباقة ودورة الفوترة:" : "Selected Plan & Cycle:"}
+                        </span>
+                        <span className="text-sm font-bold text-foreground">
+                          {isAr ? selectedPlanForUpgrade.name_ar : selectedPlanForUpgrade.name_en}
+                          <span className="text-xs font-normal text-muted-foreground ms-1.5">
+                            ({upgradeBillingInterval === "annual" ? (isAr ? "سنوي" : "Annual") : (isAr ? "شهري" : "Monthly")})
+                          </span>
+                        </span>
+                      </div>
+                      <div className="text-end">
+                        <span className="text-[11px] text-muted-foreground block">
+                          {isAr ? "المبلغ المستحق:" : "Total Amount:"}
+                        </span>
+                        <span className="text-lg font-black text-primary font-mono">
+                          {duePrice} {currency}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* BenefitPay Transfer Details Card */}
+                    <div className="p-4 rounded-2xl bg-primary/[0.03] border border-primary/20 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary font-bold text-xs">
+                            BP
+                          </div>
+                          <div>
+                            <h5 className="text-xs font-bold text-foreground">
+                              {isAr ? "بيانات التحويل عبر BenefitPay" : "BenefitPay Transfer Account"}
+                            </h5>
+                            <p className="text-[11px] text-muted-foreground font-mono">
+                              {merchantName}
+                            </p>
+                          </div>
+                        </div>
+                        {qrUrl && (
+                          <Badge variant="outline" className="text-[10px] gap-1">
+                            <QrCode className="h-3 w-3" />
+                            <span>{isAr ? "رمز QR متاح" : "QR Available"}</span>
+                          </Badge>
+                        )}
+                      </div>
+
+                      {/* QR Display if available */}
+                      {qrUrl && (
+                        <div className="flex justify-center p-2 bg-background rounded-xl border border-border/50 max-w-[160px] mx-auto">
+                          <img
+                            src={qrUrl}
+                            alt="BenefitPay QR"
+                            className="max-h-36 w-auto object-contain rounded-lg"
+                          />
+                        </div>
+                      )}
+
+                      {/* IBAN Copy Box */}
+                      <div className="p-3 rounded-xl bg-background border border-border flex items-center justify-between gap-2">
+                        <div className="min-w-0">
+                          <span className="text-[10px] text-muted-foreground font-medium block">
+                            {isAr ? "رقم الآيبان (IBAN):" : "IBAN Number:"}
+                          </span>
+                          <span className="font-mono text-xs font-bold text-foreground break-all select-all">
+                            {iban}
+                          </span>
                         </div>
                         <Button
                           type="button"
-                          variant={isCurrent ? "outline" : "default"}
+                          variant="outline"
                           size="sm"
-                          disabled={isCurrent}
-                          onClick={() => {
-                            toast.info(
-                              isAr
-                                ? "يرجى تحويل الرسوم عبر BenefitPay وتأكيد طلب الترقية مع الإدارة."
-                                : "Please transfer fee via BenefitPay and confirm receipt with admin.",
-                            );
-                            setIsUpgradeModalOpen(false);
-                          }}
-                          className="w-full font-bold text-xs min-h-[44px]"
+                          onClick={handleCopyIban}
+                          className="shrink-0 h-8 px-2.5 text-xs gap-1.5"
                         >
-                          {isCurrent ? (isAr ? "الخطة النشطة" : "Active Plan") : (isAr ? "اختيار الباقة" : "Select Plan")}
+                          {copiedIban ? (
+                            <>
+                              <Check className="h-3.5 w-3.5 text-emerald-600" />
+                              <span className="text-emerald-600 font-bold">{isAr ? "تم النسخ" : "Copied"}</span>
+                            </>
+                          ) : (
+                            <>
+                              <Copy className="h-3.5 w-3.5" />
+                              <span>{isAr ? "نسخ" : "Copy"}</span>
+                            </>
+                          )}
                         </Button>
                       </div>
-                    </div>
-                  );
-                })}
-            </div>
-          </DialogContent>
-        </Dialog>
-      )}
 
-      {/* Add-on Action Dialog */}
-      {selectedAddonForAction && (
-        <Dialog
-          open={Boolean(selectedAddonForAction)}
-          onOpenChange={(open) => !open && setSelectedAddonForAction(null)}
-        >
-          <DialogContent className="max-w-md">
-            <DialogHeader>
-              <DialogTitle className="text-base font-bold">
-                {selectedAddonForAction.action === "subscribe"
-                  ? isAr
-                    ? `تفعيل ${selectedAddonForAction.name}`
-                    : `Subscribe to ${selectedAddonForAction.name}`
-                  : isAr
-                    ? `إلغاء ${selectedAddonForAction.name}`
-                    : `Cancel ${selectedAddonForAction.name}`}
-              </DialogTitle>
-              <DialogDescription className="text-xs">
-                {selectedAddonForAction.action === "subscribe"
-                  ? isAr
-                    ? "سيتم إضافة السعة الإضافية إلى حسابك فوراً وإدراجها في دورة الفوترة القادمة."
-                    : "The boost capacity will be immediately credited to your store."
-                  : isAr
-                    ? "عند الإلغاء، ستبقى السعة الإضافية متاحة حتى نهاية الفترة الحالية ولن يتم حذف أي بيانات."
-                    : "Add-on remains active until period end. No existing data will be deleted."}
-              </DialogDescription>
-            </DialogHeader>
-            <DialogFooter className="gap-2 sm:gap-0">
-              <Button
-                type="button"
-                variant="outline"
-                size="default"
-                disabled={isSubmitting}
-                onClick={() => setSelectedAddonForAction(null)}
-                className="min-h-[44px]"
-              >
-                {isAr ? "إلغاء" : "Cancel"}
-              </Button>
-              <Button
-                type="button"
-                variant={selectedAddonForAction.action === "subscribe" ? "default" : "destructive"}
-                size="default"
-                disabled={isSubmitting}
-                onClick={handleAddonAction}
-                className="font-bold min-h-[44px]"
-              >
-                {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
-                <span>
-                  {selectedAddonForAction.action === "subscribe"
-                    ? isAr
-                      ? "تأكيد التفعيل"
-                      : "Confirm Activation"
-                    : isAr
-                      ? "تأكيد الإلغاء"
-                      : "Confirm Cancellation"}
-                </span>
-              </Button>
-            </DialogFooter>
+                      {/* Transfer Instructions */}
+                      <div className="space-y-1 text-[11px] text-muted-foreground leading-relaxed pt-1">
+                        <p>1. {isAr ? "افتح تطبيق BenefitPay واختر تحويل الأموال Fawri+." : "Open BenefitPay app and choose Fawri+ transfer."}</p>
+                        <p>2. {isAr ? `حوّل المبلغ المطلوب (${duePrice} ${currency}) إلى رقم الآيبان الموضح أعلاه.` : `Transfer exact amount (${duePrice} ${currency}) to the IBAN above.`}</p>
+                        <p>3. {isAr ? "احفظ لقطة شاشة لإشعار التحويل الناجح وارفعها في الحقل أدناه." : "Take a screenshot of the successful transfer receipt and upload below."}</p>
+                      </div>
+                    </div>
+
+                    {/* Receipt Upload Input */}
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold text-foreground block">
+                        {isAr ? "صورة إشعار التحويل (مطلوبة):" : "Transfer Receipt Screenshot (Required):"}
+                      </label>
+
+                      {!receiptPreview ? (
+                        <label className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-border rounded-2xl cursor-pointer hover:border-primary/50 hover:bg-muted/30 transition-all">
+                          <UploadCloud className="h-8 w-8 text-primary mb-2" />
+                          <span className="text-xs font-semibold text-foreground">
+                            {isAr ? "اضغط هنا لاختيار صورة الإيصال" : "Click to select transfer receipt"}
+                          </span>
+                          <span className="text-[10px] text-muted-foreground mt-1">
+                            PNG, JPG, WebP ({isAr ? "حتى 10 ميجابايت" : "up to 10MB"})
+                          </span>
+                          <input
+                            type="file"
+                            accept="image/jpeg,image/png,image/webp"
+                            onChange={handleReceiptFileChange}
+                            className="hidden"
+                          />
+                        </label>
+                      ) : (
+                        <div className="p-3 rounded-2xl bg-muted/30 border border-border flex items-center justify-between gap-3">
+                          <div className="flex items-center gap-3 min-w-0">
+                            <img
+                              src={receiptPreview}
+                              alt="Receipt Preview"
+                              className="h-14 w-14 rounded-xl object-cover border border-border shrink-0"
+                            />
+                            <div className="min-w-0">
+                              <span className="text-xs font-bold text-foreground truncate block">
+                                {receiptFile?.name}
+                              </span>
+                              <span className="text-[10px] text-muted-foreground">
+                                {receiptFile && (receiptFile.size / (1024 * 1024)).toFixed(2)} MB
+                              </span>
+                            </div>
+                          </div>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              setReceiptFile(null);
+                              setReceiptPreview(null);
+                            }}
+                            className="h-8 px-2 text-xs text-destructive hover:bg-destructive/10"
+                          >
+                            <X className="h-4 w-4 me-1" />
+                            <span>{isAr ? "إزالة" : "Remove"}</span>
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Confirmation Footer */}
+                    <DialogFooter className="gap-2 sm:gap-0 pt-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="default"
+                        disabled={isUploadingReceipt}
+                        onClick={() => setSelectedPlanForUpgrade(null)}
+                        className="min-h-[44px]"
+                      >
+                        {isAr ? "العودة" : "Back"}
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="default"
+                        size="default"
+                        disabled={!receiptFile || isUploadingReceipt}
+                        onClick={handleUploadAndConfirmUpgrade}
+                        className="font-bold min-h-[44px] gap-2 shadow-sm"
+                      >
+                        {isUploadingReceipt ? (
+                          <>
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                            <span>{isAr ? "جاري الرفع والتأكيد..." : "Uploading & Confirming..."}</span>
+                          </>
+                        ) : (
+                          <>
+                            <CheckCircle2 className="h-4 w-4" />
+                            <span>{isAr ? "تأكيد الدفع وإرسال الإيصال" : "Confirm Payment & Submit Receipt"}</span>
+                          </>
+                        )}
+                      </Button>
+                    </DialogFooter>
+                  </div>
+                );
+              })()
+            )}
           </DialogContent>
         </Dialog>
       )}
