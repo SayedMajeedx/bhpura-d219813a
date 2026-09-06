@@ -65,6 +65,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { PayPalSubscriptionButton } from "./PayPalSubscriptionButton";
 
 interface BrandSubscriptionHubProps {
   brandId: string;
@@ -93,6 +94,8 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
   const [selectedPlanForUpgrade, setSelectedPlanForUpgrade] = useState<any | null>(null);
   const [inlineSelectedPlanId, setInlineSelectedPlanId] = useState<string | null>(null);
   const [upgradeBillingInterval, setUpgradeBillingInterval] = useState<"monthly" | "annual">("annual");
+  const [inlinePaymentMethod, setInlinePaymentMethod] = useState<"paypal" | "benefit">("paypal");
+  const [dialogPaymentMethod, setDialogPaymentMethod] = useState<"paypal" | "benefit">("paypal");
   const [receiptFile, setReceiptFile] = useState<File | null>(null);
   const [receiptPreview, setReceiptPreview] = useState<string | null>(null);
   const [isUploadingReceipt, setIsUploadingReceipt] = useState(false);
@@ -216,6 +219,14 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
     } finally {
       setIsUploadingReceipt(false);
     }
+  };
+
+  const handlePaymentSuccess = () => {
+    setIsUpgradeModalOpen(false);
+    setSelectedPlanForUpgrade(null);
+    void queryClient.invalidateQueries({ queryKey: ["brand_subscription_details", brandId] });
+    void queryClient.invalidateQueries({ queryKey: ["brand", brandSlug] });
+    void queryClient.invalidateQueries({ queryKey: ["brands"] });
   };
 
   if (isLoading || isEntitlementsLoading) {
@@ -519,7 +530,7 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
         </CardContent>
       </Card>
 
-      {/* 1.5 Prominent BenefitPay Upgrade & Activation Section (For Trial, Expired, Grace or Pending Verification) */}
+      {/* 1.5 Prominent Upgrade & Activation Section (For Trial, Expired, Grace or Pending Verification) */}
       {shouldShowInlineUpgradeCard && !isPendingVerification && (
         <Card className="border-2 border-primary/20 bg-gradient-to-b from-card via-card to-primary/5 shadow-md rounded-3xl overflow-hidden">
           <CardHeader className="pb-4 border-b border-border/50 bg-muted/10">
@@ -527,18 +538,25 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
               <div>
                 <CardTitle className="text-xl font-bold flex items-center gap-2.5">
                   <CreditCard className="h-5 w-5 text-primary" />
-                  <span>{isAr ? "ترقية الباقة وطلب الاعتماد عبر BenefitPay" : "Upgrade Plan & Request BenefitPay Approval"}</span>
+                  <span>{isAr ? "ترقية الباقة وتفعيل الاشتراك" : "Upgrade Plan & Activate Subscription"}</span>
                 </CardTitle>
                 <CardDescription className="text-xs mt-1">
                   {isAr
-                    ? "اختر الباقة المناسبة وحوّل الرسوم عبر BenefitPay ثم أرفق إشعار التحويل؛ سيقوم السوبر أدمن بالتحقق من الحوالة وتفعيل باقتك يدوياً بعد الاعتماد."
-                    : "Select your plan, transfer via BenefitPay, and upload your receipt. The super-admin will verify payment and activate your tier upon review."}
+                    ? "اختر الباقة المناسبة وسدد عبر PayPal أو البطاقة البنكية للتفعيل الفوري، أو عبر BenefitPay باعتماد الإدارة."
+                    : "Select your plan and pay via PayPal/Card for instant activation, or via BenefitPay with admin review."}
                 </CardDescription>
               </div>
-              <Badge variant="outline" className="bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/30 text-xs font-bold gap-1.5 self-start sm:self-center">
-                <ShieldCheck className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
-                <span>{isAr ? "تفعيل يدوي باعتماد الإدارة" : "Admin Approval Required"}</span>
-              </Badge>
+              {inlinePaymentMethod === "paypal" ? (
+                <Badge variant="outline" className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 text-xs font-bold gap-1.5 self-start sm:self-center">
+                  <Sparkles className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+                  <span>{isAr ? "تفعيل فوري تلقائي" : "Instant Activation"}</span>
+                </Badge>
+              ) : (
+                <Badge variant="outline" className="bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/30 text-xs font-bold gap-1.5 self-start sm:self-center">
+                  <ShieldCheck className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
+                  <span>{isAr ? "تفعيل يدوي باعتماد الإدارة" : "Admin Approval Required"}</span>
+                </Badge>
+              )}
             </div>
           </CardHeader>
 
@@ -629,188 +647,292 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
               </div>
             </div>
 
-            {/* Step 2: BenefitPay Account & Transfer Instructions */}
+            {/* Step 2: Payment Method Choice */}
             <div className="space-y-3 pt-2 border-t border-border/50">
               <span className="text-xs font-bold text-foreground block">
-                {isAr ? "2. تفاصيل التحويل عبر BenefitPay (Fawri+):" : "2. BenefitPay Transfer Details (Fawri+):"}
+                {isAr ? "2. اختر وسيلة الدفع:" : "2. Select Payment Method:"}
               </span>
 
-              {/* Dynamic Due Amount Banner */}
-              <div className="p-3.5 rounded-2xl bg-primary/10 border border-primary/20 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                <span className="text-xs font-medium text-foreground">
-                  {isAr ? "المبلغ الإجمالي المطلوب تحويله:" : "Total Amount Due:"}
-                </span>
-                <div className="flex items-baseline gap-1.5 font-bold">
-                  <span className="text-2xl font-black text-primary font-mono">
-                    {activeInlinePrice.toFixed(3)}
-                  </span>
-                  <span className="text-sm font-bold text-primary">
-                    {isAr ? "دينار بحريني" : "BHD"}
-                  </span>
-                  <span className="text-xs text-muted-foreground font-normal ms-1">
-                    ({upgradeBillingInterval === "annual" ? (isAr ? "اشتراك سنوي كامل" : "Full Annual") : (isAr ? "اشتراك شهري" : "Monthly")})
-                  </span>
-                </div>
-              </div>
-
-              {/* QR and IBAN */}
-              <div className="grid grid-cols-1 md:grid-cols-[180px_1fr] gap-4 p-4 rounded-2xl bg-muted/20 border border-border/60">
-                <div className="flex flex-col items-center justify-center p-3 rounded-xl border border-border/60 bg-background text-center">
-                  {systemSettings?.benefit_pay_qr_url ? (
-                    <img
-                      src={systemSettings.benefit_pay_qr_url}
-                      alt="BenefitPay QR"
-                      className="mx-auto aspect-square w-32 object-contain rounded-lg"
-                    />
-                  ) : (
-                    <div className="mx-auto grid aspect-square w-32 place-items-center rounded-lg bg-muted text-muted-foreground">
-                      <QrCode className="h-10 w-10 text-primary/70" />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setInlinePaymentMethod("paypal")}
+                  className={`h-auto p-4 rounded-2xl text-start transition-all flex flex-col justify-between items-start gap-3 w-full border ${
+                    inlinePaymentMethod === "paypal"
+                      ? "border-primary bg-primary/10 ring-2 ring-primary/20"
+                      : "border-border/70 hover:border-border hover:bg-muted/30"
+                  }`}
+                >
+                  <div className="flex items-center justify-between w-full">
+                    <div className="flex items-center gap-2.5">
+                      <div className="h-8 w-8 rounded-xl bg-primary/15 text-primary flex items-center justify-center">
+                        <Sparkles className="h-4 w-4" />
+                      </div>
+                      <div>
+                        <div className="text-xs font-bold text-foreground">
+                          PayPal & Cards
+                        </div>
+                        <div className="text-[10px] text-muted-foreground">
+                          {isAr ? "فيزا / ماستركارد / Apple Pay" : "Visa / Mastercard / Apple Pay"}
+                        </div>
+                      </div>
                     </div>
-                  )}
-                  <span className="mt-2 text-[11px] font-bold text-foreground">
-                    {systemSettings?.merchant_account_name || "BOUTQ-OFFICIAL"}
-                  </span>
-                </div>
+                    <Badge variant="default" className="text-[10px] font-bold bg-primary text-primary-foreground">
+                      {isAr ? "تفعيل فوري" : "Instant"}
+                    </Badge>
+                  </div>
+                  <p className="text-[11px] text-muted-foreground font-normal">
+                    {isAr
+                      ? "سداد إلكتروني مباشر عبر حساب PayPal أو أي بطاقة بنكية، وتفعيل فوري للباقة دون انتظار."
+                      : "Instant online payment via PayPal account or bank card with automatic tier activation."}
+                  </p>
+                </Button>
 
-                <div className="space-y-3 flex flex-col justify-center">
-                  <div>
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground block mb-1">
-                      {isAr ? "رقم الآيبان الرسمي (IBAN):" : "Official IBAN:"}
-                    </span>
-                    <div className="flex items-center justify-between gap-2 p-2.5 rounded-xl border border-border/80 bg-background">
-                      <code dir="ltr" className="break-all text-xs font-bold font-mono text-foreground">
-                        {systemSettings?.subscription_iban || "BH12KHCB0000001234567890"}
-                      </code>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={handleCopyIban}
-                        className="h-8 text-xs font-bold shrink-0 gap-1"
-                      >
-                        {copiedIban ? (
-                          <>
-                            <Check className="h-3.5 w-3.5 text-emerald-600" />
-                            <span className="text-emerald-600">{isAr ? "تم النسخ" : "Copied"}</span>
-                          </>
-                        ) : (
-                          <>
-                            <Copy className="h-3.5 w-3.5" />
-                            <span>{isAr ? "نسخ" : "Copy"}</span>
-                          </>
-                        )}
-                      </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setInlinePaymentMethod("benefit")}
+                  className={`h-auto p-4 rounded-2xl text-start transition-all flex flex-col justify-between items-start gap-3 w-full border ${
+                    inlinePaymentMethod === "benefit"
+                      ? "border-primary bg-primary/10 ring-2 ring-primary/20"
+                      : "border-border/70 hover:border-border hover:bg-muted/30"
+                  }`}
+                >
+                  <div className="flex items-center justify-between w-full">
+                    <div className="flex items-center gap-2.5">
+                      <div className="h-8 w-8 rounded-xl bg-muted text-foreground flex items-center justify-center font-bold text-xs">
+                        BP
+                      </div>
+                      <div>
+                        <div className="text-xs font-bold text-foreground">
+                          BenefitPay (Fawri+)
+                        </div>
+                        <div className="text-[10px] text-muted-foreground">
+                          {isAr ? "تحويل محلي بالدينار البحريني" : "Local BHD Transfer"}
+                        </div>
+                      </div>
                     </div>
+                    <Badge variant="outline" className="text-[10px] font-semibold text-muted-foreground">
+                      {isAr ? "اعتماد يدوي" : "Manual Review"}
+                    </Badge>
                   </div>
-
-                  <div className="text-[11px] text-muted-foreground space-y-1">
-                    <p className="font-semibold text-foreground">
-                      {isAr ? "طريقة الدفع في تطبيق BenefitPay:" : "How to transfer in BenefitPay:"}
-                    </p>
-                    <p>• {isAr ? "افتح تطبيق بنفت باي واختر تحويل فوري Fawri+." : "Open BenefitPay app and select Fawri+ transfer."}</p>
-                    <p>• {isAr ? "الصق رقم الآيبان أعلاه، وتأكد من كتابة المبلغ المطلوب بدقة." : "Paste the IBAN above and enter the exact total amount."}</p>
-                    <p>• {isAr ? "احفظ صورة إشعار التحويل المالي أو لقطة شاشة للعملية." : "Save the confirmation receipt screenshot after transfer."}</p>
-                  </div>
-                </div>
+                  <p className="text-[11px] text-muted-foreground font-normal">
+                    {isAr
+                      ? "تحويل فوري بدون رسوم بوابة عبر تطبيق بنفت باي، وإرفاق الإشعار لاعتماد الإدارة."
+                      : "Zero gateway fees via BenefitPay app; submit receipt for admin approval."}
+                  </p>
+                </Button>
               </div>
             </div>
 
-            {/* Step 3: Receipt Upload & Submit */}
-            <div className="space-y-3 pt-2 border-t border-border/50">
-              <span className="text-xs font-bold text-foreground block">
-                {isAr ? "3. إرفاق صورة إشعار التحويل البنكي:" : "3. Upload Payment Receipt Screenshot:"}
-              </span>
+            {/* Instant PayPal / Card Checkout */}
+            {inlinePaymentMethod === "paypal" && inlineSelectedPlan && (
+              <div className="space-y-3 pt-2 border-t border-border/50">
+                <span className="text-xs font-bold text-foreground block">
+                  {isAr ? "3. إتمام الدفع والتفعيل الفوري:" : "3. Complete Payment & Instant Activation:"}
+                </span>
 
-              {receiptPreview ? (
-                <div className="flex items-center justify-between gap-4 p-3.5 rounded-2xl border border-primary/30 bg-primary/5">
-                  <div className="flex items-center gap-3">
-                    <img
-                      src={receiptPreview}
-                      alt="Receipt Preview"
-                      className="h-16 w-16 object-cover rounded-xl border border-border"
-                    />
-                    <div>
-                      <p className="text-xs font-bold text-foreground line-clamp-1">{receiptFile?.name}</p>
-                      <p className="text-[11px] text-muted-foreground">
-                        {receiptFile ? (receiptFile.size / 1024 / 1024).toFixed(2) : 0} MB
-                      </p>
-                      <span className="inline-flex items-center gap-1 text-[10px] text-emerald-600 font-bold mt-0.5">
-                        <CheckCircle2 className="h-3 w-3" />
-                        {isAr ? "جاهز للإرسال" : "Ready for submission"}
+                <PayPalSubscriptionButton
+                  brandId={brandId}
+                  targetPlanId={inlineSelectedPlan.id}
+                  planNameAr={inlineSelectedPlan.name_ar}
+                  planNameEn={inlineSelectedPlan.name_en}
+                  bhdAmount={activeInlinePrice}
+                  billingInterval={upgradeBillingInterval}
+                  isAr={isAr}
+                  onSuccess={handlePaymentSuccess}
+                />
+              </div>
+            )}
+
+            {/* Manual BenefitPay Transfer Section */}
+            {inlinePaymentMethod === "benefit" && (
+              <>
+                {/* Step 3: BenefitPay Account & Transfer Instructions */}
+                <div className="space-y-3 pt-2 border-t border-border/50">
+                  <span className="text-xs font-bold text-foreground block">
+                    {isAr ? "3. تفاصيل التحويل عبر BenefitPay (Fawri+):" : "3. BenefitPay Transfer Details (Fawri+):"}
+                  </span>
+
+                  {/* Dynamic Due Amount Banner */}
+                  <div className="p-3.5 rounded-2xl bg-primary/10 border border-primary/20 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <span className="text-xs font-medium text-foreground">
+                      {isAr ? "المبلغ الإجمالي المطلوب تحويله:" : "Total Amount Due:"}
+                    </span>
+                    <div className="flex items-baseline gap-1.5 font-bold">
+                      <span className="text-2xl font-black text-primary font-mono">
+                        {activeInlinePrice.toFixed(3)}
+                      </span>
+                      <span className="text-sm font-bold text-primary">
+                        {isAr ? "دينار بحريني" : "BHD"}
+                      </span>
+                      <span className="text-xs text-muted-foreground font-normal ms-1">
+                        ({upgradeBillingInterval === "annual" ? (isAr ? "اشتراك سنوي كامل" : "Full Annual") : (isAr ? "اشتراك شهري" : "Monthly")})
                       </span>
                     </div>
                   </div>
+
+                  {/* QR and IBAN */}
+                  <div className="grid grid-cols-1 md:grid-cols-[180px_1fr] gap-4 p-4 rounded-2xl bg-muted/20 border border-border/60">
+                    <div className="flex flex-col items-center justify-center p-3 rounded-xl border border-border/60 bg-background text-center">
+                      {systemSettings?.benefit_pay_qr_url ? (
+                        <img
+                          src={systemSettings.benefit_pay_qr_url}
+                          alt="BenefitPay QR"
+                          className="mx-auto aspect-square w-32 object-contain rounded-lg"
+                        />
+                      ) : (
+                        <div className="mx-auto grid aspect-square w-32 place-items-center rounded-lg bg-muted text-muted-foreground">
+                          <QrCode className="h-10 w-10 text-primary/70" />
+                        </div>
+                      )}
+                      <span className="mt-2 text-[11px] font-bold text-foreground">
+                        {systemSettings?.merchant_account_name || "BOUTQ-OFFICIAL"}
+                      </span>
+                    </div>
+
+                    <div className="space-y-3 flex flex-col justify-center">
+                      <div>
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground block mb-1">
+                          {isAr ? "رقم الآيبان الرسمي (IBAN):" : "Official IBAN:"}
+                        </span>
+                        <div className="flex items-center justify-between gap-2 p-2.5 rounded-xl border border-border/80 bg-background">
+                          <code dir="ltr" className="break-all text-xs font-bold font-mono text-foreground">
+                            {systemSettings?.subscription_iban || "BH12KHCB0000001234567890"}
+                          </code>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={handleCopyIban}
+                            className="h-8 text-xs font-bold shrink-0 gap-1"
+                          >
+                            {copiedIban ? (
+                              <>
+                                <Check className="h-3.5 w-3.5 text-emerald-600" />
+                                <span className="text-emerald-600">{isAr ? "تم النسخ" : "Copied"}</span>
+                              </>
+                            ) : (
+                              <>
+                                <Copy className="h-3.5 w-3.5" />
+                                <span>{isAr ? "نسخ" : "Copy"}</span>
+                              </>
+                            )}
+                          </Button>
+                        </div>
+                      </div>
+
+                      <div className="text-[11px] text-muted-foreground space-y-1">
+                        <p className="font-semibold text-foreground">
+                          {isAr ? "طريقة الدفع في تطبيق BenefitPay:" : "How to transfer in BenefitPay:"}
+                        </p>
+                        <p>• {isAr ? "افتح تطبيق بنفت باي واختر تحويل فوري Fawri+." : "Open BenefitPay app and select Fawri+ transfer."}</p>
+                        <p>• {isAr ? "الصق رقم الآيبان أعلاه، وتأكد من كتابة المبلغ المطلوب بدقة." : "Paste the IBAN above and enter the exact total amount."}</p>
+                        <p>• {isAr ? "احفظ صورة إشعار التحويل المالي أو لقطة شاشة للعملية." : "Save the confirmation receipt screenshot after transfer."}</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Step 4: Receipt Upload & Submit */}
+                <div className="space-y-3 pt-2 border-t border-border/50">
+                  <span className="text-xs font-bold text-foreground block">
+                    {isAr ? "4. إرفاق صورة إشعار التحويل البنكي:" : "4. Upload Payment Receipt Screenshot:"}
+                  </span>
+
+                  {receiptPreview ? (
+                    <div className="flex items-center justify-between gap-4 p-3.5 rounded-2xl border border-primary/30 bg-primary/5">
+                      <div className="flex items-center gap-3">
+                        <img
+                          src={receiptPreview}
+                          alt="Receipt Preview"
+                          className="h-16 w-16 object-cover rounded-xl border border-border"
+                        />
+                        <div>
+                          <p className="text-xs font-bold text-foreground line-clamp-1">{receiptFile?.name}</p>
+                          <p className="text-[11px] text-muted-foreground">
+                            {receiptFile ? (receiptFile.size / 1024 / 1024).toFixed(2) : 0} MB
+                          </p>
+                          <span className="inline-flex items-center gap-1 text-[10px] text-emerald-600 font-bold mt-0.5">
+                            <CheckCircle2 className="h-3 w-3" />
+                            {isAr ? "جاهز للإرسال" : "Ready for submission"}
+                          </span>
+                        </div>
+                      </div>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="text-xs text-destructive hover:text-destructive hover:bg-destructive/10"
+                        onClick={() => {
+                          setReceiptFile(null);
+                          setReceiptPreview(null);
+                        }}
+                      >
+                        {isAr ? "إزالة الصورة" : "Remove"}
+                      </Button>
+                    </div>
+                  ) : (
+                    <label className="flex flex-col items-center justify-center p-6 rounded-2xl border-2 border-dashed border-border hover:border-primary/50 bg-background/50 hover:bg-primary/5 cursor-pointer transition-colors group">
+                      <UploadCloud className="h-8 w-8 text-muted-foreground group-hover:text-primary transition-colors" />
+                      <span className="mt-2 text-xs font-bold text-foreground">
+                        {isAr ? "انقر لاختيار صورة الإيصال أو اسحب الملف إلى هنا" : "Click to select receipt or drag & drop"}
+                      </span>
+                      <span className="text-[10px] text-muted-foreground mt-0.5">
+                        PNG, JPG, WebP {isAr ? "حتى 10 ميجابايت" : "up to 10MB"}
+                      </span>
+                      <input
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp"
+                        className="hidden"
+                        onChange={handleReceiptFileChange}
+                        disabled={isUploadingReceipt}
+                      />
+                    </label>
+                  )}
+
+                  {/* Clarification Notice: Manual Super-Admin Approval */}
+                  <div className="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-xs text-amber-900 dark:text-amber-200 flex items-start gap-2.5">
+                    <ShieldAlert className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+                    <div>
+                      <p className="font-bold text-amber-800 dark:text-amber-300">
+                        {isAr ? "ملاحظة هامة حول آلية التفعيل:" : "Important Activation Note:"}
+                      </p>
+                      <p className="text-[11px] text-amber-800/80 dark:text-amber-300/80 mt-0.5 leading-relaxed">
+                        {isAr
+                          ? "التفعيل ليس تلقائياً أو فورياً. بعد إرسال الإيصال، يقوم السوبر أدمن بالتحقق من استلام المبلغ في الحساب البنكي ثم تفعيل الباقة والموارد الجديدة لحساب متجرك يدوياً."
+                          : "Activation is not instant. After submitting the receipt, the super-admin verifies the bank transfer and manually activates your upgraded tier."}
+                      </p>
+                    </div>
+                  </div>
+
                   <Button
                     type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="text-xs text-destructive hover:text-destructive hover:bg-destructive/10"
-                    onClick={() => {
-                      setReceiptFile(null);
-                      setReceiptPreview(null);
-                    }}
+                    size="lg"
+                    disabled={!receiptFile || isUploadingReceipt}
+                    onClick={() => void handleUploadAndConfirmUpgrade(inlineSelectedPlan)}
+                    className="w-full min-h-[48px] text-sm font-bold gap-2 shadow-md bg-primary text-primary-foreground hover:bg-primary/90"
                   >
-                    {isAr ? "إزالة الصورة" : "Remove"}
+                    {isUploadingReceipt ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        <span>{isAr ? "جاري رفع الإيصال وإرساله للاعتماد..." : "Uploading & Submitting for Approval..."}</span>
+                      </>
+                    ) : (
+                      <>
+                        <PackageCheck className="h-4.5 w-4.5" />
+                        <span>
+                          {isAr
+                            ? `إرسال الإيصال لاعتماد السوبر أدمن (${activeInlinePrice.toFixed(3)} د.ب)`
+                            : `Submit Receipt for Super-Admin Approval (${activeInlinePrice.toFixed(3)} BHD)`}
+                        </span>
+                      </>
+                    )}
                   </Button>
                 </div>
-              ) : (
-                <label className="flex flex-col items-center justify-center p-6 rounded-2xl border-2 border-dashed border-border hover:border-primary/50 bg-background/50 hover:bg-primary/5 cursor-pointer transition-colors group">
-                  <UploadCloud className="h-8 w-8 text-muted-foreground group-hover:text-primary transition-colors" />
-                  <span className="mt-2 text-xs font-bold text-foreground">
-                    {isAr ? "انقر لاختيار صورة الإيصال أو اسحب الملف إلى هنا" : "Click to select receipt or drag & drop"}
-                  </span>
-                  <span className="text-[10px] text-muted-foreground mt-0.5">
-                    PNG, JPG, WebP {isAr ? "حتى 10 ميجابايت" : "up to 10MB"}
-                  </span>
-                  <input
-                    type="file"
-                    accept="image/jpeg,image/png,image/webp"
-                    className="hidden"
-                    onChange={handleReceiptFileChange}
-                    disabled={isUploadingReceipt}
-                  />
-                </label>
-              )}
-
-              {/* Clarification Notice: Manual Super-Admin Approval */}
-              <div className="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-xs text-amber-900 dark:text-amber-200 flex items-start gap-2.5">
-                <ShieldAlert className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
-                <div>
-                  <p className="font-bold text-amber-800 dark:text-amber-300">
-                    {isAr ? "ملاحظة هامة حول آلية التفعيل:" : "Important Activation Note:"}
-                  </p>
-                  <p className="text-[11px] text-amber-800/80 dark:text-amber-300/80 mt-0.5 leading-relaxed">
-                    {isAr
-                      ? "التفعيل ليس تلقائياً أو فورياً. بعد إرسال الإيصال، يقوم السوبر أدمن بالتحقق من استلام المبلغ في الحساب البنكي ثم تفعيل الباقة والموارد الجديدة لحساب متجرك يدوياً."
-                      : "Activation is not instant. After submitting the receipt, the super-admin verifies the bank transfer and manually activates your upgraded tier."}
-                  </p>
-                </div>
-              </div>
-
-              <Button
-                type="button"
-                size="lg"
-                disabled={!receiptFile || isUploadingReceipt}
-                onClick={() => void handleUploadAndConfirmUpgrade(inlineSelectedPlan)}
-                className="w-full min-h-[48px] text-sm font-bold gap-2 shadow-md bg-primary text-primary-foreground hover:bg-primary/90"
-              >
-                {isUploadingReceipt ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    <span>{isAr ? "جاري رفع الإيصال وإرساله للاعتماد..." : "Uploading & Submitting for Approval..."}</span>
-                  </>
-                ) : (
-                  <>
-                    <PackageCheck className="h-4.5 w-4.5" />
-                    <span>
-                      {isAr
-                        ? `إرسال الإيصال لاعتماد السوبر أدمن (${activeInlinePrice.toFixed(3)} د.ب)`
-                        : `Submit Receipt for Super-Admin Approval (${activeInlinePrice.toFixed(3)} BHD)`}
-                    </span>
-                  </>
-                )}
-              </Button>
-            </div>
+              </>
+            )}
           </CardContent>
         </Card>
       )}
@@ -1200,12 +1322,12 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
 
                       <DialogTitle className="text-lg font-bold flex items-center gap-2 mt-2">
                         <CreditCard className="h-5 w-5 text-primary" />
-                        <span>{isAr ? "الدفع عبر BenefitPay وتأكيد الترقية" : "Pay via BenefitPay & Confirm Upgrade"}</span>
+                        <span>{isAr ? "الدفع وتفعيل ترقية الباقة" : "Pay & Activate Plan Upgrade"}</span>
                       </DialogTitle>
                       <DialogDescription className="text-xs">
                         {isAr
-                          ? "قم بتحويل المبلغ المطلوب عبر تطبيق BenefitPay ثم ارفع صورة إشعار التحويل لاعتماد السوبر أدمن قبل التفعيل."
-                          : "Transfer the amount via BenefitPay and upload your receipt screenshot for super-admin approval."}
+                          ? "سدد إلكترونياً عبر PayPal أو البطاقة البنكية للتفعيل الفوري، أو حوّل عبر BenefitPay وارفع الإشعار للاعتماد."
+                          : "Pay online via PayPal / Card for instant activation, or transfer via BenefitPay with receipt upload."}
                       </DialogDescription>
                     </DialogHeader>
 
@@ -1232,176 +1354,244 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
                       </div>
                     </div>
 
-                    {/* BenefitPay Transfer Details Card */}
-                    <div className="p-4 rounded-2xl bg-primary/[0.03] border border-primary/20 space-y-3">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary font-bold text-xs">
-                            BP
-                          </div>
-                          <div>
-                            <h5 className="text-xs font-bold text-foreground">
-                              {isAr ? "بيانات التحويل عبر BenefitPay" : "BenefitPay Transfer Account"}
-                            </h5>
-                            <p className="text-[11px] text-muted-foreground font-mono">
-                              {merchantName}
-                            </p>
-                          </div>
-                        </div>
-                        {qrUrl && (
-                          <Badge variant="outline" className="text-[10px] gap-1">
-                            <QrCode className="h-3 w-3" />
-                            <span>{isAr ? "رمز QR متاح" : "QR Available"}</span>
-                          </Badge>
-                        )}
-                      </div>
-
-                      {/* QR Display if available */}
-                      {qrUrl && (
-                        <div className="flex justify-center p-2 bg-background rounded-xl border border-border/50 max-w-[160px] mx-auto">
-                          <img
-                            src={qrUrl}
-                            alt="BenefitPay QR"
-                            className="max-h-36 w-auto object-contain rounded-lg"
-                          />
-                        </div>
-                      )}
-
-                      {/* IBAN Copy Box */}
-                      <div className="p-3 rounded-xl bg-background border border-border flex items-center justify-between gap-2">
-                        <div className="min-w-0">
-                          <span className="text-[10px] text-muted-foreground font-medium block">
-                            {isAr ? "رقم الآيبان (IBAN):" : "IBAN Number:"}
-                          </span>
-                          <span className="font-mono text-xs font-bold text-foreground break-all select-all">
-                            {iban}
-                          </span>
-                        </div>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={handleCopyIban}
-                          className="shrink-0 h-8 px-2.5 text-xs gap-1.5"
-                        >
-                          {copiedIban ? (
-                            <>
-                              <Check className="h-3.5 w-3.5 text-emerald-600" />
-                              <span className="text-emerald-600 font-bold">{isAr ? "تم النسخ" : "Copied"}</span>
-                            </>
-                          ) : (
-                            <>
-                              <Copy className="h-3.5 w-3.5" />
-                              <span>{isAr ? "نسخ" : "Copy"}</span>
-                            </>
-                          )}
-                        </Button>
-                      </div>
-
-                      {/* Transfer Instructions */}
-                      <div className="space-y-1 text-[11px] text-muted-foreground leading-relaxed pt-1">
-                        <p>1. {isAr ? "افتح تطبيق BenefitPay واختر تحويل الأموال Fawri+." : "Open BenefitPay app and choose Fawri+ transfer."}</p>
-                        <p>2. {isAr ? `حوّل المبلغ المطلوب (${duePrice} ${currency}) إلى رقم الآيبان الموضح أعلاه.` : `Transfer exact amount (${duePrice} ${currency}) to the IBAN above.`}</p>
-                        <p>3. {isAr ? "احفظ لقطة شاشة لإشعار التحويل الناجح وارفعها في الحقل أدناه." : "Take a screenshot of the successful transfer receipt and upload below."}</p>
-                      </div>
-                    </div>
-
-                    {/* Receipt Upload Input */}
-                    <div className="space-y-2">
-                      <label className="text-xs font-bold text-foreground block">
-                        {isAr ? "صورة إشعار التحويل (مطلوبة):" : "Transfer Receipt Screenshot (Required):"}
-                      </label>
-
-                      {!receiptPreview ? (
-                        <label className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-border rounded-2xl cursor-pointer hover:border-primary/50 hover:bg-muted/30 transition-all">
-                          <UploadCloud className="h-8 w-8 text-primary mb-2" />
-                          <span className="text-xs font-semibold text-foreground">
-                            {isAr ? "اضغط هنا لاختيار صورة الإيصال" : "Click to select transfer receipt"}
-                          </span>
-                          <span className="text-[10px] text-muted-foreground mt-1">
-                            PNG, JPG, WebP ({isAr ? "حتى 10 ميجابايت" : "up to 10MB"})
-                          </span>
-                          <input
-                            type="file"
-                            accept="image/jpeg,image/png,image/webp"
-                            onChange={handleReceiptFileChange}
-                            className="hidden"
-                          />
-                        </label>
-                      ) : (
-                        <div className="p-3 rounded-2xl bg-muted/30 border border-border flex items-center justify-between gap-3">
-                          <div className="flex items-center gap-3 min-w-0">
-                            <img
-                              src={receiptPreview}
-                              alt="Receipt Preview"
-                              className="h-14 w-14 rounded-xl object-cover border border-border shrink-0"
-                            />
-                            <div className="min-w-0">
-                              <span className="text-xs font-bold text-foreground truncate block">
-                                {receiptFile?.name}
-                              </span>
-                              <span className="text-[10px] text-muted-foreground">
-                                {receiptFile && (receiptFile.size / (1024 * 1024)).toFixed(2)} MB
-                              </span>
-                            </div>
-                          </div>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => {
-                              setReceiptFile(null);
-                              setReceiptPreview(null);
-                            }}
-                            className="h-8 px-2 text-xs text-destructive hover:bg-destructive/10"
-                          >
-                            <X className="h-4 w-4 me-1" />
-                            <span>{isAr ? "إزالة" : "Remove"}</span>
-                          </Button>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Super-admin approval note */}
-                    <p className="text-[11px] text-amber-800 dark:text-amber-300 bg-amber-500/10 border border-amber-500/20 p-2.5 rounded-xl">
-                      {isAr
-                        ? "تنويه: يتم تدقيق الإيصال واعتماد التفعيل يدوياً من السوبر أدمن فور مطابقة التحويل البنكي."
-                        : "Note: The super-admin will manually verify the receipt and activate your plan upon bank transfer confirmation."}
-                    </p>
-
-                    {/* Confirmation Footer */}
-                    <DialogFooter className="gap-2 sm:gap-0 pt-2">
+                    {/* Payment Method Switcher in Dialog */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                       <Button
                         type="button"
                         variant="outline"
-                        size="default"
-                        disabled={isUploadingReceipt}
-                        onClick={() => setSelectedPlanForUpgrade(null)}
-                        className="min-h-[44px]"
+                        onClick={() => setDialogPaymentMethod("paypal")}
+                        className={`h-auto p-3.5 rounded-xl text-start transition-all flex flex-col justify-between items-start gap-2 border ${
+                          dialogPaymentMethod === "paypal"
+                            ? "border-primary bg-primary/10 ring-2 ring-primary/20"
+                            : "border-border/70 hover:border-border hover:bg-muted/30"
+                        }`}
                       >
-                        {isAr ? "العودة" : "Back"}
+                        <div className="flex items-center justify-between w-full">
+                          <div className="flex items-center gap-2">
+                            <Sparkles className="h-4 w-4 text-primary" />
+                            <span className="text-xs font-bold text-foreground">PayPal & Cards</span>
+                          </div>
+                          <Badge variant="default" className="text-[9px] font-bold bg-primary text-primary-foreground">
+                            {isAr ? "تفعيل فوري" : "Instant"}
+                          </Badge>
+                        </div>
+                        <p className="text-[10px] text-muted-foreground font-normal">
+                          {isAr ? "بطاقات فيزا، ماستركارد، Apple Pay" : "Visa, Mastercard, Apple Pay"}
+                        </p>
                       </Button>
+
                       <Button
                         type="button"
-                        variant="default"
-                        size="default"
-                        disabled={!receiptFile || isUploadingReceipt}
-                        onClick={handleUploadAndConfirmUpgrade}
-                        className="font-bold min-h-[44px] gap-2 shadow-sm"
+                        variant="outline"
+                        onClick={() => setDialogPaymentMethod("benefit")}
+                        className={`h-auto p-3.5 rounded-xl text-start transition-all flex flex-col justify-between items-start gap-2 border ${
+                          dialogPaymentMethod === "benefit"
+                            ? "border-primary bg-primary/10 ring-2 ring-primary/20"
+                            : "border-border/70 hover:border-border hover:bg-muted/30"
+                        }`}
                       >
-                        {isUploadingReceipt ? (
-                          <>
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                            <span>{isAr ? "جاري الرفع والإرسال للاعتماد..." : "Uploading & Submitting..."}</span>
-                          </>
-                        ) : (
-                          <>
-                            <CheckCircle2 className="h-4 w-4" />
-                            <span>{isAr ? "إرسال الإيصال لاعتماد السوبر أدمن" : "Submit Receipt for Super-Admin Approval"}</span>
-                          </>
-                        )}
+                        <div className="flex items-center justify-between w-full">
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-bold text-foreground">BenefitPay</span>
+                          </div>
+                          <Badge variant="outline" className="text-[9px] font-semibold text-muted-foreground">
+                            {isAr ? "اعتماد يدوي" : "Manual Review"}
+                          </Badge>
+                        </div>
+                        <p className="text-[10px] text-muted-foreground font-normal">
+                          {isAr ? "تحويل محلي مباشر بالدينار" : "Direct Local BHD Transfer"}
+                        </p>
                       </Button>
-                    </DialogFooter>
+                    </div>
+
+                    {/* PayPal & Cards Checkout in Dialog */}
+                    {dialogPaymentMethod === "paypal" ? (
+                      <div className="pt-2">
+                        <PayPalSubscriptionButton
+                          brandId={brandId}
+                          targetPlanId={selectedPlanForUpgrade.id}
+                          planNameAr={selectedPlanForUpgrade.name_ar}
+                          planNameEn={selectedPlanForUpgrade.name_en}
+                          bhdAmount={duePrice}
+                          billingInterval={upgradeBillingInterval}
+                          isAr={isAr}
+                          onSuccess={handlePaymentSuccess}
+                        />
+                      </div>
+                    ) : (
+                      <>
+                        {/* BenefitPay Transfer Details Card */}
+                        <div className="p-4 rounded-2xl bg-primary/[0.03] border border-primary/20 space-y-3">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary font-bold text-xs">
+                                BP
+                              </div>
+                              <div>
+                                <h5 className="text-xs font-bold text-foreground">
+                                  {isAr ? "بيانات التحويل عبر BenefitPay" : "BenefitPay Transfer Account"}
+                                </h5>
+                                <p className="text-[11px] text-muted-foreground font-mono">
+                                  {merchantName}
+                                </p>
+                              </div>
+                            </div>
+                            {qrUrl && (
+                              <Badge variant="outline" className="text-[10px] gap-1">
+                                <QrCode className="h-3 w-3" />
+                                <span>{isAr ? "رمز QR متاح" : "QR Available"}</span>
+                              </Badge>
+                            )}
+                          </div>
+
+                          {/* QR Display if available */}
+                          {qrUrl && (
+                            <div className="flex justify-center p-2 bg-background rounded-xl border border-border/50 max-w-[160px] mx-auto">
+                              <img
+                                src={qrUrl}
+                                alt="BenefitPay QR"
+                                className="max-h-36 w-auto object-contain rounded-lg"
+                              />
+                            </div>
+                          )}
+
+                          {/* IBAN Copy Box */}
+                          <div className="p-3 rounded-xl bg-background border border-border flex items-center justify-between gap-2">
+                            <div className="min-w-0">
+                              <span className="text-[10px] text-muted-foreground font-medium block">
+                                {isAr ? "رقم الآيبان (IBAN):" : "IBAN Number:"}
+                              </span>
+                              <span className="font-mono text-xs font-bold text-foreground break-all select-all">
+                                {iban}
+                              </span>
+                            </div>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={handleCopyIban}
+                              className="shrink-0 h-8 px-2.5 text-xs gap-1.5"
+                            >
+                              {copiedIban ? (
+                                <>
+                                  <Check className="h-3.5 w-3.5 text-emerald-600" />
+                                  <span className="text-emerald-600 font-bold">{isAr ? "تم النسخ" : "Copied"}</span>
+                                </>
+                              ) : (
+                                <>
+                                  <Copy className="h-3.5 w-3.5" />
+                                  <span>{isAr ? "نسخ" : "Copy"}</span>
+                                </>
+                              )}
+                            </Button>
+                          </div>
+
+                          {/* Transfer Instructions */}
+                          <div className="space-y-1 text-[11px] text-muted-foreground leading-relaxed pt-1">
+                            <p>1. {isAr ? "افتح تطبيق BenefitPay واختر تحويل الأموال Fawri+." : "Open BenefitPay app and choose Fawri+ transfer."}</p>
+                            <p>2. {isAr ? `حوّل المبلغ المطلوب (${duePrice} ${currency}) إلى رقم الآيبان الموضح أعلاه.` : `Transfer exact amount (${duePrice} ${currency}) to the IBAN above.`}</p>
+                            <p>3. {isAr ? "احفظ لقطة شاشة لإشعار التحويل الناجح وارفعها في الحقل أدناه." : "Take a screenshot of the successful transfer receipt and upload below."}</p>
+                          </div>
+                        </div>
+
+                        {/* Receipt Upload Input */}
+                        <div className="space-y-2">
+                          <label className="text-xs font-bold text-foreground block">
+                            {isAr ? "صورة إشعار التحويل (مطلوبة):" : "Transfer Receipt Screenshot (Required):"}
+                          </label>
+
+                          {!receiptPreview ? (
+                            <label className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-border rounded-2xl cursor-pointer hover:border-primary/50 hover:bg-muted/30 transition-all">
+                              <UploadCloud className="h-8 w-8 text-primary mb-2" />
+                              <span className="text-xs font-semibold text-foreground">
+                                {isAr ? "اضغط هنا لاختيار صورة الإيصال" : "Click to select transfer receipt"}
+                              </span>
+                              <span className="text-[10px] text-muted-foreground mt-1">
+                                PNG, JPG, WebP ({isAr ? "حتى 10 ميجابايت" : "up to 10MB"})
+                              </span>
+                              <input
+                                type="file"
+                                accept="image/jpeg,image/png,image/webp"
+                                onChange={handleReceiptFileChange}
+                                className="hidden"
+                              />
+                            </label>
+                          ) : (
+                            <div className="p-3 rounded-2xl bg-muted/30 border border-border flex items-center justify-between gap-3">
+                              <div className="flex items-center gap-3 min-w-0">
+                                <img
+                                  src={receiptPreview}
+                                  alt="Receipt Preview"
+                                  className="h-14 w-14 rounded-xl object-cover border border-border shrink-0"
+                                />
+                                <div className="min-w-0">
+                                  <span className="text-xs font-bold text-foreground truncate block">
+                                    {receiptFile?.name}
+                                  </span>
+                                  <span className="text-[10px] text-muted-foreground">
+                                    {receiptFile && (receiptFile.size / (1024 * 1024)).toFixed(2)} MB
+                                  </span>
+                                </div>
+                              </div>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => {
+                                  setReceiptFile(null);
+                                  setReceiptPreview(null);
+                                }}
+                                className="h-8 px-2 text-xs text-destructive hover:bg-destructive/10"
+                              >
+                                <X className="h-4 w-4 me-1" />
+                                <span>{isAr ? "إزالة" : "Remove"}</span>
+                              </Button>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Super-admin approval note */}
+                        <p className="text-[11px] text-amber-800 dark:text-amber-300 bg-amber-500/10 border border-amber-500/20 p-2.5 rounded-xl">
+                          {isAr
+                            ? "تنويه: يتم تدقيق الإيصال واعتماد التفعيل يدوياً من السوبر أدمن فور مطابقة التحويل البنكي."
+                            : "Note: The super-admin will manually verify the receipt and activate your plan upon bank transfer confirmation."}
+                        </p>
+
+                        {/* Confirmation Footer */}
+                        <DialogFooter className="gap-2 sm:gap-0 pt-2">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="default"
+                            disabled={isUploadingReceipt}
+                            onClick={() => setSelectedPlanForUpgrade(null)}
+                            className="min-h-[44px]"
+                          >
+                            {isAr ? "العودة" : "Back"}
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="default"
+                            size="default"
+                            disabled={!receiptFile || isUploadingReceipt}
+                            onClick={handleUploadAndConfirmUpgrade}
+                            className="font-bold min-h-[44px] gap-2 shadow-sm"
+                          >
+                            {isUploadingReceipt ? (
+                              <>
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                                <span>{isAr ? "جاري الرفع والإرسال للاعتماد..." : "Uploading & Submitting..."}</span>
+                              </>
+                            ) : (
+                              <>
+                                <CheckCircle2 className="h-4 w-4" />
+                                <span>{isAr ? "إرسال الإيصال لاعتماد السوبر أدمن" : "Submit Receipt for Super-Admin Approval"}</span>
+                              </>
+                            )}
+                          </Button>
+                        </DialogFooter>
+                      </>
+                    )}
                   </div>
                 );
               })()

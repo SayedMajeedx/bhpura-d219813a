@@ -1,0 +1,261 @@
+import { useEffect, useRef, useState } from "react";
+import { Loader2, ShieldCheck, CreditCard, Sparkles } from "lucide-react";
+import { toast } from "sonner";
+import {
+  PAYPAL_LIVE_CLIENT_ID,
+  convertBhdToUsd,
+  createPayPalSubscriptionOrder,
+  capturePayPalSubscriptionOrder,
+} from "@/lib/paypal-subscription.functions";
+
+interface PayPalSubscriptionButtonProps {
+  brandId: string;
+  targetPlanId: string;
+  planNameAr: string;
+  planNameEn: string;
+  bhdAmount: number;
+  billingInterval: "monthly" | "annual";
+  isAr: boolean;
+  onSuccess: () => void;
+}
+
+declare global {
+  interface Window {
+    paypal?: any;
+  }
+}
+
+export function PayPalSubscriptionButton({
+  brandId,
+  targetPlanId,
+  planNameAr,
+  planNameEn,
+  bhdAmount,
+  billingInterval,
+  isAr,
+  onSuccess,
+}: PayPalSubscriptionButtonProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [loadingSdk, setLoadingSdk] = useState(true);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
+
+  const usdAmount = convertBhdToUsd(bhdAmount);
+
+  useEffect(() => {
+    let isMounted = true;
+    const scriptId = "paypal-sdk-script";
+
+    const renderButtons = () => {
+      if (!isMounted || !containerRef.current || !window.paypal?.Buttons) return;
+
+      containerRef.current.innerHTML = "";
+
+      try {
+        window.paypal
+          .Buttons({
+            style: {
+              layout: "vertical",
+              color: "gold",
+              shape: "rect",
+              label: "pay",
+              height: 44,
+            },
+            createOrder: async () => {
+              try {
+                const res = await createPayPalSubscriptionOrder({
+                  data: {
+                    brandId,
+                    targetPlanId,
+                    billingInterval,
+                  },
+                });
+                return res.orderId;
+              } catch (err: any) {
+                const msg = err.message || "Failed to create PayPal order";
+                toast.error(isAr ? "تعذر إنشاء جلسة الدفع في PayPal" : msg);
+                throw err;
+              }
+            },
+            onApprove: async (data: { orderID: string }) => {
+              setIsProcessing(true);
+              const toastId = toast.loading(
+                isAr
+                  ? "جاري تأكيد عملية الدفع وتفعيل الباقة فورياً..."
+                  : "Confirming payment and activating your subscription...",
+              );
+
+              try {
+                await capturePayPalSubscriptionOrder({
+                  data: {
+                    brandId,
+                    orderId: data.orderID,
+                    targetPlanId,
+                    billingInterval,
+                  },
+                });
+
+                toast.success(
+                  isAr
+                    ? "تم استلام الدفعة وتفعيل الباقة بنجاح!"
+                    : "Payment verified and subscription activated successfully!",
+                  { id: toastId },
+                );
+
+                onSuccess();
+              } catch (err: any) {
+                toast.error(
+                  isAr
+                    ? "حدث خطأ أثناء إتمام الدفع. يرجى التواصل مع الدعم."
+                    : (err.message ?? "Capture failed. Please contact support."),
+                  { id: toastId },
+                );
+              } finally {
+                setIsProcessing(false);
+              }
+            },
+            onError: (err: any) => {
+              console.error("PayPal Smart Button error:", err);
+              toast.error(
+                isAr
+                  ? "حدث خطأ أثناء الدفع عبر PayPal. يرجى المحاولة مرة أخرى."
+                  : "PayPal checkout error. Please try again.",
+              );
+            },
+            onCancel: () => {
+              toast.info(
+                isAr ? "تم إلغاء عملية الدفع في PayPal." : "PayPal checkout was cancelled.",
+              );
+            },
+          })
+          .render(containerRef.current)
+          .catch((err: any) => {
+            console.error("PayPal render error:", err);
+          });
+
+        setLoadingSdk(false);
+      } catch (err: any) {
+        if (isMounted) {
+          setLoadError(err.message || "Failed to initialize PayPal buttons");
+          setLoadingSdk(false);
+        }
+      }
+    };
+
+    if (window.paypal) {
+      renderButtons();
+      return () => {
+        isMounted = false;
+        if (containerRef.current) containerRef.current.innerHTML = "";
+      };
+    }
+
+    const existingScript = document.getElementById(scriptId);
+    if (existingScript) {
+      existingScript.addEventListener("load", renderButtons);
+      return () => {
+        isMounted = false;
+        existingScript.removeEventListener("load", renderButtons);
+      };
+    }
+
+    const script = document.createElement("script");
+    script.id = scriptId;
+    script.src = `https://www.paypal.com/sdk/js?client-id=${PAYPAL_LIVE_CLIENT_ID}&currency=USD&intent=capture&enable-funding=card,applepay`;
+    script.async = true;
+
+    script.onload = () => {
+      renderButtons();
+    };
+
+    script.onerror = () => {
+      if (isMounted) {
+        setLoadError(
+          isAr
+            ? "تعذر تحميل مكتبة PayPal. يرجى التحقق من اتصال الإنترنت."
+            : "Failed to load PayPal SDK.",
+        );
+        setLoadingSdk(false);
+      }
+    };
+
+    document.body.appendChild(script);
+
+    return () => {
+      isMounted = false;
+      if (containerRef.current) containerRef.current.innerHTML = "";
+    };
+  }, [brandId, targetPlanId, billingInterval, isAr, onSuccess]);
+
+  return (
+    <div className="space-y-4">
+      {/* Price Summary Badge */}
+      <div className="p-3.5 rounded-xl border border-border/60 bg-muted/30 flex items-center justify-between text-xs">
+        <div className="space-y-0.5">
+          <span className="text-muted-foreground block text-[11px]">
+            {isAr ? "الباقة وفترة الاشتراك:" : "Plan & Interval:"}
+          </span>
+          <span className="font-semibold text-foreground">
+            {isAr ? planNameAr : planNameEn} (
+            {billingInterval === "monthly"
+              ? isAr
+                ? "شهري"
+                : "Monthly"
+              : isAr
+                ? "سنوي"
+                : "Annual"}
+            )
+          </span>
+        </div>
+        <div className="text-end">
+          <div className="font-mono font-bold text-sm text-foreground">
+            ${usdAmount} USD
+          </div>
+          <div className="text-[10px] text-muted-foreground font-mono">
+            ≈ {bhdAmount.toFixed(3)} BHD
+          </div>
+        </div>
+      </div>
+
+      {/* Security note */}
+      <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
+        <ShieldCheck className="h-4 w-4 text-emerald-500 shrink-0" />
+        <span>
+          {isAr
+            ? "دفع مشفر وآمن عبر PayPal أو البطاقات البنكية الدولية مع تفعيل فوري ومباشر للباقة."
+            : "Encrypted, secure payment via PayPal or international cards with instant tier activation."}
+        </span>
+      </div>
+
+      {/* Loading state */}
+      {loadingSdk && !loadError && (
+        <div className="h-28 rounded-xl border border-dashed border-border flex flex-col items-center justify-center gap-2 text-xs text-muted-foreground">
+          <Loader2 className="h-5 w-5 animate-spin text-primary" />
+          <span>{isAr ? "جاري تحميل أزرار الدفع الآمنة..." : "Loading secure payment options..."}</span>
+        </div>
+      )}
+
+      {/* Processing overlay */}
+      {isProcessing && (
+        <div className="p-4 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center gap-2 text-xs font-semibold text-primary">
+          <Loader2 className="h-4 w-4 animate-spin" />
+          <span>{isAr ? "جاري تفعيل الباقة..." : "Activating your subscription..."}</span>
+        </div>
+      )}
+
+      {/* Error state */}
+      {loadError && (
+        <div className="p-3 text-xs text-destructive bg-destructive/10 border border-destructive/20 rounded-xl">
+          {loadError}
+        </div>
+      )}
+
+      {/* PayPal Smart Buttons target container */}
+      <div
+        ref={containerRef}
+        className="w-full min-h-[44px] transition-all"
+        style={{ display: loadingSdk ? "none" : "block" }}
+      />
+    </div>
+  );
+}
