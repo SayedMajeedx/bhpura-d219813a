@@ -20,6 +20,13 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   Plus,
   Store,
   ExternalLink,
@@ -176,9 +183,22 @@ function BrandsPage() {
 
   // Approval Dialog States
   const [approvingBrand, setApprovingBrand] = useState<Brand | null>(null);
-  const [approveTier, setApproveTier] = useState<"basic" | "growth" | "enterprise">("basic");
+  const [approvingPlanId, setApprovingPlanId] = useState<string>("");
+  const [approvingInterval, setApprovingInterval] = useState<"monthly" | "annual">("annual");
   const [approving, setApproving] = useState(false);
   const [rejecting, setRejecting] = useState<string | null>(null);
+
+  const { data: saasPlans = [] } = useQuery({
+    queryKey: ["saas_plans_for_admin"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("saas_plans")
+        .select("id, code, name_ar, name_en, is_active, sort_order")
+        .eq("is_active", true)
+        .order("sort_order", { ascending: true });
+      return data ?? [];
+    },
+  });
 
   const q = useQuery({
     queryKey: ["brands"],
@@ -199,6 +219,31 @@ function BrandsPage() {
   const pendingApprovals = brands.filter(
     (b) => b.subscription_status === "pending_verification" && b.payment_receipt_url,
   );
+
+  const pendingBrandIds = pendingApprovals.map((b) => b.id);
+  const { data: pendingSubscriptions = [] } = useQuery({
+    queryKey: ["pending_brand_subscriptions", pendingBrandIds],
+    queryFn: async () => {
+      if (pendingBrandIds.length === 0) return [];
+      const { data } = await supabase
+        .from("brand_subscriptions")
+        .select(`
+          id,
+          brand_id,
+          billing_interval,
+          renewal_target_plan_id,
+          target_plan:saas_plans!brand_subscriptions_renewal_target_plan_id_fkey(
+            id,
+            code,
+            name_ar,
+            name_en
+          )
+        `)
+        .in("brand_id", pendingBrandIds);
+      return data ?? [];
+    },
+    enabled: pendingBrandIds.length > 0,
+  });
 
   // Compute Platform KPI Stats
   const activeSaaSCount = brands.filter((b) => b.subscription_status === "active").length;
@@ -230,7 +275,8 @@ function BrandsPage() {
       await approveSubscriptionSaaS({
         data: {
           brandId: approvingBrand.id,
-          tier: approveTier,
+          targetPlanId: approvingPlanId || undefined,
+          billingInterval: approvingInterval,
         },
       });
       toast.success(
@@ -240,6 +286,7 @@ function BrandsPage() {
       );
       setApprovingBrand(null);
       refresh();
+      qc.invalidateQueries({ queryKey: ["pending_brand_subscriptions"] });
     } catch (err: any) {
       toast.error(err.message || "Failed to approve subscription.");
     } finally {
@@ -584,84 +631,103 @@ function BrandsPage() {
             />
           ) : (
             <div className="space-y-3">
-              {pendingApprovals.map((b) => (
-                <Card
-                  key={b.id}
-                  className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm p-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="h-11 w-11 rounded-full bg-amber-500/5 grid place-items-center text-amber-500">
-                      <ClockIcon className="h-5 w-5 animate-pulse" />
-                    </div>
-                    <div>
-                      <h4 className="font-display font-medium text-base text-zinc-900 dark:text-zinc-100">
-                        {lang === "ar" ? b.name_ar || b.name_en : b.name_en}
-                      </h4>
-                      <p className="text-xs text-muted-foreground font-mono">
-                        /{b.slug} • ID: {b.id.substring(0, 8)}...
-                      </p>
-                      {b.payment_receipt_uploaded_at && (
-                        <p className="text-[10px] text-zinc-400 mt-1">
-                          {lang === "ar" ? "تم الرفع:" : "Uploaded:"}{" "}
-                          {new Date(b.payment_receipt_uploaded_at).toLocaleString(
-                            lang === "ar" ? "ar-BH-u-nu-latn" : "en-US",
-                          )}
+              {pendingApprovals.map((b) => {
+                const sub = pendingSubscriptions.find((s) => s.brand_id === b.id);
+                return (
+                  <Card
+                    key={b.id}
+                    className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm p-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="h-11 w-11 rounded-full bg-amber-500/5 grid place-items-center text-amber-500">
+                        <ClockIcon className="h-5 w-5 animate-pulse" />
+                      </div>
+                      <div>
+                        <h4 className="font-display font-medium text-base text-zinc-900 dark:text-zinc-100">
+                          {lang === "ar" ? b.name_ar || b.name_en : b.name_en}
+                        </h4>
+                        <p className="text-xs text-muted-foreground font-mono">
+                          /{b.slug} • ID: {b.id.substring(0, 8)}...
                         </p>
-                      )}
+                        {b.payment_receipt_uploaded_at && (
+                          <p className="text-[10px] text-zinc-400 mt-1">
+                            {lang === "ar" ? "تم الرفع:" : "Uploaded:"}{" "}
+                            {new Date(b.payment_receipt_uploaded_at).toLocaleString(
+                              lang === "ar" ? "ar-BH-u-nu-latn" : "en-US",
+                            )}
+                          </p>
+                        )}
+                        {sub?.target_plan && (
+                          <div className="mt-2 flex items-center gap-1.5 text-xs text-primary bg-primary/10 px-2.5 py-1 rounded-lg w-fit border border-primary/20">
+                            <TrendingUp className="h-3.5 w-3.5" />
+                            <span className="font-semibold">
+                              {lang === "ar"
+                                ? `الترقية المطلوبة: ${(sub.target_plan as any).name_ar || (sub.target_plan as any).name_en} (${sub.billing_interval === "monthly" ? "شهري" : "سنوي"})`
+                                : `Requested: ${(sub.target_plan as any).name_en || (sub.target_plan as any).name_ar} (${sub.billing_interval === "monthly" ? "Monthly" : "Annual"})`}
+                            </span>
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  </div>
 
-                  <div className="flex items-center gap-2">
-                    {/* View R2 Receipt Button */}
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="gap-1 text-xs font-medium shadow-sm transition-all duration-200 hover:shadow hover:scale-[1.01] active:scale-95"
-                      onClick={() =>
-                        b.payment_receipt_url && handleViewReceipt(b.payment_receipt_url)
-                      }
-                    >
-                      <Eye className="h-4 w-4 text-primary" />
-                      <span>{lang === "ar" ? "عرض إيصال R2" : "View Receipt"}</span>
-                    </Button>
+                    <div className="flex items-center gap-2">
+                      {/* View R2 Receipt Button */}
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="gap-1 text-xs font-medium shadow-sm transition-all duration-200 hover:shadow hover:scale-[1.01] active:scale-95"
+                        onClick={() =>
+                          b.payment_receipt_url && handleViewReceipt(b.payment_receipt_url)
+                        }
+                      >
+                        <Eye className="h-4 w-4 text-primary" />
+                        <span>{lang === "ar" ? "عرض إيصال R2" : "View Receipt"}</span>
+                      </Button>
 
-                    {/* Open Approve Dialog */}
-                    <Button
-                      size="sm"
-                      className="bg-emerald-600 hover:bg-emerald-700 text-white gap-1 text-xs font-medium shadow-sm transition-all duration-200 hover:shadow hover:scale-[1.01] active:scale-95"
-                      onClick={() => {
-                        setApprovingBrand(b);
-                        setApproveTier("basic");
-                      }}
-                    >
-                      <CheckCircle className="h-4 w-4" />
-                      <span>{lang === "ar" ? "اعتماد" : "Approve"}</span>
-                    </Button>
+                      {/* Open Approve Dialog */}
+                      <Button
+                        size="sm"
+                        className="bg-emerald-600 hover:bg-emerald-700 text-white gap-1 text-xs font-medium shadow-sm transition-all duration-200 hover:shadow hover:scale-[1.01] active:scale-95"
+                        onClick={() => {
+                          setApprovingBrand(b);
+                          const targetPlan =
+                            saasPlans.find((p) => p.id === sub?.renewal_target_plan_id) ||
+                            saasPlans.find((p) => p.code === "pro") ||
+                            saasPlans.find((p) => p.code !== "trial" && p.code !== "lifetime_founder") ||
+                            saasPlans[0];
+                          setApprovingPlanId(targetPlan?.id || "");
+                          setApprovingInterval(sub?.billing_interval === "monthly" ? "monthly" : "annual");
+                        }}
+                      >
+                        <CheckCircle className="h-4 w-4" />
+                        <span>{lang === "ar" ? "اعتماد" : "Approve"}</span>
+                      </Button>
 
-                    {/* Reject Receipt */}
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      disabled={rejecting === b.id}
-                      className="text-rose-500 hover:text-rose-600 hover:bg-rose-500/5 gap-1 text-xs font-medium transition-all duration-200 hover:scale-[1.01] active:scale-95"
-                      onClick={() => handleReject(b.id)}
-                    >
-                      {rejecting === b.id ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        <XCircle className="h-4 w-4" />
-                      )}
-                      <span>{lang === "ar" ? "رفض" : "Reject"}</span>
-                    </Button>
-                  </div>
-                </Card>
-              ))}
+                      {/* Reject Receipt */}
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        disabled={rejecting === b.id}
+                        className="text-rose-500 hover:text-rose-600 hover:bg-rose-500/5 gap-1 text-xs font-medium transition-all duration-200 hover:scale-[1.01] active:scale-95"
+                        onClick={() => handleReject(b.id)}
+                      >
+                        {rejecting === b.id ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <XCircle className="h-4 w-4" />
+                        )}
+                        <span>{lang === "ar" ? "رفض" : "Reject"}</span>
+                      </Button>
+                    </div>
+                  </Card>
+                );
+              })}
             </div>
           )}
         </TabsContent>
       </Tabs>
 
-      {/* DIALOG: Approve Subscription & Assign Tier/Expires Date */}
+      {/* DIALOG: Approve Subscription & Assign Plan/Interval */}
       {approvingBrand && (
         <Dialog open={!!approvingBrand} onOpenChange={(v) => !v && setApprovingBrand(null)}>
           <DialogContent className="max-w-md bg-background/95 backdrop-blur-md border border-border/60 text-foreground p-6 rounded-2xl shadow-xl">
@@ -677,14 +743,63 @@ function BrandsPage() {
                   {lang === "ar" ? "المحل المختار" : "Boutique Brand"}
                 </p>
                 <p className="font-display font-semibold mt-0.5 text-foreground text-sm">
-                  {approvingBrand.name_en}
+                  {lang === "ar" ? approvingBrand.name_ar || approvingBrand.name_en : approvingBrand.name_en}
                 </p>
               </div>
 
-              <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-4 text-sm">
-                {lang === "ar"
-                  ? "الموافقة تمدد الاشتراك سنة تقويمية كاملة من تاريخ الانتهاء الحالي، أو من اليوم إذا كان منتهياً."
-                  : "Approval extends the subscription by one calendar year from its current expiry, or from today when expired."}
+              {/* Plan Selection */}
+              <div className="space-y-1.5">
+                <Label className="text-xs font-semibold text-foreground">
+                  {lang === "ar" ? "الباقة المراد تفعيلها" : "Target Subscription Plan"}
+                </Label>
+                <Select value={approvingPlanId} onValueChange={setApprovingPlanId}>
+                  <SelectTrigger className="w-full bg-background/50 border-border/60">
+                    <SelectValue placeholder={lang === "ar" ? "اختر الباقة..." : "Select Plan..."} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {saasPlans
+                      .filter((p) => p.code !== "trial" && p.code !== "lifetime_founder")
+                      .map((p) => (
+                        <SelectItem key={p.id} value={p.id}>
+                          {lang === "ar" ? p.name_ar : p.name_en} ({p.code})
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Billing Interval Selection */}
+              <div className="space-y-1.5">
+                <Label className="text-xs font-semibold text-foreground">
+                  {lang === "ar" ? "فترة الاشتراك" : "Billing Interval"}
+                </Label>
+                <Select
+                  value={approvingInterval}
+                  onValueChange={(val: "monthly" | "annual") => setApprovingInterval(val)}
+                >
+                  <SelectTrigger className="w-full bg-background/50 border-border/60">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="monthly">
+                      {lang === "ar" ? "شهري (شهر واحد من تاريخ التفعيل)" : "Monthly (1 Month)"}
+                    </SelectItem>
+                    <SelectItem value="annual">
+                      {lang === "ar" ? "سنوي (سنة كاملة من تاريخ التفعيل)" : "Annual (1 Year)"}
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-4 text-xs text-muted-foreground space-y-1">
+                <p className="font-semibold text-emerald-600 dark:text-emerald-400">
+                  {lang === "ar" ? "ملاحظة الاعتماد:" : "Activation note:"}
+                </p>
+                <p>
+                  {lang === "ar"
+                    ? `الموافقة ستقوم بترقية المتجر فورياً للباقة المختارة وإنهاء الفترة التجريبية وتمديد الصلاحية لمدة ${approvingInterval === "monthly" ? "شهر كامل" : "سنة كاملة"}.`
+                    : `Approval will immediately upgrade the boutique to the selected plan, terminate the trial mode, and extend subscription for ${approvingInterval === "monthly" ? "1 month" : "1 full year"}.`}
+                </p>
               </div>
             </div>
             <DialogFooter className="gap-2">

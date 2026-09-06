@@ -255,7 +255,9 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
   const isCancelled = subscription?.status === "cancelled" || subscription?.cancel_at_period_end;
   const isPendingVerification = brand?.subscription_status === "pending_verification";
 
-  const trialEndsAtDate = subscription?.trial_ends_at || brand?.trial_ends_at;
+  const trialEndsAtDate = isTrial
+    ? (subscription?.trial_ends_at || brand?.trial_ends_at)
+    : null;
   const trialDaysRemaining = trialEndsAtDate
     ? Math.max(0, Math.ceil((new Date(trialEndsAtDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
     : null;

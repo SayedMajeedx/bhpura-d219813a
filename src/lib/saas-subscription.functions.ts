@@ -28,7 +28,9 @@ const SubmitReceiptInput = z.object({
 
 const AdminReviewInput = z.object({
   brandId: z.string().uuid(),
-  tier: z.enum(["basic", "growth", "enterprise"]).default("basic"),
+  tier: z.string().optional(),
+  targetPlanId: z.string().uuid().optional(),
+  billingInterval: z.enum(["monthly", "annual"]).optional(),
 });
 
 const AdminRejectInput = z.object({
@@ -215,6 +217,61 @@ export const approveSubscriptionSaaS = createServerFn({ method: "POST" })
     }
     if (!brand.payment_receipt_url) throw new Error("PAYMENT_RECEIPT_REQUIRED");
 
+    // Fetch subscription record to discover merchant's requested upgrade plan & interval
+    const { data: sub } = await context.supabase
+      .from("brand_subscriptions")
+      .select("id, renewal_target_plan_id, billing_interval, plan_id")
+      .eq("brand_id", data.brandId)
+      .maybeSingle();
+
+    // Determine target plan:
+    // 1. Explicit targetPlanId passed by super admin
+    // 2. sub.renewal_target_plan_id stored during receipt upload
+    // 3. Current sub.plan_id if it's NOT a trial
+    // 4. Default to first active public plan (e.g. Pro)
+    let targetPlanId = data.targetPlanId || sub?.renewal_target_plan_id;
+    if (!targetPlanId && sub?.plan_id) {
+      const { data: currentP } = await context.supabase
+        .from("saas_plans")
+        .select("id, code")
+        .eq("id", sub.plan_id)
+        .maybeSingle();
+      if (currentP && currentP.code !== "trial") {
+        targetPlanId = currentP.id;
+      }
+    }
+
+    if (!targetPlanId) {
+      const { data: defaultPaidPlan } = await context.supabase
+        .from("saas_plans")
+        .select("id")
+        .eq("is_active", true)
+        .neq("code", "trial")
+        .neq("code", "lifetime_founder")
+        .order("sort_order", { ascending: true })
+        .limit(1)
+        .maybeSingle();
+      targetPlanId = defaultPaidPlan?.id;
+    }
+
+    if (!targetPlanId) throw new Error("TARGET_PLAN_NOT_FOUND");
+
+    const { data: targetPlan } = await context.supabase
+      .from("saas_plans")
+      .select("id, code, name_ar, name_en")
+      .eq("id", targetPlanId)
+      .single();
+
+    const { data: ver } = await context.supabase
+      .from("saas_plan_versions")
+      .select("id, version_number")
+      .eq("plan_id", targetPlanId)
+      .eq("is_current", true)
+      .maybeSingle();
+
+    const billingInterval: "monthly" | "annual" =
+      data.billingInterval || (sub?.billing_interval === "monthly" ? "monthly" : "annual");
+
     // Calculate new expiration date
     let baseDate = new Date();
     // If they already have an active future expiration, extend from that date!
@@ -225,16 +282,23 @@ export const approveSubscriptionSaaS = createServerFn({ method: "POST" })
       baseDate = new Date(brand.subscription_expires_at);
     }
 
-    baseDate.setFullYear(baseDate.getFullYear() + 1);
+    if (billingInterval === "monthly") {
+      baseDate.setMonth(baseDate.getMonth() + 1);
+    } else {
+      baseDate.setFullYear(baseDate.getFullYear() + 1);
+    }
     const newExpiresAt = baseDate.toISOString();
+
+    const planCode = targetPlan?.code || data.tier || "pro";
 
     const { error } = await context.supabase
       .from("brands")
       .update({
-        subscription_tier: data.tier,
+        subscription_tier: planCode,
         subscription_status: "active",
-        plan_type: "annual",
+        plan_type: billingInterval,
         subscription_expires_at: newExpiresAt,
+        trial_ends_at: null, // Clear trial completely upon paid approval
         payment_receipt_url: null, // Processed
         payment_receipt_uploaded_at: null,
         renewal_intent: null,
@@ -245,23 +309,7 @@ export const approveSubscriptionSaaS = createServerFn({ method: "POST" })
     if (error) throw error;
 
     // Synchronize brand_subscriptions table
-    const { data: sub } = await context.supabase
-      .from("brand_subscriptions")
-      .select("id, renewal_target_plan_id, billing_interval, plan_id")
-      .eq("brand_id", data.brandId)
-      .maybeSingle();
-
     if (sub) {
-      const targetPlanId = sub.renewal_target_plan_id || sub.plan_id;
-      const { data: ver } = await context.supabase
-        .from("saas_plan_versions")
-        .select("id")
-        .eq("plan_id", targetPlanId)
-        .eq("is_current", true)
-        .maybeSingle();
-
-      const billingInterval = sub.billing_interval === "monthly" ? "monthly" : "annual";
-
       await context.supabase
         .from("brand_subscriptions")
         .update({
@@ -271,7 +319,7 @@ export const approveSubscriptionSaaS = createServerFn({ method: "POST" })
           status: "active",
           current_period_start: new Date().toISOString(),
           current_period_end: newExpiresAt,
-          trial_ends_at: null,
+          trial_ends_at: null, // Clear trial completely
           renewal_intent: null,
           renewal_target_plan_id: null,
           updated_at: new Date().toISOString(),
