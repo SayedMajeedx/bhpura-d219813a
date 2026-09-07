@@ -67,7 +67,7 @@ export function PayPalSubscriptionButton({
             layout: "vertical",
             color: "gold",
             shape: "rect",
-            label: "pay",
+            label: "paypal",
             height: 44,
           },
           createOrder: async () => {
@@ -271,9 +271,13 @@ export function PayPalSubscriptionButton({
           </span>
         </div>
         <p className="text-muted-foreground leading-relaxed ps-6 text-[10px]">
-          {isAr
-            ? "يقبل جميع البطاقات الائتمانية البحرينية (Credit Cards) وبطاقات الخصم المباشر (Debit Cards الصادرة من بنوك البحرين كـ ila و BBK و BisB المفعلة للشراء أونلاين عبر Visa/Mastercard)."
-            : "Accepts all Bahraini Credit Cards and online-enabled Debit Cards (e.g. ila Bank, BBK, BisB, NBB with Visa/Mastercard enabled)."}
+          {isAr ? (
+            <>
+              يقبل جميع بطاقات الائتمان البحرينية <bdi dir="ltr">(Credit Cards)</bdi> وبطاقات الخصم المباشر <bdi dir="ltr">(Debit Cards)</bdi> الصادرة من بنوك البحرين كـ <bdi dir="ltr">ila</bdi> و <bdi dir="ltr">BBK</bdi> و <bdi dir="ltr">BisB</bdi> المفعلة للشراء أونلاين عبر <bdi dir="ltr">Visa / Mastercard</bdi>.
+            </>
+          ) : (
+            "Accepts all Bahraini Credit Cards and online-enabled Debit Cards (e.g. ila Bank, BBK, BisB, NBB with Visa/Mastercard enabled)."
+          )}
         </p>
       </div>
 
