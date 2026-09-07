@@ -202,8 +202,8 @@ export function typographyVariables(config: TypographyConfig, language: Typograp
   };
 
   return {
-    "--type-body": `"${body.url ? "BoutqBodyCustom" : body.family}", sans-serif`,
-    "--type-display": `"${display.url ? "BoutqDisplayCustom" : display.family}", sans-serif`,
+    "--type-body": `"${body.url ? "BoutqBodyCustom" : body.family}", "Inter", "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`,
+    "--type-display": `"${display.url ? "BoutqDisplayCustom" : display.family}", "Inter", "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`,
     "--type-body-weight": config.bodyWeight,
     "--type-heading-weight": config.headingWeight,
     "--type-scale": config.scale,
