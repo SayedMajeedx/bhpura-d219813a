@@ -671,7 +671,7 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
                       </div>
                       <div>
                         <div className="text-xs font-bold text-foreground">
-                          PayPal & Cards
+                          {isAr ? "باي بال والبطاقات البنكية" : "PayPal & Cards"}
                         </div>
                         <div className="text-[10px] text-muted-foreground">
                           {isAr ? "فيزا / ماستركارد / Apple Pay" : "Visa / Mastercard / Apple Pay"}
@@ -706,10 +706,10 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
                       </div>
                       <div>
                         <div className="text-xs font-bold text-foreground">
-                          BenefitPay (Fawri+)
+                          {isAr ? "بنفت باي (BenefitPay)" : "BenefitPay (Fawri+)"}
                         </div>
                         <div className="text-[10px] text-muted-foreground">
-                          {isAr ? "تحويل محلي بالدينار البحريني" : "Local BHD Transfer"}
+                          {isAr ? "تحويل محلي فوري بالدينار البحريني" : "Local BHD Transfer"}
                         </div>
                       </div>
                     </div>
@@ -1369,7 +1369,9 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
                         <div className="flex items-center justify-between w-full">
                           <div className="flex items-center gap-2">
                             <Sparkles className="h-4 w-4 text-primary" />
-                            <span className="text-xs font-bold text-foreground">PayPal & Cards</span>
+                            <span className="text-xs font-bold text-foreground">
+                              {isAr ? "باي بال والبطاقات" : "PayPal & Cards"}
+                            </span>
                           </div>
                           <Badge variant="default" className="text-[9px] font-bold bg-primary text-primary-foreground">
                             {isAr ? "تفعيل فوري" : "Instant"}
@@ -1392,7 +1394,9 @@ export function BrandSubscriptionHub({ brandId, brandSlug }: BrandSubscriptionHu
                       >
                         <div className="flex items-center justify-between w-full">
                           <div className="flex items-center gap-2">
-                            <span className="text-xs font-bold text-foreground">BenefitPay</span>
+                            <span className="text-xs font-bold text-foreground">
+                              {isAr ? "بنفت باي" : "BenefitPay"}
+                            </span>
                           </div>
                           <Badge variant="outline" className="text-[9px] font-semibold text-muted-foreground">
                             {isAr ? "اعتماد يدوي" : "Manual Review"}

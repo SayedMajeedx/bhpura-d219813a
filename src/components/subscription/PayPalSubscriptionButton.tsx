@@ -44,7 +44,6 @@ export function PayPalSubscriptionButton({
 
   useEffect(() => {
     let isMounted = true;
-    const scriptId = "paypal-sdk-script";
 
     const renderButtons = () => {
       if (!isMounted || !containerRef.current) return;
@@ -171,7 +170,17 @@ export function PayPalSubscriptionButton({
       }
     };
 
-    if (window.paypal?.Buttons) {
+    const desiredLocale = isAr ? "ar_BH" : "en_US";
+    const scriptId = `paypal-sdk-script-${desiredLocale}`;
+    const oppositeScriptId = `paypal-sdk-script-${isAr ? "en_US" : "ar_BH"}`;
+
+    const oppositeScript = document.getElementById(oppositeScriptId);
+    if (oppositeScript) {
+      oppositeScript.remove();
+      delete (window as any).paypal;
+    }
+
+    if (window.paypal?.Buttons && document.getElementById(scriptId)) {
       renderButtons();
       return () => {
         isMounted = false;
@@ -194,7 +203,7 @@ export function PayPalSubscriptionButton({
 
     const script = document.createElement("script");
     script.id = scriptId;
-    script.src = `https://www.paypal.com/sdk/js?client-id=${PAYPAL_LIVE_CLIENT_ID}&currency=USD&intent=capture&enable-funding=card`;
+    script.src = `https://www.paypal.com/sdk/js?client-id=${PAYPAL_LIVE_CLIENT_ID}&currency=USD&intent=capture&enable-funding=card&locale=${desiredLocale}`;
     script.async = true;
 
     script.onload = () => {
@@ -222,7 +231,7 @@ export function PayPalSubscriptionButton({
   }, [brandId, targetPlanId, billingInterval, isAr, onSuccess]);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4" dir={isAr ? "rtl" : "ltr"}>
       {/* Price Summary Badge */}
       <div className="p-3.5 rounded-xl border border-border/60 bg-muted/30 flex items-center justify-between text-xs">
         <div className="space-y-0.5">
@@ -241,7 +250,7 @@ export function PayPalSubscriptionButton({
             )
           </span>
         </div>
-        <div className="text-end">
+        <div className="text-end" dir="ltr">
           <div className="font-mono font-bold text-sm text-foreground">
             ${usdAmount} USD
           </div>
@@ -251,21 +260,28 @@ export function PayPalSubscriptionButton({
         </div>
       </div>
 
-      {/* Security note */}
-      <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
-        <ShieldCheck className="h-4 w-4 text-emerald-500 shrink-0" />
-        <span>
+      {/* Security & Accepted Cards Note */}
+      <div className="p-3 rounded-xl border border-border/70 bg-card/60 space-y-1 text-[11px]">
+        <div className="flex items-center gap-2 text-foreground font-semibold">
+          <ShieldCheck className="h-4 w-4 text-emerald-500 shrink-0" />
+          <span>
+            {isAr
+              ? "دفع إلكتروني مشفّر وتفعيل فوري للباقة"
+              : "Encrypted instant online payment & immediate activation"}
+          </span>
+        </div>
+        <p className="text-muted-foreground leading-relaxed ps-6 text-[10px]">
           {isAr
-            ? "دفع مشفر وآمن عبر PayPal أو البطاقات البنكية الدولية مع تفعيل فوري ومباشر للباقة."
-            : "Encrypted, secure payment via PayPal or international cards with instant tier activation."}
-        </span>
+            ? "يقبل جميع البطاقات الائتمانية البحرينية (Credit Cards) وبطاقات الخصم المباشر (Debit Cards الصادرة من بنوك البحرين كـ ila و BBK و BisB المفعلة للشراء أونلاين عبر Visa/Mastercard)."
+            : "Accepts all Bahraini Credit Cards and online-enabled Debit Cards (e.g. ila Bank, BBK, BisB, NBB with Visa/Mastercard enabled)."}
+        </p>
       </div>
 
       {/* Loading state */}
       {loadingSdk && !loadError && (
         <div className="h-28 rounded-xl border border-dashed border-border flex flex-col items-center justify-center gap-2 text-xs text-muted-foreground">
           <Loader2 className="h-5 w-5 animate-spin text-primary" />
-          <span>{isAr ? "جاري تحميل أزرار الدفع الآمنة..." : "Loading secure payment options..."}</span>
+          <span>{isAr ? "جاري تحميل خيارات الدفع الآمنة..." : "Loading secure payment options..."}</span>
         </div>
       )}
 
@@ -287,6 +303,7 @@ export function PayPalSubscriptionButton({
       {/* PayPal Smart Buttons target container */}
       <div
         ref={containerRef}
+        dir={isAr ? "rtl" : "ltr"}
         className="w-full min-h-[44px] transition-all"
       />
     </div>
