@@ -713,7 +713,7 @@ function HeroContentCarousel({
   }
 
   return (
-    <div className="relative isolate w-[88%] max-w-xl overflow-hidden rounded-2xl bg-transparent shadow-lg [clip-path:inset(0_round_1rem)] sm:w-full">
+    <div className="relative isolate w-full max-w-xl px-1 sm:px-0 overflow-hidden rounded-2xl bg-transparent shadow-lg [clip-path:inset(0_round_1rem)]">
       <div
         dir="ltr"
         className="grid items-stretch overflow-hidden rounded-2xl [clip-path:inset(0_round_1rem)] touch-pan-y"
@@ -756,7 +756,7 @@ function HeroContentCarousel({
               dir={lang === "ar" ? "rtl" : "ltr"}
               aria-hidden={slideIndex !== idx}
               inert={slideIndex !== idx ? true : undefined}
-              className={`col-start-1 row-start-1 aspect-video min-w-0 overflow-hidden rounded-2xl transition-[opacity,transform] duration-[500ms] ease-[cubic-bezier(0.22,1,0.36,1)] [backface-visibility:hidden] [clip-path:inset(0_round_1rem)] sm:duration-[600ms] ${slideIndex === idx ? "z-10 pointer-events-auto translate-y-0 scale-100 opacity-100" : "z-0 pointer-events-none translate-y-1 scale-[0.992] opacity-0"}`}
+              className={`col-start-1 row-start-1 aspect-[16/10] sm:aspect-video min-w-0 min-h-[220px] sm:min-h-[260px] overflow-hidden rounded-2xl transition-[opacity,transform] duration-[500ms] ease-[cubic-bezier(0.22,1,0.36,1)] [backface-visibility:hidden] [clip-path:inset(0_round_1rem)] sm:duration-[600ms] ${slideIndex === idx ? "z-10 pointer-events-auto translate-y-0 scale-100 opacity-100" : "z-0 pointer-events-none translate-y-1 scale-[0.992] opacity-0"}`}
             >
               {slide.type === "image" && mediaUrl ? (
                 <div className="relative h-full w-full overflow-hidden rounded-2xl sm:h-[320px]">

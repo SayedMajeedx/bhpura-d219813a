@@ -403,6 +403,19 @@ function StoreShell() {
     // Clean up refresh tokens stored by the retired client-only pseudo-passkey flow.
     localStorage.removeItem(`passkey_token_${brand.slug}`);
     localStorage.removeItem(`passkey_registered_${brand.slug}`);
+
+    // Detect if embedded in an iframe or preview mode to suppress OS scrollbars
+    const isEmbedded =
+      typeof window !== "undefined" &&
+      (window.self !== window.top || window.location.search.includes("preview=1"));
+    if (isEmbedded) {
+      document.documentElement.classList.add("is-embedded", "scrollbar-none");
+      document.body.classList.add("is-embedded", "scrollbar-none");
+    }
+    return () => {
+      document.documentElement.classList.remove("is-embedded", "scrollbar-none");
+      document.body.classList.remove("is-embedded", "scrollbar-none");
+    };
   }, [brand.slug]);
 
   const [localRadius, setLocalRadius] = useState<string | null>(null);
@@ -507,6 +520,10 @@ function StoreShell() {
 function WhatsAppFab() {
   const { settings, lang, brand } = useStorefront();
   const { pathname } = useLocation();
+  const isEmbedded =
+    typeof window !== "undefined" &&
+    (window.self !== window.top || window.location.search.includes("preview=1"));
+  if (isEmbedded) return null;
   if (!settings.whatsapp_enabled) return null;
   const digits = (settings.whatsapp_number ?? "").replace(/\D/g, "");
   if (!digits) return null;

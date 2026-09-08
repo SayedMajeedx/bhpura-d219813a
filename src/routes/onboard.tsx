@@ -380,7 +380,7 @@ function OnboardPage() {
 
           {/* Mobile Preview Modal */}
           <Dialog open={showMobilePreview} onOpenChange={setShowMobilePreview}>
-            <DialogContent className="max-w-lg p-3 sm:p-5 bg-card border-border max-h-[92vh] overflow-y-auto">
+            <DialogContent className="max-w-md w-[95vw] sm:w-full p-2 sm:p-5 bg-card border-border max-h-[94vh] overflow-y-auto">
               <DialogHeader className="pb-1">
                 <DialogTitle className="text-sm font-bold flex items-center gap-2">
                   <Sparkles className="size-4 text-primary" />

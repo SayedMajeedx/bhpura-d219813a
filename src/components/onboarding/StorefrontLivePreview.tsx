@@ -39,7 +39,7 @@ export function StorefrontLivePreview({
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
   // Storefront iframe source URL (relative path ensures reliable same-origin loading)
-  const iframeSrc = `/${slug.trim().toLowerCase()}`;
+  const iframeSrc = `/${slug.trim().toLowerCase()}?preview=1`;
   const externalUrl = getStorefrontUrl(slug);
 
   // Subdomain for mockup address bars: ensure only clean latin subdomain without flipped Arabic text
@@ -135,7 +135,7 @@ export function StorefrontLivePreview({
       <div
         className={cn(
           "w-full flex justify-center transition-all duration-300",
-          device === "mobile" ? "max-w-[400px]" : "max-w-full",
+          device === "mobile" ? "max-w-[360px] sm:max-w-[380px]" : "max-w-full",
         )}
       >
         {device === "mobile" ? (
@@ -144,7 +144,7 @@ export function StorefrontLivePreview({
             {/* Phone Bezel */}
             <div
               dir="ltr"
-              className="w-full h-[660px] sm:h-[700px] bg-card rounded-[42px] border-[8px] border-border shadow-2xl overflow-hidden flex flex-col relative ring-1 ring-border/50"
+              className="w-full h-[640px] sm:h-[690px] bg-card rounded-[38px] border-[5px] sm:border-[6px] border-border shadow-2xl overflow-hidden flex flex-col relative ring-1 ring-border/50"
             >
               {/* iOS Status Bar + Dynamic Island */}
               <div className="h-8 w-full bg-background/95 backdrop-blur border-b border-border/30 px-5 flex items-center justify-between shrink-0 relative z-30 select-none">
@@ -197,7 +197,14 @@ export function StorefrontLivePreview({
                 title={isAr ? "معاينة المتجر الإلكتروني" : "Storefront Live Preview"}
                 className="w-full flex-1 border-0 bg-background overflow-hidden"
                 style={{ scrollbarWidth: "none" }}
-                onLoad={() => setIsLoading(false)}
+                onLoad={() => {
+                  setIsLoading(false);
+                  try {
+                    iframeRef.current?.contentWindow?.scrollTo(0, 0);
+                  } catch {
+                    // cross-origin access guard
+                  }
+                }}
                 sandbox="allow-same-origin allow-scripts allow-forms allow-popups"
               />
 
