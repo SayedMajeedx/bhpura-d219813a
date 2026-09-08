@@ -905,7 +905,7 @@ function HeroContentCarousel({
                 </div>
               ) : (
                 <div
-                  className="flex h-full flex-col justify-center overflow-hidden rounded-2xl bg-card text-card-foreground px-4 pt-2.5 pb-8 shadow-xl border border-border/40 sm:h-[320px] sm:p-8 sm:pb-20"
+                  className="hero-carousel-text-card flex h-full flex-col justify-center overflow-hidden rounded-2xl bg-card text-card-foreground p-5 pb-12 shadow-xl border border-border/40 sm:h-[320px] sm:p-8 sm:pb-20"
                   style={{ textAlign: settings.hero_title_align }}
                 >
                   {settings.show_hero_title && title && (
@@ -913,7 +913,7 @@ function HeroContentCarousel({
                       className="mb-1 font-semibold leading-tight sm:mb-3"
                       style={{
                         color: settings.hero_title_color || "var(--color-foreground)",
-                        fontSize: `clamp(1.1rem, 4vw, ${settings.hero_title_size}px)`,
+                        fontSize: `clamp(1.25rem, 5vw, ${settings.hero_title_size}px)`,
                         fontFamily: "var(--sf-font)",
                       }}
                     >
@@ -921,7 +921,7 @@ function HeroContentCarousel({
                     </h1>
                   )}
                   {settings.show_hero_about && body && (
-                    <p className="mb-2 line-clamp-2 text-[11.5px] leading-snug text-muted-foreground sm:mb-4 sm:line-clamp-none sm:text-base sm:leading-relaxed">
+                    <p className="mb-3 line-clamp-2 text-xs leading-relaxed text-muted-foreground sm:mb-4 sm:line-clamp-none sm:text-base">
                       {body}
                     </p>
                   )}
@@ -929,7 +929,7 @@ function HeroContentCarousel({
                     <div>
                       <StorefrontLink
                         href={slide.button_href || "#products"}
-                        className="inline-flex items-center rounded-full bg-primary text-primary-foreground px-3.5 py-1.5 text-xs font-semibold shadow-sm transition-transform duration-200 hover:scale-105 active:scale-95 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 sm:px-6 sm:py-3 sm:text-base"
+                        className="inline-flex items-center rounded-full bg-primary text-primary-foreground px-4 py-2 text-xs font-semibold shadow-sm transition-transform duration-200 hover:scale-105 active:scale-95 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 sm:px-6 sm:py-3 sm:text-base"
                       >
                         {button}
                       </StorefrontLink>

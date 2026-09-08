@@ -441,6 +441,26 @@ html.is-embedded body {
   scrollbar-width: none !important; /* Firefox */
 }
 
+/* Scoped ONLY to the live preview iframe in Onboard (active when html.is-embedded) */
+html.is-embedded .hero-carousel-text-card {
+  padding-left: 1rem !important;
+  padding-right: 1rem !important;
+  padding-top: 0.625rem !important;
+  padding-bottom: 2rem !important;
+}
+html.is-embedded .hero-carousel-text-card h1 {
+  font-size: clamp(1.05rem, 3.8vw, 1.25rem) !important;
+}
+html.is-embedded .hero-carousel-text-card p {
+  font-size: 11.5px !important;
+  line-height: 1.35 !important;
+  margin-bottom: 0.5rem !important;
+}
+html.is-embedded .hero-carousel-text-card a {
+  padding: 0.35rem 0.85rem !important;
+  font-size: 0.75rem !important;
+}
+
 @media print {
   @page {
     margin: 16mm;
