@@ -1702,12 +1702,12 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
                               )
                             : isGuest
                               ? t(
-                                  "أدخلي مقاساتكِ لتفصيل هذه القطعة كضيف مباشرة.",
-                                  "Enter your measurements to tailor this item directly as a guest.",
+                                  "إدخال المقاسات لتفصيل هذه القطعة كطلب ضيف مباشرة.",
+                                  "Enter measurements to tailor this item directly as a guest.",
                                 )
                               : t(
                                   "يمكن تعديل المقاسات هنا، ثم حفظها واستخدامها مباشرة.",
-                                  "Edit your measurements here, then save and use them instantly.",
+                                  "Edit measurements here, then save and use them instantly.",
                                 )}
                         </p>
                       </div>
@@ -1813,7 +1813,7 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
                     <p className="mt-3 flex items-center gap-1.5 text-xs font-medium text-emerald-700 dark:text-emerald-400">
                       <Check className="size-3.5" />
                       {t(
-                        "تم ربط هذه المقاسات بالطلب. يمكنكِ إلغاء التطبيق لتعديلها في أي وقت.",
+                        "تم ربط هذه المقاسات بالطلب. يمكن إلغاء التطبيق لتعديلها في أي وقت.",
                         "Measurements attached to this order. Click Remove to modify them anytime.",
                       )}
                     </p>
@@ -1833,8 +1833,8 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
                         className="text-primary hover:underline font-semibold"
                       >
                         {t(
-                          "لديكِ حساب مسبق؟ سجلي الدخول لتحميل مقاساتك",
-                          "Have an account? Sign in to load saved sizes",
+                          "لديك حساب مسجل؟ تسجيل الدخول لاسترجاع المقاسات",
+                          "Have an account? Sign in to load saved measurements",
                         )}
                       </Link>
                     </div>
