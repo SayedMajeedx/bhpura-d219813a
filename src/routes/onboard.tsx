@@ -23,7 +23,15 @@ import {
   AlertCircle,
   Eye,
   EyeOff,
+  Smartphone,
 } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { StorefrontLivePreview } from "@/components/onboarding/StorefrontLivePreview";
 import {
   registerInstantTrial,
   getPublicOnboardingPlans,
@@ -83,6 +91,7 @@ function OnboardPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [slugStatus, setSlugStatus] = useState<"idle" | "checking" | "available" | "taken">("idle");
   const [existingAccountWarning, setExistingAccountWarning] = useState<string | null>(null);
+  const [showMobilePreview, setShowMobilePreview] = useState(false);
 
   const chooseBillingInterval = (interval: "monthly" | "annual") => {
     setBillingInterval(interval);
@@ -271,7 +280,7 @@ function OnboardPage() {
     >
       {/* 1. Minimalist Header */}
       <header className="border-b border-border/60 bg-background/80 backdrop-blur sticky top-0 z-30">
-        <div className="max-w-6xl mx-auto px-4 sm:px-8 h-16 flex items-center justify-between">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <Link to="/" dir="ltr" className="flex items-center gap-2.5 group">
             <img
               src="/boutq-logo-pack/boutq-icon-squircle.svg"
@@ -303,7 +312,7 @@ function OnboardPage() {
       </header>
 
       {/* 2. Hero & Value Proposition */}
-      <main className="max-w-6xl mx-auto px-4 sm:px-8 py-10 sm:py-16 w-full space-y-12">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-16 w-full space-y-12">
         <div className="text-center max-w-2xl mx-auto space-y-4">
           <Badge
             variant="outline"
@@ -341,9 +350,58 @@ function OnboardPage() {
           </div>
         )}
 
-        {/* 3. Boutique Launch Form */}
-        <div className="max-w-2xl mx-auto w-full">
-          <Card className="border border-border bg-card rounded-2xl shadow-sm">
+        {/* Mobile Quick Live Preview Trigger */}
+        <div className="lg:hidden max-w-xl mx-auto w-full">
+          <div className="rounded-2xl border border-primary/20 bg-primary/5 p-3.5 flex items-center justify-between gap-3 shadow-xs">
+            <div className="flex items-center gap-3">
+              <div className="size-9 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                <Smartphone className="size-4" />
+              </div>
+              <div>
+                <p className="text-xs font-bold text-foreground">
+                  {isAr ? "شاهد تجربة حية لمتجرك" : "View Live Boutique Demo"}
+                </p>
+                <p className="text-[11px] text-muted-foreground">
+                  {isAr ? "تصفح المنتجات والسلة كما يراها عميلك" : "Browse products & test the cart"}
+                </p>
+              </div>
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setShowMobilePreview(true)}
+              className="text-xs font-bold shrink-0 gap-1.5"
+            >
+              <Eye className="size-3.5" />
+              <span>{isAr ? "معاينة حية" : "Live Demo"}</span>
+            </Button>
+          </div>
+
+          {/* Mobile Preview Modal */}
+          <Dialog open={showMobilePreview} onOpenChange={setShowMobilePreview}>
+            <DialogContent className="max-w-lg p-3 sm:p-5 bg-card border-border max-h-[92vh] overflow-y-auto">
+              <DialogHeader className="pb-1">
+                <DialogTitle className="text-sm font-bold flex items-center gap-2">
+                  <Sparkles className="size-4 text-primary" />
+                  <span>{isAr ? "المعاينة الحية للمتجر" : "Storefront Live Preview"}</span>
+                </DialogTitle>
+              </DialogHeader>
+              <StorefrontLivePreview
+                slug="pura"
+                displaySlug={slug || (isAr ? "متجرك" : "your-brand")}
+                brandName={brandName}
+                isAr={isAr}
+                onActionClick={() => setShowMobilePreview(false)}
+              />
+            </DialogContent>
+          </Dialog>
+        </div>
+
+        {/* 3. Boutique Launch Form & Live Storefront Preview */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start w-full">
+          <div className="lg:col-span-7 w-full">
+            <Card className="border border-border bg-card rounded-2xl shadow-sm">
             <CardHeader className="pb-4">
               <CardTitle className="text-xl font-bold text-foreground">
                 {isAr ? "إطلاق متجرك الإلكتروني" : "Launch Your Boutique"}
@@ -587,6 +645,21 @@ function OnboardPage() {
             </CardContent>
           </Card>
         </div>
+
+        <div className="hidden lg:flex lg:col-span-5 lg:sticky lg:top-24 flex-col items-center">
+          <StorefrontLivePreview
+            slug="pura"
+            displaySlug={slug || (isAr ? "متجرك" : "your-brand")}
+            brandName={brandName}
+            isAr={isAr}
+            onActionClick={() => {
+              const input = document.getElementById("brandName");
+              input?.focus();
+              input?.scrollIntoView({ behavior: "smooth", block: "center" });
+            }}
+          />
+        </div>
+      </div>
 
         {/* 4. Bottom Transparent Plans Overview */}
         <div className="pt-12 border-t border-border/60 space-y-6">
