@@ -41,7 +41,13 @@ export function StorefrontLivePreview({
   // Storefront iframe source URL (relative path ensures reliable same-origin loading)
   const iframeSrc = `/${slug.trim().toLowerCase()}`;
   const externalUrl = getStorefrontUrl(slug);
-  const effectiveDisplaySlug = (displaySlug || slug).trim().toLowerCase();
+
+  // Subdomain for mockup address bars: ensure only clean latin subdomain without flipped Arabic text
+  const rawSubdomain = (displaySlug || slug).trim().toLowerCase();
+  const cleanSubdomain =
+    rawSubdomain && !/[\u0600-\u06FF]/.test(rawSubdomain)
+      ? rawSubdomain.replace(/[^a-z0-9-]/g, "")
+      : slug.trim().toLowerCase();
 
   const handleRefresh = () => {
     setIsLoading(true);
@@ -129,16 +135,19 @@ export function StorefrontLivePreview({
       <div
         className={cn(
           "w-full flex justify-center transition-all duration-300",
-          device === "mobile" ? "max-w-[380px]" : "max-w-full",
+          device === "mobile" ? "max-w-[400px]" : "max-w-full",
         )}
       >
         {device === "mobile" ? (
           /* Mobile Phone Mockup */
           <div className="w-full relative flex flex-col items-center">
             {/* Phone Bezel */}
-            <div className="w-full h-[640px] sm:h-[680px] bg-card rounded-[42px] border-[8px] border-border shadow-2xl overflow-hidden flex flex-col relative ring-1 ring-border/50">
+            <div
+              dir="ltr"
+              className="w-full h-[660px] sm:h-[700px] bg-card rounded-[42px] border-[8px] border-border shadow-2xl overflow-hidden flex flex-col relative ring-1 ring-border/50"
+            >
               {/* iOS Status Bar + Dynamic Island */}
-              <div className="h-9 w-full bg-background/95 backdrop-blur border-b border-border/30 px-5 flex items-center justify-between shrink-0 relative z-30 select-none">
+              <div className="h-8 w-full bg-background/95 backdrop-blur border-b border-border/30 px-5 flex items-center justify-between shrink-0 relative z-30 select-none">
                 <span className="text-[11px] font-semibold text-foreground tracking-tight font-mono">
                   9:41
                 </span>
@@ -157,12 +166,9 @@ export function StorefrontLivePreview({
 
               {/* iOS Safari Mock Address Pill */}
               <div className="h-7 bg-muted/60 border-b border-border/50 px-3 flex items-center justify-center shrink-0">
-                <div
-                  dir="ltr"
-                  className="w-full max-w-[240px] h-5 bg-background/90 rounded-md border border-border/60 px-2 flex items-center justify-center gap-1 text-[10px] text-muted-foreground font-mono truncate"
-                >
+                <div className="w-full max-w-[240px] h-5 bg-background/90 rounded-md border border-border/60 px-2 flex items-center justify-center gap-1 text-[10px] text-muted-foreground font-mono truncate">
                   <Lock className="size-2.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
-                  <span className="truncate">{effectiveDisplaySlug}.boutq.store</span>
+                  <span className="truncate">{cleanSubdomain}.boutq.store</span>
                 </div>
               </div>
 
@@ -189,7 +195,8 @@ export function StorefrontLivePreview({
                 ref={iframeRef}
                 src={iframeSrc}
                 title={isAr ? "معاينة المتجر الإلكتروني" : "Storefront Live Preview"}
-                className="w-full flex-1 border-0 bg-background"
+                className="w-full flex-1 border-0 bg-background overflow-hidden"
+                style={{ scrollbarWidth: "none" }}
                 onLoad={() => setIsLoading(false)}
                 sandbox="allow-same-origin allow-scripts allow-forms allow-popups"
               />
@@ -218,7 +225,7 @@ export function StorefrontLivePreview({
                 className="flex-1 max-w-sm mx-auto h-6 bg-background rounded-md border border-border/80 px-2.5 flex items-center gap-1.5 text-[11px] text-muted-foreground font-mono truncate"
               >
                 <Lock className="size-3 text-emerald-600 dark:text-emerald-400 shrink-0" />
-                <span className="truncate">{effectiveDisplaySlug}.boutq.store</span>
+                <span className="truncate">{cleanSubdomain}.boutq.store</span>
               </div>
             </div>
 
