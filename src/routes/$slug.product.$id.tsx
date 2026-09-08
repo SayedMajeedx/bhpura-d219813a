@@ -333,6 +333,7 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
   const [sizeMode, setSizeMode] = useState<"ready" | "custom">("ready");
   const [passportApplied, setPassportApplied] = useState(false);
   const [passportDraft, setPassportDraft] = useState<Record<string, string>>({});
+  const [guestUnit, setGuestUnit] = useState<"in" | "cm">("in");
   const [savingPassport, setSavingPassport] = useState(false);
   const [uploadingField, setUploadingField] = useState<Record<string, boolean>>({});
   const optionsRef = useRef<HTMLDivElement | null>(null);
@@ -684,18 +685,37 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
       } | null;
     },
   });
+  const isGuest = !customerQ.data?.id;
   const storedFitProfiles = normalizeFitProfiles(fitPassportQ.data?.measurements);
   const fitProfileValues = passportDraft;
+
   useEffect(() => {
-    const values = storedFitProfiles[fitProfileType];
-    setPassportDraft(
-      Object.fromEntries(Object.entries(values).map(([key, value]) => [key, String(value)])),
-    );
-  }, [fitPassportQ.data?.measurements, fitProfileType]);
+    if (customerQ.data?.id && fitPassportQ.data?.measurements) {
+      const values = storedFitProfiles[fitProfileType];
+      setPassportDraft(
+        Object.fromEntries(Object.entries(values).map(([key, value]) => [key, String(value)])),
+      );
+    } else if (!customerQ.data?.id) {
+      try {
+        const raw = localStorage.getItem(`pura_guest_fit_passport_${brand.slug}_${fitProfileType}`);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (parsed?.draft && typeof parsed.draft === "object") {
+            setPassportDraft(parsed.draft);
+          }
+          if (parsed?.unit === "in" || parsed?.unit === "cm") {
+            setGuestUnit(parsed.unit);
+          }
+        }
+      } catch {}
+    }
+  }, [customerQ.data?.id, fitPassportQ.data?.measurements, fitProfileType, brand.slug]);
+
   const fitProfileComplete = Boolean(
-    fitPassportQ.data?.consent_to_store &&
+    (isGuest ? true : fitPassportQ.data?.consent_to_store) &&
     missingFitFields(fitProfileType, fitProfileValues).length === 0,
   );
+
   const applyFitPassport = () => {
     setCfValues((current) => {
       const next = { ...current };
@@ -715,6 +735,43 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
       ),
     );
   };
+
+  const applyGuestFitPassport = () => {
+    if (missingFitFields(fitProfileType, passportDraft).length) {
+      toast.error(
+        t(
+          "يرجى إكمال المقاسات الإجبارية بقيم صحيحة أكبر من صفر",
+          "Complete all required measurements with values greater than zero",
+        ),
+      );
+      return;
+    }
+    try {
+      localStorage.setItem(
+        `pura_guest_fit_passport_${brand.slug}_${fitProfileType}`,
+        JSON.stringify({ draft: passportDraft, unit: guestUnit }),
+      );
+    } catch {}
+
+    setCfValues((current) => {
+      const next = { ...current };
+      customFields.forEach((field) => {
+        const measurement = matchCustomFieldToMeasurement(field);
+        if (measurement && passportDraft[measurement] != null)
+          next[field.key] = String(passportDraft[measurement]);
+      });
+      return next;
+    });
+    setPassportApplied(true);
+    setErrorMsg(null);
+    toast.success(
+      t(
+        `تم تطبيق مقاسات ${fitProfileType === "abaya" ? "العباية" : "الفستان"} على هذا الطلب`,
+        "Fit Passport applied to this order",
+      ),
+    );
+  };
+
   const saveAndApplyFitPassport = async () => {
     if (!customerQ.data?.id) return;
     if (missingFitFields(fitProfileType, passportDraft).length) {
@@ -751,6 +808,7 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
     applyFitPassport();
     toast.success(t("تم حفظ المقاسات في Passport وتطبيقها", "Measurements saved and applied"));
   };
+
   const removeFitPassport = () => {
     setPassportApplied(false);
     setCfValues((current) => {
@@ -762,7 +820,7 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
       });
       return next;
     });
-    toast.success(t("تم إلغاء استخدام المقاسات المحفوظة", "Saved measurements removed"));
+    toast.success(t("تم إلغاء استخدام المقاسات", "Measurements removed"));
   };
   useEffect(() => {
     if (!product?.id) return;
@@ -1013,7 +1071,10 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
       })
       .filter((v) => v.value.length > 0);
 
-    if (isTailoringActive && passportApplied && fitProfileComplete && fitPassportQ.data) {
+    if (isTailoringActive && passportApplied && fitProfileComplete) {
+      const activeUnit = fitPassportQ.data?.preferred_length_unit ?? guestUnit ?? "in";
+      const activeVersion = fitPassportQ.data?.version ? String(fitPassportQ.data.version) : "guest";
+
       custom.push({
         key: "fit_passport_profile",
         label_ar: "ملف المقاس المستخدم",
@@ -1029,7 +1090,7 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
           key: `fit_passport_${fitProfileType}_${key}`,
           label_ar: `Passport — ${labelAr}`,
           label_en: `Passport — ${labelEn}`,
-          value: `${value} ${fitPassportQ.data!.preferred_length_unit}`,
+          value: `${value} ${activeUnit}`,
           type: "number",
           price_delta: 0,
         });
@@ -1038,7 +1099,7 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
         key: "fit_passport_version",
         label_ar: "إصدار ملف المقاس",
         label_en: "Fit Passport version",
-        value: String(fitPassportQ.data.version),
+        value: activeVersion,
         type: "text",
         price_delta: 0,
       });
@@ -1608,49 +1669,104 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
                   </span>
                 </div>
               )}
-              {passportConfigured && customerQ.data && (
+              {passportConfigured && (
                 <div
-                  className={`rounded-xl border p-4 ${fitProfileComplete ? "border-primary/20 bg-primary/[0.045]" : "border-amber-200 bg-amber-50/70"}`}
+                  className={`rounded-xl border p-4 ${
+                    fitProfileComplete
+                      ? "border-primary/20 bg-primary/[0.045]"
+                      : "border-amber-200 bg-amber-50/70 dark:border-amber-900/50 dark:bg-amber-950/20"
+                  }`}
                 >
                   <div className="flex flex-wrap items-center justify-between gap-3">
-                    <div className="flex items-start gap-3">
-                      <span className="grid size-9 place-items-center rounded-lg bg-primary text-primary-foreground">
+                    <div className="flex items-start gap-3 min-w-0">
+                      <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-primary text-primary-foreground">
                         <Ruler className="size-4" />
                       </span>
-                      <div>
-                        <p className="text-sm font-bold">
-                          Pura Fit Passport ·{" "}
-                          {fitProfileType === "abaya" ? t("عباية", "Abaya") : t("فستان", "Dress")}
-                        </p>
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <p className="text-sm font-bold">
+                            Pura Fit Passport ·{" "}
+                            {fitProfileType === "abaya" ? t("عباية", "Abaya") : t("فستان", "Dress")}
+                          </p>
+                          {isGuest && (
+                            <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary">
+                              {t("طلب ضيف", "Guest order")}
+                            </span>
+                          )}
+                        </div>
                         <p className="mt-0.5 text-xs text-muted-foreground">
                           {passportApplied
                             ? t(
-                                "تم حفظ هذه المقاسات وتطبيقها على الطلب",
-                                "These measurements are saved and applied to this order",
+                                "تم تطبيق هذه المقاسات على طلبك.",
+                                "These measurements are applied to your order.",
                               )
-                            : t(
-                                "يمكن تعديل المقاسات هنا، ثم حفظها واستخدامها مباشرة.",
-                                "Edit your measurements here, then save and use them instantly.",
-                              )}
+                            : isGuest
+                              ? t(
+                                  "أدخلي مقاساتكِ لتفصيل هذه القطعة كضيف مباشرة.",
+                                  "Enter your measurements to tailor this item directly as a guest.",
+                                )
+                              : t(
+                                  "يمكن تعديل المقاسات هنا، ثم حفظها واستخدامها مباشرة.",
+                                  "Edit your measurements here, then save and use them instantly.",
+                                )}
                         </p>
                       </div>
                     </div>
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant={passportApplied ? "outline" : "default"}
-                      disabled={savingPassport}
-                      onClick={passportApplied ? removeFitPassport : saveAndApplyFitPassport}
-                      className="gap-2"
-                    >
-                      {passportApplied ? <X className="size-4" /> : <Check className="size-4" />}
-                      {passportApplied
-                        ? t("إلغاء التطبيق", "Remove")
-                        : savingPassport
-                          ? t("جارٍ الحفظ…", "Saving…")
-                          : t("حفظ واستخدام", "Save & use")}
-                    </Button>
+
+                    <div className="flex items-center gap-2">
+                      {isGuest && !passportApplied && (
+                        <div className="flex items-center rounded-lg border border-border bg-background p-0.5 text-xs font-semibold">
+                          <button
+                            type="button"
+                            onClick={() => setGuestUnit("in")}
+                            className={`rounded-md px-2 py-1 text-xs transition-colors ${
+                              guestUnit === "in"
+                                ? "bg-primary text-primary-foreground shadow-xs"
+                                : "text-muted-foreground hover:text-foreground"
+                            }`}
+                          >
+                            {t("بوصة", "in")}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setGuestUnit("cm")}
+                            className={`rounded-md px-2 py-1 text-xs transition-colors ${
+                              guestUnit === "cm"
+                                ? "bg-primary text-primary-foreground shadow-xs"
+                                : "text-muted-foreground hover:text-foreground"
+                            }`}
+                          >
+                            {t("سم", "cm")}
+                          </button>
+                        </div>
+                      )}
+
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant={passportApplied ? "outline" : "default"}
+                        disabled={savingPassport}
+                        onClick={
+                          passportApplied
+                            ? removeFitPassport
+                            : isGuest
+                              ? applyGuestFitPassport
+                              : saveAndApplyFitPassport
+                        }
+                        className="gap-2"
+                      >
+                        {passportApplied ? <X className="size-4" /> : <Check className="size-4" />}
+                        {passportApplied
+                          ? t("إلغاء التطبيق", "Remove")
+                          : savingPassport
+                            ? t("جارٍ الحفظ…", "Saving…")
+                            : isGuest
+                              ? t("تطبيق المقاسات", "Apply")
+                              : t("حفظ واستخدام", "Save & use")}
+                      </Button>
+                    </div>
                   </div>
+
                   <div className="mt-4 grid grid-cols-2 gap-x-3 gap-y-4 sm:grid-cols-12">
                     {FIT_PROFILE_FIELDS[fitProfileType].map(([key, ar, en, required]) => (
                       <label
@@ -1684,48 +1800,45 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
                             className="h-10 pe-9 bg-background"
                           />
                           <span className="absolute end-3 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">
-                            {fitPassportQ.data?.preferred_length_unit ?? "in"}
+                            {isGuest
+                              ? guestUnit
+                              : fitPassportQ.data?.preferred_length_unit ?? "in"}
                           </span>
                         </div>
                       </label>
                     ))}
                   </div>
+
                   {passportApplied && (
-                    <p className="mt-3 flex items-center gap-1.5 text-xs font-medium text-emerald-700">
+                    <p className="mt-3 flex items-center gap-1.5 text-xs font-medium text-emerald-700 dark:text-emerald-400">
                       <Check className="size-3.5" />
                       {t(
-                        "تم ربط نسخة هذه المقاسات بالطلب، ويمكنك إلغاء التطبيق لتعديلها.",
-                        "A snapshot is attached to this order. Remove it to edit again.",
+                        "تم ربط هذه المقاسات بالطلب. يمكنكِ إلغاء التطبيق لتعديلها في أي وقت.",
+                        "Measurements attached to this order. Click Remove to modify them anytime.",
                       )}
                     </p>
                   )}
-                </div>
-              )}
-              {passportConfigured && !fitPassportQ.isLoading && !customerQ.data && (
-                <div className="rounded-xl border border-dashed border-primary/30 bg-primary/[0.035] p-5 text-center">
-                  <Ruler className="mx-auto size-6 text-primary" />
-                  <p className="mt-2 text-sm font-bold">Pura Fit Passport</p>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    {session
-                      ? t(
-                          "يرجى إنشاء ملف المقاسات المناسب من الحساب لإكمال طلب التفصيل.",
-                          "Create the matching measurement profile in your account to continue.",
-                        )
-                      : t(
-                          "يرجى تسجيل الدخول وحفظ المقاسات لإكمال طلب التفصيل.",
-                          "Sign in and save your measurements to continue.",
+
+                  {isGuest && !passportApplied && (
+                    <div className="mt-3.5 pt-3 border-t border-border/40 flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
+                      <span>
+                        {t(
+                          "لا يشترط إنشاء حساب لتفصيل هذه القطعة.",
+                          "No account required to tailor this item.",
                         )}
-                  </p>
-                  <Button asChild type="button" variant="outline" size="sm" className="mt-3">
-                    <Link
-                      to={session ? "/$slug/account" : "/$slug/auth"}
-                      params={{ slug: brand.slug }}
-                    >
-                      {session
-                        ? t("فتح مقاساتي", "Open my measurements")
-                        : t("تسجيل الدخول", "Sign in")}
-                    </Link>
-                  </Button>
+                      </span>
+                      <Link
+                        to="/$slug/auth"
+                        params={{ slug: brand.slug }}
+                        className="text-primary hover:underline font-semibold"
+                      >
+                        {t(
+                          "لديكِ حساب مسبق؟ سجلي الدخول لتحميل مقاساتك",
+                          "Have an account? Sign in to load saved sizes",
+                        )}
+                      </Link>
+                    </div>
+                  )}
                 </div>
               )}
               {visibleCustomFields.map((f) => {

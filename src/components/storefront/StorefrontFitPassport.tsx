@@ -71,7 +71,34 @@ export function StorefrontFitPassport({
   });
   useEffect(() => {
     const p = passportQ.data;
-    if (!p) return;
+    if (!p) {
+      try {
+        const abayaRaw = localStorage.getItem(`pura_guest_fit_passport_pura_abaya`);
+        const dressRaw = localStorage.getItem(`pura_guest_fit_passport_pura_dress`);
+        const loaded: FitProfiles = { abaya: {}, dress: {} };
+        let found = false;
+        if (abayaRaw) {
+          const parsed = JSON.parse(abayaRaw);
+          if (parsed?.draft) {
+            loaded.abaya = parsed.draft;
+            found = true;
+          }
+          if (parsed?.unit === "in" || parsed?.unit === "cm") setUnit(parsed.unit);
+        }
+        if (dressRaw) {
+          const parsed = JSON.parse(dressRaw);
+          if (parsed?.draft) {
+            loaded.dress = parsed.draft;
+            found = true;
+          }
+          if (parsed?.unit === "in" || parsed?.unit === "cm") setUnit(parsed.unit);
+        }
+        if (found) {
+          setMeasurements(loaded);
+        }
+      } catch {}
+      return;
+    }
     const n = normalizeFitProfiles(p.measurements);
     setMeasurements({
       abaya: Object.fromEntries(Object.entries(n.abaya).map(([k, v]) => [k, String(v)])),
