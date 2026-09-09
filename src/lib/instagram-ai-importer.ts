@@ -796,8 +796,8 @@ export const batchParseCaptionsWithAI = createServerFn({ method: "POST" })
         }
 
         if (response.ok) {
-          const resData = await response.json();
-          const rawText = resData.candidates?.[0]?.content?.parts?.[0]?.text;
+          const resData = (await response.json()) as any;
+          const rawText = resData?.candidates?.[0]?.content?.parts?.[0]?.text;
           if (rawText) {
             try {
               aiResults = JSON.parse(rawText);
