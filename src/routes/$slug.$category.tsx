@@ -456,9 +456,13 @@ function CategoryPage() {
         mobileEnabled={settings.secondary_banner_parallax_mobile_enabled}
         desktopBreakpoint={settings.secondary_banner_parallax_breakpoint}
         className="min-h-[clamp(16rem,32vw,24rem)] border-b"
-        style={{ color: "var(--color-primary-foreground)" }}
+        style={{
+          color: settings.category_banner_background_url
+            ? "#ffffff"
+            : (settings.heading_color || "var(--sf-heading, var(--sf-header-fg, var(--foreground, #111111))"),
+        }}
         backgroundStyle={{
-          backgroundColor: "var(--sf-header-bg)",
+          backgroundColor: "var(--sf-header-bg, var(--background, #ffffff))",
         }}
         background={
           settings.category_banner_background_url ? (
@@ -471,7 +475,7 @@ function CategoryPage() {
                 loading="lazy"
                 className="h-full w-full object-cover"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-primary/75 via-primary/30 to-primary/10" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-black/20" />
             </>
           ) : undefined
         }

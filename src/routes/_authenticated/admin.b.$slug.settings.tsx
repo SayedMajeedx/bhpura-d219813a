@@ -29,6 +29,7 @@ import {
   UploadCloud,
   Loader2,
   Trash2,
+  Crop,
 } from "lucide-react";
 import { useT, useI18n } from "@/lib/i18n";
 import { PhoneInput } from "@/components/phone-input";
@@ -915,17 +916,71 @@ function Settings() {
                     placeholder="https://..."
                     onChange={(e) => setF({ ...f, logo_url: e.target.value })}
                   />
+                  <input
+                    ref={logoInput}
+                    type="file"
+                    accept="image/png,image/svg+xml,image/webp,image/jpeg,image/gif"
+                    className="hidden"
+                    onChange={(e) =>
+                      e.target.files?.[0] && handleUpload(e.target.files[0], "logo")
+                    }
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    onClick={() => logoInput.current?.click()}
+                    disabled={uploading === "logo"}
+                    title={lang === "ar" ? "رفع الشعار مباشرة بدون قص (يحفظ الشفافية كما هي)" : "Direct upload logo as-is (preserves transparency)"}
+                    aria-label={lang === "ar" ? "رفع الشعار مباشرة" : "Direct upload logo"}
+                  >
+                    <Upload className="h-4 w-4" />
+                  </Button>
                   <CropUploadButton
                     onCrop={(blob) => handleUpload(blob, "logo")}
                     preset="logo"
+                    allowTransparency
                     busy={uploading === "logo"}
                     size="icon"
                     variant="outline"
-                    title={lang === "ar" ? "ضبط وضغط شعار المتجر" : "Frame and crop store logo"}
+                    title={lang === "ar" ? "تأطير وضبط الشعار (شفاف)" : "Frame and crop store logo"}
                   >
-                    <Upload className="h-4 w-4" />
+                    <Crop className="h-4 w-4" />
                   </CropUploadButton>
                 </div>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {lang === "ar"
+                    ? "يدعم صور PNG الشفافة وملفات SVG. يتم الحفاظ على الشفافية تلقائياً دون إضافة أي خلفية."
+                    : "Supports transparent PNG and SVG files. Transparency is preserved without adding any background."}
+                </p>
+                {f.logo_url && (
+                  <div className="mt-2 flex items-center gap-3">
+                    <div
+                      className="relative h-12 w-28 shrink-0 overflow-hidden rounded-lg border bg-[#18181b] p-1 flex items-center justify-center shadow-inner"
+                      style={{
+                        backgroundImage: `
+                          linear-gradient(45deg, rgba(255,255,255,0.08) 25%, transparent 25%),
+                          linear-gradient(-45deg, rgba(255,255,255,0.08) 25%, transparent 25%),
+                          linear-gradient(45deg, transparent 75%, rgba(255,255,255,0.08) 75%),
+                          linear-gradient(-45deg, transparent 75%, rgba(255,255,255,0.08) 75%)
+                        `,
+                        backgroundSize: "12px 12px",
+                        backgroundPosition: "0 0, 0 6px, 6px -6px, -6px 0",
+                      }}
+                    >
+                      <img
+                        src={f.logo_url}
+                        alt="Logo preview"
+                        className="max-h-full max-w-full object-contain"
+                      />
+                    </div>
+                    <span className="text-xs text-muted-foreground">
+                      {lang === "ar"
+                        ? "معاينة الشعار الفعلي (تأكيد شفافية الخلفية)"
+                        : "Active logo preview (Transparency verified)"}
+                    </span>
+                  </div>
+                )}
               </div>
               <div>
                 <Label>{lang === "ar" ? "أيقونة المتجر" : "Store favicon"}</Label>
@@ -3364,18 +3419,19 @@ function CustomizerNavigation({
   onChange,
   isAr,
 }: {
-  active: "theme" | "general" | "promotions";
-  onChange: (value: "theme" | "general" | "promotions") => void;
+  active: "theme" | "general" | "promotions" | "content";
+  onChange: (value: "theme" | "general" | "promotions" | "content") => void;
   isAr: boolean;
 }) {
   const items = [
     ["theme", isAr ? "الألوان والمظهر العام" : "Theme & Styles"],
     ["general", isAr ? "الشعار والواجهة الرئيسية" : "Logo & Hero"],
     ["promotions", isAr ? "شريط الإعلانات والترويج" : "Announcements & Merchandising"],
+    ["content", isAr ? "القائمة والرسائل" : "Menu & Content"],
   ] as const;
   return (
     <div
-      className="grid grid-cols-1 sm:grid-cols-3 gap-2 rounded-xl bg-muted/60 p-1.5"
+      className="grid grid-cols-2 sm:grid-cols-4 gap-2 rounded-xl bg-muted/60 p-1.5"
       role="tablist"
     >
       {items.map(([value, label]) => (
@@ -3705,7 +3761,11 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
   const [promoCropIndex, setPromoCropIndex] = useState<number | null>(null);
   const [uploadingPromo, setUploadingPromo] = useState(false);
   const [uploadingSectionKey, setUploadingSectionKey] = useState<string | null>(null);
-  const [settingsTab, setSettingsTab] = useState<"theme" | "general" | "promotions">("theme");
+  const [settingsTab, setSettingsTab] = useState<"theme" | "general" | "promotions" | "content">("theme");
+  const [themeMode, setThemeMode] = useState<"quick" | "advanced">("quick");
+  const enFontInput = useRef<HTMLInputElement>(null);
+  const arFontInput = useRef<HTMLInputElement>(null);
+  const [uploadingFont, setUploadingFont] = useState<"en" | "ar" | null>(null);
   const [contentLanguage, setContentLanguage] = useState<"en" | "ar">(lang === "ar" ? "ar" : "en");
   const [state, setState] = useState<{
     logo_size: number;
@@ -4106,6 +4166,73 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
     setPromoCropIndex(null);
   };
 
+  const uploadStorefrontFont = async (file: File, language: "en" | "ar") => {
+    try {
+      setUploadingFont(language);
+      const url = await uploadPublicMedia(brandId, file, "font");
+      const cleanName = file.name
+        .replace(/\.[^.]+$/, "")
+        .replace(/[_-]+/g, " ")
+        .trim();
+      const customFamily = `Custom — ${cleanName || (language === "ar" ? "Arabic" : "English")}`;
+      setState((current) =>
+        current
+          ? {
+              ...current,
+              [language === "en" ? "storefront_font_en" : "storefront_font_ar"]: customFamily,
+              [language === "en" ? "storefront_font_en_url" : "storefront_font_ar_url"]: url,
+              storefront_typography: {
+                ...current.storefront_typography,
+                body: {
+                  ...current.storefront_typography.body,
+                  [language]: {
+                    family: customFamily,
+                    url,
+                  },
+                },
+                display: {
+                  ...current.storefront_typography.display,
+                  [language]: {
+                    family: customFamily,
+                    url,
+                  },
+                },
+              },
+            }
+          : current,
+      );
+      toast.success(isAr ? "تم رفع الخط بنجاح" : "Font uploaded successfully");
+    } catch (error: any) {
+      toast.error(error.message ?? "Font upload failed");
+    } finally {
+      setUploadingFont(null);
+    }
+  };
+
+  const removeStorefrontFont = (language: "en" | "ar") => {
+    const fallbackFamily = language === "ar" ? "Cairo" : "Inter";
+    setState((current) =>
+      current
+        ? {
+            ...current,
+            [language === "en" ? "storefront_font_en" : "storefront_font_ar"]: fallbackFamily,
+            [language === "en" ? "storefront_font_en_url" : "storefront_font_ar_url"]: null,
+            storefront_typography: {
+              ...current.storefront_typography,
+              body: {
+                ...current.storefront_typography.body,
+                [language]: { family: fallbackFamily, url: null },
+              },
+              display: {
+                ...current.storefront_typography.display,
+                [language]: { family: fallbackFamily, url: null },
+              },
+            },
+          }
+        : current,
+    );
+  };
+
   if (!state) {
     return (
       <Card className="overflow-hidden border border-border/60 shadow-lg rounded-2xl bg-card/40 backdrop-blur-sm p-6 space-y-4">
@@ -4133,137 +4260,603 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
       </div>
 
       <CustomizerNavigation active={settingsTab} onChange={setSettingsTab} isAr={isAr} />
-      {settingsTab === "promotions" && (
+      {(settingsTab === "promotions" || settingsTab === "content") && (
         <ContentLanguageToggle value={contentLanguage} onChange={setContentLanguage} isAr={isAr} />
       )}
 
       {/* ---------------- Tab 1: Theme & Style (الألوان والمظهر العام) ---------------- */}
       <div className={settingsTab === "theme" ? "space-y-6" : "hidden"}>
-        <QuickThemeCustomizer
-          primaryColor={state.storefront_accent_color || state.btn_primary_bg || "#000000"}
-          secondaryColor={state.btn_secondary_bg || "#1f1f1f"}
-          radius={state.storefront_radius || "0.375rem"}
-          currentFontAr={state.storefront_font_ar || "Cairo"}
-          currentFontEn={state.storefront_font_en || "Inter"}
-          headerGlass={state.header_glass ?? true}
-          badgeAccent={state.badge_accent || "maroon"}
-          headerBg={state.header_bg}
-          headerFg={state.header_fg}
-          footerBg={state.footer_bg}
-          footerFg={state.footer_fg}
-          isAr={isAr}
-          onHeaderBgChange={(val) => setState((prev) => (!prev ? prev : { ...prev, header_bg: val }))}
-          onHeaderFgChange={(val) => setState((prev) => (!prev ? prev : { ...prev, header_fg: val }))}
-          onFooterBgChange={(val) => setState((prev) => (!prev ? prev : { ...prev, footer_bg: val }))}
-          onFooterFgChange={(val) => setState((prev) => (!prev ? prev : { ...prev, footer_fg: val }))}
-          onPrimaryChange={(val) =>
-            setState((prev) =>
-              !prev
-                ? prev
-                : {
-                    ...prev,
-                    storefront_accent_color: val,
-                    btn_primary_bg: val,
-                  },
-            )
-          }
-          onSecondaryChange={(val) =>
-            setState((prev) =>
-              !prev
-                ? prev
-                : {
-                    ...prev,
-                    btn_secondary_bg: val,
-                  },
-            )
-          }
-          onRadiusChange={(val) =>
-            setState((prev) =>
-              !prev
-                ? prev
-                : {
-                    ...prev,
-                    storefront_radius: val,
-                  },
-            )
-          }
-          onHeaderGlassChange={(val) =>
-            setState((prev) =>
-              !prev
-                ? prev
-                : {
-                    ...prev,
-                    header_glass: val,
-                  },
-            )
-          }
-          onBadgeAccentChange={(val) =>
-            setState((prev) =>
-              !prev
-                ? prev
-                : {
-                    ...prev,
-                    badge_accent: val,
-                  },
-            )
-          }
-          onSelectFontPreset={(preset: FontMoodPreset) => {
-            setState((prev) =>
-              !prev
-                ? prev
-                : {
-                    ...prev,
-                    storefront_font_ar: preset.fontAr,
-                    storefront_font_en: preset.fontEn,
-                    storefront_typography: {
-                      ...(prev.storefront_typography || {}),
-                      body: {
-                        ...(prev.storefront_typography?.body || {}),
-                        ar: { family: preset.fontAr, url: null },
-                        en: { family: preset.fontEn, url: null },
-                      },
-                      display: {
-                        ...(prev.storefront_typography?.display || {}),
-                        ar: { family: preset.fontAr, url: null },
-                        en: { family: preset.fontEn, url: null },
-                      },
-                    },
-                  },
-            );
-          }}
-          onSwapColors={() => {
-            setState((prev) => {
-              if (!prev) return prev;
-              const curPrimary = prev.storefront_accent_color || prev.btn_primary_bg || "#000000";
-              const curSecondary = prev.btn_secondary_bg || "#1f1f1f";
-              return {
-                ...prev,
-                storefront_accent_color: curSecondary,
-                btn_primary_bg: curSecondary,
-                btn_secondary_bg: curPrimary,
-              };
-            });
-          }}
-        />
-
-        <div className="flex items-center justify-between rounded-xl border border-border p-4 bg-card shadow-sm">
-          <div>
-            <Label className="text-sm font-semibold cursor-pointer">
-              {isAr ? "شارات التخفيضات التلقائية" : "Automatic Sale Badges"}
-            </Label>
-            <p className="mt-0.5 text-xs text-muted-foreground">
-              {isAr
-                ? "إظهار شارة الخصم تلقائياً على كروت المنتجات المخفضة في المتجر"
-                : "Automatically show a discount badge on discounted product cards"}
-            </p>
+        <div className="flex items-center justify-between gap-3 flex-wrap">
+          <div className="flex items-center gap-1.5 rounded-xl bg-muted/60 p-1">
+            <Button
+              type="button"
+              size="sm"
+              variant={themeMode === "quick" ? "default" : "ghost"}
+              onClick={() => setThemeMode("quick")}
+              className="gap-1.5 h-8 text-xs font-semibold rounded-lg"
+            >
+              <Sparkles className="size-3.5" />
+              <span>{isAr ? "المظهر السريع (تلقائي)" : "Quick Theme"}</span>
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant={themeMode === "advanced" ? "default" : "ghost"}
+              onClick={() => setThemeMode("advanced")}
+              className="gap-1.5 h-8 text-xs font-semibold rounded-lg"
+            >
+              <span>{isAr ? "تخصيص تفصيلي متقدم" : "Advanced Customizer"}</span>
+            </Button>
           </div>
-          <Switch
-            checked={state.global_sale_badges_enabled}
-            onCheckedChange={(checked) =>
-              setState({ ...state, global_sale_badges_enabled: checked })
-            }
-          />
+          <span className="text-xs text-muted-foreground">
+            {themeMode === "quick"
+              ? isAr ? "تعديل فوري منسق بضغطة زر" : "One-click curated styling"
+              : isAr ? "تحكم كامل بكافة الألوان والخطوط والأزرار" : "Granular control over all styles"}
+          </span>
         </div>
+
+        {themeMode === "quick" && (
+          <>
+            <QuickThemeCustomizer
+              primaryColor={state.storefront_accent_color || state.btn_primary_bg || "#000000"}
+              secondaryColor={state.btn_secondary_bg || "#1f1f1f"}
+              radius={state.storefront_radius || "0.375rem"}
+              currentFontAr={state.storefront_font_ar || "Cairo"}
+              currentFontEn={state.storefront_font_en || "Inter"}
+              headerGlass={state.header_glass ?? true}
+              badgeAccent={state.badge_accent || "maroon"}
+              headerBg={state.header_bg}
+              headerFg={state.header_fg}
+              footerBg={state.footer_bg}
+              footerFg={state.footer_fg}
+              isAr={isAr}
+              onHeaderBgChange={(val) => setState((prev) => (!prev ? prev : { ...prev, header_bg: val }))}
+              onHeaderFgChange={(val) => setState((prev) => (!prev ? prev : { ...prev, header_fg: val }))}
+              onFooterBgChange={(val) => setState((prev) => (!prev ? prev : { ...prev, footer_bg: val }))}
+              onFooterFgChange={(val) => setState((prev) => (!prev ? prev : { ...prev, footer_fg: val }))}
+              onPrimaryChange={(val) =>
+                setState((prev) =>
+                  !prev
+                    ? prev
+                    : {
+                        ...prev,
+                        storefront_accent_color: val,
+                        btn_primary_bg: val,
+                      },
+                )
+              }
+              onSecondaryChange={(val) =>
+                setState((prev) =>
+                  !prev
+                    ? prev
+                    : {
+                        ...prev,
+                        btn_secondary_bg: val,
+                      },
+                )
+              }
+              onRadiusChange={(val) =>
+                setState((prev) =>
+                  !prev
+                    ? prev
+                    : {
+                        ...prev,
+                        storefront_radius: val,
+                      },
+                )
+              }
+              onHeaderGlassChange={(val) =>
+                setState((prev) =>
+                  !prev
+                    ? prev
+                    : {
+                        ...prev,
+                        header_glass: val,
+                      },
+                )
+              }
+              onBadgeAccentChange={(val) =>
+                setState((prev) =>
+                  !prev
+                    ? prev
+                    : {
+                        ...prev,
+                        badge_accent: val,
+                      },
+                )
+              }
+              onSelectFontPreset={(preset: FontMoodPreset) => {
+                setState((prev) =>
+                  !prev
+                    ? prev
+                    : {
+                        ...prev,
+                        storefront_font_ar: preset.fontAr,
+                        storefront_font_en: preset.fontEn,
+                        storefront_typography: {
+                          ...(prev.storefront_typography || {}),
+                          body: {
+                            ...(prev.storefront_typography?.body || {}),
+                            ar: { family: preset.fontAr, url: null },
+                            en: { family: preset.fontEn, url: null },
+                          },
+                          display: {
+                            ...(prev.storefront_typography?.display || {}),
+                            ar: { family: preset.fontAr, url: null },
+                            en: { family: preset.fontEn, url: null },
+                          },
+                        },
+                      },
+                );
+              }}
+              onSwapColors={() => {
+                setState((prev) => {
+                  if (!prev) return prev;
+                  const curPrimary = prev.storefront_accent_color || prev.btn_primary_bg || "#000000";
+                  const curSecondary = prev.btn_secondary_bg || "#1f1f1f";
+                  return {
+                    ...prev,
+                    storefront_accent_color: curSecondary,
+                    btn_primary_bg: curSecondary,
+                    btn_secondary_bg: curPrimary,
+                  };
+                });
+              }}
+            />
+
+            <div className="flex items-center justify-between rounded-xl border border-border p-4 bg-card shadow-sm">
+              <div>
+                <Label className="text-sm font-semibold cursor-pointer">
+                  {isAr ? "شارات التخفيضات التلقائية" : "Automatic Sale Badges"}
+                </Label>
+                <p className="mt-0.5 text-xs text-muted-foreground">
+                  {isAr
+                    ? "إظهار شارة الخصم تلقائياً على كروت المنتجات المخفضة في المتجر"
+                    : "Automatically show a discount badge on discounted product cards"}
+                </p>
+              </div>
+              <Switch
+                checked={state.global_sale_badges_enabled}
+                onCheckedChange={(checked) =>
+                  setState({ ...state, global_sale_badges_enabled: checked })
+                }
+              />
+            </div>
+          </>
+        )}
+
+        {themeMode === "advanced" && (
+          <div className="space-y-6">
+            {/* Card 1: Colors & Headings */}
+            <div className="space-y-4 rounded-xl border border-border p-4 bg-card shadow-sm">
+              <div>
+                <h3 className="font-semibold text-sm">
+                  {isAr ? "ألوان المتجر والعناوين والروابط" : "Storefront Colors & Headings"}
+                </h3>
+                <p className="mt-0.5 text-xs text-muted-foreground">
+                  {isAr
+                    ? "تحكم دقيق في الألوان التي تظهر لزوار موقعك وتؤثر على العناوين والروابط والخلفيات."
+                    : "Granular control over storefront colors affecting headings, links, and background."}
+                </p>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <ColorField
+                  label={isAr ? "لون المتجر الأساسي (Primary Accent)" : "Storefront Accent Color"}
+                  value={state.storefront_accent_color}
+                  onChange={(value) => setState({ ...state, storefront_accent_color: value })}
+                />
+                <ColorField
+                  label={isAr ? "لون العناوين (Heading Color)" : "Heading Color"}
+                  value={state.heading_color}
+                  onChange={(value) => setState({ ...state, heading_color: value })}
+                />
+                <ColorField
+                  label={isAr ? "لون الروابط (Link Color)" : "Link Color"}
+                  value={state.link_color}
+                  onChange={(value) => setState({ ...state, link_color: value })}
+                />
+                <ColorField
+                  label={isAr ? "لون نصوص المتجر العامة" : "General Text Color"}
+                  value={state.storefront_text_color}
+                  onChange={(value) => setState({ ...state, storefront_text_color: value })}
+                />
+                <div className="sm:col-span-2">
+                  <ColorField
+                    label={isAr ? "خلفية المتجر العامة" : "Storefront Background Color"}
+                    value={state.storefront_background_color}
+                    onChange={(value) => setState({ ...state, storefront_background_color: value })}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Card 2: Header & Footer */}
+            <div className="space-y-4 rounded-xl border border-border p-4 bg-card shadow-sm">
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <h3 className="font-semibold text-sm">{isAr ? "الترويسة والتذييل" : "Header & Footer"}</h3>
+                  <p className="mt-0.5 text-xs text-muted-foreground">
+                    {isAr ? "تخصيص ألوان ونمط شريط التنقل العلوي وتذييل الصفحة." : "Customize header bar and footer colors and styles."}
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Switch
+                    checked={state.header_glass}
+                    onCheckedChange={(checked) => setState({ ...state, header_glass: checked })}
+                  />
+                  <Label className="cursor-pointer text-xs font-semibold">{isAr ? "نمط زجاجي مضبب" : "Glassmorphic Header"}</Label>
+                </div>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <ColorField
+                  label={isAr ? "خلفية الترويسة العلوية" : "Header Background"}
+                  value={state.header_bg}
+                  onChange={(v) => setState({ ...state, header_bg: v })}
+                />
+                <ColorField
+                  label={isAr ? "نص وأيقونات الترويسة" : "Header Text / Icons"}
+                  value={state.header_fg}
+                  onChange={(v) => setState({ ...state, header_fg: v })}
+                />
+                <ColorField
+                  label={isAr ? "خلفية تذييل الصفحة (الفوتر)" : "Footer Background"}
+                  value={state.footer_bg}
+                  onChange={(v) => setState({ ...state, footer_bg: v })}
+                />
+                <ColorField
+                  label={isAr ? "نص تذييل الصفحة" : "Footer Text"}
+                  value={state.footer_fg}
+                  onChange={(v) => setState({ ...state, footer_fg: v })}
+                />
+              </div>
+            </div>
+
+            {/* Card 3: Buttons */}
+            <div className="space-y-4 rounded-xl border border-border p-4 bg-card shadow-sm">
+              <div>
+                <h3 className="font-semibold text-sm">{isAr ? "أزرار المتجر والتفاعل" : "Store Buttons & Actions"}</h3>
+                <p className="mt-0.5 text-xs text-muted-foreground">
+                  {isAr
+                    ? "ألوان أزرار الشراء والإضافة للسلة وإتمام الطلب."
+                    : "Colors for primary actions, Add to Cart, Buy Now, and checkout buttons."}
+                </p>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <ColorField
+                  label={isAr ? "خلفية الزر الأساسي (أضف للسلة)" : "Primary Button Background (Add to Cart)"}
+                  value={state.btn_primary_bg}
+                  onChange={(v) => setState({ ...state, btn_primary_bg: v })}
+                />
+                <ColorField
+                  label={isAr ? "نص الزر الأساسي" : "Primary Button Text"}
+                  value={state.btn_primary_fg}
+                  onChange={(v) => setState({ ...state, btn_primary_fg: v })}
+                />
+                <ColorField
+                  label={isAr ? "خلفية الزر الثانوي (اشترِ الآن)" : "Secondary Button Background (Buy Now)"}
+                  value={state.btn_secondary_bg}
+                  onChange={(v) => setState({ ...state, btn_secondary_bg: v })}
+                />
+                <ColorField
+                  label={isAr ? "نص الزر الثانوي" : "Secondary Button Text"}
+                  value={state.btn_secondary_fg}
+                  onChange={(v) => setState({ ...state, btn_secondary_fg: v })}
+                />
+                <ColorField
+                  label={isAr ? "خلفية زر إتمام الشراء (Checkout)" : "Checkout Button Background"}
+                  value={state.btn_checkout_bg}
+                  onChange={(v) => setState({ ...state, btn_checkout_bg: v })}
+                />
+                <ColorField
+                  label={isAr ? "نص زر إتمام الشراء" : "Checkout Button Text"}
+                  value={state.btn_checkout_fg}
+                  onChange={(v) => setState({ ...state, btn_checkout_fg: v })}
+                />
+                <ColorField
+                  label={isAr ? "خلفية زر الدفع بسلة التسوق الجانبية" : "Cart Drawer Checkout Button Background"}
+                  value={state.cart_drawer_checkout_bg}
+                  onChange={(v) => setState({ ...state, cart_drawer_checkout_bg: v })}
+                />
+                <ColorField
+                  label={isAr ? "نص زر الدفع بسلة التسوق الجانبية" : "Cart Drawer Checkout Button Text"}
+                  value={state.cart_drawer_checkout_fg}
+                  onChange={(v) => setState({ ...state, cart_drawer_checkout_fg: v })}
+                />
+              </div>
+            </div>
+
+            {/* Card 4: Curvature & Badges */}
+            <div className="space-y-4 rounded-xl border border-border p-4 bg-card shadow-sm">
+              <div>
+                <h3 className="font-semibold text-sm">{isAr ? "انحناء الزوايا وشارات التخفيضات" : "Curvature & Badges"}</h3>
+                <p className="mt-0.5 text-xs text-muted-foreground">
+                  {isAr ? "درجة استدارة حواف العناصر وكروت المنتجات ولون شارات الخصم." : "Corner curvature and discount badge styles."}
+                </p>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <Label className="font-semibold text-xs">{isAr ? "انحناء زوايا المتجر (Corner Curvature)" : "Corner Curvature"}</Label>
+                  <Select
+                    value={state.storefront_radius || "1rem"}
+                    onValueChange={(val) => setState({ ...state, storefront_radius: val })}
+                  >
+                    <SelectTrigger className="mt-1.5">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="0px">
+                        {isAr ? "مستقيمة حادة (Sharp — 0px)" : "Sharp Rectangles (0px)"}
+                      </SelectItem>
+                      <SelectItem value="0.375rem">
+                        {isAr ? "انحناء خفيف (Subtle — 6px)" : "Subtle Rounded (6px)"}
+                      </SelectItem>
+                      <SelectItem value="0.5rem">
+                        {isAr ? "انحناء قياسي (Standard — 8px)" : "Standard Rounded (8px)"}
+                      </SelectItem>
+                      <SelectItem value="1rem">
+                        {isAr ? "منحنية أنيقة (Curved — 16px)" : "Curved (16px)"}
+                      </SelectItem>
+                      <SelectItem value="9999px">
+                        {isAr ? "كبسولة دائرية كاملة (Pill — Full Rounded)" : "Pill / Full Rounded"}
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label className="font-semibold text-xs">{isAr ? "لون شارة التخفيضات (Sale Badge Accent)" : "Sale Badge Accent"}</Label>
+                  <Select
+                    value={state.badge_accent || "maroon"}
+                    onValueChange={(val) => setState({ ...state, badge_accent: val })}
+                  >
+                    <SelectTrigger className="mt-1.5">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="maroon">{isAr ? "عنابي كلاسيكي (Classic Maroon)" : "Classic Maroon"}</SelectItem>
+                      <SelectItem value="crimson">{isAr ? "أحمر قرمزي (Vibrant Crimson)" : "Vibrant Crimson"}</SelectItem>
+                      <SelectItem value="slate">{isAr ? "رمادي داكن نخبوي (Luxury Slate)" : "Luxury Slate"}</SelectItem>
+                      <SelectItem value="emerald">{isAr ? "أخضر زمردي (Fresh Emerald)" : "Fresh Emerald"}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between rounded-lg border border-border p-3 pt-3 mt-2">
+                <div>
+                  <Label className="text-xs font-semibold cursor-pointer">
+                    {isAr ? "تفعيل شارات التخفيضات التلقائية" : "Automatic Sale Badges"}
+                  </Label>
+                  <p className="mt-0.5 text-[11px] text-muted-foreground">
+                    {isAr
+                      ? "إظهار شارة الخصم تلقائياً على كروت المنتجات المخفضة في المتجر"
+                      : "Automatically show a discount badge on discounted product cards"}
+                  </p>
+                </div>
+                <Switch
+                  checked={state.global_sale_badges_enabled}
+                  onCheckedChange={(checked) =>
+                    setState({ ...state, global_sale_badges_enabled: checked })
+                  }
+                />
+              </div>
+            </div>
+
+            {/* Card 5: Typography & Custom Fonts */}
+            <div className="space-y-4 rounded-xl border border-border p-4 bg-card shadow-sm">
+              <div>
+                <h3 className="font-semibold text-sm">{isAr ? "خطوط المتجر ورفع الخطوط المخصصة" : "Storefront Typography & Fonts"}</h3>
+                <p className="mt-0.5 text-xs text-muted-foreground">
+                  {isAr
+                    ? "اختر خطاً لكل لغة، أو ارفع ملف الخط الخاص بهويتك بصيغة (.woff2 / .woff / .ttf / .otf)."
+                    : "Select fonts or upload custom web fonts (.woff2, .woff, .ttf, .otf)."}
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {/* English Font */}
+                <div className="space-y-2 rounded-lg border border-border p-3">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-xs font-semibold">{isAr ? "الخط الإنجليزي" : "English Font"}</Label>
+                    {state.storefront_font_en_url && (
+                      <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded font-medium">
+                        {isAr ? "خط مخصص مرفوع" : "Custom uploaded"}
+                      </span>
+                    )}
+                  </div>
+                  <Select
+                    value={state.storefront_font_en}
+                    onValueChange={(val) => {
+                      setState({
+                        ...state,
+                        storefront_font_en: val,
+                        storefront_font_en_url: val.startsWith("Custom —") ? state.storefront_font_en_url : null,
+                      });
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {STOREFRONT_EN_FONTS.map((font) => (
+                        <SelectItem key={font} value={font}>
+                          {font}
+                        </SelectItem>
+                      ))}
+                      {state.storefront_font_en_url && (
+                        <SelectItem value={state.storefront_font_en}>
+                          {state.storefront_font_en}
+                        </SelectItem>
+                      )}
+                    </SelectContent>
+                  </Select>
+                  <div className="flex items-center gap-2 pt-1">
+                    <input
+                      ref={enFontInput}
+                      type="file"
+                      accept=".woff,.woff2,.ttf,.otf"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) uploadStorefrontFont(file, "en");
+                        e.target.value = "";
+                      }}
+                    />
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      className="h-8 text-xs gap-1.5"
+                      disabled={uploadingFont === "en"}
+                      onClick={() => enFontInput.current?.click()}
+                    >
+                      {uploadingFont === "en" ? (
+                        <Loader2 className="size-3.5 animate-spin" />
+                      ) : (
+                        <Upload className="size-3.5" />
+                      )}
+                      <span>{isAr ? "رفع خط إنجليزي" : "Upload EN Font"}</span>
+                    </Button>
+                    {state.storefront_font_en_url && (
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="ghost"
+                        className="h-8 text-xs text-destructive hover:text-destructive hover:bg-destructive/10"
+                        onClick={() => removeStorefrontFont("en")}
+                      >
+                        <Trash2 className="size-3.5 me-1" />
+                        <span>{isAr ? "إزالة" : "Remove"}</span>
+                      </Button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Arabic Font */}
+                <div className="space-y-2 rounded-lg border border-border p-3">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-xs font-semibold">{isAr ? "الخط العربي" : "Arabic Font"}</Label>
+                    {state.storefront_font_ar_url && (
+                      <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded font-medium">
+                        {isAr ? "خط مخصص مرفوع" : "Custom uploaded"}
+                      </span>
+                    )}
+                  </div>
+                  <Select
+                    value={state.storefront_font_ar}
+                    onValueChange={(val) => {
+                      setState({
+                        ...state,
+                        storefront_font_ar: val,
+                        storefront_font_ar_url: val.startsWith("Custom —") ? state.storefront_font_ar_url : null,
+                      });
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {STOREFRONT_AR_FONTS.map((font) => (
+                        <SelectItem key={font} value={font}>
+                          {font}
+                        </SelectItem>
+                      ))}
+                      {state.storefront_font_ar_url && (
+                        <SelectItem value={state.storefront_font_ar}>
+                          {state.storefront_font_ar}
+                        </SelectItem>
+                      )}
+                    </SelectContent>
+                  </Select>
+                  <div className="flex items-center gap-2 pt-1">
+                    <input
+                      ref={arFontInput}
+                      type="file"
+                      accept=".woff,.woff2,.ttf,.otf"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) uploadStorefrontFont(file, "ar");
+                        e.target.value = "";
+                      }}
+                    />
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      className="h-8 text-xs gap-1.5"
+                      disabled={uploadingFont === "ar"}
+                      onClick={() => arFontInput.current?.click()}
+                    >
+                      {uploadingFont === "ar" ? (
+                        <Loader2 className="size-3.5 animate-spin" />
+                      ) : (
+                        <Upload className="size-3.5" />
+                      )}
+                      <span>{isAr ? "رفع خط عربي" : "Upload AR Font"}</span>
+                    </Button>
+                    {state.storefront_font_ar_url && (
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="ghost"
+                        className="h-8 text-xs text-destructive hover:text-destructive hover:bg-destructive/10"
+                        onClick={() => removeStorefrontFont("ar")}
+                      >
+                        <Trash2 className="size-3.5 me-1" />
+                        <span>{isAr ? "إزالة" : "Remove"}</span>
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Typography Advanced Controls for Storefront & Admin */}
+              <div className="space-y-4 pt-3 border-t border-border">
+                <TypographyAdvancedControls
+                  title={isAr ? "نظام خطوط واجهة المتجر" : "Storefront typography system"}
+                  config={state.storefront_typography}
+                  onChange={(val) => setState({ ...state, storefront_typography: val })}
+                  isAr={isAr}
+                  namespace="Storefront"
+                />
+                <div className="space-y-3 rounded-xl border border-primary/20 bg-primary/5 p-4">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                      <h4 className="text-sm font-semibold">
+                        {isAr ? "نظام خطوط لوحة الإدارة" : "Admin Workspace Typography"}
+                      </h4>
+                      <p className="text-xs text-muted-foreground">
+                        {isAr
+                          ? "يمكنك استخدام نفس خطوط المتجر للوحة التحكم لتوحيد التجربة."
+                          : "You can mirror storefront fonts inside the admin workspace."}
+                      </p>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="h-8 text-xs"
+                      onClick={() => {
+                        setState({ ...state, admin_typography: { ...state.storefront_typography } });
+                        toast.success(isAr ? "تم نسخ خطوط المتجر إلى لوحة التحكم" : "Copied storefront fonts to admin");
+                      }}
+                    >
+                      {isAr ? "نسخ خطوط المتجر للوحة التحكم" : "Copy storefront fonts"}
+                    </Button>
+                  </div>
+                  <TypographyAdvancedControls
+                    title={isAr ? "نظام خطوط لوحة الإدارة" : "Admin typography system"}
+                    config={state.admin_typography}
+                    onChange={(val) => setState({ ...state, admin_typography: val })}
+                    isAr={isAr}
+                    namespace="Admin"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* ---------------- Tab 2: Logo & Hero (الشعار والواجهة الرئيسية) ---------------- */}
@@ -4358,6 +4951,82 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
           </div>
         </div>
 
+        {/* Hero Title Customization Card */}
+        <div className="space-y-4 rounded-xl border border-border p-4 bg-card shadow-sm">
+          <div>
+            <h3 className="font-semibold text-sm">{isAr ? "عنوان واجهة المتجر الرئيسية (Hero Title)" : "Hero Title & Typography"}</h3>
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              {isAr
+                ? "تخصيص النص والحجم واللون والمحاذاة للعنوان الرئيسي بالصفحة الأولى."
+                : "Customize text, size, color, and alignment for the main hero heading."}
+            </p>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <Label>{isAr ? "عنوان الواجهة (بالعربية)" : "Hero title (Arabic)"}</Label>
+              <Input
+                dir="rtl"
+                className="text-right"
+                value={state.hero_title_ar ?? ""}
+                placeholder={isAr ? "فارغ يستخدم اسم العلامة بالعربية" : "Blank uses brand name"}
+                onChange={(e) => setState({ ...state, hero_title_ar: e.target.value || null })}
+              />
+            </div>
+            <div>
+              <Label>{isAr ? "عنوان الواجهة (بالإنجليزية)" : "Hero title (English)"}</Label>
+              <Input
+                dir="ltr"
+                className="text-left"
+                value={state.hero_title_en ?? ""}
+                placeholder={isAr ? "فارغ يستخدم اسم العلامة بالإنجليزية" : "Blank uses brand name"}
+                onChange={(e) => setState({ ...state, hero_title_en: e.target.value || null })}
+              />
+            </div>
+            <div>
+              <Label>{isAr ? "حجم الخط للعنوان (بكسل)" : "Title font size (px)"}</Label>
+              <Input
+                type="number"
+                min={24}
+                max={96}
+                value={state.hero_title_size}
+                onChange={(e) =>
+                  setState({
+                    ...state,
+                    hero_title_size: Math.max(24, Math.min(96, Number(e.target.value))),
+                  })
+                }
+              />
+            </div>
+            <ColorField
+              label={isAr ? "لون عنوان الواجهة" : "Hero title color"}
+              value={state.hero_title_color}
+              onChange={(value) => setState({ ...state, hero_title_color: value })}
+            />
+            <div className="sm:col-span-2">
+              <Label>{isAr ? "محاذاة العنوان" : "Title alignment"}</Label>
+              <div className="mt-1.5 flex gap-2">
+                {(["start", "center", "end"] as const).map((alignment) => (
+                  <Button
+                    key={alignment}
+                    type="button"
+                    size="sm"
+                    variant={state.hero_title_align === alignment ? "default" : "outline"}
+                    onClick={() => setState({ ...state, hero_title_align: alignment })}
+                  >
+                    {isAr
+                      ? alignment === "start"
+                        ? "البداية"
+                        : alignment === "center"
+                          ? "الوسط"
+                          : "النهاية"
+                      : alignment}
+                  </Button>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+
         <BrandHeroCard brandId={brandId} onSaveRef={heroSaveRef} />
       </div>
 
@@ -4425,23 +5094,48 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
               />
               <Label className="cursor-pointer text-xs">{isAr ? "نص عريض" : "Bold text"}</Label>
             </div>
+            <div className="flex items-center gap-2 rounded-md border border-border px-3 py-2">
+              <Switch
+                checked={state.announcement_italic}
+                onCheckedChange={(checked) => setState({ ...state, announcement_italic: checked })}
+              />
+              <Label className="cursor-pointer text-xs">{isAr ? "نص مائل" : "Italic text"}</Label>
+            </div>
           </div>
-          <div>
-            <Label>{isAr ? "ظهور الشريط في الصفحات" : "Display Pages"}</Label>
-            <Select
-              value={state.announcement_scope}
-              onValueChange={(v: any) => setState({ ...state, announcement_scope: v })}
-            >
-              <SelectTrigger className="w-full sm:w-64 mt-1">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">{isAr ? "جميع صفحات المتجر" : "All pages"}</SelectItem>
-                <SelectItem value="home">{isAr ? "الصفحة الرئيسية فقط" : "Homepage only"}</SelectItem>
-                <SelectItem value="catalog">{isAr ? "صفحات المنتجات والتسوق" : "Shopping pages"}</SelectItem>
-                <SelectItem value="checkout">{isAr ? "صفحة الدفع فقط" : "Checkout only"}</SelectItem>
-              </SelectContent>
-            </Select>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <Label>{isAr ? "ظهور الشريط في الصفحات" : "Display Pages"}</Label>
+              <Select
+                value={state.announcement_scope}
+                onValueChange={(v: any) => setState({ ...state, announcement_scope: v })}
+              >
+                <SelectTrigger className="mt-1">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">{isAr ? "جميع صفحات المتجر" : "All pages"}</SelectItem>
+                  <SelectItem value="home">{isAr ? "الصفحة الرئيسية فقط" : "Homepage only"}</SelectItem>
+                  <SelectItem value="catalog">{isAr ? "صفحات المنتجات والتسوق" : "Shopping pages"}</SelectItem>
+                  <SelectItem value="checkout">{isAr ? "صفحة الدفع فقط" : "Checkout only"}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>{isAr ? "الجمهور المستهدف" : "Target Audience"}</Label>
+              <Select
+                value={state.announcement_audience}
+                onValueChange={(v: any) => setState({ ...state, announcement_audience: v })}
+              >
+                <SelectTrigger className="mt-1">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">{isAr ? "الجميع (زوار ومسجلون)" : "All visitors"}</SelectItem>
+                  <SelectItem value="guest">{isAr ? "الزوار غير المسجلين فقط" : "Guests only"}</SelectItem>
+                  <SelectItem value="authenticated">{isAr ? "العملاء المسجلون فقط" : "Registered customers only"}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         </div>
 
@@ -4739,6 +5433,227 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
           }}
           onConfirm={confirmPromoCrop}
         />
+
+        {/* Parallax Banner Effects */}
+        <div className="space-y-4 rounded-xl border border-border p-4 bg-card shadow-sm">
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <h3 className="font-semibold text-sm">{isAr ? "تأثير الحركة البارالاكس للافتات (Parallax Effect)" : "Banner Parallax Effect"}</h3>
+              <p className="mt-0.5 text-xs text-muted-foreground">
+                {isAr
+                  ? "تأثير عمق ثلاثي الأبعاد يتحرك مع سكرول الصفحة للافتات التصنيفات والأقسام المميزة."
+                  : "Smooth parallax scrolling motion for category and featured banners."}
+              </p>
+            </div>
+            <Switch
+              checked={state.secondary_banner_parallax_enabled}
+              onCheckedChange={(checked) =>
+                setState({ ...state, secondary_banner_parallax_enabled: checked })
+              }
+            />
+          </div>
+          {state.secondary_banner_parallax_enabled && (
+            <div className="grid grid-cols-1 gap-4 border-t border-border pt-4 sm:grid-cols-2">
+              <div className="flex items-center justify-between gap-4 rounded-xl border border-border p-3">
+                <div>
+                  <Label className="cursor-pointer text-xs font-semibold">{isAr ? "تفعيل التأثير على الموبايل" : "Enable on mobile"}</Label>
+                  <p className="mt-0.5 text-[11px] text-muted-foreground">
+                    {isAr
+                      ? "عند الإيقاف تظل اللافتة ثابتة دون حركة على شاشات الهواتف."
+                      : "When disabled, banners remain static on mobile screens."}
+                  </p>
+                </div>
+                <Switch
+                  checked={state.secondary_banner_parallax_mobile_enabled}
+                  onCheckedChange={(checked) =>
+                    setState({ ...state, secondary_banner_parallax_mobile_enabled: checked })
+                  }
+                />
+              </div>
+              <div>
+                <Label className="text-xs font-semibold">
+                  {isAr ? "نقطة توقف شاشة سطح المكتب (بكسل)" : "Desktop breakpoint (px)"}
+                </Label>
+                <Input
+                  type="number"
+                  min={320}
+                  max={1920}
+                  className="mt-1"
+                  value={state.secondary_banner_parallax_breakpoint}
+                  onChange={(event) =>
+                    setState({
+                      ...state,
+                      secondary_banner_parallax_breakpoint: Math.max(
+                        320,
+                        Math.min(1920, Number(event.target.value) || 768),
+                      ),
+                    })
+                  }
+                />
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* ---------------- Tab 4: Content & Navigation (القائمة والمحتوى) ---------------- */}
+      <div className={settingsTab === "content" ? "space-y-6" : "hidden"}>
+        {/* Drawer Navigation Menu */}
+        <div className="space-y-4 rounded-xl border border-border p-4 bg-card shadow-sm">
+          <div>
+            <h3 className="font-semibold text-sm">{isAr ? "القائمة الجانبية للمتجر (Drawer Menu)" : "Storefront Navigation Drawer"}</h3>
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              {isAr
+                ? "تخصيص عنوان وألوان والروابط الظاهرة داخل قائمة التنقل الجانبية للمتسوقين."
+                : "Customize drawer menu title, colors, and core navigation links."}
+            </p>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div dir={contentLanguage === "ar" ? "rtl" : "ltr"}>
+              <Label>{contentLanguage === "ar" ? "عنوان القائمة" : "Drawer menu title"}</Label>
+              <Input
+                className={contentLanguage === "ar" ? "text-right" : "text-left"}
+                value={(contentLanguage === "ar" ? state.menu_title_ar : state.menu_title_en) ?? ""}
+                placeholder={contentLanguage === "ar" ? "فارغ يستخدم اسم المتجر" : "Blank uses brand name"}
+                onChange={(e) =>
+                  setState({
+                    ...state,
+                    [contentLanguage === "ar" ? "menu_title_ar" : "menu_title_en"]: e.target.value || null,
+                  })
+                }
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <ColorField
+                label={isAr ? "خلفية القائمة" : "Menu background"}
+                value={state.menu_bg}
+                onChange={(v) => setState({ ...state, menu_bg: v })}
+              />
+              <ColorField
+                label={isAr ? "نص القائمة" : "Menu text"}
+                value={state.menu_fg}
+                onChange={(v) => setState({ ...state, menu_fg: v })}
+              />
+            </div>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 border-t border-border pt-4">
+            {(
+              [
+                ["menu_show_home", isAr ? "إظهار رابط الرئيسية" : "Show Home link"],
+                ["menu_show_account", isAr ? "إظهار الحساب وتسجيل الدخول" : "Show Account & Login"],
+                ["menu_show_orders", isAr ? "إظهار طلباتي" : "Show My Orders"],
+                ["menu_show_pages", isAr ? "إظهار روابط الصفحات الثابتة والسياسات" : "Show custom pages & policies"],
+              ] as const
+            ).map(([key, label]) => (
+              <div
+                key={key}
+                className="flex items-center justify-between gap-4 rounded-xl border border-border p-3"
+              >
+                <Label className="cursor-pointer text-xs font-semibold">{label}</Label>
+                <Switch
+                  checked={state[key]}
+                  onCheckedChange={(checked) => setState({ ...state, [key]: checked })}
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Loading Screen */}
+        {hasLoaderColumns && (
+          <div className="space-y-4 rounded-xl border border-border p-4 bg-card shadow-sm">
+            <div>
+              <h3 className="font-semibold text-sm">
+                {isAr ? "شاشة تحميل وفتح المتجر (Loading Screen)" : "Storefront Loading Screen"}
+              </h3>
+              <p className="mt-0.5 text-xs text-muted-foreground">
+                {isAr
+                  ? "العبارة الترحيبية التي تظهر للمتسوقين لثوانٍ معدودة أثناء تجهيز وفتح المتجر."
+                  : "The message shown to shoppers during initial storefront load."}
+              </p>
+            </div>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div dir="rtl">
+                <Label>{isAr ? "عبارة التحميل (بالعربية)" : "Loading text (Arabic)"}</Label>
+                <Input
+                  className="text-right"
+                  value={state.storefront_loader_text_ar ?? ""}
+                  placeholder="جاري فتح المتجر الإلكتروني..."
+                  onChange={(e) =>
+                    setState({ ...state, storefront_loader_text_ar: e.target.value || null })
+                  }
+                />
+              </div>
+              <div dir="ltr">
+                <Label>{isAr ? "عبارة التحميل (بالإنجليزية)" : "Loading text (English)"}</Label>
+                <Input
+                  className="text-left"
+                  value={state.storefront_loader_text_en ?? ""}
+                  placeholder="Loading boutique storefront..."
+                  onChange={(e) =>
+                    setState({ ...state, storefront_loader_text_en: e.target.value || null })
+                  }
+                />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Homepage Sections Titles Overview */}
+        <div className="space-y-4 rounded-xl border border-border p-4 bg-card shadow-sm">
+          <div>
+            <h3 className="font-semibold text-sm">
+              {isAr ? "عناوين أقسام الصفحة الرئيسية" : "Homepage Section Titles"}
+            </h3>
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              {isAr
+                ? "تخصيص مسميات الأقسام التلقائية في الصفحة الرئيسية بكلا اللغتين."
+                : "Customize bilingual headings for auto-populated homepage sections."}
+            </p>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <Label>{isAr ? "عنوان وصل حديثاً (بالعربية)" : "New arrivals title (Arabic)"}</Label>
+              <Input
+                dir="rtl"
+                className="text-right mt-1"
+                value={state.new_arrivals_title_ar ?? ""}
+                placeholder="وصل حديثاً"
+                onChange={(e) => setState({ ...state, new_arrivals_title_ar: e.target.value || null })}
+              />
+            </div>
+            <div>
+              <Label>{isAr ? "عنوان وصل حديثاً (بالإنجليزية)" : "New arrivals title (English)"}</Label>
+              <Input
+                dir="ltr"
+                className="text-left mt-1"
+                value={state.new_arrivals_title_en ?? ""}
+                placeholder="New arrivals"
+                onChange={(e) => setState({ ...state, new_arrivals_title_en: e.target.value || null })}
+              />
+            </div>
+            <div>
+              <Label>{isAr ? "عنوان الأكثر مبيعاً (بالعربية)" : "Best sellers title (Arabic)"}</Label>
+              <Input
+                dir="rtl"
+                className="text-right mt-1"
+                value={state.best_sellers_title_ar ?? ""}
+                placeholder="الأكثر مبيعاً"
+                onChange={(e) => setState({ ...state, best_sellers_title_ar: e.target.value || null })}
+              />
+            </div>
+            <div>
+              <Label>{isAr ? "عنوان الأكثر مبيعاً (بالإنجليزية)" : "Best sellers title (English)"}</Label>
+              <Input
+                dir="ltr"
+                className="text-left mt-1"
+                value={state.best_sellers_title_en ?? ""}
+                placeholder="Best sellers"
+                onChange={(e) => setState({ ...state, best_sellers_title_en: e.target.value || null })}
+              />
+            </div>
+          </div>
+        </div>
       </div>
 
       <div className="sticky bottom-20 md:bottom-3 z-10 flex justify-end rounded-xl border border-border/70 bg-background/90 p-3 shadow-lg backdrop-blur-xl">

@@ -24,6 +24,7 @@ type Props = {
   overlayTitle?: string;
   overlaySubtitle?: string;
   overlayGradient?: boolean;
+  allowTransparency?: boolean;
 };
 
 const MAX_SOURCE_BYTES = 30 * 1024 * 1024;
@@ -42,16 +43,23 @@ export function CropUploadButton({
   title,
   description,
   heroPreview,
-  accept = "image/jpeg,image/png,image/webp,image/avif",
+  accept,
   overlayTitle,
   overlaySubtitle,
   overlayGradient,
+  allowTransparency,
 }: Props) {
   const { lang } = useI18n();
   const isAr = lang === "ar";
   const inputRef = useRef<HTMLInputElement>(null);
   const [source, setSource] = useState<string | null>(null);
   const [sourceFile, setSourceFile] = useState<File | null>(null);
+
+  const resolvedAccept =
+    accept ??
+    (preset === "logo" || allowTransparency
+      ? "image/jpeg,image/png,image/webp,image/svg+xml,image/avif"
+      : "image/jpeg,image/png,image/webp,image/avif");
 
   useEffect(
     () => () => {
@@ -80,6 +88,18 @@ export function CropUploadButton({
       );
       return;
     }
+
+    // Direct upload for vector SVG files to preserve infinite resolution and alpha transparency
+    if (file.type === "image/svg+xml") {
+      toast.success(
+        isAr
+          ? "تم رفع ملف SVG الفكتوري مباشرة للحفاظ على الدقة والشفافية."
+          : "Uploaded vector SVG directly for maximum fidelity and transparency.",
+      );
+      void onCrop(file);
+      return;
+    }
+
     setSourceFile(file);
     setSource((current) => {
       if (current) URL.revokeObjectURL(current);
@@ -92,7 +112,7 @@ export function CropUploadButton({
       <input
         ref={inputRef}
         type="file"
-        accept={accept}
+        accept={resolvedAccept}
         className="hidden"
         disabled={busy}
         onChange={(event) => {
@@ -124,6 +144,7 @@ export function CropUploadButton({
         overlayTitle={overlayTitle}
         overlaySubtitle={overlaySubtitle}
         overlayGradient={overlayGradient}
+        allowTransparency={allowTransparency || preset === "logo"}
         onCancel={close}
         onConfirm={async (blob) => {
           await onCrop(blob);

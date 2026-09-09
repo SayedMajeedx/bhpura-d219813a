@@ -15,13 +15,28 @@ import { useI18n } from "@/lib/i18n";
 import { getImageCropPreset, type ImageCropPresetKey } from "@/lib/image-crop-presets";
 import { cn } from "@/lib/utils";
 
-export type ContainBgStyle = "blur" | "white" | "neutral";
+export type ContainBgStyle = "transparent" | "blur" | "white" | "neutral";
 export type FitMode = "cover" | "contain";
 
 export type CropProcessOptions = {
   fitMode?: FitMode;
   containBg?: ContainBgStyle;
+  format?: "image/png" | "image/jpeg" | "image/webp";
+  allowTransparency?: boolean;
 };
+
+export function isLikelyTransparent(imageSrc?: string | null): boolean {
+  if (!imageSrc) return false;
+  if (
+    imageSrc.startsWith("data:image/png") ||
+    imageSrc.startsWith("data:image/webp") ||
+    imageSrc.startsWith("data:image/svg+xml")
+  ) {
+    return true;
+  }
+  const clean = imageSrc.split("?")[0].toLowerCase();
+  return clean.endsWith(".png") || clean.endsWith(".webp") || clean.endsWith(".svg");
+}
 
 type Props = {
   open: boolean;
@@ -44,6 +59,10 @@ type Props = {
   overlaySubtitle?: string;
   /** Whether to render live dark gradient overlay */
   overlayGradient?: boolean;
+  /** Preserve transparent alpha channel without forcing opaque background */
+  allowTransparency?: boolean;
+  defaultFitMode?: FitMode;
+  defaultContainBg?: ContainBgStyle;
 };
 
 export async function getCroppedBlob(
@@ -62,7 +81,7 @@ export async function getCroppedBlob(
   });
 
   const fitMode = options?.fitMode ?? "cover";
-  const containBg = options?.containBg ?? "blur";
+  const containBg = options?.containBg ?? (options?.allowTransparency ? "transparent" : "blur");
 
   const sourceAspect =
     area && area.width > 0 && area.height > 0
@@ -88,8 +107,11 @@ export async function getCroppedBlob(
   ctx.imageSmoothingEnabled = true;
   ctx.imageSmoothingQuality = "high";
 
+  // Clear canvas completely to keep transparent base
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
   if (fitMode === "contain") {
-    // Fill background
+    // Fill background only when not transparent
     if (containBg === "blur") {
       ctx.save();
       const bgScale = Math.max(
@@ -111,10 +133,11 @@ export async function getCroppedBlob(
     } else if (containBg === "white") {
       ctx.fillStyle = "#ffffff";
       ctx.fillRect(0, 0, canvas.width, canvas.height);
-    } else {
+    } else if (containBg === "neutral") {
       ctx.fillStyle = "#f5f5f4";
       ctx.fillRect(0, 0, canvas.width, canvas.height);
     }
+    // If containBg === "transparent", canvas remains completely transparent
 
     // Scale and center full image within bounds
     const fitScale = Math.min(
@@ -157,11 +180,20 @@ export async function getCroppedBlob(
     );
   }
 
+  const isTransparent =
+    options?.allowTransparency ||
+    containBg === "transparent" ||
+    options?.format === "image/png" ||
+    (containBg !== "blur" && containBg !== "white" && containBg !== "neutral" && isLikelyTransparent(imageSrc));
+
+  const outputFormat =
+    options?.format ?? (isTransparent ? "image/png" : "image/jpeg");
+
   return await new Promise<Blob>((resolve, reject) => {
     canvas.toBlob(
       (b) => (b ? resolve(b) : reject(new Error("Failed to encode image"))),
-      "image/jpeg",
-      0.92,
+      outputFormat,
+      outputFormat === "image/png" ? undefined : 0.92,
     );
   });
 }
@@ -183,6 +215,9 @@ export function ImageCropperDialog({
   overlayTitle,
   overlaySubtitle,
   overlayGradient = false,
+  allowTransparency,
+  defaultFitMode,
+  defaultContainBg,
 }: Props) {
   const { lang } = useI18n();
   const isAr = lang === "ar";
@@ -201,14 +236,30 @@ export function ImageCropperDialog({
     { labelEn: "Storefront wrapper preview", labelAr: "معاينة إطار الواجهة", aspect },
   ];
 
+  const isTransparentTarget =
+    allowTransparency ||
+    preset === "logo" ||
+    containBg === "transparent" ||
+    isLikelyTransparent(imageSrc);
+
   useEffect(() => {
     if (!open) return;
     setCrop({ x: 0, y: 0 });
     setZoom(1);
     setArea(null);
-    setFitMode("cover");
-    setContainBg("blur");
-  }, [imageSrc, open]);
+    const shouldDefaultTransparent =
+      preset === "logo" ||
+      allowTransparency ||
+      isLikelyTransparent(imageSrc);
+
+    if (shouldDefaultTransparent) {
+      setFitMode(defaultFitMode ?? "contain");
+      setContainBg(defaultContainBg ?? "transparent");
+    } else {
+      setFitMode(defaultFitMode ?? "cover");
+      setContainBg(defaultContainBg ?? "blur");
+    }
+  }, [imageSrc, open, preset, allowTransparency, defaultFitMode, defaultContainBg]);
 
   useEffect(() => {
     if (!open || !imageSrc) {
@@ -237,7 +288,12 @@ export function ImageCropperDialog({
           area,
           previewWidth,
           Math.round(previewWidth / targetAspect),
-          { fitMode, containBg },
+          {
+            fitMode,
+            containBg,
+            allowTransparency: isTransparentTarget,
+            format: isTransparentTarget ? "image/png" : "image/jpeg",
+          },
         );
         if (disposed) return;
         const nextUrl = URL.createObjectURL(blob);
@@ -260,6 +316,7 @@ export function ImageCropperDialog({
     containBg,
     fitMode,
     imageSrc,
+    isTransparentTarget,
     open,
     resolvedOutputHeight,
     resolvedOutputWidth,
@@ -279,12 +336,23 @@ export function ImageCropperDialog({
     if (fitMode === "cover" && !area) return;
     try {
       setProcessing(true);
+      const isTransparent =
+        allowTransparency ||
+        preset === "logo" ||
+        containBg === "transparent" ||
+        isLikelyTransparent(imageSrc);
+
       const blob = await getCroppedBlob(
         imageSrc,
         area,
         resolvedOutputWidth,
         resolvedOutputHeight,
-        { fitMode, containBg },
+        {
+          fitMode,
+          containBg,
+          allowTransparency: isTransparent,
+          format: isTransparent ? "image/png" : "image/jpeg",
+        },
       );
       await onConfirm(blob);
     } catch {
@@ -338,12 +406,25 @@ export function ImageCropperDialog({
               <Crop className="h-5 w-5" />
             </span>
             <div className="min-w-0">
-              <DialogTitle>{title || (isAr ? "قص وضبط الصورة" : "Frame & Crop Image")}</DialogTitle>
+              <DialogTitle>
+                {title ||
+                  (preset === "logo"
+                    ? isAr
+                      ? "ضبط وتجهيز شعار المتجر"
+                      : "Frame & Crop Store Logo"
+                    : isAr
+                      ? "قص وضبط الصورة"
+                      : "Frame & Crop Image")}
+              </DialogTitle>
               <p className="mt-1 text-sm text-muted-foreground">
                 {description ||
-                  (isAr
-                    ? "اختر ملء الإطار أو احتواء كامل لمنع قص أي تفاصيل، أو تخطّ القص لاستخدام الصورة الأصلية."
-                    : "Choose cover to crop, contain to preserve full height, or skip crop to keep original.")}
+                  (preset === "logo"
+                    ? isAr
+                      ? "تم تفعيل وضع الشفافية تلقائياً للحفاظ على شعارك مفرغاً بدون خلفية وبكامل دقته."
+                      : "Transparency mode active: your logo is preserved with transparent background and full quality."
+                    : isAr
+                      ? "اختر ملء الإطار أو احتواء كامل لمنع قص أي تفاصيل، أو تخطّ القص لاستخدام الصورة الأصلية."
+                      : "Choose cover to crop, contain to preserve full height, or skip crop to keep original.")}
               </p>
             </div>
           </div>
@@ -387,15 +468,15 @@ export function ImageCropperDialog({
                 <div className="inline-flex rounded-lg border bg-muted/30 p-0.5">
                   <button
                     type="button"
-                    onClick={() => setContainBg("blur")}
+                    onClick={() => setContainBg("transparent")}
                     className={cn(
                       "rounded-md px-2 py-1 text-[11px] font-medium transition-all",
-                      containBg === "blur"
-                        ? "bg-background text-foreground shadow-sm"
+                      containBg === "transparent"
+                        ? "bg-background text-foreground shadow-sm font-semibold"
                         : "text-muted-foreground hover:text-foreground",
                     )}
                   >
-                    {isAr ? "ضبابي فاخر" : "Soft Blur"}
+                    {isAr ? "شفاف (بدون خلفية)" : "Transparent"}
                   </button>
                   <button
                     type="button"
@@ -403,7 +484,7 @@ export function ImageCropperDialog({
                     className={cn(
                       "rounded-md px-2 py-1 text-[11px] font-medium transition-all",
                       containBg === "white"
-                        ? "bg-background text-foreground shadow-sm"
+                        ? "bg-background text-foreground shadow-sm font-semibold"
                         : "text-muted-foreground hover:text-foreground",
                     )}
                   >
@@ -415,18 +496,51 @@ export function ImageCropperDialog({
                     className={cn(
                       "rounded-md px-2 py-1 text-[11px] font-medium transition-all",
                       containBg === "neutral"
-                        ? "bg-background text-foreground shadow-sm"
+                        ? "bg-background text-foreground shadow-sm font-semibold"
                         : "text-muted-foreground hover:text-foreground",
                     )}
                   >
                     {isAr ? "محايد" : "Neutral"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setContainBg("blur")}
+                    className={cn(
+                      "rounded-md px-2 py-1 text-[11px] font-medium transition-all",
+                      containBg === "blur"
+                        ? "bg-background text-foreground shadow-sm font-semibold"
+                        : "text-muted-foreground hover:text-foreground",
+                    )}
+                  >
+                    {isAr ? "ضبابي فاخر" : "Soft Blur"}
                   </button>
                 </div>
               </div>
             )}
           </div>
 
-          <div className="relative h-[min(46vh,410px)] min-h-60 w-full shrink-0 overflow-hidden rounded-2xl bg-neutral-950 shadow-inner">
+          <div
+            className={cn(
+              "relative h-[min(46vh,410px)] min-h-60 w-full shrink-0 overflow-hidden rounded-2xl shadow-inner",
+              containBg === "transparent" || isTransparentTarget
+                ? "bg-[#18181b]"
+                : "bg-neutral-950",
+            )}
+            style={
+              containBg === "transparent" || isTransparentTarget
+                ? {
+                    backgroundImage: `
+                      linear-gradient(45deg, rgba(255,255,255,0.06) 25%, transparent 25%),
+                      linear-gradient(-45deg, rgba(255,255,255,0.06) 25%, transparent 25%),
+                      linear-gradient(45deg, transparent 75%, rgba(255,255,255,0.06) 75%),
+                      linear-gradient(-45deg, transparent 75%, rgba(255,255,255,0.06) 75%)
+                    `,
+                    backgroundSize: "20px 20px",
+                    backgroundPosition: "0 0, 0 10px, 10px -10px, -10px 0",
+                  }
+                : undefined
+            }
+          >
             {imageSrc && (
               fitMode === "contain" ? (
                 <div className="relative flex h-full w-full items-center justify-center overflow-hidden">
@@ -460,7 +574,13 @@ export function ImageCropperDialog({
 
                   <span className="pointer-events-none absolute top-3 start-3 z-30 rounded-full bg-black/65 px-3 py-1 text-[11px] font-medium text-white backdrop-blur flex items-center gap-1.5">
                     <Check className="h-3 w-3 text-emerald-400" />
-                    {isAr ? "الصورة كاملة دون أي قص" : "Entire photo preserved"}
+                    {containBg === "transparent"
+                      ? isAr
+                        ? "خلفية شفافة (بدون خلفية)"
+                        : "Transparent background"
+                      : isAr
+                        ? "الصورة كاملة دون أي قص"
+                        : "Entire photo preserved"}
                   </span>
                 </div>
               ) : (
@@ -519,7 +639,7 @@ export function ImageCropperDialog({
                   onClick={reset}
                   disabled={isBusy}
                 >
-                  <RotateCcw className="h-4 w-4" />
+                  <RotateCcw className="h-3.5 w-3.5" />
                   {isAr ? "إعادة ضبط" : "Reset"}
                 </Button>
               </div>
@@ -528,67 +648,60 @@ export function ImageCropperDialog({
                   type="button"
                   variant="outline"
                   size="icon"
-                  className="h-11 w-11 shrink-0 rounded-full"
-                  onClick={() => adjustZoom(-0.15)}
+                  className="h-9 w-9 shrink-0"
+                  onClick={() => adjustZoom(-0.1)}
                   disabled={isBusy || zoom <= 1}
-                  aria-label={isAr ? "تصغير" : "Zoom out"}
                 >
-                  <Minus className="h-4 w-4" />
+                  <Minus className="h-3.5 w-3.5" />
                 </Button>
                 <Slider
-                  aria-label={isAr ? "مستوى التكبير" : "Zoom level"}
+                  value={[zoom]}
                   min={1}
                   max={4}
                   step={0.05}
-                  value={[zoom]}
-                  onValueChange={(v) => setZoom(v[0] ?? 1)}
+                  onValueChange={([val]) => setZoom(val)}
+                  disabled={isBusy}
+                  className="flex-1"
                 />
                 <Button
                   type="button"
                   variant="outline"
                   size="icon"
-                  className="h-11 w-11 shrink-0 rounded-full"
-                  onClick={() => adjustZoom(0.15)}
+                  className="h-9 w-9 shrink-0"
+                  onClick={() => adjustZoom(0.1)}
                   disabled={isBusy || zoom >= 4}
-                  aria-label={isAr ? "تكبير" : "Zoom in"}
                 >
-                  <Plus className="h-4 w-4" />
+                  <Plus className="h-3.5 w-3.5" />
                 </Button>
-                <span className="hidden w-14 text-end font-mono text-xs text-muted-foreground sm:block">
-                  {Math.round(zoom * 100)}%
-                </span>
               </div>
             </div>
           ) : (
-            <div className="rounded-xl border border-primary/20 bg-primary/5 p-3.5 text-xs text-muted-foreground flex items-center gap-2">
-              <Sparkles className="h-4 w-4 text-primary shrink-0" />
+            <div className="flex items-center justify-between rounded-xl border border-dashed bg-muted/20 p-3 text-xs text-muted-foreground">
               <span>
                 {isAr
-                  ? "وضع الاحتواء الكامل يضمن بقاء أبعاد صورتك كاملة دون أي اقتطاع، مع ملء الجوانب بخلفية سينمائية متناسقة."
-                  : "Contain mode fits your full photo inside the aspect ratio without clipping, framed by a harmonious backdrop."}
+                  ? containBg === "transparent"
+                    ? "يتم الحفاظ على الشعار بدقته الكاملة وخلفيته الشفافة دون إضافة أي لون."
+                    : "تظهر الصورة كاملة داخل الإطار دون أي قص، مع تعبئة المساحات المحيطة بالخلفية المختارة."
+                  : containBg === "transparent"
+                    ? "Logo is preserved with full fidelity and transparent background."
+                    : "The full image is displayed without cropping; extra space is filled with the chosen background."}
               </span>
             </div>
           )}
 
-          {imageSrc && (
-            <details className="group rounded-xl border bg-background" open>
-              <summary className="flex cursor-pointer list-none items-center justify-between px-3.5 py-2.5 text-sm font-semibold [&::-webkit-details-marker]:hidden">
-                <span>{isAr ? "معاينة المظهر في الواجهة" : "Live Storefront Wrapper Preview"}</span>
-                <span
-                  aria-hidden="true"
-                  className="text-muted-foreground transition-transform group-open:rotate-180"
-                >
-                  ⌄
-                </span>
+          {heroPreview && previewAspects.length > 0 && (
+            <details className="group rounded-xl border bg-muted/10 p-3 text-xs">
+              <summary className="cursor-pointer font-medium text-foreground transition-colors hover:text-primary">
+                {isAr ? "معاينة إضافية لمقاسات الشاشات" : "Additional responsive previews"}
               </summary>
-              <div className="grid gap-3 px-3.5 pb-3.5 sm:grid-cols-2 md:grid-cols-3">
+              <div className="mt-3 grid grid-cols-1 sm:grid-cols-3 gap-3">
                 {previewAspects.map((preview) => (
-                  <div key={preview.labelEn} className="space-y-1.5">
-                    <p className="text-xs font-medium text-muted-foreground">
+                  <div key={preview.labelEn} className="space-y-1">
+                    <span className="text-[11px] text-muted-foreground">
                       {isAr ? preview.labelAr : preview.labelEn}
-                    </p>
+                    </span>
                     <div
-                      className="relative mx-auto w-full overflow-hidden rounded-xl border bg-muted shadow-sm"
+                      className="relative overflow-hidden rounded-lg bg-neutral-900 border"
                       style={{ aspectRatio: String(preview.aspect) }}
                     >
                       {previewUrl ? (
@@ -646,7 +759,11 @@ export function ImageCropperDialog({
                 title={isAr ? "رفع الصورة الأصلية بدون أي قص أو تعديل" : "Upload original without cropping"}
               >
                 <Maximize2 className="h-4 w-4" />
-                {isAr ? "تخطي القص (الأصلية)" : "Skip crop (Original)"}
+                {isAr
+                  ? (preset === "logo" || allowTransparency)
+                    ? "استخدام الشعار الأصلي (شفاف)"
+                    : "تخطي القص (الأصلية)"
+                  : "Skip crop (Original)"}
               </Button>
             </div>
             <Button
@@ -660,12 +777,16 @@ export function ImageCropperDialog({
                   ? "جاري تجهيز الصورة…"
                   : "Preparing image…"
                 : isAr
-                  ? fitMode === "contain"
-                    ? "اعتماد الصورة (كاملة)"
-                    : "اعتماد الصورة"
-                  : fitMode === "contain"
-                    ? "Use full image"
-                    : "Use this crop"}
+                  ? (preset === "logo" || containBg === "transparent")
+                    ? "اعتماد الشعار (بدون خلفية)"
+                    : fitMode === "contain"
+                      ? "اعتماد الصورة (كاملة)"
+                      : "اعتماد الصورة"
+                  : (preset === "logo" || containBg === "transparent")
+                    ? "Use Logo (Transparent)"
+                    : fitMode === "contain"
+                      ? "Use full image"
+                      : "Use this crop"}
             </Button>
           </div>
         </DialogFooter>
