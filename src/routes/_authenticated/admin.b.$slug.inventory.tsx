@@ -108,6 +108,7 @@ import { ProductBomModal } from "@/components/products/ProductBomModal";
 import { BatchIncubatorTransferModal } from "@/components/incubators/BatchIncubatorTransferModal";
 
 import { ListPagination } from "@/components/list-pagination";
+import { InstagramImporterModal } from "@/components/inventory/InstagramImporterModal";
 import { isLowStock, isOutOfStock } from "@/lib/inventory-health";
 import { RoutePendingSkeleton } from "@/components/os/route-pending-skeleton";
 import { OsEmptyState } from "@/components/os/os-empty-state";
@@ -1662,6 +1663,7 @@ function ProductsSection({
         }}
         renderImporters={
           <div className="flex flex-col gap-1 p-1">
+            <InstagramImporterModal brandId={brandId} onComplete={onChanged} />
             <ProductImporterModal brandId={brandId} onComplete={onChanged} />
             <Button
               variant="ghost"
