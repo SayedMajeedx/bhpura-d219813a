@@ -1312,7 +1312,12 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
 
         <div className="md:col-span-7">
           <div className="mb-1 flex items-start justify-between gap-3 sm:mb-2">
-            <h1 className="font-display text-2xl sm:text-3xl">{displayName}</h1>
+            <h1
+              className="font-display text-2xl sm:text-3xl"
+              style={{ color: "var(--sf-product-title, var(--sf-heading))" }}
+            >
+              {displayName}
+            </h1>
             <div className="flex items-center gap-2 shrink-0">
               <ProductShareModal
                 isAr={lang === "ar"}
@@ -1335,7 +1340,7 @@ function ProductDetail({ splatId }: { splatId?: string } = {}) {
           </div>
           <div
             className="mb-3 flex flex-wrap items-center gap-3 text-xl font-semibold sm:mb-4 sm:text-2xl"
-            style={{ color: primary }}
+            style={{ color: "var(--sf-price, var(--sf-heading))" }}
           >
             <span>{priceLabel}</span>
             {originalPrice > displayPrice && (
