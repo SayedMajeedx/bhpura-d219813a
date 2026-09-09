@@ -329,11 +329,22 @@ export const fetchInstagramPosts = createServerFn({ method: "POST" })
       );
     }
 
+    let cleanUsername = (data.username || "").trim();
+    if (cleanUsername) {
+      if (cleanUsername.includes("instagram.com/")) {
+        const match = cleanUsername.match(/instagram\.com\/([^/?#]+)/);
+        if (match && match[1]) {
+          cleanUsername = match[1];
+        }
+      }
+      cleanUsername = cleanUsername.replace(/^@/, "").replace(/\/+$/, "").trim();
+    }
+
     const directUrls =
       data.urls && data.urls.length > 0
         ? data.urls
-        : data.username
-          ? [`https://www.instagram.com/${data.username.replace(/^@/, "").trim()}/`]
+        : cleanUsername
+          ? [`https://www.instagram.com/${cleanUsername}/`]
           : [];
 
     if (directUrls.length === 0) {

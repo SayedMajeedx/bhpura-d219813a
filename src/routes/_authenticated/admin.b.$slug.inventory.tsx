@@ -58,6 +58,7 @@ import {
   ChevronLeft,
   ChevronRight,
   HelpCircle,
+  Instagram,
 } from "lucide-react";
 import { toast } from "sonner";
 import { formatMoney } from "@/lib/format";
@@ -1164,6 +1165,7 @@ function ProductsSection({
   const [bulkDeleting, setBulkDeleting] = useState(false);
   const [incubatorTransferModalOpen, setIncubatorTransferModalOpen] = useState(false);
   const [incubatorTransferProducts, setIncubatorTransferProducts] = useState<Product[]>([]);
+  const [isInstagramModalOpen, setIsInstagramModalOpen] = useState(false);
   const [pageSize, setPageSize] = useState(10);
   const [page, setPage] = useState(1);
 
@@ -1663,7 +1665,15 @@ function ProductsSection({
         }}
         renderImporters={
           <div className="flex flex-col gap-1 p-1">
-            <InstagramImporterModal brandId={brandId} onComplete={onChanged} />
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsInstagramModalOpen(true)}
+              className="justify-start text-xs font-semibold"
+            >
+              <Instagram className="h-3.5 w-3.5 me-2 text-primary" />
+              {isAr ? "استيراد كتالوج إنستغرام" : "Import from Instagram"}
+            </Button>
             <ProductImporterModal brandId={brandId} onComplete={onChanged} />
             <Button
               variant="ghost"
@@ -2016,6 +2026,12 @@ function ProductsSection({
           }}
         />
       )}
+      <InstagramImporterModal
+        brandId={brandId}
+        open={isInstagramModalOpen}
+        onOpenChange={setIsInstagramModalOpen}
+        onComplete={onChanged}
+      />
     </div>
   );
 }

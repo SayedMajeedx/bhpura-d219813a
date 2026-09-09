@@ -42,9 +42,11 @@ import {
   type InstagramProductDraft,
 } from "@/lib/instagram-ai-importer";
 
-interface InstagramImporterModalProps {
+export interface InstagramImporterModalProps {
   brandId: string;
   onComplete: () => void;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
   trigger?: React.ReactNode;
 }
 
@@ -54,13 +56,34 @@ type FilterTab = "all" | "ready" | "needs_review" | "image_failed";
 export function InstagramImporterModal({
   brandId,
   onComplete,
+  open: controlledOpen,
+  onOpenChange: setControlledOpen,
   trigger,
 }: InstagramImporterModalProps) {
   const { lang } = useI18n();
   const isAr = lang === "ar";
 
-  const [isOpen, setIsOpen] = React.useState(false);
+  const isControlled = controlledOpen !== undefined;
+  const [internalOpen, setInternalOpen] = React.useState(false);
+  const isOpen = isControlled ? controlledOpen : internalOpen;
+
+  const setIsOpen = (val: boolean) => {
+    if (isControlled) {
+      setControlledOpen?.(val);
+    } else {
+      setInternalOpen(val);
+    }
+  };
+
   const [step, setStep] = React.useState<Step>("input");
+
+  React.useEffect(() => {
+    if (isOpen && step === "success") {
+      setStep("input");
+      setStatusMessage("");
+      setProgressPercent(0);
+    }
+  }, [isOpen]);
 
   // Inputs
   const [username, setUsername] = React.useState("");
@@ -144,7 +167,14 @@ export function InstagramImporterModal({
       .map((u) => u.trim())
       .filter((u) => u.length > 0);
 
-    const cleanUsername = username.replace(/^@/, "").trim();
+    let cleanUsername = username.trim();
+    if (cleanUsername.includes("instagram.com/")) {
+      const match = cleanUsername.match(/instagram\.com\/([^/?#]+)/);
+      if (match && match[1]) {
+        cleanUsername = match[1];
+      }
+    }
+    cleanUsername = cleanUsername.replace(/^@/, "").replace(/\/+$/, "").trim();
 
     if (!cleanUsername && rawUrls.length === 0) {
       toast.error(
@@ -158,7 +188,11 @@ export function InstagramImporterModal({
     try {
       // 1. Apify Scraping Actor
       setStep("scraping");
-      setStatusMessage(isAr ? "بدء سحب المنشورات عبر Apify..." : "Starting Apify scraping run...");
+      setStatusMessage(
+        isAr
+          ? `بدء سحب المنشورات عبر Apify (المطلوب: ${limit} منشور)...`
+          : `Starting Apify scraping run (requesting ${limit} posts)...`,
+      );
       setProgressPercent(15);
 
       const runInit = await fetchInstagramPosts({
@@ -172,17 +206,35 @@ export function InstagramImporterModal({
       setStatusMessage(isAr ? "جاري استخراج بيانات الحساب..." : "Crawling Instagram posts...");
       setProgressPercent(25);
 
-      // Poll until finished
+      // Poll until finished (up to 3 minutes)
       let pollCount = 0;
       let datasetId = runInit.datasetId;
-      while (pollCount < 40) {
+      let succeeded = false;
+      const maxPolls = 60;
+      while (pollCount < maxPolls) {
         await new Promise((r) => setTimeout(r, 3000));
         pollCount++;
         const check = await checkScraperStatus({ data: { runId: runInit.runId } });
         if (check.status === "SUCCEEDED") {
+          succeeded = true;
           break;
         }
-        setProgressPercent(Math.min(45, 25 + pollCount));
+        if (check.status === "FAILED" || check.status === "ABORTED" || check.status === "TIMED-OUT") {
+          throw new Error(
+            isAr
+              ? `فشلت عملية السحب بحالة (${check.status}). تأكد من أن الحساب عام (Public).`
+              : `Scraping failed with status: ${check.status}. Make sure the account is public.`,
+          );
+        }
+        setProgressPercent(Math.min(48, 25 + Math.floor(pollCount * 0.38)));
+      }
+
+      if (!succeeded) {
+        throw new Error(
+          isAr
+            ? "استغرقت عملية سحب المنشورات وقتاً طويلاً. يرجى تجربة سحب 5 أو 10 منشورات أولاً أو التأكد من إتاحة الحساب."
+            : "Scraping timed out. Please try with fewer posts or verify account accessibility.",
+        );
       }
 
       setStatusMessage(isAr ? "قراءة الصور والمنشورات..." : "Loading post data...");
@@ -433,7 +485,7 @@ export function InstagramImporterModal({
     <>
       {trigger ? (
         <div onClick={handleOpen}>{trigger}</div>
-      ) : (
+      ) : !isControlled ? (
         <Button
           variant="outline"
           size="sm"
@@ -443,10 +495,19 @@ export function InstagramImporterModal({
           <Instagram className="h-4 w-4 text-primary" />
           {isAr ? "استيراد كتالوج إنستغرام" : "Import from Instagram"}
         </Button>
-      )}
+      ) : null}
 
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
-        <DialogContent className="max-w-5xl max-h-[92vh] flex flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-2xl p-0">
+        <DialogContent
+          onPointerDownOutside={(e) => {
+            // Prevent accidental outside-click modal dismissal
+            e.preventDefault();
+          }}
+          onInteractOutside={(e) => {
+            e.preventDefault();
+          }}
+          className="max-w-5xl max-h-[92vh] flex flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-2xl p-0"
+        >
           {/* Header */}
           <DialogHeader className="border-b border-border p-4 sm:p-5 shrink-0 bg-muted/20">
             <div className="flex items-center justify-between gap-3">
@@ -468,11 +529,21 @@ export function InstagramImporterModal({
                 </div>
               </div>
 
-              {step === "review" && (
-                <Badge variant="outline" className="border-primary/30 text-primary font-bold">
-                  {drafts.length} {isAr ? "منشور مستورد" : "Imported"}
-                </Badge>
-              )}
+              <div className="flex items-center gap-2">
+                {step === "review" && (
+                  <Badge variant="outline" className="border-primary/30 text-primary font-bold">
+                    {drafts.length} {isAr ? "منشور مستورد" : "Imported"}
+                  </Badge>
+                )}
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setIsOpen(false)}
+                  className="h-8 w-8 rounded-lg text-muted-foreground hover:text-foreground"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
           </DialogHeader>
 
@@ -516,23 +587,39 @@ export function InstagramImporterModal({
                     />
                   </div>
 
-                  <div className="flex items-center justify-between pt-2">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-2">
                     <Label className="text-xs font-bold text-foreground">
                       {isAr ? "عدد المنشورات المطلوبة:" : "Maximum posts to fetch:"}
                     </Label>
-                    <div className="flex items-center gap-2">
-                      {[10, 20, 30, 50].map((num) => (
+                    <div className="flex flex-wrap items-center gap-2">
+                      {[5, 10, 20, 30, 50].map((num) => (
                         <Button
                           key={num}
                           type="button"
                           variant={limit === num ? "default" : "outline"}
                           size="sm"
                           onClick={() => setLimit(num)}
-                          className="h-7 px-3 text-xs font-semibold rounded-lg"
+                          className="h-7 px-2.5 text-xs font-semibold rounded-lg"
                         >
                           {num}
                         </Button>
                       ))}
+                      <div className="flex items-center gap-1.5 ms-1">
+                        <Input
+                          type="number"
+                          min={1}
+                          max={100}
+                          value={limit}
+                          onChange={(e) => {
+                            const val = parseInt(e.target.value, 10);
+                            if (!isNaN(val) && val >= 1 && val <= 100) {
+                              setLimit(val);
+                            }
+                          }}
+                          className="h-7 w-16 text-xs text-center font-bold font-mono rounded-lg"
+                        />
+                        <span className="text-[11px] text-muted-foreground">{isAr ? "منشور" : "posts"}</span>
+                      </div>
                     </div>
                   </div>
                 </div>
