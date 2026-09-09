@@ -769,6 +769,7 @@ function HeroContentCarousel({
                   : "left";
           const rawTitleSize = slide.title_size || settings.hero_title_size || 26;
           const titleSize = Math.max(16, Math.min(48, rawTitleSize));
+          const mobileTitleSize = Math.max(16, Math.round(titleSize * 0.78));
 
           return (
             <article
@@ -816,7 +817,7 @@ function HeroContentCarousel({
                             className="font-bold drop-shadow-md sm:text-2xl"
                             style={{
                               fontFamily: "var(--sf-font)",
-                              fontSize: `clamp(1.125rem, 3.8vw, ${titleSize}px)`,
+                              fontSize: `clamp(${mobileTitleSize}px, calc(${mobileTitleSize}px + 0.8vw), ${titleSize}px)`,
                             }}
                           >
                             {title}
@@ -887,7 +888,7 @@ function HeroContentCarousel({
                             className="font-bold drop-shadow-md sm:text-2xl"
                             style={{
                               fontFamily: "var(--sf-font)",
-                              fontSize: `clamp(1.125rem, 3.8vw, ${titleSize}px)`,
+                              fontSize: `clamp(${mobileTitleSize}px, calc(${mobileTitleSize}px + 0.8vw), ${titleSize}px)`,
                             }}
                           >
                             {title}
@@ -924,7 +925,7 @@ function HeroContentCarousel({
                       className="font-semibold leading-tight drop-shadow-sm mb-1.5 sm:mb-3"
                       style={{
                         color: settings.hero_title_color || "var(--color-foreground)",
-                        fontSize: `clamp(1.125rem, 3.8vw, ${titleSize}px)`,
+                        fontSize: `clamp(${mobileTitleSize}px, calc(${mobileTitleSize}px + 0.8vw), ${titleSize}px)`,
                         fontFamily: "var(--sf-font)",
                       }}
                     >

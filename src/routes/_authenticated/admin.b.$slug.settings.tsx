@@ -2996,6 +2996,19 @@ function HeroSlideLivePreview({
     (isAr ? slide.media_url_en : slide.media_url_ar) ||
     "";
 
+  const previewTitleSize = Math.max(16, Math.min(48, slide.title_size ?? 26));
+  const previewAlign = slide.align ?? "start";
+  const previewTextAlign =
+    previewAlign === "center"
+      ? "center"
+      : isAr
+        ? previewAlign === "end"
+          ? "left"
+          : "right"
+        : previewAlign === "end"
+          ? "right"
+          : "left";
+
   const badgeBg =
     badgeAccent === "crimson"
       ? "var(--color-destructive, #dc2626)"
@@ -3051,19 +3064,62 @@ function HeroSlideLivePreview({
             ) : (
               <img src={mediaUrl} alt="" className="h-full w-full object-cover" />
             )}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/35 to-transparent flex flex-col justify-end p-4 text-white">
+            <div
+              className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/35 to-transparent flex flex-col justify-end p-4 text-white"
+              style={{ textAlign: previewTextAlign }}
+            >
               {title && (
-                <h4 className="font-heading font-extrabold text-base sm:text-lg text-white drop-shadow-sm">
+                <h4
+                  className="font-heading font-semibold text-white drop-shadow-sm leading-tight"
+                  style={{ fontSize: `${previewTitleSize}px`, textAlign: previewTextAlign }}
+                >
                   {title}
                 </h4>
               )}
               {body && (
-                <p className="mt-1 line-clamp-2 text-xs text-white/90 drop-shadow-sm">{body}</p>
+                <p className="mt-1 line-clamp-2 text-xs text-white/90 drop-shadow-sm" style={{ textAlign: previewTextAlign }}>
+                  {body}
+                </p>
               )}
               {button && (
+                <div style={{ textAlign: previewTextAlign }}>
+                  <Button
+                    size="sm"
+                    className="mt-2.5 w-fit min-h-[36px] px-4 text-xs font-semibold shadow-sm text-primary-foreground"
+                    style={{
+                      backgroundColor: "var(--primary)",
+                      borderRadius: radius,
+                    }}
+                  >
+                    {button}
+                  </Button>
+                </div>
+              )}
+            </div>
+          </div>
+        ) : (
+          <div
+            className="flex h-full flex-col justify-center p-5 text-card-foreground bg-card"
+            style={{ textAlign: previewTextAlign }}
+          >
+            {title && (
+              <h4
+                className="font-heading font-semibold text-foreground leading-tight"
+                style={{ fontSize: `${previewTitleSize}px`, textAlign: previewTextAlign }}
+              >
+                {title}
+              </h4>
+            )}
+            {body && (
+              <p className="mt-1 line-clamp-2 text-xs text-muted-foreground" style={{ textAlign: previewTextAlign }}>
+                {body}
+              </p>
+            )}
+            {button && (
+              <div style={{ textAlign: previewTextAlign }}>
                 <Button
                   size="sm"
-                  className="mt-2.5 w-fit min-h-[36px] px-4 text-xs font-semibold shadow-sm text-primary-foreground"
+                  className="mt-3 w-fit min-h-[36px] px-4 text-xs font-semibold shadow-sm text-primary-foreground"
                   style={{
                     backgroundColor: "var(--primary)",
                     borderRadius: radius,
@@ -3071,28 +3127,7 @@ function HeroSlideLivePreview({
                 >
                   {button}
                 </Button>
-              )}
-            </div>
-          </div>
-        ) : (
-          <div className="flex h-full flex-col justify-center p-5 text-card-foreground bg-card">
-            {title && (
-              <h4 className="font-heading font-extrabold text-base sm:text-lg text-foreground">
-                {title}
-              </h4>
-            )}
-            {body && <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">{body}</p>}
-            {button && (
-              <Button
-                size="sm"
-                className="mt-3 w-fit min-h-[36px] px-4 text-xs font-semibold shadow-sm text-primary-foreground"
-                style={{
-                  backgroundColor: "var(--primary)",
-                  borderRadius: radius,
-                }}
-              >
-                {button}
-              </Button>
+              </div>
             )}
           </div>
         )}
