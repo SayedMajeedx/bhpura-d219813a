@@ -16,14 +16,26 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-import { AlertTriangle, Eye, EyeOff, RefreshCw, Upload, Sparkles, Truck, MapPin } from "lucide-react";
+import {
+  AlertTriangle,
+  Eye,
+  EyeOff,
+  RefreshCw,
+  Upload,
+  Sparkles,
+  Truck,
+  MapPin,
+  ImagePlus,
+  UploadCloud,
+  Loader2,
+  Trash2,
+} from "lucide-react";
 import { useT, useI18n } from "@/lib/i18n";
 import { PhoneInput } from "@/components/phone-input";
 import { Rnd } from "react-rnd";
 import { useBrand } from "@/lib/brand-context";
 import { queryKeys } from "@/lib/query-keys";
 import { Switch } from "@/components/ui/switch";
-import { Trash2 } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { uploadPublicMedia } from "@/lib/r2-upload";
 import { formatMoney } from "@/lib/format";
@@ -3422,6 +3434,120 @@ function ContentLanguageToggle({
   );
 }
 
+function SectionBannerPicker({
+  title,
+  subtitle,
+  imageUrl,
+  isUploading,
+  onUpload,
+  onRemove,
+  isAr,
+}: {
+  title: string;
+  subtitle?: string;
+  imageUrl?: string | null;
+  isUploading: boolean;
+  onUpload: (file: File) => void;
+  onRemove: () => void;
+  isAr: boolean;
+}) {
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  return (
+    <div className="space-y-2 rounded-lg border border-border bg-card p-3 shadow-xs">
+      <div className="flex items-center justify-between">
+        <div>
+          <span className="text-xs font-semibold text-foreground">{title}</span>
+          {subtitle && <p className="text-[11px] text-muted-foreground">{subtitle}</p>}
+        </div>
+        {imageUrl && (
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={onRemove}
+            className="h-7 px-2 text-xs text-destructive hover:bg-destructive/10"
+          >
+            <Trash2 className="size-3.5 me-1" />
+            {isAr ? "إزالة الصورة" : "Remove"}
+          </Button>
+        )}
+      </div>
+
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          if (file) {
+            onUpload(file);
+            e.target.value = "";
+          }
+        }}
+      />
+
+      {imageUrl ? (
+        <div className="group relative aspect-[21/9] sm:aspect-[3/1] w-full overflow-hidden rounded-md border border-border bg-muted">
+          <img
+            src={imageUrl}
+            alt={title}
+            className="size-full object-cover transition-transform group-hover:scale-102"
+          />
+          <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              disabled={isUploading}
+              onClick={() => fileInputRef.current?.click()}
+              className="text-xs shadow-md"
+            >
+              {isUploading ? (
+                <>
+                  <Loader2 className="size-3.5 me-1.5 animate-spin" />
+                  {isAr ? "جارٍ الرفع..." : "Uploading..."}
+                </>
+              ) : (
+                <>
+                  <UploadCloud className="size-3.5 me-1.5" />
+                  {isAr ? "استبدال الصورة" : "Replace Image"}
+                </>
+              )}
+            </Button>
+          </div>
+        </div>
+      ) : (
+        <Button
+          type="button"
+          variant="outline"
+          disabled={isUploading}
+          onClick={() => fileInputRef.current?.click()}
+          className="w-full h-20 border-dashed border-2 flex flex-col items-center justify-center gap-1 hover:bg-muted/40 transition-colors"
+        >
+          {isUploading ? (
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <Loader2 className="size-4 animate-spin text-primary" />
+              <span>{isAr ? "جارٍ رفع الصورة..." : "Uploading image..."}</span>
+            </div>
+          ) : (
+            <>
+              <ImagePlus className="size-5 text-muted-foreground" />
+              <span className="text-xs font-medium text-foreground">
+                {isAr ? "اضغط لرفع صورة لافتة" : "Click to upload banner"}
+              </span>
+              <span className="text-[10px] text-muted-foreground">
+                {isAr ? "أبعاد عريضة بنسبة 2:1 أو 21:9" : "Widescreen 2:1 or 21:9"}
+              </span>
+            </>
+          )}
+        </Button>
+      )}
+    </div>
+  );
+}
+
 function ColorField({
   label,
   value,
@@ -3578,6 +3704,7 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
   const [promoCropSrc, setPromoCropSrc] = useState<string | null>(null);
   const [promoCropIndex, setPromoCropIndex] = useState<number | null>(null);
   const [uploadingPromo, setUploadingPromo] = useState(false);
+  const [uploadingSectionKey, setUploadingSectionKey] = useState<string | null>(null);
   const [settingsTab, setSettingsTab] = useState<"theme" | "general" | "promotions">("theme");
   const [contentLanguage, setContentLanguage] = useState<"en" | "ar">(lang === "ar" ? "ar" : "en");
   const [state, setState] = useState<{
@@ -3899,6 +4026,62 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
     }
   };
 
+  const handleUploadBanner = async (
+    key: "best" | "sale" | "trending" | "category",
+    file: File,
+  ) => {
+    try {
+      setUploadingSectionKey(key);
+      const url = await uploadPublicMedia(brandId, file, "hero");
+      if (key === "category") {
+        setState((prev) => (prev ? { ...prev, category_banner_background_url: url } : prev));
+      } else {
+        setState((prev) => {
+          if (!prev) return prev;
+          const currentSection = prev.homepage_editorial_sections?.[key] ?? EMPTY_EDITORIAL_SECTION;
+          return {
+            ...prev,
+            ...(key === "trending" ? { trending_banner_background_url: url } : {}),
+            homepage_editorial_sections: {
+              ...prev.homepage_editorial_sections,
+              [key]: {
+                ...currentSection,
+                banner_image_url: url,
+              },
+            },
+          };
+        });
+      }
+      toast.success(isAr ? "تم رفع صورة اللافتة بنجاح" : "Banner image uploaded successfully");
+    } catch (err: any) {
+      toast.error(err.message || "Failed to upload image");
+    } finally {
+      setUploadingSectionKey(null);
+    }
+  };
+
+  const handleRemoveBanner = (key: "best" | "sale" | "trending" | "category") => {
+    if (key === "category") {
+      setState((prev) => (prev ? { ...prev, category_banner_background_url: "" } : prev));
+    } else {
+      setState((prev) => {
+        if (!prev) return prev;
+        const currentSection = prev.homepage_editorial_sections?.[key] ?? EMPTY_EDITORIAL_SECTION;
+        return {
+          ...prev,
+          ...(key === "trending" ? { trending_banner_background_url: "" } : {}),
+          homepage_editorial_sections: {
+            ...prev.homepage_editorial_sections,
+            [key]: {
+              ...currentSection,
+              banner_image_url: "",
+            },
+          },
+        };
+      });
+    }
+  };
+
   const choosePromoImage = (index: number, file: File) => {
     if (!file.type.startsWith("image/")) {
       toast.error(isAr ? "يرجى اختيار ملف صورة" : "Please choose an image file");
@@ -3964,7 +4147,15 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
           currentFontEn={state.storefront_font_en || "Inter"}
           headerGlass={state.header_glass ?? true}
           badgeAccent={state.badge_accent || "maroon"}
+          headerBg={state.header_bg}
+          headerFg={state.header_fg}
+          footerBg={state.footer_bg}
+          footerFg={state.footer_fg}
           isAr={isAr}
+          onHeaderBgChange={(val) => setState((prev) => (!prev ? prev : { ...prev, header_bg: val }))}
+          onHeaderFgChange={(val) => setState((prev) => (!prev ? prev : { ...prev, header_fg: val }))}
+          onFooterBgChange={(val) => setState((prev) => (!prev ? prev : { ...prev, footer_bg: val }))}
+          onFooterFgChange={(val) => setState((prev) => (!prev ? prev : { ...prev, footer_fg: val }))}
           onPrimaryChange={(val) =>
             setState((prev) =>
               !prev
@@ -4254,31 +4445,33 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
           </div>
         </div>
 
-        {/* Homepage Sections */}
+        {/* Homepage Sections & Banners */}
         <div className="space-y-4 rounded-xl border border-border p-4 bg-card shadow-sm">
           <div>
             <h3 className="font-semibold text-sm">
-              {isAr ? "أقسام الصفحة الرئيسية التلقائية" : "Homepage Sections"}
+              {isAr ? "أقسام الصفحة الرئيسية ولافتات العرض" : "Homepage Sections & Section Banners"}
             </h3>
             <p className="mt-0.5 text-xs text-muted-foreground">
               {isAr
-                ? "تخصيص ظهور وعناوين أقسام وصل حديثاً والأكثر مبيعاً"
-                : "Customize display and titles for New Arrivals and Best Sellers"}
+                ? "تخصيص ظهور الأقسام الرئيسية ورفع صور اللافتات المميزة لكل قسم (مثل الأكثر مبيعاً والتنزيلات)."
+                : "Configure homepage sections and upload featured banner images for each section."}
             </p>
           </div>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div className="space-y-3 rounded-lg border border-border p-3">
+
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+            {/* 1. وصل حديثاً */}
+            <div className="space-y-3 rounded-lg border border-border p-3.5 bg-muted/10">
               <div className="flex items-center justify-between gap-3">
-                <Label className="cursor-pointer text-xs font-medium">{isAr ? "إظهار قسم وصل حديثاً" : "Show New Arrivals"}</Label>
+                <Label className="cursor-pointer text-xs font-semibold">{isAr ? "قسم وصل حديثاً" : "New Arrivals Section"}</Label>
                 <Switch
                   checked={state.show_new_arrivals}
                   onCheckedChange={(checked) => setState({ ...state, show_new_arrivals: checked })}
                 />
               </div>
               <div dir={contentLanguage === "ar" ? "rtl" : "ltr"}>
-                <Label className="text-xs">{contentLanguage === "ar" ? "عنوان القسم" : "Section title"}</Label>
+                <Label className="text-xs text-muted-foreground">{contentLanguage === "ar" ? "عنوان القسم المعروض" : "Displayed title"}</Label>
                 <Input
-                  className={contentLanguage === "ar" ? "text-right" : "text-left"}
+                  className={`mt-1 h-9 text-xs ${contentLanguage === "ar" ? "text-right" : "text-left"}`}
                   value={
                     (contentLanguage === "ar"
                       ? state.new_arrivals_title_ar
@@ -4296,18 +4489,32 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
               </div>
             </div>
 
-            <div className="space-y-3 rounded-lg border border-border p-3">
+            {/* 2. الأكثر مبيعاً (Best Sellers) - with Banner Upload! */}
+            <div className="space-y-3 rounded-lg border border-border p-3.5 bg-muted/10">
               <div className="flex items-center justify-between gap-3">
-                <Label className="cursor-pointer text-xs font-medium">{isAr ? "إظهار الأكثر مبيعاً" : "Show Best Sellers"}</Label>
+                <Label className="cursor-pointer text-xs font-semibold">{isAr ? "قسم الأكثر مبيعاً" : "Best Sellers Section"}</Label>
                 <Switch
                   checked={state.show_best_sellers}
-                  onCheckedChange={(checked) => setState({ ...state, show_best_sellers: checked })}
+                  onCheckedChange={(checked) => {
+                    const currentBest = state.homepage_editorial_sections?.best ?? EMPTY_EDITORIAL_SECTION;
+                    setState({
+                      ...state,
+                      show_best_sellers: checked,
+                      homepage_editorial_sections: {
+                        ...state.homepage_editorial_sections,
+                        best: {
+                          ...currentBest,
+                          enabled: checked,
+                        },
+                      },
+                    });
+                  }}
                 />
               </div>
               <div dir={contentLanguage === "ar" ? "rtl" : "ltr"}>
-                <Label className="text-xs">{contentLanguage === "ar" ? "عنوان القسم" : "Section title"}</Label>
+                <Label className="text-xs text-muted-foreground">{contentLanguage === "ar" ? "عنوان القسم المعروض" : "Displayed title"}</Label>
                 <Input
-                  className={contentLanguage === "ar" ? "text-right" : "text-left"}
+                  className={`mt-1 h-9 text-xs ${contentLanguage === "ar" ? "text-right" : "text-left"}`}
                   value={
                     (contentLanguage === "ar"
                       ? state.best_sellers_title_ar
@@ -4323,6 +4530,102 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
                   }
                 />
               </div>
+              <SectionBannerPicker
+                title={isAr ? "صورة لافتة الأكثر مبيعاً" : "Best Sellers Banner Image"}
+                subtitle={isAr ? "تظهر كخلفية لافتة لقسم الأكثر مبيعاً بالمتجر" : "Displays behind the best sellers section"}
+                imageUrl={state.homepage_editorial_sections?.best?.banner_image_url}
+                isUploading={uploadingSectionKey === "best"}
+                onUpload={(file) => handleUploadBanner("best", file)}
+                onRemove={() => handleRemoveBanner("best")}
+                isAr={isAr}
+              />
+            </div>
+
+            {/* 3. قسم التنزيلات (Sale Section) */}
+            <div className="space-y-3 rounded-lg border border-border p-3.5 bg-muted/10">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <Label className="cursor-pointer text-xs font-semibold">{isAr ? "قسم التنزيلات والعروض" : "Sale & Offers Section"}</Label>
+                  <p className="text-[11px] text-muted-foreground">{isAr ? "يعرض المنتجات المخفضة تلقائياً" : "Shows discounted items"}</p>
+                </div>
+                <Switch
+                  checked={state.homepage_editorial_sections?.sale?.enabled ?? true}
+                  onCheckedChange={(checked) => {
+                    const currentSale = state.homepage_editorial_sections?.sale ?? EMPTY_EDITORIAL_SECTION;
+                    setState({
+                      ...state,
+                      homepage_editorial_sections: {
+                        ...state.homepage_editorial_sections,
+                        sale: {
+                          ...currentSale,
+                          enabled: checked,
+                        },
+                      },
+                    });
+                  }}
+                />
+              </div>
+              <SectionBannerPicker
+                title={isAr ? "صورة لافتة التنزيلات" : "Sale Banner Image"}
+                subtitle={isAr ? "تظهر كخلفية لقسم التنزيلات والعروض بالمتجر" : "Displays behind the sale section"}
+                imageUrl={state.homepage_editorial_sections?.sale?.banner_image_url}
+                isUploading={uploadingSectionKey === "sale"}
+                onUpload={(file) => handleUploadBanner("sale", file)}
+                onRemove={() => handleRemoveBanner("sale")}
+                isAr={isAr}
+              />
+            </div>
+
+            {/* 4. قسم الرائج الآن (Trending Now) */}
+            <div className="space-y-3 rounded-lg border border-border p-3.5 bg-muted/10">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <Label className="cursor-pointer text-xs font-semibold">{isAr ? "قسم الرائج الآن" : "Trending Now Section"}</Label>
+                  <p className="text-[11px] text-muted-foreground">{isAr ? "يعرض المنتجات ذات الشعبية العالية" : "Shows trending products"}</p>
+                </div>
+                <Switch
+                  checked={state.homepage_editorial_sections?.trending?.enabled ?? true}
+                  onCheckedChange={(checked) => {
+                    const currentTrending = state.homepage_editorial_sections?.trending ?? EMPTY_EDITORIAL_SECTION;
+                    setState({
+                      ...state,
+                      homepage_editorial_sections: {
+                        ...state.homepage_editorial_sections,
+                        trending: {
+                          ...currentTrending,
+                          enabled: checked,
+                        },
+                      },
+                    });
+                  }}
+                />
+              </div>
+              <SectionBannerPicker
+                title={isAr ? "صورة لافتة الرائج الآن" : "Trending Banner Image"}
+                subtitle={isAr ? "تظهر كخلفية لقسم المنتجات الرائجة بالمتجر" : "Displays behind trending products"}
+                imageUrl={
+                  state.homepage_editorial_sections?.trending?.banner_image_url ||
+                  state.trending_banner_background_url
+                }
+                isUploading={uploadingSectionKey === "trending"}
+                onUpload={(file) => handleUploadBanner("trending", file)}
+                onRemove={() => handleRemoveBanner("trending")}
+                isAr={isAr}
+              />
+            </div>
+
+            {/* 5. خلفية فواصل التصنيفات (Category Divider Banner) */}
+            <div className="space-y-3 rounded-lg border border-border p-3.5 bg-muted/10 lg:col-span-2">
+              <Label className="text-xs font-semibold">{isAr ? "خلفية لافتات فواصل التصنيفات" : "Category Divider Banner"}</Label>
+              <SectionBannerPicker
+                title={isAr ? "صورة خلفية فواصل التصنيفات" : "Category Divider Background"}
+                subtitle={isAr ? "صورة الخلفية التي تظهر عند تصفح التصنيفات والفئات بالمتجر" : "Background image for category browsing"}
+                imageUrl={state.category_banner_background_url}
+                isUploading={uploadingSectionKey === "category"}
+                onUpload={(file) => handleUploadBanner("category", file)}
+                onRemove={() => handleRemoveBanner("category")}
+                isAr={isAr}
+              />
             </div>
           </div>
         </div>

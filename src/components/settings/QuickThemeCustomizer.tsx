@@ -70,6 +70,10 @@ export interface QuickThemeCustomizerProps {
   currentFontEn: string;
   headerGlass?: boolean;
   badgeAccent?: string;
+  headerBg?: string | null;
+  headerFg?: string | null;
+  footerBg?: string | null;
+  footerFg?: string | null;
   isAr: boolean;
   onPrimaryChange: (val: string) => void;
   onSecondaryChange: (val: string) => void;
@@ -78,6 +82,10 @@ export interface QuickThemeCustomizerProps {
   onSwapColors: () => void;
   onHeaderGlassChange?: (val: boolean) => void;
   onBadgeAccentChange?: (val: string) => void;
+  onHeaderBgChange?: (val: string | null) => void;
+  onHeaderFgChange?: (val: string | null) => void;
+  onFooterBgChange?: (val: string | null) => void;
+  onFooterFgChange?: (val: string | null) => void;
 }
 
 export function QuickThemeCustomizer({
@@ -88,6 +96,10 @@ export function QuickThemeCustomizer({
   currentFontEn,
   headerGlass = true,
   badgeAccent = "maroon",
+  headerBg,
+  headerFg,
+  footerBg,
+  footerFg,
   isAr,
   onPrimaryChange,
   onSecondaryChange,
@@ -96,6 +108,10 @@ export function QuickThemeCustomizer({
   onSwapColors,
   onHeaderGlassChange,
   onBadgeAccentChange,
+  onHeaderBgChange,
+  onHeaderFgChange,
+  onFooterBgChange,
+  onFooterFgChange,
 }: QuickThemeCustomizerProps) {
   // Normalize radius to sharp / smooth / round matching storefront route
   const activeRadiusPreset = React.useMemo(() => {
@@ -242,10 +258,230 @@ export function QuickThemeCustomizer({
         </div>
       </div>
 
-      {/* 2. Corner Radius Style */}
+      {/* 2. Header & Footer Colors (ألوان الترويسة والفوتر) */}
+      {(onHeaderBgChange || onFooterBgChange) && (
+        <div className="space-y-3 border-t border-border/60 pt-4">
+          <div>
+            <Label className="text-sm font-medium">
+              {isAr ? "2. ألوان الترويسة العلوية والتذييل (الفوتر)" : "2. Header & Footer Colors"}
+            </Label>
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              {isAr
+                ? "تخصيص ألوان شريط التنقل العلوي وتذييل الصفحة لتلائم هوية متجرك."
+                : "Customize header and footer bar colors to fit your store branding."}
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Header Colors */}
+            {onHeaderBgChange && (
+              <div className="rounded-xl border border-border bg-muted/20 p-3.5 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-foreground">
+                    {isAr ? "شريط الترويسة العلوي (Header)" : "Top Header Bar"}
+                  </span>
+                  <div className="flex gap-1">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 px-1.5 text-[10px]"
+                      onClick={() => {
+                        onHeaderBgChange("#ffffff");
+                        if (onHeaderFgChange) onHeaderFgChange("#111111");
+                      }}
+                    >
+                      {isAr ? "أبيض" : "White"}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 px-1.5 text-[10px]"
+                      onClick={() => {
+                        onHeaderBgChange(primaryColor || "#000000");
+                        if (onHeaderFgChange) onHeaderFgChange("#ffffff");
+                      }}
+                    >
+                      {isAr ? "لون الهوية" : "Brand"}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 px-1.5 text-[10px]"
+                      onClick={() => {
+                        onHeaderBgChange("#111111");
+                        if (onHeaderFgChange) onHeaderFgChange("#ffffff");
+                      }}
+                    >
+                      {isAr ? "داكن" : "Dark"}
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-3">
+                  {/* Header BG */}
+                  <div className="flex items-center gap-2.5 rounded-lg border border-border bg-background p-2 flex-1 min-w-[140px]">
+                    <label
+                      className="relative size-8 shrink-0 cursor-pointer overflow-hidden rounded-md border border-border shadow-xs"
+                      style={{ backgroundColor: headerBg || "#ffffff" }}
+                      title={isAr ? "لون خلفية الترويسة" : "Header background color"}
+                    >
+                      <input
+                        type="color"
+                        value={headerBg || "#ffffff"}
+                        onChange={(e) => onHeaderBgChange(e.target.value)}
+                        className="absolute inset-0 size-full cursor-pointer opacity-0"
+                      />
+                    </label>
+                    <div className="min-w-0">
+                      <span className="block text-[11px] font-medium text-foreground truncate">
+                        {isAr ? "خلفية الترويسة" : "Background"}
+                      </span>
+                      <span className="block font-mono text-[10px] text-muted-foreground uppercase">
+                        {headerBg || "#ffffff"}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Header Text */}
+                  {onHeaderFgChange && (
+                    <div className="flex items-center gap-2.5 rounded-lg border border-border bg-background p-2 flex-1 min-w-[140px]">
+                      <label
+                        className="relative size-8 shrink-0 cursor-pointer overflow-hidden rounded-md border border-border shadow-xs"
+                        style={{ backgroundColor: headerFg || "#111111" }}
+                        title={isAr ? "لون نص وأيقونات الترويسة" : "Header text & icons color"}
+                      >
+                        <input
+                          type="color"
+                          value={headerFg || "#111111"}
+                          onChange={(e) => onHeaderFgChange(e.target.value)}
+                          className="absolute inset-0 size-full cursor-pointer opacity-0"
+                        />
+                      </label>
+                      <div className="min-w-0">
+                        <span className="block text-[11px] font-medium text-foreground truncate">
+                          {isAr ? "النص والأيقونات" : "Text / Icons"}
+                        </span>
+                        <span className="block font-mono text-[10px] text-muted-foreground uppercase">
+                          {headerFg || "#111111"}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Footer Colors */}
+            {onFooterBgChange && (
+              <div className="rounded-xl border border-border bg-muted/20 p-3.5 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-foreground">
+                    {isAr ? "شريط التذييل (الفوتر)" : "Footer Bar"}
+                  </span>
+                  <div className="flex gap-1">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 px-1.5 text-[10px]"
+                      onClick={() => {
+                        onFooterBgChange("#ffffff");
+                        if (onFooterFgChange) onFooterFgChange("#111111");
+                      }}
+                    >
+                      {isAr ? "أبيض" : "White"}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 px-1.5 text-[10px]"
+                      onClick={() => {
+                        onFooterBgChange(primaryColor || "#000000");
+                        if (onFooterFgChange) onFooterFgChange("#ffffff");
+                      }}
+                    >
+                      {isAr ? "لون الهوية" : "Brand"}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 px-1.5 text-[10px]"
+                      onClick={() => {
+                        onFooterBgChange("#111111");
+                        if (onFooterFgChange) onFooterFgChange("#ffffff");
+                      }}
+                    >
+                      {isAr ? "داكن" : "Dark"}
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-3">
+                  {/* Footer BG */}
+                  <div className="flex items-center gap-2.5 rounded-lg border border-border bg-background p-2 flex-1 min-w-[140px]">
+                    <label
+                      className="relative size-8 shrink-0 cursor-pointer overflow-hidden rounded-md border border-border shadow-xs"
+                      style={{ backgroundColor: footerBg || "#ffffff" }}
+                      title={isAr ? "لون خلفية الفوتر" : "Footer background color"}
+                    >
+                      <input
+                        type="color"
+                        value={footerBg || "#ffffff"}
+                        onChange={(e) => onFooterBgChange(e.target.value)}
+                        className="absolute inset-0 size-full cursor-pointer opacity-0"
+                      />
+                    </label>
+                    <div className="min-w-0">
+                      <span className="block text-[11px] font-medium text-foreground truncate">
+                        {isAr ? "خلفية الفوتر" : "Background"}
+                      </span>
+                      <span className="block font-mono text-[10px] text-muted-foreground uppercase">
+                        {footerBg || "#ffffff"}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Footer Text */}
+                  {onFooterFgChange && (
+                    <div className="flex items-center gap-2.5 rounded-lg border border-border bg-background p-2 flex-1 min-w-[140px]">
+                      <label
+                        className="relative size-8 shrink-0 cursor-pointer overflow-hidden rounded-md border border-border shadow-xs"
+                        style={{ backgroundColor: footerFg || "#111111" }}
+                        title={isAr ? "لون نصوص وروابط الفوتر" : "Footer text & links color"}
+                      >
+                        <input
+                          type="color"
+                          value={footerFg || "#111111"}
+                          onChange={(e) => onFooterFgChange(e.target.value)}
+                          className="absolute inset-0 size-full cursor-pointer opacity-0"
+                        />
+                      </label>
+                      <div className="min-w-0">
+                        <span className="block text-[11px] font-medium text-foreground truncate">
+                          {isAr ? "النصوص والروابط" : "Text / Links"}
+                        </span>
+                        <span className="block font-mono text-[10px] text-muted-foreground uppercase">
+                          {footerFg || "#111111"}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* 3. Corner Radius Style */}
       <div className="space-y-3 border-t border-border/60 pt-4">
         <Label className="text-sm font-medium">
-          {isAr ? "2. انحناء الحواف والبطاقات" : "2. Corner Style"}
+          {isAr ? "3. انحناء الحواف والبطاقات" : "3. Corner Style"}
         </Label>
         <div className="grid grid-cols-3 gap-3">
           {cornerPresets.map((preset) => {
@@ -278,10 +514,10 @@ export function QuickThemeCustomizer({
         </div>
       </div>
 
-      {/* 3. Typography Mood Presets */}
+      {/* 4. Typography Mood Presets */}
       <div className="space-y-3 border-t border-border/60 pt-4">
         <Label className="text-sm font-medium">
-          {isAr ? "3. نبرة وطابع الخطوط" : "3. Typography Mood"}
+          {isAr ? "4. نبرة وطابع الخطوط" : "4. Typography Mood"}
         </Label>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {FONT_MOOD_PRESETS.map((preset) => {
@@ -323,7 +559,7 @@ export function QuickThemeCustomizer({
         </div>
       </div>
 
-      {/* 4. Navigation & Badges */}
+      {/* 5. Navigation & Badges */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-border/60 pt-4">
         {/* Navigation Bar Style */}
         {onHeaderGlassChange && (
