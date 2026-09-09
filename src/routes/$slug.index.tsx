@@ -667,19 +667,7 @@ function HeroBanner() {
         />
       )}
 
-      <div
-        className={`relative z-10 mx-auto flex w-full max-w-7xl items-center px-3 py-1 sm:px-6 sm:py-0 min-h-[220px] sm:min-h-[55vh] ${
-          settings.hero_title_align === "center"
-            ? "justify-center"
-            : settings.hero_title_align === "end"
-              ? lang === "ar"
-                ? "justify-center sm:justify-start"
-                : "justify-center sm:justify-end"
-              : lang === "ar"
-                ? "justify-center sm:justify-end"
-                : "justify-center sm:justify-start"
-        }`}
-      >
+      <div className="relative z-10 mx-auto flex max-w-7xl items-center px-4 py-2 sm:px-6 sm:py-0 min-h-[220px] sm:min-h-[55vh]">
         <HeroContentCarousel slides={slides} />
       </div>
     </section>
@@ -728,7 +716,7 @@ function HeroContentCarousel({
   }
 
   return (
-    <div className="relative isolate w-[92%] sm:w-full max-w-xl mx-auto overflow-hidden rounded-2xl bg-transparent shadow-lg [clip-path:inset(0_round_1rem)]">
+    <div className="relative isolate w-[92%] sm:w-full max-w-xl overflow-hidden rounded-2xl bg-transparent shadow-lg [clip-path:inset(0_round_1rem)]">
       <div
         dir="ltr"
         className="grid items-stretch overflow-hidden rounded-2xl [clip-path:inset(0_round_1rem)] touch-pan-y"
