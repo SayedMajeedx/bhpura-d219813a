@@ -230,11 +230,10 @@ export const createR2UploadUrl = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .validator((raw: unknown) => Input.parse(raw))
   .handler(async ({ data, context }) => {
-    const [{ data: canAccess }, { data: isAdmin }] = await Promise.all([
-      context.supabase.rpc("can_access_brand", { _brand_id: data.brandId }),
-      context.supabase.rpc("is_admin"),
-    ]);
-    if (!canAccess || !isAdmin) throw new Error("FORBIDDEN");
+    const { data: canAccess } = await context.supabase.rpc("can_access_brand", {
+      _brand_id: data.brandId,
+    });
+    if (!canAccess) throw new Error("FORBIDDEN");
 
     const extension = mimeToExtension[data.contentType.toLowerCase()];
     if (!extension) throw new Error("UNSUPPORTED_FILE_TYPE");
@@ -272,11 +271,10 @@ export const deleteR2Object = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .validator((raw: unknown) => DeleteInput.parse(raw))
   .handler(async ({ data, context }) => {
-    const [{ data: canAccess }, { data: isAdmin }] = await Promise.all([
-      context.supabase.rpc("can_access_brand", { _brand_id: data.brandId }),
-      context.supabase.rpc("is_admin"),
-    ]);
-    if (!canAccess || !isAdmin) throw new Error("FORBIDDEN");
+    const { data: canAccess } = await context.supabase.rpc("can_access_brand", {
+      _brand_id: data.brandId,
+    });
+    if (!canAccess) throw new Error("FORBIDDEN");
     if (!data.key.startsWith(`brands/${data.brandId}/`)) throw new Error("INVALID_OBJECT_KEY");
     const { signer, endpoint, bucket } = r2Connection();
     const response = await signer.fetch(r2ObjectUrl(endpoint, bucket, data.key), {
