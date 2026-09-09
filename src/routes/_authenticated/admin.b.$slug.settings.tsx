@@ -30,6 +30,7 @@ import {
   Loader2,
   Trash2,
   Crop,
+  ChevronDown,
 } from "lucide-react";
 import { useT, useI18n } from "@/lib/i18n";
 import { PhoneInput } from "@/components/phone-input";
@@ -3802,6 +3803,8 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
     footer_fg: string | null;
     heading_color: string | null;
     link_color: string | null;
+    price_color: string | null;
+    product_title_color: string | null;
     btn_primary_bg: string | null;
     btn_primary_fg: string | null;
     btn_secondary_bg: string | null;
@@ -3932,6 +3935,8 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
         footer_fg: data.footer_fg ?? null,
         heading_color: data.heading_color ?? null,
         link_color: data.link_color ?? null,
+        price_color: data.price_color ?? null,
+        product_title_color: data.product_title_color ?? null,
         btn_primary_bg: data.btn_primary_bg ?? null,
         btn_primary_fg: data.btn_primary_fg ?? null,
         btn_secondary_bg: data.btn_secondary_bg ?? null,
@@ -4029,6 +4034,8 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
       "admin_typography",
       "storefront_loader_text_en",
       "storefront_loader_text_ar",
+      "price_color",
+      "product_title_color",
     ];
 
     let { error } = await (supabase.from("business_settings") as any)
@@ -4427,16 +4434,16 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
 
         {themeMode === "advanced" && (
           <div className="space-y-6">
-            {/* Card 1: Colors & Headings */}
+            {/* Card 1: Colors, Headings & Product Cards */}
             <div className="space-y-4 rounded-xl border border-border p-4 bg-card shadow-sm">
               <div>
                 <h3 className="font-semibold text-sm">
-                  {isAr ? "ألوان المتجر والعناوين والروابط" : "Storefront Colors & Headings"}
+                  {isAr ? "ألوان المتجر والعناوين والمنتجات" : "Storefront, Headings & Products Colors"}
                 </h3>
                 <p className="mt-0.5 text-xs text-muted-foreground">
                   {isAr
-                    ? "تحكم دقيق في الألوان التي تظهر لزوار موقعك وتؤثر على العناوين والروابط والخلفيات."
-                    : "Granular control over storefront colors affecting headings, links, and background."}
+                    ? "تحكم دقيق ومستقل في ألوان عناوين الأقسام، أسماء المنتجات، الأسعار، والنصوص العامة."
+                    : "Granular independent control over section headings, product titles, prices, and text."}
                 </p>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -4446,9 +4453,19 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
                   onChange={(value) => setState({ ...state, storefront_accent_color: value })}
                 />
                 <ColorField
-                  label={isAr ? "لون العناوين (Heading Color)" : "Heading Color"}
+                  label={isAr ? "لون عناوين الأقسام الرئيسية (وصل حديثاً وغيرها)" : "Section Headings Color"}
                   value={state.heading_color}
                   onChange={(value) => setState({ ...state, heading_color: value })}
+                />
+                <ColorField
+                  label={isAr ? "لون أسماء المنتجات في البطاقات" : "Product Title Color"}
+                  value={state.product_title_color}
+                  onChange={(value) => setState({ ...state, product_title_color: value })}
+                />
+                <ColorField
+                  label={isAr ? "لون أسعار المنتجات" : "Product Price Color"}
+                  value={state.price_color}
+                  onChange={(value) => setState({ ...state, price_color: value })}
                 />
                 <ColorField
                   label={isAr ? "لون الروابط (Link Color)" : "Link Color"}
@@ -4811,49 +4828,25 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
                 </div>
               </div>
 
-              {/* Typography Advanced Controls for Storefront & Admin */}
-              <div className="space-y-4 pt-3 border-t border-border">
-                <TypographyAdvancedControls
-                  title={isAr ? "نظام خطوط واجهة المتجر" : "Storefront typography system"}
-                  config={state.storefront_typography}
-                  onChange={(val) => setState({ ...state, storefront_typography: val })}
-                  isAr={isAr}
-                  namespace="Storefront"
-                />
-                <div className="space-y-3 rounded-xl border border-primary/20 bg-primary/5 p-4">
-                  <div className="flex flex-wrap items-center justify-between gap-3">
-                    <div>
-                      <h4 className="text-sm font-semibold">
-                        {isAr ? "نظام خطوط لوحة الإدارة" : "Admin Workspace Typography"}
-                      </h4>
-                      <p className="text-xs text-muted-foreground">
-                        {isAr
-                          ? "يمكنك استخدام نفس خطوط المتجر للوحة التحكم لتوحيد التجربة."
-                          : "You can mirror storefront fonts inside the admin workspace."}
-                      </p>
-                    </div>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      className="h-8 text-xs"
-                      onClick={() => {
-                        setState({ ...state, admin_typography: { ...state.storefront_typography } });
-                        toast.success(isAr ? "تم نسخ خطوط المتجر إلى لوحة التحكم" : "Copied storefront fonts to admin");
-                      }}
-                    >
-                      {isAr ? "نسخ خطوط المتجر للوحة التحكم" : "Copy storefront fonts"}
-                    </Button>
-                  </div>
+              {/* Optional Advanced Typography Tuning */}
+              <details className="group rounded-xl border border-border p-3.5 bg-muted/5 transition-all">
+                <summary className="cursor-pointer text-xs font-semibold text-muted-foreground hover:text-foreground flex items-center justify-between select-none list-none">
+                  <span className="flex items-center gap-2">
+                    <Sparkles className="size-3.5 text-primary" />
+                    <span>{isAr ? "إعدادات أوزان ومقاييس الخطوط الدقيقة (للمصممين والمحترفين)" : "Advanced Typography Weights & Scales (Optional)"}</span>
+                  </span>
+                  <ChevronDown className="size-4 transition-transform group-open:rotate-180 text-muted-foreground" />
+                </summary>
+                <div className="pt-4 space-y-4 border-t border-border mt-3">
                   <TypographyAdvancedControls
-                    title={isAr ? "نظام خطوط لوحة الإدارة" : "Admin typography system"}
-                    config={state.admin_typography}
-                    onChange={(val) => setState({ ...state, admin_typography: val })}
+                    title={isAr ? "نظام خطوط واجهة المتجر" : "Storefront typography system"}
+                    config={state.storefront_typography}
+                    onChange={(val) => setState({ ...state, storefront_typography: val })}
                     isAr={isAr}
-                    namespace="Admin"
+                    namespace="Storefront"
                   />
                 </div>
-              </div>
+              </details>
             </div>
           </div>
         )}
@@ -5598,62 +5591,6 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
             </div>
           </div>
         )}
-
-        {/* Homepage Sections Titles Overview */}
-        <div className="space-y-4 rounded-xl border border-border p-4 bg-card shadow-sm">
-          <div>
-            <h3 className="font-semibold text-sm">
-              {isAr ? "عناوين أقسام الصفحة الرئيسية" : "Homepage Section Titles"}
-            </h3>
-            <p className="mt-0.5 text-xs text-muted-foreground">
-              {isAr
-                ? "تخصيص مسميات الأقسام التلقائية في الصفحة الرئيسية بكلا اللغتين."
-                : "Customize bilingual headings for auto-populated homepage sections."}
-            </p>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <Label>{isAr ? "عنوان وصل حديثاً (بالعربية)" : "New arrivals title (Arabic)"}</Label>
-              <Input
-                dir="rtl"
-                className="text-right mt-1"
-                value={state.new_arrivals_title_ar ?? ""}
-                placeholder="وصل حديثاً"
-                onChange={(e) => setState({ ...state, new_arrivals_title_ar: e.target.value || null })}
-              />
-            </div>
-            <div>
-              <Label>{isAr ? "عنوان وصل حديثاً (بالإنجليزية)" : "New arrivals title (English)"}</Label>
-              <Input
-                dir="ltr"
-                className="text-left mt-1"
-                value={state.new_arrivals_title_en ?? ""}
-                placeholder="New arrivals"
-                onChange={(e) => setState({ ...state, new_arrivals_title_en: e.target.value || null })}
-              />
-            </div>
-            <div>
-              <Label>{isAr ? "عنوان الأكثر مبيعاً (بالعربية)" : "Best sellers title (Arabic)"}</Label>
-              <Input
-                dir="rtl"
-                className="text-right mt-1"
-                value={state.best_sellers_title_ar ?? ""}
-                placeholder="الأكثر مبيعاً"
-                onChange={(e) => setState({ ...state, best_sellers_title_ar: e.target.value || null })}
-              />
-            </div>
-            <div>
-              <Label>{isAr ? "عنوان الأكثر مبيعاً (بالإنجليزية)" : "Best sellers title (English)"}</Label>
-              <Input
-                dir="ltr"
-                className="text-left mt-1"
-                value={state.best_sellers_title_en ?? ""}
-                placeholder="Best sellers"
-                onChange={(e) => setState({ ...state, best_sellers_title_en: e.target.value || null })}
-              />
-            </div>
-          </div>
-        </div>
       </div>
 
       <div className="sticky bottom-20 md:bottom-3 z-10 flex justify-end rounded-xl border border-border/70 bg-background/90 p-3 shadow-lg backdrop-blur-xl">

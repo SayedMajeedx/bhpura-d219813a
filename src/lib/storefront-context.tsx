@@ -139,6 +139,8 @@ export type PublicSettings = {
   footer_help_title_ar?: string | null;
   heading_color: string | null;
   link_color: string | null;
+  price_color?: string | null;
+  product_title_color?: string | null;
   btn_primary_bg: string | null;
   btn_primary_fg: string | null;
   btn_secondary_bg: string | null;

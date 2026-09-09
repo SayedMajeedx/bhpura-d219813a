@@ -213,6 +213,8 @@ export const Route = createFileRoute("/$slug")({
       footer_help_title_ar: footerTitles?.help_ar ?? null,
       heading_color: s?.heading_color ?? null,
       link_color: s?.link_color ?? null,
+      price_color: s?.price_color ?? null,
+      product_title_color: s?.product_title_color ?? null,
       btn_primary_bg: s?.btn_primary_bg ?? null,
       btn_primary_fg: s?.btn_primary_fg ?? null,
       btn_secondary_bg: s?.btn_secondary_bg ?? null,
@@ -395,6 +397,8 @@ function StoreShell() {
     settings.cart_drawer_checkout_fg ?? readableOn(cartDrawerCheckoutBg, btnCheckoutFg);
   const headingColor = settings.heading_color ?? primary;
   const linkColor = settings.link_color ?? primary;
+  const productTitleColor = settings.product_title_color ?? headingColor;
+  const priceColor = settings.price_color ?? headingColor;
   const typographyLanguage = lang === "ar" ? "ar" : "en";
   const typographyVars = typographyVariables(settings.storefront_typography, typographyLanguage);
   const typographyFaces = customFontFaces(settings.storefront_typography, typographyLanguage);
@@ -487,6 +491,8 @@ function StoreShell() {
           ["--sf-cart-checkout-fg" as any]: cartDrawerCheckoutFg,
           ["--sf-heading" as any]: headingColor,
           ["--sf-link" as any]: linkColor,
+          ["--sf-product-title" as any]: productTitleColor,
+          ["--sf-price" as any]: priceColor,
           ...typographyVars,
           ["--sf-font" as any]: typographyVars["--type-body"],
           ["--font-sans" as any]: typographyVars["--type-body"],
