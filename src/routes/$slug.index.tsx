@@ -667,7 +667,7 @@ function HeroBanner() {
         />
       )}
 
-      <div className="relative z-10 mx-auto flex max-w-7xl items-center px-4 py-2 sm:px-6 sm:py-0 min-h-[220px] sm:min-h-[55vh]">
+      <div className="relative z-10 mx-auto flex w-full max-w-7xl items-center justify-center sm:justify-start px-3 py-1 sm:px-6 sm:py-0 min-h-[220px] sm:min-h-[55vh]">
         <HeroContentCarousel slides={slides} />
       </div>
     </section>
@@ -716,10 +716,10 @@ function HeroContentCarousel({
   }
 
   return (
-    <div className="relative isolate w-[92%] sm:w-full max-w-xl overflow-hidden rounded-2xl bg-transparent shadow-lg [clip-path:inset(0_round_1rem)]">
+    <div className="relative isolate w-[92%] sm:w-full max-w-xl mx-auto sm:mx-0 overflow-hidden rounded-2xl bg-transparent shadow-lg [clip-path:inset(0_round_1rem)]">
       <div
         dir="ltr"
-        className="grid items-stretch overflow-hidden rounded-2xl [clip-path:inset(0_round_1rem)] touch-pan-y"
+        className="grid w-full items-stretch overflow-hidden rounded-2xl [clip-path:inset(0_round_1rem)] touch-pan-y"
         onTouchStart={(event) => {
           touchStartX.current = event.touches[0]?.clientX ?? null;
         }}
@@ -776,7 +776,7 @@ function HeroContentCarousel({
               dir={lang === "ar" ? "rtl" : "ltr"}
               aria-hidden={slideIndex !== idx}
               inert={slideIndex !== idx ? true : undefined}
-              className={`col-start-1 row-start-1 min-w-0 overflow-hidden rounded-2xl transition-[opacity,transform] duration-[500ms] ease-[cubic-bezier(0.22,1,0.36,1)] [backface-visibility:hidden] [clip-path:inset(0_round_1rem)] aspect-video sm:duration-[600ms] ${
+              className={`col-start-1 row-start-1 w-full min-w-0 overflow-hidden rounded-2xl transition-[opacity,transform] duration-[500ms] ease-[cubic-bezier(0.22,1,0.36,1)] [backface-visibility:hidden] [clip-path:inset(0_round_1rem)] aspect-video sm:duration-[600ms] ${
                 slideIndex === idx
                   ? "z-10 pointer-events-auto translate-y-0 scale-100 opacity-100"
                   : "z-0 pointer-events-none translate-y-1 scale-[0.992] opacity-0"
@@ -912,16 +912,16 @@ function HeroContentCarousel({
               ) : (
                 <div
                   dir={isAr ? "rtl" : "ltr"}
-                  className={`hero-carousel-text-card flex h-full flex-col justify-center overflow-hidden rounded-2xl bg-white/70 dark:bg-black/60 text-card-foreground shadow-[0_8px_32px_rgba(0,0,0,0.12),inset_0_1px_1.5px_rgba(255,255,255,0.7)] backdrop-blur-2xl backdrop-saturate-180 border border-white/50 dark:border-white/15 sm:h-[320px] ${
+                  className={`hero-carousel-text-card flex w-full h-full flex-col justify-center overflow-hidden rounded-2xl bg-white/70 dark:bg-black/60 text-card-foreground shadow-[0_8px_32px_rgba(0,0,0,0.12),inset_0_1px_1.5px_rgba(255,255,255,0.7)] backdrop-blur-2xl backdrop-saturate-180 border border-white/50 dark:border-white/15 sm:h-[320px] ${
                     hasMultipleSlides
-                      ? "p-5 pb-12 sm:p-8 sm:pb-20"
-                      : "p-6 sm:p-8"
+                      ? "p-4 pb-11 sm:p-8 sm:pb-20"
+                      : "p-4 sm:p-8"
                   }`}
                   style={{ textAlign: slideTextAlign }}
                 >
                   {settings.show_hero_title && title && (
                     <h1
-                      className="font-semibold leading-tight drop-shadow-sm mb-2 sm:mb-3"
+                      className="font-semibold leading-tight drop-shadow-sm mb-1.5 sm:mb-3"
                       style={{
                         color: settings.hero_title_color || "var(--color-foreground)",
                         fontSize: `clamp(1.125rem, 3.8vw, ${titleSize}px)`,
@@ -932,7 +932,7 @@ function HeroContentCarousel({
                     </h1>
                   )}
                   {settings.show_hero_about && body && (
-                    <p className="line-clamp-3 text-xs leading-relaxed text-foreground/85 dark:text-neutral-200 mb-3 sm:mb-4 sm:line-clamp-none sm:text-base font-normal">
+                    <p className="line-clamp-2 text-xs leading-relaxed text-foreground/85 dark:text-neutral-200 mb-2.5 sm:mb-4 sm:line-clamp-none sm:text-base font-normal">
                       {body}
                     </p>
                   )}
@@ -940,7 +940,7 @@ function HeroContentCarousel({
                     <div style={{ textAlign: slideTextAlign }}>
                       <StorefrontLink
                         href={slide.button_href || "#products"}
-                        className="inline-flex items-center rounded-full bg-primary text-primary-foreground px-5 py-2.5 text-xs font-semibold shadow-sm transition-transform duration-200 hover:scale-105 active:scale-95 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 sm:px-6 sm:py-3 sm:text-sm"
+                        className="inline-flex items-center rounded-full bg-primary text-primary-foreground px-4 py-2 text-xs font-semibold shadow-sm transition-transform duration-200 hover:scale-105 active:scale-95 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 sm:px-6 sm:py-3 sm:text-sm"
                       >
                         {button}
                       </StorefrontLink>
