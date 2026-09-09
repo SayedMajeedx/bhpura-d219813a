@@ -905,7 +905,7 @@ function HeroContentCarousel({
                 </div>
               ) : (
                 <div
-                  className="hero-carousel-text-card flex h-full flex-col justify-center overflow-hidden rounded-2xl bg-card text-card-foreground p-5 pb-12 shadow-xl border border-border/40 sm:h-[320px] sm:p-8 sm:pb-20"
+                  className="hero-carousel-text-card flex h-full flex-col justify-center overflow-hidden rounded-2xl bg-white/70 dark:bg-black/60 text-card-foreground p-5 pb-12 shadow-[0_8px_32px_rgba(0,0,0,0.12),inset_0_1px_1.5px_rgba(255,255,255,0.7)] backdrop-blur-2xl backdrop-saturate-180 border border-white/50 dark:border-white/15 sm:h-[320px] sm:p-8 sm:pb-20"
                   style={{ textAlign: settings.hero_title_align }}
                 >
                   {settings.show_hero_title && title && (
@@ -921,7 +921,7 @@ function HeroContentCarousel({
                     </h1>
                   )}
                   {settings.show_hero_about && body && (
-                    <p className="mb-3 line-clamp-2 text-xs leading-relaxed text-muted-foreground sm:mb-4 sm:line-clamp-none sm:text-base">
+                    <p className="mb-3 line-clamp-2 text-xs leading-relaxed text-foreground/85 dark:text-neutral-200 sm:mb-4 sm:line-clamp-none sm:text-base font-normal">
                       {body}
                     </p>
                   )}
