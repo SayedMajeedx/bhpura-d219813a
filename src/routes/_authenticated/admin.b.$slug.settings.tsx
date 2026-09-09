@@ -31,6 +31,8 @@ import {
   Trash2,
   Crop,
   ChevronDown,
+  Smartphone,
+  Monitor,
 } from "lucide-react";
 import { useT, useI18n } from "@/lib/i18n";
 import { PhoneInput } from "@/components/phone-input";
@@ -3855,10 +3857,269 @@ function StorefrontSeoCard({ brandId }: { brandId: string }) {
   );
 }
 
+interface FooterLivePreviewProps {
+  logoUrl?: string | null;
+  footerLogoSize: number;
+  footerBg?: string | null;
+  footerFg?: string | null;
+  brandName: string;
+  showFooterName?: boolean;
+  isAr: boolean;
+}
+
+function FooterLivePreview({
+  logoUrl,
+  footerLogoSize,
+  footerBg,
+  footerFg,
+  brandName,
+  showFooterName = true,
+  isAr,
+}: FooterLivePreviewProps) {
+  const [viewport, setViewport] = useState<"mobile" | "desktop">("mobile");
+
+  const bg = footerBg || "#121212";
+  const fg = footerFg || "#ffffff";
+  const clampedSize = Math.max(16, Math.min(120, footerLogoSize || 28));
+
+  return (
+    <div className="rounded-xl border border-border overflow-hidden bg-muted/20 space-y-3 p-3 sm:p-4">
+      <div className="flex items-center justify-between gap-2 flex-wrap">
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-semibold">
+            {isAr ? "معاينة فورية لتذييل المتجر (الفوتر)" : "Live Storefront Footer Preview"}
+          </span>
+          <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-primary">
+            📐 {clampedSize}px
+          </span>
+        </div>
+        <div className="flex items-center gap-1 bg-background/80 p-0.5 rounded-lg border border-border">
+          <Button
+            type="button"
+            size="sm"
+            variant={viewport === "mobile" ? "default" : "ghost"}
+            className="h-7 px-2.5 text-xs gap-1.5"
+            onClick={() => setViewport("mobile")}
+          >
+            <Smartphone className="size-3.5" />
+            <span>{isAr ? "جوال" : "Mobile"}</span>
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            variant={viewport === "desktop" ? "default" : "ghost"}
+            className="h-7 px-2.5 text-xs gap-1.5"
+            onClick={() => setViewport("desktop")}
+          >
+            <Monitor className="size-3.5" />
+            <span>{isAr ? "كمبيوتر" : "Desktop"}</span>
+          </Button>
+        </div>
+      </div>
+
+      <div
+        className="w-full flex justify-center items-center py-3 px-1 sm:px-2 rounded-lg transition-all"
+        style={{
+          background: "radial-gradient(circle at center, rgba(0,0,0,0.03) 0%, rgba(0,0,0,0.08) 100%)",
+        }}
+      >
+        <div
+          dir={isAr ? "rtl" : "ltr"}
+          className={`transition-all duration-300 rounded-xl border border-white/10 shadow-lg overflow-hidden ${
+            viewport === "mobile" ? "w-full max-w-[340px]" : "w-full max-w-2xl"
+          }`}
+          style={{
+            backgroundColor: bg,
+            color: fg,
+          }}
+        >
+          {viewport === "mobile" ? (
+            /* Mobile Footer Mini Preview */
+            <div className="p-4 space-y-3 text-center text-xs">
+              <div className="flex flex-col items-center pb-2.5 border-b border-white/10">
+                {logoUrl ? (
+                  <img
+                    src={logoUrl}
+                    alt={brandName}
+                    style={{ height: `${clampedSize}px`, width: "auto" }}
+                    className="object-contain transition-all duration-150"
+                  />
+                ) : (
+                  <span className="font-bold text-sm" style={{ color: fg }}>
+                    {brandName}
+                  </span>
+                )}
+              </div>
+
+              <div className="space-y-1.5 text-start border-b border-white/10 pb-2.5 text-[11px] opacity-80">
+                <div className="flex items-center justify-between py-1 border-b border-white/5">
+                  <span>{isAr ? "عن المتجر" : "About Us"}</span>
+                  <ChevronDown className="size-3 opacity-60" />
+                </div>
+                <div className="flex items-center justify-between py-1">
+                  <span>{isAr ? "خدمة العملاء والسياسات" : "Customer Support"}</span>
+                  <ChevronDown className="size-3 opacity-60" />
+                </div>
+              </div>
+
+              <div className="pt-1 text-[10px] opacity-60 flex items-center justify-center gap-1.5">
+                {showFooterName && <span className="font-semibold">{brandName}</span>}
+                <span>© {new Date().getFullYear()}</span>
+              </div>
+            </div>
+          ) : (
+            /* Desktop Footer Mini Preview */
+            <div className="p-5 space-y-3 text-center text-xs">
+              <div className="flex flex-col items-center gap-2">
+                {logoUrl ? (
+                  <div className="pb-1">
+                    <img
+                      src={logoUrl}
+                      alt={brandName}
+                      style={{ height: `${clampedSize}px`, width: "auto" }}
+                      className="object-contain transition-all duration-150"
+                    />
+                  </div>
+                ) : null}
+                <div className="flex justify-center items-center gap-4 text-xs font-medium opacity-85">
+                  <span>{isAr ? "الرئيسية" : "Home"}</span>
+                  <span>{isAr ? "المنتجات" : "Products"}</span>
+                  <span>{isAr ? "عن المتجر" : "About"}</span>
+                  <span>{isAr ? "تواصل معنا" : "Contact"}</span>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-center gap-3 py-1.5 px-3 text-[10px] font-medium opacity-90 border-y border-white/10 rounded-lg bg-white/5">
+                <span>✨ {isAr ? "تصاميم حصرية" : "Exclusive Designs"}</span>
+                <span className="opacity-30">•</span>
+                <span>💸 {isAr ? "الدفع عند الاستلام وبنفت" : "BenefitPay & COD"}</span>
+                <span className="opacity-30">•</span>
+                <span>🔒 {isAr ? "آمن ومشفّر" : "256-Bit SSL"}</span>
+              </div>
+
+              <div className="flex items-center justify-center gap-2 text-[10px] opacity-60 pt-1 border-t border-white/10">
+                {showFooterName && <span className="font-semibold">{brandName}</span>}
+                <span>© {new Date().getFullYear()} — {isAr ? "جميع الحقوق محفوظة" : "All rights reserved"}</span>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+interface FooterLogoResizerControlProps {
+  value: number;
+  onChange: (val: number) => void;
+  isAr: boolean;
+  logoUrl?: string | null;
+  footerBg?: string | null;
+  footerFg?: string | null;
+  brandName: string;
+  showFooterName?: boolean;
+}
+
+function FooterLogoResizerControl({
+  value,
+  onChange,
+  isAr,
+  logoUrl,
+  footerBg,
+  footerFg,
+  brandName,
+  showFooterName = true,
+}: FooterLogoResizerControlProps) {
+  const currentSize = value || 28;
+  const presets = [
+    { label: isAr ? "صغير جداً (20px)" : "XS (20px)", val: 20 },
+    { label: isAr ? "افتراضي (28px)" : "Default (28px)", val: 28 },
+    { label: isAr ? "متوسط (36px)" : "Medium (36px)", val: 36 },
+    { label: isAr ? "كبير (48px)" : "Large (48px)", val: 48 },
+    { label: isAr ? "كبير جداً (64px)" : "XL (64px)", val: 64 },
+  ];
+
+  return (
+    <div className="space-y-4 rounded-xl border border-border p-4 bg-card/60 shadow-xs">
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <div>
+          <Label className="text-sm font-semibold">
+            {isAr ? "حجم شعار تذييل الصفحة (الفوتر)" : "Footer Logo Size"}
+          </Label>
+          <p className="mt-0.5 text-xs text-muted-foreground">
+            {isAr
+              ? "تحكم دقيق بارتفاع الشعار المعروض في الفوتر على جميع الأجهزة مع معاينة فورية."
+              : "Control the exact height of the logo shown in the storefront footer across devices with live preview."}
+          </p>
+        </div>
+        <span className="text-xs font-mono font-bold px-2.5 py-1 rounded-md bg-primary/10 text-primary border border-primary/20">
+          {currentSize}px
+        </span>
+      </div>
+
+      <div className="space-y-3">
+        <div className="flex items-center gap-4">
+          <input
+            type="range"
+            min={16}
+            max={96}
+            step={2}
+            value={currentSize}
+            onChange={(e) => onChange(Number(e.target.value))}
+            className="flex-1 h-2 bg-muted rounded-lg appearance-none cursor-pointer accent-primary"
+            aria-label={isAr ? "شريط تمرير حجم شعار الفوتر" : "Footer logo size slider"}
+          />
+          <Input
+            type="number"
+            min={16}
+            max={120}
+            value={currentSize}
+            onChange={(e) => onChange(Math.max(16, Math.min(120, Number(e.target.value))))}
+            className="w-20 text-center font-mono text-xs h-9"
+          />
+        </div>
+
+        {/* Quick Presets */}
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <span className="text-[11px] text-muted-foreground me-1 font-medium">
+            {isAr ? "أحجام جاهزة:" : "Presets:"}
+          </span>
+          {presets.map((p) => (
+            <Button
+              key={p.val}
+              type="button"
+              size="sm"
+              variant={currentSize === p.val ? "default" : "outline"}
+              className="h-7 text-xs px-2.5 rounded-lg"
+              onClick={() => onChange(p.val)}
+            >
+              {p.label}
+            </Button>
+          ))}
+        </div>
+      </div>
+
+      {/* Live Preview */}
+      <FooterLivePreview
+        logoUrl={logoUrl}
+        footerLogoSize={currentSize}
+        footerBg={footerBg}
+        footerFg={footerFg}
+        brandName={brandName}
+        showFooterName={showFooterName}
+        isAr={isAr}
+      />
+    </div>
+  );
+}
+
 function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
+  const brand = useBrand();
   const heroSaveRef = useRef<(() => Promise<void>) | null>(null);
   const { lang } = useI18n();
   const isAr = lang === "ar";
+  const brandDisplayName =
+    (isAr ? brand?.name_ar : brand?.name_en) || brand?.name_en || brand?.slug || "";
   const qc = useQueryClient();
   const router = useRouter();
   const [saving, setSaving] = useState(false);
@@ -3874,6 +4135,7 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
   const [contentLanguage, setContentLanguage] = useState<"en" | "ar">(lang === "ar" ? "ar" : "en");
   const [state, setState] = useState<{
     logo_size: number;
+    footer_logo_size: number;
     logo_align: string;
     show_header_name: boolean;
     show_hero_title: boolean;
@@ -3970,6 +4232,7 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
     if (data)
       setState({
         logo_size: data.logo_size ?? 48,
+        footer_logo_size: Number(data.footer_logo_size ?? 28),
         logo_align: data.logo_align ?? "left",
         show_header_name: data.show_header_name ?? true,
         show_hero_title: data.show_hero_title ?? true,
@@ -4140,6 +4403,7 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
       "storefront_loader_text_ar",
       "price_color",
       "product_title_color",
+      "footer_logo_size",
     ];
 
     let { error } = await (supabase.from("business_settings") as any)
@@ -4630,6 +4894,19 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
                   onChange={(v) => setState({ ...state, footer_fg: v })}
                 />
               </div>
+
+              <div className="border-t border-border pt-4">
+                <FooterLogoResizerControl
+                  value={state.footer_logo_size}
+                  onChange={(val) => setState({ ...state, footer_logo_size: val })}
+                  isAr={isAr}
+                  logoUrl={data?.logo_url || brand?.logo_url}
+                  footerBg={state.footer_bg}
+                  footerFg={state.footer_fg}
+                  brandName={brandDisplayName}
+                  showFooterName={state.show_footer_name}
+                />
+              </div>
             </div>
 
             {/* Card 3: Buttons */}
@@ -4988,7 +5265,7 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
           <h3 className="font-semibold text-sm">{isAr ? "الشعار والهوية" : "Logo & Header"}</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <Label>{isAr ? "حجم الشعار (بكسل)" : "Logo size (px)"}</Label>
+              <Label>{isAr ? "حجم شعار الترويسة (الرأس) (بكسل)" : "Header logo size (px)"}</Label>
               <Input
                 type="number"
                 min={24}
@@ -5072,6 +5349,20 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
               />
             </div>
           </div>
+        </div>
+
+        {/* Footer Logo & Live Preview */}
+        <div className="space-y-4 rounded-xl border border-border p-4 bg-card shadow-sm">
+          <FooterLogoResizerControl
+            value={state.footer_logo_size}
+            onChange={(val) => setState({ ...state, footer_logo_size: val })}
+            isAr={isAr}
+            logoUrl={data?.logo_url || brand?.logo_url}
+            footerBg={state.footer_bg}
+            footerFg={state.footer_fg}
+            brandName={brandDisplayName}
+            showFooterName={state.show_footer_name}
+          />
         </div>
 
         {/* Hero Title Customization Card */}

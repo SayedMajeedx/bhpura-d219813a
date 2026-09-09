@@ -200,6 +200,7 @@ export const Route = createFileRoute("/$slug")({
         }
       })(),
       logo_size: Number(s?.logo_size ?? 48),
+      footer_logo_size: Number(s?.footer_logo_size ?? 28),
       logo_align: (s?.logo_align ?? "left") as "left" | "center" | "right",
       show_header_name: s?.show_header_name ?? true,
       show_hero_title: s?.show_hero_title ?? true,
@@ -2238,6 +2239,8 @@ function StorefrontFooter() {
     ? settings.footer_help_title_ar?.trim() || "المساعدة"
     : settings.footer_help_title_en?.trim() || "Help";
 
+  const footerLogoSize = Math.max(16, Math.min(120, Number(settings.footer_logo_size ?? 28)));
+
   return (
     <footer
       className="border-t py-5 sm:py-6"
@@ -2252,6 +2255,16 @@ function StorefrontFooter() {
             DESKTOP FOOTER (md:flex) — Unchanged Layout
             ========================================================================= */}
         <div className="hidden md:flex flex-col items-center gap-3 text-center text-xs">
+          {settings.logo_url && (
+            <div className="pb-1">
+              <img
+                src={settings.logo_url}
+                alt={brand.name_en || "Logo"}
+                style={{ height: `${footerLogoSize}px`, width: "auto" }}
+                className="object-contain"
+              />
+            </div>
+          )}
           {pageLinks.length > 0 && (
             <nav className="flex flex-wrap justify-center items-center gap-x-5 gap-y-1 text-xs font-medium tracking-wide">
               {pageLinks.map((p) => (
@@ -2336,7 +2349,8 @@ function StorefrontFooter() {
               <img
                 src={settings.logo_url}
                 alt={brand.name_en || "Logo"}
-                className="h-7 w-auto object-contain"
+                style={{ height: `${footerLogoSize}px`, width: "auto" }}
+                className="object-contain"
               />
             ) : (
               <span

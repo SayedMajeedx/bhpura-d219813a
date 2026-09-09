@@ -107,6 +107,7 @@ export type PublicSettings = {
   delivery_estimate_en?: string | null;
   // Theme customizer
   logo_size: number;
+  footer_logo_size?: number;
   logo_align: "left" | "center" | "right";
   show_header_name: boolean;
   show_hero_title: boolean;
