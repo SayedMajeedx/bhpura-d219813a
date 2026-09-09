@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
   Check,
@@ -111,16 +111,30 @@ function ContentStudioPage() {
   const brand = useBrand();
   const { lang } = useI18n();
   const isAr = lang === "ar";
+  const brandNameEn = brand.name_en || (brand as any).name || "Brand";
+  const brandNameDisplay = isAr ? brand.name_ar || (brand as any).name || brandNameEn : brandNameEn;
+  const brandSlugClean = brand.slug || slug || "brand";
+  const defaultEditionLabel = `The ${brandNameEn} Edit`;
+
   const stageRef = useRef<HTMLDivElement>(null);
   const [format, setFormat] = useState<keyof typeof FORMATS>("story");
   const [theme, setTheme] = useState<keyof typeof THEMES>("editorial");
   const [productId, setProductId] = useState("");
-  const [editionLabel, setEditionLabel] = useState("The Pura Edit");
+  const [editionLabel, setEditionLabel] = useState(() => defaultEditionLabel);
   const [headline, setHeadline] = useState("صُممت لتبقى في الذاكرة");
   const [body, setBody] = useState("أناقة هادئة، وتفاصيل مدروسة لكل لحظة.");
   const [showPrice, setShowPrice] = useState(true);
   const [imageFit, setImageFit] = useState<"cover" | "contain">("cover");
   const [exporting, setExporting] = useState(false);
+
+  useEffect(() => {
+    setEditionLabel((prev) => {
+      if (!prev || prev === "The Pura Edit" || (prev.startsWith("The ") && prev.endsWith(" Edit"))) {
+        return `The ${brandNameEn} Edit`;
+      }
+      return prev;
+    });
+  }, [brandNameEn]);
 
   const productsQ = useQuery({
     queryKey: ["content-studio-products", brand.id],
@@ -185,11 +199,12 @@ function ContentStudioPage() {
   const editionIsAr = containsArabic(editionLabel);
   const headlineIsAr = containsArabic(headline);
   const bodyIsAr = containsArabic(body);
+  const fallbackLineName = `${brandNameEn.toUpperCase()} LINE`;
   const productName = selected
     ? isAr
       ? selected.name_ar || selected.name
       : selected.name_en || selected.name
-    : "PURA LINE";
+    : fallbackLineName;
 
   const exportCreative = async () => {
     if (!stageRef.current) return;
@@ -203,7 +218,7 @@ function ContentStudioPage() {
         useCORS: true,
         logging: false,
       });
-      const fileName = `pura-${selected?.name || "creative"}-${format}.png`
+      const fileName = `${brandSlugClean}-${selected?.name || "creative"}-${format}.png`
         .replace(/\s+/g, "-")
         .toLowerCase();
       const blob = await new Promise<Blob>((resolve, reject) =>
@@ -342,7 +357,8 @@ ${desc}${detailsBlock}
             </span>
             <div>
               <div className="mb-1 flex items-center gap-2 text-xs font-bold uppercase tracking-[.18em] text-primary">
-                <Sparkles className="size-3.5" /> Pura Content Studio
+                <Sparkles className="size-3.5" />
+                {`${brandNameEn} Content Studio`}
               </div>
               <h1 className="font-display text-3xl font-black sm:text-4xl">
                 {isAr ? "من المنتج إلى محتوى جاهز للنشر" : "From product to publish-ready creative"}
@@ -518,7 +534,7 @@ ${desc}${detailsBlock}
                   maxLength={28}
                   onChange={(event) => setEditionLabel(event.target.value)}
                   className="mt-2 h-11 rounded-xl"
-                  placeholder="The Pura Edit"
+                  placeholder={defaultEditionLabel}
                 />
               </div>
               <div>
@@ -666,7 +682,9 @@ ${desc}${detailsBlock}
                       className="h-12 w-auto max-w-32 object-contain brightness-0 invert"
                     />
                   ) : (
-                    <span className="font-serif text-2xl tracking-[.22em]">PURA</span>
+                    <span className="font-serif text-2xl tracking-[.22em]">
+                      {brandNameEn.toUpperCase()}
+                    </span>
                   )}
                   {editionLabel?.trim() ? (
                     <>
