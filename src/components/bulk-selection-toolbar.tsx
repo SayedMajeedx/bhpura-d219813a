@@ -1,4 +1,4 @@
-import { Building2, CheckSquare, Square, Trash2 } from "lucide-react";
+import { Building2, CheckSquare, FolderEdit, Square, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -13,6 +13,7 @@ type BulkSelectionToolbarProps = {
   onDeselectAll: () => void;
   onDeleteSelected: () => void;
   onTransferToIncubator?: () => void;
+  onUpdateCategory?: () => void;
 };
 
 export function BulkSelectionToolbar({
@@ -26,6 +27,7 @@ export function BulkSelectionToolbar({
   onDeselectAll,
   onDeleteSelected,
   onTransferToIncubator,
+  onUpdateCategory,
 }: BulkSelectionToolbarProps) {
   const isAr = lang === "ar";
   return (
@@ -64,6 +66,19 @@ export function BulkSelectionToolbar({
           <Square className="h-4 w-4" />
           {isAr ? "إلغاء تحديد الكل" : "Deselect all"}
         </Button>
+        {selectedCount > 0 && onUpdateCategory && (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            disabled={disabled}
+            onClick={onUpdateCategory}
+            className="h-9 gap-1.5 text-xs"
+          >
+            <FolderEdit className="h-4 w-4 text-primary" />
+            {isAr ? "تغيير القسم" : "Change category"}
+          </Button>
+        )}
         {selectedCount > 0 && onTransferToIncubator && (
           <Button
             type="button"

@@ -25,6 +25,11 @@ import {
   normalizeTypography,
   typographyVariables,
 } from "@/lib/typography";
+import {
+  renderTrustBadgeIcon,
+  DEFAULT_TRUST_BADGES,
+  type TrustBadgesConfig,
+} from "@/lib/trust-badges";
 import { useQueryClient } from "@tanstack/react-query";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -2192,6 +2197,16 @@ function StorefrontFooter() {
   const [openCompany, setOpenCompany] = useState(false);
   const [openHelp, setOpenHelp] = useState(false);
 
+  const rawTrustBadges = (settings as any).trust_badges;
+  const trustBadgesConfig: TrustBadgesConfig =
+    rawTrustBadges && typeof rawTrustBadges === "object" && Array.isArray(rawTrustBadges.items)
+      ? rawTrustBadges
+      : DEFAULT_TRUST_BADGES;
+
+  const activeBadges = (trustBadgesConfig.enabled ?? true)
+    ? (trustBadgesConfig.items || []).filter((b) => b.enabled)
+    : [];
+
   const pages = settings.pages ?? [];
   const pageLinks = pages
     .map((p, idx) => {
@@ -2299,22 +2314,19 @@ function StorefrontFooter() {
           )}
 
           {/* Custom Boutique Trust & Security Reassurance Bar */}
-          <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 my-2 py-2.5 px-4 text-[11px] font-medium opacity-90 border-y border-white/10 rounded-xl bg-white/5 backdrop-blur-xs max-w-3xl w-full">
-            <div className="inline-flex items-center gap-1.5">
-              <span className="text-amber-500/90">✨</span>
-              <span>{t("تصاميم حصرية خاصّة بنا", "Exclusive In-House Designs")}</span>
+          {activeBadges.length > 0 && (
+            <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 my-2 py-2.5 px-4 text-[11px] font-medium opacity-90 border-y border-white/10 rounded-xl bg-white/5 backdrop-blur-xs max-w-3xl w-full">
+              {activeBadges.map((badge, idx) => (
+                <React.Fragment key={badge.id || idx}>
+                  {idx > 0 && <div className="hidden sm:inline text-white/20">•</div>}
+                  <div className="inline-flex items-center gap-1.5">
+                    {renderTrustBadgeIcon(badge.icon, "h-3.5 w-3.5", badge.color)}
+                    <span>{isAr ? badge.text_ar || badge.text_en : badge.text_en || badge.text_ar}</span>
+                  </div>
+                </React.Fragment>
+              ))}
             </div>
-            <div className="hidden sm:inline text-white/20">•</div>
-            <div className="inline-flex items-center gap-1.5">
-              <span className="text-emerald-500/90">💸</span>
-              <span>{t("الدفع كاش عند الاستلام أو بنفت بي", "Cash on Arrival & BenefitPay")}</span>
-            </div>
-            <div className="hidden sm:inline text-white/20">•</div>
-            <div className="inline-flex items-center gap-1.5">
-              <span className="text-sky-500/90">🔒</span>
-              <span>{t("موقع آمن ومشفّر 256-Bit", "256-Bit SSL Encrypted")}</span>
-            </div>
-          </div>
+          )}
 
           <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-[11px] opacity-70 border-t border-border pt-2 w-full max-w-2xl">
             {settings.show_footer_name && (
@@ -2463,35 +2475,21 @@ function StorefrontFooter() {
           )}
 
           {/* Section 4: Trust Badges Grid */}
-          <div className="grid grid-cols-2 gap-2 my-3 text-xs">
-            <div className="rounded-xl border border-white/10 bg-white/5 backdrop-blur-xs p-3 flex flex-col items-center justify-center text-center gap-1.5 min-h-[72px]">
-              <span className="text-amber-400 text-base">✨</span>
-              <span className="font-medium text-[11px] leading-tight">
-                {t("تصاميم حصرية خاصّة بنا", "Exclusive In-House Designs")}
-              </span>
+          {activeBadges.length > 0 && (
+            <div className="grid grid-cols-2 gap-2 my-3 text-xs">
+              {activeBadges.map((badge, idx) => (
+                <div
+                  key={badge.id || idx}
+                  className="rounded-xl border border-white/10 bg-white/5 backdrop-blur-xs p-3 flex flex-col items-center justify-center text-center gap-1.5 min-h-[72px]"
+                >
+                  {renderTrustBadgeIcon(badge.icon, "h-5 w-5", badge.color)}
+                  <span className="font-medium text-[11px] leading-tight">
+                    {isAr ? badge.text_ar || badge.text_en : badge.text_en || badge.text_ar}
+                  </span>
+                </div>
+              ))}
             </div>
-
-            <div className="rounded-xl border border-white/10 bg-white/5 backdrop-blur-xs p-3 flex flex-col items-center justify-center text-center gap-1.5 min-h-[72px]">
-              <span className="text-emerald-400 text-base">💸</span>
-              <span className="font-medium text-[11px] leading-tight">
-                {t("الدفع كاش عند الاستلام أو بنفت بي", "Cash on Arrival & BenefitPay")}
-              </span>
-            </div>
-
-            <div className="rounded-xl border border-white/10 bg-white/5 backdrop-blur-xs p-3 flex flex-col items-center justify-center text-center gap-1.5 min-h-[72px]">
-              <span className="text-sky-400 text-base">🔒</span>
-              <span className="font-medium text-[11px] leading-tight">
-                {t("موقع آمن ومشفّر 256-Bit", "256-Bit SSL Encrypted")}
-              </span>
-            </div>
-
-            <div className="rounded-xl border border-white/10 bg-white/5 backdrop-blur-xs p-3 flex flex-col items-center justify-center text-center gap-1.5 min-h-[72px]">
-              <span className="text-purple-400 text-base">🚚</span>
-              <span className="font-medium text-[11px] leading-tight">
-                {t("توصيل سريع ومباشر", "Fast Local Delivery")}
-              </span>
-            </div>
-          </div>
+          )}
 
           {/* Section 5: Bottom Bar */}
           <div className="pt-3 border-t border-white/10 flex flex-col items-center gap-1.5 text-[11px] opacity-75">

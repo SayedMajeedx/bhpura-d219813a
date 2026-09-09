@@ -698,7 +698,7 @@ export const batchParseCaptionsWithAI = createServerFn({ method: "POST" })
       "2. LOOK FOR PRODUCT CODES: Check for 'Code: MC5', 'كود: MC5', 'Model: 102', 'MC5'. If a code is found, format title as 'عباية MC5' or 'كود MC5'.",
       "3. IF NO CODE: Find the substantive line describing the garment (e.g. 'عباية بشت حرير مغسول').",
       "4. DESCRIPTION: Extract the rich Arabic or English text describing fabric, cut, and details. Exclude phone numbers, delivery terms, and hashtags.",
-      "5. CATEGORY: Infer 'عبايات' (Abayas), 'فساتين' (Dresses), 'جلابيات' (Jalabiya), 'قفاطين' (Kaftans), or 'شيل وطرح' (Scarves). Default to 'عبايات'.",
+      "5. CATEGORY: Infer category ONLY if explicitly stated in caption (e.g. 'فساتين', 'عبايات', 'جلابيات', 'قفاطين'). If not mentioned or unclear, return null. Never guess or force a default category.",
       "STRICT PRICE RULES:",
       "6. CURRENCY: Explicitly look for prices in BHD, BD, bd, dinar, دينار, د.ب.",
       "7. IF NO PRICE OR UNCERTAIN: Return price: null. Do NOT guess.",
@@ -895,7 +895,10 @@ export const batchParseCaptionsWithAI = createServerFn({ method: "POST" })
       const sizes =
         Array.isArray(parsed.sizes) && parsed.sizes.length > 0 ? parsed.sizes : ["52", "54", "56"];
       const colors = Array.isArray(parsed.colors) ? parsed.colors : [];
-      const category = parsed.category || "عبايات";
+      const category =
+        parsed.category && String(parsed.category).trim() !== ""
+          ? String(parsed.category).trim()
+          : null;
 
       const nameConfidence = Math.max(0, Math.min(1, Number(parsed.confidence?.name) || 0.7));
       const descConfidence = Math.max(
@@ -1088,7 +1091,10 @@ export const bulkInsertProducts = createServerFn({ method: "POST" })
             description: p.description || "",
             description_en: p.description || "",
             description_ar: p.description || "",
-            category: p.category || "عام",
+            category:
+              p.category && String(p.category).trim() !== "" && p.category !== "عام"
+                ? String(p.category).trim()
+                : null,
             image_url: p.coverImageUrl || (validMedia[0]?.url ?? null),
             is_active: false, // MANDATORY: Always saved as draft!
             featured_trending: false,

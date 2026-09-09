@@ -69,6 +69,11 @@ import {
   QuickThemeCustomizer,
   type FontMoodPreset,
 } from "@/components/settings/QuickThemeCustomizer";
+import { TrustBadgesEditor } from "@/components/settings/TrustBadgesEditor";
+import {
+  type TrustBadgesConfig,
+  DEFAULT_TRUST_BADGES,
+} from "@/lib/trust-badges";
 
 const SUPPORTED_CURRENCIES = [
   { code: "BHD", name_en: "BHD — Bahraini Dinar", name_ar: "د.ب — دينار بحريني" },
@@ -3532,7 +3537,7 @@ function CustomizerNavigation({
 }) {
   const items = [
     ["theme", isAr ? "الألوان والمظهر العام" : "Theme & Styles"],
-    ["general", isAr ? "الشعار والواجهة الرئيسية" : "Logo & Hero"],
+    ["general", isAr ? "الشعار والواجهة والتذييل" : "Logo, Hero & Footer"],
     ["promotions", isAr ? "شريط الإعلانات والترويج" : "Announcements & Merchandising"],
     ["content", isAr ? "القائمة والرسائل" : "Menu & Content"],
   ] as const;
@@ -4208,6 +4213,7 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
     cart_drawer_checkout_fg: string | null;
     storefront_loader_text_en: string | null;
     storefront_loader_text_ar: string | null;
+    trust_badges: TrustBadgesConfig;
   } | null>(null);
 
   const [hasLoaderColumns, setHasLoaderColumns] = useState(true);
@@ -4359,6 +4365,10 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
         cart_drawer_checkout_fg: data.cart_drawer_checkout_fg ?? null,
         storefront_loader_text_en: data.storefront_loader_text_en ?? null,
         storefront_loader_text_ar: data.storefront_loader_text_ar ?? null,
+        trust_badges:
+          data.trust_badges && typeof data.trust_badges === "object"
+            ? (data.trust_badges as any)
+            : DEFAULT_TRUST_BADGES,
       });
   }, [data]);
 
@@ -4404,6 +4414,7 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
       "price_color",
       "product_title_color",
       "footer_logo_size",
+      "trust_badges",
     ];
 
     let { error } = await (supabase.from("business_settings") as any)
@@ -5364,6 +5375,15 @@ function StorefrontCustomizerCard({ brandId }: { brandId: string }) {
             showFooterName={state.show_footer_name}
           />
         </div>
+
+        {/* Footer Trust Badges Editor */}
+        <TrustBadgesEditor
+          value={state.trust_badges}
+          onChange={(val) => setState({ ...state, trust_badges: val })}
+          isAr={isAr}
+          footerBg={state.footer_bg}
+          footerFg={state.footer_fg}
+        />
 
         {/* Hero Title Customization Card */}
         <div className="space-y-4 rounded-xl border border-border p-4 bg-card shadow-sm">

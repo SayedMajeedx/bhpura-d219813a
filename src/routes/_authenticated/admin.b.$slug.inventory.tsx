@@ -1163,6 +1163,9 @@ function ProductsSection({
   const [selectedProductIds, setSelectedProductIds] = useState<Set<string>>(new Set());
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
   const [bulkDeleting, setBulkDeleting] = useState(false);
+  const [bulkCategoryOpen, setBulkCategoryOpen] = useState(false);
+  const [bulkSelectedCategory, setBulkSelectedCategory] = useState<string>("");
+  const [bulkCategoryApplying, setBulkCategoryApplying] = useState(false);
   const [incubatorTransferModalOpen, setIncubatorTransferModalOpen] = useState(false);
   const [incubatorTransferProducts, setIncubatorTransferProducts] = useState<Product[]>([]);
   const [isInstagramModalOpen, setIsInstagramModalOpen] = useState(false);
@@ -1649,6 +1652,43 @@ function ProductsSection({
     }
   };
 
+  const applyBulkCategory = async () => {
+    const ids = [...selectedProductIds];
+    if (ids.length === 0) return;
+    setBulkCategoryApplying(true);
+    try {
+      const catToSave =
+        bulkSelectedCategory && bulkSelectedCategory.trim() !== ""
+          ? bulkSelectedCategory.trim()
+          : null;
+      const { error } = await (supabase.from("products") as any)
+        .update({ category: catToSave })
+        .eq("brand_id", brandId)
+        .in("id", ids);
+      if (error) throw error;
+      toast.success(
+        isAr
+          ? catToSave
+            ? `تم تحديث قسم ${ids.length} منتج بنجاح`
+            : `تم تعيين ${ids.length} منتج كـ "بدون قسم" بنجاح`
+          : `Updated category for ${ids.length} products`,
+      );
+      setSelectedProductIds(new Set());
+      setBulkCategoryOpen(false);
+      onChanged();
+    } catch (error) {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : isAr
+            ? "تعذر تحديث قسم المنتجات"
+            : "Could not update products category",
+      );
+    } finally {
+      setBulkCategoryApplying(false);
+    }
+  };
+
   const activeFilterCount = (selectedCategory !== "all" ? 1 : 0) + (search ? 1 : 0);
 
   return (
@@ -1720,7 +1760,7 @@ function ProductsSection({
         entityEn="products"
         selectedCount={selectedProductIds.size}
         allFilteredSelected={allFilteredProductsSelected}
-        disabled={bulkDeleting || filteredDisplayProducts.length === 0}
+        disabled={bulkDeleting || bulkCategoryApplying || filteredDisplayProducts.length === 0}
         onSelectAll={() =>
           setSelectedProductIds((current) => {
             const next = new Set(current);
@@ -1730,6 +1770,10 @@ function ProductsSection({
         }
         onDeselectAll={() => setSelectedProductIds(new Set())}
         onDeleteSelected={() => setBulkDeleteOpen(true)}
+        onUpdateCategory={() => {
+          setBulkSelectedCategory("");
+          setBulkCategoryOpen(true);
+        }}
         onTransferToIncubator={() => {
           const selectedProds = products.filter((p) => selectedProductIds.has(p.id));
           if (selectedProds.length > 0) {
@@ -1851,6 +1895,7 @@ function ProductsSection({
           lang={isAr ? "ar" : "en"}
           products={paginatedProducts}
           variantsByProduct={variantsByProduct}
+          categories={categoriesQ.data ?? []}
           currency={currency}
           isLoading={false}
           isError={false}
@@ -1950,6 +1995,68 @@ function ProductsSection({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <Dialog open={bulkCategoryOpen} onOpenChange={setBulkCategoryOpen}>
+        <DialogContent className="max-w-[calc(100vw-2rem)] sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-base font-bold">
+              {isAr ? "تغيير قسم المنتجات المحددة" : "Change Category for Selected Products"}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <p className="text-xs text-muted-foreground">
+              {isAr
+                ? `اختر القسم الجديد لـ ${selectedProductIds.size} منتج تم تحديدها، أو اختر "بدون قسم" لإزالتها من أي قسم:`
+                : `Select the new category for ${selectedProductIds.size} selected products, or choose "No category" to unassign:`}
+            </p>
+            <div className="space-y-1.5">
+              <Label className="text-xs font-semibold text-foreground">
+                {isAr ? "القسم المستهدف" : "Target Category"}
+              </Label>
+              <select
+                className="w-full h-10 rounded-lg border border-input bg-background px-3 text-sm focus:ring-1 focus:ring-primary outline-none"
+                value={bulkSelectedCategory}
+                onChange={(e) => setBulkSelectedCategory(e.target.value)}
+              >
+                <option value="">{isAr ? "بدون قسم (إلغاء تعيين القسم)" : "No category (Unassign)"}</option>
+                {(categoriesQ.data ?? []).map((c) => {
+                  const val = c.slug || c.name_en;
+                  const label = isAr ? c.name_ar || c.name_en : c.name_en;
+                  return (
+                    <option key={c.id} value={val}>
+                      {label}
+                    </option>
+                  );
+                })}
+              </select>
+            </div>
+          </div>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button
+              type="button"
+              variant="outline"
+              disabled={bulkCategoryApplying}
+              onClick={() => setBulkCategoryOpen(false)}
+            >
+              {isAr ? "إلغاء" : "Cancel"}
+            </Button>
+            <Button
+              type="button"
+              disabled={bulkCategoryApplying}
+              onClick={() => void applyBulkCategory()}
+              className="bg-primary text-primary-foreground"
+            >
+              {bulkCategoryApplying
+                ? isAr
+                  ? "جاري التحديث..."
+                  : "Updating..."
+                : isAr
+                  ? "تطبيق التغيير"
+                  : "Apply Changes"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <AlertDialog
         open={!!productToDelete}
@@ -2545,7 +2652,7 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
         description: legacyDesc,
         description_ar: form.description_ar.trim() || null,
         description_en: form.description_en.trim() || null,
-        category: form.category,
+        category: form.category && form.category.trim() !== "" ? form.category.trim() : null,
         base_price: form.base_price ? Number(form.base_price) : 0,
         cost_price: form.cost_price ? Number(form.cost_price) : 0,
         image_url: form.image_url,
@@ -2606,7 +2713,7 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
         description: legacyDesc,
         description_ar: form.description_ar.trim() || null,
         description_en: form.description_en.trim() || null,
-        category: form.category,
+        category: form.category && form.category.trim() !== "" ? form.category.trim() : null,
         base_price: form.base_price ? Number(form.base_price) : 0,
         // TODO (Tech Debt / Financial Reporting): Currently defaults to 0 due to database NOT NULL constraint.
         // In a future migration, alter column to nullable to distinguish between 'unknown cost' (null) and 'zero cost' (0),
@@ -2758,14 +2865,35 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
               </p>
             )}
             <div>
-              <Label className="text-xs font-bold text-muted-foreground">
-                {t("inventory.category")}
-              </Label>
-              <div className="mt-1">
+              <div className="flex items-center justify-between mb-1">
+                <Label className="text-xs font-bold text-muted-foreground">
+                  {t("inventory.category")}
+                </Label>
+                {form.category ? (
+                  <button
+                    type="button"
+                    onClick={() => setForm({ ...form, category: "" })}
+                    className="text-[11px] text-destructive hover:underline font-medium"
+                  >
+                    {isAr ? "إلغاء تعيين القسم (بدون قسم)" : "Clear category (No category)"}
+                  </button>
+                ) : null}
+              </div>
+              <div>
                 {(categoriesQ.data ?? []).length > 0 ? (
                   <select
                     className="w-full h-10 rounded-lg border border-input bg-background px-3 text-sm focus:ring-1 focus:ring-primary outline-none"
-                    value={form.category}
+                    value={(() => {
+                      if (!form.category) return "";
+                      const match = (categoriesQ.data ?? []).find(
+                        (c) =>
+                          c.slug?.toLowerCase() === form.category.toLowerCase() ||
+                          c.name_en?.toLowerCase() === form.category.toLowerCase() ||
+                          c.name_ar?.toLowerCase() === form.category.toLowerCase() ||
+                          c.id === form.category,
+                      );
+                      return match ? match.slug || match.name_en : form.category;
+                    })()}
                     onChange={(e) => setForm({ ...form, category: e.target.value })}
                   >
                     <option value="">{isAr ? "بدون قسم" : "No category"}</option>
@@ -2778,6 +2906,18 @@ function ProductDialog({ product, onSaved }: { product: Product | null; onSaved:
                         </option>
                       );
                     })}
+                    {form.category &&
+                      !(categoriesQ.data ?? []).some(
+                        (c) =>
+                          c.slug?.toLowerCase() === form.category.toLowerCase() ||
+                          c.name_en?.toLowerCase() === form.category.toLowerCase() ||
+                          c.name_ar?.toLowerCase() === form.category.toLowerCase() ||
+                          c.id === form.category,
+                      ) && (
+                        <option value={form.category}>
+                          {form.category} ({isAr ? "قسم حالي غير مسجل" : "Current unlisted category"})
+                        </option>
+                      )}
                   </select>
                 ) : (
                   <Input

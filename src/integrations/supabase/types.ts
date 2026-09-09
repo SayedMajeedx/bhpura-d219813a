@@ -1360,6 +1360,7 @@ export type Database = {
           vat_number: string | null
           whatsapp_enabled: boolean
           whatsapp_number: string | null
+          trust_badges?: Json | null
         }
         Insert: {
           address?: string | null
@@ -1503,6 +1504,7 @@ export type Database = {
           vat_number?: string | null
           whatsapp_enabled?: boolean
           whatsapp_number?: string | null
+          trust_badges?: Json | null
         }
         Update: {
           address?: string | null
@@ -1646,6 +1648,7 @@ export type Database = {
           vat_number?: string | null
           whatsapp_enabled?: boolean
           whatsapp_number?: string | null
+          trust_badges?: Json | null
         }
         Relationships: [
           {

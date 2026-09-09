@@ -54,6 +54,12 @@ interface InventoryWorkQueueProps {
   onToggleProduct?: (productId: string) => void;
   onToggleAll?: () => void;
   currency?: string;
+  categories?: Array<{
+    id: string;
+    name_en: string;
+    name_ar: string | null;
+    slug: string | null;
+  }>;
 }
 
 export const InventoryWorkQueue: React.FC<InventoryWorkQueueProps> = ({
@@ -75,11 +81,27 @@ export const InventoryWorkQueue: React.FC<InventoryWorkQueueProps> = ({
   onToggleProduct = () => undefined,
   onToggleAll = () => undefined,
   currency = "BHD",
+  categories,
 }) => {
   const isAr = lang === "ar";
   const [expandedProducts, setExpandedProducts] = useState<Record<string, boolean>>({});
   const [pendingDelete, setPendingDelete] = useState<any | null>(null);
   const selectedOnPage = products.filter((product) => selectedProductIds.has(product.id)).length;
+
+  const resolveCategoryName = (catVal: string | null | undefined) => {
+    if (!catVal || !catVal.trim()) return null;
+    const match = categories?.find(
+      (c) =>
+        c.slug?.toLowerCase() === catVal.toLowerCase() ||
+        c.name_en?.toLowerCase() === catVal.toLowerCase() ||
+        c.name_ar?.toLowerCase() === catVal.toLowerCase() ||
+        c.id === catVal,
+    );
+    if (match) {
+      return isAr ? match.name_ar || match.name_en : match.name_en || match.name_ar;
+    }
+    return catVal;
+  };
 
   const toggleExpand = (productId: string) => {
     setExpandedProducts((prev) => ({
@@ -218,8 +240,16 @@ export const InventoryWorkQueue: React.FC<InventoryWorkQueueProps> = ({
                       </td>
 
                       {/* Category */}
-                      <td className="p-3 align-middle text-muted-foreground font-medium">
-                        {product.category || (isAr ? "عام" : "General")}
+                      <td className="p-3 align-middle font-medium">
+                        {product.category && resolveCategoryName(product.category) ? (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] bg-muted/70 text-foreground border border-border/50">
+                            {resolveCategoryName(product.category)}
+                          </span>
+                        ) : (
+                          <span className="text-muted-foreground/50 text-[11px] italic">
+                            {isAr ? "بدون قسم" : "No category"}
+                          </span>
+                        )}
                       </td>
 
                       {/* Variants Breakdown */}
