@@ -11,6 +11,16 @@ import {
   Palette,
   Phone,
   Sparkles,
+  Move,
+  Sliders,
+  RotateCcw,
+  Layers,
+  Video,
+  Image as LucideImage,
+  Sun,
+  Moon,
+  Eye,
+  ChevronDown,
 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -154,13 +164,18 @@ function ContentStudioPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("product_variants")
-        .select("id,product_id,size,stock_main,stock_incubator")
+        .select("id,product_id,size,color,fabric,selling_price,original_price,image_url,stock_main,stock_incubator")
         .eq("brand_id", brand.id);
       if (error) throw error;
       return (data ?? []) as Array<{
         id: string;
         product_id: string;
         size: string | null;
+        color: string | null;
+        fabric: string | null;
+        selling_price: number | null;
+        original_price: number | null;
+        image_url: string | null;
         stock_main: number | null;
         stock_incubator: number | null;
       }>;
@@ -179,7 +194,155 @@ function ContentStudioPage() {
   });
   const products = productsQ.data ?? [];
   const selected = products.find((product) => product.id === productId) ?? products[0];
-  const photo = firstImage(selected);
+
+  type StudioMediaItem = {
+    url: string;
+    type: "image" | "video";
+    source: "primary" | "gallery" | "variant";
+    label: string;
+  };
+
+  const productVariants = useMemo(() => {
+    if (!selected) return [];
+    return (variantsQ.data ?? []).filter((v) => v.product_id === selected.id);
+  }, [selected, variantsQ.data]);
+
+  const [selectedVariantId, setSelectedVariantId] = useState<string | null>(null);
+  const [selectedMediaUrl, setSelectedMediaUrl] = useState<string | null>(null);
+
+  // Header customization state
+  const [headerScale, setHeaderScale] = useState(1.0);
+  const [headerLogoHeight, setHeaderLogoHeight] = useState(48);
+  const [headerPosY, setHeaderPosY] = useState(4.5);
+  const [headerPosX, setHeaderPosX] = useState(0);
+  const [headerPlateStyle, setHeaderPlateStyle] = useState<"none" | "glass" | "solid">("none");
+  const [headerPlateColor, setHeaderPlateColor] = useState("rgba(0, 0, 0, 0.48)");
+  const [headerTextColor, setHeaderTextColor] = useState<"white" | "dark">("white");
+  const [headerBadgeText, setHeaderBadgeText] = useState("Bahrain");
+  const [headerShowBadge, setHeaderShowBadge] = useState(true);
+  const [isDraggingHeader, setIsDraggingHeader] = useState(false);
+
+  const activeVariant = useMemo(() => {
+    if (!selectedVariantId) return null;
+    return productVariants.find((v) => v.id === selectedVariantId) ?? null;
+  }, [productVariants, selectedVariantId]);
+
+  const productMediaList = useMemo(() => {
+    if (!selected) return [];
+    const list: StudioMediaItem[] = [];
+    const seenUrls = new Set<string>();
+
+    const add = (
+      url: string | null | undefined,
+      type: "image" | "video",
+      source: "primary" | "gallery" | "variant",
+      label: string,
+    ) => {
+      if (!url || seenUrls.has(url)) return;
+      seenUrls.add(url);
+      list.push({ url, type, source, label });
+    };
+
+    if (selected.image_url) {
+      add(selected.image_url, "image", "primary", isAr ? "الأساسية" : "Main");
+    }
+
+    if (Array.isArray(selected.media)) {
+      selected.media.forEach((item: any, idx: number) => {
+        const url = typeof item === "string" ? item : item?.url;
+        if (!url) return;
+        const isVid =
+          typeof item === "object" && item.type === "video"
+            ? true
+            : /\.(mp4|webm|mov|ogg)(\?|$)/i.test(url);
+        add(
+          url,
+          isVid ? "video" : "image",
+          "gallery",
+          isVid ? `${isAr ? "فيديو" : "Video"} ${idx + 1}` : `${isAr ? "صورة" : "Image"} ${idx + 1}`,
+        );
+      });
+    }
+
+    productVariants.forEach((v) => {
+      if (v.image_url) {
+        const vLabel = [v.size, v.color].filter(Boolean).join(" · ") || (isAr ? "متغير" : "Variant");
+        add(v.image_url, "image", "variant", vLabel);
+      }
+    });
+
+    return list;
+  }, [selected, productVariants, isAr]);
+
+  useEffect(() => {
+    if (productMediaList.length > 0) {
+      const match = productMediaList.some((m) => m.url === selectedMediaUrl);
+      if (!match) {
+        setSelectedMediaUrl(productMediaList[0].url);
+      }
+    } else {
+      setSelectedMediaUrl(null);
+    }
+  }, [selected?.id, productMediaList, selectedMediaUrl]);
+
+  const handleSelectVariant = (variantId: string | null) => {
+    setSelectedVariantId(variantId);
+    if (variantId) {
+      const v = productVariants.find((item) => item.id === variantId);
+      if (v?.image_url) {
+        setSelectedMediaUrl(v.image_url);
+      }
+    }
+  };
+
+  const currentMedia = useMemo(() => {
+    return productMediaList.find((m) => m.url === selectedMediaUrl) ?? productMediaList[0] ?? null;
+  }, [productMediaList, selectedMediaUrl]);
+
+  const photo = currentMedia?.url ?? firstImage(selected);
+  const isCurrentVideo = currentMedia?.type === "video";
+
+  const effectivePrice =
+    activeVariant?.selling_price != null ? activeVariant.selling_price : selected?.base_price ?? null;
+
+  const handleHeaderPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (exporting) return;
+    e.preventDefault();
+    setIsDraggingHeader(true);
+    const startY = e.clientY;
+    const startPosY = headerPosY;
+    const stageEl = stageRef.current;
+    const stageHeight = stageEl ? stageEl.offsetHeight : 1;
+
+    const onPointerMove = (moveEv: PointerEvent) => {
+      const deltaY = moveEv.clientY - startY;
+      const deltaPercent = (deltaY / stageHeight) * 100;
+      const nextY = Math.max(1, Math.min(82, startPosY + deltaPercent));
+      setHeaderPosY(Math.round(nextY * 10) / 10);
+    };
+
+    const onPointerUp = () => {
+      setIsDraggingHeader(false);
+      window.removeEventListener("pointermove", onPointerMove);
+      window.removeEventListener("pointerup", onPointerUp);
+    };
+
+    window.addEventListener("pointermove", onPointerMove);
+    window.addEventListener("pointerup", onPointerUp);
+  };
+
+  const resetHeaderLayout = () => {
+    setHeaderScale(1.0);
+    setHeaderLogoHeight(48);
+    setHeaderPosY(4.5);
+    setHeaderPosX(0);
+    setHeaderPlateStyle("none");
+    setHeaderPlateColor("rgba(0, 0, 0, 0.48)");
+    setHeaderTextColor("white");
+    setHeaderBadgeText("Bahrain");
+    setHeaderShowBadge(true);
+  };
+
   const businessName =
     settingsQ.data?.business_name || (isAr ? brand.name_ar : brand.name_en) || brand.name_en;
   const logo = settingsQ.data?.logo_url || brand.logo_url;
@@ -308,7 +471,7 @@ function ContentStudioPage() {
 
     const occasionFormatted = selected.occasion ? selected.occasion.trim() : "";
     const fabricFormatted = selected.fabric_type ? selected.fabric_type.trim() : "";
-    const priceFormatted = selected.base_price ? Number(selected.base_price).toFixed(3) : "0.000";
+    const priceFormatted = effectivePrice != null ? Number(effectivePrice).toFixed(3) : "0.000";
 
     const details: string[] = [];
     if (sizesFormatted) {
@@ -414,20 +577,121 @@ ${desc}${detailsBlock}
           </div>
           <div className="space-y-6 p-5">
             <div>
-              <Label>{isAr ? "المنتج" : "Product"}</Label>
-              <Select value={selected?.id ?? ""} onValueChange={setProductId}>
-                <SelectTrigger className="mt-2 h-12 rounded-xl">
-                  <SelectValue placeholder={isAr ? "اختيار منتج" : "Choose a product"} />
-                </SelectTrigger>
-                <SelectContent>
-                  {products.map((product) => (
-                    <SelectItem key={product.id} value={product.id}>
-                      {isAr ? product.name_ar || product.name : product.name_en || product.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+            {/* Product Selector */}
+            <div className="space-y-3">
+              <div>
+                <Label>{isAr ? "المنتج" : "Product"}</Label>
+                <Select value={selected?.id ?? ""} onValueChange={setProductId}>
+                  <SelectTrigger className="mt-2 h-12 rounded-xl">
+                    <SelectValue placeholder={isAr ? "اختيار منتج" : "Choose a product"} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {products.map((product) => (
+                      <SelectItem key={product.id} value={product.id}>
+                        {isAr ? product.name_ar || product.name : product.name_en || product.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Variant Selector (if product has multiple variants) */}
+              {productVariants.length > 0 && (
+                <div>
+                  <div className="flex items-center justify-between">
+                    <Label className="text-xs text-muted-foreground">
+                      {isAr ? "المتغير / المقاس واللون" : "Product Variant"}
+                    </Label>
+                    <span className="text-[10px] text-muted-foreground">
+                      {productVariants.length} {isAr ? "خيارات" : "options"}
+                    </span>
+                  </div>
+                  <Select
+                    value={selectedVariantId || "all"}
+                    onValueChange={(val) => handleSelectVariant(val === "all" ? null : val)}
+                  >
+                    <SelectTrigger className="mt-1.5 h-10 rounded-xl text-xs bg-muted/20">
+                      <SelectValue placeholder={isAr ? "جميع المتغيرات / الأساسي" : "All variants (base)"} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">
+                        {isAr ? "المنتج الأساسي (الافتراضي)" : "Base product (default)"}
+                      </SelectItem>
+                      {productVariants.map((v) => {
+                        const labelParts = [v.size, v.color].filter(Boolean);
+                        const vTitle = labelParts.length > 0 ? labelParts.join(" · ") : v.id.slice(0, 6);
+                        const priceStr = v.selling_price != null ? ` · ${Number(v.selling_price).toFixed(3)} ${currencySymbol}` : "";
+                        return (
+                          <SelectItem key={v.id} value={v.id}>
+                            {vTitle} {priceStr}
+                          </SelectItem>
+                        );
+                      })}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+
+              {/* Media gallery selector (pictures & videos) */}
+              {productMediaList.length > 1 && (
+                <div className="space-y-1.5 rounded-xl border border-border/60 bg-muted/20 p-2.5">
+                  <div className="flex items-center justify-between text-xs font-semibold text-muted-foreground">
+                    <span className="flex items-center gap-1.5">
+                      <LucideImage className="size-3.5 text-primary" />
+                      {isAr ? "اختيار صورة أو فيديو التصميم" : "Select design media"}
+                    </span>
+                    <span className="text-[10px] bg-primary/10 text-primary font-bold px-1.5 py-0.5 rounded-full">
+                      {productMediaList.length} {isAr ? "عناصر" : "items"}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2 overflow-x-auto pb-1 pt-1 scrollbar-thin">
+                    {productMediaList.map((item, idx) => {
+                      const isSelected = item.url === selectedMediaUrl;
+                      return (
+                        <button
+                          key={item.url + idx}
+                          type="button"
+                          onClick={() => setSelectedMediaUrl(item.url)}
+                          className={cn(
+                            "relative shrink-0 size-14 rounded-xl overflow-hidden border-2 transition-all group",
+                            isSelected
+                              ? "border-primary ring-2 ring-primary/30 scale-105 shadow-sm"
+                              : "border-border hover:border-primary/50 opacity-75 hover:opacity-100",
+                          )}
+                          title={item.label}
+                        >
+                          {item.type === "video" ? (
+                            <div className="size-full bg-neutral-900 flex flex-col items-center justify-center text-white p-1">
+                              <Video className="size-5 text-primary" />
+                              <span className="text-[9px] font-bold mt-0.5">MP4</span>
+                            </div>
+                          ) : (
+                            <img
+                              src={item.url}
+                              alt=""
+                              className="size-full object-cover"
+                              crossOrigin="anonymous"
+                            />
+                          )}
+                          {item.type === "video" && (
+                            <span className="absolute bottom-0.5 end-0.5 bg-black/80 text-[8px] text-white px-1 rounded font-semibold flex items-center gap-0.5">
+                              <Video className="size-2" />
+                            </span>
+                          )}
+                          {isSelected && (
+                            <span className="absolute top-0.5 start-0.5 bg-primary text-primary-foreground size-4 rounded-full flex items-center justify-center shadow">
+                              <Check className="size-2.5 stroke-[3]" />
+                            </span>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
             </div>
+
+            {/* Publish Size */}
             <div>
               <Label>{isAr ? "مقاس النشر" : "Publish size"}</Label>
               <div className="mt-2 grid grid-cols-3 gap-2">
@@ -454,6 +718,8 @@ ${desc}${detailsBlock}
                 ))}
               </div>
             </div>
+
+            {/* Visual Style */}
             <div>
               <Label>{isAr ? "الأسلوب" : "Visual style"}</Label>
               <div className="mt-2 grid grid-cols-3 gap-2">
@@ -478,6 +744,8 @@ ${desc}${detailsBlock}
                 ))}
               </div>
             </div>
+
+            {/* Product Framing */}
             <div>
               <Label>{isAr ? "طريقة عرض صورة المنتج" : "Product photo framing"}</Label>
               <div className="mt-2 grid grid-cols-2 gap-2">
@@ -523,20 +791,354 @@ ${desc}${detailsBlock}
                 </button>
               </div>
             </div>
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="studio-edition-label">
-                  {isAr ? "العبارة بجانب الشعار" : "Edition label"}
-                </Label>
-                <Input
-                  id="studio-edition-label"
-                  value={editionLabel}
-                  maxLength={28}
-                  onChange={(event) => setEditionLabel(event.target.value)}
-                  className="mt-2 h-11 rounded-xl"
-                  placeholder={defaultEditionLabel}
-                />
+
+            {/* Header & Branding Bar Customization Card */}
+            <div className="rounded-2xl border border-border/80 bg-muted/20 p-4 space-y-4">
+              <div className="flex items-center justify-between border-b border-border/60 pb-3">
+                <div className="flex items-center gap-2">
+                  <span className="grid size-7 place-items-center rounded-lg bg-primary/10 text-primary">
+                    <Sliders className="size-3.5" />
+                  </span>
+                  <div>
+                    <h3 className="text-xs font-bold text-foreground">
+                      {isAr ? "شريط الشعار والترويسة" : "Header & Branding Bar"}
+                    </h3>
+                    <p className="text-[10px] text-muted-foreground">
+                      {isAr ? "تخصيص الموضع والحجم وخلفية الشعار" : "Position, resize & backdrop plate"}
+                    </p>
+                  </div>
+                </div>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={resetHeaderLayout}
+                  className="h-7 gap-1 px-2 text-[10px] font-semibold text-muted-foreground hover:text-foreground"
+                  title={isAr ? "استعادة الموضع والحجم الافتراضي" : "Reset layout"}
+                >
+                  <RotateCcw className="size-3" />
+                  {isAr ? "إعادة ضبط" : "Reset"}
+                </Button>
               </div>
+
+              {/* Text Fields */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <Label htmlFor="studio-edition-label" className="text-xs">
+                    {isAr ? "العبارة بجانب الشعار" : "Edition label"}
+                  </Label>
+                  <Input
+                    id="studio-edition-label"
+                    value={editionLabel}
+                    maxLength={28}
+                    onChange={(event) => setEditionLabel(event.target.value)}
+                    className="mt-1.5 h-9 rounded-xl text-xs"
+                    placeholder={defaultEditionLabel}
+                  />
+                </div>
+                <div>
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="studio-badge-text" className="text-xs">
+                      {isAr ? "شارة الموقع / الدولة" : "Location badge"}
+                    </Label>
+                    <button
+                      type="button"
+                      onClick={() => setHeaderShowBadge(!headerShowBadge)}
+                      className="text-[10px] text-primary font-semibold hover:underline"
+                    >
+                      {headerShowBadge ? (isAr ? "إخفاء" : "Hide") : (isAr ? "إظهار" : "Show")}
+                    </button>
+                  </div>
+                  <Input
+                    id="studio-badge-text"
+                    value={headerBadgeText}
+                    maxLength={16}
+                    disabled={!headerShowBadge}
+                    onChange={(event) => setHeaderBadgeText(event.target.value)}
+                    className="mt-1.5 h-9 rounded-xl text-xs"
+                    placeholder="Bahrain"
+                  />
+                </div>
+              </div>
+
+              {/* Backdrop Plate Style (None / Glassmorphic / Solid) */}
+              <div className="space-y-2">
+                <Label className="text-xs font-semibold">
+                  {isAr ? "خلفية شريط الشعار (لزيادة الوضوح)" : "Header backdrop plate"}
+                </Label>
+                <div className="grid grid-cols-3 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setHeaderPlateStyle("none")}
+                    className={cn(
+                      "rounded-xl border p-2 text-center text-xs font-bold transition-all",
+                      headerPlateStyle === "none"
+                        ? "border-primary bg-primary/[0.08] ring-1 ring-primary text-primary"
+                        : "border-border bg-background/50 hover:border-primary/40 text-muted-foreground",
+                    )}
+                  >
+                    {isAr ? "شفاف" : "None"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setHeaderPlateStyle("glass");
+                      if (headerPlateColor === "#1a1a1a") setHeaderPlateColor("rgba(0, 0, 0, 0.48)");
+                    }}
+                    className={cn(
+                      "rounded-xl border p-2 text-center text-xs font-bold transition-all",
+                      headerPlateStyle === "glass"
+                        ? "border-primary bg-primary/[0.08] ring-1 ring-primary text-primary"
+                        : "border-border bg-background/50 hover:border-primary/40 text-muted-foreground",
+                    )}
+                  >
+                    {isAr ? "زجاجي مضبب" : "Glass"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setHeaderPlateStyle("solid");
+                      if (headerPlateColor.startsWith("rgba")) setHeaderPlateColor("#1a1a1a");
+                    }}
+                    className={cn(
+                      "rounded-xl border p-2 text-center text-xs font-bold transition-all",
+                      headerPlateStyle === "solid"
+                        ? "border-primary bg-primary/[0.08] ring-1 ring-primary text-primary"
+                        : "border-border bg-background/50 hover:border-primary/40 text-muted-foreground",
+                    )}
+                  >
+                    {isAr ? "خلفية مصمتة" : "Solid"}
+                  </button>
+                </div>
+
+                {/* Plate Color & Contrast Settings */}
+                {headerPlateStyle !== "none" && (
+                  <div className="space-y-3 rounded-xl border border-border/60 bg-background/70 p-3 pt-2.5">
+                    <div>
+                      <div className="flex items-center justify-between text-[11px] text-muted-foreground mb-1.5 font-medium">
+                        <span>{isAr ? "لون الخلفية" : "Plate color"}</span>
+                        <span>{headerPlateColor}</span>
+                      </div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        {headerPlateStyle === "glass" ? (
+                          <>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setHeaderPlateColor("rgba(0, 0, 0, 0.52)");
+                                setHeaderTextColor("white");
+                              }}
+                              className={cn(
+                                "h-7 px-2.5 rounded-lg text-[10px] font-bold border transition-all flex items-center gap-1.5",
+                                headerPlateColor === "rgba(0, 0, 0, 0.52)"
+                                  ? "border-primary ring-1 ring-primary"
+                                  : "border-border",
+                              )}
+                              style={{ background: "rgba(0, 0, 0, 0.52)", color: "#fff" }}
+                            >
+                              <Moon className="size-2.5" />
+                              {isAr ? "زجاج داكن" : "Dark glass"}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setHeaderPlateColor("rgba(255, 255, 255, 0.78)");
+                                setHeaderTextColor("dark");
+                              }}
+                              className={cn(
+                                "h-7 px-2.5 rounded-lg text-[10px] font-bold border transition-all flex items-center gap-1.5",
+                                headerPlateColor === "rgba(255, 255, 255, 0.78)"
+                                  ? "border-primary ring-1 ring-primary"
+                                  : "border-border",
+                              )}
+                              style={{ background: "rgba(255, 255, 255, 0.78)", color: "#111" }}
+                            >
+                              <Sun className="size-2.5" />
+                              {isAr ? "زجاج فاتح" : "Light glass"}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setHeaderPlateColor("rgba(51, 10, 10, 0.65)");
+                                setHeaderTextColor("white");
+                              }}
+                              className={cn(
+                                "h-7 px-2.5 rounded-lg text-[10px] font-bold border transition-all flex items-center gap-1.5",
+                                headerPlateColor === "rgba(51, 10, 10, 0.65)"
+                                  ? "border-primary ring-1 ring-primary"
+                                  : "border-border",
+                              )}
+                              style={{ background: "rgba(51, 10, 10, 0.65)", color: "#fff" }}
+                            >
+                              <Palette className="size-2.5" />
+                              {isAr ? "براند" : "Brand"}
+                            </button>
+                          </>
+                        ) : (
+                          <>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setHeaderPlateColor("#111111");
+                                setHeaderTextColor("white");
+                              }}
+                              className={cn(
+                                "h-7 px-2.5 rounded-lg text-[10px] font-bold border transition-all flex items-center gap-1.5",
+                                headerPlateColor === "#111111"
+                                  ? "border-primary ring-1 ring-primary"
+                                  : "border-border",
+                              )}
+                              style={{ background: "#111111", color: "#fff" }}
+                            >
+                              {isAr ? "أسود" : "Black"}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setHeaderPlateColor("#ffffff");
+                                setHeaderTextColor("dark");
+                              }}
+                              className={cn(
+                                "h-7 px-2.5 rounded-lg text-[10px] font-bold border transition-all flex items-center gap-1.5",
+                                headerPlateColor === "#ffffff"
+                                  ? "border-primary ring-1 ring-primary"
+                                  : "border-border",
+                              )}
+                              style={{ background: "#ffffff", color: "#111" }}
+                            >
+                              {isAr ? "أبيض" : "White"}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setHeaderPlateColor(palette.ink);
+                                setHeaderTextColor("white");
+                              }}
+                              className={cn(
+                                "h-7 px-2.5 rounded-lg text-[10px] font-bold border transition-all flex items-center gap-1.5",
+                                headerPlateColor === palette.ink
+                                  ? "border-primary ring-1 ring-primary"
+                                  : "border-border",
+                              )}
+                              style={{ background: palette.ink, color: palette.bg }}
+                            >
+                              <Palette className="size-2.5" />
+                              {isAr ? "لون النمط" : "Theme ink"}
+                            </button>
+                          </>
+                        )}
+                        <label className="flex items-center gap-1.5 h-7 px-2 rounded-lg border border-border bg-background cursor-pointer text-[10px] text-muted-foreground hover:text-foreground">
+                          <input
+                            type="color"
+                            value={headerPlateColor.startsWith("#") ? headerPlateColor : "#1a1a1a"}
+                            onChange={(e) => setHeaderPlateColor(e.target.value)}
+                            className="size-4 cursor-pointer rounded border-0 bg-transparent p-0"
+                          />
+                          <span>{isAr ? "مخصص" : "Custom"}</span>
+                        </label>
+                      </div>
+                    </div>
+
+                    {/* Text Contrast Mode */}
+                    <div className="flex items-center justify-between border-t border-border/50 pt-2 text-xs">
+                      <span className="text-[11px] font-semibold text-muted-foreground">
+                        {isAr ? "تباين الشعار والنصوص" : "Content contrast"}
+                      </span>
+                      <div className="flex items-center gap-1">
+                        <button
+                          type="button"
+                          onClick={() => setHeaderTextColor("white")}
+                          className={cn(
+                            "px-2.5 py-1 rounded-lg text-[10px] font-bold border transition-all",
+                            headerTextColor === "white"
+                              ? "border-primary bg-primary/10 text-primary"
+                              : "border-border text-muted-foreground",
+                          )}
+                        >
+                          ⚪ {isAr ? "أبيض" : "Light"}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setHeaderTextColor("dark")}
+                          className={cn(
+                            "px-2.5 py-1 rounded-lg text-[10px] font-bold border transition-all",
+                            headerTextColor === "dark"
+                              ? "border-primary bg-primary/10 text-primary"
+                              : "border-border text-muted-foreground",
+                          )}
+                        >
+                          ⚫ {isAr ? "داكن" : "Dark"}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Resize & Drag Fine-Tuning Controls */}
+              <div className="space-y-3 border-t border-border/60 pt-3">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-semibold flex items-center gap-1.5 text-foreground">
+                    <Move className="size-3.5 text-primary" />
+                    {isAr ? "الموضع والارتفاع" : "Position & Sizing"}
+                  </span>
+                  <span className="text-[10px] text-muted-foreground">
+                    {isAr ? "اسحب بالماوس مباشرة أو اضبط هنا" : "Drag on canvas or adjust"}
+                  </span>
+                </div>
+
+                {/* Vertical Position (Y) */}
+                <div className="space-y-1">
+                  <div className="flex justify-between text-[11px] text-muted-foreground">
+                    <span>{isAr ? "الموضع العمودي (من الأعلى)" : "Vertical position (Y)"}</span>
+                    <span className="font-bold text-foreground">{headerPosY}%</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="1"
+                    max="75"
+                    step="0.5"
+                    value={headerPosY}
+                    onChange={(e) => setHeaderPosY(parseFloat(e.target.value))}
+                    className="w-full accent-primary h-1.5 bg-muted rounded-lg cursor-pointer"
+                  />
+                </div>
+
+                {/* Logo Height */}
+                <div className="space-y-1">
+                  <div className="flex justify-between text-[11px] text-muted-foreground">
+                    <span>{isAr ? "ارتفاع الشعار" : "Logo height"}</span>
+                    <span className="font-bold text-foreground">{headerLogoHeight}px</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="20"
+                    max="80"
+                    step="2"
+                    value={headerLogoHeight}
+                    onChange={(e) => setHeaderLogoHeight(parseInt(e.target.value, 10))}
+                    className="w-full accent-primary h-1.5 bg-muted rounded-lg cursor-pointer"
+                  />
+                </div>
+
+                {/* Overall Scale */}
+                <div className="space-y-1">
+                  <div className="flex justify-between text-[11px] text-muted-foreground">
+                    <span>{isAr ? "مقياس الترويسة الكاملة" : "Overall header scale"}</span>
+                    <span className="font-bold text-foreground">{Math.round(headerScale * 100)}%</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="0.75"
+                    max="1.4"
+                    step="0.05"
+                    value={headerScale}
+                    onChange={(e) => setHeaderScale(parseFloat(e.target.value))}
+                    className="w-full accent-primary h-1.5 bg-muted rounded-lg cursor-pointer"
+                  />
+                </div>
+              </div>
+            </div>
               <div>
                 <Label htmlFor="studio-headline">{isAr ? "العنوان" : "Headline"}</Label>
                 <Input
@@ -641,7 +1243,17 @@ ${desc}${detailsBlock}
               style={{ background: palette.bg, color: palette.ink }}
             >
               {photo ? (
-                imageFit === "contain" ? (
+                isCurrentVideo ? (
+                  <video
+                    src={photo}
+                    crossOrigin="anonymous"
+                    autoPlay
+                    loop
+                    muted
+                    playsInline
+                    className="absolute inset-0 size-full object-cover"
+                  />
+                ) : imageFit === "contain" ? (
                   <div className="absolute inset-0 flex items-center justify-center overflow-hidden">
                     <img
                       src={photo}
@@ -669,34 +1281,78 @@ ${desc}${detailsBlock}
                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(214,177,130,.65),transparent_28%),radial-gradient(circle_at_80%_75%,rgba(51,10,10,.22),transparent_30%)]" />
               )}
               <div className="absolute inset-0 bg-gradient-to-b from-black/25 via-transparent via-70% to-black/20" />
+
+              {/* Draggable & Customizable Header Bar */}
               <div
                 dir="ltr"
-                className="absolute inset-x-[7%] top-[4.5%] flex items-center justify-between gap-3 text-white"
+                onPointerDown={handleHeaderPointerDown}
+                className={cn(
+                  "absolute inset-x-[5%] z-20 flex items-center justify-between gap-3 transition-shadow select-none",
+                  !exporting &&
+                    "cursor-grab active:cursor-grabbing group hover:ring-2 hover:ring-primary/60 hover:ring-offset-2 hover:ring-offset-black/30 rounded-2xl",
+                  isDraggingHeader && "cursor-grabbing ring-2 ring-primary ring-offset-2",
+                  headerPlateStyle === "glass" &&
+                    "backdrop-blur-md shadow-lg border border-white/20 px-3.5 py-2 sm:px-4 sm:py-2.5 rounded-2xl",
+                  headerPlateStyle === "solid" &&
+                    "shadow-md border border-white/10 px-3.5 py-2 sm:px-4 sm:py-2.5 rounded-2xl",
+                  headerPlateStyle === "none" && "px-1 py-1",
+                )}
+                style={{
+                  top: `${headerPosY}%`,
+                  transform: `scale(${headerScale})`,
+                  transformOrigin: "center center",
+                  backgroundColor:
+                    headerPlateStyle === "glass"
+                      ? headerPlateColor || "rgba(0, 0, 0, 0.48)"
+                      : headerPlateStyle === "solid"
+                        ? headerPlateColor || "#1a1a1a"
+                        : "transparent",
+                  color: headerTextColor === "dark" ? "#111827" : "#ffffff",
+                }}
               >
-                <div className="flex items-center gap-3">
+                {/* Drag handle tooltip on hover (hidden during export) */}
+                {!exporting && (
+                  <div className="absolute -top-7 start-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-30">
+                    <span className="flex items-center gap-1 text-[9px] font-bold bg-black/85 text-white px-2.5 py-0.5 rounded-full shadow-md whitespace-nowrap">
+                      <Move className="size-2.5" />
+                      {isAr ? "اسحب لتغيير الموضع" : "Drag to reposition"}
+                    </span>
+                  </div>
+                )}
+
+                <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
                   {logo ? (
                     <img
                       src={logo}
                       crossOrigin="anonymous"
                       alt={businessName}
-                      className="h-12 w-auto max-w-32 object-contain brightness-0 invert"
+                      style={{ height: `${headerLogoHeight}px`, width: "auto" }}
+                      className={cn(
+                        "max-w-28 sm:max-w-36 object-contain pointer-events-none transition-all",
+                        headerTextColor === "white" ? "brightness-0 invert" : "",
+                      )}
                     />
                   ) : (
-                    <span className="font-serif text-2xl tracking-[.22em]">
+                    <span className="font-serif text-xl sm:text-2xl tracking-[.22em] pointer-events-none">
                       {brandNameEn.toUpperCase()}
                     </span>
                   )}
                   {editionLabel?.trim() ? (
                     <>
-                      <span className="h-7 w-px bg-white/40" />
+                      <span
+                        className={cn(
+                          "h-6 sm:h-7 w-px pointer-events-none",
+                          headerTextColor === "dark" ? "bg-neutral-900/30" : "bg-white/40",
+                        )}
+                      />
                       <span
                         dir="auto"
                         lang={editionIsAr ? "ar" : "en"}
                         className={cn(
-                          "font-semibold",
+                          "font-semibold truncate pointer-events-none",
                           editionIsAr
                             ? "text-[12px] sm:text-sm"
-                            : "text-[9px] uppercase tracking-[.25em]",
+                            : "text-[9px] sm:text-[10px] uppercase tracking-[.22em]",
                         )}
                         style={editionIsAr ? { fontFamily: "Tahoma, Arial, sans-serif" } : undefined}
                       >
@@ -705,9 +1361,19 @@ ${desc}${detailsBlock}
                     </>
                   ) : null}
                 </div>
-                <span className="rounded-full border border-white/50 px-3 py-1 text-[9px] font-bold uppercase tracking-[.16em]">
-                  Bahrain
-                </span>
+
+                {headerShowBadge && headerBadgeText?.trim() && (
+                  <span
+                    className={cn(
+                      "rounded-full px-2.5 py-0.5 sm:px-3 sm:py-1 text-[8px] sm:text-[9px] font-bold uppercase tracking-[.16em] whitespace-nowrap pointer-events-none shrink-0",
+                      headerTextColor === "dark"
+                        ? "border border-neutral-900/30 bg-black/5 text-neutral-900"
+                        : "border border-white/50 bg-white/10 text-white",
+                    )}
+                  >
+                    {headerBadgeText}
+                  </span>
+                )}
               </div>
               <div
                 dir={isAr ? "rtl" : "ltr"}
