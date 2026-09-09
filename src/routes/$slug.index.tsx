@@ -694,16 +694,6 @@ function HeroContentCarousel({
   const blockedClick = useRef(false);
 
   const hasMultipleSlides = slides.length > 1;
-  const anySlideHasMedia = slides.some((s) => {
-    const mUrl =
-      (lang === "ar" ? s.media_url_ar : s.media_url_en) ||
-      s.media_url ||
-      (lang === "ar" ? s.media_url_en : s.media_url_ar);
-    const iframeUrl =
-      (lang === "ar" ? s.media_iframe_url_ar : s.media_iframe_url_en) ||
-      (lang === "ar" ? s.media_iframe_url_en : s.media_iframe_url_ar);
-    return (s.type === "image" && Boolean(mUrl)) || (s.type === "video" && Boolean(mUrl || iframeUrl));
-  });
 
   const alignClass =
     settings.hero_title_align === "center"
@@ -740,16 +730,10 @@ function HeroContentCarousel({
   }
 
   return (
-    <div
-      className={`relative isolate w-full max-w-xl overflow-hidden rounded-2xl bg-transparent ${
-        anySlideHasMedia ? "shadow-lg [clip-path:inset(0_round_1rem)]" : ""
-      }`}
-    >
+    <div className="relative isolate w-full max-w-xl overflow-hidden rounded-2xl bg-transparent shadow-lg [clip-path:inset(0_round_1rem)]">
       <div
         dir="ltr"
-        className={`grid items-stretch overflow-hidden rounded-2xl ${
-          anySlideHasMedia ? "[clip-path:inset(0_round_1rem)]" : ""
-        } touch-pan-y`}
+        className="grid items-stretch overflow-hidden rounded-2xl [clip-path:inset(0_round_1rem)] touch-pan-y"
         onTouchStart={(event) => {
           touchStartX.current = event.touches[0]?.clientX ?? null;
         }}
@@ -793,9 +777,7 @@ function HeroContentCarousel({
               dir={lang === "ar" ? "rtl" : "ltr"}
               aria-hidden={slideIndex !== idx}
               inert={slideIndex !== idx ? true : undefined}
-              className={`col-start-1 row-start-1 min-w-0 overflow-hidden rounded-2xl transition-[opacity,transform] duration-[500ms] ease-[cubic-bezier(0.22,1,0.36,1)] [backface-visibility:hidden] [clip-path:inset(0_round_1rem)] sm:duration-[600ms] ${
-                anySlideHasMedia ? "aspect-video" : "w-full"
-              } ${
+              className={`col-start-1 row-start-1 min-w-0 overflow-hidden rounded-2xl transition-[opacity,transform] duration-[500ms] ease-[cubic-bezier(0.22,1,0.36,1)] [backface-visibility:hidden] [clip-path:inset(0_round_1rem)] aspect-video sm:duration-[600ms] ${
                 slideIndex === idx
                   ? "z-10 pointer-events-auto translate-y-0 scale-100 opacity-100"
                   : "z-0 pointer-events-none translate-y-1 scale-[0.992] opacity-0"
@@ -924,11 +906,9 @@ function HeroContentCarousel({
                 </div>
               ) : (
                 <div
-                  className={`hero-carousel-text-card flex flex-col justify-center overflow-hidden rounded-2xl bg-white/70 dark:bg-black/60 text-card-foreground shadow-[0_8px_32px_rgba(0,0,0,0.12),inset_0_1px_1.5px_rgba(255,255,255,0.7)] backdrop-blur-2xl backdrop-saturate-180 border border-white/50 dark:border-white/15 ${alignClass} ${
-                    anySlideHasMedia ? "h-full sm:h-[320px]" : "w-full"
-                  } ${
+                  className={`hero-carousel-text-card flex h-full flex-col justify-center overflow-hidden rounded-2xl bg-white/70 dark:bg-black/60 text-card-foreground shadow-[0_8px_32px_rgba(0,0,0,0.12),inset_0_1px_1.5px_rgba(255,255,255,0.7)] backdrop-blur-2xl backdrop-saturate-180 border border-white/50 dark:border-white/15 sm:h-[320px] ${alignClass} ${
                     hasMultipleSlides
-                      ? "pt-6 px-6 pb-12 sm:pt-8 sm:px-10 sm:pb-16"
+                      ? "p-5 pb-12 sm:p-8 sm:pb-20"
                       : "p-6 sm:p-8"
                   }`}
                   style={{ textAlign: settings.hero_title_align }}
@@ -969,7 +949,7 @@ function HeroContentCarousel({
       {hasMultipleSlides && (
         <div
           dir="ltr"
-          className="pointer-events-none absolute inset-x-3 bottom-1.5 z-20 flex items-center justify-between text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.7)] sm:inset-x-5 sm:bottom-4"
+          className="pointer-events-none absolute inset-x-3 bottom-1 z-20 flex items-center justify-between text-white mix-blend-difference sm:inset-x-5 sm:bottom-6"
         >
           <button
             type="button"
@@ -977,22 +957,21 @@ function HeroContentCarousel({
             aria-label={lang === "ar" ? "الشريحة السابقة" : "Previous hero slide"}
             className="pointer-events-auto grid h-11 w-11 place-items-center bg-transparent transition duration-300 hover:scale-110 hover:opacity-70 active:scale-95"
           >
-            <ChevronLeft strokeWidth={1.5} className="h-7 w-7" />
+            <ChevronLeft strokeWidth={1} className="h-7 w-7" />
           </button>
           <div className="pointer-events-auto flex items-center justify-center gap-1">
             {slides.map((slide, dot) => (
               <button
                 key={slide.id}
                 type="button"
-                onClick={() => goTo(dot)}
-                aria-label={`${lang === "ar" ? "الشريحة" : "Hero slide"} ${dot + 1}`}
-                aria-current={dot === idx ? "true" : undefined}
-                className={`grid h-11 place-items-center transition-all duration-500 ${
-                  dot === idx ? "w-10" : "w-6 opacity-50"
+                onClick={() => setIdx(dot)}
+                aria-label={`${lang === "ar" ? "الانتقال إلى الشريحة" : "Go to slide"} ${dot + 1}`}
+                className={`flex h-11 items-center px-1 transition-opacity ${
+                  dot === idx ? "opacity-100" : "opacity-35 hover:opacity-70"
                 }`}
               >
                 <span
-                  className={`block h-0.5 rounded-full bg-current transition-all duration-500 ${
+                  className={`block h-px bg-current transition-all duration-500 ${
                     dot === idx ? "w-8" : "w-3"
                   }`}
                 />
@@ -1005,7 +984,7 @@ function HeroContentCarousel({
             aria-label={lang === "ar" ? "الشريحة التالية" : "Next hero slide"}
             className="pointer-events-auto grid h-11 w-11 place-items-center bg-transparent transition duration-300 hover:scale-110 hover:opacity-70 active:scale-95"
           >
-            <ChevronRight strokeWidth={1.5} className="h-7 w-7" />
+            <ChevronRight strokeWidth={1} className="h-7 w-7" />
           </button>
         </div>
       )}
